@@ -4957,7 +4957,7 @@ div.csl-indent {
 
 
 <p>Replication of the simulation experiments from <span class="citation" data-cites="Jansen1995"><a href="#ref-Jansen1995" role="doc-biblioref">[1]</a></span>.</p>
-<div id="1883fa0f" class="cell" data-execution_count="1">
+<div id="1883fa0f" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> SimulationStudy</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> bsplot</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -4967,13 +4967,13 @@ div.csl-indent {
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>odir <span class="op">=</span> <span class="st">"./figures"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="8d47f971" class="cell" data-execution_count="2">
+<div id="8d47f971" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>s <span class="op">=</span> SimulationStudy.from_file(<span class="st">"Jansen1995_extracted.yaml"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="c3246929" class="cell" data-execution_count="3">
+<div id="c3246929" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>exp1 <span class="op">=</span> s.get_experiment(<span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="cac46f67" class="cell" data-execution_count="4">
+<div id="cac46f67" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ── Experiment 1: C sweep (Fig. 3) ──</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>res1 <span class="op">=</span> exp1.run(<span class="st">"tvboptim"</span>)</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>fig3 <span class="op">=</span> jr_plot.plot_fig3(res1)</span>
@@ -5006,7 +5006,7 @@ Experiment complete.
 </div>
 </div>
 </div>
-<div id="e8edf0dc" class="cell" data-execution_count="5">
+<div id="e8edf0dc" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ── Experiment 2: Parameter space exploration (Fig. 4) ──</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>res2 <span class="op">=</span> s.get_experiment(<span class="dv">2</span>).run(<span class="st">"tvboptim"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
@@ -5029,7 +5029,7 @@ Experiment complete.
 ============================================================</code></pre>
 </div>
 </div>
-<div id="8f4fe2fe" class="cell" data-execution_count="6">
+<div id="8f4fe2fe" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>importlib.<span class="bu">reload</span>(jr_plot)</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>fig4 <span class="op">=</span> jr_plot.plot_fig4(res2)</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>fig4.savefig(odir <span class="op">+</span> <span class="st">"/Jansen1995_Fig4.png"</span>, dpi<span class="op">=</span><span class="dv">300</span>)</span>
@@ -5042,7 +5042,7 @@ Experiment complete.
 </div>
 </div>
 </div>
-<div id="426bd0a8" class="cell" data-execution_count="7">
+<div id="426bd0a8" class="cell" data-execution_count="8">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ── Experiment 3: Symmetric K sweep (Fig. 5) ──</span></span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>exp3 <span class="op">=</span> s.get_experiment(<span class="dv">3</span>)</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>res3 <span class="op">=</span> exp3.run(<span class="st">"tvboptim"</span>)</span>
@@ -5076,7 +5076,7 @@ Experiment complete.
 </div>
 </div>
 </div>
-<div id="162374e6" class="cell" data-execution_count="8">
+<div id="162374e6" class="cell" data-execution_count="9">
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ── Experiment 4: Asymmetric K sweep (Fig. 6) ──</span></span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>exp4 <span class="op">=</span> s.get_experiment(<span class="dv">4</span>)</span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>res4 <span class="op">=</span> exp4.run(<span class="st">"tvboptim"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -5100,7 +5100,7 @@ Experiment complete.
 ============================================================</code></pre>
 </div>
 </div>
-<div id="774ab662" class="cell" data-execution_count="9">
+<div id="774ab662" class="cell" data-execution_count="10">
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>importlib.<span class="bu">reload</span>(jr_plot)</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>fig6 <span class="op">=</span> jr_plot.plot_fig6(res4, exp4)</span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>fig6.savefig(odir <span class="op">+</span> <span class="st">"/Jansen1995_Fig6.png"</span>, dpi<span class="op">=</span><span class="dv">300</span>)</span>
@@ -5113,7 +5113,7 @@ Experiment complete.
 </div>
 </div>
 </div>
-<div id="40fea98e" class="cell" data-execution_count="10">
+<div id="40fea98e" class="cell" data-execution_count="11">
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ── Experiment 5: VEP — identical columns, no delay (Figs. 8, 9, 10) ──</span></span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>exp5 <span class="op">=</span> s.get_experiment(<span class="dv">5</span>)</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>res5 <span class="op">=</span> exp5.run(<span class="st">"tvboptim"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -5139,7 +5139,7 @@ Experiment complete.
 ============================================================</code></pre>
 </div>
 </div>
-<div id="22135c9d" class="cell" data-execution_count="11">
+<div id="22135c9d" class="cell" data-execution_count="12">
 <div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>importlib.<span class="bu">reload</span>(jr_plot)</span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>fig8 <span class="op">=</span> jr_plot.plot_fig8(res5, exp5)</span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>fig8.savefig(odir <span class="op">+</span> <span class="st">"/Jansen1995_Fig8.png"</span>, dpi<span class="op">=</span><span class="dv">300</span>)</span>
@@ -5152,7 +5152,7 @@ Experiment complete.
 </div>
 </div>
 </div>
-<div id="6965e7e5" class="cell" data-execution_count="12">
+<div id="6965e7e5" class="cell" data-execution_count="13">
 <div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>importlib.<span class="bu">reload</span>(jr_plot)</span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>fig9 <span class="op">=</span> jr_plot.plot_fig9(res5, exp5)</span>
 <span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>fig9.savefig(odir <span class="op">+</span> <span class="st">"/Jansen1995_Fig9.png"</span>, dpi<span class="op">=</span><span class="dv">300</span>)</span>
@@ -5165,7 +5165,7 @@ Experiment complete.
 </div>
 </div>
 </div>
-<div id="bc39f764" class="cell" data-execution_count="13">
+<div id="bc39f764" class="cell" data-execution_count="14">
 <div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>importlib.<span class="bu">reload</span>(jr_plot)</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>fig10 <span class="op">=</span> jr_plot.plot_fig10(res5, exp5)</span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>fig10.savefig(odir <span class="op">+</span> <span class="st">"/Jansen1995_Fig10.png"</span>, dpi<span class="op">=</span><span class="dv">300</span>)</span>
@@ -5178,7 +5178,7 @@ Experiment complete.
 </div>
 </div>
 </div>
-<div id="be29d870" class="cell" data-execution_count="14">
+<div id="be29d870" class="cell" data-execution_count="15">
 <div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ── Experiment 6: VEP — different columns, with delay (Fig. 11) ──</span></span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>exp6 <span class="op">=</span> s.get_experiment(<span class="dv">6</span>)</span>
 <span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>res6 <span class="op">=</span> exp6.run(<span class="st">"tvboptim"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -5202,7 +5202,7 @@ Experiment complete.
 ============================================================</code></pre>
 </div>
 </div>
-<div id="6972402d" class="cell" data-execution_count="15">
+<div id="6972402d" class="cell" data-execution_count="16">
 <div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>importlib.<span class="bu">reload</span>(jr_plot)</span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>fig11<span class="op">=</span>jr_plot.plot_fig11(res6, exp6)</span>
 <span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>fig11.savefig(odir <span class="op">+</span> <span class="st">"/Jansen1995_Fig11.png"</span>, dpi<span class="op">=</span><span class="dv">300</span>)</span>

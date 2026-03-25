@@ -4992,7 +4992,7 @@ window.Quarto = {
 </section>
 <section id="tonic-spiking" class="level2">
 <h2 class="anchored" data-anchor-id="tonic-spiking">1. Tonic Spiking</h2>
-<div id="c899d686" class="cell" data-execution_count="1">
+<div id="c899d686" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> SimulationExperiment</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>exp_tonic <span class="op">=</span> SimulationExperiment.from_string(<span class="st">"""</span></span>
@@ -5042,7 +5042,7 @@ Events: ['spike']</code></pre>
 </section>
 <section id="bursting" class="level2">
 <h2 class="anchored" data-anchor-id="bursting">2. Bursting</h2>
-<div id="09c27dd1" class="cell" data-execution_count="2">
+<div id="09c27dd1" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>exp_burst <span class="op">=</span> SimulationExperiment.from_string(<span class="st">"""</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="st">label: "NeuroML Ex2: Izhikevich (bursting)"</span></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="st">dynamics:</span></span>
@@ -5084,7 +5084,7 @@ Events: ['spike']</code></pre>
 </section>
 <section id="render-lems-xml-tonic-variant" class="level2">
 <h2 class="anchored" data-anchor-id="render-lems-xml-tonic-variant">3. Render LEMS XML (tonic variant)</h2>
-<div id="276e8f2a" class="cell" data-execution_count="3">
+<div id="276e8f2a" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>xml <span class="op">=</span> exp_tonic.render(<span class="st">"lems"</span>)</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(xml[:<span class="dv">1500</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
@@ -5129,7 +5129,7 @@ Events: ['spike']</code></pre>
 </section>
 <section id="run-reference-neuroml2" class="level2">
 <h2 class="anchored" data-anchor-id="run-reference-neuroml2">4. Run Reference (NeuroML2)</h2>
-<div id="5c0c25bb" class="cell" data-execution_count="4">
+<div id="5c0c25bb" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys, os</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>sys.path.insert(<span class="dv">0</span>, os.path.dirname(os.path.abspath(<span class="st">"."</span>)))</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> _nml_helpers <span class="im">import</span> run_lems_example</span>
@@ -5144,7 +5144,7 @@ Events: ['spike']</code></pre>
 </section>
 <section id="run-tvbo-versions" class="level2">
 <h2 class="anchored" data-anchor-id="run-tvbo-versions">5. Run TVBO Versions</h2>
-<div id="0a96dbd1" class="cell" data-execution_count="5">
+<div id="0a96dbd1" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> extract_array(exp):</span>
@@ -5164,7 +5164,7 @@ Burst: shape=(40001, 3)</code></pre>
 <section id="numerical-comparison" class="level2">
 <h2 class="anchored" data-anchor-id="numerical-comparison">6. Numerical Comparison</h2>
 <p>The NeuroML example outputs multiple cells (izBurst, izTonic, izMixed, izClass1). We compare the tonic variant:</p>
-<div id="634985b6" class="cell" data-execution_count="6">
+<div id="634985b6" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> _nml_helpers <span class="im">import</span> compare_traces</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -5194,7 +5194,7 @@ Burst: shape=(40001, 3)</code></pre>
 </section>
 <section id="plot" class="level2">
 <h2 class="anchored" data-anchor-id="plot">7. Plot</h2>
-<div id="d3aca2ee" class="cell" data-execution_count="7">
+<div id="d3aca2ee" class="cell" data-execution_count="8">
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> _nml_helpers <span class="im">import</span> plot_comparison</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>plot_comparison(</span>
@@ -5213,7 +5213,7 @@ Burst: shape=(40001, 3)</code></pre>
 </div>
 <section id="all-four-variants-from-neuroml" class="level3">
 <h3 class="anchored" data-anchor-id="all-four-variants-from-neuroml">All Four Variants from NeuroML</h3>
-<div id="03acaa5f" class="cell" data-execution_count="8">
+<div id="03acaa5f" class="cell" data-execution_count="9">
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">4</span>, <span class="dv">1</span>, figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">10</span>), sharex<span class="op">=</span><span class="va">True</span>)</span>

@@ -5028,7 +5028,7 @@ window.Quarto = {
 <li><code>distance_unit</code>: Unit for edge distances/lengths (default: <code>"mm"</code>)</li>
 <li><code>time_unit</code>: Default time unit for delays (default: <code>"ms"</code>)</li>
 </ul>
-<div id="d24ac3e1" class="cell" data-execution_count="1">
+<div id="d24ac3e1" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> Network</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo.datamodel <span class="im">import</span> Parameter</span>
@@ -5055,7 +5055,7 @@ Time unit: ms</code></pre>
 <p>The <code>compute_delays()</code> method calculates transmission delays from distances and conduction speed:</p>
 <p><span class="math display">\[\text{delay} = \frac{\text{distance}}{\text{speed}}\]</span></p>
 <p>Units are handled automatically via SymPy:</p>
-<div id="e1aada78" class="cell" data-execution_count="2">
+<div id="e1aada78" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Set conduction speed (with units)</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>net.conduction_speed <span class="op">=</span> Parameter(name<span class="op">=</span><span class="st">"v"</span>, value<span class="op">=</span><span class="fl">3.0</span>, unit<span class="op">=</span><span class="st">"mm/ms"</span>)</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -5073,7 +5073,7 @@ Time unit: ms</code></pre>
 <section id="mixed-units" class="level3">
 <h3 class="anchored" data-anchor-id="mixed-units">1.2 Mixed Units</h3>
 <p>TVBO correctly handles mixed units. The conduction speed unit doesn’t need to match the network’s distance/time units:</p>
-<div id="b13dc9e9" class="cell" data-execution_count="3">
+<div id="b13dc9e9" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Speed in m/s, distances in mm, output in ms</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>net.conduction_speed <span class="op">=</span> Parameter(name<span class="op">=</span><span class="st">"v"</span>, value<span class="op">=</span><span class="fl">3.0</span>, unit<span class="op">=</span><span class="st">"m/s"</span>)</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>delays <span class="op">=</span> net.compute_delays()</span>
@@ -5085,7 +5085,7 @@ Time unit: ms</code></pre>
  [0. 0. 0.]]</code></pre>
 </div>
 </div>
-<div id="2388c1b7" class="cell" data-execution_count="4">
+<div id="2388c1b7" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Override output unit</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>delays_seconds <span class="op">=</span> net.compute_delays(<span class="st">"s"</span>)</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Delays in seconds:</span><span class="ch">\n</span><span class="sc">{</span>delays_seconds<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -5100,7 +5100,7 @@ Time unit: ms</code></pre>
 <section id="custom-network-units" class="level3">
 <h3 class="anchored" data-anchor-id="custom-network-units">1.3 Custom Network Units</h3>
 <p>Create networks with non-default units:</p>
-<div id="3e160b4d" class="cell" data-execution_count="5">
+<div id="3e160b4d" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Network with distances in meters and time in seconds</span></span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>net_si <span class="op">=</span> Network.from_matrix(</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    W,</span>
@@ -5145,7 +5145,7 @@ Time unit: ms</code></pre>
 </tr>
 </tbody>
 </table>
-<div id="ad41f11c" class="cell" data-execution_count="6">
+<div id="ad41f11c" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Example: centimeters and microseconds</span></span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>net_micro <span class="op">=</span> Network.from_matrix(</span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    W,</span>
@@ -5168,7 +5168,7 @@ Time unit: ms</code></pre>
 <section id="edge-level-parameters-with-units" class="level3">
 <h3 class="anchored" data-anchor-id="edge-level-parameters-with-units">1.5 Edge-Level Parameters with Units</h3>
 <p>Individual edges can have parameters with units via the <code>parameters</code> slot:</p>
-<div id="9e1b4cd6" class="cell" data-execution_count="7">
+<div id="9e1b4cd6" class="cell" data-execution_count="8">
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo.datamodel <span class="im">import</span> Edge, Node</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Create network with explicit edges</span></span>

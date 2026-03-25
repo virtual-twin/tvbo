@@ -4962,7 +4962,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="fitzhugh-nagumo-basic-export" class="level2">
 <h2 class="anchored" data-anchor-id="fitzhugh-nagumo-basic-export">1. FitzHugh-Nagumo — Basic Export</h2>
 <p>FitzHugh-Nagumo is already in the TVBO database as a <code>Dynamics</code> that maps cleanly to a LEMS <code>ComponentType</code>:</p>
-<div id="c8220828" class="cell" data-execution_count="1">
+<div id="c8220828" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> Dynamics</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo.adapters.neuroml <span class="im">import</span> NeuroMLAdapter</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -5261,7 +5261,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="full-experiment-export" class="level2">
 <h2 class="anchored" data-anchor-id="full-experiment-export">5. Full Experiment Export</h2>
-<div id="7446c265" class="cell" data-execution_count="2">
+<div id="7446c265" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> SimulationExperiment</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo.adapters.neuroml <span class="im">import</span> NeuroMLAdapter</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -5294,7 +5294,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="split-file-export" class="level2">
 <h2 class="anchored" data-anchor-id="split-file-export">6. Split-File Export</h2>
 <p>By NeuroML convention, a fully portable model is distributed as three separate LEMS files that references each other via <code>&lt;Include&gt;</code>. The TVBO adapter generates all three with a single call:</p>
-<div id="ac626a78" class="cell" data-execution_count="3">
+<div id="ac626a78" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>paths <span class="op">=</span> adapter.export(<span class="st">"./output"</span>, split<span class="op">=</span><span class="va">True</span>, validate<span class="op">=</span><span class="va">False</span>)</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(paths)</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="co"># {</span></span>
@@ -5339,7 +5339,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 <p>You can render each piece independently:</p>
-<div id="fc6f45c0" class="cell" data-execution_count="4">
+<div id="fc6f45c0" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Just the ComponentType definitions</span></span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>xml_dyn <span class="op">=</span> adapter.render_dynamics()</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -5354,7 +5354,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="unified-render-api" class="level2">
 <h2 class="anchored" data-anchor-id="unified-render-api">7. Unified <code>render()</code> API</h2>
 <p><code>SimulationExperiment.render()</code> is the unified entry point for all serialisation formats — both executable code and metadata.</p>
-<div id="e8c29ac8" class="cell" data-execution_count="5">
+<div id="e8c29ac8" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># exp and adapter are already defined in section 5 above</span></span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Render as LEMS XML (same as NeuroMLAdapter(exp).render_code())</span></span>
@@ -5372,7 +5372,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="running-via-jneuroml" class="level2">
 <h2 class="anchored" data-anchor-id="running-via-jneuroml">8. Running via jNeuroML</h2>
 <p>Once a valid LEMS file is produced, simulate it with jNeuroML:</p>
-<div id="2c8d1465" class="cell" data-execution_count="6">
+<div id="2c8d1465" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Via the adapter</span></span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>adapter.run()</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>

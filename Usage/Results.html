@@ -4989,7 +4989,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="basic-usage" class="level2">
 <h2 class="anchored" data-anchor-id="basic-usage">Basic Usage</h2>
-<div id="93f4fea2" class="cell" data-execution_count="1">
+<div id="93f4fea2" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> Dynamics, SimulationExperiment</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> Dynamics.from_db(<span class="st">"ReducedWongWangExcInh"</span>)</span>
@@ -4997,7 +4997,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> exp.run(<span class="st">"jax"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>The <code>ExperimentResult</code> displays a tree summary:</p>
-<div id="f638e786" class="cell" data-execution_count="2">
+<div id="f638e786" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>result</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display cell-output-markdown" data-execution_count="2">
 <pre><code>Experiment
@@ -5011,7 +5011,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="integration-main-simulation" class="level3">
 <h3 class="anchored" data-anchor-id="integration-main-simulation">Integration (Main Simulation)</h3>
 <p>The primary simulation result is an <code>xr.DataArray</code> with named dimensions and coordinates:</p>
-<div id="458b6307" class="cell" data-execution_count="3">
+<div id="458b6307" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>result.integration.data</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="3">
 <div><svg style="position: absolute; width: 0; height: 0; overflow: hidden">
@@ -5462,14 +5462,14 @@ Dimensions without coordinates: node</pre><div class="xr-wrap" style="display:no
 </div>
 </div>
 <p>Use xarray’s label-based selection:</p>
-<div id="621ddfcf" class="cell" data-execution_count="4">
+<div id="621ddfcf" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Select a single state variable across all nodes</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>result.integration.sel(variable<span class="op">=</span><span class="st">'S_e'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="4">
 <pre><code>SimulationResult(81920, 1, 1)</code></pre>
 </div>
 </div>
-<div id="4375cd61" class="cell" data-execution_count="5">
+<div id="4375cd61" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Integer indexing — first 1000 time steps</span></span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>result.integration.isel(time<span class="op">=</span><span class="bu">slice</span>(<span class="dv">0</span>, <span class="dv">1000</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="5">
@@ -5477,7 +5477,7 @@ Dimensions without coordinates: node</pre><div class="xr-wrap" style="display:no
 </div>
 </div>
 <p>Standard properties remain available:</p>
-<div id="15645d96" class="cell" data-execution_count="6">
+<div id="15645d96" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"state_names:"</span>, result.integration.state_names)</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"dims:       "</span>, result.integration.data.dims)</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"shape:      "</span>, result.integration.data.shape)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -5491,7 +5491,7 @@ shape:       (81920, 2, 1, 1)</code></pre>
 <section id="backward-compatibility" class="level3">
 <h3 class="anchored" data-anchor-id="backward-compatibility">Backward Compatibility</h3>
 <p><code>ExperimentResult</code> delegates to <code>integration</code> for backward compatibility. This means <code>result.data</code> and <code>result.time</code> work as before:</p>
-<div id="37165b62" class="cell" data-execution_count="7">
+<div id="37165b62" class="cell" data-execution_count="8">
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># These are equivalent:</span></span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> result.data <span class="kw">is</span> result.integration.data</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"result.data.shape:"</span>, result.data.shape)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -5503,7 +5503,7 @@ shape:       (81920, 2, 1, 1)</code></pre>
 <section id="source-experiment-link" class="level3">
 <h3 class="anchored" data-anchor-id="source-experiment-link">Source Experiment Link</h3>
 <p><code>ExperimentResult</code> holds a back-reference to the <code>SimulationExperiment</code> that produced it:</p>
-<div id="e23bb4cd" class="cell" data-execution_count="8">
+<div id="e23bb4cd" class="cell" data-execution_count="9">
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"source type:  "</span>, <span class="bu">type</span>(result.source).<span class="va">__name__</span>)</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"dynamics name:"</span>, result.source.dynamics.name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
@@ -5552,7 +5552,7 @@ dynamics name: ReducedWongWangExcInh</code></pre>
 <section id="bids-compatible-export" class="level3">
 <h3 class="anchored" data-anchor-id="bids-compatible-export">BIDS-Compatible Export</h3>
 <p><code>ExperimentResult.export()</code> writes simulation data and experiment metadata to a <a href="https://bids-specification.readthedocs.io/">BIDS</a>-compatible directory following <a href="https://bids.neuroimaging.io/bep034">BEP034</a> conventions:</p>
-<div id="00aaa2b3" class="cell" data-execution_count="9">
+<div id="00aaa2b3" class="cell" data-execution_count="10">
 <div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> tempfile, os</span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>outdir <span class="op">=</span> os.path.join(tempfile.mkdtemp(), <span class="st">"my_experiment"</span>)</span>
 <span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>result.export(outdir)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -5560,7 +5560,7 @@ dynamics name: ReducedWongWangExcInh</code></pre>
 <pre><code>PosixPath('/var/folders/ym/9kw1g21j1nd7kwfn8c0z3st40000gn/T/tmprnqnjnsa/my_experiment')</code></pre>
 </div>
 </div>
-<div id="aad1db86" class="cell" data-execution_count="10">
+<div id="aad1db86" class="cell" data-execution_count="11">
 <div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Show what was written</span></span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> root, dirs, files <span class="kw">in</span> os.walk(outdir):</span>
 <span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    level <span class="op">=</span> root.replace(outdir, <span class="st">""</span>).count(os.sep)</span>
@@ -5645,7 +5645,7 @@ dynamics name: ReducedWongWangExcInh</code></pre>
 <section id="data-format-netcdf" class="level3">
 <h3 class="anchored" data-anchor-id="data-format-netcdf">Data Format: netCDF</h3>
 <p>Simulation data is stored as <strong>netCDF</strong> — a self-describing scientific data format built on HDF5. Each file contains the full array with named dimensions and coordinates, readable by any netCDF/HDF5 tool:</p>
-<div id="4b1c9a16" class="cell" data-execution_count="11">
+<div id="4b1c9a16" class="cell" data-execution_count="12">
 <div class="sourceCode cell-code" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> xarray <span class="im">as</span> xr</span>
 <span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Read back exported data</span></span>
@@ -6054,7 +6054,7 @@ Tip
 <p>netCDF4 files <strong>are</strong> HDF5 files — any HDF5 reader (h5py, HDFView, MATLAB’s <code>h5read</code>) can open them directly. The netCDF layer adds self-describing dimension names and coordinates.</p>
 </div>
 </div>
-<div id="e884596b" class="cell" data-execution_count="12">
+<div id="e884596b" class="cell" data-execution_count="13">
 <div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Clean up</span></span>
 <span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> shutil</span>
 <span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>shutil.rmtree(os.path.dirname(outdir))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>

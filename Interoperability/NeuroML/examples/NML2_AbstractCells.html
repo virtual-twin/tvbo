@@ -5018,7 +5018,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="show-original-nml-file-structure" class="level2">
 <h2 class="anchored" data-anchor-id="show-original-nml-file-structure">Show Original NML File Structure</h2>
-<div id="00c10741" class="cell" data-execution_count="1">
+<div id="00c10741" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>nml_file <span class="op">=</span> Path.home() <span class="op">/</span> <span class="st">"work_data/toolboxes/NeuroML2/examples/NML2_AbstractCells.nml"</span></span>
@@ -5049,7 +5049,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="define-all-cells-in-tvbo">Define All Cells in TVBO</h2>
 <section id="fitzhugh-nagumo-1969" class="level3">
 <h3 class="anchored" data-anchor-id="fitzhugh-nagumo-1969">FitzHugh-Nagumo 1969</h3>
-<div id="e0d10ede" class="cell" data-execution_count="2">
+<div id="e0d10ede" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> SimulationExperiment</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>exp_fn1969 <span class="op">=</span> SimulationExperiment.from_string(<span class="st">"""</span></span>
@@ -5085,7 +5085,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="izhikevich-2007" class="level3">
 <h3 class="anchored" data-anchor-id="izhikevich-2007">Izhikevich 2007</h3>
-<div id="2c689864" class="cell" data-execution_count="3">
+<div id="2c689864" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>exp_iz2007 <span class="op">=</span> SimulationExperiment.from_string(<span class="st">"""</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="st">label: "NML2 AbstractCells: Izhikevich 2007"</span></span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="st">dynamics:</span></span>
@@ -5130,7 +5130,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="render-and-inspect-lems" class="level2">
 <h2 class="anchored" data-anchor-id="render-and-inspect-lems">Render and Inspect LEMS</h2>
-<div id="a5b15ba5" class="cell" data-execution_count="4">
+<div id="a5b15ba5" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Show FHN1969 LEMS</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>xml <span class="op">=</span> exp_fn1969.render(<span class="st">"lems"</span>)</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== FHN1969 LEMS (excerpt) ==="</span>)</span>
@@ -5173,7 +5173,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="run-tvbo" class="level2">
 <h2 class="anchored" data-anchor-id="run-tvbo">Run TVBO</h2>
-<div id="93746cbf" class="cell" data-execution_count="5">
+<div id="93746cbf" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>

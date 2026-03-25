@@ -4918,6 +4918,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul class="collapse">
   <li><a href="#tvbo.utils.units.normalize_unit" id="toc-tvbo.utils.units.normalize_unit" class="nav-link" data-scroll-target="#tvbo.utils.units.normalize_unit">normalize_unit</a></li>
   <li><a href="#tvbo.utils.units.unit_has_time_dimension" id="toc-tvbo.utils.units.unit_has_time_dimension" class="nav-link" data-scroll-target="#tvbo.utils.units.unit_has_time_dimension">unit_has_time_dimension</a></li>
+  <li><a href="#tvbo.utils.units.unit_to_latex" id="toc-tvbo.utils.units.unit_to_latex" class="nav-link" data-scroll-target="#tvbo.utils.units.unit_to_latex">unit_to_latex</a></li>
   <li><a href="#tvbo.utils.units.unit_to_lems_dimension" id="toc-tvbo.utils.units.unit_to_lems_dimension" class="nav-link" data-scroll-target="#tvbo.utils.units.unit_to_lems_dimension">unit_to_lems_dimension</a></li>
   <li><a href="#tvbo.utils.units.unit_to_lems_symbol" id="toc-tvbo.utils.units.unit_to_lems_symbol" class="nav-link" data-scroll-target="#tvbo.utils.units.unit_to_lems_symbol">unit_to_lems_symbol</a></li>
   <li><a href="#tvbo.utils.units.unit_to_symbol" id="toc-tvbo.utils.units.unit_to_symbol" class="nav-link" data-scroll-target="#tvbo.utils.units.unit_to_symbol">unit_to_symbol</a></li>
@@ -4965,14 +4966,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Return True if the unit carries a time component (T or T⁻¹).</td>
 </tr>
 <tr class="odd">
+<td><a href="#tvbo.utils.units.unit_to_latex">unit_to_latex</a></td>
+<td>Return a LaTeX string for the unit, suitable for wrapping in <code>$...$</code>.</td>
+</tr>
+<tr class="even">
 <td><a href="#tvbo.utils.units.unit_to_lems_dimension">unit_to_lems_dimension</a></td>
 <td>Return the LEMS dimension name for a UnitEnum value (or string).</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.utils.units.unit_to_lems_symbol">unit_to_lems_symbol</a></td>
 <td>Return the LEMS unit symbol string for appending to numeric values.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.utils.units.unit_to_symbol">unit_to_symbol</a></td>
 <td>Return the conventional display symbol for a UnitEnum value.</td>
 </tr>
@@ -4997,21 +5002,27 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Return True if the unit carries a time component (T or T⁻¹).</p>
 <p>This is the key signal for NeuroML LEMS export: if any parameter in the RHS equation has a time dimension, the equation already carries time normalisation and <code>/ SEC</code> is not needed.</p>
 </section>
+<section id="tvbo.utils.units.unit_to_latex" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.utils.units.unit_to_latex">unit_to_latex</h3>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>utils.units.unit_to_latex(unit)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Return a LaTeX string for the unit, suitable for wrapping in <code>$...$</code>.</p>
+<p>Converts enum values like <code>per_ms</code> → <code>\mathrm{ms}^{-1}</code>, <code>rad_per_ms</code> → <code>\mathrm{rad}\,\mathrm{ms}^{-1}</code>. Returns an empty string for dimensionless / unknown units.</p>
+</section>
 <section id="tvbo.utils.units.unit_to_lems_dimension" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.utils.units.unit_to_lems_dimension">unit_to_lems_dimension</h3>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>utils.units.unit_to_lems_dimension(unit)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>utils.units.unit_to_lems_dimension(unit)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Return the LEMS dimension name for a UnitEnum value (or string).</p>
 <p>Returns the proper LEMS dimension (e.g.&nbsp;<code>"voltage"</code>, <code>"capacitance"</code>) when the unit has a known mapping, or <code>"none"</code> for dimensionless / unknown units.</p>
 </section>
 <section id="tvbo.utils.units.unit_to_lems_symbol" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.utils.units.unit_to_lems_symbol">unit_to_lems_symbol</h3>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>utils.units.unit_to_lems_symbol(unit)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>utils.units.unit_to_lems_symbol(unit)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Return the LEMS unit symbol string for appending to numeric values.</p>
 <p>For dimensioned parameters (e.g.&nbsp;<code>pF</code>, <code>nS</code>, <code>mV</code>), returns the matching LEMS unit symbol. For dimensionless or unknown units, returns <code>""</code>.</p>
 </section>
 <section id="tvbo.utils.units.unit_to_symbol" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.utils.units.unit_to_symbol">unit_to_symbol</h3>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>utils.units.unit_to_symbol(unit)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>utils.units.unit_to_symbol(unit)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Return the conventional display symbol for a UnitEnum value.</p>
 <p>For simple abbreviations (ms, mV, nA), the enum value IS the symbol. For compound forms (per_ms, mV_per_ms), returns conventional notation.</p>
 <blockquote class="blockquote">

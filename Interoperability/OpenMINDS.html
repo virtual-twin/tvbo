@@ -4996,7 +4996,7 @@ window.Quarto = {
 <section id="define-a-simulation-experiment" class="level2">
 <h2 class="anchored" data-anchor-id="define-a-simulation-experiment">Define a Simulation Experiment</h2>
 <p>The most readable way to define an experiment is using <strong>pure YAML</strong> with <code>SimulationExperiment.from_string()</code>:</p>
-<div id="setup" class="cell" data-execution_count="1">
+<div id="setup" class="cell" data-execution_count="2">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
@@ -5004,7 +5004,7 @@ window.Quarto = {
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Markdown</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
-<div id="4905f63d" class="cell" data-execution_count="2">
+<div id="4905f63d" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>yaml_definition <span class="op">=</span> <span class="st">"""</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="st">id: 1</span></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="st">label: Three-Node Oscillator Network</span></span>
@@ -5176,7 +5176,7 @@ window.Quarto = {
 </section>
 </section>
 </div>
-<div id="ff817417" class="cell" data-execution_count="3">
+<div id="ff817417" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>experiment.run().integration.plot()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
@@ -5202,7 +5202,7 @@ Experiment complete.
 </section>
 <section id="export-to-openminds-json-ld" class="level2">
 <h2 class="anchored" data-anchor-id="export-to-openminds-json-ld">Export to OpenMINDS JSON-LD</h2>
-<div id="bb9ee509" class="cell" data-execution_count="4">
+<div id="bb9ee509" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 2: Convert to OpenMINDS JSON-LD</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>jsonld <span class="op">=</span> experiment.to_openminds(base_id<span class="op">=</span><span class="st">"https://example.org/simulations"</span>)</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -5265,7 +5265,7 @@ Experiment complete.
 </section>
 <section id="import-from-openminds-json-ld" class="level2">
 <h2 class="anchored" data-anchor-id="import-from-openminds-json-ld">Import from OpenMINDS JSON-LD</h2>
-<div id="56acc011" class="cell" data-execution_count="5">
+<div id="56acc011" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>reconstructed <span class="op">=</span> SimulationExperiment.from_openminds(jsonld)</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>reconstructed.run().integration.plot()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
@@ -5292,7 +5292,7 @@ Experiment complete.
 </section>
 <section id="convert-back-to-yaml" class="level2">
 <h2 class="anchored" data-anchor-id="convert-back-to-yaml">Convert Back to YAML</h2>
-<div id="c40a875a" class="cell" data-execution_count="6">
+<div id="c40a875a" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>yaml_output <span class="op">=</span> reconstructed.to_yaml()</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(yaml_output[:<span class="dv">2000</span>])</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">... [truncated]"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>

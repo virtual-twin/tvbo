@@ -5084,7 +5084,7 @@ window.Quarto = {
 <h2 class="anchored" data-anchor-id="round-trip-1-tvbo-pyrates-tvbo">Round-Trip 1: TVBO → PyRates → TVBO</h2>
 <section id="step-1-define-model-in-tvbo" class="level3">
 <h3 class="anchored">Step 1: Define Model in TVBO</h3>
-<div id="05a95fda" class="cell" data-execution_count="1">
+<div id="05a95fda" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> Dynamics</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Markdown, display</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -5139,13 +5139,13 @@ window.Quarto = {
 </section>
 <section id="step-2-export-to-pyrates-and-simulate" class="level3">
 <h3 class="anchored" data-anchor-id="step-2-export-to-pyrates-and-simulate">Step 2: Export to PyRates and Simulate</h3>
-<div id="4888254b" class="cell" data-execution_count="2">
+<div id="4888254b" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> shutil</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pyrates <span class="im">import</span> CircuitTemplate, clear</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="894f07ee" class="cell" data-execution_count="3">
+<div id="894f07ee" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Export TVBO model to PyRates format</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>os.makedirs(<span class="st">'_pyrates_vdp'</span>, exist_ok<span class="op">=</span><span class="va">True</span>)</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> <span class="bu">open</span>(<span class="st">'_pyrates_vdp/__init__.py'</span>, <span class="st">'w'</span>) <span class="im">as</span> f:</span>
@@ -5184,7 +5184,7 @@ def VanDerPol(
 </code></pre>
 </div>
 </div>
-<div id="d0fefc60" class="cell" data-execution_count="4">
+<div id="d0fefc60" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Run in PyRates</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>T <span class="op">=</span> <span class="fl">100.0</span></span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>step_size <span class="op">=</span> <span class="fl">1e-2</span></span>
@@ -5249,7 +5249,7 @@ Simulation Progress
 </section>
 <section id="step-3-load-back-into-tvbo" class="level3">
 <h3 class="anchored">Step 3: Load Back into TVBO</h3>
-<div id="26785065" class="cell" data-execution_count="5">
+<div id="26785065" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> tempfile</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Markdown, display</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -5304,7 +5304,7 @@ Simulation Progress
 </section>
 <section id="step-4-run-in-tvbo" class="level3">
 <h3 class="anchored">Step 4: Run in TVBO</h3>
-<div id="77749a86" class="cell" data-execution_count="6">
+<div id="77749a86" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> SimulationExperiment</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Markdown, display</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -5416,7 +5416,7 @@ Experiment complete.
 <h2 class="anchored" data-anchor-id="round-trip-2-pyrates-tvbo-pyrates">Round-Trip 2: PyRates → TVBO → PyRates</h2>
 <section id="step-1-load-pyrates-model-into-tvbo" class="level3">
 <h3 class="anchored">Step 1: Load PyRates Model into TVBO</h3>
-<div id="063f4c76" class="cell" data-execution_count="7">
+<div id="063f4c76" class="cell" data-execution_count="8">
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> Dynamics</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Markdown, display</span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -5471,7 +5471,7 @@ Experiment complete.
 </section>
 <section id="step-2-modify-in-tvbo-and-display-code" class="level3">
 <h3 class="anchored" data-anchor-id="step-2-modify-in-tvbo-and-display-code">Step 2: Modify in TVBO and Display Code</h3>
-<div id="893e3bbf" class="cell" data-execution_count="8">
+<div id="893e3bbf" class="cell" data-execution_count="9">
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Markdown, display</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Modify parameter in TVBO</span></span>
@@ -5512,7 +5512,7 @@ def vdp(
 </section>
 <section id="step-3-run-in-tvbo" class="level3">
 <h3 class="anchored">Step 3: Run in TVBO</h3>
-<div id="e4c9966d" class="cell" data-execution_count="9">
+<div id="e4c9966d" class="cell" data-execution_count="10">
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Markdown, display</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Run the modified model in TVBO</span></span>
@@ -5579,7 +5579,7 @@ def vdp(
 </section>
 </section>
 </div>
-<div id="f7330566" class="cell" data-execution_count="10">
+<div id="f7330566" class="cell" data-execution_count="11">
 <div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> exp.run().integration</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>result.plot()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
@@ -5606,7 +5606,7 @@ Experiment complete.
 </section>
 <section id="step-4-export-back-to-pyrates" class="level3">
 <h3 class="anchored" data-anchor-id="step-4-export-back-to-pyrates">Step 4: Export Back to PyRates</h3>
-<div id="b3041718" class="cell" data-execution_count="11">
+<div id="b3041718" class="cell" data-execution_count="12">
 <div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> tempfile</span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> tempfile.TemporaryDirectory() <span class="im">as</span> tmpdir:</span>
@@ -5665,7 +5665,7 @@ vdp_circuit:
 <section id="loading-multi-operator-pyrates-files" class="level2">
 <h2 class="anchored" data-anchor-id="loading-multi-operator-pyrates-files">Loading Multi-Operator PyRates Files</h2>
 <p>PyRates files can contain multiple <code>OperatorTemplates</code>. Use <code>SimulationExperiment.from_pyrates()</code> to load all of them:</p>
-<div id="4ec5bdf0" class="cell" data-execution_count="12">
+<div id="4ec5bdf0" class="cell" data-execution_count="13">
 <div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> SimulationExperiment</span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Markdown, display</span>
 <span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -5879,7 +5879,7 @@ r_{eff} = r_{in}*u
 </div>
 <section id="run-tsodyks-markram-synapse-model" class="level3">
 <h3 class="anchored">Run Tsodyks-Markram Synapse Model</h3>
-<div id="b9fcef4e" class="cell" data-execution_count="13">
+<div id="b9fcef4e" class="cell" data-execution_count="14">
 <div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Markdown, display</span>
 <span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Run the Tsodyks-Markram model with constant presynaptic input</span></span>
@@ -6078,7 +6078,7 @@ Steady-state efficacy: 0.005</code></pre>
 <section id="pyrates-vs-tvbo-numerical-comparison" class="level2">
 <h2 class="anchored" data-anchor-id="pyrates-vs-tvbo-numerical-comparison">PyRates vs TVBO: Numerical Comparison</h2>
 <p>Let’s verify that both engines produce identical results:</p>
-<div id="b3258173" class="cell" data-execution_count="14">
+<div id="b3258173" class="cell" data-execution_count="15">
 <div class="sourceCode cell-code" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Markdown, display</span>
 <span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a></span>

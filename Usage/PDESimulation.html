@@ -4990,7 +4990,7 @@ window.Quarto = {
 <p>A minimal diffusion example on a unit square, using scikit-fem’s built-in mesh generators.</p>
 <section id="step-1-create-a-triangle-mesh-and-experiment-yaml" class="level3">
 <h3 class="anchored" data-anchor-id="step-1-create-a-triangle-mesh-and-experiment-yaml">Step 1 — Create a triangle mesh and experiment YAML</h3>
-<div id="1f4eb4c2" class="cell" data-execution_count="1">
+<div id="1f4eb4c2" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> tempfile, os, yaml</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> meshio</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
@@ -5053,7 +5053,7 @@ window.Quarto = {
 </section>
 <section id="step-2-run-the-simulation" class="level3">
 <h3 class="anchored" data-anchor-id="step-2-run-the-simulation">Step 2 — Run the simulation</h3>
-<div id="ea6f9f32" class="cell" data-execution_count="2">
+<div id="ea6f9f32" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> SimulationExperiment</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>exp <span class="op">=</span> SimulationExperiment.from_file(yaml_path)</span>
@@ -5075,7 +5075,7 @@ Time: 0.00 to 1.00, dt=0.010</code></pre>
 </section>
 <section id="step-3-animate-the-diffusion" class="level3">
 <h3 class="anchored" data-anchor-id="step-3-animate-the-diffusion">Step 3 — Animate the diffusion</h3>
-<div id="49501ee0" class="cell" data-execution_count="3">
+<div id="49501ee0" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.tri <span class="im">as</span> mtri</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> matplotlib.colors <span class="im">import</span> PowerNorm</span>
@@ -5126,7 +5126,7 @@ Time: 0.00 to 1.00, dt=0.010</code></pre>
 <p>Diffusion on a cortical surface mesh (fsLR 32k), using the <code>mesh_file</code> attribute to reference an external GIFTI file directly. The cortical midthickness surface is a closed manifold (no boundary), so the Dirichlet BC has no effect and total mass is conserved — the field spreads but doesn’t decay.</p>
 <section id="setup-and-run" class="level3">
 <h3 class="anchored" data-anchor-id="setup-and-run">Setup and run</h3>
-<div id="7cda28e0" class="cell" data-execution_count="4">
+<div id="7cda28e0" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> templateflow.api <span class="im">as</span> tfa</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> nibabel <span class="im">as</span> nib</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -5183,7 +5183,7 @@ Time: 0.00 to 1.00, dt=0.010</code></pre>
 </section>
 <section id="animate-with-bsplot" class="level3">
 <h3 class="anchored" data-anchor-id="animate-with-bsplot">Animate with bsplot</h3>
-<div id="714202da" class="cell" data-execution_count="5">
+<div id="714202da" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> matplotlib.colors <span class="im">import</span> PowerNorm</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> bsplot.surface <span class="im">import</span> plot_surf</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> bsplot.animate <span class="im">import</span> animate_axes</span>

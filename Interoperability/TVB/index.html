@@ -5078,7 +5078,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="import-a-tvb-simulator" class="level3">
 <h3 class="anchored" data-anchor-id="import-a-tvb-simulator">Import a TVB Simulator</h3>
 <p>Convert a fully configured TVB <code>Simulator</code> into a tvbo <code>SimulationExperiment</code> — preserving the model, coupling, integrator, monitors, noise, and network:</p>
-<div id="9926905f" class="cell" data-execution_count="1">
+<div id="9926905f" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> Dynamics, SimulationExperiment, Network</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -5113,7 +5113,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <pre><code>TVB Simulator: JansenRit, 76 regions, dt=0.1</code></pre>
 </div>
 </div>
-<div id="d246e4bf" class="cell" data-execution_count="2">
+<div id="d246e4bf" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>exp <span class="op">=</span> SimulationExperiment.from_tvb_simulator(sim)</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Model:      </span><span class="sc">{</span>exp<span class="sc">.</span>model<span class="sc">}</span><span class="ss">"</span>)</span>
@@ -5134,7 +5134,7 @@ Monitors:   ['Raw', 'TemporalAverage']</code></pre>
 </div>
 </div>
 <p>The imported experiment is a standard tvbo object — you can inspect the YAML representation, modify parameters, or re-export:</p>
-<div id="b10fa2cc" class="cell" data-execution_count="3">
+<div id="b10fa2cc" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Show the YAML specification</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(exp.to_yaml()[:<span class="dv">1500</span>])</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"..."</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -5194,7 +5194,7 @@ dynamics:
 <section id="export-a-dynamics-model-to-tvb" class="level3">
 <h3 class="anchored" data-anchor-id="export-a-dynamics-model-to-tvb">Export a Dynamics Model to TVB</h3>
 <p>Any tvbo <code>Dynamics</code> can be compiled into a TVB-compatible <code>Model</code> object. This uses Mako code generation to produce a TVB Model subclass:</p>
-<div id="96d0a787" class="cell" data-execution_count="4">
+<div id="96d0a787" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>dyn <span class="op">=</span> Dynamics.from_db(<span class="st">"JansenRit"</span>)</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>tvb_model <span class="op">=</span> dyn.execute(<span class="bu">format</span><span class="op">=</span><span class="st">"tvb"</span>)</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -5208,7 +5208,7 @@ Parameters: ['A', 'B', 'J', 'a_1', 'a_2', 'a_3', 'a_4', 'a', 'b', 'mu', 'nu_max'
 </div>
 </div>
 <p>You can inspect the generated TVB model code:</p>
-<div id="94ccad3b" class="cell" data-execution_count="5">
+<div id="94ccad3b" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>code <span class="op">=</span> dyn.render_code(<span class="bu">format</span><span class="op">=</span><span class="st">"tvb"</span>)</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Show first 40 lines</span></span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> line <span class="kw">in</span> code.splitlines()[:<span class="dv">40</span>]:</span>
@@ -5262,7 +5262,7 @@ class JansenRit(Model):
 <section id="define-and-run-a-simulation" class="level3">
 <h3 class="anchored" data-anchor-id="define-and-run-a-simulation">Define and Run a Simulation</h3>
 <p>A <code>SimulationExperiment</code> can also be defined from a YAML string — useful for sharing reproducible experiment specifications:</p>
-<div id="cae78663" class="cell" data-execution_count="6">
+<div id="cae78663" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Define an experiment from YAML</span></span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>exp2 <span class="op">=</span> SimulationExperiment.from_string(<span class="st">"""</span></span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="st">label: Quick JansenRit demo</span></span>
@@ -5305,7 +5305,7 @@ Step:     0.1</code></pre>
 </div>
 </div>
 <p>Run a simulation using the TVB simulator we already built:</p>
-<div id="cell-fig-timeseries" class="cell" data-execution_count="7">
+<div id="cell-fig-timeseries" class="cell" data-execution_count="8">
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Run using the previously configured TVB simulator</span></span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>results <span class="op">=</span> sim.run(simulation_length<span class="op">=</span><span class="dv">500</span>)</span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>(raw_time, raw_data), (tavg_time, tavg_data) <span class="op">=</span> results</span>
@@ -5352,7 +5352,7 @@ Figure&nbsp;1: Jansen-Rit simulation on 76-region TVB connectivity
 <section id="import-a-connectivity" class="level3">
 <h3 class="anchored" data-anchor-id="import-a-connectivity">Import a Connectivity</h3>
 <p>For connectome-only workflows, import TVB connectivity without a full simulator. See the <a href="../../Interoperability/TVB/Connectome.html">Connectome Round-Trip</a> page for the complete walkthrough including surface meshes and HDF5 persistence.</p>
-<div id="7d4b83a8" class="cell" data-execution_count="8">
+<div id="7d4b83a8" class="cell" data-execution_count="9">
 <div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvb.datatypes.connectivity <span class="im">import</span> Connectivity</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>conn <span class="op">=</span> Connectivity.from_file()</span>
@@ -5365,7 +5365,7 @@ Figure&nbsp;1: Jansen-Rit simulation on 76-region TVB connectivity
 <pre><code>76 regions, weights: [0.000, 3.000]</code></pre>
 </div>
 </div>
-<div id="cell-fig-connectivity" class="cell" data-execution_count="9">
+<div id="cell-fig-connectivity" class="cell" data-execution_count="10">
 <div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>net.plot_matrix()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="9">
 <div id="fig-connectivity" class="quarto-float quarto-figure quarto-figure-center anchored">
@@ -5381,7 +5381,7 @@ Figure&nbsp;2: TVB default connectivity imported into tvbo
 </div>
 </div>
 <p>The round-trip is lossless:</p>
-<div id="9fe3f5d5" class="cell" data-execution_count="10">
+<div id="9fe3f5d5" class="cell" data-execution_count="11">
 <div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>conn2 <span class="op">=</span> net.execute(<span class="bu">format</span><span class="op">=</span><span class="st">"tvb"</span>)</span>

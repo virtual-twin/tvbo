@@ -4999,7 +4999,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="example-simple-dynamical-system" class="level2">
 <h2 class="anchored" data-anchor-id="example-simple-dynamical-system">Example: Simple Dynamical System</h2>
 <p>Let’s create and run a simple experiment to demonstrate the output format.</p>
-<div id="setup" class="cell" data-execution_count="1">
+<div id="setup" class="cell" data-execution_count="2">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> Dynamics</span>
@@ -5011,7 +5011,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="define-a-simple-model" class="level3">
 <h3 class="anchored" data-anchor-id="define-a-simple-model">Define a Simple Model</h3>
 <p>We’ll create a damped harmonic oscillator with both state variables and derived outputs:</p>
-<div id="model-definition" class="cell" data-execution_count="2">
+<div id="model-definition" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>yaml_content <span class="op">=</span> <span class="st">"""</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="st">name: DampedOscillator</span></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="st">description: "Simple damped harmonic oscillator with derived output"</span></span>
@@ -5068,7 +5068,7 @@ Output: ['x', 'v', 'energy']</code></pre>
 </section>
 <section id="create-and-run-experiment" class="level3">
 <h3 class="anchored" data-anchor-id="create-and-run-experiment">Create and Run Experiment</h3>
-<div id="run-experiment" class="cell" data-execution_count="3">
+<div id="run-experiment" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>exp <span class="op">=</span> SimulationExperiment(dynamics<span class="op">=</span>model)</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Run the simulation using JAX backend</span></span>
@@ -5085,7 +5085,7 @@ Time points: 81920</code></pre>
 </section>
 <section id="visualize-results" class="level3">
 <h3 class="anchored" data-anchor-id="visualize-results">Visualize Results</h3>
-<div id="cell-plot-results" class="cell" data-execution_count="4">
+<div id="cell-plot-results" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>res.plot()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="4">
 <div id="plot-results" class="quarto-figure quarto-figure-center anchored">
@@ -5100,7 +5100,7 @@ Time points: 81920</code></pre>
 <section id="inspect-output-variables" class="level3">
 <h3 class="anchored" data-anchor-id="inspect-output-variables">Inspect Output Variables</h3>
 <p>The result contains exactly what was specified in <code>output</code>:</p>
-<div id="inspect-output" class="cell" data-execution_count="5">
+<div id="inspect-output" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Access the labels</span></span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">hasattr</span>(res, <span class="st">'labels_dimensions'</span>) <span class="kw">and</span> res.labels_dimensions:</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Output variables:"</span>, res.labels_dimensions.get(<span class="st">"State Variable"</span>, []))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -5156,7 +5156,7 @@ Time points: 81920</code></pre>
 </section>
 <section id="cleanup" class="level2">
 <h2 class="anchored" data-anchor-id="cleanup">Cleanup</h2>
-<div id="cleanup" class="cell" data-execution_count="6">
+<div id="cleanup" class="cell" data-execution_count="7">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>os.unlink(temp_path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>

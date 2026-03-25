@@ -4985,7 +4985,7 @@ window.Quarto = {
 </ul>
 <section id="quick-start" class="level2">
 <h2 class="anchored" data-anchor-id="quick-start">Quick Start</h2>
-<div id="d281f84e" class="cell" data-execution_count="1">
+<div id="d281f84e" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Markdown</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> Continuation, Dynamics, SimulationExperiment</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -5109,7 +5109,7 @@ window.Quarto = {
 </section>
 </div>
 </div>
-<div id="d91486f8" class="cell" data-execution_count="2">
+<div id="d91486f8" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>cont <span class="op">=</span> Continuation.from_string(</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">"""</span><span class="op">\</span></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="st">name: eq_in_a</span></span>
@@ -5135,7 +5135,7 @@ window.Quarto = {
 </div>
 <section id="bifurcationkit.jl-backend" class="level3">
 <h3 class="anchored" data-anchor-id="bifurcationkit.jl-backend">BifurcationKit.jl backend</h3>
-<div id="a6f7ffd2" class="cell" data-execution_count="3">
+<div id="a6f7ffd2" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>bif_result_jl <span class="op">=</span> exp.run(<span class="st">"bifurcationkit.jl"</span>)</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>bif_result_jl.plot(VOI<span class="op">=</span><span class="st">'V'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
@@ -5152,7 +5152,7 @@ window.Quarto = {
 </section>
 <section id="pyratespycobi-backend-same-specification" class="level3">
 <h3 class="anchored" data-anchor-id="pyratespycobi-backend-same-specification">PyRates/PyCoBi backend (same specification!)</h3>
-<div id="b5b5e97e" class="cell" data-execution_count="4">
+<div id="b5b5e97e" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>bif_result_py <span class="op">=</span> exp.run(<span class="st">"pyrates-bifurcation"</span>)</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>bif_result_py.plot(VOI<span class="op">=</span><span class="st">'V'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
@@ -6152,7 +6152,7 @@ tvbo_bif ... done</code></pre>
 <p>Codim-2 continuation traces how bifurcation points (folds, Hopfs) move in a <strong>two-parameter</strong> plane. This reveals cusp, Bogdanov-Takens (BT), and generalized Hopf (GH) organizing centers.</p>
 <p>Choose parameter pairs that interact <strong>nonlinearly</strong> — e.g.&nbsp;<code>I</code> (nullcline shift) with <code>b</code> (nullcline slope), not two shift parameters like <code>I</code> and <code>a</code> which produce trivially parallel curves.</p>
 <p>Both backends support codim-2 — add a <code>continuation</code> with <code>free_parameters</code> inside a branch:</p>
-<div id="79c818f9" class="cell" data-execution_count="5">
+<div id="79c818f9" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>cont_c2 <span class="op">=</span> Continuation.from_string(</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">"""</span><span class="op">\</span></span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="st">name: eq_I_with_codim2</span></span>
@@ -6186,7 +6186,7 @@ tvbo_bif ... done</code></pre>
 </div>
 <section id="bifurcationkit.jl-codim-2" class="level3">
 <h3 class="anchored" data-anchor-id="bifurcationkit.jl-codim-2">BifurcationKit.jl codim-2</h3>
-<div id="d495db2b" class="cell" data-execution_count="6">
+<div id="d495db2b" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>result_c2_jl <span class="op">=</span> exp_c2.run(<span class="st">"bifurcationkit.jl"</span>)</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>result_c2_jl.plot_codim2()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
@@ -6214,7 +6214,7 @@ tvbo_bif ... done</code></pre>
 </section>
 <section id="pyratespycobi-codim-2" class="level3">
 <h3 class="anchored" data-anchor-id="pyratespycobi-codim-2">PyRates/PyCoBi codim-2</h3>
-<div id="edcae126" class="cell" data-execution_count="7">
+<div id="edcae126" class="cell" data-execution_count="8">
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>result_c2_py <span class="op">=</span> exp_c2.run(<span class="st">"pyrates-bifurcation"</span>)</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>result_c2_py.plot_codim2()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
@@ -7324,7 +7324,7 @@ Merge done</code></pre>
 <section id="d-bifurcation-diagram" class="level3">
 <h3 class="anchored" data-anchor-id="d-bifurcation-diagram">3D Bifurcation Diagram</h3>
 <p>The 3D plot shows the equilibrium backbone, periodic orbit tube surfaces (using the second state variable for cross-section shape), and codim-2 curves sweeping through parameter space:</p>
-<div id="288099c2" class="cell" data-execution_count="8">
+<div id="288099c2" class="cell" data-execution_count="9">
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>result_c2_jl.plot_3d(VOI<span class="op">=</span><span class="st">'V'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
@@ -7339,7 +7339,7 @@ Merge done</code></pre>
 </section>
 <section id="jansen-rit-model" class="level2">
 <h2 class="anchored" data-anchor-id="jansen-rit-model">Jansen-Rit Model</h2>
-<div id="e5237db3" class="cell" data-execution_count="9">
+<div id="e5237db3" class="cell" data-execution_count="10">
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>cont <span class="op">=</span> Continuation.from_string(</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">"""</span><span class="op">\</span></span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="st">name: jr_mu</span></span>
