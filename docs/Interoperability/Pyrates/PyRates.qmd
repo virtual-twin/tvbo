@@ -156,8 +156,8 @@ result = exp.run().integration
 fig, axes = plt.subplots(1, 2, figsize=(12, 4))
 
 time = result.time
-x = result.data[:, 0, 0]
-z = result.data[:, 1, 0]
+x = result.data.isel(variable=0).values
+z = result.data.isel(variable=1).values
 
 axes[0].plot(time, x, label="x")
 axes[0].plot(time, z, label="z", alpha=0.8)
@@ -294,8 +294,8 @@ result = synapse_exp.run().integration
 fig, axes = plt.subplots(1, 3, figsize=(14, 4))
 
 time = result.time
-x = result.data[:, 0, 0]  # synaptic resources
-u = result.data[:, 1, 0]  # utilization factor
+x = result.data.isel(variable=0).values  # synaptic resources
+u = result.data.isel(variable=1).values  # utilization factor
 
 axes[0].plot(time, x)
 axes[0].set_xlabel("Time (ms)")
@@ -372,8 +372,8 @@ clear(pyrates_model)
 shutil.rmtree("_compare")
 
 # Compare
-tvbo_x = tvbo_result.data[:, 0, 0]
-tvbo_z = tvbo_result.data[:, 1, 0]
+tvbo_x = tvbo_result.data.isel(variable=0).values
+tvbo_z = tvbo_result.data.isel(variable=1).values
 
 fig, axes = plt.subplots(1, 2, layout='compressed')
 

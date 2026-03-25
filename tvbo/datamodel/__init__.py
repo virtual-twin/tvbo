@@ -93,6 +93,8 @@ def _unit_meta_getattribute(cls, item):
     try:
         result = _meta_orig_getattribute(cls, item)
     except AttributeError:
+        if item.startswith('__') and item.endswith('__'):
+            raise
         # Dotted names like "a.u." can't be Python attributes; construct instead
         canonical = _normalize_unit(item) or item
         return cls(canonical)

@@ -42,14 +42,24 @@ def _graph_from_experiment(result):
     return {'positions': positions, 'adjacency': np.asarray(W), 'labels': labels}
 
 
-def _extract_node_timeseries(data):
+def _extract_node_timeseries(data, max_points=200):
     """Extract a list of ``(var_name, vals[time, node], time)`` from data.
 
     Handles data that may or may not still have a *variable* dimension
-    (e.g. after ``.sel(variable='V')``).
+    (e.g. after ``.sel(variable='V')``).  When the time axis has more than
+    *max_points* samples the arrays are downsampled so that animations
+    stay lightweight.
     """
     dims = data.dims if hasattr(data, 'dims') else ()
     time = data.coords['time'].values if 'time' in data.coords else np.arange(data.shape[0])
+
+    # Compute downsample indices once (shared across variables)
+    n_t = len(time)
+    if n_t > max_points:
+        idx = np.linspace(0, n_t - 1, max_points, dtype=int)
+        time = time[idx]
+    else:
+        idx = None
 
     if 'variable' in dims:
         var_names = list(np.atleast_1d(data.coords['variable'].values))
@@ -61,6 +71,8 @@ def _extract_node_timeseries(data):
                 arr = arr[:, np.newaxis]
             elif arr.ndim >= 3:
                 arr = arr[..., 0]   # drop mode dim
+            if idx is not None:
+                arr = arr[idx]
             slices.append((str(vn), arr, time))
         return slices
 
@@ -71,6 +83,8 @@ def _extract_node_timeseries(data):
         arr = arr[:, np.newaxis]
     elif arr.ndim >= 3:
         arr = arr[..., 0]
+    if idx is not None:
+        arr = arr[idx]
     return [(vn, arr, time)]
 
 
@@ -144,6 +158,7 @@ def animate_network(result, state=None, interval=50, cmap='viridis',
         n_vars, 2, figsize=figsize, squeeze=False,
         gridspec_kw={'width_ratios': [1, 1.2]},
     )
+    fig.dpi = 72  # keep PNGs small for to_jshtml() embed_limit
 
     all_artists = []  # (scatter, lines, avg_line) per row
 
@@ -200,22 +215,21 @@ def animate_network(result, state=None, interval=50, cmap='viridis',
 
     fig.tight_layout()
 
-    # Shared frame list from the first variable's time axis
-    ref_time = slices[0][2]
-    step = max(1, len(ref_time) // 200)
-    frames = list(range(0, len(ref_time), step))
+    # Data is already downsampled by _extract_node_timeseries;
+    # animate sequentially over all points.
+    n_frames = len(slices[0][2])
 
-    def update(frame):
+    def update(i):
         arts = []
         for sc, lines, vals, time, ax_g, vn in all_artists:
-            sc.set_array(vals[frame])
-            ax_g.set_title(f'{vn}  t = {time[frame]:.2f}')
-            for i, ln in enumerate(lines):
-                ln.set_data(time[:frame + 1], vals[:frame + 1, i])
+            sc.set_array(vals[i])
+            ax_g.set_title(f'{vn}  t = {time[i]:.2f}')
+            for j, ln in enumerate(lines):
+                ln.set_data(time[:i + 1], vals[:i + 1, j])
             arts.extend([sc] + lines)
         return arts
 
-    ani = FuncAnimation(fig, update, frames=frames, interval=interval, blit=False)
+    ani = FuncAnimation(fig, update, frames=n_frames, interval=interval, blit=False)
     plt.close(fig)
     return ani
 
@@ -260,6 +274,7 @@ def animate_timeseries(result, state=None, interval=50, cmap='viridis',
         figsize = (10, 3 * n_vars)
 
     fig, axes = plt.subplots(n_vars, 1, figsize=figsize, squeeze=False)
+    fig.dpi = 72  # keep PNGs small for to_jshtml() embed_limit
 
     all_artists = []
     for row, (vn, vals, time) in enumerate(slices):
@@ -281,20 +296,20 @@ def animate_timeseries(result, state=None, interval=50, cmap='viridis',
 
     fig.tight_layout()
 
-    ref_time = slices[0][2]
-    step = max(1, len(ref_time) // 200)
-    frames = list(range(0, len(ref_time), step))
+    # Data is already downsampled by _extract_node_timeseries;
+    # animate sequentially over all points.
+    n_frames = len(slices[0][2])
 
-    def update(frame):
+    def update(i):
         arts = []
         for lines, vals, time, ax in all_artists:
-            ax.set_title(f't = {time[frame]:.2f}')
-            for i, ln in enumerate(lines):
-                ln.set_data(time[:frame + 1], vals[:frame + 1, i])
+            ax.set_title(f't = {time[i]:.2f}')
+            for j, ln in enumerate(lines):
+                ln.set_data(time[:i + 1], vals[:i + 1, j])
             arts.extend(lines)
         return arts
 
-    ani = FuncAnimation(fig, update, frames=frames, interval=interval, blit=False)
+    ani = FuncAnimation(fig, update, frames=n_frames, interval=interval, blit=False)
     plt.close(fig)
     return ani
 
