@@ -109,6 +109,15 @@ allow-direct-references = true
 
 [tool.hatch.build]
 include = ["tvbo/**", "README.md"]
+exclude = [
+    "tvbo/database/networks/*.h5",
+    "tvbo/data/tvbo_data/atlas/**/*.nii.gz",
+    "tvbo/data/go-basic.obo",
+    "tvbo/data/ontology/*.owl",
+    "tvbo/data/NeuroMMSig_abeta_subgraph.dill",
+    "tvbo/data/tvb-go/**/*.png",
+    "tvbo/**/__pycache__",
+]
 
 [tool.hatch.version]
 path = "tvbo/__init__.py"
