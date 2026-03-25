@@ -58,7 +58,7 @@ dynamics:
     I_ext:
       equation:
         rhs: "800.0"
-      description: Constant current 0.8 nA = 800 pA (pulseGen1: delay=0, duration=2000ms)
+      description: "Constant current 0.8 nA = 800 pA (pulseGen1: delay=0, duration=2000ms)"
   state_variables:
     v:
       equation:

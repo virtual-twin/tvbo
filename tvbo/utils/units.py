@@ -138,6 +138,104 @@ def unit_has_time_dimension(unit):
     return key in _TIME_UNITS
 
 
+# ── UnitEnum → LaTeX display symbol ──────────────────────────────────
+
+_UNIT_TO_LATEX = {
+    # Time
+    "s": r"\mathrm{s}",
+    "ms": r"\mathrm{ms}",
+    "us": r"\mathrm{\mu s}",
+    # Rates / inverse time (pure inverse → negative exponent)
+    "per_s": r"\mathrm{s}^{-1}",
+    "per_ms": r"\mathrm{ms}^{-1}",
+    "Hz": r"\mathrm{Hz}",
+    "kHz": r"\mathrm{kHz}",
+    # Voltage
+    "V": r"\mathrm{V}",
+    "mV": r"\mathrm{mV}",
+    # Inverse voltage
+    "per_mV": r"\mathrm{mV}^{-1}",
+    # Voltage rates (fraction)
+    "mV_per_ms": r"\frac{\mathrm{mV}}{\mathrm{ms}}",
+    "mV_per_s": r"\frac{\mathrm{mV}}{\mathrm{s}}",
+    # Current
+    "A": r"\mathrm{A}",
+    "nA": r"\mathrm{nA}",
+    "pA": r"\mathrm{pA}",
+    "uA": r"\mathrm{\mu A}",
+    # Capacitance
+    "pF": r"\mathrm{pF}",
+    "nF": r"\mathrm{nF}",
+    "uF": r"\mathrm{\mu F}",
+    # Conductance
+    "nS": r"\mathrm{nS}",
+    "uS": r"\mathrm{\mu S}",
+    "mS": r"\mathrm{mS}",
+    "pS": r"\mathrm{pS}",
+    # Resistance
+    "kohm": r"\mathrm{k\Omega}",
+    "Mohm": r"\mathrm{M\Omega}",
+    # Charge (inverse)
+    "per_nC": r"\mathrm{nC}^{-1}",
+    "per_pC": r"\mathrm{pC}^{-1}",
+    # Concentration
+    "mol_per_m3": r"\frac{\mathrm{mol}}{\mathrm{m}^3}",
+    "mmol_per_m3": r"\frac{\mathrm{mmol}}{\mathrm{m}^3}",
+    "mM": r"\mathrm{mM}",
+    "M": r"\mathrm{M}",
+    # Volume
+    "um3": r"\mathrm{\mu m}^{3}",
+    # Length
+    "m": r"\mathrm{m}",
+    "mm": r"\mathrm{mm}",
+    "cm": r"\mathrm{cm}",
+    # Velocity (fraction)
+    "m_per_s": r"\frac{\mathrm{m}}{\mathrm{s}}",
+    "mm_per_ms": r"\frac{\mathrm{mm}}{\mathrm{ms}}",
+    # Gain / compound (fraction)
+    "Hz_per_nA": r"\frac{\mathrm{Hz}}{\mathrm{nA}}",
+    # Conductivity / permeability (fraction)
+    "S_per_m": r"\frac{\mathrm{S}}{\mathrm{m}}",
+    "H_per_m": r"\frac{\mathrm{H}}{\mathrm{m}}",
+    # Angular rate (fraction)
+    "rad_per_ms": r"\frac{\mathrm{rad}}{\mathrm{ms}}",
+    "rad_per_s": r"\frac{\mathrm{rad}}{\mathrm{s}}",
+    # Angle
+    "rad": r"\mathrm{rad}",
+    # Temperature
+    "degC": r"^{\circ}\mathrm{C}",
+    "K": r"\mathrm{K}",
+    # Mass
+    "kg": r"\mathrm{kg}",
+    "kg_per_s": r"\frac{\mathrm{kg}}{\mathrm{s}}",
+    # Acceleration (fraction)
+    "m_per_s2": r"\frac{\mathrm{m}}{\mathrm{s}^2}",
+    # Force / stiffness (fraction)
+    "N_per_m": r"\frac{\mathrm{N}}{\mathrm{m}}",
+    # Time squared
+    "s2": r"\mathrm{s}^{2}",
+    # Per-unit
+    "per_unit": r"\mathrm{p.u.}",
+    # Dimensionless
+    "dimensionless": "",
+    "percent": r"\%",
+    "arbitrary_unit": r"\mathrm{a.u.}",
+}
+
+
+def unit_to_latex(unit):
+    """Return a LaTeX string for the unit, suitable for wrapping in ``$...$``.
+
+    Converts enum values like ``per_ms`` → ``\\mathrm{ms}^{-1}``,
+    ``rad_per_ms`` → ``\\mathrm{rad}\\,\\mathrm{ms}^{-1}``.
+    Returns an empty string for dimensionless / unknown units.
+    """
+    if unit is None:
+        return ""
+    key = unit.value if hasattr(unit, "value") else str(unit).strip()
+    return _UNIT_TO_LATEX.get(key, r"\mathrm{" + key + r"}")
+
+
 # ── Legacy string → UnitEnum normalisation ───────────────────────────
 
 _LEGACY_TO_ENUM = {
