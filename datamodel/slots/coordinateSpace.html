@@ -2903,6 +2903,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/model_type.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">model_type</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/modes.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">modes</span></a>
   </div>
@@ -4162,6 +4168,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/ModelType.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Type</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/NoiseType.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Noise Type</span></a>
   </div>
@@ -4916,13 +4928,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td><a href="../../datamodel/classes/BrainAtlas.html">BrainAtlas</a></td>
-<td>A schema for representing a version of a brain atlas</td>
+<td><a href="../../datamodel/classes/Coordinate.html">Coordinate</a></td>
+<td>A 3D coordinate with X, Y, Z values</td>
 <td>no</td>
 </tr>
 <tr class="even">
-<td><a href="../../datamodel/classes/Coordinate.html">Coordinate</a></td>
-<td>A 3D coordinate with X, Y, Z values</td>
+<td><a href="../../datamodel/classes/BrainAtlas.html">BrainAtlas</a></td>
+<td>A schema for representing a version of a brain atlas</td>
 <td>no</td>
 </tr>
 </tbody>
@@ -5085,7 +5097,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

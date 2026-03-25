@@ -2903,6 +2903,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/model_type.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">model_type</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/modes.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">modes</span></a>
   </div>
@@ -4162,6 +4168,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/ModelType.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Type</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/NoiseType.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Noise Type</span></a>
   </div>
@@ -5049,7 +5061,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

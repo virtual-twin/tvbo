@@ -2903,6 +2903,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/model_type.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">model_type</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/modes.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">modes</span></a>
   </div>
@@ -4162,6 +4168,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/ModelType.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Type</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/NoiseType.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Noise Type</span></a>
   </div>
@@ -4921,6 +4933,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#tvbo.datamodel.schema.Integrator" id="toc-tvbo.datamodel.schema.Integrator" class="nav-link" data-scroll-target="#tvbo.datamodel.schema.Integrator">Integrator</a></li>
   <li><a href="#tvbo.datamodel.schema.LossFunction" id="toc-tvbo.datamodel.schema.LossFunction" class="nav-link" data-scroll-target="#tvbo.datamodel.schema.LossFunction">LossFunction</a></li>
   <li><a href="#tvbo.datamodel.schema.Matrix" id="toc-tvbo.datamodel.schema.Matrix" class="nav-link" data-scroll-target="#tvbo.datamodel.schema.Matrix">Matrix</a></li>
+  <li><a href="#tvbo.datamodel.schema.ModelType" id="toc-tvbo.datamodel.schema.ModelType" class="nav-link" data-scroll-target="#tvbo.datamodel.schema.ModelType">ModelType</a></li>
   <li><a href="#tvbo.datamodel.schema.Network" id="toc-tvbo.datamodel.schema.Network" class="nav-link" data-scroll-target="#tvbo.datamodel.schema.Network">Network</a></li>
   <li><a href="#tvbo.datamodel.schema.Node" id="toc-tvbo.datamodel.schema.Node" class="nav-link" data-scroll-target="#tvbo.datamodel.schema.Node">Node</a></li>
   <li><a href="#tvbo.datamodel.schema.NumericalDiscretizationMethod" id="toc-tvbo.datamodel.schema.NumericalDiscretizationMethod" class="nav-link" data-scroll-target="#tvbo.datamodel.schema.NumericalDiscretizationMethod">NumericalDiscretizationMethod</a></li>
@@ -5142,114 +5155,118 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Adjacency matrix of a network.</td>
 </tr>
 <tr class="odd">
+<td><a href="#tvbo.datamodel.schema.ModelType">ModelType</a></td>
+<td>Coarse classification of a Dynamics model by its mathematical/biological origin. Used for filtering and display in</td>
+</tr>
+<tr class="even">
 <td><a href="#tvbo.datamodel.schema.Network">Network</a></td>
 <td>Network specification with nodes, edges, and reusable coupling configurations. Supports both explicit node/edge</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.datamodel.schema.Node">Node</a></td>
 <td>A node in a network with its own dynamics and properties</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.datamodel.schema.NumericalDiscretizationMethod">NumericalDiscretizationMethod</a></td>
 <td>Numerical discretization method for boundary value problems (periodic orbits, connecting orbits, quasi-periodic</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.datamodel.schema.Observation">Observation</a></td>
 <td>Unified class for all observation/measurement specifications. Covers monitors (BOLD, EEG), tuning observables, and</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.datamodel.schema.Optimization">Optimization</a></td>
 <td>Configuration for parameter optimization. Inherits single-stage fields from OptimizationStage. For multi-stage</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.datamodel.schema.OptimizationStage">OptimizationStage</a></td>
 <td>A single stage in a multi-stage optimization workflow. Stages run sequentially, with each stage potentially using</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.datamodel.schema.Option">Option</a></td>
 <td>A toolkit-specific key-value option (string name + string value). Used for backend settings that are not universal</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.datamodel.schema.PDE">PDE</a></td>
 <td>Partial differential equation problem definition.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.datamodel.schema.ParcellationEntity">ParcellationEntity</a></td>
 <td>A schema for representing a parcellation entity, which is an anatomical location or study target.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.datamodel.schema.ParcellationTerminology">ParcellationTerminology</a></td>
 <td>A schema for representing a parcellation terminology, which consists of parcellation entities.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.datamodel.schema.PhysicalDimension">PhysicalDimension</a></td>
 <td>Physical dimension categories for LEMS and dimensional analysis. Each dimension decomposes into SI base dimensions</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.datamodel.schema.Provenance">Provenance</a></td>
 <td>W3C PROV-O aligned provenance. Reusable on any entity (Network, TimeSeries, Dynamics, etc.).</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.datamodel.schema.Range">Range</a></td>
 <td>Specifies a range for array generation, parameter bounds, or grid exploration.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.datamodel.schema.ReductionType">ReductionType</a></td>
 <td>Operations for reducing/aggregating values across dimensions</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.datamodel.schema.RegionMapping">RegionMapping</a></td>
 <td>Maps vertices to parent regions for hierarchical/aggregated coupling</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.datamodel.schema.SamplingAxis">SamplingAxis</a></td>
 <td>Dimension along which a distribution is sampled.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.datamodel.schema.SoftwarePackage">SoftwarePackage</a></td>
 <td>Identity information about a software package independent of a specific version requirement.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.datamodel.schema.Solver">Solver</a></td>
 <td>Lightweight specification of a numerical ODE solver / integrator. Covers adaptive solvers (Vern9, Rodas5, Tsit5,</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.datamodel.schema.SpecimenEnum">SpecimenEnum</a></td>
 <td>A set of permissible types for specimens used in brain atlas creation.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.datamodel.schema.StandardGraphType">StandardGraphType</a></td>
 <td>Well-known graph generator families with automatic backend mapping. The type field on GraphGenerator is a free</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.datamodel.schema.StateValue">StateValue</a></td>
 <td>A named state variable value for per-node initialization.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.datamodel.schema.StimulationSetting">StimulationSetting</a></td>
 <td>DBS parameters for a specific session.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.datamodel.schema.Subject">Subject</a></td>
 <td>Human or animal subject receiving DBS.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.datamodel.schema.TimeSeries">TimeSeries</a></td>
 <td>Time series data from simulations or measurements. Supports BIDS-compatible export for computational modeling</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.datamodel.schema.Tractogram">Tractogram</a></td>
 <td>Reference to tractography/diffusion MRI data used to derive structural connectivity</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.datamodel.schema.TuningObjective">TuningObjective</a></td>
 <td>Defines what the tuning algorithm optimizes for. Can be an activity target (FIC) or a connectivity target (EIB).</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.datamodel.schema.UnitEnum">UnitEnum</a></td>
 <td>Physical units of measurement for model parameters, state variables, and integration settings. Uses conventional</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.datamodel.schema.UpdateRule">UpdateRule</a></td>
 <td>Defines how a parameter is updated based on observables. Represents iterative learning rules like FIC or EIB</td>
 </tr>
@@ -5809,107 +5826,92 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb42-11"><a href="#cb42-11" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Adjacency matrix of a network.</p>
 </section>
+<section id="tvbo.datamodel.schema.ModelType" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.datamodel.schema.ModelType">ModelType</h3>
+<div class="sourceCode" id="cb43"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.ModelType()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Coarse classification of a Dynamics model by its mathematical/biological origin. Used for filtering and display in list_db().</p>
+</section>
 <section id="tvbo.datamodel.schema.Network" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.schema.Network">Network</h3>
-<div class="sourceCode" id="cb43"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.Network(</span>
-<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>    description<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>    parameters<span class="op">=</span>empty_dict(),</span>
-<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a>    nodes<span class="op">=</span>empty_list(),</span>
-<span id="cb43-6"><a href="#cb43-6" aria-hidden="true" tabindex="-1"></a>    edges<span class="op">=</span>empty_list(),</span>
-<span id="cb43-7"><a href="#cb43-7" aria-hidden="true" tabindex="-1"></a>    coupling<span class="op">=</span>empty_dict(),</span>
-<span id="cb43-8"><a href="#cb43-8" aria-hidden="true" tabindex="-1"></a>    dynamics<span class="op">=</span>empty_dict(),</span>
-<span id="cb43-9"><a href="#cb43-9" aria-hidden="true" tabindex="-1"></a>    number_of_nodes<span class="op">=</span><span class="dv">1</span>,</span>
-<span id="cb43-10"><a href="#cb43-10" aria-hidden="true" tabindex="-1"></a>    parcellation<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb43-11"><a href="#cb43-11" aria-hidden="true" tabindex="-1"></a>    tractogram<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb43-12"><a href="#cb43-12" aria-hidden="true" tabindex="-1"></a>    transforms<span class="op">=</span>empty_dict(),</span>
-<span id="cb43-13"><a href="#cb43-13" aria-hidden="true" tabindex="-1"></a>    data_file<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb43-14"><a href="#cb43-14" aria-hidden="true" tabindex="-1"></a>    descriptor<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb43-15"><a href="#cb43-15" aria-hidden="true" tabindex="-1"></a>    bids_dir<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb43-16"><a href="#cb43-16" aria-hidden="true" tabindex="-1"></a>    bids<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb43-17"><a href="#cb43-17" aria-hidden="true" tabindex="-1"></a>    structural_measures<span class="op">=</span>empty_list(),</span>
-<span id="cb43-18"><a href="#cb43-18" aria-hidden="true" tabindex="-1"></a>    observational_measures<span class="op">=</span>empty_list(),</span>
-<span id="cb43-19"><a href="#cb43-19" aria-hidden="true" tabindex="-1"></a>    provenance<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb43-20"><a href="#cb43-20" aria-hidden="true" tabindex="-1"></a>    parent_network<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb43-21"><a href="#cb43-21" aria-hidden="true" tabindex="-1"></a>    node_mapping<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb43-22"><a href="#cb43-22" aria-hidden="true" tabindex="-1"></a>    distance_unit<span class="op">=</span><span class="st">'mm'</span>,</span>
-<span id="cb43-23"><a href="#cb43-23" aria-hidden="true" tabindex="-1"></a>    time_unit<span class="op">=</span><span class="st">'ms'</span>,</span>
-<span id="cb43-24"><a href="#cb43-24" aria-hidden="true" tabindex="-1"></a>    edge_matrix_files<span class="op">=</span>empty_list(),</span>
-<span id="cb43-25"><a href="#cb43-25" aria-hidden="true" tabindex="-1"></a>    graph_generator<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb43-26"><a href="#cb43-26" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb44"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.Network(</span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>    description<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>    parameters<span class="op">=</span>empty_dict(),</span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>    nodes<span class="op">=</span>empty_list(),</span>
+<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>    edges<span class="op">=</span>empty_list(),</span>
+<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a>    coupling<span class="op">=</span>empty_dict(),</span>
+<span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a>    dynamics<span class="op">=</span>empty_dict(),</span>
+<span id="cb44-9"><a href="#cb44-9" aria-hidden="true" tabindex="-1"></a>    number_of_nodes<span class="op">=</span><span class="dv">1</span>,</span>
+<span id="cb44-10"><a href="#cb44-10" aria-hidden="true" tabindex="-1"></a>    coordinate_space<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb44-11"><a href="#cb44-11" aria-hidden="true" tabindex="-1"></a>    parcellation<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb44-12"><a href="#cb44-12" aria-hidden="true" tabindex="-1"></a>    tractogram<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb44-13"><a href="#cb44-13" aria-hidden="true" tabindex="-1"></a>    transforms<span class="op">=</span>empty_dict(),</span>
+<span id="cb44-14"><a href="#cb44-14" aria-hidden="true" tabindex="-1"></a>    data_file<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb44-15"><a href="#cb44-15" aria-hidden="true" tabindex="-1"></a>    descriptor<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb44-16"><a href="#cb44-16" aria-hidden="true" tabindex="-1"></a>    bids_dir<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb44-17"><a href="#cb44-17" aria-hidden="true" tabindex="-1"></a>    bids<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb44-18"><a href="#cb44-18" aria-hidden="true" tabindex="-1"></a>    structural_measures<span class="op">=</span>empty_list(),</span>
+<span id="cb44-19"><a href="#cb44-19" aria-hidden="true" tabindex="-1"></a>    observational_measures<span class="op">=</span>empty_list(),</span>
+<span id="cb44-20"><a href="#cb44-20" aria-hidden="true" tabindex="-1"></a>    provenance<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb44-21"><a href="#cb44-21" aria-hidden="true" tabindex="-1"></a>    parent_network<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb44-22"><a href="#cb44-22" aria-hidden="true" tabindex="-1"></a>    node_mapping<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb44-23"><a href="#cb44-23" aria-hidden="true" tabindex="-1"></a>    distance_unit<span class="op">=</span><span class="st">'mm'</span>,</span>
+<span id="cb44-24"><a href="#cb44-24" aria-hidden="true" tabindex="-1"></a>    time_unit<span class="op">=</span><span class="st">'ms'</span>,</span>
+<span id="cb44-25"><a href="#cb44-25" aria-hidden="true" tabindex="-1"></a>    edge_matrix_files<span class="op">=</span>empty_list(),</span>
+<span id="cb44-26"><a href="#cb44-26" aria-hidden="true" tabindex="-1"></a>    graph_generator<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb44-27"><a href="#cb44-27" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Network specification with nodes, edges, and reusable coupling configurations. Supports both explicit node/edge representation and matrix-based connectivity (Connectome compatibility).</p>
 </section>
 <section id="tvbo.datamodel.schema.Node" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.schema.Node">Node</h3>
-<div class="sourceCode" id="cb44"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.Node(</span>
-<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">id</span><span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>    description<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>    parameters<span class="op">=</span>empty_dict(),</span>
-<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>    dynamics<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a>    position<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a>    region<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb44-9"><a href="#cb44-9" aria-hidden="true" tabindex="-1"></a>    state<span class="op">=</span>empty_dict(),</span>
-<span id="cb44-10"><a href="#cb44-10" aria-hidden="true" tabindex="-1"></a>    events<span class="op">=</span>empty_dict(),</span>
-<span id="cb44-11"><a href="#cb44-11" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb45"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.Node(</span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">id</span><span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a>    description<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a>    parameters<span class="op">=</span>empty_dict(),</span>
+<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a>    dynamics<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb45-7"><a href="#cb45-7" aria-hidden="true" tabindex="-1"></a>    position<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb45-8"><a href="#cb45-8" aria-hidden="true" tabindex="-1"></a>    region<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb45-9"><a href="#cb45-9" aria-hidden="true" tabindex="-1"></a>    state<span class="op">=</span>empty_dict(),</span>
+<span id="cb45-10"><a href="#cb45-10" aria-hidden="true" tabindex="-1"></a>    events<span class="op">=</span>empty_dict(),</span>
+<span id="cb45-11"><a href="#cb45-11" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>A node in a network with its own dynamics and properties</p>
 </section>
 <section id="tvbo.datamodel.schema.NumericalDiscretizationMethod" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.schema.NumericalDiscretizationMethod">NumericalDiscretizationMethod</h3>
-<div class="sourceCode" id="cb45"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.NumericalDiscretizationMethod()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb46"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.NumericalDiscretizationMethod()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Numerical discretization method for boundary value problems (periodic orbits, connecting orbits, quasi-periodic tori).</p>
 </section>
 <section id="tvbo.datamodel.schema.Observation" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.schema.Observation">Observation</h3>
-<div class="sourceCode" id="cb46"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.Observation(</span>
-<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>    acronym<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb46-5"><a href="#cb46-5" aria-hidden="true" tabindex="-1"></a>    description<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb46-6"><a href="#cb46-6" aria-hidden="true" tabindex="-1"></a>    equation<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb46-7"><a href="#cb46-7" aria-hidden="true" tabindex="-1"></a>    parameters<span class="op">=</span>empty_dict(),</span>
-<span id="cb46-8"><a href="#cb46-8" aria-hidden="true" tabindex="-1"></a>    environment<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb46-9"><a href="#cb46-9" aria-hidden="true" tabindex="-1"></a>    time_scale<span class="op">=</span><span class="st">'ms'</span>,</span>
-<span id="cb46-10"><a href="#cb46-10" aria-hidden="true" tabindex="-1"></a>    source<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb46-11"><a href="#cb46-11" aria-hidden="true" tabindex="-1"></a>    period<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb46-12"><a href="#cb46-12" aria-hidden="true" tabindex="-1"></a>    downsample_period<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb46-13"><a href="#cb46-13" aria-hidden="true" tabindex="-1"></a>    voi<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb46-14"><a href="#cb46-14" aria-hidden="true" tabindex="-1"></a>    imaging_modality<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb46-15"><a href="#cb46-15" aria-hidden="true" tabindex="-1"></a>    warmup_source<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb46-16"><a href="#cb46-16" aria-hidden="true" tabindex="-1"></a>    data_source<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb46-17"><a href="#cb46-17" aria-hidden="true" tabindex="-1"></a>    skip_t<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb46-18"><a href="#cb46-18" aria-hidden="true" tabindex="-1"></a>    tail_samples<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb46-19"><a href="#cb46-19" aria-hidden="true" tabindex="-1"></a>    aggregation<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb46-20"><a href="#cb46-20" aria-hidden="true" tabindex="-1"></a>    window_size<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb46-21"><a href="#cb46-21" aria-hidden="true" tabindex="-1"></a>    pipeline<span class="op">=</span>empty_list(),</span>
-<span id="cb46-22"><a href="#cb46-22" aria-hidden="true" tabindex="-1"></a>    class_reference<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb46-23"><a href="#cb46-23" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb47"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.Observation(</span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>    acronym<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a>    description<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb47-6"><a href="#cb47-6" aria-hidden="true" tabindex="-1"></a>    equation<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb47-7"><a href="#cb47-7" aria-hidden="true" tabindex="-1"></a>    parameters<span class="op">=</span>empty_dict(),</span>
+<span id="cb47-8"><a href="#cb47-8" aria-hidden="true" tabindex="-1"></a>    environment<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb47-9"><a href="#cb47-9" aria-hidden="true" tabindex="-1"></a>    time_scale<span class="op">=</span><span class="st">'ms'</span>,</span>
+<span id="cb47-10"><a href="#cb47-10" aria-hidden="true" tabindex="-1"></a>    source<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb47-11"><a href="#cb47-11" aria-hidden="true" tabindex="-1"></a>    period<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb47-12"><a href="#cb47-12" aria-hidden="true" tabindex="-1"></a>    downsample_period<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb47-13"><a href="#cb47-13" aria-hidden="true" tabindex="-1"></a>    voi<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb47-14"><a href="#cb47-14" aria-hidden="true" tabindex="-1"></a>    imaging_modality<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb47-15"><a href="#cb47-15" aria-hidden="true" tabindex="-1"></a>    warmup_source<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb47-16"><a href="#cb47-16" aria-hidden="true" tabindex="-1"></a>    data_source<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb47-17"><a href="#cb47-17" aria-hidden="true" tabindex="-1"></a>    skip_t<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb47-18"><a href="#cb47-18" aria-hidden="true" tabindex="-1"></a>    tail_samples<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb47-19"><a href="#cb47-19" aria-hidden="true" tabindex="-1"></a>    aggregation<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb47-20"><a href="#cb47-20" aria-hidden="true" tabindex="-1"></a>    window_size<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb47-21"><a href="#cb47-21" aria-hidden="true" tabindex="-1"></a>    pipeline<span class="op">=</span>empty_list(),</span>
+<span id="cb47-22"><a href="#cb47-22" aria-hidden="true" tabindex="-1"></a>    class_reference<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb47-23"><a href="#cb47-23" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Unified class for all observation/measurement specifications. Covers monitors (BOLD, EEG), tuning observables, and derived quantities. Pipeline is a sequence of Functions with input -&gt; output flow.</p>
 </section>
 <section id="tvbo.datamodel.schema.Optimization" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.schema.Optimization">Optimization</h3>
-<div class="sourceCode" id="cb47"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.Optimization(</span>
-<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>    description<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a>    free_parameters<span class="op">=</span>empty_list(),</span>
-<span id="cb47-6"><a href="#cb47-6" aria-hidden="true" tabindex="-1"></a>    algorithm<span class="op">=</span><span class="st">'adam'</span>,</span>
-<span id="cb47-7"><a href="#cb47-7" aria-hidden="true" tabindex="-1"></a>    learning_rate<span class="op">=</span><span class="fl">0.001</span>,</span>
-<span id="cb47-8"><a href="#cb47-8" aria-hidden="true" tabindex="-1"></a>    max_iterations<span class="op">=</span><span class="dv">100</span>,</span>
-<span id="cb47-9"><a href="#cb47-9" aria-hidden="true" tabindex="-1"></a>    hyperparameters<span class="op">=</span>empty_dict(),</span>
-<span id="cb47-10"><a href="#cb47-10" aria-hidden="true" tabindex="-1"></a>    freeze_parameters<span class="op">=</span>empty_list(),</span>
-<span id="cb47-11"><a href="#cb47-11" aria-hidden="true" tabindex="-1"></a>    warmup_from<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb47-12"><a href="#cb47-12" aria-hidden="true" tabindex="-1"></a>    execution<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb47-13"><a href="#cb47-13" aria-hidden="true" tabindex="-1"></a>    integration<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb47-14"><a href="#cb47-14" aria-hidden="true" tabindex="-1"></a>    loss<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb47-15"><a href="#cb47-15" aria-hidden="true" tabindex="-1"></a>    stages<span class="op">=</span>empty_dict(),</span>
-<span id="cb47-16"><a href="#cb47-16" aria-hidden="true" tabindex="-1"></a>    depends_on<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb47-17"><a href="#cb47-17" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Configuration for parameter optimization. Inherits single-stage fields from OptimizationStage. For multi-stage workflows, use ‘stages’ (ignores inherited single-stage fields). Loss equation references observations directly by name.</p>
-</section>
-<section id="tvbo.datamodel.schema.OptimizationStage" class="level3">
-<h3 class="anchored" data-anchor-id="tvbo.datamodel.schema.OptimizationStage">OptimizationStage</h3>
-<div class="sourceCode" id="cb48"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.OptimizationStage(</span>
+<div class="sourceCode" id="cb48"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.Optimization(</span>
 <span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a>    description<span class="op">=</span><span class="va">None</span>,</span>
@@ -5920,244 +5922,265 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb48-9"><a href="#cb48-9" aria-hidden="true" tabindex="-1"></a>    hyperparameters<span class="op">=</span>empty_dict(),</span>
 <span id="cb48-10"><a href="#cb48-10" aria-hidden="true" tabindex="-1"></a>    freeze_parameters<span class="op">=</span>empty_list(),</span>
 <span id="cb48-11"><a href="#cb48-11" aria-hidden="true" tabindex="-1"></a>    warmup_from<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb48-12"><a href="#cb48-12" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb48-12"><a href="#cb48-12" aria-hidden="true" tabindex="-1"></a>    execution<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb48-13"><a href="#cb48-13" aria-hidden="true" tabindex="-1"></a>    integration<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb48-14"><a href="#cb48-14" aria-hidden="true" tabindex="-1"></a>    loss<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb48-15"><a href="#cb48-15" aria-hidden="true" tabindex="-1"></a>    stages<span class="op">=</span>empty_dict(),</span>
+<span id="cb48-16"><a href="#cb48-16" aria-hidden="true" tabindex="-1"></a>    depends_on<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb48-17"><a href="#cb48-17" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Configuration for parameter optimization. Inherits single-stage fields from OptimizationStage. For multi-stage workflows, use ‘stages’ (ignores inherited single-stage fields). Loss equation references observations directly by name.</p>
+</section>
+<section id="tvbo.datamodel.schema.OptimizationStage" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.datamodel.schema.OptimizationStage">OptimizationStage</h3>
+<div class="sourceCode" id="cb49"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.OptimizationStage(</span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>    description<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a>    free_parameters<span class="op">=</span>empty_list(),</span>
+<span id="cb49-6"><a href="#cb49-6" aria-hidden="true" tabindex="-1"></a>    algorithm<span class="op">=</span><span class="st">'adam'</span>,</span>
+<span id="cb49-7"><a href="#cb49-7" aria-hidden="true" tabindex="-1"></a>    learning_rate<span class="op">=</span><span class="fl">0.001</span>,</span>
+<span id="cb49-8"><a href="#cb49-8" aria-hidden="true" tabindex="-1"></a>    max_iterations<span class="op">=</span><span class="dv">100</span>,</span>
+<span id="cb49-9"><a href="#cb49-9" aria-hidden="true" tabindex="-1"></a>    hyperparameters<span class="op">=</span>empty_dict(),</span>
+<span id="cb49-10"><a href="#cb49-10" aria-hidden="true" tabindex="-1"></a>    freeze_parameters<span class="op">=</span>empty_list(),</span>
+<span id="cb49-11"><a href="#cb49-11" aria-hidden="true" tabindex="-1"></a>    warmup_from<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb49-12"><a href="#cb49-12" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>A single stage in a multi-stage optimization workflow. Stages run sequentially, with each stage potentially using different parameters, shapes, learning rates, and algorithms.</p>
 </section>
 <section id="tvbo.datamodel.schema.Option" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.schema.Option">Option</h3>
-<div class="sourceCode" id="cb49"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.Option(name<span class="op">=</span><span class="va">None</span>, value<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb50"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.Option(name<span class="op">=</span><span class="va">None</span>, value<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>A toolkit-specific key-value option (string name + string value). Used for backend settings that are not universal numeric parameters (e.g., solver name, tangent method, jacobian type).</p>
 </section>
 <section id="tvbo.datamodel.schema.PDE" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.schema.PDE">PDE</h3>
-<div class="sourceCode" id="cb50"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.PDE(</span>
-<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>    description<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a>    parameters<span class="op">=</span>empty_dict(),</span>
-<span id="cb50-5"><a href="#cb50-5" aria-hidden="true" tabindex="-1"></a>    domain<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb50-6"><a href="#cb50-6" aria-hidden="true" tabindex="-1"></a>    mesh<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb50-7"><a href="#cb50-7" aria-hidden="true" tabindex="-1"></a>    state_variables<span class="op">=</span>empty_dict(),</span>
-<span id="cb50-8"><a href="#cb50-8" aria-hidden="true" tabindex="-1"></a>    field<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb50-9"><a href="#cb50-9" aria-hidden="true" tabindex="-1"></a>    operators<span class="op">=</span>empty_list(),</span>
-<span id="cb50-10"><a href="#cb50-10" aria-hidden="true" tabindex="-1"></a>    sources<span class="op">=</span>empty_list(),</span>
-<span id="cb50-11"><a href="#cb50-11" aria-hidden="true" tabindex="-1"></a>    boundary_conditions<span class="op">=</span>empty_list(),</span>
-<span id="cb50-12"><a href="#cb50-12" aria-hidden="true" tabindex="-1"></a>    solver<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb50-13"><a href="#cb50-13" aria-hidden="true" tabindex="-1"></a>    derived_parameters<span class="op">=</span>empty_list(),</span>
-<span id="cb50-14"><a href="#cb50-14" aria-hidden="true" tabindex="-1"></a>    derived_variables<span class="op">=</span>empty_list(),</span>
-<span id="cb50-15"><a href="#cb50-15" aria-hidden="true" tabindex="-1"></a>    functions<span class="op">=</span>empty_list(),</span>
-<span id="cb50-16"><a href="#cb50-16" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb51"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.PDE(</span>
+<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a>    description<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb51-4"><a href="#cb51-4" aria-hidden="true" tabindex="-1"></a>    parameters<span class="op">=</span>empty_dict(),</span>
+<span id="cb51-5"><a href="#cb51-5" aria-hidden="true" tabindex="-1"></a>    domain<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb51-6"><a href="#cb51-6" aria-hidden="true" tabindex="-1"></a>    mesh<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb51-7"><a href="#cb51-7" aria-hidden="true" tabindex="-1"></a>    state_variables<span class="op">=</span>empty_dict(),</span>
+<span id="cb51-8"><a href="#cb51-8" aria-hidden="true" tabindex="-1"></a>    field<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb51-9"><a href="#cb51-9" aria-hidden="true" tabindex="-1"></a>    operators<span class="op">=</span>empty_list(),</span>
+<span id="cb51-10"><a href="#cb51-10" aria-hidden="true" tabindex="-1"></a>    sources<span class="op">=</span>empty_list(),</span>
+<span id="cb51-11"><a href="#cb51-11" aria-hidden="true" tabindex="-1"></a>    boundary_conditions<span class="op">=</span>empty_list(),</span>
+<span id="cb51-12"><a href="#cb51-12" aria-hidden="true" tabindex="-1"></a>    solver<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb51-13"><a href="#cb51-13" aria-hidden="true" tabindex="-1"></a>    derived_parameters<span class="op">=</span>empty_list(),</span>
+<span id="cb51-14"><a href="#cb51-14" aria-hidden="true" tabindex="-1"></a>    derived_variables<span class="op">=</span>empty_list(),</span>
+<span id="cb51-15"><a href="#cb51-15" aria-hidden="true" tabindex="-1"></a>    functions<span class="op">=</span>empty_list(),</span>
+<span id="cb51-16"><a href="#cb51-16" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Partial differential equation problem definition.</p>
 </section>
 <section id="tvbo.datamodel.schema.ParcellationEntity" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.schema.ParcellationEntity">ParcellationEntity</h3>
-<div class="sourceCode" id="cb51"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.ParcellationEntity(</span>
-<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a>    abbreviation<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb51-4"><a href="#cb51-4" aria-hidden="true" tabindex="-1"></a>    alternateName<span class="op">=</span>empty_list(),</span>
-<span id="cb51-5"><a href="#cb51-5" aria-hidden="true" tabindex="-1"></a>    lookupLabel<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb51-6"><a href="#cb51-6" aria-hidden="true" tabindex="-1"></a>    hasParent<span class="op">=</span>empty_list(),</span>
-<span id="cb51-7"><a href="#cb51-7" aria-hidden="true" tabindex="-1"></a>    ontologyIdentifier<span class="op">=</span>empty_list(),</span>
-<span id="cb51-8"><a href="#cb51-8" aria-hidden="true" tabindex="-1"></a>    versionIdentifier<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb51-9"><a href="#cb51-9" aria-hidden="true" tabindex="-1"></a>    relatedUBERONTerm<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb51-10"><a href="#cb51-10" aria-hidden="true" tabindex="-1"></a>    originalLookupLabel<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb51-11"><a href="#cb51-11" aria-hidden="true" tabindex="-1"></a>    hemisphere<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb51-12"><a href="#cb51-12" aria-hidden="true" tabindex="-1"></a>    center<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb51-13"><a href="#cb51-13" aria-hidden="true" tabindex="-1"></a>    color<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb51-14"><a href="#cb51-14" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb52"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.ParcellationEntity(</span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a>    abbreviation<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb52-4"><a href="#cb52-4" aria-hidden="true" tabindex="-1"></a>    alternateName<span class="op">=</span>empty_list(),</span>
+<span id="cb52-5"><a href="#cb52-5" aria-hidden="true" tabindex="-1"></a>    lookupLabel<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb52-6"><a href="#cb52-6" aria-hidden="true" tabindex="-1"></a>    hasParent<span class="op">=</span>empty_list(),</span>
+<span id="cb52-7"><a href="#cb52-7" aria-hidden="true" tabindex="-1"></a>    ontologyIdentifier<span class="op">=</span>empty_list(),</span>
+<span id="cb52-8"><a href="#cb52-8" aria-hidden="true" tabindex="-1"></a>    versionIdentifier<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb52-9"><a href="#cb52-9" aria-hidden="true" tabindex="-1"></a>    relatedUBERONTerm<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb52-10"><a href="#cb52-10" aria-hidden="true" tabindex="-1"></a>    originalLookupLabel<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb52-11"><a href="#cb52-11" aria-hidden="true" tabindex="-1"></a>    hemisphere<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb52-12"><a href="#cb52-12" aria-hidden="true" tabindex="-1"></a>    center<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb52-13"><a href="#cb52-13" aria-hidden="true" tabindex="-1"></a>    color<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb52-14"><a href="#cb52-14" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>A schema for representing a parcellation entity, which is an anatomical location or study target.</p>
 </section>
 <section id="tvbo.datamodel.schema.ParcellationTerminology" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.schema.ParcellationTerminology">ParcellationTerminology</h3>
-<div class="sourceCode" id="cb52"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.ParcellationTerminology(</span>
-<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a>    dataLocation<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb52-4"><a href="#cb52-4" aria-hidden="true" tabindex="-1"></a>    ontologyIdentifier<span class="op">=</span>empty_list(),</span>
-<span id="cb52-5"><a href="#cb52-5" aria-hidden="true" tabindex="-1"></a>    versionIdentifier<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb52-6"><a href="#cb52-6" aria-hidden="true" tabindex="-1"></a>    entities<span class="op">=</span>empty_dict(),</span>
-<span id="cb52-7"><a href="#cb52-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb53"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.ParcellationTerminology(</span>
+<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a>    dataLocation<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb53-4"><a href="#cb53-4" aria-hidden="true" tabindex="-1"></a>    ontologyIdentifier<span class="op">=</span>empty_list(),</span>
+<span id="cb53-5"><a href="#cb53-5" aria-hidden="true" tabindex="-1"></a>    versionIdentifier<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb53-6"><a href="#cb53-6" aria-hidden="true" tabindex="-1"></a>    entities<span class="op">=</span>empty_dict(),</span>
+<span id="cb53-7"><a href="#cb53-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>A schema for representing a parcellation terminology, which consists of parcellation entities.</p>
 </section>
 <section id="tvbo.datamodel.schema.PhysicalDimension" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.schema.PhysicalDimension">PhysicalDimension</h3>
-<div class="sourceCode" id="cb53"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.PhysicalDimension()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb54"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.PhysicalDimension()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Physical dimension categories for LEMS and dimensional analysis. Each dimension decomposes into SI base dimensions (M, L, T, I, K, N).</p>
 </section>
 <section id="tvbo.datamodel.schema.Provenance" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.schema.Provenance">Provenance</h3>
-<div class="sourceCode" id="cb54"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.Provenance(</span>
-<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a>    derived_from<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a>    references<span class="op">=</span>empty_list(),</span>
-<span id="cb54-4"><a href="#cb54-4" aria-hidden="true" tabindex="-1"></a>    date_created<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb54-5"><a href="#cb54-5" aria-hidden="true" tabindex="-1"></a>    license<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb54-6"><a href="#cb54-6" aria-hidden="true" tabindex="-1"></a>    generated_by<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb54-7"><a href="#cb54-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb55"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.Provenance(</span>
+<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a>    derived_from<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a>    references<span class="op">=</span>empty_list(),</span>
+<span id="cb55-4"><a href="#cb55-4" aria-hidden="true" tabindex="-1"></a>    date_created<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb55-5"><a href="#cb55-5" aria-hidden="true" tabindex="-1"></a>    license<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb55-6"><a href="#cb55-6" aria-hidden="true" tabindex="-1"></a>    generated_by<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb55-7"><a href="#cb55-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>W3C PROV-O aligned provenance. Reusable on any entity (Network, TimeSeries, Dynamics, etc.).</p>
 </section>
 <section id="tvbo.datamodel.schema.Range" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.schema.Range">Range</h3>
-<div class="sourceCode" id="cb55"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.Range(</span>
-<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a>    lo<span class="op">=</span><span class="st">'0'</span>,</span>
-<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a>    hi<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb55-4"><a href="#cb55-4" aria-hidden="true" tabindex="-1"></a>    step<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb55-5"><a href="#cb55-5" aria-hidden="true" tabindex="-1"></a>    n<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb55-6"><a href="#cb55-6" aria-hidden="true" tabindex="-1"></a>    log_scale<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb55-7"><a href="#cb55-7" aria-hidden="true" tabindex="-1"></a>    explored_values<span class="op">=</span>empty_list(),</span>
-<span id="cb55-8"><a href="#cb55-8" aria-hidden="true" tabindex="-1"></a>    element<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb55-9"><a href="#cb55-9" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb56"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.Range(</span>
+<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a>    lo<span class="op">=</span><span class="st">'0'</span>,</span>
+<span id="cb56-3"><a href="#cb56-3" aria-hidden="true" tabindex="-1"></a>    hi<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb56-4"><a href="#cb56-4" aria-hidden="true" tabindex="-1"></a>    step<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb56-5"><a href="#cb56-5" aria-hidden="true" tabindex="-1"></a>    n<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb56-6"><a href="#cb56-6" aria-hidden="true" tabindex="-1"></a>    log_scale<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb56-7"><a href="#cb56-7" aria-hidden="true" tabindex="-1"></a>    explored_values<span class="op">=</span>empty_list(),</span>
+<span id="cb56-8"><a href="#cb56-8" aria-hidden="true" tabindex="-1"></a>    element<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb56-9"><a href="#cb56-9" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Specifies a range for array generation, parameter bounds, or grid exploration.</p>
 </section>
 <section id="tvbo.datamodel.schema.ReductionType" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.schema.ReductionType">ReductionType</h3>
-<div class="sourceCode" id="cb56"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.ReductionType()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb57"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.ReductionType()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Operations for reducing/aggregating values across dimensions</p>
 </section>
 <section id="tvbo.datamodel.schema.RegionMapping" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.schema.RegionMapping">RegionMapping</h3>
-<div class="sourceCode" id="cb57"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.RegionMapping(</span>
-<span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb57-3"><a href="#cb57-3" aria-hidden="true" tabindex="-1"></a>    description<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb57-4"><a href="#cb57-4" aria-hidden="true" tabindex="-1"></a>    dataLocation<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb57-5"><a href="#cb57-5" aria-hidden="true" tabindex="-1"></a>    vertex_to_region<span class="op">=</span>empty_list(),</span>
-<span id="cb57-6"><a href="#cb57-6" aria-hidden="true" tabindex="-1"></a>    n_vertices<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb57-7"><a href="#cb57-7" aria-hidden="true" tabindex="-1"></a>    n_regions<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb57-8"><a href="#cb57-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb58"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.RegionMapping(</span>
+<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a>    description<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb58-4"><a href="#cb58-4" aria-hidden="true" tabindex="-1"></a>    dataLocation<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb58-5"><a href="#cb58-5" aria-hidden="true" tabindex="-1"></a>    vertex_to_region<span class="op">=</span>empty_list(),</span>
+<span id="cb58-6"><a href="#cb58-6" aria-hidden="true" tabindex="-1"></a>    n_vertices<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb58-7"><a href="#cb58-7" aria-hidden="true" tabindex="-1"></a>    n_regions<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb58-8"><a href="#cb58-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Maps vertices to parent regions for hierarchical/aggregated coupling</p>
 </section>
 <section id="tvbo.datamodel.schema.SamplingAxis" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.schema.SamplingAxis">SamplingAxis</h3>
-<div class="sourceCode" id="cb58"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.SamplingAxis()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb59"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.SamplingAxis()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Dimension along which a distribution is sampled.</p>
 </section>
 <section id="tvbo.datamodel.schema.SoftwarePackage" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.schema.SoftwarePackage">SoftwarePackage</h3>
-<div class="sourceCode" id="cb59"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.SoftwarePackage(</span>
-<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb59-3"><a href="#cb59-3" aria-hidden="true" tabindex="-1"></a>    description<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb59-4"><a href="#cb59-4" aria-hidden="true" tabindex="-1"></a>    homepage<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb59-5"><a href="#cb59-5" aria-hidden="true" tabindex="-1"></a>    license<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb59-6"><a href="#cb59-6" aria-hidden="true" tabindex="-1"></a>    repository<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb59-7"><a href="#cb59-7" aria-hidden="true" tabindex="-1"></a>    doi<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb59-8"><a href="#cb59-8" aria-hidden="true" tabindex="-1"></a>    ecosystem<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb59-9"><a href="#cb59-9" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb60"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.SoftwarePackage(</span>
+<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb60-3"><a href="#cb60-3" aria-hidden="true" tabindex="-1"></a>    description<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb60-4"><a href="#cb60-4" aria-hidden="true" tabindex="-1"></a>    homepage<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb60-5"><a href="#cb60-5" aria-hidden="true" tabindex="-1"></a>    license<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb60-6"><a href="#cb60-6" aria-hidden="true" tabindex="-1"></a>    repository<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb60-7"><a href="#cb60-7" aria-hidden="true" tabindex="-1"></a>    doi<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb60-8"><a href="#cb60-8" aria-hidden="true" tabindex="-1"></a>    ecosystem<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb60-9"><a href="#cb60-9" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Identity information about a software package independent of a specific version requirement.</p>
 </section>
 <section id="tvbo.datamodel.schema.Solver" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.schema.Solver">Solver</h3>
-<div class="sourceCode" id="cb60"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.Solver(method<span class="op">=</span><span class="st">'Tsit5'</span>, abs_tol<span class="op">=</span><span class="fl">1e-10</span>, rel_tol<span class="op">=</span><span class="fl">1e-10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb61"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.Solver(method<span class="op">=</span><span class="st">'Tsit5'</span>, abs_tol<span class="op">=</span><span class="fl">1e-10</span>, rel_tol<span class="op">=</span><span class="fl">1e-10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Lightweight specification of a numerical ODE solver / integrator. Covers adaptive solvers (Vern9, Rodas5, Tsit5, etc.) used in shooting methods, initial-state integration, and other contexts where only the algorithm and tolerances matter.</p>
 </section>
 <section id="tvbo.datamodel.schema.SpecimenEnum" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.schema.SpecimenEnum">SpecimenEnum</h3>
-<div class="sourceCode" id="cb61"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.SpecimenEnum()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb62"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.SpecimenEnum()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>A set of permissible types for specimens used in brain atlas creation.</p>
 </section>
 <section id="tvbo.datamodel.schema.StandardGraphType" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.schema.StandardGraphType">StandardGraphType</h3>
-<div class="sourceCode" id="cb62"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.StandardGraphType()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb63"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.StandardGraphType()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Well-known graph generator families with automatic backend mapping. The type field on GraphGenerator is a free string; this enum lists common types that get automatic code generation for Julia (Graphs.jl) and Python (NetworkX).</p>
 </section>
 <section id="tvbo.datamodel.schema.StateValue" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.schema.StateValue">StateValue</h3>
-<div class="sourceCode" id="cb63"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.StateValue(name<span class="op">=</span><span class="va">None</span>, value<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb64"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.StateValue(name<span class="op">=</span><span class="va">None</span>, value<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>A named state variable value for per-node initialization.</p>
 </section>
 <section id="tvbo.datamodel.schema.StimulationSetting" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.schema.StimulationSetting">StimulationSetting</h3>
-<div class="sourceCode" id="cb64"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.StimulationSetting(</span>
-<span id="cb64-2"><a href="#cb64-2" aria-hidden="true" tabindex="-1"></a>    electrode_reference<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb64-3"><a href="#cb64-3" aria-hidden="true" tabindex="-1"></a>    amplitude<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb64-4"><a href="#cb64-4" aria-hidden="true" tabindex="-1"></a>    frequency<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb64-5"><a href="#cb64-5" aria-hidden="true" tabindex="-1"></a>    pulse_width<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb64-6"><a href="#cb64-6" aria-hidden="true" tabindex="-1"></a>    mode<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb64-7"><a href="#cb64-7" aria-hidden="true" tabindex="-1"></a>    active_contacts<span class="op">=</span>empty_list(),</span>
-<span id="cb64-8"><a href="#cb64-8" aria-hidden="true" tabindex="-1"></a>    efield<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb64-9"><a href="#cb64-9" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb65"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.StimulationSetting(</span>
+<span id="cb65-2"><a href="#cb65-2" aria-hidden="true" tabindex="-1"></a>    electrode_reference<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb65-3"><a href="#cb65-3" aria-hidden="true" tabindex="-1"></a>    amplitude<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb65-4"><a href="#cb65-4" aria-hidden="true" tabindex="-1"></a>    frequency<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb65-5"><a href="#cb65-5" aria-hidden="true" tabindex="-1"></a>    pulse_width<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb65-6"><a href="#cb65-6" aria-hidden="true" tabindex="-1"></a>    mode<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb65-7"><a href="#cb65-7" aria-hidden="true" tabindex="-1"></a>    active_contacts<span class="op">=</span>empty_list(),</span>
+<span id="cb65-8"><a href="#cb65-8" aria-hidden="true" tabindex="-1"></a>    efield<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb65-9"><a href="#cb65-9" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>DBS parameters for a specific session.</p>
 </section>
 <section id="tvbo.datamodel.schema.Subject" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.schema.Subject">Subject</h3>
-<div class="sourceCode" id="cb65"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.Subject(</span>
-<span id="cb65-2"><a href="#cb65-2" aria-hidden="true" tabindex="-1"></a>    subject_id<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb65-3"><a href="#cb65-3" aria-hidden="true" tabindex="-1"></a>    age<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb65-4"><a href="#cb65-4" aria-hidden="true" tabindex="-1"></a>    sex<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb65-5"><a href="#cb65-5" aria-hidden="true" tabindex="-1"></a>    diagnosis<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb65-6"><a href="#cb65-6" aria-hidden="true" tabindex="-1"></a>    handedness<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb65-7"><a href="#cb65-7" aria-hidden="true" tabindex="-1"></a>    protocols<span class="op">=</span>empty_list(),</span>
-<span id="cb65-8"><a href="#cb65-8" aria-hidden="true" tabindex="-1"></a>    coordinate_space<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb65-9"><a href="#cb65-9" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb66"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.Subject(</span>
+<span id="cb66-2"><a href="#cb66-2" aria-hidden="true" tabindex="-1"></a>    subject_id<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb66-3"><a href="#cb66-3" aria-hidden="true" tabindex="-1"></a>    age<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb66-4"><a href="#cb66-4" aria-hidden="true" tabindex="-1"></a>    sex<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb66-5"><a href="#cb66-5" aria-hidden="true" tabindex="-1"></a>    diagnosis<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb66-6"><a href="#cb66-6" aria-hidden="true" tabindex="-1"></a>    handedness<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb66-7"><a href="#cb66-7" aria-hidden="true" tabindex="-1"></a>    protocols<span class="op">=</span>empty_list(),</span>
+<span id="cb66-8"><a href="#cb66-8" aria-hidden="true" tabindex="-1"></a>    coordinate_space<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb66-9"><a href="#cb66-9" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Human or animal subject receiving DBS.</p>
 </section>
 <section id="tvbo.datamodel.schema.TimeSeries" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.schema.TimeSeries">TimeSeries</h3>
-<div class="sourceCode" id="cb66"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.TimeSeries(</span>
-<span id="cb66-2"><a href="#cb66-2" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb66-3"><a href="#cb66-3" aria-hidden="true" tabindex="-1"></a>    description<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb66-4"><a href="#cb66-4" aria-hidden="true" tabindex="-1"></a>    dataLocation<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb66-5"><a href="#cb66-5" aria-hidden="true" tabindex="-1"></a>    data<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb66-6"><a href="#cb66-6" aria-hidden="true" tabindex="-1"></a>    time<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb66-7"><a href="#cb66-7" aria-hidden="true" tabindex="-1"></a>    sampling_rate<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb66-8"><a href="#cb66-8" aria-hidden="true" tabindex="-1"></a>    sampling_period<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb66-9"><a href="#cb66-9" aria-hidden="true" tabindex="-1"></a>    sampling_period_unit<span class="op">=</span><span class="st">'ms'</span>,</span>
-<span id="cb66-10"><a href="#cb66-10" aria-hidden="true" tabindex="-1"></a>    unit<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb66-11"><a href="#cb66-11" aria-hidden="true" tabindex="-1"></a>    labels_ordering<span class="op">=</span>empty_list(),</span>
-<span id="cb66-12"><a href="#cb66-12" aria-hidden="true" tabindex="-1"></a>    labels_dimensions<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb66-13"><a href="#cb66-13" aria-hidden="true" tabindex="-1"></a>    source_experiment<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb66-14"><a href="#cb66-14" aria-hidden="true" tabindex="-1"></a>    generated_at<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb66-15"><a href="#cb66-15" aria-hidden="true" tabindex="-1"></a>    software_environment<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb66-16"><a href="#cb66-16" aria-hidden="true" tabindex="-1"></a>    task_name<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb66-17"><a href="#cb66-17" aria-hidden="true" tabindex="-1"></a>    subject_id<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb66-18"><a href="#cb66-18" aria-hidden="true" tabindex="-1"></a>    session_id<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb66-19"><a href="#cb66-19" aria-hidden="true" tabindex="-1"></a>    run_id<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb66-20"><a href="#cb66-20" aria-hidden="true" tabindex="-1"></a>    modality<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb66-21"><a href="#cb66-21" aria-hidden="true" tabindex="-1"></a>    model_equation_ref<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb66-22"><a href="#cb66-22" aria-hidden="true" tabindex="-1"></a>    model_param_ref<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb66-23"><a href="#cb66-23" aria-hidden="true" tabindex="-1"></a>    connectivity_ref<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb66-24"><a href="#cb66-24" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb67"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.TimeSeries(</span>
+<span id="cb67-2"><a href="#cb67-2" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb67-3"><a href="#cb67-3" aria-hidden="true" tabindex="-1"></a>    description<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb67-4"><a href="#cb67-4" aria-hidden="true" tabindex="-1"></a>    dataLocation<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb67-5"><a href="#cb67-5" aria-hidden="true" tabindex="-1"></a>    data<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb67-6"><a href="#cb67-6" aria-hidden="true" tabindex="-1"></a>    time<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb67-7"><a href="#cb67-7" aria-hidden="true" tabindex="-1"></a>    sampling_rate<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb67-8"><a href="#cb67-8" aria-hidden="true" tabindex="-1"></a>    sampling_period<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb67-9"><a href="#cb67-9" aria-hidden="true" tabindex="-1"></a>    sampling_period_unit<span class="op">=</span><span class="st">'ms'</span>,</span>
+<span id="cb67-10"><a href="#cb67-10" aria-hidden="true" tabindex="-1"></a>    unit<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb67-11"><a href="#cb67-11" aria-hidden="true" tabindex="-1"></a>    labels_ordering<span class="op">=</span>empty_list(),</span>
+<span id="cb67-12"><a href="#cb67-12" aria-hidden="true" tabindex="-1"></a>    labels_dimensions<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb67-13"><a href="#cb67-13" aria-hidden="true" tabindex="-1"></a>    source_experiment<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb67-14"><a href="#cb67-14" aria-hidden="true" tabindex="-1"></a>    generated_at<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb67-15"><a href="#cb67-15" aria-hidden="true" tabindex="-1"></a>    software_environment<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb67-16"><a href="#cb67-16" aria-hidden="true" tabindex="-1"></a>    task_name<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb67-17"><a href="#cb67-17" aria-hidden="true" tabindex="-1"></a>    subject_id<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb67-18"><a href="#cb67-18" aria-hidden="true" tabindex="-1"></a>    session_id<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb67-19"><a href="#cb67-19" aria-hidden="true" tabindex="-1"></a>    run_id<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb67-20"><a href="#cb67-20" aria-hidden="true" tabindex="-1"></a>    modality<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb67-21"><a href="#cb67-21" aria-hidden="true" tabindex="-1"></a>    model_equation_ref<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb67-22"><a href="#cb67-22" aria-hidden="true" tabindex="-1"></a>    model_param_ref<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb67-23"><a href="#cb67-23" aria-hidden="true" tabindex="-1"></a>    connectivity_ref<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb67-24"><a href="#cb67-24" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Time series data from simulations or measurements. Supports BIDS-compatible export for computational modeling (BEP034).</p>
 </section>
 <section id="tvbo.datamodel.schema.Tractogram" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.schema.Tractogram">Tractogram</h3>
-<div class="sourceCode" id="cb67"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.Tractogram(</span>
-<span id="cb67-2"><a href="#cb67-2" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb67-3"><a href="#cb67-3" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb67-4"><a href="#cb67-4" aria-hidden="true" tabindex="-1"></a>    description<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb67-5"><a href="#cb67-5" aria-hidden="true" tabindex="-1"></a>    data_source<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb67-6"><a href="#cb67-6" aria-hidden="true" tabindex="-1"></a>    number_of_subjects<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb67-7"><a href="#cb67-7" aria-hidden="true" tabindex="-1"></a>    acquisition<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb67-8"><a href="#cb67-8" aria-hidden="true" tabindex="-1"></a>    processing_pipeline<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb67-9"><a href="#cb67-9" aria-hidden="true" tabindex="-1"></a>    reference<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb67-10"><a href="#cb67-10" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb68"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.Tractogram(</span>
+<span id="cb68-2"><a href="#cb68-2" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb68-3"><a href="#cb68-3" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb68-4"><a href="#cb68-4" aria-hidden="true" tabindex="-1"></a>    description<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb68-5"><a href="#cb68-5" aria-hidden="true" tabindex="-1"></a>    data_source<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb68-6"><a href="#cb68-6" aria-hidden="true" tabindex="-1"></a>    number_of_subjects<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb68-7"><a href="#cb68-7" aria-hidden="true" tabindex="-1"></a>    acquisition<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb68-8"><a href="#cb68-8" aria-hidden="true" tabindex="-1"></a>    processing_pipeline<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb68-9"><a href="#cb68-9" aria-hidden="true" tabindex="-1"></a>    reference<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb68-10"><a href="#cb68-10" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Reference to tractography/diffusion MRI data used to derive structural connectivity</p>
 </section>
 <section id="tvbo.datamodel.schema.TuningObjective" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.schema.TuningObjective">TuningObjective</h3>
-<div class="sourceCode" id="cb68"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.TuningObjective(</span>
-<span id="cb68-2"><a href="#cb68-2" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb68-3"><a href="#cb68-3" aria-hidden="true" tabindex="-1"></a>    description<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb68-4"><a href="#cb68-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">type</span><span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb68-5"><a href="#cb68-5" aria-hidden="true" tabindex="-1"></a>    target_variable<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb68-6"><a href="#cb68-6" aria-hidden="true" tabindex="-1"></a>    target_value<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb68-7"><a href="#cb68-7" aria-hidden="true" tabindex="-1"></a>    target_data<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb68-8"><a href="#cb68-8" aria-hidden="true" tabindex="-1"></a>    metric<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb68-9"><a href="#cb68-9" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb69"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.TuningObjective(</span>
+<span id="cb69-2"><a href="#cb69-2" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb69-3"><a href="#cb69-3" aria-hidden="true" tabindex="-1"></a>    description<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb69-4"><a href="#cb69-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">type</span><span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb69-5"><a href="#cb69-5" aria-hidden="true" tabindex="-1"></a>    target_variable<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb69-6"><a href="#cb69-6" aria-hidden="true" tabindex="-1"></a>    target_value<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb69-7"><a href="#cb69-7" aria-hidden="true" tabindex="-1"></a>    target_data<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb69-8"><a href="#cb69-8" aria-hidden="true" tabindex="-1"></a>    metric<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb69-9"><a href="#cb69-9" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Defines what the tuning algorithm optimizes for. Can be an activity target (FIC) or a connectivity target (EIB).</p>
 </section>
 <section id="tvbo.datamodel.schema.UnitEnum" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.schema.UnitEnum">UnitEnum</h3>
-<div class="sourceCode" id="cb69"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.UnitEnum()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb70"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.UnitEnum()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Physical units of measurement for model parameters, state variables, and integration settings. Uses conventional abbreviations as values, mapped to the QUDT ontology (http://qudt.org/vocab/unit/) with UO cross-references where available.</p>
 </section>
 <section id="tvbo.datamodel.schema.UpdateRule" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.schema.UpdateRule">UpdateRule</h3>
-<div class="sourceCode" id="cb70"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.UpdateRule(</span>
-<span id="cb70-2"><a href="#cb70-2" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb70-3"><a href="#cb70-3" aria-hidden="true" tabindex="-1"></a>    target_parameter<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb70-4"><a href="#cb70-4" aria-hidden="true" tabindex="-1"></a>    equation<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb70-5"><a href="#cb70-5" aria-hidden="true" tabindex="-1"></a>    description<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb70-6"><a href="#cb70-6" aria-hidden="true" tabindex="-1"></a>    bounds<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb70-7"><a href="#cb70-7" aria-hidden="true" tabindex="-1"></a>    warmup<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb70-8"><a href="#cb70-8" aria-hidden="true" tabindex="-1"></a>    requires<span class="op">=</span>empty_list(),</span>
-<span id="cb70-9"><a href="#cb70-9" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb71"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.UpdateRule(</span>
+<span id="cb71-2"><a href="#cb71-2" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb71-3"><a href="#cb71-3" aria-hidden="true" tabindex="-1"></a>    target_parameter<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb71-4"><a href="#cb71-4" aria-hidden="true" tabindex="-1"></a>    equation<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb71-5"><a href="#cb71-5" aria-hidden="true" tabindex="-1"></a>    description<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb71-6"><a href="#cb71-6" aria-hidden="true" tabindex="-1"></a>    bounds<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb71-7"><a href="#cb71-7" aria-hidden="true" tabindex="-1"></a>    warmup<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb71-8"><a href="#cb71-8" aria-hidden="true" tabindex="-1"></a>    requires<span class="op">=</span>empty_list(),</span>
+<span id="cb71-9"><a href="#cb71-9" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Defines how a parameter is updated based on observables. Represents iterative learning rules like FIC or EIB updates. Functions from experiment.functions are available in the equation.</p>
 
 
@@ -6238,7 +6261,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

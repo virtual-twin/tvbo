@@ -2928,6 +2928,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/model_type.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">model_type</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/modes.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">modes</span></a>
   </div>
@@ -4187,6 +4193,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/enums/ModelType.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Type</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/enums/NoiseType.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Noise Type</span></a>
   </div>
@@ -4923,7 +4935,21 @@ window.Quarto = {
 <p>Browse runnable examples demonstrating TVBO capabilities.</p>
 <div id="listing-examples-listing" class="quarto-listing quarto-listing-container-grid">
 <div class="list grid quarto-listing-cols-3">
-<div class="g-col-1" data-index="0" data-listing-file-modified-sort="1773407322443" data-listing-reading-time-sort="1" data-listing-word-count-sort="41">
+<div class="g-col-1" data-index="0" data-listing-file-modified-sort="1774444734222" data-listing-reading-time-sort="3" data-listing-word-count-sort="575">
+<a href="../examples/dynamics_from_db.html" class="quarto-grid-link">
+<div class="quarto-grid-item card h-100 card-left">
+<p class="card-img-top"><img src="dynamics_from_db_files/figure-html/fig-gallery-output-1.png" style="height: 200;"  class="thumbnail-image card-img"/></p>
+<div class="card-body post-contents">
+<h5 class="no-anchor card-title listing-title">
+Dynamics Database Gallery
+</h5>
+<div class="card-text listing-description delink">
+<p>Overview of all models in the TVBO database, organised by category.</p>
+</div>
+</div>
+</div></a>
+</div>
+<div class="g-col-1" data-index="1" data-listing-file-modified-sort="1773407322443" data-listing-reading-time-sort="1" data-listing-word-count-sort="41">
 <a href="../examples/network_from_db.html" class="quarto-grid-link">
 <div class="quarto-grid-item card h-100 card-left">
 <p class="card-img-top"><img src="network_from_db_files/figure-html/cell-2-output-1.png" style="height: 200;"  class="thumbnail-image card-img"/></p>
@@ -4933,6 +4959,16 @@ Load Normative Networks
 </h5>
 <div class="card-text listing-description delink">
 <p>Load and visualize normative brain networks from the TVBO database.</p>
+</div>
+</div>
+</div></a>
+</div>
+<div class="g-col-1" data-index="2" data-listing-file-modified-sort="1774443849026">
+<a href="../examples/create_network.qmd" class="quarto-grid-link">
+<div class="quarto-grid-item card h-100 card-left">
+
+<div class="card-body post-contents">
+<div class="card-text listing-description delink">
 </div>
 </div>
 </div></a>
@@ -5017,7 +5053,7 @@ Load Normative Networks
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

@@ -2868,6 +2868,12 @@ ul.task-list li input[type="checkbox"] {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/model_type.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">model_type</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/modes.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">modes</span></a>
   </div>
@@ -4123,6 +4129,12 @@ ul.task-list li input[type="checkbox"] {
   <div class="sidebar-item-container"> 
   <a href="../datamodel/enums/InitialStateMethod.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Initial State Method</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/enums/ModelType.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Type</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5424,7 +5436,7 @@ ul.task-list li input[type="checkbox"] {
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

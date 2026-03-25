@@ -2903,6 +2903,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/model_type.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">model_type</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/modes.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">modes</span></a>
   </div>
@@ -4162,6 +4168,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/ModelType.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Type</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/NoiseType.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Noise Type</span></a>
   </div>
@@ -4902,6 +4914,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <section id="slot-coupling_variable" class="level1">
 <h1>Slot: coupling_variable</h1>
+<p><em>Whether this state variable is transmitted to connected nodes through the coupling function. In TVB terms, this determines the cvar indices (state variables extracted from history and fed into the coupling function). The coupling function may override this via its incoming_states attribute.</em></p>
 <p>URI: <a href="http://www.thevirtualbrain.org/tvb-o/slot/coupling_variable">tvbo:slot/coupling_variable</a> Alias: coupling_variable</p>
 <!-- no inheritance hierarchy -->
 <section id="applicable-classes" class="level2">
@@ -4916,12 +4929,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td><a href="../../datamodel/classes/StateVariable.html">StateVariable</a></td>
+<td><a href="../../datamodel/classes/FieldStateVariable.html">FieldStateVariable</a></td>
 <td></td>
 <td>no</td>
 </tr>
 <tr class="even">
-<td><a href="../../datamodel/classes/FieldStateVariable.html">FieldStateVariable</a></td>
+<td><a href="../../datamodel/classes/StateVariable.html">StateVariable</a></td>
 <td></td>
 <td>no</td>
 </tr>
@@ -5020,14 +5033,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="linkml-source">LinkML Source</h2>
 <details>
 <div class="sourceCode" id="cb1"><pre class="sourceCode yaml code-with-copy"><code class="sourceCode yaml"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">name</span><span class="kw">:</span><span class="at"> coupling_variable</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">from_schema</span><span class="kw">:</span><span class="at"> https://w3id.org/tvbo</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">rank</span><span class="kw">:</span><span class="at"> </span><span class="dv">1000</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ifabsent</span><span class="kw">:</span><span class="at"> </span><span class="st">'False'</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">alias</span><span class="kw">:</span><span class="at"> coupling_variable</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">owner</span><span class="kw">:</span><span class="at"> StateVariable</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">domain_of</span><span class="kw">:</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> StateVariable</span></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">range</span><span class="kw">:</span><span class="at"> boolean</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">description</span><span class="kw">:</span><span class="at"> Whether this state variable is transmitted to connected nodes through</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="at">  the coupling function. In TVB terms, this determines the cvar indices (state variables</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="at">  extracted from history and fed into the coupling function). The coupling function</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="at">  may override this via its incoming_states attribute.</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">from_schema</span><span class="kw">:</span><span class="at"> https://w3id.org/tvbo</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">rank</span><span class="kw">:</span><span class="at"> </span><span class="dv">1000</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">ifabsent</span><span class="kw">:</span><span class="at"> </span><span class="st">'False'</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">alias</span><span class="kw">:</span><span class="at"> coupling_variable</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="fu">owner</span><span class="kw">:</span><span class="at"> StateVariable</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="fu">domain_of</span><span class="kw">:</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> StateVariable</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="fu">range</span><span class="kw">:</span><span class="at"> boolean</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 
 
@@ -5107,7 +5124,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

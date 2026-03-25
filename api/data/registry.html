@@ -2903,6 +2903,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/model_type.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">model_type</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/modes.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">modes</span></a>
   </div>
@@ -4162,6 +4168,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/ModelType.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Type</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/NoiseType.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Noise Type</span></a>
   </div>
@@ -4881,6 +4893,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul class="collapse">
   <li><a href="#tvbo.data.registry.database_dir" id="toc-tvbo.data.registry.database_dir" class="nav-link" data-scroll-target="#tvbo.data.registry.database_dir">database_dir</a></li>
   <li><a href="#tvbo.data.registry.list_entries" id="toc-tvbo.data.registry.list_entries" class="nav-link" data-scroll-target="#tvbo.data.registry.list_entries">list_entries</a></li>
+  <li><a href="#tvbo.data.registry.list_entries_with_metadata" id="toc-tvbo.data.registry.list_entries_with_metadata" class="nav-link" data-scroll-target="#tvbo.data.registry.list_entries_with_metadata">list_entries_with_metadata</a></li>
   <li><a href="#tvbo.data.registry.resolve" id="toc-tvbo.data.registry.resolve" class="nav-link" data-scroll-target="#tvbo.data.registry.resolve">resolve</a></li>
   </ul></li>
   </ul></li>
@@ -4897,7 +4910,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h1>registry</h1>
 <p><code>data.registry</code></p>
 <p>Canonical database registry — resolves short names to YAML file paths.</p>
-<p>Works both from pip-installed packages and editable/dev installs. See TVBO-Database-Access-Proposal.md §5 for design rationale.</p>
+<p>Works both from pip-installed packages and editable/dev installs. Searches recursively within each category directory so that models in subfolders (e.g.&nbsp;database/models/julia/) are automatically discovered. See TVBO-Database-Access-Proposal.md §5 for design rationale.</p>
 <section id="functions" class="level2">
 <h2 class="anchored" data-anchor-id="functions">Functions</h2>
 <table class="caption-top table">
@@ -4917,6 +4930,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>List all available database entries for a class.</td>
 </tr>
 <tr class="odd">
+<td><a href="#tvbo.data.registry.list_entries_with_metadata">list_entries_with_metadata</a></td>
+<td>Return a list of dicts with <code>name</code>, <code>model_type</code>, <code>description</code>, <code>path</code></td>
+</tr>
+<tr class="even">
 <td><a href="#tvbo.data.registry.resolve">resolve</a></td>
 <td>Resolve a short name to a database YAML file path.</td>
 </tr>
@@ -4932,11 +4949,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>data.registry.list_entries(cls_name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>List all available database entries for a class.</p>
 </section>
+<section id="tvbo.data.registry.list_entries_with_metadata" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.data.registry.list_entries_with_metadata">list_entries_with_metadata</h3>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>data.registry.list_entries_with_metadata(cls_name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Return a list of dicts with <code>name</code>, <code>model_type</code>, <code>description</code>, <code>path</code> for every entry in the given class category. Fast — reads only the first ~30 lines of each YAML file.</p>
+</section>
 <section id="tvbo.data.registry.resolve" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.data.registry.resolve">resolve</h3>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>data.registry.resolve(cls_name, name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>data.registry.resolve(cls_name, name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Resolve a short name to a database YAML file path.</p>
-<p>Tries exact match first, then case-insensitive fallback. For Network, also matches BIDS filenames containing the atlas name.</p>
+<p>Tries exact top-level stem match first (fast path), then searches recursively by canonical <code>name:</code> field and file stem (case-insensitive). For Network, also matches BIDS filenames containing the atlas name.</p>
 
 
 </section>
@@ -5016,7 +5038,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

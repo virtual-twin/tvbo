@@ -6,7 +6,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="description" content="Various input types — pulse, sine, ramp, voltage clamp, spike generators">
+<meta name="description" content="Various input types — Izhikevich 2007 RS cell with pulse generator">
 
 <title>Ex16: Input Types – TVB-O Documentation</title>
 <style>
@@ -110,6 +110,35 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="//unpkg.com/3d-force-graph"></script>
 <script src="../../../_static/tvbo-icons.js"></script>
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 <link rel="stylesheet" href="../../../styles.css">
 </head>
@@ -2904,6 +2933,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/slots/model_type.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">model_type</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../../datamodel/slots/modes.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">modes</span></a>
   </div>
@@ -4163,6 +4198,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/enums/ModelType.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Type</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../../datamodel/enums/NoiseType.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Noise Type</span></a>
   </div>
@@ -4877,7 +4918,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
    
   <ul>
   <li><a href="#model-input-types" id="toc-model-input-types" class="nav-link active" data-scroll-target="#model-input-types">Model: Input Types</a></li>
-  <li><a href="#define-iaf-cell-in-tvbo" id="toc-define-iaf-cell-in-tvbo" class="nav-link" data-scroll-target="#define-iaf-cell-in-tvbo">1. Define IaF Cell in TVBO</a></li>
+  <li><a href="#define-izhikevich-2007-rs-cell-in-tvbo" id="toc-define-izhikevich-2007-rs-cell-in-tvbo" class="nav-link" data-scroll-target="#define-izhikevich-2007-rs-cell-in-tvbo">1. Define Izhikevich 2007 RS Cell in TVBO</a></li>
   <li><a href="#render-lems-xml" id="toc-render-lems-xml" class="nav-link" data-scroll-target="#render-lems-xml">2. Render LEMS XML</a></li>
   <li><a href="#run-reference" id="toc-run-reference" class="nav-link" data-scroll-target="#run-reference">3. Run Reference</a></li>
   <li><a href="#run-tvbo" id="toc-run-tvbo" class="nav-link" data-scroll-target="#run-tvbo">4. Run TVBO</a></li>
@@ -4895,7 +4936,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <div>
   <div class="description">
-    Various input types — pulse, sine, ramp, voltage clamp, spike generators
+    Various input types — Izhikevich 2007 RS cell with pulse generator
   </div>
 </div>
 
@@ -4914,56 +4955,66 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <section id="model-input-types" class="level2">
 <h2 class="anchored" data-anchor-id="model-input-types">Model: Input Types</h2>
-<p>Demonstrates all NeuroML2 input generator types applied to IaF cells:</p>
-<ul>
-<li><code>pulseGenerator</code> — constant amplitude pulse</li>
-<li><code>sineGenerator</code> — sinusoidal current</li>
-<li><code>rampGenerator</code> — linearly ramping current</li>
-<li><code>voltageClamp</code> — voltage clamp protocols</li>
-<li><code>spikeGenerator</code> / <code>spikeGeneratorPoisson</code> — spike train generators</li>
-</ul>
+<p>Demonstrates NeuroML2 input generator types applied to Izhikevich 2007 RS cells. We model cell 0 (izhPop[0]) which receives pulseGen0 (delay=50ms, duration=200ms, amplitude=1nA).</p>
+<p>The Izhikevich 2007 model equations:</p>
+<p><span class="math display">\[C\frac{dv}{dt} = k(v - v_r)(v - v_t) + I_{\text{ext}} - u\]</span> <span class="math display">\[\frac{du}{dt} = a(b(v - v_r) - u)\]</span></p>
 <hr>
 </section>
-<section id="define-iaf-cell-in-tvbo" class="level2">
-<h2 class="anchored" data-anchor-id="define-iaf-cell-in-tvbo">1. Define IaF Cell in TVBO</h2>
-<div id="cbe87a89" class="cell" data-execution_count="2">
+<section id="define-izhikevich-2007-rs-cell-in-tvbo" class="level2">
+<h2 class="anchored" data-anchor-id="define-izhikevich-2007-rs-cell-in-tvbo">1. Define Izhikevich 2007 RS Cell in TVBO</h2>
+<div id="90f531a5" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> SimulationExperiment</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>exp <span class="op">=</span> SimulationExperiment.from_string(<span class="st">"""</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="st">label: "NeuroML Ex16: IaF with Inputs"</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="st">label: "NeuroML Ex16: Izhikevich 2007 RS with Pulse Input"</span></span>
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="st">dynamics:</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="st">  name: IntegrateAndFire</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="st">  name: Izhikevich2007Cell</span></span>
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="st">  parameters:</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="st">    leakReversal: { value: -50.0 }</span></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="st">    tau:          { value: 30.0 }</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="st">    thresh:       { value: -55.0 }</span></span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="st">    reset:        { value: -70.0 }</span></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="st">  state_variables:</span></span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="st">    v:</span></span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="st">      equation: { rhs: "(leakReversal - v) / tau" }</span></span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="st">      initial_value: -50.0</span></span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="st">      variable_of_interest: true</span></span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="st">  events:</span></span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="st">    spike:</span></span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="st">      condition: { rhs: "v &gt; thresh" }</span></span>
-<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="st">      affect:    { rhs: "v = reset" }</span></span>
-<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="st">network:</span></span>
-<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="st">  number_of_nodes: 1</span></span>
-<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="st">integration:</span></span>
-<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="st">  method: euler</span></span>
-<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="st">  step_size: 0.005</span></span>
-<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="st">  duration: 300.0</span></span>
-<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="st">  time_scale: ms</span></span>
-<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span>)</span>
-<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Model: </span><span class="sc">{</span>exp<span class="sc">.</span>dynamics<span class="sc">.</span>name<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="st">    C:     { value: 100.0,  description: "Capacitance (pF)" }</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="st">    k:     { value: 0.7,    description: "nS/mV" }</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="st">    vr:    { value: -60.0,  description: "Resting potential (mV)" }</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="st">    vt:    { value: -40.0,  description: "Threshold potential (mV)" }</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="st">    vpeak: { value: 35.0,   description: "Peak voltage (mV)" }</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="st">    a:     { value: 0.03,   description: "Recovery rate (1/ms)" }</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="st">    b:     { value: -2.0,   description: "Recovery sensitivity (nS)" }</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="st">    c:     { value: -50.0,  description: "Reset voltage (mV)" }</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="st">    d:     { value: 100.0,  description: "Recovery increment (pA)" }</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="st">  derived_variables:</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="st">    I_ext:</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="st">      equation:</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="st">        rhs: "Piecewise((1000.0, (t &gt;= 0.05) &amp; (t &lt; 0.25)), (0.0, True))"</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="st">      description: "pulseGen0: delay=50ms, duration=200ms, amplitude=1nA=1000pA (times in SI seconds)"</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="st">  state_variables:</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="st">    v:</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="st">      equation:</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="st">        rhs: "(k*(v - vr)*(v - vt) + I_ext - u) / C"</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="st">      initial_value: -60.0</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="st">      variable_of_interest: true</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a><span class="st">    u:</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="st">      equation:</span></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a><span class="st">        rhs: "a*(b*(v - vr) - u)"</span></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a><span class="st">      initial_value: 0.0</span></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a><span class="st">  events:</span></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a><span class="st">    spike:</span></span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a><span class="st">      condition: { rhs: "v &gt; vpeak" }</span></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a><span class="st">      affect:    { rhs: "v = c; u = u + d" }</span></span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a><span class="st">network:</span></span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a><span class="st">  number_of_nodes: 1</span></span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a><span class="st">integration:</span></span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a><span class="st">  method: euler</span></span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a><span class="st">  step_size: 0.001</span></span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a><span class="st">  duration: 300.0</span></span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a><span class="st">  time_scale: ms</span></span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span>)</span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Model: </span><span class="sc">{</span>exp<span class="sc">.</span>dynamics<span class="sc">.</span>name<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Model: IntegrateAndFire</code></pre>
+<pre><code>Model: Izhikevich2007Cell</code></pre>
 </div>
 </div>
 </section>
 <section id="render-lems-xml" class="level2">
 <h2 class="anchored" data-anchor-id="render-lems-xml">2. Render LEMS XML</h2>
-<div id="c86f284b" class="cell" data-execution_count="3">
+<div id="242780c2" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>xml <span class="op">=</span> exp.render(<span class="st">"lems"</span>)</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(xml[:<span class="dv">1200</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
@@ -4971,7 +5022,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 &lt;Lems&gt;
 
   &lt;!-- Tell jLEMS/jNeuroML which component is the simulation entry point. --&gt;
-  &lt;Target component="sim_NeuroML_Ex16__IaF_with_Inputs"/&gt;
+  &lt;Target component="sim_NeuroML_Ex16__Izhikevich_2007_RS_with_Pulse_Input"/&gt;
 
   &lt;!-- ════════════════════════════════════════════════════════════════
        Dimensions &amp; Units (inline — no external includes needed)
@@ -4996,14 +5047,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   &lt;Unit symbol="ms" dimension="time" power="-3"/&gt;
   &lt;Unit symbol="us" dimension="time" power="-6"/&gt;
   &lt;Unit symbol="V" dimension="voltage" power="0"/&gt;
-  &lt;Unit symbol="mV" dimension="voltage" power="-3"/&gt;
-  &lt;Unit sym</code></pre>
+  &lt;Unit symbol="mV" dimension="voltage" powe</code></pre>
 </div>
 </div>
 </section>
 <section id="run-reference" class="level2">
 <h2 class="anchored" data-anchor-id="run-reference">3. Run Reference</h2>
-<div id="1d61707c" class="cell" data-execution_count="4">
+<div id="e6dd2f63" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys, os</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>sys.path.insert(<span class="dv">0</span>, os.path.dirname(os.path.abspath(<span class="st">"."</span>)))</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> _nml_helpers <span class="im">import</span> run_lems_example</span>
@@ -5018,21 +5068,21 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="run-tvbo" class="level2">
 <h2 class="anchored" data-anchor-id="run-tvbo">4. Run TVBO</h2>
-<div id="a466fc4b" class="cell" data-execution_count="5">
+<div id="786b03c7" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> exp.run(<span class="st">"neuroml"</span>)</span>
 <span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>da <span class="op">=</span> result.integration.data</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>tvbo_arr <span class="op">=</span> np.column_stack([da.coords[<span class="st">'time'</span>].values, da.sel(node<span class="op">=</span><span class="st">'0'</span>).values])</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>tvbo_arr <span class="op">=</span> np.column_stack([da.coords[<span class="st">'time'</span>].values, da.values])</span>
 <span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"TVBO: shape=</span><span class="sc">{</span>tvbo_arr<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>TVBO: shape=(60001, 2)</code></pre>
+<pre><code>TVBO: shape=(300001, 3)</code></pre>
 </div>
 </div>
 </section>
 <section id="plot-reference-all-input-types" class="level2">
 <h2 class="anchored" data-anchor-id="plot-reference-all-input-types">5. Plot Reference (All Input Types)</h2>
-<div id="6d37e24f" class="cell" data-execution_count="6">
+<div id="69867258" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -5147,7 +5197,7 @@ Input Types in TVBO
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

@@ -110,35 +110,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="//unpkg.com/3d-force-graph"></script>
 <script src="../../../_static/tvbo-icons.js"></script>
 
-  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
-
-<script type="text/javascript">
-const typesetMath = (el) => {
-  if (window.MathJax) {
-    // MathJax Typeset
-    window.MathJax.typeset([el]);
-  } else if (window.katex) {
-    // KaTeX Render
-    var mathElements = el.getElementsByClassName("math");
-    var macros = [];
-    for (var i = 0; i < mathElements.length; i++) {
-      var texText = mathElements[i].firstChild;
-      if (mathElements[i].tagName == "SPAN") {
-        window.katex.render(texText.data, mathElements[i], {
-          displayMode: mathElements[i].classList.contains('display'),
-          throwOnError: false,
-          macros: macros,
-          fleqn: false
-        });
-      }
-    }
-  }
-}
-window.Quarto = {
-  typesetMath
-};
-</script>
 
 <link rel="stylesheet" href="../../../styles.css">
 </head>
@@ -2933,6 +2904,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/slots/model_type.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">model_type</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../../datamodel/slots/modes.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">modes</span></a>
   </div>
@@ -4192,6 +4169,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/enums/ModelType.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Type</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../../datamodel/enums/NoiseType.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Noise Type</span></a>
   </div>
@@ -4906,9 +4889,12 @@ window.Quarto = {
    
   <ul>
   <li><a href="#model-singlecomphhcell" id="toc-model-singlecomphhcell" class="nav-link active" data-scroll-target="#model-singlecomphhcell">Model: SingleCompHHCell</a></li>
-  <li><a href="#run-reference" id="toc-run-reference" class="nav-link" data-scroll-target="#run-reference">1. Run Reference</a></li>
-  <li><a href="#run-tvbo-same-hh-model-as-ex1" id="toc-run-tvbo-same-hh-model-as-ex1" class="nav-link" data-scroll-target="#run-tvbo-same-hh-model-as-ex1">2. Run TVBO (same HH model as Ex1)</a></li>
-  <li><a href="#comparison" id="toc-comparison" class="nav-link" data-scroll-target="#comparison">3. Comparison</a></li>
+  <li><a href="#define-in-tvbo" id="toc-define-in-tvbo" class="nav-link" data-scroll-target="#define-in-tvbo">1. Define in TVBO</a></li>
+  <li><a href="#render-lems-xml" id="toc-render-lems-xml" class="nav-link" data-scroll-target="#render-lems-xml">2. Render LEMS XML</a></li>
+  <li><a href="#run-reference" id="toc-run-reference" class="nav-link" data-scroll-target="#run-reference">3. Run Reference</a></li>
+  <li><a href="#run-tvbo-version" id="toc-run-tvbo-version" class="nav-link" data-scroll-target="#run-tvbo-version">4. Run TVBO Version</a></li>
+  <li><a href="#numerical-comparison" id="toc-numerical-comparison" class="nav-link" data-scroll-target="#numerical-comparison">5. Numerical Comparison</a></li>
+  <li><a href="#plot" id="toc-plot" class="nav-link" data-scroll-target="#plot">6. Plot</a></li>
   </ul>
 <div class="toc-actions"><ul><li><a href="https://github.com/TVB-Ontology/tvbo-python/edit/main/Interoperability/NeuroML/examples/Ex5_DetCell.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/TVB-Ontology/tvbo-python/new/choose" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
     </div>
@@ -4941,122 +4927,277 @@ window.Quarto = {
 
 <section id="model-singlecomphhcell" class="level2">
 <h2 class="anchored" data-anchor-id="model-singlecomphhcell">Model: SingleCompHHCell</h2>
-<p>Same HH dynamics as Ex1, but using the full <code>&lt;cell&gt;</code> element with a segment (soma), morphology, and biophysical properties — the recommended NeuroML format for maximum simulator compatibility.</p>
-<p>The dynamics are identical to Ex1: <span class="math inline">\(C\frac{dv}{dt} = -g_{Na}m^3h(v-E_{Na}) - g_Kn^4(v-E_K) - g_L(v-E_L) + I\)</span>.</p>
+<p>Same HH dynamics as Ex1, but the reference uses the full <code>&lt;cell&gt;</code> element with a single-compartment morphology (soma, area ≈ 1000 μm²), biophysical properties, and <code>channelDensity</code> — the recommended NeuroML format for maximum simulator compatibility.</p>
+<p>For a single compartment, <code>channelDensity × area</code> gives the same total conductance as <code>channelPopulation × singleChannelConductance</code> in <code>pointCellCondBased</code>:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Property</th>
+<th>Ex5 (<code>&lt;cell&gt;</code>)</th>
+<th>Equivalent <code>pointCellCondBased</code></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Capacitance</td>
+<td>1.0 uF/cm² × 10⁻⁵ cm²</td>
+<td>C = 10 pF</td>
+</tr>
+<tr class="even">
+<td>Na</td>
+<td>120 mS/cm² × 10⁻⁵ cm² = 1.2 μS</td>
+<td>120000 × 10 pS</td>
+</tr>
+<tr class="odd">
+<td>K</td>
+<td>36 mS/cm² × 10⁻⁵ cm² = 360 nS</td>
+<td>36000 × 10 pS</td>
+</tr>
+<tr class="even">
+<td>Leak</td>
+<td>0.3 mS/cm² × 10⁻⁵ cm² = 3 nS</td>
+<td>300 × 10 pS</td>
+</tr>
+</tbody>
+</table>
+<p>TVBO uses <code>pointCellCondBased</code> with standard NeuroML ion channels, giving numerical identity with the reference to within floating-point precision (max diff &lt; 1 μV).</p>
+<hr>
+</section>
+<section id="define-in-tvbo" class="level2">
+<h2 class="anchored" data-anchor-id="define-in-tvbo">1. Define in TVBO</h2>
+<div id="d3ddcd5e" class="cell" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> SimulationExperiment</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Same channels as Ex1, but pulse_delay=100ms, pulse_duration=100ms, duration=300ms</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>exp <span class="op">=</span> SimulationExperiment.from_string(<span class="st">"""</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="st">label: "NeuroML Ex5: Detailed HH Cell"</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="st">dynamics:</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="st">  name: HodgkinHuxley</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="st">  iri: neuroml:pointCellCondBased</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="st">  description: &gt;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="st">    Single-compartment HH cell matching NeuroML2 Ex5.</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="st">    Uses pointCellCondBased with equivalent channel populations.</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="st">  parameters:</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="st">    C:              { value: 10,   description: "nml:10pF" }</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="st">    v0:             { value: -65,  description: "nml:-65mV" }</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="st">    thresh:         { value: -20,  description: "nml:-20mV" }</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="st">    pulse_delay:    { value: 100,  description: "nml:100ms" }</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="st">    pulse_duration: { value: 100,  description: "nml:100ms" }</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="st">    I_amp:          { value: 0.08, description: "nml:0.08nA" }</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="st">  components:</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="st">    passive:</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="st">      name: passive</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="st">      iri: neuroml:ionChannelPassive</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="st">      parameters:</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="st">        conductance: { value: 10,     description: "nml:10pS" }</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="st">        number:      { value: 300 }</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="st">        erev:        { value: -54.3,  description: "nml:-54.3mV" }</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="st">    na:</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a><span class="st">      name: na</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="st">      iri: neuroml:ionChannelHH</span></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a><span class="st">      parameters:</span></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a><span class="st">        conductance: { value: 10,     description: "nml:10pS" }</span></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a><span class="st">        number:      { value: 120000 }</span></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a><span class="st">        erev:        { value: 50,     description: "nml:50mV" }</span></span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a><span class="st">      components:</span></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a><span class="st">        m:</span></span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a><span class="st">          name: m</span></span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a><span class="st">          iri: neuroml:gateHHrates</span></span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a><span class="st">          parameters:</span></span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a><span class="st">            instances: { value: 3 }</span></span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a><span class="st">          components:</span></span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a><span class="st">            forwardRate:</span></span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a><span class="st">              name: forwardRate</span></span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a><span class="st">              iri: neuroml:HHExpLinearRate</span></span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a><span class="st">              parameters:</span></span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a><span class="st">                rate:     { value: 1,   description: "nml:1per_ms" }</span></span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a><span class="st">                midpoint: { value: -40, description: "nml:-40mV" }</span></span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a><span class="st">                scale:    { value: 10,  description: "nml:10mV" }</span></span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a><span class="st">            reverseRate:</span></span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a><span class="st">              name: reverseRate</span></span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a><span class="st">              iri: neuroml:HHExpRate</span></span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a><span class="st">              parameters:</span></span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a><span class="st">                rate:     { value: 4,   description: "nml:4per_ms" }</span></span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a><span class="st">                midpoint: { value: -65, description: "nml:-65mV" }</span></span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a><span class="st">                scale:    { value: -18, description: "nml:-18mV" }</span></span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a><span class="st">        h:</span></span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a><span class="st">          name: h</span></span>
+<span id="cb1-57"><a href="#cb1-57" aria-hidden="true" tabindex="-1"></a><span class="st">          iri: neuroml:gateHHrates</span></span>
+<span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a><span class="st">          parameters:</span></span>
+<span id="cb1-59"><a href="#cb1-59" aria-hidden="true" tabindex="-1"></a><span class="st">            instances: { value: 1 }</span></span>
+<span id="cb1-60"><a href="#cb1-60" aria-hidden="true" tabindex="-1"></a><span class="st">          components:</span></span>
+<span id="cb1-61"><a href="#cb1-61" aria-hidden="true" tabindex="-1"></a><span class="st">            forwardRate:</span></span>
+<span id="cb1-62"><a href="#cb1-62" aria-hidden="true" tabindex="-1"></a><span class="st">              name: forwardRate</span></span>
+<span id="cb1-63"><a href="#cb1-63" aria-hidden="true" tabindex="-1"></a><span class="st">              iri: neuroml:HHExpRate</span></span>
+<span id="cb1-64"><a href="#cb1-64" aria-hidden="true" tabindex="-1"></a><span class="st">              parameters:</span></span>
+<span id="cb1-65"><a href="#cb1-65" aria-hidden="true" tabindex="-1"></a><span class="st">                rate:     { value: 0.07, description: "nml:0.07per_ms" }</span></span>
+<span id="cb1-66"><a href="#cb1-66" aria-hidden="true" tabindex="-1"></a><span class="st">                midpoint: { value: -65,  description: "nml:-65mV" }</span></span>
+<span id="cb1-67"><a href="#cb1-67" aria-hidden="true" tabindex="-1"></a><span class="st">                scale:    { value: -20,  description: "nml:-20mV" }</span></span>
+<span id="cb1-68"><a href="#cb1-68" aria-hidden="true" tabindex="-1"></a><span class="st">            reverseRate:</span></span>
+<span id="cb1-69"><a href="#cb1-69" aria-hidden="true" tabindex="-1"></a><span class="st">              name: reverseRate</span></span>
+<span id="cb1-70"><a href="#cb1-70" aria-hidden="true" tabindex="-1"></a><span class="st">              iri: neuroml:HHSigmoidRate</span></span>
+<span id="cb1-71"><a href="#cb1-71" aria-hidden="true" tabindex="-1"></a><span class="st">              parameters:</span></span>
+<span id="cb1-72"><a href="#cb1-72" aria-hidden="true" tabindex="-1"></a><span class="st">                rate:     { value: 1,   description: "nml:1per_ms" }</span></span>
+<span id="cb1-73"><a href="#cb1-73" aria-hidden="true" tabindex="-1"></a><span class="st">                midpoint: { value: -35, description: "nml:-35mV" }</span></span>
+<span id="cb1-74"><a href="#cb1-74" aria-hidden="true" tabindex="-1"></a><span class="st">                scale:    { value: 10,  description: "nml:10mV" }</span></span>
+<span id="cb1-75"><a href="#cb1-75" aria-hidden="true" tabindex="-1"></a><span class="st">    k:</span></span>
+<span id="cb1-76"><a href="#cb1-76" aria-hidden="true" tabindex="-1"></a><span class="st">      name: k</span></span>
+<span id="cb1-77"><a href="#cb1-77" aria-hidden="true" tabindex="-1"></a><span class="st">      iri: neuroml:ionChannelHH</span></span>
+<span id="cb1-78"><a href="#cb1-78" aria-hidden="true" tabindex="-1"></a><span class="st">      parameters:</span></span>
+<span id="cb1-79"><a href="#cb1-79" aria-hidden="true" tabindex="-1"></a><span class="st">        conductance: { value: 10,  description: "nml:10pS" }</span></span>
+<span id="cb1-80"><a href="#cb1-80" aria-hidden="true" tabindex="-1"></a><span class="st">        number:      { value: 36000 }</span></span>
+<span id="cb1-81"><a href="#cb1-81" aria-hidden="true" tabindex="-1"></a><span class="st">        erev:        { value: -77, description: "nml:-77mV" }</span></span>
+<span id="cb1-82"><a href="#cb1-82" aria-hidden="true" tabindex="-1"></a><span class="st">      components:</span></span>
+<span id="cb1-83"><a href="#cb1-83" aria-hidden="true" tabindex="-1"></a><span class="st">        n:</span></span>
+<span id="cb1-84"><a href="#cb1-84" aria-hidden="true" tabindex="-1"></a><span class="st">          name: n</span></span>
+<span id="cb1-85"><a href="#cb1-85" aria-hidden="true" tabindex="-1"></a><span class="st">          iri: neuroml:gateHHrates</span></span>
+<span id="cb1-86"><a href="#cb1-86" aria-hidden="true" tabindex="-1"></a><span class="st">          parameters:</span></span>
+<span id="cb1-87"><a href="#cb1-87" aria-hidden="true" tabindex="-1"></a><span class="st">            instances: { value: 4 }</span></span>
+<span id="cb1-88"><a href="#cb1-88" aria-hidden="true" tabindex="-1"></a><span class="st">          components:</span></span>
+<span id="cb1-89"><a href="#cb1-89" aria-hidden="true" tabindex="-1"></a><span class="st">            forwardRate:</span></span>
+<span id="cb1-90"><a href="#cb1-90" aria-hidden="true" tabindex="-1"></a><span class="st">              name: forwardRate</span></span>
+<span id="cb1-91"><a href="#cb1-91" aria-hidden="true" tabindex="-1"></a><span class="st">              iri: neuroml:HHExpLinearRate</span></span>
+<span id="cb1-92"><a href="#cb1-92" aria-hidden="true" tabindex="-1"></a><span class="st">              parameters:</span></span>
+<span id="cb1-93"><a href="#cb1-93" aria-hidden="true" tabindex="-1"></a><span class="st">                rate:     { value: 0.1,   description: "nml:0.1per_ms" }</span></span>
+<span id="cb1-94"><a href="#cb1-94" aria-hidden="true" tabindex="-1"></a><span class="st">                midpoint: { value: -55,   description: "nml:-55mV" }</span></span>
+<span id="cb1-95"><a href="#cb1-95" aria-hidden="true" tabindex="-1"></a><span class="st">                scale:    { value: 10,    description: "nml:10mV" }</span></span>
+<span id="cb1-96"><a href="#cb1-96" aria-hidden="true" tabindex="-1"></a><span class="st">            reverseRate:</span></span>
+<span id="cb1-97"><a href="#cb1-97" aria-hidden="true" tabindex="-1"></a><span class="st">              name: reverseRate</span></span>
+<span id="cb1-98"><a href="#cb1-98" aria-hidden="true" tabindex="-1"></a><span class="st">              iri: neuroml:HHExpRate</span></span>
+<span id="cb1-99"><a href="#cb1-99" aria-hidden="true" tabindex="-1"></a><span class="st">              parameters:</span></span>
+<span id="cb1-100"><a href="#cb1-100" aria-hidden="true" tabindex="-1"></a><span class="st">                rate:     { value: 0.125, description: "nml:0.125per_ms" }</span></span>
+<span id="cb1-101"><a href="#cb1-101" aria-hidden="true" tabindex="-1"></a><span class="st">                midpoint: { value: -65,   description: "nml:-65mV" }</span></span>
+<span id="cb1-102"><a href="#cb1-102" aria-hidden="true" tabindex="-1"></a><span class="st">                scale:    { value: -80,   description: "nml:-80mV" }</span></span>
+<span id="cb1-103"><a href="#cb1-103" aria-hidden="true" tabindex="-1"></a><span class="st">integration:</span></span>
+<span id="cb1-104"><a href="#cb1-104" aria-hidden="true" tabindex="-1"></a><span class="st">  step_size: 0.01</span></span>
+<span id="cb1-105"><a href="#cb1-105" aria-hidden="true" tabindex="-1"></a><span class="st">  duration: 300.0</span></span>
+<span id="cb1-106"><a href="#cb1-106" aria-hidden="true" tabindex="-1"></a><span class="st">  time_scale: ms</span></span>
+<span id="cb1-107"><a href="#cb1-107" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span>)</span>
+<span id="cb1-108"><a href="#cb1-108" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Model: </span><span class="sc">{</span>exp<span class="sc">.</span>dynamics<span class="sc">.</span>name<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb1-109"><a href="#cb1-109" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"IRI: </span><span class="sc">{</span>exp<span class="sc">.</span>dynamics<span class="sc">.</span>iri<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb1-110"><a href="#cb1-110" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Components: </span><span class="sc">{</span><span class="bu">list</span>(exp.dynamics.components.keys())<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Model: HodgkinHuxley
+IRI: neuroml:pointCellCondBased
+Components: ['k', 'na', 'passive']</code></pre>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Point Cell vs Full Cell
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The reference uses a <code>&lt;cell&gt;</code> element with morphology and <code>channelDensity</code>, while TVBO uses <code>pointCellCondBased</code> with <code>channelPopulation</code>. For single-compartment cells, these are mathematically equivalent — the total conductance is the same. TVBO achieves numerical identity with the reference to within floating-point precision (max diff &lt; 1 μV).</p>
+</div>
+</div>
+</section>
+<section id="render-lems-xml" class="level2">
+<h2 class="anchored" data-anchor-id="render-lems-xml">2. Render LEMS XML</h2>
+<div id="71c6c237" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>xml <span class="op">=</span> exp.render(<span class="st">"lems"</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> line <span class="kw">in</span> xml.split(<span class="st">'</span><span class="ch">\n</span><span class="st">'</span>):</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    line_stripped <span class="op">=</span> line.strip()</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">any</span>(tag <span class="kw">in</span> line_stripped <span class="cf">for</span> tag <span class="kw">in</span> [<span class="st">'&lt;ionChannel'</span>, <span class="st">'&lt;gateHH'</span>, <span class="st">'&lt;pointCell'</span>,</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>            <span class="st">'&lt;channelPopulation'</span>, <span class="st">'&lt;pulseGenerator'</span>, <span class="st">'Rate type='</span>, <span class="st">'&lt;Include'</span>]):</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(line_stripped)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>&lt;Include file="Cells.xml"/&gt;
+&lt;Include file="Networks.xml"/&gt;
+&lt;Include file="Simulation.xml"/&gt;
+&lt;ionChannelHH id="k" conductance="10pS"&gt;
+&lt;gateHHrates id="n" instances="4"&gt;
+&lt;forwardRate type="HHExpLinearRate" rate="0.1per_ms" midpoint="-55mV" scale="10mV"/&gt;
+&lt;reverseRate type="HHExpRate" rate="0.125per_ms" midpoint="-65mV" scale="-80mV"/&gt;
+&lt;ionChannelHH id="na" conductance="10pS"&gt;
+&lt;gateHHrates id="h" instances="1"&gt;
+&lt;forwardRate type="HHExpRate" rate="0.07per_ms" midpoint="-65mV" scale="-20mV"/&gt;
+&lt;reverseRate type="HHSigmoidRate" rate="1per_ms" midpoint="-35mV" scale="10mV"/&gt;
+&lt;gateHHrates id="m" instances="3"&gt;
+&lt;forwardRate type="HHExpLinearRate" rate="1per_ms" midpoint="-40mV" scale="10mV"/&gt;
+&lt;reverseRate type="HHExpRate" rate="4per_ms" midpoint="-65mV" scale="-18mV"/&gt;
+&lt;ionChannelPassive id="passive" conductance="10pS"/&gt;
+&lt;pointCellCondBased id="HodgkinHuxley" C="10pF" v0="-65mV" thresh="-20mV"&gt;
+&lt;channelPopulation id="k_pop" ionChannel="k" number="36000" erev="-77mV"/&gt;
+&lt;channelPopulation id="na_pop" ionChannel="na" number="120000" erev="50mV"/&gt;
+&lt;channelPopulation id="passive_pop" ionChannel="passive" number="300" erev="-54.3mV"/&gt;
+&lt;pulseGenerator id="pulseGen1" delay="100ms" duration="100ms" amplitude="0.08nA"/&gt;</code></pre>
+</div>
+</div>
 </section>
 <section id="run-reference" class="level2">
-<h2 class="anchored" data-anchor-id="run-reference">1. Run Reference</h2>
-<div id="84c63824" class="cell" data-execution_count="1">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys, os</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>sys.path.insert(<span class="dv">0</span>, os.path.dirname(os.path.abspath(<span class="st">"."</span>)))</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> _nml_helpers <span class="im">import</span> run_lems_example</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>ref_outputs <span class="op">=</span> run_lems_example(<span class="st">"LEMS_NML2_Ex5_DetCell.xml"</span>)</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> name, arr <span class="kw">in</span> ref_outputs.items():</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  </span><span class="sc">{</span>name<span class="sc">}</span><span class="ss">: shape=</span><span class="sc">{</span>arr<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<h2 class="anchored" data-anchor-id="run-reference">3. Run Reference</h2>
+<div id="df8c897a" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys, os</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>sys.path.insert(<span class="dv">0</span>, os.path.dirname(os.path.abspath(<span class="st">"."</span>)))</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> _nml_helpers <span class="im">import</span> run_lems_example</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>ref_outputs <span class="op">=</span> run_lems_example(<span class="st">"LEMS_NML2_Ex5_DetCell.xml"</span>)</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> name, arr <span class="kw">in</span> ref_outputs.items():</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  </span><span class="sc">{</span>name<span class="sc">}</span><span class="ss">: shape=</span><span class="sc">{</span>arr<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>  ex5_v.dat: shape=(30001, 2)
   ex5_vars.dat: shape=(30001, 4)</code></pre>
 </div>
 </div>
 </section>
-<section id="run-tvbo-same-hh-model-as-ex1" class="level2">
-<h2 class="anchored" data-anchor-id="run-tvbo-same-hh-model-as-ex1">2. Run TVBO (same HH model as Ex1)</h2>
-<div id="b4c77c87" class="cell" data-execution_count="2">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> SimulationExperiment</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>exp <span class="op">=</span> SimulationExperiment.from_string(<span class="st">"""</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="st">label: "NeuroML Ex5: Detailed HH Cell"</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="st">dynamics:</span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="st">  name: HodgkinHuxley</span></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="st">  parameters:</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="st">    C:     { value: 10.0 }</span></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="st">    g_Na:  { value: 1200.0 }</span></span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="st">    g_K:   { value: 360.0 }</span></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="st">    g_L:   { value: 3.0 }</span></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="st">    E_Na:  { value: 50.0 }</span></span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="st">    E_K:   { value: -77.0 }</span></span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="st">    E_L:   { value: -54.3 }</span></span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="st">    gate_rate_scale: { value: 0.988 }</span></span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="st">    I_amp: { value: 0.08 }</span></span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="st">    pulse_delay:    { value: 100.0, unit: ms }</span></span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="st">    pulse_duration: { value: 100.0, unit: ms }</span></span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="st">  derived_variables:</span></span>
-<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="st">    I_ext:</span></span>
-<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a><span class="st">      equation:</span></span>
-<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a><span class="st">        rhs: "Piecewise((I_amp, (t &gt;= pulse_delay) &amp; (t &lt; pulse_delay + pulse_duration)), (0.0, True))"</span></span>
-<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a><span class="st">    alpha_m:</span></span>
-<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a><span class="st">      equation:</span></span>
-<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a><span class="st">        rhs: "Piecewise((1.0, Eq(v, -40.0)), (0.1*(v + 40.0)/(1.0 - exp(-(v + 40.0)/10.0)), True))"</span></span>
-<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a><span class="st">    beta_m:</span></span>
-<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a><span class="st">      equation:</span></span>
-<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a><span class="st">        rhs: "4.0*exp(-(v + 65.0)/18.0)"</span></span>
-<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a><span class="st">    alpha_h:</span></span>
-<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a><span class="st">      equation:</span></span>
-<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a><span class="st">        rhs: "0.07*exp(-(v + 65.0)/20.0)"</span></span>
-<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a><span class="st">    beta_h:</span></span>
-<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a><span class="st">      equation:</span></span>
-<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a><span class="st">        rhs: "1.0/(1.0 + exp(-(v + 35.0)/10.0))"</span></span>
-<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a><span class="st">    alpha_n:</span></span>
-<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a><span class="st">      equation:</span></span>
-<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a><span class="st">        rhs: "Piecewise((0.1, Eq(v, -55.0)), (0.01*(v + 55.0)/(1.0 - exp(-(v + 55.0)/10.0)), True))"</span></span>
-<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a><span class="st">    beta_n:</span></span>
-<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a><span class="st">      equation:</span></span>
-<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a><span class="st">        rhs: "0.125*exp(-(v + 65.0)/80.0)"</span></span>
-<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a><span class="st">  state_variables:</span></span>
-<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a><span class="st">    v:</span></span>
-<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a><span class="st">      equation:</span></span>
-<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a><span class="st">        rhs: "(-g_Na*m**3*h*(v - E_Na) - g_K*n**4*(v - E_K) - g_L*(v - E_L) + I_ext*1000) / C"</span></span>
-<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a><span class="st">      initial_value: -65.0</span></span>
-<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a><span class="st">      variable_of_interest: true</span></span>
-<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a><span class="st">    m:</span></span>
-<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a><span class="st">      equation: { rhs: "gate_rate_scale*(alpha_m*(1 - m) - beta_m*m)" }</span></span>
-<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a><span class="st">      initial_value: 0.05</span></span>
-<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a><span class="st">    h:</span></span>
-<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a><span class="st">      equation: { rhs: "gate_rate_scale*(alpha_h*(1 - h) - beta_h*h)" }</span></span>
-<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a><span class="st">      initial_value: 0.6</span></span>
-<span id="cb3-53"><a href="#cb3-53" aria-hidden="true" tabindex="-1"></a><span class="st">    n:</span></span>
-<span id="cb3-54"><a href="#cb3-54" aria-hidden="true" tabindex="-1"></a><span class="st">      equation: { rhs: "gate_rate_scale*(alpha_n*(1 - n) - beta_n*n)" }</span></span>
-<span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a><span class="st">      initial_value: 0.32</span></span>
-<span id="cb3-56"><a href="#cb3-56" aria-hidden="true" tabindex="-1"></a><span class="st">network:</span></span>
-<span id="cb3-57"><a href="#cb3-57" aria-hidden="true" tabindex="-1"></a><span class="st">  number_of_nodes: 1</span></span>
-<span id="cb3-58"><a href="#cb3-58" aria-hidden="true" tabindex="-1"></a><span class="st">integration:</span></span>
-<span id="cb3-59"><a href="#cb3-59" aria-hidden="true" tabindex="-1"></a><span class="st">  method: euler</span></span>
-<span id="cb3-60"><a href="#cb3-60" aria-hidden="true" tabindex="-1"></a><span class="st">  step_size: 0.01</span></span>
-<span id="cb3-61"><a href="#cb3-61" aria-hidden="true" tabindex="-1"></a><span class="st">  duration: 300.0</span></span>
-<span id="cb3-62"><a href="#cb3-62" aria-hidden="true" tabindex="-1"></a><span class="st">  time_scale: ms</span></span>
-<span id="cb3-63"><a href="#cb3-63" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span>)</span>
-<span id="cb3-64"><a href="#cb3-64" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-65"><a href="#cb3-65" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
-<span id="cb3-66"><a href="#cb3-66" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> exp.run(<span class="st">"neuroml"</span>)</span>
-<span id="cb3-67"><a href="#cb3-67" aria-hidden="true" tabindex="-1"></a>da <span class="op">=</span> result.integration.data</span>
-<span id="cb3-68"><a href="#cb3-68" aria-hidden="true" tabindex="-1"></a>tvbo_arr <span class="op">=</span> np.column_stack([da.coords[<span class="st">'time'</span>].values, da.sel(node<span class="op">=</span><span class="st">'0'</span>).values])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<section id="run-tvbo-version" class="level2">
+<h2 class="anchored" data-anchor-id="run-tvbo-version">4. Run TVBO Version</h2>
+<div id="7980cb82" class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> exp.run(<span class="st">"neuroml"</span>)</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>da <span class="op">=</span> result.integration.data</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>time <span class="op">=</span> da.coords[<span class="st">'time'</span>].values</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>v_data <span class="op">=</span> da.sel(variable<span class="op">=</span><span class="st">'v'</span>).values</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>tvbo_arr <span class="op">=</span> np.column_stack([time, v_data])</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"TVBO: shape=</span><span class="sc">{</span>tvbo_arr<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">, t=[</span><span class="sc">{</span>tvbo_arr[<span class="dv">0</span>,<span class="dv">0</span>]<span class="sc">:.4f}</span><span class="ss">, </span><span class="sc">{</span>tvbo_arr[<span class="op">-</span><span class="dv">1</span>,<span class="dv">0</span>]<span class="sc">:.4f}</span><span class="ss">]"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>TVBO: shape=(30001, 2), t=[0.0000, 0.3000]</code></pre>
+</div>
 </div>
 </section>
-<section id="comparison" class="level2">
-<h2 class="anchored" data-anchor-id="comparison">3. Comparison</h2>
-<div id="39dd7cc6" class="cell" data-execution_count="3">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> _nml_helpers <span class="im">import</span> compare_traces, plot_comparison</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>ref_arr <span class="op">=</span> <span class="bu">list</span>(ref_outputs.values())[<span class="dv">0</span>]</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>ref_v <span class="op">=</span> ref_arr[:, [<span class="dv">0</span>, <span class="dv">1</span>]]</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>tvbo_v <span class="op">=</span> tvbo_arr[:, [<span class="dv">0</span>, <span class="dv">1</span>]]</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>compare_traces(ref_v, tvbo_v, ref_cols<span class="op">=</span>[<span class="st">'time'</span>, <span class="st">'v'</span>], tvbo_cols<span class="op">=</span>[<span class="st">'time'</span>, <span class="st">'v'</span>])</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>plot_comparison(</span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    ref_v, tvbo_v,</span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    ref_cols<span class="op">=</span>[<span class="st">'time'</span>, <span class="st">'v'</span>], tvbo_cols<span class="op">=</span>[<span class="st">'time'</span>, <span class="st">'v'</span>],</span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    title<span class="op">=</span><span class="st">"Ex5: Detailed HH Cell — NeuroML vs TVBO"</span>,</span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<section id="numerical-comparison" class="level2">
+<h2 class="anchored" data-anchor-id="numerical-comparison">5. Numerical Comparison</h2>
+<div id="f825dc67" class="cell" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> _nml_helpers <span class="im">import</span> compare_traces</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>ref_arr <span class="op">=</span> <span class="bu">list</span>(ref_outputs.values())[<span class="dv">0</span>]</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>ref_v <span class="op">=</span> ref_arr[:, [<span class="dv">0</span>, <span class="dv">1</span>]]</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>tvbo_v <span class="op">=</span> tvbo_arr[:, [<span class="dv">0</span>, <span class="dv">1</span>]]</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>compare_traces(ref_v, tvbo_v, ref_cols<span class="op">=</span>[<span class="st">'time'</span>, <span class="st">'v'</span>], tvbo_cols<span class="op">=</span>[<span class="st">'time'</span>, <span class="st">'v'</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>  v: RMSE=0.589031  max_err=0.667524  corr=-0.399582  ⚠️</code></pre>
+<pre><code>  v: RMSE=0.000000  max_err=0.000001  corr=1.000000  ✅</code></pre>
 </div>
+<div class="cell-output cell-output-display" data-execution_count="5">
+<pre><code>{'v': {'rmse': np.float64(4.725915035351011e-08),
+  'max_err': np.float64(8.239999999999637e-07),
+  'corr': np.float64(0.9999999999951035),
+  'close': True}}</code></pre>
+</div>
+</div>
+</section>
+<section id="plot" class="level2">
+<h2 class="anchored" data-anchor-id="plot">6. Plot</h2>
+<div id="e9ce9706" class="cell" data-execution_count="6">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> _nml_helpers <span class="im">import</span> plot_comparison</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>plot_comparison(</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    ref_v, tvbo_v,</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    ref_cols<span class="op">=</span>[<span class="st">'time'</span>, <span class="st">'v'</span>], tvbo_cols<span class="op">=</span>[<span class="st">'time'</span>, <span class="st">'v'</span>],</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    title<span class="op">=</span><span class="st">"Ex5: Detailed HH Cell — NeuroML vs TVBO"</span>,</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    time_scale<span class="op">=</span><span class="fl">1.0</span>, time_unit<span class="op">=</span><span class="st">"s"</span>,</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Ex5_DetCell_files/figure-html/cell-4-output-2.png" class="img-fluid figure-img"></p>
+<p><img src="Ex5_DetCell_files/figure-html/cell-7-output-1.png" class="img-fluid figure-img"></p>
 </figure>
 </div>
 </div>
@@ -5138,7 +5279,7 @@ window.Quarto = {
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

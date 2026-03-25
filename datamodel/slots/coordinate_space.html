@@ -2903,6 +2903,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/model_type.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">model_type</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/modes.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">modes</span></a>
   </div>
@@ -4162,6 +4168,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/ModelType.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Type</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/NoiseType.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Noise Type</span></a>
   </div>
@@ -4912,33 +4924,38 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
+<td><a href="../../datamodel/classes/EField.html">EField</a></td>
+<td>Simulated electric field from DBS modeling</td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/Subject.html">Subject</a></td>
+<td>Human or animal subject receiving DBS</td>
+<td>no</td>
+</tr>
+<tr class="odd">
 <td><a href="../../datamodel/classes/SpatialDomain.html">SpatialDomain</a></td>
 <td></td>
 <td>no</td>
 </tr>
 <tr class="even">
+<td><a href="../../datamodel/classes/Network.html">Network</a></td>
+<td>Network specification with nodes, edges, and reusable coupling configurations</td>
+<td>no</td>
+</tr>
+<tr class="odd">
 <td><a href="../../datamodel/classes/Mesh.html">Mesh</a></td>
 <td></td>
 <td>no</td>
 </tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/Subject.html">Subject</a></td>
-<td>Human or animal subject receiving DBS</td>
-<td>no</td>
-</tr>
 <tr class="even">
-<td><a href="../../datamodel/classes/Electrode.html">Electrode</a></td>
-<td>Implanted DBS electrode and contact geometry</td>
-<td>no</td>
-</tr>
-<tr class="odd">
 <td><a href="../../datamodel/classes/Dataset.html">Dataset</a></td>
 <td>Collection of data related to a specific DBS study</td>
 <td>no</td>
 </tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/EField.html">EField</a></td>
-<td>Simulated electric field from DBS modeling</td>
+<tr class="odd">
+<td><a href="../../datamodel/classes/Electrode.html">Electrode</a></td>
+<td>Implanted DBS electrode and contact geometry</td>
 <td>no</td>
 </tr>
 </tbody>
@@ -4962,7 +4979,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td>Domain Of</td>
-<td><a href="../../datamodel/classes/Dataset.html">Dataset</a>, <a href="../../datamodel/classes/Subject.html">Subject</a>, <a href="../../datamodel/classes/Electrode.html">Electrode</a>, <a href="../../datamodel/classes/EField.html">EField</a>, <a href="../../datamodel/classes/SpatialDomain.html">SpatialDomain</a>, <a href="../../datamodel/classes/Mesh.html">Mesh</a></td>
+<td><a href="../../datamodel/classes/Dataset.html">Dataset</a>, <a href="../../datamodel/classes/Subject.html">Subject</a>, <a href="../../datamodel/classes/Electrode.html">Electrode</a>, <a href="../../datamodel/classes/EField.html">EField</a>, <a href="../../datamodel/classes/Network.html">Network</a>, <a href="../../datamodel/classes/SpatialDomain.html">SpatialDomain</a>, <a href="../../datamodel/classes/Mesh.html">Mesh</a></td>
 </tr>
 </tbody>
 </table>
@@ -5015,9 +5032,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Subject</span></span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Electrode</span></span>
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> EField</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> SpatialDomain</span></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Mesh</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="fu">range</span><span class="kw">:</span><span class="at"> string</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Network</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> SpatialDomain</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Mesh</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="fu">range</span><span class="kw">:</span><span class="at"> string</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 
 
@@ -5097,7 +5115,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

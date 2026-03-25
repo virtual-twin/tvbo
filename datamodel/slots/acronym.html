@@ -2903,6 +2903,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/model_type.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">model_type</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/modes.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">modes</span></a>
   </div>
@@ -4162,6 +4168,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/ModelType.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Type</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/NoiseType.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Noise Type</span></a>
   </div>
@@ -4915,28 +4927,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td><a href="../../datamodel/classes/Observation.html">Observation</a></td>
-<td>Unified class for all observation/measurement specifications</td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/LossFunction.html">LossFunction</a></td>
-<td>A loss function for optimization with optional aggregation</td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/ClinicalScore.html">ClinicalScore</a></td>
-<td>Metadata about a clinical score or scale</td>
-<td>no</td>
-</tr>
-<tr class="even">
 <td><a href="../../datamodel/classes/ClinicalScale.html">ClinicalScale</a></td>
 <td>A clinical assessment inventory or structured scale composed of multiple scor…</td>
 <td>no</td>
 </tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/ClinicalScore.html">ClinicalScore</a></td>
+<td>Metadata about a clinical score or scale</td>
+<td>no</td>
+</tr>
 <tr class="odd">
-<td><a href="../../datamodel/classes/Function.html">Function</a></td>
-<td>A function with explicit input -&gt; transformation -&gt; output flow</td>
+<td><a href="../../datamodel/classes/Observation.html">Observation</a></td>
+<td>Unified class for all observation/measurement specifications</td>
 <td>no</td>
 </tr>
 <tr class="even">
@@ -4947,6 +4949,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tr class="odd">
 <td><a href="../../datamodel/classes/FunctionCall.html">FunctionCall</a></td>
 <td>Invocation of a function in a pipeline</td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/Function.html">Function</a></td>
+<td>A function with explicit input -&gt; transformation -&gt; output flow</td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/LossFunction.html">LossFunction</a></td>
+<td>A loss function for optimization with optional aggregation</td>
 <td>no</td>
 </tr>
 </tbody>
@@ -5112,7 +5124,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }
