@@ -1,0 +1,239 @@
+---
+title: "Tsodyks-Markram Neural Mass Model"
+subtitle: "Replicating BifurcationKit.jl TMModel.jl with all 4 PO discretization methods"
+---
+
+## Overview
+
+This example replicates the [Tsodyks-Markram tutorial](https://bifurcationkit.github.io/BifurcationKitDocs.jl/dev/tutorials/ode/tutorialsBasic1/#Neural-mass-equation) from BifurcationKit.jl's official documentation, demonstrating **all four periodic orbit discretization methods**:
+
+1. **Collocation** — Orthogonal collocation at Gauss points
+2. **Trapezoid** — Finite-difference trapezoid rule
+3. **Shooting** — Standard multiple shooting
+4. **Poincaré** — Poincaré shooting on a hyperplane
+
+The model describes short-term synaptic plasticity with three variables:
+- **E**: Mean firing rate
+- **x**: Synaptic depression (available neurotransmitter)
+- **u**: Synaptic facilitation (release probability)
+
+## Model Definition (Inline YAML with `Dynamics.from_string`)
+
+```{python}
+from tvbo import Dynamics
+
+model_yaml = """
+name: TsodyksMarkram
+description: Tsodyks-Markram mean-field model with synaptic plasticity
+
+parameters:
+    J: {name: J, value: 3.07, domain: {lo: 0, hi: 10}}
+    alpha: {name: alpha, value: 1.4, domain: {lo: 0.1, hi: 5}}
+    E0: {name: E0, value: -2.0, domain: {lo: -10, hi: 2}}
+    tau: {name: tau, value: 0.013, domain: {lo: 0.001, hi: 0.1}}
+    tauD: {name: tauD, value: 0.20, domain: {lo: 0.01, hi: 1.0}}
+    tauF: {name: tauF, value: 1.5, domain: {lo: 0.1, hi: 5.0}}
+    U0: {name: U0, value: 0.3, domain: {lo: 0, hi: 1}}
+
+derived_variables:
+    SS0: {name: SS0, equation: {lhs: SS0, rhs: "J*u*x*E + E0"}}
+    SS1: {name: SS1, equation: {lhs: SS1, rhs: "alpha*log(1 + exp(SS0/alpha))"}}
+
+state_variables:
+    E:
+        name: E
+        initial_value: 0.238616
+        equation: {lhs: "Derivative(E, t)", rhs: "(-E + SS1)/tau"}
+    x:
+        name: x
+        initial_value: 0.982747
+        equation: {lhs: "Derivative(x, t)", rhs: "(1 - x)/tauD - u*x*E"}
+    u:
+        name: u
+        initial_value: 0.367876
+        equation: {lhs: "Derivative(u, t)", rhs: "(U0 - u)/tauF + U0*(1 - u)*E"}
+
+number_of_modes: 1
+"""
+
+# Load model from inline YAML string
+model = Dynamics.from_string(model_yaml)
+```
+
+## Method 1: Collocation (Adaptive Mesh)
+
+Orthogonal collocation with automatic mesh refinement:
+
+```{python}
+from tvbo import SimulationExperiment, Continuation
+po_collocation = """
+name: tm_po_collocation
+dynamics: TsodyksMarkram
+free_parameters:
+    - name: E0
+      domain: {lo: "-2", hi: "-1"}
+bothside: true
+branches:
+    - name: po_from_hopf
+      source_point: "hopf:2"
+      bothside: false
+      continuation:
+          name: tm_po_collocation_po_from_hopf
+          ds: 0.001
+          ds_min: 1.0e-4
+          ds_max: 0.1
+          max_steps: 110
+          tol_stability: 1.0e-5
+      discretization:
+          method: collocation
+          mesh_intervals: 50
+          degree: 4
+          linear_solver:
+              method: COPBLS
+          parameters:
+              - {name: mesh_adaptation, value: true}
+"""
+
+cont = Continuation.from_string(po_collocation)
+exp = SimulationExperiment(dynamics=model, continuations=[cont])
+
+print(exp.render_code('bifurcationkit.jl'))
+```
+
+```{python}
+result = exp.run('bifurcationkit.jl')
+result.plot()
+```
+
+<details>
+<summary>Click to expand: Generated Julia code for collocation method</summary>
+```{python}
+print(exp.render_code('bifurcationkit.jl'))
+```
+</details>
+
+## Method 2: Trapezoid (Finite Differences)
+
+```{python}
+po_trapezoid = """
+name: tm_po_trapezoid
+dynamics: TsodyksMarkram
+free_parameters:
+    - name: E0
+      domain: {lo: "-2", hi: "-1"}
+bothside: false
+branches:
+    - name: po_from_hopf
+      source_point: "hopf:2"
+      bothside: false
+      delta_p: 0.001
+      continuation:
+          name: tm_po_trapezoid_po_from_hopf
+          ds: 0.004
+          ds_min: 1.0e-4
+          ds_max: 0.1
+          max_steps: 80
+          newton_tol: 1.0e-7
+          tol_stability: 1.0e-7
+      discretization:
+          method: trapezoid
+          mesh_intervals: 250
+"""
+
+cont_trap = Continuation.from_string(po_trapezoid)
+exp_trap = SimulationExperiment(dynamics=model, continuations=[cont_trap])
+result_trap = exp_trap.run('bifurcationkit.jl')
+result_trap.plot()
+```
+
+## Method 3: Standard Shooting
+
+Multiple ODE integrations:
+
+```{python}
+po_shooting = """
+name: tm_po_shooting
+dynamics: TsodyksMarkram
+free_parameters:
+    - name: E0
+      domain: {lo: "-2", hi: "-1"}
+bothside: false
+branches:
+    - name: po_from_hopf
+      source_point: "hopf:2"
+      bothside: false
+      continuation:
+          name: tm_po_shooting_po_from_hopf
+          ds: -0.0001
+          ds_min: 1.0e-4
+          ds_max: 0.1
+          max_steps: 110
+          tol_stability: 1.0e-4
+      discretization:
+          method: shooting
+          n_sections: 15
+          ode_solver:
+              method: Rodas5
+              abs_tol: 1e-11
+              rel_tol: 1e-9
+          linear_solver:
+              method: MatrixBLS
+          parameters:
+              - {name: parallel, value: true}
+      parameters:
+          - {name: max_norm_bound, value: 10}
+"""
+
+cont_shoot = Continuation.from_string(po_shooting)
+exp_shoot = SimulationExperiment(dynamics=model, continuations=[cont_shoot])
+print(exp_shoot.render_code('bifurcationkit.jl'))
+result_shoot = exp_shoot.run('bifurcationkit.jl')
+result_shoot.plot()
+```
+
+## Method 4: Poincaré Shooting
+
+Reduced-dimension shooting:
+
+```{python}
+po_poincare = """
+name: tm_po_poincare
+dynamics: TsodyksMarkram
+free_parameters:
+    - name: E0
+      domain: {lo: "-2", hi: "-1"}
+bothside: false
+branches:
+    - name: po_from_hopf
+      source_point: "hopf:2"
+      bothside: false
+      continuation:
+          name: tm_po_poincare_po_from_hopf
+          ds: 0.0001
+          ds_max: 0.02
+          max_steps: 50
+          newton_tol: 1.0e-9
+          newton_max_iterations: 15
+          tol_stability: 1.0e-6
+          detect_bifurcation: 2
+      discretization:
+          method: poincare
+          n_sections: 5
+          ode_solver:
+              method: Rodas5
+              abs_tol: 1e-11
+              rel_tol: 1e-9
+          linear_solver:
+              method: MatrixBLS
+          parameters:
+              - {name: parallel, value: true}
+      parameters:
+          - {name: max_norm_bound, value: 1.0}
+"""
+
+cont_poinc = Continuation.from_string(po_poincare)
+exp_poinc = SimulationExperiment(dynamics=model, continuations=[cont_poinc])
+print(exp_poinc.render_code('bifurcationkit.jl'))
+result_poinc = exp_poinc.run('bifurcationkit.jl')
+result_poinc.plot()
+```

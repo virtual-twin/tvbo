@@ -1,0 +1,35 @@
+{
+  "_type": "tvbo:Parcellation",
+  "required": [
+    "atlas"
+  ],
+  "properties": {
+    "label": {
+      "type": "string"
+    },
+    "region_labels": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "center_coordinates": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "number"
+      }
+    },
+    "data_source": {
+      "type": "string"
+    },
+    "atlas": {
+      "_embeddedTypes": [
+        "sands:BrainAtlas"
+      ]
+    }
+  }
+}

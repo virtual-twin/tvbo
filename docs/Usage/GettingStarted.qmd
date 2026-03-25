@@ -1,0 +1,50 @@
+---
+title: "Getting Started"
+subtitle: "End-to-end quickstart: from model to simulation in 5 minutes"
+---
+
+::: {.callout-note}
+## Placeholder
+This page is under construction.
+:::
+
+## Overview
+
+This tutorial walks through a complete TVBO workflow — loading a neural mass model,
+defining a brain network, configuring a simulation experiment, running it, and
+inspecting the results.
+
+## Load a Model
+
+```python
+from tvbo import Dynamics
+
+model = Dynamics.from_db("JansenRit")
+model
+```
+
+## Define a Network
+
+```python
+# TODO: load connectome, attach model
+```
+
+## Configure & Run
+
+```python
+from tvbo import SimulationExperiment
+
+# TODO: build experiment, run, show results
+```
+
+## Visualize Results
+
+```python
+# TODO: result.plot()
+```
+
+## Next Steps
+
+- [Defining Dynamical Systems](DefineDynamicalSystem.qmd) — define your own models
+- [Defining Networks](../Specification/Network.qmd) — build custom brain networks
+- [Simulation Experiments](SimulationExperiments.qmd) — advanced experiment configuration

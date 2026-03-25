@@ -1,0 +1,39 @@
+name: Publish docs
+
+on:
+    push:
+        branches: ["main"]
+    workflow_dispatch:
+
+permissions:
+    contents: write
+
+concurrency:
+    group: pages
+    cancel-in-progress: true
+
+jobs:
+    publish:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+
+            - uses: actions/setup-python@v6
+              with:
+                  python-version: "3.12"
+                  cache: "pip"
+
+            - name: Install Quarto
+              uses: quarto-dev/quarto-actions/setup@v2
+
+            - name: Install tvbo + doc deps
+              run: |
+                  python -m pip install --upgrade pip
+                  pip install ".[all,docs]"
+                  pip install quartodoc jupyter
+
+            - name: Publish docs
+              uses: quarto-dev/quarto-actions/publish@v2
+              with:
+                  target: gh-pages
+                  path: docs

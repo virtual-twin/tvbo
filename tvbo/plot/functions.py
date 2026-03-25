@@ -10,8 +10,8 @@ import numpy as np
 import owlready2 as owl
 from sympy import lambdify, latex, symbols
 
-from tvbo.knowledge import ontology, config  # Assuming this module handles your equations
-from tvbo.knowledge.simulation import equations
+from tvbo.ontology import owl as ontology, config  # Assuming this module handles your equations
+from tvbo.classes import equation as equations
 
 
 def plot_coupling_function(CF, ax=None):

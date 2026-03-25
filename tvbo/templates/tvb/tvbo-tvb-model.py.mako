@@ -1,14 +1,41 @@
 ## -*- coding: utf-8 -*-
 ##
+<%namespace name="fn" file="/base/function-def.mako"/>
 <%
 import numpy as np
-from tvbo.knowledge.simulation.equations import _clash1
+from tvbo.classes.equation import _clash1
 if 'experiment' in context.keys():
-    model = context['experiment'].local_dynamics.metadata
+    model = context['experiment'].dynamics
+    standalone = False
 else:
-    model = context['model'].metadata
-render = lambda obj: model.render_equation(obj, format='python')
+    model = context['model']
+    standalone = True
+render = lambda obj: model.render_equation(obj, format='numpy')
+
+# In TVB, local_coupling is a separate dfun argument, not part of the coupling array.
+# Use the ontology to identify which coupling inputs are global (part of coupling array)
+# vs local (passed as separate dfun argument). This correctly handles models like SupHopf
+# that have named local coupling terms (e.g. lc_0) beyond just 'local_coupling'.
+from tvbo.ontology import owl as _onto
+try:
+    _global_names = set(_onto.get_model_coupling_terms(model.name, only_global=True).keys())
+    global_coupling_inputs = {k: v for k, v in model.coupling_inputs.items() if k in _global_names}
+except Exception:
+    # Model not in ontology — filter by naming convention:
+    # 'local_coupling' and 'lc_*' prefixed terms are local coupling
+    def _is_local(name):
+        return name == 'local_coupling' or name.startswith('lc_')
+    global_coupling_inputs = {k: v for k, v in model.coupling_inputs.items() if not _is_local(k)}
+local_coupling_inputs = {k: v for k, v in model.coupling_inputs.items() if k not in global_coupling_inputs}
+has_local_coupling = bool(local_coupling_inputs)
 %>
+% if standalone:
+# Auto-generated standalone model file
+import numpy as np
+from tvb.basic.neotraits.api import Attr, Final, List, NArray, Range
+from tvb.simulator.models.base import Model
+
+% endif
 class ${model.name}(Model):
 
     % for p in model.parameters.values():
@@ -16,7 +43,7 @@ class ${model.name}(Model):
         label=r":math:`${p.symbol or p.name}`",
         default=np.array([${p.value}]),
         % if p.domain:
-        domain=Range(lo=${p.domain.lo}, hi=${p.domain.hi}, step=${p.domain.step}),
+        domain=Range(lo=${p.domain.lo}, hi=${p.domain.hi}, step=${p.domain.step if p.domain.step is not None else 1.0}),
         % endif
         % if p.description:
         doc="""${p.description}"""
@@ -63,9 +90,10 @@ def format_range_or_boundary(sv, attr, default=(NEGINFINITY, INFINITY)):
 % endif
 ########## Variables Of Interest ##########
     <%
-    choices = tuple(model.state_variables.keys()) + (tuple(model.output_transforms.keys()) if model.output_transforms else ())
+    output_keys = tuple(model.output) if isinstance(model.output, list) else tuple(model.output.keys()) if model.output else ()
+    choices = tuple(model.state_variables.keys()) + output_keys
 
-    variables_of_interest = tuple(sv.name for sv in model.state_variables.values() if sv.variable_of_interest) + (tuple(model.output_transforms.keys()) if model.output_transforms else ())
+    variables_of_interest = tuple(sv.name for sv in model.state_variables.values() if sv.variable_of_interest) + output_keys
     %>
 
     variables_of_interest = List(
@@ -91,14 +119,11 @@ def format_range_or_boundary(sv, attr, default=(NEGINFINITY, INFINITY)):
         },
     )
 
-    ## TODO: Was this hack necessary for anything?
-    ## % if any([sv.coupling_variable for sv in model.state_variables.values()]):
-    ## cvar = np.array(${[i for i, sv in enumerate(model.state_variables.values()) if sv.coupling_variable]*len(model.coupling_terms)}, dtype=np.int32)
-    cvar = np.array(${list(range(len(model.state_variables)))}, dtype=np.int32)
+    cvar = np.array(${[i for i, sv in enumerate(model.state_variables.values()) if sv.coupling_variable]}, dtype=np.int32)
 
     coupling_terms = Final(
         label="Coupling terms",
-        default=${[p.name for p in model.coupling_terms.values()]}
+        default=${[p.name for p in global_coupling_inputs.values()]}
     )
 
     _R = None
@@ -119,13 +144,20 @@ def format_range_or_boundary(sv, attr, default=(NEGINFINITY, INFINITY)):
 % endif
 
 ########## OutputTransforms ##########
-% if model.output_transforms:
+% if model.output:
     def _build_observer(self):
         template = ("def observe(state):\n"
                     "    {svars} = state\n"
-                    % for ot in model.output_transforms.values():
+                    % if isinstance(model.output, list):
+                        % for var_name in model.output:
+<%                          dv = model.derived_variables.get(var_name) %>\
+                    "    ${var_name} = ${render(dv) if dv else var_name}\n"
+                        % endfor
+                    % else:
+                        % for ot in model.output.values():
                     "    ${ot.name} = ${render(ot)}\n"
-                    % endfor
+                        % endfor
+                    % endif
                     "    return numpy.array([{voi_names}])")
         svars = ','.join(self.state_variables)
         if len(self.state_variables) == 1:
@@ -134,7 +166,7 @@ def format_range_or_boundary(sv, attr, default=(NEGINFINITY, INFINITY)):
             svars=svars,
             voi_names=','.join(self.variables_of_interest)
         )
-        namespace = {'numpy': np, 'pi':np.pi, 'sin':np.sin}
+        namespace = {'numpy': np, 'np': np, 'pi':np.pi, 'sin':np.sin}
         namespace.update(self.__dict__)
         self.log.debug('building observer with code:\n%s', code)
         exec(code, namespace)
@@ -157,8 +189,11 @@ def format_range_or_boundary(sv, attr, default=(NEGINFINITY, INFINITY)):
 % if model.functions:
         # Functions
 % for f in model.functions.values():
-        def ${f.name}(${", ".join([arg.name for arg in f.arguments.values()])}):
-            return ${render(f)}
+<%
+    fndef = capture(fn.function_def, f, format='numpy', render_func=render).strip()
+    indented_fndef = '\n'.join('        ' + line if line.strip() else '' for line in fndef.split('\n'))
+%>
+${indented_fndef}
 % endfor
 % endif
 
@@ -167,9 +202,9 @@ def format_range_or_boundary(sv, attr, default=(NEGINFINITY, INFINITY)):
 % endfor
 
 ## Coupling Terms
-        # Coupling Terms
-% for cterm in model.coupling_terms:
-        ${cterm} = coupling[${list(model.coupling_terms).index(cterm)}, :]
+        # Coupling Terms (from coupling array)
+% for cterm in global_coupling_inputs:
+        ${cterm} = coupling[${list(global_coupling_inputs).index(cterm)}, :]
 % endfor
 
 ## Derived Variables

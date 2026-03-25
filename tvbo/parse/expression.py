@@ -1,11 +1,71 @@
-from sympy import parse_expr, Symbol, Function
+from sympy import parse_expr, Symbol, Function, IndexedBase, Sum, Product, sqrt
 from sympy.parsing.sympy_parser import (
     standard_transformations,
     implicit_multiplication_application,
+    convert_xor,
 )
 from sympy.parsing.latex import parse_latex
 
-from tvbo.datamodel.tvbo_datamodel import Equation
+from tvbo.datamodel.schema import Equation
+
+
+# =============================================================================
+# Custom SymPy Classes for Mathematical Aggregation
+# =============================================================================
+
+class Mean(Function):
+    """Mean over indexed expression: Mean(f(x[i]), (i, 0, N-1)).
+
+    Mathematical notation for averaging over a dimension. Translates to
+    jnp.mean(jax.vmap(...)) or jnp.mean(...) depending on the inner function.
+
+    Example:
+        Mean(1 - correlation(x[i], y[i]), (i, 0, N-1))
+        -> jnp.mean(jax.vmap(lambda x, y: 1 - correlation(x, y))(x, y))
+    """
+    @classmethod
+    def eval(cls, *args):
+        # Don't auto-evaluate; let the printer handle code generation
+        return None
+
+
+# =============================================================================
+# Symbolic Summation Support
+# =============================================================================
+# SymPy's Sum requires explicit index variables: Sum(f(i), (i, a, b))
+#
+# For proper mathematical notation, use:
+#   Sum(x[i]*y[i], (i, 0, n-1))  ->  translates to jnp.sum(x*y)
+#
+# Index variables are detected dynamically from Sum/Product limits.
+# The code printers in tvbo.codegen.code handle the translation.
+
+
+# =============================================================================
+# Array Function Definitions (single source of truth for parsing)
+# =============================================================================
+# These are array reduction/aggregation functions that SymPy doesn't have natively.
+# We define them as undefined SymPy Functions so they parse correctly (preventing
+# implicit multiplication like 'mean(x)' -> 'm*e*a*n*(x)').
+#
+# NOTE: These use lowercase names to distinguish from SymPy's symbolic Sum/Product
+# which require explicit index variables. Our versions are for array reduction
+# operations (like numpy's sum/mean) that reduce over all elements.
+#
+# For printer mappings (jnp.sum, np.mean, etc.), see tvbo.codegen.code
+
+ARRAY_FUNCTIONS = {
+    "sum": Function("sum"),
+    "mean": Function("mean"),
+    "std": Function("std"),
+    "var": Function("var"),
+    "max": Function("max"),
+    "min": Function("min"),
+    "abs": Function("abs"),
+    "prod": Function("prod"),
+    "concatenate": Function("concatenate"),
+}
+
 
 def parse_eq(
     equation: Equation,
@@ -52,14 +112,28 @@ def parse_eq(
         Parsed SymPy expression.
     """
 
-    # Start with user-provided locals (no hidden defaults)
+    # Start with user-provided locals (sympy's parse_expr handles pi, E, etc. by default)
     local_dict = dict(kwargs.pop("local_dict", {}))
 
+    # Add SymPy's Sum, Product, IndexedBase for proper mathematical notation
+    # These allow parsing expressions like Sum(x[i], (i, 0, n-1))
+    local_dict.setdefault('Sum', Sum)
+    local_dict.setdefault('Product', Product)
+    local_dict.setdefault('IndexedBase', IndexedBase)
+    local_dict.setdefault('Mean', Mean)  # Custom Mean function for indexed averaging
+    local_dict.setdefault('sqrt', sqrt)
+
+    # Merge array functions (user-provided local_dict takes precedence)
+    for name, fn in ARRAY_FUNCTIONS.items():
+        if name not in local_dict:
+            local_dict[name] = fn
+
     # Helper to coerce iterables/mappings into name -> sympy object entries
+    # IMPORTANT: User-defined parameters OVERRIDE SymPy built-ins (e.g., gamma, lambda)
     def _update_from_names_or_map(container, factory):
         if not container:
             return
-        # Mapping case
+        # Mapping case - user values override everything
         if isinstance(container, dict):
             local_dict.update(container)
             return
@@ -68,7 +142,7 @@ def parse_eq(
             for item in container:
                 if isinstance(item, str):
                     obj = factory(item)
-                    local_dict[item] = obj
+                    local_dict[item] = obj  # Override any existing (including SymPy functions)
                 else:
                     # Allow passing actual SymPy objects; try to infer name
                     name = getattr(item, "name", None)
@@ -107,11 +181,32 @@ def parse_eq(
         # parse_latex doesn't accept local_dict; it returns a SymPy Expr directly
         return parse_latex(expression, backend="lark")
 
+    import re
+
+    # Auto-detect indexed variables (e.g., x[i], y[j]) and create IndexedBase for them
+    # This allows natural mathematical notation: Sum(x[i]*y[i], (i, 0, n-1))
+    # NOTE: This MUST override any Symbol definitions (including from parameters)
+    # because x[i] syntax requires IndexedBase, not Symbol
+    indexed_pattern = re.compile(r'\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\[')
+    for match in indexed_pattern.finditer(expression):
+        var_name = match.group(1)
+        # Override even if already defined - indexed access requires IndexedBase
+        local_dict[var_name] = IndexedBase(var_name)
+
+    # Auto-detect index variables from Sum/Product limits: Sum(..., (i, a, b))
+    # Pattern matches the first element in limit tuples like (i, 0, n-1)
+    limit_pattern = re.compile(r'\(\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*,\s*[^,]+\s*,\s*[^)]+\)')
+    for match in limit_pattern.finditer(expression):
+        idx_name = match.group(1)
+        # Create as Symbol if not already defined
+        if idx_name not in local_dict:
+            local_dict[idx_name] = Symbol(idx_name)
+
     # Build transformations pipeline
     extra_transformations = tuple(kwargs.pop("extra_transformations", ()))
     transformations = kwargs.pop(
         "transformations",
-        standard_transformations + (implicit_multiplication_application,) + extra_transformations,
+        standard_transformations + (implicit_multiplication_application, convert_xor) + extra_transformations,
     )
 
     # Remaining kwargs forwarded to parse_expr (e.g., evaluate=False, global_dict=...)

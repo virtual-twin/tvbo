@@ -59,7 +59,7 @@ simulation_experiments:
           equation:
             lhs: \dot{Z}
             rhs: X * Y - beta * Z
-      coupling_terms:
+      coupling_inputs:
         c_glob:
           description: "Global excitatory coupling"
         c_inhibition:
@@ -92,4 +92,4 @@ simulation_experiments:
         rhs: "a * (-sqrt(k) * (gx))"
 
     connectivity:
-      number_of_regions: 2
+      number_of_nodes: 2

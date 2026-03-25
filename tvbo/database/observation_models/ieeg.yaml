@@ -1,0 +1,72 @@
+# iEEG - intracranial EEG (SEEG) forward model
+
+name: iEEG
+label: Intracranial EEG (SEEG)
+description: >-
+    Forward solution for intracranial/stereoelectroencephalography (SEEG).
+    Projects source activity through a lead field matrix to implanted depth
+    electrode contacts. Uses the same single-sphere analytic formula as
+    scalp EEG (Sarvas 1987, Eq. 12), but with electrode positions inside
+    the brain volume.
+
+imaging_modality: SEEG
+period: 0.9765625  # ms (~1024 Hz default)
+
+class_reference:
+    name: iEEG
+    module: tvb.simulator.monitors
+    constructor_args:
+        - name: sigma
+          value: 1.0
+
+data_source:
+    name: sensor_network
+    description: >-
+        SEEG depth electrode network. Each node is an electrode contact
+        with spatial coordinates inside the brain.
+    path: acq-SEEG588_sensors.yaml
+
+parameters:
+    conductivity:
+        value: 1.0
+        unit: S_per_m
+        description: >-
+            Tissue conductivity for the analytic point-dipole approximation.
+            Only used when no precomputed gain is available.
+
+pipeline:
+    - name: compute_gain
+      output: gain
+      description: >-
+          Construct the SEEG lead field using Sarvas 1987 Eq. 12.
+      equation:
+          rhs: "sum(Q * (a / norm(a)**3), axis=1) / (4 * pi * sigma)"
+          parameters:
+              sigma:
+                  value: 1.0
+                  unit: S_per_m
+      arguments:
+          - name: Q
+            description: "Source dipole orientations (n_sources, 3)"
+          - name: a
+            description: "Source-to-electrode vectors (n_sources, 3)"
+
+    - name: lead_field_projection
+      output: projected
+      equation:
+          rhs: "gain @ sum(X, axis=-1) / period_steps"
+      arguments:
+          - name: gain
+            description: "Lead field matrix (n_sensors, n_sources)"
+          - name: period_steps
+            description: "Number of integration steps per sampling period"
+      apply_on_dimension: node
+
+    - name: add_noise
+      input: lead_field_projection
+      output: iEEG
+      equation:
+          rhs: "X + noise"
+      arguments:
+          - name: noise
+            description: "Observation noise (n_sensors, 1)"

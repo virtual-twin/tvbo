@@ -1,0 +1,89 @@
+# BOLD (Mixture of Gammas) - canonical double-gamma HRF
+
+name: BOLD_MixtureOfGammas
+label: BOLD (Mixture of Gammas HRF)
+description: >-
+    BOLD fMRI observation model using the canonical double-gamma hemodynamic
+    response function (Glover 1999). Standard HRF used in most fMRI analysis
+    packages (SPM, FSL, AFNI).
+
+imaging_modality: BOLD
+
+class_reference:
+    name: Bold
+    module: tvb.simulator.monitors
+    constructor_args:
+        - name: hrf_kernel
+          value: MixtureOfGammas
+        - name: hrf_length
+          value: 20000.0
+
+parameters:
+    TR:
+        value: 2000.0
+        unit: ms
+
+pipeline:
+    - name: temporal_average_interim
+      output: interim_averaged
+      equation:
+          rhs: "mean(X.reshape(-1, stepsize, *X.shape[1:]), axis=1)"
+      arguments:
+          - name: stepsize
+            value: 1
+      apply_on_dimension: time
+
+    - name: hemodynamic_response
+      acronym: HRF
+      output: hrf_kernel
+      time_range:
+          lo: 0
+          hi: duration
+          step: stock_dt
+      equation:
+          rhs: "a1 * t**(d1 - 1) * exp(-b1 * t) / gamma(d1) - c * a2 * t**(d2 - 1) * exp(-b2 * t) / gamma(d2)"
+          parameters:
+              a1:
+                  value: 6.0
+              b1:
+                  value: 1.0
+              d1:
+                  value: 6.0
+              c:
+                  value: 0.35
+                  description: "Ratio of undershoot to positive response"
+              a2:
+                  value: 1.0
+              b2:
+                  value: 1.0
+              d2:
+                  value: 16.0
+      arguments:
+          - name: duration
+            value: 20
+            unit: s
+          - name: stock_dt
+            value: 0.004
+            unit: s
+
+    - name: convolve
+      input: temporal_average_interim
+      output: convolved
+      callable:
+          module: scipy.signal
+          name: fftconvolve
+      arguments:
+          - name: in2
+            value: hrf_kernel
+          - name: mode
+            value: same
+
+    - name: subsample_to_period
+      input: convolve
+      output: Bold
+      equation:
+          rhs: "X[::stepsize]"
+      arguments:
+          - name: stepsize
+            description: "TR / dt"
+      apply_on_dimension: time

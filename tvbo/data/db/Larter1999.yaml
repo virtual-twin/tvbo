@@ -81,10 +81,10 @@ model:
             equation:
                 rhs: b*(c*I+alpha_exc*V)
 
-    coupling_terms:
+    coupling_inputs:
         c_glob:
 
 simulation_experiments:
     - id: 1
       network:
-          number_of_regions: 6
+          number_of_nodes: 6

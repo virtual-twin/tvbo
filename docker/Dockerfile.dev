@@ -1,0 +1,34 @@
+# Copyright © 2025 Charité Universitätsmedizin Berlin. This software is licensed under the terms of the European Union Public Licence (EUPL) version 1.2 or later.
+
+# TVBO API container for LOCAL DEVELOPMENT
+# Does NOT install tvbo - it will be mounted and installed in editable mode
+
+FROM julia:latest AS julia
+FROM python:3.13-slim
+
+LABEL maintainer="Leon Martin <leon.martin@bih-charite.de>"
+
+# Copy Julia from official image
+COPY --from=julia /usr/local/julia /usr/local/julia
+ENV PATH="/usr/local/julia/bin:$PATH"
+
+# Build AUTO-07p
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        gcc g++ gfortran make git perl \
+    && git clone --depth 1 https://github.com/auto-07p/auto-07p /auto-07p \
+    && cd /auto-07p && ./configure && make && pip install . \
+    && rm -rf /auto-07p/.git /auto-07p/doc /auto-07p/demos \
+    && apt-get purge -y gcc g++ make && apt-get autoremove -y \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies (but NOT tvbo - we'll mount and pip install -e it)
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir jupyterlab uvicorn fastapi tvboptim juliacall pyjulia
+
+ENV AUTO_DIR=/auto-07p
+WORKDIR /app
+EXPOSE 8000 8888
+
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]

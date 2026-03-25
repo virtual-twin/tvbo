@@ -1,12 +1,45 @@
 import matplotlib.pyplot as plt
 from sympy import parse_expr, pycode, symbols
 import pandas as pd
-from tvbo.knowledge.simulation import equations
+from tvbo.classes import equation as equations
 
 
-def compute_voi(df, VOI, prefix=""):
+def compute_voi(df, VOI, prefix="", state_var_index=None):
+    """Compute variable of interest from DataFrame.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame containing bifurcation data
+    VOI : str
+        Variable of interest expression
+    prefix : str
+        Prefix for variable names
+    state_var_index : dict, optional
+        Mapping from state variable names to indices in 'x' column
+
+    Returns
+    -------
+    pd.Series
+        Computed VOI values
+    """
+    # First, check if VOI exists directly as a column
+    if VOI in df.columns:
+        return df[VOI]
+
+    # Parse the VOI expression
     exp = parse_expr(VOI, equations._clash1)
     variables = list(exp.free_symbols)
+
+    # For single variable that doesn't exist as column, check if it's in 'x'
+    if len(variables) == 1 and 'x' in df.columns and state_var_index is not None:
+        var_name = str(variables[0])
+        if var_name in state_var_index:
+            # Extract the specific state variable from 'x' column
+            idx = state_var_index[var_name]
+            return df['x'].apply(lambda x_val: x_val[idx] if hasattr(x_val, '__getitem__') else x_val)
+
+    # Otherwise, try standard evaluation with prefix substitution
     exp = exp.subs({v: symbols(f"{prefix}{v}") for v in variables})
     return df.eval(pycode(exp, fully_qualified_modules=False))
 

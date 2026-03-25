@@ -1,0 +1,25 @@
+{
+  "RelationshipMeasure": "BoldCorrelation",
+  "Directed": false,
+  "Weighted": true,
+  "ValidDiagonal": true,
+  "NonNegative": false,
+  "Software": "https://github.com/virtual-twin/tvboptim",
+  "Axes": [
+    {
+      "Name": "row",
+      "Size": 84,
+      "NodeFile": "atlas-DesikanKilliany_nodeindices.tsv"
+    },
+    {
+      "Name": "column",
+      "Size": 84,
+      "NodeFile": "atlas-DesikanKilliany_nodeindices.tsv"
+    }
+  ],
+  "Description": "Functional connectivity derived from resting-state fMRI BOLD signals. Values represent Pearson correlation coefficients between region time series.",
+  "Sources": [
+    "bids::rawdata/sub-average/func"
+  ],
+  "MeasureUnits": "r"
+}

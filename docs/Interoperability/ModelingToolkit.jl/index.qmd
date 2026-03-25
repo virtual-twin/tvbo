@@ -1,0 +1,74 @@
+---
+title: "ModelingToolkit.jl Backend"
+subtitle: "Symbolic round-trip with Julia's acausal modeling framework"
+---
+
+## Overview
+
+The **ModelingToolkit.jl** backend generates Julia code for simulating dynamical systems using [ModelingToolkit.jl](https://docs.sciml.ai/ModelingToolkit/stable/) (MTK). From a single YAML experiment specification, `render_code("mtk")` produces a self-contained Julia script that:
+
+- Defines a `@component` with symbolic parameters, variables, and equations
+- Compiles the system via `mtkcompile` (structural simplification)
+- Constructs an `ODEProblem` and solves it
+- Plots the solution
+
+Unlike the [NetworkDynamics.jl backend](../NetworkDynamics.jl/index.qmd), which targets network-based simulations with explicit graph topology, the MTK backend works with standalone dynamical systems and leverages MTK's symbolic equation processing.
+
+## Key Feature: Symbolic Round-Trip
+
+The MTK backend supports a **symbolic round-trip** between SymPy and ModelingToolkit.jl:
+
+1. tvbo stores equations as SymPy expressions (parsed from YAML)
+2. The MTK template renders them to Julia's symbolic DSL (`Dt(x) ~ ...`)
+3. MTK's `mtkcompile` performs structural transformations (e.g., higher-order ODE lowering)
+4. The transformed equations are extracted back into SymPy via `get_lowered_equations()`
+
+This means tvbo can leverage MTK's symbolic engine for transformations that would be complex to implement in pure Python.
+
+## Examples
+
+| Example | Features Demonstrated |
+|---------|----------------------|
+| [Higher-Order ODE Lowering](higher_order.qmd) | `equation_order`, `Dt(Dt(x))`, automatic auxiliary variables, SymPy ↔ MTK round-trip |
+
+## Quick Start
+
+```python
+from tvbo import SimulationExperiment
+
+# Load experiment from YAML
+exp = SimulationExperiment.from_file("yaml/lorenz_higher_order.yaml")
+
+# Generate ModelingToolkit.jl code
+julia_code = exp.render_code("mtk")
+print(julia_code)
+
+# Run the simulation (requires Julia + MTK)
+result = exp.run("mtk")
+```
+
+## Symbolic Round-Trip
+
+```python
+from tvbo.adapters.modelingtoolkit import ModelingToolkitAdapter
+
+adapter = ModelingToolkitAdapter(exp)
+
+# Get lowered first-order equations from MTK as SymPy
+lowered = adapter.get_lowered_equations()
+for name, eq in lowered["equations"].items():
+    print(eq)
+```
+
+## How it Works
+
+The code generation pipeline:
+
+1. **YAML → Python objects**: `SimulationExperiment.from_file()` parses the YAML into `Dynamics`, `Coupling`, `Network`, and `Integrator` instances
+2. **SymPy equations**: `Dynamics.get_equations()` parses equation strings into SymPy, respecting `equation_order` for higher-order derivatives
+3. **[Mako](https://www.makotemplates.org/) template**: The `mtk` format uses a single template `tvbo-mtk-experiment.jl.mako` that generates:
+   - `@component` function with `@parameters`, `@variables`, and equations
+   - Nested `Dt(Dt(x))` for higher-order ODEs
+   - `mtkcompile` for structural simplification
+   - `ODEProblem` + `solve` with the specified integrator
+4. **Symbolic rendering**: Equations are rendered to MTK syntax via `MTKPrinter` (scalar operators, no broadcasting dots)

@@ -6,18 +6,18 @@ import numpy as np
 <%include file="/tvbo-tvb-coupling.py.mako" />
 <%include file="/tvbo-tvb-integration.py.mako" />
 <%include file="/tvbo-tvb-noise.py.mako" />
-<%include file="/tvbo-tvb-monitor.py.mako" />
+<%include file="/tvbo-tvb-observation.py.mako" />
 <%
-experiment = context['experiment'].metadata
+experiment = context['experiment']
 
 initial_conditions = np.array([
-    np.full((experiment.network.number_of_regions,), v.initial_value)
+    np.full(((getattr(experiment.network, 'number_of_nodes', None) or experiment.network.number_of_regions),), v.initial_value)
     if np.isscalar(v.initial_value) else v.initial_value
-    for k, v in experiment.local_dynamics.state_variables.items()
+    for k, v in experiment.dynamics.state_variables.items()
 ]).reshape(
     1,
-    len(experiment.local_dynamics.state_variables),
-    experiment.network.number_of_regions,
+    len(experiment.dynamics.state_variables),
+    (getattr(experiment.network, 'number_of_nodes', None) or experiment.network.number_of_regions),
     1
 )
 %>
@@ -38,9 +38,9 @@ def define_simulation(connectivity, simulation_length=${experiment.integration.d
     %endif
 %endif
     simulator = Simulator(
-        model=${experiment.local_dynamics.name}(**model_kwargs),
+        model=${experiment.dynamics.name}(**model_kwargs),
         connectivity=connectivity,
-        coupling=${experiment.coupling.name}(**coupling_kwargs),
+        coupling=${'%s(**coupling_kwargs)' % experiment.coupling.name if experiment.coupling else 'Linear(**coupling_kwargs)'},
         conduction_speed=${experiment.network.conduction_speed.value},
         integrator=${experiment.integration.method + ('Stochastic' if (experiment.integration.noise or np.any(np.asarray(context['experiment'].noise_sigma_array)>0)) else '')}(${'noise=noise,' if (experiment.integration.noise or np.any(np.asarray(context['experiment'].noise_sigma_array)>0)) else ''}**integration_kwargs),
         monitors=monitors,
@@ -114,4 +114,14 @@ if __name__ == "__main__":
     sc = load_connectivity(args.fweights, args.flengths)
     sim = define_simulation(sc, simulation_length=args.simulation_length)
     sim.configure()
-    sim.run()
+    raw = sim.run()
+
+    # Wrap in ExperimentResult for consistent access and export
+    from tvbo.data.types import ExperimentResult
+    results = ExperimentResult.from_tvb(sim, raw)
+    print(results)
+
+    # Export BIDS-compatible output
+    from pathlib import Path
+    results.export(Path(__file__).parent / "derivatives")
+    print(f"BIDS output: {Path(__file__).parent / 'derivatives'}")

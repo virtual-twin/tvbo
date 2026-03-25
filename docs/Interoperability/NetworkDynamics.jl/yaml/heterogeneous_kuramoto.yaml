@@ -1,0 +1,217 @@
+# =============================================================================
+# Heterogeneous Kuramoto Network
+# =============================================================================
+# Source: https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/heterogeneous_system/
+#
+# Three different vertex types on the same graph:
+#   1. Kuramoto oscillator (nodes 2-4, 6-8): dtheta/dt = omega0 + esum
+#   2. Static node (node 1): output = theta_fix (no state variables)
+#   3. Kuramoto with inertia (node 5): 2D system with damping
+#
+# All vertices are coupled via K sin(theta_src - theta_dst).
+# =============================================================================
+
+id: 104
+label: "Heterogeneous Kuramoto Network"
+description: >
+    Kuramoto oscillators with three vertex types: standard Kuramoto oscillators
+    (6 nodes), one static node with fixed phase output, and one oscillator
+    with inertia (second-order dynamics).  Demonstrates heterogeneous vertex
+    assignment on a Watts-Strogatz ring network.
+    Recreates the NetworkDynamics.jl Heterogeneous System tutorial.
+references:
+    - "https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/heterogeneous_system/"
+    - "Kuramoto, Y. (1975). Self-entrainment of a population of coupled non-linear oscillators."
+
+# -- Default (most common) vertex dynamics ------------------------------------
+dynamics:
+    name: Kuramoto
+    label: "Kuramoto phase oscillator"
+    description: >
+        Standard Kuramoto oscillator: dtheta/dt = omega0 + esum.
+        Output (coupling variable) is theta.
+    system_type: continuous
+    autonomous: true
+    parameters:
+        omega0:
+            label: "Natural frequency"
+            symbol: "omega_0"
+            value: 0.0
+            unit: "rad/s"
+            description: "Intrinsic angular frequency of the oscillator"
+    coupling_terms:
+        c_coupling:
+            description: "Aggregated sinusoidal coupling from incident edges"
+    state_variables:
+        theta:
+            label: "Phase angle"
+            symbol: "theta"
+            equation:
+                rhs: "omega0 + c_coupling"
+            initial_value: 0.0
+            unit: "rad"
+            coupling_variable: true
+            variable_of_interest: true
+
+# -- Network -------------------------------------------------------------------
+network:
+    label: "8-node ring (Watts-Strogatz k=2, p=0)"
+    description: >
+        Regular ring lattice: each node connected to 2 nearest neighbours.
+        Equivalent to watts_strogatz(8, 2, 0) in Graphs.jl.
+    number_of_nodes: 8
+    graph_generator:
+        name: watts_strogatz
+        type: WattsStrogatz
+        parameters:
+            k: { name: k, value: 2 }
+            p: { name: p, value: 0 }
+
+    # -- Additional vertex dynamics models ----------------------------------------
+    dynamics:
+        StaticNode:
+            name: StaticNode
+            label: "Static vertex"
+            description: >
+                No internal dynamics.  Outputs a fixed phase value theta_fix as
+                its coupling output.  Used for boundary conditions or fixed
+                reference oscillators.  Has no state variables — it is a pure
+                algebraic output node (ND.jl: ff=NoFeedForward()).
+            system_type: continuous
+            autonomous: true
+            parameters:
+                theta_fix:
+                    label: "Fixed phase output"
+                    symbol: "theta_fix"
+                    value: -0.4375
+                    unit: "rad"
+                    description: "Constant phase output of this vertex"
+            coupling_terms: {}
+            state_variables: {}
+
+        KuramotoInertia:
+            name: KuramotoInertia
+            label: "Kuramoto oscillator with inertia"
+            description: >
+                Second-order Kuramoto oscillator with damping:
+                dtheta/dt = omega, domega/dt = omega0 - 1.0*omega + esum.
+                Only theta is the coupling output (g=1:1 in ND.jl).
+            system_type: continuous
+            autonomous: true
+            parameters:
+                omega0:
+                    label: "Natural frequency"
+                    symbol: "omega_0"
+                    value: 0.0
+                    unit: "rad/s"
+                    description: "Intrinsic angular frequency"
+            coupling_terms:
+                c_coupling:
+                    description: "Aggregated sinusoidal coupling from incident edges"
+            state_variables:
+                theta:
+                    label: "Phase angle"
+                    symbol: "theta"
+                    equation:
+                        rhs: "omega"
+                    initial_value: 0.0
+                    unit: "rad"
+                    coupling_variable: true
+                    variable_of_interest: true
+                omega:
+                    label: "Angular velocity"
+                    symbol: "omega"
+                    equation:
+                        rhs: "omega0 - 1.0*omega + c_coupling"
+                    initial_value: 5.0
+                    unit: "rad/s"
+                    variable_of_interest: true
+
+    nodes:
+        # Node 1: static vertex (fixed phase output)
+        - id: 0
+          label: "Static node"
+          dynamics: StaticNode
+          parameters:
+              - name: theta_fix
+                value: -0.4375
+
+        # Nodes 2-4: standard Kuramoto
+        - id: 1
+          dynamics: Kuramoto
+          parameters:
+              - name: omega0
+                value: -0.3125
+          state:
+              theta: -0.3125
+        - id: 2
+          dynamics: Kuramoto
+          parameters:
+              - name: omega0
+                value: -0.1875
+          state:
+              theta: -0.1875
+        - id: 3
+          dynamics: Kuramoto
+          parameters:
+              - name: omega0
+                value: -0.0625
+          state:
+              theta: -0.0625
+
+        # Node 5: Kuramoto with inertia (2D)
+        - id: 4
+          dynamics: KuramotoInertia
+          parameters:
+              - name: omega0
+                value: 0.0625
+          state:
+              theta: 0.0625
+              omega: 5.0
+
+        # Nodes 6-8: standard Kuramoto
+        - id: 5
+          dynamics: Kuramoto
+          parameters:
+              - name: omega0
+                value: 0.1875
+          state:
+              theta: 0.1875
+        - id: 6
+          dynamics: Kuramoto
+          parameters:
+              - name: omega0
+                value: 0.3125
+          state:
+              theta: 0.3125
+        - id: 7
+          dynamics: Kuramoto
+          parameters:
+              - name: omega0
+                value: 0.4375
+          state:
+              theta: 0.4375
+
+    coupling:
+        KuramotoCoupling:
+            name: KuramotoCoupling
+            label: "Kuramoto sinusoidal coupling"
+            description: >
+                Antisymmetric coupling: K sin(theta_src - theta_dst).
+                The AntiSymmetric wrapper ensures g_src = -g_dst.
+            delayed: false
+            parameters:
+                K:
+                    label: "Coupling strength"
+                    value: 3.0
+                    unit: "1"
+                    description: "Global coupling strength"
+            pre_expression:
+                rhs: "K * sin(x_j - x_i)"
+
+# -- Integration ---------------------------------------------------------------
+integration:
+    description: "Explicit Runge-Kutta (Tsit5) with dt=0.05 over t in [0, 10]"
+    method: Tsit5
+    step_size: 0.05
+    duration: 10.0

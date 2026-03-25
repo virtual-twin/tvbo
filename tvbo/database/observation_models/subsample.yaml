@@ -1,0 +1,23 @@
+# Subsample - temporal decimation without averaging
+
+name: SubSample
+label: Temporal Decimation
+description: >-
+    Temporal decimation of selected state variables. Records every N-th
+    integration step without any averaging or smoothing.
+
+period: 0.9765625  # ms (~1024 Hz default)
+
+class_reference:
+    name: SubSample
+    module: tvb.simulator.monitors
+
+pipeline:
+    - name: subsample
+      output: subsampled
+      equation:
+          rhs: "X[::step]"
+      arguments:
+          - name: step
+            description: "Decimation factor = period / dt"
+      apply_on_dimension: time

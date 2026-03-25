@@ -1,0 +1,48 @@
+name: Izhikevich2007
+model_type: spiking
+source: 'NeuroML2 example: NML2_AbstractCells'
+description: Izhikevich 2007 model
+parameters:
+  C:
+    value: 100.0
+    description: Capacitance (pF)
+  k:
+    value: 0.7
+    description: nS/mV
+  vr:
+    value: -60.0
+    description: Resting potential (mV)
+  vt:
+    value: -40.0
+    description: Instantaneous threshold (mV)
+  vpeak:
+    value: 35.0
+    description: Spike cutoff (mV)
+  a:
+    value: 0.03
+    description: Recovery rate (1/ms)
+  b:
+    value: -2.0
+    description: Recovery sensitivity (nS)
+  c:
+    value: -50.0
+    description: Reset potential (mV)
+  d:
+    value: 100.0
+    description: Recovery reset (pA)
+state_variables:
+  v:
+    equation:
+      rhs: (k*(v - vr)*(v - vt) - u) / C
+    initial_value: -60.0
+    variable_of_interest: true
+  u:
+    equation:
+      rhs: a*(b*(v - vr) - u)
+    initial_value: 0.0
+events:
+  spike:
+    condition:
+      rhs: v > vpeak
+    affect:
+      rhs: v = c; u = u + d

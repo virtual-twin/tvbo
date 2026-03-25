@@ -1,31 +1,59 @@
 <%
-from sympy import latex, Eq, symbols, sympify, Symbol, Function
-from tvbo.export import report
+from sympy import latex, Eq, symbols, sympify, Symbol, Function, Derivative
+from tvbo.utils import report
+
+derivative_notation = context.get('derivative_notation', 'd')
+
+def _dot_lhs(deriv, mul_symbol='dot'):
+    try:
+        t = Symbol("t")
+        order = sum(1 for v in deriv.variables if v == t)
+        base = deriv.expr
+        base_latex = latex(base, mul_symbol=mul_symbol)
+        if order == 1:
+            return f"\\dot{{{base_latex}}}"
+        if order == 2:
+            return f"\\ddot{{{base_latex}}}"
+        if order == 3:
+            return f"\\dddot{{{base_latex}}}"
+        return f"\\frac{{d^{order}}}{{d t^{order}}} {base_latex}"
+    except Exception:
+        return latex(deriv, mul_symbol=mul_symbol)
+
+def latex_equation(eq, mul_symbol='dot'):
+    if derivative_notation == 'dot' and isinstance(eq, Eq) and isinstance(eq.lhs, Derivative):
+        lhs = _dot_lhs(eq.lhs, mul_symbol=mul_symbol)
+        rhs = latex(eq.rhs, mul_symbol=mul_symbol)
+        return f"{lhs} = {rhs}"
+    return latex(eq, mul_symbol=mul_symbol)
 
 def format_aligned_equations(equations):
-    lines = [latex(eq, mul_symbol='dot').replace('=', '&=') for eq in equations]
+    lines = [latex_equation(eq, mul_symbol='dot').replace('=', '&=') for eq in equations]
     joined = ' \\\\\n'.join(lines)
     return f"$$\n\\begin{{aligned}}\n{joined}\n\\end{{aligned}}\n$$"
 
-state_equations = [eq for k, eq in model.get_equations().items() if k in model.metadata.state_variables]
+state_equations = [eq for k, eq in model.get_equations().items() if k in model.state_variables]
 
-derived_variables = [eq for k, eq in model.get_equations().items() if k in model.metadata.derived_variables]
+derived_variables = [eq for k, eq in model.get_equations().items() if k in model.derived_variables]
 
-output_transforms = [
-    Eq(symbols(p.name), sympify(p.equation.rhs, strict=False))
-    for p in model.metadata.output_transforms.values()
-]
+if isinstance(model.output, list):
+    output = [eq for k, eq in model.get_equations().items() if k in model.output]
+else:
+    output = [
+        Eq(symbols(p.name), sympify(p.equation.rhs, strict=False))
+        for p in model.output.values()
+    ]
 
 derived_parameters = [
     Eq(symbols(p.name), sympify(p.equation.rhs, strict=False))
-    for p in model.metadata.derived_parameters.values()
+    for p in model.derived_parameters.values()
 ]
 
-functions = [Eq(Function(f.name)(*[Symbol(arg) for arg in f.arguments.keys()]), sympify(f.equation.rhs, strict=False)) for f in model.metadata.functions.values()]
+functions = [Eq(Function(f.name)(*[Symbol(arg) for arg in f.arguments.keys()]), sympify(f.equation.rhs, strict=False)) for f in model.functions.values()]
 
 rows = "\n".join([
     f"${latex(Symbol(p.name))}$ & {p.value} & {p.unit if p.unit else '1'} & {p.definition or p.description} \\\\"
-    for p in model.metadata.parameters.values()
+    for p in model.parameters.values()
 ])
 
 
@@ -39,8 +67,8 @@ table_latex = (
     "\\end{center}\n"
 )
 
-%># ${model.metadata.name}
-${model.metadata.description if model.metadata.description else ""}
+%># ${model.name}
+${model.description if model.description else ""}
 
 ${"### Equations"}
 ${format_aligned_equations(state_equations)}
@@ -57,8 +85,8 @@ ${format_aligned_equations(functions)}
 ${format_aligned_equations(derived_variables)}
 % endif
 
-% if output_transforms:
-${format_aligned_equations(output_transforms)}
+% if output:
+${format_aligned_equations(output)}
 % endif
 
 ${"### Parameters"}

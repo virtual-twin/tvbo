@@ -1,0 +1,171 @@
+---
+title: "OpenMINDS Interoperability"
+subtitle: "Exporting TVBO simulations to OpenMINDS JSON-LD"
+author: "TVBO Team"
+date: today
+format:
+  html:
+    code-fold: false
+    code-tools: true
+    toc: true
+    toc-depth: 3
+jupyter: python3
+---
+
+## Overview
+
+TVBO provides bidirectional interoperability with [OpenMINDS](https://openminds.ebrains.eu/), enabling:
+
+- **Export** simulation experiments to OpenMINDS-compatible JSON-LD
+- **Import** OpenMINDS JSON-LD back into TVBO objects
+- **Integration** with EBRAINS Knowledge Graph
+
+## Define a Simulation Experiment
+
+The most readable way to define an experiment is using **pure YAML** with `SimulationExperiment.from_string()`:
+
+```{python}
+#| label: setup
+#| code-fold: true
+import json
+from tvbo.classes.experiment import SimulationExperiment
+from IPython.display import Markdown
+```
+
+```{python}
+yaml_definition = """
+id: 1
+label: Three-Node Oscillator Network
+description: >
+  A simple 3-node network simulation using a damped harmonic oscillator model.
+  Demonstrates round-trip conversion to/from OpenMINDS JSON-LD.
+
+# Custom oscillator model (avoids ontology lookup)
+dynamics:
+  name: TEST_Oscillator
+  label: Damped Harmonic Oscillator
+  description: Simple 2D oscillator for testing
+  system_type: continuous
+
+  state_variables:
+    x:
+      name: x
+      label: Position
+      equation:
+        lhs: d(x)/dt
+        rhs: y
+      domain: {lo: -10.0, hi: 10.0}
+      variable_of_interest: true
+      initial_value: 1.0
+
+    y:
+      name: y
+      label: Velocity
+      equation:
+        lhs: d(y)/dt
+        rhs: -omega**2 * x - gamma * y + k * c_in
+      coupling_variable: true
+      initial_value: 0.0
+
+  parameters:
+    omega:
+      name: omega
+      label: Angular frequency
+      value: 1.0
+      unit: rad/s
+    gamma:
+      name: gamma
+      label: Damping coefficient
+      value: 0.1
+    k:
+      name: k
+      label: Coupling strength
+      value: 0.05
+
+  coupling_terms:
+    c_in:
+
+# 3-node network with connectivity
+network:
+  number_of_nodes: 3
+  nodes:
+    - id: 0
+      label: Region_A
+    - id: 1
+      label: Region_B
+    - id: 2
+      label: Region_C
+  edges:
+    - source: 0
+      target: 1
+      parameters:
+        weight: {value: 0.5}
+    - source: 1
+      target: 0
+      parameters:
+        weight: {value: 0.5}
+    - source: 1
+      target: 2
+      parameters:
+        weight: {value: 0.3}
+    - source: 2
+      target: 1
+      parameters:
+        weight: {value: 0.3}
+    - source: 0
+      target: 2
+      parameters:
+        weight: {value: 0.2}
+    - source: 2
+      target: 0
+      parameters:
+        weight: {value: 0.2}
+
+# Integration settings
+integration:
+  method: heun
+  step_size: 0.1
+  duration: 100.0
+  time_scale: s
+
+# Coupling function
+coupling:
+  name: Linear
+  label: Linear Diffusive Coupling
+"""
+
+# Step 1: Create experiment from YAML string
+experiment = SimulationExperiment.from_string(yaml_definition)
+
+Markdown(experiment.generate_report())
+```
+
+```{python}
+experiment.run().integration.plot()
+```
+
+## Export to OpenMINDS JSON-LD
+
+```{python}
+# Step 2: Convert to OpenMINDS JSON-LD
+jsonld = experiment.to_openminds(base_id="https://example.org/simulations")
+
+
+print("JSON-LD preview:")
+print(json.dumps(jsonld, indent=2, default=str)[:1500])
+```
+
+## Import from OpenMINDS JSON-LD
+
+```{python}
+reconstructed = SimulationExperiment.from_openminds(jsonld)
+reconstructed.run().integration.plot()
+```
+
+## Convert Back to YAML
+
+```{python}
+yaml_output = reconstructed.to_yaml()
+print(yaml_output[:2000])
+print("\n... [truncated]")
+```

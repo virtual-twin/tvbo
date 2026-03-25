@@ -1,0 +1,100 @@
+---
+title: "Ex20: Analog Synapses"
+description: "Graded (non-spiking) synaptic transmission between cells"
+---
+
+## Model: Analog Synapses
+
+Demonstrates `<gradedSynapse>` and `<silentSynapse>` — continuous graded
+synaptic transmission where the postsynaptic current depends smoothly on
+the presynaptic voltage, without spike-based transmission.
+
+The cells are FitzHugh-Nagumo oscillators.
+
+---
+
+## 1. Define FHN Cell in TVBO
+
+```{python}
+from tvbo import SimulationExperiment
+
+exp = SimulationExperiment.from_string("""
+label: "NeuroML Ex20: FHN with Analog Synapses"
+dynamics:
+  name: FitzHughNagumo
+  parameters:
+    I: { value: 0.8 }
+  state_variables:
+    V:
+      equation: { rhs: "V - V**3/3 - W + I" }
+      initial_value: 0.0
+      variable_of_interest: true
+    W:
+      equation: { rhs: "0.08*(V + 0.7 - 0.8*W)" }
+      initial_value: 0.0
+network:
+  number_of_nodes: 1
+integration:
+  method: euler
+  step_size: 0.01
+  duration: 200.0
+  time_scale: s
+""")
+print(f"Model: {exp.dynamics.name}")
+```
+
+## 2. Render LEMS XML
+
+```{python}
+xml = exp.render("lems")
+print(xml[:1200])
+```
+
+## 3. Run Reference
+
+```{python}
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(".")))
+from _nml_helpers import run_lems_example
+
+ref_outputs = run_lems_example("LEMS_NML2_Ex20_AnalogSynapses.xml")
+for name, arr in ref_outputs.items():
+    print(f"  {name}: shape={arr.shape}")
+```
+
+## 4. Run TVBO
+
+```{python}
+import numpy as np
+
+result = exp.run("neuroml")
+da = result.integration.data
+tvbo_arr = np.column_stack([da.coords['time'].values, da.values])
+print(f"TVBO: shape={tvbo_arr.shape}")
+```
+
+## 5. Plot Reference
+
+```{python}
+import matplotlib.pyplot as plt
+import numpy as np
+
+for name, ref_arr in ref_outputs.items():
+    t = ref_arr[:, 0] * 1000
+    fig, ax = plt.subplots(figsize=(10, 4))
+    for i in range(1, min(ref_arr.shape[1], 6)):
+        ax.plot(t, ref_arr[:, i], alpha=0.8, label=f'col {i}')
+    ax.set_xlabel("Time (ms)")
+    ax.set_title(f"Ex20: Analog Synapses — {name}")
+    ax.legend(fontsize=7)
+    ax.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.show()
+```
+
+::: {.callout-note}
+## Graded Synapses
+`gradedSynapse` and `silentSynapse` are NeuroML-native network features for
+continuous synaptic transmission.  TVBO represents the FHN cell dynamics;
+the synaptic kinetics are handled by the NeuroML adapter.
+:::

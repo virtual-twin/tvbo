@@ -1,0 +1,110 @@
+---
+title: "BIDS Integration"
+subtitle: "Brain Imaging Data Structure export for computational modeling"
+---
+
+## Overview
+
+TVBO supports export to the [Brain Imaging Data Structure (BIDS)](https://bids.neuroimaging.io/) [@Poldrack2024] format, specifically following **BEP034: Computational Modeling Extension v1.0.0** [@Schirner2021].
+
+This enables:
+
+- **Standardized file organization** for simulation outputs
+- **Full provenance tracking** of model parameters
+- **Interoperability** with neuroimaging analysis pipelines
+- **Reproducibility** through JSON sidecar metadata
+
+## Tutorials
+
+| Tutorial | Description |
+|----------|-------------|
+| [BIDS Export](BIDS_Export.qmd) | Complete export workflow |
+| [Computational Modelling](BIDS_comp_modelling.md) | BEP034 specification details |
+
+## Directory Structure
+
+BIDS computational modeling uses a specific directory structure:
+
+```
+derivatives/tvbo/
+├── net/              # Network connectivity
+│   ├── weights.tsv
+│   └── distances.tsv
+├── ts/               # Time series
+│   ├── *_bold.tsv
+│   └── *_states.tsv
+├── eq/               # Model equations
+│   └── model.tvbo
+├── coord/            # Region coordinates
+│   └── coordinates.tsv
+├── map/              # Mapping files
+│   └── parcellation.tsv
+└── code/             # Analysis scripts
+    └── simulate.py
+```
+
+## Quick Start
+
+### Export Simulation to BIDS
+
+```python
+from tvbo import SimulationExperiment
+
+# Load and run experiment
+exp = SimulationExperiment.from_file("experiment.yaml")
+results = exp.run()
+
+# Export to BIDS format
+exp.to_bids("output/bids", results=results)
+```
+
+### BIDS File Naming
+
+BIDS uses entity-value pairs in filenames with content-based hashing:
+
+```
+sub-001_task-rest_model-JansenRit_id-abc123_bold.tsv
+```
+
+Components:
+- `sub-001`: Subject identifier
+- `task-rest`: Task name
+- `model-JansenRit`: Model used
+- `id-abc123`: Hash of JSON sidecar
+- `bold`: Data modality
+
+## Key Features
+
+### JSON Sidecar Metadata
+
+Every data file has an accompanying JSON sidecar with full provenance:
+
+```json
+{
+  "Model": "JansenRit",
+  "Parameters": {
+    "A": 3.25,
+    "B": 22.0,
+    "a": 100.0,
+    "b": 50.0
+  },
+  "Integration": {
+    "method": "Euler",
+    "dt": 0.1,
+    "duration": 1000.0
+  }
+}
+```
+
+### Content-Based Hashing
+
+File identifiers are computed from metadata to ensure:
+- **Uniqueness**: Same parameters → same ID
+- **Reproducibility**: Easy to verify simulation provenance
+- **Deduplication**: Avoid redundant files
+
+## See Also
+
+- [BIDS Specification](https://bids-specification.readthedocs.io/)
+- [BEP034 Proposal](https://bids.neuroimaging.io/bep034)
+- [OpenMINDS Integration](../OpenMINDS.qmd)

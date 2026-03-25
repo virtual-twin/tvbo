@@ -1,0 +1,44 @@
+tvbo_class: tvbo:Network
+schema_version: tvb-datamodel/0.7.0
+label: SmileyNetwork
+number_of_nodes: 9
+distance_unit: mm
+time_unit: ms
+data_file: SmileyNetwork.h5
+parameters:
+  conduction_speed:
+    label: v
+    value: 3.0
+    unit: mm_per_ms
+nodes:
+- id: 0
+  label: node_0
+- id: 1
+  label: node_1
+- id: 2
+  label: node_2
+- id: 3
+  label: node_3
+- id: 4
+  label: node_4
+- id: 5
+  label: node_5
+- id: 6
+  label: node_6
+- id: 7
+  label: node_7
+- id: 8
+  label: node_8
+edges:
+- label: sc
+  format: dense
+  weighted: true
+  valid_diagonal: false
+  non_negative: true
+  directed: false
+- label: fc
+  format: dense
+  weighted: true
+  valid_diagonal: false
+  non_negative: true
+  directed: false

@@ -1,9 +1,115 @@
 """
 TVB-O Data Model
 ================
-This module contains the data model for TVB-O.
+Auto-generated from LinkML schema.
 
-```{seealso}
-https://bss.git-pages.bihealth.org/tvb-o/tvbo-datamodel
-```
+Usage:
+    from tvbo.datamodel.schema import Dynamics, Parameter, Equation
+    from tvbo.datamodel.pydantic import Dynamics as PydanticDynamics
 """
+
+from tvbo.datamodel.schema import Network  # noqa: E402
+
+# number_of_regions is a deprecated alias for number_of_nodes.
+# Defined here (not in the generated file) so it survives make gen-linkml.
+Network.number_of_regions = property(
+    lambda self: self.number_of_nodes,
+    lambda self, v: setattr(self, 'number_of_nodes', v),
+)
+
+from .schema import *  # noqa: E402, F401, F403
+
+# ── UnitEnum: normalize aliases on construction ──────────────────────
+# The auto-generated __post_init__ has two coercion patterns:
+#   self.unit = UnitEnum(raw_string)              — constructor
+#   self.distance_unit = getattr(UnitEnum, text)  — attribute access
+#
+# Problems: (1) constructor rejects human-readable aliases ("s^-1"),
+#           (2) getattr returns PermissibleValue, not UnitEnum, which
+#               breaks on as_dict() round-trips (JAX tree_unflatten).
+#
+# Fix: patch __init__ to coerce any input to a canonical string key.
+
+from tvbo.datamodel.schema import UnitEnum as _UnitEnum  # noqa: E402
+from tvbo.utils.units import normalize_unit as _normalize_unit  # noqa: E402
+
+# Register slash-notation aliases (mm/ms → mm_per_ms) so both work in YAML
+for _alias, _canon in {
+    "mm/ms": "mm_per_ms", "m/s": "m_per_s", "mV/ms": "mV_per_ms",
+    "mV/s": "mV_per_s", "Hz/nA": "Hz_per_nA", "S/m": "S_per_m",
+    "H/m": "H_per_m", "rad/ms": "rad_per_ms",
+}.items():
+    setattr(_UnitEnum, _alias, getattr(_UnitEnum, _canon))
+del _alias, _canon
+
+_UnitEnum_orig_init = _UnitEnum.__init__
+
+
+def _unit_text(obj):
+    """Extract the plain text key from any unit-like object."""
+    if isinstance(obj, str):
+        return obj
+    # UnitEnum: str() returns just the key
+    if isinstance(obj, _UnitEnum):
+        return str(obj)
+    # PermissibleValue or any object with .text
+    text = getattr(obj, 'text', None)
+    if text is not None:
+        return text
+    # JsonObj from as_dict() round-trip: obj._code.text
+    inner = getattr(obj, '_code', None)
+    if inner is not None:
+        text = getattr(inner, 'text', None)
+        if text is not None:
+            return text
+    # dict from as_dict(): {'_code': {'text': 'mm', ...}}
+    if isinstance(obj, dict):
+        inner = obj.get('_code', obj)
+        if isinstance(inner, dict):
+            return inner.get('text', str(obj))
+    return str(obj)
+
+
+def _unit_enum_init(self, code):
+    code = _unit_text(code)
+    code = _normalize_unit(code) or code
+    _UnitEnum_orig_init(self, code)
+
+
+_UnitEnum.__init__ = _unit_enum_init
+
+# Patch metaclass so getattr(UnitEnum, "mm") returns a UnitEnum instance
+# instead of a bare PermissibleValue. The auto-generated __post_init__
+# uses `self.distance_unit = getattr(UnitEnum, self.distance_unit)`.
+# Without this patch, that stores a PermissibleValue which as_dict()
+# serializes to a huge dict that becomes an unparseable JsonObj on round-trip.
+_UnitEnumMeta = type(_UnitEnum)
+_meta_orig_getattribute = _UnitEnumMeta.__getattribute__
+
+from linkml_runtime.linkml_model.meta import PermissibleValue as _PermissibleValue
+
+
+def _unit_meta_getattribute(cls, item):
+    try:
+        result = _meta_orig_getattribute(cls, item)
+    except AttributeError:
+        if item.startswith('__') and item.endswith('__'):
+            raise
+        # Dotted names like "a.u." can't be Python attributes; construct instead
+        canonical = _normalize_unit(item) or item
+        return cls(canonical)
+    # Wrap bare PermissibleValue in a proper UnitEnum instance
+    if isinstance(result, _PermissibleValue) and not isinstance(result, _UnitEnum):
+        canonical = _normalize_unit(item) or item
+        return cls(canonical)
+    return result
+
+
+_UnitEnumMeta.__getattribute__ = _unit_meta_getattribute
+
+# Backward-compat aliases for old module names
+import sys
+from tvbo.datamodel import schema as tvbo_datamodel  # noqa: E402, F401
+from tvbo.datamodel import pydantic as tvbopydantic  # noqa: E402, F401
+sys.modules['tvbo.datamodel.tvbo_datamodel'] = tvbo_datamodel
+sys.modules['tvbo.datamodel.tvbopydantic'] = tvbopydantic

@@ -80,7 +80,7 @@ model:
       equation: { rhs: y1 - y2 }
 
   # Declare an optional coupling term name that experiments may enable by overriding y4
-  coupling_terms:
+  coupling_inputs:
     c_glob:
 
 # Experiments representing the study’s main figures/conditions
@@ -121,7 +121,7 @@ simulation_experiments:
           equation:
             rhs: A*a*(p + C2*Sigm(C1*y0) + c_glob) - 2*a*y4 - (a**2)*y1
     network:
-      number_of_regions: 2
+      number_of_nodes: 2
       node_labels: [col1, col2]
       weights:
         x: { values: [0, 1] }
@@ -133,8 +133,9 @@ simulation_experiments:
         x: { values: [0, 1] }
         y: { values: [0, 1] }
         values: [0, 0, 0, 0]    # no delay
-      conduction_speed:
-        value: 1.0
+      parameters:
+        conduction_speed:
+          value: 1.0
     coupling:
       name: Linear
       delayed: false
@@ -169,7 +170,7 @@ simulation_experiments:
           equation:
             rhs: A*a*(p + C2*Sigm(C1*y0) + c_glob) - 2*a*y4 - (a**2)*y1
     network:
-      number_of_regions: 2
+      number_of_nodes: 2
       node_labels: [visual, prefrontal]
       weights:
         x: { values: [0, 1] }
@@ -179,8 +180,9 @@ simulation_experiments:
         x: { values: [0, 1] }
         y: { values: [0, 1] }
         values: [0, 0.033, 0.033, 0]  # ~33 ms one-way delays
-      conduction_speed:
-        value: 1.0                     # so delay ≈ length
+      parameters:
+        conduction_speed:
+          value: 1.0                     # so delay ≈ length
     coupling:
       name: Linear
       delayed: true
@@ -206,7 +208,7 @@ simulation_experiments:
           equation:
             rhs: A*a*(p + C2*Sigm(C1*y0) + c_glob) - 2*a*y4 - (a**2)*y1
     network:
-      number_of_regions: 2
+      number_of_nodes: 2
       node_labels: [col1, col2]
       weights:
         x: { values: [0, 1] }
@@ -216,8 +218,9 @@ simulation_experiments:
         x: { values: [0, 1] }
         y: { values: [0, 1] }
         values: [0, 0, 0, 0]
-      conduction_speed:
-        value: 1.0
+      parameters:
+        conduction_speed:
+          value: 1.0
     coupling:
       name: Linear
       delayed: false
@@ -259,7 +262,7 @@ simulation_experiments:
           equation:
             rhs: A*a*(p + C2*Sigm(C1*y0) + c_glob) - 2*a*y4 - (a**2)*y1
     network:
-      number_of_regions: 2
+      number_of_nodes: 2
       node_labels: [visual, prefrontal]
       weights:
         x: { values: [0, 1] }
@@ -269,8 +272,9 @@ simulation_experiments:
         x: { values: [0, 1] }
         y: { values: [0, 1] }
         values: [0, 0.033, 0.033, 0]
-      conduction_speed:
-        value: 1.0
+      parameters:
+        conduction_speed:
+          value: 1.0
     coupling:
       name: Linear
       delayed: true

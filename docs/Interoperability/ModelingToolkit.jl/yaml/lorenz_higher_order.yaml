@@ -1,0 +1,58 @@
+id: 201
+label: "Second-Order Lorenz"
+description: >-
+    A second-order variant of the Lorenz system demonstrating
+    ModelingToolkit.jl's automatic higher-order ODE lowering.
+    The x equation uses equation_order=2, meaning x'' = σ(y - x).
+    MTK's mtkcompile introduces an auxiliary variable xˍt and produces
+    a coupled first-order system.
+
+dynamics:
+    name: Lorenz63_HigherOrder
+    description: >-
+        Second-order Lorenz variant from the MTK documentation.
+        Variable x has equation_order=2, so d²x/dt² = σ(y-x).
+    parameters:
+        sigma:
+            name: sigma
+            value: 10.0
+            description: Prandtl number
+        rho:
+            name: rho
+            value: 28.0
+            description: Rayleigh number
+        beta:
+            name: beta
+            value: 2.6666666666666665
+            description: Geometric factor (8/3)
+    state_variables:
+        x:
+            name: x
+            initial_value: 1.0
+            derivative_initial_value: 2.0
+            equation_order: 2
+            description: >-
+                Second-order state variable. The equation x'' = σ(y - x)
+                is automatically lowered to two first-order equations by MTK.
+            equation:
+                rhs: sigma * (y - x)
+        y:
+            name: y
+            initial_value: 0.0
+            description: Temperature difference (horizontal)
+            equation:
+                rhs: x * (rho - z) - y
+        z:
+            name: z
+            initial_value: 0.0
+            description: Temperature difference (vertical)
+            equation:
+                rhs: x * y - beta * z
+
+integration:
+    step_size: 0.01
+    duration: 100.0
+    method: Tsit5
+
+network:
+    number_of_nodes: 1

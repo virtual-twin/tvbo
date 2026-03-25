@@ -1,0 +1,16 @@
+---
+title: "Examples"
+listing:
+  id: examples-listing
+  contents: "*.qmd"
+  type: grid
+  image-height: "200"
+  grid-columns: 3
+  sort: "title"
+  fields: [image, title, description]
+---
+
+Browse runnable examples demonstrating TVBO capabilities.
+
+::: {#examples-listing}
+:::

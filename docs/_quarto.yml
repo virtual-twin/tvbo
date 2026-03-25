@@ -1,30 +1,29 @@
 project:
   type: website
   pre-render:
-    # Use the project virtualenv Python to ensure required packages are available
-    - python scripts/tvbo_package_struct.py
-    - python -m quartodoc build --config api/_quartodoc_config.yml
-    - python scripts/generate_datamodel_docs.py
-    # - python scripts/generate_yaml_examples.py
-    - python scripts/fix_mermaid_blocks.py
-    - python scripts/tvbo_package_struct.py --post
-  post-render:
-    - python scripts/generate_browser.py
+    - bash scripts/prerender.sh
   render:
     - index.qmd
     - installation.md
-    - browser.qmd
+    - reference.qmd
+    - platform.qmd
     - api/**/*.qmd
+    - datamodel/*.qmd
     - datamodel/**/*.qmd
     - Usage/*.qmd
+    - examples/**/*.qmd
+    - Specification/*.qmd
+    - Interoperability/**/*.qmd
+    - Interoperability/*.qmd
+    - Replication/*.qmd
+    - Replication/**/*.qmd
+    - Developer/*.md
     - "!_archive/*"
   output-dir: _site
 
-# Use our nested sidebar and sections at render time
+# Sidebar configuration lives in _toc.yml (single unified sidebar).
 metadata-files:
-    - api/_sidebar.yml
-
-# Note: quartodoc generates the API sidebar; datamodel uses gen-doc
+    - _toc.yml
 
 website:
     title: "TVB-O Documentation"
@@ -37,65 +36,25 @@ website:
     page-navigation: true
 
     navbar:
-        logo: _static/tvbo_python_square.svg
-        logo-altg: "tvbo-python logo"
+        logo: _static/tvbo_favicon.png
+        logo-alt: "TVB-O logo"
 
         left:
             - href: index.qmd
               text: Home
-            - href: installation.md
-              text: Installation
-            - text: "API Documentation"
-              href: api/index.qmd
+            - text: "Usage"
+              href: Usage/index.qmd
             - text: "Data Model"
               href: datamodel/index.qmd
-            - text: "Knowledge Browser"
-              href: browser.qmd
-            - text: "Usage"
-              menu:
-                  - text: "Defining Dynamical Systems"
-                    href: Usage/DefineDynamicalSystem.qmd
-                #   - text: "Setting up Simulation Experiments"
-                #     href: Usage/SetupSimulationExperiments.qmd
-                #   - text: "Running Simulations"
-                #     href: Usage/RunSimulations.qmd
-                #   - text: "Analyzing Results"
-                #     href: Usage/AnalyzeResults.qmd
+            - text: "Platform"
+              href: platform.qmd
 
         tools:
             - icon: github
               href: https://github.com/leon-k-martin/tvbo
               text: tvbo GitHub
 
-    sidebar:
-        - id: about
-          collapse-level: 1
-          contents:
-              - text: "Home"
-                href: index.qmd
-              - text: "API Documentation"
-                href: api/index.qmd
-        - id: datamodel
-          title: "Data Model"
-          collapse-level: 2
-          contents:
-              - text: "Overview"
-                href: datamodel/index.qmd
-              # - text: "Examples"
-              #   href: datamodel/examples/index.qmd
-              - section: "Core Classes"
-                contents:
-                  - datamodel/classes/SimulationExperiment.qmd
-                  - datamodel/classes/Dynamics.qmd
-                  - datamodel/classes/Network.qmd
-                  - datamodel/classes/Connectome.qmd
-              - section: "Monitoring & Observation"
-                contents:
-                  - datamodel/classes/ObservationModel.qmd
-              - section: "Parameters & Variables"
-                contents:
-                  - datamodel/classes/Parameter.qmd
-                  - datamodel/classes/StateVariable.qmd
+    sidebar: []  # merged from _toc.yml and api/_sidebar.yml
 
     page-footer:
         center: |
@@ -121,18 +80,24 @@ format:
             - text: |
                   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" referrerpolicy="no-referrer" />
                   <script src="//unpkg.com/3d-force-graph"></script>
+                  <script src="/_static/tvbo-icons.js"></script>
         grid:
           sidebar-width: 250px
           body-width: 900px
           margin-width: 300px
         out-width: "100%"
 
+bibliography: references.bib
+csl: https://raw.githubusercontent.com/citation-style-language/styles/master/ieee.csl
+
 fig-align: center
 
+# Cache notebook execution results. 'auto' only re-executes when source changes.
+# Cached results stored in _freeze/ — commit this directory to share across machines.
 execute:
     enabled: true
     cache: true
-    freeze: false
+    freeze: auto
 
 markdown:
     extensions: [myst]

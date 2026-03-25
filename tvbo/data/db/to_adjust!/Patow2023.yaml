@@ -97,7 +97,7 @@ simulation_experiments:
     connectivity:
       parcellation:
         label: HCP-MMP1
-        number_of_regions: 379
+        number_of_nodes: 379
 
     coupling:
       parameters:

@@ -1,0 +1,118 @@
+---
+title: "BifurcationKit.jl Backend"
+subtitle: "Julia code generation for bifurcation analysis"
+---
+
+## Overview
+
+The **BifurcationKit.jl** backend generates Julia code for bifurcation analysis
+using [BifurcationKit.jl](https://bifurcationkit.github.io/BifurcationKitDocs.jl/stable/) [@Veltz2020].
+From a YAML experiment specification, `render_code("bifurcation-julia")` produces
+a self-contained Julia script that:
+
+- Defines the model's vector field from YAML equations (including derived variables)
+- Finds a steady-state equilibrium via time integration
+- Sets up a `BifurcationProblem` with the chosen free parameter
+- Runs equilibrium continuation with `ContinuationPar` settings from YAML
+- Detects fold, Hopf, and branch-point bifurcations
+- Optionally continues periodic orbits from detected Hopf points using orthogonal collocation
+
+## Examples
+
+These examples recreate official
+[BifurcationKit.jl examples](https://github.com/bifurcationkit/BifurcationKit.jl/tree/main/examples)
+using TVBO's declarative YAML format.
+
+### Mapping to Original Examples
+
+| Original BifurcationKit.jl Example | TVBO Example | Features Demonstrated |
+|-------------------------------------|--------------|----------------------|
+| [`TMModel.jl`](https://github.com/bifurcationkit/BifurcationKit.jl/blob/main/examples/TMModel.jl) | [Tsodyks-Markram](TMModel.qmd) | 3-variable neural model, derived variables, equilibrium + PO continuation |
+| [`COModel.jl`](https://github.com/bifurcationkit/BifurcationKit.jl/blob/main/examples/COModel.jl) | [CO Oxidation](COModel.qmd) | Catalytic surface chemistry, conservation law via derived variable, PO with mesh adaptation |
+
+## Quick Start
+
+```python
+from tvbo import Dynamics
+from tvbo.classes.continuation import Continuation
+
+# Load model + bifurcation spec from YAML
+model = Dynamics.from_db("TsodyksMarkram")
+cont = Continuation.from_file("yaml/TMModel-bifurcation.yaml")
+
+# Generate BifurcationKit.jl code
+julia_code = model.render_code("bifurcation-julia", continuation=cont)
+print(julia_code)
+
+# Or run directly (requires Julia + BifurcationKit.jl installed)
+result = model.run("bifurcation-julia", continuation=cont)
+result.plot()
+```
+
+## How It Works
+
+The code generation pipeline:
+
+1. **Model YAML → vector field**: The model YAML defines parameters, state variables,
+   derived variables, and equations. The `tvbo-julia-model.jl.mako` template renders
+   these into a Julia function `ModelName!(dx, x, p, t)`.
+
+2. **Bifurcation YAML → continuation settings**: The bifurcation YAML specifies the
+   free parameter, its range, algorithm choice, step-size control, Newton solver
+   settings, and branch-switching configuration. The `tvbo-julia-BifurcationKit.jl.mako`
+   template maps these to BifurcationKit.jl API calls.
+
+3. **Execution**: TVBO uses `juliacall` (PythonCall) to execute the generated Julia code
+   in-process, then extracts the `ContResult` objects into Python `BifurcationResult`
+   objects with Pandas DataFrames and matplotlib plotting.
+
+## YAML Schema
+
+### Model YAML (in `tvbo/database/models/`)
+
+Defines the dynamical system:
+
+```yaml
+name: MyModel
+parameters:
+    a: {name: a, value: 1.0, domain: {lo: -5, hi: 5}}
+state_variables:
+    x: {name: x, initial_value: 0.0, equation: {lhs: "Derivative(x,t)", rhs: "-x + a"}}
+derived_variables:                    # optional intermediate quantities
+    z: {name: z, equation: {lhs: z, rhs: "1 - x"}}
+```
+
+### Bifurcation YAML (continuation spec)
+
+Controls the numerical continuation:
+
+```yaml
+dynamics: MyModel                     # which model to analyze
+free_parameters:
+    - name: a                         # continuation parameter
+      domain: {lo: "-5", hi: "5"}     # parameter range
+max_steps: 400                        # max continuation steps
+bothside: true                        # continue in both directions
+branches:                             # branch switching from bifurcation points
+    - name: po_from_hopf
+      source_point: "hopf:all"        # branch from all detected Hopf points
+      bothside: true
+```
+
+See [Generic2dOscillator-bifurcation-full.yaml](../../../tvbo/database/continuations/Generic2dOscillator-bifurcation-full.yaml)
+for a comprehensive reference of all available settings.
+
+## Supported Features
+
+| Feature | YAML Field | BifurcationKit.jl Equivalent |
+|---------|------------|------------------------------|
+| Free parameter range | `free_parameters[].domain` | `p_min`, `p_max` in `ContinuationPar` |
+| Algorithm | `algorithm` | `PALC()`, `MoorePenrose()`, `Natural()` |
+| Step-size control | `ds`, `ds_min`, `ds_max` | `ds`, `dsmin`, `dsmax` |
+| Newton solver | `newton_tol`, `newton_max_iterations` | `NewtonPar(tol, max_iterations)` |
+| Bifurcation detection | `detect_bifurcation`, `detect_fold` | `detect_bifurcation`, `detect_fold` |
+| Eigenvalues | `nev`, `tol_stability` | `nev`, `tol_stability` |
+| PO discretization | `branches[].discretization.method` | `PeriodicOrbitOCollProblem` |
+| PO mesh | `mesh_intervals`, `degree`, `mesh_adaptation` | collocation parameters |
+| Jacobian type | `discretization.options.jacobian` | `DenseAnalytical`, `DenseAnalyticalInplace` |
+| Initial state | `initial_state.method` | time integration / Newton / given |

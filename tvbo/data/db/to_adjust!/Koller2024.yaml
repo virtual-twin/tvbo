@@ -16,7 +16,7 @@ simulation_experiments:
         - label: omega
           value: 0.0628318530717959
 
-      output_transform: np.mod(VOI, 2*np.pi)
+      output: np.mod(VOI, 2*np.pi)
 
     dynamics:
       - "default"
@@ -25,18 +25,18 @@ simulation_experiments:
       parcellation:
         label: Schaefer2018
         data: https://raw.githubusercontent.com/ThomasYeoLab/CBIG/master/stable_projects/brain_parcellation/Schaefer2018_LocalGlobal/Parcellations/MNI/Schaefer2018_1000Parcels_17Networks_order_FSLMNI152_1mm.nii.gz
-        number_of_regions: 1000
+        number_of_nodes: 1000
       weights: pub-Koller2024_parc-Schaefer1000_desc-log10weights.csv
 
     coupling:
       label: KuramotoCoupling
-      conduction_speed:
-        free: yes
-        domain:
-          lo: 1
-          hi: 10
-          step: 1
       parameters:
+        - label: conduction_speed
+          free: yes
+          domain:
+            lo: 1
+            hi: 10
+            step: 1
         - label: K
           description: "Global coupling scaling"
           free: yes

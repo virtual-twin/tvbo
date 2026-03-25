@@ -1,0 +1,135 @@
+---
+title: "Ex25: Multi-Compartment Cells"
+description: "Cells with multiple dendritic compartments connected to a network"
+---
+
+## Model: Multi-Compartment Network
+
+Demonstrates multi-compartment cells with explicit morphology (soma + dendrites)
+connected in a network. Each segment has its own channel populations.
+
+The channels use standard HH kinetics.
+
+---
+
+## 1. Define HH Cell in TVBO
+
+```{python}
+from tvbo import SimulationExperiment
+
+exp = SimulationExperiment.from_string("""
+label: "NeuroML Ex25: HH Multi-Compartment"
+dynamics:
+  name: HodgkinHuxley
+  parameters:
+    C:     { value: 10.0 }
+    g_Na:  { value: 1200.0 }
+    g_K:   { value: 360.0 }
+    g_L:   { value: 3.0 }
+    E_Na:  { value: 50.0 }
+    E_K:   { value: -77.0 }
+    E_L:   { value: -54.3 }
+    I_ext: { value: 0.08 }
+  derived_variables:
+    alpha_m:
+      equation:
+        rhs: "Piecewise((1.0, Eq(v, -40.0)), (0.1*(v + 40.0)/(1.0 - exp(-(v + 40.0)/10.0)), True))"
+    beta_m:
+      equation:
+        rhs: "4.0*exp(-(v + 65.0)/18.0)"
+    alpha_h:
+      equation:
+        rhs: "0.07*exp(-(v + 65.0)/20.0)"
+    beta_h:
+      equation:
+        rhs: "1.0/(1.0 + exp(-(v + 35.0)/10.0))"
+    alpha_n:
+      equation:
+        rhs: "Piecewise((0.1, Eq(v, -55.0)), (0.01*(v + 55.0)/(1.0 - exp(-(v + 55.0)/10.0)), True))"
+    beta_n:
+      equation:
+        rhs: "0.125*exp(-(v + 65.0)/80.0)"
+  state_variables:
+    v:
+      equation:
+        rhs: "(-g_Na*m**3*h*(v - E_Na) - g_K*n**4*(v - E_K) - g_L*(v - E_L) + I_ext*1000) / C"
+      initial_value: -65.0
+      variable_of_interest: true
+    m:
+      equation: { rhs: "alpha_m*(1 - m) - beta_m*m" }
+      initial_value: 0.05
+    h:
+      equation: { rhs: "alpha_h*(1 - h) - beta_h*h" }
+      initial_value: 0.6
+    n:
+      equation: { rhs: "alpha_n*(1 - n) - beta_n*n" }
+      initial_value: 0.32
+network:
+  number_of_nodes: 1
+integration:
+  method: euler
+  step_size: 0.01
+  duration: 300.0
+  time_scale: ms
+""")
+print(f"Model: {exp.dynamics.name}")
+```
+
+## 2. Render LEMS XML
+
+```{python}
+xml = exp.render("lems")
+print(xml[:1200])
+```
+
+## 3. Run Reference
+
+```{python}
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(".")))
+from _nml_helpers import run_lems_example
+
+ref_outputs = run_lems_example("LEMS_NML2_Ex25_MultiComp.xml")
+for name, arr in ref_outputs.items():
+    print(f"  {name}: shape={arr.shape}")
+```
+
+## 4. Run TVBO
+
+```{python}
+import numpy as np
+
+result = exp.run("neuroml")
+da = result.integration.data
+tvbo_arr = np.column_stack([da.coords['time'].values, da.values])
+print(f"TVBO: shape={tvbo_arr.shape}")
+```
+
+## 5. Plot Reference
+
+```{python}
+import matplotlib.pyplot as plt
+import numpy as np
+
+for name, ref_arr in ref_outputs.items():
+    t = ref_arr[:, 0] * 1000
+    fig, ax = plt.subplots(figsize=(10, 4))
+    n_show = min(ref_arr.shape[1] - 1, 8)
+    for i in range(1, n_show + 1):
+        ax.plot(t, ref_arr[:, i] * 1000, alpha=0.7, label=f'Comp {i}')
+    ax.set_xlabel("Time (ms)")
+    ax.set_ylabel("Voltage (mV)")
+    ax.set_title(f"Ex25: Multi-Compartment — {name}")
+    if n_show <= 6:
+        ax.legend(fontsize=7)
+    ax.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.show()
+```
+
+::: {.callout-note}
+## Multi-Compartment in TVBO
+Explicit morphology and per-segment channel populations are NeuroML-native features.
+TVBO represents the HH channel dynamics per compartment; the inter-compartment
+axial resistance coupling is handled by the NeuroML adapter.
+:::

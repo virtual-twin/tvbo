@@ -123,7 +123,7 @@ simulation_experiments:
           equation:
             rhs: A*a*(p + C2*Sigm(C1*y0) + K * c_glob) - 2*a*y4 - a**2*y1
           coupling_variable: True
-      coupling_terms:
+      coupling_inputs:
         c_glob:
 
     # stimulus:
@@ -139,7 +139,7 @@ simulation_experiments:
 
 
     network:
-      number_of_regions: 2
+      number_of_nodes: 2
       weights:
         x:
           values: [1,2]

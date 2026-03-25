@@ -1,0 +1,25 @@
+```{python}
+import numpy as np
+from tvbo import Network
+
+np.random.seed(42)
+noise = np.random.uniform(0.05, 0.15, (9, 9))
+np.fill_diagonal(noise, 0)  # no self-connections
+
+# SC = :( sad smiley
+sc = noise.copy()
+sc[2, 2] = sc[2, 6] = 0.9                # eyes
+sc[5, 3] = sc[5, 4] = sc[5, 5] = 0.9     # frown top
+sc[6, 2] = sc[6, 6] = 0.8                 # frown mid
+sc[7, 1] = sc[7, 7] = 0.7                 # frown ends
+
+# FC = :) happy smiley
+fc = noise.copy()
+fc[2, 2] = fc[2, 6] = 0.9                # eyes
+fc[5, 1] = fc[5, 7] = 0.7                # smile ends
+fc[6, 2] = fc[6, 6] = 0.8                # smile mid
+fc[7, 3] = fc[7, 4] = fc[7, 5] = 0.9     # smile bottom
+
+net = Network.from_matrix(sc=sc, fc=fc)
+net.plot_overview()
+```

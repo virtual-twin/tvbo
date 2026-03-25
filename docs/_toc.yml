@@ -1,0 +1,1467 @@
+# ──────────────────────────────────────────────────────────────────────
+# Table of Contents / Sidebar configuration
+# Separated from _quarto.yml for maintainability.
+# Included via metadata-files in _quarto.yml.
+#
+# Single unified sidebar: Quarto auto-expands the section containing
+# the current page and keeps everything else collapsed.
+# ──────────────────────────────────────────────────────────────────────
+
+website:
+    sidebar:
+        - title: "TVB-O"
+          logo: _static/tvbo_logo.png
+          collapse-level: 1
+          contents:
+              - text: "Home"
+                href: index.qmd
+              - text: "Installation"
+                href: installation.md
+              - section: "Quick Reference"
+                href: reference.qmd
+                contents:
+                  - text: "Examples"
+                    href: examples/index.qmd
+
+              - section: "Usage"
+                href: Usage/index.qmd
+                contents:
+                  - section: "Fundamentals"
+                    contents:
+                      - text: "Getting Started"
+                        href: Usage/GettingStarted.qmd
+                      - text: "Defining Dynamical Systems"
+                        href: Usage/DefineDynamicalSystem.qmd
+                      - text: "Defining Networks"
+                        href: Specification/Network.qmd
+                      - text: "Coupling Functions"
+                        href: Usage/CouplingFunctions.qmd
+                      - text: "Integrators"
+                        href: Usage/Integrators.qmd
+                      - text: "Simulation Experiments"
+                        href: Usage/SimulationExperiments.qmd
+                      - text: "The Experiment Result"
+                        href: Usage/Results.qmd
+                      - text: "Code Generation"
+                        href: Usage/CodeGeneration.qmd
+                  - section: "Observation & Analysis"
+                    contents:
+                      - text: "Observation Models"
+                        href: Usage/ObservationModels.qmd
+                      - text: "Algorithms"
+                        href: Specification/Algorithms.qmd
+                      - text: "Loss Functions"
+                        href: Specification/LossFunction.qmd
+                      - text: "Parameter Exploration"
+                        href: Usage/ParameterExploration.qmd
+                      - text: "Model Fitting"
+                        href: Usage/ModelFitting.qmd
+                      - text: "Bifurcation Analysis"
+                        href: Usage/BifurcationAnalysis.qmd
+                      - text: "Visualization"
+                        href: Usage/Visualization.qmd
+                      - text: "Output Specification"
+                        href: Specification/Output.qmd
+                  - section: "Simulation Features"
+                    contents:
+                      - text: "Events & Stimulation"
+                        href: Usage/Events.qmd
+                      - text: "Noise & Stochastic Integration"
+                        href: Usage/Noise.qmd
+                  - section: "Advanced"
+                    contents:
+                      - text: "Creating Custom Networks"
+                        href: Usage/CreatingNetworks.qmd
+                      - text: "PDE Simulation"
+                        href: Usage/PDESimulation.qmd
+                      - text: "Heterogeneous Node Dynamics"
+                        href: Usage/HeterogeneousNodes.qmd
+                      - text: "Heterogeneous Edge Dynamics"
+                        href: Usage/HeterogeneousEdges.qmd
+                      - text: "Unit-Aware Computations"
+                        href: Usage/UnitValidation.qmd
+
+              - section: "Interoperability"
+                href: Interoperability/index.qmd
+                contents:
+                  - section: "The Virtual Brain (TVB)"
+                    href: Interoperability/TVB/index.qmd
+                    contents:
+                      - text: "Connectome"
+                        href: Interoperability/TVB/Connectome.qmd
+                      - text: "Monitors"
+                        href: Interoperability/TVB/Monitor.qmd
+                  - section: "tvboptim Backend"
+                    href: Interoperability/tvboptim/index.qmd
+                    contents:
+                      - text: "Jansen-Rit"
+                        href: Interoperability/tvboptim/JR_tvboptim.qmd
+                      - text: "Reduced Wong-Wang"
+                        href: Interoperability/tvboptim/RWW_tvboptim.qmd
+                      - text: "EI Tuning"
+                        href: Interoperability/tvboptim/EI_Tuning_tvboptim.qmd
+                  - section: "PyRates"
+                    href: Interoperability/Pyrates/index.qmd
+                    contents:
+                      - text: "Round-Trip Demo"
+                        href: Interoperability/Pyrates/PyRates.qmd
+                      - text: "Analysis"
+                        href: Interoperability/Pyrates/PyRates_Analysis.qmd
+                      - text: "Bifurcation"
+                        href: Interoperability/Pyrates/PyRates_Bifurcation.qmd
+                      - text: "Heterogeneous Networks"
+                        href: Interoperability/Pyrates/PyRates_Heterogeneous_Network.qmd
+                  - section: "NetworkDynamics.jl"
+                    href: Interoperability/NetworkDynamics.jl/index.qmd
+                    contents:
+                      - text: "Network Diffusion"
+                        href: Interoperability/NetworkDynamics.jl/diffusion.qmd
+                      - text: "2D Network Diffusion"
+                        href: Interoperability/NetworkDynamics.jl/diffusion_2d.qmd
+                      - text: "Kuramoto Oscillators"
+                        href: Interoperability/NetworkDynamics.jl/kuramoto.qmd
+                      - text: "Heterogeneous Kuramoto"
+                        href: Interoperability/NetworkDynamics.jl/heterogeneous_kuramoto.qmd
+                      - text: "FitzHugh-Nagumo"
+                        href: Interoperability/NetworkDynamics.jl/fitzhugh_nagumo.qmd
+                      - text: "Cascading Failure"
+                        href: Interoperability/NetworkDynamics.jl/cascading_failure.qmd
+                      - text: "Stress on Truss"
+                        href: Interoperability/NetworkDynamics.jl/stress_on_truss.qmd
+                  - section: "BifurcationKit.jl"
+                    href: Interoperability/BifurcationKit.jl/index.qmd
+                    contents:
+                      - text: "Tsodyks-Markram Model"
+                        href: Interoperability/BifurcationKit.jl/TMModel.qmd
+                      - text: "CO Oxidation Model"
+                        href: Interoperability/BifurcationKit.jl/COModel.qmd
+                  - section: "ModelingToolkit.jl"
+                    href: Interoperability/ModelingToolkit.jl/index.qmd
+                    contents:
+                      - text: "Higher-Order ODE Lowering"
+                        href: Interoperability/ModelingToolkit.jl/higher_order.qmd
+                  - section: "NeuroML / LEMS"
+                    href: Interoperability/NeuroML/index.qmd
+                    contents:
+                      - text: "LEMS Export"
+                        href: Interoperability/NeuroML/LEMS_Export.qmd
+                      - section: "LEMS Examples"
+                        href: Interoperability/NeuroML/examples/index.qmd
+                        contents:
+                          - auto: Interoperability/NeuroML/examples/Ex*.qmd
+                      - section: "NML2 File Documentation"
+                        contents:
+                          - auto: Interoperability/NeuroML/examples/NML2_*.qmd
+                  - section: "BIDS"
+                    href: Interoperability/BIDS/index.qmd
+                    contents:
+                      - text: "BIDS Export"
+                        href: Interoperability/BIDS/BIDS_Export.qmd
+                      - text: "Computational Modelling"
+                        href: Interoperability/BIDS/BIDS_comp_modelling.md
+                  - section: "OpenMINDS"
+                    contents:
+                      - text: "OpenMINDS Interoperability"
+                        href: Interoperability/OpenMINDS.qmd
+
+              - text: "---"
+
+              - text: "Platform"
+                href: platform.qmd
+# BEGIN:replication-autogen
+              - section: "Replication Studies"
+                href: Replication/index.qmd
+                contents:
+                  - text: "Jansen & Rit (1995)"
+                    href: Replication/Jansen1995/Run_Jansen1995.qmd
+# END:replication-autogen
+
+              - text: "---"
+
+# BEGIN:datamodel-autogen
+              - section: "Data Model"
+                href: datamodel/index.qmd
+                contents:
+                  - section: "Schemas"
+                    contents:
+                      - text: "SANDS"
+                        href: datamodel/schemas/SANDS.qmd
+                      - text: "tvb-datamodel"
+                        href: datamodel/schemas/tvb-datamodel.qmd
+                      - text: "tvb_dbs"
+                        href: datamodel/schemas/tvb_dbs.qmd
+                      - text: "types"
+                        href: datamodel/schemas/types.qmd
+                  - section: "Classes"
+                    contents:
+                      - text: "Aggregation"
+                        href: datamodel/classes/Aggregation.qmd
+                      - text: "Algorithm"
+                        href: datamodel/classes/Algorithm.qmd
+                      - text: "Algorithm Include"
+                        href: datamodel/classes/AlgorithmInclude.qmd
+                      - text: "Argument"
+                        href: datamodel/classes/Argument.qmd
+                      - text: "Bids Entities"
+                        href: datamodel/classes/BidsEntities.qmd
+                      - text: "Boundary Condition"
+                        href: datamodel/classes/BoundaryCondition.qmd
+                      - text: "Brain Atlas"
+                        href: datamodel/classes/BrainAtlas.qmd
+                      - text: "Brain Region Series"
+                        href: datamodel/classes/BrainRegionSeries.qmd
+                      - text: "Branch Switch"
+                        href: datamodel/classes/BranchSwitch.qmd
+                      - text: "Callable"
+                        href: datamodel/classes/Callable.qmd
+                      - text: "Case"
+                        href: datamodel/classes/Case.qmd
+                      - text: "Class Reference"
+                        href: datamodel/classes/ClassReference.qmd
+                      - text: "Clinical Improvement"
+                        href: datamodel/classes/ClinicalImprovement.qmd
+                      - text: "Clinical Scale"
+                        href: datamodel/classes/ClinicalScale.qmd
+                      - text: "Clinical Score"
+                        href: datamodel/classes/ClinicalScore.qmd
+                      - text: "Common Coordinate Space"
+                        href: datamodel/classes/CommonCoordinateSpace.qmd
+                      - text: "Conditional Block"
+                        href: datamodel/classes/ConditionalBlock.qmd
+                      - text: "Contact"
+                        href: datamodel/classes/Contact.qmd
+                      - text: "Continuation"
+                        href: datamodel/classes/Continuation.qmd
+                      - text: "Coordinate"
+                        href: datamodel/classes/Coordinate.qmd
+                      - text: "Coupling"
+                        href: datamodel/classes/Coupling.qmd
+                      - text: "Coupling Input"
+                        href: datamodel/classes/CouplingInput.qmd
+                      - text: "Dataset"
+                        href: datamodel/classes/Dataset.qmd
+                      - text: "Data Source"
+                        href: datamodel/classes/DataSource.qmd
+                      - text: "DBSProtocol"
+                        href: datamodel/classes/DBSProtocol.qmd
+                      - text: "Derived Observation"
+                        href: datamodel/classes/DerivedObservation.qmd
+                      - text: "Derived Parameter"
+                        href: datamodel/classes/DerivedParameter.qmd
+                      - text: "Derived Variable"
+                        href: datamodel/classes/DerivedVariable.qmd
+                      - text: "Differential Operator"
+                        href: datamodel/classes/DifferentialOperator.qmd
+                      - text: "Discretization"
+                        href: datamodel/classes/Discretization.qmd
+                      - text: "Distribution"
+                        href: datamodel/classes/Distribution.qmd
+                      - text: "Dynamics"
+                        href: datamodel/classes/Dynamics.qmd
+                      - text: "Edge"
+                        href: datamodel/classes/Edge.qmd
+                      - text: "EField"
+                        href: datamodel/classes/EField.qmd
+                      - text: "Electrode"
+                        href: datamodel/classes/Electrode.qmd
+                      - text: "Equation"
+                        href: datamodel/classes/Equation.qmd
+                      - text: "Event"
+                        href: datamodel/classes/Event.qmd
+                      - text: "Execution Config"
+                        href: datamodel/classes/ExecutionConfig.qmd
+                      - text: "Exploration"
+                        href: datamodel/classes/Exploration.qmd
+                      - text: "Field State Variable"
+                        href: datamodel/classes/FieldStateVariable.qmd
+                      - text: "File"
+                        href: datamodel/classes/File.qmd
+                      - text: "Function"
+                        href: datamodel/classes/Function.qmd
+                      - text: "Function Call"
+                        href: datamodel/classes/FunctionCall.qmd
+                      - text: "Graph Generator"
+                        href: datamodel/classes/GraphGenerator.qmd
+                      - text: "Initial State"
+                        href: datamodel/classes/InitialState.qmd
+                      - text: "Integrator"
+                        href: datamodel/classes/Integrator.qmd
+                      - text: "Loss Function"
+                        href: datamodel/classes/LossFunction.qmd
+                      - text: "Matrix"
+                        href: datamodel/classes/Matrix.qmd
+                      - text: "Mesh"
+                        href: datamodel/classes/Mesh.qmd
+                      - text: "NDArray"
+                        href: datamodel/classes/NDArray.qmd
+                      - text: "Network"
+                        href: datamodel/classes/Network.qmd
+                      - text: "Node"
+                        href: datamodel/classes/Node.qmd
+                      - text: "Noise"
+                        href: datamodel/classes/Noise.qmd
+                      - text: "Observation"
+                        href: datamodel/classes/Observation.qmd
+                      - text: "Optimization"
+                        href: datamodel/classes/Optimization.qmd
+                      - text: "Optimization Stage"
+                        href: datamodel/classes/OptimizationStage.qmd
+                      - text: "Option"
+                        href: datamodel/classes/Option.qmd
+                      - text: "Parameter"
+                        href: datamodel/classes/Parameter.qmd
+                      - text: "Parcellation"
+                        href: datamodel/classes/Parcellation.qmd
+                      - text: "Parcellation Entity"
+                        href: datamodel/classes/ParcellationEntity.qmd
+                      - text: "Parcellation Terminology"
+                        href: datamodel/classes/ParcellationTerminology.qmd
+                      - text: "PDE"
+                        href: datamodel/classes/PDE.qmd
+                      - text: "PDESolver"
+                        href: datamodel/classes/PDESolver.qmd
+                      - text: "Provenance"
+                        href: datamodel/classes/Provenance.qmd
+                      - text: "Random Stream"
+                        href: datamodel/classes/RandomStream.qmd
+                      - text: "Range"
+                        href: datamodel/classes/Range.qmd
+                      - text: "Region Mapping"
+                        href: datamodel/classes/RegionMapping.qmd
+                      - text: "Sample"
+                        href: datamodel/classes/Sample.qmd
+                      - text: "Simulation Experiment"
+                        href: datamodel/classes/SimulationExperiment.qmd
+                      - text: "Simulation Study"
+                        href: datamodel/classes/SimulationStudy.qmd
+                      - text: "Software Environment"
+                        href: datamodel/classes/SoftwareEnvironment.qmd
+                      - text: "Software Package"
+                        href: datamodel/classes/SoftwarePackage.qmd
+                      - text: "Software Requirement"
+                        href: datamodel/classes/SoftwareRequirement.qmd
+                      - text: "Solver"
+                        href: datamodel/classes/Solver.qmd
+                      - text: "Spatial Domain"
+                        href: datamodel/classes/SpatialDomain.qmd
+                      - text: "Spatial Field"
+                        href: datamodel/classes/SpatialField.qmd
+                      - text: "State Value"
+                        href: datamodel/classes/StateValue.qmd
+                      - text: "State Variable"
+                        href: datamodel/classes/StateVariable.qmd
+                      - text: "Stimulation Setting"
+                        href: datamodel/classes/StimulationSetting.qmd
+                      - text: "Stimulus"
+                        href: datamodel/classes/Stimulus.qmd
+                      - text: "Subject"
+                        href: datamodel/classes/Subject.qmd
+                      - text: "Temporal Applicable Equation"
+                        href: datamodel/classes/TemporalApplicableEquation.qmd
+                      - text: "Time Series"
+                        href: datamodel/classes/TimeSeries.qmd
+                      - text: "Tractogram"
+                        href: datamodel/classes/Tractogram.qmd
+                      - text: "Tuning Objective"
+                        href: datamodel/classes/TuningObjective.qmd
+                      - text: "Update Rule"
+                        href: datamodel/classes/UpdateRule.qmd
+                  - section: "Slots"
+                    contents:
+                      - text: "abbreviation"
+                        href: datamodel/slots/abbreviation.qmd
+                      - text: "abs_tol"
+                        href: datamodel/slots/abs_tol.qmd
+                      - text: "absolute_value"
+                        href: datamodel/slots/absolute_value.qmd
+                      - text: "accelerator"
+                        href: datamodel/slots/accelerator.qmd
+                      - text: "acquisition"
+                        href: datamodel/slots/acquisition.qmd
+                      - text: "acronym"
+                        href: datamodel/slots/acronym.qmd
+                      - text: "active_contacts"
+                        href: datamodel/slots/active_contacts.qmd
+                      - text: "additional_equations"
+                        href: datamodel/slots/additional_equations.qmd
+                      - text: "additive"
+                        href: datamodel/slots/additive.qmd
+                      - text: "affect"
+                        href: datamodel/slots/affect.qmd
+                      - text: "affect_negative"
+                        href: datamodel/slots/affect_negative.qmd
+                      - text: "affect_parameters"
+                        href: datamodel/slots/affect_parameters.qmd
+                      - text: "affect_states"
+                        href: datamodel/slots/affect_states.qmd
+                      - text: "age"
+                        href: datamodel/slots/age.qmd
+                      - text: "aggregate"
+                        href: datamodel/slots/aggregate.qmd
+                      - text: "aggregation"
+                        href: datamodel/slots/aggregation.qmd
+                      - text: "algorithm"
+                        href: datamodel/slots/algorithm.qmd
+                      - text: "algorithms"
+                        href: datamodel/slots/algorithms.qmd
+                      - text: "alternate Name"
+                        href: datamodel/slots/alternateName.qmd
+                      - text: "amplitude"
+                        href: datamodel/slots/amplitude.qmd
+                      - text: "anatomical Axes Orientation"
+                        href: datamodel/slots/anatomicalAxesOrientation.qmd
+                      - text: "apply_every"
+                        href: datamodel/slots/apply_every.qmd
+                      - text: "apply_on_dimension"
+                        href: datamodel/slots/apply_on_dimension.qmd
+                      - text: "arguments"
+                        href: datamodel/slots/arguments.qmd
+                      - text: "atlas"
+                        href: datamodel/slots/atlas.qmd
+                      - text: "author"
+                        href: datamodel/slots/author.qmd
+                      - text: "autonomous"
+                        href: datamodel/slots/autonomous.qmd
+                      - text: "average"
+                        href: datamodel/slots/average.qmd
+                      - text: "axes Origin"
+                        href: datamodel/slots/axesOrigin.qmd
+                      - text: "axis"
+                        href: datamodel/slots/axis.qmd
+                      - text: "baseline_value"
+                        href: datamodel/slots/baseline_value.qmd
+                      - text: "batch_size"
+                        href: datamodel/slots/batch_size.qmd
+                      - text: "bc_type"
+                        href: datamodel/slots/bc_type.qmd
+                      - text: "bids"
+                        href: datamodel/slots/bids.qmd
+                      - text: "bids_dir"
+                        href: datamodel/slots/bids_dir.qmd
+                      - text: "bothside"
+                        href: datamodel/slots/bothside.qmd
+                      - text: "boundaries"
+                        href: datamodel/slots/boundaries.qmd
+                      - text: "boundary_conditions"
+                        href: datamodel/slots/boundary_conditions.qmd
+                      - text: "bounds"
+                        href: datamodel/slots/bounds.qmd
+                      - text: "branches"
+                        href: datamodel/slots/branches.qmd
+                      - text: "build_hash"
+                        href: datamodel/slots/build_hash.qmd
+                      - text: "call_args"
+                        href: datamodel/slots/call_args.qmd
+                      - text: "callable"
+                        href: datamodel/slots/callable.qmd
+                      - text: "cases"
+                        href: datamodel/slots/cases.qmd
+                      - text: "center"
+                        href: datamodel/slots/center.qmd
+                      - text: "class_call"
+                        href: datamodel/slots/class_call.qmd
+                      - text: "class_reference"
+                        href: datamodel/slots/class_reference.qmd
+                      - text: "clinical_improvement"
+                        href: datamodel/slots/clinical_improvement.qmd
+                      - text: "clinical_scores"
+                        href: datamodel/slots/clinical_scores.qmd
+                      - text: "coefficient"
+                        href: datamodel/slots/coefficient.qmd
+                      - text: "cohort"
+                        href: datamodel/slots/cohort.qmd
+                      - text: "color"
+                        href: datamodel/slots/color.qmd
+                      - text: "comment"
+                        href: datamodel/slots/comment.qmd
+                      - text: "condition"
+                        href: datamodel/slots/condition.qmd
+                      - text: "condition_parameters"
+                        href: datamodel/slots/condition_parameters.qmd
+                      - text: "condition_states"
+                        href: datamodel/slots/condition_states.qmd
+                      - text: "conditional"
+                        href: datamodel/slots/conditional.qmd
+                      - text: "conditionals"
+                        href: datamodel/slots/conditionals.qmd
+                      - text: "connectivity"
+                        href: datamodel/slots/connectivity.qmd
+                      - text: "connectivity_ref"
+                        href: datamodel/slots/connectivity_ref.qmd
+                      - text: "constructor_args"
+                        href: datamodel/slots/constructor_args.qmd
+                      - text: "contact_id"
+                        href: datamodel/slots/contact_id.qmd
+                      - text: "contacts"
+                        href: datamodel/slots/contacts.qmd
+                      - text: "container_image"
+                        href: datamodel/slots/container_image.qmd
+                      - text: "continuation"
+                        href: datamodel/slots/continuation.qmd
+                      - text: "continuations"
+                        href: datamodel/slots/continuations.qmd
+                      - text: "coordinate"
+                        href: datamodel/slots/coordinate.qmd
+                      - text: "coordinate_space"
+                        href: datamodel/slots/coordinate_space.qmd
+                      - text: "coordinates"
+                        href: datamodel/slots/coordinates.qmd
+                      - text: "coordinate Space"
+                        href: datamodel/slots/coordinateSpace.qmd
+                      - text: "correlated"
+                        href: datamodel/slots/correlated.qmd
+                      - text: "correlation"
+                        href: datamodel/slots/correlation.qmd
+                      - text: "coupling"
+                        href: datamodel/slots/coupling.qmd
+                      - text: "coupling_function"
+                        href: datamodel/slots/coupling_function.qmd
+                      - text: "coupling_inputs"
+                        href: datamodel/slots/coupling_inputs.qmd
+                      - text: "coupling_terms"
+                        href: datamodel/slots/coupling_terms.qmd
+                      - text: "coupling_variable"
+                        href: datamodel/slots/coupling_variable.qmd
+                      - text: "data"
+                        href: datamodel/slots/data.qmd
+                      - text: "data_file"
+                        href: datamodel/slots/data_file.qmd
+                      - text: "data_source"
+                        href: datamodel/slots/data_source.qmd
+                      - text: "data Location"
+                        href: datamodel/slots/dataLocation.qmd
+                      - text: "dataset_id"
+                        href: datamodel/slots/dataset_id.qmd
+                      - text: "dataset_path"
+                        href: datamodel/slots/dataset_path.qmd
+                      - text: "date_created"
+                        href: datamodel/slots/date_created.qmd
+                      - text: "default"
+                        href: datamodel/slots/default.qmd
+                      - text: "default Image"
+                        href: datamodel/slots/defaultImage.qmd
+                      - text: "definition"
+                        href: datamodel/slots/definition.qmd
+                      - text: "degree"
+                        href: datamodel/slots/degree.qmd
+                      - text: "delayed"
+                        href: datamodel/slots/delayed.qmd
+                      - text: "delta_p"
+                        href: datamodel/slots/delta_p.qmd
+                      - text: "depends_on"
+                        href: datamodel/slots/depends_on.qmd
+                      - text: "derivative_initial_value"
+                        href: datamodel/slots/derivative_initial_value.qmd
+                      - text: "derived_from"
+                        href: datamodel/slots/derived_from.qmd
+                      - text: "derived_from_model"
+                        href: datamodel/slots/derived_from_model.qmd
+                      - text: "derived_observations"
+                        href: datamodel/slots/derived_observations.qmd
+                      - text: "derived_parameters"
+                        href: datamodel/slots/derived_parameters.qmd
+                      - text: "derived_variables"
+                        href: datamodel/slots/derived_variables.qmd
+                      - text: "description"
+                        href: datamodel/slots/description.qmd
+                      - text: "descriptor"
+                        href: datamodel/slots/descriptor.qmd
+                      - text: "detect_bifurcation"
+                        href: datamodel/slots/detect_bifurcation.qmd
+                      - text: "detect_fold"
+                        href: datamodel/slots/detect_fold.qmd
+                      - text: "diagnosis"
+                        href: datamodel/slots/diagnosis.qmd
+                      - text: "digital Identifier"
+                        href: datamodel/slots/digitalIdentifier.qmd
+                      - text: "dimension"
+                        href: datamodel/slots/dimension.qmd
+                      - text: "dimension_labels"
+                        href: datamodel/slots/dimension_labels.qmd
+                      - text: "directed"
+                        href: datamodel/slots/directed.qmd
+                      - text: "discretization"
+                        href: datamodel/slots/discretization.qmd
+                      - text: "distance_unit"
+                        href: datamodel/slots/distance_unit.qmd
+                      - text: "distribution"
+                        href: datamodel/slots/distribution.qmd
+                      - text: "doi"
+                        href: datamodel/slots/doi.qmd
+                      - text: "domain"
+                        href: datamodel/slots/domain.qmd
+                      - text: "downsample_period"
+                        href: datamodel/slots/downsample_period.qmd
+                      - text: "ds"
+                        href: datamodel/slots/ds.qmd
+                      - text: "ds_max"
+                        href: datamodel/slots/ds_max.qmd
+                      - text: "ds_min"
+                        href: datamodel/slots/ds_min.qmd
+                      - text: "dt"
+                        href: datamodel/slots/dt.qmd
+                      - text: "dtype"
+                        href: datamodel/slots/dtype.qmd
+                      - text: "duration"
+                        href: datamodel/slots/duration.qmd
+                      - text: "dynamics"
+                        href: datamodel/slots/dynamics.qmd
+                      - text: "ecosystem"
+                        href: datamodel/slots/ecosystem.qmd
+                      - text: "edge_matrix_files"
+                        href: datamodel/slots/edge_matrix_files.qmd
+                      - text: "edges"
+                        href: datamodel/slots/edges.qmd
+                      - text: "efield"
+                        href: datamodel/slots/efield.qmd
+                      - text: "electrode_id"
+                        href: datamodel/slots/electrode_id.qmd
+                      - text: "electrode_reference"
+                        href: datamodel/slots/electrode_reference.qmd
+                      - text: "electrodes"
+                        href: datamodel/slots/electrodes.qmd
+                      - text: "element"
+                        href: datamodel/slots/element.qmd
+                      - text: "element_domains"
+                        href: datamodel/slots/element_domains.qmd
+                      - text: "element_type"
+                        href: datamodel/slots/element_type.qmd
+                      - text: "elements"
+                        href: datamodel/slots/elements.qmd
+                      - text: "engine"
+                        href: datamodel/slots/engine.qmd
+                      - text: "entities"
+                        href: datamodel/slots/entities.qmd
+                      - text: "environment"
+                        href: datamodel/slots/environment.qmd
+                      - text: "environment_type"
+                        href: datamodel/slots/environment_type.qmd
+                      - text: "equation"
+                        href: datamodel/slots/equation.qmd
+                      - text: "equation_order"
+                        href: datamodel/slots/equation_order.qmd
+                      - text: "equation_type"
+                        href: datamodel/slots/equation_type.qmd
+                      - text: "evaluator"
+                        href: datamodel/slots/evaluator.qmd
+                      - text: "event_type"
+                        href: datamodel/slots/event_type.qmd
+                      - text: "events"
+                        href: datamodel/slots/events.qmd
+                      - text: "execution"
+                        href: datamodel/slots/execution.qmd
+                      - text: "explorations"
+                        href: datamodel/slots/explorations.qmd
+                      - text: "explored_values"
+                        href: datamodel/slots/explored_values.qmd
+                      - text: "expression"
+                        href: datamodel/slots/expression.qmd
+                      - text: "extension"
+                        href: datamodel/slots/extension.qmd
+                      - text: "field"
+                        href: datamodel/slots/field.qmd
+                      - text: "field_dynamics"
+                        href: datamodel/slots/field_dynamics.qmd
+                      - text: "file"
+                        href: datamodel/slots/file.qmd
+                      - text: "find_fixpoint"
+                        href: datamodel/slots/find_fixpoint.qmd
+                      - text: "format"
+                        href: datamodel/slots/format.qmd
+                      - text: "free"
+                        href: datamodel/slots/free.qmd
+                      - text: "free_parameters"
+                        href: datamodel/slots/free_parameters.qmd
+                      - text: "freeze_parameters"
+                        href: datamodel/slots/freeze_parameters.qmd
+                      - text: "frequency"
+                        href: datamodel/slots/frequency.qmd
+                      - text: "function"
+                        href: datamodel/slots/function.qmd
+                      - text: "functions"
+                        href: datamodel/slots/functions.qmd
+                      - text: "gaussian"
+                        href: datamodel/slots/gaussian.qmd
+                      - text: "generated_at"
+                        href: datamodel/slots/generated_at.qmd
+                      - text: "generated_by"
+                        href: datamodel/slots/generated_by.qmd
+                      - text: "geometry"
+                        href: datamodel/slots/geometry.qmd
+                      - text: "graph_generator"
+                        href: datamodel/slots/graph_generator.qmd
+                      - text: "groups"
+                        href: datamodel/slots/groups.qmd
+                      - text: "handedness"
+                        href: datamodel/slots/handedness.qmd
+                      - text: "has_reference"
+                        href: datamodel/slots/has_reference.qmd
+                      - text: "hash"
+                        href: datamodel/slots/hash.qmd
+                      - text: "has Parent"
+                        href: datamodel/slots/hasParent.qmd
+                      - text: "head"
+                        href: datamodel/slots/head.qmd
+                      - text: "hemisphere"
+                        href: datamodel/slots/hemisphere.qmd
+                      - text: "heterogeneous"
+                        href: datamodel/slots/heterogeneous.qmd
+                      - text: "hi"
+                        href: datamodel/slots/hi.qmd
+                      - text: "history"
+                        href: datamodel/slots/history.qmd
+                      - text: "homepage"
+                        href: datamodel/slots/homepage.qmd
+                      - text: "hyperparameters"
+                        href: datamodel/slots/hyperparameters.qmd
+                      - text: "id"
+                        href: datamodel/slots/id.qmd
+                      - text: "imaging_modality"
+                        href: datamodel/slots/imaging_modality.qmd
+                      - text: "includes"
+                        href: datamodel/slots/includes.qmd
+                      - text: "incoming_states"
+                        href: datamodel/slots/incoming_states.qmd
+                      - text: "initial_expression"
+                        href: datamodel/slots/initial_expression.qmd
+                      - text: "initial_state"
+                        href: datamodel/slots/initial_state.qmd
+                      - text: "initial_value"
+                        href: datamodel/slots/initial_value.qmd
+                      - text: "inner_coupling"
+                        href: datamodel/slots/inner_coupling.qmd
+                      - text: "input"
+                        href: datamodel/slots/input.qmd
+                      - text: "integration"
+                        href: datamodel/slots/integration.qmd
+                      - text: "intensity"
+                        href: datamodel/slots/intensity.qmd
+                      - text: "intermediate_expressions"
+                        href: datamodel/slots/intermediate_expressions.qmd
+                      - text: "iri"
+                        href: datamodel/slots/iri.qmd
+                      - text: "is Version Of"
+                        href: datamodel/slots/isVersionOf.qmd
+                      - text: "key"
+                        href: datamodel/slots/key.qmd
+                      - text: "keys"
+                        href: datamodel/slots/keys.qmd
+                      - text: "label"
+                        href: datamodel/slots/label.qmd
+                      - text: "labels_dimensions"
+                        href: datamodel/slots/labels_dimensions.qmd
+                      - text: "labels_ordering"
+                        href: datamodel/slots/labels_ordering.qmd
+                      - text: "latex"
+                        href: datamodel/slots/latex.qmd
+                      - text: "learning_rate"
+                        href: datamodel/slots/learning_rate.qmd
+                      - text: "learning_rate_schedule"
+                        href: datamodel/slots/learning_rate_schedule.qmd
+                      - text: "learning_rate_warmup"
+                        href: datamodel/slots/learning_rate_warmup.qmd
+                      - text: "lefthandside"
+                        href: datamodel/slots/lefthandside.qmd
+                      - text: "license"
+                        href: datamodel/slots/license.qmd
+                      - text: "linear_solver"
+                        href: datamodel/slots/linear_solver.qmd
+                      - text: "lo"
+                        href: datamodel/slots/lo.qmd
+                      - text: "loader"
+                        href: datamodel/slots/loader.qmd
+                      - text: "local_coupling_term"
+                        href: datamodel/slots/local_coupling_term.qmd
+                      - text: "local_states"
+                        href: datamodel/slots/local_states.qmd
+                      - text: "log_scale"
+                        href: datamodel/slots/log_scale.qmd
+                      - text: "lookup Label"
+                        href: datamodel/slots/lookupLabel.qmd
+                      - text: "loss"
+                        href: datamodel/slots/loss.qmd
+                      - text: "manufacturer"
+                        href: datamodel/slots/manufacturer.qmd
+                      - text: "max_bisection_steps"
+                        href: datamodel/slots/max_bisection_steps.qmd
+                      - text: "max_iterations"
+                        href: datamodel/slots/max_iterations.qmd
+                      - text: "max_steps"
+                        href: datamodel/slots/max_steps.qmd
+                      - text: "mesh"
+                        href: datamodel/slots/mesh.qmd
+                      - text: "mesh_file"
+                        href: datamodel/slots/mesh_file.qmd
+                      - text: "mesh_format"
+                        href: datamodel/slots/mesh_format.qmd
+                      - text: "mesh_intervals"
+                        href: datamodel/slots/mesh_intervals.qmd
+                      - text: "method"
+                        href: datamodel/slots/method.qmd
+                      - text: "metric"
+                        href: datamodel/slots/metric.qmd
+                      - text: "modality"
+                        href: datamodel/slots/modality.qmd
+                      - text: "mode"
+                        href: datamodel/slots/mode.qmd
+                      - text: "model"
+                        href: datamodel/slots/model.qmd
+                      - text: "model_equation_ref"
+                        href: datamodel/slots/model_equation_ref.qmd
+                      - text: "model_param_ref"
+                        href: datamodel/slots/model_param_ref.qmd
+                      - text: "model_type"
+                        href: datamodel/slots/model_type.qmd
+                      - text: "modes"
+                        href: datamodel/slots/modes.qmd
+                      - text: "modified"
+                        href: datamodel/slots/modified.qmd
+                      - text: "module"
+                        href: datamodel/slots/module.qmd
+                      - text: "modules"
+                        href: datamodel/slots/modules.qmd
+                      - text: "n"
+                        href: datamodel/slots/n.qmd
+                      - text: "n_inversion"
+                        href: datamodel/slots/n_inversion.qmd
+                      - text: "n_iterations"
+                        href: datamodel/slots/n_iterations.qmd
+                      - text: "n_parallel"
+                        href: datamodel/slots/n_parallel.qmd
+                      - text: "n_regions"
+                        href: datamodel/slots/n_regions.qmd
+                      - text: "n_sections"
+                        href: datamodel/slots/n_sections.qmd
+                      - text: "n_threads"
+                        href: datamodel/slots/n_threads.qmd
+                      - text: "n_trials"
+                        href: datamodel/slots/n_trials.qmd
+                      - text: "n_vertices"
+                        href: datamodel/slots/n_vertices.qmd
+                      - text: "n_workers"
+                        href: datamodel/slots/n_workers.qmd
+                      - text: "name"
+                        href: datamodel/slots/name.qmd
+                      - text: "native Unit"
+                        href: datamodel/slots/nativeUnit.qmd
+                      - text: "network"
+                        href: datamodel/slots/network.qmd
+                      - text: "nev"
+                        href: datamodel/slots/nev.qmd
+                      - text: "newton_max_iterations"
+                        href: datamodel/slots/newton_max_iterations.qmd
+                      - text: "newton_tol"
+                        href: datamodel/slots/newton_tol.qmd
+                      - text: "node_mapping"
+                        href: datamodel/slots/node_mapping.qmd
+                      - text: "nodes"
+                        href: datamodel/slots/nodes.qmd
+                      - text: "noise"
+                        href: datamodel/slots/noise.qmd
+                      - text: "noise_type"
+                        href: datamodel/slots/noise_type.qmd
+                      - text: "non_negative"
+                        href: datamodel/slots/non_negative.qmd
+                      - text: "notes"
+                        href: datamodel/slots/notes.qmd
+                      - text: "number_of_elements"
+                        href: datamodel/slots/number_of_elements.qmd
+                      - text: "number_of_modes"
+                        href: datamodel/slots/number_of_modes.qmd
+                      - text: "number_of_nodes"
+                        href: datamodel/slots/number_of_nodes.qmd
+                      - text: "number_of_stages"
+                        href: datamodel/slots/number_of_stages.qmd
+                      - text: "number_of_subjects"
+                        href: datamodel/slots/number_of_subjects.qmd
+                      - text: "number_of_vertices"
+                        href: datamodel/slots/number_of_vertices.qmd
+                      - text: "objective"
+                        href: datamodel/slots/objective.qmd
+                      - text: "observable"
+                        href: datamodel/slots/observable.qmd
+                      - text: "observational_measures"
+                        href: datamodel/slots/observational_measures.qmd
+                      - text: "observations"
+                        href: datamodel/slots/observations.qmd
+                      - text: "observed"
+                        href: datamodel/slots/observed.qmd
+                      - text: "ode_solver"
+                        href: datamodel/slots/ode_solver.qmd
+                      - text: "on_region"
+                        href: datamodel/slots/on_region.qmd
+                      - text: "ontology Identifier"
+                        href: datamodel/slots/ontologyIdentifier.qmd
+                      - text: "operator_type"
+                        href: datamodel/slots/operator_type.qmd
+                      - text: "operators"
+                        href: datamodel/slots/operators.qmd
+                      - text: "optimizations"
+                        href: datamodel/slots/optimizations.qmd
+                      - text: "optional"
+                        href: datamodel/slots/optional.qmd
+                      - text: "options"
+                        href: datamodel/slots/options.qmd
+                      - text: "original Lookup Label"
+                        href: datamodel/slots/originalLookupLabel.qmd
+                      - text: "output"
+                        href: datamodel/slots/output.qmd
+                      - text: "output_equation"
+                        href: datamodel/slots/output_equation.qmd
+                      - text: "outsym"
+                        href: datamodel/slots/outsym.qmd
+                      - text: "over"
+                        href: datamodel/slots/over.qmd
+                      - text: "package"
+                        href: datamodel/slots/package.qmd
+                      - text: "parameters"
+                        href: datamodel/slots/parameters.qmd
+                      - text: "parcellation"
+                        href: datamodel/slots/parcellation.qmd
+                      - text: "parent_network"
+                        href: datamodel/slots/parent_network.qmd
+                      - text: "parent_score"
+                        href: datamodel/slots/parent_score.qmd
+                      - text: "path"
+                        href: datamodel/slots/path.qmd
+                      - text: "percent_change"
+                        href: datamodel/slots/percent_change.qmd
+                      - text: "period"
+                        href: datamodel/slots/period.qmd
+                      - text: "pipeline"
+                        href: datamodel/slots/pipeline.qmd
+                      - text: "platform"
+                        href: datamodel/slots/platform.qmd
+                      - text: "position"
+                        href: datamodel/slots/position.qmd
+                      - text: "post_expression"
+                        href: datamodel/slots/post_expression.qmd
+                      - text: "pre_expression"
+                        href: datamodel/slots/pre_expression.qmd
+                      - text: "precision"
+                        href: datamodel/slots/precision.qmd
+                      - text: "preconditioner"
+                        href: datamodel/slots/preconditioner.qmd
+                      - text: "preprocessing"
+                        href: datamodel/slots/preprocessing.qmd
+                      - text: "processing_pipeline"
+                        href: datamodel/slots/processing_pipeline.qmd
+                      - text: "protocols"
+                        href: datamodel/slots/protocols.qmd
+                      - text: "provenance"
+                        href: datamodel/slots/provenance.qmd
+                      - text: "pulse_width"
+                        href: datamodel/slots/pulse_width.qmd
+                      - text: "pycode"
+                        href: datamodel/slots/pycode.qmd
+                      - text: "quantity_kind"
+                        href: datamodel/slots/quantity_kind.qmd
+                      - text: "random_seed"
+                        href: datamodel/slots/random_seed.qmd
+                      - text: "random_state"
+                        href: datamodel/slots/random_state.qmd
+                      - text: "recon_path"
+                        href: datamodel/slots/recon_path.qmd
+                      - text: "reconstruction"
+                        href: datamodel/slots/reconstruction.qmd
+                      - text: "reference"
+                        href: datamodel/slots/reference.qmd
+                      - text: "references"
+                        href: datamodel/slots/references.qmd
+                      - text: "region"
+                        href: datamodel/slots/region.qmd
+                      - text: "region_mapping"
+                        href: datamodel/slots/region_mapping.qmd
+                      - text: "regional_connectivity"
+                        href: datamodel/slots/regional_connectivity.qmd
+                      - text: "regions"
+                        href: datamodel/slots/regions.qmd
+                      - text: "rel_tol"
+                        href: datamodel/slots/rel_tol.qmd
+                      - text: "related UBERONTerm"
+                        href: datamodel/slots/relatedUBERONTerm.qmd
+                      - text: "reported_optimum"
+                        href: datamodel/slots/reported_optimum.qmd
+                      - text: "repository"
+                        href: datamodel/slots/repository.qmd
+                      - text: "requirements"
+                        href: datamodel/slots/requirements.qmd
+                      - text: "requires"
+                        href: datamodel/slots/requires.qmd
+                      - text: "righthandside"
+                        href: datamodel/slots/righthandside.qmd
+                      - text: "role"
+                        href: datamodel/slots/role.qmd
+                      - text: "run_id"
+                        href: datamodel/slots/run_id.qmd
+                      - text: "sample"
+                        href: datamodel/slots/sample.qmd
+                      - text: "sampling_period"
+                        href: datamodel/slots/sampling_period.qmd
+                      - text: "sampling_period_unit"
+                        href: datamodel/slots/sampling_period_unit.qmd
+                      - text: "sampling_rate"
+                        href: datamodel/slots/sampling_rate.qmd
+                      - text: "scale"
+                        href: datamodel/slots/scale.qmd
+                      - text: "scipy_ode_base"
+                        href: datamodel/slots/scipy_ode_base.qmd
+                      - text: "score"
+                        href: datamodel/slots/score.qmd
+                      - text: "seed"
+                        href: datamodel/slots/seed.qmd
+                      - text: "segmentation"
+                        href: datamodel/slots/segmentation.qmd
+                      - text: "session_id"
+                        href: datamodel/slots/session_id.qmd
+                      - text: "settings"
+                        href: datamodel/slots/settings.qmd
+                      - text: "sex"
+                        href: datamodel/slots/sex.qmd
+                      - text: "shape"
+                        href: datamodel/slots/shape.qmd
+                      - text: "simulation_experiments"
+                        href: datamodel/slots/simulation_experiments.qmd
+                      - text: "simulation_period"
+                        href: datamodel/slots/simulation_period.qmd
+                      - text: "size"
+                        href: datamodel/slots/size.qmd
+                      - text: "skip_t"
+                        href: datamodel/slots/skip_t.qmd
+                      - text: "software"
+                        href: datamodel/slots/software.qmd
+                      - text: "software_environment"
+                        href: datamodel/slots/software_environment.qmd
+                      - text: "solver"
+                        href: datamodel/slots/solver.qmd
+                      - text: "source"
+                        href: datamodel/slots/source.qmd
+                      - text: "source_branch"
+                        href: datamodel/slots/source_branch.qmd
+                      - text: "source_code"
+                        href: datamodel/slots/source_code.qmd
+                      - text: "source_experiment"
+                        href: datamodel/slots/source_experiment.qmd
+                      - text: "source_observations"
+                        href: datamodel/slots/source_observations.qmd
+                      - text: "source_point"
+                        href: datamodel/slots/source_point.qmd
+                      - text: "source_url"
+                        href: datamodel/slots/source_url.qmd
+                      - text: "source_var"
+                        href: datamodel/slots/source_var.qmd
+                      - text: "sources"
+                        href: datamodel/slots/sources.qmd
+                      - text: "sparse"
+                        href: datamodel/slots/sparse.qmd
+                      - text: "stages"
+                        href: datamodel/slots/stages.qmd
+                      - text: "state"
+                        href: datamodel/slots/state.qmd
+                      - text: "state_variables"
+                        href: datamodel/slots/state_variables.qmd
+                      - text: "state_wise_sigma"
+                        href: datamodel/slots/state_wise_sigma.qmd
+                      - text: "step"
+                        href: datamodel/slots/step.qmd
+                      - text: "step_size"
+                        href: datamodel/slots/step_size.qmd
+                      - text: "steps"
+                        href: datamodel/slots/steps.qmd
+                      - text: "stimulation"
+                        href: datamodel/slots/stimulation.qmd
+                      - text: "stimulation_variable"
+                        href: datamodel/slots/stimulation_variable.qmd
+                      - text: "stimulus"
+                        href: datamodel/slots/stimulus.qmd
+                      - text: "structural_measures"
+                        href: datamodel/slots/structural_measures.qmd
+                      - text: "subject_id"
+                        href: datamodel/slots/subject_id.qmd
+                      - text: "subjects"
+                        href: datamodel/slots/subjects.qmd
+                      - text: "symbol"
+                        href: datamodel/slots/symbol.qmd
+                      - text: "symmetry"
+                        href: datamodel/slots/symmetry.qmd
+                      - text: "system_type"
+                        href: datamodel/slots/system_type.qmd
+                      - text: "tail"
+                        href: datamodel/slots/tail.qmd
+                      - text: "tail_samples"
+                        href: datamodel/slots/tail_samples.qmd
+                      - text: "target"
+                        href: datamodel/slots/target.qmd
+                      - text: "target_component"
+                        href: datamodel/slots/target_component.qmd
+                      - text: "target_data"
+                        href: datamodel/slots/target_data.qmd
+                      - text: "target_network"
+                        href: datamodel/slots/target_network.qmd
+                      - text: "target_parameter"
+                        href: datamodel/slots/target_parameter.qmd
+                      - text: "target_structure"
+                        href: datamodel/slots/target_structure.qmd
+                      - text: "target_value"
+                        href: datamodel/slots/target_value.qmd
+                      - text: "target_var"
+                        href: datamodel/slots/target_var.qmd
+                      - text: "target_variable"
+                        href: datamodel/slots/target_variable.qmd
+                      - text: "targets"
+                        href: datamodel/slots/targets.qmd
+                      - text: "task_name"
+                        href: datamodel/slots/task_name.qmd
+                      - text: "template"
+                        href: datamodel/slots/template.qmd
+                      - text: "tensor_coefficient"
+                        href: datamodel/slots/tensor_coefficient.qmd
+                      - text: "terminology"
+                        href: datamodel/slots/terminology.qmd
+                      - text: "threshold_applied"
+                        href: datamodel/slots/threshold_applied.qmd
+                      - text: "time"
+                        href: datamodel/slots/time.qmd
+                      - text: "time_dependent"
+                        href: datamodel/slots/time_dependent.qmd
+                      - text: "time_integrator"
+                        href: datamodel/slots/time_integrator.qmd
+                      - text: "time_post_surgery"
+                        href: datamodel/slots/time_post_surgery.qmd
+                      - text: "time_range"
+                        href: datamodel/slots/time_range.qmd
+                      - text: "time_scale"
+                        href: datamodel/slots/time_scale.qmd
+                      - text: "time_unit"
+                        href: datamodel/slots/time_unit.qmd
+                      - text: "timepoint"
+                        href: datamodel/slots/timepoint.qmd
+                      - text: "timing_info"
+                        href: datamodel/slots/timing_info.qmd
+                      - text: "title"
+                        href: datamodel/slots/title.qmd
+                      - text: "tol_stability"
+                        href: datamodel/slots/tol_stability.qmd
+                      - text: "tolerances"
+                        href: datamodel/slots/tolerances.qmd
+                      - text: "tractogram"
+                        href: datamodel/slots/tractogram.qmd
+                      - text: "trajectory"
+                        href: datamodel/slots/trajectory.qmd
+                      - text: "transforms"
+                        href: datamodel/slots/transforms.qmd
+                      - text: "transient_time"
+                        href: datamodel/slots/transient_time.qmd
+                      - text: "trigger_times"
+                        href: datamodel/slots/trigger_times.qmd
+                      - text: "type"
+                        href: datamodel/slots/type.qmd
+                      - text: "unit"
+                        href: datamodel/slots/unit.qmd
+                      - text: "update_expression"
+                        href: datamodel/slots/update_expression.qmd
+                      - text: "update_rules"
+                        href: datamodel/slots/update_rules.qmd
+                      - text: "url"
+                        href: datamodel/slots/url.qmd
+                      - text: "valid_diagonal"
+                        href: datamodel/slots/valid_diagonal.qmd
+                      - text: "value"
+                        href: datamodel/slots/value.qmd
+                      - text: "values"
+                        href: datamodel/slots/values.qmd
+                      - text: "variable_of_interest"
+                        href: datamodel/slots/variable_of_interest.qmd
+                      - text: "version"
+                        href: datamodel/slots/version.qmd
+                      - text: "version_spec"
+                        href: datamodel/slots/version_spec.qmd
+                      - text: "version Identifier"
+                        href: datamodel/slots/versionIdentifier.qmd
+                      - text: "vertex_to_region"
+                        href: datamodel/slots/vertex_to_region.qmd
+                      - text: "voi"
+                        href: datamodel/slots/voi.qmd
+                      - text: "volume_data"
+                        href: datamodel/slots/volume_data.qmd
+                      - text: "warmup"
+                        href: datamodel/slots/warmup.qmd
+                      - text: "warmup_from"
+                        href: datamodel/slots/warmup_from.qmd
+                      - text: "warmup_source"
+                        href: datamodel/slots/warmup_source.qmd
+                      - text: "weighted"
+                        href: datamodel/slots/weighted.qmd
+                      - text: "weighting"
+                        href: datamodel/slots/weighting.qmd
+                      - text: "window_size"
+                        href: datamodel/slots/window_size.qmd
+                      - text: "x"
+                        href: datamodel/slots/x.qmd
+                      - text: "y"
+                        href: datamodel/slots/y.qmd
+                      - text: "year"
+                        href: datamodel/slots/year.qmd
+                      - text: "z"
+                        href: datamodel/slots/z.qmd
+                  - section: "Enumerations"
+                    contents:
+                      - text: "Aggregation Type"
+                        href: datamodel/enums/AggregationType.qmd
+                      - text: "Boundary Condition Type"
+                        href: datamodel/enums/BoundaryConditionType.qmd
+                      - text: "Continuation Algorithm"
+                        href: datamodel/enums/ContinuationAlgorithm.qmd
+                      - text: "Dimension Type"
+                        href: datamodel/enums/DimensionType.qmd
+                      - text: "Discretization Method"
+                        href: datamodel/enums/DiscretizationMethod.qmd
+                      - text: "Element Type"
+                        href: datamodel/enums/ElementType.qmd
+                      - text: "Environment Type"
+                        href: datamodel/enums/EnvironmentType.qmd
+                      - text: "Event Type"
+                        href: datamodel/enums/EventType.qmd
+                      - text: "Hemisphere"
+                        href: datamodel/enums/Hemisphere.qmd
+                      - text: "Imaging Modality"
+                        href: datamodel/enums/ImagingModality.qmd
+                      - text: "Initial State Method"
+                        href: datamodel/enums/InitialStateMethod.qmd
+                      - text: "Model Type"
+                        href: datamodel/enums/ModelType.qmd
+                      - text: "Noise Type"
+                        href: datamodel/enums/NoiseType.qmd
+                      - text: "Numerical Discretization Method"
+                        href: datamodel/enums/NumericalDiscretizationMethod.qmd
+                      - text: "Operator Type"
+                        href: datamodel/enums/OperatorType.qmd
+                      - text: "Physical Dimension"
+                        href: datamodel/enums/PhysicalDimension.qmd
+                      - text: "Reduction Type"
+                        href: datamodel/enums/ReductionType.qmd
+                      - text: "Requirement Role"
+                        href: datamodel/enums/RequirementRole.qmd
+                      - text: "Sampling Axis"
+                        href: datamodel/enums/SamplingAxis.qmd
+                      - text: "Sparse Format"
+                        href: datamodel/enums/SparseFormat.qmd
+                      - text: "Specimen Enum"
+                        href: datamodel/enums/SpecimenEnum.qmd
+                      - text: "Standard Graph Type"
+                        href: datamodel/enums/StandardGraphType.qmd
+                      - text: "System Type"
+                        href: datamodel/enums/SystemType.qmd
+                      - text: "Unit Enum"
+                        href: datamodel/enums/UnitEnum.qmd
+# END:datamodel-autogen
+
+
+# BEGIN:api-autogen
+              - section: "API Documentation"
+                href: api/index.qmd
+                contents:
+                  - section: "Adapters"
+                    href: api/adapters/index.qmd
+                    contents:
+                      - text: "Base"
+                        href: api/adapters/base.qmd
+                      - text: "Bids"
+                        href: api/adapters/bids.qmd
+                      - text: "Bifurcationkit"
+                        href: api/adapters/bifurcationkit.qmd
+                      - text: "Diffeq"
+                        href: api/adapters/diffeq.qmd
+                      - text: "Julia"
+                        href: api/adapters/julia.qmd
+                      - text: "Modelingtoolkit"
+                        href: api/adapters/modelingtoolkit.qmd
+                      - text: "Networkdynamics"
+                        href: api/adapters/networkdynamics.qmd
+                      - text: "Neuroml"
+                        href: api/adapters/neuroml.qmd
+                      - text: "Openminds"
+                        href: api/adapters/openminds.qmd
+                      - text: "Pyrates"
+                        href: api/adapters/pyrates.qmd
+                      - text: "Pyrates Bifurcation"
+                        href: api/adapters/pyrates_bifurcation.qmd
+                      - text: "Tvb"
+                        href: api/adapters/tvb.qmd
+                  - section: "Analysis"
+                    href: api/analysis/index.qmd
+                    contents:
+                      - text: "Bifurcation"
+                        href: api/analysis/bifurcation.qmd
+                  - section: "API"
+                    href: api/api/index.qmd
+                    contents:
+                      - text: "Direct Ontology Api"
+                        href: api/api/direct_ontology_api.qmd
+                      - text: "Dynamics Api"
+                        href: api/api/dynamics_api.qmd
+                      - text: "Experiment Api"
+                        href: api/api/experiment_api.qmd
+                      - text: "Main"
+                        href: api/api/main.qmd
+                      - text: "Network Api"
+                        href: api/api/network_api.qmd
+                      - text: "Ontology Api"
+                        href: api/api/ontology_api.qmd
+                  - section: "Classes"
+                    href: api/classes/index.qmd
+                    contents:
+                      - text: "Atlas"
+                        href: api/classes/atlas.qmd
+                      - text: "Continuation"
+                        href: api/classes/continuation.qmd
+                      - text: "Coupling"
+                        href: api/classes/coupling.qmd
+                      - text: "Dynamics"
+                        href: api/classes/dynamics.qmd
+                      - text: "Equation"
+                        href: api/classes/equation.qmd
+                      - text: "Experiment"
+                        href: api/classes/experiment.qmd
+                      - text: "Function"
+                        href: api/classes/function.qmd
+                      - text: "Network"
+                        href: api/classes/network.qmd
+                      - text: "Noise"
+                        href: api/classes/noise.qmd
+                      - text: "Observation"
+                        href: api/classes/observation.qmd
+                      - text: "Parcellation"
+                        href: api/classes/parcellation.qmd
+                      - text: "Perturbation"
+                        href: api/classes/perturbation.qmd
+                      - text: "Study"
+                        href: api/classes/study.qmd
+                  - section: "TVB-O Code Generation"
+                    href: api/codegen/index.qmd
+                    contents:
+                      - text: "Code"
+                        href: api/codegen/code.qmd
+                      - text: "Cuda"
+                        href: api/codegen/cuda.qmd
+                      - text: "Functions"
+                        href: api/codegen/functions.qmd
+                      - text: "Lems"
+                        href: api/codegen/lems.qmd
+                      - text: "Pyrates"
+                        href: api/codegen/pyrates.qmd
+                      - text: "Templater"
+                        href: api/codegen/templater.qmd
+                  - section: "Data"
+                    href: api/data/index.qmd
+                    contents:
+                      - text: "Converters"
+                        href: api/data/converters.qmd
+                      - text: "Matrix Io"
+                        href: api/data/matrix_io.qmd
+                      - text: "Network Io"
+                        href: api/data/network_io.qmd
+                      - text: "Registry"
+                        href: api/data/registry.qmd
+                      - text: "Types"
+                        href: api/data/types.qmd
+                  - section: "Data Model"
+                    href: api/datamodel/index.qmd
+                    contents:
+                      - text: "Pydantic"
+                        href: api/datamodel/pydantic.qmd
+                      - text: "Schema"
+                        href: api/datamodel/schema.qmd
+                  - section: "Export"
+                    href: api/export/index.qmd
+                    contents:
+                      - text: "Report"
+                        href: api/export/report.qmd
+                  - section: "TVB-O Ontology"
+                    href: api/ontology/index.qmd
+                    contents:
+                      - text: "Config"
+                        href: api/ontology/config.qmd
+                      - text: "Constants"
+                        href: api/ontology/constants.qmd
+                      - text: "Db"
+                        href: api/ontology/db.qmd
+                      - text: "Graph"
+                        href: api/ontology/graph.qmd
+                      - text: "Owl"
+                        href: api/ontology/owl.qmd
+                      - text: "Query"
+                        href: api/ontology/query.qmd
+                      - section: "Atlas"
+                        href: api/ontology/atlas/index.qmd
+                        contents:
+                          - text: "Freesurfer"
+                            href: api/ontology/atlas/freesurfer.qmd
+                      - section: "Semantic Web"
+                        href: api/ontology/semanticweb/index.qmd
+                        contents:
+                          - text: "Tvbgo"
+                            href: api/ontology/semanticweb/tvbgo.qmd
+                  - section: "Parse"
+                    href: api/parse/index.qmd
+                    contents:
+                      - text: "Expression"
+                        href: api/parse/expression.qmd
+                      - text: "Lems Loader"
+                        href: api/parse/lems_loader.qmd
+                      - text: "Tvb Converter"
+                        href: api/parse/tvb_converter.qmd
+                  - section: "Plot"
+                    href: api/plot/index.qmd
+                    contents:
+                      - text: "Analysis"
+                        href: api/plot/analysis.qmd
+                      - text: "Animate"
+                        href: api/plot/animate.qmd
+                      - text: "Bifurcation Diagram"
+                        href: api/plot/bifurcation_diagram.qmd
+                      - text: "Functions"
+                        href: api/plot/functions.qmd
+                      - text: "Network"
+                        href: api/plot/network.qmd
+                      - text: "Network Graph"
+                        href: api/plot/network_graph.qmd
+                      - text: "Ontology"
+                        href: api/plot/ontology.qmd
+                      - text: "Phase"
+                        href: api/plot/phase.qmd
+                      - text: "Timeseries"
+                        href: api/plot/timeseries.qmd
+                      - text: "Utils"
+                        href: api/plot/utils.qmd
+                  - section: "Run"
+                    href: api/run/index.qmd
+                    contents:
+                      - text: "Compgraph"
+                        href: api/run/compgraph.qmd
+                      - text: "Graph"
+                        href: api/run/graph.qmd
+                      - text: "Julia"
+                        href: api/run/julia.qmd
+                  - section: "Templates"
+                    contents:
+                      - section: "RateML"
+                        href: api/templates/rateml/index.qmd
+                        contents:
+                          - text: "Utils"
+                            href: api/templates/rateml/utils.qmd
+                      - section: "tvboptim"
+                        href: api/templates/tvboptim/index.qmd
+                        contents:
+                          - text: "Utils"
+                            href: api/templates/tvboptim/utils.qmd
+                  - section: "Utilities"
+                    href: api/utils/index.qmd
+                    contents:
+                      - text: "Report"
+                        href: api/utils/report.qmd
+                      - text: "Units"
+                        href: api/utils/units.qmd
+# END:api-autogen
+              - text: "Developer"
+                href: Developer/contributing.md

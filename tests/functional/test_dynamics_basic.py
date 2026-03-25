@@ -3,8 +3,8 @@
 Focus: ensure ontology-backed model populates parameters, state variables, and
 equations; no heavy simulation run.
 """
-from tvbo.knowledge import ontology
-from tvbo.knowledge.simulation.localdynamics import Dynamics
+from tvbo.ontology import owl as ontology
+from tvbo.classes.dynamics import Dynamics
 
 
 def test_dynamics_jansenrit_populates():

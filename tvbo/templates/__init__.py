@@ -20,6 +20,7 @@ root = abspath(dirname(__file__))
 lookup = TemplateLookup(
     directories=[
         root,
+        join(root, "base"),
         join(root, "autodiff"),
         join(root, "tvb"),
         join(root, "julia"),
@@ -27,6 +28,11 @@ lookup = TemplateLookup(
         join(root, "report"),
         join(root, "numcont"),
         join(root, "pde"),
+        join(root, "pyrates"),
+        join(root, "tvboptim"),
+        join(root, "networkdynamics"),
+        join(root, "modelingtoolkit"),
+        join(root, "neuroml"),
     ],
     module_directory=join(root, "modules"),
 )

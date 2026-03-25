@@ -1,0 +1,34 @@
+{
+  "_type": "tvbo:TimeSeries",
+  "_categories": [
+    "simulationOutput"
+  ],
+  "properties": {
+    "label": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "dataLocation": {
+      "type": "string",
+      "_instruction": "Enter the dataLocation."
+    },
+    "data": {
+      "_embeddedTypes": [
+        "tvbo:Matrix"
+      ]
+    },
+    "time": {
+      "_embeddedTypes": [
+        "tvbo:Matrix"
+      ]
+    },
+    "sampling_rate": {
+      "type": "number"
+    },
+    "unit": {
+      "type": "string"
+    }
+  }
+}

@@ -101,6 +101,7 @@ classes:
       - entities:
           range: ParcellationEntity
           multivalued: true
+          inlined: true
     slots:
       - label
       - dataLocation
@@ -167,12 +168,6 @@ slots:
     description: Enter the label used for looking up this entity in the parcellation terminology.
     range: integer
     slot_uri: atom:atlas/lookupLabel
-
-  name:
-    description: Enter the name of this entity.
-    range: string
-    required: true
-    slot_uri: atom:atlas/hasName
 
   ontologyIdentifier:
     description: Enter the internationalized resource identifier (IRI) to the related ontological terms.

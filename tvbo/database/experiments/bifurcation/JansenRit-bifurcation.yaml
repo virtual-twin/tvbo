@@ -1,0 +1,97 @@
+# Jansen-Rit bifurcation analysis — reproduces Jansen1995 Figure 3
+
+id: 103
+label: "Jansen-Rit — bifurcation in external input p"
+description: >-
+  Reproduce the bifurcation diagram from Jansen & Rit (1995) Figure 3.
+  The external firing rate p (representing thalamic input) is the
+  continuation parameter. Two fold bifurcations and a Hopf bifurcation
+  delimit the oscillatory regime.
+
+model: JansenRit
+
+continuations:
+  # ── Codim-1 in p ──────────────────────────────────────────────
+  eq_in_p:
+    name: eq_in_p
+    label: "Equilibrium branch in p"
+    dynamics: JansenRit
+    free_parameters:
+      - name: p
+        domain:
+          lo: "0"
+          hi: "0.5"
+
+    ds: 0.001
+    ds_min: 1.0e-6
+    ds_max: 0.02
+    max_steps: 2000
+    detect_bifurcation: 2
+
+    initial_state:
+      method: time_integration
+      duration: 4000.0
+
+    bothside: true
+
+    branches:
+      - name: po_alpha_rhythm
+        description: "Alpha-rhythm periodic orbit branch from Hopf point"
+        source_point: "hopf:all"
+        discretization:
+          method: collocation
+          parameters:
+            - name: mesh_intervals
+              value: 50
+            - name: degree
+              value: 4
+        continuation:
+          name: po_alpha_continuation
+          max_steps: 200
+
+  # ── Codim-2: fold curve in (p, C) ────────────────────────────
+  fold_p_C:
+    name: fold_p_C
+    label: "Fold curve in (p, C) plane"
+    description: >-
+      Two-parameter continuation of the fold bifurcation detected in
+      eq_in_p. Traces the saddle-node boundary in the (p, C) plane.
+    free_parameters:
+      - name: p
+        domain:
+          lo: "0"
+          hi: "0.5"
+      - name: C
+        domain:
+          lo: "10"
+          hi: "500"
+
+    ds: 0.01
+    max_steps: 500
+
+    initial_state:
+      method: from_branch
+      source_branch: eq_in_p
+      source_point: "fold:1"
+
+  # ── Codim-2: Hopf curve in (p, C) ────────────────────────────
+  hopf_p_C:
+    name: hopf_p_C
+    label: "Hopf curve in (p, C) plane"
+    free_parameters:
+      - name: p
+        domain:
+          lo: "0"
+          hi: "0.5"
+      - name: C
+        domain:
+          lo: "10"
+          hi: "500"
+
+    ds: 0.01
+    max_steps: 500
+
+    initial_state:
+      method: from_branch
+      source_branch: eq_in_p
+      source_point: "hopf:1"

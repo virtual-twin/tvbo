@@ -1,0 +1,24 @@
+name: IntegrateAndFire
+model_type: spiking
+source: 'NeuroML2 example: Ex0_IaF'
+parameters:
+  leakReversal:
+    value: -50.0
+  tau:
+    value: 30.0
+  thresh:
+    value: -55.0
+  reset:
+    value: -70.0
+state_variables:
+  v:
+    equation:
+      rhs: (leakReversal - v) / tau
+    initial_value: -50.0
+    variable_of_interest: true
+events:
+  spike:
+    condition:
+      rhs: v > thresh
+    affect:
+      rhs: v = reset

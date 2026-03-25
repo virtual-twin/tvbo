@@ -1,0 +1,13 @@
+# Raw observation - identity passthrough of simulation state
+
+name: Raw
+label: Raw State Recording
+description: >-
+    Records all state variables at every integration step without any
+    transformation. Identity passthrough of the full simulation state.
+
+class_reference:
+    name: Raw
+    module: tvb.simulator.monitors
+
+pipeline: []

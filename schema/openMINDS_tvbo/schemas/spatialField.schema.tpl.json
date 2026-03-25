@@ -1,0 +1,38 @@
+{
+  "_type": "tvbo:SpatialField",
+  "properties": {
+    "label": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "quantity_kind": {
+      "type": "string"
+    },
+    "unit": {
+      "type": "string"
+    },
+    "mesh": {
+      "_linkedTypes": [
+        "tvbo:Mesh"
+      ]
+    },
+    "values": {
+      "_linkedTypes": [
+        "tvbo:NDArray"
+      ]
+    },
+    "time_dependent": {
+      "type": "boolean"
+    },
+    "initial_value": {
+      "type": "number"
+    },
+    "initial_expression": {
+      "_linkedTypes": [
+        "tvbo:Equation"
+      ]
+    }
+  }
+}
