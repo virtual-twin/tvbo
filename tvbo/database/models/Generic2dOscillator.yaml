@@ -1,5 +1,6 @@
 name: Generic2dOscillator
 iri: tvbo:Generic2dOscillator
+model_type: generic
 parameters:
   I:
     name: I
@@ -133,8 +134,6 @@ references:
 coupling_inputs:
   c_glob:
     name: c_glob
-  c_pop0:
-    name: c_pop0
   local_coupling:
     name: local_coupling
 state_variables:
@@ -166,6 +165,5 @@ state_variables:
       rhs: d*(V**2*c + V*b - W*beta + a)/tau
       latex: false
     variable_of_interest: true
-    coupling_variable: false
     initial_value: 0.1
 number_of_modes: 1

@@ -40,6 +40,17 @@ if hasattr(network, 'coupling') and network.coupling:
     elif hasattr(network.coupling, 'keys'):
         all_couplings = {k: network.coupling[k] for k in network.coupling.keys()}
 
+# Build func_name -> first ci mapping (same as experiment template)
+_func_to_ci = {}
+if coupling_inputs_info and all_couplings:
+    _funcs = list(all_couplings.keys())
+    _ci_names = list(coupling_inputs_info.keys())
+    if len(_funcs) == 1:
+        _func_to_ci[_funcs[0]] = _ci_names[0]
+    elif len(_funcs) == len(_ci_names):
+        for _ci, _fn in zip(_ci_names, _funcs):
+            _func_to_ci.setdefault(_fn, _ci)
+
 def parse_list_elements(rhs_str):
     """Parse a list literal string into elements, respecting nesting."""
     inner = rhs_str[1:-1]  # Remove [ and ]
@@ -62,8 +73,9 @@ def parse_list_elements(rhs_str):
 %>
 % for coupling_key, coupling in all_couplings.items():
 <%
-    # Get dimension from coupling_inputs (key must match)
-    ci_info = coupling_inputs_info.get(coupling_key, {'dimension': 1, 'keys': None})
+    # Get dimension from coupling_inputs — translate function name to ci name
+    _ci_key = _func_to_ci.get(coupling_key, coupling_key)
+    ci_info = coupling_inputs_info.get(_ci_key, {'dimension': 1, 'keys': None})
     n_output = ci_info['dimension']
 
     # Coupling metadata
@@ -99,8 +111,14 @@ def parse_list_elements(rhs_str):
             if sv in pre_rhs:
                 incoming_states.append(sv)
         if not incoming_states:
-            # Fallback: use the pre_expression rhs itself as an incoming state name
-            incoming_states = [pre_rhs.strip()]
+            # pre_expression uses generic placeholders (e.g. x_j) —
+            # resolve to the coupling_variable state(s) from the model
+            cvars = []
+            if hasattr(model, 'state_variables') and model.state_variables:
+                for sv_name, sv_obj in model.state_variables.items():
+                    if getattr(sv_obj, 'coupling_variable', False):
+                        cvars.append(sv_name)
+            incoming_states = cvars if cvars else [pre_rhs.strip()]
 
     # Vectorized mode: returns local_states from pre() for matmul optimization
     vectorized = getattr(coupling, 'vectorized', False)

@@ -1,5 +1,6 @@
 name: LarterBreakspear
 iri: tvbo:LarterBreakspear
+model_type: neural_mass
 parameters:
   C:
     name: C

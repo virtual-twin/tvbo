@@ -1,4 +1,5 @@
 name: TowelMap
+model_type: generic
 references:
 - Roessler1979
 source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/discrete_famous_systems.jl

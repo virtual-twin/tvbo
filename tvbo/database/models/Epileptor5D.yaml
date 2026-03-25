@@ -1,5 +1,6 @@
 name: Epileptor5D
 iri: tvbo:Epileptor5D
+model_type: phenomenological
 parameters:
   Iext2:
     name: Iext2
@@ -297,7 +298,7 @@ state_variables:
       rhs: tt*(Iext + Kvf*c_pop0 + local_coupling*x1 + x1*x1cond + y1 - z)
       latex: false
     variable_of_interest: true
-    coupling_variable: false
+    coupling_variable: true
     initial_value: 0.1
   x2:
     name: x2
@@ -311,7 +312,7 @@ state_variables:
       rhs: tt*(Iext2 + Kf*c_pop1 + bb*g - x2**3 + x2 - y2 - 0.3*z + 1.05)
       latex: false
     variable_of_interest: true
-    coupling_variable: false
+    coupling_variable: true
     initial_value: 0.1
   y1:
     name: y1

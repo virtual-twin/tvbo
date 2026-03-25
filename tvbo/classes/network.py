@@ -486,27 +486,34 @@ class Network(tvbo_datamodel.Network):
     @classmethod
     def from_matrix(
         cls,
-        weights: np.ndarray,
+        weights: Optional[np.ndarray] = None,
         lengths: Optional[np.ndarray] = None,
         labels: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> "Network":
-        """Create a Network from weight (and optionally length) matrices.
+        """Create a Network from named edge-property matrices.
 
         This is a convenience constructor for creating networks from matrix
         representations. For performance, matrices are stored directly and
         edges are generated lazily only when needed.
 
+        Any keyword argument whose value is array-like (ndarray, sparse
+        matrix, or nested sequence) is treated as a named edge-property
+        matrix and stored via ``set_matrix``. All other keyword arguments
+        are forwarded to the ``Network`` constructor.
+
         Parameters
         ----------
-        weights : np.ndarray
-            Connection weight matrix (N x N). Non-zero entries become edges.
+        weights : np.ndarray, optional
+            Connection weight matrix (N x N). Stored as ``"weight"``.
         lengths : np.ndarray, optional
-            Tract length matrix (N x N). If provided, used for delay calculation.
+            Tract length matrix (N x N). Stored as ``"length"``.
         labels : list of str, optional
             Node labels. If not provided, uses "node_0", "node_1", etc.
         **kwargs : Any
-            Additional keyword arguments passed to Network constructor.
+            Keyword arguments that are array-like are stored as named
+            edge matrices (e.g. ``sc=mat`` → ``set_matrix("sc", mat)``).
+            Everything else is passed to the Network constructor.
 
         Returns
         -------
@@ -532,15 +539,51 @@ class Network(tvbo_datamodel.Network):
                       [10, 0, 8],
                       [15, 8, 0]])
         network = Network.from_matrix(W, lengths=L)
+
+        # Arbitrary named edge properties
+        sc = np.array([[0, 1], [1, 0]])
+        fc = np.array([[1, 0.8], [0.8, 1]])
+        network = Network.from_matrix(sc=sc, fc=fc, labels=["L", "R"])
+        network.plot_overview()
         ```
         """
         from scipy import sparse
 
-        if sparse.issparse(weights):
-            n_nodes = weights.shape[0]
+        def _is_matrix(v):
+            """Check if value is array-like (ndarray, sparse, or nested list)."""
+            if isinstance(v, np.ndarray) or sparse.issparse(v):
+                return True
+            if isinstance(v, (list, tuple)) and len(v) > 0:
+                return isinstance(v[0], (list, tuple, np.ndarray))
+            return False
+
+        # Separate matrix kwargs from constructor kwargs
+        matrix_kwargs = {}
+        ctor_kwargs = {}
+        for k, v in kwargs.items():
+            if _is_matrix(v):
+                matrix_kwargs[k] = v
+            else:
+                ctor_kwargs[k] = v
+
+        # Collect all matrices to infer n_nodes
+        all_matrices = {}
+        if weights is not None:
+            all_matrices["weight"] = weights
+        if lengths is not None:
+            all_matrices["length"] = lengths
+        all_matrices.update(matrix_kwargs)
+
+        if not all_matrices:
+            raise ValueError("At least one matrix must be provided.")
+
+        # Infer n_nodes from the first matrix
+        first = next(iter(all_matrices.values()))
+        if sparse.issparse(first):
+            n_nodes = first.shape[0]
         else:
-            weights = np.asarray(weights)
-            n_nodes = weights.shape[0]
+            first = np.asarray(first)
+            n_nodes = first.shape[0]
 
         if labels is None:
             labels = [f"node_{i}" for i in range(n_nodes)]
@@ -554,13 +597,13 @@ class Network(tvbo_datamodel.Network):
             edges=[],  # Don't create Edge objects - too slow for large networks
             number_of_nodes=n_nodes,
             number_of_regions=n_nodes,
-            **kwargs,
+            **ctor_kwargs,
         )
 
-        # Store matrices via set_matrix for unified storage
-        instance.set_matrix("weight", weights)
-        if lengths is not None:
-            instance.set_matrix("length", lengths)
+        # Store all matrices via set_matrix for unified storage
+        for name, data in all_matrices.items():
+            instance.set_matrix(name, data)
+
         return instance
 
     @classmethod
@@ -1086,7 +1129,11 @@ class Network(tvbo_datamodel.Network):
         path = Path(path)
         if path.is_dir() or str(path).endswith("/"):
             sidecar_ext = ".json" if sidecar_format == "json" else ".yaml"
-            bids_stem = Path(self.bids_filename).with_suffix("").with_suffix("")
+            bids_name = self.bids_filename
+            if bids_name is None:
+                label = getattr(self, "label", None) or "network"
+                bids_name = f"{label}{sidecar_ext}"
+            bids_stem = Path(bids_name).with_suffix("").with_suffix("")
             path = path / bids_stem.with_suffix(sidecar_ext)
 
         save_network(self, path, binary_format, sidecar_format)
@@ -1976,21 +2023,42 @@ class Network(tvbo_datamodel.Network):
                 if not edge_attrs["directed"]:
                     G.add_edge(edge.target, edge.source, **edge_attrs)
 
-        elif W is not None:
-            # No explicit edges - generate from weight matrix
-            n = W.shape[0]
-            # Verify dimensions match nodes if we have nodes
-            if self.nodes and len(self.nodes) != n:
-                raise ValueError(
-                    f"Matrix dimensions ({n}) don't match number of nodes ({len(self.nodes)})"
-                )
-            for i in range(n):
-                for j in range(n):
-                    if W[i, j] != 0:
-                        edge_attrs = {"weight": float(W[i, j]), "directed": True}
-                        if L is not None:
-                            edge_attrs["distance"] = float(L[i, j])
-                        G.add_edge(i, j, **edge_attrs)
+        else:
+            # No explicit edges - generate from stored matrices.
+            # Build edges from the union of all stored matrices, attaching
+            # each matrix's values as named edge attributes.
+            from scipy import sparse as _sp
+            arrays = self._get_arrays()
+
+            # Collect all dense matrices from stored arrays only
+            dense = {}
+            for name, mat in arrays.items():
+                dense[name] = mat.toarray() if _sp.issparse(mat) else np.asarray(mat)
+
+            if dense:
+                n = next(iter(dense.values())).shape[0]
+                if self.nodes and len(self.nodes) != n:
+                    raise ValueError(
+                        f"Matrix dimensions ({n}) don't match number of nodes ({len(self.nodes)})"
+                    )
+                for i in range(n):
+                    for j in range(n):
+                        edge_attrs = {"directed": True}
+                        any_nonzero = False
+                        for name, mat in dense.items():
+                            val = float(mat[i, j])
+                            edge_attrs[name] = val
+                            if val != 0:
+                                any_nonzero = True
+                        if any_nonzero:
+                            # Ensure "weight" exists for networkx compatibility
+                            if "weight" not in edge_attrs:
+                                edge_attrs["weight"] = next(
+                                    (v for v in edge_attrs.values()
+                                     if isinstance(v, float) and v != 0),
+                                    1.0,
+                                )
+                            G.add_edge(i, j, **edge_attrs)
 
         return G
 

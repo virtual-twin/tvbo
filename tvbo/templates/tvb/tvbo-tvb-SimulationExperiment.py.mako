@@ -40,7 +40,7 @@ def define_simulation(connectivity, simulation_length=${experiment.integration.d
     simulator = Simulator(
         model=${experiment.dynamics.name}(**model_kwargs),
         connectivity=connectivity,
-        coupling=${experiment.coupling.name}(**coupling_kwargs),
+        coupling=${'%s(**coupling_kwargs)' % experiment.coupling.name if experiment.coupling else 'Linear(**coupling_kwargs)'},
         conduction_speed=${experiment.network.conduction_speed.value},
         integrator=${experiment.integration.method + ('Stochastic' if (experiment.integration.noise or np.any(np.asarray(context['experiment'].noise_sigma_array)>0)) else '')}(${'noise=noise,' if (experiment.integration.noise or np.any(np.asarray(context['experiment'].noise_sigma_array)>0)) else ''}**integration_kwargs),
         monitors=monitors,

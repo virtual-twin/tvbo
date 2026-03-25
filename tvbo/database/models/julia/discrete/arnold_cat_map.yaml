@@ -1,4 +1,5 @@
 name: ArnoldCatMap
+model_type: generic
 references:
 - ArnoldAvez1968
 source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/discrete_famous_systems.jl

@@ -1,4 +1,5 @@
 name: LogisticMap
+model_type: generic
 references:
 - May1976
 - Feigenbaum1978

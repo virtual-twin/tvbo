@@ -810,6 +810,8 @@ website:
                         href: datamodel/slots/model_equation_ref.qmd
                       - text: "model_param_ref"
                         href: datamodel/slots/model_param_ref.qmd
+                      - text: "model_type"
+                        href: datamodel/slots/model_type.qmd
                       - text: "modes"
                         href: datamodel/slots/modes.qmd
                       - text: "modified"
@@ -1228,6 +1230,8 @@ website:
                         href: datamodel/enums/ImagingModality.qmd
                       - text: "Initial State Method"
                         href: datamodel/enums/InitialStateMethod.qmd
+                      - text: "Model Type"
+                        href: datamodel/enums/ModelType.qmd
                       - text: "Noise Type"
                         href: datamodel/enums/NoiseType.qmd
                       - text: "Numerical Discretization Method"

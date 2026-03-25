@@ -1,0 +1,123 @@
+name: PinskyRinzelCA3
+model_type: spiking
+source: 'NeuroML2 example: Ex22_PinskyRinzel'
+parameters:
+  iSoma:
+    value: 0.75
+  iDend:
+    value: 0.0
+  gLs:
+    value: 0.1
+  gLd:
+    value: 0.1
+  gNa:
+    value: 30.0
+  gKdr:
+    value: 15.0
+  gCa:
+    value: 10.0
+  gKahp:
+    value: 0.8
+  gKC:
+    value: 15.0
+  gc:
+    value: 2.1
+  eNa:
+    value: 60.0
+  eCa:
+    value: 80.0
+  eK:
+    value: -75.0
+  eL:
+    value: -60.0
+  pp:
+    value: 0.5
+  cm:
+    value: 3.0
+derived_variables:
+  alpha_ms:
+    equation:
+      rhs: Piecewise((0.32/4.0, Eq(Vs, -46.9)), (0.32*(-46.9 - Vs)/(exp((-46.9 - Vs)/4.0) - 1.0), True))
+  beta_ms:
+    equation:
+      rhs: Piecewise((0.28/5.0, Eq(Vs, -19.9)), (0.28*(Vs + 19.9)/(exp((Vs + 19.9)/5.0) - 1.0), True))
+  minf_s:
+    equation:
+      rhs: alpha_ms / (alpha_ms + beta_ms)
+  alpha_hs:
+    equation:
+      rhs: 0.128*exp((-43.0 - Vs)/18.0)
+  beta_hs:
+    equation:
+      rhs: 4.0 / (1.0 + exp((-20.0 - Vs)/5.0))
+  alpha_ns:
+    equation:
+      rhs: Piecewise((0.016/5.0, Eq(Vs, -24.9)), (0.016*(-24.9 - Vs)/(exp((-24.9 - Vs)/5.0) - 1.0), True))
+  beta_ns:
+    equation:
+      rhs: 0.25*exp(-1.0 - 0.025*Vs)
+  alpha_sd:
+    equation:
+      rhs: 1.6 / (1.0 + exp(-0.072*(Vd - 5.0)))
+  beta_sd:
+    equation:
+      rhs: Piecewise((0.02/5.0, Eq(Vd, -8.9)), (0.02*(Vd + 8.9)/(exp((Vd + 8.9)/5.0) - 1.0), True))
+  alpha_cd:
+    equation:
+      rhs: Piecewise((exp((Vd + 50.0)/11.0 - (Vd + 53.5)/27.0) / 18.975, Vd < -10.0), (2.0*exp((-53.5 - Vd)/27.0), True))
+  beta_cd:
+    equation:
+      rhs: Piecewise((2.0*exp((-53.5 - Vd)/27.0) - alpha_cd, Vd < -10.0), (0.0, True))
+  alpha_qd:
+    equation:
+      rhs: Min(0.00002*Cad, 0.01)
+  chi_d:
+    equation:
+      rhs: Min(Cad/250.0, 1.0)
+  ICa_d:
+    equation:
+      rhs: gCa*sd**2*(Vd - eCa)
+state_variables:
+  Vs:
+    equation:
+      rhs: (-gLs*(Vs - eL) - gNa*minf_s**2*hs*(Vs - eNa) - gKdr*ns*(Vs - eK) + gc*(Vd - Vs)/pp + iSoma/pp) / cm
+    initial_value: -60.0
+    variable_of_interest: true
+  Vd:
+    equation:
+      rhs: (-gLd*(Vd - eL) - ICa_d - gKahp*qd*(Vd - eK) - gKC*cd*chi_d*(Vd - eK) + gc*(Vs - Vd)/(1.0 - pp) + iDend/(1.0 -
+        pp)) / cm
+    initial_value: -60.0
+    variable_of_interest: true
+  Cad:
+    equation:
+      rhs: -0.13*ICa_d - 0.075*Cad
+    initial_value: 0.0
+  hs:
+    equation:
+      rhs: alpha_hs - (alpha_hs + beta_hs)*hs
+    initial_value: 0.999
+  ns:
+    equation:
+      rhs: alpha_ns - (alpha_ns + beta_ns)*ns
+    initial_value: 0.001
+  sd:
+    equation:
+      rhs: alpha_sd - (alpha_sd + beta_sd)*sd
+    initial_value: 0.009
+  cd:
+    equation:
+      rhs: alpha_cd - (alpha_cd + beta_cd)*cd
+    initial_value: 0.007
+  qd:
+    equation:
+      rhs: alpha_qd - (alpha_qd + 0.001)*qd
+    initial_value: 0.0
+  Si:
+    equation:
+      rhs: -Si/150.0
+    initial_value: 0.0
+  Wi:
+    equation:
+      rhs: -Wi/2.0
+    initial_value: 0.0

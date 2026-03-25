@@ -1,5 +1,6 @@
 name: CoombesByrne2D
 iri: tvbo:CoombesByrne2D
+model_type: mean_field
 parameters:
   Delta:
     name: Delta

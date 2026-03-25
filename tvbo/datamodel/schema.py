@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-03-24T17:50:37
+# Generation date: 2026-03-24T19:20:25
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -1295,6 +1295,7 @@ class Dynamics(YAMLRoot):
     functions: Optional[Union[dict[Union[str, FunctionName], Union[dict, "Function"]], list[Union[dict, "Function"]]]] = empty_dict()
     stimulus: Optional[Union[dict, Stimulus]] = None
     modes: Optional[Union[dict[Union[str, DynamicsName], Union[dict, "Dynamics"]], list[Union[dict, "Dynamics"]]]] = empty_dict()
+    model_type: Optional[Union[str, "ModelType"]] = None
     system_type: Optional[Union[str, "SystemType"]] = None
     autonomous: Optional[Union[bool, Bool]] = True
     observed: Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, "DerivedVariable"]], list[Union[dict, "DerivedVariable"]]]] = empty_dict()
@@ -1359,6 +1360,9 @@ class Dynamics(YAMLRoot):
             self.stimulus = Stimulus(**as_dict(self.stimulus))
 
         self._normalize_inlined_as_dict(slot_name="modes", slot_type=Dynamics, key_name="name", keyed=True)
+
+        if self.model_type is not None and not isinstance(self.model_type, ModelType):
+            self.model_type = ModelType(self.model_type)
 
         if self.system_type is not None and not isinstance(self.system_type, SystemType):
             self.system_type = SystemType(self.system_type)
@@ -4996,6 +5000,38 @@ class ImagingModality(EnumDefinitionImpl):
         name="ImagingModality",
     )
 
+class ModelType(EnumDefinitionImpl):
+    """
+    Coarse classification of a Dynamics model by its mathematical/biological origin. Used for filtering and display in
+    list_db().
+    """
+    mean_field = PermissibleValue(
+        text="mean_field",
+        description="""Mathematically derived mean-field models obtained by exact reduction of spiking networks (Ott-Antonsen ansatz, Lorentzian heterogeneity, etc.). Examples: MontbrioPazoRoxin, CoombesByrne, ReducedWongWang, ZerlautAdaptationFirstOrder.""")
+    neural_mass = PermissibleValue(
+        text="neural_mass",
+        description="""Phenomenological population-rate / neural-mass models that describe synaptic and firing-rate dynamics without an explicit derivation from single-neuron statistics. Examples: JansenRit, WilsonCowan, LarterBreakspear, TsodyksMarkram.""")
+    phase_oscillator = PermissibleValue(
+        text="phase_oscillator",
+        description="Phase-reduced or Kuramoto-type oscillator models. Examples: Kuramoto, SupHopf.")
+    phenomenological = PermissibleValue(
+        text="phenomenological",
+        description="""Empirical / phenomenological models that capture macroscopic dynamics without direct biophysical derivation. Examples: Epileptor2D, Epileptor5D.""")
+    spiking = PermissibleValue(
+        text="spiking",
+        description="""Single-neuron or conductance-based spiking models (HH, AdEx, LIF, Izhikevich, etc.). These can be used as nodes in a network alongside mean-field models.""")
+    generic = PermissibleValue(
+        text="generic",
+        description="""Generic / normal-form dynamical systems not specific to neural modelling (e.g. Generic2dOscillator, GenericLinear).""")
+    field = PermissibleValue(
+        text="field",
+        description="""Spatially distributed neural-field models described by integro- differential or PDE formulations.""")
+
+    _defn = EnumDefinition(
+        name="ModelType",
+        description="""Coarse classification of a Dynamics model by its mathematical/biological origin. Used for filtering and display in list_db().""",
+    )
+
 class SystemType(EnumDefinitionImpl):
 
     continuous = PermissibleValue(
@@ -5881,6 +5917,9 @@ slots.dynamics__stimulus = Slot(uri=TVBO.stimulus, name="dynamics__stimulus", cu
 
 slots.dynamics__modes = Slot(uri=TVBO.modes, name="dynamics__modes", curie=TVBO.curie('modes'),
                    model_uri=TVBO.dynamics__modes, domain=None, range=Optional[Union[dict[Union[str, DynamicsName], Union[dict, Dynamics]], list[Union[dict, Dynamics]]]])
+
+slots.dynamics__model_type = Slot(uri=TVBO.model_type, name="dynamics__model_type", curie=TVBO.curie('model_type'),
+                   model_uri=TVBO.dynamics__model_type, domain=None, range=Optional[Union[str, "ModelType"]])
 
 slots.dynamics__system_type = Slot(uri=TVBO.system_type, name="dynamics__system_type", curie=TVBO.curie('system_type'),
                    model_uri=TVBO.dynamics__system_type, domain=None, range=Optional[Union[str, "SystemType"]])

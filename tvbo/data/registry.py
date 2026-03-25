@@ -1,10 +1,15 @@
 """Canonical database registry — resolves short names to YAML file paths.
 
 Works both from pip-installed packages and editable/dev installs.
+Searches recursively within each category directory so that models in
+subfolders (e.g. database/models/julia/) are automatically discovered.
 See TVBO-Database-Access-Proposal.md §5 for design rationale.
 """
+import re
 from importlib.resources import files
 from pathlib import Path
+
+_NAME_RE = re.compile(r'^name:\s*(\S.*)')
 
 # --- Path resolution ---
 _pkg_db = Path(files("tvbo")) / "database"
@@ -32,7 +37,8 @@ _CATEGORIES = {
 def resolve(cls_name: str, name: str) -> Path:
     """Resolve a short name to a database YAML file path.
 
-    Tries exact match first, then case-insensitive fallback.
+    Tries exact top-level stem match first (fast path), then searches
+    recursively by canonical `name:` field and file stem (case-insensitive).
     For Network, also matches BIDS filenames containing the atlas name.
     """
     if DATABASE_ROOT is None:
@@ -48,28 +54,57 @@ def resolve(cls_name: str, name: str) -> Path:
 
     db_dir = DATABASE_ROOT / category
 
-    # Exact match
+    # Fast path: exact top-level stem match
     exact = db_dir / f"{name}.yaml"
     if exact.exists():
         return exact
 
-    # Case-insensitive fallback
-    for p in db_dir.glob("*.yaml"):
-        if p.stem.lower() == name.lower():
+    # Build recursive name index and search
+    name_lower = name.lower()
+    for canonical, p in _build_name_index(db_dir).items():
+        if canonical == name or canonical.lower() == name_lower:
+            return p
+        if p.stem == name or p.stem.lower() == name_lower:
             return p
 
     # For networks: search by atlas name in BIDS filename
     if cls_name == "Network":
-        for p in db_dir.glob("*.yaml"):
+        for p in db_dir.rglob("*.yaml"):
             if f"atlas-{name}" in p.stem:
                 return p
 
-    available = sorted(p.stem for p in db_dir.glob("*.yaml")
-                       if not p.stem.startswith("_"))
+    available = sorted(_build_name_index(db_dir).keys())
     raise FileNotFoundError(
         f"No database entry '{name}' for {cls_name}. "
         f"Available: {available}"
     )
+
+
+def _extract_name(path: Path) -> str:
+    """Read the canonical `name:` value from the first lines of a YAML file."""
+    try:
+        with path.open(encoding="utf-8") as fh:
+            for _ in range(15):
+                line = fh.readline()
+                if not line:
+                    break
+                m = _NAME_RE.match(line)
+                if m:
+                    return m.group(1).strip()
+    except OSError:
+        pass
+    return path.stem  # fallback: use filename stem
+
+
+def _build_name_index(db_dir: Path) -> dict[str, Path]:
+    """Map canonical model name -> YAML path for all files under db_dir (recursive)."""
+    index: dict[str, Path] = {}
+    for p in sorted(db_dir.rglob("*.yaml")):
+        if p.stem.startswith("_"):
+            continue
+        name = _extract_name(p)
+        index[name] = p
+    return index
 
 
 def list_entries(cls_name: str) -> list[str]:
@@ -82,8 +117,48 @@ def list_entries(cls_name: str) -> list[str]:
     db_dir = DATABASE_ROOT / category
     if not db_dir.exists():
         return []
-    return sorted(p.stem for p in db_dir.glob("*.yaml")
-                  if not p.stem.startswith("_"))
+    return sorted(_build_name_index(db_dir).keys())
+
+
+def list_entries_with_metadata(cls_name: str) -> list[dict]:
+    """Return a list of dicts with `name`, `model_type`, `description`, `path`
+    for every entry in the given class category.  Fast — reads only the first
+    ~30 lines of each YAML file.
+    """
+    if DATABASE_ROOT is None:
+        return []
+    category = _CATEGORIES.get(cls_name)
+    if category is None:
+        return []
+    db_dir = DATABASE_ROOT / category
+    if not db_dir.exists():
+        return []
+
+    _FIELD_RE = re.compile(r'^(model_type|description|system_type):\s*(.*)')
+    rows = []
+    for p in sorted(db_dir.rglob("*.yaml")):
+        if p.stem.startswith("_"):
+            continue
+        fields: dict = {"path": p}
+        try:
+            with p.open(encoding="utf-8") as fh:
+                for _ in range(30):
+                    line = fh.readline()
+                    if not line:
+                        break
+                    m = _NAME_RE.match(line)
+                    if m and "name" not in fields:
+                        fields["name"] = m.group(1).strip()
+                        continue
+                    m2 = _FIELD_RE.match(line)
+                    if m2:
+                        fields[m2.group(1)] = m2.group(2).strip()
+        except OSError:
+            continue
+        if "name" not in fields:
+            fields["name"] = p.stem
+        rows.append(fields)
+    return rows
 
 
 def database_dir(cls_name: str) -> Path:

@@ -1,4 +1,5 @@
 name: BetaTransformationMap
+model_type: generic
 references:
 - Ott2002
 source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/discrete_famous_systems.jl

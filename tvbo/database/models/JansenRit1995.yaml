@@ -11,6 +11,7 @@
 
 name: JansenRit1995
 iri: tvbo:JansenRit1995
+model_type: neural_mass
 has_reference: "Jansen1995"
 label: "Jansen-Rit Neural Mass Model (1995)"
 description: >-

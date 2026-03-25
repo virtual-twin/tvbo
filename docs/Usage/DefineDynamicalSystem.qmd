@@ -29,7 +29,7 @@ import yaml
 from tvbo import Dynamics, SimulationExperiment
 
 # Pendulum System
-dynamics_yaml = """
+pendulum_dynamics = """
 name: PendulumSystem
 description: A simple damped pendulum system for demonstrating TVBO capabilities.
 parameters:
@@ -75,7 +75,7 @@ output:
 """
 
 pendulum = SimulationExperiment(
-    dynamics=Dynamics(**yaml.load(, Loader=yaml.FullLoader)),
+    dynamics=Dynamics.from_string(pendulum_dynamics),
 )
 results = pendulum.run(duration=5_000)
 ```
@@ -92,8 +92,8 @@ Real-time animation of the pendulum motion alongside the time series data:
 
 ```{python}
 # | echo: false
-x = results.integration.get_state('x').data.squeeze()
-y = results.integration.get_state('y').data.squeeze()
+x = results.integration.sel(variable='x').values
+y = results.integration.sel(variable='y').values
 time = results.integration.time
 dt = pendulum.integration.step_size
 

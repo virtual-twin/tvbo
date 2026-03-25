@@ -1,5 +1,6 @@
 name: KIonEx
 iri: tvbo:KIonEx
+model_type: mean_field
 parameters:
   Cm:
     name: Cm
@@ -147,10 +148,10 @@ parameters:
   Cl_i0:
     name: Cl_i0
     definition: initial concentration of intracellular Cl
-    value: 4.8
+    value: 5.0
     domain:
-      lo: 4.8
-      hi: 4.8
+      lo: 5.0
+      hi: 5.0
       step: 0.0
     description: initial concentration of intracellular Cl
     unit: mmol_per_m3
@@ -219,10 +220,10 @@ parameters:
     unit: mV
   DCnap:
     name: DCnap
-    value: 21.0
+    value: 2.0
     domain:
-      lo: 21.0
-      hi: 21.0
+      lo: 2.0
+      hi: 2.0
       step: 0.0
     description: ''
     unit: mol_per_m3
@@ -576,7 +577,7 @@ state_variables:
       rhs: Vcond
       latex: false
     variable_of_interest: true
-    coupling_variable: true
+    coupling_variable: false
     boundaries:
       lo: -500.0
       hi: .inf
@@ -608,7 +609,7 @@ state_variables:
       rhs: xcond
       latex: false
     variable_of_interest: true
-    coupling_variable: false
+    coupling_variable: true
     boundaries:
       lo: 0.0
       hi: .inf

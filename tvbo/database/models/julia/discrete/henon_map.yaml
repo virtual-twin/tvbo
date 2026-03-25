@@ -1,4 +1,5 @@
 name: HenonMap
+model_type: generic
 references:
 - Henon1976
 source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/discrete_famous_systems.jl

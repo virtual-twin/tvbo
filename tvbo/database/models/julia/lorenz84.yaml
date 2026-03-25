@@ -1,4 +1,5 @@
 name: Lorenz84
+model_type: generic
 references:
 - Freire2008
 source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl

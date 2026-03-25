@@ -1,5 +1,6 @@
 name: Epileptor2D
 iri: tvbo:Epileptor2D
+model_type: phenomenological
 parameters:
   Iext:
     name: Iext

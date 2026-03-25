@@ -12,23 +12,27 @@ if 'experiment' in context.keys():
 else:
     coupling = context['coupling']
 
-# Collect coupling parameter names for use in expressions
-coupling_param_names = [par.name for par in coupling.parameters.values()] if coupling.parameters else []
+_has_coupling = coupling is not None
 
-if coupling.sparse:
-    base_class = 'SparseCoupling'
-else:
-    base_class = 'Coupling'
+if _has_coupling:
+    # Collect coupling parameter names for use in expressions
+    coupling_param_names = [par.name for par in coupling.parameters.values()] if coupling.parameters else []
 
-pre_expr = pycode(coupling.pre_expression.rhs, parameters=coupling_param_names)
-if '[0]' in pre_expr:
-    pre_expr = pre_expr.replace('[', '[:, ')
-    return_new_axis = "[:, np.newaxis]"
-else:
-    return_new_axis = ""
+    if coupling.sparse:
+        base_class = 'SparseCoupling'
+    else:
+        base_class = 'Coupling'
 
-post_expr = pycode(coupling.post_expression.rhs, parameters=['gx'] + coupling_param_names)
+    pre_expr = pycode(coupling.pre_expression.rhs, parameters=coupling_param_names)
+    if '[0]' in pre_expr:
+        pre_expr = pre_expr.replace('[', '[:, ')
+        return_new_axis = "[:, np.newaxis]"
+    else:
+        return_new_axis = ""
+
+    post_expr = pycode(coupling.post_expression.rhs, parameters=['gx'] + coupling_param_names)
 %>
+% if _has_coupling:
 ##
 class ${coupling.name}(${base_class}):
     """
@@ -75,3 +79,4 @@ class ${coupling.name}(${base_class}):
 
     def __str__(self):
         return simple_gen_astr(self, "${" ".join(list(p.name for p in coupling.parameters.values()))}")
+% endif

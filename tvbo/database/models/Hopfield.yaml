@@ -1,5 +1,6 @@
 name: Hopfield
 iri: tvbo:Hopfield
+model_type: neural_mass
 parameters:
   tauT:
     name: tauT

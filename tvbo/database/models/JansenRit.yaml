@@ -1,5 +1,6 @@
 name: JansenRit
 iri: tvbo:JansenRit
+model_type: neural_mass
 parameters:
   A:
     name: A

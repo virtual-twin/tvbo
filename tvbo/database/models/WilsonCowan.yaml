@@ -1,5 +1,6 @@
 name: WilsonCowan
 iri: tvbo:WilsonCowan
+model_type: neural_mass
 parameters:
   P:
     name: P

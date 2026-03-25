@@ -321,6 +321,46 @@ enums:
             IEEG:
                 description: "Intracranial Electroencephalography."
 
+    ModelType:
+        description: >-
+            Coarse classification of a Dynamics model by its mathematical/biological
+            origin. Used for filtering and display in list_db().
+        permissible_values:
+            mean_field:
+                description: >-
+                    Mathematically derived mean-field models obtained by exact
+                    reduction of spiking networks (Ott-Antonsen ansatz, Lorentzian
+                    heterogeneity, etc.). Examples: MontbrioPazoRoxin, CoombesByrne,
+                    ReducedWongWang, ZerlautAdaptationFirstOrder.
+            neural_mass:
+                description: >-
+                    Phenomenological population-rate / neural-mass models that describe
+                    synaptic and firing-rate dynamics without an explicit derivation
+                    from single-neuron statistics. Examples: JansenRit, WilsonCowan,
+                    LarterBreakspear, TsodyksMarkram.
+            phase_oscillator:
+                description: >-
+                    Phase-reduced or Kuramoto-type oscillator models. Examples:
+                    Kuramoto, SupHopf.
+            phenomenological:
+                description: >-
+                    Empirical / phenomenological models that capture macroscopic
+                    dynamics without direct biophysical derivation. Examples:
+                    Epileptor2D, Epileptor5D.
+            spiking:
+                description: >-
+                    Single-neuron or conductance-based spiking models (HH, AdEx,
+                    LIF, Izhikevich, etc.). These can be used as nodes in a network
+                    alongside mean-field models.
+            generic:
+                description: >-
+                    Generic / normal-form dynamical systems not specific to neural
+                    modelling (e.g. Generic2dOscillator, GenericLinear).
+            field:
+                description: >-
+                    Spatially distributed neural-field models described by integro-
+                    differential or PDE formulations.
+
     SystemType:
         permissible_values:
             continuous:
@@ -1291,6 +1331,12 @@ classes:
                 inlined: true
                 aliases:
                     - components
+            model_type:
+                range: ModelType
+                description: >-
+                    Coarse classification of this model (mean_field, neural_mass,
+                    phase_oscillator, phenomenological, spiking, generic, field).
+                    Used for filtering in Dynamics.list_db(model_type=...).
             system_type:
                 range: SystemType
             autonomous:
@@ -1336,6 +1382,12 @@ classes:
             coupling_variable:
                 range: boolean
                 ifabsent: false
+                description: >-
+                    Whether this state variable is transmitted to connected nodes
+                    through the coupling function. In TVB terms, this determines
+                    the cvar indices (state variables extracted from history and
+                    fed into the coupling function). The coupling function may
+                    override this via its incoming_states attribute.
             equation_type:
                 range: string
                 ifabsent: "string(differential)"
