@@ -93,9 +93,9 @@ api = ["fastapi>=0.115.0", "uvicorn>=0.30.0", "docker>=7.1.0"]
 tvb = ["tvb-library", "tvb-framework", "tvb-data"]
 
 # TVB optimization (JAX-based simulation & optimization)
-tvboptim = ["tvboptim @ git+https://github.com/virtual-twin/tvboptim.git"]
+tvboptim = ["tvboptim"]
 
-# Full install (all features except docs which requires private repos)
+# Full install (all features)
 all = ["tvbo[neuroml,data,knowledge,audio,api,tvb,tvboptim,docs,pyrates,julia]"]
 
 [project.urls]
