@@ -246,6 +246,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         # coupling.incoming_states supervenes: if the coupling already declares which
         # states it receives, that is authoritative. Only when incoming_states is empty
         # do we fall back to state variables with coupling_variable=True in the dynamics.
+        # IMPORTANT: If a coupling already declares local_states (e.g. FastLinearCoupling),
+        # it intentionally only uses local states for vectorized matmul — do NOT force
+        # incoming_states on it, as that would break the vectorized code path.
         dyn = getattr(self, 'dynamics', None)
         if dyn:
             cvars = [
@@ -255,7 +258,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             ]
             if cvars:
                 for coup in (getattr(self.network, 'coupling', None) or {}).values():
-                    if not getattr(coup, 'incoming_states', None):
+                    if not getattr(coup, 'incoming_states', None) and not getattr(coup, 'local_states', None):
                         coup.incoming_states = list(cvars)
 
         # Get source file path if loading from file (set by from_file classmethod)
