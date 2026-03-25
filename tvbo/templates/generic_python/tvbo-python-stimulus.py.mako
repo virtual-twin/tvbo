@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 <%
-from tvbo.export.code import render_expression
+from tvbo.codegen import render_expression
 eq, params = stimulus.get_expression()
 %>
 

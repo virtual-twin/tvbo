@@ -1,0 +1,25 @@
+{
+  "_type": "tvbo:BoundaryCondition",
+  "properties": {
+    "label": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "bc_type": {
+      "type": "string"
+    },
+    "on_region": {
+      "type": "string"
+    },
+    "value": {
+      "_linkedTypes": [
+        "tvbo:Equation"
+      ]
+    },
+    "time_dependent": {
+      "type": "boolean"
+    }
+  }
+}

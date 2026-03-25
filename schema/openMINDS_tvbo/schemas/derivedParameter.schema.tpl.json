@@ -1,0 +1,22 @@
+{
+  "_type": "tvbo:DerivedParameter",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "symbol": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "equation": {
+      "_linkedTypes": [
+        "tvbo:Equation"
+      ]
+    },
+    "unit": {
+      "type": "string"
+    }
+  }
+}

@@ -1,0 +1,42 @@
+name: IzhikevichBurst
+model_type: spiking
+source: 'NeuroML2 example: Ex2_Izh'
+parameters:
+  a:
+    value: 0.02
+  b:
+    value: 0.2
+  c:
+    value: -50.0
+  d:
+    value: 2.0
+  thresh:
+    value: 30.0
+  I_amp:
+    value: 15.0
+  pulse_delay:
+    value: 22.0
+    unit: ms
+  pulse_duration:
+    value: 2000.0
+    unit: ms
+derived_variables:
+  I_ext:
+    equation:
+      rhs: Piecewise((I_amp, (t >= pulse_delay) & (t < pulse_delay + pulse_duration)), (0.0, True))
+state_variables:
+  v:
+    equation:
+      rhs: 0.04*v**2 + 5*v + 140 - U + I_ext
+    initial_value: -70.0
+    variable_of_interest: true
+  U:
+    equation:
+      rhs: a*(b*v - U)
+    initial_value: -14.0
+events:
+  spike:
+    condition:
+      rhs: v > thresh
+    affect:
+      rhs: v = c; U = U + d

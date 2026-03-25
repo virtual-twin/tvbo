@@ -1,0 +1,23 @@
+# Global Average - spatial mean across all nodes
+
+name: GlobalAverage
+label: Global Spatial Average
+description: >-
+    Spatial mean across all network nodes at each sampling period. Reduces
+    spatial dimension to a single global signal per state variable.
+
+period: 0.9765625  # ms (~1024 Hz default)
+
+class_reference:
+    name: GlobalAverage
+    module: tvb.simulator.monitors
+
+pipeline:
+    - name: global_mean
+      output: global_averaged
+      equation:
+          rhs: "mean(X, axis=-2, keepdims=True)"
+      aggregate:
+          over: node
+          type: mean
+      apply_on_dimension: node

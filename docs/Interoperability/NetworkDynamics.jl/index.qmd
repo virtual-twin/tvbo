@@ -1,0 +1,182 @@
+---
+title: "NetworkDynamics.jl Backend"
+subtitle: "Julia code generation for network-based dynamical systems"
+---
+
+## Overview
+
+The **NetworkDynamics.jl** backend generates Julia code for simulating dynamical systems on networks using the [NetworkDynamics.jl](https://juliadynamics.github.io/NetworkDynamics.jl/stable/) package [@Lindner2021]. From a single YAML experiment specification, `render_code("networkdynamics")` produces a self-contained Julia script that:
+
+- Defines a `VertexModel` from the local dynamics (node equations)
+- Defines an `EdgeModel` from the coupling function
+- Constructs a graph from the network specification
+- Assembles a `Network`, sets initial conditions, and solves the ODE/SDE
+
+## Examples
+
+These examples recreate the official [NetworkDynamics.jl tutorials](https://juliadynamics.github.io/NetworkDynamics.jl/stable/) using tvbo's declarative YAML format.
+
+### Mapping to Original Tutorials
+
+Each TVBO example corresponds to (a part of) an original ND.jl tutorial:
+
+| Original ND.jl Tutorial | TVBO Example(s) | Features Demonstrated |
+|--------------------------|------------------|-----------------------|
+| [Getting Started (Network Diffusion)](https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/getting_started_with_network_dynamics/) | [Network Diffusion](diffusion.qmd), [2D Network Diffusion](diffusion_2d.qmd) | Basic `VertexModel`/`EdgeModel`, graph generators, 1D and 2D state variables |
+| [Heterogeneous System](https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/heterogeneous_system/) | [Kuramoto Oscillators](kuramoto.qmd), [Heterogeneous Kuramoto](heterogeneous_kuramoto.qmd) | Per-node parameter distributions, multiple vertex types (standard, static, inertia) |
+| [Directed & Weighted Graphs](https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/directed_and_weighted_graphs/) | [FitzHugh-Nagumo](fitzhugh_nagumo.qmd) | Weighted directed graphs from DTI matrix files, neuroscience models |
+| [Cascading Failure](https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/cascading_failure/) | [Cascading Failure](cascading_failure.qmd) | Discrete callbacks, edge tripping, swing equation |
+| [Stress on Truss](https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/stress_on_truss/) | [Stress on Truss](stress_on_truss.qmd) | 2D coupling (`insym`/`outsym`), observed functions (`obsf`), per-edge parameters, heterogeneous vertices |
+
+## Quick Start
+
+```python
+from tvbo import SimulationExperiment
+
+# Load experiment from YAML
+exp = SimulationExperiment.from_file("yaml/diffusion.yaml")
+
+# Generate NetworkDynamics.jl code
+julia_code = exp.render_code("networkdynamics")
+print(julia_code)
+```
+
+## How it Works
+
+The code generation pipeline:
+
+1. **YAML → Python objects**: `SimulationExperiment.from_file()` parses the YAML into `Dynamics`, `Coupling`, `Network`, and `Integrator` instances
+2. **[Mako](https://www.makotemplates.org/) templates**: The `networkdynamics` format uses three composable templates:
+   - `tvbo-nd-vertex.jl.mako` — generates the vertex function `f!` and `VertexModel`
+   - `tvbo-nd-edge.jl.mako` — generates the edge function `g!` and `EdgeModel`
+   - `tvbo-nd-experiment.jl.mako` — orchestrates the full script (imports, graph, solve, plot)
+3. **Symbolic rendering**: Equations from the YAML are rendered to Julia syntax via `JuliaPrinter`
+
+For standalone (non-network) systems, see the [ModelingToolkit.jl backend](../ModelingToolkit.jl/index.qmd).
+
+## Distributions
+
+Initial conditions and per-node parameters can be sampled from distributions using the `distribution` field on `state_variables` and `parameters`.
+
+### Schema
+
+```yaml
+state_variables:
+  v:
+    initial_value: 0.0     # fallback if no distribution
+    distribution:
+      name: Gaussian       # Gaussian or Uniform
+      seed: 42             # reproducible random seed
+      domain: { lo: -3.0, hi: 3.0 }
+      parameters:
+        mean: { name: mean, value: 0.0 }
+        std:  { name: std,  value: 5.0 }
+```
+
+### Supported Distributions
+
+| Name | Domain | Parameters | Julia Output |
+|------|--------|------------|-------------|
+| **Gaussian** | `lo`, `hi` (clamp range) | `mean`, `std` | `mean + std * randn(rng)` |
+| **Uniform** | `lo`, `hi` | — | `lo + (hi - lo) * rand(rng)` |
+
+When a distribution is specified, the template generates per-node sampling loops with a seeded `MersenneTwister` RNG. If no distribution is present, all nodes are initialized to `initial_value`.
+
+### Example: Heterogeneous Natural Frequencies (Kuramoto)
+
+```yaml
+parameters:
+  omega0:
+    value: 0.0
+    distribution:
+      name: Uniform
+      domain: { lo: 0.2, hi: 1.0 }
+```
+
+This generates:
+```julia
+for node in 1:nv(g)
+    s.p.v[node, :omega0] = 0.2 + (1.0 - 0.2) * rand(rng)
+end
+```
+
+## GraphGenerator
+
+Networks can be constructed from a `graph_generator` specification instead of explicit edge lists or matrix files. The `GraphGenerator` schema maps to backend-specific graph constructors (Graphs.jl for Julia, NetworkX for Python).
+
+### Schema
+
+```yaml
+network:
+  number_of_nodes: 20
+  graph_generator:
+    name: barabasi_albert
+    type: BarabasiAlbert    # StandardGraphType enum value
+    parameters:
+      k: { name: k, value: 4 }
+```
+
+The `type` field is a free string; values from `StandardGraphType` get automatic backend mapping. The number of nodes is always taken from `network.number_of_nodes`.
+
+### Supported Graph Types
+
+| Type | Julia (Graphs.jl) | Parameters | Description |
+|------|-------------------|------------|-------------|
+| `BarabasiAlbert` | `barabasi_albert(n, k)` | `k` (edges per new node) | Scale-free network |
+| `WattsStrogatz` | `watts_strogatz(n, k, p)` | `k` (neighbors), `p` (rewiring prob.) | Small-world network |
+| `ErdosRenyi` | `erdos_renyi(n, p)` | `p` (edge probability) | Random graph |
+| `Complete` | `complete_graph(n)` | — | Fully connected |
+| `Cycle` | `cycle_graph(n)` | — | Ring |
+| `Star` | `star_graph(n)` | — | Hub-and-spoke |
+| `RandomRegular` | `random_regular_graph(n, k)` | `k` (degree) | Regular random graph |
+
+### Alternative: Edge Matrix Files
+
+For empirical connectivity (e.g., DTI-derived brain networks), use `edge_matrix_files` instead:
+
+```yaml
+network:
+  number_of_nodes: 90
+  edge_matrix_files:
+    - Norm_G_DTI.txt
+```
+
+This loads the matrix via `readdlm()` and constructs a `SimpleWeightedDiGraph` with per-edge weights.
+
+## Graph Results and Animation
+
+When running via `exp.run(format="networkdynamics")`, the result `TimeSeries` includes graph data:
+
+```python
+ts = exp.run(format="networkdynamics")
+
+ts.graph["adjacency"]   # (n_nodes, n_nodes) adjacency matrix
+ts.graph["positions"]   # (n_nodes, 2) spring layout coordinates
+ts.graph["weights"]     # (n_edges,) edge weights or None
+```
+
+### Animate
+
+The `animate()` method creates a scatter-plot animation where each node is a dot positioned by the graph layout, colored by its timeseries value:
+
+```python
+ani = ts.animate("v", format="dots")
+
+# In Jupyter:
+from IPython.display import HTML
+HTML(ani.to_jshtml())
+
+# Save to file:
+ani.save("diffusion.gif", writer="pillow", fps=20)
+```
+
+### Template Mapping
+
+| YAML Section | Julia Construct | Template |
+|-------------|----------------|----------|
+| `dynamics.state_variables` | `f!(dx, x, esum, p, t)` | vertex |
+| `dynamics.parameters` | `psym = [:a => 0.5, ...]` | vertex |
+| `network.coupling.*.pre_expression` | `g!(e_dst, v_src, v_dst, p, t)` | edge |
+| `network.coupling.*.parameters` | `psym = [:K => 3.0, ...]` | edge |
+| `network.edges` | `SimpleDiGraph` / `complete_graph` | experiment |
+| `integration` | `ODEProblem` + `solve(prob, Tsit5())` | experiment |

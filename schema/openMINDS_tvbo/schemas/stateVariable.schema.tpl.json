@@ -1,0 +1,60 @@
+{
+  "_type": "tvbo:StateVariable",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "symbol": {
+      "type": "string"
+    },
+    "label": {
+      "type": "string"
+    },
+    "definition": {
+      "type": "string"
+    },
+    "domain": {
+      "_linkedTypes": [
+        "tvbo:Range"
+      ]
+    },
+    "description": {
+      "type": "string"
+    },
+    "equation": {
+      "_linkedTypes": [
+        "tvbo:Equation"
+      ]
+    },
+    "unit": {
+      "type": "string"
+    },
+    "variable_of_interest": {
+      "type": "boolean"
+    },
+    "coupling_variable": {
+      "type": "boolean"
+    },
+    "noise": {
+      "_embeddedTypes": [
+        "tvbo:Noise"
+      ]
+    },
+    "stimulation_variable": {
+      "type": "boolean"
+    },
+    "boundaries": {
+      "_embeddedTypes": [
+        "tvbo:Range"
+      ]
+    },
+    "initial_value": {
+      "type": "number"
+    },
+    "history": {
+      "_embeddedTypes": [
+        "tvbo:TimeSeries"
+      ]
+    }
+  }
+}

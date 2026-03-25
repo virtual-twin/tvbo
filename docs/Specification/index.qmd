@@ -1,0 +1,15 @@
+---
+title: "Specification"
+subtitle: "YAML specification reference for TVB-O experiments"
+---
+
+## Overview
+
+TVB-O experiments are defined declaratively in YAML. This section documents each specification component:
+
+| Component | Description |
+|-----------|-------------|
+| [Networks](Network.qmd) | Brain network connectivity — regions, weights, tract lengths |
+| [Algorithms](Algorithms.qmd) | Built-in iterative tuning algorithms (e.g., FIC) |
+| [Loss Functions](LossFunction.qmd) | Symbolic loss functions for optimization |
+| [Output](Output.qmd) | Declarative specification of simulation outputs |

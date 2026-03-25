@@ -1,0 +1,24 @@
+tvbo_class: tvbo:Network
+schema_version: tvb-datamodel/0.7.0
+label: Lobar surface (fsLR 32k, 64984 vertices)
+number_of_nodes: 64984
+descriptor: surf
+distance_unit: mm
+time_unit: ms
+data_file: tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-Lobar_desc-surf_relmat.h5
+parent_network: tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-Lobar_desc-SC_relmat.yaml
+node_mapping: /mesh/region_mapping
+bids:
+  template: MNI152NLin2009cAsym
+  cohort: HCPYA
+  reconstruction: dTOR
+  atlas: Lobar
+parameters:
+  conduction_speed:
+    label: v
+    value: 3.0
+    unit: mm_per_ms
+parcellation:
+  atlas:
+    name: Lobar
+    coordinateSpace: MNI152NLin2009cAsym

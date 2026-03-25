@@ -1,0 +1,193 @@
+
+
+```{python}
+from tvbo import Dynamics
+
+# Slow Hopf oscillator - the DRIVER (~0.05 Hz period)
+# Large amplitude, slow oscillation to clearly modulate other nodes
+driver = Dynamics.from_string("""
+name: SlowDriver
+parameters:
+  a:
+    value: 0.5
+  omega:
+    value: 0.3
+state_variables:
+  x:
+    equation:
+      rhs: "a*x - omega*z - x*(x**2 + z**2) + c_in"
+    initial_value: 1.0
+  z:
+    equation:
+      rhs: "omega*x + a*z - z*(x**2 + z**2)"
+    initial_value: 0.0
+coupling_inputs:
+  c_in: {}
+""")
+
+# FitzHugh-Nagumo in EXCITABLE regime
+# Will fire bursts when driven by positive input from driver
+fhn = Dynamics.from_string("""
+name: Excitable
+parameters:
+  a:
+    value: 0.7
+  b:
+    value: 0.8
+  tau:
+    value: 12.5
+  I_ext:
+    value: 0.3
+state_variables:
+  v:
+    equation:
+      rhs: "v - v**3/3 - w + I_ext + c_in"
+    initial_value: -1.0
+  w:
+    equation:
+      rhs: "(v + a - b*w)/tau"
+    initial_value: -0.5
+coupling_inputs:
+  c_in: {}
+""")
+
+# Van der Pol as relaxation oscillator
+# Receives INHIBITORY input - active when driver is LOW
+vdp = Dynamics.from_string("""
+name: Relaxation
+parameters:
+  mu:
+    value: 2.0
+state_variables:
+  x:
+    equation:
+      rhs: "mu*(x - x**3/3 - w) + c_in"
+    initial_value: -1.5
+  w:
+    equation:
+      rhs: "x/mu"
+    initial_value: 0.0
+coupling_inputs:
+  c_in: {}
+""")
+```
+
+## Network topology:
+- Driver (node 0) sends POSITIVE coupling to Excitable (node 1)
+- Driver (node 0) sends NEGATIVE coupling to Relaxation (node 2)
+- This creates anti-phase modulation: when driver is UP, node 1 is excited, node 2 is suppressed
+
+
+```{python}
+import yaml
+from tvbo import SimulationExperiment
+from tvbo import Network
+
+network_yaml = """
+label: HeterogeneousModulation
+number_of_nodes: 3
+nodes:
+  - id: 0
+    label: Driver
+    dynamics: SlowDriver
+  - id: 1
+    label: Excitable
+    dynamics: Excitable
+  - id: 2
+    label: Relaxation
+    dynamics: Relaxation
+edges:
+  - source: 0
+    target: 1
+    parameters:
+      weight:
+        value: 0.8
+    source_var: x_out
+    target_var: c_in
+  - source: 0
+    target: 2
+    parameters:
+      weight:
+        value: -0.6
+    source_var: x_out
+    target_var: c_in
+  - source: 1
+    target: 2
+    parameters:
+      weight:
+        value: 0.1
+    source_var: v_out
+    target_var: c_in
+  - source: 2
+    target: 1
+    parameters:
+      weight:
+        value: 0.1
+    source_var: x_out
+    target_var: c_in
+"""
+
+# Parse network from YAML
+network = Network(**yaml.safe_load(network_yaml))
+```
+
+```{python}
+network.plot_graph(
+    edge_cmap="coolwarm", edge_kwargs={"width": 5}, node_size=10)
+
+```
+
+```{python}
+
+network.dynamics["SlowDriver"] = driver
+network.dynamics["Excitable"] = fhn
+network.dynamics["Relaxation"] = vdp
+
+# Create experiment with dynamics library and network
+exp = SimulationExperiment(
+    network=network,
+)
+res = exp.run("pyrates")
+```
+
+```{python}
+import matplotlib.pyplot as plt
+import numpy as np
+
+fig, axes = plt.subplots(3, 1, figsize=(12, 8), sharex=True)
+
+t_tvbo = res.time
+
+# Plot Driver (slow oscillation)
+ax = axes[0]
+# Overlay TVBO data with dashed line
+driver_tvbo = res.get_region("Driver").get_state_variable("x")
+ax.plot(
+    t_tvbo,
+    driver_tvbo.data.squeeze(),
+)
+ax.set_ylabel("Driver\n(Hopf)")
+
+# Plot Excitable
+ax = axes[1]
+excitable_tvbo = res.get_region("Excitable").get_state_variable("v")
+ax.plot(
+    t_tvbo,
+    excitable_tvbo.data.squeeze(),
+)
+ax.set_ylabel("Excitable\n(FHN)")
+
+# Plot Relaxation
+ax = axes[2]
+relaxation_tvbo = res.get_region("Relaxation").get_state_variable("x")
+ax.plot(
+    t_tvbo,
+    relaxation_tvbo.data.squeeze(),
+    lw=1.5,
+    alpha=0.7,
+    label="TVBO TimeSeries",
+)
+ax.set_ylabel("Relaxation\n(VdP)")
+ax.set_xlabel("Time (ms)")
+plt.show()
+```

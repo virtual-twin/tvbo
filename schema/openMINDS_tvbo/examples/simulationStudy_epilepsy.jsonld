@@ -1,0 +1,475 @@
+{
+  "@context": {
+    "@vocab": "https://openminds.ebrains.eu/vocab/",
+    "tvbo": "http://www.thevirtualbrain.org/tvb-o/",
+    "sands": "https://openminds.ebrains.eu/sands/",
+    "core": "https://openminds.ebrains.eu/core/",
+    "computation": "https://openminds.ebrains.eu/computation/"
+  },
+  "@type": "tvbo:SimulationStudy",
+  "@id": "https://example.org/studies/epilepsy-virtual-resection-study",
+
+  "key": "EpilepsyVirtualResection2024",
+  "label": "Virtual Epileptogenic Zone Resection Study",
+  "title": "Patient-Specific Virtual Brain Modeling for Surgical Planning in Drug-Resistant Epilepsy",
+  "description": "A simulation study using personalized whole-brain models to predict seizure outcomes following virtual resection of candidate epileptogenic zones. The study employs the Epileptor neural mass model fitted to patient SEEG data.",
+  "year": 2024,
+  "doi": "10.1234/example.2024.epilepsy",
+  "derived_from": "Patient SEEG recordings and structural MRI/DTI data",
+
+  "model": {
+    "@type": "tvbo:Dynamics",
+    "@id": "https://example.org/models/epileptor",
+    "name": "Epileptor"
+  },
+
+  "sample": {
+    "@type": "tvbo:Sample",
+    "groups": ["drug-resistant-epilepsy", "temporal-lobe-epilepsy"],
+    "size": 15
+  },
+
+  "simulation_experiments": [
+    {
+      "@type": "tvbo:SimulationExperiment",
+      "@id": "https://example.org/simulations/patient-001-baseline",
+      "id": 1,
+      "label": "Patient 001 - Baseline Seizure Simulation",
+      "description": "Baseline simulation reproducing spontaneous seizure dynamics in Patient 001 before virtual resection.",
+
+      "dynamics": {
+        "@type": "tvbo:Dynamics",
+        "name": "Epileptor",
+        "label": "Epileptor Neural Mass Model",
+        "description": "A phenomenological model of seizure dynamics with fast and slow timescales, capable of reproducing the main features of seizure onset, propagation, and termination.",
+        "iri": "http://www.thevirtualbrain.org/tvb-o/Epileptor",
+        "system_type": "continuous",
+        "references": [
+          "Jirsa VK, et al. (2014). On the nature of seizure dynamics. Brain 137:2210-2230.",
+          "https://doi.org/10.1093/brain/awu133"
+        ],
+
+        "state_variables": [
+          {
+            "@type": "tvbo:StateVariable",
+            "name": "x1",
+            "label": "Fast population activity",
+            "description": "Fast timescale activity variable representing high-frequency seizure oscillations",
+            "equation": {
+              "@type": "tvbo:Equation",
+              "lhs": "d(x1)/dt",
+              "rhs": "y1 - f1(x1, x2) - z + Iext1"
+            },
+            "variable_of_interest": true,
+            "coupling_variable": true,
+            "initial_value": 0.0,
+            "domain": { "@type": "tvbo:Range", "lo": -2.0, "hi": 1.0 }
+          },
+          {
+            "@type": "tvbo:StateVariable",
+            "name": "y1",
+            "label": "Fast recovery variable",
+            "equation": {
+              "@type": "tvbo:Equation",
+              "lhs": "d(y1)/dt",
+              "rhs": "1 - 5*x1**2 - y1"
+            },
+            "initial_value": -5.0
+          },
+          {
+            "@type": "tvbo:StateVariable",
+            "name": "z",
+            "label": "Slow permittivity variable",
+            "description": "Slow timescale variable controlling seizure onset and offset",
+            "equation": {
+              "@type": "tvbo:Equation",
+              "lhs": "d(z)/dt",
+              "rhs": "(1/tau0) * (4*(x1 - x0) - z)"
+            },
+            "initial_value": 3.0,
+            "variable_of_interest": true
+          },
+          {
+            "@type": "tvbo:StateVariable",
+            "name": "x2",
+            "label": "Intermediate population 1",
+            "equation": {
+              "@type": "tvbo:Equation",
+              "lhs": "d(x2)/dt",
+              "rhs": "-y2 + x2 - x2**3 + Iext2 + 2*g - 0.3*(z - 3.5)"
+            },
+            "initial_value": 0.0
+          },
+          {
+            "@type": "tvbo:StateVariable",
+            "name": "y2",
+            "label": "Intermediate population 2",
+            "equation": {
+              "@type": "tvbo:Equation",
+              "lhs": "d(y2)/dt",
+              "rhs": "(1/tau2) * (-y2 + f2(x2))"
+            },
+            "initial_value": 0.0
+          },
+          {
+            "@type": "tvbo:StateVariable",
+            "name": "g",
+            "label": "Low-frequency activity",
+            "description": "Represents very slow modulation and interictal spikes",
+            "equation": {
+              "@type": "tvbo:Equation",
+              "lhs": "d(g)/dt",
+              "rhs": "-0.01*(g - 0.1*x1)"
+            },
+            "initial_value": 0.0
+          }
+        ],
+
+        "output": [
+          {
+            "@type": "tvbo:DerivedVariable",
+            "name": "lfp",
+            "label": "Local Field Potential",
+            "equation": {
+              "@type": "tvbo:Equation",
+              "rhs": "x1 + x2 - 2"
+            }
+          }
+        ],
+
+        "functions": [
+          {
+            "@type": "tvbo:Function",
+            "name": "f1",
+            "label": "Fast dynamics nonlinearity",
+            "equation": {
+              "@type": "tvbo:Equation",
+              "rhs": "x1**3 - 3*x1**2 if x1 < 0 else (x2 - 0.6*(z - 4)**2) * x1"
+            }
+          },
+          {
+            "@type": "tvbo:Function",
+            "name": "f2",
+            "label": "Intermediate dynamics nonlinearity",
+            "equation": {
+              "@type": "tvbo:Equation",
+              "rhs": "0 if x2 < -0.25 else 6*(x2 + 0.25)"
+            }
+          }
+        ],
+
+        "parameters": [
+          {
+            "@type": "tvbo:Parameter",
+            "name": "x0",
+            "label": "Excitability",
+            "description": "Controls the excitability of the model. Values > -2.0 can trigger seizures.",
+            "value": -1.6,
+            "domain": { "@type": "tvbo:Range", "lo": -3.0, "hi": -1.0 },
+            "heterogeneous": true
+          },
+          {
+            "@type": "tvbo:Parameter",
+            "name": "Iext1",
+            "label": "External input 1",
+            "value": 3.1
+          },
+          {
+            "@type": "tvbo:Parameter",
+            "name": "Iext2",
+            "label": "External input 2",
+            "value": 0.45
+          },
+          {
+            "@type": "tvbo:Parameter",
+            "name": "tau0",
+            "label": "Slow timescale",
+            "value": 2857.0,
+            "unit": "ms"
+          },
+          {
+            "@type": "tvbo:Parameter",
+            "name": "tau2",
+            "label": "Intermediate timescale",
+            "value": 10.0,
+            "unit": "ms"
+          }
+        ],
+
+        "coupling_terms": [
+          {
+            "@type": "tvbo:Parameter",
+            "name": "Ks",
+            "label": "Spatial coupling coefficient",
+            "value": 1.0
+          }
+        ]
+      },
+
+      "network": {
+        "@type": "tvbo:Network",
+        "label": "Patient 001 Personalized Connectome",
+        "description": "Patient-specific structural connectivity derived from diffusion tensor imaging with 84 parcels (Desikan-Killiany + subcortical structures).",
+        "number_of_nodes": 84,
+        "distance_unit": "mm",
+
+        "parcellation": {
+          "@type": "tvbo:Parcellation",
+          "label": "Desikan-Killiany + Subcortical",
+          "atlas": {
+            "@type": "sands:BrainAtlas",
+            "name": "FreeSurfer aparc+aseg",
+            "abbreviation": "DKT84"
+          }
+        },
+
+        "tractogram": "patient_001_dti_tractography.trk",
+
+        "global_coupling_strength": {
+          "@type": "tvbo:Parameter",
+          "name": "Ks",
+          "value": 0.5,
+          "description": "Fitted global coupling strength for Patient 001"
+        },
+
+        "conduction_speed": {
+          "@type": "tvbo:Parameter",
+          "name": "speed",
+          "value": 4.0,
+          "unit": "m/s"
+        },
+
+        "nodes": [
+          {
+            "@type": "tvbo:Node",
+            "id": 0,
+            "label": "Left Hippocampus",
+            "region": "Left-Hippocampus",
+            "position": {
+              "@type": "sands:CoordinatePoint",
+              "coordinateSpace": { "@type": "sands:CommonCoordinateSpace", "name": "MNI152" },
+              "x": -25.0,
+              "y": -21.0,
+              "z": -10.0
+            },
+            "parameters": [
+              {
+                "@type": "tvbo:Parameter",
+                "name": "x0",
+                "value": -1.2,
+                "comment": "Epileptogenic zone - increased excitability"
+              }
+            ]
+          },
+          {
+            "@type": "tvbo:Node",
+            "id": 1,
+            "label": "Left Amygdala",
+            "region": "Left-Amygdala",
+            "position": {
+              "@type": "sands:CoordinatePoint",
+              "coordinateSpace": { "@type": "sands:CommonCoordinateSpace", "name": "MNI152" },
+              "x": -23.0,
+              "y": -3.0,
+              "z": -17.0
+            },
+            "parameters": [
+              {
+                "@type": "tvbo:Parameter",
+                "name": "x0",
+                "value": -1.4,
+                "comment": "Part of seizure onset zone"
+              }
+            ]
+          }
+        ]
+      },
+
+      "coupling": {
+        "@type": "tvbo:Coupling",
+        "name": "Difference",
+        "label": "Difference Coupling",
+        "delayed": true,
+        "coupling_function": {
+          "@type": "tvbo:Equation",
+          "rhs": "Ks * weights @ (x1_delayed - x1)",
+          "definition": "Diffusive coupling based on difference between local and remote fast activity"
+        }
+      },
+
+      "integration": {
+        "@type": "tvbo:Integrator",
+        "method": "heun",
+        "step_size": 0.05,
+        "duration": 60000.0,
+        "time_scale": "ms",
+        "transient_time": 5000.0,
+        "delayed": true,
+        "noise": {
+          "@type": "tvbo:Noise",
+          "noise_type": "gaussian",
+          "additive": true,
+          "seed": 12345,
+          "parameters": [
+            {
+              "@type": "tvbo:Parameter",
+              "name": "nsig",
+              "value": 0.025
+            }
+          ]
+        }
+      },
+
+      "monitors": [
+        {
+          "@type": "tvbo:Monitor",
+          "name": "SEEG",
+          "label": "Stereo-EEG Monitor",
+          "description": "Simulated SEEG recordings at electrode contact locations",
+          "imaging_modality": "SEEG",
+          "period": 1.0,
+          "time_scale": "ms"
+        },
+        {
+          "@type": "tvbo:Monitor",
+          "name": "Raw",
+          "label": "Raw State Monitor",
+          "description": "Full state variable recordings for analysis",
+          "period": 10.0
+        }
+      ],
+
+      "environment": {
+        "@type": "tvbo:SoftwareEnvironment",
+        "name": "tvb-epilepsy",
+        "environment_type": "docker",
+        "container_image": "thevirtualbrain/tvb-epilepsy:2.0.0",
+        "requirements": [
+          {
+            "@type": "tvbo:SoftwareRequirement",
+            "name": "tvb-library",
+            "version_spec": "==2.8.1",
+            "role": "engine"
+          },
+          {
+            "@type": "tvbo:SoftwareRequirement",
+            "name": "tvb-epilepsy",
+            "version_spec": ">=2.0.0",
+            "role": "engine"
+          }
+        ]
+      },
+
+      "references": [
+        "Jirsa VK, et al. (2014). On the nature of seizure dynamics. Brain 137:2210-2230.",
+        "Proix T, et al. (2017). Individual brain structure and modelling predict seizure propagation. Brain 140:641-654."
+      ]
+    },
+
+    {
+      "@type": "tvbo:SimulationExperiment",
+      "@id": "https://example.org/simulations/patient-001-resection",
+      "id": 2,
+      "label": "Patient 001 - Virtual Resection Simulation",
+      "description": "Simulation after virtual resection of left hippocampus and amygdala to predict seizure freedom.",
+
+      "dynamics": {
+        "@type": "tvbo:Dynamics",
+        "@id": "https://example.org/models/epileptor"
+      },
+
+      "network": {
+        "@type": "tvbo:Network",
+        "label": "Patient 001 Post-Resection Network",
+        "description": "Connectivity matrix with left hippocampus and amygdala removed (set to zero connectivity).",
+        "number_of_nodes": 84,
+
+        "nodes": [
+          {
+            "@type": "tvbo:Node",
+            "id": 0,
+            "label": "Left Hippocampus (resected)",
+            "parameters": [
+              {
+                "@type": "tvbo:Parameter",
+                "name": "x0",
+                "value": -3.0,
+                "comment": "Set to non-epileptogenic after virtual resection"
+              }
+            ]
+          },
+          {
+            "@type": "tvbo:Node",
+            "id": 1,
+            "label": "Left Amygdala (resected)",
+            "parameters": [
+              {
+                "@type": "tvbo:Parameter",
+                "name": "x0",
+                "value": -3.0,
+                "comment": "Set to non-epileptogenic after virtual resection"
+              }
+            ]
+          }
+        ]
+      },
+
+      "integration": {
+        "@type": "tvbo:Integrator",
+        "method": "heun",
+        "step_size": 0.05,
+        "duration": 60000.0,
+        "time_scale": "ms"
+      },
+
+      "monitors": [
+        {
+          "@type": "tvbo:Monitor",
+          "name": "SEEG",
+          "imaging_modality": "SEEG",
+          "period": 1.0
+        }
+      ]
+    },
+
+    {
+      "@type": "tvbo:SimulationExperiment",
+      "@id": "https://example.org/simulations/patient-001-alternative-resection",
+      "id": 3,
+      "label": "Patient 001 - Alternative Resection Strategy",
+      "description": "Testing alternative surgical strategy with selective hippocampectomy only.",
+
+      "dynamics": {
+        "@type": "tvbo:Dynamics",
+        "@id": "https://example.org/models/epileptor"
+      },
+
+      "network": {
+        "@type": "tvbo:Network",
+        "label": "Patient 001 Selective Hippocampectomy",
+        "number_of_nodes": 84,
+        "nodes": [
+          {
+            "@type": "tvbo:Node",
+            "id": 0,
+            "label": "Left Hippocampus (resected)",
+            "parameters": [
+              {
+                "@type": "tvbo:Parameter",
+                "name": "x0",
+                "value": -3.0
+              }
+            ]
+          }
+        ]
+      },
+
+      "integration": {
+        "@type": "tvbo:Integrator",
+        "method": "heun",
+        "step_size": 0.05,
+        "duration": 60000.0
+      }
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "_type": "tvbo:RandomStream",
+  "properties": {
+    "label": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "dataLocation": {
+      "type": "string",
+      "_instruction": "Enter the dataLocation."
+    }
+  }
+}

@@ -1,0 +1,28 @@
+---
+title: "Load Normative Networks"
+description: "Load and visualize normative brain networks from the TVBO database."
+---
+
+# Get Normative Networks
+
+```{python}
+from tvbo import Network
+
+Network.from_db(rec="avgMatrix", atlas="DesikanKilliany").plot_overview(
+    plot_brain=True, log_weights=True
+)
+```
+
+
+```python
+sc = Network.from_db(
+    tpl="FSLMNI152",
+    cohort="HCPYA",
+    rec="dTOR",
+    atlas="Schaefer2018",
+    seg="7Networks",
+    scale=1000,
+    desc="SC",
+)
+sc.plot_overview(plot_brain=True, log_weights=True)
+```

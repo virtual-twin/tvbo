@@ -1,0 +1,683 @@
+tvbo_class: tvbo:Network
+schema_version: tvb-datamodel/0.7.0
+label: Schaefer2018_100_7Networks_Hansen2022_SCFC
+description: Schaefer2018 100-parcel 7Networks multi-graph network from Hansen et
+  al. (2022). Contains structural connectivity (SC) from diffusion MRI tractography
+  and functional connectivity (FC) from resting-state fMRI, both derived from the
+  HCP Young Adult cohort. SC edge weights are log-transformed streamline counts normalized
+  to [0, 1]. FC edge weights are Pearson correlations.
+number_of_nodes: 100
+descriptor: SCFC
+distance_unit: mm
+data_file: tpl-FSLMNI152_cohort-HCPYA_rec-Hansen2022_atlas-Schaefer2018_seg-7Networks_scale-100_desc-SCFC_relmat.h5
+edges:
+- label: sc
+  format: dense
+  weighted: true
+  valid_diagonal: false
+  non_negative: true
+  directed: false
+  description: SC weighted connectivity, log-transformed streamline counts normalized
+    to [0, 1]
+- label: sc_binary
+  format: dense
+  weighted: false
+  valid_diagonal: false
+  non_negative: true
+  directed: false
+  description: SC group-consensus binary mask (density- and edge-length-preserving)
+- label: fc
+  format: dense
+  weighted: true
+  valid_diagonal: false
+  non_negative: false
+  directed: false
+  description: FC group-average Pearson correlation, HCP Young Adult cohort
+node_mapping: /nodes/parent_index
+bids:
+  template: FSLMNI152
+  cohort: HCPYA
+  reconstruction: Hansen2022
+  segmentation: 7Networks
+  scale: '100'
+  atlas: Schaefer2018
+parameters:
+  conduction_speed:
+    label: v
+    value: 3.0
+    unit: mm_per_ms
+parcellation:
+  atlas:
+    name: Schaefer2018
+    coordinateSpace: FSLMNI152
+tractogram:
+  name: Hansen2022
+  label: MRtrix3-MSMT-CSD-SIFT2 group-consensus SC
+  description: 'Group-consensus structural connectivity from HCP Young Adult cohort.
+    DWI pre-processed with MRtrix3 (v3). Fiber orientation distributions using multi-shell
+    multi-tissue constrained spherical deconvolution (MSMT-CSD). Probabilistic streamline
+    tractography on the generated FODs. Streamline weights optimized with SIFT2 (cross-section
+    multiplier). Group-consensus binary network constructed preserving density and
+    edge-length distributions of individual connectomes. Edge weights: mean log-transformed
+    streamline count of non-zero edges across participants, normalized to [0, 1].'
+  processing_pipeline: MRtrix3-MSMT-CSD-SIFT2
+  reference: Hansen JY, Shafiei G, Markello RD, Smart K, Cox SML, Wu Y, Diez I, Schirner
+    M, Wirsich J, Bhatt DL, Misic B. (2022). Mapping neurotransmitter systems to the
+    structural and functional organization of the human neocortex. Nature Neuroscience,
+    25, 1569-1581. https://doi.org/10.1038/s41593-022-01186-3
+provenance:
+  date_created: '2026-03-17'
+  derived_from: https://github.com/netneurolab/hansen_receptors/tree/main/data/schaefer
+  generated_by: tvbo scripts/create_hansen2022_schaefer_networks.py
+  references:
+  - Hansen JY, Shafiei G, Markello RD, Smart K, Cox SML, Wu Y, Diez I, Schirner M,
+    Wirsich J, Bhatt DL, Misic B. (2022). Mapping neurotransmitter systems to the
+    structural and functional organization of the human neocortex. Nature Neuroscience,
+    25, 1569-1581. https://doi.org/10.1038/s41593-022-01186-3
+  - Schaefer A, Kong R, Gordon EM, Laumann TO, Zuo XN, Holmes AJ, Eickhoff SB, Yeo
+    BTT. (2018). Local-Global Parcellation of the Human Cerebral Cortex from Intrinsic
+    Functional Connectivity MRI. Cerebral Cortex, 29(3), 3095-3114. https://doi.org/10.1093/cercor/bhx179
+  - 'Van Essen DC, Smith SM, Barch DM, Behrens TEJ, Yacoub E, Ugurbil K; WU-Minn HCP
+    Consortium. (2013). The WU-Minn Human Connectome Project: an overview. NeuroImage,
+    80, 62-79. https://doi.org/10.1016/j.neuroimage.2013.05.041'
+nodes:
+- id: 0
+  label: 7Networks_LH_Vis_1
+  position:
+    x: -25.811155
+    y: -33.927593
+    z: -16.140253
+- id: 1
+  label: 7Networks_LH_Vis_2
+  position:
+    x: -22.721155
+    y: -77.246277
+    z: -11.689053
+- id: 2
+  label: 7Networks_LH_Vis_3
+  position:
+    x: -17.250652
+    y: -61.163567
+    z: -5.676682
+- id: 3
+  label: 7Networks_LH_Vis_4
+  position:
+    x: -25.779919
+    y: -93.205322
+    z: -3.999111
+- id: 4
+  label: 7Networks_LH_Vis_5
+  position:
+    x: -7.3669
+    y: -91.06916
+    z: -1.106813
+- id: 5
+  label: 7Networks_LH_Vis_6
+  position:
+    x: -13.939608
+    y: -63.543762
+    z: 4.813582
+- id: 6
+  label: 7Networks_LH_Vis_7
+  position:
+    x: -44.650928
+    y: -71.154533
+    z: 9.494488
+- id: 7
+  label: 7Networks_LH_Vis_8
+  position:
+    x: -24.521334
+    y: -86.122131
+    z: 20.63364
+- id: 8
+  label: 7Networks_LH_Vis_9
+  position:
+    x: -9.090402
+    y: -80.172485
+    z: 24.621838
+- id: 9
+  label: 7Networks_LH_SomMot_1
+  position:
+    x: -50.646648
+    y: -25.289539
+    z: 8.927068
+- id: 10
+  label: 7Networks_LH_SomMot_2
+  position:
+    x: -36.924618
+    y: -20.549791
+    z: 14.816436
+- id: 11
+  label: 7Networks_LH_SomMot_3
+  position:
+    x: -53.005367
+    y: -12.131863
+    z: 14.526551
+- id: 12
+  label: 7Networks_LH_SomMot_4
+  position:
+    x: -52.063446
+    y: -10.331133
+    z: 32.393501
+- id: 13
+  label: 7Networks_LH_SomMot_5
+  position:
+    x: -38.350121
+    y: -24.417793
+    z: 55.077835
+- id: 14
+  label: 7Networks_LH_SomMot_6
+  position:
+    x: -11.562349
+    y: -26.764782
+    z: 62.605812
+- id: 15
+  label: 7Networks_LH_DorsAttn_Post_1
+  position:
+    x: -44.248344
+    y: -57.71154
+    z: -11.120182
+- id: 16
+  label: 7Networks_LH_DorsAttn_Post_2
+  position:
+    x: -55.381794
+    y: -25.127693
+    z: 35.991459
+- id: 17
+  label: 7Networks_LH_DorsAttn_Post_3
+  position:
+    x: -24.722042
+    y: -64.035583
+    z: 47.448334
+- id: 18
+  label: 7Networks_LH_DorsAttn_Post_4
+  position:
+    x: -40.686905
+    y: -35.471867
+    z: 46.083187
+- id: 19
+  label: 7Networks_LH_DorsAttn_Post_5
+  position:
+    x: -8.57868
+    y: -58.278267
+    z: 57.02037
+- id: 20
+  label: 7Networks_LH_DorsAttn_Post_6
+  position:
+    x: -22.669333
+    y: -47.927151
+    z: 63.228371
+- id: 21
+  label: 7Networks_LH_DorsAttn_PrCv_1
+  position:
+    x: -47.031185
+    y: 6.694967
+    z: 26.716892
+- id: 22
+  label: 7Networks_LH_DorsAttn_FEF_1
+  position:
+    x: -26.510195
+    y: -3.672917
+    z: 57.183052
+- id: 23
+  label: 7Networks_LH_SalVentAttn_ParOper_1
+  position:
+    x: -55.85527
+    y: -37.518303
+    z: 29.016584
+- id: 24
+  label: 7Networks_LH_SalVentAttn_FrOperIns_1
+  position:
+    x: -40.888481
+    y: -2.831988
+    z: -8.561449
+- id: 25
+  label: 7Networks_LH_SalVentAttn_FrOperIns_2
+  position:
+    x: -37.585831
+    y: 11.360193
+    z: 7.167946
+- id: 26
+  label: 7Networks_LH_SalVentAttn_PFCl_1
+  position:
+    x: -29.632957
+    y: 41.074986
+    z: 27.661907
+- id: 27
+  label: 7Networks_LH_SalVentAttn_Med_1
+  position:
+    x: -5.745044
+    y: 15.143775
+    z: 34.669399
+- id: 28
+  label: 7Networks_LH_SalVentAttn_Med_2
+  position:
+    x: -10.619484
+    y: -34.950218
+    z: 46.366257
+- id: 29
+  label: 7Networks_LH_SalVentAttn_Med_3
+  position:
+    x: -7.307133
+    y: 0.225702
+    z: 61.019669
+- id: 30
+  label: 7Networks_LH_Limbic_OFC_1
+  position:
+    x: -13.590329
+    y: 30.414318
+    z: -19.498981
+- id: 31
+  label: 7Networks_LH_Limbic_TempPole_1
+  position:
+    x: -33.257217
+    y: -1.710942
+    z: -32.728058
+- id: 32
+  label: 7Networks_LH_Limbic_TempPole_2
+  position:
+    x: -54.196438
+    y: -32.42252
+    z: -20.547703
+- id: 33
+  label: 7Networks_LH_Cont_Par_1
+  position:
+    x: -38.112473
+    y: -51.599785
+    z: 44.014637
+- id: 34
+  label: 7Networks_LH_Cont_PFCl_1
+  position:
+    x: -41.133099
+    y: 31.482128
+    z: 20.283306
+- id: 35
+  label: 7Networks_LH_Cont_pCun_1
+  position:
+    x: -10.150635
+    y: -69.640602
+    z: 37.189167
+- id: 36
+  label: 7Networks_LH_Cont_Cing_1
+  position:
+    x: -4.119031
+    y: -27.107759
+    z: 30.068565
+- id: 37
+  label: 7Networks_LH_Default_Temp_1
+  position:
+    x: -53.833073
+    y: -5.933491
+    z: -18.559292
+- id: 38
+  label: 7Networks_LH_Default_Temp_2
+  position:
+    x: -56.144779
+    y: -32.784184
+    z: -1.458144
+- id: 39
+  label: 7Networks_LH_Default_Par_1
+  position:
+    x: -54.128265
+    y: -49.801235
+    z: 11.655276
+- id: 40
+  label: 7Networks_LH_Default_Par_2
+  position:
+    x: -46.062523
+    y: -61.390163
+    z: 32.945522
+- id: 41
+  label: 7Networks_LH_Default_PFC_1
+  position:
+    x: -32.785278
+    y: 20.774406
+    z: -10.85482
+- id: 42
+  label: 7Networks_LH_Default_PFC_2
+  position:
+    x: -44.126305
+    y: 34.466923
+    z: -1.62029
+- id: 43
+  label: 7Networks_LH_Default_PFC_3
+  position:
+    x: -6.734615
+    y: 45.955605
+    z: 0.106141
+- id: 44
+  label: 7Networks_LH_Default_PFC_4
+  position:
+    x: -22.901934
+    y: 57.505741
+    z: -0.023442
+- id: 45
+  label: 7Networks_LH_Default_PFC_5
+  position:
+    x: -11.166622
+    y: 40.364231
+    z: 39.685574
+- id: 46
+  label: 7Networks_LH_Default_PFC_6
+  position:
+    x: -38.493153
+    y: 12.28619
+    z: 45.484383
+- id: 47
+  label: 7Networks_LH_Default_PFC_7
+  position:
+    x: -24.887684
+    y: 20.838591
+    z: 47.635391
+- id: 48
+  label: 7Networks_LH_Default_pCunPCC_1
+  position:
+    x: -10.79812
+    y: -54.683285
+    z: 11.430661
+- id: 49
+  label: 7Networks_LH_Default_pCunPCC_2
+  position:
+    x: -6.170376
+    y: -52.216228
+    z: 34.233379
+- id: 50
+  label: 7Networks_RH_Vis_1
+  position:
+    x: 31.347307
+    y: -30.590345
+    z: -20.081303
+- id: 51
+  label: 7Networks_RH_Vis_2
+  position:
+    x: 25.862698
+    y: -63.825756
+    z: -9.87979
+- id: 52
+  label: 7Networks_RH_Vis_3
+  position:
+    x: 46.531898
+    y: -61.180393
+    z: -8.106243
+- id: 53
+  label: 7Networks_RH_Vis_4
+  position:
+    x: 23.310072
+    y: -91.374245
+    z: -1.845148
+- id: 54
+  label: 7Networks_RH_Vis_5
+  position:
+    x: 9.582045
+    y: -76.42939
+    z: 5.985126
+- id: 55
+  label: 7Networks_RH_Vis_6
+  position:
+    x: 17.599562
+    y: -56.4039
+    z: 5.534662
+- id: 56
+  label: 7Networks_RH_Vis_7
+  position:
+    x: 34.438778
+    y: -80.041031
+    z: 18.532698
+- id: 57
+  label: 7Networks_RH_Vis_8
+  position:
+    x: 14.925486
+    y: -83.215935
+    z: 28.967817
+- id: 58
+  label: 7Networks_RH_SomMot_1
+  position:
+    x: 51.174084
+    y: -19.859961
+    z: 8.165577
+- id: 59
+  label: 7Networks_RH_SomMot_2
+  position:
+    x: 39.919979
+    y: -14.832913
+    z: 13.849606
+- id: 60
+  label: 7Networks_RH_SomMot_3
+  position:
+    x: 55.562584
+    y: -5.05839
+    z: 12.719462
+- id: 61
+  label: 7Networks_RH_SomMot_4
+  position:
+    x: 55.521561
+    y: -6.904668
+    z: 29.548971
+- id: 62
+  label: 7Networks_RH_SomMot_5
+  position:
+    x: 44.747147
+    y: -11.077598
+    z: 44.962082
+- id: 63
+  label: 7Networks_RH_SomMot_6
+  position:
+    x: 39.066086
+    y: -21.605185
+    z: 55.704464
+- id: 64
+  label: 7Networks_RH_SomMot_7
+  position:
+    x: 30.738523
+    y: -37.120586
+    z: 59.550903
+- id: 65
+  label: 7Networks_RH_SomMot_8
+  position:
+    x: 11.921471
+    y: -26.798925
+    z: 64.025398
+- id: 66
+  label: 7Networks_RH_DorsAttn_Post_1
+  position:
+    x: 48.286972
+    y: -62.500923
+    z: 15.297755
+- id: 67
+  label: 7Networks_RH_DorsAttn_Post_2
+  position:
+    x: 48.917286
+    y: -25.00749
+    z: 41.560112
+- id: 68
+  label: 7Networks_RH_DorsAttn_Post_3
+  position:
+    x: 38.388527
+    y: -44.122952
+    z: 46.231041
+- id: 69
+  label: 7Networks_RH_DorsAttn_Post_4
+  position:
+    x: 25.134975
+    y: -63.689289
+    z: 49.448925
+- id: 70
+  label: 7Networks_RH_DorsAttn_Post_5
+  position:
+    x: 15.200966
+    y: -51.171741
+    z: 62.971554
+- id: 71
+  label: 7Networks_RH_DorsAttn_PrCv_1
+  position:
+    x: 48.363464
+    y: 9.466829
+    z: 27.118441
+- id: 72
+  label: 7Networks_RH_DorsAttn_FEF_1
+  position:
+    x: 27.424658
+    y: -3.742493
+    z: 57.810593
+- id: 73
+  label: 7Networks_RH_SalVentAttn_TempOccPar_1
+  position:
+    x: 55.015221
+    y: -44.201611
+    z: 15.31722
+- id: 74
+  label: 7Networks_RH_SalVentAttn_TempOccPar_2
+  position:
+    x: 58.055916
+    y: -28.529308
+    z: 28.840757
+- id: 75
+  label: 7Networks_RH_SalVentAttn_FrOperIns_1
+  position:
+    x: 39.50161
+    y: 8.464559
+    z: -0.285926
+- id: 76
+  label: 7Networks_RH_SalVentAttn_Med_1
+  position:
+    x: 10.791899
+    y: -29.529652
+    z: 45.054619
+- id: 77
+  label: 7Networks_RH_SalVentAttn_Med_2
+  position:
+    x: 7.872855
+    y: 3.685502
+    z: 52.680447
+- id: 78
+  label: 7Networks_RH_Limbic_OFC_1
+  position:
+    x: 13.058332
+    y: 32.890484
+    z: -18.892845
+- id: 79
+  label: 7Networks_RH_Limbic_TempPole_1
+  position:
+    x: 38.073986
+    y: -2.220248
+    z: -33.44173
+- id: 80
+  label: 7Networks_RH_Cont_Par_1
+  position:
+    x: 52.450596
+    y: -42.721439
+    z: 41.060226
+- id: 81
+  label: 7Networks_RH_Cont_Par_2
+  position:
+    x: 41.784084
+    y: -62.074516
+    z: 41.182262
+- id: 82
+  label: 7Networks_RH_Cont_PFCl_1
+  position:
+    x: 29.155863
+    y: 55.643219
+    z: -2.04119
+- id: 83
+  label: 7Networks_RH_Cont_PFCl_2
+  position:
+    x: 42.943829
+    y: 37.635933
+    z: 14.998352
+- id: 84
+  label: 7Networks_RH_Cont_PFCl_3
+  position:
+    x: 31.77475
+    y: 42.367043
+    z: 26.89682
+- id: 85
+  label: 7Networks_RH_Cont_PFCl_4
+  position:
+    x: 40.814754
+    y: 15.443663
+    z: 41.405952
+- id: 86
+  label: 7Networks_RH_Cont_Cing_1
+  position:
+    x: 5.324925
+    y: -27.530228
+    z: 29.852448
+- id: 87
+  label: 7Networks_RH_Cont_PFCmp_1
+  position:
+    x: 6.505775
+    y: 22.274267
+    z: 31.296577
+- id: 88
+  label: 7Networks_RH_Cont_pCun_1
+  position:
+    x: 10.225842
+    y: -62.020462
+    z: 42.933323
+- id: 89
+  label: 7Networks_RH_Default_Par_1
+  position:
+    x: 51.601925
+    y: -53.678928
+    z: 29.485249
+- id: 90
+  label: 7Networks_RH_Default_Temp_1
+  position:
+    x: 59.724621
+    y: -28.381802
+    z: -15.47439
+- id: 91
+  label: 7Networks_RH_Default_Temp_2
+  position:
+    x: 50.447121
+    y: 2.937776
+    z: -16.342155
+- id: 92
+  label: 7Networks_RH_Default_Temp_3
+  position:
+    x: 55.169476
+    y: -29.164253
+    z: -0.593739
+- id: 93
+  label: 7Networks_RH_Default_PFCv_1
+  position:
+    x: 33.684166
+    y: 26.478592
+    z: -12.455777
+- id: 94
+  label: 7Networks_RH_Default_PFCv_2
+  position:
+    x: 48.935101
+    y: 29.745123
+    z: 1.376583
+- id: 95
+  label: 7Networks_RH_Default_PFCdPFCm_1
+  position:
+    x: 7.082329
+    y: 46.383892
+    z: 0.766191
+- id: 96
+  label: 7Networks_RH_Default_PFCdPFCm_2
+  position:
+    x: 12.374363
+    y: 43.03157
+    z: 39.109478
+- id: 97
+  label: 7Networks_RH_Default_PFCdPFCm_3
+  position:
+    x: 25.947115
+    y: 22.602942
+    z: 47.959412
+- id: 98
+  label: 7Networks_RH_Default_pCunPCC_1
+  position:
+    x: 12.226889
+    y: -52.003078
+    z: 12.200844
+- id: 99
+  label: 7Networks_RH_Default_pCunPCC_2
+  position:
+    x: 7.0856
+    y: -51.524502
+    z: 30.793983

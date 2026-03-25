@@ -1,0 +1,100 @@
+# multiscale_cortex.yaml — hybrid mean-field / spiking network
+label: Multi-Scale Cortex
+
+# ── Dynamics (defined once, referenced by anchor) ───────────
+dynamics:
+  ReducedWongWang: &rww
+    name: ReducedWongWang
+  Izhikevich: &izh
+    name: Izhikevich
+    state_variables:
+      v:
+        equation:
+          rhs: "0.04*v*v + 5*v + 140 - u + I"
+      u:
+        equation:
+          rhs: "a * (b*v - u)"
+    parameters:
+      a: {value: 0.02}
+      b: {value: 0.2}
+      c: {value: -65}
+      d: {value: 8}
+
+# ── Coupling (defined once, referenced by anchor) ──────────
+coupling:
+  linear: &linear
+    name: linear
+  excitatory: &exc
+    name: excitatory
+  inhibitory: &inh
+    name: inhibitory
+
+# ── Macroscale nodes ────────────────────────────────────────
+nodes:
+  # Mean-field regions
+  - {id: 0, label: V1, dynamics: *rww}
+  - {id: 1, label: V2 (proxy), dynamics: *rww}
+  # Spiking subnetwork (children of node 1)
+  - {id: 2,  label: E1, dynamics: *izh}
+  - {id: 3,  label: E2, dynamics: *izh}
+  - {id: 4,  label: E3, dynamics: *izh}
+  - {id: 5,  label: E4, dynamics: *izh}
+  - {id: 6,  label: E5, dynamics: *izh}
+  - {id: 7,  label: E6, dynamics: *izh}
+  - {id: 8,  label: E7, dynamics: *izh}
+  - {id: 9,  label: E8, dynamics: *izh}
+  - {id: 10, label: I1, dynamics: *izh,
+     state: [{name: v, value: -65}, {name: u, value: -14}]}
+  - {id: 11, label: I2, dynamics: *izh,
+     state: [{name: v, value: -65}, {name: u, value: -14}]}
+
+# ── Node mapping: spiking neuron → parent proxy node ───────
+# int32 array of length 12: [–1, –1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+#   –1 = top-level node (no parent)
+#    1 = child of node 1 (the proxy)
+node_mapping: /nodes/parent_index
+
+# ── Edges ───────────────────────────────────────────────────
+edges:
+  # ── Macroscale edges (mean-field ↔ proxy) ──
+  - source: 0
+    target: 1
+    directed: true
+    source_var: S            # synaptic gating output
+    target_var: c_pop        # population coupling input
+    parameters:
+      weight: {value: 0.5}
+    coupling: *linear
+  - source: 1
+    target: 0
+    directed: true
+    source_var: S
+    target_var: c_pop
+    parameters:
+      weight: {value: 0.3}
+    coupling: *linear
+
+  # ── Subnetwork template edge (10×10 local connectivity) ──
+  - label: weights
+    format: dense
+    weighted: true
+    directed: true
+    valid_diagonal: false
+    non_negative: true
+
+  # ── Explicit E↔I edges within subnetwork ──
+  - {source: 2, target: 10, directed: true,
+     parameters: {weight: {value: 0.5}}, coupling: *exc}
+  - {source: 10, target: 2, directed: true,
+     parameters: {weight: {value: -0.3}}, coupling: *inh}
+
+  # ── Interface edges (proxy ↔ subnetwork) ──
+  - source: 1                 # proxy node (mean-field)
+    target: 2                 # first excitatory neuron
+    directed: true
+    source_var: S              # mean-field gating → spiking current
+    target_var: I
+    parameters:
+      weight: {value: 1.0}
+      gain: {value: 0.1}      # transformer scaling: I = gain · S · N_E
+    coupling: *linear

@@ -1,0 +1,14 @@
+{
+  "_type": "tvbo:CouplingInput",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "dimension": {
+      "type": "integer"
+    }
+  }
+}

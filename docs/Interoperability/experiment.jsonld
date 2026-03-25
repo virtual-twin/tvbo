@@ -1,0 +1,1212 @@
+{
+  "@context": {
+    "@vocab": "https://openminds.ebrains.eu/vocab/",
+    "tvbo": "http://www.thevirtualbrain.org/tvb-o/",
+    "sands": "https://openminds.ebrains.eu/sands/",
+    "core": "https://openminds.ebrains.eu/core/",
+    "computation": "https://openminds.ebrains.eu/computation/"
+  },
+  "@type": "tvbo:SimulationExperiment",
+  "id": 1,
+  "model": {
+    "name": "JansenRit",
+    "label": "Jansen-Rit Neural Mass Model",
+    "iri": "http://www.thevirtualbrain.org/tvb-o/JansenRit",
+    "parameters": {
+      "A": {
+        "@type": "tvbo:Parameter",
+        "name": "A",
+        "label": "Excitatory PSP amplitude",
+        "value": 3.25,
+        "description": "Maximum amplitude of EPSP [mV]",
+        "unit": "mV",
+        "explored_values": []
+      },
+      "B": {
+        "@type": "tvbo:Parameter",
+        "name": "B",
+        "label": "Inhibitory PSP amplitude",
+        "value": 22.0,
+        "description": "Maximum amplitude of IPSP [mV]",
+        "unit": "mV",
+        "explored_values": []
+      },
+      "a": {
+        "@type": "tvbo:Parameter",
+        "name": "a",
+        "label": "Excitatory time constant",
+        "value": 0.1,
+        "description": "Reciprocal of the time constant of passive membrane and all other spatially distributed delays in the dendritic network. Also called average synaptic time constant.",
+        "unit": "1/ms",
+        "explored_values": []
+      },
+      "b": {
+        "@type": "tvbo:Parameter",
+        "name": "b",
+        "label": "Inhibitory time constant",
+        "value": 0.05,
+        "description": "Rate constant of the inhibitory post-synaptic potential (IPSP)",
+        "unit": "1/ms",
+        "explored_values": []
+      },
+      "mu": {
+        "@type": "tvbo:Parameter",
+        "name": "mu",
+        "label": "External input",
+        "value": 220.0,
+        "description": "Mean excitatory external input to the derivative of the state-variable y4_JR (PCs) represented by a pulse density, that consists of activity originating from adjacent and more distant cortical columns, as well as from subcortical structures (e",
+        "unit": "Hz",
+        "explored_values": []
+      },
+      "C1": {
+        "@type": "tvbo:Parameter",
+        "name": "C1",
+        "label": "Connectivity constant 1",
+        "value": 135.0,
+        "explored_values": []
+      },
+      "C2": {
+        "@type": "tvbo:Parameter",
+        "name": "C2",
+        "label": "Connectivity constant 2",
+        "value": 108.0,
+        "explored_values": []
+      },
+      "C3": {
+        "@type": "tvbo:Parameter",
+        "name": "C3",
+        "label": "Connectivity constant 3",
+        "value": 33.75,
+        "explored_values": []
+      },
+      "C4": {
+        "@type": "tvbo:Parameter",
+        "name": "C4",
+        "label": "Connectivity constant 4",
+        "value": 33.75,
+        "explored_values": []
+      },
+      "J": {
+        "@type": "tvbo:Parameter",
+        "name": "J",
+        "definition": "Average number of synapses between three neuronal populations of the model. It accounts for synaptic phenomena such as neurotransmitter depletion.",
+        "value": 135.0,
+        "domain": {
+          "lo": 65.0,
+          "hi": 1350.0,
+          "step": 1.0
+        },
+        "description": "Average number of synapses between three neuronal populations of the model",
+        "explored_values": []
+      },
+      "a_1": {
+        "@type": "tvbo:Parameter",
+        "name": "a_1",
+        "definition": "Average probability constant of the number of synapses made by the pyramidal cells to the dendrites of the excitatory interneurons  (feedback excitatory loop). It characterizes the connectivity between the PCs and EINs.",
+        "value": 1.0,
+        "domain": {
+          "lo": 0.5,
+          "hi": 1.5,
+          "step": 0.1
+        },
+        "description": "Average probability constant of the number of synapses made by the pyramidal cells to the dendrites of the excitatory interneurons  (feedback excitatory loop)",
+        "explored_values": []
+      },
+      "a_2": {
+        "@type": "tvbo:Parameter",
+        "name": "a_2",
+        "definition": "Average probability constant of the number of synapses made by the EINs to the dendrites of the PCs. It characterizes the excitatory connectivity between the EINs and PCs.",
+        "value": 0.8,
+        "domain": {
+          "lo": 0.4,
+          "hi": 1.2,
+          "step": 0.1
+        },
+        "description": "Average probability constant of the number of synapses made by the EINs to the dendrites of the PCs",
+        "explored_values": []
+      },
+      "a_3": {
+        "@type": "tvbo:Parameter",
+        "name": "a_3",
+        "definition": "Average probability constant of the number of synapses made by the PCs to the dendrites of the IINs. It characterizes the connectivity between the PCs and inhibitory IINs.",
+        "value": 0.25,
+        "domain": {
+          "lo": 0.125,
+          "hi": 0.375,
+          "step": 0.005
+        },
+        "description": "Average probability constant of the number of synapses made by the PCs to the dendrites of the IINs",
+        "explored_values": []
+      },
+      "a_4": {
+        "@type": "tvbo:Parameter",
+        "name": "a_4",
+        "definition": "Average probability constant of the number of synapses made by the IINs to the dendrites of the PCs. It characterizes the connectivity between the IINs and  PCs.",
+        "value": 0.25,
+        "domain": {
+          "lo": 0.125,
+          "hi": 0.375,
+          "step": 0.005
+        },
+        "description": "Average probability constant of the number of synapses made by the IINs to the dendrites of the PCs",
+        "explored_values": []
+      },
+      "nu_max": {
+        "@type": "tvbo:Parameter",
+        "name": "nu_max",
+        "definition": "Asymptotic of the sigmoid function Sigm_JR corresponds to the maximum firing rate of the neural populations.",
+        "value": 0.0025,
+        "domain": {
+          "lo": 0.00125,
+          "hi": 0.00375,
+          "step": 1e-05
+        },
+        "description": "Asymptotic of the sigmoid function Sigm_JR corresponds to the maximum firing rate of the neural populations",
+        "unit": "ms^-1",
+        "explored_values": []
+      },
+      "r": {
+        "@type": "tvbo:Parameter",
+        "name": "r",
+        "definition": "Steepness (or gain) parameter of the sigmoid function Sigm_JR.",
+        "value": 0.56,
+        "domain": {
+          "lo": 0.28,
+          "hi": 0.84,
+          "step": 0.01
+        },
+        "description": "Steepness (or gain) parameter of the sigmoid function Sigm_JR",
+        "unit": "mV^-1",
+        "explored_values": []
+      },
+      "v0": {
+        "@type": "tvbo:Parameter",
+        "name": "v0",
+        "definition": "Average firing threshold (PSP) for which half of the firing rate is achieved.\n\nNote:\n- The usual value for this parameter is 6.0 (Jansen et al., 1993; Jansen & Rit, 1995).",
+        "value": 5.52,
+        "domain": {
+          "lo": 3.12,
+          "hi": 6.0,
+          "step": 0.02
+        },
+        "description": "Average firing threshold (PSP) for which half of the firing rate is achieved",
+        "unit": "mV",
+        "explored_values": []
+      }
+    },
+    "description": "Neural mass model of a cortical column with pyramidal cells and interneurons",
+    "references": [
+      "Jansen1995",
+      "Jansen1993"
+    ],
+    "derived_variables": {
+      "sigma_y0_1": {
+        "@type": "tvbo:DerivedVariable",
+        "name": "sigma_y0_1",
+        "description": "Sigmoid function that transforms the average membrane potential of the PCs populations (y0) into an average firing rate to the excitatory interneurons EINs.",
+        "equation": {
+          "lhs": "sigma_y0_1",
+          "rhs": "2.0*nu_max/(exp(r*(-J*a_1*y0 + v0)) + 1.0)",
+          "conditionals": [],
+          "latex": false
+        },
+        "conditional": false,
+        "cases": []
+      },
+      "sigma_y0_3": {
+        "@type": "tvbo:DerivedVariable",
+        "name": "sigma_y0_3",
+        "description": "Sigmoid function that transforms the average membrane potential of the PCs populations (y0) into an average firing rate to the inhibitory interneurons IINs.",
+        "equation": {
+          "lhs": "sigma_y0_3",
+          "rhs": "2.0*nu_max/(exp(r*(-J*a_3*y0 + v0)) + 1.0)",
+          "conditionals": [],
+          "latex": false
+        },
+        "conditional": false,
+        "cases": []
+      },
+      "sigma_y1_y2": {
+        "@type": "tvbo:DerivedVariable",
+        "name": "sigma_y1_y2",
+        "description": "Sigmoid function that transforms the average membrane potential of the interneurons populations (y1-y2)\ninto an average firing rate to the PCs.",
+        "equation": {
+          "lhs": "sigma_y1_y2",
+          "rhs": "2.0*nu_max/(exp(r*(v0 - y1 + y2)) + 1.0)",
+          "conditionals": [],
+          "latex": false
+        },
+        "conditional": false,
+        "cases": []
+      }
+    },
+    "coupling_terms": {
+      "c_pop0": {
+        "@type": "tvbo:Parameter",
+        "name": "c_pop0",
+        "explored_values": []
+      }
+    },
+    "state_variables": {
+      "y0": {
+        "@type": "tvbo:StateVariable",
+        "name": "y0",
+        "label": "Average PSP of pyramidal population",
+        "domain": {
+          "lo": -100.0,
+          "hi": 100.0
+        },
+        "description": "First state-variable of the first Jansen-Rit population",
+        "equation": {
+          "lhs": "Derivative(y0, t)",
+          "rhs": "y3",
+          "conditionals": [],
+          "latex": false
+        },
+        "variable_of_interest": true,
+        "coupling_variable": false,
+        "initial_value": 0.0
+      },
+      "y1": {
+        "@type": "tvbo:StateVariable",
+        "name": "y1",
+        "label": "Average PSP of excitatory interneurons",
+        "domain": {
+          "lo": -500.0,
+          "hi": 500.0
+        },
+        "description": "First state-variable of the second Jansen-Rit population (EINs)",
+        "equation": {
+          "lhs": "Derivative(y1, t)",
+          "rhs": "y4",
+          "conditionals": [],
+          "latex": false
+        },
+        "variable_of_interest": true,
+        "coupling_variable": true,
+        "initial_value": 0.0
+      },
+      "y2": {
+        "@type": "tvbo:StateVariable",
+        "name": "y2",
+        "label": "Average PSP of inhibitory interneurons",
+        "domain": {
+          "lo": -50.0,
+          "hi": 50.0
+        },
+        "description": "First state-variable of the third Jansen-Rit population (IINs)",
+        "equation": {
+          "lhs": "Derivative(y2, t)",
+          "rhs": "y5",
+          "conditionals": [],
+          "latex": false
+        },
+        "variable_of_interest": true,
+        "coupling_variable": true,
+        "initial_value": 0.0
+      },
+      "y3": {
+        "@type": "tvbo:StateVariable",
+        "name": "y3",
+        "label": "Derivative of y0",
+        "domain": {
+          "lo": -6.0,
+          "hi": 6.0
+        },
+        "description": "Second state-variable of the first Jansen-Rit population (excitatory PCs)",
+        "equation": {
+          "lhs": "Derivative(y3, t)",
+          "rhs": "A*a*(y1 - y2) - a**2*y0 - 2*a*y3",
+          "conditionals": [],
+          "latex": false
+        },
+        "variable_of_interest": true,
+        "coupling_variable": true,
+        "initial_value": 0.0
+      },
+      "y4": {
+        "@type": "tvbo:StateVariable",
+        "name": "y4",
+        "label": "Derivative of y1",
+        "domain": {
+          "lo": -20.0,
+          "hi": 20.0
+        },
+        "description": "Second state-variable of the second excitatory Jansen-Rit population (excitatory EINs)",
+        "equation": {
+          "lhs": "Derivative(y4, t)",
+          "rhs": "A*a*(C1*C2*y0 + c_in + mu) - a**2*y1 - 2*a*y4",
+          "conditionals": [],
+          "latex": false
+        },
+        "variable_of_interest": true,
+        "coupling_variable": false,
+        "initial_value": 0.0
+      },
+      "y5": {
+        "@type": "tvbo:StateVariable",
+        "name": "y5",
+        "label": "Derivative of y2",
+        "domain": {
+          "lo": -500.0,
+          "hi": 500.0
+        },
+        "description": "Second state-variable of the third (inhibitory) Jansen-Rit population (IINs)",
+        "equation": {
+          "lhs": "Derivative(y5, t)",
+          "rhs": "B*C3*C4*b*y0 - b**2*y2 - 2*b*y5",
+          "conditionals": [],
+          "latex": false
+        },
+        "variable_of_interest": true,
+        "coupling_variable": false,
+        "initial_value": 0.0
+      }
+    },
+    "number_of_modes": 1,
+    "system_type": "continuous"
+  },
+  "description": "Whole-brain resting state simulation using the Jansen-Rit neural mass model with stochastic integration and linear diffusive coupling.\n",
+  "additional_equations": [],
+  "label": "Jansen-Rit Resting State Simulation",
+  "dynamics": {
+    "name": "JansenRit",
+    "label": "Jansen-Rit Neural Mass Model",
+    "iri": "http://www.thevirtualbrain.org/tvb-o/JansenRit",
+    "parameters": {
+      "A": {
+        "@type": "tvbo:Parameter",
+        "name": "A",
+        "label": "Excitatory PSP amplitude",
+        "value": 3.25,
+        "description": "Maximum amplitude of EPSP [mV]",
+        "unit": "mV",
+        "explored_values": []
+      },
+      "B": {
+        "@type": "tvbo:Parameter",
+        "name": "B",
+        "label": "Inhibitory PSP amplitude",
+        "value": 22.0,
+        "description": "Maximum amplitude of IPSP [mV]",
+        "unit": "mV",
+        "explored_values": []
+      },
+      "a": {
+        "@type": "tvbo:Parameter",
+        "name": "a",
+        "label": "Excitatory time constant",
+        "value": 0.1,
+        "description": "Reciprocal of the time constant of passive membrane and all other spatially distributed delays in the dendritic network. Also called average synaptic time constant.",
+        "unit": "1/ms",
+        "explored_values": []
+      },
+      "b": {
+        "@type": "tvbo:Parameter",
+        "name": "b",
+        "label": "Inhibitory time constant",
+        "value": 0.05,
+        "description": "Rate constant of the inhibitory post-synaptic potential (IPSP)",
+        "unit": "1/ms",
+        "explored_values": []
+      },
+      "mu": {
+        "@type": "tvbo:Parameter",
+        "name": "mu",
+        "label": "External input",
+        "value": 220.0,
+        "description": "Mean excitatory external input to the derivative of the state-variable y4_JR (PCs) represented by a pulse density, that consists of activity originating from adjacent and more distant cortical columns, as well as from subcortical structures (e",
+        "unit": "Hz",
+        "explored_values": []
+      },
+      "C1": {
+        "@type": "tvbo:Parameter",
+        "name": "C1",
+        "label": "Connectivity constant 1",
+        "value": 135.0,
+        "explored_values": []
+      },
+      "C2": {
+        "@type": "tvbo:Parameter",
+        "name": "C2",
+        "label": "Connectivity constant 2",
+        "value": 108.0,
+        "explored_values": []
+      },
+      "C3": {
+        "@type": "tvbo:Parameter",
+        "name": "C3",
+        "label": "Connectivity constant 3",
+        "value": 33.75,
+        "explored_values": []
+      },
+      "C4": {
+        "@type": "tvbo:Parameter",
+        "name": "C4",
+        "label": "Connectivity constant 4",
+        "value": 33.75,
+        "explored_values": []
+      },
+      "J": {
+        "@type": "tvbo:Parameter",
+        "name": "J",
+        "definition": "Average number of synapses between three neuronal populations of the model. It accounts for synaptic phenomena such as neurotransmitter depletion.",
+        "value": 135.0,
+        "domain": {
+          "lo": 65.0,
+          "hi": 1350.0,
+          "step": 1.0
+        },
+        "description": "Average number of synapses between three neuronal populations of the model",
+        "explored_values": []
+      },
+      "a_1": {
+        "@type": "tvbo:Parameter",
+        "name": "a_1",
+        "definition": "Average probability constant of the number of synapses made by the pyramidal cells to the dendrites of the excitatory interneurons  (feedback excitatory loop). It characterizes the connectivity between the PCs and EINs.",
+        "value": 1.0,
+        "domain": {
+          "lo": 0.5,
+          "hi": 1.5,
+          "step": 0.1
+        },
+        "description": "Average probability constant of the number of synapses made by the pyramidal cells to the dendrites of the excitatory interneurons  (feedback excitatory loop)",
+        "explored_values": []
+      },
+      "a_2": {
+        "@type": "tvbo:Parameter",
+        "name": "a_2",
+        "definition": "Average probability constant of the number of synapses made by the EINs to the dendrites of the PCs. It characterizes the excitatory connectivity between the EINs and PCs.",
+        "value": 0.8,
+        "domain": {
+          "lo": 0.4,
+          "hi": 1.2,
+          "step": 0.1
+        },
+        "description": "Average probability constant of the number of synapses made by the EINs to the dendrites of the PCs",
+        "explored_values": []
+      },
+      "a_3": {
+        "@type": "tvbo:Parameter",
+        "name": "a_3",
+        "definition": "Average probability constant of the number of synapses made by the PCs to the dendrites of the IINs. It characterizes the connectivity between the PCs and inhibitory IINs.",
+        "value": 0.25,
+        "domain": {
+          "lo": 0.125,
+          "hi": 0.375,
+          "step": 0.005
+        },
+        "description": "Average probability constant of the number of synapses made by the PCs to the dendrites of the IINs",
+        "explored_values": []
+      },
+      "a_4": {
+        "@type": "tvbo:Parameter",
+        "name": "a_4",
+        "definition": "Average probability constant of the number of synapses made by the IINs to the dendrites of the PCs. It characterizes the connectivity between the IINs and  PCs.",
+        "value": 0.25,
+        "domain": {
+          "lo": 0.125,
+          "hi": 0.375,
+          "step": 0.005
+        },
+        "description": "Average probability constant of the number of synapses made by the IINs to the dendrites of the PCs",
+        "explored_values": []
+      },
+      "nu_max": {
+        "@type": "tvbo:Parameter",
+        "name": "nu_max",
+        "definition": "Asymptotic of the sigmoid function Sigm_JR corresponds to the maximum firing rate of the neural populations.",
+        "value": 0.0025,
+        "domain": {
+          "lo": 0.00125,
+          "hi": 0.00375,
+          "step": 1e-05
+        },
+        "description": "Asymptotic of the sigmoid function Sigm_JR corresponds to the maximum firing rate of the neural populations",
+        "unit": "ms^-1",
+        "explored_values": []
+      },
+      "r": {
+        "@type": "tvbo:Parameter",
+        "name": "r",
+        "definition": "Steepness (or gain) parameter of the sigmoid function Sigm_JR.",
+        "value": 0.56,
+        "domain": {
+          "lo": 0.28,
+          "hi": 0.84,
+          "step": 0.01
+        },
+        "description": "Steepness (or gain) parameter of the sigmoid function Sigm_JR",
+        "unit": "mV^-1",
+        "explored_values": []
+      },
+      "v0": {
+        "@type": "tvbo:Parameter",
+        "name": "v0",
+        "definition": "Average firing threshold (PSP) for which half of the firing rate is achieved.\n\nNote:\n- The usual value for this parameter is 6.0 (Jansen et al., 1993; Jansen & Rit, 1995).",
+        "value": 5.52,
+        "domain": {
+          "lo": 3.12,
+          "hi": 6.0,
+          "step": 0.02
+        },
+        "description": "Average firing threshold (PSP) for which half of the firing rate is achieved",
+        "unit": "mV",
+        "explored_values": []
+      }
+    },
+    "description": "Neural mass model of a cortical column with pyramidal cells and interneurons",
+    "references": [
+      "Jansen1995",
+      "Jansen1993"
+    ],
+    "derived_variables": {
+      "sigma_y0_1": {
+        "@type": "tvbo:DerivedVariable",
+        "name": "sigma_y0_1",
+        "description": "Sigmoid function that transforms the average membrane potential of the PCs populations (y0) into an average firing rate to the excitatory interneurons EINs.",
+        "equation": {
+          "lhs": "sigma_y0_1",
+          "rhs": "2.0*nu_max/(exp(r*(-J*a_1*y0 + v0)) + 1.0)",
+          "conditionals": [],
+          "latex": false
+        },
+        "conditional": false,
+        "cases": []
+      },
+      "sigma_y0_3": {
+        "@type": "tvbo:DerivedVariable",
+        "name": "sigma_y0_3",
+        "description": "Sigmoid function that transforms the average membrane potential of the PCs populations (y0) into an average firing rate to the inhibitory interneurons IINs.",
+        "equation": {
+          "lhs": "sigma_y0_3",
+          "rhs": "2.0*nu_max/(exp(r*(-J*a_3*y0 + v0)) + 1.0)",
+          "conditionals": [],
+          "latex": false
+        },
+        "conditional": false,
+        "cases": []
+      },
+      "sigma_y1_y2": {
+        "@type": "tvbo:DerivedVariable",
+        "name": "sigma_y1_y2",
+        "description": "Sigmoid function that transforms the average membrane potential of the interneurons populations (y1-y2)\ninto an average firing rate to the PCs.",
+        "equation": {
+          "lhs": "sigma_y1_y2",
+          "rhs": "2.0*nu_max/(exp(r*(v0 - y1 + y2)) + 1.0)",
+          "conditionals": [],
+          "latex": false
+        },
+        "conditional": false,
+        "cases": []
+      }
+    },
+    "coupling_terms": {
+      "c_pop0": {
+        "@type": "tvbo:Parameter",
+        "name": "c_pop0",
+        "explored_values": []
+      }
+    },
+    "state_variables": {
+      "y0": {
+        "@type": "tvbo:StateVariable",
+        "name": "y0",
+        "label": "Average PSP of pyramidal population",
+        "domain": {
+          "lo": -100.0,
+          "hi": 100.0
+        },
+        "description": "First state-variable of the first Jansen-Rit population",
+        "equation": {
+          "lhs": "Derivative(y0, t)",
+          "rhs": "y3",
+          "conditionals": [],
+          "latex": false
+        },
+        "variable_of_interest": true,
+        "coupling_variable": false,
+        "initial_value": 0.0
+      },
+      "y1": {
+        "@type": "tvbo:StateVariable",
+        "name": "y1",
+        "label": "Average PSP of excitatory interneurons",
+        "domain": {
+          "lo": -500.0,
+          "hi": 500.0
+        },
+        "description": "First state-variable of the second Jansen-Rit population (EINs)",
+        "equation": {
+          "lhs": "Derivative(y1, t)",
+          "rhs": "y4",
+          "conditionals": [],
+          "latex": false
+        },
+        "variable_of_interest": true,
+        "coupling_variable": true,
+        "initial_value": 0.0
+      },
+      "y2": {
+        "@type": "tvbo:StateVariable",
+        "name": "y2",
+        "label": "Average PSP of inhibitory interneurons",
+        "domain": {
+          "lo": -50.0,
+          "hi": 50.0
+        },
+        "description": "First state-variable of the third Jansen-Rit population (IINs)",
+        "equation": {
+          "lhs": "Derivative(y2, t)",
+          "rhs": "y5",
+          "conditionals": [],
+          "latex": false
+        },
+        "variable_of_interest": true,
+        "coupling_variable": true,
+        "initial_value": 0.0
+      },
+      "y3": {
+        "@type": "tvbo:StateVariable",
+        "name": "y3",
+        "label": "Derivative of y0",
+        "domain": {
+          "lo": -6.0,
+          "hi": 6.0
+        },
+        "description": "Second state-variable of the first Jansen-Rit population (excitatory PCs)",
+        "equation": {
+          "lhs": "Derivative(y3, t)",
+          "rhs": "A*a*(y1 - y2) - a**2*y0 - 2*a*y3",
+          "conditionals": [],
+          "latex": false
+        },
+        "variable_of_interest": true,
+        "coupling_variable": true,
+        "initial_value": 0.0
+      },
+      "y4": {
+        "@type": "tvbo:StateVariable",
+        "name": "y4",
+        "label": "Derivative of y1",
+        "domain": {
+          "lo": -20.0,
+          "hi": 20.0
+        },
+        "description": "Second state-variable of the second excitatory Jansen-Rit population (excitatory EINs)",
+        "equation": {
+          "lhs": "Derivative(y4, t)",
+          "rhs": "A*a*(C1*C2*y0 + c_in + mu) - a**2*y1 - 2*a*y4",
+          "conditionals": [],
+          "latex": false
+        },
+        "variable_of_interest": true,
+        "coupling_variable": false,
+        "initial_value": 0.0
+      },
+      "y5": {
+        "@type": "tvbo:StateVariable",
+        "name": "y5",
+        "label": "Derivative of y2",
+        "domain": {
+          "lo": -500.0,
+          "hi": 500.0
+        },
+        "description": "Second state-variable of the third (inhibitory) Jansen-Rit population (IINs)",
+        "equation": {
+          "lhs": "Derivative(y5, t)",
+          "rhs": "B*C3*C4*b*y0 - b**2*y2 - 2*b*y5",
+          "conditionals": [],
+          "latex": false
+        },
+        "variable_of_interest": true,
+        "coupling_variable": false,
+        "initial_value": 0.0
+      }
+    },
+    "number_of_modes": 1,
+    "system_type": "continuous"
+  },
+  "dynamics": {
+    "JansenRit": {
+      "name": "JansenRit",
+      "label": "Jansen-Rit Neural Mass Model",
+      "iri": "http://www.thevirtualbrain.org/tvb-o/JansenRit",
+      "parameters": {
+        "A": {
+          "@type": "tvbo:Parameter",
+          "name": "A",
+          "label": "Excitatory PSP amplitude",
+          "value": 3.25,
+          "description": "Maximum amplitude of EPSP [mV]",
+          "unit": "mV",
+          "explored_values": []
+        },
+        "B": {
+          "@type": "tvbo:Parameter",
+          "name": "B",
+          "label": "Inhibitory PSP amplitude",
+          "value": 22.0,
+          "description": "Maximum amplitude of IPSP [mV]",
+          "unit": "mV",
+          "explored_values": []
+        },
+        "a": {
+          "@type": "tvbo:Parameter",
+          "name": "a",
+          "label": "Excitatory time constant",
+          "value": 0.1,
+          "description": "Reciprocal of the time constant of passive membrane and all other spatially distributed delays in the dendritic network. Also called average synaptic time constant.",
+          "unit": "1/ms",
+          "explored_values": []
+        },
+        "b": {
+          "@type": "tvbo:Parameter",
+          "name": "b",
+          "label": "Inhibitory time constant",
+          "value": 0.05,
+          "description": "Rate constant of the inhibitory post-synaptic potential (IPSP)",
+          "unit": "1/ms",
+          "explored_values": []
+        },
+        "mu": {
+          "@type": "tvbo:Parameter",
+          "name": "mu",
+          "label": "External input",
+          "value": 220.0,
+          "description": "Mean excitatory external input to the derivative of the state-variable y4_JR (PCs) represented by a pulse density, that consists of activity originating from adjacent and more distant cortical columns, as well as from subcortical structures (e",
+          "unit": "Hz",
+          "explored_values": []
+        },
+        "C1": {
+          "@type": "tvbo:Parameter",
+          "name": "C1",
+          "label": "Connectivity constant 1",
+          "value": 135.0,
+          "explored_values": []
+        },
+        "C2": {
+          "@type": "tvbo:Parameter",
+          "name": "C2",
+          "label": "Connectivity constant 2",
+          "value": 108.0,
+          "explored_values": []
+        },
+        "C3": {
+          "@type": "tvbo:Parameter",
+          "name": "C3",
+          "label": "Connectivity constant 3",
+          "value": 33.75,
+          "explored_values": []
+        },
+        "C4": {
+          "@type": "tvbo:Parameter",
+          "name": "C4",
+          "label": "Connectivity constant 4",
+          "value": 33.75,
+          "explored_values": []
+        },
+        "J": {
+          "@type": "tvbo:Parameter",
+          "name": "J",
+          "definition": "Average number of synapses between three neuronal populations of the model. It accounts for synaptic phenomena such as neurotransmitter depletion.",
+          "value": 135.0,
+          "domain": {
+            "lo": 65.0,
+            "hi": 1350.0,
+            "step": 1.0
+          },
+          "description": "Average number of synapses between three neuronal populations of the model",
+          "explored_values": []
+        },
+        "a_1": {
+          "@type": "tvbo:Parameter",
+          "name": "a_1",
+          "definition": "Average probability constant of the number of synapses made by the pyramidal cells to the dendrites of the excitatory interneurons  (feedback excitatory loop). It characterizes the connectivity between the PCs and EINs.",
+          "value": 1.0,
+          "domain": {
+            "lo": 0.5,
+            "hi": 1.5,
+            "step": 0.1
+          },
+          "description": "Average probability constant of the number of synapses made by the pyramidal cells to the dendrites of the excitatory interneurons  (feedback excitatory loop)",
+          "explored_values": []
+        },
+        "a_2": {
+          "@type": "tvbo:Parameter",
+          "name": "a_2",
+          "definition": "Average probability constant of the number of synapses made by the EINs to the dendrites of the PCs. It characterizes the excitatory connectivity between the EINs and PCs.",
+          "value": 0.8,
+          "domain": {
+            "lo": 0.4,
+            "hi": 1.2,
+            "step": 0.1
+          },
+          "description": "Average probability constant of the number of synapses made by the EINs to the dendrites of the PCs",
+          "explored_values": []
+        },
+        "a_3": {
+          "@type": "tvbo:Parameter",
+          "name": "a_3",
+          "definition": "Average probability constant of the number of synapses made by the PCs to the dendrites of the IINs. It characterizes the connectivity between the PCs and inhibitory IINs.",
+          "value": 0.25,
+          "domain": {
+            "lo": 0.125,
+            "hi": 0.375,
+            "step": 0.005
+          },
+          "description": "Average probability constant of the number of synapses made by the PCs to the dendrites of the IINs",
+          "explored_values": []
+        },
+        "a_4": {
+          "@type": "tvbo:Parameter",
+          "name": "a_4",
+          "definition": "Average probability constant of the number of synapses made by the IINs to the dendrites of the PCs. It characterizes the connectivity between the IINs and  PCs.",
+          "value": 0.25,
+          "domain": {
+            "lo": 0.125,
+            "hi": 0.375,
+            "step": 0.005
+          },
+          "description": "Average probability constant of the number of synapses made by the IINs to the dendrites of the PCs",
+          "explored_values": []
+        },
+        "nu_max": {
+          "@type": "tvbo:Parameter",
+          "name": "nu_max",
+          "definition": "Asymptotic of the sigmoid function Sigm_JR corresponds to the maximum firing rate of the neural populations.",
+          "value": 0.0025,
+          "domain": {
+            "lo": 0.00125,
+            "hi": 0.00375,
+            "step": 1e-05
+          },
+          "description": "Asymptotic of the sigmoid function Sigm_JR corresponds to the maximum firing rate of the neural populations",
+          "unit": "ms^-1",
+          "explored_values": []
+        },
+        "r": {
+          "@type": "tvbo:Parameter",
+          "name": "r",
+          "definition": "Steepness (or gain) parameter of the sigmoid function Sigm_JR.",
+          "value": 0.56,
+          "domain": {
+            "lo": 0.28,
+            "hi": 0.84,
+            "step": 0.01
+          },
+          "description": "Steepness (or gain) parameter of the sigmoid function Sigm_JR",
+          "unit": "mV^-1",
+          "explored_values": []
+        },
+        "v0": {
+          "@type": "tvbo:Parameter",
+          "name": "v0",
+          "definition": "Average firing threshold (PSP) for which half of the firing rate is achieved.\n\nNote:\n- The usual value for this parameter is 6.0 (Jansen et al., 1993; Jansen & Rit, 1995).",
+          "value": 5.52,
+          "domain": {
+            "lo": 3.12,
+            "hi": 6.0,
+            "step": 0.02
+          },
+          "description": "Average firing threshold (PSP) for which half of the firing rate is achieved",
+          "unit": "mV",
+          "explored_values": []
+        }
+      },
+      "description": "Neural mass model of a cortical column with pyramidal cells and interneurons",
+      "references": [
+        "Jansen1995",
+        "Jansen1993"
+      ],
+      "derived_variables": {
+        "sigma_y0_1": {
+          "@type": "tvbo:DerivedVariable",
+          "name": "sigma_y0_1",
+          "description": "Sigmoid function that transforms the average membrane potential of the PCs populations (y0) into an average firing rate to the excitatory interneurons EINs.",
+          "equation": {
+            "lhs": "sigma_y0_1",
+            "rhs": "2.0*nu_max/(exp(r*(-J*a_1*y0 + v0)) + 1.0)",
+            "conditionals": [],
+            "latex": false
+          },
+          "conditional": false,
+          "cases": []
+        },
+        "sigma_y0_3": {
+          "@type": "tvbo:DerivedVariable",
+          "name": "sigma_y0_3",
+          "description": "Sigmoid function that transforms the average membrane potential of the PCs populations (y0) into an average firing rate to the inhibitory interneurons IINs.",
+          "equation": {
+            "lhs": "sigma_y0_3",
+            "rhs": "2.0*nu_max/(exp(r*(-J*a_3*y0 + v0)) + 1.0)",
+            "conditionals": [],
+            "latex": false
+          },
+          "conditional": false,
+          "cases": []
+        },
+        "sigma_y1_y2": {
+          "@type": "tvbo:DerivedVariable",
+          "name": "sigma_y1_y2",
+          "description": "Sigmoid function that transforms the average membrane potential of the interneurons populations (y1-y2)\ninto an average firing rate to the PCs.",
+          "equation": {
+            "lhs": "sigma_y1_y2",
+            "rhs": "2.0*nu_max/(exp(r*(v0 - y1 + y2)) + 1.0)",
+            "conditionals": [],
+            "latex": false
+          },
+          "conditional": false,
+          "cases": []
+        }
+      },
+      "coupling_terms": {
+        "c_pop0": {
+          "@type": "tvbo:Parameter",
+          "name": "c_pop0",
+          "explored_values": []
+        }
+      },
+      "state_variables": {
+        "y0": {
+          "@type": "tvbo:StateVariable",
+          "name": "y0",
+          "label": "Average PSP of pyramidal population",
+          "domain": {
+            "lo": -100.0,
+            "hi": 100.0
+          },
+          "description": "First state-variable of the first Jansen-Rit population",
+          "equation": {
+            "lhs": "Derivative(y0, t)",
+            "rhs": "y3",
+            "conditionals": [],
+            "latex": false
+          },
+          "variable_of_interest": true,
+          "coupling_variable": false,
+          "initial_value": 0.0
+        },
+        "y1": {
+          "@type": "tvbo:StateVariable",
+          "name": "y1",
+          "label": "Average PSP of excitatory interneurons",
+          "domain": {
+            "lo": -500.0,
+            "hi": 500.0
+          },
+          "description": "First state-variable of the second Jansen-Rit population (EINs)",
+          "equation": {
+            "lhs": "Derivative(y1, t)",
+            "rhs": "y4",
+            "conditionals": [],
+            "latex": false
+          },
+          "variable_of_interest": true,
+          "coupling_variable": true,
+          "initial_value": 0.0
+        },
+        "y2": {
+          "@type": "tvbo:StateVariable",
+          "name": "y2",
+          "label": "Average PSP of inhibitory interneurons",
+          "domain": {
+            "lo": -50.0,
+            "hi": 50.0
+          },
+          "description": "First state-variable of the third Jansen-Rit population (IINs)",
+          "equation": {
+            "lhs": "Derivative(y2, t)",
+            "rhs": "y5",
+            "conditionals": [],
+            "latex": false
+          },
+          "variable_of_interest": true,
+          "coupling_variable": true,
+          "initial_value": 0.0
+        },
+        "y3": {
+          "@type": "tvbo:StateVariable",
+          "name": "y3",
+          "label": "Derivative of y0",
+          "domain": {
+            "lo": -6.0,
+            "hi": 6.0
+          },
+          "description": "Second state-variable of the first Jansen-Rit population (excitatory PCs)",
+          "equation": {
+            "lhs": "Derivative(y3, t)",
+            "rhs": "A*a*(y1 - y2) - a**2*y0 - 2*a*y3",
+            "conditionals": [],
+            "latex": false
+          },
+          "variable_of_interest": true,
+          "coupling_variable": true,
+          "initial_value": 0.0
+        },
+        "y4": {
+          "@type": "tvbo:StateVariable",
+          "name": "y4",
+          "label": "Derivative of y1",
+          "domain": {
+            "lo": -20.0,
+            "hi": 20.0
+          },
+          "description": "Second state-variable of the second excitatory Jansen-Rit population (excitatory EINs)",
+          "equation": {
+            "lhs": "Derivative(y4, t)",
+            "rhs": "A*a*(C1*C2*y0 + c_in + mu) - a**2*y1 - 2*a*y4",
+            "conditionals": [],
+            "latex": false
+          },
+          "variable_of_interest": true,
+          "coupling_variable": false,
+          "initial_value": 0.0
+        },
+        "y5": {
+          "@type": "tvbo:StateVariable",
+          "name": "y5",
+          "label": "Derivative of y2",
+          "domain": {
+            "lo": -500.0,
+            "hi": 500.0
+          },
+          "description": "Second state-variable of the third (inhibitory) Jansen-Rit population (IINs)",
+          "equation": {
+            "lhs": "Derivative(y5, t)",
+            "rhs": "B*C3*C4*b*y0 - b**2*y2 - 2*b*y5",
+            "conditionals": [],
+            "latex": false
+          },
+          "variable_of_interest": true,
+          "coupling_variable": false,
+          "initial_value": 0.0
+        }
+      },
+      "number_of_modes": 1,
+      "system_type": "continuous"
+    }
+  },
+  "integration": {
+    "time_scale": "ms",
+    "duration": 5000.0,
+    "method": "heun",
+    "step_size": 0.1,
+    "noise": {
+      "parameters": {
+        "nsig": {
+          "@type": "tvbo:Parameter",
+          "name": "nsig",
+          "value": 0.01,
+          "explored_values": []
+        }
+      },
+      "noise_type": "gaussian",
+      "correlated": false,
+      "gaussian": false,
+      "additive": true,
+      "seed": 42
+    },
+    "state_wise_sigma": [],
+    "transient_time": 0.0,
+    "scipy_ode_base": false,
+    "number_of_stages": 2,
+    "intermediate_expressions": {
+      "X1": {
+        "@type": "tvbo:DerivedVariable",
+        "name": "X1",
+        "equation": {
+          "lhs": "X1",
+          "rhs": "X + dX0 * dt + noise + stimulus * dt",
+          "conditionals": [],
+          "latex": false
+        },
+        "conditional": false,
+        "cases": []
+      }
+    },
+    "update_expression": {
+      "name": "dX",
+      "equation": {
+        "lhs": "X_{t+1}",
+        "rhs": "(dX0 + dX1) * (dt / 2)",
+        "conditionals": [],
+        "latex": false
+      },
+      "conditional": false,
+      "cases": []
+    },
+    "delayed": true
+  },
+  "network": {
+    "nodes": [
+      {
+        "id": 0,
+        "label": "node_0",
+        "parameters": [],
+        "initial_state": []
+      }
+    ],
+    "edges": [],
+    "number_of_regions": 1,
+    "number_of_nodes": 1,
+    "conduction_speed": {
+      "name": "conduction_speed",
+      "label": "v",
+      "value": 3.0,
+      "unit": "mm/ms",
+      "explored_values": []
+    },
+    "distance_unit": "mm",
+    "time_unit": "ms"
+  },
+  "coupling": {
+    "name": "Linear",
+    "label": "Linear Diffusive Coupling",
+    "parameters": {
+      "a": {
+        "@type": "tvbo:Parameter",
+        "name": "a",
+        "value": 0.00390625,
+        "description": "Linear scaling factor of the coupled (delayed) input.",
+        "explored_values": []
+      },
+      "b": {
+        "@type": "tvbo:Parameter",
+        "name": "b",
+        "value": 0.0,
+        "description": "Shifts the base of the connection strength while maintaining the absolute difference between different values.",
+        "explored_values": []
+      }
+    },
+    "sparse": false,
+    "pre_expression": {
+      "rhs": "x_j",
+      "conditionals": [],
+      "latex": false
+    },
+    "post_expression": {
+      "rhs": "a*gx + b",
+      "conditionals": [],
+      "latex": false
+    },
+    "delayed": true
+  },
+  "monitors": {
+    "Raw": {
+      "@type": "tvbo:Monitor",
+      "name": "Raw",
+      "pipeline": [],
+      "data_injections": [],
+      "argument_mappings": [],
+      "time_scale": "ms",
+      "period": 1.0
+    }
+  },
+  "modelfitting": [],
+  "references": [
+    "Jansen BH, Rit VG (1995). Biol Cybern 73:357-366.",
+    "Sanz-Leon P, et al. (2015). NeuroImage 111:385-430."
+  ],
+  "@id": "https://example.org/simulations/experiments/1"
+}

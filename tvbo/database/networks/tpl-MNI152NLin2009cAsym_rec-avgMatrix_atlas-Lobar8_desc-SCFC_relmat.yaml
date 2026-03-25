@@ -1,0 +1,138 @@
+tvbo_class: tvbo:Network
+schema_version: tvb-datamodel/0.7.0
+label: Lobar8 (avgMatrix)
+number_of_nodes: 16
+descriptor: SCFC
+distance_unit: mm
+time_unit: ms
+data_file: tpl-MNI152NLin2009cAsym_rec-avgMatrix_atlas-Lobar8_desc-SCFC_relmat.h5
+node_mapping: /nodes/parent_index
+bids:
+  template: MNI152NLin2009cAsym
+  reconstruction: avgMatrix
+  atlas: Lobar8
+parameters:
+  conduction_speed:
+    label: v
+    value: 3.0
+    unit: mm_per_ms
+parcellation:
+  atlas:
+    name: Lobar8
+    coordinateSpace: MNI152NLin2009cAsym
+nodes:
+- id: 0
+  label: LH_Frontal
+  position:
+    x: -37.6207
+    y: 24.8707
+    z: 41.2036
+- id: 1
+  label: LH_Parietal
+  position:
+    x: -41.0702
+    y: -57.6942
+    z: 46.5274
+- id: 2
+  label: LH_Temporal
+  position:
+    x: -58.4131
+    y: -37.2
+    z: -14.3113
+- id: 3
+  label: LH_Occipital
+  position:
+    x: -22.7846
+    y: -95.7363
+    z: 3.9557
+- id: 4
+  label: LH_Cingulate
+  position:
+    x: -10.1694
+    y: -5.3576
+    z: 41.9145
+- id: 5
+  label: LH_Insular
+  position:
+    x: -39.8844
+    y: -5.6715
+    z: 1.6012
+- id: 6
+  label: LH_Subcortical
+  position:
+    x: -16.974
+    y: -10.5617
+    z: -1.1242
+- id: 7
+  label: LH_Cerebellum
+  position:
+    x: -21.9443
+    y: -48.6765
+    z: -36.6292
+- id: 8
+  label: RH_Frontal
+  position:
+    x: 42.2201
+    y: 21.0428
+    z: 44.2808
+- id: 9
+  label: RH_Parietal
+  position:
+    x: 44.7988
+    y: -52.0859
+    z: 47.1199
+- id: 10
+  label: RH_Temporal
+  position:
+    x: 61.3822
+    y: -29.6388
+    z: -14.7832
+- id: 11
+  label: RH_Occipital
+  position:
+    x: 27.3736
+    y: -92.3301
+    z: 4.5954
+- id: 12
+  label: RH_Cingulate
+  position:
+    x: 12.9704
+    y: -15.9202
+    z: 40.4678
+- id: 13
+  label: RH_Insular
+  position:
+    x: 41.109
+    y: 0.3338
+    z: 0.1481
+- id: 14
+  label: RH_Subcortical
+  position:
+    x: 16.3736
+    y: -10.1392
+    z: -0.8862
+- id: 15
+  label: RH_Cerebellum
+  position:
+    x: 14.6269
+    y: -47.2187
+    z: -36.3735
+edges:
+- label: weight
+  format: dense
+  weighted: true
+  valid_diagonal: false
+  non_negative: true
+  directed: false
+- label: length
+  format: dense
+  weighted: true
+  valid_diagonal: false
+  non_negative: true
+  directed: false
+- label: fc
+  format: dense
+  weighted: true
+  valid_diagonal: false
+  non_negative: true
+  directed: false

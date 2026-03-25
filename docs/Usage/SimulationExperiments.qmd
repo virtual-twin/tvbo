@@ -1,0 +1,7 @@
+---
+title: Simulation Experiments
+sidebar: usage
+jupyter: python3
+---
+
+A `SimulationExperiment` combines dynamics, network, coupling, integrator, and observations into a runnable simulation.

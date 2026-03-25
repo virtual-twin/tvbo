@@ -1,3 +1,7 @@
+.navbar-brand img.navbar-logo {
+    max-height: 28px;
+}
+
 .button {
     background-color: #426666; /* Green */
     border: none;

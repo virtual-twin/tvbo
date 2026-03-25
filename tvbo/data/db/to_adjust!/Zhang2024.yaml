@@ -72,7 +72,7 @@ simulation_experiments:
       parcellation:
         label: "Desikan-Killiany"
         data: "https://www.<link_to>/connectivity_68.zip"
-        number_of_regions: 68
+        number_of_nodes: 68
 
     integration:
       noise:

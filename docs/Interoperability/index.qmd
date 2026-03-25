@@ -1,0 +1,119 @@
+---
+title: "Interoperability"
+subtitle: "TVBO integrations with external tools and standards"
+---
+
+TVBO provides seamless interoperability with various neuroimaging tools, optimization frameworks, and metadata standards. This enables researchers to leverage specialized capabilities from different ecosystems while maintaining a unified model representation.
+
+## Integration Overview
+
+```{mermaid}
+%%| fig-width: 10
+flowchart LR
+    subgraph TVBO["TVBO Core"]
+        D[Dynamics]
+        S[SimulationExperiment]
+        N[Network]
+        D --> S
+        N --> S
+    end
+
+    subgraph Simulation["Simulation Backends"]
+        tvboptim
+        ND["NetworkDynamics.jl"]
+        DiffEq["DifferentialEquations.jl"]
+        MTK["ModelingToolkit.jl"]
+    end
+
+    subgraph Analysis["Analysis Backends"]
+        PR[PyRates]
+        BK["BifurcationKit.jl"]
+        PyCoBi["PyCoBi / AUTO-07p"]
+    end
+
+    subgraph Standards["Standards & Schemas"]
+        BIDS
+        OpenMINDS
+        LEMS["NeuroML / LEMS"]
+    end
+
+    S --> Simulation
+    S --> Analysis
+    S --> Standards
+
+
+    style TVBO fill:none,stroke:#333
+    style Simulation fill:none,stroke:#333
+    style Analysis fill:none,stroke:#333
+    style Standards fill:none,stroke:#333
+```
+
+## Available Integrations
+
+### Simulation Backends
+
+| Integration | Input | Direction | Description |
+|-------------|-------|-----------|-------------|
+| [tvboptim](tvboptim/index.qmd) | SimulationExperiment | Bidirectional | JAX-compiled simulation with autodiff optimization |
+| [NetworkDynamics.jl](NetworkDynamics.jl/index.qmd) | SimulationExperiment + Network | Export | Julia graph-based network simulation [@Lindner2021] |
+| [ModelingToolkit.jl](ModelingToolkit.jl/index.qmd) | SimulationExperiment or Dynamics | Export | Symbolic ODE system via Julia MTK |
+| DifferentialEquations.jl | SimulationExperiment | Export | Julia ODE/SDE solvers |
+
+### Analysis Backends
+
+| Integration | Input | Direction | Description |
+|-------------|-------|-----------|-------------|
+| [PyRates](Pyrates/index.qmd) | SimulationExperiment or Dynamics | Bidirectional | Dynamical systems analysis and simulation [@Gast2023] |
+| [BifurcationKit.jl](BifurcationKit.jl/index.qmd) | Dynamics + Continuation | Export | Julia bifurcation analysis [@Veltz2020] |
+| PyCoBi / AUTO-07p | Dynamics + Continuation | Export | Fortran-based numerical continuation via PyRates |
+
+### Standards & Schemas
+
+| Integration | Input | Direction | Description |
+|-------------|-------|-----------|-------------|
+| [BIDS](BIDS/index.qmd) | SimulationExperiment | Export | Brain Imaging Data Structure [@Poldrack2024; @Schirner2021] |
+| [OpenMINDS](OpenMINDS.qmd) | SimulationExperiment | Bidirectional | EBRAINS Knowledge Graph metadata (JSON-LD) |
+| [NeuroML / LEMS](NeuroML/index.qmd) | Dynamics, SimulationExperiment | Export | LEMS ComponentType definitions + jNeuroML simulation [@Sinha2024] |
+
+## Quick Start
+
+### Optimization with tvboptim
+
+```python
+from tvbo import SimulationExperiment
+
+# Load experiment and run optimization
+exp = SimulationExperiment.from_file("experiment.yaml")
+results = exp.run()
+
+# Access optimization results
+print(results.optimization.fic.history)
+```
+
+### Analysis with PyRates
+
+```python
+from tvbo import Dynamics
+
+# Export TVBO model to PyRates
+model = Dynamics.from_file("JansenRit.yaml")
+model.to_yaml(format="pyrates")
+```
+
+### Export to BIDS
+
+```python
+from tvbo import SimulationExperiment
+
+exp = SimulationExperiment.from_file("experiment.yaml")
+exp.to_bids("output/bids")
+```
+
+### Export to OpenMINDS
+
+```python
+from tvbo import SimulationExperiment
+
+exp = SimulationExperiment.from_file("experiment.yaml")
+exp.to_openminds("output/openminds.jsonld")
+```

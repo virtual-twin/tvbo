@@ -1,52 +1,15 @@
 # -*- coding: utf-8 -*-
+<%doc>
+dfun Template - Uses base/dfun.mako for generating dynamics functions.
+Supports: jax, numpy, tvboptim (standard signature) with optional auxiliaries.
+</%doc>
+<%namespace name="dfun" file="/base/dfun.mako"/>
 <%
-if 'experiment' in context.keys():
-    model = experiment.local_dynamics
-else:
-    model = context['model']
-
-metadata = model
-
-jaxcode = lambda obj: model.render_equation(obj, format='jax')
-
-parameters = [par.name for par in metadata.parameters.values()] + [par.name for par in metadata.derived_parameters.values()]
-
+model = experiment.dynamics if 'experiment' in context.keys() else context['model']
+_format = context['format'] if 'format' in context.keys() else 'jax'
+_fmt = 'jax' if _format in ('jax', 'autodiff', 'tvboptim') else 'numpy'
+_return_aux = context['return_aux'] if 'return_aux' in context.keys() else (_format == 'tvboptim')
 %>
-import jax.numpy as jnp
-import jax.scipy as jsp
+${dfun.imports(fmt=_fmt)}
 
-from collections import namedtuple
-
-## Derivatives of state variables
-def dfun(current_state, cX, _p , local_coupling=0):
-    ${', '.join(parameters)} = _p.${', _p.'.join(parameters)}
-
-    # unpack coupling terms and states as in dfun
-    % for i, cterm in enumerate(metadata.coupling_terms):
-    ${cterm} = cX[${i}]
-    % endfor
-
-    % for i, ivar in enumerate(metadata.state_variables):
-    ${ivar} = current_state[${i}]
-    % endfor
-
-    % if metadata.functions:
-    # Functions
-    % for f in metadata.functions.values():
-    def ${f.name}(${", ".join([arg.name for arg in f.arguments.values()])}):
-        return ${jaxcode(f)}
-    % endfor
-    % endif
-
-    # compute internal states for dfun
-    % for dv in metadata.derived_variables.values():
-    ${dv.name} = ${jaxcode(dv)}
-    % endfor
-
-    return jnp.array([
-        % for sv in metadata.state_variables.values():
-            ${jaxcode(sv)}, # ${sv.name}
-        % endfor
-        ])
-
-
+${dfun.full_dfun(model, fmt=_fmt, signature='standard', return_aux=_return_aux)}

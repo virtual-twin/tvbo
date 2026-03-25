@@ -1,0 +1,122 @@
+---
+title: "Ex9: FitzHugh-Nagumo"
+description: "Classic FitzHugh-Nagumo oscillator — dimensionless 2-variable model"
+---
+
+## Model: FitzHugh-Nagumo
+
+The simplest oscillatory model in NeuroML2, dimensionless:
+
+$$\frac{dV}{dt} = \frac{V - V^3/3 - W + I}{1\,\text{s}}$$
+$$\frac{dW}{dt} = \frac{0.08\,(V + 0.7 - 0.8\,W)}{1\,\text{s}}$$
+
+Parameters: $I = 0.8$ (constant external current).
+Simulated for 200 s at 0.01 s step.
+
+---
+
+## 1. Define in TVBO
+
+```{python}
+from tvbo import SimulationExperiment
+
+exp = SimulationExperiment.from_string("""
+label: "NeuroML Ex9: FitzHugh-Nagumo"
+dynamics:
+  name: FitzHughNagumo
+  parameters:
+    I: { value: 0.8 }
+  state_variables:
+    V:
+      equation: { rhs: "V - V**3/3 - W + I" }
+      initial_value: 0.0
+      variable_of_interest: true
+    W:
+      equation: { rhs: "0.08*(V + 0.7 - 0.8*W)" }
+      initial_value: 0.0
+network:
+  number_of_nodes: 1
+integration:
+  method: euler
+  step_size: 0.01
+  duration: 200.0
+  time_scale: s
+""")
+print(f"Model: {exp.dynamics.name}")
+```
+
+## 2. Render LEMS XML
+
+```{python}
+xml = exp.render("lems")
+print(xml[:1500])
+```
+
+## 3. Run Reference
+
+```{python}
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(".")))
+from _nml_helpers import run_lems_example
+
+ref_outputs = run_lems_example("LEMS_NML2_Ex9_FN.xml")
+for name, arr in ref_outputs.items():
+    print(f"  {name}: shape={arr.shape}")
+```
+
+## 4. Run TVBO
+
+```{python}
+import numpy as np
+
+result = exp.run("neuroml")
+da = result.integration.data
+tvbo_arr = np.column_stack([da.coords['time'].values, da.values])
+print(f"TVBO: shape={tvbo_arr.shape}")
+```
+
+## 5. Numerical Comparison
+
+```{python}
+from _nml_helpers import compare_traces
+import numpy as np
+
+ref_arr = list(ref_outputs.values())[0]
+# NeuroML output: time, V, W
+compare_traces(
+    ref_arr, tvbo_arr,
+    ref_cols=['time', 'V', 'W'],
+    tvbo_cols=['time', 'V', 'W'],
+)
+```
+
+## 6. Plot
+
+```{python}
+from _nml_helpers import plot_comparison
+
+plot_comparison(
+    ref_arr, tvbo_arr,
+    ref_cols=['time', 'V', 'W'],
+    tvbo_cols=['time', 'V', 'W'],
+    title="Ex9: FitzHugh-Nagumo — NeuroML vs TVBO",
+    time_unit="s",
+)
+```
+
+### Phase Portrait
+
+```{python}
+import matplotlib.pyplot as plt
+
+fig, ax = plt.subplots(figsize=(6, 5))
+ax.plot(ref_arr[:, 1], ref_arr[:, 2], label='NeuroML', alpha=0.7)
+ax.plot(tvbo_arr[:, 1], tvbo_arr[:, 2], '--', label='TVBO', alpha=0.7)
+ax.set_xlabel("V")
+ax.set_ylabel("W")
+ax.set_title("Phase Portrait: V vs W")
+ax.legend()
+ax.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()
+```

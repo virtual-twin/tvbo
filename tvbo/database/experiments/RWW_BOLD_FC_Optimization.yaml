@@ -1,0 +1,400 @@
+id: 2
+label: "RWW Functional Connectivity Fitting"
+description: >
+    Fitting functional connectivity using the Reduced Wong-Wang model.
+    Two-stage optimization: global parameters first, then regional heterogeneity.
+    Based on tvboptim RWW.qmd tutorial.
+
+dynamics:
+    name: ReducedWongWang
+    label: "Reduced Wong-Wang Model"
+    description: >
+        Biophysically-based neural mass model for BOLD FC fitting.
+        Captures slow dynamics relevant for resting-state fMRI.
+    output:
+        - S
+        - H
+
+    parameters:
+        a:
+            label: "Input gain parameter"
+            value: 0.270
+            unit: per_nC
+        b:
+            label: Input shift parameter
+            unit: kHz
+            value: 0.108
+        d:
+            label: Parameter for H function
+            value: 154.0
+            unit: ms
+        gamma:
+            label: "Kinetic parameter"
+            value: 0.641
+        tau_s:
+            label: "Synaptic time constant"
+            value: 100.0
+            unit: ms
+        w:
+            label: "Excitatory recurrence"
+            value: 0.5
+            domain:
+                lo: 0.0
+                hi: 1.0
+        J_N:
+            label: Excitatory recurrence
+            value: 0.2609
+        I_o:
+            label: "External input"
+            value: 0.32
+
+    derived_variables:
+        x:
+            label: "Total synaptic input"
+            equation:
+                rhs: "w * J_N * S + I_o + J_N * FastLinearCoupling"
+            description: "Sum of local recurrence, external input, and long-range coupling"
+
+        H:
+            label: "Population firing rate"
+            equation:
+                rhs: "(a * x - b) / (1 - exp(-d * (a * x - b)))"
+            description: "Sigmoidal transfer function converting input to firing rate"
+
+    state_variables:
+        S:
+            label: "Synaptic gating"
+            equation:
+                rhs: "-(S / tau_s) + (1 - S) * H * gamma"
+            initial_value: 0.3
+            domain:
+                lo: 0.0
+                hi: 1.0
+            description: "Fraction of open NMDA channels"
+            coupling_variable: true
+            noise:
+                additive: true
+                parameters:
+                    sigma:
+                        value: 0.00283
+                        description: "Noise intensity for S state variable"
+
+    # Key must match network.coupling key (which becomes class name)
+    coupling_inputs:
+        FastLinearCoupling:
+            dimension: 1
+
+network:
+    label: "Desikan-Killiany"
+    description: "Structural connectivity from dk_average dataset"
+    bids_dir: "../networks/bids/dk_average"
+    structural_measures: [streamlineCount, tractLength]
+    observational_measures: [BoldCorrelation]
+    transforms:
+        - name: weight
+          equation:
+            rhs: "W / max(W)"
+
+    # Coupling functions: key == class name == coupling_input key
+    coupling:
+        FastLinearCoupling:
+            label: "Fast Linear Coupling"
+            description: "Instantaneous linear coupling (no conduction delays)"
+            delayed: false
+            parameters:
+                G:
+                    label: "Global coupling"
+                    value: 0.5
+                    description: "Global scaling of long-range connections"
+                    free: true
+                    domain:
+                        lo: 0.0
+                        hi: 1.0
+            local_states:
+                - S
+            pre_expression:
+                rhs: "local_states"
+                description: "Return local states to trigger vectorized matmul mode"
+            post_expression:
+                rhs: "G * gx"
+
+integration:
+    method: Heun
+    step_size: 4.0
+    duration: 120000
+    transient_time: 120000
+
+# =============================================================================
+# FUNCTIONS: Reusable computation blocks (keyed by name)
+# =============================================================================
+functions:
+    temporal_average:
+        description: "Temporal average downsampling"
+        source_code: "jnp.mean(data.reshape(-1, period_samples, *data.shape[1:]), axis=1)"
+        arguments:
+            - name: data
+              description: "Input time series (time, nodes)"
+            - name: period_samples
+              value: 1
+              description: "Samples per averaging window"
+
+    hrf_kernel:
+        description: "Hemodynamic response function kernel (Lotka-Volterra)"
+        time_range:
+            lo: 0
+            hi: duration
+            n: 5000
+        equation:
+            rhs: "(1/3)*exp(-0.5*(t/1000)/tau_s)*sin(sqrt(1/tau_f - 1/(4*tau_s**2))*(t/1000))/sqrt(1/tau_f - 1/(4*tau_s**2))"
+            parameters:
+                tau_s:
+                    value: 0.8
+                    description: "Signal decay time constant (seconds)"
+                tau_f:
+                    value: 0.4
+                    description: "Feedback time constant (seconds)"
+        arguments:
+            - name: duration
+              value: 20000.0
+              description: "HRF kernel duration in ms"
+
+    prepend_history:
+        description: "Prepend transient history to data for convolution"
+        source_code: "jnp.concatenate([history[-kernel_samples:], data], axis=0)"
+        arguments:
+            - name: data
+              description: "Input time series (time, nodes)"
+            - name: history
+              description: "Transient history data"
+            - name: kernel_samples
+              value: 5000
+              description: "Number of samples to prepend from history"
+
+    volterra_transform:
+        description: "Volterra nonlinear BOLD transformation"
+        equation:
+            rhs: "k_1 * V_0 * (data - 1.0)"
+            parameters:
+                k_1:
+                    value: 5.6
+                    description: "Intravascular signal contribution"
+                V_0:
+                    value: 0.02
+                    description: "Resting blood volume fraction"
+        arguments:
+            - name: data
+              description: "Input data from previous step"
+
+    subsample_bold:
+        description: "Subsample to BOLD TR (final_period / downsample_period)"
+        source_code: "data[::step][:n_samples]"
+        arguments:
+            - name: data
+              description: "Input time series"
+            - name: step
+              value: 250
+              description: "Subsample factor (TR/downsample_period = 1000/4 = 250)"
+            - name: n_samples
+              value: 120
+              description: "Number of output samples (simulation_time / TR = 120000 / 1000 = 120)"
+
+    rmse:
+        description: "Root mean squared error"
+        equation:
+            rhs: "sqrt(mean((x - y)**2))"
+        arguments:
+            - name: x
+              description: "First array (simulated)"
+            - name: y
+              description: "Second array (target)"
+
+    fc_corr:
+        description: "FC correlation (upper triangle)"
+        callable:
+            name: fc_corr
+            module: tvboptim.observations.observation
+
+# =============================================================================
+# OBSERVATIONS: Derived from simulation data (keyed by name)
+# =============================================================================
+observations:
+    empirical_fc:
+        label: "Empirical Functional Connectivity"
+        description: "Target FC matrix from network observations (loaded from BIDS)"
+        source: network.observations.BoldCorrelation
+
+    bold:
+        label: "Simulated BOLD Signal"
+        description: "BOLD signal from hemodynamic response function (matches tvboptim Bold)"
+        source: S
+        period: 1000.0
+        pipeline:
+            - function: hrf_kernel
+
+            - output: downsampled_data
+              function: temporal_average
+              arguments:
+                  - name: data
+                    value: integration.result
+                  - name: period_samples
+                    value: 1
+
+            - output: downsampled_history
+              function: temporal_average
+              arguments:
+                  - name: data
+                    value: integration.transient
+                  - name: period_samples
+                    value: 1
+
+            - function: prepend_history
+              arguments:
+                  - name: data
+                    value: downsampled_data
+                  - name: history
+                    value: downsampled_history
+                  - name: kernel_samples
+                    value: 5000
+
+            - output: bold_convolve
+              callable:
+                  module: jax.scipy.signal
+                  name: fftconvolve
+              apply_on_dimension: node
+              arguments:
+                  - name: in1
+                    value: prepend_history
+                  - name: in2
+                    value: hrf_kernel
+                  - name: mode
+                    value: valid
+
+            - function: volterra_transform
+              arguments:
+                  - name: data
+                    value: bold_convolve
+
+            - function: subsample_bold
+              arguments:
+                  - name: data
+                    value: volterra_transform
+
+# =============================================================================
+# DERIVED OBSERVATIONS: Computed from other observations
+# =============================================================================
+derived_observations:
+    fc:
+        label: "Simulated Functional Connectivity"
+        description: "Pearson correlation matrix from BOLD time series"
+        source_observations:
+            - bold
+        pipeline:
+            - callable:
+                  name: compute_fc
+                  module: tvboptim.observations.observation
+              arguments:
+                  - name: timeseries
+                    value: bold
+                  - name: skip_t
+                    value: 20
+                    description: "Skip first 20 TRs to avoid transient effects"
+
+# =============================================================================
+# OPTIMIZATION: Parameter fitting (keyed by name)
+# =============================================================================
+optimizations:
+    fc_fitting:
+        label: "FC Fitting"
+        description: >
+            Two-stage optimization to fit empirical FC.
+            Stage 1: Global parameters (w, G) - same for all regions.
+            Stage 2: Regional parameters (w, I_o) - heterogeneous across regions.
+
+        loss:
+            function: rmse
+            arguments:
+                - name: simulated_fc
+                  value: observations.fc.data
+                  description: "Simulated functional connectivity matrix from fc observation"
+                - name: empirical_fc
+                  value: observations.empirical_fc.data
+                  description: "Empirical functional connectivity matrix (target, passed at runtime)"
+
+        # Multi-stage optimization (list for sequential order)
+        stages:
+            - name: global_optimization
+              label: "Global Parameter Optimization"
+              description: "Optimize global w and G (same value for all regions)"
+              free_parameters:
+                  - ReducedWongWang.w
+                  - FastLinearCoupling.G
+              algorithm: adam
+              learning_rate: 0.01
+              max_iterations: 300
+              hyperparameters:
+                  - name: b2
+                    value: 0.9999
+                    description: "Second moment decay for Adam"
+
+            - name: regional_optimization
+              label: "Regional Parameter Optimization"
+              description: "Optimize heterogeneous w and I_o per region"
+              warmup_from: global_optimization
+              free_parameters:
+                  - name: ReducedWongWang.w
+                    heterogeneous: true
+                    description: "Region-specific excitatory recurrence"
+                  - name: ReducedWongWang.I_o
+                    heterogeneous: true
+                    description: "Region-specific external input"
+              algorithm: adam
+              learning_rate: 0.004
+              max_iterations: 200
+              hyperparameters:
+                  - name: b2
+                    value: 0.999
+                    description: "Second moment decay for Adam"
+
+# =============================================================================
+# EXPLORATIONS: Parameter space search (keyed by name)
+# =============================================================================
+explorations:
+    parameter_landscape:
+        label: "w-G Parameter Landscape"
+        description: >
+            Grid search over excitatory recurrence (w) and global coupling (G)
+            to understand the FC fitting landscape before optimization.
+
+        parameters:
+            - name: ReducedWongWang.w
+              domain:
+                  lo: 0.001
+                  hi: 0.7
+                  n: 32
+            - name: FastLinearCoupling.G
+              domain:
+                  lo: 0.001
+                  hi: 0.7
+                  n: 32
+
+        mode: product
+        observable:
+            function: rmse
+            arguments:
+                - name: simulated_fc
+                  value: fc.data
+                - name: empirical_fc
+                  value: empirical_fc.data
+                  description: "Target FC (passed at runtime)"
+
+# =============================================================================
+# EXECUTION & REFERENCES
+# =============================================================================
+execution:
+    n_workers: 8
+    precision: float64
+    random_seed: 0
+
+references:
+    - "Wong & Wang (2006) J Neurosci 26:1314-1328 - Reduced Wong-Wang model"
+    - "Deco et al. (2014) J Neurosci 34:7886-7898 - Resting-state FC modeling"

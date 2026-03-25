@@ -1,0 +1,598 @@
+---
+title: "BIDS Export for TVB Simulations"
+subtitle: "Brain Imaging Data Structure (BEP034 v1.0.0) Integration"
+author: "TVB-O Team"
+date: last-modified
+format:
+  html:
+    code-fold: false
+    code-tools: true
+    toc: true
+    toc-depth: 3
+jupyter: python3
+execute:
+  eval: true
+  warning: false
+---
+
+# Introduction
+
+This notebook demonstrates how to export simulation results from The Virtual Brain (TVB) to the
+**Brain Imaging Data Structure (BIDS)** format, specifically following the
+**BEP034 Computational Modeling Extension v1.0.0**.
+
+## What is BIDS?
+
+The Brain Imaging Data Structure (BIDS) is a standard for organizing and describing
+neuroimaging data. It provides:
+
+- **Standardized file naming** conventions
+- **JSON sidecar files** for metadata
+- **Interoperability** across neuroimaging tools
+- **Reproducibility** of analyses
+
+## BEP034: Computational Modeling Extension
+
+BEP034 extends BIDS to support computational modeling data with a specific
+directory structure:
+
+- **`net/`**: Network connectivity files (weights, distances)
+- **`ts/`**: Simulated time series data
+- **`eq/`**: Model equations (tvbo format)
+- **`coord/`**: Region coordinates
+- **`map/`**: Mapping files
+- **`code/`**: Analysis code
+
+Key features:
+- File naming with `id-<hash>` suffix based on JSON sidecar hash
+- Proper entity-value pairs in filenames
+- Full provenance tracking
+
+For more information, see:
+- [BIDS Specification](https://bids-specification.readthedocs.io/)
+- [BEP034 Computational Modeling](https://bids.neuroimaging.io/get_involved.html)
+
+---
+
+# Setup
+
+```{python}
+# | label: setup
+import os
+import json
+import numpy as np
+
+# Import TVB-O components
+from tvbo import Coupling
+from tvbo.classes.noise import Integrator
+from tvbo import Network,SimulationExperiment,Dynamics
+```
+
+# Create a Simulation Experiment
+
+First, let's set up a simulation experiment using the Wilson-Cowan model with
+a sample connectome.
+
+```{python}
+from tvbo.datamodel.schema import CouplingInput, Parameter
+# | label: create-experiment
+# Load a sample connectome
+connectome = Network(number_of_nodes=3)
+
+# Define the dynamics model
+dynamics = Dynamics.from_ontology("Generic2dOscillator")
+dynamics.coupling_inputs['c_glob'] = CouplingInput(name='c_glob')
+dynamics.coupling_terms['c_glob'] = Parameter(name='c_glob')
+
+# Define coupling function
+coupling = Coupling.from_ontology('Linear')
+
+# Create the simulation experiment
+experiment = SimulationExperiment(
+    label="BIDS Demo Simulation",
+    description="Example simulation for BIDS export demonstration",
+    dynamics=dynamics,
+    coupling=coupling,
+    network=connectome,
+    integration=Integrator(
+        method="Euler",
+        step_size=0.1,
+        duration=100.0,
+    ),
+)
+```
+
+# Run the Simulation
+
+```{python}
+ts = experiment.run(format="pyrates")
+
+print(f"TimeSeries shape: {ts.shape}")
+print(f"Time points: {len(ts.time)}")
+print(f"State variables: {ts.variables_labels}")
+print(f"Sample period: {ts.sample_period} {ts.sample_period_unit}")
+```
+
+# Visualize Results
+
+```{python}
+#| label: visualize-results
+import matplotlib.pyplot as plt
+
+# Plot time series for a few regions
+fig, ax = plt.subplots(figsize=(12, 4))
+ts.get_state_variable('V').plot(ax=ax)
+ax.set_title("Simulated Brain Activity (First Variable)")
+plt.tight_layout()
+plt.show()
+```
+
+---
+
+# Export to BIDS Format (BEP034)
+
+Now we'll export the simulation results to BIDS format. The `to_bids()` method
+creates a complete BIDS-compliant dataset structure following BEP034 v1.0.0.
+
+## Output Formats
+
+Three formats are supported for time series data:
+
+| Format | Extension | Splits by State | Use Case |
+|--------|-----------|-----------------|----------|
+| `cifti` (default) | `.ptseries.nii` | Yes | Neuroimaging tools, named parcels |
+| `tsv` | `.tsv` | Yes | Simple tabular data |
+| `h5` | `.h5` | **No** | Full dimensionality, parameter sweeps |
+
+## Method 1: Export via TimeSeries
+
+```{python}
+#| label: export-via-timeseries
+# Use the derivatives folder for BIDS output
+bids_output = os.path.join(os.path.dirname(__file__) if '__file__' in dir() else '.', 'derivatives', 'tvbo')
+os.makedirs(bids_output, exist_ok=True)
+
+# Export using the TimeSeries to_bids method
+# The ts entity (ts-V, ts-W) comes from state variable names automatically
+# suffix='State' means raw neural state (default), use 'BOLD' for fMRI observation
+output_path = ts.to_bids(
+    output_dir=bids_output,
+    subject="01",
+    session="simulation",
+    description="wilsoncowan",
+    run=1,
+    suffix="State",  # 'State' for raw, 'BOLD' for fMRI, 'EEG' for EEG
+    experiment=experiment,  # Include experiment for full provenance
+)
+
+print(f"BIDS dataset created at: {output_path}")
+```
+
+## Method 1b: Export as HDF5 (preserving full dimensions)
+
+For data with multiple dimensions (e.g., parameter sweeps, modes), use HDF5:
+
+```{python}
+#| label: export-hdf5
+# HDF5 preserves full dimensionality without splitting by state variable
+# Ideal for: (sweep, time, state, region, mode) or other multi-dimensional data
+output_path_h5 = ts.to_bids(
+    output_dir=bids_output,
+    subject="01",
+    timeseries_format="h5",  # Keep all dimensions intact
+    experiment=experiment,
+)
+```
+
+## Method 2: Export via SimulationExperiment
+
+Alternatively, you can export directly from the experiment (which will run
+the simulation if needed):
+
+```{python}
+#| label: export-via-experiment
+# Use derivatives folder for experiment export
+bids_output2 = os.path.join(os.path.dirname(__file__) if '__file__' in dir() else '.', 'derivatives', 'tvbo_experiment')
+os.makedirs(bids_output2, exist_ok=True)
+
+# Export using the experiment's to_bids method
+output_path2 = experiment.to_bids(
+    output_dir=bids_output2,
+    subject="02",
+    description="simulation",
+    timeseries=ts,  # Use pre-computed timeseries
+)
+
+print(f"BIDS dataset created at: {output_path2}")
+```
+
+---
+
+# Inspect the BEP034 Structure
+
+Let's examine the created BIDS dataset structure. BEP034 organizes data into
+specific directories:
+
+```{python}
+#| label: inspect-structure
+def print_tree(path, prefix=""):
+    """Print directory tree structure."""
+    entries = sorted(os.listdir(path))
+    for i, entry in enumerate(entries):
+        is_last = i == len(entries) - 1
+        current_prefix = "└── " if is_last else "├── "
+        print(f"{prefix}{current_prefix}{entry}")
+        entry_path = os.path.join(path, entry)
+        if os.path.isdir(entry_path):
+            next_prefix = prefix + ("    " if is_last else "│   ")
+            print_tree(entry_path, next_prefix)
+
+print("BIDS Dataset Structure (BEP034 v1.0.0):")
+print("=" * 50)
+print_tree(bids_output)
+```
+
+The expected structure follows BEP034:
+
+```
+derivatives/tvbo/
+├── dataset_description.json
+├── participants.tsv
+└── sub-01/
+    └── ses-simulation/
+        ├── net/
+        │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-01_net-weights_id-<hash>.tsv
+        │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-01_net-weights_id-<hash>.json
+        │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-01_net-distances_id-<hash>.tsv
+        │   └── sub-01_ses-simulation_desc-wilsoncowan_run-01_net-distances_id-<hash>.json
+        ├── ts/
+        │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-01_ts-V_State.ptseries.nii
+        │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-01_ts-V_State.json
+        │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-01_ts-W_State.ptseries.nii
+        │   └── sub-01_ses-simulation_desc-wilsoncowan_run-01_ts-W_State.json
+        ├── eq/
+        │   └── eq-generic2doscillator_desc-wilsoncowan_id-<hash>.json
+        └── coord/ (if coordinates available)
+            ├── sub-01_ses-simulation_desc-wilsoncowan_coord-centres_id-<hash>.tsv
+            └── sub-01_ses-simulation_desc-wilsoncowan_coord-centres_id-<hash>.json
+```
+
+**Naming convention for time series:**
+- `ts-V` / `ts-W`: State variable names (from model equations)
+- `ts-Diff`: Derived output name (e.g., `output: Diff: rhs: V-W`)
+- `State`: Raw neural output (no observation model)
+- `BOLD`: Output convolved with HRF (fMRI observation)
+- `EEG`: Output with EEG forward model
+
+**Examples:**
+- `ts-V_State.ptseries.nii` - Raw state variable V
+- `ts-Diff_BOLD.ptseries.nii` - Derived output (V-W) convolved with HRF
+
+## Dataset Description
+
+```{python}
+#| label: show-dataset-description
+# Read and display the dataset_description.json
+desc_path = os.path.join(bids_output, "dataset_description.json")
+with open(desc_path, "r") as f:
+    dataset_desc = json.load(f)
+
+print("dataset_description.json:")
+print(json.dumps(dataset_desc, indent=2))
+```
+
+## Time Series Sidecar (ts/ directory)
+
+```{python}
+#| label: show-sidecar
+# Find and display the JSON sidecar from ts/ directory
+import glob
+
+sidecar_files = glob.glob(os.path.join(bids_output, "**", "ts", "*.json"), recursive=True)
+if sidecar_files:
+    with open(sidecar_files[0], "r") as f:
+        sidecar = json.load(f)
+    print("Time Series Sidecar Metadata:")
+    print(json.dumps(sidecar, indent=2))
+```
+
+## Network Connectivity (net/ directory)
+
+```{python}
+#| label: show-network
+# Find network files
+net_files = glob.glob(os.path.join(bids_output, "**", "net", "*.json"), recursive=True)
+if net_files:
+    with open(net_files[0], "r") as f:
+        net_sidecar = json.load(f)
+    print("Network Sidecar Metadata:")
+    print(json.dumps(net_sidecar, indent=2))
+```
+
+## Participants File
+
+```{python}
+#| label: show-participants
+import pandas as pd
+
+participants_path = os.path.join(bids_output, "participants.tsv")
+if os.path.exists(participants_path):
+    participants = pd.read_csv(participants_path, sep="\t")
+    print("participants.tsv:")
+    print(participants)
+```
+
+---
+
+# BIDS Validation
+
+To validate your BIDS dataset, you can use the
+[BIDS Validator](https://bids-standard.github.io/bids-validator/):
+
+```bash
+# Install bids-validator
+npm install -g bids-validator
+
+# Run validation
+bids-validator /path/to/your/bids/dataset
+```
+
+Or use the online validator: https://bids-standard.github.io/bids-validator/
+
+---
+
+# BEP034 Specific Features
+
+The export includes several BEP034-specific features:
+
+## 1. Model Equations (eq/ directory)
+
+Model equations are exported in tvbo format (JSON):
+
+```{python}
+#| label: show-equations
+# Check for equation files
+eq_files = glob.glob(os.path.join(bids_output, "**", "eq", "*.json"), recursive=True)
+if eq_files:
+    print(f"Model equation file: {os.path.basename(eq_files[0])}")
+    with open(eq_files[0], "r") as f:
+        eq_data = json.load(f)
+    print("\nEquation metadata:")
+    print(json.dumps(eq_data, indent=2))
+else:
+    print("Note: Equation export requires experiment to be provided.")
+```
+
+## 2. Connectivity Data (net/ directory)
+
+Structural connectivity matrices are exported as TSV files with proper BEP034 naming:
+
+- `*_net-weights_id-<hash>.tsv`: Connection weights
+- `*_net-distances_id-<hash>.tsv`: Tract lengths/distances
+
+```{python}
+#| label: show-connectivity
+# Check for connectivity files in net/ directory
+weights_files = glob.glob(os.path.join(bids_output, "**", "net", "*net-weights*.tsv"), recursive=True)
+distances_files = glob.glob(os.path.join(bids_output, "**", "net", "*net-distances*.tsv"), recursive=True)
+
+print(f"Weights files: {len(weights_files)}")
+for f in weights_files:
+    print(f"  - {os.path.basename(f)}")
+
+print(f"\nDistances files: {len(distances_files)}")
+for f in distances_files:
+    print(f"  - {os.path.basename(f)}")
+```
+
+## 3. ID-based File Naming
+
+BEP034 uses hash-based IDs computed from the JSON sidecar content:
+
+```{python}
+#| label: show-id-pattern
+# Show example of ID pattern
+import re
+
+ts_files = glob.glob(os.path.join(bids_output, "**", "ts", "*.tsv"), recursive=True)
+if ts_files:
+    filename = os.path.basename(ts_files[0])
+    print(f"Example filename: {filename}")
+
+    # Extract ID
+    match = re.search(r'id-([a-f0-9]+)', filename)
+    if match:
+        print(f"Extracted ID hash: {match.group(1)}")
+        print("\nThe ID is computed as SHA256 hash of the JSON sidecar content.")
+```
+
+## 4. Provenance Tracking
+
+The JSON sidecar includes simulation provenance:
+
+```{python}
+#| label: show-provenance
+if sidecar_files:
+    with open(sidecar_files[0], "r") as f:
+        sidecar = json.load(f)
+
+    if "SimulationProvenance" in sidecar:
+        print("Simulation Provenance:")
+        print(json.dumps(sidecar["SimulationProvenance"], indent=2))
+```
+
+---
+
+# Complete Example: Multiple Subjects
+
+Here's how to create a multi-subject BIDS dataset:
+
+```{python}
+#| label: multi-subject
+# Create a multi-subject dataset in derivatives
+multi_bids = os.path.join(os.path.dirname(__file__) if '__file__' in dir() else '.', 'derivatives', 'tvbo_multi')
+os.makedirs(multi_bids, exist_ok=True)
+
+# Simulate and export for multiple "subjects" (different parameter settings)
+for i, coupling_strength in enumerate([0.01, 0.02, 0.03]):
+    # Modify experiment parameters
+    modified_exp = experiment.copy()
+    modified_exp.coupling.parameters['a'].value = coupling_strength
+
+    # Run simulation
+    ts_i = modified_exp.run(format="jax")
+
+    # Export with subject number
+    # ts entity comes from state variables (V, W), suffix indicates observation type
+    ts_i.to_bids(
+        output_dir=multi_bids,
+        subject=f"{i+1:02d}",
+        description=f"coupling{int(coupling_strength*100):02d}",
+        suffix="State",  # Raw neural state (or 'BOLD' for fMRI observation)
+        experiment=modified_exp,
+    )
+    print(f"Exported subject {i+1:02d} with coupling={coupling_strength}")
+
+print("\nMulti-subject dataset structure:")
+print_tree(multi_bids)
+```
+
+---
+
+# Loading from BIDS (Round-Trip)
+
+You can load a previously exported BIDS dataset back into a SimulationExperiment
+using the `from_bids()` class method. This enables full round-trip workflows.
+
+## Minimal Example
+
+```{python}
+#| label: round-trip-minimal
+# Export to BIDS (HDF5 for 100% fidelity)
+round_trip_dir = os.path.join('.', 'derivatives', 'tvbo_roundtrip')
+os.makedirs(round_trip_dir, exist_ok=True)
+
+ts.to_bids(
+    output_dir=round_trip_dir,
+    subject="01",
+    timeseries_format="h5",  # Preserves full dimensionality
+    experiment=experiment,
+)
+
+# Load back from BIDS
+loaded_exp, loaded_ts = SimulationExperiment.from_bids(
+    bids_dir=round_trip_dir,
+    subject="01",
+)
+
+print(f"Original shape:  {ts.shape}")
+print(f"Loaded shape:    {loaded_ts.shape}")
+print(f"Model: {loaded_exp.dynamics.name}")
+```
+
+## Verifying Reproducibility with `np.isclose`
+
+```{python}
+#| label: verify-isclose
+# Compare original and loaded data
+original_data = np.asarray(ts.data).squeeze()
+loaded_data = np.asarray(loaded_ts.data).squeeze()
+
+# Check if arrays are close (within numerical tolerance)
+all_close = np.allclose(original_data, loaded_data, rtol=1e-5, atol=1e-8)
+max_diff = np.max(np.abs(original_data - loaded_data))
+
+print(f"Arrays match (np.allclose): {all_close}")
+print(f"Max absolute difference:    {max_diff:.2e}")
+
+# Verify with assertion
+assert all_close, f"Round-trip failed! Max difference: {max_diff}"
+print("✓ Round-trip verification passed!")
+```
+
+## Loading Without HDF5 (CIFTI/TSV)
+
+When loading from CIFTI or TSV format, data is reconstructed from per-state files:
+
+```{python}
+#| label: from-bids-cifti
+# Load from the earlier CIFTI export
+loaded_exp2, loaded_ts2 = SimulationExperiment.from_bids(
+    bids_dir=bids_output,
+    subject="01",
+    session="simulation",
+)
+
+print(f"Loaded TimeSeries shape: {loaded_ts2.shape}")
+print(f"State variables: {loaded_ts2.variables_labels}")
+
+# Verify CIFTI round-trip
+cifti_close = np.allclose(
+    np.asarray(ts.data).squeeze(),
+    np.asarray(loaded_ts2.data).squeeze(),
+    rtol=1e-5, atol=1e-8,
+)
+print(f"CIFTI round-trip match: {cifti_close}")
+```
+
+## Format Auto-Detection
+
+The `from_bids()` method automatically detects the time series format:
+
+| Format | Extension | Fidelity |
+|--------|-----------|----------|
+| HDF5 | `.h5` | **100%** - All dimensions preserved |
+| CIFTI | `.ptseries.nii` | High - Per-state-variable files |
+| TSV | `.tsv` | High - Per-state-variable files |
+
+For 100% reproducibility, use `timeseries_format='h5'` when exporting.
+
+---
+
+# Output Location
+
+The BIDS datasets are saved in the `derivatives` folder alongside this notebook:
+
+```{python}
+#| label: output-location
+print(f"Main output: {bids_output}")
+print(f"Experiment output: {bids_output2}")
+print(f"Multi-subject output: {multi_bids}")
+```
+
+You can inspect these folders directly or use the BIDS validator on them.
+
+---
+
+# Summary
+
+This notebook demonstrated:
+
+1. **Creating** a TVB simulation experiment
+2. **Running** the simulation to generate time series data
+3. **Exporting** results to BIDS format (BEP034 v1.0.0) using:
+   - `TimeSeries.to_bids()` method
+   - `SimulationExperiment.to_bids()` method
+4. **Loading** from BIDS format using:
+   - `SimulationExperiment.from_bids()` method (full round-trip support)
+5. **Understanding** the BEP034 directory structure:
+   - `net/`: Network connectivity (weights, distances)
+   - `ts/`: Time series data (CIFTI, TSV, or HDF5)
+   - `eq/`: Model equations
+   - `coord/`: Region coordinates
+6. **Inspecting** ID-based file naming and provenance tracking
+7. **Verifying** reproducibility with `run_to_verify=True`
+
+For more information on TVBO, visit the [documentation](https://tvbo.readthedocs.io/).
+
+---
+
+# References
+
+1. Gorgolewski, K. J., et al. (2016). The brain imaging data structure, a format for organizing and describing outputs of neuroimaging experiments. *Scientific Data*, 3, 160044.
+
+2. BIDS Specification: https://bids-specification.readthedocs.io/
+
+3. BEP034 Computational Modeling v1.0.0
+
+4. The Virtual Brain: https://www.thevirtualbrain.org/

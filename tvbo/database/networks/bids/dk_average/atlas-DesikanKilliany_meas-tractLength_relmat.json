@@ -1,0 +1,25 @@
+{
+  "RelationshipMeasure": "tractLength",
+  "Directed": false,
+  "Weighted": true,
+  "ValidDiagonal": false,
+  "NonNegative": true,
+  "Software": "https://github.com/virtual-twin/tvboptim",
+  "Axes": [
+    {
+      "Name": "row",
+      "Size": 84,
+      "NodeFile": "atlas-DesikanKilliany_nodeindices.tsv"
+    },
+    {
+      "Name": "column",
+      "Size": 84,
+      "NodeFile": "atlas-DesikanKilliany_nodeindices.tsv"
+    }
+  ],
+  "Description": "Tract lengths derived from diffusion MRI tractography. Values represent mean fiber length in millimeters between regions.",
+  "Sources": [
+    "bids::rawdata/sub-average/dwi"
+  ],
+  "MeasureUnits": "mm"
+}

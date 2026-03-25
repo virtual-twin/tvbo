@@ -1,0 +1,411 @@
+{
+  "@context": {
+    "@vocab": "https://openminds.ebrains.eu/vocab/",
+    "tvbo": "http://www.thevirtualbrain.org/tvb-o/",
+    "sands": "https://openminds.ebrains.eu/sands/",
+    "core": "https://openminds.ebrains.eu/core/",
+    "computation": "https://openminds.ebrains.eu/computation/"
+  },
+  "@type": "tvbo:SimulationExperiment",
+  "@id": "https://example.org/simulations/jansenrit-resting-state-001",
+  "id": 1,
+  "label": "Jansen-Rit Resting State Simulation",
+  "description": "Whole-brain resting state simulation using the Jansen-Rit neural mass model on the Desikan-Killiany parcellation with linear diffusive coupling.",
+
+  "dynamics": {
+    "@type": "tvbo:Dynamics",
+    "name": "JansenRit",
+    "label": "Jansen-Rit Neural Mass Model",
+    "description": "A neural mass model describing the dynamics of cortical columns with pyramidal and interneuron populations.",
+    "iri": "http://www.thevirtualbrain.org/tvb-o/JansenRit",
+    "system_type": "continuous",
+    "number_of_modes": 1,
+    "references": [
+      "Jansen BH, Rit VG (1995). Electroencephalogram and visual evoked potential generation in a mathematical model of coupled cortical columns. Biological Cybernetics 73:357-366.",
+      "https://doi.org/10.1007/BF00199471"
+    ],
+
+    "state_variables": [
+      {
+        "@type": "tvbo:StateVariable",
+        "name": "y0",
+        "label": "Average PSP of pyramidal population",
+        "description": "Average postsynaptic potential of the pyramidal population receiving excitatory input.",
+        "unit": "mV",
+        "equation": {
+          "@type": "tvbo:Equation",
+          "lhs": "d(y0)/dt",
+          "rhs": "y3"
+        },
+        "domain": {
+          "@type": "tvbo:Range",
+          "lo": -100.0,
+          "hi": 100.0
+        },
+        "variable_of_interest": true,
+        "initial_value": 0.0
+      },
+      {
+        "@type": "tvbo:StateVariable",
+        "name": "y1",
+        "label": "Average PSP of excitatory interneurons",
+        "description": "Average postsynaptic potential of excitatory interneuron population.",
+        "unit": "mV",
+        "equation": {
+          "@type": "tvbo:Equation",
+          "lhs": "d(y1)/dt",
+          "rhs": "y4"
+        },
+        "domain": {
+          "@type": "tvbo:Range",
+          "lo": -500.0,
+          "hi": 500.0
+        },
+        "variable_of_interest": false,
+        "initial_value": 0.0
+      },
+      {
+        "@type": "tvbo:StateVariable",
+        "name": "y2",
+        "label": "Average PSP of inhibitory interneurons",
+        "description": "Average postsynaptic potential of inhibitory interneuron population.",
+        "unit": "mV",
+        "equation": {
+          "@type": "tvbo:Equation",
+          "lhs": "d(y2)/dt",
+          "rhs": "y5"
+        },
+        "domain": {
+          "@type": "tvbo:Range",
+          "lo": -50.0,
+          "hi": 50.0
+        },
+        "variable_of_interest": false,
+        "initial_value": 0.0
+      },
+      {
+        "@type": "tvbo:StateVariable",
+        "name": "y3",
+        "label": "Derivative of y0",
+        "unit": "mV/ms",
+        "equation": {
+          "@type": "tvbo:Equation",
+          "lhs": "d(y3)/dt",
+          "rhs": "A * a * S(y1 - y2) - 2 * a * y3 - a**2 * y0"
+        },
+        "coupling_variable": true,
+        "initial_value": 0.0
+      },
+      {
+        "@type": "tvbo:StateVariable",
+        "name": "y4",
+        "label": "Derivative of y1",
+        "unit": "mV/ms",
+        "equation": {
+          "@type": "tvbo:Equation",
+          "lhs": "d(y4)/dt",
+          "rhs": "A * a * (mu + C2 * S(C1 * y0) + c_in) - 2 * a * y4 - a**2 * y1"
+        },
+        "initial_value": 0.0
+      },
+      {
+        "@type": "tvbo:StateVariable",
+        "name": "y5",
+        "label": "Derivative of y2",
+        "unit": "mV/ms",
+        "equation": {
+          "@type": "tvbo:Equation",
+          "lhs": "d(y5)/dt",
+          "rhs": "B * b * C4 * S(C3 * y0) - 2 * b * y5 - b**2 * y2"
+        },
+        "initial_value": 0.0
+      }
+    ],
+
+    "derived_variables": [
+      {
+        "@type": "tvbo:DerivedVariable",
+        "name": "v_pyr",
+        "label": "Pyramidal membrane potential (observable)",
+        "description": "Difference of excitatory and inhibitory PSPs, represents local field potential.",
+        "unit": "mV",
+        "equation": {
+          "@type": "tvbo:Equation",
+          "rhs": "y1 - y2"
+        }
+      }
+    ],
+
+    "output": [
+      {
+        "@type": "tvbo:DerivedVariable",
+        "name": "v_pyr",
+        "equation": {
+          "@type": "tvbo:Equation",
+          "rhs": "y1 - y2"
+        }
+      }
+    ],
+
+    "functions": [
+      {
+        "@type": "tvbo:Function",
+        "name": "S",
+        "label": "Sigmoid transfer function",
+        "description": "Transforms average membrane potential to average firing rate.",
+        "equation": {
+          "@type": "tvbo:Equation",
+          "rhs": "v_max / (1 + exp(r * (v0 - v)))"
+        },
+        "arguments": [
+          {
+            "@type": "tvbo:Parameter",
+            "name": "v",
+            "description": "Input membrane potential"
+          }
+        ]
+      }
+    ],
+
+    "parameters": [
+      {
+        "@type": "tvbo:Parameter",
+        "name": "A",
+        "label": "Excitatory PSP amplitude",
+        "value": 3.25,
+        "unit": "mV",
+        "domain": { "@type": "tvbo:Range", "lo": 0.0, "hi": 10.0 }
+      },
+      {
+        "@type": "tvbo:Parameter",
+        "name": "B",
+        "label": "Inhibitory PSP amplitude",
+        "value": 22.0,
+        "unit": "mV",
+        "domain": { "@type": "tvbo:Range", "lo": 0.0, "hi": 50.0 }
+      },
+      {
+        "@type": "tvbo:Parameter",
+        "name": "a",
+        "label": "Excitatory time constant (inverse)",
+        "value": 0.1,
+        "unit": "1/ms",
+        "domain": { "@type": "tvbo:Range", "lo": 0.01, "hi": 1.0 }
+      },
+      {
+        "@type": "tvbo:Parameter",
+        "name": "b",
+        "label": "Inhibitory time constant (inverse)",
+        "value": 0.05,
+        "unit": "1/ms",
+        "domain": { "@type": "tvbo:Range", "lo": 0.01, "hi": 1.0 }
+      },
+      {
+        "@type": "tvbo:Parameter",
+        "name": "v0",
+        "label": "Firing threshold",
+        "value": 6.0,
+        "unit": "mV"
+      },
+      {
+        "@type": "tvbo:Parameter",
+        "name": "v_max",
+        "label": "Maximum firing rate",
+        "value": 5.0,
+        "unit": "Hz"
+      },
+      {
+        "@type": "tvbo:Parameter",
+        "name": "r",
+        "label": "Sigmoid steepness",
+        "value": 0.56,
+        "unit": "1/mV"
+      },
+      {
+        "@type": "tvbo:Parameter",
+        "name": "mu",
+        "label": "External input",
+        "value": 220.0,
+        "unit": "Hz",
+        "description": "Mean external input to pyramidal population"
+      },
+      {
+        "@type": "tvbo:Parameter",
+        "name": "C1",
+        "label": "Connectivity constant 1",
+        "value": 135.0
+      },
+      {
+        "@type": "tvbo:Parameter",
+        "name": "C2",
+        "label": "Connectivity constant 2",
+        "value": 108.0
+      },
+      {
+        "@type": "tvbo:Parameter",
+        "name": "C3",
+        "label": "Connectivity constant 3",
+        "value": 33.75
+      },
+      {
+        "@type": "tvbo:Parameter",
+        "name": "C4",
+        "label": "Connectivity constant 4",
+        "value": 33.75
+      }
+    ],
+
+    "coupling_terms": [
+      {
+        "@type": "tvbo:Parameter",
+        "name": "c_in",
+        "label": "Coupling input",
+        "description": "Long-range coupling input from connected regions"
+      }
+    ]
+  },
+
+  "network": {
+    "@type": "tvbo:Network",
+    "label": "Desikan-Killiany 68 regions",
+    "description": "Structural connectivity derived from diffusion MRI tractography on the Desikan-Killiany atlas with 68 cortical regions.",
+    "number_of_nodes": 68,
+    "number_of_regions": 68,
+    "distance_unit": "mm",
+    "time_unit": "ms",
+
+    "parcellation": {
+      "@type": "tvbo:Parcellation",
+      "label": "Desikan-Killiany Atlas",
+      "atlas": {
+        "@type": "sands:BrainAtlas",
+        "name": "Desikan-Killiany",
+        "abbreviation": "DK"
+      }
+    },
+
+    "global_coupling_strength": {
+      "@type": "tvbo:Parameter",
+      "name": "G",
+      "label": "Global coupling strength",
+      "value": 0.042,
+      "description": "Scales all connection weights uniformly"
+    },
+
+    "conduction_speed": {
+      "@type": "tvbo:Parameter",
+      "name": "speed",
+      "label": "Conduction speed",
+      "value": 4.0,
+      "unit": "m/s",
+      "description": "Axonal conduction velocity for computing transmission delays"
+    }
+  },
+
+  "coupling": {
+    "@type": "tvbo:Coupling",
+    "name": "Linear",
+    "label": "Linear Diffusive Coupling",
+    "delayed": true,
+    "coupling_function": {
+      "@type": "tvbo:Equation",
+      "rhs": "G * weights @ S(y1_delayed - y2_delayed)",
+      "definition": "Weighted sum of delayed sigmoid-transformed membrane potentials from connected regions"
+    },
+    "parameters": [
+      {
+        "@type": "tvbo:Parameter",
+        "name": "G",
+        "label": "Global coupling strength",
+        "value": 0.042
+      }
+    ]
+  },
+
+  "integration": {
+    "@type": "tvbo:Integrator",
+    "method": "heun",
+    "step_size": 0.1,
+    "duration": 10000.0,
+    "time_scale": "ms",
+    "unit": "ms",
+    "transient_time": 1000.0,
+    "delayed": true,
+
+    "noise": {
+      "@type": "tvbo:Noise",
+      "noise_type": "gaussian",
+      "additive": true,
+      "seed": 42,
+      "parameters": [
+        {
+          "@type": "tvbo:Parameter",
+          "name": "nsig",
+          "label": "Noise intensity",
+          "value": 0.01,
+          "description": "Standard deviation of additive Gaussian noise"
+        }
+      ]
+    }
+  },
+
+  "monitors": [
+    {
+      "@type": "tvbo:Monitor",
+      "name": "TemporalAverage",
+      "label": "Temporal Average Monitor",
+      "description": "Records temporally averaged state variables",
+      "period": 1.0,
+      "time_scale": "ms"
+    },
+    {
+      "@type": "tvbo:Monitor",
+      "name": "Bold",
+      "label": "BOLD fMRI Monitor",
+      "description": "Simulates BOLD signal using Balloon-Windkessel hemodynamic model",
+      "imaging_modality": "BOLD",
+      "period": 2000.0,
+      "time_scale": "ms"
+    }
+  ],
+
+  "environment": {
+    "@type": "tvbo:SoftwareEnvironment",
+    "name": "tvb-library",
+    "label": "The Virtual Brain Library Environment",
+    "environment_type": "conda",
+    "platform": "linux-64",
+    "requirements": [
+      {
+        "@type": "tvbo:SoftwareRequirement",
+        "name": "tvb-library",
+        "version_spec": ">=2.8.0",
+        "role": "engine",
+        "package": {
+          "@type": "tvbo:SoftwarePackage",
+          "name": "tvb-library",
+          "homepage": "https://www.thevirtualbrain.org",
+          "repository": "https://github.com/the-virtual-brain/tvb-root",
+          "ecosystem": "pypi"
+        }
+      },
+      {
+        "@type": "tvbo:SoftwareRequirement",
+        "name": "numpy",
+        "version_spec": ">=1.20.0",
+        "role": "runtime"
+      },
+      {
+        "@type": "tvbo:SoftwareRequirement",
+        "name": "scipy",
+        "version_spec": ">=1.7.0",
+        "role": "runtime"
+      }
+    ]
+  },
+
+  "references": [
+    "Jansen BH, Rit VG (1995). Electroencephalogram and visual evoked potential generation in a mathematical model of coupled cortical columns. Biological Cybernetics 73:357-366.",
+    "Sanz-Leon P, et al. (2015). Mathematical framework for large-scale brain network modeling in The Virtual Brain. NeuroImage 111:385-430."
+  ]
+}

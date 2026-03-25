@@ -10,8 +10,8 @@ This module deals with loading elements from LEMS-generated files.
 """
 from lems import api as lems
 
-from tvbo import equations
-from tvbo.knowledge import ontology
+from tvbo.classes import equation as equations
+from tvbo.ontology import owl as ontology
 
 
 def lems_model_info(model):

@@ -1,0 +1,133 @@
+tvbo_class: tvbo:Network
+schema_version: tvb-datamodel/0.7.0
+label: HOCPA (MghUscHcp32)
+number_of_nodes: 48
+descriptor: SC
+distance_unit: mm
+time_unit: ms
+data_file: tpl-MNI152NLin2009cAsym_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-HOCPA_desc-SC_relmat.h5
+bids:
+  template: MNI152NLin2009cAsym
+  cohort: MghUscHcp32
+  reconstruction: MghUscHcp32
+parameters:
+  conduction_speed:
+    label: v
+    value: 3.0
+    unit: mm_per_ms
+parcellation:
+  atlas:
+    name: HOCPA
+tractogram:
+  name: MghUscHcp32
+nodes:
+- id: 0
+  label: node_0
+- id: 1
+  label: node_1
+- id: 2
+  label: node_2
+- id: 3
+  label: node_3
+- id: 4
+  label: node_4
+- id: 5
+  label: node_5
+- id: 6
+  label: node_6
+- id: 7
+  label: node_7
+- id: 8
+  label: node_8
+- id: 9
+  label: node_9
+- id: 10
+  label: node_10
+- id: 11
+  label: node_11
+- id: 12
+  label: node_12
+- id: 13
+  label: node_13
+- id: 14
+  label: node_14
+- id: 15
+  label: node_15
+- id: 16
+  label: node_16
+- id: 17
+  label: node_17
+- id: 18
+  label: node_18
+- id: 19
+  label: node_19
+- id: 20
+  label: node_20
+- id: 21
+  label: node_21
+- id: 22
+  label: node_22
+- id: 23
+  label: node_23
+- id: 24
+  label: node_24
+- id: 25
+  label: node_25
+- id: 26
+  label: node_26
+- id: 27
+  label: node_27
+- id: 28
+  label: node_28
+- id: 29
+  label: node_29
+- id: 30
+  label: node_30
+- id: 31
+  label: node_31
+- id: 32
+  label: node_32
+- id: 33
+  label: node_33
+- id: 34
+  label: node_34
+- id: 35
+  label: node_35
+- id: 36
+  label: node_36
+- id: 37
+  label: node_37
+- id: 38
+  label: node_38
+- id: 39
+  label: node_39
+- id: 40
+  label: node_40
+- id: 41
+  label: node_41
+- id: 42
+  label: node_42
+- id: 43
+  label: node_43
+- id: 44
+  label: node_44
+- id: 45
+  label: node_45
+- id: 46
+  label: node_46
+- id: 47
+  label: node_47
+edges:
+- label: weight
+  format: dense
+  weighted: true
+  valid_diagonal: false
+  non_negative: true
+  directed: false
+- label: length
+  unit: mm
+  format: dense
+  weighted: true
+  valid_diagonal: false
+  non_negative: true
+  directed: false

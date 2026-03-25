@@ -4,1275 +4,3171 @@ name: tvb-datamodel
 description: Metadata schema for simulation studies using The Virtual Brain neuroinformatics platform or other dynamic network models of large-scale brain activity.
 title: The Virtual Brain Data Model
 prefixes:
-  tvbo: http://www.thevirtualbrain.org/tvb-o/
-  linkml: https://w3id.org/linkml/
-  rdfs: http://www.w3.org/2000/01/rdf-schema#
-  prov: http://www.w3.org/ns/prov#
+    tvbo: http://www.thevirtualbrain.org/tvb-o/
+    linkml: https://w3id.org/linkml/
+    rdfs: http://www.w3.org/2000/01/rdf-schema#
+    prov: http://www.w3.org/ns/prov#
+    qudt: http://qudt.org/vocab/unit/
+    UO: http://purl.obolibrary.org/obo/UO_
 imports:
-  - linkml:types
-  - SANDS
-  - tvb_dbs
+    - linkml:types
+    - SANDS
+    - tvb_dbs
 
 default_prefix: tvbo
 default_range: string
 
 slots:
-  time_scale:
-    range: string
-    ifabsent: "ms"
-  environment:
-    range: SoftwareEnvironment
-  requirements:
-    multivalued: true
-    range: SoftwareRequirement
-  duration:
-    range: float
-    ifabsent: float(1000)
-  model:
-    range: Dynamics
-  has_reference:
-    range: string
-  references:
-    multivalued: true
-    range: string
-  label:
-    range: string
-  acronym:
-    range: string
-  symbol:
-    range: string
-  domain:
-    range: Range
-  iri:
-    range: string
-  value:
-    range: float
-  file:
-    range: string
-  reported_optimum:
-    range: float
-  default:
-    range: string
-  description:
-    range: string
-  definition:
-    range: string
-  parameters:
-    range: Parameter
-    multivalued: true
-    inlined: false
-  equation:
-    slot_uri: tvbo:Equation
-    range: Equation
-  unit:
-    range: string
-  derived_from:
-  source:
-    range: string
+    name:
+        range: string
+        key: true
+    time_scale:
+        range: UnitEnum
+        ifabsent: "ms"
+        description: >-
+            Time unit for the integration / simulation. Determines the
+            physical time meaning of one model time-step.
+    environment:
+        range: SoftwareEnvironment
+    requirements:
+        multivalued: true
+        range: SoftwareRequirement
+    duration:
+        range: float
+        ifabsent: float(1000)
+    model:
+        range: Dynamics
+    has_reference:
+        range: string
+    references:
+        multivalued: true
+        range: string
+    label:
+        range: string
+    acronym:
+        range: string
+    symbol:
+        range: string
+    domain:
+        range: Range
+    iri:
+        range: string
+    value:
+        range: float
+    file:
+        range: string
+    reported_optimum:
+        range: float
+    default:
+        range: string
+    description:
+        range: string
+    definition:
+        range: string
+    parameters:
+        range: Parameter
+        multivalued: true
+        inlined: true
+    equation:
+        slot_uri: tvbo:Equation
+        range: Equation
+        inlined: true
+    unit:
+        range: UnitEnum
+        description: >-
+            Physical unit of measurement. Values are drawn from the QUDT
+            ontology (http://qudt.org/vocab/unit/) with UO cross-references
+            where available.
+    derived_from:
+    source:
+        range: string
+    dataset_path:
+        range: string
+        description: >-
+            Dataset path for array-valued parameters. When set,
+            the parameter value is stored in the binary companion file
+            (HDF5 or Zarr) at this path. The value slot is omitted.
 
 enums:
-  ImagingModality:
-    permissible_values:
-      BOLD:
-        description: "Blood Oxygen Level Dependent signal."
-      EEG:
-        description: "Electroencephalography."
-      MEG:
-        description: "Magnetoencephalography."
-      SEEG:
-        description: "Stereoelectroencephalography."
-      IEEG:
-        description: "Intracranial Electroencephalography."
-  OperationType:
-    permissible_values:
-      select: {}
-      temporal_average: {}
-      subsample: {}
-      projection: {}
-      reference_subtract: {}
-      convolution: {}
-      node_coupling: {}
-      custom_transform: {}
-  SystemType:
-    permissible_values:
-      continuous:
-        description: "Continuous-time dynamics (e.g., ODE/SDE)."
-      discrete:
-        description: "Discrete-time dynamics (e.g., maps, iterated updates)."
-  BoundaryConditionType:
-    permissible_values:
-      Dirichlet: {}
-      Neumann: {}
-      Robin: {}
-      Periodic: {}
-  DiscretizationMethod:
-    permissible_values:
-      FDM: { description: "Finite Difference Method" }
-      FEM: { description: "Finite Element Method" }
-      FVM: { description: "Finite Volume Method" }
-      Spectral: {}
-  ElementType:
-    permissible_values:
-      triangle: {}
-      quad: {}
-      tetrahedron: {}
-      hexahedron: {}
-  OperatorType:
-    permissible_values:
-      gradient: {}
-      divergence: {}
-      laplacian: {}
-      curl: {}
-  NoiseType:
-    permissible_values:
-      gaussian:
-      white:
-      brown:
-      pink:
-  RequirementRole:
-    permissible_values:
-      engine: { description: "Primary simulation/processing engine" }
-      runtime: { description: "General runtime dependency" }
-      analysis: { description: "Post-processing / analysis tool" }
-      dev: { description: "Development / build dependency" }
-      optional: { description: "Optional or extra feature dependency" }
-  EnvironmentType:
-    permissible_values:
-      conda: {}
-      venv: {}
-      docker: {}
-      singularity: {}
-      system: {}
-      other: {}
+    UnitEnum:
+        description: >-
+            Physical units of measurement for model parameters, state variables,
+            and integration settings. Uses conventional abbreviations as values,
+            mapped to the QUDT ontology (http://qudt.org/vocab/unit/) with UO
+            cross-references where available.
+        permissible_values:
+            # ── Time ──
+            s:
+                meaning: qudt:SEC
+                exact_mappings:
+                    - UO:0000010
+                description: "Second"
+            ms:
+                meaning: qudt:MilliSEC
+                exact_mappings:
+                    - UO:0000028
+                description: "Millisecond"
+            us:
+                meaning: qudt:MicroSEC
+                exact_mappings:
+                    - UO:0000029
+                description: "Microsecond"
+            # ── Rates / inverse time ──
+            per_s:
+                meaning: qudt:PER-SEC
+                description: "Per second (s⁻¹)"
+            per_ms:
+                meaning: qudt:PER-MilliSEC
+                description: "Per millisecond (ms⁻¹)"
+            Hz:
+                meaning: qudt:HZ
+                exact_mappings:
+                    - UO:0000106
+                description: "Hertz (s⁻¹)"
+            kHz:
+                meaning: qudt:KiloHZ
+                description: "Kilohertz"
+            # ── Voltage ──
+            V:
+                meaning: qudt:V
+                exact_mappings:
+                    - UO:0000218
+                description: "Volt"
+            mV:
+                meaning: qudt:MilliV
+                exact_mappings:
+                    - UO:0000247
+                description: "Millivolt"
+            per_mV:
+                meaning: qudt:PER-MilliV
+                description: "Reciprocal millivolt (mV⁻¹)"
+            mV_per_ms:
+                meaning: qudt:MilliV-PER-MilliSEC
+                description: "Millivolt per millisecond"
+            mV_per_s:
+                meaning: qudt:MilliV-PER-SEC
+                description: "Millivolt per second"
+            # ── Current ──
+            A:
+                meaning: qudt:A
+                exact_mappings:
+                    - UO:0000011
+                description: "Ampere"
+            nA:
+                meaning: qudt:NanoA
+                description: "Nanoampere"
+            pA:
+                meaning: qudt:PicoA
+                exact_mappings:
+                    - UO:0010054
+                description: "Picoampere"
+            # ── Capacitance ──
+            pF:
+                meaning: qudt:PicoFARAD
+                description: "Picofarad"
+            nF:
+                meaning: qudt:NanoFARAD
+                description: "Nanofarad"
+            # ── Conductance ──
+            nS:
+                meaning: qudt:NanoS
+                description: "Nanosiemens"
+            uS:
+                meaning: qudt:MicroS
+                description: "Microsiemens"
+            # ── Charge (inverse) ──
+            per_nC:
+                meaning: qudt:PER-NanoC
+                description: "Reciprocal nanocoulomb (nC⁻¹)"
+            per_pC:
+                meaning: qudt:PER-PicoC
+                description: "Reciprocal picocoulomb (pC⁻¹)"
+            # ── Concentration ──
+            mol_per_m3:
+                meaning: qudt:MOL-PER-M3
+                description: "Mole per cubic metre (mol/m³)"
+            mmol_per_m3:
+                meaning: qudt:MilliMOL-PER-M3
+                description: "Millimole per cubic metre (mmol/m³ ≈ mM)"
+            # ── Volume ──
+            um3:
+                meaning: qudt:MicroM3
+                description: "Cubic micrometre (µm³)"
+            # ── Length / distance ──
+            m:
+                meaning: qudt:M
+                exact_mappings:
+                    - UO:0000008
+                description: "Metre"
+            mm:
+                meaning: qudt:MilliM
+                exact_mappings:
+                    - UO:0000016
+                description: "Millimetre"
+            cm:
+                meaning: qudt:CentiM
+                exact_mappings:
+                    - UO:0000015
+                description: "Centimetre"
+            # ── Velocity ──
+            m_per_s:
+                meaning: qudt:M-PER-SEC
+                description: "Metre per second"
+            mm_per_ms:
+                meaning: qudt:MilliM-PER-MilliSEC
+                description: "Millimetre per millisecond (= m/s)"
+            # ── Gain / compound ──
+            Hz_per_nA:
+                description: "Hertz per nanoampere (neural gain)"
+            # ── Conductivity / permeability ──
+            S_per_m:
+                meaning: qudt:S-PER-M
+                description: "Siemens per metre (conductivity)"
+            H_per_m:
+                meaning: qudt:H-PER-M
+                description: "Henry per metre (permeability)"
+            # ── Angular rate ──
+            rad_per_ms:
+                description: "Radian per millisecond"
+            # ── Dimensionless ──
+            dimensionless:
+                meaning: qudt:UNITLESS
+                exact_mappings:
+                    - UO:0000186
+                description: "Dimensionless (unitless)"
+            percent:
+                meaning: qudt:PERCENT
+                description: "Percent (%)"
+            arbitrary_unit:
+                description: "Arbitrary units (a.u.)"
+            # ── Mass ──
+            kg:
+                meaning: qudt:KiloGM
+                exact_mappings:
+                    - UO:0000009
+                description: "Kilogram"
+            kg_per_s:
+                description: "Kilogram per second"
+            # ── Acceleration ──
+            m_per_s2:
+                meaning: qudt:M-PER-SEC2
+                description: "Metre per second squared (acceleration)"
+            # ── Force / stiffness ──
+            N_per_m:
+                meaning: qudt:N-PER-M
+                description: "Newton per metre (spring constant)"
+            # ── Angle ──
+            rad:
+                meaning: qudt:RAD
+                exact_mappings:
+                    - UO:0000123
+                description: "Radian"
+            rad_per_s:
+                meaning: qudt:RAD-PER-SEC
+                description: "Radian per second (angular velocity)"
+            # ── Time squared ──
+            s2:
+                meaning: qudt:SEC2
+                description: "Second squared (inertia constant)"
+            # ── Per-unit (power systems) ──
+            per_unit:
+                description: "Per-unit (dimensionless power-systems convention)"
+
+    PhysicalDimension:
+        description: >-
+            Physical dimension categories for LEMS and dimensional analysis.
+            Each dimension decomposes into SI base dimensions (M, L, T, I, K, N).
+        permissible_values:
+            none:
+                description: "Dimensionless"
+            time:
+                description: "Time [T]"
+            per_time:
+                description: "Inverse time [T⁻¹]"
+            voltage:
+                description: "Voltage [M L² T⁻³ I⁻¹]"
+            current:
+                description: "Electric current [I]"
+            capacitance:
+                description: "Capacitance [M⁻¹ L⁻² T⁴ I²]"
+            conductance:
+                description: "Conductance [M⁻¹ L⁻² T³ I²]"
+            resistance:
+                description: "Resistance [M L² T⁻³ I⁻²]"
+            charge:
+                description: "Electric charge [T I]"
+            concentration:
+                description: "Concentration [L⁻³ N]"
+            substance:
+                description: "Amount of substance [N]"
+            length:
+                description: "Length [L]"
+            volume:
+                description: "Volume [L³]"
+            temperature:
+                description: "Temperature [K]"
+
+    ImagingModality:
+        permissible_values:
+            BOLD:
+                description: "Blood Oxygen Level Dependent signal."
+            EEG:
+                description: "Electroencephalography."
+            MEG:
+                description: "Magnetoencephalography."
+            SEEG:
+                description: "Stereoelectroencephalography."
+            IEEG:
+                description: "Intracranial Electroencephalography."
+
+    ModelType:
+        description: >-
+            Coarse classification of a Dynamics model by its mathematical/biological
+            origin. Used for filtering and display in list_db().
+        permissible_values:
+            mean_field:
+                description: >-
+                    Mathematically derived mean-field models obtained by exact
+                    reduction of spiking networks (Ott-Antonsen ansatz, Lorentzian
+                    heterogeneity, etc.). Examples: MontbrioPazoRoxin, CoombesByrne,
+                    ReducedWongWang, ZerlautAdaptationFirstOrder.
+            neural_mass:
+                description: >-
+                    Phenomenological population-rate / neural-mass models that describe
+                    synaptic and firing-rate dynamics without an explicit derivation
+                    from single-neuron statistics. Examples: JansenRit, WilsonCowan,
+                    LarterBreakspear, TsodyksMarkram.
+            phase_oscillator:
+                description: >-
+                    Phase-reduced or Kuramoto-type oscillator models. Examples:
+                    Kuramoto, SupHopf.
+            phenomenological:
+                description: >-
+                    Empirical / phenomenological models that capture macroscopic
+                    dynamics without direct biophysical derivation. Examples:
+                    Epileptor2D, Epileptor5D.
+            spiking:
+                description: >-
+                    Single-neuron or conductance-based spiking models (HH, AdEx,
+                    LIF, Izhikevich, etc.). These can be used as nodes in a network
+                    alongside mean-field models.
+            generic:
+                description: >-
+                    Generic / normal-form dynamical systems not specific to neural
+                    modelling (e.g. Generic2dOscillator, GenericLinear).
+            field:
+                description: >-
+                    Spatially distributed neural-field models described by integro-
+                    differential or PDE formulations.
+
+    SystemType:
+        permissible_values:
+            continuous:
+                description: "Continuous-time dynamics (e.g., ODE/SDE)."
+            discrete:
+                description: "Discrete-time dynamics (e.g., maps, iterated updates)."
+    BoundaryConditionType:
+        permissible_values:
+            Dirichlet: {}
+            Neumann: {}
+            Robin: {}
+            Periodic: {}
+    DiscretizationMethod:
+        permissible_values:
+            FDM: { description: "Finite Difference Method" }
+            FEM: { description: "Finite Element Method" }
+            FVM: { description: "Finite Volume Method" }
+            Spectral: {}
+    ElementType:
+        permissible_values:
+            triangle: {}
+            quad: {}
+            tetrahedron: {}
+            hexahedron: {}
+    OperatorType:
+        permissible_values:
+            gradient: {}
+            divergence: {}
+            laplacian: {}
+            curl: {}
+    SamplingAxis:
+        description: "Dimension along which a distribution is sampled."
+        permissible_values:
+            space:
+                description: "Sample once per node (heterogeneous parameter or spatially varying IC)."
+            time:
+                description: "Resample every integration timestep (stochastic time-varying input)."
+    NoiseType:
+        permissible_values:
+            gaussian:
+            white:
+            brown:
+            pink:
+    AggregationType:
+        description: "How to aggregate time series data"
+        permissible_values:
+            mean: { description: "Average over time" }
+            last: { description: "Last value in window" }
+            first: { description: "First value in window" }
+            window: { description: "Sliding window aggregation" }
+            none: { description: "No aggregation" }
+    EventType:
+        description: "Type of event triggering mechanism."
+        permissible_values:
+            continuous:
+                description: "Triggered when condition function crosses zero (root-finding). Maps to ContinuousCallback / ContinuousComponentCallback."
+            discrete:
+                description: "Triggered when condition function returns true (checked at each step). Maps to DiscreteCallback / DiscreteComponentCallback."
+            preset_time:
+                description: "Triggered at predetermined time points. Maps to PresetTimeCallback / PresetTimeComponentCallback."
+            stimulus:
+                description: "Continuous time-dependent input signal (e.g., external current). Legacy Stimulus behavior."
+
+    StandardGraphType:
+        description: >
+            Well-known graph generator families with automatic backend mapping.
+            The type field on GraphGenerator is a free string; this enum lists
+            common types that get automatic code generation for Julia (Graphs.jl)
+            and Python (NetworkX).
+        permissible_values:
+            BarabasiAlbert: { description: "Barabasi-Albert preferential attachment (params: k)" }
+            WattsStrogatz: { description: "Watts-Strogatz small-world (params: k, p)" }
+            ErdosRenyi: { description: "Erdos-Renyi random graph (params: p)" }
+            Complete: { description: "Complete graph (all-to-all)" }
+            Cycle: { description: "Cycle graph (ring)" }
+            Star: { description: "Star graph" }
+            RandomRegular: { description: "Random regular graph (params: k)" }
+            Grid: { description: "Grid/lattice graph (params: dims)" }
+    RequirementRole:
+        permissible_values:
+            engine: { description: "Primary simulation/processing engine" }
+            runtime: { description: "General runtime dependency" }
+            analysis: { description: "Post-processing / analysis tool" }
+            dev: { description: "Development / build dependency" }
+            optional: { description: "Optional or extra feature dependency" }
+    EnvironmentType:
+        permissible_values:
+            conda: {}
+    DimensionType:
+        description: "Dimensions along which operations can be applied"
+        permissible_values:
+            time:
+                description: "Temporal dimension"
+            state:
+                description: "State variable dimension"
+            node:
+                description: "Network node dimension (general graph term)"
+            region:
+                description: "Spatial/regional dimension (alias for node in brain networks)"
+            mode:
+                description: "Mode dimension (e.g., coupling modes)"
+            sample:
+                description: "Sample/trial/realization dimension"
+            batch:
+                description: "Batch dimension (for parallel processing)"
+            frequency:
+                description: "Frequency dimension (spectral analysis)"
+
+    ReductionType:
+        description: "Operations for reducing/aggregating values across dimensions"
+        permissible_values:
+            mean:
+                description: "Arithmetic mean"
+            sum:
+                description: "Sum of values"
+            max:
+                description: "Maximum value"
+            min:
+                description: "Minimum value"
+            none:
+                description: "No reduction (return per-element values)"
+
+    ContinuationAlgorithm:
+        description: >-
+            Predictor-corrector algorithm for numerical continuation.
+        permissible_values:
+            PALC:
+                description: "Pseudo-arclength continuation (default). Uses weighted dot product constraint."
+            MoorePenrose:
+                description: "Moore-Penrose continuation."
+            Natural:
+                description: "Natural parameter continuation. Simple parameter stepping, no arc-length constraint."
+
+    NumericalDiscretizationMethod:
+        description: >-
+            Numerical discretization method for boundary value problems
+            (periodic orbits, connecting orbits, quasi-periodic tori).
+        permissible_values:
+            collocation:
+                description: "Orthogonal collocation at Gauss points."
+            trapezoid:
+                description: "Trapezoidal rule discretization."
+            shooting:
+                description: "Standard multiple shooting."
+            poincare:
+                description: "Poincaré shooting."
+
+    InitialStateMethod:
+        description: >-
+            Strategy for obtaining the starting equilibrium or periodic orbit.
+        permissible_values:
+            time_integration:
+                description: "Integrate the ODE forward until convergence (robust, default)."
+            newton:
+                description: "Use Newton's method to find the nearest fixed point."
+            given:
+                description: "Use the model's default initial values directly."
+            from_branch:
+                description: "Start from a point on a previously computed branch."
+
+    SparseFormat:
+        permissible_values:
+            dense:
+                description: "Dense N×N array with gzip compression"
+            csr:
+                description: "Compressed Sparse Row (data, indices, indptr)"
+            coo:
+                description: "Coordinate list (data, row, col)"
 
 classes:
-  # Remove Operation class entirely
-  # Operation:
-  #   description: "A single operation (monitoring or otherwise)."
-  #   attributes:
-  #     operation_type:
-  #       description: "Kind of operation to perform (e.g., subsample, projection, convolution)."
-  #       range: OperationType
-  #       alias: type
-  #     transformation:
-  #       description: "Transformation (Function) applied by this operation."
-  #       range: Function
-  #       alias: reference
-  #     variables_of_interest:
-  #       description: "Optional per-operation variable selection; takes precedence over Monitor.select_variable when provided."
-  #       multivalued: true
-  #       range: StateVariable
+    Range:
+        description: "Specifies a range for array generation, parameter bounds, or grid exploration."
+        attributes:
+            lo:
+                range: string
+                description: "Lower bound or starting value. Can be a number or argument name."
+                ifabsent: string(0)
+            hi:
+                range: string
+                description: "Upper bound or stopping value. Can be a number or argument name."
+            step:
+                range: string
+                description: "Step size. Can be: number, argument name, or expression."
+            n:
+                range: integer
+                description: "Number of points (alternative to step for grid exploration)."
+            log_scale:
+                range: boolean
+                ifabsent: false
+                description: "Whether to use logarithmic spacing."
+            explored_values:
+                multivalued: true
+                range: float
+                array: {}
+                description: >-
+                    Explicit explored values for this element. When set on an
+                    element_domain entry, overrides the parent parameter's
+                    explored_values for this specific element.
+            element:
+                range: integer
+                description: >-
+                    Element/node index this range applies to. Used in element_domains
+                    to explicitly link a domain to a specific element of a heterogeneous
+                    parameter (e.g., element: 0 for node 0). Required when used in
+                    element_domains to avoid ambiguous positional indexing.
 
-  Range:
-    attributes:
-      lo:
-        range: float
-      hi:
-        range: float
-      step:
-        range: float
+    Equation:
+        slots:
+            - label
+            - definition
+            - parameters
+            - description
+        attributes:
+            lefthandside:
+                range: string
+                alias: lhs
+            righthandside:
+                range: string
+                alias: rhs
+            conditionals:
+                description: Conditional logic for piecewise equations.
+                range: ConditionalBlock
+                multivalued: true
+                inlined: true
+                # alias: cases
+            engine:
+                range: SoftwareRequirement
+                description: "Primary engine (must appear in environment.requirements; migration target replacing deprecated 'software')."
+                inlined: true
+            pycode:
+                range: string
+                description: Python code for the equation.
+            latex:
+                range: boolean
+                ifabsent: false
 
-  Equation:
-    class_uri: tvbo:Equation
-    slots:
-      - label
-      - definition
-      - parameters
-    attributes:
-      lefthandside:
-        range: string
-        alias: lhs
-      righthandside:
-        range: string
-        alias: rhs
-      conditionals:
-        description: Conditional logic for piecewise equations.
-        range: ConditionalBlock
-        multivalued: true
-        # alias: cases
-      engine:
-        range: SoftwareRequirement
-        description: "Primary engine (must appear in environment.requirements; migration target replacing deprecated 'software')."
-      pycode:
-        range: string
-        description: Python code for the equation.
-      latex:
-        range: boolean
-        ifabsent: false
+    ConditionalBlock:
+        description: A single condition and its corresponding equation segment.
+        attributes:
+            condition:
+                description: The condition for this block (e.g., t > onset).
+                range: string
+            expression:
+                description: The equation to apply when the condition is met.
+                range: string
 
-  ConditionalBlock:
-    description: A single condition and its corresponding equation segment.
-    attributes:
-      condition:
-        description: The condition for this block (e.g., t > onset).
-        range: string
-      expression:
-        description: The equation to apply when the condition is met.
-        range: string
+    Stimulus:
+        slots:
+            - equation
+            - parameters
+            - description
+            - dataLocation
+            - duration
+            - label
+        attributes:
+            regions:
+                multivalued: true
+                range: integer
+                array: {}
+            weighting:
+                multivalued: true
+                range: float
+                array: {}
 
-  Stimulus:
-    class_uri: tvbo:Stimulus
-    slots:
-      - equation
-      - parameters
-      - description
-      - dataLocation
-      - duration
-      - label
-    attributes:
-      regions:
-        multivalued: true
-        range: integer
-        array: {}
-      weighting:
-        multivalued: true
-        range: float
-        array: {}
+    Event:
+        description: >-
+            A discrete or continuous event that modifies the system during simulation.
+            Generalizes Stimulus: can represent external inputs (stimulus type),
+            threshold-triggered state changes (continuous/discrete type),
+            or time-scheduled interventions (preset_time type).
+            Attaches to components (nodes/edges) or to the experiment level.
+        slots:
+            - name
+            - label
+            - description
+            - parameters
+        attributes:
+            event_type:
+                range: EventType
+                ifabsent: "stimulus"
+                description: "Type of event trigger mechanism."
+            condition:
+                range: Equation
+                inlined: true
+                description: >-
+                    Condition function. For continuous events: triggers when
+                    expression crosses zero. For discrete events: triggers when
+                    expression evaluates to true. Not used for preset_time or
+                    stimulus types.
+            condition_states:
+                multivalued: true
+                range: string
+                description: >-
+                    State variable symbols accessible in the condition function.
+                    For edges, can include source/destination vertex outputs.
+            condition_parameters:
+                multivalued: true
+                range: string
+                description: "Parameter symbols accessible in the condition function."
+            affect:
+                range: Equation
+                inlined: true
+                description: >-
+                    Affect function: what happens when the event triggers.
+                    Can modify state variables and/or parameters.
+                    For stimulus type, this is the stimulus equation.
+            affect_states:
+                multivalued: true
+                range: string
+                description: "State variable symbols modifiable in the affect function."
+            affect_parameters:
+                multivalued: true
+                range: string
+                description: "Parameter symbols modifiable in the affect function."
+            affect_negative:
+                range: Equation
+                inlined: true
+                description: >-
+                    Affect on downcrossing (continuous events only).
+                    If not specified, uses the same affect for both crossings.
+            trigger_times:
+                multivalued: true
+                range: float
+                description: >-
+                    Predetermined trigger times for preset_time events.
+                    The solver will step exactly to these times.
+            target_component:
+                range: string
+                description: >-
+                    Component to attach this event to. Can be a node label,
+                    edge label, or 'all_edges'/'all_vertices' for broadcast.
+                    If not specified, event is experiment-level.
+            equation:
+                range: Equation
+                inlined: true
+                description: >-
+                    Stimulus equation for stimulus-type events.
+                    Legacy compatibility with Stimulus class.
+            regions:
+                multivalued: true
+                range: integer
+                array: {}
+                description: "Target regions for stimulus-type events."
+            weighting:
+                multivalued: true
+                range: float
+                array: {}
+                description: "Per-region weighting for stimulus-type events."
+            duration:
+                range: float
+                description: "Duration of stimulus-type events."
 
-  TemporalApplicableEquation:
-    is_a: Equation
-    slots:
-      - parameters
-    attributes:
-      time_dependent:
-        range: boolean
-        ifabsent: false
+    TemporalApplicableEquation:
+        is_a: Equation
+        slots:
+            - parameters
+        attributes:
+            time_dependent:
+                range: boolean
+                ifabsent: false
 
-  Parcellation:
-    class_uri: tvbo:Parcellation
-    slots:
-      - label
-    attributes:
-      region_labels:
-        multivalued: true
-        range: string
-      center_coordinates:
-        multivalued: true
-        range: float
-      data_source:
-        range: string
-      atlas:
-        required: true
-        range: BrainAtlas
+    Parcellation:
+        class_uri: tvbo:Parcellation
+        slots:
+            - label
+        attributes:
+            data_source:
+                range: string
+            atlas:
+                required: true
+                range: BrainAtlas
+                inlined: true
 
-  # Network:
-  #   slots:
-  #     - label
-  #     - description
-  #     - dataLocation
-  #   attributes:
-  #     matrix:
-  #       description: "Adjacency matrix representing the network."
-  #       range: Matrix
+    Tractogram:
+        class_uri: tvbo:Tractogram
+        description: "Reference to tractography/diffusion MRI data used to derive structural connectivity"
+        slots:
+            - name
+            - label
+            - description
+        attributes:
+            data_source:
+                range: string
+                description: "Path or URI to the tractography data file"
+            number_of_subjects:
+                range: integer
+                description: "Number of subjects in the tractography dataset"
+            acquisition:
+                range: string
+                description: "Acquisition protocol or scanner information"
+            processing_pipeline:
+                range: string
+                description: "Processing pipeline used to generate the tractography"
+            reference:
+                range: string
+                description: "Publication or DOI reference for this tractography dataset"
 
-  Matrix:
-    # implements:
-    #   - linkml:TwoDimensionalArray
-    #   - linkml:RowOrderedArray
-    attributes:
-      x:
+    Matrix:
         # implements:
-        #   - linkml:axis0
-        range: BrainRegionSeries
-      y:
+        #   - linkml:TwoDimensionalArray
+        #   - linkml:RowOrderedArray
+        attributes:
+            x:
+                # implements:
+                #   - linkml:axis0
+                range: BrainRegionSeries
+            y:
+                # implements:
+                #   - linkml:axis1
+                range: BrainRegionSeries
+            values:
+                multivalued: true
+                range: float
+                # implements:
+                #   - linkml:elements
+            format:
+                range: SparseFormat
+                description: "Storage format in binary companion (dense, csr, coo)"
+            shape:
+                multivalued: true
+                range: integer
+                description: "Matrix dimensions [N, M]"
+            dtype:
+                range: string
+                ifabsent: string(float32)
+                description: "Data type for matrix values"
+        description: "Adjacency matrix of a network."
+        slots:
+            - label
+            - description
+            - dataLocation
+
+    BrainRegionSeries:
+        description: A series whose values represent latitude
         # implements:
-        #   - linkml:axis1
-        range: BrainRegionSeries
-      values:
-        multivalued: true
-        range: float
-        # implements:
-        #   - linkml:elements
-    description: "Adjacency matrix of a network."
-    slots:
-      - label
-      - description
-      - dataLocation
+        #   - linkml:OneDimensionalSeries
+        attributes:
+            values:
+                range: string
+                multivalued: true
+                # implements:
+                #   - linkml:elements
 
-  BrainRegionSeries:
-    description: A series whose values represent latitude
-    # implements:
-    #   - linkml:OneDimensionalSeries
-    attributes:
-      values:
-        range: string
-        multivalued: true
-        # implements:
-        #   - linkml:elements
+    Provenance:
+        class_uri: prov:Entity
+        description: >-
+            W3C PROV-O aligned provenance. Reusable on any entity
+            (Network, TimeSeries, Dynamics, etc.).
+        slots:
+            - derived_from
+            - references
+        attributes:
+            date_created:
+                range: string
+                description: "ISO 8601 (prov:generatedAtTime)"
+            license:
+                range: string
+            generated_by:
+                range: string
+                description: "Software/agent identifier (prov:wasGeneratedBy)"
 
-  Connectome:
-    class_uri: tvbo:Connectivity
-    aliases:
-      - Graph
-    attributes:
-      number_of_regions:
-        range: integer
-        ifabsent: integer(1)
-      number_of_nodes:
-        range: integer
-        ifabsent: integer(1)
-      parcellation:
-        range: Parcellation
-      tractogram:
-        range: string
-      weights:
-        range: Matrix
-      lengths:
-        range: Matrix
-      normalization:
-        range: Equation
-      conduction_speed:
-        range: Parameter
-      node_labels:
-        multivalued: true
-        range: string
+    BidsEntities:
+        class_uri: tvbo:BidsEntities
+        description: >-
+            BIDS filename entities (BEP017-aligned) for provenance and data
+            discovery. Reusable on Network, BrainAtlas, Tractogram, or any
+            dataset with BIDS-conformant naming.
+        attributes:
+            template:
+                range: string
+                description: "BIDS tpl- entity (e.g., FSLMNI152, MNI152NLin2009cAsym)"
+            cohort:
+                range: string
+                description: "BIDS cohort- entity (e.g., HCPYA, PPMI85)"
+            reconstruction:
+                range: string
+                description: "BIDS rec- entity (e.g., dTOR)"
+            segmentation:
+                range: string
+                description: "BIDS seg- entity (e.g., ordered, ranked, 17Networks)"
+            scale:
+                range: string
+                description: "BIDS scale- entity (BEP017, e.g., 1000)"
+            atlas:
+                range: string
+                description: "BIDS atlas- entity (e.g., Schaefer2018, HCPMMP1)"
+            acquisition:
+                range: string
+                description: "BIDS acq- entity (e.g., EEGstandard1005, MEGBrainstorm)"
 
-  Network:
-    class_uri: tvbo:Network
-    # tree_root: true[]
-    description: "Complete network specification combining dynamics, graph topology, and coupling configurations"
-    slots:
-      - label
-      - description
-    attributes:
-      dynamics:
-        range: Dynamics
-        description: "Homogeneous dynamics: single Dynamics model applied to all nodes"
-      node_dynamics:
-        multivalued: true
-        range: Dynamics
-        description: "Heterogeneous dynamics: list of Dynamics models, one per node or mapped by node_dynamics_mapping"
-      node_dynamics_mapping:
-        multivalued: true
-        range: integer
-        description: "Maps each node to a Dynamics model index in node_dynamics list (if heterogeneous)"
-      graph:
-        range: Connectome
-        required: true
-        description: "Network topology with weights, delays, and connectivity structure"
-      couplings:
-        multivalued: true
-        range: Coupling
-        description: "Named coupling configurations matching dynamics.coupling_inputs (e.g., instant, delayed)"
+    Network:
+        class_uri: tvbo:Network
+        aliases:
+            - Network
+            - Connectome
+            - Graph
+            - Connectivity
+        description: "Network specification with nodes, edges, and reusable coupling configurations. Supports both explicit node/edge representation and matrix-based connectivity (Connectome compatibility)."
+        slots:
+            - label
+            - description
+            - parameters
+        attributes:
+            # New node/edge-based representation
+            nodes:
+                multivalued: true
+                range: Node
+                inlined_as_list: true
+                description: "List of nodes with individual dynamics (optional, for heterogeneous networks)"
+            edges:
+                multivalued: true
+                range: Edge
+                inlined_as_list: true
+                description: "List of directed edges with coupling references (optional, for explicit edge definition)"
+            coupling:
+                multivalued: true
+                range: Coupling
+                description: "Reusable coupling configurations referenced by edges (e.g., 'instant', 'delayed', 'inhibitory')"
+                inlined: true
+            dynamics:
+                multivalued: true
+                range: Dynamics
+                inlined: true
+                description: "Dictionary of dynamics models keyed by name. Nodes reference these by name. For heterogeneous networks with per-node dynamics."
 
-  ObservationModel:
-    class_uri: tvbo:ObservationModel
-    slots:
-      - name
-      - acronym
-      - description
-      - equation
-      - parameters
-      - environment
-    attributes:
-      transformation:
-        range: Function
-      pipeline:
-        description: "Ordered sequence of processing functions"
-        multivalued: true
-        inlined_as_list: true
-        range: ProcessingStep
-      data_injections:
-        description: "External data added to the pipeline (e.g., timepoints, kernels)"
-        multivalued: true
-        range: DataInjection
-      argument_mappings:
-        description: "How inputs/outputs connect between pipeline steps"
-        multivalued: true
-        range: ArgumentMapping
-      derivatives:
-        description: "Side computations (e.g., functional connectivity)"
-        multivalued: true
-        range: DerivedVariable
+            # Network metadata
+            number_of_nodes:
+                range: integer
+                ifabsent: integer(1)
+                description: "Number of nodes in the network (derived from nodes if not set)"
+                aliases:
+                    - number_of_nodes
+                    - number_of_regions
+            coordinate_space:
+                range: CommonCoordinateSpace
+                inlined: true
+                description: "Coordinate space for node positions (e.g., MNI152NLin2009c). Mirrors BrainAtlas.coordinateSpace so network node positions are unambiguous."
+            parcellation:
+                range: Parcellation
+                description: "Brain parcellation/atlas reference"
+                inlined: true
+            tractogram:
+                range: Tractogram
+                inlined: true
+                description: "Reference to tractography data"
+            transforms:
+                range: Function
+                multivalued: true
+                inlined_as_list: true
+                description: >-
+                    Ordered list of transforms applied to edge property matrices.
+                    Each Function's name identifies the target edge property
+                    (e.g. 'weight', 'length'). Supports equation-based (symbolic)
+                    or callable-based (software) transforms. Multiple transforms
+                    on the same target are applied sequentially.
 
-  ProcessingStep:
-    description: "A single processing step in an observation model pipeline or standalone operation"
-    attributes:
-      order:
-        range: integer
-        description: "Execution order in the pipeline (optional for standalone operations)"
-      function:
-        range: Function
-        required: true
-        description: "Function or transformation to apply"
-        alias: transformation
-      operation_type:
-        description: "Kind of operation to perform (e.g., subsample, projection, convolution)."
-        range: OperationType
-        alias: type
-      input_mapping:
-        description: "Maps function arguments to pipeline data/outputs"
-        multivalued: true
-        range: ArgumentMapping
-      output_alias:
-        description: "Optional name for this step's output (default: function name)"
-        range: string
-      apply_on_dimension:
-        description: "Which dimension to apply function on (e.g., 'time', 'space')"
-        range: string
-      ensure_shape:
-        description: "Ensure output has specific dimensionality (e.g., '4d')"
-        range: string
-      variables_of_interest:
-        description: "Optional per-step variable selection"
-        multivalued: true
-        range: StateVariable
+            # BIDS integration (BEP017)
+            data_file:
+                range: string
+                description: >-
+                    Path to companion data file. Supported extensions:
+                    .h5 (HDF5), .zarr/ (Zarr), .csv (legacy single-matrix).
+                    Null if no companion data needed.
+            descriptor:
+                range: string
+                description: >-
+                    Short alphanumeric identifier for the BIDS desc- filename
+                    entity (e.g., SC, FC, EC, SCFC). Classifies the connectivity
+                    modality of the network's edge measures.
+            bids_dir:
+                range: string
+                description: "Path to BEP017-compliant BIDS directory for loading connectivity matrices"
+            bids:
+                range: BidsEntities
+                inlined: true
+                description: "BIDS filename entities for this dataset"
+            structural_measures:
+                range: string
+                multivalued: true
+                description: "BEP017 measure names for structural connectivity (e.g., streamlineCount, tractLength)"
+            observational_measures:
+                range: string
+                multivalued: true
+                description: "BEP017 measure names for observational targets (e.g., BoldCorrelation)"
 
-  DataInjection:
-    description: "External data injected into the observation pipeline"
-    attributes:
-      name:
-        range: string
-        required: true
-      data_source:
-        description: "Source of the data (file, array, generated)"
-        range: string
-      values:
-        description: "Actual data values (for small arrays)"
-        multivalued: true
-        range: float
-        array: {}
-      shape:
-        description: "Shape of the injected data"
-        multivalued: true
-        range: integer
-      generation_function:
-        description: "Function to generate the data (e.g., np.arange)"
-        range: Function
+            provenance:
+                range: Provenance
+                inlined: true
+                description: "W3C PROV-O aligned provenance"
+            parent_network:
+                range: string
+                description: >-
+                    Path/URI to parent (coarser) Network. When set,
+                    this network is a refinement where each node maps
+                    to exactly one parent node via node_mapping.
+            node_mapping:
+                range: string
+                description: >-
+                    HDF5 dataset path for node-to-parent mapping.
+                    Int32 array of shape (N,) where entry i is the
+                    parent node ID. Required when parent_network is set.
 
-  ArgumentMapping:
-    description: "Maps function arguments to pipeline inputs/outputs"
-    attributes:
-      function_argument:
-        range: string
-        required: true
-        description: "Name of the function parameter"
-      source:
-        range: string
-        required: true
-        description: "Where the data comes from (e.g., 'Input', 'subsample', 'HRF')"
-      constant_value:
-        description: "Use a constant value instead of pipeline data"
-        range: string
+            distance_unit:
+                range: UnitEnum
+                description: "Unit for distances/lengths in the network"
+                ifabsent: string(mm)
+            time_unit:
+                range: UnitEnum
+                description: "Default time unit for the network"
+                ifabsent: string(ms)
 
-  DownsamplingModel:
-    is_a: ObservationModel
-    class_uri: tvbo:DownsamplingModel
-    attributes:
-      period:
-        range: float
-        ifabsent: float(0.9765625)
+            edge_matrix_files:
+                range: File
+                multivalued: true
 
-  Dynamics:
-    class_uri: tvbo:Dynamics
-    comments:
-      - Successor class replacing deprecated NeuralMassModel.
-    aliases:
-      - NeuralMassModel
-    slots:
-      - has_reference
-      - name
-      - label
-      - iri
-      - parameters
-      - description
-      - source
-      - references
-    slot_usage:
-      name:
-        ifabsent: "Generic2dOscillator"
-      system_type:
-        ifabsent: "continuous"
-    attributes:
-      derived_parameters:
-        multivalued: true
-        range: DerivedParameter
-      derived_variables:
-        multivalued: true
-        range: DerivedVariable
-      coupling_terms:
-        multivalued: true
-        range: Parameter
-      coupling_inputs:
-        multivalued: true
-        range: CouplingInput
-      state_variables:
-        multivalued: true
-        range: StateVariable
-      modified:
-        range: boolean
-      output_transforms:
-        multivalued: true
-        range: DerivedVariable
-      derived_from_model:
-        range: NeuralMassModel
-      number_of_modes:
-        range: integer
-        ifabsent: integer(1)
-      local_coupling_term:
-        range: Parameter
-      functions:
-        multivalued: true
-        range: Function
-      stimulus:
-        range: Stimulus
-      modes:
-        multivalued: true
-        range: NeuralMassModel
-      system_type:
-        range: SystemType
+            graph_generator:
+                range: GraphGenerator
+                inlined: true
+                description: >
+                    Graph generator specification.  When set, overrides explicit
+                    edges/nodes for graph construction.  The type field is a free
+                    string; StandardGraphType lists well-known types that get
+                    automatic code generation across backends.
 
-  NeuralMassModel:
-    is_a: Dynamics
-    class_uri: tvbo:NeuralMassModel
-    comments:
-      - Deprecated in favor of Dynamics.
-    aliases:
-      - NeuralMassModel
+    GraphGenerator:
+        description: >
+            Backend-agnostic graph generator specification.  Captures the
+            mathematical family (type) and its parameters so that each backend
+            can emit the correct constructor call (Graphs.jl, NetworkX, etc.).
+            The number of nodes is always taken from Network.number_of_nodes.
+        slots:
+            - name
+            - description
+        attributes:
+            type:
+                range: string
+                required: true
+                description: >
+                    Graph family name.  Use a StandardGraphType value for
+                    automatic backend mapping, or any custom string for
+                    documentation purposes.
+            seed:
+                range: integer
+                description: "Random seed for reproducible graph generation."
+            directed:
+                range: boolean
+                ifabsent: boolean(false)
+                description: "Whether to generate a directed graph."
+            parameters:
+                range: Parameter
+                multivalued: true
+                inlined: true
+                description: >
+                    Generator parameters (e.g. k, p, dims).  Names are
+                    matched by the backend mapping to construct the call.
 
-  StateVariable:
-    class_uri: tvbo:StateVariable
-    slots:
-      - name
-      - symbol
-      - label
-      - definition
-      - domain
-      - description
-      - equation
-      - unit
-    attributes:
-      variable_of_interest:
-        range: boolean
-        ifabsent: true
-      coupling_variable:
-        range: boolean
-        ifabsent: false
-      noise:
-        range: Noise
-      stimulation_variable:
-        range: boolean
-      boundaries:
-        range: Range
-      initial_value:
-        range: float
-        ifabsent: float(0.1)
-      history:
-        range: TimeSeries
+    File:
+        slots:
+            - name
+            - description
+        attributes:
+            type:
+                range: string
+            path:
+                range: string
+            extension:
+                range: string
 
-  Distribution:
-    slots:
-      - name
-      - equation
-      - parameters
-    attributes:
-      dependencies:
-        multivalued: true
-        range: Parameter
+    Node:
+        class_uri: tvbo:Node
+        description: "A node in a network with its own dynamics and properties"
+        slots:
+            - label
+            - description
+            - parameters
+        attributes:
+            id:
+                range: integer
+                required: true
+                description: "Unique node identifier"
+            dynamics:
+                range: Dynamics
+                required: false
+                description: "Dynamics model governing this node's behavior. Can be a reference (by name) or inline definition. If not provided, uses experiment's dynamics."
+                inlined: false
+            position:
+                range: Coordinate
+                description: "Spatial coordinates (x, y, z) of the node"
+                inlined: true
+            region:
+                range: string
+                description: "Brain region or anatomical label"
+            state:
+                multivalued: true
+                range: StateValue
+                inlined: true
+                description: "Per-node initial state variable values, keyed by state variable name."
+            events:
+                multivalued: true
+                range: Event
+                inlined: true
+                description: "Events attached to this node (e.g., threshold-based state changes)."
 
-      correlation:
-        range: Matrix
+    StateValue:
+        class_uri: tvbo:StateValue
+        description: "A named state variable value for per-node initialization."
+        slots:
+            - name
+            - value
 
-  Parameter:
-    class_uri: tvbo:Parameter
-    slots:
-      - name
-      - label
-      - symbol
-      - definition
-      - value
-      - default
-      - domain
-      - reported_optimum
-      - description
-      - equation
-      - unit
-    attributes:
-      comment:
-        range: string
-      heterogeneous:
-        range: boolean
-      free:
-        range: boolean
-      shape:
-        range: string
-      explored_values:
-        multivalued: true
-        range: float
-        array: {}
+    Edge:
+        class_uri: tvbo:Edge
+        description: "An edge in a network. Two modes: explicit (source+target set, scalar parameters in YAML) or template (no source/target, N×N matrix measure in HDF5). Both coexist in the same edges list."
+        slots:
+            - label
+            - description
+            - parameters
+        attributes:
+            source:
+                range: integer
+                required: false
+                description: "Source node ID (set for explicit edges, absent for template edges)"
+            target:
+                range: integer
+                required: false
+                description: "Target node ID (set for explicit edges, absent for template edges)"
+            unit:
+                range: string
+                description: "Unit for matrix values (template edges only)"
+            format:
+                range: SparseFormat
+                description: "Storage format in HDF5 (template edges only)"
+            weighted:
+                range: boolean
+                ifabsent: boolean(true)
+                description: "Matrix entries carry weights (not just 0/1)"
+            valid_diagonal:
+                range: boolean
+                ifabsent: boolean(false)
+                description: "Self-connections are meaningful"
+            non_negative:
+                range: boolean
+                ifabsent: boolean(true)
+                description: "All values >= 0"
+            source_var:
+                range: string
+                description: "Output variable from source node to use (e.g., 'x_out'). If not specified, uses first output variable from source dynamics."
+            target_var:
+                range: string
+                description: "Input variable on target node to connect to (e.g., 'c_in'). If not specified, uses first coupling input from target dynamics."
+            coupling:
+                range: Coupling
+                required: false
+                description: "Coupling function for this edge. Can be a reference (by name) to coupling or inline definition. If not provided, uses experiment's default coupling."
+                inlined: false
+            directed:
+                range: boolean
+                ifabsent: false
+                description: "Whether the edge is directed. If false, represents a symmetric/bidirectional connection."
+            target_network:
+                range: string
+                required: false
+                description: >-
+                    Path or name of the Network whose nodes define the columns
+                    of a non-square (projection) matrix. For example, a gain
+                    matrix with shape (n_sensors, n_regions) references the
+                    brain parcellation network here.  Row labels come from
+                    the parent Network's own nodes.
+            dimension_labels:
+                multivalued: true
+                range: string
+                required: false
+                description: >-
+                    Ordered labels for the matrix columns (dim-1) when the
+                    matrix is non-square.  Row labels (dim-0) are the parent
+                    Network's node labels.  Stored as HDF5 dimension scales
+                    in the companion file.
+            dynamics:
+                range: Dynamics
+                required: false
+                inlined: false
+                description: >-
+                    Dynamics model for this edge. When specified, the edge has
+                    its own state variables and ODE (EdgeModel with f in ND.jl).
+                    Uses the same Dynamics class as nodes — state_variables define
+                    edge states, derived_variables define observables, output defines
+                    what is visible for plotting/analysis. The coupling_function on
+                    Coupling still defines how vertex outputs map to edge outputs
+                    for aggregation at vertices.
+            events:
+                multivalued: true
+                range: Event
+                inlined: true
+                description: "Events attached to this edge (e.g., threshold-based line tripping)."
 
-  CouplingInput:
-    description: "Specification of a coupling input channel for multi-coupling dynamics"
-    slots:
-      - name
-      - description
-    attributes:
-      dimension:
-        range: integer
-        ifabsent: integer(1)
-        description: "Dimensionality of the coupling input (number of coupled values)"
+    Observation:
+        description: >-
+            Unified class for all observation/measurement specifications.
+            Covers monitors (BOLD, EEG), tuning observables, and derived quantities.
+            Pipeline is a sequence of Functions with input -> output flow.
+        class_uri: tvbo:Observation
+        slots:
+            - name
+            - acronym
+            - label
+            - description
+            - equation
+            - parameters
+            - environment
+            - time_scale
+        attributes:
+            # Source specification - what state variable to observe
+            source:
+                range: StateVariable
+                description: >-
+                    State variable to observe (e.g., S_e for excitatory activity).
+                    For observations derived from other observations, use DerivedObservation.
+                inlined: false
 
-  Function:
-    class_uri: tvbo:Function
-    slots:
-      - name
-      - acronym
-      - label
-      - equation
-      - definition
-      - description
-      - requirements
-    attributes:
-      iri:
-        range: string
-      definition:
-        range: string
-      arguments:
-        multivalued: true
-        range: Parameter
-      output:
-        range: Equation
-      source_code:
-        range: string
-      callable:
-        range: Callable
+            # Monitor attributes (for BOLD, EEG, etc.)
+            period:
+                range: float
+                description: "Sampling period for monitors (ms). For BOLD: TR in ms."
+            downsample_period:
+                range: float
+                description: "Intermediate downsampling period (ms). For BOLD: typically matches dt."
+            voi:
+                range: integer
+                description: "Variable of interest index (which state variable to monitor). Default: 0."
+            imaging_modality:
+                range: ImagingModality
+                description: "Type of imaging modality (BOLD, EEG, MEG, etc.)"
+            warmup_source:
+                range: string
+                description: "Reference to transient simulation result for history initialization (e.g., 'result_init')."
 
-  Callable:
-    slots:
-      - name
-      - description
-    attributes:
-      module:
-        range: string
-      qualname:
-        range: string
-      software:
-        range: SoftwareRequirement
+            # External data loading (makes empirical data an Observation too)
+            data_source:
+                range: DataSource
+                inlined: true
+                description: >-
+                    Load data from external source (file, database, API).
+                    When specified, this observation represents empirical/external data
+                    rather than simulated data. Enables unified treatment of all data.
 
-  Case:
-    attributes:
-      condition:
-        range: string
-      equation:
-        range: Equation
+            # Observable/aggregation attributes (for tuning algorithms)
+            skip_t:
+                range: integer
+                description: "Number of samples to skip at the start (transient removal). For FC: typically 10-20 TRs."
+            tail_samples:
+                range: integer
+                description: "Number of samples from the end to use. Takes the last N samples before aggregation. E.g., tail_samples: 500 means use data[-500:]."
+            aggregation:
+                range: AggregationType
+                description: "How to aggregate over time"
+            window_size:
+                range: integer
+                description: "Number of samples for windowed aggregation"
 
-  DerivedParameter:
-    is_a: Parameter
-    class_uri: tvbo:DerivedParameter
-    slots:
-      - name
-      - symbol
-      - description
-      - equation
-      - unit
+            # Processing pipeline (sequence of Functions with input -> output flow)
+            pipeline:
+                description: "Ordered sequence of Functions. Each Function transforms input -> output."
+                multivalued: true
+                inlined_as_list: true
+                range: FunctionCall
 
-  DerivedVariable:
-    class_uri: tvbo:DerivedVariable
-    attributes:
-      conditional:
-        range: boolean
-        ifabsent: false
-      cases:
-        multivalued: true
-        range: Case
-    slots:
-      - name
-      - symbol
-      - description
-      - equation
-      - unit
+            # Direct class reference (alternative to pipeline)
+            class_reference:
+                description: >-
+                    Direct class reference (alternative to pipeline). Use for external library
+                    classes like tvboptim.Bold, custom monitors, or any callable class.
+                    The class is instantiated with constructor_args and called with call_args.
+                    Example: {name: Bold, module: tvboptim.observations.tvb_monitors.bold,
+                    constructor_args: [{name: period, value: 1000.0}]}
+                range: ClassReference
+                inlined: true
 
-  Noise:
-    class_uri: tvbo:Noise
-    slots:
-      - parameters
-      - equation
-    attributes:
-      noise_type:
-        range: string
-        ifabsent: "gaussian"
-      correlated:
-        range: boolean
-        ifabsent: false
-      gaussian:
-        range: boolean
-        description: "Indicates whether the noise is Gaussian"
-        ifabsent: false
-      additive:
-        range: boolean
-        description: "Indicates whether the noise is additive"
-        ifabsent: true
-      seed:
-        range: integer
-        ifabsent: integer(42)
-      random_state:
-        range: RandomStream
-      intensity:
-        description: "Optional scalar or vector intensity parameter for noise."
-        range: Parameter
-      function:
-        description: "Optional functional form of the noise (callable specification)."
-        range: Function
-      pycode:
-        description: "Inline Python code representation of the noise process."
-        range: string
-      targets:
-        description: "State variables this noise applies to; if omitted, applies globally."
-        multivalued: true
-        range: StateVariable
+    # ProcessingStep, DataInjection, ArgumentMapping removed
+    # Function now handles input -> process -> output flow directly
 
-  RandomStream:
-    class_uri: tvbo:RandomStream
-    slots:
-      - label
-      - description
-      - dataLocation
+    DerivedObservation:
+        description: >-
+            Observation derived from one or more other observations.
+            Examples:
+            - fc (from bold) - single source transformation
+            - fc_corr (from fc and fc_target) - multi-source comparison
+            Unlike regular Observations, these don't generate monitor classes
+            but are computed from existing observation values.
+        is_a: Observation
+        class_uri: tvbo:DerivedObservation
+        attributes:
+            source_observations:
+                range: Observation
+                multivalued: true
+                inlined: false
+                required: true
+                minimum_cardinality: 1
+                description: >-
+                    One or more observations to derive from. For transformations
+                    (e.g., fc from bold), use single source. For comparisons
+                    (e.g., fc_corr from fc and fc_target), use multiple sources.
+                    Order may matter for asymmetric operations.
 
-  CostFunction:
-    slots:
-      - label
-      - equation
-      - parameters
+    Dynamics:
+        class_uri: tvbo:Dynamics
+        comments:
+            - Successor class replacing deprecated NeuralMassModel.
+        aliases:
+            - NeuralMassModel
+        slots:
+            - has_reference
+            - name
+            - label
+            - iri
+            - parameters
+            - description
+            - source
+            - references
+        slot_usage:
+            name:
+                ifabsent: "Generic2dOscillator"
+            system_type:
+                ifabsent: "continuous"
+        attributes:
+            derived_parameters:
+                multivalued: true
+                range: DerivedParameter
+                inlined: true
+            derived_variables:
+                multivalued: true
+                range: DerivedVariable
+                inlined: true
+            coupling_terms:
+                multivalued: true
+                range: Parameter
+                inlined: true
+            coupling_inputs:
+                multivalued: true
+                range: CouplingInput
+                inlined: true
+            state_variables:
+                multivalued: true
+                range: StateVariable
+                inlined: true
+            modified:
+                range: boolean
+            output:
+                multivalued: true
+                range: string
+                description: "Output variable names to include in simulation results. References to state_variables or derived_variables by name."
+            derived_from_model:
+                range: Dynamics
+            number_of_modes:
+                range: integer
+                ifabsent: integer(1)
+            local_coupling_term:
+                range: Parameter
+            functions:
+                multivalued: true
+                range: Function
+                inlined: true
+            stimulus:
+                range: Stimulus
+                inlined: true
+            modes:
+                multivalued: true
+                range: Dynamics
+                inlined: true
+                aliases:
+                    - components
+            model_type:
+                range: ModelType
+                description: >-
+                    Coarse classification of this model (mean_field, neural_mass,
+                    phase_oscillator, phenomenological, spiking, generic, field).
+                    Used for filtering in Dynamics.list_db(model_type=...).
+            system_type:
+                range: SystemType
+            autonomous:
+                range: boolean
+                ifabsent: "true"
+                description: "Whether the system is autonomous (equations do not depend explicitly on time t). Non-autonomous systems have explicit time dependence, e.g. f*cos(omega*t)."
+            observed:
+                multivalued: true
+                range: DerivedVariable
+                inlined: true
+                description: >-
+                    Observable functions computed from states, inputs, and parameters
+                    after simulation. Unlike derived_variables (which are intermediate
+                    algebraic expressions used within the ODE), observed variables
+                    are post-hoc quantities recoverable from the solution.
+                    Maps to obsf/obssym in ND.jl EdgeModel/VertexModel.
+                    Example: absolute force magnitude computed from force components.
+            events:
+                multivalued: true
+                range: Event
+                inlined: true
+                description: >-
+                    Discrete state transitions intrinsic to the dynamical system,
+                    such as threshold-triggered resets in spiking neuron models.
+                    Unlike experiment-level events (stimulation, perturbation),
+                    these define the model's own discontinuous behavior.
 
-  FittingTarget:
-    slots:
-      - label
-      - equation
-      - symbol
-      - definition
-      - parameters
+    StateVariable:
+        class_uri: tvbo:StateVariable
+        slots:
+            - name
+            - symbol
+            - label
+            - definition
+            - domain
+            - description
+            - equation
+            - unit
+        attributes:
+            variable_of_interest:
+                range: boolean
+                ifabsent: true
+            coupling_variable:
+                range: boolean
+                ifabsent: false
+                description: >-
+                    Whether this state variable is transmitted to connected nodes
+                    through the coupling function. In TVB terms, this determines
+                    the cvar indices (state variables extracted from history and
+                    fed into the coupling function). The coupling function may
+                    override this via its incoming_states attribute.
+            equation_type:
+                range: string
+                ifabsent: "string(differential)"
+                description: >-
+                    Type of equation: 'differential' (default) means dx/dt = rhs,
+                    'algebraic' means 0 = rhs or x ~ rhs (DAE constraint).
+                    Algebraic equations are used by ModelingToolkit.jl backend.
+            equation_order:
+                range: integer
+                ifabsent: int(1)
+                description: >-
+                    Order of the time derivative on the LHS. Default 1 means
+                    dx/dt = rhs (first-order ODE). Order 2 means d²x/dt² = rhs
+                    (second-order ODE), etc. Higher-order ODEs are automatically
+                    lowered to coupled first-order systems by backends like
+                    ModelingToolkit.jl via mtkcompile.
+            noise:
+                range: Noise
+                inlined: true
+            stimulation_variable:
+                range: boolean
+            boundaries:
+                range: Range
+                inlined: true
+            initial_value:
+                range: float
+                ifabsent: float(0.1)
+            derivative_initial_value:
+                range: float
+                description: >-
+                    Initial value for the first time derivative, used when
+                    equation_order > 1. For a second-order ODE d²x/dt² = f,
+                    this sets dx/dt(0). Required by ModelingToolkit.jl to
+                    fully specify higher-order initial value problems.
+            distribution:
+                range: Distribution
+                inlined: true
+                description: "Distribution for sampling initial conditions per node. If present, initial_value is used as fallback/mean."
+            history:
+                range: TimeSeries
+                inlined: true
 
-  ModelFitting:
-    slots:
-      - label
-      - description
-    attributes:
-      targets:
-        multivalued: true
-        range: FittingTarget
-      cost_function:
-        range: CostFunction
+    Distribution:
+        description: >-
+            A probability distribution for sampling parameters or initial conditions.
+            Standard distributions (Uniform, Gaussian) are specified by name and domain/parameters.
+            Custom distributions use a Function for the PDF/sampling rule.
+            Default name is Uniform when only domain is given.
+        slots:
+            - name
+            - parameters
+        slot_usage:
+            name:
+                ifabsent: string(Uniform)
+        attributes:
+            domain:
+                range: Range
+                inlined: true
+                description: "Support of the distribution (sampling bounds). For Uniform this fully defines the distribution."
+            function:
+                range: Function
+                inlined: true
+                description: "Custom distribution function (PDF or sampling callable). Only needed for non-standard distributions."
+            seed:
+                range: integer
+                description: "Random seed for reproducible sampling."
+            axis:
+                range: SamplingAxis
+                ifabsent: "space"
+                description: "Dimension along which the distribution is sampled. 'space' = per-node (default), 'time' = per-timestep (stochastic input)."
+            correlation:
+                range: Matrix
+                inlined: true
 
-  Integrator:
-    class_uri: tvbo:Integrator
-    slots:
-      - time_scale
-      - unit
-      - parameters
-      - duration
-    attributes:
-      method:
-        range: string
-      step_size:
-        range: float
-        ifabsent: float(0.01220703125)
-      steps:
-        range: integer
-      noise:
-        range: Noise
-      state_wise_sigma:
-        range: float
-        multivalued: true
-      transient_time:
-        range: float
-        ifabsent: float(0)
-      scipy_ode_base:
-        range: boolean
-        ifabsent: false
-      number_of_stages:
-        range: integer
-        ifabsent: integer(1)
-      intermediate_expressions:
-        multivalued: true
-        range: DerivedVariable
-      update_expression:
-        range: DerivedVariable
-      delayed:
-        range: boolean
-        ifabsent: true
+    Parameter:
+        class_uri: tvbo:Parameter
+        slots:
+            - name
+            - label
+            - symbol
+            - definition
+            - value
+            - default
+            - domain
+            - reported_optimum
+            - description
+            - equation
+            - unit
+            - dataset_path
+        attributes:
+            comment:
+                range: string
+            heterogeneous:
+                range: boolean
+            distribution:
+                range: Distribution
+                inlined: true
+                description: "Distribution for heterogeneous per-node parameter sampling. Implies heterogeneous=true."
+            free:
+                range: boolean
+            shape:
+                range: string
+            explored_values:
+                multivalued: true
+                range: float
+                array: {}
+            element_domains:
+                multivalued: true
+                range: Range
+                inlined_as_list: true
+                description: >-
+                    Per-element domain overrides for heterogeneous parameters.
+                    When specified, element_domains[i] overrides domain for element i
+                    during exploration auto-expansion. Length must match parameter shape
+                    (e.g., n_nodes for shape "(n_nodes,)"). If not set, all elements
+                    share the same domain.
 
-  Monitor:
-    is_a: ObservationModel
-    class_uri: tvbo:Monitor
-    description: "Observation model for monitoring simulation output with optional processing pipeline"
-    slots:
-      - time_scale
-      - name
-      - label
-      - parameters
-      - acronym
-      - description
-      - equation
-      - environment
-    attributes:
-      # Monitor-specific attributes
-      period:
-        range: float
-        description: "Sampling period for the monitor"
-      imaging_modality:
-        range: ImagingModality
-        description: "Type of imaging modality (BOLD, EEG, MEG, etc.)"
+    CouplingInput:
+        description: "Specification of a coupling input channel for multi-coupling dynamics"
+        slots:
+            - name
+            - description
+        attributes:
+            dimension:
+                range: integer
+                ifabsent: integer(1)
+                description: "Dimensionality of the coupling input (number of coupled values)"
+            keys:
+                multivalued: true
+                range: string
+                description: "Named keys for multi-dimensional coupling. When dimension > 1, provides symbolic names for each index (e.g., keys: [lre, ffi] for dimension: 2). Used in equations as variable names."
 
-      # Inherited from ObservationModel:
-      # - transformation: Function
-      # - pipeline: ProcessingStep[]
-      # - data_injections: DataInjection[]
-      # - argument_mappings: ArgumentMapping[]
-      # - derivatives: DerivedVariable[]
+    Argument:
+        class_uri: tvbo:Argument
+        description: >-
+            A function argument with explicit value specification.
+            Value can be: literal (number/string), reference to input (input.key),
+            or cross-observation reference (observation_name.output_key).
+        slots:
+            - name
+            - description
+        attributes:
+            value:
+                description: >-
+                    Argument value. Can be:
+                    - Literal: 1.0, "string", etc.
+                    - Input reference: "input.frequencies" (from source_observation outputs)
+                    - Cross-observation: "target_frequencies.peak_freqs" (from another observation)
+                any_of:
+                    - range: float
+                    - range: integer
+                    - range: string
+            unit:
+                range: string
 
-  Coupling:
-    class_uri: tvbo:Coupling
-    slots:
-      - name
-      - label
-      - parameters
-    slot_usage:
-      name:
-        ifabsent: "Linear"
-    attributes:
-      # Standard coupling attributes
-      coupling_function:
-        range: Equation
-        description: "Mathematical function defining the coupling"
-      sparse:
-        range: boolean
-        ifabsent: false
-        description: "Whether the coupling uses sparse representations"
-      pre_expression:
-        range: Equation
-        description: "Pre-processing expression applied before coupling"
-      post_expression:
-        range: Equation
-        description: "Post-processing expression applied after coupling"
-      incoming_states:
-        range: StateVariable
-        description: "State variables from connected nodes (source)"
-      local_states:
-        range: StateVariable
-        description: "State variables from local node (target)"
-      delayed:
-        range: boolean
-        ifabsent: true
-        description: "Whether coupling includes transmission delays"
+    Function:
+        class_uri: tvbo:Function
+        description: >-
+            A function with explicit input -> transformation -> output flow.
+            Can be equation-based (symbolic) or software-based (callable).
+            In a pipeline, functions are chained: output of one becomes input of next.
+        slots:
+            - name
+            - acronym
+            - label
+            - equation
+            - definition
+            - description
+            - requirements
+        attributes:
+            # Input specification (within pipeline context)
+            input:
+                description: >-
+                    Simple input reference: name of previous function's output in pipeline.
+                    For multi-argument functions, use arguments with value references instead.
+                range: Function
+                inlined: false
+            # Output specification
+            output:
+                description: "Name for this function's output (referenced by subsequent functions)"
+                range: string
+            # Transformation definition (equation OR callable)
+            iri:
+                range: string
+            arguments:
+                description: "Parameters/arguments for the function"
+                multivalued: true
+                range: Argument
+                inlined_as_list: true
+            output_equation:
+                description: "Output transformation equation (if equation-based)"
+                range: Equation
+                inlined: true
+            source_code:
+                range: string
+            callable:
+                description: "Software implementation reference (if software-based)"
+                range: Callable
+                inlined: true
+            # Pipeline metadata
+            apply_on_dimension:
+                description: "Which dimension to apply the transformation on"
+                range: DimensionType
+            aggregate:
+                description: >-
+                    How to aggregate the result across dimensions.
+                    E.g., aggregate.over=node computes per-row (per-node) with keepdims.
+                    The type field controls whether to reduce (mean/sum) or keep dimensions (none).
+                range: Aggregation
+                inlined: true
+            time_range:
+                description: "Time range for generated TimeSeries (for kernel generators). Equation is evaluated at each time point."
+                range: Range
+                inlined: true
 
-      # Hierarchical/subspace coupling attributes (optional)
-      inner_coupling:
-        range: Coupling
-        description: "For hierarchical coupling: inner coupling applied at regional level"
-      region_mapping:
-        range: RegionMapping
-        description: "For hierarchical coupling: vertex-to-region mapping for aggregation"
-      regional_connectivity:
-        range: Connectome
-        description: "For hierarchical coupling: region-to-region connectivity with weights and delays"
-      aggregation:
-        any_of:
-          - range: string
-          - range: Function
-        description: "For hierarchical coupling: aggregation method ('sum', 'mean', 'max') or custom Function"
-      distribution:
-        any_of:
-          - range: string
-          - range: Function
-        description: "For hierarchical coupling: distribution method ('broadcast', 'weighted') or custom Function"
+    Aggregation:
+        description: >-
+            Specifies how to aggregate values across a dimension.
+            Used for loss functions to define per-element loss with reduction.
+        attributes:
+            over:
+                description: "Dimension to aggregate over (e.g., node, time, state)"
+                range: DimensionType
+            type:
+                description: "Aggregation operation (mean, sum, max, min, none)"
+                range: ReductionType
+                ifabsent: string(mean)
 
-  RegionMapping:
-    description: "Maps vertices to parent regions for hierarchical/aggregated coupling"
-    slots:
-      - label
-      - description
-      - dataLocation
-    attributes:
-      vertex_to_region:
-        description: "Array mapping each vertex index to its parent region index. Can use dataLocation instead for large arrays."
-        multivalued: true
-        range: integer
-      n_vertices:
-        range: integer
-        description: "Total number of vertices"
-      n_regions:
-        range: integer
-        description: "Total number of regions"
+    LossFunction:
+        is_a: Function
+        description: >-
+            A loss function for optimization with optional aggregation.
+            Extends Function with aggregation specification for per-element losses.
+        attributes:
+            aggregate:
+                description: >-
+                    How to aggregate the loss across dimensions.
+                    Example: aggregate.over=node, aggregate.type=mean
+                    computes loss per node, then averages.
+                range: Aggregation
+                inlined: true
+    FunctionCall:
+        description: >-
+            Invocation of a function in a pipeline. Can reference a defined Function by name,
+            OR inline a callable directly for external library functions,
+            OR inline an equation, OR use class_call for class instantiation.
+            Mirrors Function attributes so pipeline steps can be self-contained.
+        slots:
+            - acronym
+            - label
+            - equation
+            - description
+        attributes:
+            name:
+                range: string
+                description: "Optional name for this pipeline step"
+            function:
+                description: "Reference to a defined Function (by name)"
+                range: Function
+                inlined: false
+            callable:
+                description: "Direct callable specification (alternative to function reference)"
+                range: Callable
+                inlined: true
+            class_call:
+                description: >-
+                    Class instantiation and call (alternative to callable/function).
+                    Use for external library classes that need __init__ then __call__.
+                    Example: Bold monitor from tvboptim.
+                range: ClassReference
+                inlined: true
+            input:
+                description: "Reference to previous function's output in pipeline (by name)"
+                range: string
+            output:
+                description: "Name for this step's output (referenced by subsequent functions)"
+                range: string
+            apply_on_dimension:
+                description: "Dimension to apply function over (generates vmap in code). E.g., 'node' applies per-node."
+                range: DimensionType
+            aggregate:
+                description: >-
+                    How to aggregate the result across dimensions.
+                    Example: aggregate.over=node, aggregate.type=mean
+                    applies function per node, then averages. Used in loss functions.
+                range: Aggregation
+                inlined: true
+            arguments:
+                range: Argument
+                multivalued: true
+                inlined_as_list: true
+            time_range:
+                description: "Time range for generated TimeSeries (for kernel generators)"
+                range: Range
+                inlined: true
+            source_code:
+                range: string
 
-  Sample:
-    attributes:
-      groups:
-        multivalued: true
-        range: string
-      size:
-        range: integer
+    Callable:
+        slots:
+            - name
+            - description
+        attributes:
+            module:
+                range: string
+            software:
+                range: SoftwareRequirement
+                inlined: true
 
-  SimulationExperiment:
-    tree_root: true
-    class_uri: tvbo:Simulation
-    slots:
-      - model
-    attributes:
-      id:
-        identifier: true
-        range: integer
-      description:
-        range: string
-      additional_equations:
-        multivalued: true
-        range: Equation
-      label:
-        range: string
-      local_dynamics:
-        range: Dynamics # Lumped, per-node dynamics (ODE/SDE/DDE/SDDE)
-      dynamics:
-        multivalued: true
-        range: string
-      integration:
-        range: Integrator
-      connectivity:
-        range: Connectome
-      network:
-        range: Connectome
-      coupling:
-        range: Coupling
-      monitors:
-        multivalued: true
-        range: Monitor # Now Monitor is_a ObservationModel
-      stimulation:
-        range: Stimulus
-      field_dynamics:
-        range: PDE # Distributed, spatially resolved dynamics (PDE)
-      modelfitting:
-        multivalued: true
-        range: ModelFitting
-      # Either reference a full reusable environment (preferred) or, for
-      # legacy/simple cases, a single software requirement.
-      environment:
-        range: SoftwareEnvironment
-        description: "Execution environment (collection of requirements)."
-      software:
-        range: SoftwareRequirement
-        description: "(Deprecated) Single software requirement; prefer 'environment' with aggregated requirements."
-      references:
-        multivalued: true
-        range: string
+    ClassReference:
+        description: >-
+            Reference to a class that can be instantiated and called.
+            Used for external library classes (e.g., tvboptim.Bold, custom monitors).
+            The class is instantiated with constructor_args, then called with call_args.
+            Generalizable pattern: works for tvboptim, TVB, or any Python class.
+        is_a: Callable
+        attributes:
+            constructor_args:
+                description: >-
+                    Arguments passed to __init__ when instantiating the class.
+                    Example: period=1000.0, downsample_period=4.0 for Bold monitor.
+                multivalued: true
+                range: Argument
+                inlined_as_list: true
+            call_args:
+                description: >-
+                    Arguments passed when calling the instance (__call__).
+                    Usually the input data from simulation result.
+                    Example: result (simulation output array).
+                multivalued: true
+                range: Argument
+                inlined_as_list: true
+            warmup_source:
+                description: >-
+                    Reference to transient simulation result for history initialization.
+                    Some monitors (e.g., Bold) require history from warmup simulation.
+                    Value should reference a simulation result name (e.g., 'result_init').
+                range: string
 
-  SimulationStudy:
-    class_uri: tvbo:SimulationStudy
-    # tree_root: true
-    slots:
-      - label
-      - derived_from
-      - model
-      - description
-    attributes:
-      key:
-        range: string
-      title:
-        range: string
-      year:
-        range: integer
-      doi:
-        range: string
-      sample:
-        range: Sample
-      simulation_experiments:
-        multivalued: true
-        inlined_as_list: true
-        range: SimulationExperiment
+    Case:
+        attributes:
+            condition:
+                range: string
+            equation:
+                range: Equation
+                inlined: true
 
-  TimeSeries:
-    class_uri: tvbo:TimeSeries
-    slots:
-      - label
-      - description
-      - dataLocation
-    attributes:
-      data:
-        range: Matrix
-      time:
-        range: Matrix
-      sampling_rate:
-        range: float
-      unit:
-        range: string
+    DerivedParameter:
+        is_a: Parameter
+        class_uri: tvbo:DerivedParameter
+        slots:
+            - name
+            - symbol
+            - description
+            - equation
+            - unit
 
-  SoftwareEnvironment:
-    slots:
-      - label
-      - description
-      - dataLocation
-    attributes:
-      name:
-        range: string
-        description: "Human-readable environment label/name (deprecated alias was 'software')."
-      version:
-        range: string
-        description: "Optional version tag for the environment definition (not a package version)."
-      platform:
-        range: string
-        description: "OS / architecture description (e.g., linux-64)."
-      environment_type:
-        range: EnvironmentType
-        description: "Category: conda, venv, docker, etc."
-      container_image:
-        range: string
-        description: "Container image reference (e.g., ghcr.io/org/img:tag@sha256:...)."
-      build_hash:
-        range: string
-        description: "Deterministic hash/fingerprint of the resolved dependency set."
-      requirements:
-        description: "Constituent software/module requirements that define this environment."
-        multivalued: true
-        range: SoftwareRequirement
-        inlined: false
+    DerivedVariable:
+        class_uri: tvbo:DerivedVariable
+        attributes:
+            conditional:
+                range: boolean
+                ifabsent: false
+            cases:
+                multivalued: true
+                range: Case
+                inlined: true
+        slots:
+            - name
+            - label
+            - symbol
+            - description
+            - equation
+            - unit
 
-    comments:
-      - "An environment now aggregates one or more SoftwareRequirement entries."
-      - "Use SimulationExperiment.environment to reference a reusable environment."
-      - "Field 'name' supersedes previous 'software' attribute for clarity."
-      - "'version' here is an environment spec version, not a package version."
+    Noise:
+        class_uri: tvbo:Noise
+        slots:
+            - parameters
+            - equation
+        attributes:
+            noise_type:
+                range: string
+                ifabsent: "gaussian"
+            correlated:
+                range: boolean
+                ifabsent: false
+            gaussian:
+                range: boolean
+                description: "Indicates whether the noise is Gaussian"
+                ifabsent: false
+            additive:
+                range: boolean
+                description: "Indicates whether the noise is additive"
+                ifabsent: true
+            seed:
+                range: integer
+                ifabsent: integer(42)
+            random_state:
+                range: RandomStream
+                inlined: true
+            intensity:
+                description: "Optional scalar or vector intensity parameter for noise."
+                range: Parameter
+                inlined: true
+            function:
+                description: "Optional functional form of the noise (callable specification)."
+                range: Function
+                inlined: true
+            pycode:
+                description: "Inline Python code representation of the noise process."
+                range: string
+            targets:
+                description: "State variables this noise applies to; if omitted, applies globally."
+                multivalued: true
+                range: StateVariable
+                inlined: true
 
-  SoftwareRequirement:
-    slots:
-      - name
-      - description
-      - dataLocation
-    attributes:
-      package:
-        range: SoftwarePackage
-        required: true
-        description: "Reference to the software package identity."
-      version_spec:
-        range: string
-        description: "Version or constraint specifier (e.g., '==2.7.3', '>=1.2,<2')."
-      role:
-        range: RequirementRole
-        ifabsent: "runtime"
-      optional:
-        range: boolean
-        ifabsent: false
-      hash:
-        range: string
-        description: "Build or artifact hash for exact reproducibility (wheel, sdist, image layer)."
-      source_url:
-        range: string
-        description: "Canonical source or repository URL."
-      url:
-        range: string
-        description: "(Deprecated) Use source_url."
-      license:
-        range: string
-      modules:
-        multivalued: true
-        range: string
-        description: "(Deprecated) Former ad-hoc list; use environment.requirements list instead."
-      version:
-        range: string
-        description: "(Deprecated) Use version_spec."
-    comments:
-      - "Represents an individual requirement (package/module/library)."
-      - "Add 'package' to separate identity from requirement expression."
-      - "Use 'version_spec' instead of 'version' for semantic clarity."
-      - "'modules' retained only for backward compatibility and will be removed in a future release."
-      - "No pointer back to SoftwareEnvironment; aggregation is one-way from SoftwareEnvironment.requirements."
+    RandomStream:
+        class_uri: tvbo:RandomStream
+        slots:
+            - label
+            - description
+            - dataLocation
 
-  SoftwarePackage:
-    description: "Identity information about a software package independent of a specific version requirement."
-    slots:
-      - name
-      - description
-    attributes:
-      homepage:
-        range: string
-      license:
-        range: string
-      repository:
-        range: string
-      doi:
-        range: string
-      ecosystem:
-        range: string
-        description: "Package ecosystem or index (e.g., pypi, conda-forge)."
-    comments:
-      - "Distinct from SoftwareRequirement which binds a package to a version/role."
+    DataSource:
+        description: "Specification for loading external/empirical data."
+        slots:
+            - name
+            - label
+            - description
+        attributes:
+            path:
+                range: string
+                description: "File path or URI to the data"
+            loader:
+                range: Callable
+                inlined: true
+                description: "Callable that loads the data (e.g., load_functional_connectivity)"
+            format:
+                range: string
+                description: "Data format: 'npy', 'mat', 'csv', 'nifti', etc."
+            key:
+                range: string
+                description: "Key/variable name within the file (for .mat, .npz, etc.)"
+            preprocessing:
+                range: Function
+                inlined: true
+                description: "Optional preprocessing to apply after loading"
 
-  # nD array for field and image data
-  NDArray:
-    attributes:
-      shape:
-        multivalued: true
-        range: integer
-      dtype:
-        range: string
-      dataLocation:
-        range: string
-      unit:
-        range: string
-    slots:
-      - label
-      - description
+    OptimizationStage:
+        description: >-
+            A single stage in a multi-stage optimization workflow.
+            Stages run sequentially, with each stage potentially using
+            different parameters, shapes, learning rates, and algorithms.
+        slots:
+            - name
+            - label
+            - description
+        attributes:
+            free_parameters:
+                multivalued: true
+                range: Parameter
+                inlined: false
+                description: >-
+                    Parameters to optimize in this stage.
+                    Use 'shape' attribute to specify scalar vs regional.
+                    Example: {name: w, shape: "(n_nodes,)"} for heterogeneous.
+            algorithm:
+                range: string
+                ifabsent: string(adam)
+                description: "Optimizer for this stage: 'adam', 'adamw', 'sgd', etc."
+            learning_rate:
+                range: float
+                ifabsent: float(0.001)
+            max_iterations:
+                range: integer
+                ifabsent: integer(100)
+            hyperparameters:
+                multivalued: true
+                range: Parameter
+                inlined: true
+                inlined_as_list: true
+                description: "Stage-specific hyperparameters (e.g., b2=0.9999 for adam)"
+            freeze_parameters:
+                multivalued: true
+                range: Parameter
+                inlined: false
+                description: "Parameters from previous stages to freeze (keep at optimized value but not update)"
+            warmup_from:
+                range: OptimizationStage
+                inlined: false
+                description: "Previous stage to initialize from. Final values from that stage become initial values for this stage."
 
-  # Spatial domain and mesh
-  SpatialDomain:
-    attributes:
-      coordinate_space:
-        range: CommonCoordinateSpace
-      region:
-        description: "Optional named region/ROI in the atlas/parcellation."
-        range: string
-      geometry:
-        description: "Optional file for geometry/ROI mask (e.g., NIfTI, GIfTI)."
-        range: string
-    slots:
-      - label
-      - description
+    Optimization:
+        is_a: OptimizationStage
+        description: >-
+            Configuration for parameter optimization.
+            Inherits single-stage fields from OptimizationStage.
+            For multi-stage workflows, use 'stages' (ignores inherited single-stage fields).
+            Loss equation references observations directly by name.
+        attributes:
+            execution:
+                range: ExecutionConfig
+                inlined: true
+                description: >-
+                    Per-optimization execution configuration (overrides experiment-level defaults).
+                    Useful for setting random_seed, precision, or hardware for optimization phase.
+            # Integration settings for optimization (overrides experiment-level defaults)
+            integration:
+                range: Integrator
+                inlined: true
+                description: >-
+                    Integration settings for optimization simulations (overrides experiment defaults).
+                    If specified, creates a fresh model_fn and state with prepare() before optimization.
+                    Can specify different duration, step_size, method than the experiment.
+                    If not specified, uses experiment-level integration settings.
+            # Loss specification - FunctionCall that references or inlines the loss function
+            loss:
+                range: FunctionCall
+                inlined: true
+                description: >-
+                    Loss function call. Uses FunctionCall to either:
+                    1. Reference existing function: function: rmse
+                    2. Inline callable: callable: {module: ..., name: ...}
+                    Arguments specify inputs (simulated_fc, empirical_fc, etc.)
 
-  Mesh:
-    attributes:
-      element_type:
-        range: ElementType
-      coordinates:
-        description: "Node coordinates (x,y,z) in the given coordinate space."
-        multivalued: true
-        range: Coordinate
-      elements:
-        description: "Connectivity (indices) or file reference to topology."
-        range: string
-      coordinate_space:
-        range: CommonCoordinateSpace
-    slots:
-      - label
-      - description
-      - dataLocation
+            # Multi-stage optimization (preferred for complex workflows)
+            stages:
+                multivalued: true
+                range: OptimizationStage
+                inlined: true
+                inlined_as_list: true
+                description: >-
+                    Ordered list of optimization stages. Stages run sequentially.
+                    Stage n+1 starts from optimized values of stage n.
+                    When defined, inherited single-stage fields are ignored.
 
-  # Spatial field
-  SpatialField:
-    attributes:
-      quantity_kind:
-        description: "Scalar, vector, or tensor."
-        range: string
-      unit:
-        range: string
-      mesh:
-        range: Mesh
-      values:
-        range: NDArray
-      time_dependent:
-        range: boolean
-        ifabsent: false
-      initial_value:
-        description: "Constant initial value for the field."
-        range: float
-        ifabsent: float(0.1)
-      initial_expression:
-        description: "Analytic initial condition for the field."
-        range: Equation
-    slots:
-      - label
-      - description
+            # Dependency on algorithm (use algorithm's result state as starting point)
+            depends_on:
+                range: Algorithm
+                inlined: false
+                description: >-
+                    Algorithm to use as starting point for optimization.
+                    If specified, optimization starts from algorithm's result state.
+                    If not specified, optimization starts from initial simulation state.
 
-  # Field-like state variable for PDEs (aligns with Dynamics.StateVariable)
-  FieldStateVariable:
-    is_a: StateVariable
-    attributes:
-      mesh:
-        range: Mesh
-      boundary_conditions:
-        multivalued: true
-        range: BoundaryCondition
-    slots:
-      - label
-      - description
+    # =============================================================================
+    # Parameter Exploration
+    # =============================================================================
 
-  DifferentialOperator:
-    attributes:
-      operator_type:
-        range: OperatorType
-      coefficient:
-        range: Parameter
-      tensor_coefficient:
-        description: "Optional anisotropic tensor (e.g., diffusion)."
-        range: Parameter
-      expression:
-        description: "Symbolic form (e.g., '-div(D * grad(u))')."
-        range: Equation
-    slots:
-      - label
-      - definition
-      - equation
+    Exploration:
+        description: "Parameter space exploration (grid search, sweep)."
+        slots:
+            - name
+            - label
+            - description
+        attributes:
+            execution:
+                range: ExecutionConfig
+                inlined: true
+                description: >-
+                    Per-exploration execution configuration (overrides experiment-level defaults).
+                    Useful for setting random_seed, n_workers for parallel grid search.
+            parameters:
+                multivalued: true
+                range: Parameter
+                inlined: true
+                description: "Parameters with domain ranges to explore (uses domain.lo, domain.hi, domain.n)"
+            mode:
+                range: string
+                ifabsent: string(product)
+                description: "Combination mode: 'product' (full grid), 'zip' (paired)"
+            observable:
+                range: FunctionCall
+                inlined: true
+                description: "Observable to compute at each point. Use function: obs_name for simple observation, or function: func_name + arguments for FunctionCall."
+            n_parallel:
+                range: integer
+                ifabsent: integer(1)
+                description: "Parallel evaluations"
+            n_trials:
+                range: integer
+                ifabsent: integer(1)
+                description: >-
+                    Number of independent trials per grid point.
+                    Each trial uses a different noise seed. Used for averaging
+                    stochastic simulations (e.g., VEP = average of 20 trials).
+            average:
+                range: string
+                description: >-
+                    Averaging mode across trials. 'trials' = average over n_trials
+                    independent runs (evoked potential paradigm). None = return all trials.
 
-  BoundaryCondition:
-    attributes:
-      bc_type:
-        range: BoundaryConditionType
-      on_region:
-        description: "Mesh/atlas subset where BC applies."
-        range: string
-      value:
-        description: "Constant, parameter, or equation."
-        range: Equation
-      time_dependent:
-        range: boolean
-        ifabsent: false
-    slots:
-      - label
-      - description
+    # =============================================================================
+    # Iterative Tuning Algorithms (FIC, EIB, etc.)
+    # =============================================================================
 
-  PDESolver:
-    attributes:
-      discretization:
-        range: DiscretizationMethod
-      time_integrator:
-        description: "e.g., implicit Euler, Crank–Nicolson."
-        range: string
-      dt:
-        description: "Time step (s)."
-        range: float
-        alias: step_size
-      tolerances:
-        description: "Abs/rel tolerances."
-        range: string
-      preconditioner:
-        range: string
-    slots:
-      - label
-      - description
-      - requirements
-      - environment
+    UpdateRule:
+        description: >-
+            Defines how a parameter is updated based on observables.
+            Represents iterative learning rules like FIC or EIB updates.
+            Functions from experiment.functions are available in the equation.
+        slots:
+            - name
+            - description
+        attributes:
+            target_parameter:
+                range: Parameter
+                inlined: true
+                required: true
+                description: The parameter to update (e.g., J_i, wLRE)
+            equation:
+                range: Equation
+                inlined: true
+                required: true
+                description: >-
+                    Update equation (e.g., 'J_i + eta * delta').
+                    Can use functions defined in experiment.functions section.
+            bounds:
+                range: Range
+                inlined: true
+                description: Constraints on parameter values after update
+            warmup:
+                range: boolean
+                description: >-
+                    Whether to apply learning rate warmup to this update rule.
+                    When true, the learning rate (eta) is scaled by (i+1)/n_iterations.
+            requires:
+                multivalued: true
+                range: Observation
+                description: Observables required by this update rule
 
-  PDE:
-    description: "Partial differential equation problem definition."
-    attributes:
-      domain:
-        range: SpatialDomain
-      mesh:
-        description: "Shared mesh for all field state variables in this PDE."
-        range: Mesh
-  # Prefer state_variables for PDEs; keep single 'field' for backward compatibility
-      state_variables:
-        multivalued: true
-        range: FieldStateVariable
-      field:
-        description: "Primary field being solved for (deprecated; use state_variables)."
-        range: SpatialField
-      operators:
-        multivalued: true
-        range: DifferentialOperator
-      sources:
-        multivalued: true
-        range: Equation
-      boundary_conditions:
-        multivalued: true
-        range: BoundaryCondition
-      solver:
-        range: PDESolver
-      derived_parameters:
-        multivalued: true
-        range: DerivedParameter
-      derived_variables:
-        multivalued: true
-        range: DerivedVariable
-      functions:
-        multivalued: true
-        range: Function
-    slots:
-      - label
-      - description
-      - parameters
+    AlgorithmInclude:
+        description: >-
+            Reference to an included algorithm with optional argument overrides.
+            Allows combining algorithms with different hyperparameter values.
+        attributes:
+            algorithm:
+                range: Algorithm
+                inlined: false
+                required: true
+                description: Reference to the algorithm to include
+            arguments:
+                multivalued: true
+                range: Parameter
+                inlined: true
+                description: >-
+                    Override hyperparameter values for the included algorithm.
+                    Maps parameter names to new values.
+
+    TuningObjective:
+        description: >-
+            Defines what the tuning algorithm optimizes for.
+            Can be an activity target (FIC) or a connectivity target (EIB).
+        slots:
+            - label
+            - description
+        attributes:
+            type:
+                range: string
+                description: "Type of objective: 'activity_target', 'fc_matching', 'custom'"
+            target_variable:
+                range: StateVariable
+                inlined: false
+                description: State variable for activity targets (e.g., S_e)
+            target_value:
+                range: float
+                description: Target value for activity objectives
+            target_data:
+                range: Observation
+                inlined: false
+                description: Reference to empirical data observation for matching objectives
+            metric:
+                range: Equation
+                inlined: true
+                description: "Metric equation for matching (e.g., correlation, rmse)"
+
+    Algorithm:
+        description: >-
+            A complete specification of an iterative parameter tuning algorithm.
+            Combines update rules, objectives, observations, and hyperparameters.
+        slots:
+            - name
+            - description
+        attributes:
+            execution:
+                range: ExecutionConfig
+                inlined: true
+                description: >-
+                    Per-algorithm execution configuration (overrides experiment-level defaults).
+                    Useful for setting random_seed per algorithm to ensure reproducibility.
+            type:
+                range: string
+                description: "Algorithm type: 'fic', 'eib', 'homeostatic', 'custom'"
+            includes:
+                multivalued: true
+                range: AlgorithmInclude
+                inlined: true
+                description: >-
+                    Include update rules from other algorithms with optional argument overrides.
+                    Unlike depends_on (sequential), includes means combined execution.
+                    Example: includes: [{algorithm: fic, arguments: [{name: eta, value: 0.1}]}]
+            objective:
+                range: TuningObjective
+                inlined: true
+                description: What the algorithm optimizes for
+            observations:
+                multivalued: true
+                range: Observation
+                inlined: false
+                description: >-
+                    References to observations defined in the observations section.
+                    Includes both simulated observations and external data (via data_source).
+            update_rules:
+                multivalued: true
+                range: UpdateRule
+                inlined: true
+                required: false
+                description: >-
+                    How parameters are updated each iteration.
+                    When using 'includes', update_rules are inherited from included algorithms.
+            hyperparameters:
+                multivalued: true
+                range: Parameter
+                inlined: true
+                description: Additional algorithm-specific parameters
+            learning_rate:
+                range: float
+                description: Learning rate (eta) for the tuning algorithm
+            learning_rate_warmup:
+                range: boolean
+                ifabsent: boolean(false)
+                description: >-
+                    Linear warmup of learning rate from 0 to learning_rate over n_iterations.
+                    eta_effective = eta * (i+1) / n_iterations
+            n_iterations:
+                range: integer
+                description: Number of iterations to run
+            learning_rate_schedule:
+                range: string
+                description: "Learning rate schedule: 'constant', 'linear', 'exponential'"
+            simulation_period:
+                range: float
+                description: Duration of each simulation step (e.g., one BOLD TR)
+            apply_every:
+                range: integer
+                ifabsent: integer(1)
+                description: Apply update every N iterations
+            functions:
+                multivalued: true
+                range: FunctionCall
+                inlined_as_list: true
+                description: >-
+                    Function calls for tracking progress, computing metrics, etc.
+                    Each FunctionCall references a function from the experiment's functions section
+                    and specifies arguments for that specific algorithm context.
+            depends_on:
+                multivalued: true
+                range: Algorithm
+                description: Other algorithms that must run first (e.g., EIB depends on FIC)
+
+    # =============================================================================
+    # Continuation & Bifurcation Analysis
+    # =============================================================================
+    # Abstract metadata — toolkit-agnostic. All attributes must apply to any
+    # continuation engine (BifurcationKit, AUTO-07p, MatCont, COCO, …).
+    # Toolkit-specific string options go in the `options` slot.
+    # =============================================================================
+
+    Option:
+        description: >-
+            A toolkit-specific key-value option (string name + string value).
+            Used for backend settings that are not universal numeric parameters
+            (e.g., solver name, tangent method, jacobian type).
+        attributes:
+            name:
+                range: string
+                required: true
+                identifier: true
+                description: "Option name (key)."
+            value:
+                range: string
+                required: true
+                description: "Option value."
+
+    Discretization:
+        description: >-
+            Discretization method for boundary value problems in continuation
+            (periodic orbits, connecting orbits, quasi-periodic tori).
+            Specifies the method; method-specific numerics go in parameters.
+        slots:
+            - parameters
+        attributes:
+            method:
+                range: NumericalDiscretizationMethod
+                ifabsent: string(collocation)
+                description: "Discretization method."
+            ode_solver:
+                range: Solver
+                inlined: true
+                description: >-
+                    ODE solver for flow-based methods (shooting, poincaré).
+                    Specifies algorithm (e.g. Vern9, Rodas5) and tolerances.
+                    Not needed for collocation or trapezoid.
+            linear_solver:
+                range: Solver
+                inlined: true
+                description: >-
+                    Linear solver for the Newton bordered system.
+                    E.g. COPBLS (collocation), MatrixBLS (shooting/poincaré).
+            mesh_intervals:
+                range: integer
+                ifabsent: int(50)
+                description: >-
+                    Number of mesh intervals (time slices) for collocation
+                    or trapezoid methods. Collocation: N in
+                    PeriodicOrbitOCollProblem(N, m). Trapezoid: M in
+                    PeriodicOrbitTrapProblem(M=...).
+            degree:
+                range: integer
+                ifabsent: int(4)
+                description: >-
+                    Polynomial degree per mesh interval for collocation.
+                    The m in PeriodicOrbitOCollProblem(N, m).
+            n_sections:
+                range: integer
+                ifabsent: int(3)
+                description: >-
+                    Number of shooting sections for shooting or Poincaré
+                    methods.
+            options:
+                multivalued: true
+                range: Option
+                inlined: true
+                description: "Toolkit-specific string options (jacobian type, etc.)."
+
+    InitialState:
+        description: >-
+            How to obtain the starting equilibrium or periodic orbit for
+            continuation. Most robust: time-integrate to steady state.
+        attributes:
+            method:
+                range: InitialStateMethod
+                ifabsent: string(time_integration)
+                description: "Strategy for finding the initial state."
+            duration:
+                range: float
+                ifabsent: float(2000.0)
+                description: "Integration duration for time_integration method."
+            abs_tol:
+                range: float
+                ifabsent: float(1e-10)
+                description: "Absolute tolerance for ODE integration."
+            rel_tol:
+                range: float
+                ifabsent: float(1e-10)
+                description: "Relative tolerance for ODE integration."
+            solver:
+                range: Solver
+                inlined: true
+                description: >-
+                    ODE solver for time_integration method.
+                    Specify method (e.g., Tsit5, Heun, RK4) and tolerances.
+            source_branch:
+                range: string
+                description: >-
+                    Name of a previously computed branch (for from_branch method).
+            source_point:
+                range: string
+                description: >-
+                    Which point on the source branch: 'endpoint', 'hopf:1',
+                    'fold:2', a step number, etc.
+
+    BranchSwitch:
+        description: >-
+            Specification for switching from a detected bifurcation point
+            to a new branch (periodic orbits from Hopf, fold continuation,
+            etc.). Each BranchSwitch says: "from which special point on the
+            parent branch, continue what kind of object, with what settings."
+            Override parent solver settings via the inline continuation field —
+            only explicitly set attributes take effect; everything else is
+            inherited from the parent Continuation.
+        slots:
+            - name
+            - description
+            - parameters
+        attributes:
+            # --- What to branch from ---
+            source_point:
+                range: string
+                description: >-
+                    Which bifurcation point to start from. Syntax:
+                    - 'hopf:-1' = last Hopf (default)
+                    - 'hopf:all' = all Hopf points
+                    - 'hopf:1' = first Hopf
+                    - 'fold:2' = second fold
+                    - integer = specific special point index
+
+            # --- Branching perturbation ---
+            delta_p:
+                range: float
+                description: >-
+                    Initial parameter offset from the bifurcation point.
+
+            # --- Solver overrides (same type as parent — only set fields override) ---
+            continuation:
+                range: Continuation
+                inlined: true
+                description: >-
+                    Override solver settings for this branch. Uses the same
+                    Continuation type — only explicitly set attributes
+                    override the parent's values.
+
+            # --- Discretization (for periodic orbits, connecting orbits, etc.) ---
+            discretization:
+                range: Discretization
+                inlined: true
+                description: >-
+                    Discretization method for the branch solution. Required
+                    for periodic orbit branches (Hopf → PO). Not needed for
+                    codim-2 branches (fold/Hopf continuation).
+
+            # --- Direction ---
+            bothside:
+                range: boolean
+                description: "Continue branch in both directions."
+
+            # --- Toolkit-specific options ---
+            options:
+                multivalued: true
+                range: Option
+                inlined: true
+                description: >-
+                    Toolkit-specific string options for this branch
+                    (linear solver, etc.).
+
+    Continuation:
+        description: >-
+            Complete specification of a numerical continuation / bifurcation
+            analysis. All universal solver settings live directly here.
+            Toolkit-specific string options go in the options slot.
+            When used inside a BranchSwitch, only explicitly set attributes
+            override the parent's values.
+        slots:
+            - name
+            - label
+            - description
+        attributes:
+            # --- Dynamics reference ---
+            dynamics:
+                range: Dynamics
+                inlined: false
+                description: >-
+                    Reference to the dynamical system model (by name).
+                    Resolved from the experiment's dynamics dict at runtime.
+
+            # --- What to vary ---
+            free_parameters:
+                multivalued: true
+                range: Parameter
+                inlined: true
+                description: >-
+                    Parameters to vary. First parameter is primary (codim-1);
+                    second enables codim-2 continuation. Each Parameter has
+                    name + domain (Range with lo/hi bounds).
+
+            # --- Step size control ---
+            ds:
+                range: float
+                description: "Initial arc-length step size."
+            ds_min:
+                range: float
+                description: "Minimum adaptive step size."
+            ds_max:
+                range: float
+                description: "Maximum adaptive step size."
+            max_steps:
+                range: integer
+                description: "Maximum continuation steps."
+
+            # --- Newton corrector ---
+            newton_tol:
+                range: float
+                description: "Absolute tolerance for Newton corrector convergence."
+            newton_max_iterations:
+                range: integer
+                description: "Maximum Newton corrector iterations per step."
+
+            # --- Eigenvalue / stability ---
+            nev:
+                range: integer
+                description: >-
+                    Number of eigenvalues to compute. Must be >= number of
+                    state variables for reliable Hopf detection.
+            tol_stability:
+                range: float
+                description: "Tolerance on real part of eigenvalue for stability boundary."
+
+            # --- Bifurcation detection ---
+            detect_bifurcation:
+                range: integer
+                description: >-
+                    Bifurcation detection level.
+                    0 = off, 1 = eigenvalues only, 2 = detect, 3 = locate precisely.
+            detect_fold:
+                range: boolean
+                description: "Enable fold (limit point) detection."
+            n_inversion:
+                range: integer
+                description: >-
+                    Number of eigenvalue sign inversions to flag a bifurcation.
+                    Must be even. Higher = fewer false positives.
+            max_bisection_steps:
+                range: integer
+                description: "Maximum bisection steps for bifurcation point localization."
+
+            # --- Continuation algorithm ---
+            algorithm:
+                range: ContinuationAlgorithm
+                ifabsent: string(PALC)
+                description: "Predictor-corrector algorithm."
+
+            # --- Initial state ---
+            initial_state:
+                range: InitialState
+                inlined: true
+                description: >-
+                    How to obtain the initial equilibrium. Default: time
+                    integration to steady state.
+
+            # --- Child branches ---
+            branches:
+                multivalued: true
+                range: BranchSwitch
+                inlined: true
+                description: >-
+                    Child branches to continue from detected bifurcation
+                    points (PO from Hopf, fold continuation, etc.).
+
+            # --- Bidirectional ---
+            bothside:
+                range: boolean
+                description: "Continue in both directions from the starting point."
+
+            # --- Execution / backend ---
+            execution:
+                range: ExecutionConfig
+                inlined: true
+                description: "Per-analysis execution configuration."
+            software:
+                range: SoftwareRequirement
+                inlined: true
+                description: "Backend engine (BifurcationKit, AUTO-07p, MatCont, etc.)."
+
+            # --- Toolkit-specific options ---
+            options:
+                multivalued: true
+                range: Option
+                inlined: true
+                description: >-
+                    Toolkit-specific string options (tangent method,
+                    solver name, etc.).
+
+    Solver:
+        description: >-
+            Lightweight specification of a numerical ODE solver / integrator.
+            Covers adaptive solvers (Vern9, Rodas5, Tsit5, etc.) used in
+            shooting methods, initial-state integration, and other contexts
+            where only the algorithm and tolerances matter.
+        attributes:
+            method:
+                range: string
+                ifabsent: string(Tsit5)
+                description: >-
+                    Solver algorithm name (e.g., Vern9, Rodas5, Tsit5,
+                    euler, heun, rk4).
+            abs_tol:
+                range: float
+                ifabsent: float(1e-10)
+                description: "Absolute tolerance for adaptive solvers."
+            rel_tol:
+                range: float
+                ifabsent: float(1e-10)
+                description: "Relative tolerance for adaptive solvers."
+
+    Integrator:
+        is_a: Solver
+        description: >-
+            Fixed-step or adaptive ODE integrator with TVB-specific extensions
+            (noise, transient time, etc.). Inherits abs_tol, rel_tol
+            from Solver. Overrides method default to 'euler'.
+        slots:
+            - time_scale
+            - unit
+            - parameters
+            - duration
+            - description
+        attributes:
+            method:
+                range: string
+                ifabsent: string(euler)
+                description: "Integration method (euler, heun, rk4, etc.)"
+            step_size:
+                range: float
+                ifabsent: float(0.01220703125)
+                aliases:
+                    - dt
+            steps:
+                range: integer
+            noise:
+                range: Noise
+                inlined: true
+            state_wise_sigma:
+                range: float
+                multivalued: true
+            transient_time:
+                range: float
+                ifabsent: float(0)
+            scipy_ode_base:
+                range: boolean
+                ifabsent: false
+            number_of_stages:
+                range: integer
+                ifabsent: integer(1)
+            intermediate_expressions:
+                multivalued: true
+                range: DerivedVariable
+                inlined: true
+            update_expression:
+                range: DerivedVariable
+                inlined: true
+            delayed:
+                range: boolean
+                ifabsent: true
+
+    Coupling:
+        class_uri: tvbo:Coupling
+        slots:
+            - name
+            - label
+            - iri
+            - parameters
+            - description
+        slot_usage:
+            name:
+                ifabsent: "Linear"
+        attributes:
+            # Standard coupling attributes
+            coupling_function:
+                range: Equation
+                description: "Mathematical function defining the coupling"
+                inlined: true
+            sparse:
+                range: boolean
+                ifabsent: false
+                description: "Whether the coupling uses sparse representations"
+            pre_expression:
+                range: Equation
+                description: "Pre-processing expression applied before coupling"
+                inlined: true
+            post_expression:
+                range: Equation
+                description: "Post-processing expression applied after coupling"
+                inlined: true
+            incoming_states:
+                range: StateVariable
+                multivalued: true
+                description: "References to state variables from connected nodes (source)"
+            local_states:
+                range: StateVariable
+                multivalued: true
+                description: "References to state variables from local node (target)"
+            delayed:
+                range: boolean
+                ifabsent: true
+                description: "Whether coupling includes transmission delays"
+            symmetry:
+                range: string
+                ifabsent: "string(directed)"
+                description: >-
+                    Edge symmetry type for NetworkDynamics.jl EdgeModel:
+                    'directed' (default), 'antisymmetric', or 'symmetric'.
+                    AntiSymmetric edges flip sign for the reverse direction.
+            outsym:
+                multivalued: true
+                range: string
+                description: >-
+                    Output symbol names for the edge model.
+                    E.g. ['P'] for a scalar power flow, ['Fx', 'Fy'] for 2D forces.
+                    Maps directly to outsym in ND.jl EdgeModel.
+                    If not specified, derived from coupling variables of the
+                    connected vertex dynamics.
+            observed:
+                multivalued: true
+                range: DerivedVariable
+                inlined: true
+                description: >-
+                    Observable functions computed from edge inputs and parameters
+                    after simulation. Maps to obsf/obssym in ND.jl EdgeModel.
+                    Example: absolute force magnitude computed from force components.
+
+            # Hierarchical/subspace coupling attributes (optional)
+            inner_coupling:
+                range: Coupling
+                description: "For hierarchical coupling: inner coupling applied at regional level"
+                inlined: true
+            region_mapping:
+                range: RegionMapping
+                description: "For hierarchical coupling: vertex-to-region mapping for aggregation"
+                inlined: true
+            regional_connectivity:
+                range: Network
+                description: "For hierarchical coupling: region-to-region connectivity with weights and delays"
+                inlined: true
+            aggregation:
+                any_of:
+                    - range: string
+                    - range: Function
+                description: "For hierarchical coupling: aggregation method ('sum', 'mean', 'max') or custom Function"
+            distribution:
+                any_of:
+                    - range: string
+                    - range: Function
+                description: "For hierarchical coupling: distribution method ('broadcast', 'weighted') or custom Function"
+
+    RegionMapping:
+        description: "Maps vertices to parent regions for hierarchical/aggregated coupling"
+        slots:
+            - label
+            - description
+            - dataLocation
+        attributes:
+            vertex_to_region:
+                description: "Array mapping each vertex index to its parent region index. Can use dataLocation instead for large arrays."
+                multivalued: true
+                range: integer
+            n_vertices:
+                range: integer
+                description: "Total number of vertices"
+            n_regions:
+                range: integer
+                description: "Total number of regions"
+
+    Sample:
+        attributes:
+            groups:
+                multivalued: true
+                range: string
+            size:
+                range: integer
+
+    ExecutionConfig:
+        description: "Configuration for computational execution (parallelization, precision, hardware)."
+        attributes:
+            n_workers:
+                range: integer
+                ifabsent: integer(1)
+                description: "Number of parallel workers (maps to pmap devices in JAX, processes in multiprocessing)"
+            n_threads:
+                range: integer
+                ifabsent: integer(-1)
+                description: "Number of CPU threads per worker (-1 = auto-detect)"
+            precision:
+                range: string
+                ifabsent: string(float64)
+                description: "Floating point precision: 'float32' or 'float64'"
+            accelerator:
+                range: string
+                ifabsent: string(cpu)
+                description: "Hardware accelerator: 'cpu', 'gpu', 'tpu'"
+            batch_size:
+                range: integer
+                description: "Batch size for vectorized operations (None = auto)"
+            random_seed:
+                range: integer
+                ifabsent: integer(42)
+                description: "Base random seed for reproducibility"
+            find_fixpoint:
+                range: boolean
+                ifabsent: false
+                description: >-
+                    Whether to find a fixed point (steady state) before
+                    time integration. Used as initial condition for ODEProblem.
+                    Maps to NLsolve.fixpoint! in ND.jl or similar in other backends.
+
+    SimulationExperiment:
+        tree_root: true
+        class_uri: tvbo:Simulation
+        slots:
+            - model
+        attributes:
+            id:
+                identifier: true
+                range: integer
+            description:
+                range: string
+            additional_equations:
+                multivalued: true
+                range: Equation
+            label:
+                range: string
+            dynamics:
+                range: Dynamics
+                inlined: true
+                description: "Default dynamics model for all nodes. For heterogeneous networks with multiple dynamics, use network.dynamics instead."
+            integration:
+                range: Integrator
+                inlined: true
+            connectivity:
+                range: Network
+                inlined: true
+                deprecated: "Use 'network' instead. 'connectivity' is kept for backward compatibility only and will be removed in a future version."
+            network:
+                range: Network
+                inlined: true
+            coupling:
+                range: Coupling
+                inlined: true
+            observations:
+                multivalued: true
+                range: Observation
+                inlined: true
+            derived_observations:
+                multivalued: true
+                range: DerivedObservation
+                inlined: true
+                description: >-
+                    Observations derived from combining other observations.
+                    Computed after all regular observations are available.
+                    Examples: fc_corr (from fc, fc_target), rmse, etc.
+            functions:
+                multivalued: true
+                range: Function
+                inlined: true
+                description: >-
+                    Reusable function definitions. Referenced by name in observation pipelines.
+                    Enables DRY: define compute_fc once, use in both simulated and empirical paths.
+            stimulation:
+                range: Stimulus
+                inlined: true
+            events:
+                multivalued: true
+                range: Event
+                inlined: true
+                description: >-
+                    Events that apply at the experiment level.
+                    For component-level events, attach them to individual
+                    nodes or edges instead.
+            field_dynamics:
+                range: PDE # Distributed, spatially resolved dynamics (PDE)
+                inlined: true
+            optimizations:
+                multivalued: true
+                range: Optimization
+                inlined: true
+                description: "Parameter optimization configurations"
+            explorations:
+                multivalued: true
+                range: Exploration
+                inlined: true
+                description: "Parameter exploration/grid search specifications"
+            algorithms:
+                multivalued: true
+                range: Algorithm
+                inlined: true
+                description: "Iterative parameter tuning algorithms (FIC, EIB, etc.)"
+            continuations:
+                multivalued: true
+                range: Continuation
+                inlined: true
+                description: >-
+                    Numerical continuation and bifurcation analysis specifications.
+                    Each entry defines a continuation experiment (equilibrium branch,
+                    codim-2 curve, periodic orbit family, etc.).
+            # Either reference a full reusable environment (preferred) or, for
+            # legacy/simple cases, a single software requirement.
+            environment:
+                range: SoftwareEnvironment
+                description: "Execution environment (collection of requirements)."
+                inlined: true
+            execution:
+                range: ExecutionConfig
+                inlined: true
+                description: "Computational execution configuration (parallelization, devices)."
+            software:
+                range: SoftwareRequirement
+                description: "(Deprecated) Single software requirement; prefer 'environment' with aggregated requirements."
+                inlined: true
+            references:
+                multivalued: true
+                range: string
+
+    SimulationStudy:
+        # tree_root: true
+        slots:
+            - label
+            - derived_from
+            - model
+            - description
+        attributes:
+            key:
+                range: string
+            title:
+                range: string
+            year:
+                range: integer
+            doi:
+                range: string
+            sample:
+                range: Sample
+            simulation_experiments:
+                alias: experiments
+                multivalued: true
+                inlined_as_list: true
+                range: SimulationExperiment
+
+    TimeSeries:
+        class_uri: tvbo:TimeSeries
+        description: >-
+            Time series data from simulations or measurements.
+            Supports BIDS-compatible export for computational modeling (BEP034).
+        slots:
+            - label
+            - description
+            - dataLocation
+        attributes:
+            data:
+                range: Matrix
+            time:
+                range: Matrix
+            sampling_rate:
+                range: float
+                description: "Sampling rate in Hz."
+            sampling_period:
+                range: float
+                description: "Time between samples (inverse of sampling_rate)."
+            sampling_period_unit:
+                range: string
+                ifabsent: "ms"
+                description: "Unit of the sampling period (e.g., 'ms', 's')."
+            unit:
+                range: string
+                description: "Physical unit of the time series values."
+            labels_ordering:
+                range: string
+                multivalued: true
+                description: "Ordering of dimensions: Time, State Variable, Space, Mode."
+            labels_dimensions:
+                range: string
+                description: "Mapping of dimension names to their labels (JSON-encoded dict)."
+            # Provenance fields for BIDS compatibility
+            source_experiment:
+                range: SimulationExperiment
+                description: "Reference to the SimulationExperiment that generated this TimeSeries."
+            generated_at:
+                range: datetime
+                description: "Timestamp when this TimeSeries was generated."
+            software_environment:
+                range: SoftwareEnvironment
+                description: "Software environment used to generate this data."
+            # BIDS metadata fields
+            task_name:
+                range: string
+                description: "BIDS task name for the simulation (e.g., 'rest', 'simulation')."
+            subject_id:
+                range: string
+                description: "BIDS subject identifier."
+            session_id:
+                range: string
+                description: "BIDS session identifier."
+            run_id:
+                range: integer
+                description: "BIDS run number."
+            modality:
+                range: ImagingModality
+                description: "Imaging modality or simulation output type."
+            model_equation_ref:
+                range: string
+                description: "BIDS ModelEq reference: path to _eq.xml LEMS file."
+            model_param_ref:
+                range: string
+                description: "BIDS ModelParam reference: path to _param.xml LEMS file."
+            connectivity_ref:
+                range: string
+                description: "Reference to connectivity data (_conndata-network_connectivity.tsv)."
+        comments:
+            - "Supports BIDS BEP034 computational modeling extension."
+            - "Use to_bids() method in Python class to export as BIDS dataset."
+
+    SoftwareEnvironment:
+        slots:
+            - label
+            - description
+            - dataLocation
+        attributes:
+            name:
+                range: string
+                description: "Human-readable environment label/name (deprecated alias was 'software')."
+            version:
+                range: string
+                description: "Optional version tag for the environment definition (not a package version)."
+            platform:
+                range: string
+                description: "OS / architecture description (e.g., linux-64)."
+            environment_type:
+                range: EnvironmentType
+                description: "Category: conda, venv, docker, etc."
+            container_image:
+                range: string
+                description: "Container image reference (e.g., ghcr.io/org/img:tag@sha256:...)."
+            build_hash:
+                range: string
+                description: "Deterministic hash/fingerprint of the resolved dependency set."
+            requirements:
+                description: "Constituent software/module requirements that define this environment."
+                multivalued: true
+                range: SoftwareRequirement
+                inlined: true
+
+        comments:
+            - "An environment now aggregates one or more SoftwareRequirement entries."
+            - "Use SimulationExperiment.environment to reference a reusable environment."
+            - "Field 'name' supersedes previous 'software' attribute for clarity."
+            - "'version' here is an environment spec version, not a package version."
+
+    SoftwareRequirement:
+        slots:
+            - name
+            - description
+            - dataLocation
+        attributes:
+            package:
+                range: SoftwarePackage
+                description: "Reference to the software package identity."
+            version_spec:
+                range: string
+                description: "Version or constraint specifier (e.g., '==2.7.3', '>=1.2,<2')."
+            role:
+                range: RequirementRole
+                ifabsent: "runtime"
+            optional:
+                range: boolean
+                ifabsent: false
+            hash:
+                range: string
+                description: "Build or artifact hash for exact reproducibility (wheel, sdist, image layer)."
+            source_url:
+                range: string
+                description: "Canonical source or repository URL."
+            url:
+                range: string
+                description: "(Deprecated) Use source_url."
+            license:
+                range: string
+            modules:
+                multivalued: true
+                range: string
+                description: "(Deprecated) Former ad-hoc list; use environment.requirements list instead."
+            version:
+                range: string
+                description: "(Deprecated) Use version_spec."
+        comments:
+            - "Represents an individual requirement (package/module/library)."
+            - "Add 'package' to separate identity from requirement expression."
+            - "Use 'version_spec' instead of 'version' for semantic clarity."
+            - "'modules' retained only for backward compatibility and will be removed in a future release."
+            - "No pointer back to SoftwareEnvironment; aggregation is one-way from SoftwareEnvironment.requirements."
+
+    SoftwarePackage:
+        description: "Identity information about a software package independent of a specific version requirement."
+        slots:
+            - name
+            - description
+        attributes:
+            homepage:
+                range: string
+            license:
+                range: string
+            repository:
+                range: string
+            doi:
+                range: string
+            ecosystem:
+                range: string
+                description: "Package ecosystem or index (e.g., pypi, conda-forge)."
+        comments:
+            - "Distinct from SoftwareRequirement which binds a package to a version/role."
+
+    # nD array for field and image data
+    NDArray:
+        attributes:
+            shape:
+                multivalued: true
+                range: integer
+            dtype:
+                range: string
+            dataLocation:
+                range: string
+            unit:
+                range: string
+        slots:
+            - label
+            - description
+
+    # Spatial domain and mesh
+    SpatialDomain:
+        attributes:
+            coordinate_space:
+                range: CommonCoordinateSpace
+            region:
+                description: "Optional named region/ROI in the atlas/parcellation."
+                range: string
+            geometry:
+                description: "Optional file for geometry/ROI mask (e.g., NIfTI, GIfTI)."
+                range: string
+        slots:
+            - label
+            - description
+
+    Mesh:
+        attributes:
+            element_type:
+                range: ElementType
+            coordinates:
+                description: "Node coordinates (x,y,z) in the given coordinate space."
+                multivalued: true
+                range: Coordinate
+            elements:
+                description: "Connectivity (indices) or file reference to topology."
+                range: string
+            coordinate_space:
+                range: CommonCoordinateSpace
+            mesh_file:
+                description: "Path to external mesh file (GIFTI, VTK, MSH, FreeSurfer, etc.)."
+                range: string
+            mesh_format:
+                description: "Explicit format override (gifti, freesurfer, meshio, vtk, gmsh). Auto-detected from extension if null."
+                range: string
+            number_of_vertices:
+                description: "Number of vertices in the mesh."
+                range: integer
+            number_of_elements:
+                description: "Number of elements (triangles, quads, tetrahedra, etc.)."
+                range: integer
+        slots:
+            - label
+            - description
+            - dataLocation
+
+    # Spatial field
+    SpatialField:
+        attributes:
+            quantity_kind:
+                description: "Scalar, vector, or tensor."
+                range: string
+            unit:
+                range: string
+            mesh:
+                range: Mesh
+            values:
+                range: NDArray
+            time_dependent:
+                range: boolean
+                ifabsent: false
+            initial_value:
+                description: "Constant initial value for the field."
+                range: float
+                ifabsent: float(0.1)
+            initial_expression:
+                description: "Analytic initial condition for the field."
+                range: Equation
+        slots:
+            - label
+            - description
+
+    # Field-like state variable for PDEs (aligns with Dynamics.StateVariable)
+    FieldStateVariable:
+        is_a: StateVariable
+        attributes:
+            mesh:
+                range: Mesh
+            boundary_conditions:
+                multivalued: true
+                range: BoundaryCondition
+        slots:
+            - label
+            - description
+
+    DifferentialOperator:
+        attributes:
+            operator_type:
+                range: OperatorType
+            coefficient:
+                range: Parameter
+            tensor_coefficient:
+                description: "Optional anisotropic tensor (e.g., diffusion)."
+                range: Parameter
+            expression:
+                description: "Symbolic form (e.g., '-div(D * grad(u))')."
+                range: Equation
+        slots:
+            - label
+            - definition
+            - equation
+
+    BoundaryCondition:
+        attributes:
+            bc_type:
+                range: BoundaryConditionType
+            on_region:
+                description: "Mesh/atlas subset where BC applies."
+                range: string
+            value:
+                description: "Constant, parameter, or equation."
+                range: Equation
+            time_dependent:
+                range: boolean
+                ifabsent: false
+        slots:
+            - label
+            - description
+
+    PDESolver:
+        attributes:
+            discretization:
+                range: DiscretizationMethod
+            time_integrator:
+                description: "e.g., implicit Euler, Crank-Nicolson."
+                range: string
+            dt:
+                description: "Time step (s)."
+                range: float
+            tolerances:
+                description: "Abs/rel tolerances."
+                range: string
+            preconditioner:
+                range: string
+        slots:
+            - label
+            - description
+            - requirements
+            - environment
+
+    PDE:
+        description: "Partial differential equation problem definition."
+        attributes:
+            domain:
+                range: SpatialDomain
+            mesh:
+                description: "Shared mesh for all field state variables in this PDE."
+                range: Mesh
+            # Prefer state_variables for PDEs; keep single 'field' for backward compatibility
+            state_variables:
+                multivalued: true
+                inlined_as_list: true
+                range: FieldStateVariable
+            field:
+                description: "Primary field being solved for (deprecated; use state_variables)."
+                range: SpatialField
+            operators:
+                multivalued: true
+                range: DifferentialOperator
+            sources:
+                multivalued: true
+                range: Equation
+            boundary_conditions:
+                multivalued: true
+                range: BoundaryCondition
+            solver:
+                range: PDESolver
+            derived_parameters:
+                multivalued: true
+                range: DerivedParameter
+            derived_variables:
+                multivalued: true
+                range: DerivedVariable
+            functions:
+                multivalued: true
+                range: Function
+        slots:
+            - label
+            - description
+            - parameters

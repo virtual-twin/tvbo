@@ -1,0 +1,93 @@
+---
+title: Noise & Stochastic Integration
+sidebar: usage
+jupyter: python3
+---
+
+Add stochastic noise to simulations for more realistic brain dynamics.
+
+## Adding Noise
+
+```{python}
+from tvbo import Dynamics, SimulationExperiment, Noise
+
+model = Dynamics.from_db("Generic2dOscillator")
+
+# Deterministic
+exp_det = SimulationExperiment(dynamics=model)
+exp_det.integration.duration = 500
+res_det = exp_det.run()
+
+# Stochastic — add Gaussian noise
+exp_noise = SimulationExperiment(dynamics=model)
+exp_noise.integration.duration = 500
+exp_noise.integration.noise = Noise(
+    **{"noise_type": "gaussian", "parameters": {"sigma": {"value": 0.01}}}
+)
+res_noise = exp_noise.run()
+```
+
+```{python}
+import matplotlib.pyplot as plt
+
+fig, axes = plt.subplots(1, 2, figsize=(10, 3), sharey=True)
+axes[0].plot(res_det.integration.time, res_det.integration.isel(variable=0).data.values, lw=0.5)
+axes[0].set_title("Deterministic")
+axes[1].plot(res_noise.integration.time, res_noise.integration.isel(variable=0).data.values, lw=0.5)
+axes[1].set_title(
+    f"With noise ({exp_noise.integration.noise.parameters['sigma'].name} =  {exp_noise.integration.noise.parameters['sigma'].value})"
+)
+for ax in axes:
+    ax.set_xlabel("Time (ms)")
+plt.tight_layout()
+plt.show()
+```
+
+## Noise Types
+
+| Type | `noise_type` | Description |
+|------|-------------|-------------|
+| Gaussian / White | `"gaussian"` | Independent samples at each time step |
+| Ornstein-Uhlenbeck | `"ou"` | Temporally correlated (colored) noise |
+
+### Ornstein-Uhlenbeck
+
+```yaml
+integration:
+    noise:
+        noise_type: ou
+        parameters:
+            nsig: {value: 0.01}
+            ntau: {value: 10.0}
+```
+
+The OU process has a time constant `ntau` controlling the autocorrelation.
+
+## YAML Specification
+
+```yaml
+integration:
+    method: heun
+    step_size: 0.1
+    duration: 5000
+    noise:
+        noise_type: gaussian
+        parameters:
+            nsig: {value: 0.015}
+```
+
+## Key Parameters
+
+| Parameter | Description |
+|-----------|-------------|
+| `nsig` | Noise amplitude ($\sigma$). Diffusion coefficient $D = \frac{1}{2}\sigma^2$ |
+| `ntau` | OU time constant (only for `ou` type) |
+
+::: {.callout-note}
+Stochastic integration uses the Heun method (stochastic Heun-Euler). Set `method: heun` for best accuracy with noise.
+:::
+
+## See Also
+
+- [Simulation Experiments](SimulationExperiments.qmd) — integrator configuration
+- [RWW tvboptim workflow](/Interoperability/tvboptim/RWW_tvboptim.qmd) — stochastic RWW simulation

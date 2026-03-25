@@ -2,18 +2,15 @@
 Test that all models in the database can be loaded without errors.
 """
 
-import os
 import glob
 import pytest
 import yaml
 from pathlib import Path
 
-from tvbo import Dynamics
+from tvbo import Dynamics, database_path
 
-# Get the database directory
-REPO_ROOT = Path(__file__).parent.parent
-DB_ROOT = REPO_ROOT / "database"
-MODEL_DIR = DB_ROOT / "models"
+REPO_ROOT = Path(__file__).resolve().parent.parent
+MODEL_DIR = database_path / "models"
 
 
 def get_all_model_files():
@@ -81,7 +78,7 @@ if __name__ == "__main__":
 
     for path, name in test_params:
         print(f"\n📝 Testing: {name}")
-        print(f"   File: {Path(path).relative_to(REPO_ROOT)}")
+        print(f"   File: {path}")
 
         try:
             with open(path, "r", encoding="utf-8") as f:

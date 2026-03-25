@@ -1,7 +1,7 @@
 ## -*- coding: utf-8 -*-
 ## SDEProblem setup (additive diagonal noise)
 <%page args="model, duration"/>
-using DifferentialEquations
+using StochasticDiffEq
 <%include file="/tvbo-julia-model.jl.mako" args="model=model" />
 
 # Initial conditions (scalar state vector)
@@ -26,7 +26,7 @@ sigma_vec = [
 ]
 
 # Drift and diffusion
-f! = ${model.metadata.name}!
+f! = ${model.name}!
 function g!(du, u, p, t)
     @inbounds for i in eachindex(u)
         du[i] = sigma_vec[i]

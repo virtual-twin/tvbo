@@ -1,0 +1,94 @@
+---
+title: "PyRates Integration"
+subtitle: "Bidirectional interoperability with PyRates dynamical systems toolbox"
+---
+
+## Overview
+
+[PyRates](https://pyrates.readthedocs.io/) [@Gast2023] is a Python framework for numerical simulation and analysis of dynamical systems. TVBO provides full round-trip interoperability:
+
+| Direction | Method | Use Case |
+|-----------|--------|----------|
+| **TVBO → PyRates** | `model.to_yaml(format="pyrates")` | Use PyRates analysis tools |
+| **PyRates → TVBO** | `Dynamics.from_pyrates()` | Use TVBO simulation/export |
+
+## Tutorials
+
+| Tutorial | Description |
+|----------|-------------|
+| [PyRates Overview](PyRates.qmd) | Basic round-trip interoperability |
+| [Analysis](PyRates_Analysis.qmd) | Time series analysis and visualization |
+| [Bifurcation](PyRates_Bifurcation.qmd) | Bifurcation diagram analysis |
+| [Heterogeneous Networks](PyRates_Heterogeneous_Network.qmd) | Spatially varying parameters |
+
+## Quick Start
+
+### Export TVBO Model to PyRates
+
+```python
+from tvbo import Dynamics
+
+# Load a TVBO model
+model = Dynamics.from_db("JansenRit")
+
+# Export to PyRates YAML format
+model.to_yaml(format="pyrates", path="jr_pyrates.yaml")
+```
+
+### Import PyRates Model to TVBO
+
+```python
+from tvbo import Dynamics
+
+# Import from PyRates YAML
+model = Dynamics.from_pyrates("pyrates_model.yaml")
+
+# Use with TVBO simulation
+print(model.equations)
+```
+
+## Feature Mapping
+
+| Feature | TVBO | PyRates |
+|---------|------|---------|
+| Differential equations | `equation.rhs` attribute | `var' = rhs` syntax |
+| Initial values | `initial_value` attribute | `variable(value)` |
+| Parameters | `Parameter` objects | Numeric values |
+| State variables | `StateVariable` objects | Variables in equations |
+| Coupling | `CouplingFunction` | Operator connections |
+
+## Use Cases
+
+### Bifurcation Analysis
+
+PyRates provides tools for computing bifurcation diagrams. Export your TVBO model to analyze stability:
+
+```python
+from tvbo import Dynamics
+
+model = Dynamics.from_file("JansenRit.yaml")
+model.to_yaml(format="pyrates", path="jr.yaml")
+
+# Use PyRates continuation tools
+from pyrates.utility.bifurcation import PyCoBi
+# ... bifurcation analysis
+```
+
+### Parameter Sweeps
+
+Run systematic parameter explorations:
+
+```python
+from tvbo import Dynamics
+
+model = Dynamics.from_file("WilsonCowan.yaml")
+pyrates_yaml = model.to_yaml(format="pyrates")
+
+# Use PyRates parameter sweep
+from pyrates import grid_search
+# ... parameter sweep
+```
+
+## See Also
+
+- [PyRates Documentation](https://pyrates.readthedocs.io/)

@@ -1,0 +1,55 @@
+# QIF population model — reproduces Montbrió et al. (2015) Fig 2
+
+id: 104
+label: "QIF neural mass — bifurcation in η̄"
+description: >-
+  Quadratic integrate-and-fire population model.
+  Continuation of equilibria in the mean neural excitability η̄,
+  reproducing the fold bifurcation diagram from Montbrió et al. (2015).
+
+model: QIF
+
+dynamics:
+  name: QIF
+  parameters:
+    tau:
+      value: 1.0
+    eta_bar:
+      value: -5.0
+    Delta:
+      value: 1.0
+    J:
+      value: 15.0
+  state_variables:
+    r:
+      equation:
+        rhs: (Delta/(pi*tau) + 2*r*v) / tau
+      initial_value: 0.01
+    v:
+      equation:
+        rhs: (v**2 + eta_bar + J*r*tau - (pi*r*tau)**2) / tau
+      initial_value: -2.0
+
+continuations:
+  eq_eta:
+    name: eq_eta
+    label: "Equilibrium branch in η̄"
+    dynamics: QIF
+    free_parameters:
+      - name: eta_bar
+        domain:
+          lo: "-20"
+          hi: "20"
+
+    ds: 0.0001
+    ds_min: 1.0e-8
+    ds_max: 0.05
+    max_steps: 2000
+    detect_bifurcation: 2
+    detect_fold: true
+
+    initial_state:
+      method: time_integration
+      duration: 4000.0
+
+    bothside: true

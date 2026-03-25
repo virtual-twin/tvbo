@@ -1,0 +1,128 @@
+{
+  "_type": "tvbo:Dynamics",
+  "_categories": [
+    "computationalModel"
+  ],
+  "properties": {
+    "has_reference": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "label": {
+      "type": "string"
+    },
+    "iri": {
+      "type": "string"
+    },
+    "parameters": {
+      "_embeddedTypes": [
+        "tvbo:Parameter"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "description": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string"
+    },
+    "references": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "derived_parameters": {
+      "_embeddedTypes": [
+        "tvbo:DerivedParameter"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "derived_variables": {
+      "_embeddedTypes": [
+        "tvbo:DerivedVariable"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "coupling_terms": {
+      "_embeddedTypes": [
+        "tvbo:Parameter"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "coupling_inputs": {
+      "_embeddedTypes": [
+        "tvbo:CouplingInput"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "state_variables": {
+      "_embeddedTypes": [
+        "tvbo:StateVariable"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "modified": {
+      "type": "boolean"
+    },
+    "output": {
+      "_embeddedTypes": [
+        "tvbo:DerivedVariable"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "derived_from_model": {
+      "type": "string"
+    },
+    "number_of_modes": {
+      "type": "integer"
+    },
+    "local_coupling_term": {
+      "_linkedTypes": [
+        "tvbo:Parameter"
+      ]
+    },
+    "functions": {
+      "_embeddedTypes": [
+        "tvbo:Function"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "stimulus": {
+      "_embeddedTypes": [
+        "tvbo:Stimulus"
+      ]
+    },
+    "modes": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "system_type": {
+      "type": "string"
+    }
+  }
+}

@@ -1,0 +1,80 @@
+---
+title: "NML2: Gap Junctions"
+description: "Electrical synapse definitions and gap junction connections"
+---
+
+## NML2_GapJunctions.nml
+
+Defines `<gapJunction>` elements for bidirectional electrical coupling:
+
+```xml
+<gapJunction id="gj1" conductance="10pS"/>
+```
+
+Connected via `<electricalConnection>` in the network.
+
+```{python}
+from pathlib import Path
+
+nml_file = Path.home() / "work_data/toolboxes/NeuroML2/examples/NML2_GapJunctions.nml"
+text = nml_file.read_text()
+
+for line in text.split('\n'):
+    stripped = line.strip()
+    if '<gapJunction' in stripped or '<electrical' in stripped or \
+       '<network' in stripped or '<population' in stripped:
+        print(stripped[:120])
+```
+
+## TVBO Representation: FHN Cell
+
+```{python}
+from tvbo import SimulationExperiment
+
+exp = SimulationExperiment.from_string("""
+label: "NML2 GapJunctions: FHN Cell"
+dynamics:
+  name: FitzHughNagumo
+  parameters:
+    I: { value: 0.8 }
+  state_variables:
+    V:
+      equation: { rhs: "V - V**3/3 - W + I" }
+      initial_value: 0.0
+      variable_of_interest: true
+    W:
+      equation: { rhs: "0.08*(V + 0.7 - 0.8*W)" }
+      initial_value: 0.0
+network:
+  number_of_nodes: 1
+integration:
+  method: euler
+  step_size: 0.01
+  duration: 200.0
+  time_scale: s
+""")
+xml = exp.render("lems")
+print(xml[:800])
+```
+
+## Run TVBO
+
+```{python}
+import numpy as np
+import matplotlib.pyplot as plt
+
+result = exp.run("neuroml")
+da = result.integration.data
+t = da.coords['time'].values
+vals = da.values
+
+fig, ax = plt.subplots(figsize=(10, 4))
+ax.plot(t, vals[:, 0], label='V')
+ax.plot(t, vals[:, 1], label='W', alpha=0.7)
+ax.set_xlabel("Time (s)")
+ax.set_title("NML2 GapJunctions: FHN Cell via TVBO")
+ax.legend()
+ax.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()
+```

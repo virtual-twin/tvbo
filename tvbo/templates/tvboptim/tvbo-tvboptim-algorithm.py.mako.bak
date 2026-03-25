@@ -1,0 +1,443 @@
+# -*- coding: utf-8 -*-
+<%doc>
+TVB-Optim Algorithm Template
+============================
+
+Generates iterative parameter tuning algorithms from Algorithm definitions.
+
+IMPORTANT: This template has NO hardcoded defaults. ALL values must be
+explicitly specified in the experiment YAML metadata. Missing required
+values will cause template rendering to fail with clear error messages.
+
+Context: experiment (SimulationExperiment instance)
+</%doc>
+<%
+from tvbo.codegen import render_expression
+
+# Define jaxcode locally (same as parent template)
+_exp_functions = getattr(experiment, 'functions', None) or {}
+if hasattr(_exp_functions, 'items'):
+    _user_functions = {str(fname): str(fname) for fname in _exp_functions.keys()}
+elif hasattr(_exp_functions, '__iter__'):
+    _user_functions = {str(getattr(f, 'name', f)): str(getattr(f, 'name', f)) for f in _exp_functions}
+else:
+    _user_functions = {}
+
+jaxcode = lambda expr, params=None: render_expression(expr, format='jax', user_functions=_user_functions, parameters=params)
+
+# =============================================================================
+# Extract Algorithms from experiment
+# =============================================================================
+algorithms_raw = getattr(experiment, 'algorithms', None) or []
+if isinstance(algorithms_raw, dict):
+    algorithms_list = list(algorithms_raw.values())
+elif isinstance(algorithms_raw, list):
+    algorithms_list = algorithms_raw
+else:
+    algorithms_list = [algorithms_raw] if algorithms_raw else []
+
+has_algorithms = len(algorithms_list) > 0
+
+def safe_name(name):
+    """Convert name to valid Python identifier."""
+    return str(name).replace(' ', '_').replace('-', '_').lower()
+
+def get_observable_name(obs):
+    """Extract observable name from various formats."""
+    if hasattr(obs, 'name'):
+        return str(obs.name)
+    return str(obs)
+
+def require_attr(obj, attr, context=""):
+    """Get required attribute or raise clear error."""
+    val = getattr(obj, attr, None)
+    if val is None:
+        raise ValueError(f"Missing required attribute '{attr}' in {context or type(obj).__name__}. "
+                        f"All algorithm parameters must be explicitly defined in YAML.")
+    return val
+
+# Build algorithm metadata with strict validation
+algorithm_metadata = []
+for algo in algorithms_list:
+    algo_name = safe_name(require_attr(algo, 'name', 'algorithm'))
+    algo_type = str(getattr(algo, 'type', 'custom')).lower()
+
+    # Required: n_iterations
+    n_iterations = require_attr(algo, 'n_iterations', f"algorithm '{algo_name}'")
+
+    # Dependencies (optional, defaults to empty list - this is structural, not a value)
+    depends_on = getattr(algo, 'depends_on', None) or []
+    if isinstance(depends_on, str):
+        depends_on = [depends_on]
+
+    # Update rules (required for iterative algorithms)
+    update_rules_raw = getattr(algo, 'update_rules', None) or []
+    if hasattr(update_rules_raw, 'values'):
+        update_rules = list(update_rules_raw.values())
+    else:
+        update_rules = list(update_rules_raw)
+
+    # Hyperparameters
+    hyperparams_raw = getattr(algo, 'hyperparameters', None) or []
+    if hasattr(hyperparams_raw, 'values'):
+        hyperparams = list(hyperparams_raw.values())
+    else:
+        hyperparams = list(hyperparams_raw)
+
+    # Observables
+    observables_raw = getattr(algo, 'observables', None) or []
+    if hasattr(observables_raw, 'values'):
+        observables = list(observables_raw.values())
+    elif hasattr(observables_raw, '__iter__') and not isinstance(observables_raw, str):
+        observables = list(observables_raw)
+    else:
+        observables = [observables_raw] if observables_raw else []
+    obs_names = [get_observable_name(o) for o in observables]
+
+    # External inputs (passed via kwargs at runtime)
+    inputs_raw = getattr(algo, 'inputs', None) or []
+    if hasattr(inputs_raw, 'values'):
+        inputs = list(inputs_raw.values())
+    else:
+        inputs = list(inputs_raw)
+
+    # Observation reference (algorithm uses existing observation from observations section)
+    observation_ref = getattr(algo, 'observation', None)
+
+    algorithm_metadata.append({
+        'name': algo_name,
+        'type': algo_type,
+        'algo': algo,
+        'depends_on': depends_on,
+        'update_rules': update_rules,
+        'hyperparams': hyperparams,
+        'observables': obs_names,
+        'inputs': inputs,
+        'observation': observation_ref,
+        'n_iterations': int(n_iterations),
+        'simulation_period': getattr(algo, 'simulation_period', None),
+        'description': getattr(algo, 'description', None),
+    })
+
+# Extract state variable names from model (structural, not a default value)
+model = experiment.dynamics
+if hasattr(model, 'state_variables') and model.state_variables:
+    state_var_names = list(model.state_variables.keys())
+else:
+    raise ValueError("Model must define state_variables for algorithm generation")
+
+%>
+% if has_algorithms:
+# =============================================================================
+# ITERATIVE ALGORITHMS
+# =============================================================================
+
+% for algo_meta in algorithm_metadata:
+<%
+    algo = algo_meta['algo']
+    algo_name = algo_meta['name']
+    algo_type = algo_meta['type']
+    n_iterations = algo_meta['n_iterations']
+    simulation_period = algo_meta['simulation_period']
+    update_rules = algo_meta['update_rules']
+    observables = algo_meta['observables']
+    depends_on = algo_meta['depends_on']
+    needs_fc = algo_meta['needs_fc']
+    description = algo_meta['description']
+
+    # Build hyperparameter dict with strict validation - all must have explicit values
+    hyperparam_dict = {}
+    for hp in algo_meta['hyperparams']:
+        hp_name = require_attr(hp, 'name', 'hyperparameter')
+        hp_val = require_attr(hp, 'value', f"hyperparameter '{hp_name}'")
+        hyperparam_dict[hp_name] = hp_val
+
+    # For FC algorithms, window_size must be in hyperparameters
+    if needs_fc and 'window_size' not in hyperparam_dict:
+        raise ValueError(f"Algorithm '{algo_name}' requires 'window_size' hyperparameter for FC computation")
+%>
+# -----------------------------------------------------------------------------
+# Algorithm: ${algo_name} (${algo_type})
+# -----------------------------------------------------------------------------
+
+% for rule in update_rules:
+<%
+    rule_name = safe_name(require_attr(rule, 'name', 'update_rule'))
+    target_param = require_attr(rule, 'target_parameter', f"update_rule '{rule_name}'")
+    target_name = str(getattr(target_param, 'name', target_param))
+
+    rule_eq = require_attr(rule, 'equation', f"update_rule '{rule_name}'")
+    rule_rhs = require_attr(rule_eq, 'rhs', f"equation in update_rule '{rule_name}'")
+
+    rule_params = getattr(rule_eq, 'parameters', None) or {}
+    if hasattr(rule_params, 'items'):
+        rule_params_dict = {}
+        for k, v in rule_params.items():
+            val = getattr(v, 'value', None)
+            if val is None:
+                raise ValueError(f"Parameter '{k}' in update_rule '{rule_name}' must have explicit value")
+            rule_params_dict[k] = val
+    else:
+        rule_params_dict = {}
+
+    # Bounds for clipping (optional)
+    bounds = getattr(rule, 'bounds', None)
+    if bounds:
+        lo_bound = require_attr(bounds, 'lo', f"bounds in update_rule '{rule_name}'")
+        hi_bound = require_attr(bounds, 'hi', f"bounds in update_rule '{rule_name}'")
+    else:
+        lo_bound = None
+        hi_bound = None
+    has_bounds = bounds is not None
+
+    # Build list of all known symbols for parsing
+    all_known_symbols = [target_name] + list(observables) + list(rule_params_dict.keys())
+%>
+def update_${algo_name}_${rule_name}(
+    ${target_name}: jnp.ndarray,
+% for obs in observables:
+    ${obs}: jnp.ndarray,
+% endfor
+% for pname, pval in rule_params_dict.items():
+    ${pname}: float,
+% endfor
+) -> jnp.ndarray:
+    """Update rule: ${rule_name} for ${target_name}."""
+    updated = ${jaxcode(rule_rhs, all_known_symbols)}
+% if has_bounds:
+    updated = jnp.clip(updated, ${lo_bound}, ${hi_bound})
+% endif
+    return updated
+
+% endfor
+
+<%
+    # Separate FC-related hyperparams (passed differently) from regular ones
+    fc_reserved = ['window_size'] if needs_fc else []
+    regular_hyperparams = {k: v for k, v in hyperparam_dict.items() if k not in fc_reserved}
+    window_size = hyperparam_dict.get('window_size') if needs_fc else None
+%>
+def run_${algo_name}(
+    state: Any,
+    model_fn: Callable,
+    key: jax.random.PRNGKey,
+    n_iterations: int,
+% for pname, pval in regular_hyperparams.items():
+    ${pname}: float,
+% endfor
+% if needs_fc:
+    fc_target: jnp.ndarray,
+    window_size: int,
+    bold_monitor: Any,
+% endif
+    verbose: bool = True,
+    print_every: int = None,
+) -> Bunch:
+    """
+    Run ${algo_name} algorithm for n_iterations.
+% if description:
+
+    ${description}
+% endif
+
+    Args:
+        state: Simulation state (Bunch with dynamics, coupling, etc.)
+        model_fn: Compiled model function from run_simulation
+        key: Random key for noise generation (REQUIRED)
+        n_iterations: Number of algorithm iterations
+% for pname in regular_hyperparams.keys():
+        ${pname}: Algorithm hyperparameter (from YAML)
+% endfor
+% if needs_fc:
+        fc_target: Target functional connectivity matrix (REQUIRED)
+        window_size: BOLD window size for FC computation (from YAML)
+        bold_monitor: BOLD monitor instance (REQUIRED)
+% endif
+        verbose: Print progress messages
+        print_every: Print frequency (defaults to n_iterations // 10)
+
+    Returns:
+        Bunch with: state, history, pre_tuning, post_tuning
+    """
+    import copy
+    import equinox as eqx
+
+    if print_every is None:
+        print_every = max(1, n_iterations // 10)
+
+    # Deep copy state to avoid modifying original
+    state = copy.deepcopy(state)
+
+    # History tracking
+    history = Bunch(
+% for obs in observables:
+        ${obs}=[],
+% endfor
+% for rule in update_rules:
+<%
+    target_param = require_attr(rule, 'target_parameter', 'update_rule')
+    target_name = str(getattr(target_param, 'name', target_param))
+%>
+        ${target_name}=[],
+% endfor
+    )
+
+    # Run pre-tuning simulation for comparison
+    pre_tuning = model_fn(state)
+
+% if needs_fc:
+    # Initialize BOLD signal sliding window for FC computation
+    bold_monitor = copy.deepcopy(bold_monitor)
+    n_nodes = pre_tuning.data.shape[-1]
+    bold_window = jnp.zeros((window_size, 1, n_nodes))
+    history_accessor = lambda tree: tree.history
+% endif
+
+    if verbose:
+        print(f"Running ${algo_name} algorithm for {n_iterations} iterations...")
+
+    for i in range(n_iterations):
+        # Split key for this iteration
+        key, subkey = jax.random.split(key)
+
+        # Run simulation for one period
+        result = model_fn(state)
+
+        # Update state for next iteration
+        state.initial_state.dynamics = result.data[-1]
+        if hasattr(state, '_internal') and hasattr(state._internal, 'noise_samples'):
+            state._internal.noise_samples = jax.random.normal(
+                key=subkey, shape=state._internal.noise_samples.shape
+            )
+
+% if needs_fc:
+        # Compute BOLD signal and update sliding window
+        bold_result = bold_monitor(result)
+        bold_window = jnp.roll(bold_window, -1, axis=0)
+        bold_window = bold_window.at[-1, 0, :].set(bold_result.ys[0, 0, :])
+
+        # Update BOLD monitor history for hemodynamic continuity
+        new_history = jnp.roll(bold_monitor.history, -result.data.shape[0], axis=0)
+        new_history = new_history.at[-result.data.shape[0]:, :, :].set(result.data[:, 0:1, :])
+        bold_monitor = eqx.tree_at(history_accessor, bold_monitor, new_history)
+
+        # Compute FC from BOLD window
+        fc_pred = compute_fc(bold_window)
+        rmse_fc = jnp.sqrt(jnp.mean((fc_pred - fc_target)**2, axis=1, keepdims=True))
+% endif
+
+        # Compute observables from result
+% for obs in observables:
+% if obs == 'mean_S_e':
+        mean_S_e = jnp.mean(result.data[:, 0], axis=0)  # Mean over time, per node
+% elif obs == 'mean_S_i':
+        mean_S_i = jnp.mean(result.data[:, 1], axis=0)  # Mean over time, per node
+% elif obs in ['fc_pred', 'fc_target', 'rmse_fc']:
+        # ${obs} computed above from BOLD window or passed as argument
+        pass
+% else:
+        ${obs} = compute_${obs}(result)
+% endif
+% endfor
+
+        # Apply update rules
+% for rule in update_rules:
+<%
+    rule_name = safe_name(require_attr(rule, 'name', 'update_rule'))
+    target_param = require_attr(rule, 'target_parameter', 'update_rule')
+    target_name = str(getattr(target_param, 'name', target_param))
+    rule_eq = require_attr(rule, 'equation', 'update_rule')
+    rule_params = getattr(rule_eq, 'parameters', None) or {}
+    if hasattr(rule_params, 'items'):
+        rule_params_dict = {k: require_attr(v, 'value', f"parameter '{k}'") for k, v in rule_params.items()}
+    else:
+        rule_params_dict = {}
+
+    # Determine where to update the parameter (dynamics or coupling)
+    is_coupling_param = target_name.startswith('w') or 'coupling' in target_name.lower()
+%>
+        # Update ${target_name}
+        new_${target_name} = update_${algo_name}_${rule_name}(
+% if is_coupling_param:
+            state.coupling.coupling.${target_name},
+% else:
+            state.dynamics.${target_name},
+% endif
+% for obs in observables:
+            ${obs},
+% endfor
+% for pname, pval in rule_params_dict.items():
+            ${pname}=${pval},
+% endfor
+        )
+% if is_coupling_param:
+        state.coupling.coupling.${target_name} = new_${target_name}
+% else:
+        state.dynamics.${target_name} = new_${target_name}
+% endif
+% endfor
+
+        # Record history (defer float conversion to end to avoid sync)
+% for obs in observables:
+% if obs == 'fc_pred':
+        history.fc_pred.append(fc_corr(fc_pred, fc_target))  # Convert at end
+% elif obs == 'rmse_fc':
+        history.rmse_fc.append(jnp.mean(rmse_fc))  # Convert at end
+% elif obs == 'fc_target':
+        pass  # fc_target is constant, no need to track
+% else:
+        history.${obs}.append(jnp.mean(${obs}))  # Convert at end
+% endif
+% endfor
+% for rule in update_rules:
+<%
+    target_param = require_attr(rule, 'target_parameter', 'update_rule')
+    target_name = str(getattr(target_param, 'name', target_param))
+    is_coupling_param = target_name.startswith('w') or 'coupling' in target_name.lower()
+%>
+% if is_coupling_param:
+        history.${target_name}.append(state.coupling.coupling.${target_name})  # JAX array, convert at end
+% else:
+        history.${target_name}.append(state.dynamics.${target_name})  # JAX array, convert at end
+% endif
+% endfor
+
+        if verbose and (i + 1) % print_every == 0:
+% if needs_fc:
+            _fc_corr = fc_corr(fc_pred, fc_target)
+            print(f"  {i+1}/{n_iterations}: FC corr={_fc_corr:.4f}, RMSE={float(jnp.mean(rmse_fc)):.4f}")
+% elif observables:
+            print(f"  {i+1}/{n_iterations}: ${observables[0]}={history.${observables[0]}[-1]:.4f}")
+% else:
+            print(f"  {i+1}/{n_iterations}: done")
+% endif
+
+    # Run post-tuning simulation
+    post_tuning = model_fn(state)
+
+    # Convert history lists to arrays (block_until_ready here, not in loop)
+    for k in list(history.keys()):
+        v = history[k]
+        if len(v) > 0:
+            first = v[0]
+            if isinstance(first, (int, float)):
+                history[k] = jnp.array(v)
+            elif hasattr(first, 'shape'):
+                if first.shape == ():  # Scalar JAX array
+                    history[k] = jnp.array([float(x) for x in v])
+                else:
+                    # JAX arrays - stack them
+                    history[k] = jnp.stack(v, axis=0)
+
+    if verbose:
+        print(f"${algo_name} complete!")
+
+    return Bunch(
+        state=state,
+        history=history,
+        pre_tuning=pre_tuning,
+        post_tuning=post_tuning,
+    )
+
+% endfor
+% endif

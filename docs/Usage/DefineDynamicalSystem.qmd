@@ -9,9 +9,11 @@ This guide demonstrates how to define and simulate a Dynamical System using TVBO
 
 We'll create a simple damped pendulum system to illustrate the key concepts.
 
+![](_output/anim1.gif)
+
 ### System Specification
 
-Define the pendulum [Dynamics](/datamodel/classes/Dynamics.html) using YAML format with [Parameter](/datamodel/classes/Parameter.html)s, [state variables](/datamodel/classes/StateVariable.html), and [output transforms](/datamodel/slots/output_transforms.html):
+Define the pendulum [Dynamics](/datamodel/classes/Dynamics.html) using YAML format with [Parameter](/datamodel/classes/Parameter.html)s, [state variables](/datamodel/classes/StateVariable.html), and [output transforms](/datamodel/slots/output.html):
 
 ```{python}
 #| echo: false
@@ -27,7 +29,7 @@ import yaml
 from tvbo import Dynamics, SimulationExperiment
 
 # Pendulum System
-dynamics_yaml = """
+pendulum_dynamics = """
 name: PendulumSystem
 description: A simple damped pendulum system for demonstrating TVBO capabilities.
 parameters:
@@ -56,7 +58,7 @@ state_variables:
         initial_value: 0.0
         equation:
             rhs: -c*omega - omega0**2 * sin(theta)
-output_transforms:
+derived_variables:
     x:
         description: X coordinate of the pendulum bob
         unit: m
@@ -67,19 +69,22 @@ output_transforms:
         unit: m
         equation:
             rhs: -L * cos(theta)
+output:
+    - x
+    - y
 """
 
 pendulum = SimulationExperiment(
-    local_dynamics=Dynamics(**yaml.load(dynamics_yaml, Loader=yaml.FullLoader)),
-
+    dynamics=Dynamics.from_string(pendulum_dynamics),
 )
 results = pendulum.run(duration=5_000)
 ```
 
 The system consists of:
-- **Parameters**: Physical constants (damping, frequency, length)
-- **State variables**: Time-evolving quantities (angle θ, angular velocity ω)
-- **Output transforms**: Computed observables (Cartesian coordinates x, y)
+
+- **[Parameters](/datamodel/classes/Parameter.html)**: Physical constants (damping, frequency, length)
+- **[State variables](/datamodel/classes/StateVariable.html)**: Time-evolving quantities (angle θ, angular velocity ω)
+- **[Output transforms](/datamodel/slots/output.html)**: Computed observables (Cartesian coordinates x, y)
 
 ### Visualization
 
@@ -87,9 +92,9 @@ Real-time animation of the pendulum motion alongside the time series data:
 
 ```{python}
 # | echo: false
-x = results.get_state_variable("x").data.squeeze()
-y = results.get_state_variable("y").data.squeeze()
-time = results.time
+x = results.integration.sel(variable='x').values
+y = results.integration.sel(variable='y').values
+time = results.integration.time
 dt = pendulum.integration.step_size
 
 target_fps = 20
@@ -108,7 +113,7 @@ ax_pendulum.set_ylabel("y")
 (line,) = ax_pendulum.plot([], [], "o-")
 
 ax_timeseries = axs[1]
-results.plot(ax=ax_timeseries)
+results.integration.plot(ax=ax_timeseries)
 time_line = ax_timeseries.axvline(x=0)
 
 def init():
@@ -136,4 +141,115 @@ plt.close()
 ani.save("_output/anim1.gif", writer="pillow", fps=target_fps)
 ```
 
-![](_output/anim1.gif)
+### Phase Portrait
+
+State variables accept a [Distribution](/datamodel/classes/Distribution.html) for initial conditions. The presence of a distribution declares that the variable should be sampled — no runtime flags needed. The resolution order is:
+
+| Configuration | Behavior |
+|---|---|
+| `initial_value: 1.0` (no distribution) | Deterministic — always starts at 1.0 |
+| `distribution:` present + `n_trials > 1` | Each trial samples a new IC from the distribution |
+| `distribution:` present, single run | Uses `initial_value` as fallback |
+| `distribution.domain` not set | Falls back to the state variable's `domain` |
+
+```yaml
+# Case 1: Fixed IC (no distribution)
+theta:
+    initial_value: 1.0        # → Always starts at 1.0
+
+# Case 2: Sampled IC (distribution present)
+theta:
+    initial_value: 0.0        # fallback if sampling disabled
+    distribution:
+        name: Uniform
+        domain: {lo: -3.14, hi: 3.14}
+    # → Sampled when n_trials > 1, else uses 0.0
+
+# Case 3: Distribution without explicit domain → inherits SV domain
+theta:
+    initial_value: 0.0
+    domain: {lo: -3.14, hi: 3.14}
+    distribution:
+        name: Uniform         # domain falls back to SV domain
+    # → Uniform(-3.14, 3.14)
+```
+
+An [Exploration](/datamodel/classes/Exploration.html) with `n_trials` runs them in parallel — each trial samples a different starting point, revealing the full phase portrait without any Python loop:
+
+```{python}
+from tvbo.datamodel.schema import Distribution, Range, Exploration
+import numpy as np
+# Attach sampling distributions to the state variables
+pendulum.dynamics.state_variables["theta"].distribution = Distribution(
+    name="Uniform", domain=Range(lo=-np.pi, hi=np.pi)
+)
+pendulum.dynamics.state_variables["omega"].distribution = Distribution(
+    name="Uniform", domain=Range(lo=-0.005,hi=0.005)
+)
+# 20 parallel trials from different initial conditions
+pendulum.explorations["ICs"] = Exploration(name="ICs", n_trials=20)
+result = pendulum.run(duration=10_000)
+```
+
+```{python}
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+def plot_phase_portrait(trials, color_trajectory_by="theta", color_ic_by=None,
+                        cmap="coolwarm", ic_cmap=None, ax=None):
+    """Plot phase portrait with independent coloring for trajectories and ICs.
+
+    color_trajectory_by: "theta" or "omega" — colors lines by that IC value
+    color_ic_by: "theta" or "omega" — colors IC dots (None = black)
+    """
+    var_map = {"theta": 0, "omega": 1}
+    label_map = {"theta": r"$\theta_0$", "omega": r"$\omega_0$"}
+
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(5, 4), layout="compressed")
+    else:
+        fig = ax.figure
+    ax.set_box_aspect(1)
+    n_trials = trials.shape[1]
+
+    # Trajectory colors
+    traj_idx = var_map[color_trajectory_by]
+    traj_ics = [float(trials[0, i, 0, traj_idx, 0]) for i in range(n_trials)]
+    traj_norm = plt.Normalize(min(traj_ics), max(traj_ics))
+    traj_cm = plt.colormaps[cmap]
+
+    # IC dot colors
+    if color_ic_by is not None:
+        ic_idx = var_map[color_ic_by]
+        ic_vals = [float(trials[0, i, 0, ic_idx, 0]) for i in range(n_trials)]
+        ic_norm = plt.Normalize(min(ic_vals), max(ic_vals))
+        ic_cm = plt.colormaps[ic_cmap or cmap]
+
+    for i in range(n_trials):
+        theta = trials[0, i, :, 0, 0]
+        omega = trials[0, i, :, 1, 0]
+        ax.plot(theta, omega, lw=0.6, alpha=0.7, color=traj_cm(traj_norm(traj_ics[i])))
+        dot_color = ic_cm(ic_norm(ic_vals[i])) if color_ic_by else "black"
+        ax.plot(theta[0], omega[0], "o", ms=4, color=dot_color, zorder=5)
+
+    # Colorbars
+    sm = plt.cm.ScalarMappable(cmap=traj_cm, norm=traj_norm)
+    fig.colorbar(sm, ax=ax, label=f"traj: {label_map[color_trajectory_by]}")
+    if color_ic_by is not None:
+        sm2 = plt.cm.ScalarMappable(cmap=ic_cm, norm=ic_norm)
+        fig.colorbar(sm2, ax=ax, label=f"IC: {label_map[color_ic_by]}")
+
+    ax.set_xlabel(r"$\theta$")
+    ax.set_ylabel(r"$\omega$")
+    plt.close()
+    return fig
+
+
+trials = result.exploration.ICs.results
+plot_phase_portrait(trials, color_trajectory_by="theta", color_ic_by="omega",
+                    cmap="coolwarm", ic_cmap="plasma")
+```
+
+
+
