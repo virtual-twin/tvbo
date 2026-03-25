@@ -3164,12 +3164,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../datamodel/slots/optimization.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">optimization</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/optimizations.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">optimizations</span></a>
   </div>
@@ -4313,6 +4307,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../api/adapters/neuroml.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Neuroml</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../api/adapters/openminds.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Openminds</span></a>
   </div>
@@ -4745,6 +4745,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../api/plot/animate.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Animate</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../api/plot/bifurcation_diagram.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Bifurcation Diagram</span></a>
   </div>
@@ -4771,6 +4777,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../api/plot/ontology.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Ontology</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/plot/phase.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Phase</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/plot/timeseries.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Timeseries</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4870,6 +4888,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">Report</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/utils/units.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Units</span></a>
+  </div>
+</li>
       </ul>
   </li>
       </ul>
@@ -4965,7 +4989,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="basic-usage" class="level2">
 <h2 class="anchored" data-anchor-id="basic-usage">Basic Usage</h2>
-<div id="d3534199" class="cell" data-execution_count="2">
+<div id="93f4fea2" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> Dynamics, SimulationExperiment</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> Dynamics.from_db(<span class="st">"ReducedWongWangExcInh"</span>)</span>
@@ -4973,12 +4997,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> exp.run(<span class="st">"jax"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>The <code>ExperimentResult</code> displays a tree summary:</p>
-<div id="2abd8580" class="cell" data-execution_count="3">
+<div id="f638e786" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>result</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display cell-output-markdown" data-execution_count="2">
 <pre><code>Experiment
 └── integration
-        data: (81920, 2, 1)</code></pre>
+        data: (81920, 2, 1, 1)</code></pre>
 </div>
 </div>
 </section>
@@ -4987,7 +5011,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="integration-main-simulation" class="level3">
 <h3 class="anchored" data-anchor-id="integration-main-simulation">Integration (Main Simulation)</h3>
 <p>The primary simulation result is an <code>xr.DataArray</code> with named dimensions and coordinates:</p>
-<div id="e3485325" class="cell" data-execution_count="4">
+<div id="458b6307" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>result.integration.data</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="3">
 <div><svg style="position: absolute; width: 0; height: 0; overflow: hidden">
@@ -5360,917 +5384,128 @@ dl.xr-attrs {
   stroke: currentColor;
   fill: currentColor;
 }
-</style><pre class="xr-text-repr-fallback">&lt;xarray.DataArray (time: 81920, variable: 2, node: 1)&gt; Size: 1MB
-array([[[0.09998933],
-        [0.09988083]],
+</style><pre class="xr-text-repr-fallback">&lt;xarray.DataArray (time: 81920, variable: 2, node: 1, mode: 1)&gt; Size: 1MB
+array([[[[0.09998933]],
 
-       [[0.09997866],
-        [0.09976182]],
+        [[0.09988083]]],
 
-       [[0.099968  ],
-        [0.09964298]],
+
+       [[[0.09997866]],
+
+        [[0.09976182]]],
+
+
+       [[[0.099968  ]],
+
+        [[0.09964298]]],
+
 
        ...,
 
-       [[0.16456527],
-        [0.03920144]],
 
-       [[0.16456528],
-        [0.03920144]],
+       [[[0.16456527]],
 
-       [[0.16456529],
-        [0.03920144]]], shape=(81920, 2, 1))
+        [[0.03920144]]],
+
+
+       [[[0.16456528]],
+
+        [[0.03920144]]],
+
+
+       [[[0.16456529]],
+
+        [[0.03920144]]]], shape=(81920, 2, 1, 1))
 Coordinates:
   * time      (time) float64 655kB 0.01221 0.02441 0.03662 ... 1e+03 1e+03 1e+03
   * variable  (variable) &lt;U3 24B 'S_e' 'S_i'
-Dimensions without coordinates: node</pre><div class="xr-wrap" style="display:none"><div class="xr-header"><div class="xr-obj-type">xarray.DataArray</div><div class="xr-array-name"></div><ul class="xr-dim-list"><li><span class="xr-has-index">time</span>: 81920</li><li><span class="xr-has-index">variable</span>: 2</li><li><span>node</span>: 1</li></ul></div><ul class="xr-sections"><li class="xr-section-item"><div class="xr-array-wrap"><input id="section-35b85eaf-ddaf-4167-96d8-321c9ae293f6" class="xr-array-in" type="checkbox" checked=""><label for="section-35b85eaf-ddaf-4167-96d8-321c9ae293f6" title="Show/hide data repr"><svg class="icon xr-icon-database"><use href="#icon-database"></use></svg></label><div class="xr-array-preview xr-preview"><span>0.09999 0.09988 0.09998 0.09976 ... 0.1646 0.0392 0.1646 0.0392</span></div><div class="xr-array-data"><pre>array([[[0.09998933],
-        [0.09988083]],
+  * mode      (mode) int64 8B 0
+Dimensions without coordinates: node</pre><div class="xr-wrap" style="display:none"><div class="xr-header"><div class="xr-obj-type">xarray.DataArray</div><div class="xr-array-name"></div><ul class="xr-dim-list"><li><span class="xr-has-index">time</span>: 81920</li><li><span class="xr-has-index">variable</span>: 2</li><li><span>node</span>: 1</li><li><span class="xr-has-index">mode</span>: 1</li></ul></div><ul class="xr-sections"><li class="xr-section-item"><div class="xr-array-wrap"><input id="section-d3c28f8f-caf3-4c39-afff-d36c7582ef10" class="xr-array-in" type="checkbox" checked=""><label for="section-d3c28f8f-caf3-4c39-afff-d36c7582ef10" title="Show/hide data repr"><svg class="icon xr-icon-database"><use href="#icon-database"></use></svg></label><div class="xr-array-preview xr-preview"><span>0.09999 0.09988 0.09998 0.09976 ... 0.1646 0.0392 0.1646 0.0392</span></div><div class="xr-array-data"><pre>array([[[[0.09998933]],
 
-       [[0.09997866],
-        [0.09976182]],
+        [[0.09988083]]],
 
-       [[0.099968  ],
-        [0.09964298]],
+
+       [[[0.09997866]],
+
+        [[0.09976182]]],
+
+
+       [[[0.099968  ]],
+
+        [[0.09964298]]],
+
 
        ...,
 
-       [[0.16456527],
-        [0.03920144]],
 
-       [[0.16456528],
-        [0.03920144]],
+       [[[0.16456527]],
 
-       [[0.16456529],
-        [0.03920144]]], shape=(81920, 2, 1))</pre></div></div></li><li class="xr-section-item"><input id="section-8ae670b1-a7b4-4a30-b775-8fa74fac4a5e" class="xr-section-summary-in" type="checkbox" checked=""><label for="section-8ae670b1-a7b4-4a30-b775-8fa74fac4a5e" class="xr-section-summary">Coordinates: <span>(2)</span></label><div class="xr-section-inline-details"></div><div class="xr-section-details"><ul class="xr-var-list"><li class="xr-var-item"><div class="xr-var-name"><span class="xr-has-index">time</span></div><div class="xr-var-dims">(time)</div><div class="xr-var-dtype">float64</div><div class="xr-var-preview xr-preview">0.01221 0.02441 ... 1e+03 1e+03</div><input id="attrs-9ce0f27a-e50f-4fbf-9110-12342b8a2f9e" class="xr-var-attrs-in" type="checkbox" disabled=""><label for="attrs-9ce0f27a-e50f-4fbf-9110-12342b8a2f9e" title="Show/Hide attributes"><svg class="icon xr-icon-file-text2"><use href="#icon-file-text2"></use></svg></label><input id="data-3267e3dc-022b-4d46-9f03-38307d0e8a68" class="xr-var-data-in" type="checkbox"><label for="data-3267e3dc-022b-4d46-9f03-38307d0e8a68" title="Show/Hide data repr"><svg class="icon xr-icon-database"><use href="#icon-database"></use></svg></label><div class="xr-var-attrs"><dl class="xr-attrs"></dl></div><div class="xr-var-data"><pre>array([1.220703e-02, 2.441406e-02, 3.662109e-02, ..., 9.999756e+02,
-       9.999878e+02, 1.000000e+03], shape=(81920,))</pre></div></li><li class="xr-var-item"><div class="xr-var-name"><span class="xr-has-index">variable</span></div><div class="xr-var-dims">(variable)</div><div class="xr-var-dtype">&lt;U3</div><div class="xr-var-preview xr-preview">'S_e' 'S_i'</div><input id="attrs-4a85983d-5d2a-48df-89b7-62ae00e4dfee" class="xr-var-attrs-in" type="checkbox" disabled=""><label for="attrs-4a85983d-5d2a-48df-89b7-62ae00e4dfee" title="Show/Hide attributes"><svg class="icon xr-icon-file-text2"><use href="#icon-file-text2"></use></svg></label><input id="data-55ac7031-e8f1-415f-8939-9f5c4505d51e" class="xr-var-data-in" type="checkbox"><label for="data-55ac7031-e8f1-415f-8939-9f5c4505d51e" title="Show/Hide data repr"><svg class="icon xr-icon-database"><use href="#icon-database"></use></svg></label><div class="xr-var-attrs"><dl class="xr-attrs"></dl></div><div class="xr-var-data"><pre>array(['S_e', 'S_i'], dtype='&lt;U3')</pre></div></li></ul></div></li><li class="xr-section-item"><input id="section-8d5108d2-8c00-4411-90f3-fff6da540594" class="xr-section-summary-in" type="checkbox"><label for="section-8d5108d2-8c00-4411-90f3-fff6da540594" class="xr-section-summary">Indexes: <span>(2)</span></label><div class="xr-section-inline-details"></div><div class="xr-section-details"><ul class="xr-var-list"><li class="xr-var-item"><div class="xr-index-name"><div>time</div></div><div class="xr-index-preview">PandasIndex</div><input type="checkbox" disabled=""><label></label><input id="index-25db1c93-031d-4d5b-bad7-c1dc73c2d3c7" class="xr-index-data-in" type="checkbox"><label for="index-25db1c93-031d-4d5b-bad7-c1dc73c2d3c7" title="Show/Hide index repr"><svg class="icon xr-icon-database"><use href="#icon-database"></use></svg></label><div class="xr-index-data"><pre>PandasIndex(Index([  0.01220703125,    0.0244140625,   0.03662109375,     0.048828125,
+        [[0.03920144]]],
+
+
+       [[[0.16456528]],
+
+        [[0.03920144]]],
+
+
+       [[[0.16456529]],
+
+        [[0.03920144]]]], shape=(81920, 2, 1, 1))</pre></div></div></li><li class="xr-section-item"><input id="section-1ca21eb1-4486-4443-a950-ef8ac82ad9a8" class="xr-section-summary-in" type="checkbox" checked=""><label for="section-1ca21eb1-4486-4443-a950-ef8ac82ad9a8" class="xr-section-summary">Coordinates: <span>(3)</span></label><div class="xr-section-inline-details"></div><div class="xr-section-details"><ul class="xr-var-list"><li class="xr-var-item"><div class="xr-var-name"><span class="xr-has-index">time</span></div><div class="xr-var-dims">(time)</div><div class="xr-var-dtype">float64</div><div class="xr-var-preview xr-preview">0.01221 0.02441 ... 1e+03 1e+03</div><input id="attrs-0fec6182-828c-4584-af9f-f2d6d243bf27" class="xr-var-attrs-in" type="checkbox" disabled=""><label for="attrs-0fec6182-828c-4584-af9f-f2d6d243bf27" title="Show/Hide attributes"><svg class="icon xr-icon-file-text2"><use href="#icon-file-text2"></use></svg></label><input id="data-b16a426f-16b1-4107-8528-5efd5b580494" class="xr-var-data-in" type="checkbox"><label for="data-b16a426f-16b1-4107-8528-5efd5b580494" title="Show/Hide data repr"><svg class="icon xr-icon-database"><use href="#icon-database"></use></svg></label><div class="xr-var-attrs"><dl class="xr-attrs"></dl></div><div class="xr-var-data"><pre>array([1.220703e-02, 2.441406e-02, 3.662109e-02, ..., 9.999756e+02,
+       9.999878e+02, 1.000000e+03], shape=(81920,))</pre></div></li><li class="xr-var-item"><div class="xr-var-name"><span class="xr-has-index">variable</span></div><div class="xr-var-dims">(variable)</div><div class="xr-var-dtype">&lt;U3</div><div class="xr-var-preview xr-preview">'S_e' 'S_i'</div><input id="attrs-67f3f88f-5fd4-40c0-94b6-b939f3cbf1fe" class="xr-var-attrs-in" type="checkbox" disabled=""><label for="attrs-67f3f88f-5fd4-40c0-94b6-b939f3cbf1fe" title="Show/Hide attributes"><svg class="icon xr-icon-file-text2"><use href="#icon-file-text2"></use></svg></label><input id="data-8e7621a2-af28-46eb-a0a7-0ea8466e8581" class="xr-var-data-in" type="checkbox"><label for="data-8e7621a2-af28-46eb-a0a7-0ea8466e8581" title="Show/Hide data repr"><svg class="icon xr-icon-database"><use href="#icon-database"></use></svg></label><div class="xr-var-attrs"><dl class="xr-attrs"></dl></div><div class="xr-var-data"><pre>array(['S_e', 'S_i'], dtype='&lt;U3')</pre></div></li><li class="xr-var-item"><div class="xr-var-name"><span class="xr-has-index">mode</span></div><div class="xr-var-dims">(mode)</div><div class="xr-var-dtype">int64</div><div class="xr-var-preview xr-preview">0</div><input id="attrs-3a7f703e-c023-4e11-8230-17af85178c5c" class="xr-var-attrs-in" type="checkbox" disabled=""><label for="attrs-3a7f703e-c023-4e11-8230-17af85178c5c" title="Show/Hide attributes"><svg class="icon xr-icon-file-text2"><use href="#icon-file-text2"></use></svg></label><input id="data-1cd34163-3151-4e65-80ef-ee86b50edf4e" class="xr-var-data-in" type="checkbox"><label for="data-1cd34163-3151-4e65-80ef-ee86b50edf4e" title="Show/Hide data repr"><svg class="icon xr-icon-database"><use href="#icon-database"></use></svg></label><div class="xr-var-attrs"><dl class="xr-attrs"></dl></div><div class="xr-var-data"><pre>array([0])</pre></div></li></ul></div></li><li class="xr-section-item"><input id="section-4fb5e0a0-6834-4935-a216-690792904b1d" class="xr-section-summary-in" type="checkbox"><label for="section-4fb5e0a0-6834-4935-a216-690792904b1d" class="xr-section-summary">Indexes: <span>(3)</span></label><div class="xr-section-inline-details"></div><div class="xr-section-details"><ul class="xr-var-list"><li class="xr-var-item"><div class="xr-index-name"><div>time</div></div><div class="xr-index-preview">PandasIndex</div><input type="checkbox" disabled=""><label></label><input id="index-7ab9be15-fe92-4736-8617-1f77e1eece0c" class="xr-index-data-in" type="checkbox"><label for="index-7ab9be15-fe92-4736-8617-1f77e1eece0c" title="Show/Hide index repr"><svg class="icon xr-icon-database"><use href="#icon-database"></use></svg></label><div class="xr-index-data"><pre>PandasIndex(Index([  0.01220703125,    0.0244140625,   0.03662109375,     0.048828125,
          0.06103515625,    0.0732421875,   0.08544921875,      0.09765625,
          0.10986328125,    0.1220703125,
        ...
        999.89013671875,    999.90234375, 999.91455078125,  999.9267578125,
        999.93896484375,   999.951171875, 999.96337890625,  999.9755859375,
        999.98779296875,          1000.0],
-      dtype='float64', name='time', length=81920))</pre></div></li><li class="xr-var-item"><div class="xr-index-name"><div>variable</div></div><div class="xr-index-preview">PandasIndex</div><input type="checkbox" disabled=""><label></label><input id="index-9d70a99f-1bf4-4ef8-8910-4c7124898b43" class="xr-index-data-in" type="checkbox"><label for="index-9d70a99f-1bf4-4ef8-8910-4c7124898b43" title="Show/Hide index repr"><svg class="icon xr-icon-database"><use href="#icon-database"></use></svg></label><div class="xr-index-data"><pre>PandasIndex(Index(['S_e', 'S_i'], dtype='str', name='variable'))</pre></div></li></ul></div></li><li class="xr-section-item"><input id="section-1f19ffc3-2f6e-4f19-9174-ef7db0849525" class="xr-section-summary-in" type="checkbox" disabled=""><label for="section-1f19ffc3-2f6e-4f19-9174-ef7db0849525" class="xr-section-summary" title="Expand/collapse section">Attributes: <span>(0)</span></label><div class="xr-section-inline-details"></div><div class="xr-section-details"><dl class="xr-attrs"></dl></div></li></ul></div></div>
+      dtype='float64', name='time', length=81920))</pre></div></li><li class="xr-var-item"><div class="xr-index-name"><div>variable</div></div><div class="xr-index-preview">PandasIndex</div><input type="checkbox" disabled=""><label></label><input id="index-8c4b9c32-02aa-471c-8bab-2c60ed67695d" class="xr-index-data-in" type="checkbox"><label for="index-8c4b9c32-02aa-471c-8bab-2c60ed67695d" title="Show/Hide index repr"><svg class="icon xr-icon-database"><use href="#icon-database"></use></svg></label><div class="xr-index-data"><pre>PandasIndex(Index(['S_e', 'S_i'], dtype='str', name='variable'))</pre></div></li><li class="xr-var-item"><div class="xr-index-name"><div>mode</div></div><div class="xr-index-preview">PandasIndex</div><input type="checkbox" disabled=""><label></label><input id="index-d2dc02e5-07a1-489b-8af7-17bbf15a388a" class="xr-index-data-in" type="checkbox"><label for="index-d2dc02e5-07a1-489b-8af7-17bbf15a388a" title="Show/Hide index repr"><svg class="icon xr-icon-database"><use href="#icon-database"></use></svg></label><div class="xr-index-data"><pre>PandasIndex(Index([0], dtype='int64', name='mode'))</pre></div></li></ul></div></li><li class="xr-section-item"><input id="section-3f6ebfac-e80a-42a7-b9ae-68aa07ab0ecf" class="xr-section-summary-in" type="checkbox" disabled=""><label for="section-3f6ebfac-e80a-42a7-b9ae-68aa07ab0ecf" class="xr-section-summary" title="Expand/collapse section">Attributes: <span>(0)</span></label><div class="xr-section-inline-details"></div><div class="xr-section-details"><dl class="xr-attrs"></dl></div></li></ul></div></div>
 </div>
 </div>
 <p>Use xarray’s label-based selection:</p>
-<div id="e611ca65" class="cell" data-execution_count="5">
+<div id="621ddfcf" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Select a single state variable across all nodes</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>result.integration.sel(variable<span class="op">=</span><span class="st">'S_e'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="4">
-<div><svg style="position: absolute; width: 0; height: 0; overflow: hidden">
-<defs>
-<symbol id="icon-database" viewbox="0 0 32 32">
-<path d="M16 0c-8.837 0-16 2.239-16 5v4c0 2.761 7.163 5 16 5s16-2.239 16-5v-4c0-2.761-7.163-5-16-5z"></path>
-<path d="M16 17c-8.837 0-16-2.239-16-5v6c0 2.761 7.163 5 16 5s16-2.239 16-5v-6c0 2.761-7.163 5-16 5z"></path>
-<path d="M16 26c-8.837 0-16-2.239-16-5v6c0 2.761 7.163 5 16 5s16-2.239 16-5v-6c0 2.761-7.163 5-16 5z"></path>
-</symbol>
-<symbol id="icon-file-text2" viewbox="0 0 32 32">
-<path d="M28.681 7.159c-0.694-0.947-1.662-2.053-2.724-3.116s-2.169-2.030-3.116-2.724c-1.612-1.182-2.393-1.319-2.841-1.319h-15.5c-1.378 0-2.5 1.121-2.5 2.5v27c0 1.378 1.122 2.5 2.5 2.5h23c1.378 0 2.5-1.122 2.5-2.5v-19.5c0-0.448-0.137-1.23-1.319-2.841zM24.543 5.457c0.959 0.959 1.712 1.825 2.268 2.543h-4.811v-4.811c0.718 0.556 1.584 1.309 2.543 2.268zM28 29.5c0 0.271-0.229 0.5-0.5 0.5h-23c-0.271 0-0.5-0.229-0.5-0.5v-27c0-0.271 0.229-0.5 0.5-0.5 0 0 15.499-0 15.5 0v7c0 0.552 0.448 1 1 1h7v19.5z"></path>
-<path d="M23 26h-14c-0.552 0-1-0.448-1-1s0.448-1 1-1h14c0.552 0 1 0.448 1 1s-0.448 1-1 1z"></path>
-<path d="M23 22h-14c-0.552 0-1-0.448-1-1s0.448-1 1-1h14c0.552 0 1 0.448 1 1s-0.448 1-1 1z"></path>
-<path d="M23 18h-14c-0.552 0-1-0.448-1-1s0.448-1 1-1h14c0.552 0 1 0.448 1 1s-0.448 1-1 1z"></path>
-</symbol>
-</defs>
-</svg>
-<style>/* CSS stylesheet for displaying xarray objects in jupyterlab.
- *
- */
-
-:root {
-  --xr-font-color0: var(--jp-content-font-color0, rgba(0, 0, 0, 1));
-  --xr-font-color2: var(--jp-content-font-color2, rgba(0, 0, 0, 0.54));
-  --xr-font-color3: var(--jp-content-font-color3, rgba(0, 0, 0, 0.38));
-  --xr-border-color: var(--jp-border-color2, #e0e0e0);
-  --xr-disabled-color: var(--jp-layout-color3, #bdbdbd);
-  --xr-background-color: var(--jp-layout-color0, white);
-  --xr-background-color-row-even: var(--jp-layout-color1, white);
-  --xr-background-color-row-odd: var(--jp-layout-color2, #eeeeee);
-}
-
-html[theme="dark"],
-html[data-theme="dark"],
-body[data-theme="dark"],
-body.vscode-dark {
-  --xr-font-color0: rgba(255, 255, 255, 1);
-  --xr-font-color2: rgba(255, 255, 255, 0.54);
-  --xr-font-color3: rgba(255, 255, 255, 0.38);
-  --xr-border-color: #1f1f1f;
-  --xr-disabled-color: #515151;
-  --xr-background-color: #111111;
-  --xr-background-color-row-even: #111111;
-  --xr-background-color-row-odd: #313131;
-}
-
-.xr-wrap {
-  display: block !important;
-  min-width: 300px;
-  max-width: 700px;
-}
-
-.xr-text-repr-fallback {
-  /* fallback to plain text repr when CSS is not injected (untrusted notebook) */
-  display: none;
-}
-
-.xr-header {
-  padding-top: 6px;
-  padding-bottom: 6px;
-  margin-bottom: 4px;
-  border-bottom: solid 1px var(--xr-border-color);
-}
-
-.xr-header > div,
-.xr-header > ul {
-  display: inline;
-  margin-top: 0;
-  margin-bottom: 0;
-}
-
-.xr-obj-type,
-.xr-array-name {
-  margin-left: 2px;
-  margin-right: 10px;
-}
-
-.xr-obj-type {
-  color: var(--xr-font-color2);
-}
-
-.xr-sections {
-  padding-left: 0 !important;
-  display: grid;
-  grid-template-columns: 150px auto auto 1fr 0 20px 0 20px;
-}
-
-.xr-section-item {
-  display: contents;
-}
-
-.xr-section-item input {
-  display: inline-block;
-  opacity: 0;
-  height: 0;
-}
-
-.xr-section-item input + label {
-  color: var(--xr-disabled-color);
-}
-
-.xr-section-item input:enabled + label {
-  cursor: pointer;
-  color: var(--xr-font-color2);
-}
-
-.xr-section-item input:focus + label {
-  border: 2px solid var(--xr-font-color0);
-}
-
-.xr-section-item input:enabled + label:hover {
-  color: var(--xr-font-color0);
-}
-
-.xr-section-summary {
-  grid-column: 1;
-  color: var(--xr-font-color2);
-  font-weight: 500;
-}
-
-.xr-section-summary > span {
-  display: inline-block;
-  padding-left: 0.5em;
-}
-
-.xr-section-summary-in:disabled + label {
-  color: var(--xr-font-color2);
-}
-
-.xr-section-summary-in + label:before {
-  display: inline-block;
-  content: "►";
-  font-size: 11px;
-  width: 15px;
-  text-align: center;
-}
-
-.xr-section-summary-in:disabled + label:before {
-  color: var(--xr-disabled-color);
-}
-
-.xr-section-summary-in:checked + label:before {
-  content: "▼";
-}
-
-.xr-section-summary-in:checked + label > span {
-  display: none;
-}
-
-.xr-section-summary,
-.xr-section-inline-details {
-  padding-top: 4px;
-  padding-bottom: 4px;
-}
-
-.xr-section-inline-details {
-  grid-column: 2 / -1;
-}
-
-.xr-section-details {
-  display: none;
-  grid-column: 1 / -1;
-  margin-bottom: 5px;
-}
-
-.xr-section-summary-in:checked ~ .xr-section-details {
-  display: contents;
-}
-
-.xr-array-wrap {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: 20px auto;
-}
-
-.xr-array-wrap > label {
-  grid-column: 1;
-  vertical-align: top;
-}
-
-.xr-preview {
-  color: var(--xr-font-color3);
-}
-
-.xr-array-preview,
-.xr-array-data {
-  padding: 0 5px !important;
-  grid-column: 2;
-}
-
-.xr-array-data,
-.xr-array-in:checked ~ .xr-array-preview {
-  display: none;
-}
-
-.xr-array-in:checked ~ .xr-array-data,
-.xr-array-preview {
-  display: inline-block;
-}
-
-.xr-dim-list {
-  display: inline-block !important;
-  list-style: none;
-  padding: 0 !important;
-  margin: 0;
-}
-
-.xr-dim-list li {
-  display: inline-block;
-  padding: 0;
-  margin: 0;
-}
-
-.xr-dim-list:before {
-  content: "(";
-}
-
-.xr-dim-list:after {
-  content: ")";
-}
-
-.xr-dim-list li:not(:last-child):after {
-  content: ",";
-  padding-right: 5px;
-}
-
-.xr-has-index {
-  font-weight: bold;
-}
-
-.xr-var-list,
-.xr-var-item {
-  display: contents;
-}
-
-.xr-var-item > div,
-.xr-var-item label,
-.xr-var-item > .xr-var-name span {
-  background-color: var(--xr-background-color-row-even);
-  margin-bottom: 0;
-}
-
-.xr-var-item > .xr-var-name:hover span {
-  padding-right: 5px;
-}
-
-.xr-var-list > li:nth-child(odd) > div,
-.xr-var-list > li:nth-child(odd) > label,
-.xr-var-list > li:nth-child(odd) > .xr-var-name span {
-  background-color: var(--xr-background-color-row-odd);
-}
-
-.xr-var-name {
-  grid-column: 1;
-}
-
-.xr-var-dims {
-  grid-column: 2;
-}
-
-.xr-var-dtype {
-  grid-column: 3;
-  text-align: right;
-  color: var(--xr-font-color2);
-}
-
-.xr-var-preview {
-  grid-column: 4;
-}
-
-.xr-index-preview {
-  grid-column: 2 / 5;
-  color: var(--xr-font-color2);
-}
-
-.xr-var-name,
-.xr-var-dims,
-.xr-var-dtype,
-.xr-preview,
-.xr-attrs dt {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  padding-right: 10px;
-}
-
-.xr-var-name:hover,
-.xr-var-dims:hover,
-.xr-var-dtype:hover,
-.xr-attrs dt:hover {
-  overflow: visible;
-  width: auto;
-  z-index: 1;
-}
-
-.xr-var-attrs,
-.xr-var-data,
-.xr-index-data {
-  display: none;
-  background-color: var(--xr-background-color) !important;
-  padding-bottom: 5px !important;
-}
-
-.xr-var-attrs-in:checked ~ .xr-var-attrs,
-.xr-var-data-in:checked ~ .xr-var-data,
-.xr-index-data-in:checked ~ .xr-index-data {
-  display: block;
-}
-
-.xr-var-data > table {
-  float: right;
-}
-
-.xr-var-name span,
-.xr-var-data,
-.xr-index-name div,
-.xr-index-data,
-.xr-attrs {
-  padding-left: 25px !important;
-}
-
-.xr-attrs,
-.xr-var-attrs,
-.xr-var-data,
-.xr-index-data {
-  grid-column: 1 / -1;
-}
-
-dl.xr-attrs {
-  padding: 0;
-  margin: 0;
-  display: grid;
-  grid-template-columns: 125px auto;
-}
-
-.xr-attrs dt,
-.xr-attrs dd {
-  padding: 0;
-  margin: 0;
-  float: left;
-  padding-right: 10px;
-  width: auto;
-}
-
-.xr-attrs dt {
-  font-weight: normal;
-  grid-column: 1;
-}
-
-.xr-attrs dt:hover span {
-  display: inline-block;
-  background: var(--xr-background-color);
-  padding-right: 10px;
-}
-
-.xr-attrs dd {
-  grid-column: 2;
-  white-space: pre-wrap;
-  word-break: break-all;
-}
-
-.xr-icon-database,
-.xr-icon-file-text2,
-.xr-no-icon {
-  display: inline-block;
-  vertical-align: middle;
-  width: 1em;
-  height: 1.5em !important;
-  stroke-width: 0;
-  stroke: currentColor;
-  fill: currentColor;
-}
-</style><pre class="xr-text-repr-fallback">&lt;xarray.DataArray (time: 81920, node: 1)&gt; Size: 655kB
-array([[0.09998933],
-       [0.09997866],
-       [0.099968  ],
-       ...,
-       [0.16456527],
-       [0.16456528],
-       [0.16456529]], shape=(81920, 1))
-Coordinates:
-  * time      (time) float64 655kB 0.01221 0.02441 0.03662 ... 1e+03 1e+03 1e+03
-    variable  &lt;U3 12B 'S_e'
-Dimensions without coordinates: node</pre><div class="xr-wrap" style="display:none"><div class="xr-header"><div class="xr-obj-type">xarray.DataArray</div><div class="xr-array-name"></div><ul class="xr-dim-list"><li><span class="xr-has-index">time</span>: 81920</li><li><span>node</span>: 1</li></ul></div><ul class="xr-sections"><li class="xr-section-item"><div class="xr-array-wrap"><input id="section-fa1ffc64-67f9-447c-9dd7-578bb76c3596" class="xr-array-in" type="checkbox" checked=""><label for="section-fa1ffc64-67f9-447c-9dd7-578bb76c3596" title="Show/hide data repr"><svg class="icon xr-icon-database"><use href="#icon-database"></use></svg></label><div class="xr-array-preview xr-preview"><span>0.09999 0.09998 0.09997 0.09996 ... 0.1646 0.1646 0.1646 0.1646</span></div><div class="xr-array-data"><pre>array([[0.09998933],
-       [0.09997866],
-       [0.099968  ],
-       ...,
-       [0.16456527],
-       [0.16456528],
-       [0.16456529]], shape=(81920, 1))</pre></div></div></li><li class="xr-section-item"><input id="section-50a1d867-3dd7-4132-a250-4b8f7dcf9b1d" class="xr-section-summary-in" type="checkbox" checked=""><label for="section-50a1d867-3dd7-4132-a250-4b8f7dcf9b1d" class="xr-section-summary">Coordinates: <span>(2)</span></label><div class="xr-section-inline-details"></div><div class="xr-section-details"><ul class="xr-var-list"><li class="xr-var-item"><div class="xr-var-name"><span class="xr-has-index">time</span></div><div class="xr-var-dims">(time)</div><div class="xr-var-dtype">float64</div><div class="xr-var-preview xr-preview">0.01221 0.02441 ... 1e+03 1e+03</div><input id="attrs-33b5e0ee-0d3e-4d94-a635-961c8a2d5c11" class="xr-var-attrs-in" type="checkbox" disabled=""><label for="attrs-33b5e0ee-0d3e-4d94-a635-961c8a2d5c11" title="Show/Hide attributes"><svg class="icon xr-icon-file-text2"><use href="#icon-file-text2"></use></svg></label><input id="data-a2731242-2430-4b4a-8f0e-5bbfcb5b0059" class="xr-var-data-in" type="checkbox"><label for="data-a2731242-2430-4b4a-8f0e-5bbfcb5b0059" title="Show/Hide data repr"><svg class="icon xr-icon-database"><use href="#icon-database"></use></svg></label><div class="xr-var-attrs"><dl class="xr-attrs"></dl></div><div class="xr-var-data"><pre>array([1.220703e-02, 2.441406e-02, 3.662109e-02, ..., 9.999756e+02,
-       9.999878e+02, 1.000000e+03], shape=(81920,))</pre></div></li><li class="xr-var-item"><div class="xr-var-name"><span>variable</span></div><div class="xr-var-dims">()</div><div class="xr-var-dtype">&lt;U3</div><div class="xr-var-preview xr-preview">'S_e'</div><input id="attrs-61571ac6-95a6-4c8e-80b4-d9dbbb8369ab" class="xr-var-attrs-in" type="checkbox" disabled=""><label for="attrs-61571ac6-95a6-4c8e-80b4-d9dbbb8369ab" title="Show/Hide attributes"><svg class="icon xr-icon-file-text2"><use href="#icon-file-text2"></use></svg></label><input id="data-f9b7b3e2-374b-4617-ba8c-a67439dc9775" class="xr-var-data-in" type="checkbox"><label for="data-f9b7b3e2-374b-4617-ba8c-a67439dc9775" title="Show/Hide data repr"><svg class="icon xr-icon-database"><use href="#icon-database"></use></svg></label><div class="xr-var-attrs"><dl class="xr-attrs"></dl></div><div class="xr-var-data"><pre>array('S_e', dtype='&lt;U3')</pre></div></li></ul></div></li><li class="xr-section-item"><input id="section-e78c7f7d-45a2-4709-993f-9e8fc3b59376" class="xr-section-summary-in" type="checkbox"><label for="section-e78c7f7d-45a2-4709-993f-9e8fc3b59376" class="xr-section-summary">Indexes: <span>(1)</span></label><div class="xr-section-inline-details"></div><div class="xr-section-details"><ul class="xr-var-list"><li class="xr-var-item"><div class="xr-index-name"><div>time</div></div><div class="xr-index-preview">PandasIndex</div><input type="checkbox" disabled=""><label></label><input id="index-38bdfbd9-698f-4541-87b4-ac9415ab76d6" class="xr-index-data-in" type="checkbox"><label for="index-38bdfbd9-698f-4541-87b4-ac9415ab76d6" title="Show/Hide index repr"><svg class="icon xr-icon-database"><use href="#icon-database"></use></svg></label><div class="xr-index-data"><pre>PandasIndex(Index([  0.01220703125,    0.0244140625,   0.03662109375,     0.048828125,
-         0.06103515625,    0.0732421875,   0.08544921875,      0.09765625,
-         0.10986328125,    0.1220703125,
-       ...
-       999.89013671875,    999.90234375, 999.91455078125,  999.9267578125,
-       999.93896484375,   999.951171875, 999.96337890625,  999.9755859375,
-       999.98779296875,          1000.0],
-      dtype='float64', name='time', length=81920))</pre></div></li></ul></div></li><li class="xr-section-item"><input id="section-6f6dd147-0274-4a91-9240-b21cae581e6e" class="xr-section-summary-in" type="checkbox" disabled=""><label for="section-6f6dd147-0274-4a91-9240-b21cae581e6e" class="xr-section-summary" title="Expand/collapse section">Attributes: <span>(0)</span></label><div class="xr-section-inline-details"></div><div class="xr-section-details"><dl class="xr-attrs"></dl></div></li></ul></div></div>
+<pre><code>SimulationResult(81920, 1, 1)</code></pre>
 </div>
 </div>
-<div id="0ccc3d8e" class="cell" data-execution_count="6">
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Integer indexing — first 1000 time steps</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>result.integration.isel(time<span class="op">=</span><span class="bu">slice</span>(<span class="dv">0</span>, <span class="dv">1000</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="4375cd61" class="cell" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Integer indexing — first 1000 time steps</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>result.integration.isel(time<span class="op">=</span><span class="bu">slice</span>(<span class="dv">0</span>, <span class="dv">1000</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="5">
-<div><svg style="position: absolute; width: 0; height: 0; overflow: hidden">
-<defs>
-<symbol id="icon-database" viewbox="0 0 32 32">
-<path d="M16 0c-8.837 0-16 2.239-16 5v4c0 2.761 7.163 5 16 5s16-2.239 16-5v-4c0-2.761-7.163-5-16-5z"></path>
-<path d="M16 17c-8.837 0-16-2.239-16-5v6c0 2.761 7.163 5 16 5s16-2.239 16-5v-6c0 2.761-7.163 5-16 5z"></path>
-<path d="M16 26c-8.837 0-16-2.239-16-5v6c0 2.761 7.163 5 16 5s16-2.239 16-5v-6c0 2.761-7.163 5-16 5z"></path>
-</symbol>
-<symbol id="icon-file-text2" viewbox="0 0 32 32">
-<path d="M28.681 7.159c-0.694-0.947-1.662-2.053-2.724-3.116s-2.169-2.030-3.116-2.724c-1.612-1.182-2.393-1.319-2.841-1.319h-15.5c-1.378 0-2.5 1.121-2.5 2.5v27c0 1.378 1.122 2.5 2.5 2.5h23c1.378 0 2.5-1.122 2.5-2.5v-19.5c0-0.448-0.137-1.23-1.319-2.841zM24.543 5.457c0.959 0.959 1.712 1.825 2.268 2.543h-4.811v-4.811c0.718 0.556 1.584 1.309 2.543 2.268zM28 29.5c0 0.271-0.229 0.5-0.5 0.5h-23c-0.271 0-0.5-0.229-0.5-0.5v-27c0-0.271 0.229-0.5 0.5-0.5 0 0 15.499-0 15.5 0v7c0 0.552 0.448 1 1 1h7v19.5z"></path>
-<path d="M23 26h-14c-0.552 0-1-0.448-1-1s0.448-1 1-1h14c0.552 0 1 0.448 1 1s-0.448 1-1 1z"></path>
-<path d="M23 22h-14c-0.552 0-1-0.448-1-1s0.448-1 1-1h14c0.552 0 1 0.448 1 1s-0.448 1-1 1z"></path>
-<path d="M23 18h-14c-0.552 0-1-0.448-1-1s0.448-1 1-1h14c0.552 0 1 0.448 1 1s-0.448 1-1 1z"></path>
-</symbol>
-</defs>
-</svg>
-<style>/* CSS stylesheet for displaying xarray objects in jupyterlab.
- *
- */
-
-:root {
-  --xr-font-color0: var(--jp-content-font-color0, rgba(0, 0, 0, 1));
-  --xr-font-color2: var(--jp-content-font-color2, rgba(0, 0, 0, 0.54));
-  --xr-font-color3: var(--jp-content-font-color3, rgba(0, 0, 0, 0.38));
-  --xr-border-color: var(--jp-border-color2, #e0e0e0);
-  --xr-disabled-color: var(--jp-layout-color3, #bdbdbd);
-  --xr-background-color: var(--jp-layout-color0, white);
-  --xr-background-color-row-even: var(--jp-layout-color1, white);
-  --xr-background-color-row-odd: var(--jp-layout-color2, #eeeeee);
-}
-
-html[theme="dark"],
-html[data-theme="dark"],
-body[data-theme="dark"],
-body.vscode-dark {
-  --xr-font-color0: rgba(255, 255, 255, 1);
-  --xr-font-color2: rgba(255, 255, 255, 0.54);
-  --xr-font-color3: rgba(255, 255, 255, 0.38);
-  --xr-border-color: #1f1f1f;
-  --xr-disabled-color: #515151;
-  --xr-background-color: #111111;
-  --xr-background-color-row-even: #111111;
-  --xr-background-color-row-odd: #313131;
-}
-
-.xr-wrap {
-  display: block !important;
-  min-width: 300px;
-  max-width: 700px;
-}
-
-.xr-text-repr-fallback {
-  /* fallback to plain text repr when CSS is not injected (untrusted notebook) */
-  display: none;
-}
-
-.xr-header {
-  padding-top: 6px;
-  padding-bottom: 6px;
-  margin-bottom: 4px;
-  border-bottom: solid 1px var(--xr-border-color);
-}
-
-.xr-header > div,
-.xr-header > ul {
-  display: inline;
-  margin-top: 0;
-  margin-bottom: 0;
-}
-
-.xr-obj-type,
-.xr-array-name {
-  margin-left: 2px;
-  margin-right: 10px;
-}
-
-.xr-obj-type {
-  color: var(--xr-font-color2);
-}
-
-.xr-sections {
-  padding-left: 0 !important;
-  display: grid;
-  grid-template-columns: 150px auto auto 1fr 0 20px 0 20px;
-}
-
-.xr-section-item {
-  display: contents;
-}
-
-.xr-section-item input {
-  display: inline-block;
-  opacity: 0;
-  height: 0;
-}
-
-.xr-section-item input + label {
-  color: var(--xr-disabled-color);
-}
-
-.xr-section-item input:enabled + label {
-  cursor: pointer;
-  color: var(--xr-font-color2);
-}
-
-.xr-section-item input:focus + label {
-  border: 2px solid var(--xr-font-color0);
-}
-
-.xr-section-item input:enabled + label:hover {
-  color: var(--xr-font-color0);
-}
-
-.xr-section-summary {
-  grid-column: 1;
-  color: var(--xr-font-color2);
-  font-weight: 500;
-}
-
-.xr-section-summary > span {
-  display: inline-block;
-  padding-left: 0.5em;
-}
-
-.xr-section-summary-in:disabled + label {
-  color: var(--xr-font-color2);
-}
-
-.xr-section-summary-in + label:before {
-  display: inline-block;
-  content: "►";
-  font-size: 11px;
-  width: 15px;
-  text-align: center;
-}
-
-.xr-section-summary-in:disabled + label:before {
-  color: var(--xr-disabled-color);
-}
-
-.xr-section-summary-in:checked + label:before {
-  content: "▼";
-}
-
-.xr-section-summary-in:checked + label > span {
-  display: none;
-}
-
-.xr-section-summary,
-.xr-section-inline-details {
-  padding-top: 4px;
-  padding-bottom: 4px;
-}
-
-.xr-section-inline-details {
-  grid-column: 2 / -1;
-}
-
-.xr-section-details {
-  display: none;
-  grid-column: 1 / -1;
-  margin-bottom: 5px;
-}
-
-.xr-section-summary-in:checked ~ .xr-section-details {
-  display: contents;
-}
-
-.xr-array-wrap {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: 20px auto;
-}
-
-.xr-array-wrap > label {
-  grid-column: 1;
-  vertical-align: top;
-}
-
-.xr-preview {
-  color: var(--xr-font-color3);
-}
-
-.xr-array-preview,
-.xr-array-data {
-  padding: 0 5px !important;
-  grid-column: 2;
-}
-
-.xr-array-data,
-.xr-array-in:checked ~ .xr-array-preview {
-  display: none;
-}
-
-.xr-array-in:checked ~ .xr-array-data,
-.xr-array-preview {
-  display: inline-block;
-}
-
-.xr-dim-list {
-  display: inline-block !important;
-  list-style: none;
-  padding: 0 !important;
-  margin: 0;
-}
-
-.xr-dim-list li {
-  display: inline-block;
-  padding: 0;
-  margin: 0;
-}
-
-.xr-dim-list:before {
-  content: "(";
-}
-
-.xr-dim-list:after {
-  content: ")";
-}
-
-.xr-dim-list li:not(:last-child):after {
-  content: ",";
-  padding-right: 5px;
-}
-
-.xr-has-index {
-  font-weight: bold;
-}
-
-.xr-var-list,
-.xr-var-item {
-  display: contents;
-}
-
-.xr-var-item > div,
-.xr-var-item label,
-.xr-var-item > .xr-var-name span {
-  background-color: var(--xr-background-color-row-even);
-  margin-bottom: 0;
-}
-
-.xr-var-item > .xr-var-name:hover span {
-  padding-right: 5px;
-}
-
-.xr-var-list > li:nth-child(odd) > div,
-.xr-var-list > li:nth-child(odd) > label,
-.xr-var-list > li:nth-child(odd) > .xr-var-name span {
-  background-color: var(--xr-background-color-row-odd);
-}
-
-.xr-var-name {
-  grid-column: 1;
-}
-
-.xr-var-dims {
-  grid-column: 2;
-}
-
-.xr-var-dtype {
-  grid-column: 3;
-  text-align: right;
-  color: var(--xr-font-color2);
-}
-
-.xr-var-preview {
-  grid-column: 4;
-}
-
-.xr-index-preview {
-  grid-column: 2 / 5;
-  color: var(--xr-font-color2);
-}
-
-.xr-var-name,
-.xr-var-dims,
-.xr-var-dtype,
-.xr-preview,
-.xr-attrs dt {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  padding-right: 10px;
-}
-
-.xr-var-name:hover,
-.xr-var-dims:hover,
-.xr-var-dtype:hover,
-.xr-attrs dt:hover {
-  overflow: visible;
-  width: auto;
-  z-index: 1;
-}
-
-.xr-var-attrs,
-.xr-var-data,
-.xr-index-data {
-  display: none;
-  background-color: var(--xr-background-color) !important;
-  padding-bottom: 5px !important;
-}
-
-.xr-var-attrs-in:checked ~ .xr-var-attrs,
-.xr-var-data-in:checked ~ .xr-var-data,
-.xr-index-data-in:checked ~ .xr-index-data {
-  display: block;
-}
-
-.xr-var-data > table {
-  float: right;
-}
-
-.xr-var-name span,
-.xr-var-data,
-.xr-index-name div,
-.xr-index-data,
-.xr-attrs {
-  padding-left: 25px !important;
-}
-
-.xr-attrs,
-.xr-var-attrs,
-.xr-var-data,
-.xr-index-data {
-  grid-column: 1 / -1;
-}
-
-dl.xr-attrs {
-  padding: 0;
-  margin: 0;
-  display: grid;
-  grid-template-columns: 125px auto;
-}
-
-.xr-attrs dt,
-.xr-attrs dd {
-  padding: 0;
-  margin: 0;
-  float: left;
-  padding-right: 10px;
-  width: auto;
-}
-
-.xr-attrs dt {
-  font-weight: normal;
-  grid-column: 1;
-}
-
-.xr-attrs dt:hover span {
-  display: inline-block;
-  background: var(--xr-background-color);
-  padding-right: 10px;
-}
-
-.xr-attrs dd {
-  grid-column: 2;
-  white-space: pre-wrap;
-  word-break: break-all;
-}
-
-.xr-icon-database,
-.xr-icon-file-text2,
-.xr-no-icon {
-  display: inline-block;
-  vertical-align: middle;
-  width: 1em;
-  height: 1.5em !important;
-  stroke-width: 0;
-  stroke: currentColor;
-  fill: currentColor;
-}
-</style><pre class="xr-text-repr-fallback">&lt;xarray.DataArray (time: 1000, variable: 2, node: 1)&gt; Size: 16kB
-array([[[0.09998933],
-        [0.09988083]],
-
-       [[0.09997866],
-        [0.09976182]],
-
-       [[0.099968  ],
-        [0.09964298]],
-
-       ...,
-
-       [[0.09551789],
-        [0.04083318]],
-
-       [[0.09551934],
-        [0.04081451]],
-
-       [[0.0955208 ],
-        [0.04079589]]], shape=(1000, 2, 1))
-Coordinates:
-  * time      (time) float64 8kB 0.01221 0.02441 0.03662 ... 12.18 12.19 12.21
-  * variable  (variable) &lt;U3 24B 'S_e' 'S_i'
-Dimensions without coordinates: node</pre><div class="xr-wrap" style="display:none"><div class="xr-header"><div class="xr-obj-type">xarray.DataArray</div><div class="xr-array-name"></div><ul class="xr-dim-list"><li><span class="xr-has-index">time</span>: 1000</li><li><span class="xr-has-index">variable</span>: 2</li><li><span>node</span>: 1</li></ul></div><ul class="xr-sections"><li class="xr-section-item"><div class="xr-array-wrap"><input id="section-95753d2a-33d6-4f80-8b39-5597e01bd92a" class="xr-array-in" type="checkbox" checked=""><label for="section-95753d2a-33d6-4f80-8b39-5597e01bd92a" title="Show/hide data repr"><svg class="icon xr-icon-database"><use href="#icon-database"></use></svg></label><div class="xr-array-preview xr-preview"><span>0.09999 0.09988 0.09998 0.09976 ... 0.09552 0.04081 0.09552 0.0408</span></div><div class="xr-array-data"><pre>array([[[0.09998933],
-        [0.09988083]],
-
-       [[0.09997866],
-        [0.09976182]],
-
-       [[0.099968  ],
-        [0.09964298]],
-
-       ...,
-
-       [[0.09551789],
-        [0.04083318]],
-
-       [[0.09551934],
-        [0.04081451]],
-
-       [[0.0955208 ],
-        [0.04079589]]], shape=(1000, 2, 1))</pre></div></div></li><li class="xr-section-item"><input id="section-a32e518f-1edc-4a58-b04a-63f60820e044" class="xr-section-summary-in" type="checkbox" checked=""><label for="section-a32e518f-1edc-4a58-b04a-63f60820e044" class="xr-section-summary">Coordinates: <span>(2)</span></label><div class="xr-section-inline-details"></div><div class="xr-section-details"><ul class="xr-var-list"><li class="xr-var-item"><div class="xr-var-name"><span class="xr-has-index">time</span></div><div class="xr-var-dims">(time)</div><div class="xr-var-dtype">float64</div><div class="xr-var-preview xr-preview">0.01221 0.02441 ... 12.19 12.21</div><input id="attrs-445c5718-bf7c-4b77-ae71-924ab2396ade" class="xr-var-attrs-in" type="checkbox" disabled=""><label for="attrs-445c5718-bf7c-4b77-ae71-924ab2396ade" title="Show/Hide attributes"><svg class="icon xr-icon-file-text2"><use href="#icon-file-text2"></use></svg></label><input id="data-5797bc04-c168-4bf4-bcc7-ba936e381520" class="xr-var-data-in" type="checkbox"><label for="data-5797bc04-c168-4bf4-bcc7-ba936e381520" title="Show/Hide data repr"><svg class="icon xr-icon-database"><use href="#icon-database"></use></svg></label><div class="xr-var-attrs"><dl class="xr-attrs"></dl></div><div class="xr-var-data"><pre>array([ 0.012207,  0.024414,  0.036621, ..., 12.182617, 12.194824, 12.207031],
-      shape=(1000,))</pre></div></li><li class="xr-var-item"><div class="xr-var-name"><span class="xr-has-index">variable</span></div><div class="xr-var-dims">(variable)</div><div class="xr-var-dtype">&lt;U3</div><div class="xr-var-preview xr-preview">'S_e' 'S_i'</div><input id="attrs-25a363ea-5735-4bfa-92fa-f4573e262668" class="xr-var-attrs-in" type="checkbox" disabled=""><label for="attrs-25a363ea-5735-4bfa-92fa-f4573e262668" title="Show/Hide attributes"><svg class="icon xr-icon-file-text2"><use href="#icon-file-text2"></use></svg></label><input id="data-d3ba44a7-5e99-4972-ac33-9558a4e4747b" class="xr-var-data-in" type="checkbox"><label for="data-d3ba44a7-5e99-4972-ac33-9558a4e4747b" title="Show/Hide data repr"><svg class="icon xr-icon-database"><use href="#icon-database"></use></svg></label><div class="xr-var-attrs"><dl class="xr-attrs"></dl></div><div class="xr-var-data"><pre>array(['S_e', 'S_i'], dtype='&lt;U3')</pre></div></li></ul></div></li><li class="xr-section-item"><input id="section-f58ab7d3-a3f9-4fcb-bc1b-c1e5f232e64b" class="xr-section-summary-in" type="checkbox"><label for="section-f58ab7d3-a3f9-4fcb-bc1b-c1e5f232e64b" class="xr-section-summary">Indexes: <span>(2)</span></label><div class="xr-section-inline-details"></div><div class="xr-section-details"><ul class="xr-var-list"><li class="xr-var-item"><div class="xr-index-name"><div>time</div></div><div class="xr-index-preview">PandasIndex</div><input type="checkbox" disabled=""><label></label><input id="index-ae71faf8-6441-4ec9-9677-803077d8c08b" class="xr-index-data-in" type="checkbox"><label for="index-ae71faf8-6441-4ec9-9677-803077d8c08b" title="Show/Hide index repr"><svg class="icon xr-icon-database"><use href="#icon-database"></use></svg></label><div class="xr-index-data"><pre>PandasIndex(Index([ 0.01220703125,   0.0244140625,  0.03662109375,    0.048828125,
-        0.06103515625,   0.0732421875,  0.08544921875,     0.09765625,
-        0.10986328125,   0.1220703125,
-       ...
-       12.09716796875,      12.109375, 12.12158203125,  12.1337890625,
-       12.14599609375,   12.158203125, 12.17041015625,  12.1826171875,
-       12.19482421875,    12.20703125],
-      dtype='float64', name='time', length=1000))</pre></div></li><li class="xr-var-item"><div class="xr-index-name"><div>variable</div></div><div class="xr-index-preview">PandasIndex</div><input type="checkbox" disabled=""><label></label><input id="index-67e1c9f4-13fb-47f3-9a1e-634861caaff1" class="xr-index-data-in" type="checkbox"><label for="index-67e1c9f4-13fb-47f3-9a1e-634861caaff1" title="Show/Hide index repr"><svg class="icon xr-icon-database"><use href="#icon-database"></use></svg></label><div class="xr-index-data"><pre>PandasIndex(Index(['S_e', 'S_i'], dtype='str', name='variable'))</pre></div></li></ul></div></li><li class="xr-section-item"><input id="section-5814877c-8e64-4fb7-a255-fa00f378e11d" class="xr-section-summary-in" type="checkbox" disabled=""><label for="section-5814877c-8e64-4fb7-a255-fa00f378e11d" class="xr-section-summary" title="Expand/collapse section">Attributes: <span>(0)</span></label><div class="xr-section-inline-details"></div><div class="xr-section-details"><dl class="xr-attrs"></dl></div></li></ul></div></div>
+<pre><code>SimulationResult(1000, 2, 1, 1)</code></pre>
 </div>
 </div>
 <p>Standard properties remain available:</p>
-<div id="f451ab7a" class="cell" data-execution_count="7">
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"state_names:"</span>, result.integration.state_names)</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"dims:       "</span>, result.integration.data.dims)</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"shape:      "</span>, result.integration.data.shape)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="15645d96" class="cell" data-execution_count="6">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"state_names:"</span>, result.integration.state_names)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"dims:       "</span>, result.integration.data.dims)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"shape:      "</span>, result.integration.data.shape)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>state_names: [np.str_('S_e'), np.str_('S_i')]
-dims:        ('time', 'variable', 'node')
-shape:       (81920, 2, 1)</code></pre>
+dims:        ('time', 'variable', 'node', 'mode')
+shape:       (81920, 2, 1, 1)</code></pre>
 </div>
 </div>
 </section>
 <section id="backward-compatibility" class="level3">
 <h3 class="anchored" data-anchor-id="backward-compatibility">Backward Compatibility</h3>
 <p><code>ExperimentResult</code> delegates to <code>integration</code> for backward compatibility. This means <code>result.data</code> and <code>result.time</code> work as before:</p>
-<div id="94601087" class="cell" data-execution_count="8">
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># These are equivalent:</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> result.data <span class="kw">is</span> result.integration.data</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"result.data.shape:"</span>, result.data.shape)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="37165b62" class="cell" data-execution_count="7">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># These are equivalent:</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> result.data <span class="kw">is</span> result.integration.data</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"result.data.shape:"</span>, result.data.shape)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>result.data.shape: (81920, 2, 1)</code></pre>
+<pre><code>result.data.shape: (81920, 2, 1, 1)</code></pre>
 </div>
 </div>
 </section>
 <section id="source-experiment-link" class="level3">
 <h3 class="anchored" data-anchor-id="source-experiment-link">Source Experiment Link</h3>
 <p><code>ExperimentResult</code> holds a back-reference to the <code>SimulationExperiment</code> that produced it:</p>
-<div id="a7372bb2" class="cell" data-execution_count="9">
-<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"source type:  "</span>, <span class="bu">type</span>(result.source).<span class="va">__name__</span>)</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"dynamics name:"</span>, result.source.dynamics.name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="e23bb4cd" class="cell" data-execution_count="8">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"source type:  "</span>, <span class="bu">type</span>(result.source).<span class="va">__name__</span>)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"dynamics name:"</span>, result.source.dynamics.name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>source type:   SimulationExperiment
 dynamics name: ReducedWongWangExcInh</code></pre>
@@ -6281,58 +5516,58 @@ dynamics name: ReducedWongWangExcInh</code></pre>
 <section id="observations" class="level2">
 <h2 class="anchored" data-anchor-id="observations">Observations</h2>
 <p>Observations (BOLD, functional connectivity, PSD, etc.) are attached to the simulation that produced them:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>result.integration.observations                <span class="co"># dict of observation outputs</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>result.integration.observations[<span class="st">'bold'</span>]        <span class="co"># BOLD SimulationResult</span></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>result.integration.observations[<span class="st">'bold'</span>].data   <span class="co"># xr.DataArray</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>result.integration.observations                <span class="co"># dict of observation outputs</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>result.integration.observations[<span class="st">'bold'</span>]        <span class="co"># BOLD SimulationResult</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>result.integration.observations[<span class="st">'bold'</span>].data   <span class="co"># xr.DataArray</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="algorithm-results" class="level2">
 <h2 class="anchored" data-anchor-id="algorithm-results">Algorithm Results</h2>
 <p>When running experiments with algorithms (e.g.&nbsp;FIC, EIB), results track the full iteration history:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load and run an experiment with algorithms</span></span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>exp <span class="op">=</span> SimulationExperiment.from_db(<span class="st">"EI_Tuning_FIC_EIB_Optimization"</span>)</span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> exp.run(<span class="st">"tvboptim"</span>)</span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>fic <span class="op">=</span> result.algorithms[<span class="st">'fic'</span>]</span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>fic.name                  <span class="co"># 'fic'</span></span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>fic.n_iterations          <span class="co"># 200</span></span>
-<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>fic.state                 <span class="co"># Final tuned state (parameter arrays)</span></span>
-<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>fic.history               <span class="co"># Per-iteration tracking</span></span>
-<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>fic.pre_tuning            <span class="co"># SimulationResult before tuning</span></span>
-<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>fic.post_tuning           <span class="co"># SimulationResult after tuning</span></span>
-<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>fic.convergence           <span class="co"># Computed convergence metrics</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load and run an experiment with algorithms</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>exp <span class="op">=</span> SimulationExperiment.from_db(<span class="st">"EI_Tuning_FIC_EIB_Optimization"</span>)</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> exp.run(<span class="st">"tvboptim"</span>)</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>fic <span class="op">=</span> result.algorithms[<span class="st">'fic'</span>]</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>fic.name                  <span class="co"># 'fic'</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>fic.n_iterations          <span class="co"># 200</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>fic.state                 <span class="co"># Final tuned state (parameter arrays)</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>fic.history               <span class="co"># Per-iteration tracking</span></span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>fic.pre_tuning            <span class="co"># SimulationResult before tuning</span></span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>fic.post_tuning           <span class="co"># SimulationResult after tuning</span></span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>fic.convergence           <span class="co"># Computed convergence metrics</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="optimization-results" class="level2">
 <h2 class="anchored" data-anchor-id="optimization-results">Optimization Results</h2>
 <p>Optimization results track loss trajectory and parameter evolution:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>opt <span class="op">=</span> result.optimizations[<span class="st">'gradient_eib'</span>]</span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>opt.name                 <span class="co"># 'gradient_eib'</span></span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>opt.n_steps              <span class="co"># Number of gradient steps</span></span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>opt.final_loss           <span class="co"># Final loss value</span></span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>opt.loss_trajectory      <span class="co"># Loss at each step (array)</span></span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>opt.state                <span class="co"># Fitted parameters</span></span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>opt.simulation           <span class="co"># Post-optimization SimulationResult</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>opt <span class="op">=</span> result.optimizations[<span class="st">'gradient_eib'</span>]</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>opt.name                 <span class="co"># 'gradient_eib'</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>opt.n_steps              <span class="co"># Number of gradient steps</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>opt.final_loss           <span class="co"># Final loss value</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>opt.loss_trajectory      <span class="co"># Loss at each step (array)</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>opt.state                <span class="co"># Fitted parameters</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>opt.simulation           <span class="co"># Post-optimization SimulationResult</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="exporting-results" class="level2">
 <h2 class="anchored" data-anchor-id="exporting-results">Exporting Results</h2>
 <section id="bids-compatible-export" class="level3">
 <h3 class="anchored" data-anchor-id="bids-compatible-export">BIDS-Compatible Export</h3>
 <p><code>ExperimentResult.export()</code> writes simulation data and experiment metadata to a <a href="https://bids-specification.readthedocs.io/">BIDS</a>-compatible directory following <a href="https://bids.neuroimaging.io/bep034">BEP034</a> conventions:</p>
-<div id="dc08d08e" class="cell" data-execution_count="10">
-<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> tempfile, os</span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>outdir <span class="op">=</span> os.path.join(tempfile.mkdtemp(), <span class="st">"my_experiment"</span>)</span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>result.export(outdir)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="00aaa2b3" class="cell" data-execution_count="9">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> tempfile, os</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>outdir <span class="op">=</span> os.path.join(tempfile.mkdtemp(), <span class="st">"my_experiment"</span>)</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>result.export(outdir)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="9">
-<pre><code>PosixPath('/var/folders/ym/9kw1g21j1nd7kwfn8c0z3st40000gn/T/tmp6ab8zjrv/my_experiment')</code></pre>
+<pre><code>PosixPath('/var/folders/ym/9kw1g21j1nd7kwfn8c0z3st40000gn/T/tmprnqnjnsa/my_experiment')</code></pre>
 </div>
 </div>
-<div id="8efec462" class="cell" data-execution_count="11">
-<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Show what was written</span></span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> root, dirs, files <span class="kw">in</span> os.walk(outdir):</span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    level <span class="op">=</span> root.replace(outdir, <span class="st">""</span>).count(os.sep)</span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    indent <span class="op">=</span> <span class="st">"  "</span> <span class="op">*</span> level</span>
-<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>indent<span class="sc">}{</span>os<span class="sc">.</span>path<span class="sc">.</span>basename(root)<span class="sc">}</span><span class="ss">/"</span>)</span>
-<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> f <span class="kw">in</span> <span class="bu">sorted</span>(files):</span>
-<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"  </span><span class="sc">{</span>indent<span class="sc">}{</span>f<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="aad1db86" class="cell" data-execution_count="10">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Show what was written</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> root, dirs, files <span class="kw">in</span> os.walk(outdir):</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    level <span class="op">=</span> root.replace(outdir, <span class="st">""</span>).count(os.sep)</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>    indent <span class="op">=</span> <span class="st">"  "</span> <span class="op">*</span> level</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>indent<span class="sc">}{</span>os<span class="sc">.</span>path<span class="sc">.</span>basename(root)<span class="sc">}</span><span class="ss">/"</span>)</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> f <span class="kw">in</span> <span class="bu">sorted</span>(files):</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"  </span><span class="sc">{</span>indent<span class="sc">}{</span>f<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>my_experiment/
   dataset_description.json
@@ -6345,12 +5580,12 @@ dynamics name: ReducedWongWangExcInh</code></pre>
 </div>
 <section id="export-options" class="level4">
 <h4 class="anchored" data-anchor-id="export-options">Export Options</h4>
-<div class="sourceCode" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>result.export(</span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">"output/"</span>,</span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    subject<span class="op">=</span><span class="st">"02"</span>,              <span class="co"># BIDS subject label (default: "01")</span></span>
-<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>    session<span class="op">=</span><span class="st">"pre"</span>,             <span class="co"># Optional BIDS session</span></span>
-<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>    description<span class="op">=</span><span class="st">"fic_tuned"</span>,   <span class="co"># desc- entity (default: "tvbsim")</span></span>
-<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>result.export(</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">"output/"</span>,</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    subject<span class="op">=</span><span class="st">"02"</span>,              <span class="co"># BIDS subject label (default: "01")</span></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>    session<span class="op">=</span><span class="st">"pre"</span>,             <span class="co"># Optional BIDS session</span></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>    description<span class="op">=</span><span class="st">"fic_tuned"</span>,   <span class="co"># desc- entity (default: "tvbsim")</span></span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="what-gets-written" class="level4">
 <h4 class="anchored" data-anchor-id="what-gets-written">What Gets Written</h4>
@@ -6410,14 +5645,14 @@ dynamics name: ReducedWongWangExcInh</code></pre>
 <section id="data-format-netcdf" class="level3">
 <h3 class="anchored" data-anchor-id="data-format-netcdf">Data Format: netCDF</h3>
 <p>Simulation data is stored as <strong>netCDF</strong> — a self-describing scientific data format built on HDF5. Each file contains the full array with named dimensions and coordinates, readable by any netCDF/HDF5 tool:</p>
-<div id="ebd97f65" class="cell" data-execution_count="12">
-<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> xarray <span class="im">as</span> xr</span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Read back exported data</span></span>
-<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>nc_files <span class="op">=</span> [f <span class="cf">for</span> f <span class="kw">in</span> os.listdir(os.path.join(outdir, <span class="st">"sub-01"</span>, <span class="st">"ts"</span>)) <span class="cf">if</span> f.endswith(<span class="st">".nc"</span>)]</span>
-<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>nc_path <span class="op">=</span> os.path.join(outdir, <span class="st">"sub-01"</span>, <span class="st">"ts"</span>, nc_files[<span class="dv">0</span>])</span>
-<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>ds <span class="op">=</span> xr.open_dataset(nc_path)</span>
-<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>ds[<span class="st">'data'</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="4b1c9a16" class="cell" data-execution_count="11">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> xarray <span class="im">as</span> xr</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Read back exported data</span></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>nc_files <span class="op">=</span> [f <span class="cf">for</span> f <span class="kw">in</span> os.listdir(os.path.join(outdir, <span class="st">"sub-01"</span>, <span class="st">"ts"</span>)) <span class="cf">if</span> f.endswith(<span class="st">".nc"</span>)]</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>nc_path <span class="op">=</span> os.path.join(outdir, <span class="st">"sub-01"</span>, <span class="st">"ts"</span>, nc_files[<span class="dv">0</span>])</span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>ds <span class="op">=</span> xr.open_dataset(nc_path)</span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>ds[<span class="st">'data'</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="11">
 <div><svg style="position: absolute; width: 0; height: 0; overflow: hidden">
 <defs>
@@ -6789,20 +6024,21 @@ dl.xr-attrs {
   stroke: currentColor;
   fill: currentColor;
 }
-</style><pre class="xr-text-repr-fallback">&lt;xarray.DataArray 'data' (time: 81920, variable: 2, node: 1)&gt; Size: 1MB
+</style><pre class="xr-text-repr-fallback">&lt;xarray.DataArray 'data' (time: 81920, variable: 2, node: 1, mode: 1)&gt; Size: 1MB
 [163840 values with dtype=float64]
 Coordinates:
   * time      (time) float64 655kB 0.01221 0.02441 0.03662 ... 1e+03 1e+03 1e+03
   * variable  (variable) object 16B 'S_e' 'S_i'
-Dimensions without coordinates: node</pre><div class="xr-wrap" style="display:none"><div class="xr-header"><div class="xr-obj-type">xarray.DataArray</div><div class="xr-array-name">'data'</div><ul class="xr-dim-list"><li><span class="xr-has-index">time</span>: 81920</li><li><span class="xr-has-index">variable</span>: 2</li><li><span>node</span>: 1</li></ul></div><ul class="xr-sections"><li class="xr-section-item"><div class="xr-array-wrap"><input id="section-70d8b7ab-4d5f-441a-8418-0921126ee57e" class="xr-array-in" type="checkbox" checked=""><label for="section-70d8b7ab-4d5f-441a-8418-0921126ee57e" title="Show/hide data repr"><svg class="icon xr-icon-database"><use href="#icon-database"></use></svg></label><div class="xr-array-preview xr-preview"><span>...</span></div><div class="xr-array-data"><pre>[163840 values with dtype=float64]</pre></div></div></li><li class="xr-section-item"><input id="section-d3b6f9c5-1ee6-44b0-aa32-06f61ed4e45e" class="xr-section-summary-in" type="checkbox" checked=""><label for="section-d3b6f9c5-1ee6-44b0-aa32-06f61ed4e45e" class="xr-section-summary">Coordinates: <span>(2)</span></label><div class="xr-section-inline-details"></div><div class="xr-section-details"><ul class="xr-var-list"><li class="xr-var-item"><div class="xr-var-name"><span class="xr-has-index">time</span></div><div class="xr-var-dims">(time)</div><div class="xr-var-dtype">float64</div><div class="xr-var-preview xr-preview">0.01221 0.02441 ... 1e+03 1e+03</div><input id="attrs-a19a54db-832c-4848-87d9-4513c825dec9" class="xr-var-attrs-in" type="checkbox" disabled=""><label for="attrs-a19a54db-832c-4848-87d9-4513c825dec9" title="Show/Hide attributes"><svg class="icon xr-icon-file-text2"><use href="#icon-file-text2"></use></svg></label><input id="data-e7d85092-4b7b-4874-8d18-26e00f4049d0" class="xr-var-data-in" type="checkbox"><label for="data-e7d85092-4b7b-4874-8d18-26e00f4049d0" title="Show/Hide data repr"><svg class="icon xr-icon-database"><use href="#icon-database"></use></svg></label><div class="xr-var-attrs"><dl class="xr-attrs"></dl></div><div class="xr-var-data"><pre>array([1.220703e-02, 2.441406e-02, 3.662109e-02, ..., 9.999756e+02,
-       9.999878e+02, 1.000000e+03], shape=(81920,))</pre></div></li><li class="xr-var-item"><div class="xr-var-name"><span class="xr-has-index">variable</span></div><div class="xr-var-dims">(variable)</div><div class="xr-var-dtype">object</div><div class="xr-var-preview xr-preview">'S_e' 'S_i'</div><input id="attrs-8e0906c9-46a5-45fc-a819-4be76f2adfef" class="xr-var-attrs-in" type="checkbox" disabled=""><label for="attrs-8e0906c9-46a5-45fc-a819-4be76f2adfef" title="Show/Hide attributes"><svg class="icon xr-icon-file-text2"><use href="#icon-file-text2"></use></svg></label><input id="data-49a6017b-cc2d-4c77-b063-f506db74ad34" class="xr-var-data-in" type="checkbox"><label for="data-49a6017b-cc2d-4c77-b063-f506db74ad34" title="Show/Hide data repr"><svg class="icon xr-icon-database"><use href="#icon-database"></use></svg></label><div class="xr-var-attrs"><dl class="xr-attrs"></dl></div><div class="xr-var-data"><pre>array(['S_e', 'S_i'], dtype=object)</pre></div></li></ul></div></li><li class="xr-section-item"><input id="section-a036b139-7103-4bf2-bb4d-2adf6bf46c47" class="xr-section-summary-in" type="checkbox"><label for="section-a036b139-7103-4bf2-bb4d-2adf6bf46c47" class="xr-section-summary">Indexes: <span>(2)</span></label><div class="xr-section-inline-details"></div><div class="xr-section-details"><ul class="xr-var-list"><li class="xr-var-item"><div class="xr-index-name"><div>time</div></div><div class="xr-index-preview">PandasIndex</div><input type="checkbox" disabled=""><label></label><input id="index-34f28ede-71d4-4798-a11c-5c0e9d871e29" class="xr-index-data-in" type="checkbox"><label for="index-34f28ede-71d4-4798-a11c-5c0e9d871e29" title="Show/Hide index repr"><svg class="icon xr-icon-database"><use href="#icon-database"></use></svg></label><div class="xr-index-data"><pre>PandasIndex(Index([  0.01220703125,    0.0244140625,   0.03662109375,     0.048828125,
+  * mode      (mode) int32 4B 0
+Dimensions without coordinates: node</pre><div class="xr-wrap" style="display:none"><div class="xr-header"><div class="xr-obj-type">xarray.DataArray</div><div class="xr-array-name">'data'</div><ul class="xr-dim-list"><li><span class="xr-has-index">time</span>: 81920</li><li><span class="xr-has-index">variable</span>: 2</li><li><span>node</span>: 1</li><li><span class="xr-has-index">mode</span>: 1</li></ul></div><ul class="xr-sections"><li class="xr-section-item"><div class="xr-array-wrap"><input id="section-37794cea-0c37-4ca9-9180-0d91613dcdea" class="xr-array-in" type="checkbox" checked=""><label for="section-37794cea-0c37-4ca9-9180-0d91613dcdea" title="Show/hide data repr"><svg class="icon xr-icon-database"><use href="#icon-database"></use></svg></label><div class="xr-array-preview xr-preview"><span>...</span></div><div class="xr-array-data"><pre>[163840 values with dtype=float64]</pre></div></div></li><li class="xr-section-item"><input id="section-d97caf6d-2644-4c09-befd-ea96688a5826" class="xr-section-summary-in" type="checkbox" checked=""><label for="section-d97caf6d-2644-4c09-befd-ea96688a5826" class="xr-section-summary">Coordinates: <span>(3)</span></label><div class="xr-section-inline-details"></div><div class="xr-section-details"><ul class="xr-var-list"><li class="xr-var-item"><div class="xr-var-name"><span class="xr-has-index">time</span></div><div class="xr-var-dims">(time)</div><div class="xr-var-dtype">float64</div><div class="xr-var-preview xr-preview">0.01221 0.02441 ... 1e+03 1e+03</div><input id="attrs-ef78e6b3-eb63-43d4-84b3-38d9585c5214" class="xr-var-attrs-in" type="checkbox" disabled=""><label for="attrs-ef78e6b3-eb63-43d4-84b3-38d9585c5214" title="Show/Hide attributes"><svg class="icon xr-icon-file-text2"><use href="#icon-file-text2"></use></svg></label><input id="data-2969b695-d509-4e0f-a83e-a82199188288" class="xr-var-data-in" type="checkbox"><label for="data-2969b695-d509-4e0f-a83e-a82199188288" title="Show/Hide data repr"><svg class="icon xr-icon-database"><use href="#icon-database"></use></svg></label><div class="xr-var-attrs"><dl class="xr-attrs"></dl></div><div class="xr-var-data"><pre>array([1.220703e-02, 2.441406e-02, 3.662109e-02, ..., 9.999756e+02,
+       9.999878e+02, 1.000000e+03], shape=(81920,))</pre></div></li><li class="xr-var-item"><div class="xr-var-name"><span class="xr-has-index">variable</span></div><div class="xr-var-dims">(variable)</div><div class="xr-var-dtype">object</div><div class="xr-var-preview xr-preview">'S_e' 'S_i'</div><input id="attrs-a81ed7fe-d44b-4b25-9e21-9337f464b52f" class="xr-var-attrs-in" type="checkbox" disabled=""><label for="attrs-a81ed7fe-d44b-4b25-9e21-9337f464b52f" title="Show/Hide attributes"><svg class="icon xr-icon-file-text2"><use href="#icon-file-text2"></use></svg></label><input id="data-c2ae73c4-a887-4489-978b-32b118d76e5d" class="xr-var-data-in" type="checkbox"><label for="data-c2ae73c4-a887-4489-978b-32b118d76e5d" title="Show/Hide data repr"><svg class="icon xr-icon-database"><use href="#icon-database"></use></svg></label><div class="xr-var-attrs"><dl class="xr-attrs"></dl></div><div class="xr-var-data"><pre>array(['S_e', 'S_i'], dtype=object)</pre></div></li><li class="xr-var-item"><div class="xr-var-name"><span class="xr-has-index">mode</span></div><div class="xr-var-dims">(mode)</div><div class="xr-var-dtype">int32</div><div class="xr-var-preview xr-preview">0</div><input id="attrs-04b5470f-e199-4053-8a20-7731d9c94d93" class="xr-var-attrs-in" type="checkbox" disabled=""><label for="attrs-04b5470f-e199-4053-8a20-7731d9c94d93" title="Show/Hide attributes"><svg class="icon xr-icon-file-text2"><use href="#icon-file-text2"></use></svg></label><input id="data-b0d875f1-01d1-43b2-b781-65246ab93185" class="xr-var-data-in" type="checkbox"><label for="data-b0d875f1-01d1-43b2-b781-65246ab93185" title="Show/Hide data repr"><svg class="icon xr-icon-database"><use href="#icon-database"></use></svg></label><div class="xr-var-attrs"><dl class="xr-attrs"></dl></div><div class="xr-var-data"><pre>array([0], dtype=int32)</pre></div></li></ul></div></li><li class="xr-section-item"><input id="section-08d040a6-baa7-4996-b825-49b2dd508249" class="xr-section-summary-in" type="checkbox"><label for="section-08d040a6-baa7-4996-b825-49b2dd508249" class="xr-section-summary">Indexes: <span>(3)</span></label><div class="xr-section-inline-details"></div><div class="xr-section-details"><ul class="xr-var-list"><li class="xr-var-item"><div class="xr-index-name"><div>time</div></div><div class="xr-index-preview">PandasIndex</div><input type="checkbox" disabled=""><label></label><input id="index-b8425c03-a71d-404c-8624-0362b364d994" class="xr-index-data-in" type="checkbox"><label for="index-b8425c03-a71d-404c-8624-0362b364d994" title="Show/Hide index repr"><svg class="icon xr-icon-database"><use href="#icon-database"></use></svg></label><div class="xr-index-data"><pre>PandasIndex(Index([  0.01220703125,    0.0244140625,   0.03662109375,     0.048828125,
          0.06103515625,    0.0732421875,   0.08544921875,      0.09765625,
          0.10986328125,    0.1220703125,
        ...
        999.89013671875,    999.90234375, 999.91455078125,  999.9267578125,
        999.93896484375,   999.951171875, 999.96337890625,  999.9755859375,
        999.98779296875,          1000.0],
-      dtype='float64', name='time', length=81920))</pre></div></li><li class="xr-var-item"><div class="xr-index-name"><div>variable</div></div><div class="xr-index-preview">PandasIndex</div><input type="checkbox" disabled=""><label></label><input id="index-18b5afae-0e12-4d4e-93ab-1fd2fc5746bf" class="xr-index-data-in" type="checkbox"><label for="index-18b5afae-0e12-4d4e-93ab-1fd2fc5746bf" title="Show/Hide index repr"><svg class="icon xr-icon-database"><use href="#icon-database"></use></svg></label><div class="xr-index-data"><pre>PandasIndex(Index(['S_e', 'S_i'], dtype='object', name='variable'))</pre></div></li></ul></div></li><li class="xr-section-item"><input id="section-485c3cd0-dbdc-4e67-a775-b33f7c539feb" class="xr-section-summary-in" type="checkbox" disabled=""><label for="section-485c3cd0-dbdc-4e67-a775-b33f7c539feb" class="xr-section-summary" title="Expand/collapse section">Attributes: <span>(0)</span></label><div class="xr-section-inline-details"></div><div class="xr-section-details"><dl class="xr-attrs"></dl></div></li></ul></div></div>
+      dtype='float64', name='time', length=81920))</pre></div></li><li class="xr-var-item"><div class="xr-index-name"><div>variable</div></div><div class="xr-index-preview">PandasIndex</div><input type="checkbox" disabled=""><label></label><input id="index-b9cc850e-37f5-43e7-8ca1-8fdd810c7218" class="xr-index-data-in" type="checkbox"><label for="index-b9cc850e-37f5-43e7-8ca1-8fdd810c7218" title="Show/Hide index repr"><svg class="icon xr-icon-database"><use href="#icon-database"></use></svg></label><div class="xr-index-data"><pre>PandasIndex(Index(['S_e', 'S_i'], dtype='object', name='variable'))</pre></div></li><li class="xr-var-item"><div class="xr-index-name"><div>mode</div></div><div class="xr-index-preview">PandasIndex</div><input type="checkbox" disabled=""><label></label><input id="index-cfb129a3-b050-4f83-9a25-e5b535c9867b" class="xr-index-data-in" type="checkbox"><label for="index-cfb129a3-b050-4f83-9a25-e5b535c9867b" title="Show/Hide index repr"><svg class="icon xr-icon-database"><use href="#icon-database"></use></svg></label><div class="xr-index-data"><pre>PandasIndex(Index([0], dtype='int32', name='mode'))</pre></div></li></ul></div></li><li class="xr-section-item"><input id="section-30cb0533-f056-4caf-b8d6-dcf9bab624d9" class="xr-section-summary-in" type="checkbox" disabled=""><label for="section-30cb0533-f056-4caf-b8d6-dcf9bab624d9" class="xr-section-summary" title="Expand/collapse section">Attributes: <span>(0)</span></label><div class="xr-section-inline-details"></div><div class="xr-section-details"><dl class="xr-attrs"></dl></div></li></ul></div></div>
 </div>
 </div>
 <div class="callout callout-style-default callout-tip callout-titled">
@@ -6818,10 +6054,10 @@ Tip
 <p>netCDF4 files <strong>are</strong> HDF5 files — any HDF5 reader (h5py, HDFView, MATLAB’s <code>h5read</code>) can open them directly. The netCDF layer adds self-describing dimension names and coordinates.</p>
 </div>
 </div>
-<div id="8c537c7d" class="cell" data-execution_count="13">
-<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Clean up</span></span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> shutil</span>
-<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>shutil.rmtree(os.path.dirname(outdir))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="e884596b" class="cell" data-execution_count="12">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Clean up</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> shutil</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>shutil.rmtree(os.path.dirname(outdir))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 </section>
@@ -6909,7 +6145,7 @@ Tip
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp('/' + window.location.host + '/');
+        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

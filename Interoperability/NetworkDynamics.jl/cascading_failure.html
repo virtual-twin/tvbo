@@ -3193,12 +3193,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/optimization.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">optimization</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/optimizations.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">optimizations</span></a>
   </div>
@@ -4342,6 +4336,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/adapters/neuroml.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Neuroml</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/adapters/openminds.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Openminds</span></a>
   </div>
@@ -4774,6 +4774,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/plot/animate.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Animate</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/plot/bifurcation_diagram.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Bifurcation Diagram</span></a>
   </div>
@@ -4800,6 +4806,18 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../api/plot/ontology.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Ontology</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/plot/phase.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Phase</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/plot/timeseries.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Timeseries</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4899,6 +4917,12 @@ window.Quarto = {
  <span class="menu-text">Report</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/utils/units.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Units</span></a>
+  </div>
+</li>
       </ul>
   </li>
       </ul>
@@ -4923,6 +4947,18 @@ window.Quarto = {
   <li><a href="#model-report" id="toc-model-report" class="nav-link" data-scroll-target="#model-report">Model Report</a></li>
   <li><a href="#cascading-failure" id="toc-cascading-failure" class="nav-link" data-scroll-target="#cascading-failure">Cascading Failure</a>
   <ul class="collapse">
+  <li><a href="#brain-network-5-node-power-grid" id="toc-brain-network-5-node-power-grid" class="nav-link" data-scroll-target="#brain-network-5-node-power-grid">1. Brain Network: 5-node power grid</a>
+  <ul class="collapse">
+  <li><a href="#coupling-active-power-flow" id="toc-coupling-active-power-flow" class="nav-link" data-scroll-target="#coupling-active-power-flow">Coupling: Active power flow</a></li>
+  </ul></li>
+  <li><a href="#local-dynamics-swing-equation" id="toc-local-dynamics-swing-equation" class="nav-link" data-scroll-target="#local-dynamics-swing-equation">2. Local Dynamics: Swing equation</a>
+  <ul class="collapse">
+  <li><a href="#state-equations" id="toc-state-equations" class="nav-link" data-scroll-target="#state-equations">2.1 State Equations</a></li>
+  <li><a href="#parameters" id="toc-parameters" class="nav-link" data-scroll-target="#parameters">2.2 Parameters</a></li>
+  </ul></li>
+  <li><a href="#numerical-integration" id="toc-numerical-integration" class="nav-link" data-scroll-target="#numerical-integration">3. Numerical Integration</a></li>
+  <li><a href="#execution" id="toc-execution" class="nav-link" data-scroll-target="#execution">4. Execution</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
   <li><a href="#generated-julia-code" id="toc-generated-julia-code" class="nav-link" data-scroll-target="#generated-julia-code">Generated Julia Code</a></li>
   <li><a href="#run-plot" id="toc-run-plot" class="nav-link" data-scroll-target="#run-plot">Run &amp; Plot</a></li>
   </ul></li>
@@ -4956,7 +4992,7 @@ window.Quarto = {
 <p>Reference: Schäfer, B., Witthaut, D., Timme, M., &amp; Latora, V. (2018). <em>Dynamically induced cascading failures in power grids.</em> Nature Communications, 9(1), 1–13.</p>
 <section id="yaml-specification" class="level2">
 <h2 class="anchored" data-anchor-id="yaml-specification">YAML Specification</h2>
-<div id="aa7e90fa" class="cell" data-execution_count="2">
+<div id="026598a7" class="cell" data-execution_count="1">
 <div class="cell-output cell-output-display" data-execution_count="1">
 <style>pre { line-height: 125%; }
 td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
@@ -5061,7 +5097,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"Schäfer,</span><span class="nv"> </span><span class="s">B.,</span><span class="nv"> </span><span class="s">Witthaut,</span><span class="nv"> </span><span class="s">D.,</span><span class="nv"> </span><span class="s">Timme,</span><span class="nv"> </span><span class="s">M.,</span><span class="nv"> </span><span class="s">&amp;</span><span class="nv"> </span><span class="s">Latora,</span><span class="nv"> </span><span class="s">V.</span><span class="nv"> </span><span class="s">(2018).</span><span class="nv"> </span><span class="s">Dynamically</span><span class="nv"> </span><span class="s">induced</span><span class="nv"> </span><span class="s">cascading</span><span class="nv"> </span><span class="s">failures</span><span class="nv"> </span><span class="s">in</span><span class="nv"> </span><span class="s">power</span><span class="nv"> </span><span class="s">grids.</span><span class="nv"> </span><span class="s">Nature</span><span class="nv"> </span><span class="s">Communications,</span><span class="nv"> </span><span class="s">9(1),</span><span class="nv"> </span><span class="s">1-13."</span>
 
 <span class="c1"># -- Local Dynamics ------------------------------------------------------------</span>
-<span class="nt">local_dynamics</span><span class="p">:</span>
+<span class="nt">dynamics</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">SwingEquation</span>
 <span class="w">    </span><span class="nt">label</span><span class="p">:</span><span class="w"> </span><span class="s">"Swing</span><span class="nv"> </span><span class="s">equation"</span>
 <span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;</span>
@@ -5119,7 +5155,6 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <span class="w">        </span><span class="no">Simple undirected graph with 5 nodes and 7 edges. Two generators</span>
 <span class="w">        </span><span class="no">(nodes 2, 5) and three loads (nodes 1, 3, 4).</span>
 <span class="w">    </span><span class="nt">number_of_nodes</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span>
-<span class="w">    </span><span class="nt">number_of_regions</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span>
 <span class="w">    </span><span class="nt">edges</span><span class="p">:</span>
 <span class="w">        </span><span class="c1"># 7 undirected edges from adjacency matrix:</span>
 <span class="w">        </span><span class="c1"># [0,1,1,0,1; 1,0,1,1,0; 1,1,0,1,0; 0,1,1,0,1; 1,0,0,1,0]</span>
@@ -5241,9 +5276,50 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <h1>Cascading Failure</h1>
 <p>Minimal example of dynamic cascading failure in a power grid. Swing equation vertices with active power flow on edges. When the power flow on a line exceeds its limit, the line trips (K → 0). Uses find_fixpoint for steady-state initial conditions and component-based callbacks for discrete events. Recreates the NetworkDynamics.jl Cascading Failure tutorial.</p>
 <hr>
-<p>Power grid node modeled by the swing equation. The model comprises <strong>2 state variables</strong> representing neural population activity.</p>
-<p><span class="math display">\[\frac{ddelta}{dt} = \omega\]</span></p>
-<p><span class="math display">\[\frac{domega}{dt} = \frac{P_{ref} + c_{power} - \gamma \cdot \omega}{I}\]</span></p>
+<section id="brain-network-5-node-power-grid" class="level2">
+<h2 class="anchored" data-anchor-id="brain-network-5-node-power-grid">1. Brain Network: 5-node power grid</h2>
+<p>Simple undirected graph with 5 nodes and 7 edges. Two generators (nodes 2, 5) and three loads (nodes 1, 3, 4).</p>
+<ul>
+<li><strong>Regions:</strong> 5</li>
+</ul>
+<section id="coupling-active-power-flow" class="level3">
+<h3 class="anchored" data-anchor-id="coupling-active-power-flow">Coupling: Active power flow</h3>
+<p>Antisymmetric active power line: P = K sin(δ_src - δ_dst). Has additional parameter ‘limit’ for callback threshold.</p>
+<p>Receives <span class="math inline">\(\delta\)</span> from connected regions.</p>
+<p><strong>Pre-synaptic:</strong> <span class="math inline">\(c_{\text{pre}} = - K \cdot \sin{\left(x_{i} - x_{j} \right)}\)</span></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Parameter</th>
+<th style="text-align: right;">Value</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><span class="math inline">\(K\)</span></td>
+<td style="text-align: right;">1.63</td>
+<td style="text-align: left;">Line susceptance / coupling constant</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><span class="math inline">\(limit\)</span></td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: left;">Threshold for line tripping</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="local-dynamics-swing-equation" class="level2">
+<h2 class="anchored" data-anchor-id="local-dynamics-swing-equation">2. Local Dynamics: Swing equation</h2>
+<p>Power grid node modeled by the swing equation. The model comprises <strong>2 state variables</strong>.</p>
+<section id="state-equations" class="level3">
+<h3 class="anchored" data-anchor-id="state-equations">2.1 State Equations</h3>
+<p><span class="math display">\[\dot{\delta} = \omega\]</span></p>
+<p><span class="math display">\[\dot{\omega} = \frac{P_{ref} + c_{power} - \gamma \cdot \omega}{I}\]</span></p>
+</section>
+<section id="parameters" class="level3">
+<h3 class="anchored" data-anchor-id="parameters">2.2 Parameters</h3>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 29%">
@@ -5261,63 +5337,71 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </thead>
 <tbody>
 <tr class="odd">
-<td style="text-align: left;"><span class="math inline">\(P_{ref}\)</span></td>
-<td style="text-align: right;">0.0</td>
-<td style="text-align: left;">p.u.</td>
-<td style="text-align: left;">Power setpoint: positive = generator, negative = load</td>
-</tr>
-<tr class="even">
 <td style="text-align: left;"><span class="math inline">\(I\)</span></td>
 <td style="text-align: right;">1.0</td>
-<td style="text-align: left;">s²</td>
+<td style="text-align: left;">s2</td>
 <td style="text-align: left;">Rotational inertia of the generator/load</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><span class="math inline">\(P_{ref}\)</span></td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: left;">per_unit</td>
+<td style="text-align: left;">Power setpoint: positive = generator, negative = load</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;"><span class="math inline">\(\gamma\)</span></td>
 <td style="text-align: right;">0.1</td>
-<td style="text-align: left;">1/s</td>
+<td style="text-align: left;">per_s</td>
 <td style="text-align: left;">Droop / damping coefficient</td>
 </tr>
 </tbody>
 </table>
-<p><strong>Pre-synaptic transformation:</strong> <span class="math display">\[c_{\text{pre}} = x_{j}\]</span></p>
-<p><strong>Post-synaptic transformation:</strong> <span class="math display">\[c_{\text{post}} = b + a \cdot gx\]</span></p>
+</section>
+</section>
+<section id="numerical-integration" class="level2">
+<h2 class="anchored" data-anchor-id="numerical-integration">3. Numerical Integration</h2>
+<ul>
+<li><strong>Method:</strong> Tsit5</li>
+<li><strong>Time step:</strong> <span class="math inline">\(\Delta t = 0.01\)</span> ms</li>
+<li><strong>Duration:</strong> 6.0 ms</li>
+</ul>
+</section>
+<section id="execution" class="level2">
+<h2 class="anchored" data-anchor-id="execution">4. Execution</h2>
 <table class="caption-top table">
-<colgroup>
-<col style="width: 35%">
-<col style="width: 22%">
-<col style="width: 41%">
-</colgroup>
 <thead>
 <tr class="header">
-<th style="text-align: left;">Parameter</th>
+<th style="text-align: left;">Setting</th>
 <th style="text-align: right;">Value</th>
-<th style="text-align: left;">Description</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td style="text-align: left;"><span class="math inline">\(a\)</span></td>
-<td style="text-align: right;">0.00390625</td>
-<td style="text-align: left;">Linear scaling factor of the coupled (delayed) input.</td>
+<td style="text-align: left;">Workers</td>
+<td style="text-align: right;">1</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;"><span class="math inline">\(b\)</span></td>
-<td style="text-align: right;">0.0</td>
-<td style="text-align: left;">Shifts the base of the connection strength while maintaining the absolute difference between different values.</td>
+<td style="text-align: left;">Precision</td>
+<td style="text-align: right;">float64</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Random seed</td>
+<td style="text-align: right;">42</td>
 </tr>
 </tbody>
 </table>
+<hr>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
 <ul>
-<li><p><strong>Regions:</strong> 5</p></li>
-<li><p><strong>Conduction velocity:</strong> 3.0 mm/ms</p></li>
-<li><p><strong>Method:</strong> Tsit5</p></li>
-<li><p><strong>Time step:</strong> <span class="math inline">\(\Delta t = 0.01\)</span> ms</p></li>
-<li><p><strong>Duration:</strong> 6.0 ms</p></li>
+<li>https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/cascading_failure/</li>
+<li>Schäfer, B., Witthaut, D., Timme, M., &amp; Latora, V. (2018). Dynamically induced cascading failures in power grids. Nature Communications, 9(1), 1-13.</li>
 </ul>
+</section>
 <section id="generated-julia-code" class="level2">
 <h2 class="anchored" data-anchor-id="generated-julia-code">Generated Julia Code</h2>
-<div id="d8f08ea0" class="cell" data-execution_count="4">
+<div id="d4129e57" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> SimulationExperiment</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>exp <span class="op">=</span> SimulationExperiment.from_file(<span class="st">"yaml/cascading_failure.yaml"</span>)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>Code(exp.render_code(<span class="st">"networkdynamics"</span>), language<span class="op">=</span><span class="st">'julia'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -5398,6 +5482,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 .output_html .vm { color: #19177C } /* Name.Variable.Magic */
 .output_html .il { color: #666 } /* Literal.Number.Integer.Long */</style><div class="highlight"><pre><span></span><span class="k">using</span><span class="w"> </span><span class="n">Graphs</span>
 <span class="k">using</span><span class="w"> </span><span class="n">NetworkDynamics</span>
+
 <span class="k">using</span><span class="w"> </span><span class="n">OrdinaryDiffEqTsit5</span>
 
 
@@ -5406,7 +5491,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 
 
 
-<span class="k">function</span><span class="w"> </span><span class="n">SwingEquation_f!</span><span class="p">(</span><span class="n">dx</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">esum</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="n">P_ref</span><span class="p">,</span><span class="w"> </span><span class="n">I</span><span class="p">,</span><span class="w"> </span><span class="n">gamma</span><span class="p">,),</span><span class="w"> </span><span class="n">t</span><span class="p">)</span>
+<span class="k">function</span><span class="w"> </span><span class="n">SwingEquation_f!</span><span class="p">(</span><span class="n">dx</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">esum</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="n">I</span><span class="p">,</span><span class="w"> </span><span class="n">P_ref</span><span class="p">,</span><span class="w"> </span><span class="n">gamma</span><span class="p">,),</span><span class="w"> </span><span class="n">t</span><span class="p">)</span>
 
 <span class="w">    </span><span class="n">delta</span><span class="p">,</span><span class="w"> </span><span class="n">omega</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">x</span>
 
@@ -5420,7 +5505,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <span class="w">    </span><span class="n">f</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SwingEquation_f!</span><span class="p">,</span>
 <span class="w">    </span><span class="n">g</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">StateMask</span><span class="p">(</span><span class="mi">1</span><span class="o">:</span><span class="mi">1</span><span class="p">),</span>
 <span class="w">    </span><span class="n">sym</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="ss">:delta</span><span class="p">,</span><span class="w"> </span><span class="ss">:omega</span><span class="p">],</span>
-<span class="w">    </span><span class="n">psym</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="ss">:P_ref</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="ss">:I</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="ss">:gamma</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="mf">0.1</span><span class="p">],</span>
+<span class="w">    </span><span class="n">psym</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="ss">:I</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="ss">:P_ref</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="ss">:gamma</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="mf">0.1</span><span class="p">],</span>
 <span class="w">    </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ss">:SwingEquation</span><span class="p">,</span>
 <span class="p">)</span>
 
@@ -5544,7 +5629,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </section>
 <section id="run-plot" class="level2">
 <h2 class="anchored" data-anchor-id="run-plot">Run &amp; Plot</h2>
-<div id="87c4160e" class="cell" data-execution_count="5">
+<div id="0c69c27d" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -5654,7 +5739,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp('/' + window.location.host + '/');
+        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

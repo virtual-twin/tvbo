@@ -3186,12 +3186,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../datamodel/slots/optimization.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">optimization</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/optimizations.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">optimizations</span></a>
   </div>
@@ -4335,6 +4329,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../api/adapters/neuroml.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Neuroml</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../api/adapters/openminds.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Openminds</span></a>
   </div>
@@ -4767,6 +4767,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../api/plot/animate.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Animate</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../api/plot/bifurcation_diagram.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Bifurcation Diagram</span></a>
   </div>
@@ -4793,6 +4799,18 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../api/plot/ontology.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Ontology</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/plot/phase.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Phase</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/plot/timeseries.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Timeseries</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4892,6 +4910,12 @@ window.Quarto = {
  <span class="menu-text">Report</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/utils/units.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Units</span></a>
+  </div>
+</li>
       </ul>
   </li>
       </ul>
@@ -4935,7 +4959,7 @@ window.Quarto = {
 <p>Browse runnable examples demonstrating TVBO capabilities.</p>
 <div id="listing-examples-listing" class="quarto-listing quarto-listing-container-grid">
 <div class="list grid quarto-listing-cols-3">
-<div class="g-col-1" data-index="0" data-listing-file-modified-sort="1774444734222" data-listing-reading-time-sort="3" data-listing-word-count-sort="575">
+<div class="g-col-1" data-index="0" data-listing-file-modified-sort="1774445490455" data-listing-reading-time-sort="3" data-listing-word-count-sort="575">
 <a href="../examples/dynamics_from_db.html" class="quarto-grid-link">
 <div class="quarto-grid-item card h-100 card-left">
 <p class="card-img-top"><img src="dynamics_from_db_files/figure-html/fig-gallery-output-1.png" style="height: 200;"  class="thumbnail-image card-img"/></p>
@@ -4949,7 +4973,7 @@ Dynamics Database Gallery
 </div>
 </div></a>
 </div>
-<div class="g-col-1" data-index="1" data-listing-file-modified-sort="1773407322443" data-listing-reading-time-sort="1" data-listing-word-count-sort="41">
+<div class="g-col-1" data-index="1" data-listing-file-modified-sort="1774445490455" data-listing-reading-time-sort="1" data-listing-word-count-sort="41">
 <a href="../examples/network_from_db.html" class="quarto-grid-link">
 <div class="quarto-grid-item card h-100 card-left">
 <p class="card-img-top"><img src="network_from_db_files/figure-html/cell-2-output-1.png" style="height: 200;"  class="thumbnail-image card-img"/></p>
@@ -4963,12 +4987,24 @@ Load Normative Networks
 </div>
 </div></a>
 </div>
-<div class="g-col-1" data-index="2" data-listing-file-modified-sort="1774443849026">
-<a href="../examples/create_network.qmd" class="quarto-grid-link">
+<div class="g-col-1" data-index="2" data-listing-file-modified-sort="1774445490454" data-listing-reading-time-sort="2" data-listing-word-count-sort="205">
+<a href="../examples/create_network.html" class="quarto-grid-link">
 <div class="quarto-grid-item card h-100 card-left">
-
+<p class="card-img-top"><img src="create_network_files/figure-html/cell-2-output-1.png" style="height: 200;"  class="thumbnail-image card-img"/></p>
 <div class="card-body post-contents">
+<h5 class="no-anchor card-title listing-title">
+SC = :( sad smiley
+</h5>
 <div class="card-text listing-description delink">
+
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-2"><span class="im">from</span> tvbo <span class="im">import</span> Network</span>
+<span id="cb1-3"></span>
+<span id="cb1-4">np.random.seed(<span class="dv">42</span>)</span>
+<span id="cb1-5">noise <span class="op">=</span> np.random.uniform(<span class="fl">0.05</span>, <span class="fl">0.15</span>, (<span class="dv">9</span>, <span class="dv">9</span>))</span>
+<span id="cb1-6">np.fill_diagonal(noise, <span class="dv">0</span>)  <span class="co"># no self-connections</span></span>
+<span id="cb1-7"></span>
+<span id="cb1-8"><span class="co"># SC = :(…</span></span><span id="cb1-9"><span class="op"></span></span><span id="cb1-10"><span class="dv"></span><span class="dv"></span><span class="op"></span><span class="dv"></span><span class="dv"></span><span class="op"></span><span class="fl"></span><span class="co"></span></span><span id="cb1-11"><span class="dv"></span><span class="dv"></span><span class="op"></span><span class="dv"></span><span class="dv"></span><span class="op"></span><span class="dv"></span><span class="dv"></span><span class="op"></span><span class="fl"></span><span class="co"></span></span><span id="cb1-12"><span class="dv"></span><span class="dv"></span><span class="op"></span><span class="dv"></span><span class="dv"></span><span class="op"></span><span class="fl"></span><span class="co"></span></span><span id="cb1-13"><span class="dv"></span><span class="dv"></span><span class="op"></span><span class="dv"></span><span class="dv"></span><span class="op"></span><span class="fl"></span><span class="co"></span></span><span id="cb1-14"></span><span id="cb1-15"><span class="co"></span></span><span id="cb1-16"><span class="op"></span></span><span id="cb1-17"><span class="dv"></span><span class="dv"></span><span class="op"></span><span class="dv"></span><span class="dv"></span><span class="op"></span><span class="fl"></span><span class="co"></span></span><span id="cb1-18"><span class="dv"></span><span class="dv"></span><span class="op"></span><span class="dv"></span><span class="dv"></span><span class="op"></span><span class="fl"></span><span class="co"></span></span><span id="cb1-19"><span class="dv"></span><span class="dv"></span><span class="op"></span><span class="dv"></span><span class="dv"></span><span class="op"></span><span class="fl"></span><span class="co"></span></span><span id="cb1-20"><span class="dv"></span><span class="dv"></span><span class="op"></span><span class="dv"></span><span class="dv"></span><span class="op"></span><span class="dv"></span><span class="dv"></span><span class="op"></span><span class="fl"></span><span class="co"></span></span><span id="cb1-21"></span><span id="cb1-22"><span class="op"></span><span class="op"></span><span class="op"></span></span><span id="cb1-23"></span></code></pre></div><div class="cell-output cell-output-display" data-execution_count="1"><div><figure class="figure"><p></p></figure></div></div>
 </div>
 </div>
 </div></a>
@@ -5053,7 +5089,7 @@ Load Normative Networks
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp('/' + window.location.host + '/');
+        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

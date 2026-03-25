@@ -3161,12 +3161,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/optimization.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">optimization</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/optimizations.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">optimizations</span></a>
   </div>
@@ -4310,6 +4304,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/adapters/neuroml.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Neuroml</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/adapters/openminds.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Openminds</span></a>
   </div>
@@ -4742,6 +4742,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/plot/animate.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Animate</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/plot/bifurcation_diagram.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Bifurcation Diagram</span></a>
   </div>
@@ -4768,6 +4774,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../api/plot/ontology.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Ontology</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/plot/phase.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Phase</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/plot/timeseries.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Timeseries</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4867,6 +4885,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">Report</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/utils/units.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Units</span></a>
+  </div>
+</li>
       </ul>
   </li>
       </ul>
@@ -4938,7 +4962,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="fitzhugh-nagumo-basic-export" class="level2">
 <h2 class="anchored" data-anchor-id="fitzhugh-nagumo-basic-export">1. FitzHugh-Nagumo — Basic Export</h2>
 <p>FitzHugh-Nagumo is already in the TVBO database as a <code>Dynamics</code> that maps cleanly to a LEMS <code>ComponentType</code>:</p>
-<div id="0126ba3a" class="cell" data-execution_count="1">
+<div id="c8220828" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> Dynamics</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo.adapters.neuroml <span class="im">import</span> NeuroMLAdapter</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -5064,8 +5088,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     &lt;Parameter name="y4_0" dimension="none"/&gt;
     &lt;Parameter name="y5_0" dimension="none"/&gt;
 
-    &lt;!-- Time constant for derivatives: normalises 1/ms → dimensionless rate.
-         Value matches integration.time_scale so equations stay numerically correct. --&gt;
+    &lt;!-- Time constant for derivatives.
+         All parameters use dimension="none" to avoid jLEMS dimensional
+         analysis failures (neural-mass models mix units freely).
+         / SEC is always applied so the TimeDerivative has per_time
+         dimension.  When the model already has time units in parameters,
+         SEC = 1s (numerically 1.0 — identity); otherwise SEC = 1&lt;time_scale&gt;
+         provides the actual numeric conversion.
+         needs_sec=True  time_scale=ms --&gt;
     &lt;Constant name="SEC" dimension="time" value="1ms"/&gt;
 
     &lt;!-- Exposures (one per state variable) --&gt;
@@ -5091,6 +5121,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       &lt;DerivedVariable name="sigma_y0_3" dimension="none" value="2.0*nu_max/(1.0 + exp(r*(v0 - J*a_3*y0)))"/&gt;
       &lt;DerivedVariable name="sigma_y1_y2" dimension="none" value="2.0*nu_max/(1.0 + exp(r*(v0 + y2 - y1)))"/&gt;
 
+      &lt;!-- ── Flat dynamics (no spike events) ── --&gt;
+
       &lt;!-- Time derivatives --&gt;
       &lt;TimeDerivative variable="y0" value="(y3) / SEC"/&gt;
       &lt;TimeDerivative variable="y1" value="(y4) / SEC"/&gt;
@@ -5109,36 +5141,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         &lt;StateAssignment variable="y5" value="y5_0"/&gt;
       &lt;/OnStart&gt;
 
-      &lt;!-- Events (spike / reset) --&gt;
+      &lt;!-- Events (non-spike) --&gt;
 
     &lt;/Dynamics&gt;
 
   &lt;/ComponentType&gt;
 
-  &lt;!-- ════════════════════════════════════════════════════════════════
-       Coupling ComponentType
-       Provides pre/post expressions + global coupling parameter.
-       The DerivedParameter c_pop0 is the coupling input consumed by
-       the dynamics ComponentType's coupling_inputs.
-       ════════════════════════════════════════════════════════════════ --&gt;
-  &lt;ComponentType name="Coupling"&gt;
-    &lt;Parameter name="global_coupling" dimension="none"/&gt;
-    &lt;Parameter name="a" dimension="none"/&gt;
-    &lt;Parameter name="b" dimension="none"/&gt;
-    &lt;Dynamics&gt;
-      &lt;DerivedVariable name="pre"  dimension="none" value="x_j"/&gt;
-      &lt;DerivedVariable name="gx"   dimension="none" value="global_coupling * pre"/&gt;
-      &lt;DerivedVariable name="post" dimension="none" value="b + a*gx"/&gt;
-      &lt;DerivedVariable name="c_pop0" dimension="none" value="post"/&gt;
-    &lt;/Dynamics&gt;
-  &lt;/ComponentType&gt;
 
   &lt;!-- ════════════════════════════════════════════════════════════════
        Component instances (default parameter values)
        ════════════════════════════════════════════════════════════════ --&gt;
   &lt;Component id="JansenRit_inst" type="JansenRit" A="3.25" B="22.0" J="135.0" a_1="1.0" a_2="0.8" a_3="0.25" a_4="0.25" a="0.1" b="0.05" mu="0.22" nu_max="0.0025" r="0.56" v0="5.52" c_pop0="0" local_coupling="0" y0_0="0.1" y1_0="0.1" y2_0="0.1" y3_0="0.1" y4_0="0.1" y5_0="0.1"/&gt;
 
-  &lt;Component id="coupling" type="Coupling" global_coupling="0.00390625" a="0.00390625" b="0.0"/&gt;
 
 
   &lt;!-- ════════════════════════════════════════════════════════════════
@@ -5247,7 +5261,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="full-experiment-export" class="level2">
 <h2 class="anchored" data-anchor-id="full-experiment-export">5. Full Experiment Export</h2>
-<div id="3250cee6" class="cell" data-execution_count="2">
+<div id="7446c265" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> SimulationExperiment</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo.adapters.neuroml <span class="im">import</span> NeuroMLAdapter</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -5280,7 +5294,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="split-file-export" class="level2">
 <h2 class="anchored" data-anchor-id="split-file-export">6. Split-File Export</h2>
 <p>By NeuroML convention, a fully portable model is distributed as three separate LEMS files that references each other via <code>&lt;Include&gt;</code>. The TVBO adapter generates all three with a single call:</p>
-<div id="4a0ab491" class="cell" data-execution_count="3">
+<div id="ac626a78" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>paths <span class="op">=</span> adapter.export(<span class="st">"./output"</span>, split<span class="op">=</span><span class="va">True</span>, validate<span class="op">=</span><span class="va">False</span>)</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(paths)</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="co"># {</span></span>
@@ -5325,7 +5339,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 <p>You can render each piece independently:</p>
-<div id="c5f0288f" class="cell" data-execution_count="4">
+<div id="fc6f45c0" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Just the ComponentType definitions</span></span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>xml_dyn <span class="op">=</span> adapter.render_dynamics()</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -5340,7 +5354,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="unified-render-api" class="level2">
 <h2 class="anchored" data-anchor-id="unified-render-api">7. Unified <code>render()</code> API</h2>
 <p><code>SimulationExperiment.render()</code> is the unified entry point for all serialisation formats — both executable code and metadata.</p>
-<div id="e3f7087f" class="cell" data-execution_count="5">
+<div id="e8c29ac8" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># exp and adapter are already defined in section 5 above</span></span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Render as LEMS XML (same as NeuroMLAdapter(exp).render_code())</span></span>
@@ -5358,7 +5372,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="running-via-jneuroml" class="level2">
 <h2 class="anchored" data-anchor-id="running-via-jneuroml">8. Running via jNeuroML</h2>
 <p>Once a valid LEMS file is produced, simulate it with jNeuroML:</p>
-<div id="2c10edbc" class="cell" data-execution_count="6">
+<div id="2c8d1465" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Via the adapter</span></span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>adapter.run()</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -5367,7 +5381,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell-output cell-output-display cell-output-markdown" data-execution_count="6">
 <pre><code>JansenRit LEMS Export
 └── integration
-        data: (81921, 6, 1)</code></pre>
+        data: (81921, 6)</code></pre>
 </div>
 </div>
 <p>Or from the command line:</p>
@@ -5561,7 +5575,7 @@ If a parameter has <code>unit: "mA/cm2"</code> that isn’t in the lookup table,
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp('/' + window.location.host + '/');
+        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

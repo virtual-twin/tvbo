@@ -3190,12 +3190,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/optimization.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">optimization</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/optimizations.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">optimizations</span></a>
   </div>
@@ -4339,6 +4333,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/adapters/neuroml.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Neuroml</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/adapters/openminds.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Openminds</span></a>
   </div>
@@ -4771,6 +4771,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/plot/animate.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Animate</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/plot/bifurcation_diagram.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Bifurcation Diagram</span></a>
   </div>
@@ -4797,6 +4803,18 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../api/plot/ontology.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Ontology</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/plot/phase.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Phase</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/plot/timeseries.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Timeseries</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4896,6 +4914,12 @@ window.Quarto = {
  <span class="menu-text">Report</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/utils/units.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Units</span></a>
+  </div>
+</li>
       </ul>
   </li>
       </ul>
@@ -4974,7 +4998,7 @@ window.Quarto = {
 </section>
 <section id="setup" class="level2">
 <h2 class="anchored" data-anchor-id="setup">Setup</h2>
-<div id="ec93dea5" class="cell" data-execution_count="1">
+<div id="4e0c9e78" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> matplotlib <span class="im">import</span> cm</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -4985,7 +5009,7 @@ window.Quarto = {
 <p>Explore how the damping parameter μ affects oscillation behaviour.</p>
 <section id="define-model-and-exploration" class="level3">
 <h3 class="anchored">Define Model and Exploration</h3>
-<div id="4913ee5a" class="cell" data-execution_count="2">
+<div id="52650d6a" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> Dynamics, SimulationExperiment</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo.datamodel.schema <span class="im">import</span> Exploration, Parameter, Range</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Markdown, display</span>
@@ -5034,7 +5058,7 @@ window.Quarto = {
 </section>
 <section id="declare-exploration-and-run" class="level3">
 <h3 class="anchored" data-anchor-id="declare-exploration-and-run">Declare Exploration and Run</h3>
-<div id="2e54c08e" class="cell" data-execution_count="3">
+<div id="3573f166" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>exp <span class="op">=</span> SimulationExperiment(dynamics<span class="op">=</span>vdp)</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>exp.integration.duration <span class="op">=</span> <span class="fl">50.0</span></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>exp.integration.step_size <span class="op">=</span> <span class="fl">1e-2</span></span>
@@ -5077,7 +5101,7 @@ Simulation Progress
      (2) Processing output variables...
         ...finished.
      (3) Running the simulation...
-        ...finished after 0.022495917000924237s.
+        ...finished after 0.02262170799986052s.
 Compilation Progress
 --------------------
     (1) Translating the circuit template into a networkx graph representation...
@@ -5093,7 +5117,7 @@ Simulation Progress
      (2) Processing output variables...
         ...finished.
      (3) Running the simulation...
-        ...finished after 0.09025104199827183s.
+        ...finished after 0.05941066699961084s.
 Sweep complete — 6 conditions × 5000 time steps
 ExplorationResult: ExplorationResult(name='mu_sweep', grid=6, timeseries=(6, 5000, 2))</code></pre>
 </div>
@@ -5101,7 +5125,7 @@ ExplorationResult: ExplorationResult(name='mu_sweep', grid=6, timeseries=(6, 500
 </section>
 <section id="visualize-time-series" class="level3">
 <h3 class="anchored" data-anchor-id="visualize-time-series">Visualize Time Series</h3>
-<div id="4ec753e7" class="cell" data-execution_count="4">
+<div id="87401b07" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">2</span>, <span class="dv">3</span>, figsize<span class="op">=</span>(<span class="dv">14</span>, <span class="dv">8</span>))</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>axes <span class="op">=</span> axes.flatten()</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -5128,7 +5152,7 @@ ExplorationResult: ExplorationResult(name='mu_sweep', grid=6, timeseries=(6, 500
 </section>
 <section id="phase-portraits" class="level3">
 <h3 class="anchored" data-anchor-id="phase-portraits">Phase Portraits</h3>
-<div id="05ef7345" class="cell" data-execution_count="5">
+<div id="7de17a1e" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">2</span>, <span class="dv">3</span>, figsize<span class="op">=</span>(<span class="dv">14</span>, <span class="dv">8</span>))</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>axes <span class="op">=</span> axes.flatten()</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>colors <span class="op">=</span> cm.viridis(np.linspace(<span class="dv">0</span>, <span class="dv">1</span>, <span class="bu">len</span>(mu_values)))</span>
@@ -5163,7 +5187,7 @@ ExplorationResult: ExplorationResult(name='mu_sweep', grid=6, timeseries=(6, 500
 <p>Explore two FitzHugh-Nagumo parameters simultaneously using a full Cartesian product.</p>
 <section id="define-model-and-2d-exploration" class="level3">
 <h3 class="anchored">Define Model and 2D Exploration</h3>
-<div id="3c54471e" class="cell" data-execution_count="6">
+<div id="8c26a5b1" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>fhn <span class="op">=</span> Dynamics(<span class="st">"Dynamics"</span>)</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>fhn.name <span class="op">=</span> <span class="st">"FHN"</span></span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>fhn.add_parameter(<span class="st">"a"</span>, value<span class="op">=</span><span class="fl">0.7</span>)</span>
@@ -5225,7 +5249,7 @@ ExplorationResult: ExplorationResult(name='mu_sweep', grid=6, timeseries=(6, 500
 </section>
 </section>
 </div>
-<div id="03130c1d" class="cell" data-execution_count="7">
+<div id="4b947a30" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>exp2 <span class="op">=</span> SimulationExperiment(dynamics<span class="op">=</span>fhn)</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>exp2.integration.duration <span class="op">=</span> <span class="fl">100.0</span></span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>exp2.integration.step_size <span class="op">=</span> <span class="fl">5e-3</span></span>
@@ -5270,7 +5294,7 @@ Simulation Progress
      (2) Processing output variables...
         ...finished.
      (3) Running the simulation...
-        ...finished after 0.14872750001086388s.
+        ...finished after 0.14529229199979454s.
 Compilation Progress
 --------------------
     (1) Translating the circuit template into a networkx graph representation...
@@ -5286,14 +5310,14 @@ Simulation Progress
      (2) Processing output variables...
         ...finished.
      (3) Running the simulation...
-        ...finished after 0.8430946669977857s.
+        ...finished after 0.8711053329989227s.
 Grid: 3×3 = 9 conditions, 20000 time steps</code></pre>
 </div>
 </div>
 </section>
 <section id="amplitude-heatmap" class="level3">
 <h3 class="anchored" data-anchor-id="amplitude-heatmap">Amplitude Heatmap</h3>
-<div id="74d393a2" class="cell" data-execution_count="8">
+<div id="2b152d3a" class="cell" data-execution_count="8">
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Steady-state amplitude for each condition</span></span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>amps <span class="op">=</span> np.array([</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    np.ptp(sweep2.results[i, n_time2 <span class="op">//</span> <span class="dv">2</span>:, v_idx])</span>
@@ -5330,7 +5354,7 @@ Grid: 3×3 = 9 conditions, 20000 time steps</code></pre>
 <p>Scan the background drive η of a QIF mean-field model to find the transition from silence to oscillation.</p>
 <section id="define-model-and-sweep" class="level3">
 <h3 class="anchored">Define Model and Sweep</h3>
-<div id="04a436d7" class="cell" data-execution_count="9">
+<div id="c1811820" class="cell" data-execution_count="9">
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>qif <span class="op">=</span> Dynamics(<span class="st">"Dynamics"</span>)</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>qif.name <span class="op">=</span> <span class="st">"QIF"</span></span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>qif.add_parameter(<span class="st">"tau"</span>,   value<span class="op">=</span><span class="fl">1.0</span>)</span>
@@ -5392,7 +5416,7 @@ Grid: 3×3 = 9 conditions, 20000 time steps</code></pre>
 </section>
 </section>
 </div>
-<div id="f8d63642" class="cell" data-execution_count="10">
+<div id="f3096df5" class="cell" data-execution_count="10">
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>exp3 <span class="op">=</span> SimulationExperiment(dynamics<span class="op">=</span>qif)</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>exp3.integration.duration <span class="op">=</span> <span class="fl">200.0</span></span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>exp3.integration.step_size <span class="op">=</span> <span class="fl">5e-3</span></span>
@@ -5430,7 +5454,7 @@ Simulation Progress
      (2) Processing output variables...
         ...finished.
      (3) Running the simulation...
-        ...finished after 0.39545925000857096s.
+        ...finished after 0.385886207999647s.
 Compilation Progress
 --------------------
     (1) Translating the circuit template into a networkx graph representation...
@@ -5446,14 +5470,14 @@ Simulation Progress
      (2) Processing output variables...
         ...finished.
      (3) Running the simulation...
-        ...finished after 4.21698770900548s.
+        ...finished after 4.052057500000956s.
 Sweep complete — 15 conditions × 40000 time steps</code></pre>
 </div>
 </div>
 </section>
 <section id="bifurcation-diagram" class="level3">
 <h3 class="anchored" data-anchor-id="bifurcation-diagram">Bifurcation Diagram</h3>
-<div id="66fb18ef" class="cell" data-execution_count="11">
+<div id="f612bf62" class="cell" data-execution_count="11">
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>steady_start <span class="op">=</span> <span class="bu">int</span>(<span class="fl">0.8</span> <span class="op">*</span> n_time3)</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>r_min  <span class="op">=</span> [<span class="bu">float</span>(np.<span class="bu">min</span>( sweep3.results[i, steady_start:, r_idx])) <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(eta_values))]</span>
@@ -5629,7 +5653,7 @@ Sweep complete — 15 conditions × 40000 time steps</code></pre>
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp('/' + window.location.host + '/');
+        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

@@ -3162,12 +3162,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/optimization.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">optimization</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/optimizations.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">optimizations</span></a>
   </div>
@@ -4311,6 +4305,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/adapters/neuroml.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Neuroml</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/adapters/openminds.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Openminds</span></a>
   </div>
@@ -4743,6 +4743,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/plot/animate.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Animate</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/plot/bifurcation_diagram.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Bifurcation Diagram</span></a>
   </div>
@@ -4769,6 +4775,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../api/plot/ontology.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Ontology</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/plot/phase.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Phase</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/plot/timeseries.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Timeseries</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4868,6 +4886,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">Report</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/utils/units.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Units</span></a>
+  </div>
+</li>
       </ul>
   </li>
       </ul>
@@ -4934,7 +4958,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <p>TVB (The Virtual Brain) stores brain connectivity as <code>Connectivity</code> objects with weights, tract lengths, centres, region labels, and conduction speed. TVBO can import these losslessly, persist them as YAML + HDF5, and export back to TVB with identical arrays.</p>
-<div id="988449bf" class="cell" data-execution_count="2">
+<div id="8651df77" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> tempfile</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
@@ -4945,7 +4969,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="import-tvb-connectivity" class="level2">
 <h2 class="anchored" data-anchor-id="import-tvb-connectivity">1. Import TVB Connectivity</h2>
 <p>Load the default TVB connectivity (76-region Hagmann parcellation) and convert it to a tvbo <code>Network</code>:</p>
-<div id="c1dce431" class="cell" data-execution_count="3">
+<div id="b79d028d" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvb.datatypes.connectivity <span class="im">import</span> Connectivity</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>conn <span class="op">=</span> Connectivity.from_file()</span>
@@ -4957,7 +4981,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <pre><code>TVB: 76 regions, speed = 3.0 mm/ms</code></pre>
 </div>
 </div>
-<div id="830d7713" class="cell" data-execution_count="4">
+<div id="59b6de8a" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>net <span class="op">=</span> Network.from_tvb(conn)</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"tvbo: </span><span class="sc">{</span>net<span class="sc">.</span>number_of_nodes<span class="sc">}</span><span class="ss"> nodes"</span>)</span>
@@ -4967,14 +4991,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Lengths range: [</span><span class="sc">{</span>net<span class="sc">.</span>lengths_matrix<span class="sc">.</span><span class="bu">min</span>()<span class="sc">:.1f}</span><span class="ss">, </span><span class="sc">{</span>net<span class="sc">.</span>lengths_matrix<span class="sc">.</span><span class="bu">max</span>()<span class="sc">:.1f}</span><span class="ss">] mm"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>tvbo: 76 nodes
-Label: Connectivity gid: d89a8e0e-f0c4-431f-810e-f3ebcccd4218
-Conduction speed: 3.0 mm/ms
+Label: Connectivity gid: 9df860e7-5404-4cf5-98d7-500e11dfbbed
+Conduction speed: 3.0 mm_per_ms
 Weights range: [0.0000, 3.0000]
 Lengths range: [0.0, 153.5] mm</code></pre>
 </div>
 </div>
 <p>All TVB per-node metadata is preserved — cortical flags, areas, hemispheres, and orientations:</p>
-<div id="333af1aa" class="cell" data-execution_count="5">
+<div id="83dea9ac" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>node0 <span class="op">=</span> net.nodes[<span class="dv">0</span>]</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Node 0: </span><span class="sc">{</span>node0<span class="sc">.</span>label<span class="sc">}</span><span class="ss">"</span>)</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Position: (</span><span class="sc">{</span>node0<span class="sc">.</span>position<span class="sc">.</span>x<span class="sc">:.1f}</span><span class="ss">, </span><span class="sc">{</span>node0<span class="sc">.</span>position<span class="sc">.</span>y<span class="sc">:.1f}</span><span class="ss">, </span><span class="sc">{</span>node0<span class="sc">.</span>position<span class="sc">.</span>z<span class="sc">:.1f}</span><span class="ss">)"</span>)</span>
@@ -4992,7 +5016,7 @@ Lengths range: [0.0, 153.5] mm</code></pre>
 </section>
 <section id="visualize-the-connectome" class="level2">
 <h2 class="anchored" data-anchor-id="visualize-the-connectome">2. Visualize the Connectome</h2>
-<div id="cell-fig-weights" class="cell" data-execution_count="6">
+<div id="cell-fig-weights" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>net.plot_matrix()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="5">
 <div id="fig-weights" class="quarto-float quarto-figure quarto-figure-center anchored">
@@ -5007,7 +5031,7 @@ Figure&nbsp;1: Weight matrix of the TVB default connectivity (76 regions)
 </div>
 </div>
 </div>
-<div id="cell-fig-overview" class="cell" data-execution_count="7">
+<div id="cell-fig-overview" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>net.plot_overview(plot_brain<span class="op">=</span><span class="va">False</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="6">
 <div id="fig-overview" class="quarto-float quarto-figure quarto-figure-center anchored">
@@ -5026,7 +5050,7 @@ Figure&nbsp;2: Network overview — weights, lengths, and graph layout
 <section id="save-as-yaml-hdf5" class="level2">
 <h2 class="anchored" data-anchor-id="save-as-yaml-hdf5">3. Save as YAML + HDF5</h2>
 <p>TVBO stores networks as a human-readable YAML sidecar (metadata and schema) plus an HDF5 companion file (dense matrix data with gzip compression).</p>
-<div id="7c8490fb" class="cell" data-execution_count="8">
+<div id="a13a7c09" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>outdir <span class="op">=</span> Path(tempfile.mkdtemp())</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>yaml_path <span class="op">=</span> outdir <span class="op">/</span> <span class="st">"tvb_default_76.yaml"</span></span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -5039,11 +5063,11 @@ Figure&nbsp;2: Network overview — weights, lengths, and graph layout
 <div class="cell-output cell-output-stdout">
 <pre><code>Created files:
   tvb_default_76.h5               (64,256 bytes)
-  tvb_default_76.yaml             (15,545 bytes)</code></pre>
+  tvb_default_76.yaml             (15,549 bytes)</code></pre>
 </div>
 </div>
 <p>The YAML sidecar is fully self-describing:</p>
-<div id="dcea2e3c" class="cell" data-execution_count="9">
+<div id="39a95ca1" class="cell" data-execution_count="8">
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Show first 40 lines of the sidecar</span></span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>lines <span class="op">=</span> yaml_path.read_text().splitlines()</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> line <span class="kw">in</span> lines[:<span class="dv">40</span>]:</span>
@@ -5052,7 +5076,7 @@ Figure&nbsp;2: Network overview — weights, lengths, and graph layout
 <div class="cell-output cell-output-stdout">
 <pre><code>tvbo_class: tvbo:Network
 schema_version: tvb-datamodel/0.7.0
-label: 'Connectivity gid: d89a8e0e-f0c4-431f-810e-f3ebcccd4218'
+label: 'Connectivity gid: 9df860e7-5404-4cf5-98d7-500e11dfbbed'
 number_of_nodes: 76
 descriptor: SC
 distance_unit: mm
@@ -5062,7 +5086,7 @@ parameters:
   conduction_speed:
     label: v
     value: 3.0
-    unit: mm/ms
+    unit: mm_per_ms
 nodes:
 - id: 0
   label: rA1
@@ -5096,18 +5120,18 @@ nodes:
 </section>
 <section id="reload-and-verify" class="level2">
 <h2 class="anchored" data-anchor-id="reload-and-verify">4. Reload and Verify</h2>
-<div id="fe80a674" class="cell" data-execution_count="10">
+<div id="217c2a41" class="cell" data-execution_count="9">
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>reloaded <span class="op">=</span> Network.from_file(yaml_path)</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Reloaded: </span><span class="sc">{</span>reloaded<span class="sc">.</span>number_of_nodes<span class="sc">}</span><span class="ss"> nodes"</span>)</span>
 <span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Label: </span><span class="sc">{</span>reloaded<span class="sc">.</span>label<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Reloaded: 76 nodes
-Label: Connectivity gid: d89a8e0e-f0c4-431f-810e-f3ebcccd4218</code></pre>
+Label: Connectivity gid: 9df860e7-5404-4cf5-98d7-500e11dfbbed</code></pre>
 </div>
 </div>
 <p>Verify lossless round-trip — arrays match exactly:</p>
-<div id="e002b5e8" class="cell" data-execution_count="11">
+<div id="9b1e2cf1" class="cell" data-execution_count="10">
 <div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>np.testing.assert_allclose(reloaded.weights_matrix, net.weights_matrix)</span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>np.testing.assert_allclose(reloaded.lengths_matrix, net.lengths_matrix)</span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"✓ Weights match"</span>)</span>
@@ -5118,7 +5142,7 @@ Label: Connectivity gid: d89a8e0e-f0c4-431f-810e-f3ebcccd4218</code></pre>
 </div>
 </div>
 <p>Node metadata also survives:</p>
-<div id="68a771db" class="cell" data-execution_count="12">
+<div id="313dcab2" class="cell" data-execution_count="11">
 <div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">min</span>(<span class="dv">5</span>, net.number_of_nodes)):</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    orig <span class="op">=</span> net.nodes[i]</span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    load <span class="op">=</span> reloaded.nodes[i]</span>
@@ -5133,7 +5157,7 @@ Label: Connectivity gid: d89a8e0e-f0c4-431f-810e-f3ebcccd4218</code></pre>
 <section id="export-back-to-tvb" class="level2">
 <h2 class="anchored" data-anchor-id="export-back-to-tvb">5. Export Back to TVB</h2>
 <p>Convert the reloaded network back to a TVB <code>Connectivity</code> and compare with the original:</p>
-<div id="33ef3d68" class="cell" data-execution_count="13">
+<div id="40fffb3b" class="cell" data-execution_count="12">
 <div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>conn2 <span class="op">=</span> reloaded.execute(<span class="bu">format</span><span class="op">=</span><span class="st">"tvb"</span>)</span>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"TVB round-trip: </span><span class="sc">{</span>conn2<span class="sc">.</span>weights<span class="sc">.</span>shape[<span class="dv">0</span>]<span class="sc">}</span><span class="ss"> regions"</span>)</span>
@@ -5155,7 +5179,7 @@ Label: Connectivity gid: d89a8e0e-f0c4-431f-810e-f3ebcccd4218</code></pre>
 </div>
 <section id="centre-coordinates" class="level3">
 <h3 class="anchored" data-anchor-id="centre-coordinates">Centre coordinates</h3>
-<div id="edfff83d" class="cell" data-execution_count="14">
+<div id="49a8f54c" class="cell" data-execution_count="13">
 <div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">3</span>, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="fl">3.5</span>))</span>
@@ -5183,7 +5207,7 @@ Label: Connectivity gid: d89a8e0e-f0c4-431f-810e-f3ebcccd4218</code></pre>
 <pre><code>Max centre deviation: 0.00e+00 mm</code></pre>
 </div>
 </div>
-<div id="cell-fig-diff" class="cell" data-execution_count="15">
+<div id="cell-fig-diff" class="cell" data-execution_count="14">
 <div class="sourceCode cell-code" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>diff <span class="op">=</span> conn2.weights <span class="op">-</span> conn.weights</span>
 <span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">6</span>, <span class="dv">5</span>))</span>
 <span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>im <span class="op">=</span> ax.imshow(diff, cmap<span class="op">=</span><span class="st">"RdBu_r"</span>, vmin<span class="op">=-</span><span class="fl">1e-10</span>, vmax<span class="op">=</span><span class="fl">1e-10</span>)</span>
@@ -5215,7 +5239,7 @@ Figure&nbsp;3: Difference between original and round-tripped weights (should be 
 <section id="surface-network-multi-level" class="level2">
 <h2 class="anchored" data-anchor-id="surface-network-multi-level">6. Surface Network (Multi-Level)</h2>
 <p>TVB surface simulations use three objects: <code>Connectivity</code> (regions), <code>CorticalSurface</code> (mesh), and <code>RegionMapping</code> (vertex → region). TVBO imports all three into a linked pair of networks.</p>
-<div id="c6d781a4" class="cell" data-execution_count="16">
+<div id="0b3cb198" class="cell" data-execution_count="15">
 <div class="sourceCode cell-code" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvb.datatypes.surfaces <span class="im">import</span> CorticalSurface</span>
 <span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvb.datatypes.region_mapping <span class="im">import</span> RegionMapping</span>
 <span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -5236,7 +5260,7 @@ Figure&nbsp;3: Difference between original and round-tripped weights (should be 
 Region mapping: 16384 entries → 76 regions</code></pre>
 </div>
 </div>
-<div id="a0a4a703" class="cell" data-execution_count="17">
+<div id="78f7a07a" class="cell" data-execution_count="16">
 <div class="sourceCode cell-code" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>region_net, surface_net <span class="op">=</span> Network.from_tvb_surface(conn, surf, rmap)</span>
 <span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Region network:  </span><span class="sc">{</span>region_net<span class="sc">.</span>number_of_nodes<span class="sc">}</span><span class="ss"> nodes"</span>)</span>
@@ -5253,7 +5277,7 @@ Parent link: True</code></pre>
 </div>
 <section id="visualize-the-cortical-mesh" class="level3">
 <h3 class="anchored" data-anchor-id="visualize-the-cortical-mesh">Visualize the Cortical Mesh</h3>
-<div id="cell-fig-mesh" class="cell" data-execution_count="18">
+<div id="cell-fig-mesh" class="cell" data-execution_count="17">
 <div class="sourceCode cell-code" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>vertices <span class="op">=</span> surface_net._mesh_vertices</span>
 <span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>triangles <span class="op">=</span> surface_net._mesh_elements</span>
 <span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>region_ids <span class="op">=</span> surface_net.node_mapping_data.astype(<span class="bu">float</span>)</span>
@@ -5290,7 +5314,7 @@ Figure&nbsp;4: TVB default cortical surface coloured by region assignment
 </section>
 <section id="save-and-reload-multi-level-networks" class="level3">
 <h3 class="anchored" data-anchor-id="save-and-reload-multi-level-networks">Save and Reload Multi-Level Networks</h3>
-<div id="eaaff0e3" class="cell" data-execution_count="19">
+<div id="ab650ab0" class="cell" data-execution_count="18">
 <div class="sourceCode cell-code" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>surf_dir <span class="op">=</span> Path(tempfile.mkdtemp())</span>
 <span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>region_net.save(surf_dir <span class="op">/</span> <span class="st">"regions.yaml"</span>)</span>
@@ -5303,12 +5327,12 @@ Figure&nbsp;4: TVB default cortical surface coloured by region assignment
 <div class="cell-output cell-output-stdout">
 <pre><code>Surface network files:
   regions.h5                      (64,256 bytes)
-  regions.yaml                    (15,538 bytes)
+  regions.yaml                    (15,542 bytes)
   surface.h5                      (823,061 bytes)
-  surface.yaml                    (2,002,529 bytes)</code></pre>
+  surface.yaml                    (2,002,533 bytes)</code></pre>
 </div>
 </div>
-<div id="471d4538" class="cell" data-execution_count="20">
+<div id="02cdd0d7" class="cell" data-execution_count="19">
 <div class="sourceCode cell-code" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>reloaded_surf <span class="op">=</span> Network.from_file(surf_dir <span class="op">/</span> <span class="st">"surface.yaml"</span>)</span>
 <span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Reloaded: </span><span class="sc">{</span>reloaded_surf<span class="sc">.</span>number_of_nodes<span class="sc">}</span><span class="ss"> nodes"</span>)</span>
@@ -5329,7 +5353,7 @@ Mesh triangles: (32760, 3)
 <section id="optional-mne-projection-layer-in-the-network-section" class="level3">
 <h3 class="anchored" data-anchor-id="optional-mne-projection-layer-in-the-network-section">Optional: MNE Projection Layer in the Network Section</h3>
 <p>The MNE exporter creates a sensor-to-region projection network in tvbo format (<code>sensors_eeg_standard1005_fsaverage_aparc_projection.yaml</code>). This can be handled in the same multi-layer network workflow as other network resources.</p>
-<div id="e392a903" class="cell" data-execution_count="21">
+<div id="3cedc609" class="cell" data-execution_count="20">
 <div class="sourceCode cell-code" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> database_path</span>
 <span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>mne_yaml <span class="op">=</span> (</span>
@@ -5387,7 +5411,8 @@ Mesh triangles: (32760, 3)
 <span id="cb35-55"><a href="#cb35-55" aria-hidden="true" tabindex="-1"></a>        <span class="st">"python scripts/export_mne_standard1005_projection_network.py"</span></span>
 <span id="cb35-56"><a href="#cb35-56" aria-hidden="true" tabindex="-1"></a>    )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>MNE projection layer: nodes=129, edges=830, gain_shape=(61, 68)</code></pre>
+<pre><code>MNE projection network not found. Generate it with:
+python scripts/export_mne_standard1005_projection_network.py</code></pre>
 </div>
 </div>
 </section>
@@ -5518,7 +5543,7 @@ Mesh triangles: (32760, 3)
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp('/' + window.location.host + '/');
+        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

@@ -3161,12 +3161,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/optimization.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">optimization</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/optimizations.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">optimizations</span></a>
   </div>
@@ -4310,6 +4304,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/adapters/neuroml.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Neuroml</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/adapters/openminds.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Openminds</span></a>
   </div>
@@ -4742,6 +4742,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/plot/animate.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Animate</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/plot/bifurcation_diagram.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Bifurcation Diagram</span></a>
   </div>
@@ -4768,6 +4774,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../api/plot/ontology.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Ontology</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/plot/phase.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Phase</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/plot/timeseries.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Timeseries</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4867,6 +4885,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">Report</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/utils/units.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Units</span></a>
+  </div>
+</li>
       </ul>
   </li>
       </ul>
@@ -4914,7 +4938,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <p>Reproducing the FIC+EIB tuning workflow from <a href="https://doi.org/10.1038/s41467-023-38626-y">Schirner et al.&nbsp;(2023)</a>. Fits local inhibitory weights (J_i) for E-I balance and dual coupling weights (wLRE, wFFI) to match empirical functional connectivity.</p>
-<div id="20248cb2" class="cell" data-execution_count="2">
+<div id="c66d9786" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>os.environ[<span class="st">"XLA_FLAGS"</span>] <span class="op">=</span> <span class="st">"--xla_force_host_platform_device_count=8"</span></span>
@@ -4927,7 +4951,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>exp <span class="op">=</span> SimulationExperiment.from_db(<span class="st">"EI_Tuning_FIC_EIB_Optimization"</span>)</span>
 <span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(exp.render_code(<span class="st">'tvboptim'</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="dfc601f0" class="cell" data-execution_count="3">
+<div id="86ff7be4" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>results <span class="op">=</span> exp.run(<span class="st">"tvboptim"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
@@ -4944,51 +4968,51 @@ STEP 3: Running algorithms...
   Algorithms to run (dependency order): ['fic', 'fic_eib']
 \n&gt;&gt;&gt; Running algorithm: fic (seed=0)
 Running fic algorithm for 200 iterations...
-  10/200: mean_S_e=0.2573, mean_S_i=0.0906, bold=0.9095
-  20/200: mean_S_e=0.2573, mean_S_i=0.0917, bold=0.8454
-  30/200: mean_S_e=0.2393, mean_S_i=0.0846, bold=0.7678
-  40/200: mean_S_e=0.2447, mean_S_i=0.0868, bold=0.7933
-  50/200: mean_S_e=0.2433, mean_S_i=0.0869, bold=0.8126
-  60/200: mean_S_e=0.2479, mean_S_i=0.0857, bold=0.8491
-  70/200: mean_S_e=0.2438, mean_S_i=0.0876, bold=0.8279
-  80/200: mean_S_e=0.2321, mean_S_i=0.0822, bold=0.7855
-  90/200: mean_S_e=0.2383, mean_S_i=0.0839, bold=0.7930
-  100/200: mean_S_e=0.2379, mean_S_i=0.0828, bold=0.7978
-  110/200: mean_S_e=0.2346, mean_S_i=0.0840, bold=0.8119
-  120/200: mean_S_e=0.2509, mean_S_i=0.0876, bold=0.8327
-  130/200: mean_S_e=0.2449, mean_S_i=0.0848, bold=0.8166
-  140/200: mean_S_e=0.2436, mean_S_i=0.0858, bold=0.7963
-  150/200: mean_S_e=0.2560, mean_S_i=0.0881, bold=0.8101
-  160/200: mean_S_e=0.2456, mean_S_i=0.0851, bold=0.8204
-  170/200: mean_S_e=0.2479, mean_S_i=0.0877, bold=0.7800
-  180/200: mean_S_e=0.2497, mean_S_i=0.0880, bold=0.8311
-  190/200: mean_S_e=0.2417, mean_S_i=0.0857, bold=0.7961
-  200/200: mean_S_e=0.2319, mean_S_i=0.0822, bold=0.8276
+  10/200: mean_S_e=0.2707, mean_S_i=0.0948, bold=0.8968
+  20/200: mean_S_e=0.2495, mean_S_i=0.0885, bold=0.8020
+  30/200: mean_S_e=0.2385, mean_S_i=0.0855, bold=0.7663
+  40/200: mean_S_e=0.2399, mean_S_i=0.0857, bold=0.7535
+  50/200: mean_S_e=0.2488, mean_S_i=0.0890, bold=0.8102
+  60/200: mean_S_e=0.2493, mean_S_i=0.0877, bold=0.8181
+  70/200: mean_S_e=0.2433, mean_S_i=0.0858, bold=0.8208
+  80/200: mean_S_e=0.2357, mean_S_i=0.0839, bold=0.7898
+  90/200: mean_S_e=0.2420, mean_S_i=0.0847, bold=0.8009
+  100/200: mean_S_e=0.2517, mean_S_i=0.0873, bold=0.7816
+  110/200: mean_S_e=0.2533, mean_S_i=0.0887, bold=0.8221
+  120/200: mean_S_e=0.2578, mean_S_i=0.0897, bold=0.7762
+  130/200: mean_S_e=0.2398, mean_S_i=0.0853, bold=0.8168
+  140/200: mean_S_e=0.2359, mean_S_i=0.0834, bold=0.7894
+  150/200: mean_S_e=0.2499, mean_S_i=0.0873, bold=0.8309
+  160/200: mean_S_e=0.2489, mean_S_i=0.0865, bold=0.8252
+  170/200: mean_S_e=0.2440, mean_S_i=0.0855, bold=0.8212
+  180/200: mean_S_e=0.2443, mean_S_i=0.0855, bold=0.8026
+  190/200: mean_S_e=0.2480, mean_S_i=0.0850, bold=0.7940
+  200/200: mean_S_e=0.2405, mean_S_i=0.0842, bold=0.7931
 fic complete!
 \n&gt;&gt;&gt; Running algorithm: fic_eib (seed=0)
     (using state from dependency: fic)
   Using passed bold buffer (200 samples, using last 150)
 Running fic_eib algorithm for 2000 iterations...
-  100/2000: fc_corr=0.1310, fc_rmse=0.2781, mean_S_e=0.2407, mean_S_i=0.0834, bold=0.8087, fc_inloop=0.0205
-  200/2000: fc_corr=0.1429, fc_rmse=0.2762, mean_S_e=0.2384, mean_S_i=0.0842, bold=0.8519, fc_inloop=0.0213
-  300/2000: fc_corr=0.1182, fc_rmse=0.2785, mean_S_e=0.2619, mean_S_i=0.0899, bold=0.8657, fc_inloop=0.0211
-  400/2000: fc_corr=0.1374, fc_rmse=0.2712, mean_S_e=0.2551, mean_S_i=0.0874, bold=0.8331, fc_inloop=0.0285
-  500/2000: fc_corr=0.1113, fc_rmse=0.2782, mean_S_e=0.2562, mean_S_i=0.0894, bold=0.8266, fc_inloop=0.0221
-  600/2000: fc_corr=0.1057, fc_rmse=0.2782, mean_S_e=0.2584, mean_S_i=0.0885, bold=0.8629, fc_inloop=0.0234
-  700/2000: fc_corr=0.2093, fc_rmse=0.2696, mean_S_e=0.2687, mean_S_i=0.0898, bold=0.8784, fc_inloop=0.0288
-  800/2000: fc_corr=0.1912, fc_rmse=0.2716, mean_S_e=0.2496, mean_S_i=0.0841, bold=0.8270, fc_inloop=0.0263
-  900/2000: fc_corr=0.2053, fc_rmse=0.2700, mean_S_e=0.2509, mean_S_i=0.0847, bold=0.8864, fc_inloop=0.0262
-  1000/2000: fc_corr=0.2494, fc_rmse=0.2639, mean_S_e=0.2555, mean_S_i=0.0858, bold=0.8516, fc_inloop=0.0313
-  1100/2000: fc_corr=0.2198, fc_rmse=0.2630, mean_S_e=0.2756, mean_S_i=0.0894, bold=0.9206, fc_inloop=0.0352
-  1200/2000: fc_corr=0.2754, fc_rmse=0.2599, mean_S_e=0.2578, mean_S_i=0.0821, bold=0.8482, fc_inloop=0.0357
-  1300/2000: fc_corr=0.4046, fc_rmse=0.2435, mean_S_e=0.2590, mean_S_i=0.0826, bold=0.8869, fc_inloop=0.0479
-  1400/2000: fc_corr=0.4282, fc_rmse=0.2386, mean_S_e=0.2934, mean_S_i=0.0915, bold=0.9964, fc_inloop=0.0512
-  1500/2000: fc_corr=0.4379, fc_rmse=0.2243, mean_S_e=0.2675, mean_S_i=0.0847, bold=0.8706, fc_inloop=0.0692
-  1600/2000: fc_corr=0.4252, fc_rmse=0.2252, mean_S_e=0.2790, mean_S_i=0.0873, bold=0.9256, fc_inloop=0.0707
-  1700/2000: fc_corr=0.4736, fc_rmse=0.2158, mean_S_e=0.2757, mean_S_i=0.0853, bold=0.9244, fc_inloop=0.0799
-  1800/2000: fc_corr=0.5174, fc_rmse=0.2060, mean_S_e=0.2606, mean_S_i=0.0809, bold=0.7845, fc_inloop=0.0882
-  1900/2000: fc_corr=0.5715, fc_rmse=0.2006, mean_S_e=0.2486, mean_S_i=0.0773, bold=0.8469, fc_inloop=0.0907
-  2000/2000: fc_corr=0.5612, fc_rmse=0.1913, mean_S_e=0.2381, mean_S_i=0.0723, bold=0.7224, fc_inloop=0.1046
+  100/2000: fc_corr=0.1350, fc_rmse=0.2801, mean_S_e=0.2570, mean_S_i=0.0887, bold=0.8016, fc_inloop=0.0175
+  200/2000: fc_corr=0.1110, fc_rmse=0.2853, mean_S_e=0.2417, mean_S_i=0.0841, bold=0.7971, fc_inloop=0.0123
+  300/2000: fc_corr=0.1482, fc_rmse=0.2735, mean_S_e=0.2508, mean_S_i=0.0867, bold=0.8278, fc_inloop=0.0249
+  400/2000: fc_corr=0.2089, fc_rmse=0.2739, mean_S_e=0.2661, mean_S_i=0.0897, bold=0.8806, fc_inloop=0.0192
+  500/2000: fc_corr=0.1820, fc_rmse=0.2794, mean_S_e=0.2695, mean_S_i=0.0917, bold=0.8573, fc_inloop=0.0138
+  600/2000: fc_corr=0.1432, fc_rmse=0.2810, mean_S_e=0.2541, mean_S_i=0.0865, bold=0.8787, fc_inloop=0.0154
+  700/2000: fc_corr=0.1672, fc_rmse=0.2732, mean_S_e=0.2617, mean_S_i=0.0883, bold=0.8556, fc_inloop=0.0242
+  800/2000: fc_corr=0.2213, fc_rmse=0.2685, mean_S_e=0.2689, mean_S_i=0.0903, bold=0.9115, fc_inloop=0.0272
+  900/2000: fc_corr=0.2699, fc_rmse=0.2511, mean_S_e=0.2724, mean_S_i=0.0899, bold=0.9255, fc_inloop=0.0455
+  1000/2000: fc_corr=0.2264, fc_rmse=0.2561, mean_S_e=0.2491, mean_S_i=0.0818, bold=0.8911, fc_inloop=0.0448
+  1100/2000: fc_corr=0.3105, fc_rmse=0.2474, mean_S_e=0.2735, mean_S_i=0.0900, bold=0.8965, fc_inloop=0.0496
+  1200/2000: fc_corr=0.3417, fc_rmse=0.2497, mean_S_e=0.2570, mean_S_i=0.0827, bold=0.8454, fc_inloop=0.0434
+  1300/2000: fc_corr=0.3620, fc_rmse=0.2392, mean_S_e=0.2541, mean_S_i=0.0811, bold=0.8861, fc_inloop=0.0558
+  1400/2000: fc_corr=0.4133, fc_rmse=0.2274, mean_S_e=0.2677, mean_S_i=0.0845, bold=0.9010, fc_inloop=0.0677
+  1500/2000: fc_corr=0.3971, fc_rmse=0.2367, mean_S_e=0.2600, mean_S_i=0.0822, bold=0.8692, fc_inloop=0.0569
+  1600/2000: fc_corr=0.4001, fc_rmse=0.2384, mean_S_e=0.2630, mean_S_i=0.0813, bold=0.8473, fc_inloop=0.0538
+  1700/2000: fc_corr=0.4871, fc_rmse=0.2215, mean_S_e=0.2775, mean_S_i=0.0847, bold=0.9188, fc_inloop=0.0689
+  1800/2000: fc_corr=0.4406, fc_rmse=0.2342, mean_S_e=0.2448, mean_S_i=0.0761, bold=0.8658, fc_inloop=0.0588
+  1900/2000: fc_corr=0.5188, fc_rmse=0.2043, mean_S_e=0.2619, mean_S_i=0.0798, bold=0.9533, fc_inloop=0.0888
+  2000/2000: fc_corr=0.5472, fc_rmse=0.1773, mean_S_e=0.2525, mean_S_i=0.0761, bold=0.8173, fc_inloop=0.1284
 fic_eib complete!
 
 ============================================================
@@ -4999,72 +5023,72 @@ fic_eib complete!
 STEP 4: Running optimization...
 ============================================================
   Preparing optimization model (t1=300000.0ms, dt=4.0ms, solver=Heun)
-Step 0: 0.323819
-Step 1: 0.287817
-Step 2: 0.274085
-Step 3: 0.278268
-Step 4: 0.280464
-Step 5: 0.280446
-Step 6: 0.279260
-Step 7: 0.277225
-Step 8: 0.274855
-Step 9: 0.272703
-Step 10: 0.270251
-Step 11: 0.266524
-Step 12: 0.261954
-Step 13: 0.259123
-Step 14: 0.256596
-Step 15: 0.252917
-Step 16: 0.248507
-Step 17: 0.244543
-Step 18: 0.241554
-Step 19: 0.237032
-Step 20: 0.239891
-Step 21: 0.239685
-Step 22: 0.234856
-Step 23: 0.227783
-Step 24: 0.224228
-Step 25: 0.223848
-Step 26: 0.221952
-Step 27: 0.215661
-Step 28: 0.206034
-Step 29: 0.199305
-Step 30: 0.197315
-Step 31: 0.191677
-Step 32: 0.181581
-Step 33: 0.177735
-Step 34: 0.175866
-Step 35: 0.167351
-Step 36: 0.159381
-Step 37: 0.157341
-Step 38: 0.152918
-Step 39: 0.152308
-Step 40: 0.157470
-Step 41: 0.161631
-Step 42: 0.159809
-Step 43: 0.154668
-Step 44: 0.153070
-Step 45: 0.153082
-Step 46: 0.151430
-Step 47: 0.143376
-Step 48: 0.140794
-Step 49: 0.140237
-Step 50: 0.138376
-Step 51: 0.135317
-Step 52: 0.131470
-Step 53: 0.125828
-Step 54: 0.129819
-Step 55: 0.126077
-Step 56: 0.122429
-Step 57: 0.121797
-Step 58: 0.121222
-Step 59: 0.121485
-Step 60: 0.119737
-Step 61: 0.117430
-Step 62: 0.115783
-Step 63: 0.114292
-Step 64: 0.114368
-Step 65: 0.113907
+Step 0: 0.322668
+Step 1: 0.287123
+Step 2: 0.273792
+Step 3: 0.278946
+Step 4: 0.281408
+Step 5: 0.281410
+Step 6: 0.280226
+Step 7: 0.277955
+Step 8: 0.275005
+Step 9: 0.272384
+Step 10: 0.269918
+Step 11: 0.267459
+Step 12: 0.264796
+Step 13: 0.261953
+Step 14: 0.259053
+Step 15: 0.255887
+Step 16: 0.252129
+Step 17: 0.249260
+Step 18: 0.246927
+Step 19: 0.243956
+Step 20: 0.239331
+Step 21: 0.235034
+Step 22: 0.233686
+Step 23: 0.230091
+Step 24: 0.222207
+Step 25: 0.218732
+Step 26: 0.219809
+Step 27: 0.217955
+Step 28: 0.211716
+Step 29: 0.204805
+Step 30: 0.204738
+Step 31: 0.203428
+Step 32: 0.195780
+Step 33: 0.186489
+Step 34: 0.184497
+Step 35: 0.183675
+Step 36: 0.175692
+Step 37: 0.165803
+Step 38: 0.165003
+Step 39: 0.160964
+Step 40: 0.151198
+Step 41: 0.147560
+Step 42: 0.156845
+Step 43: 0.146453
+Step 44: 0.137254
+Step 45: 0.138594
+Step 46: 0.140232
+Step 47: 0.130705
+Step 48: 0.124505
+Step 49: 0.123443
+Step 50: 0.121160
+Step 51: 0.116373
+Step 52: 0.117663
+Step 53: 0.117160
+Step 54: 0.114675
+Step 55: 0.110528
+Step 56: 0.112404
+Step 57: 0.108646
+Step 58: 0.107686
+Step 59: 0.107167
+Step 60: 0.113084
+Step 61: 0.118312
+Step 62: 0.104568
+Step 63: 0.108190
+Step 64: 0.109938
+Step 65: 0.112890
   Optimization complete.
 
 ============================================================
@@ -5074,7 +5098,7 @@ Experiment complete.
 </div>
 <section id="results" class="level2">
 <h2 class="anchored" data-anchor-id="results">Results</h2>
-<div id="cell-fig-ei-tuning-results" class="cell" data-fig-height="12" data-execution_count="4">
+<div id="cell-fig-ei-tuning-results" class="cell" data-fig-height="12" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> bsplot</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>cmap <span class="op">=</span> plt.cm.cividis</span>
@@ -5315,7 +5339,7 @@ Figure&nbsp;1: <strong>EI Tuning Results.</strong> Row 1: FIC algorithm. Row 2: 
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp('/' + window.location.host + '/');
+        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

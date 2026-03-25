@@ -3193,12 +3193,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/optimization.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">optimization</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/optimizations.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">optimizations</span></a>
   </div>
@@ -4342,6 +4336,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/adapters/neuroml.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Neuroml</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/adapters/openminds.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Openminds</span></a>
   </div>
@@ -4774,6 +4774,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/plot/animate.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Animate</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/plot/bifurcation_diagram.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Bifurcation Diagram</span></a>
   </div>
@@ -4800,6 +4806,18 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../api/plot/ontology.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Ontology</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/plot/phase.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Phase</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/plot/timeseries.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Timeseries</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4899,6 +4917,12 @@ window.Quarto = {
  <span class="menu-text">Report</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/utils/units.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Units</span></a>
+  </div>
+</li>
       </ul>
   </li>
       </ul>
@@ -4968,7 +4992,7 @@ window.Quarto = {
 <p>Replicates the <a href="https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/directed_and_weighted_graphs/">NetworkDynamics.jl Directed and Weighted Graphs tutorial</a> — FitzHugh-Nagumo oscillators on a 90-region AAL brain connectivity derived from DTI (Tzourio-Mazoyer et al., 2002). The structural connectivity matrix <code>Norm_G_DTI.txt</code> provides directed, weighted edges.</p>
 <section id="yaml-specification" class="level2">
 <h2 class="anchored" data-anchor-id="yaml-specification">YAML Specification</h2>
-<div id="0dd4c312" class="cell" data-execution_count="1">
+<div id="377c7283" class="cell" data-execution_count="1">
 <div class="cell-output cell-output-display" data-execution_count="1">
 <style>pre { line-height: 125%; }
 td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
@@ -5202,6 +5226,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <section id="coupling-weighted-electrical-gap-junction-coupling" class="level3">
 <h3 class="anchored" data-anchor-id="coupling-weighted-electrical-gap-junction-coupling">Coupling: Weighted electrical gap-junction coupling</h3>
 <p>Directed coupling: each edge computes w * sigma * (u_src - u_dst), where w is the per-edge structural weight and sigma is a global coupling strength parameter.</p>
+<p>Receives <span class="math inline">\(u\)</span> from connected regions.</p>
 <p><strong>Pre-synaptic:</strong> <span class="math inline">\(c_{\text{pre}} = \sigma \cdot w \cdot \left(x_{j} - x_{i}\right)\)</span></p>
 <table class="caption-top table">
 <thead>
@@ -5255,13 +5280,13 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <tr class="odd">
 <td style="text-align: left;"><span class="math inline">\(a\)</span></td>
 <td style="text-align: right;">0.5</td>
-<td style="text-align: left;">1</td>
+<td style="text-align: left;">dimensionless</td>
 <td style="text-align: left;">Excitability threshold; determines oscillatory vs excitable regime</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;"><span class="math inline">\(\epsilon\)</span></td>
 <td style="text-align: right;">0.05</td>
-<td style="text-align: left;">1</td>
+<td style="text-align: left;">dimensionless</td>
 <td style="text-align: left;">Ratio of fast (u) to slow (v) time scales</td>
 </tr>
 </tbody>
@@ -5288,7 +5313,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </section>
 <section id="generated-julia-code" class="level2">
 <h2 class="anchored" data-anchor-id="generated-julia-code">Generated Julia Code</h2>
-<div id="e730f4a1" class="cell" data-execution_count="3">
+<div id="c4f0158c" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>Code(exp.render_code(<span class="st">"networkdynamics"</span>), language<span class="op">=</span><span class="st">'julia'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="3">
 <style>pre { line-height: 125%; }
@@ -5493,24 +5518,16 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </section>
 <section id="run-plot" class="level2">
 <h2 class="anchored" data-anchor-id="run-plot">Run &amp; Plot</h2>
-<div id="2e2d9ef4" class="cell" data-execution_count="4">
+<div id="c4054382" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>ts <span class="op">=</span> exp.run(<span class="bu">format</span><span class="op">=</span><span class="st">"networkdynamics"</span>)</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>ts.plot()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Detected IPython. Loading juliacall extension. See https://juliapy.github.io/PythonCall.jl/stable/compat/#IPython</code></pre>
 </div>
 <div class="cell-output cell-output-display" data-execution_count="4">
-<pre><code>(array([2.00000e+00, 9.70000e+01, 4.94000e+02, 1.65500e+03, 1.52180e+04,
-        2.29359e+05, 1.08803e+05, 3.07500e+03, 1.12300e+03, 3.54000e+02]),
- array([-16.33624325, -13.4598752 , -10.58350715,  -7.7071391 ,
-         -4.83077105,  -1.95440299,   0.92196506,   3.79833311,
-          6.67470116,   9.55106921,  12.42743726]),
- &lt;BarContainer object of 10 artists&gt;)</code></pre>
-</div>
-<div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="fitzhugh_nagumo_files/figure-html/cell-5-output-3.png" class="img-fluid figure-img"></p>
+<p><img src="fitzhugh_nagumo_files/figure-html/cell-5-output-2.png" class="img-fluid figure-img"></p>
 </figure>
 </div>
 </div>
@@ -5518,7 +5535,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </section>
 <section id="results" class="level2">
 <h2 class="anchored" data-anchor-id="results">Results</h2>
-<div id="9168d05d" class="cell" data-execution_count="5">
+<div id="48cd5124" class="cell" data-execution_count="5">
 <div class="cell-output cell-output-stdout">
 <pre><code>Shape: (2001, 2, 90)
 Time range: 0.0 – 200.0
@@ -5530,9 +5547,13 @@ Final u std across nodes: 0.8682
 </section>
 <section id="animate" class="level2">
 <h2 class="anchored" data-anchor-id="animate">Animate</h2>
-<div id="8d8a2a76" class="cell" data-execution_count="6">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>ani <span class="op">=</span> ts.animate(<span class="st">"u"</span>, <span class="bu">format</span><span class="op">=</span><span class="st">"dots"</span>)</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>ani.save(<span class="st">"fitzhugh_nagumo.gif"</span>, writer<span class="op">=</span><span class="st">"pillow"</span>, fps<span class="op">=</span><span class="dv">20</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="0c13e94c" class="cell" data-execution_count="6">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>ani <span class="op">=</span> ts.animate(<span class="st">"u"</span>, <span class="bu">format</span><span class="op">=</span><span class="st">"dots"</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>ani.save(<span class="st">"fitzhugh_nagumo.gif"</span>, writer<span class="op">=</span><span class="st">"pillow"</span>, fps<span class="op">=</span><span class="dv">20</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>/Users/leonmartin_bih/tools/tvbo/tvbo/plot/animate.py:216: UserWarning: Tight layout not applied. The bottom and top margins cannot be made large enough to accommodate all Axes decorations.
+  fig.tight_layout()</code></pre>
+</div>
 </div>
 <p><img src="fitzhugh_nagumo.gif" class="img-fluid"></p>
 
@@ -5613,7 +5634,7 @@ Final u std across nodes: 0.8682
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp('/' + window.location.host + '/');
+        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

@@ -3162,12 +3162,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/optimization.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">optimization</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/optimizations.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">optimizations</span></a>
   </div>
@@ -4311,6 +4305,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/adapters/neuroml.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Neuroml</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/adapters/openminds.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Openminds</span></a>
   </div>
@@ -4743,6 +4743,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/plot/animate.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Animate</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/plot/bifurcation_diagram.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Bifurcation Diagram</span></a>
   </div>
@@ -4769,6 +4775,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../api/plot/ontology.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Ontology</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/plot/phase.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Phase</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/plot/timeseries.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Timeseries</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4868,6 +4886,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">Report</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/utils/units.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Units</span></a>
+  </div>
+</li>
       </ul>
   </li>
       </ul>
@@ -4940,7 +4964,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <p>TVB uses <strong>monitors</strong> to define what a simulation records — raw state variables, temporal averages, BOLD fMRI via hemodynamic response, or scalp EEG/MEG via lead-field projection. TVBO stores each monitor as a framework-agnostic <strong>Observation</strong> YAML that captures the full signal processing pipeline, then converts to any backend on demand.</p>
-<div id="a5c28ae8" class="cell" data-execution_count="1">
+<div id="44af90ec" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> Observation, Network</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -4956,7 +4980,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><strong>data_source</strong> — optional link to a sensor network (for EEG/MEG/iEEG)</li>
 <li><strong>parameters</strong> — physical constants (conductivity, permeability, TR, …)</li>
 </ul>
-<div id="45908d9a" class="cell" data-execution_count="2">
+<div id="457bd1bd" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Available observation models:"</span>)</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> name <span class="kw">in</span> Observation.list_db():</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    obs <span class="op">=</span> Observation.from_db(name)</span>
@@ -4966,7 +4990,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  </span><span class="sc">{</span><span class="bu">str</span>(obs.name)<span class="sc">:40s}</span><span class="ss">  pipeline=</span><span class="sc">{</span>pipe<span class="sc">}</span><span class="ss">  data_source=</span><span class="sc">{</span>ds<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Available observation models:
-  FunctionalConnectivity                    pipeline=4  data_source=—
   AfferentCoupling                          pipeline=0  data_source=—
   AfferentCouplingTemporalAverage           pipeline=1  data_source=—
   BOLD_DoubleExponential                    pipeline=4  data_source=—
@@ -4975,13 +4998,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   BOLD_RegionROI                            pipeline=6  data_source=—
   BOLD_TVB                                  pipeline=5  data_source=—
   EEG                                       pipeline=3  data_source=sensor network
+  FunctionalConnectivity                    pipeline=4  data_source=—
   GlobalAverage                             pipeline=1  data_source=—
-  iEEG                                      pipeline=3  data_source=sensor network
   MEG                                       pipeline=3  data_source=sensor network
   Raw                                       pipeline=0  data_source=—
   SpatialAverage                            pipeline=1  data_source=—
   SubSample                                 pipeline=1  data_source=—
-  TemporalAverage                           pipeline=1  data_source=—</code></pre>
+  TemporalAverage                           pipeline=1  data_source=—
+  iEEG                                      pipeline=3  data_source=sensor network</code></pre>
 </div>
 </div>
 <p>The models fall into four categories:</p>
@@ -5025,7 +5049,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="basic-monitors" class="level2">
 <h2 class="anchored" data-anchor-id="basic-monitors">2. Basic Monitors</h2>
 <p>Basic monitors apply simple temporal or spatial transformations to the raw simulation state. They require no external data.</p>
-<div id="e10eaf1f" class="cell" data-execution_count="3">
+<div id="6987a146" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>obs_raw <span class="op">=</span> Observation.from_db(<span class="st">"raw"</span>)</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>obs_raw<span class="sc">.</span>name<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>obs_raw<span class="sc">.</span>description<span class="sc">}</span><span class="ss">"</span>)</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Pipeline steps: </span><span class="sc">{</span><span class="bu">len</span>(obs_raw.pipeline <span class="kw">or</span> [])<span class="sc">}</span><span class="ss">"</span>)</span>
@@ -5036,7 +5060,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   TVB class: Raw</code></pre>
 </div>
 </div>
-<div id="f96b714f" class="cell" data-execution_count="4">
+<div id="3c26bc72" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>obs_ta <span class="op">=</span> Observation.from_db(<span class="st">"temporal_average"</span>)</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>obs_ta<span class="sc">.</span>name<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>obs_ta<span class="sc">.</span>label<span class="sc">}</span><span class="ss">"</span>)</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Period: </span><span class="sc">{</span>obs_ta<span class="sc">.</span>period<span class="sc">}</span><span class="ss"> ms"</span>)</span>
@@ -5050,7 +5074,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="convert-to-tvb" class="level3">
 <h3 class="anchored" data-anchor-id="convert-to-tvb">Convert to TVB</h3>
 <p>Each observation converts to its corresponding TVB monitor with a single function call:</p>
-<div id="2860a105" class="cell" data-execution_count="5">
+<div id="bca642a4" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo.adapters.tvb <span class="im">import</span> to_tvb_monitor</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>mon_raw <span class="op">=</span> to_tvb_monitor(obs_raw)</span>
@@ -5076,7 +5100,7 @@ TA   → TemporalAverage, period=0.9765625</code></pre>
 </ol>
 <section id="eeg" class="level3">
 <h3 class="anchored" data-anchor-id="eeg">3.1 EEG</h3>
-<div id="f8646254" class="cell" data-execution_count="6">
+<div id="44f400f6" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>obs_eeg <span class="op">=</span> Observation.from_db(<span class="st">"eeg"</span>)</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>obs_eeg<span class="sc">.</span>name<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>obs_eeg<span class="sc">.</span>label<span class="sc">}</span><span class="ss">"</span>)</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Imaging modality: </span><span class="sc">{</span>obs_eeg<span class="sc">.</span>imaging_modality<span class="sc">}</span><span class="ss">"</span>)</span>
@@ -5097,7 +5121,7 @@ TA   → TemporalAverage, period=0.9765625</code></pre>
   reference_electrode: — </code></pre>
 </div>
 </div>
-<div id="7220488e" class="cell" data-execution_count="7">
+<div id="fd1a5eed" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load the sensor network from database</span></span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> database_path</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>sensor_net <span class="op">=</span> Network.from_file(</span>
@@ -5117,7 +5141,7 @@ Gain range:     [-120.12, 253.93]</code></pre>
 </section>
 <section id="meg" class="level3">
 <h3 class="anchored" data-anchor-id="meg">3.2 MEG</h3>
-<div id="faf27e91" class="cell" data-execution_count="8">
+<div id="705281de" class="cell" data-execution_count="8">
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>obs_meg <span class="op">=</span> Observation.from_db(<span class="st">"meg"</span>)</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>obs_meg<span class="sc">.</span>name<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>obs_meg<span class="sc">.</span>label<span class="sc">}</span><span class="ss">"</span>)</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Sensor network: </span><span class="sc">{</span>obs_meg<span class="sc">.</span>data_source<span class="sc">.</span>path<span class="sc">}</span><span class="ss">"</span>)</span>
@@ -5138,7 +5162,7 @@ Gain range:     [-120.12, 253.93]</code></pre>
 </section>
 <section id="ieeg-seeg" class="level3">
 <h3 class="anchored" data-anchor-id="ieeg-seeg">3.3 iEEG (SEEG)</h3>
-<div id="b421f2b1" class="cell" data-execution_count="9">
+<div id="3cc0f7f5" class="cell" data-execution_count="9">
 <div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>obs_ieeg <span class="op">=</span> Observation.from_db(<span class="st">"ieeg"</span>)</span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>obs_ieeg<span class="sc">.</span>name<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>obs_ieeg<span class="sc">.</span>label<span class="sc">}</span><span class="ss">"</span>)</span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Sensor network: </span><span class="sc">{</span>obs_ieeg<span class="sc">.</span>data_source<span class="sc">.</span>path<span class="sc">}</span><span class="ss">"</span>)</span>
@@ -5153,7 +5177,7 @@ Gain range:     [-120.12, 253.93]</code></pre>
 <section id="convert-projection-monitors-to-tvb" class="level3">
 <h3 class="anchored" data-anchor-id="convert-projection-monitors-to-tvb">Convert Projection Monitors to TVB</h3>
 <p>The adapter loads sensors, orientations (MEG), and gain matrices automatically from the linked sensor network:</p>
-<div id="3c46f4d8" class="cell" data-execution_count="10">
+<div id="856f54f5" class="cell" data-execution_count="10">
 <div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>mon_eeg <span class="op">=</span> to_tvb_monitor(obs_eeg)</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>mon_meg <span class="op">=</span> to_tvb_monitor(obs_meg)</span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>mon_ieeg <span class="op">=</span> to_tvb_monitor(obs_ieeg)</span>
@@ -5184,7 +5208,7 @@ iEEG → iEEG
 <section id="visualize-tvb-projection-networks-on-tvb-surface" class="level2">
 <h2 class="anchored" data-anchor-id="visualize-tvb-projection-networks-on-tvb-surface">4. Visualize TVB Projection Networks on TVB Surface</h2>
 <p>We now build sensor-to-region projection graphs directly from the TVB-default EEG/MEG/iEEG monitor data and render them on the TVB default cortical surface mesh.</p>
-<div id="51434cad" class="cell" data-execution_count="11">
+<div id="22417833" class="cell" data-execution_count="11">
 <div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> nibabel <span class="im">as</span> nib</span>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> bsplot.graph <span class="im">import</span> create_network, plot_network_on_surface</span>
 <span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> database_path</span>
@@ -5230,7 +5254,7 @@ iEEG → iEEG
 TVB regions: 76</code></pre>
 </div>
 </div>
-<div id="633933ca" class="cell" data-execution_count="12">
+<div id="ec596298" class="cell" data-execution_count="12">
 <div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> _to_region_gain(gain_matrix, mapping, n_regions):</span>
 <span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    gain_abs <span class="op">=</span> np.<span class="bu">abs</span>(np.nan_to_num(gain_matrix, nan<span class="op">=</span><span class="fl">0.0</span>))</span>
 <span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -5296,7 +5320,7 @@ TVB regions: 76</code></pre>
 <span id="cb22-63"><a href="#cb22-63" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb22-64"><a href="#cb22-64" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> graph, region_gain</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="770ed08f" class="cell" data-execution_count="13">
+<div id="2629abe1" class="cell" data-execution_count="13">
 <div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>candidates <span class="op">=</span> {</span>
 <span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">"EEG"</span>: (<span class="st">"eeg"</span>, <span class="st">"eeg_projection"</span>),</span>
 <span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"MEG"</span>: (<span class="st">"meg"</span>, <span class="st">"meg_projection"</span>),</span>
@@ -5372,7 +5396,7 @@ Figure&nbsp;1: TVB default projection networks on the TVB default cortical surfa
 <li><strong>Subsampling</strong> — downsample to TR</li>
 <li><strong>Volterra transform</strong> — nonlinear signal transformation (some variants)</li>
 </ol>
-<div id="c34ca306" class="cell" data-execution_count="15">
+<div id="4287ba88" class="cell" data-execution_count="15">
 <div class="sourceCode cell-code" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>obs_bold <span class="op">=</span> Observation.from_db(<span class="st">"bold_tvb"</span>)</span>
 <span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>obs_bold<span class="sc">.</span>name<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>obs_bold<span class="sc">.</span>label<span class="sc">}</span><span class="ss">"</span>)</span>
 <span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  HRF kernel: </span><span class="sc">{</span>obs_bold<span class="sc">.</span>class_reference<span class="sc">.</span>constructor_args[<span class="dv">0</span>]<span class="sc">.</span>value<span class="sc">}</span><span class="ss">"</span>)</span>
@@ -5392,7 +5416,7 @@ Figure&nbsp;1: TVB default projection networks on the TVB default cortical surfa
     tau_s = 0.8 s</code></pre>
 </div>
 </div>
-<div id="80a47363" class="cell" data-execution_count="16">
+<div id="e2fb28f3" class="cell" data-execution_count="16">
 <div class="sourceCode cell-code" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>mon_bold <span class="op">=</span> to_tvb_monitor(obs_bold)</span>
 <span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"BOLD → </span><span class="sc">{</span><span class="bu">type</span>(mon_bold)<span class="sc">.</span><span class="va">__name__</span><span class="sc">}</span><span class="ss">"</span>)</span>
 <span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  HRF: </span><span class="sc">{</span><span class="bu">type</span>(mon_bold.hrf_kernel)<span class="sc">.</span><span class="va">__name__</span><span class="sc">}</span><span class="ss">"</span>)</span>
@@ -5420,7 +5444,7 @@ Figure&nbsp;1: TVB default projection networks on the TVB default cortical surfa
 <section id="coupling-monitors" class="level2">
 <h2 class="anchored" data-anchor-id="coupling-monitors">6. Coupling Monitors</h2>
 <p>Coupling monitors record the afferent (incoming) coupling term at each node — the network input that drives the dynamics, rather than the model state itself. Useful for analysing effective connectivity.</p>
-<div id="7d6be7e5" class="cell" data-execution_count="17">
+<div id="b5c518b9" class="cell" data-execution_count="17">
 <div class="sourceCode cell-code" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>obs_ac <span class="op">=</span> Observation.from_db(<span class="st">"afferent_coupling"</span>)</span>
 <span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>obs_ac<span class="sc">.</span>name<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>obs_ac<span class="sc">.</span>label<span class="sc">}</span><span class="ss">"</span>)</span>
 <span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Source: </span><span class="sc">{</span>obs_ac<span class="sc">.</span>source<span class="sc">}</span><span class="ss">"</span>)</span>
@@ -5439,7 +5463,7 @@ Figure&nbsp;1: TVB default projection networks on the TVB default cortical surfa
 <section id="simulation-round-trip-numerical-verification" class="level2">
 <h2 class="anchored" data-anchor-id="simulation-round-trip-numerical-verification">7. Simulation Round-Trip: Numerical Verification</h2>
 <p>To verify that tvbo-generated TVB models are faithful to the original, we compare simulations run with the TVB-native <code>Generic2dOscillator</code> against the tvbo-generated equivalent. Both use identical connectivity, coupling, integrator, and initial conditions. Results are wrapped using <code>ExperimentResult.from_tvb()</code> for consistent access.</p>
-<div id="fdbbf18a" class="cell" data-execution_count="18">
+<div id="4d471838" class="cell" data-execution_count="18">
 <div class="sourceCode cell-code" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> Dynamics, ExperimentResult</span>
 <span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvb.simulator.lab <span class="im">import</span> simulator, models, coupling, integrators, monitors</span>
 <span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -5530,7 +5554,7 @@ Figure&nbsp;2: Simulation roundtrip: TVB native vs tvbo-generated Generic2dOscil
 <section id="code-generation-api" class="level3">
 <h3 class="anchored" data-anchor-id="code-generation-api">Code Generation API</h3>
 <p>Each observation model can also render its TVB monitor code directly:</p>
-<div id="9c3e61fc" class="cell" data-execution_count="20">
+<div id="3ae48bc0" class="cell" data-execution_count="20">
 <div class="sourceCode cell-code" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>obs_eeg_rt <span class="op">=</span> Observation.from_db(<span class="st">"eeg"</span>)</span>
 <span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(obs_eeg_rt.render_code(<span class="st">"tvb"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
@@ -5600,7 +5624,7 @@ monitors = [
 </code></pre>
 </div>
 </div>
-<div id="acdb1944" class="cell" data-execution_count="21">
+<div id="740674c7" class="cell" data-execution_count="21">
 <div class="sourceCode cell-code" id="cb37"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Execute returns a configured TVB monitor object</span></span>
 <span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>mon <span class="op">=</span> obs_eeg_rt.execute(<span class="st">"tvb"</span>)</span>
 <span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Returned: </span><span class="sc">{</span><span class="bu">type</span>(mon)<span class="sc">.</span><span class="va">__name__</span><span class="sc">}</span><span class="ss">"</span>)</span>
@@ -5616,7 +5640,7 @@ monitors = [
 <section id="monitor-round-trip-tvbo-tvb-verify" class="level2">
 <h2 class="anchored" data-anchor-id="monitor-round-trip-tvbo-tvb-verify">8. Monitor Round-Trip: tvbo → TVB → verify</h2>
 <p>The adapter can convert every observation type to its corresponding TVB monitor and back:</p>
-<div id="000049c0" class="cell" data-execution_count="22">
+<div id="a38d9784" class="cell" data-execution_count="22">
 <div class="sourceCode cell-code" id="cb39"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo.adapters.tvb <span class="im">import</span> to_tvb_monitor</span>
 <span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> name <span class="kw">in</span> [<span class="st">"raw"</span>, <span class="st">"eeg"</span>, <span class="st">"bold_tvb"</span>, <span class="st">"temporal_average"</span>]:</span>
@@ -5765,7 +5789,7 @@ TemporalAverage      → TemporalAverage               </code></pre>
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp('/' + window.location.host + '/');
+        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

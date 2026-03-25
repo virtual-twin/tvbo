@@ -3163,12 +3163,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/optimization.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">optimization</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/optimizations.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">optimizations</span></a>
   </div>
@@ -4312,6 +4306,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/adapters/neuroml.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Neuroml</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/adapters/openminds.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Openminds</span></a>
   </div>
@@ -4744,6 +4744,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/plot/animate.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Animate</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/plot/bifurcation_diagram.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Bifurcation Diagram</span></a>
   </div>
@@ -4770,6 +4776,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../api/plot/ontology.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Ontology</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/plot/phase.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Phase</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/plot/timeseries.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Timeseries</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4867,6 +4885,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../api/utils/report.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Report</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/utils/units.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Units</span></a>
   </div>
 </li>
       </ul>
@@ -5014,7 +5038,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="create-a-simulation-experiment" class="level1">
 <h1>Create a Simulation Experiment</h1>
 <p>First, let’s set up a simulation experiment using the Wilson-Cowan model with a sample connectome.</p>
-<div id="8e38b6f7" class="cell" data-execution_count="2">
+<div id="5feb75d6" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo.datamodel.schema <span class="im">import</span> CouplingInput, Parameter</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co"># | label: create-experiment</span></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Load a sample connectome</span></span>
@@ -5045,7 +5069,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="run-the-simulation" class="level1">
 <h1>Run the Simulation</h1>
-<div id="4ce359ce" class="cell" data-execution_count="3">
+<div id="10aadc22" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>ts <span class="op">=</span> experiment.run(<span class="bu">format</span><span class="op">=</span><span class="st">"pyrates"</span>)</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"TimeSeries shape: </span><span class="sc">{</span>ts<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">"</span>)</span>
@@ -5068,7 +5092,7 @@ Simulation Progress
      (2) Processing output variables...
         ...finished.
      (3) Running the simulation...
-        ...finished after 0.020741790998727083s.
+        ...finished after 0.01357958399967174s.
 TimeSeries shape: (1000, 2, 3)
 Time points: 1000
 State variables: ['V' 'W']
@@ -5242,14 +5266,19 @@ Sample period: 0.1 ms</code></pre>
     │   ├── eq-dynamics_desc-dynamics_id-6638a397.json
     │   ├── eq-dynamics_desc-dynamics_id-6a2926f6.json
     │   ├── eq-dynamics_desc-dynamics_id-6c4d1005.json
+    │   ├── eq-dynamics_desc-dynamics_id-6d63797f.json
     │   ├── eq-dynamics_desc-dynamics_id-71306f85.json
     │   ├── eq-dynamics_desc-dynamics_id-766abece.json
+    │   ├── eq-dynamics_desc-dynamics_id-80676839.json
+    │   ├── eq-dynamics_desc-dynamics_id-8098f0c2.json
     │   ├── eq-dynamics_desc-dynamics_id-8d1a13ba.json
+    │   ├── eq-dynamics_desc-dynamics_id-9b7864b6.json
     │   ├── eq-dynamics_desc-dynamics_id-9f3721f4.json
     │   ├── eq-dynamics_desc-dynamics_id-b917debf.json
     │   ├── eq-dynamics_desc-dynamics_id-b941b8ff.json
     │   ├── eq-dynamics_desc-dynamics_id-bc668539.json
     │   ├── eq-dynamics_desc-dynamics_id-be77bca1.json
+    │   ├── eq-dynamics_desc-dynamics_id-c2db8ae9.json
     │   ├── eq-dynamics_desc-dynamics_id-c3860b72.json
     │   ├── eq-dynamics_desc-dynamics_id-c8b6c602.json
     │   ├── eq-dynamics_desc-dynamics_id-caddfef2.json
@@ -5262,12 +5291,20 @@ Sample period: 0.1 ms</code></pre>
     │   ├── sub-01_desc-dynamics_net-distances_id-04443ce7.tsv
     │   ├── sub-01_desc-dynamics_net-distances_id-15a17e77.json
     │   ├── sub-01_desc-dynamics_net-distances_id-15a17e77.tsv
+    │   ├── sub-01_desc-dynamics_net-distances_id-17faaf0a.json
+    │   ├── sub-01_desc-dynamics_net-distances_id-17faaf0a.tsv
     │   ├── sub-01_desc-dynamics_net-distances_id-21989e10.json
     │   ├── sub-01_desc-dynamics_net-distances_id-21989e10.tsv
+    │   ├── sub-01_desc-dynamics_net-distances_id-2b4b6e49.json
+    │   ├── sub-01_desc-dynamics_net-distances_id-2b4b6e49.tsv
     │   ├── sub-01_desc-dynamics_net-distances_id-310bd292.json
     │   ├── sub-01_desc-dynamics_net-distances_id-310bd292.tsv
     │   ├── sub-01_desc-dynamics_net-distances_id-31956948.json
     │   ├── sub-01_desc-dynamics_net-distances_id-31956948.tsv
+    │   ├── sub-01_desc-dynamics_net-distances_id-4503d552.json
+    │   ├── sub-01_desc-dynamics_net-distances_id-4503d552.tsv
+    │   ├── sub-01_desc-dynamics_net-distances_id-4875ef73.json
+    │   ├── sub-01_desc-dynamics_net-distances_id-4875ef73.tsv
     │   ├── sub-01_desc-dynamics_net-distances_id-54e20f15.json
     │   ├── sub-01_desc-dynamics_net-distances_id-54e20f15.tsv
     │   ├── sub-01_desc-dynamics_net-distances_id-5acbc0ba.json
@@ -5294,6 +5331,8 @@ Sample period: 0.1 ms</code></pre>
     │   ├── sub-01_desc-dynamics_net-distances_id-c1cb9109.tsv
     │   ├── sub-01_desc-dynamics_net-distances_id-c1cc3361.json
     │   ├── sub-01_desc-dynamics_net-distances_id-c1cc3361.tsv
+    │   ├── sub-01_desc-dynamics_net-distances_id-d66238a3.json
+    │   ├── sub-01_desc-dynamics_net-distances_id-d66238a3.tsv
     │   ├── sub-01_desc-dynamics_net-distances_id-d7dc5d1a.json
     │   ├── sub-01_desc-dynamics_net-distances_id-d7dc5d1a.tsv
     │   ├── sub-01_desc-dynamics_net-distances_id-dc6ec676.json
@@ -5334,6 +5373,8 @@ Sample period: 0.1 ms</code></pre>
     │   ├── sub-01_desc-dynamics_net-weights_id-3f4036bd.tsv
     │   ├── sub-01_desc-dynamics_net-weights_id-4085f6c4.json
     │   ├── sub-01_desc-dynamics_net-weights_id-4085f6c4.tsv
+    │   ├── sub-01_desc-dynamics_net-weights_id-4cb47303.json
+    │   ├── sub-01_desc-dynamics_net-weights_id-4cb47303.tsv
     │   ├── sub-01_desc-dynamics_net-weights_id-58074be9.json
     │   ├── sub-01_desc-dynamics_net-weights_id-58074be9.tsv
     │   ├── sub-01_desc-dynamics_net-weights_id-5bbd0847.json
@@ -5342,12 +5383,16 @@ Sample period: 0.1 ms</code></pre>
     │   ├── sub-01_desc-dynamics_net-weights_id-5fcc649c.tsv
     │   ├── sub-01_desc-dynamics_net-weights_id-6c3d1a04.json
     │   ├── sub-01_desc-dynamics_net-weights_id-6c3d1a04.tsv
+    │   ├── sub-01_desc-dynamics_net-weights_id-73641fe4.json
+    │   ├── sub-01_desc-dynamics_net-weights_id-73641fe4.tsv
     │   ├── sub-01_desc-dynamics_net-weights_id-793ce150.json
     │   ├── sub-01_desc-dynamics_net-weights_id-793ce150.tsv
     │   ├── sub-01_desc-dynamics_net-weights_id-7ac2f88e.json
     │   ├── sub-01_desc-dynamics_net-weights_id-7ac2f88e.tsv
     │   ├── sub-01_desc-dynamics_net-weights_id-7bfd3de6.json
     │   ├── sub-01_desc-dynamics_net-weights_id-7bfd3de6.tsv
+    │   ├── sub-01_desc-dynamics_net-weights_id-86a2282e.json
+    │   ├── sub-01_desc-dynamics_net-weights_id-86a2282e.tsv
     │   ├── sub-01_desc-dynamics_net-weights_id-8df6af86.json
     │   ├── sub-01_desc-dynamics_net-weights_id-8df6af86.tsv
     │   ├── sub-01_desc-dynamics_net-weights_id-9f1bac5a.json
@@ -5358,18 +5403,24 @@ Sample period: 0.1 ms</code></pre>
     │   ├── sub-01_desc-dynamics_net-weights_id-d2dbab05.tsv
     │   ├── sub-01_desc-dynamics_net-weights_id-d5bb8eda.json
     │   ├── sub-01_desc-dynamics_net-weights_id-d5bb8eda.tsv
+    │   ├── sub-01_desc-dynamics_net-weights_id-e8ea2ff4.json
+    │   ├── sub-01_desc-dynamics_net-weights_id-e8ea2ff4.tsv
     │   ├── sub-01_desc-dynamics_net-weights_id-eb4fe977.json
     │   ├── sub-01_desc-dynamics_net-weights_id-eb4fe977.tsv
+    │   ├── sub-01_desc-dynamics_net-weights_id-f5a9ad41.json
+    │   ├── sub-01_desc-dynamics_net-weights_id-f5a9ad41.tsv
     │   ├── sub-01_desc-dynamics_net-weights_id-fd495e36.json
     │   └── sub-01_desc-dynamics_net-weights_id-fd495e36.tsv
     ├── ses-simulation
     │   ├── eq
     │   │   ├── eq-dynamics_desc-wilsoncowan_id-1d8cfee0.json
+    │   │   ├── eq-dynamics_desc-wilsoncowan_id-1e620699.json
     │   │   ├── eq-dynamics_desc-wilsoncowan_id-2708b6e5.json
     │   │   ├── eq-dynamics_desc-wilsoncowan_id-31964045.json
     │   │   ├── eq-dynamics_desc-wilsoncowan_id-329a9611.json
     │   │   ├── eq-dynamics_desc-wilsoncowan_id-3d0cac17.json
     │   │   ├── eq-dynamics_desc-wilsoncowan_id-43e2687c.json
+    │   │   ├── eq-dynamics_desc-wilsoncowan_id-50e83602.json
     │   │   ├── eq-dynamics_desc-wilsoncowan_id-51f747bd.json
     │   │   ├── eq-dynamics_desc-wilsoncowan_id-5bea9395.json
     │   │   ├── eq-dynamics_desc-wilsoncowan_id-66636228.json
@@ -5388,22 +5439,41 @@ Sample period: 0.1 ms</code></pre>
     │   │   ├── eq-dynamics_desc-wilsoncowan_id-bee7f9c1.json
     │   │   ├── eq-dynamics_desc-wilsoncowan_id-c97bb354.json
     │   │   ├── eq-dynamics_desc-wilsoncowan_id-ced770f8.json
+    │   │   ├── eq-dynamics_desc-wilsoncowan_id-d2547330.json
+    │   │   ├── eq-dynamics_desc-wilsoncowan_id-d265190b.json
     │   │   ├── eq-dynamics_desc-wilsoncowan_id-dd839713.json
     │   │   ├── eq-dynamics_desc-wilsoncowan_id-defd9235.json
+    │   │   ├── eq-dynamics_desc-wilsoncowan_id-ebb7bd3e.json
     │   │   └── eq-dynamics_desc-wilsoncowan_id-f93777ea.json
     │   ├── net
+    │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-03f9617b.json
+    │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-03f9617b.tsv
+    │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-095db1d8.json
+    │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-095db1d8.tsv
     │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-0f535f41.json
     │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-0f535f41.tsv
+    │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-0f69a04f.json
+    │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-0f69a04f.tsv
+    │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-15e25918.json
+    │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-15e25918.tsv
     │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-1c762cce.json
     │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-1c762cce.tsv
+    │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-2cef099e.json
+    │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-2cef099e.tsv
     │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-3c7d1743.json
     │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-3c7d1743.tsv
     │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-4385a656.json
     │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-4385a656.tsv
     │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-4f166c88.json
     │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-4f166c88.tsv
+    │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-5ba33224.json
+    │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-5ba33224.tsv
+    │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-5bd8e6b0.json
+    │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-5bd8e6b0.tsv
     │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-5c96c66d.json
     │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-5c96c66d.tsv
+    │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-5ccbca38.json
+    │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-5ccbca38.tsv
     │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-5f9046be.json
     │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-5f9046be.tsv
     │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-6bb473e2.json
@@ -5450,8 +5520,16 @@ Sample period: 0.1 ms</code></pre>
     │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-0fc527dc.tsv
     │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-1c1605d7.json
     │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-1c1605d7.tsv
+    │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-292e3946.json
+    │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-292e3946.tsv
+    │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-2a658d43.json
+    │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-2a658d43.tsv
     │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-2ca870ed.json
     │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-2ca870ed.tsv
+    │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-301b066c.json
+    │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-301b066c.tsv
+    │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-361961f6.json
+    │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-361961f6.tsv
     │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-4510b271.json
     │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-4510b271.tsv
     │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-51413713.json
@@ -5474,6 +5552,8 @@ Sample period: 0.1 ms</code></pre>
     │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-95040d35.tsv
     │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-9e65e283.json
     │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-9e65e283.tsv
+    │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-9e6dceb7.json
+    │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-9e6dceb7.tsv
     │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-a8b26549.json
     │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-a8b26549.tsv
     │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-ad21ba4d.json
@@ -5484,8 +5564,14 @@ Sample period: 0.1 ms</code></pre>
     │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-b813c7ff.tsv
     │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-b994eeb1.json
     │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-b994eeb1.tsv
+    │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-c90476a0.json
+    │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-c90476a0.tsv
     │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-c9135f72.json
     │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-c9135f72.tsv
+    │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-cb6a053d.json
+    │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-cb6a053d.tsv
+    │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-cea38689.json
+    │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-cea38689.tsv
     │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-d78211cb.json
     │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-d78211cb.tsv
     │   │   ├── sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-dd215690.json
@@ -5605,12 +5691,12 @@ Sample period: 0.1 ms</code></pre>
   "SamplingPeriodUnits": "ms",
   "StartTime": 0.0,
   "Units": "a.u.",
-  "GeneratedAt": "2026-03-20T00:08:24.569162",
+  "GeneratedAt": "2026-03-25T16:56:52.478246",
   "Provenance": {
     "Model": "Generic2dOscillator - 12 parameters and 2 state variables",
-    "Integrator": "Integrator({\n  'method': 'Euler',\n  'abs_tol': 1e-10,\n  'rel_tol': 1e-10,\n  'time_scale': 'ms',\n  'duration': 100.0,\n  'step_size': 0.1,\n  'transient_time': 0.0,\n  'scipy_ode_base': False,\n  'number_of_stages': 1,\n  'update_expression': DerivedVariable({\n      'name': 'dX',\n      'equation': Equation({'lhs': 'X_{t+1}', 'rhs': 'dX0 * dt', 'latex': False}),\n      'conditional': False\n    }),\n  'delayed': False\n})",
+    "Integrator": "Integrator({\n  'method': 'Euler',\n  'abs_tol': 1e-10,\n  'rel_tol': 1e-10,\n  'time_scale': UnitEnum(text='ms', description='Millisecond', meaning='http://qudt.org/vocab/unit/MilliSEC'),\n  'duration': 100.0,\n  'step_size': 0.1,\n  'transient_time': 0.0,\n  'scipy_ode_base': False,\n  'number_of_stages': 1,\n  'update_expression': DerivedVariable({\n      'name': 'dX',\n      'equation': Equation({'lhs': 'X_{t+1}', 'rhs': 'dX0 * dt', 'latex': False}),\n      'conditional': False\n    }),\n  'delayed': False\n})",
     "StepSize": 0.1,
-    "GeneratedAt": "2026-03-20T00:08:24.569126",
+    "GeneratedAt": "2026-03-25T16:56:52.478226",
     "Software": "tvbo"
   },
   "StateVariables": [
@@ -5737,18 +5823,22 @@ Equation metadata:
 <span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> f <span class="kw">in</span> distances_files:</span>
 <span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  - </span><span class="sc">{</span>os<span class="sc">.</span>path<span class="sc">.</span>basename(f)<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Weights files: 52
+<pre><code>Weights files: 65
   - sub-01_desc-dynamics_net-weights_id-2ddef1a9.tsv
   - sub-01_desc-dynamics_net-weights_id-fd495e36.tsv
   - sub-01_desc-dynamics_net-weights_id-29a9db1d.tsv
   - sub-01_desc-dynamics_net-weights_id-d5bb8eda.tsv
+  - sub-01_desc-dynamics_net-weights_id-73641fe4.tsv
   - sub-01_desc-dynamics_net-weights_id-07549a27.tsv
   - sub-01_desc-dynamics_net-weights_id-58074be9.tsv
+  - sub-01_desc-dynamics_net-weights_id-86a2282e.tsv
   - sub-01_desc-dynamics_net-weights_id-aa951bcc.tsv
   - sub-01_desc-dynamics_net-weights_id-3115eb53.tsv
   - sub-01_desc-dynamics_net-weights_id-5fcc649c.tsv
   - sub-01_desc-dynamics_net-weights_id-32355b2e.tsv
   - sub-01_desc-dynamics_net-weights_id-d2dbab05.tsv
+  - sub-01_desc-dynamics_net-weights_id-f5a9ad41.tsv
+  - sub-01_desc-dynamics_net-weights_id-e8ea2ff4.tsv
   - sub-01_desc-dynamics_net-weights_id-30da98b2.tsv
   - sub-01_desc-dynamics_net-weights_id-8df6af86.tsv
   - sub-01_desc-dynamics_net-weights_id-7ac2f88e.tsv
@@ -5763,10 +5853,12 @@ Equation metadata:
   - sub-01_desc-dynamics_net-weights_id-793ce150.tsv
   - sub-01_desc-dynamics_net-weights_id-7bfd3de6.tsv
   - sub-01_desc-dynamics_net-weights_id-4085f6c4.tsv
+  - sub-01_desc-dynamics_net-weights_id-4cb47303.tsv
   - sub-01_desc-dynamics_net-weights_id-5bbd0847.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-d78211cb.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-942c3235.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-70aa91ce.tsv
+  - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-2a658d43.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-57a9dde3.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-0a83a938.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-9e65e283.tsv
@@ -5775,31 +5867,41 @@ Equation metadata:
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-e193c577.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-8f2296c1.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-b994eeb1.tsv
+  - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-361961f6.tsv
+  - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-301b066c.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-a8b26549.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-b813c7ff.tsv
+  - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-c90476a0.tsv
+  - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-292e3946.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-1c1605d7.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-2ca870ed.tsv
+  - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-cea38689.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-7b7d99a1.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-e20efcf4.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-4510b271.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-b264f810.tsv
+  - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-cb6a053d.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-52ea8f73.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-69b0a62a.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-0fc527dc.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-dd215690.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-51413713.tsv
+  - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-9e6dceb7.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-ad21ba4d.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-weights_id-ec0a5341.tsv
 
-Distances files: 52
+Distances files: 65
   - sub-01_desc-dynamics_net-distances_id-21989e10.tsv
   - sub-01_desc-dynamics_net-distances_id-9cc9aa47.tsv
   - sub-01_desc-dynamics_net-distances_id-e1440ed7.tsv
   - sub-01_desc-dynamics_net-distances_id-dc6ec676.tsv
   - sub-01_desc-dynamics_net-distances_id-deb16f2b.tsv
+  - sub-01_desc-dynamics_net-distances_id-4503d552.tsv
   - sub-01_desc-dynamics_net-distances_id-c1cc3361.tsv
   - sub-01_desc-dynamics_net-distances_id-c0c52e53.tsv
+  - sub-01_desc-dynamics_net-distances_id-4875ef73.tsv
   - sub-01_desc-dynamics_net-distances_id-94eefc92.tsv
+  - sub-01_desc-dynamics_net-distances_id-2b4b6e49.tsv
   - sub-01_desc-dynamics_net-distances_id-15a17e77.tsv
   - sub-01_desc-dynamics_net-distances_id-91758976.tsv
   - sub-01_desc-dynamics_net-distances_id-6af9eea9.tsv
@@ -5815,28 +5917,38 @@ Distances files: 52
   - sub-01_desc-dynamics_net-distances_id-310bd292.tsv
   - sub-01_desc-dynamics_net-distances_id-68b768fb.tsv
   - sub-01_desc-dynamics_net-distances_id-fb4d474a.tsv
+  - sub-01_desc-dynamics_net-distances_id-17faaf0a.tsv
   - sub-01_desc-dynamics_net-distances_id-f8e194a6.tsv
+  - sub-01_desc-dynamics_net-distances_id-d66238a3.tsv
   - sub-01_desc-dynamics_net-distances_id-31956948.tsv
   - sub-01_desc-dynamics_net-distances_id-54e20f15.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-dc9bcd08.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-8d76f082.tsv
+  - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-5ccbca38.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-6bb473e2.tsv
+  - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-095db1d8.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-8d2ec3ba.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-8b248e24.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-3c7d1743.tsv
+  - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-15e25918.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-8551a205.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-1c762cce.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-4f166c88.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-a3a4470f.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-d3ac5f3c.tsv
+  - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-5bd8e6b0.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-bf79ea0f.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-8f145d68.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-fc523e1d.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-879d5ea2.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-5c96c66d.tsv
+  - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-2cef099e.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-8ddf6d8d.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-9ee11858.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-c2a04cdf.tsv
+  - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-03f9617b.tsv
+  - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-5ba33224.tsv
+  - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-0f69a04f.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-4385a656.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-c3b0c832.tsv
   - sub-01_ses-simulation_desc-wilsoncowan_run-1_net-distances_id-a4a65a54.tsv
@@ -5933,6 +6045,8 @@ Multi-subject dataset structure:
 │   │   ├── eq-dynamics_desc-coupling01_id-2cef3c44.json
 │   │   ├── eq-dynamics_desc-coupling01_id-36f5141a.json
 │   │   ├── eq-dynamics_desc-coupling01_id-40063088.json
+│   │   ├── eq-dynamics_desc-coupling01_id-40da513f.json
+│   │   ├── eq-dynamics_desc-coupling01_id-543aa144.json
 │   │   ├── eq-dynamics_desc-coupling01_id-574c4195.json
 │   │   ├── eq-dynamics_desc-coupling01_id-6add95d2.json
 │   │   ├── eq-dynamics_desc-coupling01_id-70407c77.json
@@ -5942,7 +6056,10 @@ Multi-subject dataset structure:
 │   │   ├── eq-dynamics_desc-coupling01_id-99fb2cb1.json
 │   │   ├── eq-dynamics_desc-coupling01_id-b6be9656.json
 │   │   ├── eq-dynamics_desc-coupling01_id-bbae9e8d.json
+│   │   ├── eq-dynamics_desc-coupling01_id-bbed7e41.json
+│   │   ├── eq-dynamics_desc-coupling01_id-bc84f0fa.json
 │   │   ├── eq-dynamics_desc-coupling01_id-bf615c6a.json
+│   │   ├── eq-dynamics_desc-coupling01_id-caa9c9e4.json
 │   │   ├── eq-dynamics_desc-coupling01_id-dbf694f0.json
 │   │   ├── eq-dynamics_desc-coupling01_id-e0a3f650.json
 │   │   ├── eq-dynamics_desc-coupling01_id-e2b26466.json
@@ -5967,10 +6084,14 @@ Multi-subject dataset structure:
 │   │   ├── sub-01_desc-coupling01_net-distances_id-577104f2.tsv
 │   │   ├── sub-01_desc-coupling01_net-distances_id-5ed7a507.json
 │   │   ├── sub-01_desc-coupling01_net-distances_id-5ed7a507.tsv
+│   │   ├── sub-01_desc-coupling01_net-distances_id-5f34b34b.json
+│   │   ├── sub-01_desc-coupling01_net-distances_id-5f34b34b.tsv
 │   │   ├── sub-01_desc-coupling01_net-distances_id-64171602.json
 │   │   ├── sub-01_desc-coupling01_net-distances_id-64171602.tsv
 │   │   ├── sub-01_desc-coupling01_net-distances_id-6c114699.json
 │   │   ├── sub-01_desc-coupling01_net-distances_id-6c114699.tsv
+│   │   ├── sub-01_desc-coupling01_net-distances_id-77d0d8e0.json
+│   │   ├── sub-01_desc-coupling01_net-distances_id-77d0d8e0.tsv
 │   │   ├── sub-01_desc-coupling01_net-distances_id-7864cefe.json
 │   │   ├── sub-01_desc-coupling01_net-distances_id-7864cefe.tsv
 │   │   ├── sub-01_desc-coupling01_net-distances_id-7c1b0071.json
@@ -5981,14 +6102,20 @@ Multi-subject dataset structure:
 │   │   ├── sub-01_desc-coupling01_net-distances_id-9343114a.tsv
 │   │   ├── sub-01_desc-coupling01_net-distances_id-97774528.json
 │   │   ├── sub-01_desc-coupling01_net-distances_id-97774528.tsv
+│   │   ├── sub-01_desc-coupling01_net-distances_id-9a278ce0.json
+│   │   ├── sub-01_desc-coupling01_net-distances_id-9a278ce0.tsv
 │   │   ├── sub-01_desc-coupling01_net-distances_id-a5dab334.json
 │   │   ├── sub-01_desc-coupling01_net-distances_id-a5dab334.tsv
 │   │   ├── sub-01_desc-coupling01_net-distances_id-a725c47b.json
 │   │   ├── sub-01_desc-coupling01_net-distances_id-a725c47b.tsv
 │   │   ├── sub-01_desc-coupling01_net-distances_id-a893af76.json
 │   │   ├── sub-01_desc-coupling01_net-distances_id-a893af76.tsv
+│   │   ├── sub-01_desc-coupling01_net-distances_id-a99310d0.json
+│   │   ├── sub-01_desc-coupling01_net-distances_id-a99310d0.tsv
 │   │   ├── sub-01_desc-coupling01_net-distances_id-ae0e3964.json
 │   │   ├── sub-01_desc-coupling01_net-distances_id-ae0e3964.tsv
+│   │   ├── sub-01_desc-coupling01_net-distances_id-aea240e5.json
+│   │   ├── sub-01_desc-coupling01_net-distances_id-aea240e5.tsv
 │   │   ├── sub-01_desc-coupling01_net-distances_id-bb216533.json
 │   │   ├── sub-01_desc-coupling01_net-distances_id-bb216533.tsv
 │   │   ├── sub-01_desc-coupling01_net-distances_id-d4754f08.json
@@ -6007,10 +6134,14 @@ Multi-subject dataset structure:
 │   │   ├── sub-01_desc-coupling01_net-weights_id-3326d162.tsv
 │   │   ├── sub-01_desc-coupling01_net-weights_id-36d2fe3b.json
 │   │   ├── sub-01_desc-coupling01_net-weights_id-36d2fe3b.tsv
+│   │   ├── sub-01_desc-coupling01_net-weights_id-41cda31d.json
+│   │   ├── sub-01_desc-coupling01_net-weights_id-41cda31d.tsv
 │   │   ├── sub-01_desc-coupling01_net-weights_id-489750d0.json
 │   │   ├── sub-01_desc-coupling01_net-weights_id-489750d0.tsv
 │   │   ├── sub-01_desc-coupling01_net-weights_id-4a57750a.json
 │   │   ├── sub-01_desc-coupling01_net-weights_id-4a57750a.tsv
+│   │   ├── sub-01_desc-coupling01_net-weights_id-4c82c291.json
+│   │   ├── sub-01_desc-coupling01_net-weights_id-4c82c291.tsv
 │   │   ├── sub-01_desc-coupling01_net-weights_id-50cf2ae6.json
 │   │   ├── sub-01_desc-coupling01_net-weights_id-50cf2ae6.tsv
 │   │   ├── sub-01_desc-coupling01_net-weights_id-55b69c88.json
@@ -6025,6 +6156,8 @@ Multi-subject dataset structure:
 │   │   ├── sub-01_desc-coupling01_net-weights_id-72ebc05f.tsv
 │   │   ├── sub-01_desc-coupling01_net-weights_id-7830a5b3.json
 │   │   ├── sub-01_desc-coupling01_net-weights_id-7830a5b3.tsv
+│   │   ├── sub-01_desc-coupling01_net-weights_id-82aa4143.json
+│   │   ├── sub-01_desc-coupling01_net-weights_id-82aa4143.tsv
 │   │   ├── sub-01_desc-coupling01_net-weights_id-901a61e7.json
 │   │   ├── sub-01_desc-coupling01_net-weights_id-901a61e7.tsv
 │   │   ├── sub-01_desc-coupling01_net-weights_id-98f1c9db.json
@@ -6035,12 +6168,16 @@ Multi-subject dataset structure:
 │   │   ├── sub-01_desc-coupling01_net-weights_id-ba7437d8.tsv
 │   │   ├── sub-01_desc-coupling01_net-weights_id-bb62cee8.json
 │   │   ├── sub-01_desc-coupling01_net-weights_id-bb62cee8.tsv
+│   │   ├── sub-01_desc-coupling01_net-weights_id-c959ba1a.json
+│   │   ├── sub-01_desc-coupling01_net-weights_id-c959ba1a.tsv
 │   │   ├── sub-01_desc-coupling01_net-weights_id-d20288ea.json
 │   │   ├── sub-01_desc-coupling01_net-weights_id-d20288ea.tsv
 │   │   ├── sub-01_desc-coupling01_net-weights_id-d5a487c2.json
 │   │   ├── sub-01_desc-coupling01_net-weights_id-d5a487c2.tsv
 │   │   ├── sub-01_desc-coupling01_net-weights_id-d833508d.json
 │   │   ├── sub-01_desc-coupling01_net-weights_id-d833508d.tsv
+│   │   ├── sub-01_desc-coupling01_net-weights_id-ef18196e.json
+│   │   ├── sub-01_desc-coupling01_net-weights_id-ef18196e.tsv
 │   │   ├── sub-01_desc-coupling01_net-weights_id-f493613c.json
 │   │   ├── sub-01_desc-coupling01_net-weights_id-f493613c.tsv
 │   │   ├── sub-01_desc-coupling01_net-weights_id-f7aa1651.json
@@ -6064,12 +6201,16 @@ Multi-subject dataset structure:
 │   │   ├── eq-dynamics_desc-coupling02_id-571543de.json
 │   │   ├── eq-dynamics_desc-coupling02_id-59bdbbda.json
 │   │   ├── eq-dynamics_desc-coupling02_id-61203ce7.json
+│   │   ├── eq-dynamics_desc-coupling02_id-62e13b30.json
+│   │   ├── eq-dynamics_desc-coupling02_id-65a6b28a.json
 │   │   ├── eq-dynamics_desc-coupling02_id-782d3b64.json
 │   │   ├── eq-dynamics_desc-coupling02_id-7cee1eab.json
 │   │   ├── eq-dynamics_desc-coupling02_id-824656d8.json
 │   │   ├── eq-dynamics_desc-coupling02_id-83c8045c.json
+│   │   ├── eq-dynamics_desc-coupling02_id-86d36df5.json
 │   │   ├── eq-dynamics_desc-coupling02_id-8873d8d0.json
 │   │   ├── eq-dynamics_desc-coupling02_id-89ec4af8.json
+│   │   ├── eq-dynamics_desc-coupling02_id-8b796209.json
 │   │   ├── eq-dynamics_desc-coupling02_id-b3f498f7.json
 │   │   ├── eq-dynamics_desc-coupling02_id-b42d2639.json
 │   │   ├── eq-dynamics_desc-coupling02_id-b70e995c.json
@@ -6078,6 +6219,7 @@ Multi-subject dataset structure:
 │   │   ├── eq-dynamics_desc-coupling02_id-ccf93923.json
 │   │   ├── eq-dynamics_desc-coupling02_id-d0817508.json
 │   │   ├── eq-dynamics_desc-coupling02_id-e0790efa.json
+│   │   ├── eq-dynamics_desc-coupling02_id-fc36a45f.json
 │   │   ├── eq-dynamics_desc-coupling02_id-fe5260d0.json
 │   │   └── eq-dynamics_desc-coupling02_id-ffce6daa.json
 │   ├── net
@@ -6105,10 +6247,18 @@ Multi-subject dataset structure:
 │   │   ├── sub-02_desc-coupling02_net-distances_id-6ae95b09.tsv
 │   │   ├── sub-02_desc-coupling02_net-distances_id-97b7d304.json
 │   │   ├── sub-02_desc-coupling02_net-distances_id-97b7d304.tsv
+│   │   ├── sub-02_desc-coupling02_net-distances_id-98846912.json
+│   │   ├── sub-02_desc-coupling02_net-distances_id-98846912.tsv
 │   │   ├── sub-02_desc-coupling02_net-distances_id-9a998a8f.json
 │   │   ├── sub-02_desc-coupling02_net-distances_id-9a998a8f.tsv
+│   │   ├── sub-02_desc-coupling02_net-distances_id-a668957b.json
+│   │   ├── sub-02_desc-coupling02_net-distances_id-a668957b.tsv
+│   │   ├── sub-02_desc-coupling02_net-distances_id-a7669ad1.json
+│   │   ├── sub-02_desc-coupling02_net-distances_id-a7669ad1.tsv
 │   │   ├── sub-02_desc-coupling02_net-distances_id-adc2496c.json
 │   │   ├── sub-02_desc-coupling02_net-distances_id-adc2496c.tsv
+│   │   ├── sub-02_desc-coupling02_net-distances_id-b8c2d39a.json
+│   │   ├── sub-02_desc-coupling02_net-distances_id-b8c2d39a.tsv
 │   │   ├── sub-02_desc-coupling02_net-distances_id-bbf7ccce.json
 │   │   ├── sub-02_desc-coupling02_net-distances_id-bbf7ccce.tsv
 │   │   ├── sub-02_desc-coupling02_net-distances_id-be1b2505.json
@@ -6119,6 +6269,8 @@ Multi-subject dataset structure:
 │   │   ├── sub-02_desc-coupling02_net-distances_id-c5c12d76.tsv
 │   │   ├── sub-02_desc-coupling02_net-distances_id-c60d2aa8.json
 │   │   ├── sub-02_desc-coupling02_net-distances_id-c60d2aa8.tsv
+│   │   ├── sub-02_desc-coupling02_net-distances_id-cfb252ea.json
+│   │   ├── sub-02_desc-coupling02_net-distances_id-cfb252ea.tsv
 │   │   ├── sub-02_desc-coupling02_net-distances_id-d11aef22.json
 │   │   ├── sub-02_desc-coupling02_net-distances_id-d11aef22.tsv
 │   │   ├── sub-02_desc-coupling02_net-distances_id-d6394358.json
@@ -6133,6 +6285,8 @@ Multi-subject dataset structure:
 │   │   ├── sub-02_desc-coupling02_net-weights_id-07e01ee5.tsv
 │   │   ├── sub-02_desc-coupling02_net-weights_id-0b51301d.json
 │   │   ├── sub-02_desc-coupling02_net-weights_id-0b51301d.tsv
+│   │   ├── sub-02_desc-coupling02_net-weights_id-146cdcc4.json
+│   │   ├── sub-02_desc-coupling02_net-weights_id-146cdcc4.tsv
 │   │   ├── sub-02_desc-coupling02_net-weights_id-18fc4f88.json
 │   │   ├── sub-02_desc-coupling02_net-weights_id-18fc4f88.tsv
 │   │   ├── sub-02_desc-coupling02_net-weights_id-2beb9dd8.json
@@ -6143,6 +6297,8 @@ Multi-subject dataset structure:
 │   │   ├── sub-02_desc-coupling02_net-weights_id-3f0bcef8.tsv
 │   │   ├── sub-02_desc-coupling02_net-weights_id-4ae34ffa.json
 │   │   ├── sub-02_desc-coupling02_net-weights_id-4ae34ffa.tsv
+│   │   ├── sub-02_desc-coupling02_net-weights_id-59c886ae.json
+│   │   ├── sub-02_desc-coupling02_net-weights_id-59c886ae.tsv
 │   │   ├── sub-02_desc-coupling02_net-weights_id-5df58e4d.json
 │   │   ├── sub-02_desc-coupling02_net-weights_id-5df58e4d.tsv
 │   │   ├── sub-02_desc-coupling02_net-weights_id-61f653c5.json
@@ -6157,14 +6313,20 @@ Multi-subject dataset structure:
 │   │   ├── sub-02_desc-coupling02_net-weights_id-8c5e39e7.tsv
 │   │   ├── sub-02_desc-coupling02_net-weights_id-8df5a796.json
 │   │   ├── sub-02_desc-coupling02_net-weights_id-8df5a796.tsv
+│   │   ├── sub-02_desc-coupling02_net-weights_id-94758d1f.json
+│   │   ├── sub-02_desc-coupling02_net-weights_id-94758d1f.tsv
 │   │   ├── sub-02_desc-coupling02_net-weights_id-98203530.json
 │   │   ├── sub-02_desc-coupling02_net-weights_id-98203530.tsv
 │   │   ├── sub-02_desc-coupling02_net-weights_id-aa889780.json
 │   │   ├── sub-02_desc-coupling02_net-weights_id-aa889780.tsv
 │   │   ├── sub-02_desc-coupling02_net-weights_id-b070ded8.json
 │   │   ├── sub-02_desc-coupling02_net-weights_id-b070ded8.tsv
+│   │   ├── sub-02_desc-coupling02_net-weights_id-b99a9819.json
+│   │   ├── sub-02_desc-coupling02_net-weights_id-b99a9819.tsv
 │   │   ├── sub-02_desc-coupling02_net-weights_id-bf28d536.json
 │   │   ├── sub-02_desc-coupling02_net-weights_id-bf28d536.tsv
+│   │   ├── sub-02_desc-coupling02_net-weights_id-c36085ba.json
+│   │   ├── sub-02_desc-coupling02_net-weights_id-c36085ba.tsv
 │   │   ├── sub-02_desc-coupling02_net-weights_id-d44f97ca.json
 │   │   ├── sub-02_desc-coupling02_net-weights_id-d44f97ca.tsv
 │   │   ├── sub-02_desc-coupling02_net-weights_id-dd8b42fc.json
@@ -6187,6 +6349,7 @@ Multi-subject dataset structure:
     │   ├── eq-dynamics_desc-coupling03_id-006fb8e1.json
     │   ├── eq-dynamics_desc-coupling03_id-03bcfb28.json
     │   ├── eq-dynamics_desc-coupling03_id-0457517a.json
+    │   ├── eq-dynamics_desc-coupling03_id-056b5688.json
     │   ├── eq-dynamics_desc-coupling03_id-081e0484.json
     │   ├── eq-dynamics_desc-coupling03_id-0c221a7e.json
     │   ├── eq-dynamics_desc-coupling03_id-1220f94e.json
@@ -6197,8 +6360,12 @@ Multi-subject dataset structure:
     │   ├── eq-dynamics_desc-coupling03_id-470a277f.json
     │   ├── eq-dynamics_desc-coupling03_id-4d5d22ed.json
     │   ├── eq-dynamics_desc-coupling03_id-580ac457.json
+    │   ├── eq-dynamics_desc-coupling03_id-5b06f50a.json
     │   ├── eq-dynamics_desc-coupling03_id-610ab647.json
+    │   ├── eq-dynamics_desc-coupling03_id-739999e3.json
     │   ├── eq-dynamics_desc-coupling03_id-85b02b69.json
+    │   ├── eq-dynamics_desc-coupling03_id-92919f7b.json
+    │   ├── eq-dynamics_desc-coupling03_id-95877093.json
     │   ├── eq-dynamics_desc-coupling03_id-9e62d70f.json
     │   ├── eq-dynamics_desc-coupling03_id-a6b96239.json
     │   ├── eq-dynamics_desc-coupling03_id-bc2c938e.json
@@ -6215,6 +6382,8 @@ Multi-subject dataset structure:
     │   ├── sub-03_desc-coupling03_net-distances_id-0203c683.tsv
     │   ├── sub-03_desc-coupling03_net-distances_id-021e2668.json
     │   ├── sub-03_desc-coupling03_net-distances_id-021e2668.tsv
+    │   ├── sub-03_desc-coupling03_net-distances_id-14493d4a.json
+    │   ├── sub-03_desc-coupling03_net-distances_id-14493d4a.tsv
     │   ├── sub-03_desc-coupling03_net-distances_id-1625c0d8.json
     │   ├── sub-03_desc-coupling03_net-distances_id-1625c0d8.tsv
     │   ├── sub-03_desc-coupling03_net-distances_id-1fce33bd.json
@@ -6225,6 +6394,8 @@ Multi-subject dataset structure:
     │   ├── sub-03_desc-coupling03_net-distances_id-36ff4065.tsv
     │   ├── sub-03_desc-coupling03_net-distances_id-54bfe1b2.json
     │   ├── sub-03_desc-coupling03_net-distances_id-54bfe1b2.tsv
+    │   ├── sub-03_desc-coupling03_net-distances_id-593c36ee.json
+    │   ├── sub-03_desc-coupling03_net-distances_id-593c36ee.tsv
     │   ├── sub-03_desc-coupling03_net-distances_id-5a510dd2.json
     │   ├── sub-03_desc-coupling03_net-distances_id-5a510dd2.tsv
     │   ├── sub-03_desc-coupling03_net-distances_id-68dc9b3f.json
@@ -6235,8 +6406,12 @@ Multi-subject dataset structure:
     │   ├── sub-03_desc-coupling03_net-distances_id-8932f0fa.tsv
     │   ├── sub-03_desc-coupling03_net-distances_id-99b4e7da.json
     │   ├── sub-03_desc-coupling03_net-distances_id-99b4e7da.tsv
+    │   ├── sub-03_desc-coupling03_net-distances_id-9d58db5a.json
+    │   ├── sub-03_desc-coupling03_net-distances_id-9d58db5a.tsv
     │   ├── sub-03_desc-coupling03_net-distances_id-a29972be.json
     │   ├── sub-03_desc-coupling03_net-distances_id-a29972be.tsv
+    │   ├── sub-03_desc-coupling03_net-distances_id-a6f8f344.json
+    │   ├── sub-03_desc-coupling03_net-distances_id-a6f8f344.tsv
     │   ├── sub-03_desc-coupling03_net-distances_id-b602c54e.json
     │   ├── sub-03_desc-coupling03_net-distances_id-b602c54e.tsv
     │   ├── sub-03_desc-coupling03_net-distances_id-cbb3143d.json
@@ -6249,6 +6424,8 @@ Multi-subject dataset structure:
     │   ├── sub-03_desc-coupling03_net-distances_id-e36eb816.tsv
     │   ├── sub-03_desc-coupling03_net-distances_id-e6571681.json
     │   ├── sub-03_desc-coupling03_net-distances_id-e6571681.tsv
+    │   ├── sub-03_desc-coupling03_net-distances_id-e84cf5de.json
+    │   ├── sub-03_desc-coupling03_net-distances_id-e84cf5de.tsv
     │   ├── sub-03_desc-coupling03_net-distances_id-ea5dcbb7.json
     │   ├── sub-03_desc-coupling03_net-distances_id-ea5dcbb7.tsv
     │   ├── sub-03_desc-coupling03_net-distances_id-ebf6e370.json
@@ -6271,6 +6448,8 @@ Multi-subject dataset structure:
     │   ├── sub-03_desc-coupling03_net-weights_id-3ef1f212.tsv
     │   ├── sub-03_desc-coupling03_net-weights_id-41f80b8f.json
     │   ├── sub-03_desc-coupling03_net-weights_id-41f80b8f.tsv
+    │   ├── sub-03_desc-coupling03_net-weights_id-48872e0f.json
+    │   ├── sub-03_desc-coupling03_net-weights_id-48872e0f.tsv
     │   ├── sub-03_desc-coupling03_net-weights_id-57540b57.json
     │   ├── sub-03_desc-coupling03_net-weights_id-57540b57.tsv
     │   ├── sub-03_desc-coupling03_net-weights_id-5f8fb533.json
@@ -6279,10 +6458,18 @@ Multi-subject dataset structure:
     │   ├── sub-03_desc-coupling03_net-weights_id-70beb431.tsv
     │   ├── sub-03_desc-coupling03_net-weights_id-7228c805.json
     │   ├── sub-03_desc-coupling03_net-weights_id-7228c805.tsv
+    │   ├── sub-03_desc-coupling03_net-weights_id-7474d9ca.json
+    │   ├── sub-03_desc-coupling03_net-weights_id-7474d9ca.tsv
+    │   ├── sub-03_desc-coupling03_net-weights_id-7ccac2c2.json
+    │   ├── sub-03_desc-coupling03_net-weights_id-7ccac2c2.tsv
     │   ├── sub-03_desc-coupling03_net-weights_id-8d5b89cb.json
     │   ├── sub-03_desc-coupling03_net-weights_id-8d5b89cb.tsv
+    │   ├── sub-03_desc-coupling03_net-weights_id-92e9a581.json
+    │   ├── sub-03_desc-coupling03_net-weights_id-92e9a581.tsv
     │   ├── sub-03_desc-coupling03_net-weights_id-942b152a.json
     │   ├── sub-03_desc-coupling03_net-weights_id-942b152a.tsv
+    │   ├── sub-03_desc-coupling03_net-weights_id-94b3553c.json
+    │   ├── sub-03_desc-coupling03_net-weights_id-94b3553c.tsv
     │   ├── sub-03_desc-coupling03_net-weights_id-9d68f2ac.json
     │   ├── sub-03_desc-coupling03_net-weights_id-9d68f2ac.tsv
     │   ├── sub-03_desc-coupling03_net-weights_id-9e11a9fa.json
@@ -6616,7 +6803,7 @@ Multi-subject output: ./derivatives/tvbo_multi</code></pre>
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp('/' + window.location.host + '/');
+        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

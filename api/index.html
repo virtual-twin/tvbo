@@ -3126,12 +3126,6 @@ ul.task-list li input[type="checkbox"] {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../datamodel/slots/optimization.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">optimization</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/optimizations.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">optimizations</span></a>
   </div>
@@ -4275,6 +4269,12 @@ ul.task-list li input[type="checkbox"] {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../api/adapters/neuroml.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Neuroml</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../api/adapters/openminds.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Openminds</span></a>
   </div>
@@ -4707,6 +4707,12 @@ ul.task-list li input[type="checkbox"] {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../api/plot/animate.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Animate</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../api/plot/bifurcation_diagram.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Bifurcation Diagram</span></a>
   </div>
@@ -4733,6 +4739,18 @@ ul.task-list li input[type="checkbox"] {
   <div class="sidebar-item-container"> 
   <a href="../api/plot/ontology.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Ontology</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/plot/phase.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Phase</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/plot/timeseries.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Timeseries</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4832,6 +4850,12 @@ ul.task-list li input[type="checkbox"] {
  <span class="menu-text">Report</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/utils/units.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Units</span></a>
+  </div>
+</li>
       </ul>
   </li>
       </ul>
@@ -4921,18 +4945,22 @@ ul.task-list li input[type="checkbox"] {
 <td>NetworkDynamics.jl backend adapter for SimulationExperiment.</td>
 </tr>
 <tr class="odd">
+<td><a href="../api/adapters/neuroml.html#tvbo.adapters.neuroml">neuroml</a></td>
+<td>NeuroML/LEMS adapter for SimulationExperiment.</td>
+</tr>
+<tr class="even">
 <td><a href="../api/adapters/openminds.html#tvbo.adapters.openminds">openminds</a></td>
 <td>OpenMINDS JSON-LD conversion utilities for TVBO.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../api/adapters/pyrates.html#tvbo.adapters.pyrates">pyrates</a></td>
 <td>PyRates backend adapter for SimulationExperiment.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../api/adapters/pyrates_bifurcation.html#tvbo.adapters.pyrates_bifurcation">pyrates_bifurcation</a></td>
 <td>PyRates/PyCoBi bifurcation analysis backend adapter for SimulationExperiment.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../api/adapters/tvb.html#tvbo.adapters.tvb">tvb</a></td>
 <td>TVB (The Virtual Brain) adapter for tvbo.</td>
 </tr>
@@ -5263,26 +5291,38 @@ ul.task-list li input[type="checkbox"] {
 <td></td>
 </tr>
 <tr class="odd">
+<td><a href="../api/plot/animate.html#tvbo.plot.animate">animate</a></td>
+<td>Animation utilities for SimulationResult.</td>
+</tr>
+<tr class="even">
 <td><a href="../api/plot/bifurcation_diagram.html#tvbo.plot.bifurcation_diagram">bifurcation_diagram</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../api/plot/functions.html#tvbo.plot.functions">functions</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../api/plot/network.html#tvbo.plot.network">network</a></td>
 <td>Network graph plotting utilities.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="../api/plot/network_graph.html#tvbo.plot.network_graph">network_graph</a></td>
 <td>Network graph plotting utilities.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="../api/plot/ontology.html#tvbo.plot.ontology">ontology</a></td>
 <td>Plotting functions for visualizing networks</td>
 </tr>
+<tr class="odd">
+<td><a href="../api/plot/phase.html#tvbo.plot.phase">phase</a></td>
+<td>Phase-space trajectory and vector-field plots for SimulationResult.</td>
+</tr>
 <tr class="even">
+<td><a href="../api/plot/timeseries.html#tvbo.plot.timeseries">timeseries</a></td>
+<td>Time-series, EEG, and power-spectrum plotting for SimulationResult.</td>
+</tr>
+<tr class="odd">
 <td><a href="../api/plot/utils.html#tvbo.plot.utils">utils</a></td>
 <td></td>
 </tr>
@@ -5355,6 +5395,10 @@ ul.task-list li input[type="checkbox"] {
 <tr class="even">
 <td><a href="../api/utils/report.html#tvbo.utils.report">report</a></td>
 <td>Report Module</td>
+</tr>
+<tr class="odd">
+<td><a href="../api/utils/units.html#tvbo.utils.units">units</a></td>
+<td>Unit and Dimension Utilities</td>
 </tr>
 </tbody>
 </table>
@@ -5436,7 +5480,7 @@ ul.task-list li input[type="checkbox"] {
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp('/' + window.location.host + '/');
+        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

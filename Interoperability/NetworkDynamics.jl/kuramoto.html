@@ -3193,12 +3193,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/optimization.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">optimization</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/optimizations.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">optimizations</span></a>
   </div>
@@ -4342,6 +4336,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/adapters/neuroml.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Neuroml</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/adapters/openminds.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Openminds</span></a>
   </div>
@@ -4774,6 +4774,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/plot/animate.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Animate</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/plot/bifurcation_diagram.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Bifurcation Diagram</span></a>
   </div>
@@ -4800,6 +4806,18 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../api/plot/ontology.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Ontology</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/plot/phase.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Phase</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/plot/timeseries.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Timeseries</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4899,6 +4917,12 @@ window.Quarto = {
  <span class="menu-text">Report</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/utils/units.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Units</span></a>
+  </div>
+</li>
       </ul>
   </li>
       </ul>
@@ -4968,7 +4992,7 @@ window.Quarto = {
 <p>Replicates the <a href="https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/heterogeneous_system/">NetworkDynamics.jl Heterogeneous System tutorial</a> — Kuramoto phase oscillators on an 8-node ring with heterogeneous natural frequencies.</p>
 <section id="yaml-specification" class="level2">
 <h2 class="anchored" data-anchor-id="yaml-specification">YAML Specification</h2>
-<div id="a4081f48" class="cell" data-execution_count="1">
+<div id="e5f0c51c" class="cell" data-execution_count="1">
 <div class="cell-output cell-output-display" data-execution_count="1">
 <style>pre { line-height: 125%; }
 td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
@@ -5207,7 +5231,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <tr class="odd">
 <td style="text-align: left;"><span class="math inline">\(\omega_{0}\)</span></td>
 <td style="text-align: right;">0.0</td>
-<td style="text-align: left;">rad/s</td>
+<td style="text-align: left;">rad_per_s</td>
 <td style="text-align: left;">Intrinsic angular frequency of the oscillator (heterogeneous per node)</td>
 </tr>
 </tbody>
@@ -5225,13 +5249,13 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </section>
 <section id="references" class="level2">
 <h2 class="anchored" data-anchor-id="references">References</h2>
-<p>Strogatz, S. (2000). From kuramoto to crawford: exploring the onset of synchronization in populations of coupled oscillators. <em>Physica D: Nonlinear Phenomena</em>, 143(1–4), 1-20.</p>
 <p>Kuramoto, Y. (1975). Self-entrainment of a population of coupled non-linear oscillators. <em>Lecture Notes in Physics</em>, 420-422.</p>
-<p>Cabral, J., Hugues, E., Sporns, O., &amp; Deco, G. (2011). Role of local network oscillations in resting-state functional connectivity. <em>NeuroImage</em>, 57(1), 130-139. - https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/heterogeneous_system/ - Kuramoto, Y. (1975). Self-entrainment of a population of coupled non-linear oscillators.</p>
+<p>Cabral, J., Hugues, E., Sporns, O., &amp; Deco, G. (2011). Role of local network oscillations in resting-state functional connectivity. <em>NeuroImage</em>, 57(1), 130-139.</p>
+<p>Strogatz, S. (2000). From kuramoto to crawford: exploring the onset of synchronization in populations of coupled oscillators. <em>Physica D: Nonlinear Phenomena</em>, 143(1–4), 1-20. - https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/heterogeneous_system/ - Kuramoto, Y. (1975). Self-entrainment of a population of coupled non-linear oscillators.</p>
 </section>
 <section id="generated-julia-code" class="level2">
 <h2 class="anchored" data-anchor-id="generated-julia-code">Generated Julia Code</h2>
-<div id="ddb980ad" class="cell" data-execution_count="3">
+<div id="1ae40d31" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># exp is already loaded in the 'Model Report' section above</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>Code(exp.render_code(<span class="st">"networkdynamics"</span>), language<span class="op">=</span><span class="st">'julia'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="3">
@@ -5425,13 +5449,13 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </section>
 <section id="run-plot" class="level2">
 <h2 class="anchored" data-anchor-id="run-plot">Run &amp; Plot</h2>
-<div id="3422200e" class="cell" data-execution_count="4">
+<div id="9e5e0e6a" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>ts <span class="op">=</span> exp.run(<span class="bu">format</span><span class="op">=</span><span class="st">"networkdynamics"</span>)</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>ts.plot()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Detected IPython. Loading juliacall extension. See https://juliapy.github.io/PythonCall.jl/stable/compat/#IPython</code></pre>
 </div>
-<div class="cell-output cell-output-display">
+<div class="cell-output cell-output-display" data-execution_count="4">
 <div>
 <figure class="figure">
 <p><img src="kuramoto_files/figure-html/cell-5-output-2.png" class="img-fluid figure-img"></p>
@@ -5442,7 +5466,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </section>
 <section id="results" class="level2">
 <h2 class="anchored" data-anchor-id="results">Results</h2>
-<div id="afaad6a4" class="cell" data-execution_count="5">
+<div id="0e3a9336" class="cell" data-execution_count="5">
 <div class="cell-output cell-output-stdout">
 <pre><code>Shape: (201, 1, 8)
 Time range: 0.0 – 10.0
@@ -5452,7 +5476,7 @@ Final theta range: [6.293, 12.570]</code></pre>
 </section>
 <section id="animate" class="level2">
 <h2 class="anchored" data-anchor-id="animate">Animate</h2>
-<div id="3522be3b" class="cell" data-execution_count="6">
+<div id="073f3792" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>ani <span class="op">=</span> ts.animate(<span class="st">"theta"</span>, <span class="bu">format</span><span class="op">=</span><span class="st">"dots"</span>)</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>ani.save(<span class="st">"kuramoto.gif"</span>, writer<span class="op">=</span><span class="st">"pillow"</span>, fps<span class="op">=</span><span class="dv">20</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
@@ -5535,7 +5559,7 @@ Final theta range: [6.293, 12.570]</code></pre>
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp('/' + window.location.host + '/');
+        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

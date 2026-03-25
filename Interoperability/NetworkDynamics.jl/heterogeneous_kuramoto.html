@@ -3193,12 +3193,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/optimization.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">optimization</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/optimizations.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">optimizations</span></a>
   </div>
@@ -4342,6 +4336,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/adapters/neuroml.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Neuroml</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/adapters/openminds.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Openminds</span></a>
   </div>
@@ -4774,6 +4774,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/plot/animate.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Animate</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/plot/bifurcation_diagram.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Bifurcation Diagram</span></a>
   </div>
@@ -4800,6 +4806,18 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../api/plot/ontology.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Ontology</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/plot/phase.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Phase</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/plot/timeseries.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Timeseries</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4899,6 +4917,12 @@ window.Quarto = {
  <span class="menu-text">Report</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/utils/units.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Units</span></a>
+  </div>
+</li>
       </ul>
   </li>
       </ul>
@@ -4923,6 +4947,17 @@ window.Quarto = {
   <li><a href="#model-report" id="toc-model-report" class="nav-link" data-scroll-target="#model-report">Model Report</a></li>
   <li><a href="#heterogeneous-kuramoto-network" id="toc-heterogeneous-kuramoto-network" class="nav-link" data-scroll-target="#heterogeneous-kuramoto-network">Heterogeneous Kuramoto Network</a>
   <ul class="collapse">
+  <li><a href="#brain-network-8-node-ring-watts-strogatz-k2-p0" id="toc-brain-network-8-node-ring-watts-strogatz-k2-p0" class="nav-link" data-scroll-target="#brain-network-8-node-ring-watts-strogatz-k2-p0">1. Brain Network: 8-node ring (Watts-Strogatz k=2, p=0)</a>
+  <ul class="collapse">
+  <li><a href="#coupling-kuramoto-sinusoidal-coupling" id="toc-coupling-kuramoto-sinusoidal-coupling" class="nav-link" data-scroll-target="#coupling-kuramoto-sinusoidal-coupling">Coupling: Kuramoto sinusoidal coupling</a></li>
+  </ul></li>
+  <li><a href="#local-dynamics-kuramoto-phase-oscillator" id="toc-local-dynamics-kuramoto-phase-oscillator" class="nav-link" data-scroll-target="#local-dynamics-kuramoto-phase-oscillator">2. Local Dynamics: Kuramoto phase oscillator</a>
+  <ul class="collapse">
+  <li><a href="#state-equations" id="toc-state-equations" class="nav-link" data-scroll-target="#state-equations">2.1 State Equations</a></li>
+  <li><a href="#parameters" id="toc-parameters" class="nav-link" data-scroll-target="#parameters">2.2 Parameters</a></li>
+  </ul></li>
+  <li><a href="#numerical-integration" id="toc-numerical-integration" class="nav-link" data-scroll-target="#numerical-integration">3. Numerical Integration</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
   <li><a href="#generated-julia-code" id="toc-generated-julia-code" class="nav-link" data-scroll-target="#generated-julia-code">Generated Julia Code</a></li>
   <li><a href="#run-plot" id="toc-run-plot" class="nav-link" data-scroll-target="#run-plot">Run &amp; Plot</a></li>
   </ul></li>
@@ -4961,7 +4996,7 @@ window.Quarto = {
 <p>Per-node parameter overrides set heterogeneous natural frequencies.</p>
 <section id="yaml-specification" class="level2">
 <h2 class="anchored" data-anchor-id="yaml-specification">YAML Specification</h2>
-<div id="d3508794" class="cell" data-execution_count="2">
+<div id="166abbbd" class="cell" data-execution_count="1">
 <div class="cell-output cell-output-display" data-execution_count="1">
 <style>pre { line-height: 125%; }
 td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
@@ -5063,7 +5098,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"Kuramoto,</span><span class="nv"> </span><span class="s">Y.</span><span class="nv"> </span><span class="s">(1975).</span><span class="nv"> </span><span class="s">Self-entrainment</span><span class="nv"> </span><span class="s">of</span><span class="nv"> </span><span class="s">a</span><span class="nv"> </span><span class="s">population</span><span class="nv"> </span><span class="s">of</span><span class="nv"> </span><span class="s">coupled</span><span class="nv"> </span><span class="s">non-linear</span><span class="nv"> </span><span class="s">oscillators."</span>
 
 <span class="c1"># -- Default (most common) vertex dynamics ------------------------------------</span>
-<span class="nt">local_dynamics</span><span class="p">:</span>
+<span class="nt">dynamics</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Kuramoto</span>
 <span class="w">    </span><span class="nt">label</span><span class="p">:</span><span class="w"> </span><span class="s">"Kuramoto</span><span class="nv"> </span><span class="s">phase</span><span class="nv"> </span><span class="s">oscillator"</span>
 <span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;</span>
@@ -5092,66 +5127,6 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <span class="w">            </span><span class="nt">coupling_variable</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 <span class="w">            </span><span class="nt">variable_of_interest</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 
-<span class="c1"># -- Additional vertex dynamics models ----------------------------------------</span>
-<span class="nt">dynamics</span><span class="p">:</span>
-<span class="w">    </span><span class="nt">StaticNode</span><span class="p">:</span>
-<span class="w">        </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">StaticNode</span>
-<span class="w">        </span><span class="nt">label</span><span class="p">:</span><span class="w"> </span><span class="s">"Static</span><span class="nv"> </span><span class="s">vertex"</span>
-<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;</span>
-<span class="w">            </span><span class="no">No internal dynamics.  Outputs a fixed phase value theta_fix as</span>
-<span class="w">            </span><span class="no">its coupling output.  Used for boundary conditions or fixed</span>
-<span class="w">            </span><span class="no">reference oscillators.  Has no state variables — it is a pure</span>
-<span class="w">            </span><span class="no">algebraic output node (ND.jl: ff=NoFeedForward()).</span>
-<span class="w">        </span><span class="nt">system_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">continuous</span>
-<span class="w">        </span><span class="nt">autonomous</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-<span class="w">        </span><span class="nt">parameters</span><span class="p">:</span>
-<span class="w">            </span><span class="nt">theta_fix</span><span class="p">:</span>
-<span class="w">                </span><span class="nt">label</span><span class="p">:</span><span class="w"> </span><span class="s">"Fixed</span><span class="nv"> </span><span class="s">phase</span><span class="nv"> </span><span class="s">output"</span>
-<span class="w">                </span><span class="nt">symbol</span><span class="p">:</span><span class="w"> </span><span class="s">"theta_fix"</span>
-<span class="w">                </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">-0.4375</span>
-<span class="w">                </span><span class="nt">unit</span><span class="p">:</span><span class="w"> </span><span class="s">"rad"</span>
-<span class="w">                </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">"Constant</span><span class="nv"> </span><span class="s">phase</span><span class="nv"> </span><span class="s">output</span><span class="nv"> </span><span class="s">of</span><span class="nv"> </span><span class="s">this</span><span class="nv"> </span><span class="s">vertex"</span>
-<span class="w">        </span><span class="nt">coupling_terms</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
-<span class="w">        </span><span class="nt">state_variables</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
-
-<span class="w">    </span><span class="nt">KuramotoInertia</span><span class="p">:</span>
-<span class="w">        </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">KuramotoInertia</span>
-<span class="w">        </span><span class="nt">label</span><span class="p">:</span><span class="w"> </span><span class="s">"Kuramoto</span><span class="nv"> </span><span class="s">oscillator</span><span class="nv"> </span><span class="s">with</span><span class="nv"> </span><span class="s">inertia"</span>
-<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;</span>
-<span class="w">            </span><span class="no">Second-order Kuramoto oscillator with damping:</span>
-<span class="w">            </span><span class="no">dtheta/dt = omega, domega/dt = omega0 - 1.0*omega + esum.</span>
-<span class="w">            </span><span class="no">Only theta is the coupling output (g=1:1 in ND.jl).</span>
-<span class="w">        </span><span class="nt">system_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">continuous</span>
-<span class="w">        </span><span class="nt">autonomous</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-<span class="w">        </span><span class="nt">parameters</span><span class="p">:</span>
-<span class="w">            </span><span class="nt">omega0</span><span class="p">:</span>
-<span class="w">                </span><span class="nt">label</span><span class="p">:</span><span class="w"> </span><span class="s">"Natural</span><span class="nv"> </span><span class="s">frequency"</span>
-<span class="w">                </span><span class="nt">symbol</span><span class="p">:</span><span class="w"> </span><span class="s">"omega_0"</span>
-<span class="w">                </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.0</span>
-<span class="w">                </span><span class="nt">unit</span><span class="p">:</span><span class="w"> </span><span class="s">"rad/s"</span>
-<span class="w">                </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">"Intrinsic</span><span class="nv"> </span><span class="s">angular</span><span class="nv"> </span><span class="s">frequency"</span>
-<span class="w">        </span><span class="nt">coupling_terms</span><span class="p">:</span>
-<span class="w">            </span><span class="nt">c_coupling</span><span class="p">:</span>
-<span class="w">                </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">"Aggregated</span><span class="nv"> </span><span class="s">sinusoidal</span><span class="nv"> </span><span class="s">coupling</span><span class="nv"> </span><span class="s">from</span><span class="nv"> </span><span class="s">incident</span><span class="nv"> </span><span class="s">edges"</span>
-<span class="w">        </span><span class="nt">state_variables</span><span class="p">:</span>
-<span class="w">            </span><span class="nt">theta</span><span class="p">:</span>
-<span class="w">                </span><span class="nt">label</span><span class="p">:</span><span class="w"> </span><span class="s">"Phase</span><span class="nv"> </span><span class="s">angle"</span>
-<span class="w">                </span><span class="nt">symbol</span><span class="p">:</span><span class="w"> </span><span class="s">"theta"</span>
-<span class="w">                </span><span class="nt">equation</span><span class="p">:</span>
-<span class="w">                    </span><span class="nt">rhs</span><span class="p">:</span><span class="w"> </span><span class="s">"omega"</span>
-<span class="w">                </span><span class="nt">initial_value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.0</span>
-<span class="w">                </span><span class="nt">unit</span><span class="p">:</span><span class="w"> </span><span class="s">"rad"</span>
-<span class="w">                </span><span class="nt">coupling_variable</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-<span class="w">                </span><span class="nt">variable_of_interest</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-<span class="w">            </span><span class="nt">omega</span><span class="p">:</span>
-<span class="w">                </span><span class="nt">label</span><span class="p">:</span><span class="w"> </span><span class="s">"Angular</span><span class="nv"> </span><span class="s">velocity"</span>
-<span class="w">                </span><span class="nt">symbol</span><span class="p">:</span><span class="w"> </span><span class="s">"omega"</span>
-<span class="w">                </span><span class="nt">equation</span><span class="p">:</span>
-<span class="w">                    </span><span class="nt">rhs</span><span class="p">:</span><span class="w"> </span><span class="s">"omega0</span><span class="nv"> </span><span class="s">-</span><span class="nv"> </span><span class="s">1.0*omega</span><span class="nv"> </span><span class="s">+</span><span class="nv"> </span><span class="s">c_coupling"</span>
-<span class="w">                </span><span class="nt">initial_value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5.0</span>
-<span class="w">                </span><span class="nt">unit</span><span class="p">:</span><span class="w"> </span><span class="s">"rad/s"</span>
-<span class="w">                </span><span class="nt">variable_of_interest</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-
 <span class="c1"># -- Network -------------------------------------------------------------------</span>
 <span class="nt">network</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">label</span><span class="p">:</span><span class="w"> </span><span class="s">"8-node</span><span class="nv"> </span><span class="s">ring</span><span class="nv"> </span><span class="s">(Watts-Strogatz</span><span class="nv"> </span><span class="s">k=2,</span><span class="nv"> </span><span class="s">p=0)"</span>
@@ -5159,13 +5134,72 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <span class="w">        </span><span class="no">Regular ring lattice: each node connected to 2 nearest neighbours.</span>
 <span class="w">        </span><span class="no">Equivalent to watts_strogatz(8, 2, 0) in Graphs.jl.</span>
 <span class="w">    </span><span class="nt">number_of_nodes</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8</span>
-<span class="w">    </span><span class="nt">number_of_regions</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8</span>
 <span class="w">    </span><span class="nt">graph_generator</span><span class="p">:</span>
 <span class="w">        </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">watts_strogatz</span>
 <span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">WattsStrogatz</span>
 <span class="w">        </span><span class="nt">parameters</span><span class="p">:</span>
 <span class="w">            </span><span class="nt">k</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> name</span><span class="p">:</span><span class="w"> </span><span class="nv">k</span><span class="p p-Indicator">,</span><span class="nt"> value</span><span class="p">:</span><span class="w"> </span><span class="nv">2</span><span class="w"> </span><span class="p p-Indicator">}</span>
 <span class="w">            </span><span class="nt">p</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> name</span><span class="p">:</span><span class="w"> </span><span class="nv">p</span><span class="p p-Indicator">,</span><span class="nt"> value</span><span class="p">:</span><span class="w"> </span><span class="nv">0</span><span class="w"> </span><span class="p p-Indicator">}</span>
+
+<span class="w">    </span><span class="c1"># -- Additional vertex dynamics models ----------------------------------------</span>
+<span class="w">    </span><span class="nt">dynamics</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">StaticNode</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">StaticNode</span>
+<span class="w">            </span><span class="nt">label</span><span class="p">:</span><span class="w"> </span><span class="s">"Static</span><span class="nv"> </span><span class="s">vertex"</span>
+<span class="w">            </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;</span>
+<span class="w">                </span><span class="no">No internal dynamics.  Outputs a fixed phase value theta_fix as</span>
+<span class="w">                </span><span class="no">its coupling output.  Used for boundary conditions or fixed</span>
+<span class="w">                </span><span class="no">reference oscillators.  Has no state variables — it is a pure</span>
+<span class="w">                </span><span class="no">algebraic output node (ND.jl: ff=NoFeedForward()).</span>
+<span class="w">            </span><span class="nt">system_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">continuous</span>
+<span class="w">            </span><span class="nt">autonomous</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">            </span><span class="nt">parameters</span><span class="p">:</span>
+<span class="w">                </span><span class="nt">theta_fix</span><span class="p">:</span>
+<span class="w">                    </span><span class="nt">label</span><span class="p">:</span><span class="w"> </span><span class="s">"Fixed</span><span class="nv"> </span><span class="s">phase</span><span class="nv"> </span><span class="s">output"</span>
+<span class="w">                    </span><span class="nt">symbol</span><span class="p">:</span><span class="w"> </span><span class="s">"theta_fix"</span>
+<span class="w">                    </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">-0.4375</span>
+<span class="w">                    </span><span class="nt">unit</span><span class="p">:</span><span class="w"> </span><span class="s">"rad"</span>
+<span class="w">                    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">"Constant</span><span class="nv"> </span><span class="s">phase</span><span class="nv"> </span><span class="s">output</span><span class="nv"> </span><span class="s">of</span><span class="nv"> </span><span class="s">this</span><span class="nv"> </span><span class="s">vertex"</span>
+<span class="w">            </span><span class="nt">coupling_terms</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
+<span class="w">            </span><span class="nt">state_variables</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
+
+<span class="w">        </span><span class="nt">KuramotoInertia</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">KuramotoInertia</span>
+<span class="w">            </span><span class="nt">label</span><span class="p">:</span><span class="w"> </span><span class="s">"Kuramoto</span><span class="nv"> </span><span class="s">oscillator</span><span class="nv"> </span><span class="s">with</span><span class="nv"> </span><span class="s">inertia"</span>
+<span class="w">            </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;</span>
+<span class="w">                </span><span class="no">Second-order Kuramoto oscillator with damping:</span>
+<span class="w">                </span><span class="no">dtheta/dt = omega, domega/dt = omega0 - 1.0*omega + esum.</span>
+<span class="w">                </span><span class="no">Only theta is the coupling output (g=1:1 in ND.jl).</span>
+<span class="w">            </span><span class="nt">system_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">continuous</span>
+<span class="w">            </span><span class="nt">autonomous</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">            </span><span class="nt">parameters</span><span class="p">:</span>
+<span class="w">                </span><span class="nt">omega0</span><span class="p">:</span>
+<span class="w">                    </span><span class="nt">label</span><span class="p">:</span><span class="w"> </span><span class="s">"Natural</span><span class="nv"> </span><span class="s">frequency"</span>
+<span class="w">                    </span><span class="nt">symbol</span><span class="p">:</span><span class="w"> </span><span class="s">"omega_0"</span>
+<span class="w">                    </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.0</span>
+<span class="w">                    </span><span class="nt">unit</span><span class="p">:</span><span class="w"> </span><span class="s">"rad/s"</span>
+<span class="w">                    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">"Intrinsic</span><span class="nv"> </span><span class="s">angular</span><span class="nv"> </span><span class="s">frequency"</span>
+<span class="w">            </span><span class="nt">coupling_terms</span><span class="p">:</span>
+<span class="w">                </span><span class="nt">c_coupling</span><span class="p">:</span>
+<span class="w">                    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">"Aggregated</span><span class="nv"> </span><span class="s">sinusoidal</span><span class="nv"> </span><span class="s">coupling</span><span class="nv"> </span><span class="s">from</span><span class="nv"> </span><span class="s">incident</span><span class="nv"> </span><span class="s">edges"</span>
+<span class="w">            </span><span class="nt">state_variables</span><span class="p">:</span>
+<span class="w">                </span><span class="nt">theta</span><span class="p">:</span>
+<span class="w">                    </span><span class="nt">label</span><span class="p">:</span><span class="w"> </span><span class="s">"Phase</span><span class="nv"> </span><span class="s">angle"</span>
+<span class="w">                    </span><span class="nt">symbol</span><span class="p">:</span><span class="w"> </span><span class="s">"theta"</span>
+<span class="w">                    </span><span class="nt">equation</span><span class="p">:</span>
+<span class="w">                        </span><span class="nt">rhs</span><span class="p">:</span><span class="w"> </span><span class="s">"omega"</span>
+<span class="w">                    </span><span class="nt">initial_value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.0</span>
+<span class="w">                    </span><span class="nt">unit</span><span class="p">:</span><span class="w"> </span><span class="s">"rad"</span>
+<span class="w">                    </span><span class="nt">coupling_variable</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">                    </span><span class="nt">variable_of_interest</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">                </span><span class="nt">omega</span><span class="p">:</span>
+<span class="w">                    </span><span class="nt">label</span><span class="p">:</span><span class="w"> </span><span class="s">"Angular</span><span class="nv"> </span><span class="s">velocity"</span>
+<span class="w">                    </span><span class="nt">symbol</span><span class="p">:</span><span class="w"> </span><span class="s">"omega"</span>
+<span class="w">                    </span><span class="nt">equation</span><span class="p">:</span>
+<span class="w">                        </span><span class="nt">rhs</span><span class="p">:</span><span class="w"> </span><span class="s">"omega0</span><span class="nv"> </span><span class="s">-</span><span class="nv"> </span><span class="s">1.0*omega</span><span class="nv"> </span><span class="s">+</span><span class="nv"> </span><span class="s">c_coupling"</span>
+<span class="w">                    </span><span class="nt">initial_value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5.0</span>
+<span class="w">                    </span><span class="nt">unit</span><span class="p">:</span><span class="w"> </span><span class="s">"rad/s"</span>
+<span class="w">                    </span><span class="nt">variable_of_interest</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 
 <span class="w">    </span><span class="nt">nodes</span><span class="p">:</span>
 <span class="w">        </span><span class="c1"># Node 1: static vertex (fixed phase output)</span>
@@ -5182,19 +5216,22 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <span class="w">          </span><span class="nt">parameters</span><span class="p">:</span>
 <span class="w">              </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">omega0</span>
 <span class="w">                </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">-0.3125</span>
-<span class="w">          </span><span class="nt">initial_state</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">-0.3125</span><span class="p p-Indicator">]</span>
+<span class="w">          </span><span class="nt">state</span><span class="p">:</span>
+<span class="w">              </span><span class="nt">theta</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">-0.3125</span>
 <span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
 <span class="w">          </span><span class="nt">dynamics</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Kuramoto</span>
 <span class="w">          </span><span class="nt">parameters</span><span class="p">:</span>
 <span class="w">              </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">omega0</span>
 <span class="w">                </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">-0.1875</span>
-<span class="w">          </span><span class="nt">initial_state</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">-0.1875</span><span class="p p-Indicator">]</span>
+<span class="w">          </span><span class="nt">state</span><span class="p">:</span>
+<span class="w">              </span><span class="nt">theta</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">-0.1875</span>
 <span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span>
 <span class="w">          </span><span class="nt">dynamics</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Kuramoto</span>
 <span class="w">          </span><span class="nt">parameters</span><span class="p">:</span>
 <span class="w">              </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">omega0</span>
 <span class="w">                </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">-0.0625</span>
-<span class="w">          </span><span class="nt">initial_state</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">-0.0625</span><span class="p p-Indicator">]</span>
+<span class="w">          </span><span class="nt">state</span><span class="p">:</span>
+<span class="w">              </span><span class="nt">theta</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">-0.0625</span>
 
 <span class="w">        </span><span class="c1"># Node 5: Kuramoto with inertia (2D)</span>
 <span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span>
@@ -5202,7 +5239,9 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <span class="w">          </span><span class="nt">parameters</span><span class="p">:</span>
 <span class="w">              </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">omega0</span>
 <span class="w">                </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.0625</span>
-<span class="w">          </span><span class="nt">initial_state</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">0.0625</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">5.0</span><span class="p p-Indicator">]</span>
+<span class="w">          </span><span class="nt">state</span><span class="p">:</span>
+<span class="w">              </span><span class="nt">theta</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.0625</span>
+<span class="w">              </span><span class="nt">omega</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5.0</span>
 
 <span class="w">        </span><span class="c1"># Nodes 6-8: standard Kuramoto</span>
 <span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span>
@@ -5210,19 +5249,22 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <span class="w">          </span><span class="nt">parameters</span><span class="p">:</span>
 <span class="w">              </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">omega0</span>
 <span class="w">                </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.1875</span>
-<span class="w">          </span><span class="nt">initial_state</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">0.1875</span><span class="p p-Indicator">]</span>
+<span class="w">          </span><span class="nt">state</span><span class="p">:</span>
+<span class="w">              </span><span class="nt">theta</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.1875</span>
 <span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">6</span>
 <span class="w">          </span><span class="nt">dynamics</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Kuramoto</span>
 <span class="w">          </span><span class="nt">parameters</span><span class="p">:</span>
 <span class="w">              </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">omega0</span>
 <span class="w">                </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.3125</span>
-<span class="w">          </span><span class="nt">initial_state</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">0.3125</span><span class="p p-Indicator">]</span>
+<span class="w">          </span><span class="nt">state</span><span class="p">:</span>
+<span class="w">              </span><span class="nt">theta</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.3125</span>
 <span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">7</span>
 <span class="w">          </span><span class="nt">dynamics</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Kuramoto</span>
 <span class="w">          </span><span class="nt">parameters</span><span class="p">:</span>
 <span class="w">              </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">omega0</span>
 <span class="w">                </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.4375</span>
-<span class="w">          </span><span class="nt">initial_state</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">0.4375</span><span class="p p-Indicator">]</span>
+<span class="w">          </span><span class="nt">state</span><span class="p">:</span>
+<span class="w">              </span><span class="nt">theta</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.4375</span>
 
 <span class="w">    </span><span class="nt">coupling</span><span class="p">:</span>
 <span class="w">        </span><span class="nt">KuramotoCoupling</span><span class="p">:</span>
@@ -5258,8 +5300,44 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <h1>Heterogeneous Kuramoto Network</h1>
 <p>Kuramoto oscillators with three vertex types: standard Kuramoto oscillators (6 nodes), one static node with fixed phase output, and one oscillator with inertia (second-order dynamics). Demonstrates heterogeneous vertex assignment on a Watts-Strogatz ring network. Recreates the NetworkDynamics.jl Heterogeneous System tutorial.</p>
 <hr>
-<p>Standard Kuramoto oscillator: dtheta/dt = omega0 + esum. The model comprises <strong>1 state variables</strong> representing neural population activity.</p>
-<p><span class="math display">\[\frac{dtheta}{dt} = c_{coupling} + \omega_{0}\]</span></p>
+<section id="brain-network-8-node-ring-watts-strogatz-k2-p0" class="level2">
+<h2 class="anchored" data-anchor-id="brain-network-8-node-ring-watts-strogatz-k2-p0">1. Brain Network: 8-node ring (Watts-Strogatz k=2, p=0)</h2>
+<p>Regular ring lattice: each node connected to 2 nearest neighbours. Equivalent to watts_strogatz(8, 2, 0) in Graphs.jl.</p>
+<ul>
+<li><strong>Regions:</strong> 8</li>
+</ul>
+<section id="coupling-kuramoto-sinusoidal-coupling" class="level3">
+<h3 class="anchored" data-anchor-id="coupling-kuramoto-sinusoidal-coupling">Coupling: Kuramoto sinusoidal coupling</h3>
+<p>Antisymmetric coupling: K sin(theta_src - theta_dst). The AntiSymmetric wrapper ensures g_src = -g_dst.</p>
+<p>Receives <span class="math inline">\(\theta\)</span> from connected regions.</p>
+<p><strong>Pre-synaptic:</strong> <span class="math inline">\(c_{\text{pre}} = - K \cdot \sin{\left(x_{i} - x_{j} \right)}\)</span></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Parameter</th>
+<th style="text-align: right;">Value</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><span class="math inline">\(K\)</span></td>
+<td style="text-align: right;">3.0</td>
+<td style="text-align: left;">Global coupling strength</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="local-dynamics-kuramoto-phase-oscillator" class="level2">
+<h2 class="anchored" data-anchor-id="local-dynamics-kuramoto-phase-oscillator">2. Local Dynamics: Kuramoto phase oscillator</h2>
+<p>Standard Kuramoto oscillator: dtheta/dt = omega0 + esum. The model comprises <strong>1 state variables</strong>.</p>
+<section id="state-equations" class="level3">
+<h3 class="anchored" data-anchor-id="state-equations">2.1 State Equations</h3>
+<p><span class="math display">\[\dot{\theta} = c_{coupling} + \omega_{0}\]</span></p>
+</section>
+<section id="parameters" class="level3">
+<h3 class="anchored" data-anchor-id="parameters">2.2 Parameters</h3>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 29%">
@@ -5279,53 +5357,31 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <tr class="odd">
 <td style="text-align: left;"><span class="math inline">\(\omega_{0}\)</span></td>
 <td style="text-align: right;">0.0</td>
-<td style="text-align: left;">rad/s</td>
+<td style="text-align: left;">rad_per_s</td>
 <td style="text-align: left;">Intrinsic angular frequency of the oscillator</td>
 </tr>
 </tbody>
 </table>
-<p><strong>Pre-synaptic transformation:</strong> <span class="math display">\[c_{\text{pre}} = x_{j}\]</span></p>
-<p><strong>Post-synaptic transformation:</strong> <span class="math display">\[c_{\text{post}} = b + a \cdot gx\]</span></p>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 35%">
-<col style="width: 22%">
-<col style="width: 41%">
-</colgroup>
-<thead>
-<tr class="header">
-<th style="text-align: left;">Parameter</th>
-<th style="text-align: right;">Value</th>
-<th style="text-align: left;">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;"><span class="math inline">\(a\)</span></td>
-<td style="text-align: right;">0.00390625</td>
-<td style="text-align: left;">Linear scaling factor of the coupled (delayed) input.</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;"><span class="math inline">\(b\)</span></td>
-<td style="text-align: right;">0.0</td>
-<td style="text-align: left;">Shifts the base of the connection strength while maintaining the absolute difference between different values.</td>
-</tr>
-</tbody>
-</table>
+</section>
+</section>
+<section id="numerical-integration" class="level2">
+<h2 class="anchored" data-anchor-id="numerical-integration">3. Numerical Integration</h2>
 <ul>
-<li><p><strong>Regions:</strong> 8</p></li>
-<li><p><strong>Conduction velocity:</strong> 3.0 mm/ms</p></li>
-<li><p><strong>Method:</strong> Tsit5</p></li>
-<li><p><strong>Time step:</strong> <span class="math inline">\(\Delta t = 0.05\)</span> ms</p></li>
-<li><p><strong>Duration:</strong> 10.0 ms</p></li>
+<li><strong>Method:</strong> Tsit5</li>
+<li><strong>Time step:</strong> <span class="math inline">\(\Delta t = 0.05\)</span> ms</li>
+<li><strong>Duration:</strong> 10.0 ms</li>
 </ul>
 <hr>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
 <p>Cabral, J., Hugues, E., Sporns, O., &amp; Deco, G. (2011). Role of local network oscillations in resting-state functional connectivity. <em>NeuroImage</em>, 57(1), 130-139.</p>
 <p>Kuramoto, Y. (1975). Self-entrainment of a population of coupled non-linear oscillators. <em>Lecture Notes in Physics</em>, 420-422.</p>
-<p>Strogatz, S. (2000). From kuramoto to crawford: exploring the onset of synchronization in populations of coupled oscillators. <em>Physica D: Nonlinear Phenomena</em>, 143(1–4), 1-20.</p>
+<p>Strogatz, S. (2000). From kuramoto to crawford: exploring the onset of synchronization in populations of coupled oscillators. <em>Physica D: Nonlinear Phenomena</em>, 143(1–4), 1-20. - https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/heterogeneous_system/ - Kuramoto, Y. (1975). Self-entrainment of a population of coupled non-linear oscillators.</p>
+</section>
 <section id="generated-julia-code" class="level2">
 <h2 class="anchored" data-anchor-id="generated-julia-code">Generated Julia Code</h2>
-<div id="ccd0a3b6" class="cell" data-execution_count="4">
+<div id="9c73396e" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> SimulationExperiment</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>exp <span class="op">=</span> SimulationExperiment.from_file(<span class="st">"yaml/heterogeneous_kuramoto.yaml"</span>)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>Code(exp.render_code(<span class="st">"networkdynamics"</span>), language<span class="op">=</span><span class="st">'julia'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -5406,6 +5462,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 .output_html .vm { color: #19177C } /* Name.Variable.Magic */
 .output_html .il { color: #666 } /* Literal.Number.Integer.Long */</style><div class="highlight"><pre><span></span><span class="k">using</span><span class="w"> </span><span class="n">Graphs</span>
 <span class="k">using</span><span class="w"> </span><span class="n">NetworkDynamics</span>
+
 <span class="k">using</span><span class="w"> </span><span class="n">OrdinaryDiffEqTsit5</span>
 
 
@@ -5415,6 +5472,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 
 
 <span class="k">function</span><span class="w"> </span><span class="n">Kuramoto_f!</span><span class="p">(</span><span class="n">dx</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">esum</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="n">omega0</span><span class="p">,),</span><span class="w"> </span><span class="n">t</span><span class="p">)</span>
+<span class="w">    </span><span class="n">theta</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
 
 <span class="w">    </span><span class="n">c_coupling</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">esum</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
 <span class="w">    </span><span class="n">dx</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">c_coupling</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">omega0</span>
@@ -5431,6 +5489,31 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 
 
 
+
+
+
+
+
+<span class="k">function</span><span class="w"> </span><span class="n">KuramotoInertia_f!</span><span class="p">(</span><span class="n">dx</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">esum</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="n">omega0</span><span class="p">,),</span><span class="w"> </span><span class="n">t</span><span class="p">)</span>
+
+<span class="w">    </span><span class="n">omega</span><span class="p">,</span><span class="w"> </span><span class="n">theta</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">x</span>
+
+<span class="w">    </span><span class="n">c_coupling</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">esum</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="w">    </span><span class="n">dx</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">c_coupling</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">omega0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mf">1.0</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">omega</span>
+<span class="w">    </span><span class="n">dx</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">omega</span>
+<span class="w">    </span><span class="nb">nothing</span>
+<span class="k">end</span>
+
+<span class="n">vertex_KuramotoInertia</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">VertexModel</span><span class="p">(;</span>
+<span class="w">    </span><span class="n">f</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">KuramotoInertia_f!</span><span class="p">,</span>
+<span class="w">    </span><span class="n">g</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">StateMask</span><span class="p">(</span><span class="mi">2</span><span class="o">:</span><span class="mi">2</span><span class="p">),</span>
+<span class="w">    </span><span class="n">sym</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="ss">:omega</span><span class="p">,</span><span class="w"> </span><span class="ss">:theta</span><span class="p">],</span>
+<span class="w">    </span><span class="n">psym</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="ss">:omega0</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="mf">0.0</span><span class="p">],</span>
+<span class="w">    </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ss">:KuramotoInertia</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+
 <span class="k">function</span><span class="w"> </span><span class="n">StaticNode_g!</span><span class="p">(</span><span class="n">out</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="p">,</span><span class="w"> </span><span class="n">t</span><span class="p">)</span>
 <span class="w">    </span><span class="n">out</span><span class="w"> </span><span class="o">.=</span><span class="w"> </span><span class="n">p</span>
 <span class="w">    </span><span class="nb">nothing</span>
@@ -5442,31 +5525,6 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <span class="w">    </span><span class="n">ff</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">NoFeedForward</span><span class="p">(),</span>
 <span class="w">    </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ss">:StaticNode</span><span class="p">,</span>
 <span class="p">)</span>
-
-
-
-
-
-
-
-<span class="k">function</span><span class="w"> </span><span class="n">KuramotoInertia_f!</span><span class="p">(</span><span class="n">dx</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">esum</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="n">omega0</span><span class="p">,),</span><span class="w"> </span><span class="n">t</span><span class="p">)</span>
-
-<span class="w">    </span><span class="n">theta</span><span class="p">,</span><span class="w"> </span><span class="n">omega</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">x</span>
-
-<span class="w">    </span><span class="n">c_coupling</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">esum</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-<span class="w">    </span><span class="n">dx</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">omega</span>
-<span class="w">    </span><span class="n">dx</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">c_coupling</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">omega0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mf">1.0</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">omega</span>
-<span class="w">    </span><span class="nb">nothing</span>
-<span class="k">end</span>
-
-<span class="n">vertex_KuramotoInertia</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">VertexModel</span><span class="p">(;</span>
-<span class="w">    </span><span class="n">f</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">KuramotoInertia_f!</span><span class="p">,</span>
-<span class="w">    </span><span class="n">g</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">StateMask</span><span class="p">(</span><span class="mi">1</span><span class="o">:</span><span class="mi">1</span><span class="p">),</span>
-<span class="w">    </span><span class="n">sym</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="ss">:theta</span><span class="p">,</span><span class="w"> </span><span class="ss">:omega</span><span class="p">],</span>
-<span class="w">    </span><span class="n">psym</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="ss">:omega0</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="mf">0.0</span><span class="p">],</span>
-<span class="w">    </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ss">:KuramotoInertia</span><span class="p">,</span>
-<span class="p">)</span>
-
 
 
 
@@ -5522,9 +5580,9 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <span class="n">s</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">v</span><span class="p">[</span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="ss">:omega0</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="mf">0.0625</span>
 
 
-<span class="n">s</span><span class="o">.</span><span class="n">v</span><span class="p">[</span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="ss">:theta</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0625</span>
-
 <span class="n">s</span><span class="o">.</span><span class="n">v</span><span class="p">[</span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="ss">:omega</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">5.0</span>
+
+<span class="n">s</span><span class="o">.</span><span class="n">v</span><span class="p">[</span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="ss">:theta</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0625</span>
 
 <span class="n">s</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">v</span><span class="p">[</span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="ss">:omega0</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0625</span>
 
@@ -5591,18 +5649,11 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </section>
 <section id="run-plot" class="level2">
 <h2 class="anchored" data-anchor-id="run-plot">Run &amp; Plot</h2>
-<div id="5891491c" class="cell" data-execution_count="5">
+<div id="247611ce" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>ts <span class="op">=</span> exp.run(<span class="bu">format</span><span class="op">=</span><span class="st">"networkdynamics"</span>)</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>ts.plot()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>WARNING: Imported binding MainInclude.eval was undeclared at import time during import to Main.
-WARNING: import of MainInclude.eval into Main conflicts with an existing identifier; ignored.
-WARNING: Imported binding MainInclude.include was undeclared at import time during import to Main.
-WARNING: import of MainInclude.include into Main conflicts with an existing identifier; ignored.
-WARNING: Imported binding MainInclude.eval was undeclared at import time during import to Main.
-WARNING: import of MainInclude.eval into Main conflicts with an existing identifier; ignored.
-WARNING: Imported binding MainInclude.include was undeclared at import time during import to Main.
-WARNING: import of MainInclude.include into Main conflicts with an existing identifier; ignored.</code></pre>
+<div class="cell-output cell-output-stdout">
+<pre><code>Detected IPython. Loading juliacall extension. See https://juliapy.github.io/PythonCall.jl/stable/compat/#IPython</code></pre>
 </div>
 <div class="cell-output cell-output-display" data-execution_count="4">
 <div>
@@ -5690,7 +5741,7 @@ WARNING: import of MainInclude.include into Main conflicts with an existing iden
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp('/' + window.location.host + '/');
+        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

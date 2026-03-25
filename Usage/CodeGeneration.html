@@ -3190,12 +3190,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../datamodel/slots/optimization.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">optimization</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/optimizations.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">optimizations</span></a>
   </div>
@@ -4339,6 +4333,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../api/adapters/neuroml.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Neuroml</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../api/adapters/openminds.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Openminds</span></a>
   </div>
@@ -4771,6 +4771,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../api/plot/animate.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Animate</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../api/plot/bifurcation_diagram.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Bifurcation Diagram</span></a>
   </div>
@@ -4797,6 +4803,18 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../api/plot/ontology.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Ontology</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/plot/phase.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Phase</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/plot/timeseries.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Timeseries</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4896,6 +4914,12 @@ window.Quarto = {
  <span class="menu-text">Report</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/utils/units.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Units</span></a>
+  </div>
+</li>
       </ul>
   </li>
       </ul>
@@ -4964,7 +4988,7 @@ window.Quarto = {
 <section id="code-generation" class="level2">
 <h2 class="anchored" data-anchor-id="code-generation">Code Generation</h2>
 <p>View the generated source code for any backend:</p>
-<div id="78ff764c" class="cell" data-execution_count="2">
+<div id="ea2f385b" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> Dynamics, SimulationExperiment</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> Dynamics.from_db(<span class="st">"Generic2dOscillator"</span>)</span>
@@ -4972,7 +4996,7 @@ window.Quarto = {
 </div>
 <section id="jax" class="level3">
 <h3 class="anchored" data-anchor-id="jax">JAX</h3>
-<div id="d2b115da" class="cell" data-execution_count="3">
+<div id="52e5b708" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(exp.render_code(<span class="st">'jax'</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
@@ -4986,7 +5010,7 @@ import jax.numpy as jnp
 
 def cfun(weights, history, current_state, p, delay_indices, t):
     n_node = weights.shape[0]
-    a, b = p.a, p.b
+    b, a = p.b, p.a
 
 
     x_j = jnp.array([
@@ -4995,6 +5019,7 @@ def cfun(weights, history, current_state, p, delay_indices, t):
     
     ])
 
+    V = x_j[0]
 
     pre = x_j
     pre = pre.reshape(-1, n_node ,n_node)
@@ -5002,7 +5027,6 @@ def cfun(weights, history, current_state, p, delay_indices, t):
     def op(x): return jnp.sum(weights * x, axis=-1)
     gx = jax.vmap(op, in_axes=0)(pre)
     return b + a*gx
-
 
 
 
@@ -5030,7 +5054,6 @@ def dfun(current_state, t, cX, _p):
 
     # Coupling
     c_glob = cX[0]
-    c_pop0 = cX[1]
     local_coupling = 0
 
 
@@ -5198,7 +5221,7 @@ def kernel(state):
 </section>
 <section id="python-scipy" class="level3">
 <h3 class="anchored" data-anchor-id="python-scipy">Python (SciPy)</h3>
-<div id="a2f3ab7d" class="cell" data-execution_count="4">
+<div id="0d4a2dd9" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(model.render_code(<span class="st">'python'</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>import numpy as np
@@ -5221,7 +5244,6 @@ def Generic2dOscillator(
     gamma=1.0,
     tau=1.0,
     c_glob=0.0,
-    c_pop0=0.0,
     stimulus=False,
 ):
     stim_t = stimulus(t) if stimulus else 0.0
@@ -5256,7 +5278,7 @@ def Generic2dOscillator(
 </section>
 <section id="julia" class="level3">
 <h3 class="anchored" data-anchor-id="julia">Julia</h3>
-<div id="6c0b8063" class="cell" data-execution_count="5">
+<div id="314a8285" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(model.render_code(<span class="st">'julia'</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
@@ -5269,7 +5291,7 @@ def Generic2dOscillator(
 
 function Generic2dOscillator!(dx, x, p, t = 0)
 
-    (;I, a, alpha, b, beta, c, d, e, f, g, gamma, tau, c_glob, c_pop0, local_coupling) = p
+    (;I, a, alpha, b, beta, c, d, e, f, g, gamma, tau, c_glob, local_coupling) = p
 
     V, W = x
 
@@ -5283,7 +5305,7 @@ end
 
 
 # Parameter values
-p = (I = 0.0, a = -2.0, alpha = 1.0, b = -10.0, beta = 1.0, c = 0.0, d = 0.02, e = 3.0, f = 1.0, g = 0.0, gamma = 1.0, tau = 1.0, c_glob = 0.0, c_pop0 = 0.0, local_coupling = 0.0)
+p = (I = 0.0, a = -2.0, alpha = 1.0, b = -10.0, beta = 1.0, c = 0.0, d = 0.02, e = 3.0, f = 1.0, g = 0.0, gamma = 1.0, tau = 1.0, c_glob = 0.0, local_coupling = 0.0)
 
 
 using OrdinaryDiffEqTsit5
@@ -5406,12 +5428,13 @@ sol = solve(prob, Tsit5(); saveat=0.01)
 <h2 class="anchored" data-anchor-id="export-formats">Export Formats</h2>
 <section id="yaml" class="level3">
 <h3 class="anchored" data-anchor-id="yaml">YAML</h3>
-<div id="87687a9c" class="cell" data-execution_count="6">
+<div id="8b0f5ab6" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>yaml_str <span class="op">=</span> exp.to_yaml()</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(yaml_str[:<span class="dv">300</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>id: 1
-model:
+model: Generic2dOscillator
+dynamics:
   name: Generic2dOscillator
   iri: tvbo:Generic2dOscillator
   parameters:
@@ -5423,8 +5446,7 @@ model:
         lo: '-5.0'
         hi: '5.0'
         step: '0.01'
-        log_scale: false
-      description: Bas</code></pre>
+        log_scale</code></pre>
 </div>
 </div>
 </section>
@@ -5441,7 +5463,7 @@ model:
 <section id="model-reports" class="level2">
 <h2 class="anchored" data-anchor-id="model-reports">Model Reports</h2>
 <p>Generate formatted documentation of a model:</p>
-<div id="25fc5b97" class="cell" data-execution_count="7">
+<div id="d1c0832b" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Markdown</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>report <span class="op">=</span> model.generate_report(<span class="bu">format</span><span class="op">=</span><span class="st">"markdown"</span>)</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>Markdown(report)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -5643,7 +5665,7 @@ model:
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp('/' + window.location.host + '/');
+        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }
