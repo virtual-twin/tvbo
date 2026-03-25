@@ -123,6 +123,9 @@ exclude = [
 "tvbo/database/networks/tpl-MNI152NLin2009cAsym_rec-avgMatrix_atlas-Lobar8_desc-SCFC_relmat.h5" = "tvbo/database/networks/tpl-MNI152NLin2009cAsym_rec-avgMatrix_atlas-Lobar8_desc-SCFC_relmat.h5"
 "tvbo/database/networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-Lobar8_desc-SCFC_relmat.h5" = "tvbo/database/networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-Lobar8_desc-SCFC_relmat.h5"
 "tvbo/database/networks/tpl-MNI152NLin2009cAsym_rec-avgMatrix_atlas-DesikanKilliany_desc-SCFC_relmat.h5" = "tvbo/database/networks/tpl-MNI152NLin2009cAsym_rec-avgMatrix_atlas-DesikanKilliany_desc-SCFC_relmat.h5"
+"tvbo/database/networks/tpl-MNI152NLin2009bAsym_cohort-HCPYA_rec-dTOR_atlas-HCPMMP1_desc-SC_relmat.h5" = "tvbo/database/networks/tpl-MNI152NLin2009bAsym_cohort-HCPYA_rec-dTOR_atlas-HCPMMP1_desc-SC_relmat.h5"
+"tvbo/database/networks/tpl-MNI152NLin2009bAsym_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-HCPMMP1_desc-SC_relmat.h5" = "tvbo/database/networks/tpl-MNI152NLin2009bAsym_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-HCPMMP1_desc-SC_relmat.h5"
+"tvbo/database/networks/tpl-MNI152NLin2009bAsym_cohort-PPMI85_rec-PPMI85_atlas-HCPMMP1_desc-SC_relmat.h5" = "tvbo/database/networks/tpl-MNI152NLin2009bAsym_cohort-PPMI85_rec-PPMI85_atlas-HCPMMP1_desc-SC_relmat.h5"
 
 [tool.hatch.version]
 path = "tvbo/__init__.py"
