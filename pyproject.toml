@@ -113,11 +113,16 @@ exclude = [
     "tvbo/database/networks/*.h5",
     "tvbo/data/tvbo_data/atlas/**/*.nii.gz",
     "tvbo/data/go-basic.obo",
-    "tvbo/data/ontology/*.owl",
+    "tvbo/data/ontology/_tvb-o.owl",
     "tvbo/data/NeuroMMSig_abeta_subgraph.dill",
     "tvbo/data/tvb-go/**/*.png",
     "tvbo/**/__pycache__",
 ]
+
+[tool.hatch.build.force-include]
+"tvbo/database/networks/tpl-MNI152NLin2009cAsym_rec-avgMatrix_atlas-Lobar8_desc-SCFC_relmat.h5" = "tvbo/database/networks/tpl-MNI152NLin2009cAsym_rec-avgMatrix_atlas-Lobar8_desc-SCFC_relmat.h5"
+"tvbo/database/networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-Lobar8_desc-SCFC_relmat.h5" = "tvbo/database/networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-Lobar8_desc-SCFC_relmat.h5"
+"tvbo/database/networks/tpl-MNI152NLin2009cAsym_rec-avgMatrix_atlas-DesikanKilliany_desc-SCFC_relmat.h5" = "tvbo/database/networks/tpl-MNI152NLin2009cAsym_rec-avgMatrix_atlas-DesikanKilliany_desc-SCFC_relmat.h5"
 
 [tool.hatch.version]
 path = "tvbo/__init__.py"
