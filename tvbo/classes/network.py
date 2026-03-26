@@ -1808,6 +1808,12 @@ class Network(tvbo_datamodel.Network):
             W = _arrs["weights"]
             if _sp.issparse(W):
                 W = W.toarray()
+        elif "sc" in _arrs:
+            from scipy import sparse as _sp
+
+            W = _arrs["sc"]
+            if _sp.issparse(W):
+                W = W.toarray()
         # Check for cached matrix from from_matrix (performance optimization)
         elif hasattr(self, "_cached_weights") and self._cached_weights is not None:
             W = self._cached_weights
@@ -2195,18 +2201,29 @@ class Network(tvbo_datamodel.Network):
         format: str = "tvb",
         target=None,
         threshold_percentile: float = 85,
+        **kwargs,
     ) -> Any:
         """Convert connectome to simulator-specific format.
 
         Parameters
         ----------
         format : str, default="tvb"
-            Target format: ``"tvb"`` or ``"networkx"``.
+            Target format: ``"tvb"``, ``"networkx"``, or ``"tvboptim"``.
         target : Network, optional
             Target network for bipartite projection graphs
             (used with ``format="networkx"`` when a gain matrix exists).
         threshold_percentile : float, default=85
             Keep only gain edges above this percentile (networkx only).
+        **kwargs
+            Extra arguments forwarded to the adapter. For tvboptim:
+
+            - ``delays=False`` — force a ``DenseGraph`` without delays.
+            - ``return_type="graph"`` — return only the graph object.
+            - ``return_type="network"`` (default) — return a full tvboptim
+              ``Network`` (requires ``dynamics`` and ``coupling`` kwargs).
+            - ``dynamics`` — tvboptim dynamics instance.
+            - ``coupling`` — tvboptim coupling instance(s).
+            - ``noise`` — tvboptim noise instance (optional).
 
         Returns
         -------
@@ -2222,6 +2239,13 @@ class Network(tvbo_datamodel.Network):
                 target=target,
                 threshold_percentile=threshold_percentile,
             )
+        elif format.lower() in ("tvboptim", "tvb-optim"):
+            from tvbo.adapters.tvboptim import to_tvboptim
+
+            return to_tvboptim(self, **kwargs)
+        raise ValueError(
+            f"Format {format!r} not supported. Valid formats: tvb, networkx, tvboptim."
+        )
 
     def _build_networkx_graph(
         self,

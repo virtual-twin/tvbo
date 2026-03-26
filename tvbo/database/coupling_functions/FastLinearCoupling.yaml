@@ -1,0 +1,28 @@
+name: FastLinearCoupling
+label: Fast Linear Coupling
+description: >-
+  Instantaneous linear coupling using vectorized matrix multiplication.
+  Applies global coupling strength G to the weighted sum of source states.
+  Faster than element-wise LinearCoupling for dense all-to-all connectivity.
+delayed: false
+sparse: false
+local_states:
+  - S
+parameters:
+  G:
+    name: G
+    value: 0.1
+    description: Global coupling strength scaling long-range connections
+    domain:
+      lo: 0.0
+      hi: 10.0
+  b:
+    name: b
+    value: 0.0
+    description: Offset/bias added to coupling signal
+pre_expression:
+  rhs: local_states
+  latex: false
+post_expression:
+  rhs: G * gx + b
+  latex: false

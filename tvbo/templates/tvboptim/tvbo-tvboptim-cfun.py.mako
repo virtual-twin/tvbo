@@ -5,12 +5,9 @@ TVB-Optim Coupling (cfun) Template
 
 Generates coupling classes for tvboptim.experimental.network_dynamics.
 
-Context Variables:
-- experiment: SimulationExperiment instance (required)
-
-Each entry in network.coupling generates a coupling class.
-The key in network.coupling becomes the key used in Network(coupling={key: instance}).
-The key must also exist in dynamics.coupling_inputs for dimension/keys info.
+Context Variables (two modes):
+- experiment: SimulationExperiment instance (experiment mode — renders all network couplings)
+- coupling: single Coupling instance (standalone mode — renders one coupling class)
 
 Output:
 - Python class(es) inheriting from InstantaneousCoupling or DelayedCoupling
@@ -19,26 +16,35 @@ Output:
 from tvbo.codegen import render_expression
 from tvbo.templates.tvboptim.utils import get_param_info
 
-# Get network and model from experiment
-assert 'experiment' in context.keys(), "experiment required for cfun template"
-network = experiment.network
-model = experiment.dynamics
+# Two modes: experiment (full pipeline) or standalone (single coupling)
+if 'experiment' in context.keys():
+    network = experiment.network
+    model = experiment.dynamics
 
-# Build coupling_inputs lookup: key -> {dimension, keys}
-coupling_inputs_info = {}
-if hasattr(model, 'coupling_inputs') and model.coupling_inputs:
-    for ci_key, ci in model.coupling_inputs.items():
-        dim = getattr(ci, 'dimension', 1) or 1
-        keys = getattr(ci, 'keys', None)
-        coupling_inputs_info[ci_key] = {'dimension': dim, 'keys': list(keys) if keys else None}
+    # Build coupling_inputs lookup: key -> {dimension, keys}
+    coupling_inputs_info = {}
+    if hasattr(model, 'coupling_inputs') and model.coupling_inputs:
+        for ci_key, ci in model.coupling_inputs.items():
+            dim = getattr(ci, 'dimension', 1) or 1
+            keys = getattr(ci, 'keys', None)
+            coupling_inputs_info[ci_key] = {'dimension': dim, 'keys': list(keys) if keys else None}
 
-# Get all couplings from network.coupling
-all_couplings = {}
-if hasattr(network, 'coupling') and network.coupling:
-    if hasattr(network.coupling, 'items'):
-        all_couplings = dict(network.coupling.items())
-    elif hasattr(network.coupling, 'keys'):
-        all_couplings = {k: network.coupling[k] for k in network.coupling.keys()}
+    # Get all couplings from network.coupling
+    all_couplings = {}
+    if hasattr(network, 'coupling') and network.coupling:
+        if hasattr(network.coupling, 'items'):
+            all_couplings = dict(network.coupling.items())
+        elif hasattr(network.coupling, 'keys'):
+            all_couplings = {k: network.coupling[k] for k in network.coupling.keys()}
+
+elif 'coupling' in context.keys():
+    _standalone_coupling = context['coupling']
+    model = None
+    all_couplings = {_standalone_coupling.name: _standalone_coupling}
+    coupling_inputs_info = {}
+
+else:
+    assert False, "cfun template requires 'experiment' or 'coupling' in context"
 
 # Build func_name -> first ci mapping (same as experiment template)
 _func_to_ci = {}
@@ -101,7 +107,7 @@ def parse_list_elements(rhs_str):
     # Match state variable names referenced in the expression against model svars
     if not incoming_states and not local_states and pre_expr:
         svar_names = set()
-        if hasattr(model, 'state_variables') and model.state_variables:
+        if model and hasattr(model, 'state_variables') and model.state_variables:
             svar_names = {sv if isinstance(sv, str) else getattr(sv, 'name', str(sv))
                           for sv in (model.state_variables.keys()
                                      if hasattr(model.state_variables, 'keys')
@@ -114,7 +120,7 @@ def parse_list_elements(rhs_str):
             # pre_expression uses generic placeholders (e.g. x_j) —
             # resolve to the coupling_variable state(s) from the model
             cvars = []
-            if hasattr(model, 'state_variables') and model.state_variables:
+            if model and hasattr(model, 'state_variables') and model.state_variables:
                 for sv_name, sv_obj in model.state_variables.items():
                     if getattr(sv_obj, 'coupling_variable', False):
                         cvars.append(sv_name)

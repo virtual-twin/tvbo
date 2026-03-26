@@ -1793,7 +1793,13 @@ class Dynamics(tvbo_datamodel.Dynamics):
             template = templates.lookup.get_template("tvbo-python-model.py.mako")
             kwargs.update({"coupling_as_argument": True})
 
-        elif format.lower() in ["autodiff", "jax", "numpy", "tvboptim"]:
+        elif format.lower() == "tvboptim":
+            # Full AbstractDynamics subclass for tvboptim
+            template = templates.lookup.get_template(
+                "tvbo-tvboptim-dynamics.py.mako"
+            )
+
+        elif format.lower() in ["autodiff", "jax", "numpy"]:
             # standard signature: dfun(current_state, t, cX, _p)
             template = templates.lookup.get_template("tvbo-jax-dfuns.py.mako")
 
@@ -1890,6 +1896,12 @@ class Dynamics(tvbo_datamodel.Dynamics):
             tvb_obj.title = self.label
             tvb_obj.configure()
             return tvb_obj
+
+        elif format.lower() in ("tvboptim", "tvb-optim"):
+            namespace = {}
+            exec(clean_code(self.render_code(format="tvboptim")), namespace)
+            cls = namespace[self.name]
+            return cls(**kwargs)
 
         elif format.lower() in ["c", "sympy2c"]:
             try:
