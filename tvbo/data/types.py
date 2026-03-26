@@ -519,6 +519,236 @@ class OptimizationResult:
             f"OptimizationResult(name='{self.name}', n_steps={self.n_steps}{loss_str})"
         )
 
+    # ------------------------------------------------------------------
+    # Plotting
+    # ------------------------------------------------------------------
+
+    def plot(self, type="summary", ax=None, figsize=None, **kwargs):
+        """Plot optimization results.
+
+        Parameters
+        ----------
+        type : str
+            ``'summary'`` (default) – loss curve + parameter trajectories.
+            ``'loss'`` – loss curve only.
+            ``'parameters'`` – free-parameter evolution over steps.
+            ``'state'`` – final fitted parameter values (bar charts).
+        ax : matplotlib.axes.Axes, optional
+            Target axes (single-panel plots only, i.e. *type='loss'*).
+        figsize : tuple, optional
+        **kwargs
+            Forwarded to matplotlib plot calls.
+        """
+        from tvbo.plot.utils import use_tvbo_style
+        use_tvbo_style()
+
+        if type == "loss":
+            return self._plot_loss(ax=ax, figsize=figsize, **kwargs)
+        if type == "parameters":
+            return self._plot_parameters(figsize=figsize, **kwargs)
+        if type == "state":
+            return self._plot_state(figsize=figsize, **kwargs)
+        # Default: summary
+        return self._plot_summary(figsize=figsize, **kwargs)
+
+    # --- loss curve ---------------------------------------------------
+
+    def _get_loss_values(self):
+        """Return loss trajectory as a numpy array, or None."""
+        if self.loss_trajectory is not None:
+            return np.asarray(self.loss_trajectory)
+        # Fallback: try dict-style access on history (plain dict)
+        if isinstance(self.history, dict) and "loss" in self.history:
+            loss_data = self.history["loss"]
+            if hasattr(loss_data, "save"):
+                return np.asarray(loss_data["save"])
+        return None
+
+    def _plot_loss(self, ax=None, figsize=None, **kwargs):
+        loss = self._get_loss_values()
+        if loss is None:
+            raise ValueError("No loss trajectory available")
+        if ax is None:
+            fig, ax = plt.subplots(figsize=figsize or (8, 3))
+        else:
+            fig = ax.get_figure()
+        steps = np.arange(len(loss))
+        ax.plot(steps, loss, **kwargs)
+        ax.set_xlabel("Step")
+        ax.set_ylabel("Loss")
+        ax.set_title(self.name or "Loss")
+        fig.tight_layout()
+        plt.close(fig)
+        return fig
+
+    # --- parameter trajectories ---------------------------------------
+
+    @staticmethod
+    def _flatten_params(state, prefix=""):
+        """Flatten a (possibly nested) state dict to ``{name: ndarray}``."""
+        flat = {}
+        if state is None:
+            return flat
+        # Treat JAX-array-protocol objects (e.g. tvboptim Parameter,
+        # BoundedParameter) as leaf nodes — don't recurse into their
+        # internal attrs like .low / .high.
+        if hasattr(state, "__jax_array__"):
+            try:
+                arr = np.asarray(state.__jax_array__())
+                if arr.dtype.kind in ("f", "i", "u"):
+                    flat[prefix] = arr
+            except (TypeError, ValueError):
+                pass
+            return flat
+        items = None
+        if isinstance(state, dict):
+            items = state.items()
+        elif hasattr(state, "__dict__") and not isinstance(state, np.ndarray):
+            items = (
+                (k, v) for k, v in vars(state).items() if not k.startswith("_")
+            )
+        if items is not None:
+            for k, v in items:
+                name = f"{prefix}.{k}" if prefix else k
+                sub = OptimizationResult._flatten_params(v, name)
+                if sub:
+                    flat.update(sub)
+        else:
+            # Leaf node
+            try:
+                val = (
+                    state.__jax_array__()
+                    if hasattr(state, "__jax_array__")
+                    else state
+                )
+                arr = np.asarray(val)
+                if arr.dtype.kind in ("f", "i", "u"):
+                    flat[prefix] = arr
+            except (TypeError, ValueError):
+                pass
+        return flat
+
+    def _get_param_trajectories(self):
+        """Return ``{name: array(n_steps, ...)}`` from *state_trajectory*."""
+        if not self.state_trajectory:
+            return {}
+        all_flat = [self._flatten_params(s) for s in self.state_trajectory]
+        if not all_flat or not all_flat[0]:
+            return {}
+        names = list(all_flat[0].keys())
+        result = {}
+        for name in names:
+            try:
+                vals = [f[name] for f in all_flat if name in f]
+                if len(vals) != len(all_flat):
+                    continue
+                result[name] = np.stack(vals)
+            except (ValueError, KeyError):
+                continue
+        return result
+
+    def _plot_parameters(self, figsize=None, **kwargs):
+        trajectories = self._get_param_trajectories()
+        if not trajectories:
+            raise ValueError("No parameter trajectories available")
+        n = len(trajectories)
+        fig, axes = plt.subplots(
+            n, 1, figsize=figsize or (8, 2.5 * n), sharex=True, squeeze=False,
+        )
+        axes = axes[:, 0]
+        for ax, (name, values) in zip(axes, trajectories.items()):
+            steps = np.arange(values.shape[0])
+            if values.ndim == 1 or (values.ndim == 2 and values.shape[1] == 1):
+                ax.plot(steps, values.ravel(), **kwargs)
+            else:
+                for j in range(values.shape[1]):
+                    ax.plot(steps, values[:, j], alpha=0.4, linewidth=0.8, **kwargs)
+            ax.set_ylabel(name)
+        axes[-1].set_xlabel("Step")
+        fig.suptitle(
+            f"{self.name}: Parameters" if self.name else "Parameter Evolution",
+        )
+        fig.tight_layout()
+        plt.close(fig)
+        return fig
+
+    # --- final state bar charts ---------------------------------------
+
+    def _get_final_params(self):
+        if self.state is None:
+            return {}
+        return self._flatten_params(self.state)
+
+    def _plot_state(self, figsize=None, **kwargs):
+        params = self._get_final_params()
+        if not params:
+            raise ValueError("No fitted parameters available")
+        scalar = {k: float(v) for k, v in params.items() if v.ndim == 0}
+        arrays = {k: v for k, v in params.items() if v.ndim > 0}
+        n_panels = (1 if scalar else 0) + len(arrays)
+        if n_panels == 0:
+            raise ValueError("No parameters to plot")
+        fig, axes = plt.subplots(
+            1, n_panels, figsize=figsize or (4 * n_panels, 4), squeeze=False,
+        )
+        axes = axes[0]
+        idx = 0
+        if scalar:
+            axes[idx].bar(list(scalar.keys()), list(scalar.values()), **kwargs)
+            axes[idx].set_title("Scalar parameters")
+            axes[idx].tick_params(axis="x", rotation=45)
+            idx += 1
+        for name, val in arrays.items():
+            axes[idx].bar(np.arange(len(val)), val, **kwargs)
+            axes[idx].set_xlabel("Node")
+            axes[idx].set_title(name)
+            idx += 1
+        fig.suptitle(
+            f"{self.name}: Fitted State" if self.name else "Fitted State",
+        )
+        fig.tight_layout()
+        plt.close(fig)
+        return fig
+
+    # --- summary (loss + params) --------------------------------------
+
+    def _plot_summary(self, figsize=None, **kwargs):
+        loss = self._get_loss_values()
+        trajectories = self._get_param_trajectories()
+        n_panels = (1 if loss is not None else 0) + len(trajectories)
+        if n_panels == 0:
+            raise ValueError("No optimization data to plot")
+        fig, axes = plt.subplots(
+            n_panels, 1, figsize=figsize or (8, 2.5 * n_panels),
+            sharex=True, squeeze=False,
+        )
+        axes = axes[:, 0]
+        idx = 0
+        if loss is not None:
+            steps = np.arange(len(loss))
+            axes[idx].plot(steps, loss)
+            axes[idx].set_ylabel("Loss")
+            idx += 1
+        for name, values in trajectories.items():
+            steps = np.arange(values.shape[0])
+            if values.ndim == 1 or (values.ndim == 2 and values.shape[1] == 1):
+                axes[idx].plot(steps, values.ravel())
+            else:
+                for j in range(values.shape[1]):
+                    axes[idx].plot(
+                        steps, values[:, j], alpha=0.4, linewidth=0.8,
+                    )
+            axes[idx].set_ylabel(name)
+            idx += 1
+        axes[-1].set_xlabel("Step")
+        title = self.name or "Optimization"
+        if self.final_loss is not None:
+            title += f"  (final loss: {self.final_loss:.4f})"
+        fig.suptitle(title)
+        fig.tight_layout()
+        plt.close(fig)
+        return fig
+
 
 class ExplorationResult(Bunch):
     """Result of parameter exploration (grid search).
