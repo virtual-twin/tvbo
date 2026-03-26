@@ -267,9 +267,58 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         # Load network from BIDS if bids_dir is specified
         if hasattr(self.network, "bids_dir") and self.network.bids_dir:
             self._load_network_from_bids()
+        elif hasattr(self.network, "data_file") and self.network.data_file:
+            self._load_network_from_data_file()
 
         if not getattr(self, "integration", None):
             self.integration = Integrator(method="Heun")
+
+    def _load_network_from_data_file(self):
+        """Load network matrices from a companion data file (h5/zarr/yaml sidecar).
+
+        Resolves ``network.data_file`` as an absolute path or relative to the
+        YAML source file / cwd.  The coupling and transforms defined inline in
+        the experiment YAML are preserved after loading.
+        """
+        from pathlib import Path
+        from tvbo.classes.network import Network as _Network
+
+        data_file = Path(self.network.data_file)
+        if not data_file.is_absolute():
+            source_file = getattr(self, '_source_file', None)
+            if source_file:
+                data_file = (Path(source_file).parent / data_file).resolve()
+            else:
+                data_file = (Path.cwd() / data_file).resolve()
+
+        # Accept .h5/.zarr → find sidecar, or direct .yaml sidecar path
+        if data_file.suffix in ('.h5', '.zarr'):
+            sidecar = data_file.with_suffix('.yaml')
+        else:
+            sidecar = data_file
+
+        loaded = _Network.from_file(sidecar)
+
+        # Preserve inline experiment coupling / transforms.
+        # We must use indexing on the loaded network's containers rather than
+        # bulk-assigning a plain dict, because LinkML __setattr__ wraps plain
+        # dicts into JsonObj which breaks .items() downstream.
+        inline_coupling = dict(self.network.coupling) if self.network.coupling else {}
+        inline_transforms = list(self.network.transforms) if self.network.transforms else []
+
+        self.network = loaded
+        self.network.__class__ = Network
+
+        if inline_coupling:
+            # Clear loaded network's coupling, then insert inline entries
+            # using indexing on the existing LinkML container.
+            if hasattr(self.network.coupling, 'clear'):
+                self.network.coupling.clear()
+            for k, v in inline_coupling.items():
+                self.network.coupling[k] = v
+
+        if inline_transforms:
+            self.network.transforms = inline_transforms
 
     def _load_network_from_bids(self):
         """Load network matrices from BEP017 BIDS directory.
