@@ -395,8 +395,12 @@ elif isinstance(output, list):
     out_names = [str(o) for o in output]
 else:
     out_names = [str(output)]
+# Only show output line for variables not already listed in derived_variables
+out_names = [n for n in out_names if n not in dvars]
 %>
+% if out_names:
 **Output:** ${', '.join(['$' + latex(Symbol(n)) + '$' for n in out_names])}
+% endif
 % endif
 % endif
 <%

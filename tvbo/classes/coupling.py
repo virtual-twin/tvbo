@@ -334,6 +334,12 @@ class Coupling(tvbo_datamodel.Coupling):
 
         return _to_yaml(self, filepath)
 
+    def render(self, format="yaml", **kwargs) -> str:
+        fmt = format.lower()
+        if fmt == "yaml":
+            return self.to_yaml(filepath=kwargs.get("filepath"))
+        return self.render_code(format=format, **kwargs)
+
     def render_code(self, format="tvb", model=None, alt_label=None, **kwargs):
         if format == "tvb":
             rendered_code = templates.lookup.get_template(
@@ -343,6 +349,12 @@ class Coupling(tvbo_datamodel.Coupling):
         elif format.lower() in ["autodiff", "jax"]:
             template = templates.lookup.get_template("tvbo-jax-coupling.py.mako")
             rendered_code = template.render(coupling=self, model=model, **kwargs)
+
+        elif format.lower() in ("tvboptim", "tvb-optim"):
+            template = templates.lookup.get_template(
+                "tvbo-tvboptim-coupling.py.mako"
+            )
+            rendered_code = template.render(coupling=self, **kwargs)
 
         elif format.lower() == "python":
             from tvbo.codegen.code import NumPyPrinter, render_expression
@@ -361,6 +373,12 @@ class Coupling(tvbo_datamodel.Coupling):
             )
             tvb_obj = local_vars[self.name if not alt_label else alt_label](**kwargs)
             return tvb_obj
+
+        elif format.lower() in ("tvboptim", "tvb-optim"):
+            namespace = {}
+            exec(self.render_code(format="tvboptim"), namespace)
+            cls = namespace[self.name]
+            return cls(**kwargs)
 
         elif format.lower() == "python":
             from sympy import Symbol, lambdify

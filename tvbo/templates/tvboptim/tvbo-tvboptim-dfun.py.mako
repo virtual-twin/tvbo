@@ -141,7 +141,6 @@ class ${class_name}(AbstractDynamics):
     INITIAL_STATE = ${tuple(initial_state)}
     % if aux_names:
     AUXILIARY_NAMES = ${tuple(aux_names)}
-    VARIABLES_OF_INTEREST = ${tuple(range(len(state_names) + len(aux_names)))}
     % else:
     AUXILIARY_NAMES = ()
     % endif
@@ -236,7 +235,7 @@ ${_fdef}
         ])
 
         % if aux_names:
-        auxiliaries = jnp.array([jnp.broadcast_to(jnp.asarray(a), state[0].shape) for a in [${', '.join(aux_names)}]])
+        auxiliaries = jnp.array([${', '.join(aux_names)}])
         % else:
         auxiliaries = jnp.array([])
         % endif
