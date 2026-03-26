@@ -1016,17 +1016,50 @@ def build_lems_context(experiment):
     )
     fn_names = list((getattr(dyn, "functions", None) or {}).keys())
 
+    # ── PyLEMS reserved function names ──
+    # These names are hard-coded in PyLEMS's ExprParser and CANNOT be used
+    # as variable names in LEMS expressions.  If a model defines a derived
+    # variable (or other symbol) with one of these names, we must rename it.
+    _PYLEMS_RESERVED = {
+        'exp', 'log', 'sqrt', 'sin', 'cos', 'tan', 'sinh', 'cosh',
+        'tanh', 'abs', 'ceil', 'factorial', 'random', 'H',
+    }
+    _lems_rename = {}
+    for name in list(str(k) for k in dvs.keys()):
+        if name in _PYLEMS_RESERVED:
+            _lems_rename[name] = f"{name}_dv"
+    if _lems_rename:
+        from sympy import Symbol
+        _lems_subs = {Symbol(old): Symbol(new) for old, new in _lems_rename.items()}
+        # Rebuild dvs with renamed keys
+        dvs = {_lems_rename.get(str(k), str(k)): v for k, v in dvs.items()}
+        # Add renamed names to all_names for correct printing
+        all_names = [_lems_rename.get(n, n) for n in all_names]
+    else:
+        _lems_subs = {}
+
     def lems_expr(e):
         """Parse (if needed), inline model functions, then print as LEMS."""
         if not isinstance(e, _SympyBasic):
-            e = parse_eq(str(e), parameters=all_names, functions=fn_names)
+            # Parse with ORIGINAL names so SymPy recognises the symbols
+            parse_names = all_names[:]
+            for old in _lems_rename:
+                if old not in parse_names:
+                    parse_names.append(old)
+            e = parse_eq(str(e), parameters=parse_names, functions=fn_names)
         e = inline_model_functions(e, dyn, all_names)
+        if _lems_subs:
+            e = e.subs(_lems_subs)
         return sympy_to_lems(e, parameters=all_names)
 
     def _parse_piecewise(rhs_str):
         """Return [(condition_str, value_str)] if rhs is Piecewise, else None."""
         try:
-            expr = parse_eq(str(rhs_str), parameters=all_names, functions=fn_names)
+            parse_names = all_names[:]
+            for old in _lems_rename:
+                if old not in parse_names:
+                    parse_names.append(old)
+            expr = parse_eq(str(rhs_str), parameters=parse_names, functions=fn_names)
             # Rewrite Min/Max and similar forms to Piecewise when possible.
             expr = expr.rewrite(Piecewise)
             # Support wrapped forms like Q10*Piecewise(...) by folding to a

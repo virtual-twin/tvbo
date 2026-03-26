@@ -530,8 +530,10 @@ class LEMSPrinter(StrPrinter):
 
     Key differences from plain StrPrinter:
     - Powers use ``^`` instead of ``**``
-    - Natural log is ``ln`` (SymPy ``log`` is natural; LEMS ``log`` is base-10)
+    - Natural log is ``log`` (both SymPy and LEMS ``log`` are natural log)
     - ``abs`` instead of ``Abs``
+    - ``sign(x)`` → ``(H(x) - H(-1*x))`` (Heaviside decomposition)
+    - ``Mod(x, y)`` → ``(x + y*ceil(-(x/y)))``
     - Relational operators use LEMS dot-notation: ``.gt.``, ``.geq.``, ``.lt.``,
       ``.leq.``, ``.eq.``, ``.neq.``
     - Boolean operators: ``.and.``, ``.or.``, ``.not.``
@@ -577,11 +579,22 @@ class LEMSPrinter(StrPrinter):
         return f"{self.parenthesize(expr.base, PREC)}^{self.parenthesize(expr.exp, PREC)}"
 
     def _print_log(self, expr):
-        # SymPy log() is natural log; LEMS uses ln for natural log
+        # SymPy log() is natural log; LEMS log() is also natural log
         if len(expr.args) == 1:
-            return f"ln({self._print(expr.args[0])})"
-        # log(x, base) — no direct LEMS equivalent; approximate via ln
-        return f"(ln({self._print(expr.args[0])}) / ln({self._print(expr.args[1])}))"
+            return f"log({self._print(expr.args[0])})"
+        # log(x, base) — change of base via natural log
+        return f"(log({self._print(expr.args[0])}) / log({self._print(expr.args[1])}))"
+
+    def _print_sign(self, expr):
+        # sign(x) = H(x) - H(-x) using LEMS built-in Heaviside
+        arg = self._print(expr.args[0])
+        return f"(H({arg}) - H(-1*{arg}))"
+
+    def _print_Mod(self, expr):
+        # Mod(x, y) = x + y*ceil(-(x/y))  [floor = -ceil(-x)]
+        x = self._print(expr.args[0])
+        y = self._print(expr.args[1])
+        return f"({x} + {y}*ceil(-({x})/({y})))"
 
     def _print_Function(self, expr):
         name = expr.func.__name__
