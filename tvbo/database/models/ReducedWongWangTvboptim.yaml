@@ -18,7 +18,7 @@ description: >-
   global coupling strength G (a coupling parameter) scales the structural connectivity
   weights that modulate inter-regional communication.
 references:
-  - WongWang2006
+  - Wong2006
   - Deco2013
 parameters:
   a:
@@ -119,18 +119,27 @@ derived_variables:
       rhs: w*J_N*S + I_o + J_N*instant + J_N*delayed
       latex: false
     conditional: false
-  H:
-    name: H
+  H_x:
+    name: H_x
     description: >-
-      Sigmoid transfer function mapping total synaptic input current x to the
-      average population firing rate.
+      Average population firing rate H evaluated at the total synaptic input x.
     equation:
-      lhs: H
-      rhs: (a*x - b)/(1 - exp(-d*(a*x - b)))
+      lhs: H_x
+      rhs: H(x)
       latex: false
     conditional: false
+functions:
+  H:
+    name: H
+    definition: >-
+      Sigmoid transfer function mapping total synaptic input current to the
+      average population firing rate (Deco et al., 2013).
+    arguments:
+      - x
+    equation:
+      rhs: (a*x - b)/(1 - exp(-d*(a*x - b)))
 output:
-  - H
+  - H_x
 coupling_inputs:
   instant:
     name: instant
@@ -149,7 +158,7 @@ state_variables:
       NMDA channels at each network node.
     equation:
       lhs: Derivative(S, t)
-      rhs: -S/tau_s + (1 - S)*H*gamma
+      rhs: -S/tau_s + (1 - S)*H(x)*gamma
       latex: false
     variable_of_interest: true
     coupling_variable: true

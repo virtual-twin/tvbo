@@ -40,11 +40,13 @@ state_equations = [eq for k, eq in model.get_equations().items() if k in model.s
 derived_variables = [eq for k, eq in model.get_equations().items() if k in model.derived_variables]
 
 if isinstance(model.output, list):
-    output = [eq for k, eq in model.get_equations().items() if k in model.output]
+    output = [eq for k, eq in model.get_equations().items()
+              if k in model.output and k not in model.derived_variables]
 else:
     output = [
         Eq(symbols(p.name), sympify(p.equation.rhs, strict=False))
         for p in model.output.values()
+        if p.name not in model.derived_variables
     ]
 
 derived_parameters = [
@@ -58,6 +60,23 @@ functions = [Eq(Function(f.name)(*[Symbol(arg.name if hasattr(arg, 'name') else 
 ${'## ' + model.name}
 ${model.description if model.description else ""}
 
+% if functions:
+${"### Functions"}
+${'\n'.join([f"$$\n{latex_equation(eq, mul_symbol='*')}\n$$" for eq in functions])}
+% endif
+
+% if derived_parameters or derived_variables:
+
+% if derived_parameters:
+${"### Derived Parameters"}
+${'\n'.join([f"$$\n{latex_equation(eq, mul_symbol='*')}\n$$" for eq in derived_parameters])}
+% endif
+% if derived_variables:
+${"### Derived Variables"}
+${'\n'.join([f"$$\n{latex_equation(eq, mul_symbol='*')}\n$$" for eq in derived_variables])}
+% endif
+% endif
+
 ${"### State Equations"}
 ${'\n'.join([f"$$\n{latex_equation(eq, mul_symbol='*')}\n$$" for eq in state_equations])}
 
@@ -67,46 +86,26 @@ ${"### Parameters"}
 |---------------|-----------|----------|-----------------|
 ${'\n'.join([f"| ${latex(Symbol(p.name))}$ | {p.value} | {'$' + unit_to_latex(p.unit) + '$' if p.unit and unit_to_latex(p.unit) else ('—' if p.unit else 'N/A')} | {p.description} |" for p in model.parameters.values()])}
 
-% if derived_parameters or derived_variables or functions:
-${"### Derived Quantities"}
-% endif
-% if derived_parameters:
-${"#### Derived Parameters"}
-${'\n'.join([f"$$\n{latex_equation(eq, mul_symbol='*')}\n$$" for eq in derived_parameters])}
-% endif
-% if derived_variables:
-${"#### Derived Variables"}
-${'\n'.join([f"$$\n{latex_equation(eq, mul_symbol='*')}\n$$" for eq in derived_variables])}
-% endif
-% if functions:
-${"#### Functions"}
-${'\n'.join([f"$$\n{latex_equation(eq, mul_symbol='*')}\n$$" for eq in functions])}
-% endif
-
-% if output:
-${"### Output Transforms"}
-${'\n'.join([f"$$\n{latex_equation(eq, mul_symbol='*')}\n$$" for eq in output])}
-% endif
-
-
 <%
+# Resolve references: try ontology objects first, then plain string list from YAML
 refs_src = None
 if getattr(model, 'ontology', None) is not None:
     refs_src = getattr(model.ontology, 'has_reference', None)
-else:
+if not refs_src:
     refs_src = getattr(model, 'has_reference', None)
 
-# Normalize to a list
-refs = list(refs_src) if refs_src else []
-
-# Extract safe names
 ref_names = []
-for r in refs:
-    name = getattr(r, 'name', None)
-    if name:
-        ref_names.append(name)
+if refs_src:
+    for r in refs_src:
+        name = getattr(r, 'name', None) or (r if isinstance(r, str) else None)
+        if name:
+            ref_names.append(name)
+
+# Fall back to model.references (plain list of bib keys from YAML)
+if not ref_names:
+    ref_names = list(getattr(model, 'references', None) or [])
 %>
 % if ref_names:
-${"## References"}
+${"### References"}
 ${"\n\n".join([report.get_citation(n) for n in ref_names])}
 % endif
