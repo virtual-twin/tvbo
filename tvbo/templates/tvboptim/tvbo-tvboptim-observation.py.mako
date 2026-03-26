@@ -505,7 +505,7 @@ for obs in obs_list:
             }
 
 # =============================================================================
-# Check for Network Observations (loaded from BIDS)
+# Check for Network Observations (loaded from BIDS or edge data)
 # =============================================================================
 # Identify observations that reference network.observations.* and extract the keys
 network_obs_keys = set()
@@ -514,6 +514,19 @@ for obs in obs_list:
     if src and str(src).startswith('network.observations.'):
         key = str(src).split('network.observations.')[1]
         network_obs_keys.add(key)
+
+# Identify observations that reference network.edges.* and extract matrix data
+network_edge_data = {}  # {edge_label: list} — embedded at codegen time
+for obs in obs_list:
+    src = obs.get('source')
+    if src and str(src).startswith('network.edges.'):
+        edge_label = str(src).split('network.edges.')[1]
+        if edge_label not in network_edge_data:
+            _net = get_attr(experiment, 'network', None)
+            if _net:
+                _matrix = _net.matrix(edge_label)
+                if _matrix is not None:
+                    network_edge_data[edge_label] = _matrix.tolist()
 
 # Get BIDS directory from experiment network (resolve to absolute path)
 bids_dir = None
@@ -576,10 +589,21 @@ from ${module} import ${class_name} as _Ext${class_name}
     is_network_observation = obs_source and str(obs_source).startswith('network.observations.')
     network_obs_key = str(obs_source).split('network.observations.')[1] if is_network_observation else None
 
+    # Check if source is from network.edges (edge matrix data)
+    is_network_edge = obs_source and str(obs_source).startswith('network.edges.')
+    network_edge_label = str(obs_source).split('network.edges.')[1] if is_network_edge else None
+
     # Determine state index from source (only for state variable sources)
     state_idx = state_names.index(obs_source) if obs_source and obs_source in state_names else 0
 %>
-% if is_network_observation and bids_dir:
+% if is_network_edge and network_edge_label in network_edge_data:
+## =============================================================================
+## Static Network Edge Data (embedded from network edge matrix)
+## =============================================================================
+# ${obs['label'] or obs_name} - edge data from network
+${obs_name} = jnp.array(${repr(network_edge_data[network_edge_label])})
+
+% elif is_network_observation and bids_dir:
 ## =============================================================================
 ## Static Network Observation (data from BIDS - module-level constant)
 ## =============================================================================
