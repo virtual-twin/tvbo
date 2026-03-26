@@ -1,7 +1,7 @@
 tvbo_class: tvbo:Network
 schema_version: tvb-datamodel/0.7.0
-label: Lobar8 surface (fsLR 32k, 64984 vertices)
-number_of_nodes: 64984
+label: Lobar8 surface (fsaverage 164k, 327684 vertices)
+number_of_nodes: 327684
 descriptor: surf
 distance_unit: mm
 time_unit: ms
