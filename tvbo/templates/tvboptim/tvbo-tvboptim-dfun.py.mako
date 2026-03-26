@@ -45,16 +45,15 @@ state_names = list(model.state_variables.keys())
 initial_state = [float(sv.initial_value) if sv.initial_value is not None else 0.0
                  for sv in model.state_variables.values()]
 
-# Determine auxiliary variables from 'output' attribute
-# If output is specified, only derived variables in output list become auxiliaries
-# State variables in output are already state variables, not auxiliaries
+# Determine auxiliary variables from 'output' attribute.
+# output is a list of derived_variable names (schema: range: string, multivalued: true).
+# State variables in output are silently ignored (already in state array).
 output_vars = getattr(model, 'output', None) or []
 if isinstance(output_vars, str):
     output_vars = [output_vars]
 
 if output_vars:
-    # Filter output to only include derived variables (exclude state variables)
-    aux_names = [v for v in output_vars if v in (model.derived_variables or {}).keys()]
+    aux_names = [v for v in output_vars if v in (model.derived_variables or {})]
 else:
     # Default: all derived variables become auxiliaries
     aux_names = list(model.derived_variables.keys()) if model.derived_variables else []
