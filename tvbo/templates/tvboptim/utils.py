@@ -253,14 +253,14 @@ def format_bounds_array(bounds: List, format: str = "jax") -> str:
 # =============================================================================
 
 def is_network_observation(obs: Any) -> bool:
-    """Check if observation is a network observation (static data from BIDS).
+    """Check if observation is a network observation (static data from network).
 
-    Network observations have source starting with 'network.observations'.
+    Network observations have source starting with 'network.observations' or 'network.edges'.
     """
     if not obs:
         return False
     source = getattr(obs, 'source', None)
-    if source and str(source).startswith('network.observations'):
+    if source and (str(source).startswith('network.observations') or str(source).startswith('network.edges')):
         return True
     return False
 
