@@ -120,6 +120,7 @@ exclude = [
 ]
 
 [tool.hatch.build.force-include]
+"tvbo/database/networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_atlas-Lobar8_desc-surf_relmat.h5" = "tvbo/database/networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_atlas-Lobar8_desc-surf_relmat.h5"
 "tvbo/database/networks/tpl-MNI152NLin2009cAsym_rec-avgMatrix_atlas-Lobar8_desc-SCFC_relmat.h5" = "tvbo/database/networks/tpl-MNI152NLin2009cAsym_rec-avgMatrix_atlas-Lobar8_desc-SCFC_relmat.h5"
 "tvbo/database/networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-Lobar8_desc-SCFC_relmat.h5" = "tvbo/database/networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-Lobar8_desc-SCFC_relmat.h5"
 "tvbo/database/networks/tpl-MNI152NLin2009cAsym_rec-avgMatrix_atlas-DesikanKilliany_desc-SCFC_relmat.h5" = "tvbo/database/networks/tpl-MNI152NLin2009cAsym_rec-avgMatrix_atlas-DesikanKilliany_desc-SCFC_relmat.h5"
