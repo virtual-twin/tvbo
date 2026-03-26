@@ -13,7 +13,6 @@ from pathlib import Path
 
 import nibabel as nib
 import numpy as np
-from scipy.spatial import KDTree
 from templateflow.conf import TF_HOME
 
 from tvbo.classes.network import Network
@@ -102,16 +101,8 @@ def dk_to_lobar8(labels: np.ndarray, key_to_name: dict[int, str],
     for key, idx in label_to_idx.items():
         rm[labels == key] = idx
 
-    unmapped = rm == -1
-    n_unmapped = int(unmapped.sum())
-    if n_unmapped > 0:
-        mapped = ~unmapped
-        tree = KDTree(vertices[mapped])
-        _, nn_idx = tree.query(vertices[unmapped])
-        rm[unmapped] = rm[mapped][nn_idx]
-        print(f"  [{hemi_prefix}] {n_unmapped} medial wall vertices → "
-              f"nearest cortical lobe")
-
+    n_unmapped = int((rm == -1).sum())
+    print(f"  [{hemi_prefix}] {n_unmapped} medial wall vertices (kept as -1)")
     return rm
 
 
@@ -144,7 +135,8 @@ def build_hemi_surface(hemi_code: str, hemi_prefix: str,
 
     print(f"  {n_vertices} vertices, {n_elements} triangles")
     print(f"  rm unique={np.unique(rm)}, min={rm.min()}, max={rm.max()}")
-    assert rm.min() >= 0, "No vertex should be unmapped!"
+    n_mapped = int((rm >= 0).sum())
+    print(f"  {n_mapped} cortical, {len(rm) - n_mapped} medial wall (-1)")
 
     normals = compute_normals(vertices, faces)
 
