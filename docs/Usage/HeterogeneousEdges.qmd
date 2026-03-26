@@ -245,7 +245,7 @@ edges:
 # Parse network and create experiment with all components
 network_plasticity = Network.from_string(network_yaml)
 
-network_plasticity.plot_graph(node_size=10, edge_cmap="bwr")
+network_plasticity.plot_graph(node_size=150, edge_cmap="bwr", fontsize=13)
 ```
 
 ## Run Simulation with Pulsed Stimulus
