@@ -84,7 +84,7 @@ ${"### Parameters"}
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|
-${'\n'.join([f"| ${latex(Symbol(p.name))}$ | {p.value} | {'$' + unit_to_latex(p.unit) + '$' if p.unit and unit_to_latex(p.unit) else ('—' if p.unit else 'N/A')} | {p.description} |" for p in model.parameters.values()])}
+${'\n'.join([f"| ${latex(Symbol(p.name))}$ | {p.value} | {'$' + unit_to_latex(p.unit) + '$' if p.unit and unit_to_latex(p.unit) else '—'} | {p.description} |" for p in model.parameters.values()])}
 
 <%
 # Resolve references: try ontology objects first, then plain string list from YAML
