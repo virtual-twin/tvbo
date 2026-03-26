@@ -1,0 +1,24 @@
+tvbo_class: tvbo:Network
+schema_version: tvb-datamodel/0.7.0
+label: Lobar8 RH surface (fsaverage 164k, 163842 vertices)
+number_of_nodes: 163842
+descriptor: surf
+distance_unit: mm
+time_unit: ms
+data_file: tpl-MNI152NLin2009cAsym_cohort-HCPYA_atlas-Lobar8_hemi-R_desc-surf_relmat.h5
+parent_network: tpl-MNI152NLin2009cAsym_rec-avgMatrix_atlas-Lobar8_desc-SCFC_relmat.yaml
+node_mapping: /mesh/region_mapping
+bids:
+  template: MNI152NLin2009cAsym
+  cohort: HCPYA
+  atlas: Lobar8
+  hemi: R
+parameters:
+  conduction_speed:
+    label: v
+    value: 3.0
+    unit: mm_per_ms
+parcellation:
+  atlas:
+    name: Lobar8
+    coordinateSpace: MNI152NLin2009cAsym
