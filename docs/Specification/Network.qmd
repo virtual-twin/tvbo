@@ -889,7 +889,7 @@ network is resolved automatically from the edge's `target_network`
 reference — no extra argument needed:
 
 ```{python}
-G = sensor_net.execute(format="networkx", threshold_percentile=85)
+G = sensor_net.execute(format="networkx", threshold_percentile=90)
 n_s = sum(1 for _, d in G.nodes(data=True) if d["node_type"] == "sensor")
 n_r = sum(1 for _, d in G.nodes(data=True) if d["node_type"] == "region")
 print(f"Graph: {n_s} sensors + {n_r} regions = {G.number_of_nodes()} nodes")
@@ -928,8 +928,8 @@ Optionally, overlay a translucent **head surface** from MNE's
 fsaverage BEM model using `extra_surfaces`:
 
 ```{python}
-#| code-fold: true
-#| code-summary: "Load MNE fsaverage head surface and render with network"
+##| code-fold: true
+# | code-summary: "Load MNE fsaverage head surface and render with network"
 import mne
 import nibabel as nib
 from pathlib import Path
@@ -938,7 +938,7 @@ fs_dir = Path(mne.datasets.fetch_fsaverage(verbose=False))
 head_surfs = mne.read_bem_surfaces(
     str(fs_dir / "bem" / "fsaverage-head.fif"), verbose=False
 )
-head_verts = head_surfs[0]["rr"] * 1000   # m → mm
+head_verts = head_surfs[0]["rr"] * 1000  # m → mm
 head_tris = head_surfs[0]["tris"]
 
 head_gifti = nib.gifti.GiftiImage()
@@ -948,9 +948,7 @@ head_gifti.add_gifti_data_array(
     )
 )
 head_gifti.add_gifti_data_array(
-    nib.gifti.GiftiDataArray(
-        head_tris.astype(np.int32), intent="NIFTI_INTENT_TRIANGLE"
-    )
+    nib.gifti.GiftiDataArray(head_tris.astype(np.int32), intent="NIFTI_INTENT_TRIANGLE")
 )
 
 fig, axes = plt.subplots(1, 2, figsize=(6, 3), layout="compressed")
@@ -959,14 +957,14 @@ for ax, view in zip(axes, ["front", "top"]):
         G,
         ax=ax,
         view=view,
-        node_radius=1.5,
+        node_radius=2,
         node_color="auto",
-        edge_radius=0.004,
+        edge_radius=0.001,
         edge_color="auto",
         edge_cmap="hot",
         edge_data_key="gain",
         edge_scale={"gain": 12, "mode": "log"},
-        surface_alpha=0.12,
+        surface_alpha=0.1,
         nodes=list(G.nodes()),
         extra_surfaces=[head_gifti],
         extra_colors=["wheat"],
