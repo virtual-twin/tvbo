@@ -3004,6 +3004,7 @@ class Network(tvbo_datamodel.Network):
         edge_percentile: float = 0,
         show_nodes: bool = True,
         show_edges: bool = True,
+        max_edge_labels: int = 15,
     ) -> Figure:
         """Create comprehensive visualization with brain surface and matrices.
 
@@ -3045,6 +3046,10 @@ class Network(tvbo_datamodel.Network):
             Show node spheres on the brain surface panel.
         show_edges : bool, default=True
             Show edge tubes on the brain surface panel.
+        max_edge_labels : int, default=15
+            In graph panels (``plot_brain=False``), automatically hide edge
+            labels when the number of visible edges exceeds this value.
+            Set to a negative value to always show edge labels.
 
         Returns
         -------
@@ -3187,9 +3192,29 @@ class Network(tvbo_datamodel.Network):
                 col = 1
             else:
                 # --- Graph panel (networkx) ---
+                graph_obj = self.graph
+                if edge_percentile > 0:
+                    edge_weights = np.array(
+                        [
+                            abs(d.get("weight", 1.0))
+                            for _, _, _, d in graph_obj.edges(keys=True, data=True)
+                        ],
+                        dtype=float,
+                    )
+                    if edge_weights.size > 0:
+                        cutoff = np.percentile(edge_weights, edge_percentile)
+                        n_visible_edges = int(np.sum(edge_weights >= cutoff))
+                    else:
+                        n_visible_edges = 0
+                else:
+                    n_visible_edges = graph_obj.number_of_edges()
+
+                auto_edge_labels = (
+                    True if max_edge_labels < 0 else n_visible_edges <= max_edge_labels
+                )
                 graph_defaults = {
                     "node_labels": True,
-                    "edge_labels": True,
+                    "edge_labels": auto_edge_labels,
                     "threshold_percentile": edge_percentile,
                     "edge_color": prop,
                 }
