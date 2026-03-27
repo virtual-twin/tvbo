@@ -2036,9 +2036,23 @@ class Network(tvbo_datamodel.Network):
             from scipy import sparse as _sp
             arrays = self._get_arrays()
 
-            # Collect all dense matrices from stored arrays only
+            # Collect matrix names from in-memory arrays, template-edge metadata,
+            # and common aliases accessible via the generic matrix(...) accessor.
+            matrix_names = set(arrays.keys())
+            for e in self.edges or []:
+                lbl = getattr(e, "label", None) or getattr(e, "name", None)
+                if lbl:
+                    matrix_names.add(lbl)
+            for name in ("weight", "weights", "length", "lengths", "sc", "fc"):
+                if self.matrix(name) is not None:
+                    matrix_names.add(name)
+
+            # Materialize all available matrices as dense arrays.
             dense = {}
-            for name, mat in arrays.items():
+            for name in matrix_names:
+                mat = self.matrix(name)
+                if mat is None:
+                    continue
                 dense[name] = mat.toarray() if _sp.issparse(mat) else np.asarray(mat)
 
             if dense:
