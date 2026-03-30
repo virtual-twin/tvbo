@@ -388,30 +388,56 @@ class OntologyAPI:
     def configure_simulation_experiment(self, metadata):
         """
         Configure a simulation experiment based on the metadata configuration.
-        The metadata conforms to the tvbo-datamodel and should have the following format:
-        ```
-        {
-            "model": {
-                "label": "Generic2dOscillator",
-                "parameters": {"label": "a", "value": 1},
-            },
-            "connectivity": {
-                "parcellation": {
-                    "label": "DesikanKilliany"
+
+        Accepts either legacy ``model``/``connectivity`` keys or the current
+        ``dynamics``/``network`` keys.  Model and coupling names are resolved
+        via ``Dynamics.from_db`` / ``Coupling.from_db`` so that equations,
+        parameters, and state variables are fully populated.
+
+        Example metadata::
+
+            {
+                "dynamics": "Generic2dOscillator",
+                "coupling": "Linear",
+                "network": {
+                    "parcellation": {"atlas": {"name": "DesikanKilliany"}},
+                    "tractogram": {"name": "dTOR"},
                 },
-                "tractogram": {"label":"dTOR"},
-            },
-            "coupling": {"label": "Linear"},
-            "integration": {
-                "noise": {
-                    "additive":  True,
-                    "parameters": {"label": "sigma", "value": 0.1},
-                }
-            },
-        }
-        ```
+                "integration": {"method": "Heun"},
+            }
         """
+        from tvbo.classes.dynamics import Dynamics
+        from tvbo.classes.coupling import Coupling
+
+        md = dict(metadata)  # shallow copy to avoid mutating caller's dict
+
+        # --- Resolve dynamics name → full Dynamics object ---
+        dyn_raw = md.pop("dynamics", None) or md.pop("model", None)
+        if dyn_raw is not None:
+            if isinstance(dyn_raw, str):
+                dyn_name = dyn_raw
+            elif isinstance(dyn_raw, dict):
+                dyn_name = dyn_raw.get("name") or dyn_raw.get("label", "Generic2dOscillator")
+            else:
+                dyn_name = str(dyn_raw)
+            md["dynamics"] = Dynamics.from_db(dyn_name)
+
+        # --- Resolve coupling name → full Coupling object ---
+        coup_raw = md.pop("coupling", None)
+        if coup_raw is not None:
+            if isinstance(coup_raw, str):
+                coup_name = coup_raw
+            elif isinstance(coup_raw, dict):
+                coup_name = coup_raw.get("name") or coup_raw.get("label", "Linear")
+            else:
+                coup_name = str(coup_raw)
+            md["coupling"] = Coupling.from_db(coup_name)
+
+        # --- Normalise legacy connectivity → network ---
+        if "connectivity" in md and "network" not in md:
+            md["network"] = md.pop("connectivity")
+
         self.experiment = SimulationExperiment(
             id=1,
-            **metadata,
+            **md,
         )
