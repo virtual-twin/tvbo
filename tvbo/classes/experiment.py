@@ -216,14 +216,18 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             self.network.__class__ = Network
             # Network.__init__ doesn't run when class is patched, so sync here
             _sync_network_node_count(self.network)
+            if not getattr(self.network, "conduction_speed", None):
+                self.network.parameters['conduction_speed'] = tvbo_datamodel.Parameter(
+                    name="conduction_speed", label="v",
+                    value=3.0, unit="mm_per_ms",
+                )
 
         # Upgrade network.coupling entries to runtime Coupling + apply type fills
         _upgrade_network_couplings(self.network, _coupling_types)
 
         # --- Coupling resolution: network.coupling is canonical ---
-        # network.coupling is a catalog of named coupling functions (keyed by
-        # function name, e.g. 'Linear'). The mapping from coupling_inputs to
-        # functions happens at code generation time in templates.
+        # Keys may be function names or coupling_input names; backends
+        # handle the mapping at the adapter boundary.
         dyn_ci = getattr(getattr(self, 'dynamics', None), 'coupling_inputs', None)
         has_coupling_inputs = bool(dyn_ci)
         net_coup = getattr(self.network, 'coupling', None)
