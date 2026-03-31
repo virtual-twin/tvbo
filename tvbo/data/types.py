@@ -7,10 +7,7 @@ from matplotlib import colormaps
 from matplotlib.animation import FuncAnimation
 
 import xarray as xr
-try:
-    import xarray_jax  # side effect: registers xr.DataArray as JAX pytree
-except ImportError:
-    pass
+import tvbo.jax.xarray_pytrees  # noqa: F401 – registers xr types as JAX pytrees
 
 from tvbo.classes import equation as equations
 from tvbo.utils import Bunch

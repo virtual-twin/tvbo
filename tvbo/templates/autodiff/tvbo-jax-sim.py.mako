@@ -248,6 +248,14 @@ def kernel(state):
     % for i, svar in enumerate(svars):
     ${svar} = trace[:, [${i}], :]
     % endfor
+    ## Emit model function definitions needed by derived variables
+    % for f in (model.functions or {}).values():
+    <%
+        from tvbo.templates.base.utils import get_func_args
+    %>
+    def ${f.name}(${', '.join(get_func_args(f))}):
+        return ${jaxcode_obj(f)}
+    % endfor
 
     ## Compute derived vars that only depend on state vars (can be done from trace)
     <%
