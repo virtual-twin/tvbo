@@ -75,19 +75,41 @@ all_couplings = dict(network.coupling.items()) if network.coupling else {}
 
 # Map coupling_input names to (func_name, coupling_obj) for tvboptim coupling_dict
 # tvboptim keys coupling by coupling_input name, schema keys by function name
+# Resolution order:
+#   1. Explicit source on CouplingInput (ci.source == func_name)
+#   2. Same name (ci_name == func_name)
+#   3. Single func → broadcast to all coupling inputs
+#   4. Same count → positional zip
 ci_coupling_map = {}  # ci_name -> (func_name, coupling_obj)
 func_to_first_ci = {}  # func_name -> first ci_name (for state access translation)
 if coupling_inputs_dict and all_couplings:
     funcs = list(all_couplings.items())  # [(name, obj), ...]
     ci_names = list(coupling_inputs_dict.keys())
-    if len(funcs) == 1:
-        # Single function → broadcast to all coupling inputs
-        for ci_name in ci_names:
-            ci_coupling_map[ci_name] = funcs[0]
-        func_to_first_ci[funcs[0][0]] = ci_names[0]
-    elif len(funcs) == len(ci_names):
-        # Map by order
-        for ci_name, (_fn, _co) in zip(ci_names, funcs):
+
+    # 1. Explicit source attribute
+    for ci_name in ci_names:
+        ci_obj = coupling_inputs_dict[ci_name]
+        src = getattr(ci_obj, 'source', None)
+        if src and src in all_couplings:
+            ci_coupling_map[ci_name] = (src, all_couplings[src])
+            func_to_first_ci.setdefault(src, ci_name)
+
+    # 2. Same name match
+    for ci_name in ci_names:
+        if ci_name not in ci_coupling_map and ci_name in all_couplings:
+            ci_coupling_map[ci_name] = (ci_name, all_couplings[ci_name])
+            func_to_first_ci.setdefault(ci_name, ci_name)
+
+    # 3/4. Fallback for remaining unmapped
+    _unmapped_cis = [c for c in ci_names if c not in ci_coupling_map]
+    _unmapped_funcs = [(n, o) for n, o in funcs if n not in func_to_first_ci]
+    if len(_unmapped_funcs) == 1 and _unmapped_cis:
+        # Single unmapped function → broadcast to all remaining CIs
+        for ci_name in _unmapped_cis:
+            ci_coupling_map[ci_name] = _unmapped_funcs[0]
+        func_to_first_ci.setdefault(_unmapped_funcs[0][0], _unmapped_cis[0])
+    elif len(_unmapped_funcs) == len(_unmapped_cis):
+        for ci_name, (_fn, _co) in zip(_unmapped_cis, _unmapped_funcs):
             ci_coupling_map[ci_name] = (_fn, _co)
             func_to_first_ci.setdefault(_fn, ci_name)
 # Translate function-name coupling key to ci name for tvboptim state access

@@ -18,15 +18,12 @@ dependencies = [
     "pandas>=2.2.3",
     "xarray>=2025.0",
 
-    # Data models & schema
-    "pydantic>=2.6.0",
+    # Data models & schema (pydantic, pyyaml, rdflib are transitive via linkml-runtime)
     "linkml-runtime>=1.8.5",
-    "PyYAML>=6.0.0",
     "h5py>=3.12.1",
 
     # Ontologies
-    "owlready2==0.47",
-    "rdflib>=7.1.1",
+    "owlready2>=0.47",
 
     # ML
     "jax >=0.4.28",
