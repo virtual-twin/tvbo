@@ -147,6 +147,14 @@ def integrate(state, weights, dt, params_integrate, delay_indices, external_inpu
     % for i, cterm in enumerate(model.coupling_terms.keys()):
     ${cterm} = cX[${i}]
     % endfor
+    ## Emit model function definitions needed by derived variables
+    % for f in (model.functions or {}).values():
+    <%
+        from tvbo.templates.base.utils import get_func_args
+    %>
+    def ${f.name}(${', '.join(get_func_args(f))}):
+        return ${jaxcode_obj(f)}
+    % endfor
 
     ## Compute derived variables in dependency order
     % for dv_name in all_integrate_derived_vars:

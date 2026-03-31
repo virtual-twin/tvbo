@@ -148,34 +148,21 @@ def to_tvboptim(
         dyn_obj = None
 
     # Auto-extract coupling from network if not provided.
-    # Keys must match the dynamics' coupling_inputs (e.g. instant, delayed).
+    # If keys already match COUPLING_INPUTS names, pass as dict;
+    # otherwise pass as list so tvboptim maps by order.
     if coupling is None and hasattr(network, 'coupling') and network.coupling:
-        # Get coupling_input keys from the tvbo dynamics to use as dict keys
-        ci_keys = []
-        if dyn_obj is None and hasattr(network, 'dynamics') and network.dynamics:
-            dyn_obj = network.dynamics[next(iter(network.dynamics))]
-        if dyn_obj and hasattr(dyn_obj, 'coupling_inputs') and dyn_obj.coupling_inputs:
-            ci_keys = list(dyn_obj.coupling_inputs.keys())
-
-        coupling_dict = {}
-        for key, coup_obj in network.coupling.items():
-            tvboptim_coup = coup_obj.execute('tvboptim')
-            is_delayed = getattr(coup_obj, 'delayed', False)
-            # Find matching coupling_input key by delayed/instant convention
-            matched = False
-            for ci_key in ci_keys:
-                if ci_key in coupling_dict:
-                    continue
-                ci_is_delayed = 'delay' in ci_key.lower()
-                if is_delayed == ci_is_delayed:
-                    coupling_dict[ci_key] = tvboptim_coup
-                    matched = True
-                    break
-            if not matched:
-                # Fallback: use the coupling function name as key
-                coupling_dict[key] = tvboptim_coup
-
-        coupling = coupling_dict
+        coup_dict = {
+            key: coup_obj.execute('tvboptim')
+            for key, coup_obj in network.coupling.items()
+        }
+        if dynamics is not None and hasattr(dynamics, 'COUPLING_INPUTS'):
+            ci_keys = set(dynamics.COUPLING_INPUTS.keys())
+            if set(coup_dict.keys()) <= ci_keys:
+                coupling = coup_dict
+            else:
+                coupling = list(coup_dict.values())
+        else:
+            coupling = coup_dict
 
     if dynamics is None or coupling is None:
         raise ValueError(
