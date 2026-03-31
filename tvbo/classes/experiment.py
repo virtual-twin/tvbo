@@ -271,7 +271,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         # Load network from BIDS if bids_dir is specified
         if hasattr(self.network, "bids_dir") and self.network.bids_dir:
             self._load_network_from_bids()
-        elif hasattr(self.network, "data_file") and self.network.data_file:
+        elif (hasattr(self.network, "data_file") and self.network.data_file
+              and not getattr(self.network, '_store', None)):
             self._load_network_from_data_file()
 
         if not getattr(self, "integration", None):
