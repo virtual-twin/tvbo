@@ -51,7 +51,7 @@ __contact__ = "petra.ritter@charite.de"
 __status__ = "beta"
 
 __copyright__ = (
-    "Copyright (c) 2023, "
+    "Copyright (c) 2026, "
     "Brain Simulation Section"
     "Charité Universitätsmedizin Berlin"
 )

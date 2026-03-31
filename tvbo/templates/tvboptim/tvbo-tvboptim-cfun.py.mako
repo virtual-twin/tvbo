@@ -46,15 +46,36 @@ elif 'coupling' in context.keys():
 else:
     assert False, "cfun template requires 'experiment' or 'coupling' in context"
 
-# Build func_name -> first ci mapping (same as experiment template)
+# Build func_name -> ci_name mapping.
+# Resolution order:
+#   1. Explicit source on CouplingInput (ci.source == func_name)
+#   2. Same name (ci_name == func_name)
+#   3. Single CI + single func → auto-map
+#   4. Same count → positional zip
 _func_to_ci = {}
 if coupling_inputs_info and all_couplings:
     _funcs = list(all_couplings.keys())
     _ci_names = list(coupling_inputs_info.keys())
-    if len(_funcs) == 1:
-        _func_to_ci[_funcs[0]] = _ci_names[0]
-    elif len(_funcs) == len(_ci_names):
-        for _ci, _fn in zip(_ci_names, _funcs):
+
+    # 1. Explicit source attribute
+    if hasattr(model, 'coupling_inputs') and model is not None and model.coupling_inputs:
+        for ci_key, ci in model.coupling_inputs.items():
+            src = getattr(ci, 'source', None)
+            if src and src in all_couplings:
+                _func_to_ci[src] = ci_key
+
+    # 2. Same name match
+    for fn in _funcs:
+        if fn not in _func_to_ci and fn in coupling_inputs_info:
+            _func_to_ci[fn] = fn
+
+    # 3/4. Fallback for remaining unmapped functions
+    _unmapped_funcs = [f for f in _funcs if f not in _func_to_ci]
+    _unmapped_cis = [c for c in _ci_names if c not in _func_to_ci.values()]
+    if len(_unmapped_funcs) == 1 and len(_unmapped_cis) == 1:
+        _func_to_ci[_unmapped_funcs[0]] = _unmapped_cis[0]
+    elif len(_unmapped_funcs) == len(_unmapped_cis):
+        for _ci, _fn in zip(_unmapped_cis, _unmapped_funcs):
             _func_to_ci.setdefault(_fn, _ci)
 
 def parse_list_elements(rhs_str):

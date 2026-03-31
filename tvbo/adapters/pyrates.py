@@ -161,6 +161,34 @@ def _patch_pyrates_missing_funcs():
         _pr_parser.ExpressionParser.parse_expr = _patched_parse_expr
 
 
+def _inline_model_functions(expr, dyn):
+    """Inline model-defined functions (e.g. H(x)) into a SymPy expression.
+
+    Replaces function calls like H(x) with the function body from
+    dyn.functions, substituting formal arguments with actual arguments.
+    """
+    import sympy as sp
+
+    functions = getattr(dyn, 'functions', None)
+    if not functions:
+        return expr
+
+    for func_name, func_def in functions.items():
+        func_eq = getattr(func_def, 'equation', None)
+        if not func_eq or not func_eq.rhs:
+            continue
+        args = getattr(func_def, 'arguments', None) or []
+        arg_names = [str(getattr(a, 'name', a)) for a in args]
+        sym_func = sp.Function(func_name)
+        for match in expr.atoms(sp.Function(func_name)):
+            if match.func == sym_func:
+                body = sp.sympify(func_eq.rhs)
+                for formal, actual in zip(arg_names, match.args):
+                    body = body.subs(sp.Symbol(formal), actual)
+                expr = expr.subs(match, body)
+    return expr
+
+
 class PyRatesAdapter(BaseAdapter):
     """Adapter for running SimulationExperiment via PyRates backend."""
 
@@ -856,7 +884,7 @@ class PyRatesAdapter(BaseAdapter):
             if not (eq and eq.rhs):
                 continue
 
-            expr = sp.sympify(eq.rhs)
+            expr = _inline_model_functions(sp.sympify(eq.rhs), dyn)
             subs = {}
 
             for sym in expr.free_symbols:
@@ -895,7 +923,7 @@ class PyRatesAdapter(BaseAdapter):
             if not (eq and eq.rhs):
                 continue
 
-            expr = sp.sympify(eq.rhs)
+            expr = _inline_model_functions(sp.sympify(eq.rhs), dyn)
             subs = {}
 
             for sym in expr.free_symbols:

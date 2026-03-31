@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-03-24T19:20:25
+# Generation date: 2026-03-31T11:06:00
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -1628,6 +1628,7 @@ class CouplingInput(YAMLRoot):
 
     name: Union[str, CouplingInputName] = None
     description: Optional[str] = None
+    source: Optional[str] = None
     dimension: Optional[int] = 1
     keys: Optional[Union[str, list[str]]] = empty_list()
 
@@ -1639,6 +1640,9 @@ class CouplingInput(YAMLRoot):
 
         if self.description is not None and not isinstance(self.description, str):
             self.description = str(self.description)
+
+        if self.source is not None and not isinstance(self.source, str):
+            self.source = str(self.source)
 
         if self.dimension is not None and not isinstance(self.dimension, int):
             self.dimension = int(self.dimension)
@@ -6001,6 +6005,9 @@ slots.parameter__explored_values = Slot(uri=TVBO.explored_values, name="paramete
 
 slots.parameter__element_domains = Slot(uri=TVBO.element_domains, name="parameter__element_domains", curie=TVBO.curie('element_domains'),
                    model_uri=TVBO.parameter__element_domains, domain=None, range=Optional[Union[Union[dict, Range], list[Union[dict, Range]]]])
+
+slots.couplingInput__source = Slot(uri=TVBO.source, name="couplingInput__source", curie=TVBO.curie('source'),
+                   model_uri=TVBO.couplingInput__source, domain=None, range=Optional[str])
 
 slots.couplingInput__dimension = Slot(uri=TVBO.dimension, name="couplingInput__dimension", curie=TVBO.curie('dimension'),
                    model_uri=TVBO.couplingInput__dimension, domain=None, range=Optional[int])
