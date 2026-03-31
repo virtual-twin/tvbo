@@ -148,8 +148,8 @@ def to_tvboptim(
         dyn_obj = None
 
     # Auto-extract coupling from network if not provided.
-    # If keys already match COUPLING_INPUTS names, pass as dict;
-    # otherwise pass as list so tvboptim maps by order.
+    # Resolution: use CouplingInput.source to remap function keys → CI keys,
+    # then fall back to name matching, then positional order.
     if coupling is None and hasattr(network, 'coupling') and network.coupling:
         coup_dict = {
             key: coup_obj.execute('tvboptim')
@@ -157,9 +157,27 @@ def to_tvboptim(
         }
         if dynamics is not None and hasattr(dynamics, 'COUPLING_INPUTS'):
             ci_keys = set(dynamics.COUPLING_INPUTS.keys())
-            if set(coup_dict.keys()) <= ci_keys:
+            func_keys = list(coup_dict.keys())
+
+            # Build func_name → ci_name mapping from source attribute
+            remap = {}
+            if dyn_obj is not None and hasattr(dyn_obj, 'coupling_inputs') and dyn_obj.coupling_inputs:
+                for ci_name, ci_obj in dyn_obj.coupling_inputs.items():
+                    src = getattr(ci_obj, 'source', None)
+                    if src and src in coup_dict:
+                        remap[src] = ci_name
+
+            if remap:
+                # Apply explicit source remapping
+                coupling = {}
+                for fk, fv in coup_dict.items():
+                    ci_name = remap.get(fk, fk)
+                    coupling[ci_name] = fv
+            elif set(func_keys) <= ci_keys:
+                # Names already match COUPLING_INPUTS
                 coupling = coup_dict
             else:
+                # Positional fallback
                 coupling = list(coup_dict.values())
         else:
             coupling = coup_dict
