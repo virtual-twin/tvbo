@@ -92,60 +92,8 @@ Real-time animation of the pendulum motion alongside the time series data:
 
 ```{python}
 # | echo: false
-x = results.integration.sel(variable='x').values
-y = results.integration.sel(variable='y').values
-time = results.integration.time
-dt = pendulum.integration.step_size
-
-target_fps = 20
-skip_frames = max(1, int(1000 / target_fps / dt))
-actual_interval = dt * skip_frames
-
-fig, axs = plt.subplots(1, 2, layout="compressed", figsize=(7, 2.5))
-
-ax_pendulum = axs[0]
-ax_pendulum.set_xlim(-1.5, 1.5)
-ax_pendulum.set_ylim(-1.5, 0.5)
-ax_pendulum.set_aspect("equal")
-ax_pendulum.set_xlabel("x")
-ax_pendulum.set_ylabel("y")
-
-(line,) = ax_pendulum.plot([], [], "o-")
-
-ax_timeseries = axs[1]
-ax_timeseries.set_xlim(time[0], time[-1])
-ax_timeseries.set_ylim(min(x.min(), y.min()) * 1.1, max(x.max(), y.max()) * 1.1)
-ax_timeseries.set_xlabel("time (ms)")
-ax_timeseries.set_ylabel("position (m)")
-(line_x,) = ax_timeseries.plot([], [], label="x")
-(line_y,) = ax_timeseries.plot([], [], label="y")
-ax_timeseries.legend(loc="upper right")
-
-def init():
-    line.set_data([], [])
-    line_x.set_data([], [])
-    line_y.set_data([], [])
-    return line, line_x, line_y
-
-def animate(i):
-    line.set_data([0, x[i]], [0, y[i]])
-    line_x.set_data(time[:i+1], x[:i+1])
-    line_y.set_data(time[:i+1], y[:i+1])
-    return line, line_x, line_y
-
-frame_indices = range(0, len(time), skip_frames)
-ani = animation.FuncAnimation(
-    fig,
-    animate,
-    init_func=init,
-    frames=frame_indices,
-    interval=actual_interval,
-    blit=True,
-    repeat=True,
-)
-
-plt.close()
-ani.save("_output/anim1.gif", writer="pillow", fps=target_fps)
+ani = results.integration.animate('pendulum', save="_output/anim1.gif")
+```
 ```
 
 ### Phase Portrait

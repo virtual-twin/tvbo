@@ -362,3 +362,194 @@ def animate_phase(result, x_var=None, y_var=None, region=0, mode=0,
     ani = FuncAnimation(fig, update, frames=frames, interval=interval, blit=False)
     plt.close(fig)
     return ani
+
+
+# =========================================================================
+# Composable Panel System
+# =========================================================================
+#
+# Each panel function has the signature:
+#     panel_fn(result, ax, max_points=200) -> (n_frames, update_fn)
+#
+# update_fn(i) updates artists for frame i and returns a list of artists.
+# Panels share a common frame count (the minimum across all panels).
+
+# Built-in composite types: string -> list of panel names
+_COMPOSITE_TYPES = {
+    'pendulum': ['pendulum_bob', 'timeseries'],
+}
+
+
+def _panel_timeseries(result, ax, max_points=200):
+    """Panel: evolving time-series traces."""
+    slices = _extract_node_timeseries(result.data, max_points=max_points)
+
+    all_lines = []
+    all_data = []
+    for vn, vals, time in slices:
+        n_traces = vals.shape[1]
+        for j in range(n_traces):
+            ln, = ax.plot([], [], linewidth=0.8, alpha=0.7, label=vn if n_traces == 1 else f'{vn}[{j}]')
+            all_lines.append(ln)
+            all_data.append((vals[:, j], time))
+
+    if slices:
+        time = slices[0][2]
+        all_vals = np.concatenate([v for _, v, _ in slices], axis=1)
+        vmin, vmax = float(all_vals.min()), float(all_vals.max())
+        margin = 0.05 * abs(vmax - vmin) if vmax != vmin else 0.1
+        ax.set_xlim(time[0], time[-1])
+        ax.set_ylim(vmin - margin, vmax + margin)
+    ax.set_xlabel('time')
+    ax.legend(loc='upper right', fontsize='small')
+    n_frames = len(slices[0][2]) if slices else 0
+
+    def update(i):
+        for ln, (vals, time) in zip(all_lines, all_data):
+            ln.set_data(time[:i + 1], vals[:i + 1])
+        return all_lines
+
+    return n_frames, update
+
+
+def _panel_pendulum_bob(result, ax, max_points=200):
+    """Panel: pendulum bob swinging from origin."""
+    data = result.data
+    time_raw = data.coords['time'].values if 'time' in data.coords else np.arange(data.shape[0])
+    var_names = list(np.atleast_1d(data.coords['variable'].values)) if 'variable' in data.coords else []
+
+    # Try x/y derived variables first, fall back to sin/cos of first state var
+    if 'x' in var_names and 'y' in var_names:
+        x_raw = np.asarray(data.sel(variable='x')).ravel()
+        y_raw = np.asarray(data.sel(variable='y')).ravel()
+    elif 'theta' in var_names:
+        theta = np.asarray(data.sel(variable='theta')).ravel()
+        x_raw = np.sin(theta)
+        y_raw = -np.cos(theta)
+    else:
+        raise ValueError("Pendulum panel requires 'x'+'y' or 'theta' variables.")
+
+    # Downsample
+    n_t = len(time_raw)
+    if n_t > max_points:
+        idx = np.linspace(0, n_t - 1, max_points, dtype=int)
+        x_ds, y_ds = x_raw[idx], y_raw[idx]
+    else:
+        idx = None
+        x_ds, y_ds = x_raw, y_raw
+
+    pad = 0.3
+    lim = max(abs(x_ds).max(), abs(y_ds).max()) + pad
+    ax.set_xlim(-lim, lim)
+    ax.set_ylim(-lim, pad)
+    ax.set_aspect('equal')
+    ax.set_xlabel('x')
+    ax.set_ylabel('y')
+
+    line, = ax.plot([], [], 'o-', lw=2, markersize=8)
+
+    n_frames = len(x_ds)
+
+    def update(i):
+        line.set_data([0, x_ds[i]], [0, y_ds[i]])
+        return [line]
+
+    return n_frames, update
+
+
+def _panel_phase(result, ax, max_points=200, trail=None):
+    """Panel: phase-space trajectory with trailing tail."""
+    from tvbo.plot.phase import _extract_2d
+    time, x, y, xlabel, ylabel = _extract_2d(result, None, None, 0, 0)
+
+    n_t = len(time)
+    if n_t > max_points:
+        idx = np.linspace(0, n_t - 1, max_points, dtype=int)
+        time, x, y = time[idx], x[idx], y[idx]
+
+    if trail is None:
+        trail = max_points // 2
+
+    ax.set_xlim(x.min() - 0.05 * np.ptp(x), x.max() + 0.05 * np.ptp(x))
+    ax.set_ylim(y.min() - 0.05 * np.ptp(y), y.max() + 0.05 * np.ptp(y))
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+
+    line, = ax.plot([], [], 'b-', linewidth=0.8, alpha=0.7)
+    point, = ax.plot([], [], 'ro', markersize=6)
+
+    n_frames = len(time)
+
+    def update(i):
+        lo = max(0, i - trail)
+        line.set_data(x[lo:i + 1], y[lo:i + 1])
+        point.set_data([x[i]], [y[i]])
+        return [line, point]
+
+    return n_frames, update
+
+
+# Registry of panel functions
+_PANEL_REGISTRY = {
+    'timeseries': _panel_timeseries,
+    'pendulum_bob': _panel_pendulum_bob,
+    'phase': _panel_phase,
+}
+
+
+def animate_multi(result, panels, interval=50, figsize=None, max_points=200,
+                  save=None, fps=20):
+    """Compose multiple animation panels into a single FuncAnimation.
+
+    Parameters
+    ----------
+    result : SimulationResult
+    panels : list of str
+        Panel type names (e.g. ['pendulum_bob', 'timeseries']).
+    interval : int
+        Milliseconds between frames.
+    figsize : tuple, optional
+    max_points : int
+        Maximum time points per panel (downsampled for performance).
+    save : str, optional
+        If given, save the animation to this path (e.g. 'anim.gif').
+    fps : int
+        Frames per second when saving.
+
+    Returns
+    -------
+    matplotlib.animation.FuncAnimation
+    """
+    from matplotlib.animation import FuncAnimation
+
+    n_panels = len(panels)
+    if figsize is None:
+        figsize = (4 * n_panels, 3)
+
+    fig, axes = plt.subplots(1, n_panels, figsize=figsize, layout='compressed')
+    if n_panels == 1:
+        axes = [axes]
+
+    updaters = []
+    n_frames = None
+    for ax, panel_name in zip(axes, panels):
+        panel_fn = _PANEL_REGISTRY.get(panel_name)
+        if panel_fn is None:
+            raise ValueError(f"Unknown panel type '{panel_name}'. Available: {list(_PANEL_REGISTRY.keys())}")
+        nf, update_fn = panel_fn(result, ax, max_points=max_points)
+        updaters.append(update_fn)
+        n_frames = min(n_frames, nf) if n_frames is not None else nf
+
+    def update(i):
+        arts = []
+        for fn in updaters:
+            arts.extend(fn(i))
+        return arts
+
+    ani = FuncAnimation(fig, update, frames=n_frames, interval=interval, blit=True)
+    plt.close(fig)
+
+    if save:
+        ani.save(save, writer='pillow', fps=fps)
+
+    return ani
