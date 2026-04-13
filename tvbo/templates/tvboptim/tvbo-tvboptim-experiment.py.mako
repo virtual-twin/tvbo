@@ -1897,9 +1897,9 @@ def run_experiment(
     initial_state = copy.deepcopy(state)
 
 <%
-    # Result labels must match what the solver records.
-    # When auxiliaries exist, VARIABLES_OF_INTEREST records all (states + aux),
-    # so labels must include both state_names and aux_names.
+    # Result labels must match what the solver actually records.
+    # When auxiliaries exist and VARIABLES_OF_INTEREST includes them,
+    # the solver records states + aux, so labels must include both.
     _aux_names = [v for v in (model_output_vars or []) if v in (model.derived_variables or {}).keys()]
     if not _aux_names and model.derived_variables:
         _aux_names = list(model.derived_variables.keys())
