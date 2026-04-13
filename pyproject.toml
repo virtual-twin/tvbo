@@ -47,7 +47,7 @@ dependencies = [
 
 [project.optional-dependencies]
 # NeuroML/LEMS support
-neuroml = ["PyLEMS>=0.6.7"]
+neuroml = ["PyLEMS>=0.6.7", "pyNeuroML>=0.7.0"]
 
 # Data formats (tractograms, HDF5)
 data = ["dipy>=1.10.0"]

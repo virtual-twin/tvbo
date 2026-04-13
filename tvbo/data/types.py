@@ -237,13 +237,17 @@ class SimulationResult:
 
         Parameters
         ----------
-        type : str, optional
-            'network' — nodes colored by state on graph layout.
-            'phase' — trailing trajectory in phase space.
-            'timeseries' — evolving time-series traces.
-            A state variable name — selects that variable, then animates.
-            If None, auto-selects 'network' when a network is available,
-            otherwise 'timeseries'.
+        type : str or list of str, optional
+            Single panel type:
+                'network' — nodes colored by state on graph layout.
+                'phase' — trailing trajectory in phase space.
+                'timeseries' — evolving time-series traces.
+                'pendulum' — dual-panel: pendulum bob + timeseries.
+                A state variable name — selects that variable, then animates.
+            List of panel types for custom multi-panel layout:
+                e.g. ``['pendulum_bob', 'timeseries']``,
+                ``['phase', 'timeseries']``
+            If None, auto-selects based on available metadata.
         **kwargs
             Forwarded to the animation function.
 
@@ -251,9 +255,19 @@ class SimulationResult:
         -------
         matplotlib.animation.FuncAnimation
         """
+        from tvbo.plot.animate import _COMPOSITE_TYPES, _PANEL_REGISTRY, animate_multi
+
+        # List of panels → multi-panel animation
+        if isinstance(type, list):
+            return animate_multi(self, type, **kwargs)
+
+        # Named composite type (e.g. 'pendulum' → ['pendulum_bob', 'timeseries'])
+        if type in _COMPOSITE_TYPES:
+            return animate_multi(self, _COMPOSITE_TYPES[type], **kwargs)
+
         _known_types = {'network', 'phase', 'timeseries', None}
         result = self
-        if type not in _known_types:
+        if type not in _known_types and type not in _PANEL_REGISTRY:
             # Treat as variable name selection
             result = self.sel(variable=type)
             type = None
