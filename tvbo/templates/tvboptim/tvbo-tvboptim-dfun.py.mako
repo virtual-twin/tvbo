@@ -140,6 +140,8 @@ class ${class_name}(AbstractDynamics):
     INITIAL_STATE = ${tuple(initial_state)}
     % if aux_names:
     AUXILIARY_NAMES = ${tuple(aux_names)}
+    # Record states + auxiliaries so output-derived variables appear in results
+    VARIABLES_OF_INTEREST = ${tuple(state_names + aux_names)}
     % else:
     AUXILIARY_NAMES = ()
     % endif
