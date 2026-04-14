@@ -19,6 +19,11 @@ from tests.functional.simulation_backends_shared import (
     MODEL_FILES,
     MODEL_IDS,
     _HAVE_LEMS,
+    _HAVE_NEUROML,
+    _HAVE_NEURON,
+    _HAVE_BRIAN2,
+    _HAVE_NETPYNE,
+    _HAVE_EDEN,
 )
 
 
@@ -198,3 +203,88 @@ class TestNeuroMLValidation:
             adapter.validate(xml)
         except Exception as e:
             pytest.xfail(f"PyLEMS validation failed (known limitation): {e}")
+
+
+# ── Run tests (downstream simulator execution) ───────────────────────
+
+# Use FitzHughNagumo — simple 2-variable model that validates and runs
+# reliably across all backends.
+_RUN_EXPERIMENT = str(NEUROML_EXPERIMENTS_DIR / "FitzHughNagumo_Ex9.yaml")
+
+
+def _run_neuroml_backend(backend):
+    """Helper: load FHN experiment, run via NeuroMLAdapter, return result."""
+    from tvbo.adapters.neuroml import NeuroMLAdapter
+
+    exp = SimulationExperiment.from_file(_RUN_EXPERIMENT)
+    adapter = NeuroMLAdapter(exp)
+    return adapter.run(backend=backend)
+
+
+@pytest.mark.backend_neuroml
+@pytest.mark.skipif(not _HAVE_NEUROML, reason="pyNeuroML not installed")
+class TestNeuroMLRun:
+    """Test LEMS simulation execution via pyNeuroML runners."""
+
+    def test_run_jneuroml(self):
+        """Run FitzHughNagumo via jNeuroML reference engine."""
+        result = _run_neuroml_backend('jneuroml')
+        assert result is not None
+        assert result.integration is not None
+        assert result.integration.data.sizes['time'] > 0
+        assert 'V' in result.integration.data.coords['variable'].values
+
+    @pytest.mark.skipif(not _HAVE_NEURON, reason="NEURON not installed")
+    def test_run_neuron(self):
+        """Run FitzHughNagumo via NEURON (jNeuroML export)."""
+        result = _run_neuroml_backend('neuron')
+        assert result is not None
+        assert result.integration is not None
+        assert result.integration.data.sizes['time'] > 0
+
+    @pytest.mark.skipif(not _HAVE_BRIAN2, reason="Brian2 not installed")
+    def test_run_brian2(self):
+        """Run FitzHughNagumo via Brian2 (jNeuroML export)."""
+        result = _run_neuroml_backend('brian2')
+        assert result is not None
+        assert result.integration is not None
+        assert result.integration.data.sizes['time'] > 0
+
+    @pytest.mark.skipif(not _HAVE_NETPYNE, reason="NetPyNE not installed")
+    def test_run_netpyne(self):
+        """Run FitzHughNagumo via NetPyNE (jNeuroML export)."""
+        result = _run_neuroml_backend('netpyne')
+        assert result is not None
+        assert result.integration is not None
+        assert result.integration.data.sizes['time'] > 0
+
+    @pytest.mark.skipif(not _HAVE_EDEN, reason="EDEN not installed")
+    def test_run_eden(self):
+        """Run FitzHughNagumo via EDEN simulator."""
+        result = _run_neuroml_backend('eden')
+        assert result is not None
+        assert result.integration is not None
+        assert result.integration.data.sizes['time'] > 0
+
+    def test_run_invalid_backend(self):
+        """ValueError for unsupported backend name."""
+        from tvbo.adapters.neuroml import NeuroMLAdapter
+
+        exp = SimulationExperiment.from_file(_RUN_EXPERIMENT)
+        adapter = NeuroMLAdapter(exp)
+        with pytest.raises(ValueError, match="Unknown NeuroML backend"):
+            adapter.run(backend='nonexistent')
+
+    def test_run_via_experiment(self):
+        """SimulationExperiment.run('neuroml') routes to adapter.run()."""
+        exp = SimulationExperiment.from_file(_RUN_EXPERIMENT)
+        result = exp.run("neuroml")
+        assert result is not None
+        assert result.integration is not None
+
+    def test_run_via_experiment_with_backend(self):
+        """SimulationExperiment.run('neuroml', backend='jneuroml') works."""
+        exp = SimulationExperiment.from_file(_RUN_EXPERIMENT)
+        result = exp.run("neuroml", backend="jneuroml")
+        assert result is not None
+        assert result.integration is not None
