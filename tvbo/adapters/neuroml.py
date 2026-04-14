@@ -1560,20 +1560,46 @@ class NeuroMLAdapter(BaseAdapter):
         validate_lems_xml(xml_string)
         return True
 
-    def run(self, **kwargs) -> "ExperimentResult":
-        """Run the LEMS simulation via jNeuroML.
+    # Mapping of backend names to pyNeuroML runner functions.
+    _BACKENDS = {
+        'jneuroml': 'run_lems_with_jneuroml',
+        'neuron':   'run_lems_with_jneuroml_neuron',
+        'brian2':   'run_lems_with_jneuroml_brian2',
+        'netpyne':  'run_lems_with_jneuroml_netpyne',
+        'eden':     'run_lems_with_eden',
+    }
 
-        Uses a fully self-contained monolithic LEMS file with all dimensions,
-        units, and infrastructure types (Simulation, OutputFile, OutputColumn)
-        defined inline.  This avoids the jNeuroML double-read bug that occurs
-        when external NeuroML type files are included via ``<Include>``.
+    def run(self, backend='jneuroml', **kwargs) -> "ExperimentResult":
+        """Run the LEMS simulation via a downstream simulator.
+
+        Exports a self-contained monolithic LEMS file and executes it using
+        one of the pyNeuroML runner functions.
+
+        Parameters
+        ----------
+        backend : str
+            Which simulator to use.  One of:
+
+            * ``'jneuroml'`` (default) — reference LEMS engine (Java)
+            * ``'neuron'``  — NEURON via jNeuroML
+            * ``'brian2'``  — Brian2 via jNeuroML
+            * ``'netpyne'`` — NetPyNE via jNeuroML
+            * ``'eden'``    — EDEN simulator
+        **kwargs
+            Passed through to ``render_code()`` for template rendering.
 
         Returns
         -------
         ExperimentResult
-            Simulation results loaded from jNeuroML output files.
+            Simulation results loaded from output files.
+
+        Raises
+        ------
+        ValueError
+            If *backend* is not one of the supported names.
+        RuntimeError
+            If the downstream simulator fails.
         """
-        import subprocess
         import tempfile
         from pathlib import Path
 
@@ -1582,6 +1608,13 @@ class NeuroMLAdapter(BaseAdapter):
 
         from tvbo.data.types import ExperimentResult, SimulationResult
 
+        backend = backend.lower()
+        if backend not in self._BACKENDS:
+            raise ValueError(
+                f"Unknown NeuroML backend {backend!r}. "
+                f"Supported: {', '.join(sorted(self._BACKENDS))}"
+            )
+
         uses_std = (
             self.experiment and self.experiment.dynamics
             and _uses_neuroml_types(self.experiment.dynamics)
@@ -1589,13 +1622,11 @@ class NeuroMLAdapter(BaseAdapter):
 
         if uses_std:
             sv_names = ['v']
-            dyn_id = safe_id(self.experiment.dynamics.name)
             net_ctx = None
             cell_contexts = {}
         else:
             ctx = build_lems_context(self.experiment)
             sv_names = list(ctx['svs'].keys())
-            dyn_id = ctx['dyn_id']
             net_ctx = ctx.get('net_ctx')
             cell_contexts = ctx.get('cell_contexts', {})
 
@@ -1607,27 +1638,13 @@ class NeuroMLAdapter(BaseAdapter):
             lems_file.write_text(xml)
             (tmpdir / "results").mkdir()
 
-            # Use jNeuroML JAR directly for portability
-            from pyneuroml import JNEUROML_VERSION
-            import pyneuroml
-            jar_dir = Path(pyneuroml.__file__).parent / "lib"
-            jar = jar_dir / f"jNeuroML-{JNEUROML_VERSION}-jar-with-dependencies.jar"
-            result = subprocess.run(
-                ["java", "-jar", str(jar), "tvbo_lems_sim.xml", "-nogui"],
-                capture_output=True, text=True, cwd=str(tmpdir), timeout=600,
-            )
-            if result.returncode != 0:
-                raise RuntimeError(
-                    f"jNeuroML execution failed (rc={result.returncode}):\n"
-                    f"{result.stderr[-1000:]}"
-                )
+            self._invoke_runner(backend, lems_file, tmpdir)
 
-            # Load output: results/{dyn_id}.dat
             dat_files = list(tmpdir.glob("results/*.dat"))
             if not dat_files:
                 raise RuntimeError(
-                    "jNeuroML produced no output files. stderr:\n"
-                    f"{result.stderr[-500:]}"
+                    f"Backend {backend!r} produced no output files in "
+                    f"{tmpdir / 'results'}"
                 )
 
             raw = np.loadtxt(str(dat_files[0]))
@@ -1636,15 +1653,13 @@ class NeuroMLAdapter(BaseAdapter):
         values_data = raw[:, 1:]
 
         if net_ctx and cell_contexts:
-            # Multi-population: rebuild column labels from the ordered out_cols
-            # produced by the template (same order as the OutputFile columns).
             col_names = []
             for pop in net_ctx['populations']:
                 if pop.get('is_input'):
-                    continue  # input source populations don't have output columns
+                    continue
                 ct = cell_contexts.get(pop['dyn_name'], {})
                 if ct.get('is_synapse'):
-                    continue  # synapse populations don't have output columns
+                    continue
                 for sv_name in ct.get('svs', {}):
                     for idx in range(pop['size']):
                         col_names.append(f"{pop['id']}[{idx}]/{sv_name}")
@@ -1655,7 +1670,6 @@ class NeuroMLAdapter(BaseAdapter):
                 coords={'time': time_data, 'quantity': col_names},
             )
         else:
-            # Single population: (time, variable) — no node dim when there's only one
             da = xr.DataArray(
                 data=values_data.reshape(-1, len(sv_names)),
                 dims=['time', 'variable'],
@@ -1671,3 +1685,50 @@ class NeuroMLAdapter(BaseAdapter):
             source=self.experiment,
             name=getattr(self.experiment, 'label', None),
         )
+
+    # ── private helpers ───────────────────────────────────────────────
+
+    @staticmethod
+    def _invoke_runner(backend: str, lems_file, tmpdir):
+        """Call the appropriate pyNeuroML runner for *backend*."""
+        import os
+
+        from pyneuroml import pynml
+
+        runner_name = NeuroMLAdapter._BACKENDS[backend]
+        runner = getattr(pynml, runner_name)
+
+        # jNeuroML's NEURON export needs NEURON_HOME to locate nrnivmodl.
+        # When running inside a venv the binaries live in $VIRTUAL_ENV/bin,
+        # so we derive NEURON_HOME from the nrniv location if unset.
+        env_patch = {}
+        if backend == 'neuron' and 'NEURON_HOME' not in os.environ:
+            import shutil
+            nrniv = shutil.which('nrniv')
+            if nrniv:
+                from pathlib import Path
+                env_patch['NEURON_HOME'] = str(Path(nrniv).parent.parent)
+
+        old_env = {k: os.environ.get(k) for k in env_patch}
+        os.environ.update(env_patch)
+        try:
+            success = runner(
+                str(lems_file.name),
+                nogui=True,
+                load_saved_data=False,
+                exec_in_dir=str(tmpdir),
+                verbose=False,
+                exit_on_fail=False,
+            )
+        finally:
+            for k, v in old_env.items():
+                if v is None:
+                    os.environ.pop(k, None)
+                else:
+                    os.environ[k] = v
+
+        if not success:
+            raise RuntimeError(
+                f"pyNeuroML runner {runner_name}() failed for "
+                f"{lems_file.name} (backend={backend!r})"
+            )

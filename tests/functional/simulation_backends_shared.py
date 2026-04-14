@@ -18,6 +18,10 @@ _HAVE_TVBOPTIM = _has("tvboptim")
 _HAVE_JULIACALL = _has("juliacall")
 _HAVE_LEMS = _has("lems")
 _HAVE_NEUROML = _has("pyneuroml")
+_HAVE_NEURON = _has("neuron")
+_HAVE_BRIAN2 = _has("brian2")
+_HAVE_NETPYNE = _has("netpyne")
+_HAVE_EDEN = _has("eden")
 
 
 from tvbo import database_path
