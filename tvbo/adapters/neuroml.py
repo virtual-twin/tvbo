@@ -387,9 +387,12 @@ def _nml_attr(param, default=''):
             return f"{formatted} {nml_unit}"
         return formatted
 
-    # String-valued attribute (no numeric value) via description
+    # String-valued attribute via description or label
     if desc:
         return desc
+    label = str(getattr(param, 'label', '') or '')
+    if label:
+        return label
 
     return str(default)
 
@@ -407,6 +410,7 @@ _NML_ROLE_SLOTS = frozenset({
     'forwardRate', 'reverseRate',
     'steadyState', 'timeCourse',
     'q10Settings',
+    'blockMechanism', 'plasticityMechanism',
 })
 
 # role slot → (extends_type, exposure_name, exposure_dimension)
@@ -434,6 +438,7 @@ _CONCENTRATION_MODEL_TYPES = frozenset({
 # with parameter attributes (no ComponentType definition needed).
 _SYNAPSE_TYPES = frozenset({
     'expOneSynapse', 'expTwoSynapse', 'alphaSynapse',
+    'alphaCurrentSynapse',
     'blockingPlasticSynapse', 'doubleSynapse',
     'gapJunction', 'linearGradedSynapse', 'gradedSynapse',
     'silentSynapse',
@@ -896,6 +901,36 @@ def _render_cell_xml(dyn, dyn_id=None, custom_types=None):
     if not iri.startswith('neuroml:'):
         return None
     cell_type = iri.split(':', 1)[1]
+
+    # Flat cell types: render as simple <type id="..." params.../> with no children
+    _FLAT_CELL_TYPES = {
+        'iafCell', 'iafRefCell', 'iafTauCell', 'iafTauRefCell',
+        'izhikevichCell', 'izhikevich2007Cell',
+        'adExIaFCell', 'fitzHughNagumoCell', 'fitzHughNagumo1969Cell',
+        'IF_curr_alpha', 'IF_curr_exp', 'IF_cond_alpha', 'IF_cond_exp',
+        'EIF_cond_exp_isfa_ista', 'EIF_cond_alpha_isfa_ista',
+        'HH_cond_exp',
+    }
+    if cell_type in _FLAT_CELL_TYPES:
+        if dyn_id is None:
+            dyn_id = safe_id(dyn.name or 'dynamics')
+        params = dyn.parameters or {}
+        attr_parts = [f'id="{dyn_id}"']
+        for pn, pv in params.items():
+            pn = str(pn)
+            attr_parts.append(f'{pn}="{_nml_attr(pv)}"')
+        cell_xml = f'    <{cell_type} {" ".join(attr_parts)}/>'
+        return {
+            'channel_xmls': [],
+            'cell_xml': cell_xml,
+            'input_xmls': [],
+            'input_refs': [],
+            'conc_xmls': [],
+            'custom_types': custom_types,
+            'cell_type': cell_type,
+            'dyn_id': dyn_id,
+        }
+
     if cell_type not in ('pointCellCondBased', 'cell'):
         return None
 
@@ -1032,9 +1067,10 @@ def _render_cell_xml(dyn, dyn_id=None, custom_types=None):
 
     elif cell_type == 'cell':
         diameter = float(_nml_attr(params.get('diameter'), '10'))
-        length = float(_nml_attr(params.get('length'), '20'))
+        length = float(_nml_attr(params.get('length'), '0'))
         spec_cap = _nml_attr(params.get('specificCapacitance'), '1.0 uF_per_cm2')
-        init_v = _nml_attr(params.get('initMembPotential'), '-65.0 mV')
+        init_v = _nml_attr(
+            params.get('initMembPotential') or params.get('v0'), '-65.0 mV')
         spike_thresh = _nml_attr(params.get('spikeThresh'), '0 mV')
         resistivity_val = _nml_attr(params.get('resistivity'), '0.1 kohm_cm')
 
@@ -1090,10 +1126,28 @@ def _render_standard_neuroml_lems(experiment):
     - Concentration models → standalone XML + species in intracellularProperties
 
     Supports cell types: ``pointCellCondBased``, ``cell``.
+    Also supports multi-population networks when ``experiment.network`` has
+    nodes and edges with cell types using NeuroML IRIs.
 
     Returns the complete LEMS XML string, or None if the dynamics can't be
     represented using standard types (caller should fall back to flat rendering).
     """
+    # ── Multi-population network detection ──
+    network = getattr(experiment, 'network', None)
+    if network:
+        nodes = getattr(network, 'nodes', None) or []
+        edges = getattr(network, 'edges', None) or []
+        dynamics_lib = getattr(network, 'dynamics', None) or {}
+        if nodes and edges and dynamics_lib:
+            # Check if any network cell type uses standard NeuroML types
+            has_nml_cells = any(
+                _uses_neuroml_types(d)
+                for d in dynamics_lib.values()
+                if hasattr(d, 'iri')
+            )
+            if has_nml_cells:
+                return _render_network_standard_neuroml_lems(experiment)
+
     dyn = experiment.dynamics
     if not dyn:
         return None
@@ -1107,124 +1161,14 @@ def _render_standard_neuroml_lems(experiment):
     if cell_type in ('fitzHughNagumoCell', 'fitzHughNagumo1969Cell'):
         return _render_fhn_lems(experiment, cell_type)
 
-    if cell_type not in ('pointCellCondBased', 'cell'):
+    # Delegate to cell rendering helper
+    cell_result = _render_cell_xml(dyn)
+    if cell_result is None:
         return None
 
+    custom_types = cell_result['custom_types']
+    dyn_id = cell_result['dyn_id']
     params = dyn.parameters or {}
-    components = dyn.modes or {}
-
-    # ── Classify components by IRI type ──
-    channels = {}
-    inputs = {}
-    conc_models = {}
-    for comp_name, comp in components.items():
-        comp_type = _nml_type_name(comp) or ''
-        if comp_type in _CHANNEL_TYPES:
-            channels[comp_name] = comp
-        elif comp_type in CURRENT_INPUT_TYPES:
-            inputs[comp_name] = comp
-        elif comp_type in _CONCENTRATION_MODEL_TYPES:
-            conc_models[comp_name] = comp
-
-    # ── Render channels with generic tree walker ──
-    custom_types = {}
-    channel_xmls = []
-    channel_pops = []
-    channel_densities = []
-
-    for comp_name, comp in channels.items():
-        comp_params = comp.parameters or {}
-
-        ch_lines = _render_nml_subtree(
-            comp, comp_name, indent=4, custom_types=custom_types,
-            exclude_params=_CHANNEL_LINKING_PARAMS,
-        )
-        channel_xmls.append('\n'.join(ch_lines))
-
-        if cell_type == 'pointCellCondBased':
-            number_attr = _nml_attr(comp_params.get('number'), '1')
-            erev_attr = _nml_attr(comp_params.get('erev'), '0mV')
-            channel_pops.append(
-                f'        <channelPopulation id="{safe_id(comp_name)}_pop" '
-                f'ionChannel="{safe_id(comp_name)}" '
-                f'number="{number_attr}" erev="{erev_attr}"/>'
-            )
-        elif cell_type == 'cell':
-            erev_attr = _nml_attr(comp_params.get('erev'), '0mV')
-            ion_attr = _nml_attr(comp_params.get('ion'), 'non_specific')
-            ghk_perm = comp_params.get('permeability')
-            if ghk_perm:
-                channel_densities.append(
-                    f'                <channelDensityGHK permeability="{_nml_attr(ghk_perm)}" '
-                    f'id="{safe_id(comp_name)}_all" '
-                    f'ionChannel="{safe_id(comp_name)}" ion="{ion_attr}"/>'
-                )
-            else:
-                cd_attr = _nml_attr(comp_params.get('condDensity'), '0.0003 S_per_cm2')
-                channel_densities.append(
-                    f'                <channelDensity condDensity="{cd_attr}" '
-                    f'id="{safe_id(comp_name)}_all" '
-                    f'ionChannel="{safe_id(comp_name)}" erev="{erev_attr}" ion="{ion_attr}"/>'
-                )
-
-    # ── Render input components ──
-    input_xmls = []
-    input_refs = []
-    for inp_name, inp in inputs.items():
-        inp_lines = _render_nml_subtree(
-            inp, inp_name, indent=4, custom_types=custom_types,
-        )
-        input_xmls.append('\n'.join(inp_lines))
-        input_refs.append(
-            f'        <explicitInput target="pop[0]" '
-            f'input="{safe_id(inp_name)}" destination="synapses"/>'
-        )
-
-    # Legacy: pulse params on the cell (backward compat)
-    if not input_xmls:
-        pulse_idx = 0
-        for suffix in ('', '_2', '_3', '_4'):
-            d_key = f'pulse_delay{suffix}'
-            dur_key = f'pulse_duration{suffix}'
-            amp_key = f'I_amp{suffix}'
-            if params.get(d_key) and params.get(dur_key) and params.get(amp_key):
-                pulse_idx += 1
-                pid = f'pulseGen{pulse_idx}'
-                input_xmls.append(
-                    f'    <pulseGenerator id="{pid}" '
-                    f'delay="{_nml_attr(params[d_key])}" '
-                    f'duration="{_nml_attr(params[dur_key])}" '
-                    f'amplitude="{_nml_attr(params[amp_key])}"/>'
-                )
-                input_refs.append(
-                    f'        <explicitInput target="pop[0]" '
-                    f'input="{pid}" destination="synapses"/>'
-                )
-
-    # ── Render concentration models ──
-    conc_xmls = []
-    species_xmls = []
-    for cm_name, cm in conc_models.items():
-        cm_type = _nml_type_name(cm)
-        cm_params = cm.parameters or {}
-        attrs = [f'id="{safe_id(cm_name)}"', f'type="{cm_type}"']
-        for p_name, p_val in cm_params.items():
-            if p_name in ('initialConcentration', 'initialExtConcentration'):
-                continue
-            nml_val = _nml_attr(p_val)
-            if nml_val:
-                attrs.append(f'{p_name}="{nml_val}"')
-        conc_xmls.append(f'    <concentrationModel {" ".join(attrs)}/>')
-
-        ion_attr = _nml_attr(cm_params.get('ion'), 'ca')
-        init_conc = _nml_attr(cm_params.get('initialConcentration'), '5e-6 mM')
-        init_ext = _nml_attr(cm_params.get('initialExtConcentration'), '2 mM')
-        species_xmls.append(
-            f'                <species id="{ion_attr}" ion="{ion_attr}" '
-            f'concentrationModel="{safe_id(cm_name)}" '
-            f'initialConcentration="{init_conc}" '
-            f'initialExtConcentration="{init_ext}"/>'
-        )
 
     # ── Integration parameters ──
     integration = getattr(experiment, 'integration', None)
@@ -1234,7 +1178,6 @@ def _render_standard_neuroml_lems(experiment):
     time_scale = str(raw_ts) if str(raw_ts) in ('s', 'ms', 'us') else 'ms'
 
     label = getattr(experiment, 'label', None)
-    dyn_id = safe_id(dyn.name or 'dynamics')
     sim_id = 'sim_' + (safe_id(label) if label else dyn_id)
 
     # ── Assemble XML ──
@@ -1254,71 +1197,25 @@ def _render_standard_neuroml_lems(experiment):
         lines.append('')
 
     # Concentration models (before cell that references them)
-    for cm_xml in conc_xmls:
+    for cm_xml in cell_result['conc_xmls']:
         lines.append(cm_xml)
         lines.append('')
 
     # Channel definitions (standalone, before cell)
-    for ch in channel_xmls:
+    for ch in cell_result['channel_xmls']:
         lines.append(ch)
         lines.append('')
 
     # Cell definition
-    if cell_type == 'pointCellCondBased':
-        C_attr = _nml_attr(params.get('C'), '10pF')
-        v0_attr = _nml_attr(params.get('v0'), '-65mV')
-        thresh_attr = _nml_attr(params.get('thresh'), '20mV')
-        lines.append(
-            f'    <pointCellCondBased id="{dyn_id}" C="{C_attr}" '
-            f'v0="{v0_attr}" thresh="{thresh_attr}">'
-        )
-        for pop in channel_pops:
-            lines.append(pop)
-        lines.append('    </pointCellCondBased>')
-
-    elif cell_type == 'cell':
-        diameter = float(_nml_attr(params.get('diameter'), '10'))
-        length = float(_nml_attr(params.get('length'), '20'))
-        spec_cap = _nml_attr(params.get('specificCapacitance'), '1.0 uF_per_cm2')
-        init_v = _nml_attr(params.get('initMembPotential'), '-65.0 mV')
-        spike_thresh = _nml_attr(params.get('spikeThresh'), '0 mV')
-        resistivity_val = _nml_attr(params.get('resistivity'), '0.1 kohm_cm')
-
-        lines.append(f'    <cell id="{dyn_id}">')
-        lines.append('        <morphology id="morphology">')
-        lines.append('            <segment id="0" name="Soma">')
-        lines.append(f'                <proximal x="0.0" y="0.0" z="0.0" diameter="{diameter}"/>')
-        lines.append(f'                <distal x="0.0" y="0.0" z="{length}" diameter="{diameter}"/>')
-        lines.append('            </segment>')
-        lines.append('            <segmentGroup id="all">')
-        lines.append('                <member segment="0"/>')
-        lines.append('            </segmentGroup>')
-        lines.append('            <segmentGroup id="soma_group">')
-        lines.append('                <member segment="0"/>')
-        lines.append('            </segmentGroup>')
-        lines.append('        </morphology>')
-        lines.append('        <biophysicalProperties id="biophys">')
-        lines.append('            <membraneProperties>')
-        for cd in channel_densities:
-            lines.append(cd)
-        lines.append(f'                <specificCapacitance value="{spec_cap}"/>')
-        lines.append(f'                <initMembPotential value="{init_v}"/>')
-        lines.append(f'                <spikeThresh value="{spike_thresh}"/>')
-        lines.append('            </membraneProperties>')
-        lines.append('            <intracellularProperties>')
-        for sp in species_xmls:
-            lines.append(sp)
-        lines.append(f'                <resistivity value="{resistivity_val}"/>')
-        lines.append('            </intracellularProperties>')
-        lines.append('        </biophysicalProperties>')
-        lines.append('    </cell>')
-
+    lines.append(cell_result['cell_xml'])
     lines.append('')
 
     # Input generators (standalone)
-    for inp_xml in input_xmls:
+    for inp_xml in cell_result['input_xmls']:
         lines.append(inp_xml)
         lines.append('')
+
+    input_refs = cell_result['input_refs']
 
     # ── Temperature / tissue wrapper ──
     tissue_start = params.get('tissue_startTemperature')
@@ -1401,6 +1298,564 @@ def _render_standard_neuroml_lems(experiment):
     return '\n'.join(lines)
 
 
+# ── Multi-population network rendering (standard NeuroML types) ──────
+
+def _render_network_standard_neuroml_lems(experiment):
+    """Render a multi-population NeuroML network using standard types.
+
+    Uses :func:`_build_network_context` to extract populations, synapses,
+    connections, and inputs from the experiment's network.  Each cell type
+    is rendered via :func:`_render_cell_xml`.  Synapses use standard
+    NeuroML component types (expOneSynapse, etc.).
+
+    Returns the complete LEMS XML string, or None on failure.
+    """
+    from collections import OrderedDict
+
+    network = experiment.network
+    dynamics_lib = getattr(network, 'dynamics', None) or {}
+    nodes = getattr(network, 'nodes', None) or []
+    edges = getattr(network, 'edges', None) or []
+
+    # ── Integration parameters ──
+    integration = getattr(experiment, 'integration', None)
+    dt = integration.step_size if integration else 0.01
+    duration = integration.duration if integration else 1000.0
+    raw_ts = (getattr(integration, 'time_scale', None) or 'ms') if integration else 'ms'
+    time_scale = str(raw_ts) if str(raw_ts) in ('s', 'ms', 'us') else 'ms'
+
+    label = getattr(experiment, 'label', None)
+    dyn_id = safe_id(
+        (experiment.dynamics.name if experiment.dynamics else None) or 'network'
+    )
+    sim_id = 'sim_' + (safe_id(label) if label else dyn_id)
+
+    # ── Group nodes by dynamics name → populations ──
+    groups = OrderedDict()  # dyn_name -> [node, ...]
+    for node in nodes:
+        node_dyn = getattr(node, 'dynamics', None)
+        if node_dyn:
+            dyn_name = getattr(node_dyn, 'name', None) or str(node_dyn)
+        else:
+            dyn_name = dyn_id
+        groups.setdefault(dyn_name, []).append(node)
+
+    # ── Classify each group: cell, input source, or current source ──
+    custom_types = {}
+    cell_xmls_all = []   # channel + cell definition XML blocks
+    input_xmls_all = []  # standalone input component XML blocks
+    synapse_xmls = []    # standalone synapse component XML blocks
+
+    populations = []       # {id, component, size, node_ids, dyn_name}
+    node_pop_map = {}      # node_id -> (pop_id, index_within_pop)
+    input_nodes = {}       # node_id -> {id, type, params}
+    output_pops = []       # (pop_id, size, sv_var_name) for OutputColumns
+
+    for dyn_name, group_nodes in groups.items():
+        # Resolve NeuroML type from dynamics library IRI
+        _dyn_lib_obj = dynamics_lib.get(dyn_name)
+        _dyn_iri = getattr(_dyn_lib_obj, 'iri', '') or ''
+        _nml_type = _dyn_iri.split(':', 1)[1] if _dyn_iri.startswith('neuroml:') else dyn_name
+        is_current_input = _nml_type in CURRENT_INPUT_TYPES
+        is_event_source = _nml_type in EVENT_SOURCE_TYPES
+
+        if is_current_input:
+            for node in group_nodes:
+                nid = getattr(node, 'id', 0)
+                # Merge: dynamics library params as defaults, node params override
+                dyn_params = _normalize_edge_params(
+                    getattr(_dyn_lib_obj, 'parameters', None))
+                node_params = _normalize_edge_params(
+                    getattr(node, 'parameters', None))
+                merged_params = {**dyn_params, **node_params}
+                param_strs = {}
+                for pn, pv in merged_params.items():
+                    val = getattr(pv, 'value', pv)
+                    unit = getattr(pv, 'unit', None) or ''
+                    if unit:
+                        nml_unit = _TVBO_TO_NML_UNIT.get(str(unit), str(unit))
+                        param_strs[str(pn)] = f"{val} {nml_unit}"
+                    else:
+                        param_strs[str(pn)] = str(val)
+                input_id = f"{safe_id(dyn_name)}_{nid}"
+                input_nodes[nid] = {
+                    'type': _nml_type,
+                    'id': input_id,
+                    'params': param_strs,
+                }
+                # Render the input component XML
+                attr_parts = [f'id="{input_id}"']
+                for pk, pv_str in param_strs.items():
+                    attr_parts.append(f'{pk}="{pv_str}"')
+                input_xmls_all.append(
+                    f'    <{_nml_type} {" ".join(attr_parts)}/>'
+                )
+            continue
+
+        if is_event_source:
+            dyn_obj = dynamics_lib.get(dyn_name)
+            for sub_idx, node in enumerate(group_nodes):
+                nid = getattr(node, 'id', sub_idx)
+                # Merge: dynamics library params as defaults, node params override
+                dyn_params = _normalize_edge_params(
+                    getattr(_dyn_lib_obj, 'parameters', None))
+                node_params = _normalize_edge_params(
+                    getattr(node, 'parameters', None))
+                merged_params = {**dyn_params, **node_params}
+                param_strs = {}
+                for pn, pv in merged_params.items():
+                    val = getattr(pv, 'value', pv)
+                    unit = getattr(pv, 'unit', None) or ''
+                    if val is not None:
+                        if unit:
+                            nml_unit = _TVBO_TO_NML_UNIT.get(str(unit), str(unit))
+                            param_strs[str(pn)] = f"{val} {nml_unit}"
+                        else:
+                            param_strs[str(pn)] = str(val)
+
+                comp_id = f"{safe_id(dyn_name)}_{nid}"
+                pop_id = f"{safe_id(dyn_name)}_{nid}_pop"
+                node_pop_map[nid] = (pop_id, 0)
+                populations.append({
+                    "id": pop_id,
+                    "component": comp_id,
+                    "size": 1,
+                    "node_ids": [nid],
+                    "dyn_name": dyn_name,
+                    "is_input": True,
+                })
+
+                # Extract preset_time events → <spike> children
+                spike_children_xml = _render_event_children(
+                    dyn_obj, time_scale)
+
+                attr_parts = [f'id="{comp_id}"']
+                for pk, pv_str in param_strs.items():
+                    attr_parts.append(f'{pk}="{pv_str}"')
+                if spike_children_xml:
+                    input_xmls_all.append(
+                        f'    <{_nml_type} {" ".join(attr_parts)}>\n'
+                        f'{spike_children_xml}\n'
+                        f'    </{_nml_type}>'
+                    )
+                else:
+                    input_xmls_all.append(
+                        f'    <{_nml_type} {" ".join(attr_parts)}/>'
+                    )
+            continue
+
+        # ── Normal cell type ──
+        dyn_obj = dynamics_lib.get(dyn_name)
+        if dyn_obj is None:
+            dyn_obj = experiment.dynamics
+        if dyn_obj is None:
+            continue
+
+        cell_id = safe_id(dyn_name)
+
+        # Check if this cell type uses standard NeuroML types
+        cell_result = _render_cell_xml(dyn_obj, dyn_id=cell_id,
+                                       custom_types=custom_types)
+        if cell_result is not None:
+            # Standard NeuroML cell — use tree walker output
+            for ch in cell_result['channel_xmls']:
+                cell_xmls_all.append(ch)
+            for cm in cell_result['conc_xmls']:
+                cell_xmls_all.append(cm)
+            cell_xmls_all.append(cell_result['cell_xml'])
+            # Cell inputs (components on cell, like pulseGenerator children)
+            for inp_xml in cell_result['input_xmls']:
+                input_xmls_all.append(inp_xml)
+            custom_types = cell_result['custom_types']
+            sv_var = 'v'
+        else:
+            # Not a standard cell — skip for now (will fall through to
+            # Mako template rendering)
+            return None
+
+        pop_id = safe_id(dyn_name) + "_pop"
+        node_ids = []
+        for idx, node in enumerate(group_nodes):
+            nid = getattr(node, 'id', idx)
+            node_pop_map[nid] = (pop_id, idx)
+            node_ids.append(nid)
+
+        populations.append({
+            "id": pop_id,
+            "component": cell_id,
+            "size": len(group_nodes),
+            "node_ids": node_ids,
+            "dyn_name": dyn_name,
+        })
+        output_pops.append((pop_id, len(group_nodes), sv_var))
+
+    # ── Process edges → synapses + connections + inputs ──
+    synapse_set = {}    # dedup_key -> synapse_id
+    connections = []    # {from_pop, from_idx, to_pop, to_idx, synapse, weight, delay}
+    explicit_inputs = []  # {input_id, target_pop, target_idx}
+
+    for edge_idx, edge in enumerate(edges):
+        src = getattr(edge, 'source', None)
+        tgt = getattr(edge, 'target', None)
+        if src is None or tgt is None:
+            continue
+        src, tgt = int(src), int(tgt)
+
+        # Edge from current input → explicitInput (with optional weight)
+        if src in input_nodes:
+            if tgt not in node_pop_map:
+                continue
+            inp_info = input_nodes[src]
+            tgt_pop, tgt_idx = node_pop_map[tgt]
+            inp_edge_params = _normalize_edge_params(
+                getattr(edge, 'parameters', None))
+            inp_weight = None
+            for pn, pv in inp_edge_params.items():
+                if str(pn) == 'weight':
+                    inp_weight = float(getattr(pv, 'value', pv))
+            explicit_inputs.append({
+                'input_id': inp_info['id'],
+                'target_pop': tgt_pop,
+                'target_idx': tgt_idx,
+                'weight': inp_weight,
+            })
+            continue
+
+        if src not in node_pop_map or tgt not in node_pop_map:
+            continue
+
+        src_pop, src_idx = node_pop_map[src]
+        tgt_pop, tgt_idx = node_pop_map[tgt]
+
+        # Get synapse type from coupling name.
+        # If the coupling name matches a dynamics library entry, resolve
+        # the IRI and parameters from that entry (TVBO-native definition).
+        edge_coupling = getattr(edge, 'coupling', None)
+        resolved_syn_dyn = None
+        if edge_coupling:
+            coup_str = str(edge_coupling)
+            if coup_str in dynamics_lib:
+                resolved_syn_dyn = dynamics_lib[coup_str]
+
+        edge_params = _normalize_edge_params(
+            getattr(edge, 'parameters', None))
+
+        weight = None
+        delay = None
+        syn_params = {}  # {name: "formatted value string"}
+
+        # 1) Edge parameters → weight/delay + synapse params
+        for pname, pval in edge_params.items():
+            pname = str(pname)
+            val = getattr(pval, 'value', pval)
+            unit = getattr(pval, 'unit', None) or ''
+            if pname == 'weight':
+                weight = float(val) if val is not None else None
+            elif pname == 'delay':
+                delay = val
+                if unit:
+                    delay = f"{val} {unit}"
+            else:
+                if unit:
+                    nml_unit = _TVBO_TO_NML_UNIT.get(str(unit), str(unit))
+                    syn_params[pname] = f"{val} {nml_unit}"
+                else:
+                    syn_params[pname] = str(val)
+
+        # 2) Resolve synapse type name from IRI or coupling string
+        syn_type = None
+        if resolved_syn_dyn:
+            nml = _nml_type_name(resolved_syn_dyn)
+            syn_type = nml or str(edge_coupling)
+        elif edge_coupling:
+            coup_name = (getattr(edge_coupling, 'name', None)
+                         or str(edge_coupling))
+            syn_type = coup_name
+
+        if syn_type is None:
+            syn_type = f"syn{edge_idx}"
+
+        # 3) Dedup — use dynamics library name as key when resolved,
+        #    else (syn_type + edge params) for inline definitions.
+        if resolved_syn_dyn:
+            syn_key = (str(edge_coupling),)
+        else:
+            syn_key = (syn_type, tuple(sorted(syn_params.items())))
+        if syn_key not in synapse_set:
+            if resolved_syn_dyn:
+                # Tree walker uses the dynamics library key as element id
+                syn_id = safe_id(str(edge_coupling))
+            elif any(s_id == safe_id(syn_type)
+                     for s_id in synapse_set.values()):
+                syn_id = f"{safe_id(syn_type)}_{edge_idx}"
+            else:
+                syn_id = safe_id(syn_type)
+            synapse_set[syn_key] = syn_id
+
+            # ── Render synapse XML ──
+            if resolved_syn_dyn:
+                # Dynamics-based: use the generic tree walker (same as
+                # channels/gates).  Handles child modes (blockMechanism,
+                # plasticityMechanism, etc.) recursively.
+                syn_lines = _render_nml_subtree(
+                    resolved_syn_dyn, str(edge_coupling),
+                    indent=4, custom_types=None)
+                if syn_lines:
+                    synapse_xmls.append('\n'.join(syn_lines))
+            else:
+                # Inline string coupling: flat <synType id="..." params.../>
+                # Merge edge params into syn_params (already done above)
+                attr_parts = [f'id="{syn_id}"']
+                for pk, pv_str in syn_params.items():
+                    attr_parts.append(f'{pk}="{pv_str}"')
+                synapse_xmls.append(
+                    f'    <{syn_type} {" ".join(attr_parts)}/>')
+
+        syn_id = synapse_set[syn_key]
+
+        # Classify connection type based on synapse
+        conn_class = 'chemical'
+        if syn_type in _ELECTRICAL_SYNAPSE_TYPES:
+            conn_class = 'electrical'
+        elif syn_type in _CONTINUOUS_SYNAPSE_TYPES:
+            conn_class = 'continuous'
+
+        # For continuous connections, auto-generate silentSynapse preComponent
+        pre_component = None
+        if conn_class == 'continuous':
+            pre_component = f"silent_{syn_id}"
+
+        connections.append({
+            'from_pop': src_pop,
+            'from_idx': src_idx,
+            'to_pop': tgt_pop,
+            'to_idx': tgt_idx,
+            'synapse': syn_id,
+            'syn_type': syn_type,
+            'weight': weight,
+            'delay': delay,
+            'conn_class': conn_class,
+            'pre_component': pre_component,
+        })
+
+    # ── Assemble LEMS XML ──
+    lines = [
+        '<Lems>',
+        f'  <Target component="{sim_id}"/>',
+        '',
+        '  <Include file="Cells.xml"/>',
+        '  <Include file="Networks.xml"/>',
+        '  <Include file="Simulation.xml"/>',
+        '',
+    ]
+
+    # Custom ComponentType definitions
+    for ct_xml in custom_types.values():
+        lines.append(ct_xml)
+        lines.append('')
+
+    # Cell type definitions (channels + cell)
+    for cell_xml in cell_xmls_all:
+        lines.append(cell_xml)
+        lines.append('')
+
+    # Input components
+    for inp_xml in input_xmls_all:
+        lines.append(inp_xml)
+        lines.append('')
+
+    # Synapse components
+    for syn_xml in synapse_xmls:
+        lines.append(syn_xml)
+        lines.append('')
+
+    # Auto-generate silentSynapse preComponents for continuous connections
+    silent_ids = set()
+    for conn in connections:
+        if conn.get('pre_component') and conn['pre_component'] not in silent_ids:
+            silent_ids.add(conn['pre_component'])
+            lines.append(
+                f'    <silentSynapse id="{conn["pre_component"]}"/>')
+            lines.append('')
+
+    # Network block
+    lines.append('    <network id="net1">')
+
+    # Populations
+    for pop in populations:
+        if pop.get('is_input'):
+            continue
+        lines.append(
+            f'        <population id="{pop["id"]}" '
+            f'component="{pop["component"]}" size="{pop["size"]}"/>'
+        )
+
+    # Event source populations (spikeGenerator, spikeArray, etc.)
+    for pop in populations:
+        if pop.get('is_input'):
+            lines.append(
+                f'        <population id="{pop["id"]}" '
+                f'component="{pop["component"]}" size="{pop["size"]}"/>'
+            )
+
+    # Synaptic connections — split into chemical, electrical, continuous
+    chem_conns = [c for c in connections if c['conn_class'] == 'chemical']
+    elec_conns = [c for c in connections if c['conn_class'] == 'electrical']
+    cont_conns = [c for c in connections if c['conn_class'] == 'continuous']
+
+    # Chemical projections (group by from_pop, to_pop, synapse)
+    if chem_conns:
+        chem_projs = OrderedDict()
+        for conn in chem_conns:
+            key = (conn['from_pop'], conn['to_pop'], conn['synapse'])
+            chem_projs.setdefault(key, []).append(conn)
+        for pidx, ((fp, tp, syn), proj_conns) in enumerate(
+            chem_projs.items()
+        ):
+            proj_id = f"projection{pidx}"
+            lines.append(
+                f'        <projection id="{proj_id}" '
+                f'presynapticPopulation="{fp}" '
+                f'postsynapticPopulation="{tp}" synapse="{syn}">')
+            for cidx, conn in enumerate(proj_conns):
+                pre = f'../{fp}[{conn["from_idx"]}]'
+                post = f'../{tp}[{conn["to_idx"]}]'
+                if (conn.get('weight') is not None
+                        or conn.get('delay') is not None):
+                    w = conn.get('weight', 1.0) or 1.0
+                    d = conn.get('delay', '0ms') or '0ms'
+                    lines.append(
+                        f'            <connectionWD id="{cidx}" '
+                        f'preCellId="{pre}" postCellId="{post}" '
+                        f'weight="{w}" delay="{d}" '
+                        f'destination="synapses"/>')
+                else:
+                    lines.append(
+                        f'            <connection id="{cidx}" '
+                        f'preCellId="{pre}" postCellId="{post}" '
+                        f'destination="synapses"/>')
+            lines.append('        </projection>')
+
+    # Electrical projections (gap junctions)
+    if elec_conns:
+        # Group by (from_pop, to_pop, synapse) → projection
+        elec_projs = OrderedDict()
+        for conn in elec_conns:
+            key = (conn['from_pop'], conn['to_pop'], conn['synapse'])
+            elec_projs.setdefault(key, []).append(conn)
+        for pidx, ((fp, tp, syn), proj_conns) in enumerate(elec_projs.items()):
+            proj_id = f"elecProj_{pidx}"
+            lines.append(
+                f'        <electricalProjection id="{proj_id}" '
+                f'presynapticPopulation="{fp}" '
+                f'postsynapticPopulation="{tp}">')
+            for cidx, conn in enumerate(proj_conns):
+                w = conn.get('weight')
+                if w is not None:
+                    lines.append(
+                        f'            <electricalConnectionInstanceW id="{cidx}" '
+                        f'preCell="../{fp}[{conn["from_idx"]}]" '
+                        f'postCell="../{tp}[{conn["to_idx"]}]" '
+                        f'synapse="{syn}" weight="{w}"/>')
+                else:
+                    lines.append(
+                        f'            <electricalConnection id="{cidx}" '
+                        f'preCell="{conn["from_idx"]}" '
+                        f'postCell="{conn["to_idx"]}" '
+                        f'synapse="{syn}"/>')
+            lines.append('        </electricalProjection>')
+
+    # Continuous projections (graded synapses)
+    if cont_conns:
+        cont_projs = OrderedDict()
+        for conn in cont_conns:
+            key = (conn['from_pop'], conn['to_pop'], conn['synapse'])
+            cont_projs.setdefault(key, []).append(conn)
+        for pidx, ((fp, tp, syn), proj_conns) in enumerate(cont_projs.items()):
+            proj_id = f"contProj_{pidx}"
+            lines.append(
+                f'        <continuousProjection id="{proj_id}" '
+                f'presynapticPopulation="{fp}" '
+                f'postsynapticPopulation="{tp}">')
+            for cidx, conn in enumerate(proj_conns):
+                pre_comp = conn.get('pre_component') or 'silent1'
+                w = conn.get('weight')
+                if w is not None:
+                    lines.append(
+                        f'            <continuousConnectionInstanceW id="{cidx}" '
+                        f'preCell="../{fp}[{conn["from_idx"]}]" '
+                        f'postCell="../{tp}[{conn["to_idx"]}]" '
+                        f'preComponent="{pre_comp}" '
+                        f'postComponent="{syn}" weight="{w}"/>')
+                else:
+                    lines.append(
+                        f'            <continuousConnection id="{cidx}" '
+                        f'preCell="{conn["from_idx"]}" '
+                        f'postCell="{conn["to_idx"]}" '
+                        f'preComponent="{pre_comp}" '
+                        f'postComponent="{syn}"/>')
+            lines.append('        </continuousProjection>')
+
+    # Explicit inputs (current injection) — use <inputList>/<inputW> if weighted
+    has_weighted = any(inp.get('weight') is not None for inp in explicit_inputs)
+    if has_weighted:
+        # Group by (input_id, target_pop) → one inputList per group
+        from collections import OrderedDict as _OD
+        input_groups = _OD()
+        for inp in explicit_inputs:
+            key = (inp['input_id'], inp['target_pop'])
+            input_groups.setdefault(key, []).append(inp)
+        for gidx, ((inp_id, tgt_pop), group) in enumerate(
+                input_groups.items()):
+            lines.append(
+                f'        <inputList id="inputList_{gidx}" '
+                f'component="{inp_id}" population="{tgt_pop}">')
+            for iidx, inp in enumerate(group):
+                w = inp.get('weight')
+                if w is not None:
+                    lines.append(
+                        f'            <inputW id="{iidx}" '
+                        f'target="../{tgt_pop}[{inp["target_idx"]}]" '
+                        f'destination="synapses" weight="{w}"/>')
+                else:
+                    lines.append(
+                        f'            <input id="{iidx}" '
+                        f'target="../{tgt_pop}[{inp["target_idx"]}]" '
+                        f'destination="synapses"/>')
+            lines.append('        </inputList>')
+    else:
+        for inp in explicit_inputs:
+            lines.append(
+                f'        <explicitInput target="{inp["target_pop"]}'
+                f'[{inp["target_idx"]}]" '
+                f'input="{inp["input_id"]}" destination="synapses"/>'
+            )
+
+    lines.append('    </network>')
+    lines.append('')
+
+    # Simulation block with output columns
+    lines.append(
+        f'    <Simulation id="{sim_id}" length="{duration}{time_scale}" '
+        f'step="{dt}{time_scale}" target="net1">'
+    )
+    lines.append(f'        <OutputFile id="of0" fileName="results/{dyn_id}.dat">')
+
+    for pop_id, pop_size, sv_var in output_pops:
+        for idx in range(pop_size):
+            col_id = f"{pop_id}_{idx}_{sv_var}"
+            lines.append(
+                f'            <OutputColumn id="{col_id}" '
+                f'quantity="{pop_id}[{idx}]/{sv_var}"/>'
+            )
+
+    lines.append('        </OutputFile>')
+    lines.append('    </Simulation>')
+    lines.append('')
+    lines.append('</Lems>')
+
+    return '\n'.join(lines)
+
 
 # ── Standard NeuroML input type detection ────────────────────────────
 
@@ -1421,6 +1876,31 @@ EVENT_SOURCE_TYPES = frozenset({
 })
 
 ALL_INPUT_TYPES = CURRENT_INPUT_TYPES | EVENT_SOURCE_TYPES
+
+
+def _render_event_children(dyn_obj, time_scale='ms', indent=8):
+    """Render preset_time events from a Dynamics as NeuroML child XML elements.
+
+    For ``spikeArray``, each trigger time becomes ``<spike id="N" time="T unit"/>``.
+    Returns the child XML string (multiple lines), or empty string if none.
+    """
+    if dyn_obj is None:
+        return ''
+    events = getattr(dyn_obj, 'events', None) or {}
+    if not events:
+        return ''
+    pad = ' ' * indent
+    nml_unit = _TVBO_TO_NML_UNIT.get(str(time_scale), str(time_scale))
+    children = []
+    spike_idx = 0
+    for ev in events.values():
+        if str(getattr(ev, 'event_type', '')) != 'preset_time':
+            continue
+        times = getattr(ev, 'trigger_times', None) or []
+        for t in times:
+            children.append(f'{pad}<spike id="{spike_idx}" time="{t} {nml_unit}"/>')
+            spike_idx += 1
+    return '\n'.join(children)
 
 
 # ── Network context builder ──────────────────────────────────────────
@@ -1471,8 +1951,12 @@ def _build_network_context(experiment):
         groups.setdefault(dyn_name, []).append(node)
 
     for dyn_name, group_nodes in groups.items():
-        is_current_input = dyn_name in CURRENT_INPUT_TYPES
-        is_event_source = dyn_name in EVENT_SOURCE_TYPES
+        # Resolve NeuroML type from dynamics library IRI
+        _dyn_lib_obj = dynamics_lib.get(dyn_name)
+        _dyn_iri = getattr(_dyn_lib_obj, 'iri', '') or ''
+        _nml_type = _dyn_iri.split(':', 1)[1] if _dyn_iri.startswith('neuroml:') else dyn_name
+        is_current_input = _nml_type in CURRENT_INPUT_TYPES
+        is_event_source = _nml_type in EVENT_SOURCE_TYPES
 
         if is_current_input:
             # Current injection sources are NOT populations.
@@ -1481,7 +1965,6 @@ def _build_network_context(experiment):
                 nid = getattr(node, "id", 0)
                 node_params = _normalize_edge_params(
                     getattr(node, "parameters", None))
-                # Build param string dict: "delay" -> "25ms"
                 param_strs = {}
                 for pn, pv in node_params.items():
                     val = getattr(pv, 'value', pv)
@@ -1489,7 +1972,7 @@ def _build_network_context(experiment):
                     param_strs[str(pn)] = f"{val}{unit}"
                 input_id = f"{safe_id(dyn_name)}_{nid}"
                 input_nodes[nid] = {
-                    'type': dyn_name,
+                    'type': _nml_type,
                     'id': input_id,
                     'params': param_strs,
                 }
@@ -1498,30 +1981,23 @@ def _build_network_context(experiment):
         if is_event_source:
             # Event sources (spikeGenerator, spikeArray) ARE populations.
             # Use the standard type as component directly (not a custom CT).
+            dyn_obj = dynamics_lib.get(dyn_name)
+            integration = getattr(experiment, 'integration', None)
+            ts = str(getattr(integration, 'time_scale', 'ms') or 'ms') if integration else 'ms'
             for sub_idx, node in enumerate(group_nodes):
                 nid = getattr(node, "id", sub_idx)
                 node_params = _normalize_edge_params(
                     getattr(node, "parameters", None))
                 param_strs = {}
-                spike_times = []
                 for pn, pv in node_params.items():
-                    pn_str = str(pn)
                     val = getattr(pv, 'value', pv)
                     unit = getattr(pv, 'unit', None) or ''
-                    if pn_str == 'spike_times':
-                        # spikeArray: list of spike times
-                        if isinstance(val, (list, tuple)):
-                            spike_times = [(f"{t}{unit}") for t in val]
-                        elif isinstance(val, str):
-                            spike_times = [
-                                (s.strip() if unit in s.strip() else f"{s.strip()}{unit}")
-                                for s in val.split(',')
-                            ]
-                    else:
-                        param_strs[pn_str] = f"{val}{unit}"
+                    if val is not None:
+                        param_strs[str(pn)] = f"{val}{unit}"
                 comp_id = f"{safe_id(dyn_name)}_{nid}"
                 pop_id = f"{safe_id(dyn_name)}_{nid}_pop"
                 node_pop_map[nid] = (pop_id, 0)
+                spike_children = _render_event_children(dyn_obj, ts)
                 populations.append({
                     "id": pop_id,
                     "component": comp_id,
@@ -1529,10 +2005,10 @@ def _build_network_context(experiment):
                     "node_ids": [nid],
                     "dyn_name": dyn_name,
                     "is_input": True,
-                    "input_type": dyn_name,
+                    "input_type": _nml_type,
                     "input_id": comp_id,
                     "input_params": param_strs,
-                    "spike_times": spike_times,
+                    "spike_children_xml": spike_children,
                 })
             continue
 
@@ -2192,10 +2668,24 @@ class NeuroMLAdapter(BaseAdapter):
             validator, so this should only be True when the output is
             destined for ``run()``.
         """
-        if use_standard_types and self.experiment and self.experiment.dynamics and _uses_neuroml_types(self.experiment.dynamics):
-            xml = _render_standard_neuroml_lems(self.experiment)
-            if xml is not None:
-                return xml
+        if use_standard_types and self.experiment:
+            # Check primary dynamics for standard NeuroML types
+            if self.experiment.dynamics and _uses_neuroml_types(self.experiment.dynamics):
+                xml = _render_standard_neuroml_lems(self.experiment)
+                if xml is not None:
+                    return xml
+            # Also check for standard-type network (cell types in network.dynamics)
+            network = getattr(self.experiment, 'network', None)
+            if network:
+                dyn_lib = getattr(network, 'dynamics', None) or {}
+                nodes = getattr(network, 'nodes', None) or []
+                edges = getattr(network, 'edges', None) or []
+                if nodes and edges and dyn_lib:
+                    if any(_uses_neuroml_types(d) for d in dyn_lib.values()
+                           if hasattr(d, 'iri')):
+                        xml = _render_network_standard_neuroml_lems(self.experiment)
+                        if xml is not None:
+                            return xml
         from tvbo import templates
         template = templates.lookup.get_template(self.TEMPLATE)
         return template.render(experiment=self.experiment, **self._ctx(**kwargs))
@@ -2438,7 +2928,44 @@ class NeuroMLAdapter(BaseAdapter):
             and _uses_neuroml_types(self.experiment.dynamics)
         )
 
-        if uses_std:
+        # Check for standard-type network (cell types in network.dynamics)
+        _is_std_network = False
+        _std_net_output_pops = []  # (pop_id, size, sv_var)
+        if self.experiment:
+            network = getattr(self.experiment, 'network', None)
+            if network:
+                _net_nodes = getattr(network, 'nodes', None) or []
+                _net_edges = getattr(network, 'edges', None) or []
+                _net_dyn_lib = getattr(network, 'dynamics', None) or {}
+                if _net_nodes and _net_edges and _net_dyn_lib:
+                    if any(_uses_neuroml_types(d) for d in _net_dyn_lib.values()
+                           if hasattr(d, 'iri')):
+                        _is_std_network = True
+                        uses_std = True
+
+        if _is_std_network:
+            # Build output column names from network structure
+            from collections import OrderedDict
+            _groups = OrderedDict()
+            for node in _net_nodes:
+                nd = getattr(node, 'dynamics', None)
+                dname = (getattr(nd, 'name', None) or str(nd)) if nd else 'dynamics'
+                _groups.setdefault(dname, []).append(node)
+
+            for dname, gnodes in _groups.items():
+                _dobj = _net_dyn_lib.get(dname)
+                _diri = getattr(_dobj, 'iri', '') or ''
+                _dnml = _diri.split(':', 1)[1] if _diri.startswith('neuroml:') else dname
+                if _dnml in CURRENT_INPUT_TYPES or _dnml in EVENT_SOURCE_TYPES:
+                    continue
+                pop_id = safe_id(dname) + "_pop"
+                pop_size = len(gnodes)
+                _std_net_output_pops.append((pop_id, pop_size, 'v'))
+
+            sv_names = ['v']
+            net_ctx = None
+            cell_contexts = {}
+        elif uses_std:
             iri = getattr(self.experiment.dynamics, 'iri', '') or ''
             nml_type = iri.split(':', 1)[1] if ':' in iri else ''
             if nml_type in ('fitzHughNagumoCell', 'fitzHughNagumo1969Cell'):
@@ -2482,7 +3009,18 @@ class NeuroMLAdapter(BaseAdapter):
         time_data = raw[:, 0]
         values_data = raw[:, 1:]
 
-        if net_ctx and cell_contexts:
+        if _is_std_network and _std_net_output_pops:
+            col_names = []
+            for pop_id, pop_size, sv_var in _std_net_output_pops:
+                for idx in range(pop_size):
+                    col_names.append(f"{pop_id}[{idx}]/{sv_var}")
+
+            da = xr.DataArray(
+                data=values_data,
+                dims=['time', 'quantity'],
+                coords={'time': time_data, 'quantity': col_names},
+            )
+        elif net_ctx and cell_contexts:
             col_names = []
             for pop in net_ctx['populations']:
                 if pop.get('is_input'):

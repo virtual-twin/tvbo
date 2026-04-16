@@ -1,43 +1,70 @@
 ---
 title: "Ex19: Gap Junctions"
-description: "Electrical synapses (gap junctions) between cells"
+description: "Electrical synapses (gap junctions) between integrate-and-fire cells"
 ---
 
 ## Model: Gap Junctions
 
-Demonstrates `<electricalConnection>` — bidirectional electrical coupling
-between cells via gap junctions with linear conductance: $I_{gap} = g_{gap}(V_{pre} - V_{post})$.
+Two iafCells connected by a gap junction (electrical synapse), each driven by a
+separate pulseGenerator at different times. Demonstrates bidirectional current flow.
 
-The cells are FitzHugh-Nagumo oscillators.
+Reference: NeuroML2 LEMS_NML2_Ex19_GapJunctions.xml
 
 ---
 
-## 1. Define FHN Cell in TVBO
+## 1. Define Network in TVBO
 
 ```{python}
 from tvbo import SimulationExperiment
 
 exp = SimulationExperiment.from_string("""
-label: "NeuroML Ex19: FHN with Gap Junctions"
+label: "NeuroML Ex19: Gap Junctions"
 dynamics:
-  name: FitzHughNagumo
-  parameters:
-    I: { value: 0.8 }
-  state_variables:
-    V:
-      equation: { rhs: "V - V**3/3 - W + I" }
-      initial_value: 0.0
-      variable_of_interest: true
-    W:
-      equation: { rhs: "0.08*(V + 0.7 - 0.8*W)" }
-      initial_value: 0.0
+  name: iafCell
+  iri: neuroml:iafCell
 network:
-  number_of_nodes: 1
+  dynamics:
+    iaf:
+      name: iaf
+      iri: neuroml:iafCell
+      parameters:
+        leakConductance: {value: 0.2, unit: nS}
+        leakReversal: {value: -70, unit: mV}
+        thresh: {value: -55, unit: mV}
+        reset: {value: -70, unit: mV}
+        C: {value: 3.2, unit: pF}
+    pg1:
+      name: pg1
+      iri: neuroml:pulseGenerator
+      parameters:
+        delay: {value: 50, unit: ms}
+        duration: {value: 200, unit: ms}
+        amplitude: {value: 0.0032, unit: nA}
+    pg2:
+      name: pg2
+      iri: neuroml:pulseGenerator
+      parameters:
+        delay: {value: 400, unit: ms}
+        duration: {value: 200, unit: ms}
+        amplitude: {value: 0.0032, unit: nA}
+  nodes:
+    - {id: 0, dynamics: iaf}
+    - {id: 1, dynamics: iaf}
+    - {id: 10, dynamics: pg1}
+    - {id: 11, dynamics: pg2}
+  edges:
+    - source: 0
+      target: 1
+      coupling: gapJunction
+      parameters:
+        conductance: {value: 10, unit: pS}
+    - {source: 10, target: 0}
+    - {source: 11, target: 1}
 integration:
   method: euler
   step_size: 0.01
-  duration: 200.0
-  time_scale: s
+  duration: 700.0
+  time_scale: ms
 """)
 print(f"Model: {exp.dynamics.name}")
 ```
@@ -46,7 +73,7 @@ print(f"Model: {exp.dynamics.name}")
 
 ```{python}
 xml = exp.render("lems")
-print(xml[:1200])
+print(xml[:2000])
 ```
 
 ## 3. Run Reference
@@ -72,7 +99,7 @@ tvbo_arr = np.column_stack([da.coords['time'].values, da.values])
 print(f"TVBO: shape={tvbo_arr.shape}")
 ```
 
-## 5. Plot Reference
+## 5. Compare
 
 ```{python}
 import matplotlib.pyplot as plt
@@ -82,7 +109,7 @@ for name, ref_arr in ref_outputs.items():
     t = ref_arr[:, 0] * 1000
     fig, ax = plt.subplots(figsize=(10, 4))
     for i in range(1, min(ref_arr.shape[1], 6)):
-        ax.plot(t, ref_arr[:, i] * 1000, alpha=0.8, label=f'Cell {i}')
+        ax.plot(t, ref_arr[:, i] * 1000, alpha=0.8, label=f'Ref {i}')
     ax.set_xlabel("Time (ms)")
     ax.set_ylabel("Voltage (mV)")
     ax.set_title(f"Ex19: Gap Junctions — {name}")
@@ -94,7 +121,7 @@ for name, ref_arr in ref_outputs.items():
 
 ::: {.callout-note}
 ## Gap Junctions
-Electrical synapses (`electricalConnection`) are NeuroML-native network features.
-TVBO represents the FHN cell dynamics; the gap junction coupling is handled by
-the NeuroML adapter.
+Gap junctions (electrical synapses) allow bidirectional current flow between cells.
+When cell 1 fires (driven by pulseGen1), current flows to cell 2 and vice versa.
+Modeled as `gapJunction` with `electricalProjection` in NeuroML.
 :::

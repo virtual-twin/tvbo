@@ -149,6 +149,16 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             from tvbo.classes.dynamics import _resolve_dynamics_aliases
             _resolve_dynamics_aliases(dyn_kw)
 
+        # Also resolve aliases in network.dynamics entries
+        net_kw = kwargs.get("network")
+        if isinstance(net_kw, dict):
+            net_dyn = net_kw.get("dynamics")
+            if isinstance(net_dyn, dict):
+                from tvbo.classes.dynamics import _resolve_dynamics_aliases
+                for _dv in net_dyn.values():
+                    if isinstance(_dv, dict):
+                        _resolve_dynamics_aliases(_dv)
+
         # Delegate to the parent dataclass initializer
         super().__init__(**kwargs)
 
@@ -1993,7 +2003,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         elif format.lower() in ["lems", "neuroml", "nml"]:
             from tvbo.adapters.neuroml import NeuroMLAdapter
             adapter = NeuroMLAdapter(self)
-            rendered_code = adapter.render_code(**kwargs)
+            rendered_code = adapter.render_code(use_standard_types=True, **kwargs)
 
         else:
             raise ValueError(

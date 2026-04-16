@@ -130,3 +130,4 @@ _archive/database
 tvbo/templates/modules/*.py.mako.py
 docs/Interoperability/NeuroML/examples/_*.*
 results/*.dat
+var

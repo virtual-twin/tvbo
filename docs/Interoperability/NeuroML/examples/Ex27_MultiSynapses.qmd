@@ -1,45 +1,103 @@
 ---
 title: "Ex27: Multi-Synapses"
-description: "Multiple synapse types on single connections"
+description: "AMPA + NMDA synapses, individually and as doubleSynapse composite"
 ---
 
 ## Model: Multi-Synapses
 
-Demonstrates multiple synapse types between the same pre/post cell pair,
-showing how different receptor types (AMPA, NMDA, GABA) can coexist on
-a single connection with different kinetics.
+Five iafCells receiving spikes: cells get AMPA-only, NMDA-only, both separately,
+and a doubleSynapse (AMPA+NMDA composite) with delay. Demonstrates doubleSynapse
+which references two child synapses by name.
+
+Reference: NeuroML2 LEMS_NML2_Ex27_MultiSynapses.xml
 
 ---
 
-## 1. Define IaF Cell in TVBO
+## 1. Define Network in TVBO
 
 ```{python}
 from tvbo import SimulationExperiment
 
 exp = SimulationExperiment.from_string("""
-label: "NeuroML Ex27: IaF with Multi-Synapses"
+label: "NeuroML Ex27: Multi-Synapses"
 dynamics:
-  name: IntegrateAndFire
-  parameters:
-    leakReversal: { value: -50.0 }
-    tau:          { value: 30.0 }
-    thresh:       { value: -55.0 }
-    reset:        { value: -70.0 }
-  state_variables:
-    v:
-      equation: { rhs: "(leakReversal - v) / tau" }
-      initial_value: -50.0
-      variable_of_interest: true
-  events:
-    spike:
-      condition: { rhs: "v > thresh" }
-      affect:    { rhs: "v = reset" }
+  name: iafCell
+  iri: neuroml:iafCell
 network:
-  number_of_nodes: 1
+  dynamics:
+    iaf:
+      name: iaf
+      iri: neuroml:iafCell
+      parameters:
+        leakReversal: {value: -70, unit: mV}
+        thresh: {value: -55, unit: mV}
+        reset: {value: -70, unit: mV}
+        C: {value: 0.2, unit: nF}
+        leakConductance: {value: 10, unit: nS}
+    spks:
+      name: spks
+      iri: neuroml:spikeArray
+      events:
+        s:
+          event_type: preset_time
+          trigger_times: [50, 200, 350, 360]
+    # AMPA: fast excitatory synapse
+    AMPA:
+      name: AMPA
+      iri: neuroml:expTwoSynapse
+      parameters:
+        gbase: {value: 1, unit: nS}
+        erev: {value: 0, unit: mV}
+        tauRise: {value: 1, unit: ms}
+        tauDecay: {value: 2, unit: ms}
+    # NMDA: slow excitatory synapse with Mg2+ block
+    NMDA:
+      name: NMDA
+      iri: neuroml:blockingPlasticSynapse
+      parameters:
+        gbase: {value: 4, unit: nS}
+        erev: {value: 0, unit: mV}
+        tauRise: {value: 2, unit: ms}
+        tauDecay: {value: 20, unit: ms}
+      modes:
+        blockMechanism:
+          name: blockMechanism
+          iri: neuroml:voltageConcDepBlockMechanism
+          parameters:
+            species: {description: mg}
+            blockConcentration: {value: 1.2, unit: mmol_per_m3}
+            scalingConc: {value: 1.920544, unit: mmol_per_m3}
+            scalingVolt: {value: 16.129, unit: mV}
+    # doubleSynapse: composite of AMPA + NMDA
+    AMPA_NMDA:
+      name: AMPA_NMDA
+      iri: neuroml:doubleSynapse
+      parameters:
+        synapse1: {description: AMPA}
+        synapse1Path: {description: ./AMPA}
+        synapse2: {description: NMDA}
+        synapse2Path: {description: ./NMDA}
+  nodes:
+    - {id: 0, dynamics: iaf}
+    - {id: 1, dynamics: iaf}
+    - {id: 2, dynamics: iaf}
+    - {id: 3, dynamics: iaf}
+    - {id: 4, dynamics: iaf}
+    - {id: 100, dynamics: spks}
+  edges:
+    # Cell 0: AMPA only
+    - {source: 100, target: 0, coupling: AMPA, parameters: {weight: {value: 0.5}, delay: {value: 0, unit: ms}}}
+    # Cell 1: NMDA only
+    - {source: 100, target: 1, coupling: NMDA, parameters: {weight: {value: 0.5}, delay: {value: 0, unit: ms}}}
+    # Cell 2: AMPA + NMDA separately
+    - {source: 100, target: 2, coupling: AMPA, parameters: {weight: {value: 0.5}, delay: {value: 0, unit: ms}}}
+    - {source: 100, target: 2, coupling: NMDA, parameters: {weight: {value: 0.5}, delay: {value: 0, unit: ms}}}
+    # Cell 3: doubleSynapse (AMPA+NMDA composite) with 5ms delay
+    - {source: 100, target: 3, coupling: AMPA_NMDA, parameters: {weight: {value: 0.5}, delay: {value: 5, unit: ms}}}
 integration:
   method: euler
-  step_size: 0.005
-  duration: 300.0
+  step_size: 0.001
+  duration: 600.0
   time_scale: ms
 """)
 print(f"Model: {exp.dynamics.name}")
@@ -49,7 +107,7 @@ print(f"Model: {exp.dynamics.name}")
 
 ```{python}
 xml = exp.render("lems")
-print(xml[:1200])
+print(xml[:3000])
 ```
 
 ## 3. Run Reference
@@ -75,17 +133,16 @@ tvbo_arr = np.column_stack([da.coords['time'].values, da.values])
 print(f"TVBO: shape={tvbo_arr.shape}")
 ```
 
-## 5. Plot Reference
+## 5. Compare
 
 ```{python}
 import matplotlib.pyplot as plt
-import numpy as np
 
 for name, ref_arr in ref_outputs.items():
     t = ref_arr[:, 0] * 1000
     fig, ax = plt.subplots(figsize=(10, 4))
     for i in range(1, min(ref_arr.shape[1], 6)):
-        ax.plot(t, ref_arr[:, i] * 1000, alpha=0.8, label=f'Cell {i}')
+        ax.plot(t, ref_arr[:, i] * 1000, alpha=0.8, label=f'Ref col{i}')
     ax.set_xlabel("Time (ms)")
     ax.set_ylabel("Voltage (mV)")
     ax.set_title(f"Ex27: Multi-Synapses — {name}")
@@ -97,6 +154,12 @@ for name, ref_arr in ref_outputs.items():
 
 ::: {.callout-note}
 ## Multi-Synapses
-Multiple synapse types (AMPA, NMDA, GABA) per connection is a NeuroML network feature.
-TVBO represents the cell dynamics; synaptic diversity is handled by the NeuroML adapter.
+Demonstrates three ways to combine synaptic inputs:
+1. **AMPA only** (cell 0): fast excitatory, `expTwoSynapse`
+2. **NMDA only** (cell 1): slow with Mg²⁺ block, `blockingPlasticSynapse`
+3. **AMPA + NMDA separate** (cell 2): two independent projections
+4. **doubleSynapse** (cell 3): composite synapse referencing AMPA and NMDA by name
+
+`doubleSynapse` (nml:doubleSynapse) has `synapse1`/`synapse2` as string references
+to separately defined synapse components.
 :::

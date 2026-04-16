@@ -1,45 +1,109 @@
 ---
 title: "Ex12: Network 2"
-description: "Larger IaF network with multiple populations"
+description: "Multiple spike sources and synapse types including NMDA with Mg²⁺ block"
 ---
 
-## Model: IaF Network
+## Model: Network 2
 
-A multi-population network of IaF cells with expTwoSynapse connections
-and pulse generator inputs.  The individual cell dynamics are the same IaF
-model as Ex0.
+Nine iafCells receiving input from three spike sources (periodic generator, spike arrays)
+via three synapse types: `expOneSynapse`, `expTwoSynapse`, and NMDA `blockingPlasticSynapse`
+with Mg²⁺ voltage-dependent block. Demonstrates weight and delay modulation.
+
+Reference: NeuroML2 LEMS_NML2_Ex12_Net2.xml
 
 ---
 
-## 1. Define IaF Cell in TVBO
+## 1. Define Network in TVBO
 
 ```{python}
 from tvbo import SimulationExperiment
 
 exp = SimulationExperiment.from_string("""
-label: "NeuroML Ex12: IaF Cell (Network 2)"
+label: "NeuroML Ex12: Network 2"
 dynamics:
-  name: IntegrateAndFire
-  parameters:
-    leakReversal: { value: -50.0 }
-    tau:          { value: 30.0 }
-    thresh:       { value: -55.0 }
-    reset:        { value: -70.0 }
-  state_variables:
-    v:
-      equation: { rhs: "(leakReversal - v) / tau" }
-      initial_value: -50.0
-      variable_of_interest: true
-  events:
-    spike:
-      condition: { rhs: "v > thresh" }
-      affect:    { rhs: "v = reset" }
+  name: iafCell
+  iri: neuroml:iafCell
 network:
-  number_of_nodes: 1
+  dynamics:
+    iaf1:
+      name: iaf1
+      iri: neuroml:iafCell
+      parameters:
+        leakReversal: {value: -60, unit: mV}
+        thresh: {value: -35, unit: mV}
+        reset: {value: -65, unit: mV}
+        C: {value: 10, unit: pF}
+        leakConductance: {value: 0.5, unit: nS}
+    spiker:
+      name: spiker
+      iri: neuroml:spikeGenerator
+      parameters:
+        period: {value: 30, unit: ms}
+    spikes2:
+      name: spikes2
+      iri: neuroml:spikeArray
+      events:
+        s:
+          event_type: preset_time
+          trigger_times: [50, 100, 130]
+    spike100:
+      name: spike100
+      iri: neuroml:spikeArray
+      events:
+        s:
+          event_type: preset_time
+          trigger_times: [100]
+    # NMDA synapse with Mg²⁺ voltage-dependent block (defined with full
+    # composition tree — blockMechanism is a child dynamics)
+    synNmda:
+      name: synNmda
+      iri: neuroml:blockingPlasticSynapse
+      parameters:
+        gbase: {value: 5, unit: nS}
+        tauDecay: {value: 10, unit: ms}
+        tauRise: {value: 1, unit: ms}
+        erev: {value: 0, unit: mV}
+      modes:
+        blockMechanism:
+          name: blockMechanism
+          iri: neuroml:voltageConcDepBlockMechanism
+          parameters:
+            species: {description: mg}
+            blockConcentration: {value: 1.2, unit: mmol_per_m3}
+            scalingConc: {value: 1.9205441817997078, unit: mmol_per_m3}
+            scalingVolt: {value: 16.129032258064516, unit: mV}
+  nodes:
+    # 9 post-synaptic cells
+    - {id: 0, dynamics: iaf1}
+    - {id: 1, dynamics: iaf1}
+    - {id: 2, dynamics: iaf1}
+    - {id: 3, dynamics: iaf1}
+    - {id: 4, dynamics: iaf1}
+    - {id: 5, dynamics: iaf1}
+    - {id: 6, dynamics: iaf1}
+    - {id: 7, dynamics: iaf1}
+    - {id: 8, dynamics: iaf1}
+    # Spike sources
+    - {id: 100, dynamics: spike100}
+    - {id: 101, dynamics: spikes2}
+    - {id: 102, dynamics: spiker}
+  edges:
+    # spike100 → iaf[0..2]: expOneSynapse, varying weight/delay
+    - {source: 100, target: 0, coupling: expOneSynapse, parameters: {gbase: {value: 0.1, unit: nS}, erev: {value: 0, unit: mV}, tauDecay: {value: 2, unit: ms}}}
+    - {source: 100, target: 1, coupling: expOneSynapse, parameters: {gbase: {value: 0.1, unit: nS}, erev: {value: 0, unit: mV}, tauDecay: {value: 2, unit: ms}, weight: {value: 0.5}, delay: {value: 10, unit: ms}}}
+    - {source: 100, target: 2, coupling: expOneSynapse, parameters: {gbase: {value: 0.1, unit: nS}, erev: {value: 0, unit: mV}, tauDecay: {value: 2, unit: ms}, weight: {value: 0.25}, delay: {value: 15, unit: ms}}}
+    # spikes2 → iaf[3..5]: expTwoSynapse, varying weight/delay
+    - {source: 101, target: 3, coupling: expTwoSynapse, parameters: {gbase: {value: 0.1, unit: nS}, erev: {value: 0, unit: mV}, tauDecay: {value: 2, unit: ms}, tauRise: {value: 0.05, unit: ms}}}
+    - {source: 101, target: 4, coupling: expTwoSynapse, parameters: {gbase: {value: 0.1, unit: nS}, erev: {value: 0, unit: mV}, tauDecay: {value: 2, unit: ms}, tauRise: {value: 0.05, unit: ms}, weight: {value: 0.5}, delay: {value: 10, unit: ms}}}
+    - {source: 101, target: 5, coupling: expTwoSynapse, parameters: {gbase: {value: 0.1, unit: nS}, erev: {value: 0, unit: mV}, tauDecay: {value: 2, unit: ms}, tauRise: {value: 0.05, unit: ms}, weight: {value: 0.25}, delay: {value: 15, unit: ms}}}
+    # spiker → iaf[6..8]: NMDA synapse, varying weight/delay
+    - {source: 102, target: 6, coupling: synNmda}
+    - {source: 102, target: 7, coupling: synNmda, parameters: {weight: {value: 0.5}, delay: {value: 10, unit: ms}}}
+    - {source: 102, target: 8, coupling: synNmda, parameters: {weight: {value: 0.25}, delay: {value: 15, unit: ms}}}
 integration:
   method: euler
   step_size: 0.005
-  duration: 200.0
+  duration: 300.0
   time_scale: ms
 """)
 print(f"Model: {exp.dynamics.name}")
@@ -49,7 +113,7 @@ print(f"Model: {exp.dynamics.name}")
 
 ```{python}
 xml = exp.render("lems")
-print(xml[:1200])
+print(xml[:3000])
 ```
 
 ## 3. Run Reference
@@ -75,7 +139,7 @@ tvbo_arr = np.column_stack([da.coords['time'].values, da.values])
 print(f"TVBO: shape={tvbo_arr.shape}")
 ```
 
-## 5. Plot Reference Network
+## 5. Compare
 
 ```{python}
 import matplotlib.pyplot as plt
@@ -84,8 +148,8 @@ import numpy as np
 for name, ref_arr in ref_outputs.items():
     t = ref_arr[:, 0] * 1000
     fig, ax = plt.subplots(figsize=(10, 4))
-    for i in range(1, min(ref_arr.shape[1], 8)):
-        ax.plot(t, ref_arr[:, i] * 1000, alpha=0.7, label=f'Cell {i}')
+    for i in range(1, min(ref_arr.shape[1], 6)):
+        ax.plot(t, ref_arr[:, i] * 1000, alpha=0.8, label=f'Ref col{i}')
     ax.set_xlabel("Time (ms)")
     ax.set_ylabel("Voltage (mV)")
     ax.set_title(f"Ex12: Network 2 — {name}")
@@ -96,7 +160,13 @@ for name, ref_arr in ref_outputs.items():
 ```
 
 ::: {.callout-note}
-## Network Topology
-The multi-population connectivity and synaptic projections are NeuroML-native.
-TVBO models the individual cell dynamics.
+## Network 2
+Demonstrates three synapse types with weight and delay modulation:
+- `expOneSynapse`: single-exponential decay
+- `expTwoSynapse`: dual-exponential (rise + decay)
+- `blockingPlasticSynapse` (NMDA): with Mg²⁺ voltage-dependent block via child `blockMechanism`
+
+The NMDA synapse is defined as a dynamics entry with a composition tree:
+synNmda (blockingPlasticSynapse) → blockMechanism (voltageConcDepBlockMechanism).
+Same pattern as channels with gates — no lookup tables needed.
 :::
