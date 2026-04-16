@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-03-31T11:06:00
+# Generation date: 2026-04-15T22:21:15
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -56,8 +56,8 @@ from rdflib import (
     URIRef
 )
 
-from linkml_runtime.linkml_model.types import Boolean, Datetime, Float, Integer, String
-from linkml_runtime.utils.metamodelcore import Bool, XSDDateTime
+from linkml_runtime.linkml_model.types import Boolean, Date, Datetime, Float, Integer, String, Uri
+from linkml_runtime.utils.metamodelcore import Bool, URI, XSDDate, XSDDateTime
 
 metamodel_version = "1.7.0"
 version = None
@@ -65,13 +65,19 @@ version = None
 # Namespaces
 UO = CurieNamespace('UO', 'http://purl.obolibrary.org/obo/UO_')
 ATOM = CurieNamespace('atom', 'http://uri.interlex.org/tgbugs/uris/readable/')
+BIOTOOLS = CurieNamespace('biotools', 'https://bio.tools/ontology/')
 LINKML = CurieNamespace('linkml', 'https://w3id.org/linkml/')
+NIDM = CurieNamespace('nidm', 'http://purl.org/nidash/nidm#')
 PROV = CurieNamespace('prov', 'http://www.w3.org/ns/prov#')
 QUDT = CurieNamespace('qudt', 'http://qudt.org/vocab/unit/')
 RDFS = CurieNamespace('rdfs', 'http://www.w3.org/2000/01/rdf-schema#')
 SCHEMA = CurieNamespace('schema', 'http://schema.org/')
+SIO = CurieNamespace('sio', 'http://semanticscience.org/resource/')
 TVBO = CurieNamespace('tvbo', 'http://www.thevirtualbrain.org/tvb-o/')
 TVBO_DBS = CurieNamespace('tvbo_dbs', 'http://www.thevirtualbrain.org/tvb-o/dbs/')
+TVBO_STUDY = CurieNamespace('tvbo_study', 'http://www.thevirtualbrain.org/tvb-o/study/')
+TVBO_SW = CurieNamespace('tvbo_sw', 'http://www.thevirtualbrain.org/tvb-o/software/')
+WD = CurieNamespace('wd', 'http://www.wikidata.org/entity/')
 DEFAULT_ = TVBO
 
 
@@ -198,14 +204,6 @@ class SimulationExperimentId(extended_int):
     pass
 
 
-class SoftwareRequirementName(extended_str):
-    pass
-
-
-class SoftwarePackageName(extended_str):
-    pass
-
-
 class FieldStateVariableName(StateVariableName):
     pass
 
@@ -226,7 +224,35 @@ class SubjectSubjectId(extended_str):
     pass
 
 
+class SessionSessionId(extended_str):
+    pass
+
+
+class DatasetDatasetId(extended_str):
+    pass
+
+
+class DBSDatasetDatasetId(DatasetDatasetId):
+    pass
+
+
+class DBSSubjectSubjectId(SubjectSubjectId):
+    pass
+
+
 class DBSProtocolName(extended_str):
+    pass
+
+
+class SoftwarePackageName(extended_str):
+    pass
+
+
+class SimulationToolName(SoftwarePackageName):
+    pass
+
+
+class SoftwareRequirementName(extended_str):
     pass
 
 
@@ -3245,6 +3271,7 @@ class SimulationExperiment(YAMLRoot):
     execution: Optional[Union[dict, ExecutionConfig]] = None
     software: Optional[Union[dict, "SoftwareRequirement"]] = None
     references: Optional[Union[str, list[str]]] = empty_list()
+    dataset: Optional[Union[dict, "Dataset"]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.id):
@@ -3314,6 +3341,9 @@ class SimulationExperiment(YAMLRoot):
         if not isinstance(self.references, list):
             self.references = [self.references] if self.references is not None else []
         self.references = [v if isinstance(v, str) else str(v) for v in self.references]
+
+        if self.dataset is not None and not isinstance(self.dataset, Dataset):
+            self.dataset = Dataset(**as_dict(self.dataset))
 
         super().__post_init__(**kwargs)
 
@@ -3474,175 +3504,6 @@ class TimeSeries(YAMLRoot):
 
         if self.connectivity_ref is not None and not isinstance(self.connectivity_ref, str):
             self.connectivity_ref = str(self.connectivity_ref)
-
-        super().__post_init__(**kwargs)
-
-
-@dataclass(repr=False)
-class SoftwareEnvironment(YAMLRoot):
-    _inherited_slots: ClassVar[list[str]] = []
-
-    class_class_uri: ClassVar[URIRef] = TVBO["SoftwareEnvironment"]
-    class_class_curie: ClassVar[str] = "tvbo:SoftwareEnvironment"
-    class_name: ClassVar[str] = "SoftwareEnvironment"
-    class_model_uri: ClassVar[URIRef] = TVBO.SoftwareEnvironment
-
-    label: Optional[str] = None
-    description: Optional[str] = None
-    dataLocation: Optional[str] = None
-    name: Optional[str] = None
-    version: Optional[str] = None
-    platform: Optional[str] = None
-    environment_type: Optional[Union[str, "EnvironmentType"]] = None
-    container_image: Optional[str] = None
-    build_hash: Optional[str] = None
-    requirements: Optional[Union[dict[Union[str, SoftwareRequirementName], Union[dict, "SoftwareRequirement"]], list[Union[dict, "SoftwareRequirement"]]]] = empty_dict()
-
-    def __post_init__(self, *_: str, **kwargs: Any):
-        if self.label is not None and not isinstance(self.label, str):
-            self.label = str(self.label)
-
-        if self.description is not None and not isinstance(self.description, str):
-            self.description = str(self.description)
-
-        if self.dataLocation is not None and not isinstance(self.dataLocation, str):
-            self.dataLocation = str(self.dataLocation)
-
-        if self.name is not None and not isinstance(self.name, str):
-            self.name = str(self.name)
-
-        if self.version is not None and not isinstance(self.version, str):
-            self.version = str(self.version)
-
-        if self.platform is not None and not isinstance(self.platform, str):
-            self.platform = str(self.platform)
-
-        if self.environment_type is not None and not isinstance(self.environment_type, EnvironmentType):
-            self.environment_type = EnvironmentType(self.environment_type)
-
-        if self.container_image is not None and not isinstance(self.container_image, str):
-            self.container_image = str(self.container_image)
-
-        if self.build_hash is not None and not isinstance(self.build_hash, str):
-            self.build_hash = str(self.build_hash)
-
-        self._normalize_inlined_as_dict(slot_name="requirements", slot_type=SoftwareRequirement, key_name="name", keyed=True)
-
-        super().__post_init__(**kwargs)
-
-
-@dataclass(repr=False)
-class SoftwareRequirement(YAMLRoot):
-    _inherited_slots: ClassVar[list[str]] = []
-
-    class_class_uri: ClassVar[URIRef] = TVBO["SoftwareRequirement"]
-    class_class_curie: ClassVar[str] = "tvbo:SoftwareRequirement"
-    class_name: ClassVar[str] = "SoftwareRequirement"
-    class_model_uri: ClassVar[URIRef] = TVBO.SoftwareRequirement
-
-    name: Union[str, SoftwareRequirementName] = None
-    description: Optional[str] = None
-    dataLocation: Optional[str] = None
-    package: Optional[Union[str, SoftwarePackageName]] = None
-    version_spec: Optional[str] = None
-    role: Optional[Union[str, "RequirementRole"]] = 'runtime'
-    optional: Optional[Union[bool, Bool]] = False
-    hash: Optional[str] = None
-    source_url: Optional[str] = None
-    url: Optional[str] = None
-    license: Optional[str] = None
-    modules: Optional[Union[str, list[str]]] = empty_list()
-    version: Optional[str] = None
-
-    def __post_init__(self, *_: str, **kwargs: Any):
-        if self._is_empty(self.name):
-            self.MissingRequiredField("name")
-        if not isinstance(self.name, SoftwareRequirementName):
-            self.name = SoftwareRequirementName(self.name)
-
-        if self.description is not None and not isinstance(self.description, str):
-            self.description = str(self.description)
-
-        if self.dataLocation is not None and not isinstance(self.dataLocation, str):
-            self.dataLocation = str(self.dataLocation)
-
-        if self.package is not None and not isinstance(self.package, SoftwarePackageName):
-            self.package = SoftwarePackageName(self.package)
-
-        if self.version_spec is not None and not isinstance(self.version_spec, str):
-            self.version_spec = str(self.version_spec)
-
-        if self.role is not None and not isinstance(self.role, RequirementRole):
-            self.role = getattr(RequirementRole, self.role)
-
-        if self.optional is not None and not isinstance(self.optional, Bool):
-            self.optional = Bool(self.optional)
-
-        if self.hash is not None and not isinstance(self.hash, str):
-            self.hash = str(self.hash)
-
-        if self.source_url is not None and not isinstance(self.source_url, str):
-            self.source_url = str(self.source_url)
-
-        if self.url is not None and not isinstance(self.url, str):
-            self.url = str(self.url)
-
-        if self.license is not None and not isinstance(self.license, str):
-            self.license = str(self.license)
-
-        if not isinstance(self.modules, list):
-            self.modules = [self.modules] if self.modules is not None else []
-        self.modules = [v if isinstance(v, str) else str(v) for v in self.modules]
-
-        if self.version is not None and not isinstance(self.version, str):
-            self.version = str(self.version)
-
-        super().__post_init__(**kwargs)
-
-
-@dataclass(repr=False)
-class SoftwarePackage(YAMLRoot):
-    """
-    Identity information about a software package independent of a specific version requirement.
-    """
-    _inherited_slots: ClassVar[list[str]] = []
-
-    class_class_uri: ClassVar[URIRef] = TVBO["SoftwarePackage"]
-    class_class_curie: ClassVar[str] = "tvbo:SoftwarePackage"
-    class_name: ClassVar[str] = "SoftwarePackage"
-    class_model_uri: ClassVar[URIRef] = TVBO.SoftwarePackage
-
-    name: Union[str, SoftwarePackageName] = None
-    description: Optional[str] = None
-    homepage: Optional[str] = None
-    license: Optional[str] = None
-    repository: Optional[str] = None
-    doi: Optional[str] = None
-    ecosystem: Optional[str] = None
-
-    def __post_init__(self, *_: str, **kwargs: Any):
-        if self._is_empty(self.name):
-            self.MissingRequiredField("name")
-        if not isinstance(self.name, SoftwarePackageName):
-            self.name = SoftwarePackageName(self.name)
-
-        if self.description is not None and not isinstance(self.description, str):
-            self.description = str(self.description)
-
-        if self.homepage is not None and not isinstance(self.homepage, str):
-            self.homepage = str(self.homepage)
-
-        if self.license is not None and not isinstance(self.license, str):
-            self.license = str(self.license)
-
-        if self.repository is not None and not isinstance(self.repository, str):
-            self.repository = str(self.repository)
-
-        if self.doi is not None and not isinstance(self.doi, str):
-            self.doi = str(self.doi)
-
-        if self.ecosystem is not None and not isinstance(self.ecosystem, str):
-            self.ecosystem = str(self.ecosystem)
 
         super().__post_init__(**kwargs)
 
@@ -3958,7 +3819,7 @@ class PDESolver(YAMLRoot):
     label: Optional[str] = None
     description: Optional[str] = None
     requirements: Optional[Union[Union[str, SoftwareRequirementName], list[Union[str, SoftwareRequirementName]]]] = empty_list()
-    environment: Optional[Union[dict, SoftwareEnvironment]] = None
+    environment: Optional[Union[dict, "SoftwareEnvironment"]] = None
     discretization: Optional[Union[str, "DiscretizationMethod"]] = None
     time_integrator: Optional[str] = None
     dt: Optional[float] = None
@@ -4315,31 +4176,167 @@ class ParcellationTerminology(YAMLRoot):
 
 
 @dataclass(repr=False)
+class Subject(YAMLRoot):
+    """
+    A participant in a study. Each subject typically has their own brain network (connectome) and empirical
+    recordings. Corresponds to a BIDS 'sub-' entity.
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO_STUDY["Subject"]
+    class_class_curie: ClassVar[str] = "tvbo_study:Subject"
+    class_name: ClassVar[str] = "Subject"
+    class_model_uri: ClassVar[URIRef] = TVBO.Subject
+
+    subject_id: Union[str, SubjectSubjectId] = None
+    label: Optional[str] = None
+    group: Optional[str] = None
+    age: Optional[float] = None
+    sex: Optional[Union[str, "SexEnum"]] = None
+    sessions: Optional[Union[dict[Union[str, SessionSessionId], Union[dict, "Session"]], list[Union[dict, "Session"]]]] = empty_dict()
+    network: Optional[str] = None
+    metadata: Optional[str] = None
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self._is_empty(self.subject_id):
+            self.MissingRequiredField("subject_id")
+        if not isinstance(self.subject_id, SubjectSubjectId):
+            self.subject_id = SubjectSubjectId(self.subject_id)
+
+        if self.label is not None and not isinstance(self.label, str):
+            self.label = str(self.label)
+
+        if self.group is not None and not isinstance(self.group, str):
+            self.group = str(self.group)
+
+        if self.age is not None and not isinstance(self.age, float):
+            self.age = float(self.age)
+
+        if self.sex is not None and not isinstance(self.sex, SexEnum):
+            self.sex = SexEnum(self.sex)
+
+        self._normalize_inlined_as_dict(slot_name="sessions", slot_type=Session, key_name="session_id", keyed=True)
+
+        if self.network is not None and not isinstance(self.network, str):
+            self.network = str(self.network)
+
+        if self.metadata is not None and not isinstance(self.metadata, str):
+            self.metadata = str(self.metadata)
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
+class Session(YAMLRoot):
+    """
+    A data collection session for a subject. Corresponds to a BIDS 'ses-' entity. Sessions capture longitudinal
+    timepoints (baseline, follow-up), different experimental conditions, or repeated measures.
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO_STUDY["Session"]
+    class_class_curie: ClassVar[str] = "tvbo_study:Session"
+    class_name: ClassVar[str] = "Session"
+    class_model_uri: ClassVar[URIRef] = TVBO.Session
+
+    session_id: Union[str, SessionSessionId] = None
+    label: Optional[str] = None
+    network: Optional[str] = None
+    empirical_data: Optional[Union[str, list[str]]] = empty_list()
+    condition: Optional[str] = None
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self._is_empty(self.session_id):
+            self.MissingRequiredField("session_id")
+        if not isinstance(self.session_id, SessionSessionId):
+            self.session_id = SessionSessionId(self.session_id)
+
+        if self.label is not None and not isinstance(self.label, str):
+            self.label = str(self.label)
+
+        if self.network is not None and not isinstance(self.network, str):
+            self.network = str(self.network)
+
+        if not isinstance(self.empirical_data, list):
+            self.empirical_data = [self.empirical_data] if self.empirical_data is not None else []
+        self.empirical_data = [v if isinstance(v, str) else str(v) for v in self.empirical_data]
+
+        if self.condition is not None and not isinstance(self.condition, str):
+            self.condition = str(self.condition)
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
 class Dataset(YAMLRoot):
+    """
+    A collection of subjects for a multi-subject study. Provides the subject/session structure needed for workflow
+    rendering. Optionally backed by a BIDS directory layout.
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO_STUDY["Dataset"]
+    class_class_curie: ClassVar[str] = "tvbo_study:Dataset"
+    class_name: ClassVar[str] = "Dataset"
+    class_model_uri: ClassVar[URIRef] = TVBO.Dataset
+
+    dataset_id: Union[str, DatasetDatasetId] = None
+    label: Optional[str] = None
+    description: Optional[str] = None
+    bids_root: Optional[str] = None
+    subjects: Optional[Union[dict[Union[str, SubjectSubjectId], Union[dict, Subject]], list[Union[dict, Subject]]]] = empty_dict()
+    conditions: Optional[Union[str, list[str]]] = empty_list()
+    reference: Optional[str] = None
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self._is_empty(self.dataset_id):
+            self.MissingRequiredField("dataset_id")
+        if not isinstance(self.dataset_id, DatasetDatasetId):
+            self.dataset_id = DatasetDatasetId(self.dataset_id)
+
+        if self.label is not None and not isinstance(self.label, str):
+            self.label = str(self.label)
+
+        if self.description is not None and not isinstance(self.description, str):
+            self.description = str(self.description)
+
+        if self.bids_root is not None and not isinstance(self.bids_root, str):
+            self.bids_root = str(self.bids_root)
+
+        self._normalize_inlined_as_dict(slot_name="subjects", slot_type=Subject, key_name="subject_id", keyed=True)
+
+        if not isinstance(self.conditions, list):
+            self.conditions = [self.conditions] if self.conditions is not None else []
+        self.conditions = [v if isinstance(v, str) else str(v) for v in self.conditions]
+
+        if self.reference is not None and not isinstance(self.reference, str):
+            self.reference = str(self.reference)
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
+class DBSDataset(Dataset):
     """
     Collection of data related to a specific DBS study.
     """
     _inherited_slots: ClassVar[list[str]] = []
 
-    class_class_uri: ClassVar[URIRef] = TVBO_DBS["Dataset"]
-    class_class_curie: ClassVar[str] = "tvbo_dbs:Dataset"
-    class_name: ClassVar[str] = "Dataset"
-    class_model_uri: ClassVar[URIRef] = TVBO.Dataset
+    class_class_uri: ClassVar[URIRef] = TVBO_DBS["DBSDataset"]
+    class_class_curie: ClassVar[str] = "tvbo_dbs:DBSDataset"
+    class_name: ClassVar[str] = "DBSDataset"
+    class_model_uri: ClassVar[URIRef] = TVBO.DBSDataset
 
-    label: Optional[str] = None
-    dataset_id: Optional[str] = None
-    subjects: Optional[Union[dict[Union[str, SubjectSubjectId], Union[dict, "Subject"]], list[Union[dict, "Subject"]]]] = empty_dict()
+    dataset_id: Union[str, DBSDatasetDatasetId] = None
     clinical_scores: Optional[Union[Union[dict, "ClinicalScore"], list[Union[dict, "ClinicalScore"]]]] = empty_list()
     coordinate_space: Optional[Union[str, CommonCoordinateSpaceName]] = None
+    subjects: Optional[Union[dict[Union[str, DBSSubjectSubjectId], Union[dict, "DBSSubject"]], list[Union[dict, "DBSSubject"]]]] = empty_dict()
 
     def __post_init__(self, *_: str, **kwargs: Any):
-        if self.label is not None and not isinstance(self.label, str):
-            self.label = str(self.label)
-
-        if self.dataset_id is not None and not isinstance(self.dataset_id, str):
-            self.dataset_id = str(self.dataset_id)
-
-        self._normalize_inlined_as_dict(slot_name="subjects", slot_type=Subject, key_name="subject_id", keyed=True)
+        if self._is_empty(self.dataset_id):
+            self.MissingRequiredField("dataset_id")
+        if not isinstance(self.dataset_id, DBSDatasetDatasetId):
+            self.dataset_id = DBSDatasetDatasetId(self.dataset_id)
 
         if not isinstance(self.clinical_scores, list):
             self.clinical_scores = [self.clinical_scores] if self.clinical_scores is not None else []
@@ -4348,24 +4345,24 @@ class Dataset(YAMLRoot):
         if self.coordinate_space is not None and not isinstance(self.coordinate_space, CommonCoordinateSpaceName):
             self.coordinate_space = CommonCoordinateSpaceName(self.coordinate_space)
 
+        self._normalize_inlined_as_dict(slot_name="subjects", slot_type=DBSSubject, key_name="subject_id", keyed=True)
+
         super().__post_init__(**kwargs)
 
 
 @dataclass(repr=False)
-class Subject(YAMLRoot):
+class DBSSubject(Subject):
     """
     Human or animal subject receiving DBS.
     """
     _inherited_slots: ClassVar[list[str]] = []
 
-    class_class_uri: ClassVar[URIRef] = TVBO_DBS["Subject"]
-    class_class_curie: ClassVar[str] = "tvbo_dbs:Subject"
-    class_name: ClassVar[str] = "Subject"
-    class_model_uri: ClassVar[URIRef] = TVBO.Subject
+    class_class_uri: ClassVar[URIRef] = TVBO_DBS["DBSSubject"]
+    class_class_curie: ClassVar[str] = "tvbo_dbs:DBSSubject"
+    class_name: ClassVar[str] = "DBSSubject"
+    class_model_uri: ClassVar[URIRef] = TVBO.DBSSubject
 
-    subject_id: Union[str, SubjectSubjectId] = None
-    age: Optional[float] = None
-    sex: Optional[str] = None
+    subject_id: Union[str, DBSSubjectSubjectId] = None
     diagnosis: Optional[str] = None
     handedness: Optional[str] = None
     protocols: Optional[Union[Union[str, DBSProtocolName], list[Union[str, DBSProtocolName]]]] = empty_list()
@@ -4374,14 +4371,8 @@ class Subject(YAMLRoot):
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.subject_id):
             self.MissingRequiredField("subject_id")
-        if not isinstance(self.subject_id, SubjectSubjectId):
-            self.subject_id = SubjectSubjectId(self.subject_id)
-
-        if self.age is not None and not isinstance(self.age, float):
-            self.age = float(self.age)
-
-        if self.sex is not None and not isinstance(self.sex, str):
-            self.sex = str(self.sex)
+        if not isinstance(self.subject_id, DBSSubjectSubjectId):
+            self.subject_id = DBSSubjectSubjectId(self.subject_id)
 
         if self.diagnosis is not None and not isinstance(self.diagnosis, str):
             self.diagnosis = str(self.diagnosis)
@@ -4745,6 +4736,305 @@ class EField(YAMLRoot):
         super().__post_init__(**kwargs)
 
 
+@dataclass(repr=False)
+class SoftwarePackage(YAMLRoot):
+    """
+    Identity and metadata for a software package, aligned with schema.org/SoftwareApplication and CodeMeta v3.
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = SCHEMA["SoftwareApplication"]
+    class_class_curie: ClassVar[str] = "schema:SoftwareApplication"
+    class_name: ClassVar[str] = "SoftwarePackage"
+    class_model_uri: ClassVar[URIRef] = TVBO.SoftwarePackage
+
+    name: Union[str, SoftwarePackageName] = None
+    description: Optional[str] = None
+    homepage: Optional[Union[str, URI]] = None
+    license: Optional[str] = None
+    repository: Optional[Union[str, URI]] = None
+    doi: Optional[str] = None
+    ecosystem: Optional[Union[Union[str, "EcosystemEnum"], list[Union[str, "EcosystemEnum"]]]] = empty_list()
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self._is_empty(self.name):
+            self.MissingRequiredField("name")
+        if not isinstance(self.name, SoftwarePackageName):
+            self.name = SoftwarePackageName(self.name)
+
+        if self.description is not None and not isinstance(self.description, str):
+            self.description = str(self.description)
+
+        if self.homepage is not None and not isinstance(self.homepage, URI):
+            self.homepage = URI(self.homepage)
+
+        if self.license is not None and not isinstance(self.license, str):
+            self.license = str(self.license)
+
+        if self.repository is not None and not isinstance(self.repository, URI):
+            self.repository = URI(self.repository)
+
+        if self.doi is not None and not isinstance(self.doi, str):
+            self.doi = str(self.doi)
+
+        if not isinstance(self.ecosystem, list):
+            self.ecosystem = [self.ecosystem] if self.ecosystem is not None else []
+        self.ecosystem = [v if isinstance(v, EcosystemEnum) else EcosystemEnum(v) for v in self.ecosystem]
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
+class SimulationTool(SoftwarePackage):
+    """
+    A software tool for computational neuroscience simulation, analysis, or model specification. Extends
+    SoftwarePackage with neuroscience-specific controlled vocabularies for scale, paradigm, role, and
+    interoperability. Aligned with CodeMeta v3 and DOAP.
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = SCHEMA["SoftwareApplication"]
+    class_class_curie: ClassVar[str] = "schema:SoftwareApplication"
+    class_name: ClassVar[str] = "SimulationTool"
+    class_model_uri: ClassVar[URIRef] = TVBO.SimulationTool
+
+    name: Union[str, SimulationToolName] = None
+    application_category: Optional[str] = None
+    scale: Optional[Union[Union[str, "SimulationScale"], list[Union[str, "SimulationScale"]]]] = empty_list()
+    model_paradigm: Optional[Union[Union[str, "ModelParadigm"], list[Union[str, "ModelParadigm"]]]] = empty_list()
+    tool_role: Optional[Union[Union[str, "ToolRole"], list[Union[str, "ToolRole"]]]] = empty_list()
+    programming_language: Optional[Union[Union[str, "ProgrammingLanguageEnum"], list[Union[str, "ProgrammingLanguageEnum"]]]] = empty_list()
+    runtime_platform: Optional[Union[str, list[str]]] = empty_list()
+    operating_system: Optional[Union[str, list[str]]] = empty_list()
+    interoperates_with: Optional[Union[Union[str, SimulationToolName], list[Union[str, SimulationToolName]]]] = empty_list()
+    version: Optional[str] = None
+    date_created: Optional[Union[str, XSDDate]] = None
+    date_modified: Optional[Union[str, XSDDate]] = None
+    development_status: Optional[Union[str, "DevelopmentStatus"]] = None
+    author: Optional[Union[str, list[str]]] = empty_list()
+    maintainer: Optional[Union[str, list[str]]] = empty_list()
+    funder: Optional[Union[str, list[str]]] = empty_list()
+    reference_publication: Optional[str] = None
+    citation: Optional[Union[str, list[str]]] = empty_list()
+    keywords: Optional[Union[str, list[str]]] = empty_list()
+    same_as: Optional[Union[Union[str, URI], list[Union[str, URI]]]] = empty_list()
+    issue_tracker: Optional[Union[str, URI]] = None
+    is_accessible_for_free: Optional[Union[bool, Bool]] = True
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self._is_empty(self.name):
+            self.MissingRequiredField("name")
+        if not isinstance(self.name, SimulationToolName):
+            self.name = SimulationToolName(self.name)
+
+        if self.application_category is not None and not isinstance(self.application_category, str):
+            self.application_category = str(self.application_category)
+
+        if not isinstance(self.scale, list):
+            self.scale = [self.scale] if self.scale is not None else []
+        self.scale = [v if isinstance(v, SimulationScale) else SimulationScale(v) for v in self.scale]
+
+        if not isinstance(self.model_paradigm, list):
+            self.model_paradigm = [self.model_paradigm] if self.model_paradigm is not None else []
+        self.model_paradigm = [v if isinstance(v, ModelParadigm) else ModelParadigm(v) for v in self.model_paradigm]
+
+        if not isinstance(self.tool_role, list):
+            self.tool_role = [self.tool_role] if self.tool_role is not None else []
+        self.tool_role = [v if isinstance(v, ToolRole) else ToolRole(v) for v in self.tool_role]
+
+        if not isinstance(self.programming_language, list):
+            self.programming_language = [self.programming_language] if self.programming_language is not None else []
+        self.programming_language = [v if isinstance(v, ProgrammingLanguageEnum) else ProgrammingLanguageEnum(v) for v in self.programming_language]
+
+        if not isinstance(self.runtime_platform, list):
+            self.runtime_platform = [self.runtime_platform] if self.runtime_platform is not None else []
+        self.runtime_platform = [v if isinstance(v, str) else str(v) for v in self.runtime_platform]
+
+        if not isinstance(self.operating_system, list):
+            self.operating_system = [self.operating_system] if self.operating_system is not None else []
+        self.operating_system = [v if isinstance(v, str) else str(v) for v in self.operating_system]
+
+        if not isinstance(self.interoperates_with, list):
+            self.interoperates_with = [self.interoperates_with] if self.interoperates_with is not None else []
+        self.interoperates_with = [v if isinstance(v, SimulationToolName) else SimulationToolName(v) for v in self.interoperates_with]
+
+        if self.version is not None and not isinstance(self.version, str):
+            self.version = str(self.version)
+
+        if self.date_created is not None and not isinstance(self.date_created, XSDDate):
+            self.date_created = XSDDate(self.date_created)
+
+        if self.date_modified is not None and not isinstance(self.date_modified, XSDDate):
+            self.date_modified = XSDDate(self.date_modified)
+
+        if self.development_status is not None and not isinstance(self.development_status, DevelopmentStatus):
+            self.development_status = DevelopmentStatus(self.development_status)
+
+        if not isinstance(self.author, list):
+            self.author = [self.author] if self.author is not None else []
+        self.author = [v if isinstance(v, str) else str(v) for v in self.author]
+
+        if not isinstance(self.maintainer, list):
+            self.maintainer = [self.maintainer] if self.maintainer is not None else []
+        self.maintainer = [v if isinstance(v, str) else str(v) for v in self.maintainer]
+
+        if not isinstance(self.funder, list):
+            self.funder = [self.funder] if self.funder is not None else []
+        self.funder = [v if isinstance(v, str) else str(v) for v in self.funder]
+
+        if self.reference_publication is not None and not isinstance(self.reference_publication, str):
+            self.reference_publication = str(self.reference_publication)
+
+        if not isinstance(self.citation, list):
+            self.citation = [self.citation] if self.citation is not None else []
+        self.citation = [v if isinstance(v, str) else str(v) for v in self.citation]
+
+        if not isinstance(self.keywords, list):
+            self.keywords = [self.keywords] if self.keywords is not None else []
+        self.keywords = [v if isinstance(v, str) else str(v) for v in self.keywords]
+
+        if not isinstance(self.same_as, list):
+            self.same_as = [self.same_as] if self.same_as is not None else []
+        self.same_as = [v if isinstance(v, URI) else URI(v) for v in self.same_as]
+
+        if self.issue_tracker is not None and not isinstance(self.issue_tracker, URI):
+            self.issue_tracker = URI(self.issue_tracker)
+
+        if self.is_accessible_for_free is not None and not isinstance(self.is_accessible_for_free, Bool):
+            self.is_accessible_for_free = Bool(self.is_accessible_for_free)
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
+class SoftwareRequirement(YAMLRoot):
+    """
+    An individual software requirement binding a package to a version constraint and a role within an environment.
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO_SW["SoftwareRequirement"]
+    class_class_curie: ClassVar[str] = "tvbo_sw:SoftwareRequirement"
+    class_name: ClassVar[str] = "SoftwareRequirement"
+    class_model_uri: ClassVar[URIRef] = TVBO.SoftwareRequirement
+
+    name: Union[str, SoftwareRequirementName] = None
+    description: Optional[str] = None
+    dataLocation: Optional[str] = None
+    package: Optional[Union[str, SoftwarePackageName]] = None
+    version_spec: Optional[str] = None
+    role: Optional[Union[str, "RequirementRole"]] = 'runtime'
+    optional: Optional[Union[bool, Bool]] = False
+    hash: Optional[str] = None
+    source_url: Optional[str] = None
+    url: Optional[str] = None
+    license: Optional[str] = None
+    modules: Optional[Union[str, list[str]]] = empty_list()
+    version: Optional[str] = None
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self._is_empty(self.name):
+            self.MissingRequiredField("name")
+        if not isinstance(self.name, SoftwareRequirementName):
+            self.name = SoftwareRequirementName(self.name)
+
+        if self.description is not None and not isinstance(self.description, str):
+            self.description = str(self.description)
+
+        if self.dataLocation is not None and not isinstance(self.dataLocation, str):
+            self.dataLocation = str(self.dataLocation)
+
+        if self.package is not None and not isinstance(self.package, SoftwarePackageName):
+            self.package = SoftwarePackageName(self.package)
+
+        if self.version_spec is not None and not isinstance(self.version_spec, str):
+            self.version_spec = str(self.version_spec)
+
+        if self.role is not None and not isinstance(self.role, RequirementRole):
+            self.role = getattr(RequirementRole, self.role)
+
+        if self.optional is not None and not isinstance(self.optional, Bool):
+            self.optional = Bool(self.optional)
+
+        if self.hash is not None and not isinstance(self.hash, str):
+            self.hash = str(self.hash)
+
+        if self.source_url is not None and not isinstance(self.source_url, str):
+            self.source_url = str(self.source_url)
+
+        if self.url is not None and not isinstance(self.url, str):
+            self.url = str(self.url)
+
+        if self.license is not None and not isinstance(self.license, str):
+            self.license = str(self.license)
+
+        if not isinstance(self.modules, list):
+            self.modules = [self.modules] if self.modules is not None else []
+        self.modules = [v if isinstance(v, str) else str(v) for v in self.modules]
+
+        if self.version is not None and not isinstance(self.version, str):
+            self.version = str(self.version)
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
+class SoftwareEnvironment(YAMLRoot):
+    """
+    A reproducible software environment aggregating one or more SoftwareRequirement entries. Used by
+    SimulationExperiment to specify the execution context.
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO_SW["SoftwareEnvironment"]
+    class_class_curie: ClassVar[str] = "tvbo_sw:SoftwareEnvironment"
+    class_name: ClassVar[str] = "SoftwareEnvironment"
+    class_model_uri: ClassVar[URIRef] = TVBO.SoftwareEnvironment
+
+    label: Optional[str] = None
+    description: Optional[str] = None
+    dataLocation: Optional[str] = None
+    name: Optional[str] = None
+    version: Optional[str] = None
+    platform: Optional[str] = None
+    environment_type: Optional[Union[str, "EnvironmentType"]] = None
+    container_image: Optional[str] = None
+    build_hash: Optional[str] = None
+    requirements: Optional[Union[dict[Union[str, SoftwareRequirementName], Union[dict, SoftwareRequirement]], list[Union[dict, SoftwareRequirement]]]] = empty_dict()
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self.label is not None and not isinstance(self.label, str):
+            self.label = str(self.label)
+
+        if self.description is not None and not isinstance(self.description, str):
+            self.description = str(self.description)
+
+        if self.dataLocation is not None and not isinstance(self.dataLocation, str):
+            self.dataLocation = str(self.dataLocation)
+
+        if self.name is not None and not isinstance(self.name, str):
+            self.name = str(self.name)
+
+        if self.version is not None and not isinstance(self.version, str):
+            self.version = str(self.version)
+
+        if self.platform is not None and not isinstance(self.platform, str):
+            self.platform = str(self.platform)
+
+        if self.environment_type is not None and not isinstance(self.environment_type, EnvironmentType):
+            self.environment_type = EnvironmentType(self.environment_type)
+
+        if self.container_image is not None and not isinstance(self.container_image, str):
+            self.container_image = str(self.container_image)
+
+        if self.build_hash is not None and not isinstance(self.build_hash, str):
+            self.build_hash = str(self.build_hash)
+
+        self._normalize_inlined_as_dict(slot_name="requirements", slot_type=SoftwareRequirement, key_name="name", keyed=True)
+
+        super().__post_init__(**kwargs)
+
+
 # Enumerations
 class UnitEnum(EnumDefinitionImpl):
     """
@@ -4820,6 +5110,9 @@ class UnitEnum(EnumDefinitionImpl):
         text="nF",
         description="Nanofarad",
         meaning=QUDT["NanoFARAD"])
+    uF_per_cm2 = PermissibleValue(
+        text="uF_per_cm2",
+        description="Microfarad per square centimetre (specific capacitance)")
     nS = PermissibleValue(
         text="nS",
         description="Nanosiemens",
@@ -4828,6 +5121,16 @@ class UnitEnum(EnumDefinitionImpl):
         text="uS",
         description="Microsiemens",
         meaning=QUDT["MicroS"])
+    pS = PermissibleValue(
+        text="pS",
+        description="Picosiemens",
+        meaning=QUDT["PicoS"])
+    S_per_cm2 = PermissibleValue(
+        text="S_per_cm2",
+        description="Siemens per square centimetre (conductance density)")
+    mS_per_cm2 = PermissibleValue(
+        text="mS_per_cm2",
+        description="Millisiemens per square centimetre (conductance density)")
     per_nC = PermissibleValue(
         text="per_nC",
         description="Reciprocal nanocoulomb (nC⁻¹)",
@@ -4840,10 +5143,16 @@ class UnitEnum(EnumDefinitionImpl):
         text="mol_per_m3",
         description="Mole per cubic metre (mol/m³)",
         meaning=QUDT["MOL-PER-M3"])
+    mol_per_cm3 = PermissibleValue(
+        text="mol_per_cm3",
+        description="Mole per cubic centimetre (mol/cm³)")
     mmol_per_m3 = PermissibleValue(
         text="mmol_per_m3",
         description="Millimole per cubic metre (mmol/m³ ≈ mM)",
         meaning=QUDT["MilliMOL-PER-M3"])
+    mol_per_m_per_A_per_s = PermissibleValue(
+        text="mol_per_m_per_A_per_s",
+        description="Mole per metre per ampere per second (concentration-current coupling)")
     um3 = PermissibleValue(
         text="um3",
         description="Cubic micrometre (µm³)",
@@ -4879,6 +5188,13 @@ class UnitEnum(EnumDefinitionImpl):
         text="H_per_m",
         description="Henry per metre (permeability)",
         meaning=QUDT["H-PER-M"])
+    kohm_cm = PermissibleValue(
+        text="kohm_cm",
+        description="Kilo-ohm centimetre (axial resistivity)")
+    degC = PermissibleValue(
+        text="degC",
+        description="Degree Celsius",
+        meaning=QUDT["DEG_C"])
     rad_per_ms = PermissibleValue(
         text="rad_per_ms",
         description="Radian per millisecond")
@@ -5209,36 +5525,6 @@ class StandardGraphType(EnumDefinitionImpl):
         description="""Well-known graph generator families with automatic backend mapping. The type field on GraphGenerator is a free string; this enum lists common types that get automatic code generation for Julia (Graphs.jl) and Python (NetworkX).""",
     )
 
-class RequirementRole(EnumDefinitionImpl):
-
-    engine = PermissibleValue(
-        text="engine",
-        description="Primary simulation/processing engine")
-    runtime = PermissibleValue(
-        text="runtime",
-        description="General runtime dependency")
-    analysis = PermissibleValue(
-        text="analysis",
-        description="Post-processing / analysis tool")
-    dev = PermissibleValue(
-        text="dev",
-        description="Development / build dependency")
-    optional = PermissibleValue(
-        text="optional",
-        description="Optional or extra feature dependency")
-
-    _defn = EnumDefinition(
-        name="RequirementRole",
-    )
-
-class EnvironmentType(EnumDefinitionImpl):
-
-    conda = PermissibleValue(text="conda")
-
-    _defn = EnumDefinition(
-        name="EnvironmentType",
-    )
-
 class DimensionType(EnumDefinitionImpl):
     """
     Dimensions along which operations can be applied
@@ -5402,6 +5688,337 @@ class Hemisphere(EnumDefinitionImpl):
         name="Hemisphere",
     )
 
+class SexEnum(EnumDefinitionImpl):
+
+    male = PermissibleValue(
+        text="male",
+        description="Male")
+    female = PermissibleValue(
+        text="female",
+        description="Female")
+    other = PermissibleValue(
+        text="other",
+        description="Other or not reported")
+
+    _defn = EnumDefinition(
+        name="SexEnum",
+    )
+
+class SimulationScale(EnumDefinitionImpl):
+    """
+    Spatial / organizational scale at which a tool operates. Multi-valued: a tool can span multiple scales. Mapped to
+    SIO and Wikidata where possible.
+    """
+    channel = PermissibleValue(
+        text="channel",
+        description="Ion channel / sub-cellular molecular dynamics.",
+        meaning=WD["Q898786"])
+    neuron = PermissibleValue(
+        text="neuron",
+        description="Single neuron (compartmental or point).",
+        meaning=WD["Q43054"])
+    neural_network = PermissibleValue(
+        text="neural_network",
+        description="Microcircuit / local network of neurons.",
+        meaning=WD["Q484761"])
+    neural_mass = PermissibleValue(
+        text="neural_mass",
+        description="Population-level neural mass or mean-field model.",
+        meaning=WD["Q7003015"])
+    network_system = PermissibleValue(
+        text="network_system",
+        description="Whole-brain or large-scale network of regions.",
+        meaning=WD["Q1073340"])
+
+    _defn = EnumDefinition(
+        name="SimulationScale",
+        description="""Spatial / organizational scale at which a tool operates. Multi-valued: a tool can span multiple scales. Mapped to SIO and Wikidata where possible.""",
+    )
+
+class ToolRole(EnumDefinitionImpl):
+    """
+    Primary function of the tool in a simulation workflow.
+    """
+    simulator = PermissibleValue(
+        text="simulator",
+        description="Core numerical simulator.",
+        meaning=WD["Q1569346"])
+    framework = PermissibleValue(
+        text="framework",
+        description="Multi-paradigm simulation framework.",
+        meaning=WD["Q271680"])
+    backend_runtime = PermissibleValue(
+        text="backend_runtime",
+        description="Optimized execution backend for another simulator.")
+    optimization_framework = PermissibleValue(
+        text="optimization_framework",
+        description="Parameter optimization / fitting tool.",
+        meaning=WD["Q816286"])
+    specification_language = PermissibleValue(
+        text="specification_language",
+        description="Model description language or data standard.",
+        meaning=WD["Q2661442"])
+    workflow_framework = PermissibleValue(
+        text="workflow_framework",
+        description="Orchestration, model-building, or pipeline tool.")
+    analysis_tool = PermissibleValue(
+        text="analysis_tool",
+        description="Post-processing, signal analysis, or statistics.",
+        meaning=BIOTOOLS["operation_2945"])
+    visualization_tool = PermissibleValue(
+        text="visualization_tool",
+        description="Visualization or graphical user interface.",
+        meaning=BIOTOOLS["operation_0337"])
+    model_repository = PermissibleValue(
+        text="model_repository",
+        description="Database or repository of published models.",
+        meaning=WD["Q7397"])
+    continuation_tool = PermissibleValue(
+        text="continuation_tool",
+        description="Numerical continuation / bifurcation analysis.",
+        meaning=WD["Q858926"])
+
+    _defn = EnumDefinition(
+        name="ToolRole",
+        description="Primary function of the tool in a simulation workflow.",
+    )
+
+class ModelParadigm(EnumDefinitionImpl):
+    """
+    Computational paradigm or modeling approach supported by the tool.
+    """
+    neural_mass = PermissibleValue(
+        text="neural_mass",
+        description="Phenomenological population-rate / neural-mass models.",
+        meaning=WD["Q7003015"])
+    mean_field = PermissibleValue(
+        text="mean_field",
+        description="Mean-field reductions of spiking networks.",
+        meaning=WD["Q1368960"])
+    spiking = PermissibleValue(
+        text="spiking",
+        description="Spiking neuron models (LIF, AdEx, Izhikevich, etc.).",
+        meaning=WD["Q7579783"])
+    conductance_based = PermissibleValue(
+        text="conductance_based",
+        description="Conductance-based / Hodgkin-Huxley-type models.",
+        meaning=WD["Q72484"])
+    compartmental = PermissibleValue(
+        text="compartmental",
+        description="Multi-compartment morphologically detailed models.",
+        meaning=WD["Q5155691"])
+    rate_based = PermissibleValue(
+        text="rate_based",
+        description="Firing-rate models.",
+        meaning=WD["Q3685405"])
+    phase_oscillator = PermissibleValue(
+        text="phase_oscillator",
+        description="Phase-reduced or Kuramoto-type oscillator models.",
+        meaning=WD["Q634884"])
+    reaction_diffusion = PermissibleValue(
+        text="reaction_diffusion",
+        description="Stochastic or deterministic reaction-diffusion.",
+        meaning=WD["Q851270"])
+    plasticity = PermissibleValue(
+        text="plasticity",
+        description="Synaptic plasticity (STDP, homeostatic, etc.).",
+        meaning=WD["Q747830"])
+    generic = PermissibleValue(
+        text="generic",
+        description="General-purpose, not specific to neuroscience.")
+    multiscale = PermissibleValue(
+        text="multiscale",
+        description="Bridging multiple spatial/temporal scales.",
+        meaning=WD["Q1948412"])
+    dynamic_mean_field = PermissibleValue(
+        text="dynamic_mean_field",
+        description="Dynamic mean-field approximation (e.g., Deco et al.).")
+    data_standard = PermissibleValue(
+        text="data_standard",
+        description="Data format or exchange standard.",
+        meaning=WD["Q317623"])
+    model_description = PermissibleValue(
+        text="model_description",
+        description="Declarative model specification language.")
+    bifurcation_analysis = PermissibleValue(
+        text="bifurcation_analysis",
+        description="Dynamical systems bifurcation / continuation analysis.",
+        meaning=WD["Q858926"])
+
+    _defn = EnumDefinition(
+        name="ModelParadigm",
+        description="Computational paradigm or modeling approach supported by the tool.",
+    )
+
+class DevelopmentStatus(EnumDefinitionImpl):
+    """
+    Development status of the software. Based on repostatus.org categories.
+    """
+    active = PermissibleValue(
+        text="active",
+        description="Actively developed with regular releases.")
+    inactive = PermissibleValue(
+        text="inactive",
+        description="No longer actively developed; may still work.")
+    concept = PermissibleValue(
+        text="concept",
+        description="Minimal or no implementation; ideas / prototypes.")
+    wip = PermissibleValue(
+        text="wip",
+        description="Work in progress; not yet feature-complete.")
+    suspended = PermissibleValue(
+        text="suspended",
+        description="Development paused; may resume in future.")
+    unsupported = PermissibleValue(
+        text="unsupported",
+        description="Released but no longer supported.")
+    moved = PermissibleValue(
+        text="moved",
+        description="Project has been moved to a different location.")
+
+    _defn = EnumDefinition(
+        name="DevelopmentStatus",
+        description="Development status of the software. Based on repostatus.org categories.",
+    )
+
+class EcosystemEnum(EnumDefinitionImpl):
+    """
+    Package ecosystem or registry the software is distributed through.
+    """
+    pypi = PermissibleValue(
+        text="pypi",
+        description="Python Package Index.",
+        meaning=WD["Q2984888"])
+    conda_forge = PermissibleValue(
+        text="conda_forge",
+        description="Conda-Forge community channel.",
+        meaning=WD["Q105593788"])
+    cran = PermissibleValue(
+        text="cran",
+        description="Comprehensive R Archive Network.",
+        meaning=WD["Q901584"])
+    julia_registry = PermissibleValue(
+        text="julia_registry",
+        description="Julia General package registry.")
+    npm = PermissibleValue(
+        text="npm",
+        description="Node Package Manager registry.",
+        meaning=WD["Q7067518"])
+    bioconda = PermissibleValue(
+        text="bioconda",
+        description="Bioinformatics Conda channel.")
+    github = PermissibleValue(
+        text="github",
+        description="Distributed via GitHub releases.")
+    maven = PermissibleValue(
+        text="maven",
+        description="Maven Central Repository (Java).",
+        meaning=WD["Q6795527"])
+
+    _defn = EnumDefinition(
+        name="EcosystemEnum",
+        description="Package ecosystem or registry the software is distributed through.",
+    )
+
+class ProgrammingLanguageEnum(EnumDefinitionImpl):
+    """
+    Programming languages relevant to computational neuroscience tools. Mapped to Wikidata identifiers.
+    """
+    Python = PermissibleValue(
+        text="Python",
+        meaning=WD["Q28865"])
+    C = PermissibleValue(
+        text="C",
+        meaning=WD["Q15777"])
+    Java = PermissibleValue(
+        text="Java",
+        meaning=WD["Q251"])
+    Julia = PermissibleValue(
+        text="Julia",
+        meaning=WD["Q4010477"])
+    MATLAB = PermissibleValue(
+        text="MATLAB",
+        meaning=WD["Q182017"])
+    R = PermissibleValue(
+        text="R",
+        meaning=WD["Q206904"])
+    Fortran = PermissibleValue(
+        text="Fortran",
+        meaning=WD["Q83303"])
+    Haskell = PermissibleValue(
+        text="Haskell",
+        meaning=WD["Q34010"])
+    Rust = PermissibleValue(
+        text="Rust",
+        meaning=WD["Q575650"])
+    JavaScript = PermissibleValue(
+        text="JavaScript",
+        meaning=WD["Q2005"])
+    XML = PermissibleValue(
+        text="XML",
+        meaning=WD["Q2115"])
+    HOC = PermissibleValue(
+        text="HOC",
+        description="NEURON's high-level interpreted language.",
+        meaning=WD["Q5765633"])
+
+    _defn = EnumDefinition(
+        name="ProgrammingLanguageEnum",
+        description="Programming languages relevant to computational neuroscience tools. Mapped to Wikidata identifiers.",
+    )
+
+    @classmethod
+    def _addvals(cls):
+        setattr(cls, "C++",
+            PermissibleValue(
+                text="C++",
+                meaning=WD["Q2407"]))
+        setattr(cls, "C#",
+            PermissibleValue(
+                text="C#",
+                meaning=WD["Q2370"]))
+
+class RequirementRole(EnumDefinitionImpl):
+
+    engine = PermissibleValue(
+        text="engine",
+        description="Primary simulation/processing engine.")
+    runtime = PermissibleValue(
+        text="runtime",
+        description="General runtime dependency.")
+    analysis = PermissibleValue(
+        text="analysis",
+        description="Post-processing / analysis tool.")
+    dev = PermissibleValue(
+        text="dev",
+        description="Development / build dependency.")
+    optional = PermissibleValue(
+        text="optional",
+        description="Optional or extra feature dependency.")
+
+    _defn = EnumDefinition(
+        name="RequirementRole",
+    )
+
+class EnvironmentType(EnumDefinitionImpl):
+
+    conda = PermissibleValue(
+        text="conda",
+        description="Conda environment.")
+    venv = PermissibleValue(
+        text="venv",
+        description="Python virtual environment.")
+    docker = PermissibleValue(
+        text="docker",
+        description="Docker container.")
+    singularity = PermissibleValue(
+        text="singularity",
+        description="Singularity/Apptainer container.")
+
+    _defn = EnumDefinition(
+        name="EnvironmentType",
+    )
+
 # Slots
 class slots:
     pass
@@ -5517,8 +6134,14 @@ slots.dataLocation = Slot(uri=ATOM.dataLocation, name="dataLocation", curie=ATOM
 slots.coordinateSpace = Slot(uri=ATOM.coordinateSpace, name="coordinateSpace", curie=ATOM.curie('coordinateSpace'),
                    model_uri=TVBO.coordinateSpace, domain=None, range=Optional[Union[str, CommonCoordinateSpaceName]])
 
-slots.subject_id = Slot(uri=TVBO_DBS.subject_id, name="subject_id", curie=TVBO_DBS.curie('subject_id'),
+slots.subject_id = Slot(uri=TVBO_STUDY.subject_id, name="subject_id", curie=TVBO_STUDY.curie('subject_id'),
                    model_uri=TVBO.subject_id, domain=None, range=URIRef)
+
+slots.session_id = Slot(uri=TVBO_STUDY.session_id, name="session_id", curie=TVBO_STUDY.curie('session_id'),
+                   model_uri=TVBO.session_id, domain=None, range=URIRef)
+
+slots.dataset_id = Slot(uri=TVBO_STUDY.dataset_id, name="dataset_id", curie=TVBO_STUDY.curie('dataset_id'),
+                   model_uri=TVBO.dataset_id, domain=None, range=URIRef)
 
 slots.id = Slot(uri=TVBO_DBS.id, name="id", curie=TVBO_DBS.curie('id'),
                    model_uri=TVBO.id, domain=None, range=Optional[int])
@@ -6624,6 +7247,9 @@ slots.simulationExperiment__software = Slot(uri=TVBO.software, name="simulationE
 slots.simulationExperiment__references = Slot(uri=TVBO.references, name="simulationExperiment__references", curie=TVBO.curie('references'),
                    model_uri=TVBO.simulationExperiment__references, domain=None, range=Optional[Union[str, list[str]]])
 
+slots.simulationExperiment__dataset = Slot(uri=TVBO.dataset, name="simulationExperiment__dataset", curie=TVBO.curie('dataset'),
+                   model_uri=TVBO.simulationExperiment__dataset, domain=None, range=Optional[Union[dict, Dataset]])
+
 slots.simulationStudy__key = Slot(uri=TVBO.key, name="simulationStudy__key", curie=TVBO.curie('key'),
                    model_uri=TVBO.simulationStudy__key, domain=None, range=Optional[str])
 
@@ -6698,72 +7324,6 @@ slots.timeSeries__model_param_ref = Slot(uri=TVBO.model_param_ref, name="timeSer
 
 slots.timeSeries__connectivity_ref = Slot(uri=TVBO.connectivity_ref, name="timeSeries__connectivity_ref", curie=TVBO.curie('connectivity_ref'),
                    model_uri=TVBO.timeSeries__connectivity_ref, domain=None, range=Optional[str])
-
-slots.softwareEnvironment__name = Slot(uri=TVBO.name, name="softwareEnvironment__name", curie=TVBO.curie('name'),
-                   model_uri=TVBO.softwareEnvironment__name, domain=None, range=Optional[str])
-
-slots.softwareEnvironment__version = Slot(uri=TVBO.version, name="softwareEnvironment__version", curie=TVBO.curie('version'),
-                   model_uri=TVBO.softwareEnvironment__version, domain=None, range=Optional[str])
-
-slots.softwareEnvironment__platform = Slot(uri=TVBO.platform, name="softwareEnvironment__platform", curie=TVBO.curie('platform'),
-                   model_uri=TVBO.softwareEnvironment__platform, domain=None, range=Optional[str])
-
-slots.softwareEnvironment__environment_type = Slot(uri=TVBO.environment_type, name="softwareEnvironment__environment_type", curie=TVBO.curie('environment_type'),
-                   model_uri=TVBO.softwareEnvironment__environment_type, domain=None, range=Optional[Union[str, "EnvironmentType"]])
-
-slots.softwareEnvironment__container_image = Slot(uri=TVBO.container_image, name="softwareEnvironment__container_image", curie=TVBO.curie('container_image'),
-                   model_uri=TVBO.softwareEnvironment__container_image, domain=None, range=Optional[str])
-
-slots.softwareEnvironment__build_hash = Slot(uri=TVBO.build_hash, name="softwareEnvironment__build_hash", curie=TVBO.curie('build_hash'),
-                   model_uri=TVBO.softwareEnvironment__build_hash, domain=None, range=Optional[str])
-
-slots.softwareEnvironment__requirements = Slot(uri=TVBO.requirements, name="softwareEnvironment__requirements", curie=TVBO.curie('requirements'),
-                   model_uri=TVBO.softwareEnvironment__requirements, domain=None, range=Optional[Union[dict[Union[str, SoftwareRequirementName], Union[dict, SoftwareRequirement]], list[Union[dict, SoftwareRequirement]]]])
-
-slots.softwareRequirement__package = Slot(uri=TVBO.package, name="softwareRequirement__package", curie=TVBO.curie('package'),
-                   model_uri=TVBO.softwareRequirement__package, domain=None, range=Optional[Union[str, SoftwarePackageName]])
-
-slots.softwareRequirement__version_spec = Slot(uri=TVBO.version_spec, name="softwareRequirement__version_spec", curie=TVBO.curie('version_spec'),
-                   model_uri=TVBO.softwareRequirement__version_spec, domain=None, range=Optional[str])
-
-slots.softwareRequirement__role = Slot(uri=TVBO.role, name="softwareRequirement__role", curie=TVBO.curie('role'),
-                   model_uri=TVBO.softwareRequirement__role, domain=None, range=Optional[Union[str, "RequirementRole"]])
-
-slots.softwareRequirement__optional = Slot(uri=TVBO.optional, name="softwareRequirement__optional", curie=TVBO.curie('optional'),
-                   model_uri=TVBO.softwareRequirement__optional, domain=None, range=Optional[Union[bool, Bool]])
-
-slots.softwareRequirement__hash = Slot(uri=TVBO.hash, name="softwareRequirement__hash", curie=TVBO.curie('hash'),
-                   model_uri=TVBO.softwareRequirement__hash, domain=None, range=Optional[str])
-
-slots.softwareRequirement__source_url = Slot(uri=TVBO.source_url, name="softwareRequirement__source_url", curie=TVBO.curie('source_url'),
-                   model_uri=TVBO.softwareRequirement__source_url, domain=None, range=Optional[str])
-
-slots.softwareRequirement__url = Slot(uri=TVBO.url, name="softwareRequirement__url", curie=TVBO.curie('url'),
-                   model_uri=TVBO.softwareRequirement__url, domain=None, range=Optional[str])
-
-slots.softwareRequirement__license = Slot(uri=TVBO.license, name="softwareRequirement__license", curie=TVBO.curie('license'),
-                   model_uri=TVBO.softwareRequirement__license, domain=None, range=Optional[str])
-
-slots.softwareRequirement__modules = Slot(uri=TVBO.modules, name="softwareRequirement__modules", curie=TVBO.curie('modules'),
-                   model_uri=TVBO.softwareRequirement__modules, domain=None, range=Optional[Union[str, list[str]]])
-
-slots.softwareRequirement__version = Slot(uri=TVBO.version, name="softwareRequirement__version", curie=TVBO.curie('version'),
-                   model_uri=TVBO.softwareRequirement__version, domain=None, range=Optional[str])
-
-slots.softwarePackage__homepage = Slot(uri=TVBO.homepage, name="softwarePackage__homepage", curie=TVBO.curie('homepage'),
-                   model_uri=TVBO.softwarePackage__homepage, domain=None, range=Optional[str])
-
-slots.softwarePackage__license = Slot(uri=TVBO.license, name="softwarePackage__license", curie=TVBO.curie('license'),
-                   model_uri=TVBO.softwarePackage__license, domain=None, range=Optional[str])
-
-slots.softwarePackage__repository = Slot(uri=TVBO.repository, name="softwarePackage__repository", curie=TVBO.curie('repository'),
-                   model_uri=TVBO.softwarePackage__repository, domain=None, range=Optional[str])
-
-slots.softwarePackage__doi = Slot(uri=TVBO.doi, name="softwarePackage__doi", curie=TVBO.curie('doi'),
-                   model_uri=TVBO.softwarePackage__doi, domain=None, range=Optional[str])
-
-slots.softwarePackage__ecosystem = Slot(uri=TVBO.ecosystem, name="softwarePackage__ecosystem", curie=TVBO.curie('ecosystem'),
-                   model_uri=TVBO.softwarePackage__ecosystem, domain=None, range=Optional[str])
 
 slots.nDArray__shape = Slot(uri=TVBO.shape, name="nDArray__shape", curie=TVBO.curie('shape'),
                    model_uri=TVBO.nDArray__shape, domain=None, range=Optional[Union[int, list[int]]])
@@ -6951,35 +7511,74 @@ slots.parcellationEntity__color = Slot(uri=ATOM.color, name="parcellationEntity_
 slots.parcellationTerminology__entities = Slot(uri=ATOM.entities, name="parcellationTerminology__entities", curie=ATOM.curie('entities'),
                    model_uri=TVBO.parcellationTerminology__entities, domain=None, range=Optional[Union[dict[Union[str, ParcellationEntityName], Union[dict, ParcellationEntity]], list[Union[dict, ParcellationEntity]]]])
 
-slots.dataset__dataset_id = Slot(uri=TVBO_DBS.dataset_id, name="dataset__dataset_id", curie=TVBO_DBS.curie('dataset_id'),
-                   model_uri=TVBO.dataset__dataset_id, domain=None, range=Optional[str])
+slots.subject__label = Slot(uri=TVBO_STUDY.label, name="subject__label", curie=TVBO_STUDY.curie('label'),
+                   model_uri=TVBO.subject__label, domain=None, range=Optional[str])
 
-slots.dataset__subjects = Slot(uri=TVBO_DBS.subjects, name="dataset__subjects", curie=TVBO_DBS.curie('subjects'),
-                   model_uri=TVBO.dataset__subjects, domain=None, range=Optional[Union[dict[Union[str, SubjectSubjectId], Union[dict, Subject]], list[Union[dict, Subject]]]])
+slots.subject__group = Slot(uri=TVBO_STUDY.group, name="subject__group", curie=TVBO_STUDY.curie('group'),
+                   model_uri=TVBO.subject__group, domain=None, range=Optional[str])
 
-slots.dataset__clinical_scores = Slot(uri=TVBO_DBS.clinical_scores, name="dataset__clinical_scores", curie=TVBO_DBS.curie('clinical_scores'),
-                   model_uri=TVBO.dataset__clinical_scores, domain=None, range=Optional[Union[Union[dict, ClinicalScore], list[Union[dict, ClinicalScore]]]])
-
-slots.dataset__coordinate_space = Slot(uri=TVBO_DBS.coordinate_space, name="dataset__coordinate_space", curie=TVBO_DBS.curie('coordinate_space'),
-                   model_uri=TVBO.dataset__coordinate_space, domain=None, range=Optional[Union[str, CommonCoordinateSpaceName]])
-
-slots.subject__age = Slot(uri=TVBO_DBS.age, name="subject__age", curie=TVBO_DBS.curie('age'),
+slots.subject__age = Slot(uri=TVBO_STUDY.age, name="subject__age", curie=TVBO_STUDY.curie('age'),
                    model_uri=TVBO.subject__age, domain=None, range=Optional[float])
 
-slots.subject__sex = Slot(uri=TVBO_DBS.sex, name="subject__sex", curie=TVBO_DBS.curie('sex'),
-                   model_uri=TVBO.subject__sex, domain=None, range=Optional[str])
+slots.subject__sex = Slot(uri=TVBO_STUDY.sex, name="subject__sex", curie=TVBO_STUDY.curie('sex'),
+                   model_uri=TVBO.subject__sex, domain=None, range=Optional[Union[str, "SexEnum"]])
 
-slots.subject__diagnosis = Slot(uri=TVBO_DBS.diagnosis, name="subject__diagnosis", curie=TVBO_DBS.curie('diagnosis'),
-                   model_uri=TVBO.subject__diagnosis, domain=None, range=Optional[str])
+slots.subject__sessions = Slot(uri=TVBO_STUDY.sessions, name="subject__sessions", curie=TVBO_STUDY.curie('sessions'),
+                   model_uri=TVBO.subject__sessions, domain=None, range=Optional[Union[dict[Union[str, SessionSessionId], Union[dict, Session]], list[Union[dict, Session]]]])
 
-slots.subject__handedness = Slot(uri=TVBO_DBS.handedness, name="subject__handedness", curie=TVBO_DBS.curie('handedness'),
-                   model_uri=TVBO.subject__handedness, domain=None, range=Optional[str])
+slots.subject__network = Slot(uri=TVBO_STUDY.network, name="subject__network", curie=TVBO_STUDY.curie('network'),
+                   model_uri=TVBO.subject__network, domain=None, range=Optional[str])
 
-slots.subject__protocols = Slot(uri=TVBO_DBS.protocols, name="subject__protocols", curie=TVBO_DBS.curie('protocols'),
-                   model_uri=TVBO.subject__protocols, domain=None, range=Optional[Union[Union[str, DBSProtocolName], list[Union[str, DBSProtocolName]]]])
+slots.subject__metadata = Slot(uri=TVBO_STUDY.metadata, name="subject__metadata", curie=TVBO_STUDY.curie('metadata'),
+                   model_uri=TVBO.subject__metadata, domain=None, range=Optional[str])
 
-slots.subject__coordinate_space = Slot(uri=TVBO_DBS.coordinate_space, name="subject__coordinate_space", curie=TVBO_DBS.curie('coordinate_space'),
-                   model_uri=TVBO.subject__coordinate_space, domain=None, range=Optional[Union[str, CommonCoordinateSpaceName]])
+slots.session__label = Slot(uri=TVBO_STUDY.label, name="session__label", curie=TVBO_STUDY.curie('label'),
+                   model_uri=TVBO.session__label, domain=None, range=Optional[str])
+
+slots.session__network = Slot(uri=TVBO_STUDY.network, name="session__network", curie=TVBO_STUDY.curie('network'),
+                   model_uri=TVBO.session__network, domain=None, range=Optional[str])
+
+slots.session__empirical_data = Slot(uri=TVBO_STUDY.empirical_data, name="session__empirical_data", curie=TVBO_STUDY.curie('empirical_data'),
+                   model_uri=TVBO.session__empirical_data, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.session__condition = Slot(uri=TVBO_STUDY.condition, name="session__condition", curie=TVBO_STUDY.curie('condition'),
+                   model_uri=TVBO.session__condition, domain=None, range=Optional[str])
+
+slots.dataset__label = Slot(uri=TVBO_STUDY.label, name="dataset__label", curie=TVBO_STUDY.curie('label'),
+                   model_uri=TVBO.dataset__label, domain=None, range=Optional[str])
+
+slots.dataset__description = Slot(uri=TVBO_STUDY.description, name="dataset__description", curie=TVBO_STUDY.curie('description'),
+                   model_uri=TVBO.dataset__description, domain=None, range=Optional[str])
+
+slots.dataset__bids_root = Slot(uri=TVBO_STUDY.bids_root, name="dataset__bids_root", curie=TVBO_STUDY.curie('bids_root'),
+                   model_uri=TVBO.dataset__bids_root, domain=None, range=Optional[str])
+
+slots.dataset__subjects = Slot(uri=TVBO_STUDY.subjects, name="dataset__subjects", curie=TVBO_STUDY.curie('subjects'),
+                   model_uri=TVBO.dataset__subjects, domain=None, range=Optional[Union[dict[Union[str, SubjectSubjectId], Union[dict, Subject]], list[Union[dict, Subject]]]])
+
+slots.dataset__conditions = Slot(uri=TVBO_STUDY.conditions, name="dataset__conditions", curie=TVBO_STUDY.curie('conditions'),
+                   model_uri=TVBO.dataset__conditions, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.dataset__reference = Slot(uri=TVBO_STUDY.reference, name="dataset__reference", curie=TVBO_STUDY.curie('reference'),
+                   model_uri=TVBO.dataset__reference, domain=None, range=Optional[str])
+
+slots.dBSDataset__clinical_scores = Slot(uri=TVBO_DBS.clinical_scores, name="dBSDataset__clinical_scores", curie=TVBO_DBS.curie('clinical_scores'),
+                   model_uri=TVBO.dBSDataset__clinical_scores, domain=None, range=Optional[Union[Union[dict, ClinicalScore], list[Union[dict, ClinicalScore]]]])
+
+slots.dBSDataset__coordinate_space = Slot(uri=TVBO_DBS.coordinate_space, name="dBSDataset__coordinate_space", curie=TVBO_DBS.curie('coordinate_space'),
+                   model_uri=TVBO.dBSDataset__coordinate_space, domain=None, range=Optional[Union[str, CommonCoordinateSpaceName]])
+
+slots.dBSSubject__diagnosis = Slot(uri=TVBO_DBS.diagnosis, name="dBSSubject__diagnosis", curie=TVBO_DBS.curie('diagnosis'),
+                   model_uri=TVBO.dBSSubject__diagnosis, domain=None, range=Optional[str])
+
+slots.dBSSubject__handedness = Slot(uri=TVBO_DBS.handedness, name="dBSSubject__handedness", curie=TVBO_DBS.curie('handedness'),
+                   model_uri=TVBO.dBSSubject__handedness, domain=None, range=Optional[str])
+
+slots.dBSSubject__protocols = Slot(uri=TVBO_DBS.protocols, name="dBSSubject__protocols", curie=TVBO_DBS.curie('protocols'),
+                   model_uri=TVBO.dBSSubject__protocols, domain=None, range=Optional[Union[Union[str, DBSProtocolName], list[Union[str, DBSProtocolName]]]])
+
+slots.dBSSubject__coordinate_space = Slot(uri=TVBO_DBS.coordinate_space, name="dBSSubject__coordinate_space", curie=TVBO_DBS.curie('coordinate_space'),
+                   model_uri=TVBO.dBSSubject__coordinate_space, domain=None, range=Optional[Union[str, CommonCoordinateSpaceName]])
 
 slots.electrode__electrode_id = Slot(uri=TVBO_DBS.electrode_id, name="electrode__electrode_id", curie=TVBO_DBS.curie('electrode_id'),
                    model_uri=TVBO.electrode__electrode_id, domain=None, range=Optional[str])
@@ -7125,6 +7724,159 @@ slots.eField__coordinate_space = Slot(uri=TVBO_DBS.coordinate_space, name="eFiel
 slots.eField__threshold_applied = Slot(uri=TVBO_DBS.threshold_applied, name="eField__threshold_applied", curie=TVBO_DBS.curie('threshold_applied'),
                    model_uri=TVBO.eField__threshold_applied, domain=None, range=Optional[float])
 
+slots.softwarePackage__name = Slot(uri=SCHEMA.name, name="softwarePackage__name", curie=SCHEMA.curie('name'),
+                   model_uri=TVBO.softwarePackage__name, domain=None, range=URIRef)
+
+slots.softwarePackage__description = Slot(uri=SCHEMA.description, name="softwarePackage__description", curie=SCHEMA.curie('description'),
+                   model_uri=TVBO.softwarePackage__description, domain=None, range=Optional[str])
+
+slots.softwarePackage__homepage = Slot(uri=SCHEMA.url, name="softwarePackage__homepage", curie=SCHEMA.curie('url'),
+                   model_uri=TVBO.softwarePackage__homepage, domain=None, range=Optional[Union[str, URI]])
+
+slots.softwarePackage__license = Slot(uri=SCHEMA.license, name="softwarePackage__license", curie=SCHEMA.curie('license'),
+                   model_uri=TVBO.softwarePackage__license, domain=None, range=Optional[str])
+
+slots.softwarePackage__repository = Slot(uri=SCHEMA.codeRepository, name="softwarePackage__repository", curie=SCHEMA.curie('codeRepository'),
+                   model_uri=TVBO.softwarePackage__repository, domain=None, range=Optional[Union[str, URI]])
+
+slots.softwarePackage__doi = Slot(uri=TVBO_SW.doi, name="softwarePackage__doi", curie=TVBO_SW.curie('doi'),
+                   model_uri=TVBO.softwarePackage__doi, domain=None, range=Optional[str])
+
+slots.softwarePackage__ecosystem = Slot(uri=TVBO_SW.ecosystem, name="softwarePackage__ecosystem", curie=TVBO_SW.curie('ecosystem'),
+                   model_uri=TVBO.softwarePackage__ecosystem, domain=None, range=Optional[Union[Union[str, "EcosystemEnum"], list[Union[str, "EcosystemEnum"]]]])
+
+slots.simulationTool__application_category = Slot(uri=SCHEMA.applicationCategory, name="simulationTool__application_category", curie=SCHEMA.curie('applicationCategory'),
+                   model_uri=TVBO.simulationTool__application_category, domain=None, range=Optional[str])
+
+slots.simulationTool__scale = Slot(uri=TVBO_SW.scale, name="simulationTool__scale", curie=TVBO_SW.curie('scale'),
+                   model_uri=TVBO.simulationTool__scale, domain=None, range=Optional[Union[Union[str, "SimulationScale"], list[Union[str, "SimulationScale"]]]])
+
+slots.simulationTool__model_paradigm = Slot(uri=TVBO_SW.model_paradigm, name="simulationTool__model_paradigm", curie=TVBO_SW.curie('model_paradigm'),
+                   model_uri=TVBO.simulationTool__model_paradigm, domain=None, range=Optional[Union[Union[str, "ModelParadigm"], list[Union[str, "ModelParadigm"]]]])
+
+slots.simulationTool__tool_role = Slot(uri=TVBO_SW.tool_role, name="simulationTool__tool_role", curie=TVBO_SW.curie('tool_role'),
+                   model_uri=TVBO.simulationTool__tool_role, domain=None, range=Optional[Union[Union[str, "ToolRole"], list[Union[str, "ToolRole"]]]])
+
+slots.simulationTool__programming_language = Slot(uri=SCHEMA.programmingLanguage, name="simulationTool__programming_language", curie=SCHEMA.curie('programmingLanguage'),
+                   model_uri=TVBO.simulationTool__programming_language, domain=None, range=Optional[Union[Union[str, "ProgrammingLanguageEnum"], list[Union[str, "ProgrammingLanguageEnum"]]]])
+
+slots.simulationTool__runtime_platform = Slot(uri=SCHEMA.runtimePlatform, name="simulationTool__runtime_platform", curie=SCHEMA.curie('runtimePlatform'),
+                   model_uri=TVBO.simulationTool__runtime_platform, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.simulationTool__operating_system = Slot(uri=SCHEMA.operatingSystem, name="simulationTool__operating_system", curie=SCHEMA.curie('operatingSystem'),
+                   model_uri=TVBO.simulationTool__operating_system, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.simulationTool__interoperates_with = Slot(uri=TVBO_SW.interoperates_with, name="simulationTool__interoperates_with", curie=TVBO_SW.curie('interoperates_with'),
+                   model_uri=TVBO.simulationTool__interoperates_with, domain=None, range=Optional[Union[Union[str, SimulationToolName], list[Union[str, SimulationToolName]]]])
+
+slots.simulationTool__version = Slot(uri=SCHEMA.softwareVersion, name="simulationTool__version", curie=SCHEMA.curie('softwareVersion'),
+                   model_uri=TVBO.simulationTool__version, domain=None, range=Optional[str])
+
+slots.simulationTool__date_created = Slot(uri=SCHEMA.dateCreated, name="simulationTool__date_created", curie=SCHEMA.curie('dateCreated'),
+                   model_uri=TVBO.simulationTool__date_created, domain=None, range=Optional[Union[str, XSDDate]])
+
+slots.simulationTool__date_modified = Slot(uri=SCHEMA.dateModified, name="simulationTool__date_modified", curie=SCHEMA.curie('dateModified'),
+                   model_uri=TVBO.simulationTool__date_modified, domain=None, range=Optional[Union[str, XSDDate]])
+
+slots.simulationTool__development_status = Slot(uri=TVBO_SW.development_status, name="simulationTool__development_status", curie=TVBO_SW.curie('development_status'),
+                   model_uri=TVBO.simulationTool__development_status, domain=None, range=Optional[Union[str, "DevelopmentStatus"]])
+
+slots.simulationTool__author = Slot(uri=SCHEMA.author, name="simulationTool__author", curie=SCHEMA.curie('author'),
+                   model_uri=TVBO.simulationTool__author, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.simulationTool__maintainer = Slot(uri=SCHEMA.maintainer, name="simulationTool__maintainer", curie=SCHEMA.curie('maintainer'),
+                   model_uri=TVBO.simulationTool__maintainer, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.simulationTool__funder = Slot(uri=SCHEMA.funder, name="simulationTool__funder", curie=SCHEMA.curie('funder'),
+                   model_uri=TVBO.simulationTool__funder, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.simulationTool__reference_publication = Slot(uri=TVBO_SW.reference_publication, name="simulationTool__reference_publication", curie=TVBO_SW.curie('reference_publication'),
+                   model_uri=TVBO.simulationTool__reference_publication, domain=None, range=Optional[str])
+
+slots.simulationTool__citation = Slot(uri=SCHEMA.citation, name="simulationTool__citation", curie=SCHEMA.curie('citation'),
+                   model_uri=TVBO.simulationTool__citation, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.simulationTool__keywords = Slot(uri=SCHEMA.keywords, name="simulationTool__keywords", curie=SCHEMA.curie('keywords'),
+                   model_uri=TVBO.simulationTool__keywords, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.simulationTool__same_as = Slot(uri=SCHEMA.sameAs, name="simulationTool__same_as", curie=SCHEMA.curie('sameAs'),
+                   model_uri=TVBO.simulationTool__same_as, domain=None, range=Optional[Union[Union[str, URI], list[Union[str, URI]]]])
+
+slots.simulationTool__issue_tracker = Slot(uri=TVBO_SW.issue_tracker, name="simulationTool__issue_tracker", curie=TVBO_SW.curie('issue_tracker'),
+                   model_uri=TVBO.simulationTool__issue_tracker, domain=None, range=Optional[Union[str, URI]])
+
+slots.simulationTool__is_accessible_for_free = Slot(uri=SCHEMA.isAccessibleForFree, name="simulationTool__is_accessible_for_free", curie=SCHEMA.curie('isAccessibleForFree'),
+                   model_uri=TVBO.simulationTool__is_accessible_for_free, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.softwareRequirement__name = Slot(uri=TVBO_SW.name, name="softwareRequirement__name", curie=TVBO_SW.curie('name'),
+                   model_uri=TVBO.softwareRequirement__name, domain=None, range=URIRef)
+
+slots.softwareRequirement__description = Slot(uri=TVBO_SW.description, name="softwareRequirement__description", curie=TVBO_SW.curie('description'),
+                   model_uri=TVBO.softwareRequirement__description, domain=None, range=Optional[str])
+
+slots.softwareRequirement__dataLocation = Slot(uri=TVBO_SW.dataLocation, name="softwareRequirement__dataLocation", curie=TVBO_SW.curie('dataLocation'),
+                   model_uri=TVBO.softwareRequirement__dataLocation, domain=None, range=Optional[str])
+
+slots.softwareRequirement__package = Slot(uri=TVBO_SW.package, name="softwareRequirement__package", curie=TVBO_SW.curie('package'),
+                   model_uri=TVBO.softwareRequirement__package, domain=None, range=Optional[Union[str, SoftwarePackageName]])
+
+slots.softwareRequirement__version_spec = Slot(uri=TVBO_SW.version_spec, name="softwareRequirement__version_spec", curie=TVBO_SW.curie('version_spec'),
+                   model_uri=TVBO.softwareRequirement__version_spec, domain=None, range=Optional[str])
+
+slots.softwareRequirement__role = Slot(uri=TVBO_SW.role, name="softwareRequirement__role", curie=TVBO_SW.curie('role'),
+                   model_uri=TVBO.softwareRequirement__role, domain=None, range=Optional[Union[str, "RequirementRole"]])
+
+slots.softwareRequirement__optional = Slot(uri=TVBO_SW.optional, name="softwareRequirement__optional", curie=TVBO_SW.curie('optional'),
+                   model_uri=TVBO.softwareRequirement__optional, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.softwareRequirement__hash = Slot(uri=TVBO_SW.hash, name="softwareRequirement__hash", curie=TVBO_SW.curie('hash'),
+                   model_uri=TVBO.softwareRequirement__hash, domain=None, range=Optional[str])
+
+slots.softwareRequirement__source_url = Slot(uri=TVBO_SW.source_url, name="softwareRequirement__source_url", curie=TVBO_SW.curie('source_url'),
+                   model_uri=TVBO.softwareRequirement__source_url, domain=None, range=Optional[str])
+
+slots.softwareRequirement__url = Slot(uri=TVBO_SW.url, name="softwareRequirement__url", curie=TVBO_SW.curie('url'),
+                   model_uri=TVBO.softwareRequirement__url, domain=None, range=Optional[str])
+
+slots.softwareRequirement__license = Slot(uri=TVBO_SW.license, name="softwareRequirement__license", curie=TVBO_SW.curie('license'),
+                   model_uri=TVBO.softwareRequirement__license, domain=None, range=Optional[str])
+
+slots.softwareRequirement__modules = Slot(uri=TVBO_SW.modules, name="softwareRequirement__modules", curie=TVBO_SW.curie('modules'),
+                   model_uri=TVBO.softwareRequirement__modules, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.softwareRequirement__version = Slot(uri=TVBO_SW.version, name="softwareRequirement__version", curie=TVBO_SW.curie('version'),
+                   model_uri=TVBO.softwareRequirement__version, domain=None, range=Optional[str])
+
+slots.softwareEnvironment__label = Slot(uri=TVBO_SW.label, name="softwareEnvironment__label", curie=TVBO_SW.curie('label'),
+                   model_uri=TVBO.softwareEnvironment__label, domain=None, range=Optional[str])
+
+slots.softwareEnvironment__description = Slot(uri=TVBO_SW.description, name="softwareEnvironment__description", curie=TVBO_SW.curie('description'),
+                   model_uri=TVBO.softwareEnvironment__description, domain=None, range=Optional[str])
+
+slots.softwareEnvironment__dataLocation = Slot(uri=TVBO_SW.dataLocation, name="softwareEnvironment__dataLocation", curie=TVBO_SW.curie('dataLocation'),
+                   model_uri=TVBO.softwareEnvironment__dataLocation, domain=None, range=Optional[str])
+
+slots.softwareEnvironment__name = Slot(uri=TVBO_SW.name, name="softwareEnvironment__name", curie=TVBO_SW.curie('name'),
+                   model_uri=TVBO.softwareEnvironment__name, domain=None, range=Optional[str])
+
+slots.softwareEnvironment__version = Slot(uri=TVBO_SW.version, name="softwareEnvironment__version", curie=TVBO_SW.curie('version'),
+                   model_uri=TVBO.softwareEnvironment__version, domain=None, range=Optional[str])
+
+slots.softwareEnvironment__platform = Slot(uri=TVBO_SW.platform, name="softwareEnvironment__platform", curie=TVBO_SW.curie('platform'),
+                   model_uri=TVBO.softwareEnvironment__platform, domain=None, range=Optional[str])
+
+slots.softwareEnvironment__environment_type = Slot(uri=TVBO_SW.environment_type, name="softwareEnvironment__environment_type", curie=TVBO_SW.curie('environment_type'),
+                   model_uri=TVBO.softwareEnvironment__environment_type, domain=None, range=Optional[Union[str, "EnvironmentType"]])
+
+slots.softwareEnvironment__container_image = Slot(uri=TVBO_SW.container_image, name="softwareEnvironment__container_image", curie=TVBO_SW.curie('container_image'),
+                   model_uri=TVBO.softwareEnvironment__container_image, domain=None, range=Optional[str])
+
+slots.softwareEnvironment__build_hash = Slot(uri=TVBO_SW.build_hash, name="softwareEnvironment__build_hash", curie=TVBO_SW.curie('build_hash'),
+                   model_uri=TVBO.softwareEnvironment__build_hash, domain=None, range=Optional[str])
+
+slots.softwareEnvironment__requirements = Slot(uri=TVBO_SW.requirements, name="softwareEnvironment__requirements", curie=TVBO_SW.curie('requirements'),
+                   model_uri=TVBO.softwareEnvironment__requirements, domain=None, range=Optional[Union[dict[Union[str, SoftwareRequirementName], Union[dict, SoftwareRequirement]], list[Union[dict, SoftwareRequirement]]]])
+
 slots.system_type = Slot(uri=TVBO.system_type, name="system_type", curie=TVBO.curie('system_type'),
                    model_uri=TVBO.system_type, domain=None, range=Optional[str])
 
@@ -7139,4 +7891,7 @@ slots.Distribution_name = Slot(uri=TVBO.name, name="Distribution_name", curie=TV
 
 slots.Coupling_name = Slot(uri=TVBO.name, name="Coupling_name", curie=TVBO.curie('name'),
                    model_uri=TVBO.Coupling_name, domain=Coupling, range=Union[str, CouplingName])
+
+slots.DBSDataset_subjects = Slot(uri=TVBO.subjects, name="DBSDataset_subjects", curie=TVBO.curie('subjects'),
+                   model_uri=TVBO.DBSDataset_subjects, domain=DBSDataset, range=Optional[Union[dict[Union[str, DBSSubjectSubjectId], Union[dict, "DBSSubject"]], list[Union[dict, "DBSSubject"]]]])
 

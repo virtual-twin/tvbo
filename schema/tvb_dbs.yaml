@@ -9,51 +9,33 @@ prefixes:
 
 default_prefix: tvbo_dbs
 
-slots:
-  subject_id:
-    identifier: true
-    description: >-
-      Unique identifier for a subject within a dataset.
-    from_schema: https://w3id.org/tvbo/dbs
-    range: string
-    required: true
-    exact_mappings:
-      - schema:identifier
-    aliases:
-      - subject code
-      - subject label
+imports:
+  - linkml:types
+  - tvbo_study
 
+slots:
   id:
     description: Surrogate integer key.
     range: integer
 
 classes:
-  Dataset:
+  DBSDataset:
+    is_a: Dataset
     description: Collection of data related to a specific DBS study.
-    slots:
-      - label
     attributes:
-      dataset_id:
-        range: string
-      subjects:
-        range: Subject
-        multivalued: true
-        inlined: true
       clinical_scores:
         multivalued: true
         range: ClinicalScore
       coordinate_space:
         range: CommonCoordinateSpace
+    slot_usage:
+      subjects:
+        range: DBSSubject
 
-  Subject:
+  DBSSubject:
+    is_a: Subject
     description: Human or animal subject receiving DBS.
-    slots:
-      - subject_id
     attributes:
-      age:
-        range: float
-      sex:
-        range: string
       diagnosis:
         range: string
       handedness:

@@ -1,0 +1,43 @@
+name: BSB
+description: Brain Scaffold Builder — a framework for reconstructing and simulating
+  data-driven brain tissue models using morphological and connectivity scaffolds.
+homepage: https://bsb.readthedocs.io
+repository: https://github.com/dbbs-lab/bsb-core
+reference_publication: 10.3389/fninf.2019.00068
+license: Apache-2.0
+is_accessible_for_free: true
+ecosystem:
+- pypi
+application_category: scaffold
+date_created: '2019-01-01'
+development_status: active
+scale:
+- neuron
+- network_system
+model_paradigm:
+- multiscale
+tool_role:
+- workflow_framework
+programming_language:
+- Python
+runtime_platform:
+- Python
+- HPC
+interoperates_with:
+- SONATA
+- NEURON
+- Arbor
+- NEST
+author:
+- Robin De Schepper
+- Egidio D'Angelo
+maintainer:
+- Robin De Schepper
+funder:
+- EU HBP
+keywords:
+- cerebellum
+- network builder
+- multi-simulator
+- placement
+issue_tracker: https://github.com/dbbs-lab/bsb/issues

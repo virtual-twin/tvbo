@@ -1,0 +1,58 @@
+name: NEURON
+description: NEURON is a simulation environment for modeling individual neurons and
+  networks of neurons. It provides tools for constructing, managing, and using biophysically
+  realistic models with active membranes.
+homepage: https://www.neuron.yale.edu
+repository: https://github.com/neuronsimulator/nrn
+doi: 10.3389/fninf.2009.00001
+reference_publication: 10.1162/neco.1997.9.6.1179
+license: BSD-3-Clause
+is_accessible_for_free: true
+ecosystem:
+- pypi
+application_category: simulation
+date_created: '1994-01-01'
+development_status: active
+scale:
+- channel
+- neuron
+- neural_network
+- network_system
+model_paradigm:
+- conductance_based
+- compartmental
+- spiking
+tool_role:
+- simulator
+programming_language:
+- Python
+- C++
+- HOC
+runtime_platform:
+- MPI
+- CoreNEURON
+interoperates_with:
+- CoreNEURON
+- NeuroML
+- PyNN
+- TVB
+- NetPyNE
+- SONATA
+author:
+- Michael Hines
+- Nicholas Carnevale
+maintainer:
+- Yale University
+- Blue Brain Project
+funder:
+- NIH
+- Yale University
+keywords:
+- compartmental model
+- Hodgkin-Huxley
+- morphology
+- electrophysiology
+same_as:
+- https://www.wikidata.org/entity/Q1993723
+- https://scicrunch.org/resolver/RRID:SCR_005393
+issue_tracker: https://github.com/neuronsimulator/nrn/issues

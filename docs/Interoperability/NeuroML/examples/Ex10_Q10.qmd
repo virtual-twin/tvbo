@@ -30,59 +30,121 @@ exp = SimulationExperiment.from_string("""
 label: "NeuroML Ex10: Q10 Temperature Dependence"
 dynamics:
   name: HodgkinHuxley_Q10
+  iri: neuroml:pointCellCondBased
+  description: >
+    HH cell with Q10 temperature scaling on all gates.
+    Network at 22°C, experimental temp 32°C → Q10 = 3^(-1) ≈ 0.333.
   parameters:
-    C:     { value: 10.0 }
-    g_Na:  { value: 1200.0 }
-    g_K:   { value: 360.0 }
-    g_L:   { value: 3.0 }
-    E_Na:  { value: 50.0 }
-    E_K:   { value: -77.0 }
-    E_L:   { value: -54.3 }
-    I_amp: { value: 0.08 }
-    pulse_delay:    { value: 100.0, unit: ms }
-    pulse_duration: { value: 100.0, unit: ms }
-    Q10:   { value: 0.333333, description: "Q10 factor = 3^((22-32)/10)" }
-  derived_variables:
-    I_ext:
-      equation:
-        rhs: "Piecewise((I_amp, (t >= pulse_delay) & (t < pulse_delay + pulse_duration)), (0.0, True))"
-    alpha_m:
-      equation:
-        rhs: "Q10 * Piecewise((1.0, Eq(v, -40.0)), (0.1*(v + 40.0)/(1.0 - exp(-(v + 40.0)/10.0)), True))"
-    beta_m:
-      equation:
-        rhs: "Q10 * 4.0*exp(-(v + 65.0)/18.0)"
-    alpha_h:
-      equation:
-        rhs: "Q10 * 0.07*exp(-(v + 65.0)/20.0)"
-    beta_h:
-      equation:
-        rhs: "Q10 * 1.0/(1.0 + exp(-(v + 35.0)/10.0))"
-    alpha_n:
-      equation:
-        rhs: "Q10 * Piecewise((0.1, Eq(v, -55.0)), (0.01*(v + 55.0)/(1.0 - exp(-(v + 55.0)/10.0)), True))"
-    beta_n:
-      equation:
-        rhs: "Q10 * 0.125*exp(-(v + 65.0)/80.0)"
-  state_variables:
-    v:
-      equation:
-        rhs: "(-g_Na*m**3*h*(v - E_Na) - g_K*n**4*(v - E_K) - g_L*(v - E_L) + I_ext*1000) / C"
-      initial_value: -65.0
-      variable_of_interest: true
-    m:
-      equation: { rhs: "alpha_m*(1 - m) - beta_m*m" }
-      initial_value: 0.052932
-    h:
-      equation: { rhs: "alpha_h*(1 - h) - beta_h*h" }
-      initial_value: 0.596121
-    n:
-      equation: { rhs: "alpha_n*(1 - n) - beta_n*n" }
-      initial_value: 0.317677
-network:
-  number_of_nodes: 1
+    C:              { value: 10, unit: pF }
+    v0:             { value: -65, unit: mV }
+    thresh:         { value: 20, unit: mV }
+    pulse_delay:    { value: 100, unit: ms }
+    pulse_duration: { value: 100, unit: ms }
+    I_amp:          { value: 0.08, unit: nA }
+    network_temperature: { value: 22, unit: degC }
+  components:
+    passive:
+      name: passive
+      iri: neuroml:ionChannelPassive
+      parameters:
+        conductance: { value: 10, unit: pS }
+        number:      { value: 300 }
+        erev:        { value: -54.3, unit: mV }
+    na:
+      name: na
+      iri: neuroml:ionChannelHH
+      parameters:
+        conductance: { value: 10, unit: pS }
+        number:      { value: 120000 }
+        erev:        { value: 50, unit: mV }
+      components:
+        m:
+          name: m
+          iri: neuroml:gateHHrates
+          parameters:
+            instances: { value: 3 }
+          components:
+            q10Settings:
+              name: q10Settings
+              iri: neuroml:q10ExpTemp
+              parameters:
+                q10Factor:        { value: 3 }
+                experimentalTemp: { value: 32, unit: degC }
+            forwardRate:
+              name: forwardRate
+              iri: neuroml:HHExpLinearRate
+              parameters:
+                rate:     { value: 1, unit: per_ms }
+                midpoint: { value: -40, unit: mV }
+                scale:    { value: 10, unit: mV }
+            reverseRate:
+              name: reverseRate
+              iri: neuroml:HHExpRate
+              parameters:
+                rate:     { value: 4, unit: per_ms }
+                midpoint: { value: -65, unit: mV }
+                scale:    { value: -18, unit: mV }
+        h:
+          name: h
+          iri: neuroml:gateHHrates
+          parameters:
+            instances: { value: 1 }
+          components:
+            q10Settings:
+              name: q10Settings
+              iri: neuroml:q10ExpTemp
+              parameters:
+                q10Factor:        { value: 3 }
+                experimentalTemp: { value: 32, unit: degC }
+            forwardRate:
+              name: forwardRate
+              iri: neuroml:HHExpRate
+              parameters:
+                rate:     { value: 0.07, unit: per_ms }
+                midpoint: { value: -65, unit: mV }
+                scale:    { value: -20, unit: mV }
+            reverseRate:
+              name: reverseRate
+              iri: neuroml:HHSigmoidRate
+              parameters:
+                rate:     { value: 1, unit: per_ms }
+                midpoint: { value: -35, unit: mV }
+                scale:    { value: 10, unit: mV }
+    k:
+      name: k
+      iri: neuroml:ionChannelHH
+      parameters:
+        conductance: { value: 10, unit: pS }
+        number:      { value: 36000 }
+        erev:        { value: -77, unit: mV }
+      components:
+        n:
+          name: n
+          iri: neuroml:gateHHrates
+          parameters:
+            instances: { value: 4 }
+          components:
+            q10Settings:
+              name: q10Settings
+              iri: neuroml:q10ExpTemp
+              parameters:
+                q10Factor:        { value: 3 }
+                experimentalTemp: { value: 32, unit: degC }
+            forwardRate:
+              name: forwardRate
+              iri: neuroml:HHExpLinearRate
+              parameters:
+                rate:     { value: 0.1, unit: per_ms }
+                midpoint: { value: -55, unit: mV }
+                scale:    { value: 10, unit: mV }
+            reverseRate:
+              name: reverseRate
+              iri: neuroml:HHExpRate
+              parameters:
+                rate:     { value: 0.125, unit: per_ms }
+                midpoint: { value: -65, unit: mV }
+                scale:    { value: -80, unit: mV }
 integration:
-  method: euler
   step_size: 0.01
   duration: 300.0
   time_scale: ms

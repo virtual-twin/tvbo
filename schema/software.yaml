@@ -1,0 +1,463 @@
+id: https://w3id.org/tvbo/software
+name: software
+title: TVBO Software Schema
+description: >-
+    Schema for describing software tools, environments, and requirements
+    in computational neuroscience. Aligned with schema.org/SoftwareApplication,
+    CodeMeta v3, and DOAP vocabularies. Extends with neuroscience-specific
+    controlled vocabularies for simulation scale, modeling paradigm, tool
+    role, and interoperability.
+
+prefixes:
+    linkml: https://w3id.org/linkml/
+    tvbo_sw: http://www.thevirtualbrain.org/tvb-o/software/
+    schema: http://schema.org/
+    doap: http://usefulinc.com/ns/doap#
+    sio: http://semanticscience.org/resource/
+    nidm: http://purl.org/nidash/nidm#
+    biotools: https://bio.tools/ontology/
+    wd: http://www.wikidata.org/entity/
+
+default_prefix: tvbo_sw
+
+imports:
+    - linkml:types
+
+enums:
+    SimulationScale:
+        description: >-
+            Spatial / organizational scale at which a tool operates.
+            Multi-valued: a tool can span multiple scales.
+            Mapped to SIO and Wikidata where possible.
+        permissible_values:
+            channel:
+                description: "Ion channel / sub-cellular molecular dynamics."
+                meaning: wd:Q898786
+                exact_mappings:
+                    - sio:SIO_010056
+            neuron:
+                description: "Single neuron (compartmental or point)."
+                meaning: wd:Q43054
+                exact_mappings:
+                    - sio:SIO_010025
+            neural_network:
+                description: "Microcircuit / local network of neurons."
+                meaning: wd:Q484761
+            neural_mass:
+                description: "Population-level neural mass or mean-field model."
+                meaning: wd:Q7003015
+            network_system:
+                description: "Whole-brain or large-scale network of regions."
+                meaning: wd:Q1073340
+
+    ToolRole:
+        description: >-
+            Primary function of the tool in a simulation workflow.
+        permissible_values:
+            simulator:
+                description: "Core numerical simulator."
+                meaning: wd:Q1569346
+            framework:
+                description: "Multi-paradigm simulation framework."
+                meaning: wd:Q271680
+            backend_runtime:
+                description: "Optimized execution backend for another simulator."
+            optimization_framework:
+                description: "Parameter optimization / fitting tool."
+                meaning: wd:Q816286
+            specification_language:
+                description: "Model description language or data standard."
+                meaning: wd:Q2661442
+            workflow_framework:
+                description: "Orchestration, model-building, or pipeline tool."
+            analysis_tool:
+                description: "Post-processing, signal analysis, or statistics."
+                meaning: biotools:operation_2945
+            visualization_tool:
+                description: "Visualization or graphical user interface."
+                meaning: biotools:operation_0337
+            model_repository:
+                description: "Database or repository of published models."
+                meaning: wd:Q7397
+            continuation_tool:
+                description: "Numerical continuation / bifurcation analysis."
+                meaning: wd:Q858926
+
+    ModelParadigm:
+        description: >-
+            Computational paradigm or modeling approach supported by the tool.
+        permissible_values:
+            neural_mass:
+                description: "Phenomenological population-rate / neural-mass models."
+                meaning: wd:Q7003015
+            mean_field:
+                description: "Mean-field reductions of spiking networks."
+                meaning: wd:Q1368960
+            spiking:
+                description: "Spiking neuron models (LIF, AdEx, Izhikevich, etc.)."
+                meaning: wd:Q7579783
+            conductance_based:
+                description: "Conductance-based / Hodgkin-Huxley-type models."
+                meaning: wd:Q72484
+            compartmental:
+                description: "Multi-compartment morphologically detailed models."
+                meaning: wd:Q5155691
+            rate_based:
+                description: "Firing-rate models."
+                meaning: wd:Q3685405
+            phase_oscillator:
+                description: "Phase-reduced or Kuramoto-type oscillator models."
+                meaning: wd:Q634884
+            reaction_diffusion:
+                description: "Stochastic or deterministic reaction-diffusion."
+                meaning: wd:Q851270
+            plasticity:
+                description: "Synaptic plasticity (STDP, homeostatic, etc.)."
+                meaning: wd:Q747830
+            generic:
+                description: "General-purpose, not specific to neuroscience."
+            multiscale:
+                description: "Bridging multiple spatial/temporal scales."
+                meaning: wd:Q1948412
+            dynamic_mean_field:
+                description: "Dynamic mean-field approximation (e.g., Deco et al.)."
+            data_standard:
+                description: "Data format or exchange standard."
+                meaning: wd:Q317623
+            model_description:
+                description: "Declarative model specification language."
+            bifurcation_analysis:
+                description: "Dynamical systems bifurcation / continuation analysis."
+                meaning: wd:Q858926
+
+    DevelopmentStatus:
+        description: >-
+            Development status of the software.
+            Based on repostatus.org categories.
+        permissible_values:
+            active:
+                description: "Actively developed with regular releases."
+            inactive:
+                description: "No longer actively developed; may still work."
+            concept:
+                description: "Minimal or no implementation; ideas / prototypes."
+            wip:
+                description: "Work in progress; not yet feature-complete."
+            suspended:
+                description: "Development paused; may resume in future."
+            unsupported:
+                description: "Released but no longer supported."
+            moved:
+                description: "Project has been moved to a different location."
+
+    EcosystemEnum:
+        description: >-
+            Package ecosystem or registry the software is distributed through.
+        permissible_values:
+            pypi:
+                description: "Python Package Index."
+                meaning: wd:Q2984888
+            conda_forge:
+                description: "Conda-Forge community channel."
+                meaning: wd:Q105593788
+            cran:
+                description: "Comprehensive R Archive Network."
+                meaning: wd:Q901584
+            julia_registry:
+                description: "Julia General package registry."
+            npm:
+                description: "Node Package Manager registry."
+                meaning: wd:Q7067518
+            bioconda:
+                description: "Bioinformatics Conda channel."
+            github:
+                description: "Distributed via GitHub releases."
+            maven:
+                description: "Maven Central Repository (Java)."
+                meaning: wd:Q6795527
+
+    ProgrammingLanguageEnum:
+        description: >-
+            Programming languages relevant to computational neuroscience tools.
+            Mapped to Wikidata identifiers.
+        permissible_values:
+            Python:
+                meaning: wd:Q28865
+            C:
+                meaning: wd:Q15777
+            "C++":
+                meaning: wd:Q2407
+            Java:
+                meaning: wd:Q251
+            Julia:
+                meaning: wd:Q4010477
+            MATLAB:
+                meaning: wd:Q182017
+            R:
+                meaning: wd:Q206904
+            Fortran:
+                meaning: wd:Q83303
+            Haskell:
+                meaning: wd:Q34010
+            Rust:
+                meaning: wd:Q575650
+            JavaScript:
+                meaning: wd:Q2005
+            XML:
+                meaning: wd:Q2115
+            HOC:
+                description: "NEURON's high-level interpreted language."
+                meaning: wd:Q5765633
+            "C#":
+                meaning: wd:Q2370
+
+    RequirementRole:
+        permissible_values:
+            engine:
+                description: "Primary simulation/processing engine."
+            runtime:
+                description: "General runtime dependency."
+            analysis:
+                description: "Post-processing / analysis tool."
+            dev:
+                description: "Development / build dependency."
+            optional:
+                description: "Optional or extra feature dependency."
+
+    EnvironmentType:
+        permissible_values:
+            conda:
+                description: "Conda environment."
+            venv:
+                description: "Python virtual environment."
+            docker:
+                description: "Docker container."
+            singularity:
+                description: "Singularity/Apptainer container."
+
+classes:
+    SoftwarePackage:
+        description: >-
+            Identity and metadata for a software package, aligned with
+            schema.org/SoftwareApplication and CodeMeta v3.
+        class_uri: schema:SoftwareApplication
+        attributes:
+            name:
+                range: string
+                key: true
+                slot_uri: schema:name
+            description:
+                range: string
+                slot_uri: schema:description
+            homepage:
+                range: uri
+                slot_uri: schema:url
+                description: "Project homepage URL."
+            license:
+                range: string
+                slot_uri: schema:license
+                description: "SPDX license identifier (e.g., MIT, GPL-3.0-only)."
+            repository:
+                range: uri
+                slot_uri: schema:codeRepository
+                description: "Source code repository URL."
+            doi:
+                range: string
+                description: "Digital Object Identifier for the software or its reference publication."
+            ecosystem:
+                range: EcosystemEnum
+                multivalued: true
+                description: "Package ecosystem(s) through which the software is distributed."
+
+    SimulationTool:
+        is_a: SoftwarePackage
+        description: >-
+            A software tool for computational neuroscience simulation,
+            analysis, or model specification. Extends SoftwarePackage with
+            neuroscience-specific controlled vocabularies for scale, paradigm,
+            role, and interoperability. Aligned with CodeMeta v3 and DOAP.
+        class_uri: schema:SoftwareApplication
+        attributes:
+            # ── Neuroscience-specific classifications ──
+            application_category:
+                range: string
+                slot_uri: schema:applicationCategory
+                description: "High-level category (e.g., simulation, analysis, specification)."
+            scale:
+                range: SimulationScale
+                multivalued: true
+                description: "Spatial/organizational scales the tool operates at."
+            model_paradigm:
+                range: ModelParadigm
+                multivalued: true
+                description: "Computational paradigms supported."
+            tool_role:
+                range: ToolRole
+                multivalued: true
+                description: "Primary function(s) in a simulation workflow."
+            # ── Implementation details ──
+            programming_language:
+                range: ProgrammingLanguageEnum
+                multivalued: true
+                slot_uri: schema:programmingLanguage
+                description: "Implementation languages."
+            runtime_platform:
+                range: string
+                multivalued: true
+                slot_uri: schema:runtimePlatform
+                description: "Execution backends or platforms (e.g., MPI, OpenMP, CUDA, JAX)."
+            operating_system:
+                range: string
+                multivalued: true
+                slot_uri: schema:operatingSystem
+                description: "Supported operating systems (e.g., Linux, macOS, Windows)."
+            # ── Interoperability (typed references) ──
+            interoperates_with:
+                range: SimulationTool
+                multivalued: true
+                description: "Tools this tool can exchange data with or delegate to."
+            # ── Versioning and lifecycle ──
+            version:
+                range: string
+                slot_uri: schema:softwareVersion
+                description: "Current or latest stable version string."
+            date_created:
+                range: date
+                slot_uri: schema:dateCreated
+                description: "Date the software was first released (YYYY-MM-DD)."
+            date_modified:
+                range: date
+                slot_uri: schema:dateModified
+                description: "Date of the most recent release or significant update."
+            development_status:
+                range: DevelopmentStatus
+                description: "Development status (repostatus.org aligned)."
+            # ── People and organizations ──
+            author:
+                range: string
+                multivalued: true
+                slot_uri: schema:author
+                description: "Original author(s) or creating organization(s)."
+            maintainer:
+                range: string
+                multivalued: true
+                slot_uri: schema:maintainer
+                description: "Current maintainer(s) or responsible organization(s)."
+            funder:
+                range: string
+                multivalued: true
+                slot_uri: schema:funder
+                description: "Funding bodies or grants (e.g., 'EU H2020 945539', 'NIH R01...')."
+            # ── Scholarly citation ──
+            reference_publication:
+                range: string
+                description: "DOI of the primary reference publication for this tool."
+            citation:
+                range: string
+                multivalued: true
+                slot_uri: schema:citation
+                description: "Additional citation strings or DOIs."
+            # ── Discovery and cross-linking ──
+            keywords:
+                range: string
+                multivalued: true
+                slot_uri: schema:keywords
+                description: "Tags for topic-based discovery and clustering."
+            same_as:
+                range: uri
+                multivalued: true
+                slot_uri: schema:sameAs
+                description: "URIs that unambiguously identify this tool (Wikidata, bio.tools, RRID, SciCrunch)."
+            issue_tracker:
+                range: uri
+                description: "URL of the bug tracker or issue board."
+            is_accessible_for_free:
+                range: boolean
+                slot_uri: schema:isAccessibleForFree
+                ifabsent: true
+                description: "Whether the tool is free/open-source."
+
+    SoftwareRequirement:
+        description: >-
+            An individual software requirement binding a package to a version
+            constraint and a role within an environment.
+        attributes:
+            name:
+                range: string
+                key: true
+            description:
+                range: string
+            dataLocation:
+                range: string
+            package:
+                range: SoftwarePackage
+                description: "Reference to the software package identity."
+            version_spec:
+                range: string
+                description: "Version or constraint specifier (e.g., '==2.7.3', '>=1.2,<2')."
+            role:
+                range: RequirementRole
+                ifabsent: "runtime"
+            optional:
+                range: boolean
+                ifabsent: false
+            hash:
+                range: string
+                description: "Build or artifact hash for exact reproducibility."
+            source_url:
+                range: string
+                description: "Canonical source or repository URL."
+            url:
+                range: string
+                description: "(Deprecated) Use source_url."
+            license:
+                range: string
+            modules:
+                multivalued: true
+                range: string
+                description: "(Deprecated) Use environment.requirements list instead."
+            version:
+                range: string
+                description: "(Deprecated) Use version_spec."
+        comments:
+            - "Represents an individual requirement (package/module/library)."
+            - "Use 'version_spec' instead of 'version' for semantic clarity."
+
+    SoftwareEnvironment:
+        description: >-
+            A reproducible software environment aggregating one or more
+            SoftwareRequirement entries. Used by SimulationExperiment to
+            specify the execution context.
+        attributes:
+            label:
+                range: string
+            description:
+                range: string
+            dataLocation:
+                range: string
+            name:
+                range: string
+                description: "Human-readable environment label."
+            version:
+                range: string
+                description: "Environment definition version (not a package version)."
+            platform:
+                range: string
+                description: "OS / architecture (e.g., linux-64, macos-arm64)."
+            environment_type:
+                range: EnvironmentType
+                description: "Category: conda, venv, docker, etc."
+            container_image:
+                range: string
+                description: "Container image reference (e.g., ghcr.io/org/img:tag@sha256:...)."
+            build_hash:
+                range: string
+                description: "Deterministic hash of the resolved dependency set."
+            requirements:
+                multivalued: true
+                range: SoftwareRequirement
+                inlined: true
+                description: "Constituent software requirements."
+        comments:
+            - "An environment aggregates one or more SoftwareRequirement entries."
+            - "Use SimulationExperiment.environment to reference a reusable environment."

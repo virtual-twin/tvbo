@@ -1,0 +1,34 @@
+name: FastDMF
+description: A fast C++ implementation of the Dynamic Mean Field (DMF) model for whole-brain
+  simulation, with Python bindings. Optimized for rapid parameter exploration on connectome
+  data.
+repository: https://github.com/Picardian14/FastDMF
+doi: 10.3389/fncom.2022.866517
+reference_publication: 10.1016/j.neuroimage.2021.118367
+license: MIT
+is_accessible_for_free: true
+application_category: simulation
+date_created: '2021-01-01'
+development_status: inactive
+scale:
+- neural_mass
+- network_system
+model_paradigm:
+- dynamic_mean_field
+tool_role:
+- simulator
+programming_language:
+- C++
+- Python
+runtime_platform:
+- C++
+interoperates_with:
+- TVB
+author:
+- Gustavo Deco
+maintainer:
+- Ignacio Martín
+keywords:
+- dynamic mean-field
+- resting state
+- functional connectivity

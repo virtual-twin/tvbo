@@ -10,10 +10,16 @@ prefixes:
     prov: http://www.w3.org/ns/prov#
     qudt: http://qudt.org/vocab/unit/
     UO: http://purl.obolibrary.org/obo/UO_
+    sio: http://semanticscience.org/resource/
+    nidm: http://purl.org/nidash/nidm#
+    biotools: https://bio.tools/ontology/
+    wd: http://www.wikidata.org/entity/
 imports:
     - linkml:types
     - SANDS
+    - tvbo_study
     - tvb_dbs
+    - software
 
 default_prefix: tvbo
 default_range: string
@@ -169,6 +175,8 @@ enums:
             nF:
                 meaning: qudt:NanoFARAD
                 description: "Nanofarad"
+            uF_per_cm2:
+                description: "Microfarad per square centimetre (specific capacitance)"
             # ── Conductance ──
             nS:
                 meaning: qudt:NanoS
@@ -176,6 +184,13 @@ enums:
             uS:
                 meaning: qudt:MicroS
                 description: "Microsiemens"
+            pS:
+                meaning: qudt:PicoS
+                description: "Picosiemens"
+            S_per_cm2:
+                description: "Siemens per square centimetre (conductance density)"
+            mS_per_cm2:
+                description: "Millisiemens per square centimetre (conductance density)"
             # ── Charge (inverse) ──
             per_nC:
                 meaning: qudt:PER-NanoC
@@ -187,9 +202,15 @@ enums:
             mol_per_m3:
                 meaning: qudt:MOL-PER-M3
                 description: "Mole per cubic metre (mol/m³)"
+            mol_per_cm3:
+                description: "Mole per cubic centimetre (mol/cm³)"
             mmol_per_m3:
                 meaning: qudt:MilliMOL-PER-M3
                 description: "Millimole per cubic metre (mmol/m³ ≈ mM)"
+                aliases:
+                    - mM
+            mol_per_m_per_A_per_s:
+                description: "Mole per metre per ampere per second (concentration-current coupling)"
             # ── Volume ──
             um3:
                 meaning: qudt:MicroM3
@@ -227,6 +248,13 @@ enums:
             H_per_m:
                 meaning: qudt:H-PER-M
                 description: "Henry per metre (permeability)"
+            # ── Resistivity ──
+            kohm_cm:
+                description: "Kilo-ohm centimetre (axial resistivity)"
+            # ── Temperature ──
+            degC:
+                meaning: qudt:DEG_C
+                description: "Degree Celsius"
             # ── Angular rate ──
             rad_per_ms:
                 description: "Radian per millisecond"
@@ -439,16 +467,6 @@ enums:
             Star: { description: "Star graph" }
             RandomRegular: { description: "Random regular graph (params: k)" }
             Grid: { description: "Grid/lattice graph (params: dims)" }
-    RequirementRole:
-        permissible_values:
-            engine: { description: "Primary simulation/processing engine" }
-            runtime: { description: "General runtime dependency" }
-            analysis: { description: "Post-processing / analysis tool" }
-            dev: { description: "Development / build dependency" }
-            optional: { description: "Optional or extra feature dependency" }
-    EnvironmentType:
-        permissible_values:
-            conda: {}
     DimensionType:
         description: "Dimensions along which operations can be applied"
         permissible_values:
@@ -2783,6 +2801,13 @@ classes:
             references:
                 multivalued: true
                 range: string
+            dataset:
+                range: Dataset
+                inlined: true
+                description: >-
+                    Multi-subject dataset for workflow rendering. When set,
+                    render_workflow() uses dataset.subjects/sessions to generate
+                    per-subject parallel jobs.
 
     SimulationStudy:
         # tree_root: true
@@ -2880,105 +2905,6 @@ classes:
         comments:
             - "Supports BIDS BEP034 computational modeling extension."
             - "Use to_bids() method in Python class to export as BIDS dataset."
-
-    SoftwareEnvironment:
-        slots:
-            - label
-            - description
-            - dataLocation
-        attributes:
-            name:
-                range: string
-                description: "Human-readable environment label/name (deprecated alias was 'software')."
-            version:
-                range: string
-                description: "Optional version tag for the environment definition (not a package version)."
-            platform:
-                range: string
-                description: "OS / architecture description (e.g., linux-64)."
-            environment_type:
-                range: EnvironmentType
-                description: "Category: conda, venv, docker, etc."
-            container_image:
-                range: string
-                description: "Container image reference (e.g., ghcr.io/org/img:tag@sha256:...)."
-            build_hash:
-                range: string
-                description: "Deterministic hash/fingerprint of the resolved dependency set."
-            requirements:
-                description: "Constituent software/module requirements that define this environment."
-                multivalued: true
-                range: SoftwareRequirement
-                inlined: true
-
-        comments:
-            - "An environment now aggregates one or more SoftwareRequirement entries."
-            - "Use SimulationExperiment.environment to reference a reusable environment."
-            - "Field 'name' supersedes previous 'software' attribute for clarity."
-            - "'version' here is an environment spec version, not a package version."
-
-    SoftwareRequirement:
-        slots:
-            - name
-            - description
-            - dataLocation
-        attributes:
-            package:
-                range: SoftwarePackage
-                description: "Reference to the software package identity."
-            version_spec:
-                range: string
-                description: "Version or constraint specifier (e.g., '==2.7.3', '>=1.2,<2')."
-            role:
-                range: RequirementRole
-                ifabsent: "runtime"
-            optional:
-                range: boolean
-                ifabsent: false
-            hash:
-                range: string
-                description: "Build or artifact hash for exact reproducibility (wheel, sdist, image layer)."
-            source_url:
-                range: string
-                description: "Canonical source or repository URL."
-            url:
-                range: string
-                description: "(Deprecated) Use source_url."
-            license:
-                range: string
-            modules:
-                multivalued: true
-                range: string
-                description: "(Deprecated) Former ad-hoc list; use environment.requirements list instead."
-            version:
-                range: string
-                description: "(Deprecated) Use version_spec."
-        comments:
-            - "Represents an individual requirement (package/module/library)."
-            - "Add 'package' to separate identity from requirement expression."
-            - "Use 'version_spec' instead of 'version' for semantic clarity."
-            - "'modules' retained only for backward compatibility and will be removed in a future release."
-            - "No pointer back to SoftwareEnvironment; aggregation is one-way from SoftwareEnvironment.requirements."
-
-    SoftwarePackage:
-        description: "Identity information about a software package independent of a specific version requirement."
-        slots:
-            - name
-            - description
-        attributes:
-            homepage:
-                range: string
-            license:
-                range: string
-            repository:
-                range: string
-            doi:
-                range: string
-            ecosystem:
-                range: string
-                description: "Package ecosystem or index (e.g., pypi, conda-forge)."
-        comments:
-            - "Distinct from SoftwareRequirement which binds a package to a version/role."
 
     # nD array for field and image data
     NDArray:

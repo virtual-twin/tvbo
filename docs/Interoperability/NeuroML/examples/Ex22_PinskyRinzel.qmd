@@ -105,19 +105,19 @@ dynamics:
     hs:
       equation:
         rhs: "alpha_hs - (alpha_hs + beta_hs)*hs"
-      initial_value: 0.999
+      initial_value: 0.0
     ns:
       equation:
         rhs: "alpha_ns - (alpha_ns + beta_ns)*ns"
-      initial_value: 0.001
+      initial_value: 0.0
     sd:
       equation:
         rhs: "alpha_sd - (alpha_sd + beta_sd)*sd"
-      initial_value: 0.009
+      initial_value: 0.0
     cd:
       equation:
         rhs: "alpha_cd - (alpha_cd + beta_cd)*cd"
-      initial_value: 0.007
+      initial_value: 0.0
     qd:
       equation:
         rhs: "alpha_qd - (alpha_qd + 0.001)*qd"

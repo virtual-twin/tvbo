@@ -88,7 +88,9 @@ class TestNeuroMLExperiments:
         xml = exp.render("lems")
         assert xml is not None
         assert "<Lems>" in xml
-        assert "<ComponentType" in xml
+        # Standard NeuroML types use <Include file="Cells.xml"/> instead of
+        # custom <ComponentType> definitions.
+        assert "<ComponentType" in xml or '<Include file="Cells.xml"/>' in xml
         assert "<Simulation" in xml
 
     @pytest.mark.parametrize(

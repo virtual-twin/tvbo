@@ -1,0 +1,48 @@
+name: Elephant
+description: Electrophysiology Analysis Toolkit — a Python library for the analysis
+  of electrophysiological data, including spike-train statistics, spectral analysis,
+  and unitary event analysis.
+homepage: https://elephant.readthedocs.io
+repository: https://github.com/NeuralEnsemble/elephant
+doi: 10.5281/zenodo.1186602
+reference_publication: 10.5281/zenodo.1186602
+license: BSD-3-Clause
+is_accessible_for_free: true
+ecosystem:
+- pypi
+application_category: analysis
+date_created: '2015-01-01'
+development_status: active
+scale:
+- neuron
+- network_system
+model_paradigm:
+- generic
+tool_role:
+- analysis_tool
+programming_language:
+- Python
+runtime_platform:
+- Python
+- NumPy
+interoperates_with:
+- Neo
+- NEST
+- Brian2
+- NWB
+author:
+- Michael Denker
+- Andrew Davison
+maintainer:
+- NeuralEnsemble
+funder:
+- EU HBP
+- Jülich Research Centre
+keywords:
+- spike train analysis
+- electrophysiology
+- statistics
+- Python
+same_as:
+- https://scicrunch.org/resolver/RRID:SCR_003833
+issue_tracker: https://github.com/NeuralEnsemble/elephant/issues

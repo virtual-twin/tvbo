@@ -1,0 +1,45 @@
+name: jaxley
+description: A differentiable simulator for biophysical neuron models built on JAX.
+  Supports multi-compartment Hodgkin-Huxley models with automatic differentiation
+  for gradient-based parameter inference.
+homepage: https://jaxley.readthedocs.io
+repository: https://github.com/jaxleyverse/jaxley
+doi: 10.7554/eLife.99205
+reference_publication: 10.7554/eLife.99205
+license: Apache-2.0
+is_accessible_for_free: true
+ecosystem:
+- pypi
+application_category: simulation
+date_created: '2024-01-01'
+development_status: active
+scale:
+- channel
+- neuron
+- network_system
+model_paradigm:
+- compartmental
+- conductance_based
+tool_role:
+- simulator
+programming_language:
+- Python
+runtime_platform:
+- JAX
+interoperates_with:
+- NEURON
+- SWC morphologies
+author:
+- Michael Deistler
+- Jakob Macke
+maintainer:
+- Michael Deistler
+funder:
+- University of Tübingen
+- DFG
+keywords:
+- differentiable simulation
+- JAX
+- compartmental model
+- parameter inference
+issue_tracker: https://github.com/jaxleyverse/jaxley/issues
