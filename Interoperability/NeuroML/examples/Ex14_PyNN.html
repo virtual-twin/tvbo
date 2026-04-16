@@ -6,7 +6,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="description" content="PyNN-compatible cell types — IF_curr_alpha, IF_cond_exp, EIF_cond_exp_isfa_ista, HH_cond_exp">
+<meta name="description" content="Full PyNN network — 7 cell types, 4 targets, 2 spike sources, 4 projections">
 
 <title>Ex14: PyNN Cells – TVB-O Documentation</title>
 <style>
@@ -110,35 +110,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="//unpkg.com/3d-force-graph"></script>
 <script src="../../../_static/tvbo-icons.js"></script>
 
-  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
-
-<script type="text/javascript">
-const typesetMath = (el) => {
-  if (window.MathJax) {
-    // MathJax Typeset
-    window.MathJax.typeset([el]);
-  } else if (window.katex) {
-    // KaTeX Render
-    var mathElements = el.getElementsByClassName("math");
-    var macros = [];
-    for (var i = 0; i < mathElements.length; i++) {
-      var texText = mathElements[i].firstChild;
-      if (mathElements[i].tagName == "SPAN") {
-        window.katex.render(texText.data, mathElements[i], {
-          displayMode: mathElements[i].classList.contains('display'),
-          throwOnError: false,
-          macros: macros,
-          fleqn: false
-        });
-      }
-    }
-  }
-}
-window.Quarto = {
-  typesetMath
-};
-</script>
 
 <link rel="stylesheet" href="../../../styles.css">
 </head>
@@ -191,7 +162,7 @@ window.Quarto = {
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../../Interoperability/index.html">Interoperability</a></li><li class="breadcrumb-item"><a href="../../../Interoperability/NeuroML/index.html">NeuroML / LEMS</a></li><li class="breadcrumb-item"><a href="../../../Interoperability/NeuroML/examples/index.html">LEMS Examples</a></li><li class="breadcrumb-item">Interoperability</li><li class="breadcrumb-item">NeuroML</li><li class="breadcrumb-item"><a href="../../../Interoperability/NeuroML/examples/Ex0_IaF.html">Examples</a></li><li class="breadcrumb-item"><a href="../../../Interoperability/NeuroML/examples/Ex14_PyNN.html">Ex14: PyNN Cells</a></li></ol></nav>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../../Interoperability/index.html">Interoperability</a></li><li class="breadcrumb-item"><a href="../../../Interoperability/NeuroML/index.html">NeuroML / LEMS</a></li><li class="breadcrumb-item"><a href="../../../Interoperability/NeuroML/examples/index.html">LEMS Examples</a></li><li class="breadcrumb-item"><a href="../../../Interoperability/NeuroML/examples/Ex14_PyNN.html">Ex14: PyNN Cells</a></li></ol></nav>
         <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
     </div>
@@ -634,6 +605,12 @@ window.Quarto = {
  <span class="menu-text">LEMS Export</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../Interoperability/NeuroML/IRI_vs_YAML.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">IRI vs.&nbsp;Inline YAML</span></a>
+  </div>
+</li>
           <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
             <a href="../../../Interoperability/NeuroML/examples/index.html" class="sidebar-item-text sidebar-link">
@@ -643,33 +620,6 @@ window.Quarto = {
           </a> 
       </div>
       <ul id="quarto-sidebar-section-15" class="collapse list-unstyled sidebar-section depth3 show">  
-          <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-16" role="navigation" aria-expanded="true">
- <span class="menu-text">Interoperability</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-16" role="navigation" aria-expanded="true" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-16" class="collapse list-unstyled sidebar-section depth4 show">  
-          <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-17" role="navigation" aria-expanded="true">
- <span class="menu-text">NeuroML</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-17" role="navigation" aria-expanded="true" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-17" class="collapse list-unstyled sidebar-section depth5 show">  
-          <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-18" role="navigation" aria-expanded="true">
- <span class="menu-text">Examples</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-18" role="navigation" aria-expanded="true" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-18" class="collapse list-unstyled sidebar-section depth6 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../../Interoperability/NeuroML/examples/Ex0_IaF.html" class="sidebar-item-text sidebar-link">
@@ -684,14 +634,56 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../../Interoperability/NeuroML/examples/Ex10_Q10.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Ex10: Q10 Temperature Dependence</span></a>
+  <a href="../../../Interoperability/NeuroML/examples/Ex2_Izh.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Ex2: Izhikevich</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../../Interoperability/NeuroML/examples/Ex11_STDP.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Ex11: STDP</span></a>
+  <a href="../../../Interoperability/NeuroML/examples/Ex3_Net.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Ex3: HH Network with Synapses</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../Interoperability/NeuroML/examples/Ex4_KS.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Ex4: Kinetic Scheme Channels</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../Interoperability/NeuroML/examples/Ex5_DetCell.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Ex5: Detailed HH Cell</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../Interoperability/NeuroML/examples/Ex6_NMDA.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Ex6: NMDA Synapse</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../Interoperability/NeuroML/examples/Ex7_STP.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Ex7: Short-Term Plasticity</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../Interoperability/NeuroML/examples/Ex8_AdEx.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Ex8: Adaptive Exponential IF</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../Interoperability/NeuroML/examples/Ex9_FN.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Ex9: FitzHugh-Nagumo</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../Interoperability/NeuroML/examples/Ex10_Q10.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Ex10: Q10 Temperature Dependence</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -744,12 +736,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../../Interoperability/NeuroML/examples/Ex2_Izh.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Ex2: Izhikevich</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../../Interoperability/NeuroML/examples/Ex20_AnalogSynapses.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Ex20: Analog Synapses</span></a>
   </div>
@@ -796,164 +782,83 @@ window.Quarto = {
  <span class="menu-text">Ex27: Multi-Synapses</span></a>
   </div>
 </li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../../Interoperability/NeuroML/examples/Ex3_Net.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Ex3: HH Network with Synapses</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../../Interoperability/NeuroML/examples/Ex4_KS.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Ex4: Kinetic Scheme Channels</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../../Interoperability/NeuroML/examples/Ex5_DetCell.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Ex5: Detailed HH Cell</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../../Interoperability/NeuroML/examples/Ex6_NMDA.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Ex6: NMDA Synapse</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../../Interoperability/NeuroML/examples/Ex7_STP.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Ex7: Short-Term Plasticity</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../../Interoperability/NeuroML/examples/Ex8_AdEx.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Ex8: Adaptive Exponential IF</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../../Interoperability/NeuroML/examples/Ex9_FN.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Ex9: FitzHugh-Nagumo</span></a>
-  </div>
-</li>
-      </ul>
-  </li>
-      </ul>
-  </li>
-      </ul>
-  </li>
       </ul>
   </li>
           <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-19" role="navigation" aria-expanded="false">
- <span class="menu-text">NML2 File Documentation</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-19" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <a href="../../../Interoperability/NeuroML/examples/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">NML2 Documentation</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-16" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-19" class="collapse list-unstyled sidebar-section depth3 ">  
-          <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-20" role="navigation" aria-expanded="false">
- <span class="menu-text">Interoperability</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-20" role="navigation" aria-expanded="false" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-20" class="collapse list-unstyled sidebar-section depth4 ">  
-          <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-21" role="navigation" aria-expanded="false">
- <span class="menu-text">NeuroML</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-21" role="navigation" aria-expanded="false" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-21" class="collapse list-unstyled sidebar-section depth5 ">  
-          <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-22" role="navigation" aria-expanded="false">
- <span class="menu-text">Examples</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-22" role="navigation" aria-expanded="false" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-22" class="collapse list-unstyled sidebar-section depth6 ">  
+      <ul id="quarto-sidebar-section-16" class="collapse list-unstyled sidebar-section depth3 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../../Interoperability/NeuroML/examples/NML2_AbstractCells.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">NML2: Abstract Cells</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../../Interoperability/NeuroML/examples/NML2_AnalogSynapses.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">NML2: Analog Synapses</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../../Interoperability/NeuroML/examples/NML2_FullCell.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">NML2: Full Cell</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../../Interoperability/NeuroML/examples/NML2_FullNeuroML.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">NML2: Full NeuroML</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../../Interoperability/NeuroML/examples/NML2_GapJunctions.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">NML2: Gap Junctions</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../../Interoperability/NeuroML/examples/NML2_Inputs.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">NML2: Inputs</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../../Interoperability/NeuroML/examples/NML2_InstanceBasedNetwork.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">NML2: Instance-Based Network</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../../Interoperability/NeuroML/examples/NML2_SimpleIonChannel.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">NML2: Simple Ion Channel</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../../Interoperability/NeuroML/examples/NML2_SimpleMorphology.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">NML2: Simple Morphology</span></a>
+ <span class="menu-text">Abstract Cells</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../../Interoperability/NeuroML/examples/NML2_SingleCompHHCell.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">NML2: Single-Compartment HH Cell</span></a>
+ <span class="menu-text">Single-Compartment HH Cell</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../Interoperability/NeuroML/examples/NML2_FullCell.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Full Cell</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../Interoperability/NeuroML/examples/NML2_SimpleMorphology.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Simple Morphology</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../Interoperability/NeuroML/examples/NML2_SimpleIonChannel.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Simple Ion Channel</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../../Interoperability/NeuroML/examples/NML2_SynapseTypes.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">NML2: Synapse Types</span></a>
+ <span class="menu-text">Synapse Types</span></a>
   </div>
 </li>
-      </ul>
-  </li>
-      </ul>
-  </li>
-      </ul>
-  </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../Interoperability/NeuroML/examples/NML2_AnalogSynapses.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Analog Synapses</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../Interoperability/NeuroML/examples/NML2_GapJunctions.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Gap Junctions</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../Interoperability/NeuroML/examples/NML2_Inputs.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Inputs</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../Interoperability/NeuroML/examples/NML2_InstanceBasedNetwork.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Instance-Based Network</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../Interoperability/NeuroML/examples/NML2_FullNeuroML.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Full NeuroML</span></a>
+  </div>
+</li>
       </ul>
   </li>
       </ul>
@@ -962,11 +867,11 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../../../Interoperability/BIDS/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">BIDS</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-23" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-17" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-23" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-17" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../../Interoperability/BIDS/BIDS_Export.html" class="sidebar-item-text sidebar-link">
@@ -983,13 +888,13 @@ window.Quarto = {
   </li>
           <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-24" role="navigation" aria-expanded="false">
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-18" role="navigation" aria-expanded="false">
  <span class="menu-text">OpenMINDS</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-24" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-18" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-24" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-18" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../../Interoperability/OpenMINDS.html" class="sidebar-item-text sidebar-link">
@@ -1011,11 +916,11 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../../../Replication/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Replication Studies</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-25" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-19" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-25" class="collapse list-unstyled sidebar-section depth1 ">  
+      <ul id="quarto-sidebar-section-19" class="collapse list-unstyled sidebar-section depth1 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../../Replication/Jansen1995/Run_Jansen1995.html" class="sidebar-item-text sidebar-link">
@@ -1029,24 +934,30 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../../../datamodel/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Data Model</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-26" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-20" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-26" class="collapse list-unstyled sidebar-section depth1 ">  
+      <ul id="quarto-sidebar-section-20" class="collapse list-unstyled sidebar-section depth1 ">  
           <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-27" role="navigation" aria-expanded="false">
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-21" role="navigation" aria-expanded="false">
  <span class="menu-text">Schemas</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-27" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-21" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-27" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-21" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../../datamodel/schemas/SANDS.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">SANDS</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/schemas/software.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">software</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -1063,6 +974,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/schemas/tvbo_study.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tvbo_study</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../../datamodel/schemas/types.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">types</span></a>
   </div>
@@ -1071,13 +988,13 @@ window.Quarto = {
   </li>
           <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-28" role="navigation" aria-expanded="false">
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-22" role="navigation" aria-expanded="false">
  <span class="menu-text">Classes</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-28" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-22" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-28" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-22" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../../datamodel/classes/Aggregation.html" class="sidebar-item-text sidebar-link">
@@ -1224,8 +1141,20 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/classes/DBSDataset.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">DBSDataset</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../../datamodel/classes/DBSProtocol.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">DBSProtocol</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/classes/DBSSubject.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">DBSSubject</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -1488,6 +1417,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/classes/Session.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Session</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../../datamodel/classes/SimulationExperiment.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Simulation Experiment</span></a>
   </div>
@@ -1496,6 +1431,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../../datamodel/classes/SimulationStudy.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Simulation Study</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/classes/SimulationTool.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Simulation Tool</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -1598,13 +1539,13 @@ window.Quarto = {
   </li>
           <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-29" role="navigation" aria-expanded="false">
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-23" role="navigation" aria-expanded="false">
  <span class="menu-text">Slots</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-29" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-23" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-29" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-23" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../../datamodel/slots/abbreviation.html" class="sidebar-item-text sidebar-link">
@@ -1733,6 +1674,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/slots/application_category.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">application_category</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../../datamodel/slots/apply_every.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">apply_every</span></a>
   </div>
@@ -1817,6 +1764,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/slots/bids_root.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">bids_root</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../../datamodel/slots/bothside.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">bothside</span></a>
   </div>
@@ -1873,6 +1826,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../../datamodel/slots/center.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">center</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/slots/citation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">citation</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -1951,6 +1910,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../../datamodel/slots/conditionals.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">conditionals</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/slots/conditions.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">conditions</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2093,6 +2058,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/slots/dataset.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">dataset</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../../datamodel/slots/dataset_id.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">dataset_id</span></a>
   </div>
@@ -2107,6 +2078,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../../datamodel/slots/date_created.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">date_created</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/slots/date_modified.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">date_modified</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2209,6 +2186,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../../datamodel/slots/detect_fold.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">detect_fold</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/slots/development_status.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">development_status</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2387,6 +2370,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/slots/empirical_data.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">empirical_data</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../../datamodel/slots/engine.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">engine</span></a>
   </div>
@@ -2543,6 +2532,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/slots/funder.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">funder</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../../datamodel/slots/gaussian.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">gaussian</span></a>
   </div>
@@ -2569,6 +2564,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../../datamodel/slots/graph_generator.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">graph_generator</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/slots/group.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">group</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2717,8 +2718,26 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/slots/interoperates_with.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">interoperates_with</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../../datamodel/slots/iri.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">iri</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/slots/is_accessible_for_free.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">is_accessible_for_free</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/slots/issue_tracker.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">issue_tracker</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2737,6 +2756,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../../datamodel/slots/keys.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">keys</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/slots/keywords.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">keywords</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2843,6 +2868,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/slots/maintainer.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">maintainer</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../../datamodel/slots/manufacturer.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">manufacturer</span></a>
   </div>
@@ -2891,6 +2922,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/slots/metadata.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">metadata</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../../datamodel/slots/method.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">method</span></a>
   </div>
@@ -2923,6 +2960,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../../datamodel/slots/model_equation_ref.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">model_equation_ref</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/slots/model_paradigm.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">model_paradigm</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3179,6 +3222,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/slots/operating_system.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">operating_system</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../../datamodel/slots/operator_type.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">operator_type</span></a>
   </div>
@@ -3341,6 +3390,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/slots/programming_language.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">programming_language</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../../datamodel/slots/protocols.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">protocols</span></a>
   </div>
@@ -3395,8 +3450,20 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/slots/record.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">record</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../../datamodel/slots/reference.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">reference</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/slots/reference_publication.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">reference_publication</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3485,6 +3552,18 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/slots/runtime_platform.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">runtime_platform</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/slots/same_as.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">same_as</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../../datamodel/slots/sample.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">sample</span></a>
   </div>
@@ -3541,6 +3620,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../../datamodel/slots/session_id.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">session_id</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/slots/sessions.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">sessions</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3935,6 +4020,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/slots/tool_role.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tool_role</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../../datamodel/slots/tractogram.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">tractogram</span></a>
   </div>
@@ -4117,13 +4208,13 @@ window.Quarto = {
   </li>
           <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-30" role="navigation" aria-expanded="false">
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-24" role="navigation" aria-expanded="false">
  <span class="menu-text">Enumerations</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-30" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-24" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-30" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-24" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../../datamodel/enums/AggregationType.html" class="sidebar-item-text sidebar-link">
@@ -4144,6 +4235,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/enums/DevelopmentStatus.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Development Status</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../../datamodel/enums/DimensionType.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Dimension Type</span></a>
   </div>
@@ -4152,6 +4249,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../../datamodel/enums/DiscretizationMethod.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Discretization Method</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/enums/EcosystemEnum.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Ecosystem Enum</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4192,6 +4295,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/enums/ModelParadigm.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Paradigm</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../../datamodel/enums/ModelType.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Model Type</span></a>
   </div>
@@ -4222,6 +4331,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/enums/ProgrammingLanguageEnum.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Programming Language Enum</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../../datamodel/enums/ReductionType.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Reduction Type</span></a>
   </div>
@@ -4236,6 +4351,18 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../../datamodel/enums/SamplingAxis.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Sampling Axis</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/enums/SexEnum.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Sex Enum</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/enums/SimulationScale.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Simulation Scale</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4264,6 +4391,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../../datamodel/enums/ToolRole.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Tool Role</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../../datamodel/enums/UnitEnum.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Unit Enum</span></a>
   </div>
@@ -4276,20 +4409,20 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../../../api/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">API Documentation</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-31" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-25" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-31" class="collapse list-unstyled sidebar-section depth1 ">  
+      <ul id="quarto-sidebar-section-25" class="collapse list-unstyled sidebar-section depth1 ">  
           <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
             <a href="../../../api/adapters/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Adapters</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-32" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-26" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-32" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-26" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../../api/adapters/base.html" class="sidebar-item-text sidebar-link">
@@ -4362,17 +4495,23 @@ window.Quarto = {
  <span class="menu-text">Tvb</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../api/adapters/tvboptim.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Tvboptim</span></a>
+  </div>
+</li>
       </ul>
   </li>
           <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
             <a href="../../../api/analysis/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Analysis</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-33" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-27" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-33" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-27" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../../api/analysis/bifurcation.html" class="sidebar-item-text sidebar-link">
@@ -4385,11 +4524,11 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../../../api/api/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">API</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-34" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-28" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-34" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-28" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../../api/api/direct_ontology_api.html" class="sidebar-item-text sidebar-link">
@@ -4432,11 +4571,11 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../../../api/classes/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Classes</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-35" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-29" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-35" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-29" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../../api/classes/atlas.html" class="sidebar-item-text sidebar-link">
@@ -4521,11 +4660,11 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../../../api/codegen/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">TVB-O Code Generation</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-36" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-30" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-36" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-30" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../../api/codegen/code.html" class="sidebar-item-text sidebar-link">
@@ -4568,11 +4707,11 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../../../api/data/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Data</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-37" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-31" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-37" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-31" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../../api/data/converters.html" class="sidebar-item-text sidebar-link">
@@ -4609,11 +4748,11 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../../../api/datamodel/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Data Model</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-38" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-32" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-38" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-32" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../../api/datamodel/pydantic.html" class="sidebar-item-text sidebar-link">
@@ -4632,11 +4771,11 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../../../api/export/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Export</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-39" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-33" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-39" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-33" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../../api/export/report.html" class="sidebar-item-text sidebar-link">
@@ -4647,13 +4786,30 @@ window.Quarto = {
   </li>
           <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a href="../../../api/ontology/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">TVB-O Ontology</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-40" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <a href="../../../api/jax/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">from tvbo.jax import xarray_pytrees  # noqa: F401 – side effect: registers pytrees</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-34" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-40" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-34" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../../api/jax/xarray_pytrees.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Xarray Pytrees</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../../api/ontology/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">TVB-O Ontology</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-35" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-35" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../../api/ontology/config.html" class="sidebar-item-text sidebar-link">
@@ -4694,11 +4850,11 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../../../api/ontology/atlas/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Atlas</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-41" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-36" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-41" class="collapse list-unstyled sidebar-section depth3 ">  
+      <ul id="quarto-sidebar-section-36" class="collapse list-unstyled sidebar-section depth3 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../../api/ontology/atlas/freesurfer.html" class="sidebar-item-text sidebar-link">
@@ -4711,11 +4867,11 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../../../api/ontology/semanticweb/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Semantic Web</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-42" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-37" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-42" class="collapse list-unstyled sidebar-section depth3 ">  
+      <ul id="quarto-sidebar-section-37" class="collapse list-unstyled sidebar-section depth3 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../../api/ontology/semanticweb/tvbgo.html" class="sidebar-item-text sidebar-link">
@@ -4730,11 +4886,11 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../../../api/parse/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Parse</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-43" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-38" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-43" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-38" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../../api/parse/expression.html" class="sidebar-item-text sidebar-link">
@@ -4759,11 +4915,11 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../../../api/plot/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Plot</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-44" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-39" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-44" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-39" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../../api/plot/analysis.html" class="sidebar-item-text sidebar-link">
@@ -4830,11 +4986,11 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../../../api/run/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Run</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-45" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-40" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-45" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-40" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../../api/run/compgraph.html" class="sidebar-item-text sidebar-link">
@@ -4857,22 +5013,22 @@ window.Quarto = {
   </li>
           <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-46" role="navigation" aria-expanded="false">
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-41" role="navigation" aria-expanded="false">
  <span class="menu-text">Templates</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-46" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-41" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-46" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-41" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
             <a href="../../../api/templates/rateml/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">RateML</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-47" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-42" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-47" class="collapse list-unstyled sidebar-section depth3 ">  
+      <ul id="quarto-sidebar-section-42" class="collapse list-unstyled sidebar-section depth3 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../../api/templates/rateml/utils.html" class="sidebar-item-text sidebar-link">
@@ -4885,11 +5041,11 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../../../api/templates/tvboptim/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">tvboptim</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-48" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-43" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-48" class="collapse list-unstyled sidebar-section depth3 ">  
+      <ul id="quarto-sidebar-section-43" class="collapse list-unstyled sidebar-section depth3 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../../api/templates/tvboptim/utils.html" class="sidebar-item-text sidebar-link">
@@ -4904,11 +5060,11 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../../../api/utils/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Utilities</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-49" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-44" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-49" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-44" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../../api/utils/report.html" class="sidebar-item-text sidebar-link">
@@ -4941,26 +5097,26 @@ window.Quarto = {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#model-pynn-cell-types" id="toc-model-pynn-cell-types" class="nav-link active" data-scroll-target="#model-pynn-cell-types">Model: PyNN Cell Types</a></li>
-  <li><a href="#define-adex-eif-in-tvbo" id="toc-define-adex-eif-in-tvbo" class="nav-link" data-scroll-target="#define-adex-eif-in-tvbo">1. Define AdEx (EIF) in TVBO</a></li>
+  <li><a href="#model-pynn-cell-types-network" id="toc-model-pynn-cell-types-network" class="nav-link active" data-scroll-target="#model-pynn-cell-types-network">Model: PyNN Cell Types Network</a></li>
+  <li><a href="#define-network-in-tvbo" id="toc-define-network-in-tvbo" class="nav-link" data-scroll-target="#define-network-in-tvbo">1. Define Network in TVBO</a></li>
   <li><a href="#render-lems-xml" id="toc-render-lems-xml" class="nav-link" data-scroll-target="#render-lems-xml">2. Render LEMS XML</a></li>
   <li><a href="#run-reference" id="toc-run-reference" class="nav-link" data-scroll-target="#run-reference">3. Run Reference</a></li>
   <li><a href="#run-tvbo" id="toc-run-tvbo" class="nav-link" data-scroll-target="#run-tvbo">4. Run TVBO</a></li>
-  <li><a href="#plot-all-pynn-variants-reference" id="toc-plot-all-pynn-variants-reference" class="nav-link" data-scroll-target="#plot-all-pynn-variants-reference">5. Plot All PyNN Variants (Reference)</a></li>
+  <li><a href="#compare" id="toc-compare" class="nav-link" data-scroll-target="#compare">5. Compare</a></li>
   </ul>
 <div class="toc-actions"><ul><li><a href="https://github.com/TVB-Ontology/tvbo-python/edit/main/Interoperability/NeuroML/examples/Ex14_PyNN.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/TVB-Ontology/tvbo-python/new/choose" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
-<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../../Interoperability/index.html">Interoperability</a></li><li class="breadcrumb-item"><a href="../../../Interoperability/NeuroML/index.html">NeuroML / LEMS</a></li><li class="breadcrumb-item"><a href="../../../Interoperability/NeuroML/examples/index.html">LEMS Examples</a></li><li class="breadcrumb-item">Interoperability</li><li class="breadcrumb-item">NeuroML</li><li class="breadcrumb-item"><a href="../../../Interoperability/NeuroML/examples/Ex0_IaF.html">Examples</a></li><li class="breadcrumb-item"><a href="../../../Interoperability/NeuroML/examples/Ex14_PyNN.html">Ex14: PyNN Cells</a></li></ol></nav>
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../../Interoperability/index.html">Interoperability</a></li><li class="breadcrumb-item"><a href="../../../Interoperability/NeuroML/index.html">NeuroML / LEMS</a></li><li class="breadcrumb-item"><a href="../../../Interoperability/NeuroML/examples/index.html">LEMS Examples</a></li><li class="breadcrumb-item"><a href="../../../Interoperability/NeuroML/examples/Ex14_PyNN.html">Ex14: PyNN Cells</a></li></ol></nav>
 <div class="quarto-title">
 <h1 class="title">Ex14: PyNN Cells</h1>
 </div>
 
 <div>
   <div class="description">
-    PyNN-compatible cell types — IF_curr_alpha, IF_cond_exp, EIF_cond_exp_isfa_ista, HH_cond_exp
+    Full PyNN network — 7 cell types, 4 targets, 2 spike sources, 4 projections
   </div>
 </div>
 
@@ -4977,109 +5133,298 @@ window.Quarto = {
 </header>
 
 
-<section id="model-pynn-cell-types" class="level2">
-<h2 class="anchored" data-anchor-id="model-pynn-cell-types">Model: PyNN Cell Types</h2>
-<p>NeuroML2 includes PyNN-compatible cell types, all expressible as ODEs:</p>
+<section id="model-pynn-cell-types-network" class="level2">
+<h2 class="anchored" data-anchor-id="model-pynn-cell-types-network">Model: PyNN Cell Types Network</h2>
+<p>NeuroML2 includes PyNN-compatible cell types. This example creates the full <code>netAll</code> network from LEMS_NML2_Ex14_PyNN.xml:</p>
 <ul>
-<li><strong>IF_curr_alpha</strong>: <span class="math inline">\(C\frac{dv}{dt} = -g_L(v - E_L) + I_{syn}\)</span></li>
-<li><strong>IF_cond_exp</strong>: <span class="math inline">\(C\frac{dv}{dt} = -g_L(v - E_L) - g_{syn}(v - E_{syn})\)</span></li>
-<li><strong>EIF_cond_exp</strong>: AdEx model (same as Ex8)</li>
-<li><strong>HH_cond_exp</strong>: Hodgkin-Huxley (same as Ex1)</li>
+<li>7 PyNN cell populations (IF_curr_alpha, IF_curr_exp, IF_cond_alpha, IF_cond_exp, EIF_cond_exp_isfa_ista, EIF_cond_alpha_isfa_ista, HH_cond_exp)</li>
+<li>4 silent target cells (IF_cond_alpha with i_offset=0)</li>
+<li>2 SpikeSourcePoisson inputs (50 Hz and 80 Hz)</li>
+<li>4 projections with PyNN synapse types and weight/delay</li>
 </ul>
 <hr>
 </section>
-<section id="define-adex-eif-in-tvbo" class="level2">
-<h2 class="anchored" data-anchor-id="define-adex-eif-in-tvbo">1. Define AdEx (EIF) in TVBO</h2>
-<div id="2dc77b4b" class="cell" data-execution_count="2">
+<section id="define-network-in-tvbo" class="level2">
+<h2 class="anchored" data-anchor-id="define-network-in-tvbo">1. Define Network in TVBO</h2>
+<div id="76584c89" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> SimulationExperiment</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>exp <span class="op">=</span> SimulationExperiment.from_string(<span class="st">"""</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="st">label: "NeuroML Ex14: PyNN AdEx Cell"</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="st">label: "NeuroML Ex14: PyNN Cells"</span></span>
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="st">dynamics:</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="st">  name: AdaptiveExponentialIF</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="st">  parameters:</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="st">    C:      { value: 281.0 }</span></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="st">    gL:     { value: 30.0 }</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="st">    EL:     { value: -70.6 }</span></span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="st">    VT:     { value: -50.4 }</span></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="st">    thresh: { value: -40.4 }</span></span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="st">    reset:  { value: -48.5 }</span></span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="st">    delT:   { value: 2.0 }</span></span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="st">    tauw:   { value: 40.0 }</span></span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="st">    a:      { value: 4.0 }</span></span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="st">    b:      { value: 0.08 }</span></span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="st">    I_ext:  { value: 0.8 }</span></span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="st">  state_variables:</span></span>
-<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="st">    v:</span></span>
-<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="st">      equation:</span></span>
-<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="st">        rhs: "(-gL*(v - EL) + gL*delT*exp((v - VT)/delT) - w + I_ext) / C"</span></span>
-<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="st">      initial_value: -70.6</span></span>
-<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="st">      variable_of_interest: true</span></span>
-<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="st">    w:</span></span>
-<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="st">      equation:</span></span>
-<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="st">        rhs: "(a*(v - EL) - w) / tauw"</span></span>
-<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a><span class="st">      initial_value: 0.0</span></span>
-<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="st">  events:</span></span>
-<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a><span class="st">    spike:</span></span>
-<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a><span class="st">      condition: { rhs: "v &gt; thresh" }</span></span>
-<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a><span class="st">      affect:    { rhs: "v = reset; w = w + b" }</span></span>
-<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a><span class="st">network:</span></span>
-<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a><span class="st">  number_of_nodes: 1</span></span>
-<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a><span class="st">integration:</span></span>
-<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a><span class="st">  method: euler</span></span>
-<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a><span class="st">  step_size: 0.025</span></span>
-<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a><span class="st">  duration: 300.0</span></span>
-<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a><span class="st">  time_scale: ms</span></span>
-<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span>)</span>
-<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Model: </span><span class="sc">{</span>exp<span class="sc">.</span>dynamics<span class="sc">.</span>name<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="st">  name: IF_curr_alpha</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="st">  iri: neuroml:IF_curr_alpha</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="st">network:</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="st">  dynamics:</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="st">    IF_curr_alpha:</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="st">      name: IF_curr_alpha</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="st">      iri: neuroml:IF_curr_alpha</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="st">      parameters:</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="st">        cm: </span><span class="sc">{value: 1.0}</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="st">        i_offset: </span><span class="sc">{value: 0.9}</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="st">        tau_m: </span><span class="sc">{value: 20.0}</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="st">        tau_refrac: </span><span class="sc">{value: 10.0}</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="st">        tau_syn_E: </span><span class="sc">{value: 0.5}</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="st">        tau_syn_I: </span><span class="sc">{value: 0.5}</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="st">        v_init: {value: -65}</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="st">        v_reset: {value: -62.0}</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="st">        v_rest: {value: -65.0}</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="st">        v_thresh: {value: -52.0}</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="st">    IF_curr_exp:</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="st">      name: IF_curr_exp</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="st">      iri: neuroml:IF_curr_exp</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="st">      parameters:</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a><span class="st">        cm: </span><span class="sc">{value: 1.0}</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="st">        i_offset: </span><span class="sc">{value: 1.0}</span></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a><span class="st">        tau_m: </span><span class="sc">{value: 20.0}</span></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a><span class="st">        tau_refrac: </span><span class="sc">{value: 8.0}</span></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a><span class="st">        tau_syn_E: </span><span class="sc">{value: 5.0}</span></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a><span class="st">        tau_syn_I: </span><span class="sc">{value: 5.0}</span></span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a><span class="st">        v_init: {value: -65}</span></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a><span class="st">        v_reset: {value: -70.0}</span></span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a><span class="st">        v_rest: {value: -65.0}</span></span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a><span class="st">        v_thresh: {value: -50.0}</span></span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a><span class="st">    IF_cond_alpha:</span></span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a><span class="st">      name: IF_cond_alpha</span></span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a><span class="st">      iri: neuroml:IF_cond_alpha</span></span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a><span class="st">      parameters:</span></span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a><span class="st">        cm: </span><span class="sc">{value: 1.0}</span></span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a><span class="st">        e_rev_E: </span><span class="sc">{value: 0.0}</span></span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a><span class="st">        e_rev_I: {value: -70.0}</span></span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a><span class="st">        i_offset: </span><span class="sc">{value: 0.9}</span></span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a><span class="st">        tau_m: </span><span class="sc">{value: 20.0}</span></span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a><span class="st">        tau_refrac: </span><span class="sc">{value: 5.0}</span></span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a><span class="st">        tau_syn_E: </span><span class="sc">{value: 0.3}</span></span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a><span class="st">        tau_syn_I: </span><span class="sc">{value: 0.5}</span></span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a><span class="st">        v_init: {value: -65}</span></span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a><span class="st">        v_reset: {value: -65.0}</span></span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a><span class="st">        v_rest: {value: -65.0}</span></span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a><span class="st">        v_thresh: {value: -50.0}</span></span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a><span class="st">    silent_cell:</span></span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a><span class="st">      name: silent_cell</span></span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a><span class="st">      iri: neuroml:IF_cond_alpha</span></span>
+<span id="cb1-57"><a href="#cb1-57" aria-hidden="true" tabindex="-1"></a><span class="st">      parameters:</span></span>
+<span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a><span class="st">        cm: </span><span class="sc">{value: 1.0}</span></span>
+<span id="cb1-59"><a href="#cb1-59" aria-hidden="true" tabindex="-1"></a><span class="st">        e_rev_E: </span><span class="sc">{value: 0.0}</span></span>
+<span id="cb1-60"><a href="#cb1-60" aria-hidden="true" tabindex="-1"></a><span class="st">        e_rev_I: {value: -70.0}</span></span>
+<span id="cb1-61"><a href="#cb1-61" aria-hidden="true" tabindex="-1"></a><span class="st">        i_offset: </span><span class="sc">{value: 0}</span></span>
+<span id="cb1-62"><a href="#cb1-62" aria-hidden="true" tabindex="-1"></a><span class="st">        tau_m: </span><span class="sc">{value: 20.0}</span></span>
+<span id="cb1-63"><a href="#cb1-63" aria-hidden="true" tabindex="-1"></a><span class="st">        tau_refrac: </span><span class="sc">{value: 5.0}</span></span>
+<span id="cb1-64"><a href="#cb1-64" aria-hidden="true" tabindex="-1"></a><span class="st">        tau_syn_E: </span><span class="sc">{value: 5}</span></span>
+<span id="cb1-65"><a href="#cb1-65" aria-hidden="true" tabindex="-1"></a><span class="st">        tau_syn_I: </span><span class="sc">{value: 10}</span></span>
+<span id="cb1-66"><a href="#cb1-66" aria-hidden="true" tabindex="-1"></a><span class="st">        v_init: {value: -65}</span></span>
+<span id="cb1-67"><a href="#cb1-67" aria-hidden="true" tabindex="-1"></a><span class="st">        v_reset: {value: -65.0}</span></span>
+<span id="cb1-68"><a href="#cb1-68" aria-hidden="true" tabindex="-1"></a><span class="st">        v_rest: {value: -65.0}</span></span>
+<span id="cb1-69"><a href="#cb1-69" aria-hidden="true" tabindex="-1"></a><span class="st">        v_thresh: {value: -50.0}</span></span>
+<span id="cb1-70"><a href="#cb1-70" aria-hidden="true" tabindex="-1"></a><span class="st">    IF_cond_exp:</span></span>
+<span id="cb1-71"><a href="#cb1-71" aria-hidden="true" tabindex="-1"></a><span class="st">      name: IF_cond_exp</span></span>
+<span id="cb1-72"><a href="#cb1-72" aria-hidden="true" tabindex="-1"></a><span class="st">      iri: neuroml:IF_cond_exp</span></span>
+<span id="cb1-73"><a href="#cb1-73" aria-hidden="true" tabindex="-1"></a><span class="st">      parameters:</span></span>
+<span id="cb1-74"><a href="#cb1-74" aria-hidden="true" tabindex="-1"></a><span class="st">        cm: </span><span class="sc">{value: 1.0}</span></span>
+<span id="cb1-75"><a href="#cb1-75" aria-hidden="true" tabindex="-1"></a><span class="st">        e_rev_E: </span><span class="sc">{value: 0.0}</span></span>
+<span id="cb1-76"><a href="#cb1-76" aria-hidden="true" tabindex="-1"></a><span class="st">        e_rev_I: {value: -70.0}</span></span>
+<span id="cb1-77"><a href="#cb1-77" aria-hidden="true" tabindex="-1"></a><span class="st">        i_offset: </span><span class="sc">{value: 1.0}</span></span>
+<span id="cb1-78"><a href="#cb1-78" aria-hidden="true" tabindex="-1"></a><span class="st">        tau_m: </span><span class="sc">{value: 20.0}</span></span>
+<span id="cb1-79"><a href="#cb1-79" aria-hidden="true" tabindex="-1"></a><span class="st">        tau_refrac: </span><span class="sc">{value: 5.0}</span></span>
+<span id="cb1-80"><a href="#cb1-80" aria-hidden="true" tabindex="-1"></a><span class="st">        tau_syn_E: </span><span class="sc">{value: 5.0}</span></span>
+<span id="cb1-81"><a href="#cb1-81" aria-hidden="true" tabindex="-1"></a><span class="st">        tau_syn_I: </span><span class="sc">{value: 5.0}</span></span>
+<span id="cb1-82"><a href="#cb1-82" aria-hidden="true" tabindex="-1"></a><span class="st">        v_init: {value: -65}</span></span>
+<span id="cb1-83"><a href="#cb1-83" aria-hidden="true" tabindex="-1"></a><span class="st">        v_reset: {value: -68.0}</span></span>
+<span id="cb1-84"><a href="#cb1-84" aria-hidden="true" tabindex="-1"></a><span class="st">        v_rest: {value: -65.0}</span></span>
+<span id="cb1-85"><a href="#cb1-85" aria-hidden="true" tabindex="-1"></a><span class="st">        v_thresh: {value: -52.0}</span></span>
+<span id="cb1-86"><a href="#cb1-86" aria-hidden="true" tabindex="-1"></a><span class="st">    EIF_cond_exp_isfa_ista:</span></span>
+<span id="cb1-87"><a href="#cb1-87" aria-hidden="true" tabindex="-1"></a><span class="st">      name: EIF_cond_exp_isfa_ista</span></span>
+<span id="cb1-88"><a href="#cb1-88" aria-hidden="true" tabindex="-1"></a><span class="st">      iri: neuroml:EIF_cond_exp_isfa_ista</span></span>
+<span id="cb1-89"><a href="#cb1-89" aria-hidden="true" tabindex="-1"></a><span class="st">      parameters:</span></span>
+<span id="cb1-90"><a href="#cb1-90" aria-hidden="true" tabindex="-1"></a><span class="st">        a: </span><span class="sc">{value: 0.0}</span></span>
+<span id="cb1-91"><a href="#cb1-91" aria-hidden="true" tabindex="-1"></a><span class="st">        b: </span><span class="sc">{value: 0.0805}</span></span>
+<span id="cb1-92"><a href="#cb1-92" aria-hidden="true" tabindex="-1"></a><span class="st">        cm: </span><span class="sc">{value: 0.281}</span></span>
+<span id="cb1-93"><a href="#cb1-93" aria-hidden="true" tabindex="-1"></a><span class="st">        delta_T: </span><span class="sc">{value: 2.0}</span></span>
+<span id="cb1-94"><a href="#cb1-94" aria-hidden="true" tabindex="-1"></a><span class="st">        e_rev_E: </span><span class="sc">{value: 0.0}</span></span>
+<span id="cb1-95"><a href="#cb1-95" aria-hidden="true" tabindex="-1"></a><span class="st">        e_rev_I: {value: -80.0}</span></span>
+<span id="cb1-96"><a href="#cb1-96" aria-hidden="true" tabindex="-1"></a><span class="st">        i_offset: </span><span class="sc">{value: 0.6}</span></span>
+<span id="cb1-97"><a href="#cb1-97" aria-hidden="true" tabindex="-1"></a><span class="st">        tau_m: </span><span class="sc">{value: 9.3667}</span></span>
+<span id="cb1-98"><a href="#cb1-98" aria-hidden="true" tabindex="-1"></a><span class="st">        tau_refrac: </span><span class="sc">{value: 5}</span></span>
+<span id="cb1-99"><a href="#cb1-99" aria-hidden="true" tabindex="-1"></a><span class="st">        tau_syn_E: </span><span class="sc">{value: 5.0}</span></span>
+<span id="cb1-100"><a href="#cb1-100" aria-hidden="true" tabindex="-1"></a><span class="st">        tau_syn_I: </span><span class="sc">{value: 5.0}</span></span>
+<span id="cb1-101"><a href="#cb1-101" aria-hidden="true" tabindex="-1"></a><span class="st">        tau_w: </span><span class="sc">{value: 144.0}</span></span>
+<span id="cb1-102"><a href="#cb1-102" aria-hidden="true" tabindex="-1"></a><span class="st">        v_init: {value: -65}</span></span>
+<span id="cb1-103"><a href="#cb1-103" aria-hidden="true" tabindex="-1"></a><span class="st">        v_reset: {value: -68.0}</span></span>
+<span id="cb1-104"><a href="#cb1-104" aria-hidden="true" tabindex="-1"></a><span class="st">        v_rest: {value: -70.6}</span></span>
+<span id="cb1-105"><a href="#cb1-105" aria-hidden="true" tabindex="-1"></a><span class="st">        v_spike: {value: -40.0}</span></span>
+<span id="cb1-106"><a href="#cb1-106" aria-hidden="true" tabindex="-1"></a><span class="st">        v_thresh: {value: -52.0}</span></span>
+<span id="cb1-107"><a href="#cb1-107" aria-hidden="true" tabindex="-1"></a><span class="st">    EIF_cond_alpha_isfa_ista:</span></span>
+<span id="cb1-108"><a href="#cb1-108" aria-hidden="true" tabindex="-1"></a><span class="st">      name: EIF_cond_alpha_isfa_ista</span></span>
+<span id="cb1-109"><a href="#cb1-109" aria-hidden="true" tabindex="-1"></a><span class="st">      iri: neuroml:EIF_cond_alpha_isfa_ista</span></span>
+<span id="cb1-110"><a href="#cb1-110" aria-hidden="true" tabindex="-1"></a><span class="st">      parameters:</span></span>
+<span id="cb1-111"><a href="#cb1-111" aria-hidden="true" tabindex="-1"></a><span class="st">        a: </span><span class="sc">{value: 0.0}</span></span>
+<span id="cb1-112"><a href="#cb1-112" aria-hidden="true" tabindex="-1"></a><span class="st">        b: </span><span class="sc">{value: 0.0805}</span></span>
+<span id="cb1-113"><a href="#cb1-113" aria-hidden="true" tabindex="-1"></a><span class="st">        cm: </span><span class="sc">{value: 0.281}</span></span>
+<span id="cb1-114"><a href="#cb1-114" aria-hidden="true" tabindex="-1"></a><span class="st">        delta_T: </span><span class="sc">{value: 0}</span></span>
+<span id="cb1-115"><a href="#cb1-115" aria-hidden="true" tabindex="-1"></a><span class="st">        e_rev_E: </span><span class="sc">{value: 0.0}</span></span>
+<span id="cb1-116"><a href="#cb1-116" aria-hidden="true" tabindex="-1"></a><span class="st">        e_rev_I: {value: -80.0}</span></span>
+<span id="cb1-117"><a href="#cb1-117" aria-hidden="true" tabindex="-1"></a><span class="st">        i_offset: </span><span class="sc">{value: 0.6}</span></span>
+<span id="cb1-118"><a href="#cb1-118" aria-hidden="true" tabindex="-1"></a><span class="st">        tau_m: </span><span class="sc">{value: 9.3667}</span></span>
+<span id="cb1-119"><a href="#cb1-119" aria-hidden="true" tabindex="-1"></a><span class="st">        tau_refrac: </span><span class="sc">{value: 5}</span></span>
+<span id="cb1-120"><a href="#cb1-120" aria-hidden="true" tabindex="-1"></a><span class="st">        tau_syn_E: </span><span class="sc">{value: 5.0}</span></span>
+<span id="cb1-121"><a href="#cb1-121" aria-hidden="true" tabindex="-1"></a><span class="st">        tau_syn_I: </span><span class="sc">{value: 5.0}</span></span>
+<span id="cb1-122"><a href="#cb1-122" aria-hidden="true" tabindex="-1"></a><span class="st">        tau_w: </span><span class="sc">{value: 144.0}</span></span>
+<span id="cb1-123"><a href="#cb1-123" aria-hidden="true" tabindex="-1"></a><span class="st">        v_init: {value: -65}</span></span>
+<span id="cb1-124"><a href="#cb1-124" aria-hidden="true" tabindex="-1"></a><span class="st">        v_reset: {value: -68.0}</span></span>
+<span id="cb1-125"><a href="#cb1-125" aria-hidden="true" tabindex="-1"></a><span class="st">        v_rest: {value: -70.6}</span></span>
+<span id="cb1-126"><a href="#cb1-126" aria-hidden="true" tabindex="-1"></a><span class="st">        v_spike: {value: -40.0}</span></span>
+<span id="cb1-127"><a href="#cb1-127" aria-hidden="true" tabindex="-1"></a><span class="st">        v_thresh: {value: -52.0}</span></span>
+<span id="cb1-128"><a href="#cb1-128" aria-hidden="true" tabindex="-1"></a><span class="st">    HH_cond_exp:</span></span>
+<span id="cb1-129"><a href="#cb1-129" aria-hidden="true" tabindex="-1"></a><span class="st">      name: HH_cond_exp</span></span>
+<span id="cb1-130"><a href="#cb1-130" aria-hidden="true" tabindex="-1"></a><span class="st">      iri: neuroml:HH_cond_exp</span></span>
+<span id="cb1-131"><a href="#cb1-131" aria-hidden="true" tabindex="-1"></a><span class="st">      parameters:</span></span>
+<span id="cb1-132"><a href="#cb1-132" aria-hidden="true" tabindex="-1"></a><span class="st">        cm: </span><span class="sc">{value: 0.2}</span></span>
+<span id="cb1-133"><a href="#cb1-133" aria-hidden="true" tabindex="-1"></a><span class="st">        e_rev_E: </span><span class="sc">{value: 0.0}</span></span>
+<span id="cb1-134"><a href="#cb1-134" aria-hidden="true" tabindex="-1"></a><span class="st">        e_rev_I: {value: -80.0}</span></span>
+<span id="cb1-135"><a href="#cb1-135" aria-hidden="true" tabindex="-1"></a><span class="st">        e_rev_K: {value: -90.0}</span></span>
+<span id="cb1-136"><a href="#cb1-136" aria-hidden="true" tabindex="-1"></a><span class="st">        e_rev_Na: </span><span class="sc">{value: 50.0}</span></span>
+<span id="cb1-137"><a href="#cb1-137" aria-hidden="true" tabindex="-1"></a><span class="st">        e_rev_leak: {value: -65.0}</span></span>
+<span id="cb1-138"><a href="#cb1-138" aria-hidden="true" tabindex="-1"></a><span class="st">        g_leak: </span><span class="sc">{value: 0.01}</span></span>
+<span id="cb1-139"><a href="#cb1-139" aria-hidden="true" tabindex="-1"></a><span class="st">        gbar_K: </span><span class="sc">{value: 6.0}</span></span>
+<span id="cb1-140"><a href="#cb1-140" aria-hidden="true" tabindex="-1"></a><span class="st">        gbar_Na: </span><span class="sc">{value: 20.0}</span></span>
+<span id="cb1-141"><a href="#cb1-141" aria-hidden="true" tabindex="-1"></a><span class="st">        i_offset: </span><span class="sc">{value: 0.2}</span></span>
+<span id="cb1-142"><a href="#cb1-142" aria-hidden="true" tabindex="-1"></a><span class="st">        tau_syn_E: </span><span class="sc">{value: 0.2}</span></span>
+<span id="cb1-143"><a href="#cb1-143" aria-hidden="true" tabindex="-1"></a><span class="st">        tau_syn_I: </span><span class="sc">{value: 2.0}</span></span>
+<span id="cb1-144"><a href="#cb1-144" aria-hidden="true" tabindex="-1"></a><span class="st">        v_init: {value: -65}</span></span>
+<span id="cb1-145"><a href="#cb1-145" aria-hidden="true" tabindex="-1"></a><span class="st">        v_offset: {value: -63.0}</span></span>
+<span id="cb1-146"><a href="#cb1-146" aria-hidden="true" tabindex="-1"></a><span class="st">    spikes1:</span></span>
+<span id="cb1-147"><a href="#cb1-147" aria-hidden="true" tabindex="-1"></a><span class="st">      name: spikes1</span></span>
+<span id="cb1-148"><a href="#cb1-148" aria-hidden="true" tabindex="-1"></a><span class="st">      iri: neuroml:SpikeSourcePoisson</span></span>
+<span id="cb1-149"><a href="#cb1-149" aria-hidden="true" tabindex="-1"></a><span class="st">      parameters:</span></span>
+<span id="cb1-150"><a href="#cb1-150" aria-hidden="true" tabindex="-1"></a><span class="st">        start: {value: 50, unit: ms}</span></span>
+<span id="cb1-151"><a href="#cb1-151" aria-hidden="true" tabindex="-1"></a><span class="st">        duration: {value: 400, unit: ms}</span></span>
+<span id="cb1-152"><a href="#cb1-152" aria-hidden="true" tabindex="-1"></a><span class="st">        rate: {value: 50, unit: Hz}</span></span>
+<span id="cb1-153"><a href="#cb1-153" aria-hidden="true" tabindex="-1"></a><span class="st">    spikes2:</span></span>
+<span id="cb1-154"><a href="#cb1-154" aria-hidden="true" tabindex="-1"></a><span class="st">      name: spikes2</span></span>
+<span id="cb1-155"><a href="#cb1-155" aria-hidden="true" tabindex="-1"></a><span class="st">      iri: neuroml:SpikeSourcePoisson</span></span>
+<span id="cb1-156"><a href="#cb1-156" aria-hidden="true" tabindex="-1"></a><span class="st">      parameters:</span></span>
+<span id="cb1-157"><a href="#cb1-157" aria-hidden="true" tabindex="-1"></a><span class="st">        start: {value: 50, unit: ms}</span></span>
+<span id="cb1-158"><a href="#cb1-158" aria-hidden="true" tabindex="-1"></a><span class="st">        duration: {value: 300, unit: ms}</span></span>
+<span id="cb1-159"><a href="#cb1-159" aria-hidden="true" tabindex="-1"></a><span class="st">        rate: {value: 80, unit: Hz}</span></span>
+<span id="cb1-160"><a href="#cb1-160" aria-hidden="true" tabindex="-1"></a><span class="st">    syn1:</span></span>
+<span id="cb1-161"><a href="#cb1-161" aria-hidden="true" tabindex="-1"></a><span class="st">      name: syn1</span></span>
+<span id="cb1-162"><a href="#cb1-162" aria-hidden="true" tabindex="-1"></a><span class="st">      iri: neuroml:expCondSynapse</span></span>
+<span id="cb1-163"><a href="#cb1-163" aria-hidden="true" tabindex="-1"></a><span class="st">      parameters:</span></span>
+<span id="cb1-164"><a href="#cb1-164" aria-hidden="true" tabindex="-1"></a><span class="st">        tau_syn: </span><span class="sc">{value: 5}</span></span>
+<span id="cb1-165"><a href="#cb1-165" aria-hidden="true" tabindex="-1"></a><span class="st">        e_rev: </span><span class="sc">{value: 0}</span></span>
+<span id="cb1-166"><a href="#cb1-166" aria-hidden="true" tabindex="-1"></a><span class="st">    syn2:</span></span>
+<span id="cb1-167"><a href="#cb1-167" aria-hidden="true" tabindex="-1"></a><span class="st">      name: syn2</span></span>
+<span id="cb1-168"><a href="#cb1-168" aria-hidden="true" tabindex="-1"></a><span class="st">      iri: neuroml:alphaCondSynapse</span></span>
+<span id="cb1-169"><a href="#cb1-169" aria-hidden="true" tabindex="-1"></a><span class="st">      parameters:</span></span>
+<span id="cb1-170"><a href="#cb1-170" aria-hidden="true" tabindex="-1"></a><span class="st">        tau_syn: </span><span class="sc">{value: 5}</span></span>
+<span id="cb1-171"><a href="#cb1-171" aria-hidden="true" tabindex="-1"></a><span class="st">        e_rev: </span><span class="sc">{value: 0}</span></span>
+<span id="cb1-172"><a href="#cb1-172" aria-hidden="true" tabindex="-1"></a><span class="st">    syn3:</span></span>
+<span id="cb1-173"><a href="#cb1-173" aria-hidden="true" tabindex="-1"></a><span class="st">      name: syn3</span></span>
+<span id="cb1-174"><a href="#cb1-174" aria-hidden="true" tabindex="-1"></a><span class="st">      iri: neuroml:expCurrSynapse</span></span>
+<span id="cb1-175"><a href="#cb1-175" aria-hidden="true" tabindex="-1"></a><span class="st">      parameters:</span></span>
+<span id="cb1-176"><a href="#cb1-176" aria-hidden="true" tabindex="-1"></a><span class="st">        tau_syn: </span><span class="sc">{value: 5}</span></span>
+<span id="cb1-177"><a href="#cb1-177" aria-hidden="true" tabindex="-1"></a><span class="st">    syn4:</span></span>
+<span id="cb1-178"><a href="#cb1-178" aria-hidden="true" tabindex="-1"></a><span class="st">      name: syn4</span></span>
+<span id="cb1-179"><a href="#cb1-179" aria-hidden="true" tabindex="-1"></a><span class="st">      iri: neuroml:alphaCurrSynapse</span></span>
+<span id="cb1-180"><a href="#cb1-180" aria-hidden="true" tabindex="-1"></a><span class="st">      parameters:</span></span>
+<span id="cb1-181"><a href="#cb1-181" aria-hidden="true" tabindex="-1"></a><span class="st">        tau_syn: </span><span class="sc">{value: 5}</span></span>
+<span id="cb1-182"><a href="#cb1-182" aria-hidden="true" tabindex="-1"></a><span class="st">  nodes:</span></span>
+<span id="cb1-183"><a href="#cb1-183" aria-hidden="true" tabindex="-1"></a><span class="st">    # 7 cell populations (1 each) — only 4 are recorded in reference output</span></span>
+<span id="cb1-184"><a href="#cb1-184" aria-hidden="true" tabindex="-1"></a><span class="st">    - {id: 0, dynamics: IF_curr_alpha, record: false}</span></span>
+<span id="cb1-185"><a href="#cb1-185" aria-hidden="true" tabindex="-1"></a><span class="st">    - {id: 1, dynamics: IF_curr_exp}</span></span>
+<span id="cb1-186"><a href="#cb1-186" aria-hidden="true" tabindex="-1"></a><span class="st">    - {id: 2, dynamics: IF_cond_alpha}</span></span>
+<span id="cb1-187"><a href="#cb1-187" aria-hidden="true" tabindex="-1"></a><span class="st">    - {id: 3, dynamics: IF_cond_exp, record: false}</span></span>
+<span id="cb1-188"><a href="#cb1-188" aria-hidden="true" tabindex="-1"></a><span class="st">    - {id: 4, dynamics: EIF_cond_exp_isfa_ista}</span></span>
+<span id="cb1-189"><a href="#cb1-189" aria-hidden="true" tabindex="-1"></a><span class="st">    - {id: 5, dynamics: EIF_cond_alpha_isfa_ista, record: false}</span></span>
+<span id="cb1-190"><a href="#cb1-190" aria-hidden="true" tabindex="-1"></a><span class="st">    - {id: 6, dynamics: HH_cond_exp}</span></span>
+<span id="cb1-191"><a href="#cb1-191" aria-hidden="true" tabindex="-1"></a><span class="st">    # 4 silent target cells</span></span>
+<span id="cb1-192"><a href="#cb1-192" aria-hidden="true" tabindex="-1"></a><span class="st">    - {id: 10, dynamics: silent_cell}</span></span>
+<span id="cb1-193"><a href="#cb1-193" aria-hidden="true" tabindex="-1"></a><span class="st">    - {id: 11, dynamics: silent_cell}</span></span>
+<span id="cb1-194"><a href="#cb1-194" aria-hidden="true" tabindex="-1"></a><span class="st">    - {id: 12, dynamics: silent_cell}</span></span>
+<span id="cb1-195"><a href="#cb1-195" aria-hidden="true" tabindex="-1"></a><span class="st">    - {id: 13, dynamics: silent_cell}</span></span>
+<span id="cb1-196"><a href="#cb1-196" aria-hidden="true" tabindex="-1"></a><span class="st">    # 2 spike sources (standalone, no connections)</span></span>
+<span id="cb1-197"><a href="#cb1-197" aria-hidden="true" tabindex="-1"></a><span class="st">    - {id: 20, dynamics: spikes1, record: false}</span></span>
+<span id="cb1-198"><a href="#cb1-198" aria-hidden="true" tabindex="-1"></a><span class="st">    - {id: 21, dynamics: spikes2, record: false}</span></span>
+<span id="cb1-199"><a href="#cb1-199" aria-hidden="true" tabindex="-1"></a><span class="st">  edges:</span></span>
+<span id="cb1-200"><a href="#cb1-200" aria-hidden="true" tabindex="-1"></a><span class="st">    # EIF_cond_exp_isfa_ista → target[0] via expCondSynapse</span></span>
+<span id="cb1-201"><a href="#cb1-201" aria-hidden="true" tabindex="-1"></a><span class="st">    - {source: 4, target: 10, coupling: syn1, parameters: {weight: </span><span class="sc">{value: 0.01}</span><span class="st">, delay: {value: 10, unit: ms</span><span class="sc">}}</span><span class="st">}</span></span>
+<span id="cb1-202"><a href="#cb1-202" aria-hidden="true" tabindex="-1"></a><span class="st">    # EIF_cond_alpha_isfa_ista → target[1] via alphaCondSynapse</span></span>
+<span id="cb1-203"><a href="#cb1-203" aria-hidden="true" tabindex="-1"></a><span class="st">    - {source: 5, target: 11, coupling: syn2, parameters: {weight: </span><span class="sc">{value: 0.005}</span><span class="st">, delay: {value: 20, unit: ms</span><span class="sc">}}</span><span class="st">}</span></span>
+<span id="cb1-204"><a href="#cb1-204" aria-hidden="true" tabindex="-1"></a><span class="st">    # IF_curr_alpha → target[2] via expCurrSynapse</span></span>
+<span id="cb1-205"><a href="#cb1-205" aria-hidden="true" tabindex="-1"></a><span class="st">    - {source: 0, target: 12, coupling: syn3, parameters: {weight: </span><span class="sc">{value: 1}</span><span class="st">, delay: {value: 30, unit: ms</span><span class="sc">}}</span><span class="st">}</span></span>
+<span id="cb1-206"><a href="#cb1-206" aria-hidden="true" tabindex="-1"></a><span class="st">    # IF_cond_exp → target[3] via alphaCurrSynapse</span></span>
+<span id="cb1-207"><a href="#cb1-207" aria-hidden="true" tabindex="-1"></a><span class="st">    - {source: 3, target: 13, coupling: syn4, parameters: {weight: </span><span class="sc">{value: 0.5}</span><span class="st">, delay: {value: 40, unit: ms</span><span class="sc">}}</span><span class="st">}</span></span>
+<span id="cb1-208"><a href="#cb1-208" aria-hidden="true" tabindex="-1"></a><span class="st">integration:</span></span>
+<span id="cb1-209"><a href="#cb1-209" aria-hidden="true" tabindex="-1"></a><span class="st">  method: euler</span></span>
+<span id="cb1-210"><a href="#cb1-210" aria-hidden="true" tabindex="-1"></a><span class="st">  step_size: 0.01</span></span>
+<span id="cb1-211"><a href="#cb1-211" aria-hidden="true" tabindex="-1"></a><span class="st">  duration: 500.0</span></span>
+<span id="cb1-212"><a href="#cb1-212" aria-hidden="true" tabindex="-1"></a><span class="st">  time_scale: ms</span></span>
+<span id="cb1-213"><a href="#cb1-213" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span>)</span>
+<span id="cb1-214"><a href="#cb1-214" aria-hidden="true" tabindex="-1"></a>dyn_name <span class="op">=</span> <span class="bu">next</span>(<span class="bu">iter</span>(exp.network.dynamics)) <span class="cf">if</span> exp.network <span class="kw">and</span> exp.network.dynamics <span class="cf">else</span> <span class="st">'network'</span></span>
+<span id="cb1-215"><a href="#cb1-215" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"TVBO model: </span><span class="sc">{</span>dyn_name<span class="sc">}</span><span class="ss">  (source var: exp)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Model: AdaptiveExponentialIF</code></pre>
+<pre><code>TVBO model: EIF_cond_alpha_isfa_ista  (source var: exp)</code></pre>
 </div>
 </div>
 </section>
 <section id="render-lems-xml" class="level2">
 <h2 class="anchored" data-anchor-id="render-lems-xml">2. Render LEMS XML</h2>
-<div id="243b07bf" class="cell" data-execution_count="3">
+<div id="2b6ee239" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>xml <span class="op">=</span> exp.render(<span class="st">"lems"</span>)</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(xml[:<span class="dv">1200</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(xml[:<span class="dv">3000</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>
-&lt;Lems&gt;
+<pre><code>&lt;Lems&gt;
+  &lt;Target component="sim_NeuroML_Ex14__PyNN_Cells"/&gt;
 
-  &lt;!-- Tell jLEMS/jNeuroML which component is the simulation entry point. --&gt;
-  &lt;Target component="sim_NeuroML_Ex14__PyNN_AdEx_Cell"/&gt;
+  &lt;Include file="Cells.xml"/&gt;
+  &lt;Include file="PyNN.xml"/&gt;
+  &lt;Include file="Networks.xml"/&gt;
+  &lt;Include file="Inputs.xml"/&gt;
+  &lt;Include file="Simulation.xml"/&gt;
 
-  &lt;!-- ════════════════════════════════════════════════════════════════
-       Dimensions &amp; Units (inline — no external includes needed)
-       ════════════════════════════════════════════════════════════════ --&gt;
+    &lt;IF_curr_alpha id="IF_curr_alpha" cm="1" i_offset="0.9" tau_m="20" tau_refrac="10" tau_syn_E="0.5" tau_syn_I="0.5" v_init="-65" v_reset="-62" v_rest="-65" v_thresh="-52"/&gt;
 
-  &lt;!-- Dimensions --&gt;
-  &lt;Dimension name="none"/&gt;
-  &lt;Dimension name="time" t="1"/&gt;
-  &lt;Dimension name="voltage" m="1" l="2" t="-3" i="-1"/&gt;
-  &lt;Dimension name="per_time" t="-1"/&gt;
-  &lt;Dimension name="conductance" m="-1" l="-2" t="3" i="2"/&gt;
-  &lt;Dimension name="capacitance" m="-1" l="-2" t="4" i="2"/&gt;
-  &lt;Dimension name="current" i="1"/&gt;
-  &lt;Dimension name="resistance" m="1" l="2" t="-3" i="-2"/&gt;
-  &lt;Dimension name="concentration" l="-3" n="1"/&gt;
-  &lt;Dimension name="substance" n="1"/&gt;
-  &lt;Dimension name="charge" t="1" i="1"/&gt;
-  &lt;Dimension name="temperature" k="1"/&gt;
+    &lt;IF_curr_exp id="IF_curr_exp" cm="1" i_offset="1" tau_m="20" tau_refrac="8" tau_syn_E="5" tau_syn_I="5" v_init="-65" v_reset="-70" v_rest="-65" v_thresh="-50"/&gt;
 
-  &lt;!-- Units --&gt;
-  &lt;Unit symbol="s" dimension="time" power="0"/&gt;
-  &lt;Unit symbol="ms" dimension="time" power="-3"/&gt;
-  &lt;Unit symbol="us" dimension="time" power="-6"/&gt;
-  &lt;Unit symbol="V" dimension="voltage" power="0"/&gt;
-  &lt;Unit symbol="mV" dimension="voltage" power="-3"/&gt;
-  &lt;Unit symb</code></pre>
+    &lt;IF_cond_alpha id="IF_cond_alpha" cm="1" e_rev_E="0" e_rev_I="-70" i_offset="0.9" tau_m="20" tau_refrac="5" tau_syn_E="0.3" tau_syn_I="0.5" v_init="-65" v_reset="-65" v_rest="-65" v_thresh="-50"/&gt;
+
+    &lt;IF_cond_exp id="IF_cond_exp" cm="1" e_rev_E="0" e_rev_I="-70" i_offset="1" tau_m="20" tau_refrac="5" tau_syn_E="5" tau_syn_I="5" v_init="-65" v_reset="-68" v_rest="-65" v_thresh="-52"/&gt;
+
+    &lt;EIF_cond_exp_isfa_ista id="EIF_cond_exp_isfa_ista" a="0" b="0.0805" cm="0.281" delta_T="2" e_rev_E="0" e_rev_I="-80" i_offset="0.6" tau_m="9.3667" tau_refrac="5" tau_syn_E="5" tau_syn_I="5" tau_w="144" v_init="-65" v_reset="-68" v_rest="-70.6" v_spike="-40" v_thresh="-52"/&gt;
+
+    &lt;EIF_cond_alpha_isfa_ista id="EIF_cond_alpha_isfa_ista" a="0" b="0.0805" cm="0.281" delta_T="0" e_rev_E="0" e_rev_I="-80" i_offset="0.6" tau_m="9.3667" tau_refrac="5" tau_syn_E="5" tau_syn_I="5" tau_w="144" v_init="-65" v_reset="-68" v_rest="-70.6" v_spike="-40" v_thresh="-52"/&gt;
+
+    &lt;HH_cond_exp id="HH_cond_exp" cm="0.2" e_rev_E="0" e_rev_I="-80" e_rev_K="-90" e_rev_Na="50" e_rev_leak="-65" g_leak="0.01" gbar_K="6" gbar_Na="20" i_offset="0.2" tau_syn_E="0.2" tau_syn_I="2" v_init="-65" v_offset="-63"/&gt;
+
+    &lt;IF_cond_alpha id="silent_cell" cm="1" e_rev_E="0" e_rev_I="-70" i_offset="0" tau_m="20" tau_refrac="5" tau_syn_E="5" tau_syn_I="10" v_init="-65" v_reset="-65" v_rest="-65" v_thresh="-50"/&gt;
+
+    &lt;SpikeSourcePoisson id="spikes1" duration="400.0 ms" rate="50.0 Hz" start="50.0 ms"/&gt;
+
+    &lt;SpikeSourcePoisson id="spikes2" duration="300.0 ms" rate="80.0 Hz" start="50.0 ms"/&gt;
+
+    &lt;expCondSynapse id="syn1" e_rev="0" tau_syn="5"/&gt;
+
+    &lt;alphaCondSynapse id="syn2" e_rev="0" tau_syn="5"/&gt;
+
+    &lt;expCurrSynapse id="syn3" tau_syn="5"/&gt;
+
+    &lt;alphaCurrSynapse id="syn4" tau_syn="5"/&gt;
+
+    &lt;network id="net1"&gt;
+        &lt;population id="IF_curr_alpha_pop" component="IF_curr_alpha" size="1"/&gt;
+        &lt;population id="IF_curr_exp_pop" component="IF_curr_exp" size="1"/&gt;
+        &lt;population id="IF_cond_alpha_pop" component="IF_cond_alpha" size="1"/&gt;
+        &lt;population id="IF_cond_exp_pop" component="IF_cond_exp" size="1"/&gt;
+        &lt;population id="EIF_cond_exp_isfa_ista_pop" component="EIF_cond_exp_isfa_ista" size="1"/&gt;
+        &lt;population id="EIF_cond_alpha_isfa_ista_pop" component="EIF_cond_alpha_isfa_ista" size="1"/&gt;
+        &lt;population id="HH_cond_exp_pop" component="HH_cond_exp" size="1"/&gt;
+        &lt;population id="silent_cell_pop" component="sile</code></pre>
 </div>
 </div>
 </section>
 <section id="run-reference" class="level2">
 <h2 class="anchored" data-anchor-id="run-reference">3. Run Reference</h2>
-<div id="96d49649" class="cell" data-execution_count="4">
+<div id="b6802ed9" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys, os</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>sys.path.insert(<span class="dv">0</span>, os.path.dirname(os.path.abspath(<span class="st">"."</span>)))</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> _nml_helpers <span class="im">import</span> run_lems_example</span>
@@ -5095,7 +5440,7 @@ window.Quarto = {
 </section>
 <section id="run-tvbo" class="level2">
 <h2 class="anchored" data-anchor-id="run-tvbo">4. Run TVBO</h2>
-<div id="e244a69f" class="cell" data-execution_count="5">
+<div id="240a044b" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> exp.run(<span class="st">"neuroml"</span>)</span>
@@ -5103,13 +5448,13 @@ window.Quarto = {
 <span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>tvbo_arr <span class="op">=</span> np.column_stack([da.coords[<span class="st">'time'</span>].values, da.values])</span>
 <span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"TVBO: shape=</span><span class="sc">{</span>tvbo_arr<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>TVBO: shape=(12001, 3)</code></pre>
+<pre><code>TVBO: shape=(50001, 9)</code></pre>
 </div>
 </div>
 </section>
-<section id="plot-all-pynn-variants-reference" class="level2">
-<h2 class="anchored" data-anchor-id="plot-all-pynn-variants-reference">5. Plot All PyNN Variants (Reference)</h2>
-<div id="541c50a0" class="cell" data-execution_count="6">
+<section id="compare" class="level2">
+<h2 class="anchored" data-anchor-id="compare">5. Compare</h2>
+<div id="5cc1fb2a" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -5150,7 +5495,7 @@ PyNN Cell Coverage
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>All four PyNN cell types are expressible as TVBO ODE systems: IaF (Ex0), conductance-based IaF, AdEx (Ex8), and HH (Ex1).</p>
+<p>Full PyNN network with all 7 cell types, 4 silent target cells receiving projections via condSynapse and currSynapse types with weight/delay modulation.</p>
 </div>
 </div>
 
