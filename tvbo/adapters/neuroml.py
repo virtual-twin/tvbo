@@ -2294,6 +2294,708 @@ def _render_event_children(dyn_obj, time_scale='ms', indent=8):
     return '\n'.join(children)
 
 
+# ── Standard-types context builder (for Mako templates) ──────────────
+
+def build_std_lems_context(experiment):
+    """Build a context dict for standard NeuroML-type Mako templates.
+
+    Inspects the experiment to determine whether it uses standard NeuroML
+    types (``iri: neuroml:*``).  When it does, extracts *all* data that
+    the Mako templates need — integration parameters, pre-rendered XML
+    fragments for cells/channels/synapses, population lists, connection
+    lists, and simulation metadata.
+
+    Returns
+    -------
+    dict or None
+        ``None`` when the experiment cannot be rendered using standard
+        NeuroML types.  Otherwise a dict containing:
+
+        * ``'is_network'``  – True for multi-population network template
+        * ``'is_fhn'``      – True for FitzHugh-Nagumo cell template
+        * All scalar and list variables that the templates iterate over.
+    """
+    from collections import OrderedDict
+
+    # ── Multi-population network detection ──
+    network = getattr(experiment, 'network', None)
+    if network:
+        nodes = getattr(network, 'nodes', None) or []
+        edges = getattr(network, 'edges', None) or []
+        dynamics_lib = getattr(network, 'dynamics', None) or {}
+        if nodes and edges and dynamics_lib:
+            has_nml_cells = any(
+                _uses_neuroml_types(d)
+                for d in dynamics_lib.values()
+                if hasattr(d, 'iri')
+            )
+            if has_nml_cells:
+                return _build_std_network_context(experiment)
+
+    # ── Single-cell path ──
+    dyn = experiment.dynamics
+    if not dyn:
+        return None
+
+    iri = getattr(dyn, 'iri', None) or ''
+    if not iri.startswith('neuroml:'):
+        return None
+
+    cell_type = iri.split(':', 1)[1]
+
+    # Common integration parameters
+    integration = getattr(experiment, 'integration', None)
+    label = getattr(experiment, 'label', None)
+
+    if cell_type in ('fitzHughNagumoCell', 'fitzHughNagumo1969Cell'):
+        return _build_std_fhn_context(experiment, cell_type)
+
+    return _build_std_cell_context(experiment)
+
+
+def _build_std_fhn_context(experiment, cell_type):
+    """Build context for FitzHugh-Nagumo standard cell template."""
+    dyn = experiment.dynamics
+    params = dyn.parameters or {}
+    svs = dyn.state_variables or {}
+
+    integration = getattr(experiment, 'integration', None)
+    dt = integration.step_size if integration else 0.01
+    duration = integration.duration if integration else 200.0
+    raw_ts = (getattr(integration, 'time_scale', None) or 's') if integration else 's'
+    time_scale = str(raw_ts) if str(raw_ts) in ('s', 'ms', 'us') else 's'
+
+    dyn_id = safe_id(dyn.name or 'fhn')
+    label = getattr(experiment, 'label', None)
+    sim_id = 'sim_' + (safe_id(label) if label else dyn_id)
+    pop_id = f'{dyn_id}Pop'
+
+    if cell_type == 'fitzHughNagumo1969Cell':
+        cell_attrs = {}
+        for pname in ('a', 'b', 'I', 'phi'):
+            p = params.get(pname)
+            cell_attrs[pname] = str(getattr(p, 'value', 0) if p else 0)
+        V0 = getattr(svs.get('V'), 'initial_value', None)
+        W0 = getattr(svs.get('W'), 'initial_value', None)
+        cell_attrs['V0'] = str(V0 if V0 is not None else 0.0)
+        cell_attrs['W0'] = str(W0 if W0 is not None else 0.0)
+    else:
+        I_param = params.get('I')
+        I_val = getattr(I_param, 'value', 0.8) if I_param else 0.8
+        cell_attrs = {'I': str(I_val)}
+
+    sv_names = list(svs.keys()) if svs else ['V', 'W']
+    colors = ['#ee40FF', '#BBA0AA', '#44BBFF', '#22DD44']
+
+    return {
+        'is_network': False,
+        'is_fhn': True,
+        'cell_tag': cell_type,
+        'cell_attrs': cell_attrs,
+        'dyn_id': dyn_id,
+        'dyn_name': dyn.name or 'FitzHugh-Nagumo',
+        'sim_id': sim_id,
+        'pop_id': pop_id,
+        'dt': dt,
+        'duration': duration,
+        'time_scale': time_scale,
+        'sv_names': sv_names,
+        'colors': colors,
+    }
+
+
+def _build_std_cell_context(experiment):
+    """Build context for a single standard NeuroML cell template."""
+    dyn = experiment.dynamics
+
+    cell_result = _render_cell_xml(dyn)
+    if cell_result is None:
+        return None
+
+    custom_types = cell_result['custom_types']
+    dyn_id = cell_result['dyn_id']
+    params = dyn.parameters or {}
+
+    integration = getattr(experiment, 'integration', None)
+    dt = integration.step_size if integration else 0.01
+    duration = integration.duration if integration else 1000.0
+    raw_ts = (getattr(integration, 'time_scale', None) or 'ms') if integration else 'ms'
+    time_scale = str(raw_ts) if str(raw_ts) in ('s', 'ms', 'us') else 'ms'
+
+    label = getattr(experiment, 'label', None)
+    sim_id = 'sim_' + (safe_id(label) if label else dyn_id)
+
+    # Temperature handling
+    tissue_start = params.get('tissue_startTemperature')
+    tissue_end = params.get('tissue_endTemperature')
+    tissue_change = params.get('tissue_changeTime')
+    use_tissue = bool(tissue_start and tissue_end and tissue_change)
+    net_temp = params.get('network_temperature')
+
+    if use_tissue:
+        sim_target = 'slice'
+        quantity_prefix = 'net1/'
+    else:
+        sim_target = 'net1'
+        quantity_prefix = ''
+
+    return {
+        'is_network': False,
+        'is_fhn': False,
+        'dyn_id': dyn_id,
+        'sim_id': sim_id,
+        'dt': dt,
+        'duration': duration,
+        'time_scale': time_scale,
+        'has_inputs': bool(cell_result.get('input_xmls')),
+        'custom_type_xmls': list(custom_types.values()),
+        'conc_xmls': cell_result['conc_xmls'],
+        'channel_xmls': cell_result['channel_xmls'],
+        'cell_xml': cell_result['cell_xml'],
+        'input_xmls': cell_result['input_xmls'],
+        'input_refs': cell_result['input_refs'],
+        # Temperature
+        'use_tissue': use_tissue,
+        'tissue_start': _nml_attr(tissue_start) if use_tissue else '',
+        'tissue_end': _nml_attr(tissue_end) if use_tissue else '',
+        'tissue_change': _nml_attr(tissue_change) if use_tissue else '',
+        'net_temp': _nml_attr(net_temp) if net_temp else None,
+        'sim_target': sim_target,
+        'quantity_prefix': quantity_prefix,
+    }
+
+
+def _build_std_network_context(experiment):
+    """Build context for a multi-population standard NeuroML network template.
+
+    Mirrors the logic of ``_render_network_standard_neuroml_lems()`` but
+    returns structured data instead of a rendered XML string.
+    """
+    from collections import OrderedDict
+
+    network = experiment.network
+    dynamics_lib = getattr(network, 'dynamics', None) or {}
+    nodes = getattr(network, 'nodes', None) or []
+    edges = getattr(network, 'edges', None) or []
+
+    # Integration parameters
+    integration = getattr(experiment, 'integration', None)
+    dt = integration.step_size if integration else 0.01
+    duration = integration.duration if integration else 1000.0
+    raw_ts = (getattr(integration, 'time_scale', None) or 'ms') if integration else 'ms'
+    time_scale = str(raw_ts) if str(raw_ts) in ('s', 'ms', 'us') else 'ms'
+
+    label = getattr(experiment, 'label', None)
+    dyn_id = safe_id(
+        (experiment.dynamics.name if experiment.dynamics else None) or 'network'
+    )
+    sim_id = 'sim_' + (safe_id(label) if label else dyn_id)
+
+    # ── Group nodes by dynamics name → populations ──
+    groups = OrderedDict()
+    for node in nodes:
+        node_dyn = getattr(node, 'dynamics', None)
+        if node_dyn:
+            dyn_name = getattr(node_dyn, 'name', None) or str(node_dyn)
+        else:
+            dyn_name = dyn_id
+        groups.setdefault(dyn_name, []).append(node)
+
+    # ── Classify each group ──
+    custom_types = {}
+    cell_xmls_all = []
+    input_xmls_all = []
+    synapse_xmls = []
+
+    populations = []
+    node_pop_map = {}
+    input_nodes = {}
+    output_pops = []
+
+    for dyn_name, group_nodes in groups.items():
+        _dyn_lib_obj = dynamics_lib.get(dyn_name)
+        _dyn_iri = getattr(_dyn_lib_obj, 'iri', '') or ''
+        _nml_type = (_dyn_iri.split(':', 1)[1]
+                     if _dyn_iri.startswith('neuroml:') else dyn_name)
+        is_current_input = _nml_type in CURRENT_INPUT_TYPES
+        is_event_source = _nml_type in EVENT_SOURCE_TYPES
+
+        if is_current_input:
+            for node in group_nodes:
+                nid = getattr(node, 'id', 0)
+                dyn_params = _normalize_edge_params(
+                    getattr(_dyn_lib_obj, 'parameters', None))
+                node_params = _normalize_edge_params(
+                    getattr(node, 'parameters', None))
+                merged_params = {**dyn_params, **node_params}
+                param_strs = {}
+                for pn, pv in merged_params.items():
+                    val = getattr(pv, 'value', pv)
+                    unit = getattr(pv, 'unit', None) or ''
+                    if val is None:
+                        val = getattr(pv, 'description', None)
+                    if val is None:
+                        continue
+                    if unit:
+                        nml_unit = _TVBO_TO_NML_UNIT.get(str(unit), str(unit))
+                        param_strs[str(pn)] = f"{val} {nml_unit}"
+                    else:
+                        param_strs[str(pn)] = str(val)
+                input_id = safe_id(dyn_name)
+                input_nodes[nid] = {
+                    'type': _nml_type,
+                    'id': input_id,
+                    'params': param_strs,
+                }
+                # Render the input component XML
+                attr_parts = [f'id="{input_id}"']
+                for pk, pv_str in param_strs.items():
+                    attr_parts.append(f'{pk}="{pv_str}"')
+
+                if _nml_type == 'compoundInput':
+                    children_xml = _render_compound_input_children(
+                        _dyn_lib_obj, indent=8)
+                    input_xmls_all.append(
+                        f'    <{_nml_type} {" ".join(attr_parts)}>\n'
+                        f'{children_xml}\n'
+                        f'    </{_nml_type}>'
+                    )
+                elif _nml_type == 'timedSynapticInput':
+                    spike_xml = _render_event_children(
+                        _dyn_lib_obj, time_scale)
+                    if spike_xml:
+                        input_xmls_all.append(
+                            f'    <{_nml_type} {" ".join(attr_parts)}>\n'
+                            f'{spike_xml}\n'
+                            f'    </{_nml_type}>'
+                        )
+                    else:
+                        input_xmls_all.append(
+                            f'    <{_nml_type} {" ".join(attr_parts)}/>'
+                        )
+                else:
+                    input_xmls_all.append(
+                        f'    <{_nml_type} {" ".join(attr_parts)}/>'
+                    )
+            continue
+
+        if is_event_source:
+            dyn_obj = dynamics_lib.get(dyn_name)
+            for sub_idx, node in enumerate(group_nodes):
+                nid = getattr(node, 'id', sub_idx)
+                dyn_params = _normalize_edge_params(
+                    getattr(_dyn_lib_obj, 'parameters', None))
+                node_params = _normalize_edge_params(
+                    getattr(node, 'parameters', None))
+                merged_params = {**dyn_params, **node_params}
+                param_strs = {}
+                for pn, pv in merged_params.items():
+                    val = getattr(pv, 'value', pv)
+                    unit = getattr(pv, 'unit', None) or ''
+                    if val is not None:
+                        if unit:
+                            nml_unit = _TVBO_TO_NML_UNIT.get(
+                                str(unit), str(unit))
+                            param_strs[str(pn)] = f"{val} {nml_unit}"
+                        else:
+                            param_strs[str(pn)] = str(val)
+
+                comp_id = safe_id(dyn_name)
+                pop_id = f"{safe_id(dyn_name)}_pop"
+                node_pop_map[nid] = (pop_id, 0)
+                populations.append({
+                    "id": pop_id,
+                    "component": comp_id,
+                    "size": 1,
+                    "node_ids": [nid],
+                    "dyn_name": dyn_name,
+                    "is_input": True,
+                })
+
+                spike_children_xml = _render_event_children(
+                    dyn_obj, time_scale)
+
+                attr_parts = [f'id="{comp_id}"']
+                for pk, pv_str in param_strs.items():
+                    attr_parts.append(f'{pk}="{pv_str}"')
+                if spike_children_xml:
+                    input_xmls_all.append(
+                        f'    <{_nml_type} {" ".join(attr_parts)}>\n'
+                        f'{spike_children_xml}\n'
+                        f'    </{_nml_type}>'
+                    )
+                else:
+                    input_xmls_all.append(
+                        f'    <{_nml_type} {" ".join(attr_parts)}/>'
+                    )
+            continue
+
+        # ── Normal cell type ──
+        dyn_obj = dynamics_lib.get(dyn_name)
+        if dyn_obj is None:
+            dyn_obj = experiment.dynamics
+        if dyn_obj is None:
+            continue
+
+        cell_id = safe_id(dyn_name)
+
+        cell_result = _render_cell_xml(dyn_obj, dyn_id=cell_id,
+                                       custom_types=custom_types)
+        if cell_result is not None:
+            for ch in cell_result['channel_xmls']:
+                cell_xmls_all.append(ch)
+            for cm in cell_result['conc_xmls']:
+                cell_xmls_all.append(cm)
+            cell_xmls_all.append(cell_result['cell_xml'])
+            for inp_xml in cell_result['input_xmls']:
+                input_xmls_all.append(inp_xml)
+            custom_types = cell_result['custom_types']
+            sv_var = 'v'
+        else:
+            return None
+
+        pop_id = safe_id(dyn_name) + "_pop"
+        node_ids = []
+        for idx, node in enumerate(group_nodes):
+            nid = getattr(node, 'id', idx)
+            node_pop_map[nid] = (pop_id, idx)
+            node_ids.append(nid)
+
+        has_positions = any(
+            getattr(n, 'position', None) is not None
+            for n in group_nodes)
+        node_positions = []
+        if has_positions:
+            for node in group_nodes:
+                pos = getattr(node, 'position', None)
+                if pos:
+                    node_positions.append(
+                        (pos.x or 0, pos.y or 0, pos.z or 0))
+                else:
+                    node_positions.append((0, 0, 0))
+
+        seg_ids = (cell_result.get('segment_ids', [])
+                   if cell_result else [])
+
+        populations.append({
+            "id": pop_id,
+            "component": cell_id,
+            "size": len(group_nodes),
+            "node_ids": node_ids,
+            "dyn_name": dyn_name,
+            "is_populationlist": has_positions,
+            "node_positions": node_positions,
+            "segment_ids": seg_ids,
+        })
+        recorded_nodes = [
+            n for n in group_nodes
+            if getattr(n, 'record', None) is not False
+        ]
+        if recorded_nodes:
+            output_pops.append((pop_id, len(recorded_nodes), sv_var))
+
+    # ── Process edges → synapses + connections + inputs ──
+    synapse_set = {}
+    connections = []
+    explicit_inputs = []
+
+    _SEG_TARGETING_KEYS = {
+        'preSegmentId', 'preFractionAlong',
+        'postSegmentId', 'postFractionAlong',
+    }
+
+    for edge_idx, edge in enumerate(edges):
+        src = getattr(edge, 'source', None)
+        tgt = getattr(edge, 'target', None)
+        if src is None or tgt is None:
+            continue
+        src, tgt = int(src), int(tgt)
+
+        if src in input_nodes:
+            if tgt not in node_pop_map:
+                continue
+            inp_info = input_nodes[src]
+            tgt_pop, tgt_idx = node_pop_map[tgt]
+            inp_edge_params = _normalize_edge_params(
+                getattr(edge, 'parameters', None))
+            inp_weight = None
+            inp_segmentId = None
+            inp_fractionAlong = None
+            for pn, pv in inp_edge_params.items():
+                pn_str = str(pn)
+                val = getattr(pv, 'value', pv)
+                if pn_str == 'weight':
+                    inp_weight = float(val) if val is not None else None
+                elif pn_str == 'segmentId' and val is not None:
+                    inp_segmentId = int(float(val))
+                elif pn_str == 'fractionAlong' and val is not None:
+                    inp_fractionAlong = float(val)
+            explicit_inputs.append({
+                'input_id': inp_info['id'],
+                'target_pop': tgt_pop,
+                'target_idx': tgt_idx,
+                'weight': inp_weight,
+                'segmentId': inp_segmentId,
+                'fractionAlong': inp_fractionAlong,
+            })
+            continue
+
+        if src not in node_pop_map or tgt not in node_pop_map:
+            continue
+
+        src_pop, src_idx = node_pop_map[src]
+        tgt_pop, tgt_idx = node_pop_map[tgt]
+
+        edge_coupling = getattr(edge, 'coupling', None)
+        if not edge_coupling:
+            edge_coupling = getattr(edge, 'dynamics', None)
+        resolved_syn_dyn = None
+        if edge_coupling:
+            coup_str = str(edge_coupling)
+            if coup_str in dynamics_lib:
+                resolved_syn_dyn = dynamics_lib[coup_str]
+
+        edge_params = _normalize_edge_params(
+            getattr(edge, 'parameters', None))
+
+        weight = None
+        delay = None
+        syn_params = {}
+        _seg_targeting = {}
+
+        for pname, pval in edge_params.items():
+            pname = str(pname)
+            val = getattr(pval, 'value', pval)
+            unit = getattr(pval, 'unit', None) or ''
+            if pname == 'weight':
+                weight = float(val) if val is not None else None
+            elif pname == 'delay':
+                delay = val
+                if unit:
+                    delay = f"{val} {unit}"
+            elif pname in _SEG_TARGETING_KEYS:
+                if val is not None:
+                    if 'Segment' in pname:
+                        _seg_targeting[pname] = int(float(val))
+                    else:
+                        _seg_targeting[pname] = float(val)
+            else:
+                if unit:
+                    nml_unit = _TVBO_TO_NML_UNIT.get(str(unit), str(unit))
+                    syn_params[pname] = f"{val} {nml_unit}"
+                else:
+                    syn_params[pname] = str(val)
+
+        syn_type = None
+        if resolved_syn_dyn:
+            nml = _nml_type_name(resolved_syn_dyn)
+            syn_type = nml or str(edge_coupling)
+        elif edge_coupling:
+            coup_name = (getattr(edge_coupling, 'name', None)
+                         or str(edge_coupling))
+            syn_type = coup_name
+
+        if syn_type is None:
+            syn_type = f"syn{edge_idx}"
+
+        if resolved_syn_dyn:
+            syn_key = (str(edge_coupling),)
+        else:
+            syn_key = (syn_type, tuple(sorted(syn_params.items())))
+        if syn_key not in synapse_set:
+            if resolved_syn_dyn:
+                syn_id = safe_id(str(edge_coupling))
+            elif any(s_id == safe_id(syn_type)
+                     for s_id in synapse_set.values()):
+                syn_id = f"{safe_id(syn_type)}_{edge_idx}"
+            else:
+                syn_id = safe_id(syn_type)
+            synapse_set[syn_key] = syn_id
+
+            if resolved_syn_dyn:
+                syn_lines = _render_nml_subtree(
+                    resolved_syn_dyn, str(edge_coupling),
+                    indent=4, custom_types=None)
+                if syn_lines:
+                    synapse_xmls.append('\n'.join(syn_lines))
+            else:
+                attr_parts = [f'id="{syn_id}"']
+                for pk, pv_str in syn_params.items():
+                    attr_parts.append(f'{pk}="{pv_str}"')
+                synapse_xmls.append(
+                    f'    <{syn_type} {" ".join(attr_parts)}/>')
+
+        syn_id = synapse_set[syn_key]
+
+        conn_class = 'chemical'
+        if syn_type in _ELECTRICAL_SYNAPSE_TYPES:
+            conn_class = 'electrical'
+        elif syn_type in _CONTINUOUS_SYNAPSE_TYPES:
+            conn_class = 'continuous'
+
+        pre_component = None
+        if conn_class == 'continuous':
+            pre_component = f"silent_{syn_id}"
+
+        connections.append({
+            'from_pop': src_pop,
+            'from_idx': src_idx,
+            'to_pop': tgt_pop,
+            'to_idx': tgt_idx,
+            'synapse': syn_id,
+            'syn_type': syn_type,
+            'weight': weight,
+            'delay': delay,
+            'conn_class': conn_class,
+            'pre_component': pre_component,
+            **_seg_targeting,
+        })
+
+    # ── Detect PyNN types ──
+    _PYNN_TYPES = {
+        'IF_curr_alpha', 'IF_curr_exp', 'IF_cond_alpha', 'IF_cond_exp',
+        'EIF_cond_exp_isfa_ista', 'EIF_cond_alpha_isfa_ista', 'HH_cond_exp',
+        'expCondSynapse', 'alphaCondSynapse', 'expCurrSynapse',
+        'alphaCurrSynapse', 'SpikeSourcePoisson',
+    }
+    _used_nml_types = set()
+    for pop in populations:
+        _pop_dyn = dynamics_lib.get(pop['dyn_name'])
+        if _pop_dyn:
+            _t = _nml_type_name(_pop_dyn)
+            if _t:
+                _used_nml_types.add(_t)
+    for sid in synapse_set.values():
+        _used_nml_types.add(sid)
+    for inp in input_nodes.values():
+        _used_nml_types.add(inp['type'])
+    for inp_xml in input_xmls_all:
+        for pt in _PYNN_TYPES:
+            if f'<{pt} ' in inp_xml or f'<{pt}/' in inp_xml:
+                _used_nml_types.add(pt)
+    needs_pynn = bool(_used_nml_types & _PYNN_TYPES)
+
+    # Render standalone synapse components from dynamics_lib
+    rendered_syn_ids = set(synapse_set.values())
+    for dlib_name, dlib_obj in dynamics_lib.items():
+        dlib_type = _nml_type_name(dlib_obj)
+        if dlib_type and dlib_type in _SYNAPSE_TYPES:
+            sid = safe_id(dlib_name)
+            if sid not in rendered_syn_ids:
+                syn_lines = _render_nml_subtree(
+                    dlib_obj, dlib_name, indent=4, custom_types=None)
+                if syn_lines:
+                    synapse_xmls.append('\n'.join(syn_lines))
+                    rendered_syn_ids.add(sid)
+
+    needs_inputs_include = bool(input_nodes) or any(
+        p.get('is_input') for p in populations)
+
+    # ── Build silent synapse list for continuous connections ──
+    silent_ids = []
+    _seen_silent = set()
+    for conn in connections:
+        pc = conn.get('pre_component')
+        if pc and pc not in _seen_silent:
+            _seen_silent.add(pc)
+            silent_ids.append(pc)
+
+    # ── Build pop lookup ──
+    pop_map = {p['id']: p for p in populations}
+
+    # ── Classify connections ──
+    chem_conns = [c for c in connections if c['conn_class'] == 'chemical']
+    elec_conns = [c for c in connections if c['conn_class'] == 'electrical']
+    cont_conns = [c for c in connections if c['conn_class'] == 'continuous']
+
+    # Chemical projection grouping
+    _SEG_KEYS = {'preSegmentId', 'preFractionAlong',
+                 'postSegmentId', 'postFractionAlong'}
+    needs_projection = any(
+        any(conn.get(sk) is not None for sk in _SEG_KEYS)
+        for conn in chem_conns
+    ) if chem_conns else False
+
+    chem_projs = OrderedDict()
+    if chem_conns and needs_projection:
+        for conn in chem_conns:
+            key = (conn['from_pop'], conn['to_pop'], conn['synapse'])
+            chem_projs.setdefault(key, []).append(conn)
+
+    elec_projs = OrderedDict()
+    if elec_conns:
+        for conn in elec_conns:
+            key = (conn['from_pop'], conn['to_pop'], conn['synapse'])
+            elec_projs.setdefault(key, []).append(conn)
+
+    cont_projs = OrderedDict()
+    if cont_conns:
+        for conn in cont_conns:
+            key = (conn['from_pop'], conn['to_pop'], conn['synapse'])
+            cont_projs.setdefault(key, []).append(conn)
+
+    # Explicit input classification
+    has_weighted = any(
+        inp.get('weight') is not None for inp in explicit_inputs)
+    has_segment_targeting = any(
+        inp.get('segmentId') is not None for inp in explicit_inputs)
+    needs_input_list = (
+        has_weighted or has_segment_targeting
+        or any(pop_map.get(inp['target_pop'], {}).get('is_populationlist')
+               for inp in explicit_inputs))
+
+    input_groups = OrderedDict()
+    if needs_input_list:
+        for inp in explicit_inputs:
+            key = (inp['input_id'], inp['target_pop'])
+            input_groups.setdefault(key, []).append(inp)
+
+    # Seed attribute
+    seed = getattr(integration, 'seed', None) if integration else None
+    if seed is None and integration:
+        int_params = getattr(integration, 'parameters', None) or {}
+        seed_param = int_params.get('seed')
+        if seed_param is not None:
+            seed = getattr(seed_param, 'value', seed_param)
+    seed_attr = f' seed="{int(seed)}"' if seed is not None else ''
+
+    return {
+        'is_network': True,
+        'is_fhn': False,
+        'sim_id': sim_id,
+        'dyn_id': dyn_id,
+        'dt': dt,
+        'duration': duration,
+        'time_scale': time_scale,
+        'seed_attr': seed_attr,
+        # Pre-rendered XML fragments
+        'custom_type_xmls': list(custom_types.values()),
+        'cell_xmls_all': cell_xmls_all,
+        'input_xmls_all': input_xmls_all,
+        'synapse_xmls': synapse_xmls,
+        'silent_ids': silent_ids,
+        # Network data
+        'populations': populations,
+        'pop_map': pop_map,
+        'output_pops': output_pops,
+        # Connections (pre-classified)
+        'chem_conns': chem_conns,
+        'elec_conns': elec_conns,
+        'cont_conns': cont_conns,
+        'needs_projection': needs_projection,
+        'chem_projs': chem_projs,
+        'elec_projs': elec_projs,
+        'cont_projs': cont_projs,
+        # Inputs
+        'explicit_inputs': explicit_inputs,
+        'needs_input_list': needs_input_list,
+        'input_groups': input_groups,
+        # Includes
+        'needs_pynn': needs_pynn,
+        'needs_inputs_include': needs_inputs_include,
+    }
+
+
 # ── Network context builder ──────────────────────────────────────────
 
 def _build_network_context(experiment):
@@ -3021,6 +3723,8 @@ class NeuroMLAdapter(BaseAdapter):
     DYNAMICS_TEMPLATE = "neuroml/tvbo-neuroml-dynamics.xml.mako"
     NETWORK_TEMPLATE = "neuroml/tvbo-neuroml-network.xml.mako"
     SIMULATION_TEMPLATE = "neuroml/tvbo-neuroml-simulation.xml.mako"
+    STD_LEMS_TEMPLATE = "neuroml/tvbo-neuroml-std-lems.xml.mako"
+    STD_NETWORK_TEMPLATE = "neuroml/tvbo-neuroml-std-network-lems.xml.mako"
 
     def __init__(self, source=None):
         from tvbo.classes.dynamics import Dynamics
@@ -3053,23 +3757,16 @@ class NeuroMLAdapter(BaseAdapter):
             destined for ``run()``.
         """
         if use_standard_types and self.experiment:
-            # Check primary dynamics for standard NeuroML types
-            if self.experiment.dynamics and _uses_neuroml_types(self.experiment.dynamics):
-                xml = _render_standard_neuroml_lems(self.experiment)
-                if xml is not None:
-                    return xml
-            # Also check for standard-type network (cell types in network.dynamics)
-            network = getattr(self.experiment, 'network', None)
-            if network:
-                dyn_lib = getattr(network, 'dynamics', None) or {}
-                nodes = getattr(network, 'nodes', None) or []
-                edges = getattr(network, 'edges', None) or []
-                if nodes and edges and dyn_lib:
-                    if any(_uses_neuroml_types(d) for d in dyn_lib.values()
-                           if hasattr(d, 'iri')):
-                        xml = _render_network_standard_neuroml_lems(self.experiment)
-                        if xml is not None:
-                            return xml
+            ctx = build_std_lems_context(self.experiment)
+            if ctx is not None:
+                from tvbo import templates
+                if ctx['is_network']:
+                    tpl = templates.lookup.get_template(
+                        self.STD_NETWORK_TEMPLATE)
+                else:
+                    tpl = templates.lookup.get_template(
+                        self.STD_LEMS_TEMPLATE)
+                return tpl.render(**ctx)
         from tvbo import templates
         template = templates.lookup.get_template(self.TEMPLATE)
         return template.render(experiment=self.experiment, **self._ctx(**kwargs))
