@@ -2003,7 +2003,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         elif format.lower() in ["lems", "neuroml", "nml"]:
             from tvbo.adapters.neuroml import NeuroMLAdapter
             adapter = NeuroMLAdapter(self)
-            rendered_code = adapter.render_code(use_standard_types=True, **kwargs)
+            kwargs.setdefault("use_standard_types", True)
+            rendered_code = adapter.render_code(**kwargs)
 
         else:
             raise ValueError(

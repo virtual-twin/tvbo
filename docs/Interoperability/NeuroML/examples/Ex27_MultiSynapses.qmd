@@ -100,7 +100,7 @@ integration:
   duration: 600.0
   time_scale: ms
 """)
-print(f"Model: {exp.dynamics.name}")
+print(f"Model: {exp.dynamics.name if exp.dynamics else 'network'}")
 ```
 
 ## 2. Render LEMS XML
@@ -125,41 +125,14 @@ for name, arr in ref_outputs.items():
 ## 4. Run TVBO
 
 ```{python}
-import numpy as np
-
 result = exp.run("neuroml")
 da = result.integration.data
-tvbo_arr = np.column_stack([da.coords['time'].values, da.values])
-print(f"TVBO: shape={tvbo_arr.shape}")
+print(f"TVBO: {da.dims}, shape={da.shape}")
 ```
 
-## 5. Compare
+## 5. Compare & Plot
 
 ```{python}
-import matplotlib.pyplot as plt
-
-for name, ref_arr in ref_outputs.items():
-    t = ref_arr[:, 0] * 1000
-    fig, ax = plt.subplots(figsize=(10, 4))
-    for i in range(1, min(ref_arr.shape[1], 6)):
-        ax.plot(t, ref_arr[:, i] * 1000, alpha=0.8, label=f'Ref col{i}')
-    ax.set_xlabel("Time (ms)")
-    ax.set_ylabel("Voltage (mV)")
-    ax.set_title(f"Ex27: Multi-Synapses — {name}")
-    ax.legend(fontsize=7)
-    ax.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.show()
+from _nml_helpers import plot_lems_comparison
+plot_lems_comparison("LEMS_NML2_Ex27_MultiSynapses.xml", ref_outputs, result.integration.data, title_prefix="Ex27")
 ```
-
-::: {.callout-note}
-## Multi-Synapses
-Demonstrates three ways to combine synaptic inputs:
-1. **AMPA only** (cell 0): fast excitatory, `expTwoSynapse`
-2. **NMDA only** (cell 1): slow with Mg²⁺ block, `blockingPlasticSynapse`
-3. **AMPA + NMDA separate** (cell 2): two independent projections
-4. **doubleSynapse** (cell 3): composite synapse referencing AMPA and NMDA by name
-
-`doubleSynapse` (nml:doubleSynapse) has `synapse1`/`synapse2` as string references
-to separately defined synapse components.
-:::
