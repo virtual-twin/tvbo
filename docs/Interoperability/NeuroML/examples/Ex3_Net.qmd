@@ -220,6 +220,7 @@ network:
   nodes:
     - id: 0
       dynamics: hhcell_1
+      record: false
     - id: 1
       dynamics: hhcell_2
     - id: 2

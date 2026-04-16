@@ -1,54 +1,247 @@
 ---
 title: "Ex23: Spike Times"
-description: "Recording and analyzing spike times from IaF cells"
+description: "Recording spike times from a mixed IaF / PyNN / HH network with Poisson inputs"
 ---
 
 ## Model: Spike Time Recording
 
-Demonstrates `<EventOutputFile>` — recording discrete spike events (as opposed
-to continuous voltage traces). Uses IaF cells with different input currents.
+Demonstrates `<EventOutputFile>` — recording discrete spike events from a
+three-population network driven by `poissonFiringSynapse` sources.
 
 ---
 
-## 1. Define IaF Cell in TVBO
+## 1. Define Network in TVBO
 
 ```{python}
 from tvbo import SimulationExperiment
 
 exp = SimulationExperiment.from_string("""
-label: "NeuroML Ex23: IaF Spike Times"
+label: "NeuroML Ex23: Spike Times"
 dynamics:
-  name: IntegrateAndFire
-  parameters:
-    leakReversal: { value: -50.0 }
-    tau:          { value: 30.0 }
-    thresh:       { value: -55.0 }
-    reset:        { value: -70.0 }
-  state_variables:
-    v:
-      equation: { rhs: "(leakReversal - v) / tau" }
-      initial_value: -50.0
-      variable_of_interest: true
-  events:
-    spike:
-      condition: { rhs: "v > thresh" }
-      affect:    { rhs: "v = reset" }
+  name: iaf
+  iri: neuroml:iafCell
 network:
-  number_of_nodes: 1
+  dynamics:
+    # ── Cell types ──
+    iaf:
+      name: iaf
+      iri: neuroml:iafCell
+      parameters:
+        leakConductance: {value: 0.2, unit: nS}
+        leakReversal:    {value: -65, unit: mV}
+        thresh:          {value: -55, unit: mV}
+        reset:           {value: -70, unit: mV}
+        C:               {value: 3.2, unit: pF}
+
+    IF_curr_alpha:
+      name: IF_curr_alpha
+      iri: neuroml:IF_curr_alpha
+      parameters:
+        cm:         {value: 1.0}
+        i_offset:   {value: 0}
+        tau_m:      {value: 20.0}
+        tau_refrac: {value: 2}
+        tau_syn_E:  {value: 0.5}
+        tau_syn_I:  {value: 0.5}
+        v_init:     {value: -65}
+        v_reset:    {value: -62.0}
+        v_rest:     {value: -65.0}
+        v_thresh:   {value: -52.0}
+
+    hhcell:
+      name: hhcell
+      iri: neuroml:cell
+      parameters:
+        diameter:            {value: 17.841242}
+        specificCapacitance: {value: 1.0, unit: uF_per_cm2}
+        initMembPotential:   {value: -65, unit: mV}
+        spikeThresh:         {value: -20, unit: mV}
+        resistivity:         {value: 0.03, unit: kohm_cm}
+      components:
+        passiveChan:
+          name: passiveChan
+          iri: neuroml:ionChannelHH
+          parameters:
+            conductance: {value: 10, unit: pS}
+            condDensity: {value: 0.0003, unit: S_per_cm2}
+            erev:        {value: -54.3, unit: mV}
+            ion:         {description: non_specific}
+        naChan:
+          name: naChan
+          iri: neuroml:ionChannelHH
+          parameters:
+            conductance: {value: 10, unit: pS}
+            condDensity: {value: 0.12, unit: S_per_cm2}
+            erev:        {value: 50, unit: mV}
+            ion:         {description: na}
+            species:     {description: na}
+          components:
+            m:
+              name: m
+              iri: neuroml:gateHHrates
+              parameters: {instances: {value: 3}}
+              components:
+                forwardRate:
+                  name: forwardRate
+                  iri: neuroml:HHExpLinearRate
+                  parameters:
+                    rate:     {value: 1, unit: per_ms}
+                    midpoint: {value: -40, unit: mV}
+                    scale:    {value: 10, unit: mV}
+                reverseRate:
+                  name: reverseRate
+                  iri: neuroml:HHExpRate
+                  parameters:
+                    rate:     {value: 4, unit: per_ms}
+                    midpoint: {value: -65, unit: mV}
+                    scale:    {value: -18, unit: mV}
+            h:
+              name: h
+              iri: neuroml:gateHHrates
+              parameters: {instances: {value: 1}}
+              components:
+                forwardRate:
+                  name: forwardRate
+                  iri: neuroml:HHExpRate
+                  parameters:
+                    rate:     {value: 0.07, unit: per_ms}
+                    midpoint: {value: -65, unit: mV}
+                    scale:    {value: -20, unit: mV}
+                reverseRate:
+                  name: reverseRate
+                  iri: neuroml:HHSigmoidRate
+                  parameters:
+                    rate:     {value: 1, unit: per_ms}
+                    midpoint: {value: -35, unit: mV}
+                    scale:    {value: 10, unit: mV}
+        kChan:
+          name: kChan
+          iri: neuroml:ionChannelHH
+          parameters:
+            conductance: {value: 10, unit: pS}
+            condDensity: {value: 0.036, unit: S_per_cm2}
+            erev:        {value: -77, unit: mV}
+            ion:         {description: k}
+            species:     {description: k}
+          components:
+            n:
+              name: n
+              iri: neuroml:gateHHrates
+              parameters: {instances: {value: 4}}
+              components:
+                forwardRate:
+                  name: forwardRate
+                  iri: neuroml:HHExpLinearRate
+                  parameters:
+                    rate:     {value: 0.1, unit: per_ms}
+                    midpoint: {value: -55, unit: mV}
+                    scale:    {value: 10, unit: mV}
+                reverseRate:
+                  name: reverseRate
+                  iri: neuroml:HHExpRate
+                  parameters:
+                    rate:     {value: 0.125, unit: per_ms}
+                    midpoint: {value: -65, unit: mV}
+                    scale:    {value: -80, unit: mV}
+
+    # ── Synapses ──
+    syn_exc1:
+      name: syn_exc1
+      iri: neuroml:expTwoSynapse
+      parameters:
+        gbase:    {value: 0.1, unit: nS}
+        erev:     {value: 0, unit: mV}
+        tauDecay: {value: 10, unit: ms}
+        tauRise:  {value: 0.5, unit: ms}
+
+    syn_exc2:
+      name: syn_exc2
+      iri: neuroml:expTwoSynapse
+      parameters:
+        gbase:    {value: 0.3, unit: nS}
+        erev:     {value: 0, unit: mV}
+        tauDecay: {value: 10, unit: ms}
+        tauRise:  {value: 0.5, unit: ms}
+
+    syn_exc3:
+      name: syn_exc3
+      iri: neuroml:expTwoSynapse
+      parameters:
+        gbase:    {value: 5, unit: nS}
+        erev:     {value: 0, unit: mV}
+        tauDecay: {value: 10, unit: ms}
+        tauRise:  {value: 0.5, unit: ms}
+
+    # ── Poisson spike sources ──
+    poissonFiringSyn:
+      name: poissonFiringSyn
+      iri: neuroml:poissonFiringSynapse
+      parameters:
+        averageRate: {value: 50, unit: Hz}
+        synapse:     {description: syn_exc1}
+        spikeTarget: {description: "./syn_exc1"}
+
+    poissonFiringSyn2:
+      name: poissonFiringSyn2
+      iri: neuroml:poissonFiringSynapse
+      parameters:
+        averageRate: {value: 150, unit: Hz}
+        synapse:     {description: syn_exc3}
+        spikeTarget: {description: "./syn_exc3"}
+
+  # ── Populations ──
+  nodes:
+    # iafPop (5 cells)
+    - {id: 0, dynamics: iaf}
+    - {id: 1, dynamics: iaf}
+    - {id: 2, dynamics: iaf}
+    - {id: 3, dynamics: iaf}
+    - {id: 4, dynamics: iaf}
+    # pynnPop (3 cells) — not in OutputFile, only in EventOutputFile
+    - {id: 10, dynamics: IF_curr_alpha, record: false}
+    - {id: 11, dynamics: IF_curr_alpha, record: false}
+    - {id: 12, dynamics: IF_curr_alpha, record: false}
+    # hhpop (1 cell)
+    - {id: 20, dynamics: hhcell}
+    # spike sources (explicitInput, not populations)
+    - {id: 100, dynamics: poissonFiringSyn, record: false}
+    - {id: 101, dynamics: poissonFiringSyn2, record: false}
+
+  # ── Connectivity ──
+  edges:
+    # Poisson → iafPop
+    - {source: 100, target: 0}
+    - {source: 100, target: 1}
+    - {source: 100, target: 2}
+    - {source: 100, target: 3}
+    - {source: 100, target: 4}
+    # Poisson → pynnPop
+    - {source: 101, target: 10}
+    - {source: 101, target: 11}
+    - {source: 101, target: 12}
+    # iafPop → hhpop via syn_exc2
+    - {source: 0, target: 20, coupling: syn_exc2}
+    - {source: 1, target: 20, coupling: syn_exc2}
+    - {source: 2, target: 20, coupling: syn_exc2}
+    - {source: 3, target: 20, coupling: syn_exc2}
+    - {source: 4, target: 20, coupling: syn_exc2}
+
 integration:
   method: euler
-  step_size: 0.005
+  step_size: 0.05
   duration: 300.0
   time_scale: ms
+  parameters:
+    seed: {value: 123}
 """)
-print(f"Model: {exp.dynamics.name}")
+print(f"Network dynamics: {list(exp.network.dynamics.keys())}")
 ```
 
 ## 2. Render LEMS XML
 
 ```{python}
 xml = exp.render("lems")
-print(xml[:1200])
+print(xml[:2000])
 ```
 
 ## 3. Run Reference
@@ -72,9 +265,10 @@ result = exp.run("neuroml")
 da = result.integration.data
 tvbo_arr = np.column_stack([da.coords['time'].values, da.values])
 print(f"TVBO: shape={tvbo_arr.shape}")
+print(f"Columns: {list(da.coords['variable'].values)}")
 ```
 
-## 5. Plot Reference
+## 5. Plot Comparison
 
 ```{python}
 import matplotlib.pyplot as plt

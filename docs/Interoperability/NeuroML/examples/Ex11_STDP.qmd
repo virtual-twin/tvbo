@@ -25,14 +25,15 @@ label: "NeuroML Ex11: IaF Cell (STDP Network)"
 dynamics:
   name: IntegrateAndFire
   parameters:
-    leakReversal: { value: -50.0 }
-    tau:          { value: 30.0 }
-    thresh:       { value: -55.0 }
-    reset:        { value: -70.0 }
+    leakReversal: { value: -50.0, unit: mV }
+    tau:          { value: 30.0,  unit: ms }
+    thresh:       { value: -55.0, unit: mV }
+    reset:        { value: -70.0, unit: mV }
   state_variables:
     v:
       equation: { rhs: "(leakReversal - v) / tau" }
       initial_value: -50.0
+      unit: mV
       variable_of_interest: true
   events:
     spike:

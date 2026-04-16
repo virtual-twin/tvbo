@@ -94,6 +94,13 @@ slots:
             Dataset path for array-valued parameters. When set,
             the parameter value is stored in the binary companion file
             (HDF5 or Zarr) at this path. The value slot is omitted.
+    record:
+        range: boolean
+        description: >-
+            Whether to include this element in simulation output files.
+            Applicable to state variables (default true), derived
+            variables (default false), and network nodes (default true).
+            Set false to suppress recording.
 
 enums:
     UnitEnum:
@@ -168,6 +175,8 @@ enums:
                 exact_mappings:
                     - UO:0010054
                 description: "Picoampere"
+            uA_per_cm2:
+                description: "Microampere per square centimetre (current density)"
             # ── Capacitance ──
             pF:
                 meaning: qudt:PicoFARAD
@@ -191,6 +200,10 @@ enums:
                 description: "Siemens per square centimetre (conductance density)"
             mS_per_cm2:
                 description: "Millisiemens per square centimetre (conductance density)"
+            S_per_m2:
+                description: "Siemens per square metre (conductance density, SI)"
+            nS_per_mV:
+                description: "Nanosiemens per millivolt"
             # ── Charge (inverse) ──
             per_nC:
                 meaning: qudt:PER-NanoC
@@ -248,6 +261,12 @@ enums:
             H_per_m:
                 meaning: qudt:H-PER-M
                 description: "Henry per metre (permeability)"
+            # ── Resistance ──
+            ohm:
+                meaning: qudt:OHM
+                description: "Ohm (Ω)"
+            Mohm:
+                description: "Megaohm (MΩ)"
             # ── Resistivity ──
             kohm_cm:
                 description: "Kilo-ohm centimetre (axial resistivity)"
@@ -1054,6 +1073,10 @@ classes:
             - label
             - description
             - parameters
+            - record
+        slot_usage:
+            record:
+                ifabsent: true
         attributes:
             id:
                 range: integer
@@ -1393,6 +1416,10 @@ classes:
             - description
             - equation
             - unit
+            - record
+        slot_usage:
+            record:
+                ifabsent: true
         attributes:
             variable_of_interest:
                 range: boolean
@@ -1783,6 +1810,10 @@ classes:
             - description
             - equation
             - unit
+            - record
+        slot_usage:
+            record:
+                ifabsent: false
 
     Noise:
         class_uri: tvbo:Noise
