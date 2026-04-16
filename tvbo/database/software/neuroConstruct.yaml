@@ -1,0 +1,40 @@
+name: neuroConstruct
+description: A graphical tool for constructing and simulating biologically realistic
+  3D neuronal networks with morphologically detailed cells. Exports to NEURON, GENESIS,
+  and NeuroML.
+homepage: http://www.neuroconstruct.org
+repository: https://github.com/NeuralEnsemble/neuroConstruct
+reference_publication: 10.1016/j.neuron.2007.08.015
+license: GPL-2.0-only
+is_accessible_for_free: true
+application_category: model-building
+date_created: '2007-01-01'
+development_status: inactive
+scale:
+- channel
+- neuron
+- network_system
+model_paradigm:
+- compartmental
+tool_role:
+- workflow_framework
+programming_language:
+- Java
+runtime_platform:
+- NEURON
+- GENESIS
+interoperates_with:
+- NEURON
+- PyNN
+- NeuroML
+author:
+- Padraig Gleeson
+maintainer:
+- Padraig Gleeson
+keywords:
+- 3D visualization
+- network builder
+- NEURON
+- GENESIS
+same_as:
+- https://scicrunch.org/resolver/RRID:SCR_002178

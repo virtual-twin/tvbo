@@ -123,20 +123,28 @@ linkml_meta = LinkMLMeta({'default_prefix': 'tvbo',
                     'Brain neuroinformatics platform or other dynamic network '
                     'models of large-scale brain activity.',
      'id': 'https://w3id.org/tvbo',
-     'imports': ['linkml:types', 'SANDS', 'tvb_dbs'],
+     'imports': ['linkml:types', 'SANDS', 'tvbo_study', 'tvb_dbs', 'software'],
      'name': 'tvb-datamodel',
      'prefixes': {'UO': {'prefix_prefix': 'UO',
                          'prefix_reference': 'http://purl.obolibrary.org/obo/UO_'},
+                  'biotools': {'prefix_prefix': 'biotools',
+                               'prefix_reference': 'https://bio.tools/ontology/'},
                   'linkml': {'prefix_prefix': 'linkml',
                              'prefix_reference': 'https://w3id.org/linkml/'},
+                  'nidm': {'prefix_prefix': 'nidm',
+                           'prefix_reference': 'http://purl.org/nidash/nidm#'},
                   'prov': {'prefix_prefix': 'prov',
                            'prefix_reference': 'http://www.w3.org/ns/prov#'},
                   'qudt': {'prefix_prefix': 'qudt',
                            'prefix_reference': 'http://qudt.org/vocab/unit/'},
                   'rdfs': {'prefix_prefix': 'rdfs',
                            'prefix_reference': 'http://www.w3.org/2000/01/rdf-schema#'},
+                  'sio': {'prefix_prefix': 'sio',
+                          'prefix_reference': 'http://semanticscience.org/resource/'},
                   'tvbo': {'prefix_prefix': 'tvbo',
-                           'prefix_reference': 'http://www.thevirtualbrain.org/tvb-o/'}},
+                           'prefix_reference': 'http://www.thevirtualbrain.org/tvb-o/'},
+                  'wd': {'prefix_prefix': 'wd',
+                         'prefix_reference': 'http://www.wikidata.org/entity/'}},
      'source_file': 'schema/tvbo_datamodel.yaml',
      'title': 'The Virtual Brain Data Model'} )
 
@@ -154,6 +162,296 @@ class Hemisphere(str, Enum):
     left = "left"
     right = "right"
     both = "both"
+
+
+class SexEnum(str, Enum):
+    male = "male"
+    """
+    Male
+    """
+    female = "female"
+    """
+    Female
+    """
+    other = "other"
+    """
+    Other or not reported
+    """
+
+
+class SimulationScale(str, Enum):
+    """
+    Spatial / organizational scale at which a tool operates. Multi-valued: a tool can span multiple scales. Mapped to SIO and Wikidata where possible.
+    """
+    channel = "channel"
+    """
+    Ion channel / sub-cellular molecular dynamics.
+    """
+    neuron = "neuron"
+    """
+    Single neuron (compartmental or point).
+    """
+    neural_network = "neural_network"
+    """
+    Microcircuit / local network of neurons.
+    """
+    neural_mass = "neural_mass"
+    """
+    Population-level neural mass or mean-field model.
+    """
+    network_system = "network_system"
+    """
+    Whole-brain or large-scale network of regions.
+    """
+
+
+class ToolRole(str, Enum):
+    """
+    Primary function of the tool in a simulation workflow.
+    """
+    simulator = "simulator"
+    """
+    Core numerical simulator.
+    """
+    framework = "framework"
+    """
+    Multi-paradigm simulation framework.
+    """
+    backend_runtime = "backend_runtime"
+    """
+    Optimized execution backend for another simulator.
+    """
+    optimization_framework = "optimization_framework"
+    """
+    Parameter optimization / fitting tool.
+    """
+    specification_language = "specification_language"
+    """
+    Model description language or data standard.
+    """
+    workflow_framework = "workflow_framework"
+    """
+    Orchestration, model-building, or pipeline tool.
+    """
+    analysis_tool = "analysis_tool"
+    """
+    Post-processing, signal analysis, or statistics.
+    """
+    visualization_tool = "visualization_tool"
+    """
+    Visualization or graphical user interface.
+    """
+    model_repository = "model_repository"
+    """
+    Database or repository of published models.
+    """
+    continuation_tool = "continuation_tool"
+    """
+    Numerical continuation / bifurcation analysis.
+    """
+
+
+class ModelParadigm(str, Enum):
+    """
+    Computational paradigm or modeling approach supported by the tool.
+    """
+    neural_mass = "neural_mass"
+    """
+    Phenomenological population-rate / neural-mass models.
+    """
+    mean_field = "mean_field"
+    """
+    Mean-field reductions of spiking networks.
+    """
+    spiking = "spiking"
+    """
+    Spiking neuron models (LIF, AdEx, Izhikevich, etc.).
+    """
+    conductance_based = "conductance_based"
+    """
+    Conductance-based / Hodgkin-Huxley-type models.
+    """
+    compartmental = "compartmental"
+    """
+    Multi-compartment morphologically detailed models.
+    """
+    rate_based = "rate_based"
+    """
+    Firing-rate models.
+    """
+    phase_oscillator = "phase_oscillator"
+    """
+    Phase-reduced or Kuramoto-type oscillator models.
+    """
+    reaction_diffusion = "reaction_diffusion"
+    """
+    Stochastic or deterministic reaction-diffusion.
+    """
+    plasticity = "plasticity"
+    """
+    Synaptic plasticity (STDP, homeostatic, etc.).
+    """
+    generic = "generic"
+    """
+    General-purpose, not specific to neuroscience.
+    """
+    multiscale = "multiscale"
+    """
+    Bridging multiple spatial/temporal scales.
+    """
+    dynamic_mean_field = "dynamic_mean_field"
+    """
+    Dynamic mean-field approximation (e.g., Deco et al.).
+    """
+    data_standard = "data_standard"
+    """
+    Data format or exchange standard.
+    """
+    model_description = "model_description"
+    """
+    Declarative model specification language.
+    """
+    bifurcation_analysis = "bifurcation_analysis"
+    """
+    Dynamical systems bifurcation / continuation analysis.
+    """
+
+
+class DevelopmentStatus(str, Enum):
+    """
+    Development status of the software. Based on repostatus.org categories.
+    """
+    active = "active"
+    """
+    Actively developed with regular releases.
+    """
+    inactive = "inactive"
+    """
+    No longer actively developed; may still work.
+    """
+    concept = "concept"
+    """
+    Minimal or no implementation; ideas / prototypes.
+    """
+    wip = "wip"
+    """
+    Work in progress; not yet feature-complete.
+    """
+    suspended = "suspended"
+    """
+    Development paused; may resume in future.
+    """
+    unsupported = "unsupported"
+    """
+    Released but no longer supported.
+    """
+    moved = "moved"
+    """
+    Project has been moved to a different location.
+    """
+
+
+class EcosystemEnum(str, Enum):
+    """
+    Package ecosystem or registry the software is distributed through.
+    """
+    pypi = "pypi"
+    """
+    Python Package Index.
+    """
+    conda_forge = "conda_forge"
+    """
+    Conda-Forge community channel.
+    """
+    cran = "cran"
+    """
+    Comprehensive R Archive Network.
+    """
+    julia_registry = "julia_registry"
+    """
+    Julia General package registry.
+    """
+    npm = "npm"
+    """
+    Node Package Manager registry.
+    """
+    bioconda = "bioconda"
+    """
+    Bioinformatics Conda channel.
+    """
+    github = "github"
+    """
+    Distributed via GitHub releases.
+    """
+    maven = "maven"
+    """
+    Maven Central Repository (Java).
+    """
+
+
+class ProgrammingLanguageEnum(str, Enum):
+    """
+    Programming languages relevant to computational neuroscience tools. Mapped to Wikidata identifiers.
+    """
+    Python = "Python"
+    C = "C"
+    CPLUS_SIGNPLUS_SIGN = "C++"
+    Java = "Java"
+    Julia = "Julia"
+    MATLAB = "MATLAB"
+    R = "R"
+    Fortran = "Fortran"
+    Haskell = "Haskell"
+    Rust = "Rust"
+    JavaScript = "JavaScript"
+    XML = "XML"
+    HOC = "HOC"
+    """
+    NEURON's high-level interpreted language.
+    """
+    CNUMBER_SIGN = "C#"
+
+
+class RequirementRole(str, Enum):
+    engine = "engine"
+    """
+    Primary simulation/processing engine.
+    """
+    runtime = "runtime"
+    """
+    General runtime dependency.
+    """
+    analysis = "analysis"
+    """
+    Post-processing / analysis tool.
+    """
+    dev = "dev"
+    """
+    Development / build dependency.
+    """
+    optional = "optional"
+    """
+    Optional or extra feature dependency.
+    """
+
+
+class EnvironmentType(str, Enum):
+    conda = "conda"
+    """
+    Conda environment.
+    """
+    venv = "venv"
+    """
+    Python virtual environment.
+    """
+    docker = "docker"
+    """
+    Docker container.
+    """
+    singularity = "singularity"
+    """
+    Singularity/Apptainer container.
+    """
 
 
 class UnitEnum(str, Enum):
@@ -228,6 +526,10 @@ class UnitEnum(str, Enum):
     """
     Nanofarad
     """
+    uF_per_cm2 = "uF_per_cm2"
+    """
+    Microfarad per square centimetre (specific capacitance)
+    """
     nS = "nS"
     """
     Nanosiemens
@@ -235,6 +537,18 @@ class UnitEnum(str, Enum):
     uS = "uS"
     """
     Microsiemens
+    """
+    pS = "pS"
+    """
+    Picosiemens
+    """
+    S_per_cm2 = "S_per_cm2"
+    """
+    Siemens per square centimetre (conductance density)
+    """
+    mS_per_cm2 = "mS_per_cm2"
+    """
+    Millisiemens per square centimetre (conductance density)
     """
     per_nC = "per_nC"
     """
@@ -248,9 +562,17 @@ class UnitEnum(str, Enum):
     """
     Mole per cubic metre (mol/m³)
     """
+    mol_per_cm3 = "mol_per_cm3"
+    """
+    Mole per cubic centimetre (mol/cm³)
+    """
     mmol_per_m3 = "mmol_per_m3"
     """
     Millimole per cubic metre (mmol/m³ ≈ mM)
+    """
+    mol_per_m_per_A_per_s = "mol_per_m_per_A_per_s"
+    """
+    Mole per metre per ampere per second (concentration-current coupling)
     """
     um3 = "um3"
     """
@@ -287,6 +609,14 @@ class UnitEnum(str, Enum):
     H_per_m = "H_per_m"
     """
     Henry per metre (permeability)
+    """
+    kohm_cm = "kohm_cm"
+    """
+    Kilo-ohm centimetre (axial resistivity)
+    """
+    degC = "degC"
+    """
+    Degree Celsius
     """
     rad_per_ms = "rad_per_ms"
     """
@@ -613,33 +943,6 @@ class StandardGraphType(str, Enum):
     """
 
 
-class RequirementRole(str, Enum):
-    engine = "engine"
-    """
-    Primary simulation/processing engine
-    """
-    runtime = "runtime"
-    """
-    General runtime dependency
-    """
-    analysis = "analysis"
-    """
-    Post-processing / analysis tool
-    """
-    dev = "dev"
-    """
-    Development / build dependency
-    """
-    optional = "optional"
-    """
-    Optional or extra feature dependency
-    """
-
-
-class EnvironmentType(str, Enum):
-    conda = "conda"
-
-
 class DimensionType(str, Enum):
     """
     Dimensions along which operations can be applied
@@ -808,6 +1111,9 @@ class BrainAtlas(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Event',
                        'Tractogram',
                        'GraphGenerator',
@@ -833,12 +1139,9 @@ class BrainAtlas(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage']} })
+                       'Coupling']} })
     abbreviation: Optional[str] = Field(default=None, description="""Slot for the abbreviation of a resource.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas', 'CommonCoordinateSpace', 'ParcellationEntity']} })
-    author: Optional[list[str]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas']} })
+    author: Optional[list[str]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas', 'SimulationTool']} })
     isVersionOf: Optional[str] = Field(default=None, description="""Linked type for the version of a brain atlas or coordinate space.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas'],
          'union_of': ['BrainAtlas',
                       'CommonCoordinateSpace',
@@ -861,6 +1164,9 @@ class CommonCoordinateSpace(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Event',
                        'Tractogram',
                        'GraphGenerator',
@@ -886,10 +1192,7 @@ class CommonCoordinateSpace(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage']} })
+                       'Coupling']} })
     abbreviation: Optional[str] = Field(default=None, description="""Slot for the abbreviation of a resource.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas', 'CommonCoordinateSpace', 'ParcellationEntity']} })
     unit: Optional[UnitEnum] = Field(default=None, description="""Physical unit of measurement. Values are drawn from the QUDT ontology (http://qudt.org/vocab/unit/) with UO cross-references where available.""", json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
                        'Edge',
@@ -903,9 +1206,9 @@ class CommonCoordinateSpace(ConfiguredBaseModel):
                        'NDArray',
                        'SpatialField']} })
     license: Optional[str] = Field(default=None, description="""Linked type for the license of the brain atlas or coordinate space version.""", json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
-                       'Provenance',
+                       'SoftwarePackage',
                        'SoftwareRequirement',
-                       'SoftwarePackage']} })
+                       'Provenance']} })
     anatomicalAxesOrientation: Optional[str] = Field(default=None, description="""Add the axes orientation in standard anatomical terms (XYZ).""", json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace']} })
     axesOrigin: Optional[str] = Field(default=None, description="""Enter the origin (central point where all axes intersect).""", json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace']} })
     nativeUnit: Optional[str] = Field(default=None, description="""Add the native unit that is used for this common coordinate space version.""", json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace']} })
@@ -930,6 +1233,9 @@ class ParcellationEntity(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Event',
                        'Tractogram',
                        'GraphGenerator',
@@ -955,10 +1261,7 @@ class ParcellationEntity(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage']} })
+                       'Coupling']} })
     ontologyIdentifier: Optional[list[str]] = Field(default=None, description="""Enter the internationalized resource identifier (IRI) to the related ontological terms.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationEntity', 'ParcellationTerminology'],
          'slot_uri': 'atom:atlas/hasIlxId'} })
     versionIdentifier: Optional[str] = Field(default=None, description="""Enter the version identifier of this brain atlas or coordinate space version.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas', 'ParcellationEntity', 'ParcellationTerminology']} })
@@ -977,8 +1280,11 @@ class ParcellationTerminology(ConfiguredBaseModel):
          'from_schema': 'https://openminds.ebrains.eu/sands/BrainAtlas'})
 
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -1006,7 +1312,6 @@ class ParcellationTerminology(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -1017,13 +1322,13 @@ class ParcellationTerminology(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE']} })
     dataLocation: Optional[str] = Field(default=None, description="""Add the location of the data file containing the parcellation terminology.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Stimulus',
                        'Matrix',
                        'RandomStream',
                        'RegionMapping',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
                        'NDArray',
                        'Mesh']} })
     ontologyIdentifier: Optional[list[str]] = Field(default=None, description="""Enter the internationalized resource identifier (IRI) to the related ontological terms.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationEntity', 'ParcellationTerminology'],
@@ -1032,15 +1337,20 @@ class ParcellationTerminology(ConfiguredBaseModel):
     entities: Optional[dict[str, ParcellationEntity]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology']} })
 
 
-class Dataset(ConfiguredBaseModel):
+class Subject(ConfiguredBaseModel):
     """
-    Collection of data related to a specific DBS study.
+    A participant in a study. Each subject typically has their own brain network (connectome) and empirical recordings. Corresponds to a BIDS 'sub-' entity.
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'http://www.thevirtualbrain.org/tvbo/dbs'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'http://www.thevirtualbrain.org/tvbo/study'})
 
-    label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+    subject_id: str = Field(default=..., description="""BIDS-compatible subject identifier (without 'sub-' prefix). Examples: '01', 'ctrl03', 'patient17'.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Subject', 'TimeSeries'],
+         'exact_mappings': ['schema:identifier']} })
+    label: Optional[str] = Field(default=None, description="""Human-readable label for the subject.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -1068,7 +1378,6 @@ class Dataset(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -1078,39 +1387,351 @@ class Dataset(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    dataset_id: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset']} })
-    subjects: Optional[dict[str, Subject]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset']} })
-    clinical_scores: Optional[list[ClinicalScore]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset']} })
-    coordinate_space: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+    group: Optional[str] = Field(default=None, description="""Group assignment (e.g., 'control', 'patient', 'healthy'). Maps to participants.tsv 'group' column in BIDS.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Subject']} })
+    age: Optional[float] = Field(default=None, description="""Age at time of study (years).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Subject']} })
+    sex: Optional[SexEnum] = Field(default=None, description="""Biological sex.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Subject']} })
+    sessions: Optional[dict[str, Session]] = Field(default=None, description="""Data collection sessions for this subject. Each session can have its own network, empirical data, and conditions.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Subject']} })
+    network: Optional[str] = Field(default=None, description="""Path to subject-specific connectome (when not session-dependent). Relative to dataset root or BIDS derivatives. For session-specific networks, use Session.network instead.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Subject', 'Session', 'SimulationExperiment']} })
+    metadata: Optional[str] = Field(default=None, description="""Additional subject metadata as key-value pairs or path to a sidecar JSON file.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Subject']} })
+
+
+class Session(ConfiguredBaseModel):
+    """
+    A data collection session for a subject. Corresponds to a BIDS 'ses-' entity. Sessions capture longitudinal timepoints (baseline, follow-up), different experimental conditions, or repeated measures.
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'http://www.thevirtualbrain.org/tvbo/study'})
+
+    session_id: str = Field(default=..., description="""BIDS session identifier (without 'ses-' prefix). Examples: 'baseline', '6month', 'pre', 'post'.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Session', 'TimeSeries']} })
+    label: Optional[str] = Field(default=None, description="""Human-readable session label.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Subject',
+                       'Session',
+                       'Dataset',
+                       'Contact',
+                       'SoftwareEnvironment',
+                       'Equation',
+                       'Stimulus',
+                       'Event',
+                       'Parcellation',
+                       'Tractogram',
+                       'Matrix',
+                       'Network',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Parameter',
+                       'Function',
+                       'FunctionCall',
+                       'DerivedVariable',
+                       'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Exploration',
+                       'TuningObjective',
+                       'Continuation',
+                       'Coupling',
+                       'RegionMapping',
+                       'SimulationExperiment',
+                       'SimulationStudy',
+                       'TimeSeries',
+                       'NDArray',
+                       'SpatialDomain',
+                       'Mesh',
+                       'SpatialField',
+                       'FieldStateVariable',
+                       'DifferentialOperator',
+                       'BoundaryCondition',
+                       'PDESolver',
+                       'PDE']} })
+    network: Optional[str] = Field(default=None, description="""Path to session-specific connectome. Overrides Subject.network when set. Relative to dataset root or BIDS derivatives.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Subject', 'Session', 'SimulationExperiment']} })
+    empirical_data: Optional[list[str]] = Field(default=None, description="""Paths to empirical recordings for this session (e.g., BOLD time series, MEG/EEG). Relative to dataset root.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Session']} })
+    condition: Optional[str] = Field(default=None, description="""Experimental condition label (e.g., 'rest', 'task-nback'). Maps to BIDS 'task-' entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Session', 'ConditionalBlock', 'Event', 'Case']} })
+
+
+class Dataset(ConfiguredBaseModel):
+    """
+    A collection of subjects for a multi-subject study. Provides the subject/session structure needed for workflow rendering. Optionally backed by a BIDS directory layout.
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'http://www.thevirtualbrain.org/tvbo/study'})
+
+    dataset_id: str = Field(default=..., description="""Unique identifier for the dataset.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset']} })
+    label: Optional[str] = Field(default=None, description="""Human-readable dataset name.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
+                       'Dataset',
+                       'Contact',
+                       'SoftwareEnvironment',
+                       'Equation',
+                       'Stimulus',
+                       'Event',
+                       'Parcellation',
+                       'Tractogram',
+                       'Matrix',
+                       'Network',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Parameter',
+                       'Function',
+                       'FunctionCall',
+                       'DerivedVariable',
+                       'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Exploration',
+                       'TuningObjective',
+                       'Continuation',
+                       'Coupling',
+                       'RegionMapping',
+                       'SimulationExperiment',
+                       'SimulationStudy',
+                       'TimeSeries',
+                       'NDArray',
+                       'SpatialDomain',
+                       'Mesh',
+                       'SpatialField',
+                       'FieldStateVariable',
+                       'DifferentialOperator',
+                       'BoundaryCondition',
+                       'PDESolver',
+                       'PDE']} })
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
+                       'Equation',
+                       'Stimulus',
+                       'Event',
+                       'Tractogram',
+                       'Matrix',
+                       'Network',
+                       'GraphGenerator',
+                       'File',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'FunctionCall',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Exploration',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
+                       'Integrator',
+                       'Coupling',
+                       'RegionMapping',
+                       'SimulationExperiment',
+                       'SimulationStudy',
+                       'TimeSeries',
+                       'NDArray',
+                       'SpatialDomain',
+                       'Mesh',
+                       'SpatialField',
+                       'FieldStateVariable',
+                       'BoundaryCondition',
+                       'PDESolver',
+                       'PDE']} })
+    bids_root: Optional[str] = Field(default=None, description="""Path to BIDS dataset root directory. When set, subject networks and empirical data paths are resolved relative to this root.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset']} })
+    subjects: Optional[dict[str, Subject]] = Field(default=None, description="""Subjects in this dataset.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset']} })
+    conditions: Optional[list[str]] = Field(default=None, description="""Global condition labels applied across all subjects (e.g., ['rest', 'task-nback', 'task-motor']).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset']} })
+    reference: Optional[str] = Field(default=None, description="""DOI or citation for this dataset.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset', 'ClinicalScale', 'ClinicalScore', 'Tractogram']} })
+
+
+class DBSDataset(Dataset):
+    """
+    Collection of data related to a specific DBS study.
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'http://www.thevirtualbrain.org/tvbo/dbs',
+         'slot_usage': {'subjects': {'name': 'subjects', 'range': 'DBSSubject'}}})
+
+    clinical_scores: Optional[list[ClinicalScore]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['DBSDataset']} })
+    coordinate_space: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['DBSDataset',
+                       'DBSSubject',
                        'Electrode',
                        'EField',
                        'Network',
                        'SpatialDomain',
                        'Mesh']} })
+    dataset_id: str = Field(default=..., description="""Unique identifier for the dataset.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset']} })
+    label: Optional[str] = Field(default=None, description="""Human-readable dataset name.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
+                       'Dataset',
+                       'Contact',
+                       'SoftwareEnvironment',
+                       'Equation',
+                       'Stimulus',
+                       'Event',
+                       'Parcellation',
+                       'Tractogram',
+                       'Matrix',
+                       'Network',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Parameter',
+                       'Function',
+                       'FunctionCall',
+                       'DerivedVariable',
+                       'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Exploration',
+                       'TuningObjective',
+                       'Continuation',
+                       'Coupling',
+                       'RegionMapping',
+                       'SimulationExperiment',
+                       'SimulationStudy',
+                       'TimeSeries',
+                       'NDArray',
+                       'SpatialDomain',
+                       'Mesh',
+                       'SpatialField',
+                       'FieldStateVariable',
+                       'DifferentialOperator',
+                       'BoundaryCondition',
+                       'PDESolver',
+                       'PDE']} })
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
+                       'Equation',
+                       'Stimulus',
+                       'Event',
+                       'Tractogram',
+                       'Matrix',
+                       'Network',
+                       'GraphGenerator',
+                       'File',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'FunctionCall',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Exploration',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
+                       'Integrator',
+                       'Coupling',
+                       'RegionMapping',
+                       'SimulationExperiment',
+                       'SimulationStudy',
+                       'TimeSeries',
+                       'NDArray',
+                       'SpatialDomain',
+                       'Mesh',
+                       'SpatialField',
+                       'FieldStateVariable',
+                       'BoundaryCondition',
+                       'PDESolver',
+                       'PDE']} })
+    bids_root: Optional[str] = Field(default=None, description="""Path to BIDS dataset root directory. When set, subject networks and empirical data paths are resolved relative to this root.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset']} })
+    subjects: Optional[dict[str, DBSSubject]] = Field(default=None, description="""Subjects in this dataset.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset']} })
+    conditions: Optional[list[str]] = Field(default=None, description="""Global condition labels applied across all subjects (e.g., ['rest', 'task-nback', 'task-motor']).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset']} })
+    reference: Optional[str] = Field(default=None, description="""DOI or citation for this dataset.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset', 'ClinicalScale', 'ClinicalScore', 'Tractogram']} })
 
 
-class Subject(ConfiguredBaseModel):
+class DBSSubject(Subject):
     """
     Human or animal subject receiving DBS.
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'http://www.thevirtualbrain.org/tvbo/dbs'})
 
-    subject_id: str = Field(default=..., description="""Unique identifier for a subject within a dataset.""", json_schema_extra = { "linkml_meta": {'aliases': ['subject code', 'subject label'],
-         'domain_of': ['Subject', 'TimeSeries'],
-         'exact_mappings': ['schema:identifier']} })
-    age: Optional[float] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Subject']} })
-    sex: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Subject']} })
-    diagnosis: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Subject']} })
-    handedness: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Subject']} })
-    protocols: Optional[list[str]] = Field(default=None, description="""All DBS protocols assigned to this subject.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Subject']} })
-    coordinate_space: Optional[str] = Field(default=None, description="""Coordinate space used for this subject's data""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
-                       'Subject',
+    diagnosis: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['DBSSubject']} })
+    handedness: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['DBSSubject']} })
+    protocols: Optional[list[str]] = Field(default=None, description="""All DBS protocols assigned to this subject.""", json_schema_extra = { "linkml_meta": {'domain_of': ['DBSSubject']} })
+    coordinate_space: Optional[str] = Field(default=None, description="""Coordinate space used for this subject's data""", json_schema_extra = { "linkml_meta": {'domain_of': ['DBSDataset',
+                       'DBSSubject',
                        'Electrode',
                        'EField',
                        'Network',
                        'SpatialDomain',
                        'Mesh']} })
+    subject_id: str = Field(default=..., description="""BIDS-compatible subject identifier (without 'sub-' prefix). Examples: '01', 'ctrl03', 'patient17'.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Subject', 'TimeSeries'],
+         'exact_mappings': ['schema:identifier']} })
+    label: Optional[str] = Field(default=None, description="""Human-readable label for the subject.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
+                       'Dataset',
+                       'Contact',
+                       'SoftwareEnvironment',
+                       'Equation',
+                       'Stimulus',
+                       'Event',
+                       'Parcellation',
+                       'Tractogram',
+                       'Matrix',
+                       'Network',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Parameter',
+                       'Function',
+                       'FunctionCall',
+                       'DerivedVariable',
+                       'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Exploration',
+                       'TuningObjective',
+                       'Continuation',
+                       'Coupling',
+                       'RegionMapping',
+                       'SimulationExperiment',
+                       'SimulationStudy',
+                       'TimeSeries',
+                       'NDArray',
+                       'SpatialDomain',
+                       'Mesh',
+                       'SpatialField',
+                       'FieldStateVariable',
+                       'DifferentialOperator',
+                       'BoundaryCondition',
+                       'PDESolver',
+                       'PDE']} })
+    group: Optional[str] = Field(default=None, description="""Group assignment (e.g., 'control', 'patient', 'healthy'). Maps to participants.tsv 'group' column in BIDS.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Subject']} })
+    age: Optional[float] = Field(default=None, description="""Age at time of study (years).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Subject']} })
+    sex: Optional[SexEnum] = Field(default=None, description="""Biological sex.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Subject']} })
+    sessions: Optional[dict[str, Session]] = Field(default=None, description="""Data collection sessions for this subject. Each session can have its own network, empirical data, and conditions.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Subject']} })
+    network: Optional[str] = Field(default=None, description="""Path to subject-specific connectome (when not session-dependent). Relative to dataset root or BIDS derivatives. For session-specific networks, use Session.network instead.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Subject', 'Session', 'SimulationExperiment']} })
+    metadata: Optional[str] = Field(default=None, description="""Additional subject metadata as key-value pairs or path to a sidecar JSON file.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Subject']} })
 
 
 class Electrode(ConfiguredBaseModel):
@@ -1128,8 +1749,8 @@ class Electrode(ConfiguredBaseModel):
     tail: Optional[Coordinate] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Electrode']} })
     trajectory: Optional[list[Coordinate]] = Field(default=None, description="""The planned trajectory for electrode implantation""", json_schema_extra = { "linkml_meta": {'domain_of': ['Electrode']} })
     target_structure: Optional[str] = Field(default=None, description="""Anatomical target structure from a brain atlas""", json_schema_extra = { "linkml_meta": {'domain_of': ['Electrode']} })
-    coordinate_space: Optional[str] = Field(default=None, description="""Coordinate space used for implantation planning""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
-                       'Subject',
+    coordinate_space: Optional[str] = Field(default=None, description="""Coordinate space used for implantation planning""", json_schema_extra = { "linkml_meta": {'domain_of': ['DBSDataset',
+                       'DBSSubject',
                        'Electrode',
                        'EField',
                        'Network',
@@ -1147,8 +1768,11 @@ class Contact(ConfiguredBaseModel):
     contact_id: Optional[int] = Field(default=None, description="""Identifier (e.g., 0, 1, 2)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Contact']} })
     coordinate: Optional[Coordinate] = Field(default=None, description="""3D coordinate of the contact center in the defined coordinate space""", json_schema_extra = { "linkml_meta": {'domain_of': ['Contact']} })
     label: Optional[str] = Field(default=None, description="""Optional human-readable label (e.g., \"1a\")""", json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -1176,7 +1800,6 @@ class Contact(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -1215,6 +1838,9 @@ class DBSProtocol(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Event',
                        'Tractogram',
                        'GraphGenerator',
@@ -1240,10 +1866,7 @@ class DBSProtocol(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage']} })
+                       'Coupling']} })
     electrodes: Optional[list[Electrode]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['DBSProtocol']} })
     settings: Optional[list[StimulationSetting]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['DBSProtocol']} })
     timing_info: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['DBSProtocol']} })
@@ -1268,6 +1891,9 @@ class ClinicalScale(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Event',
                        'Tractogram',
                        'GraphGenerator',
@@ -1293,18 +1919,18 @@ class ClinicalScale(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'SoftwareEnvironment',
+                       'Coupling']} })
+    version: Optional[str] = Field(default=None, description="""Version of the instrument (e.g., 3.0)""", json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
+                       'SimulationTool',
                        'SoftwareRequirement',
-                       'SoftwarePackage']} })
-    version: Optional[str] = Field(default=None, description="""Version of the instrument (e.g., 3.0)""", json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale', 'SoftwareEnvironment', 'SoftwareRequirement']} })
+                       'SoftwareEnvironment']} })
     domain: Optional[str] = Field(default=None, description="""Overall clinical domain (e.g., motor, cognition)""", json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
                        'ClinicalScore',
                        'StateVariable',
                        'Distribution',
                        'Parameter',
                        'PDE']} })
-    reference: Optional[str] = Field(default=None, description="""DOI, PMID or persistent identifier""", json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale', 'ClinicalScore', 'Tractogram']} })
+    reference: Optional[str] = Field(default=None, description="""DOI, PMID or persistent identifier""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset', 'ClinicalScale', 'ClinicalScore', 'Tractogram']} })
 
 
 class ClinicalScore(ConfiguredBaseModel):
@@ -1324,6 +1950,9 @@ class ClinicalScore(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Event',
                        'Tractogram',
                        'GraphGenerator',
@@ -1349,11 +1978,12 @@ class ClinicalScore(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'SoftwareEnvironment',
+                       'Coupling']} })
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
                        'SoftwareRequirement',
-                       'SoftwarePackage']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -1390,9 +2020,6 @@ class ClinicalScore(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -1407,8 +2034,8 @@ class ClinicalScore(ConfiguredBaseModel):
                        'Distribution',
                        'Parameter',
                        'PDE']} })
-    reference: Optional[str] = Field(default=None, description="""PubMed ID, DOI, or other reference to the score definition""", json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale', 'ClinicalScore', 'Tractogram']} })
-    scale: Optional[ClinicalScale] = Field(default=None, description="""The scale this score belongs to, if applicable""", json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore', 'BidsEntities']} })
+    reference: Optional[str] = Field(default=None, description="""PubMed ID, DOI, or other reference to the score definition""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset', 'ClinicalScale', 'ClinicalScore', 'Tractogram']} })
+    scale: Optional[ClinicalScale] = Field(default=None, description="""The scale this score belongs to, if applicable""", json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore', 'SimulationTool', 'BidsEntities']} })
     parent_score: Optional[ClinicalScore] = Field(default=None, description="""If this score is a subscore of a broader composite""", json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore']} })
 
 
@@ -1434,8 +2061,8 @@ class EField(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'http://www.thevirtualbrain.org/tvbo/dbs'})
 
     volume_data: Optional[str] = Field(default=None, description="""Reference to raw or thresholded volume""", json_schema_extra = { "linkml_meta": {'domain_of': ['EField']} })
-    coordinate_space: Optional[str] = Field(default=None, description="""Reference to a common coordinate space (e.g. MNI152)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
-                       'Subject',
+    coordinate_space: Optional[str] = Field(default=None, description="""Reference to a common coordinate space (e.g. MNI152)""", json_schema_extra = { "linkml_meta": {'domain_of': ['DBSDataset',
+                       'DBSSubject',
                        'Electrode',
                        'EField',
                        'Network',
@@ -1444,27 +2071,378 @@ class EField(ConfiguredBaseModel):
     threshold_applied: Optional[float] = Field(default=None, description="""Threshold value applied to the E-field simulation""", json_schema_extra = { "linkml_meta": {'domain_of': ['EField']} })
 
 
-class Range(ConfiguredBaseModel):
+class SoftwarePackage(ConfiguredBaseModel):
     """
-    Specifies a range for array generation, parameter bounds, or grid exploration.
+    Identity and metadata for a software package, aligned with schema.org/SoftwareApplication and CodeMeta v3.
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'schema:SoftwareApplication',
+         'from_schema': 'https://w3id.org/tvbo/software'})
 
-    lo: Optional[str] = Field(default="0", description="""Lower bound or starting value. Can be a number or argument name.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Range'], 'ifabsent': 'string(0)'} })
-    hi: Optional[str] = Field(default=None, description="""Upper bound or stopping value. Can be a number or argument name.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Range']} })
-    step: Optional[str] = Field(default=None, description="""Step size. Can be: number, argument name, or expression.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Range']} })
-    n: Optional[int] = Field(default=None, description="""Number of points (alternative to step for grid exploration).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Range']} })
-    log_scale: Optional[bool] = Field(default=False, description="""Whether to use logarithmic spacing.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Range'], 'ifabsent': 'False'} })
-    explored_values: Optional[AnyShapeArray[float]] = Field(default=None, description="""Explicit explored values for this element. When set on an element_domain entry, overrides the parent parameter's explored_values for this specific element.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Range', 'Parameter']} })
-    element: Optional[int] = Field(default=None, description="""Element/node index this range applies to. Used in element_domains to explicitly link a domain to a specific element of a heterogeneous parameter (e.g., element: 0 for node 0). Required when used in element_domains to avoid ambiguous positional indexing.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Range']} })
+    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+                       'CommonCoordinateSpace',
+                       'ParcellationEntity',
+                       'DBSProtocol',
+                       'ClinicalScale',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
+                       'Event',
+                       'Tractogram',
+                       'GraphGenerator',
+                       'File',
+                       'StateValue',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Distribution',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'FunctionCall',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Exploration',
+                       'UpdateRule',
+                       'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
+                       'Coupling'],
+         'slot_uri': 'schema:name'} })
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
+                       'Equation',
+                       'Stimulus',
+                       'Event',
+                       'Tractogram',
+                       'Matrix',
+                       'Network',
+                       'GraphGenerator',
+                       'File',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'FunctionCall',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Exploration',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
+                       'Integrator',
+                       'Coupling',
+                       'RegionMapping',
+                       'SimulationExperiment',
+                       'SimulationStudy',
+                       'TimeSeries',
+                       'NDArray',
+                       'SpatialDomain',
+                       'Mesh',
+                       'SpatialField',
+                       'FieldStateVariable',
+                       'BoundaryCondition',
+                       'PDESolver',
+                       'PDE'],
+         'slot_uri': 'schema:description'} })
+    homepage: Optional[str] = Field(default=None, description="""Project homepage URL.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwarePackage'], 'slot_uri': 'schema:url'} })
+    license: Optional[str] = Field(default=None, description="""SPDX license identifier (e.g., MIT, GPL-3.0-only).""", json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'Provenance'],
+         'slot_uri': 'schema:license'} })
+    repository: Optional[str] = Field(default=None, description="""Source code repository URL.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwarePackage'], 'slot_uri': 'schema:codeRepository'} })
+    doi: Optional[str] = Field(default=None, description="""Digital Object Identifier for the software or its reference publication.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwarePackage', 'SimulationStudy']} })
+    ecosystem: Optional[list[EcosystemEnum]] = Field(default=None, description="""Package ecosystem(s) through which the software is distributed.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwarePackage']} })
 
 
-class Equation(ConfiguredBaseModel):
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+class SimulationTool(SoftwarePackage):
+    """
+    A software tool for computational neuroscience simulation, analysis, or model specification. Extends SoftwarePackage with neuroscience-specific controlled vocabularies for scale, paradigm, role, and interoperability. Aligned with CodeMeta v3 and DOAP.
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'schema:SoftwareApplication',
+         'from_schema': 'https://w3id.org/tvbo/software'})
+
+    application_category: Optional[str] = Field(default=None, description="""High-level category (e.g., simulation, analysis, specification).""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationTool'], 'slot_uri': 'schema:applicationCategory'} })
+    scale: Optional[list[SimulationScale]] = Field(default=None, description="""Spatial/organizational scales the tool operates at.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore', 'SimulationTool', 'BidsEntities']} })
+    model_paradigm: Optional[list[ModelParadigm]] = Field(default=None, description="""Computational paradigms supported.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationTool']} })
+    tool_role: Optional[list[ToolRole]] = Field(default=None, description="""Primary function(s) in a simulation workflow.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationTool']} })
+    programming_language: Optional[list[ProgrammingLanguageEnum]] = Field(default=None, description="""Implementation languages.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationTool'], 'slot_uri': 'schema:programmingLanguage'} })
+    runtime_platform: Optional[list[str]] = Field(default=None, description="""Execution backends or platforms (e.g., MPI, OpenMP, CUDA, JAX).""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationTool'], 'slot_uri': 'schema:runtimePlatform'} })
+    operating_system: Optional[list[str]] = Field(default=None, description="""Supported operating systems (e.g., Linux, macOS, Windows).""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationTool'], 'slot_uri': 'schema:operatingSystem'} })
+    interoperates_with: Optional[list[str]] = Field(default=None, description="""Tools this tool can exchange data with or delegate to.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationTool']} })
+    version: Optional[str] = Field(default=None, description="""Current or latest stable version string.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
+                       'SimulationTool',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment'],
+         'slot_uri': 'schema:softwareVersion'} })
+    date_created: Optional[date] = Field(default=None, description="""Date the software was first released (YYYY-MM-DD).""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationTool', 'Provenance'],
+         'slot_uri': 'schema:dateCreated'} })
+    date_modified: Optional[date] = Field(default=None, description="""Date of the most recent release or significant update.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationTool'], 'slot_uri': 'schema:dateModified'} })
+    development_status: Optional[DevelopmentStatus] = Field(default=None, description="""Development status (repostatus.org aligned).""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationTool']} })
+    author: Optional[list[str]] = Field(default=None, description="""Original author(s) or creating organization(s).""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas', 'SimulationTool'], 'slot_uri': 'schema:author'} })
+    maintainer: Optional[list[str]] = Field(default=None, description="""Current maintainer(s) or responsible organization(s).""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationTool'], 'slot_uri': 'schema:maintainer'} })
+    funder: Optional[list[str]] = Field(default=None, description="""Funding bodies or grants (e.g., 'EU H2020 945539', 'NIH R01...').""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationTool'], 'slot_uri': 'schema:funder'} })
+    reference_publication: Optional[str] = Field(default=None, description="""DOI of the primary reference publication for this tool.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationTool']} })
+    citation: Optional[list[str]] = Field(default=None, description="""Additional citation strings or DOIs.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationTool'], 'slot_uri': 'schema:citation'} })
+    keywords: Optional[list[str]] = Field(default=None, description="""Tags for topic-based discovery and clustering.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationTool'], 'slot_uri': 'schema:keywords'} })
+    same_as: Optional[list[str]] = Field(default=None, description="""URIs that unambiguously identify this tool (Wikidata, bio.tools, RRID, SciCrunch).""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationTool'], 'slot_uri': 'schema:sameAs'} })
+    issue_tracker: Optional[str] = Field(default=None, description="""URL of the bug tracker or issue board.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationTool']} })
+    is_accessible_for_free: Optional[bool] = Field(default=True, description="""Whether the tool is free/open-source.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationTool'],
+         'ifabsent': 'True',
+         'slot_uri': 'schema:isAccessibleForFree'} })
+    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+                       'CommonCoordinateSpace',
+                       'ParcellationEntity',
+                       'DBSProtocol',
+                       'ClinicalScale',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
+                       'Event',
+                       'Tractogram',
+                       'GraphGenerator',
+                       'File',
+                       'StateValue',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Distribution',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'FunctionCall',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Exploration',
+                       'UpdateRule',
+                       'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
+                       'Coupling'],
+         'slot_uri': 'schema:name'} })
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
+                       'Equation',
+                       'Stimulus',
+                       'Event',
+                       'Tractogram',
+                       'Matrix',
+                       'Network',
+                       'GraphGenerator',
+                       'File',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'FunctionCall',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Exploration',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
+                       'Integrator',
+                       'Coupling',
+                       'RegionMapping',
+                       'SimulationExperiment',
+                       'SimulationStudy',
+                       'TimeSeries',
+                       'NDArray',
+                       'SpatialDomain',
+                       'Mesh',
+                       'SpatialField',
+                       'FieldStateVariable',
+                       'BoundaryCondition',
+                       'PDESolver',
+                       'PDE'],
+         'slot_uri': 'schema:description'} })
+    homepage: Optional[str] = Field(default=None, description="""Project homepage URL.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwarePackage'], 'slot_uri': 'schema:url'} })
+    license: Optional[str] = Field(default=None, description="""SPDX license identifier (e.g., MIT, GPL-3.0-only).""", json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'Provenance'],
+         'slot_uri': 'schema:license'} })
+    repository: Optional[str] = Field(default=None, description="""Source code repository URL.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwarePackage'], 'slot_uri': 'schema:codeRepository'} })
+    doi: Optional[str] = Field(default=None, description="""Digital Object Identifier for the software or its reference publication.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwarePackage', 'SimulationStudy']} })
+    ecosystem: Optional[list[EcosystemEnum]] = Field(default=None, description="""Package ecosystem(s) through which the software is distributed.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwarePackage']} })
+
+
+class SoftwareRequirement(ConfiguredBaseModel):
+    """
+    An individual software requirement binding a package to a version constraint and a role within an environment.
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'comments': ['Represents an individual requirement (package/module/library).',
+                      "Use 'version_spec' instead of 'version' for semantic clarity."],
+         'from_schema': 'https://w3id.org/tvbo/software'})
+
+    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+                       'CommonCoordinateSpace',
+                       'ParcellationEntity',
+                       'DBSProtocol',
+                       'ClinicalScale',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
+                       'Event',
+                       'Tractogram',
+                       'GraphGenerator',
+                       'File',
+                       'StateValue',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Distribution',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'FunctionCall',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Exploration',
+                       'UpdateRule',
+                       'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
+                       'Coupling']} })
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
+                       'Equation',
+                       'Stimulus',
+                       'Event',
+                       'Tractogram',
+                       'Matrix',
+                       'Network',
+                       'GraphGenerator',
+                       'File',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'FunctionCall',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Exploration',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
+                       'Integrator',
+                       'Coupling',
+                       'RegionMapping',
+                       'SimulationExperiment',
+                       'SimulationStudy',
+                       'TimeSeries',
+                       'NDArray',
+                       'SpatialDomain',
+                       'Mesh',
+                       'SpatialField',
+                       'FieldStateVariable',
+                       'BoundaryCondition',
+                       'PDESolver',
+                       'PDE']} })
+    dataLocation: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
+                       'Stimulus',
+                       'Matrix',
+                       'RandomStream',
+                       'RegionMapping',
+                       'TimeSeries',
+                       'NDArray',
+                       'Mesh']} })
+    package: Optional[str] = Field(default=None, description="""Reference to the software package identity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareRequirement']} })
+    version_spec: Optional[str] = Field(default=None, description="""Version or constraint specifier (e.g., '==2.7.3', '>=1.2,<2').""", json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareRequirement']} })
+    role: Optional[RequirementRole] = Field(default=RequirementRole.runtime, json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareRequirement'], 'ifabsent': 'runtime'} })
+    optional: Optional[bool] = Field(default=False, json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareRequirement'], 'ifabsent': 'False'} })
+    hash: Optional[str] = Field(default=None, description="""Build or artifact hash for exact reproducibility.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareRequirement']} })
+    source_url: Optional[str] = Field(default=None, description="""Canonical source or repository URL.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareRequirement']} })
+    url: Optional[str] = Field(default=None, description="""(Deprecated) Use source_url.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareRequirement']} })
+    license: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'Provenance']} })
+    modules: Optional[list[str]] = Field(default=None, description="""(Deprecated) Use environment.requirements list instead.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareRequirement']} })
+    version: Optional[str] = Field(default=None, description="""(Deprecated) Use version_spec.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
+                       'SimulationTool',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment']} })
+
+
+class SoftwareEnvironment(ConfiguredBaseModel):
+    """
+    A reproducible software environment aggregating one or more SoftwareRequirement entries. Used by SimulationExperiment to specify the execution context.
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'comments': ['An environment aggregates one or more SoftwareRequirement '
+                      'entries.',
+                      'Use SimulationExperiment.environment to reference a reusable '
+                      'environment.'],
+         'from_schema': 'https://w3id.org/tvbo/software'})
 
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -1492,7 +2470,171 @@ class Equation(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
+                       'NDArray',
+                       'SpatialDomain',
+                       'Mesh',
+                       'SpatialField',
+                       'FieldStateVariable',
+                       'DifferentialOperator',
+                       'BoundaryCondition',
+                       'PDESolver',
+                       'PDE']} })
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
                        'SoftwareEnvironment',
+                       'Equation',
+                       'Stimulus',
+                       'Event',
+                       'Tractogram',
+                       'Matrix',
+                       'Network',
+                       'GraphGenerator',
+                       'File',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'FunctionCall',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Exploration',
+                       'UpdateRule',
+                       'TuningObjective',
+                       'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
+                       'Integrator',
+                       'Coupling',
+                       'RegionMapping',
+                       'SimulationExperiment',
+                       'SimulationStudy',
+                       'TimeSeries',
+                       'NDArray',
+                       'SpatialDomain',
+                       'Mesh',
+                       'SpatialField',
+                       'FieldStateVariable',
+                       'BoundaryCondition',
+                       'PDESolver',
+                       'PDE']} })
+    dataLocation: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
+                       'Stimulus',
+                       'Matrix',
+                       'RandomStream',
+                       'RegionMapping',
+                       'TimeSeries',
+                       'NDArray',
+                       'Mesh']} })
+    name: Optional[str] = Field(default=None, description="""Human-readable environment label.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+                       'CommonCoordinateSpace',
+                       'ParcellationEntity',
+                       'DBSProtocol',
+                       'ClinicalScale',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
+                       'Event',
+                       'Tractogram',
+                       'GraphGenerator',
+                       'File',
+                       'StateValue',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Distribution',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'FunctionCall',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Exploration',
+                       'UpdateRule',
+                       'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
+                       'Coupling']} })
+    version: Optional[str] = Field(default=None, description="""Environment definition version (not a package version).""", json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
+                       'SimulationTool',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment']} })
+    platform: Optional[str] = Field(default=None, description="""OS / architecture (e.g., linux-64, macos-arm64).""", json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareEnvironment']} })
+    environment_type: Optional[EnvironmentType] = Field(default=None, description="""Category: conda, venv, docker, etc.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareEnvironment']} })
+    container_image: Optional[str] = Field(default=None, description="""Container image reference (e.g., ghcr.io/org/img:tag@sha256:...).""", json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareEnvironment']} })
+    build_hash: Optional[str] = Field(default=None, description="""Deterministic hash of the resolved dependency set.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareEnvironment']} })
+    requirements: Optional[dict[str, SoftwareRequirement]] = Field(default=None, description="""Constituent software requirements.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareEnvironment', 'Function', 'PDESolver']} })
+
+
+class Range(ConfiguredBaseModel):
+    """
+    Specifies a range for array generation, parameter bounds, or grid exploration.
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+
+    lo: Optional[str] = Field(default="0", description="""Lower bound or starting value. Can be a number or argument name.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Range'], 'ifabsent': 'string(0)'} })
+    hi: Optional[str] = Field(default=None, description="""Upper bound or stopping value. Can be a number or argument name.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Range']} })
+    step: Optional[str] = Field(default=None, description="""Step size. Can be: number, argument name, or expression.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Range']} })
+    n: Optional[int] = Field(default=None, description="""Number of points (alternative to step for grid exploration).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Range']} })
+    log_scale: Optional[bool] = Field(default=False, description="""Whether to use logarithmic spacing.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Range'], 'ifabsent': 'False'} })
+    explored_values: Optional[AnyShapeArray[float]] = Field(default=None, description="""Explicit explored values for this element. When set on an element_domain entry, overrides the parent parameter's explored_values for this specific element.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Range', 'Parameter']} })
+    element: Optional[int] = Field(default=None, description="""Element/node index this range applies to. Used in element_domains to explicitly link a domain to a specific element of a heterogeneous parameter (e.g., element: 0 for node 0). Required when used in element_domains to avoid ambiguous positional indexing.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Range']} })
+
+
+class Equation(ConfiguredBaseModel):
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+
+    label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
+                       'Dataset',
+                       'Contact',
+                       'SoftwareEnvironment',
+                       'Equation',
+                       'Stimulus',
+                       'Event',
+                       'Parcellation',
+                       'Tractogram',
+                       'Matrix',
+                       'Network',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Parameter',
+                       'Function',
+                       'FunctionCall',
+                       'DerivedVariable',
+                       'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Exploration',
+                       'TuningObjective',
+                       'Continuation',
+                       'Coupling',
+                       'RegionMapping',
+                       'SimulationExperiment',
+                       'SimulationStudy',
+                       'TimeSeries',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -1525,7 +2667,11 @@ class Equation(ConfiguredBaseModel):
                        'Integrator',
                        'Coupling',
                        'PDE']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -1562,9 +2708,6 @@ class Equation(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -1587,7 +2730,7 @@ class ConditionalBlock(ConfiguredBaseModel):
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
 
-    condition: Optional[str] = Field(default=None, description="""The condition for this block (e.g., t > onset).""", json_schema_extra = { "linkml_meta": {'domain_of': ['ConditionalBlock', 'Event', 'Case']} })
+    condition: Optional[str] = Field(default=None, description="""The condition for this block (e.g., t > onset).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Session', 'ConditionalBlock', 'Event', 'Case']} })
     expression: Optional[str] = Field(default=None, description="""The equation to apply when the condition is met.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ConditionalBlock', 'DifferentialOperator']} })
 
 
@@ -1626,7 +2769,11 @@ class Stimulus(ConfiguredBaseModel):
                        'Integrator',
                        'Coupling',
                        'PDE']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -1663,9 +2810,6 @@ class Stimulus(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -1675,20 +2819,23 @@ class Stimulus(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE']} })
     dataLocation: Optional[str] = Field(default=None, description="""Add the location of the data file containing the parcellation terminology.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Stimulus',
                        'Matrix',
                        'RandomStream',
                        'RegionMapping',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
                        'NDArray',
                        'Mesh']} })
     duration: Optional[float] = Field(default=1000, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'Event', 'InitialState', 'Integrator'],
          'ifabsent': 'float(1000)'} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -1716,7 +2863,6 @@ class Stimulus(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -1742,6 +2888,9 @@ class Event(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Event',
                        'Tractogram',
                        'GraphGenerator',
@@ -1767,13 +2916,13 @@ class Event(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage']} })
+                       'Coupling']} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -1801,7 +2950,6 @@ class Event(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -1811,7 +2959,11 @@ class Event(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -1848,9 +3000,6 @@ class Event(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -1878,7 +3027,7 @@ class Event(ConfiguredBaseModel):
                        'Coupling',
                        'PDE']} })
     event_type: Optional[EventType] = Field(default=EventType.stimulus, description="""Type of event trigger mechanism.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Event'], 'ifabsent': 'stimulus'} })
-    condition: Optional[Equation] = Field(default=None, description="""Condition function. For continuous events: triggers when expression crosses zero. For discrete events: triggers when expression evaluates to true. Not used for preset_time or stimulus types.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ConditionalBlock', 'Event', 'Case']} })
+    condition: Optional[Equation] = Field(default=None, description="""Condition function. For continuous events: triggers when expression crosses zero. For discrete events: triggers when expression evaluates to true. Not used for preset_time or stimulus types.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Session', 'ConditionalBlock', 'Event', 'Case']} })
     condition_states: Optional[list[str]] = Field(default=None, description="""State variable symbols accessible in the condition function. For edges, can include source/destination vertex outputs.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Event']} })
     condition_parameters: Optional[list[str]] = Field(default=None, description="""Parameter symbols accessible in the condition function.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Event']} })
     affect: Optional[Equation] = Field(default=None, description="""Affect function: what happens when the event triggers. Can modify state variables and/or parameters. For stimulus type, this is the stimulus equation.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Event']} })
@@ -1931,8 +3080,11 @@ class TemporalApplicableEquation(Equation):
                        'BoundaryCondition'],
          'ifabsent': 'False'} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -1960,7 +3112,6 @@ class TemporalApplicableEquation(Equation):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -1975,7 +3126,11 @@ class TemporalApplicableEquation(Equation):
                        'Parameter',
                        'Function',
                        'DifferentialOperator']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -2012,9 +3167,6 @@ class TemporalApplicableEquation(Equation):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -2035,8 +3187,11 @@ class Parcellation(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Parcellation', 'from_schema': 'https://w3id.org/tvbo'})
 
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -2064,7 +3219,6 @@ class Parcellation(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -2090,6 +3244,9 @@ class Tractogram(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Event',
                        'Tractogram',
                        'GraphGenerator',
@@ -2115,13 +3272,13 @@ class Tractogram(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage']} })
+                       'Coupling']} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -2149,7 +3306,6 @@ class Tractogram(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -2159,7 +3315,11 @@ class Tractogram(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -2196,9 +3356,6 @@ class Tractogram(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -2211,7 +3368,7 @@ class Tractogram(ConfiguredBaseModel):
     number_of_subjects: Optional[int] = Field(default=None, description="""Number of subjects in the tractography dataset""", json_schema_extra = { "linkml_meta": {'domain_of': ['Tractogram']} })
     acquisition: Optional[str] = Field(default=None, description="""Acquisition protocol or scanner information""", json_schema_extra = { "linkml_meta": {'domain_of': ['Tractogram', 'BidsEntities']} })
     processing_pipeline: Optional[str] = Field(default=None, description="""Processing pipeline used to generate the tractography""", json_schema_extra = { "linkml_meta": {'domain_of': ['Tractogram']} })
-    reference: Optional[str] = Field(default=None, description="""Publication or DOI reference for this tractography dataset""", json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale', 'ClinicalScore', 'Tractogram']} })
+    reference: Optional[str] = Field(default=None, description="""Publication or DOI reference for this tractography dataset""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset', 'ClinicalScale', 'ClinicalScore', 'Tractogram']} })
 
 
 class Matrix(ConfiguredBaseModel):
@@ -2221,8 +3378,11 @@ class Matrix(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
 
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -2250,7 +3410,6 @@ class Matrix(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -2260,7 +3419,11 @@ class Matrix(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -2297,9 +3460,6 @@ class Matrix(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -2309,13 +3469,13 @@ class Matrix(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE']} })
     dataLocation: Optional[str] = Field(default=None, description="""Add the location of the data file containing the parcellation terminology.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Stimulus',
                        'Matrix',
                        'RandomStream',
                        'RegionMapping',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
                        'NDArray',
                        'Mesh']} })
     x: Optional[BrainRegionSeries] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Coordinate', 'Matrix']} })
@@ -2343,11 +3503,11 @@ class Provenance(ConfiguredBaseModel):
 
     derived_from: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Provenance', 'SimulationStudy']} })
     references: Optional[list[str]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Provenance', 'Dynamics', 'SimulationExperiment']} })
-    date_created: Optional[str] = Field(default=None, description="""ISO 8601 (prov:generatedAtTime)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Provenance']} })
+    date_created: Optional[str] = Field(default=None, description="""ISO 8601 (prov:generatedAtTime)""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationTool', 'Provenance']} })
     license: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
-                       'Provenance',
+                       'SoftwarePackage',
                        'SoftwareRequirement',
-                       'SoftwarePackage']} })
+                       'Provenance']} })
     generated_by: Optional[str] = Field(default=None, description="""Software/agent identifier (prov:wasGeneratedBy)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Provenance']} })
 
 
@@ -2361,7 +3521,7 @@ class BidsEntities(ConfiguredBaseModel):
     cohort: Optional[str] = Field(default=None, description="""BIDS cohort- entity (e.g., HCPYA, PPMI85)""", json_schema_extra = { "linkml_meta": {'domain_of': ['BidsEntities']} })
     reconstruction: Optional[str] = Field(default=None, description="""BIDS rec- entity (e.g., dTOR)""", json_schema_extra = { "linkml_meta": {'domain_of': ['BidsEntities']} })
     segmentation: Optional[str] = Field(default=None, description="""BIDS seg- entity (e.g., ordered, ranked, 17Networks)""", json_schema_extra = { "linkml_meta": {'domain_of': ['BidsEntities']} })
-    scale: Optional[str] = Field(default=None, description="""BIDS scale- entity (BEP017, e.g., 1000)""", json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore', 'BidsEntities']} })
+    scale: Optional[str] = Field(default=None, description="""BIDS scale- entity (BEP017, e.g., 1000)""", json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore', 'SimulationTool', 'BidsEntities']} })
     atlas: Optional[str] = Field(default=None, description="""BIDS atlas- entity (e.g., Schaefer2018, HCPMMP1)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation', 'BidsEntities']} })
     acquisition: Optional[str] = Field(default=None, description="""BIDS acq- entity (e.g., EEGstandard1005, MEGBrainstorm)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Tractogram', 'BidsEntities']} })
 
@@ -2375,8 +3535,11 @@ class Network(ConfiguredBaseModel):
          'from_schema': 'https://w3id.org/tvbo'})
 
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -2404,7 +3567,6 @@ class Network(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -2414,7 +3576,11 @@ class Network(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -2451,9 +3617,6 @@ class Network(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -2491,8 +3654,8 @@ class Network(ConfiguredBaseModel):
     number_of_nodes: Optional[int] = Field(default=1, description="""Number of nodes in the network (derived from nodes if not set)""", json_schema_extra = { "linkml_meta": {'aliases': ['number_of_nodes', 'number_of_regions'],
          'domain_of': ['Network'],
          'ifabsent': 'integer(1)'} })
-    coordinate_space: Optional[CommonCoordinateSpace] = Field(default=None, description="""Coordinate space for node positions (e.g., MNI152NLin2009c). Mirrors BrainAtlas.coordinateSpace so network node positions are unambiguous.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
-                       'Subject',
+    coordinate_space: Optional[CommonCoordinateSpace] = Field(default=None, description="""Coordinate space for node positions (e.g., MNI152NLin2009c). Mirrors BrainAtlas.coordinateSpace so network node positions are unambiguous.""", json_schema_extra = { "linkml_meta": {'domain_of': ['DBSDataset',
+                       'DBSSubject',
                        'Electrode',
                        'EField',
                        'Network',
@@ -2530,6 +3693,9 @@ class GraphGenerator(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Event',
                        'Tractogram',
                        'GraphGenerator',
@@ -2555,11 +3721,12 @@ class GraphGenerator(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'SoftwareEnvironment',
+                       'Coupling']} })
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
                        'SoftwareRequirement',
-                       'SoftwarePackage']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -2596,9 +3763,6 @@ class GraphGenerator(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -2645,6 +3809,9 @@ class File(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Event',
                        'Tractogram',
                        'GraphGenerator',
@@ -2670,11 +3837,12 @@ class File(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'SoftwareEnvironment',
+                       'Coupling']} })
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
                        'SoftwareRequirement',
-                       'SoftwarePackage']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -2711,9 +3879,6 @@ class File(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -2738,8 +3903,11 @@ class Node(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Node', 'from_schema': 'https://w3id.org/tvbo'})
 
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -2767,7 +3935,6 @@ class Node(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -2777,7 +3944,11 @@ class Node(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -2814,9 +3985,6 @@ class Node(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -2867,6 +4035,9 @@ class StateValue(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Event',
                        'Tractogram',
                        'GraphGenerator',
@@ -2892,10 +4063,7 @@ class StateValue(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage']} })
+                       'Coupling']} })
     value: Optional[float] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StateValue',
                        'Parameter',
                        'Argument',
@@ -2910,8 +4078,11 @@ class Edge(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Edge', 'from_schema': 'https://w3id.org/tvbo'})
 
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -2939,7 +4110,6 @@ class Edge(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -2949,7 +4119,11 @@ class Edge(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -2986,9 +4160,6 @@ class Edge(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -3058,6 +4229,9 @@ class Observation(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Event',
                        'Tractogram',
                        'GraphGenerator',
@@ -3083,18 +4257,18 @@ class Observation(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage']} })
+                       'Coupling']} })
     acronym: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
                        'ClinicalScore',
                        'Observation',
                        'Function',
                        'FunctionCall']} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -3122,7 +4296,6 @@ class Observation(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -3132,7 +4305,11 @@ class Observation(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -3169,9 +4346,6 @@ class Observation(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -3242,6 +4416,9 @@ class DerivedObservation(Observation):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Event',
                        'Tractogram',
                        'GraphGenerator',
@@ -3267,18 +4444,18 @@ class DerivedObservation(Observation):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage']} })
+                       'Coupling']} })
     acronym: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
                        'ClinicalScore',
                        'Observation',
                        'Function',
                        'FunctionCall']} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -3306,7 +4483,6 @@ class DerivedObservation(Observation):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -3316,7 +4492,11 @@ class DerivedObservation(Observation):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -3353,9 +4533,6 @@ class DerivedObservation(Observation):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -3429,6 +4606,9 @@ class Dynamics(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Event',
                        'Tractogram',
                        'GraphGenerator',
@@ -3454,14 +4634,14 @@ class Dynamics(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage'],
+                       'Coupling'],
          'ifabsent': 'Generic2dOscillator'} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -3489,7 +4669,6 @@ class Dynamics(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -3518,7 +4697,11 @@ class Dynamics(ConfiguredBaseModel):
                        'Integrator',
                        'Coupling',
                        'PDE']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -3555,9 +4738,6 @@ class Dynamics(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -3597,6 +4777,9 @@ class StateVariable(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Event',
                        'Tractogram',
                        'GraphGenerator',
@@ -3622,17 +4805,17 @@ class StateVariable(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage']} })
+                       'Coupling']} })
     symbol: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable',
                        'Parameter',
                        'DerivedParameter',
                        'DerivedVariable']} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -3660,7 +4843,6 @@ class StateVariable(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -3681,7 +4863,11 @@ class StateVariable(ConfiguredBaseModel):
                        'Distribution',
                        'Parameter',
                        'PDE']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -3718,9 +4904,6 @@ class StateVariable(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -3780,6 +4963,9 @@ class Distribution(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Event',
                        'Tractogram',
                        'GraphGenerator',
@@ -3805,10 +4991,7 @@ class Distribution(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage'],
+                       'Coupling'],
          'ifabsent': 'string(Uniform)'} })
     parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
                        'Stimulus',
@@ -3849,6 +5032,9 @@ class Parameter(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Event',
                        'Tractogram',
                        'GraphGenerator',
@@ -3874,13 +5060,13 @@ class Parameter(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage']} })
+                       'Coupling']} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -3908,7 +5094,6 @@ class Parameter(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -3940,7 +5125,11 @@ class Parameter(ConfiguredBaseModel):
                        'Parameter',
                        'PDE']} })
     reported_optimum: Optional[float] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -3977,9 +5166,6 @@ class Parameter(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -4035,6 +5221,9 @@ class CouplingInput(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Event',
                        'Tractogram',
                        'GraphGenerator',
@@ -4060,11 +5249,12 @@ class CouplingInput(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'SoftwareEnvironment',
+                       'Coupling']} })
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
                        'SoftwareRequirement',
-                       'SoftwarePackage']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -4101,9 +5291,6 @@ class CouplingInput(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -4129,6 +5316,9 @@ class Argument(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Event',
                        'Tractogram',
                        'GraphGenerator',
@@ -4154,11 +5344,12 @@ class Argument(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'SoftwareEnvironment',
+                       'Coupling']} })
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
                        'SoftwareRequirement',
-                       'SoftwarePackage']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -4195,9 +5386,6 @@ class Argument(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -4237,6 +5425,9 @@ class Function(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Event',
                        'Tractogram',
                        'GraphGenerator',
@@ -4262,18 +5453,18 @@ class Function(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage']} })
+                       'Coupling']} })
     acronym: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
                        'ClinicalScore',
                        'Observation',
                        'Function',
                        'FunctionCall']} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -4301,7 +5492,6 @@ class Function(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -4330,7 +5520,11 @@ class Function(ConfiguredBaseModel):
                        'Parameter',
                        'Function',
                        'DifferentialOperator']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -4367,9 +5561,6 @@ class Function(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -4378,7 +5569,7 @@ class Function(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    requirements: Optional[list[str]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'SoftwareEnvironment', 'PDESolver']} })
+    requirements: Optional[list[str]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareEnvironment', 'Function', 'PDESolver']} })
     input: Optional[str] = Field(default=None, description="""Simple input reference: name of previous function's output in pipeline. For multi-argument functions, use arguments with value references instead.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall']} })
     output: Optional[str] = Field(default=None, description="""Name for this function's output (referenced by subsequent functions)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function', 'FunctionCall']} })
     iri: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function', 'Coupling']} })
@@ -4419,6 +5610,9 @@ class LossFunction(Function):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Event',
                        'Tractogram',
                        'GraphGenerator',
@@ -4444,18 +5638,18 @@ class LossFunction(Function):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage']} })
+                       'Coupling']} })
     acronym: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
                        'ClinicalScore',
                        'Observation',
                        'Function',
                        'FunctionCall']} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -4483,7 +5677,6 @@ class LossFunction(Function):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -4512,7 +5705,11 @@ class LossFunction(Function):
                        'Parameter',
                        'Function',
                        'DifferentialOperator']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -4549,9 +5746,6 @@ class LossFunction(Function):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -4560,7 +5754,7 @@ class LossFunction(Function):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    requirements: Optional[list[str]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'SoftwareEnvironment', 'PDESolver']} })
+    requirements: Optional[list[str]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareEnvironment', 'Function', 'PDESolver']} })
     input: Optional[str] = Field(default=None, description="""Simple input reference: name of previous function's output in pipeline. For multi-argument functions, use arguments with value references instead.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall']} })
     output: Optional[str] = Field(default=None, description="""Name for this function's output (referenced by subsequent functions)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function', 'FunctionCall']} })
     iri: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function', 'Coupling']} })
@@ -4584,8 +5778,11 @@ class FunctionCall(ConfiguredBaseModel):
                        'Function',
                        'FunctionCall']} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -4613,7 +5810,6 @@ class FunctionCall(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -4637,7 +5833,11 @@ class FunctionCall(ConfiguredBaseModel):
                        'UpdateRule',
                        'DifferentialOperator'],
          'slot_uri': 'tvbo:Equation'} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -4674,9 +5874,6 @@ class FunctionCall(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -4691,6 +5888,9 @@ class FunctionCall(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Event',
                        'Tractogram',
                        'GraphGenerator',
@@ -4716,10 +5916,7 @@ class FunctionCall(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage']} })
+                       'Coupling']} })
     function: Optional[str] = Field(default=None, description="""Reference to a defined Function (by name)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Distribution', 'FunctionCall', 'Noise']} })
     callable: Optional[Callable] = Field(default=None, description="""Direct callable specification (alternative to function reference)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall']} })
     class_call: Optional[ClassReference] = Field(default=None, description="""Class instantiation and call (alternative to callable/function). Use for external library classes that need __init__ then __call__. Example: Bold monitor from tvboptim.""", json_schema_extra = { "linkml_meta": {'domain_of': ['FunctionCall']} })
@@ -4741,6 +5938,9 @@ class Callable(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Event',
                        'Tractogram',
                        'GraphGenerator',
@@ -4766,11 +5966,12 @@ class Callable(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'SoftwareEnvironment',
+                       'Coupling']} })
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
                        'SoftwareRequirement',
-                       'SoftwarePackage']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -4807,9 +6008,6 @@ class Callable(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -4837,6 +6035,9 @@ class ClassReference(Callable):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Event',
                        'Tractogram',
                        'GraphGenerator',
@@ -4862,11 +6063,12 @@ class ClassReference(Callable):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'SoftwareEnvironment',
+                       'Coupling']} })
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
                        'SoftwareRequirement',
-                       'SoftwarePackage']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -4903,9 +6105,6 @@ class ClassReference(Callable):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -4921,7 +6120,7 @@ class ClassReference(Callable):
 class Case(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
 
-    condition: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ConditionalBlock', 'Event', 'Case']} })
+    condition: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Session', 'ConditionalBlock', 'Event', 'Case']} })
     equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
                        'Event',
                        'Observation',
@@ -4946,6 +6145,9 @@ class DerivedParameter(Parameter):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Event',
                        'Tractogram',
                        'GraphGenerator',
@@ -4971,15 +6173,16 @@ class DerivedParameter(Parameter):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage']} })
+                       'Coupling']} })
     symbol: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable',
                        'Parameter',
                        'DerivedParameter',
                        'DerivedVariable']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -5016,9 +6219,6 @@ class DerivedParameter(Parameter):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -5053,8 +6253,11 @@ class DerivedParameter(Parameter):
                        'NDArray',
                        'SpatialField']} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -5082,7 +6285,6 @@ class DerivedParameter(Parameter):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -5129,6 +6331,9 @@ class DerivedVariable(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Event',
                        'Tractogram',
                        'GraphGenerator',
@@ -5154,13 +6359,13 @@ class DerivedVariable(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage']} })
+                       'Coupling']} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -5188,7 +6393,6 @@ class DerivedVariable(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -5202,7 +6406,11 @@ class DerivedVariable(ConfiguredBaseModel):
                        'Parameter',
                        'DerivedParameter',
                        'DerivedVariable']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -5239,9 +6447,6 @@ class DerivedVariable(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -5331,8 +6536,11 @@ class RandomStream(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:RandomStream', 'from_schema': 'https://w3id.org/tvbo'})
 
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -5360,7 +6568,6 @@ class RandomStream(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -5370,7 +6577,11 @@ class RandomStream(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -5407,9 +6618,6 @@ class RandomStream(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -5419,13 +6627,13 @@ class RandomStream(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE']} })
     dataLocation: Optional[str] = Field(default=None, description="""Add the location of the data file containing the parcellation terminology.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Stimulus',
                        'Matrix',
                        'RandomStream',
                        'RegionMapping',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
                        'NDArray',
                        'Mesh']} })
 
@@ -5442,6 +6650,9 @@ class DataSource(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Event',
                        'Tractogram',
                        'GraphGenerator',
@@ -5467,13 +6678,13 @@ class DataSource(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage']} })
+                       'Coupling']} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -5501,7 +6712,6 @@ class DataSource(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -5511,7 +6721,11 @@ class DataSource(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -5548,9 +6762,6 @@ class DataSource(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -5578,6 +6789,9 @@ class OptimizationStage(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Event',
                        'Tractogram',
                        'GraphGenerator',
@@ -5603,13 +6817,13 @@ class OptimizationStage(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage']} })
+                       'Coupling']} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -5637,7 +6851,6 @@ class OptimizationStage(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -5647,7 +6860,11 @@ class OptimizationStage(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -5684,9 +6901,6 @@ class OptimizationStage(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -5726,6 +6940,9 @@ class Optimization(OptimizationStage):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Event',
                        'Tractogram',
                        'GraphGenerator',
@@ -5751,13 +6968,13 @@ class Optimization(OptimizationStage):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage']} })
+                       'Coupling']} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -5785,7 +7002,6 @@ class Optimization(OptimizationStage):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -5795,7 +7011,11 @@ class Optimization(OptimizationStage):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -5832,9 +7052,6 @@ class Optimization(OptimizationStage):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -5865,6 +7082,9 @@ class Exploration(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Event',
                        'Tractogram',
                        'GraphGenerator',
@@ -5890,13 +7110,13 @@ class Exploration(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage']} })
+                       'Coupling']} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -5924,7 +7144,6 @@ class Exploration(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -5934,7 +7153,11 @@ class Exploration(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -5971,9 +7194,6 @@ class Exploration(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -6025,6 +7245,9 @@ class UpdateRule(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Event',
                        'Tractogram',
                        'GraphGenerator',
@@ -6050,11 +7273,12 @@ class UpdateRule(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'SoftwareEnvironment',
+                       'Coupling']} })
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
                        'SoftwareRequirement',
-                       'SoftwarePackage']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -6091,9 +7315,6 @@ class UpdateRule(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -6138,8 +7359,11 @@ class TuningObjective(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
 
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -6167,7 +7391,6 @@ class TuningObjective(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -6177,7 +7400,11 @@ class TuningObjective(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -6214,9 +7441,6 @@ class TuningObjective(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -6248,6 +7472,9 @@ class Algorithm(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Event',
                        'Tractogram',
                        'GraphGenerator',
@@ -6273,11 +7500,12 @@ class Algorithm(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'SoftwareEnvironment',
+                       'Coupling']} })
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
                        'SoftwareRequirement',
-                       'SoftwarePackage']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -6314,9 +7542,6 @@ class Algorithm(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -6362,6 +7587,9 @@ class Option(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Event',
                        'Tractogram',
                        'GraphGenerator',
@@ -6387,10 +7615,7 @@ class Option(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage']} })
+                       'Coupling']} })
     value: str = Field(default=..., description="""Option value.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateValue',
                        'Parameter',
                        'Argument',
@@ -6461,6 +7686,9 @@ class BranchSwitch(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Event',
                        'Tractogram',
                        'GraphGenerator',
@@ -6486,11 +7714,12 @@ class BranchSwitch(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'SoftwareEnvironment',
+                       'Coupling']} })
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
                        'SoftwareRequirement',
-                       'SoftwarePackage']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -6527,9 +7756,6 @@ class BranchSwitch(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -6576,6 +7802,9 @@ class Continuation(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Event',
                        'Tractogram',
                        'GraphGenerator',
@@ -6601,13 +7830,13 @@ class Continuation(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage']} })
+                       'Coupling']} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -6635,7 +7864,6 @@ class Continuation(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -6645,7 +7873,11 @@ class Continuation(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -6682,9 +7914,6 @@ class Continuation(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -6775,7 +8004,11 @@ class Integrator(Solver):
                        'PDE']} })
     duration: Optional[float] = Field(default=1000, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'Event', 'InitialState', 'Integrator'],
          'ifabsent': 'float(1000)'} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -6812,9 +8045,6 @@ class Integrator(Solver):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -6852,6 +8082,9 @@ class Coupling(ConfiguredBaseModel):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Event',
                        'Tractogram',
                        'GraphGenerator',
@@ -6877,14 +8110,14 @@ class Coupling(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage'],
+                       'Coupling'],
          'ifabsent': 'Linear'} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -6912,7 +8145,6 @@ class Coupling(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -6941,7 +8173,11 @@ class Coupling(ConfiguredBaseModel):
                        'Integrator',
                        'Coupling',
                        'PDE']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -6978,9 +8214,6 @@ class Coupling(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -7015,8 +8248,11 @@ class RegionMapping(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
 
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -7044,7 +8280,6 @@ class RegionMapping(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -7054,7 +8289,11 @@ class RegionMapping(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -7091,9 +8330,6 @@ class RegionMapping(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -7103,13 +8339,13 @@ class RegionMapping(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE']} })
     dataLocation: Optional[str] = Field(default=None, description="""Add the location of the data file containing the parcellation terminology.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Stimulus',
                        'Matrix',
                        'RandomStream',
                        'RegionMapping',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
                        'NDArray',
                        'Mesh']} })
     vertex_to_region: Optional[list[int]] = Field(default=None, description="""Array mapping each vertex index to its parent region index. Can use dataLocation instead for large arrays.""", json_schema_extra = { "linkml_meta": {'domain_of': ['RegionMapping']} })
@@ -7146,7 +8382,11 @@ class SimulationExperiment(ConfiguredBaseModel):
 
     model: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Electrode', 'SimulationExperiment', 'SimulationStudy']} })
     id: int = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'SimulationExperiment']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -7183,9 +8423,6 @@ class SimulationExperiment(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -7196,8 +8433,11 @@ class SimulationExperiment(ConfiguredBaseModel):
                        'PDE']} })
     additional_equations: Optional[list[Equation]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -7225,7 +8465,6 @@ class SimulationExperiment(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -7244,7 +8483,7 @@ class SimulationExperiment(ConfiguredBaseModel):
     connectivity: Optional[Network] = Field(default=None, json_schema_extra = { "linkml_meta": {'deprecated': "Use 'network' instead. 'connectivity' is kept for backward "
                        'compatibility only and will be removed in a future version.',
          'domain_of': ['SimulationExperiment']} })
-    network: Optional[Network] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
+    network: Optional[Network] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Subject', 'Session', 'SimulationExperiment']} })
     coupling: Optional[Coupling] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Network', 'Edge', 'SimulationExperiment']} })
     observations: Optional[dict[str, Observation]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Algorithm', 'SimulationExperiment']} })
     derived_observations: Optional[dict[str, DerivedObservation]] = Field(default=None, description="""Observations derived from combining other observations. Computed after all regular observations are available. Examples: fc_corr (from fc, fc_target), rmse, etc.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
@@ -7264,14 +8503,18 @@ class SimulationExperiment(ConfiguredBaseModel):
                        'SimulationExperiment']} })
     software: Optional[SoftwareRequirement] = Field(default=None, description="""(Deprecated) Single software requirement; prefer 'environment' with aggregated requirements.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Callable', 'Continuation', 'SimulationExperiment']} })
     references: Optional[list[str]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Provenance', 'Dynamics', 'SimulationExperiment']} })
+    dataset: Optional[Dataset] = Field(default=None, description="""Multi-subject dataset for workflow rendering. When set, render_workflow() uses dataset.subjects/sessions to generate per-subject parallel jobs.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
 
 
 class SimulationStudy(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
 
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -7299,7 +8542,6 @@ class SimulationStudy(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -7311,7 +8553,11 @@ class SimulationStudy(ConfiguredBaseModel):
                        'PDE']} })
     derived_from: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Provenance', 'SimulationStudy']} })
     model: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Electrode', 'SimulationExperiment', 'SimulationStudy']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -7348,9 +8594,6 @@ class SimulationStudy(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -7362,7 +8605,7 @@ class SimulationStudy(ConfiguredBaseModel):
     key: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['DataSource', 'SimulationStudy']} })
     title: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationStudy']} })
     year: Optional[int] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationStudy']} })
-    doi: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationStudy', 'SoftwarePackage']} })
+    doi: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwarePackage', 'SimulationStudy']} })
     sample: Optional[Sample] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationStudy']} })
     experiments: Optional[list[SimulationExperiment]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationStudy']} })
 
@@ -7378,8 +8621,11 @@ class TimeSeries(ConfiguredBaseModel):
          'from_schema': 'https://w3id.org/tvbo'})
 
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -7407,7 +8653,6 @@ class TimeSeries(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -7417,7 +8662,11 @@ class TimeSeries(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -7454,9 +8703,6 @@ class TimeSeries(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -7466,13 +8712,13 @@ class TimeSeries(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE']} })
     dataLocation: Optional[str] = Field(default=None, description="""Add the location of the data file containing the parcellation terminology.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Stimulus',
                        'Matrix',
                        'RandomStream',
                        'RegionMapping',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
                        'NDArray',
                        'Mesh']} })
     data: Optional[Matrix] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['TimeSeries']} })
@@ -7498,7 +8744,7 @@ class TimeSeries(ConfiguredBaseModel):
     software_environment: Optional[SoftwareEnvironment] = Field(default=None, description="""Software environment used to generate this data.""", json_schema_extra = { "linkml_meta": {'domain_of': ['TimeSeries']} })
     task_name: Optional[str] = Field(default=None, description="""BIDS task name for the simulation (e.g., 'rest', 'simulation').""", json_schema_extra = { "linkml_meta": {'domain_of': ['TimeSeries']} })
     subject_id: Optional[str] = Field(default=None, description="""BIDS subject identifier.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Subject', 'TimeSeries']} })
-    session_id: Optional[str] = Field(default=None, description="""BIDS session identifier.""", json_schema_extra = { "linkml_meta": {'domain_of': ['TimeSeries']} })
+    session_id: Optional[str] = Field(default=None, description="""BIDS session identifier.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Session', 'TimeSeries']} })
     run_id: Optional[int] = Field(default=None, description="""BIDS run number.""", json_schema_extra = { "linkml_meta": {'domain_of': ['TimeSeries']} })
     modality: Optional[ImagingModality] = Field(default=None, description="""Imaging modality or simulation output type.""", json_schema_extra = { "linkml_meta": {'domain_of': ['TimeSeries']} })
     model_equation_ref: Optional[str] = Field(default=None, description="""BIDS ModelEq reference: path to _eq.xml LEMS file.""", json_schema_extra = { "linkml_meta": {'domain_of': ['TimeSeries']} })
@@ -7506,383 +8752,15 @@ class TimeSeries(ConfiguredBaseModel):
     connectivity_ref: Optional[str] = Field(default=None, description="""Reference to connectivity data (_conndata-network_connectivity.tsv).""", json_schema_extra = { "linkml_meta": {'domain_of': ['TimeSeries']} })
 
 
-class SoftwareEnvironment(ConfiguredBaseModel):
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'comments': ['An environment now aggregates one or more SoftwareRequirement '
-                      'entries.',
-                      'Use SimulationExperiment.environment to reference a reusable '
-                      'environment.',
-                      "Field 'name' supersedes previous 'software' attribute for "
-                      'clarity.',
-                      "'version' here is an environment spec version, not a package "
-                      'version.'],
-         'from_schema': 'https://w3id.org/tvbo'})
-
-    label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
-                       'Dataset',
-                       'Contact',
-                       'Equation',
-                       'Stimulus',
-                       'Event',
-                       'Parcellation',
-                       'Tractogram',
-                       'Matrix',
-                       'Network',
-                       'Node',
-                       'Edge',
-                       'Observation',
-                       'Dynamics',
-                       'StateVariable',
-                       'Parameter',
-                       'Function',
-                       'FunctionCall',
-                       'DerivedVariable',
-                       'RandomStream',
-                       'DataSource',
-                       'OptimizationStage',
-                       'Exploration',
-                       'TuningObjective',
-                       'Continuation',
-                       'Coupling',
-                       'RegionMapping',
-                       'SimulationExperiment',
-                       'SimulationStudy',
-                       'TimeSeries',
-                       'SoftwareEnvironment',
-                       'NDArray',
-                       'SpatialDomain',
-                       'Mesh',
-                       'SpatialField',
-                       'FieldStateVariable',
-                       'DifferentialOperator',
-                       'BoundaryCondition',
-                       'PDESolver',
-                       'PDE']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
-                       'Equation',
-                       'Stimulus',
-                       'Event',
-                       'Tractogram',
-                       'Matrix',
-                       'Network',
-                       'GraphGenerator',
-                       'File',
-                       'Node',
-                       'Edge',
-                       'Observation',
-                       'Dynamics',
-                       'StateVariable',
-                       'Parameter',
-                       'CouplingInput',
-                       'Argument',
-                       'Function',
-                       'FunctionCall',
-                       'Callable',
-                       'DerivedParameter',
-                       'DerivedVariable',
-                       'RandomStream',
-                       'DataSource',
-                       'OptimizationStage',
-                       'Exploration',
-                       'UpdateRule',
-                       'TuningObjective',
-                       'Algorithm',
-                       'BranchSwitch',
-                       'Continuation',
-                       'Integrator',
-                       'Coupling',
-                       'RegionMapping',
-                       'SimulationExperiment',
-                       'SimulationStudy',
-                       'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
-                       'NDArray',
-                       'SpatialDomain',
-                       'Mesh',
-                       'SpatialField',
-                       'FieldStateVariable',
-                       'BoundaryCondition',
-                       'PDESolver',
-                       'PDE']} })
-    dataLocation: Optional[str] = Field(default=None, description="""Add the location of the data file containing the parcellation terminology.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
-                       'Stimulus',
-                       'Matrix',
-                       'RandomStream',
-                       'RegionMapping',
-                       'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'NDArray',
-                       'Mesh']} })
-    name: Optional[str] = Field(default=None, description="""Human-readable environment label/name (deprecated alias was 'software').""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
-                       'CommonCoordinateSpace',
-                       'ParcellationEntity',
-                       'DBSProtocol',
-                       'ClinicalScale',
-                       'ClinicalScore',
-                       'Event',
-                       'Tractogram',
-                       'GraphGenerator',
-                       'File',
-                       'StateValue',
-                       'Observation',
-                       'Dynamics',
-                       'StateVariable',
-                       'Distribution',
-                       'Parameter',
-                       'CouplingInput',
-                       'Argument',
-                       'Function',
-                       'FunctionCall',
-                       'Callable',
-                       'DerivedParameter',
-                       'DerivedVariable',
-                       'DataSource',
-                       'OptimizationStage',
-                       'Exploration',
-                       'UpdateRule',
-                       'Algorithm',
-                       'Option',
-                       'BranchSwitch',
-                       'Continuation',
-                       'Coupling',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage']} })
-    version: Optional[str] = Field(default=None, description="""Optional version tag for the environment definition (not a package version).""", json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale', 'SoftwareEnvironment', 'SoftwareRequirement']} })
-    platform: Optional[str] = Field(default=None, description="""OS / architecture description (e.g., linux-64).""", json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareEnvironment']} })
-    environment_type: Optional[EnvironmentType] = Field(default=None, description="""Category: conda, venv, docker, etc.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareEnvironment']} })
-    container_image: Optional[str] = Field(default=None, description="""Container image reference (e.g., ghcr.io/org/img:tag@sha256:...).""", json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareEnvironment']} })
-    build_hash: Optional[str] = Field(default=None, description="""Deterministic hash/fingerprint of the resolved dependency set.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareEnvironment']} })
-    requirements: Optional[dict[str, SoftwareRequirement]] = Field(default=None, description="""Constituent software/module requirements that define this environment.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'SoftwareEnvironment', 'PDESolver']} })
-
-
-class SoftwareRequirement(ConfiguredBaseModel):
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'comments': ['Represents an individual requirement (package/module/library).',
-                      "Add 'package' to separate identity from requirement expression.",
-                      "Use 'version_spec' instead of 'version' for semantic clarity.",
-                      "'modules' retained only for backward compatibility and will be "
-                      'removed in a future release.',
-                      'No pointer back to SoftwareEnvironment; aggregation is one-way '
-                      'from SoftwareEnvironment.requirements.'],
-         'from_schema': 'https://w3id.org/tvbo'})
-
-    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
-                       'CommonCoordinateSpace',
-                       'ParcellationEntity',
-                       'DBSProtocol',
-                       'ClinicalScale',
-                       'ClinicalScore',
-                       'Event',
-                       'Tractogram',
-                       'GraphGenerator',
-                       'File',
-                       'StateValue',
-                       'Observation',
-                       'Dynamics',
-                       'StateVariable',
-                       'Distribution',
-                       'Parameter',
-                       'CouplingInput',
-                       'Argument',
-                       'Function',
-                       'FunctionCall',
-                       'Callable',
-                       'DerivedParameter',
-                       'DerivedVariable',
-                       'DataSource',
-                       'OptimizationStage',
-                       'Exploration',
-                       'UpdateRule',
-                       'Algorithm',
-                       'Option',
-                       'BranchSwitch',
-                       'Continuation',
-                       'Coupling',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
-                       'Equation',
-                       'Stimulus',
-                       'Event',
-                       'Tractogram',
-                       'Matrix',
-                       'Network',
-                       'GraphGenerator',
-                       'File',
-                       'Node',
-                       'Edge',
-                       'Observation',
-                       'Dynamics',
-                       'StateVariable',
-                       'Parameter',
-                       'CouplingInput',
-                       'Argument',
-                       'Function',
-                       'FunctionCall',
-                       'Callable',
-                       'DerivedParameter',
-                       'DerivedVariable',
-                       'RandomStream',
-                       'DataSource',
-                       'OptimizationStage',
-                       'Exploration',
-                       'UpdateRule',
-                       'TuningObjective',
-                       'Algorithm',
-                       'BranchSwitch',
-                       'Continuation',
-                       'Integrator',
-                       'Coupling',
-                       'RegionMapping',
-                       'SimulationExperiment',
-                       'SimulationStudy',
-                       'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
-                       'NDArray',
-                       'SpatialDomain',
-                       'Mesh',
-                       'SpatialField',
-                       'FieldStateVariable',
-                       'BoundaryCondition',
-                       'PDESolver',
-                       'PDE']} })
-    dataLocation: Optional[str] = Field(default=None, description="""Add the location of the data file containing the parcellation terminology.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
-                       'Stimulus',
-                       'Matrix',
-                       'RandomStream',
-                       'RegionMapping',
-                       'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'NDArray',
-                       'Mesh']} })
-    package: Optional[str] = Field(default=None, description="""Reference to the software package identity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareRequirement']} })
-    version_spec: Optional[str] = Field(default=None, description="""Version or constraint specifier (e.g., '==2.7.3', '>=1.2,<2').""", json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareRequirement']} })
-    role: Optional[RequirementRole] = Field(default=RequirementRole.runtime, json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareRequirement'], 'ifabsent': 'runtime'} })
-    optional: Optional[bool] = Field(default=False, json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareRequirement'], 'ifabsent': 'False'} })
-    hash: Optional[str] = Field(default=None, description="""Build or artifact hash for exact reproducibility (wheel, sdist, image layer).""", json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareRequirement']} })
-    source_url: Optional[str] = Field(default=None, description="""Canonical source or repository URL.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareRequirement']} })
-    url: Optional[str] = Field(default=None, description="""(Deprecated) Use source_url.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareRequirement']} })
-    license: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
-                       'Provenance',
-                       'SoftwareRequirement',
-                       'SoftwarePackage']} })
-    modules: Optional[list[str]] = Field(default=None, description="""(Deprecated) Former ad-hoc list; use environment.requirements list instead.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareRequirement']} })
-    version: Optional[str] = Field(default=None, description="""(Deprecated) Use version_spec.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale', 'SoftwareEnvironment', 'SoftwareRequirement']} })
-
-
-class SoftwarePackage(ConfiguredBaseModel):
-    """
-    Identity information about a software package independent of a specific version requirement.
-    """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'comments': ['Distinct from SoftwareRequirement which binds a package to a '
-                      'version/role.'],
-         'from_schema': 'https://w3id.org/tvbo'})
-
-    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
-                       'CommonCoordinateSpace',
-                       'ParcellationEntity',
-                       'DBSProtocol',
-                       'ClinicalScale',
-                       'ClinicalScore',
-                       'Event',
-                       'Tractogram',
-                       'GraphGenerator',
-                       'File',
-                       'StateValue',
-                       'Observation',
-                       'Dynamics',
-                       'StateVariable',
-                       'Distribution',
-                       'Parameter',
-                       'CouplingInput',
-                       'Argument',
-                       'Function',
-                       'FunctionCall',
-                       'Callable',
-                       'DerivedParameter',
-                       'DerivedVariable',
-                       'DataSource',
-                       'OptimizationStage',
-                       'Exploration',
-                       'UpdateRule',
-                       'Algorithm',
-                       'Option',
-                       'BranchSwitch',
-                       'Continuation',
-                       'Coupling',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
-                       'Equation',
-                       'Stimulus',
-                       'Event',
-                       'Tractogram',
-                       'Matrix',
-                       'Network',
-                       'GraphGenerator',
-                       'File',
-                       'Node',
-                       'Edge',
-                       'Observation',
-                       'Dynamics',
-                       'StateVariable',
-                       'Parameter',
-                       'CouplingInput',
-                       'Argument',
-                       'Function',
-                       'FunctionCall',
-                       'Callable',
-                       'DerivedParameter',
-                       'DerivedVariable',
-                       'RandomStream',
-                       'DataSource',
-                       'OptimizationStage',
-                       'Exploration',
-                       'UpdateRule',
-                       'TuningObjective',
-                       'Algorithm',
-                       'BranchSwitch',
-                       'Continuation',
-                       'Integrator',
-                       'Coupling',
-                       'RegionMapping',
-                       'SimulationExperiment',
-                       'SimulationStudy',
-                       'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
-                       'NDArray',
-                       'SpatialDomain',
-                       'Mesh',
-                       'SpatialField',
-                       'FieldStateVariable',
-                       'BoundaryCondition',
-                       'PDESolver',
-                       'PDE']} })
-    homepage: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwarePackage']} })
-    license: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
-                       'Provenance',
-                       'SoftwareRequirement',
-                       'SoftwarePackage']} })
-    repository: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwarePackage']} })
-    doi: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationStudy', 'SoftwarePackage']} })
-    ecosystem: Optional[str] = Field(default=None, description="""Package ecosystem or index (e.g., pypi, conda-forge).""", json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwarePackage']} })
-
-
 class NDArray(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
 
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -7910,7 +8788,6 @@ class NDArray(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -7920,7 +8797,11 @@ class NDArray(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -7957,9 +8838,6 @@ class NDArray(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -7971,13 +8849,13 @@ class NDArray(ConfiguredBaseModel):
     shape: Optional[list[int]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Matrix', 'Parameter', 'NDArray']} })
     dtype: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Matrix', 'NDArray']} })
     dataLocation: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Stimulus',
                        'Matrix',
                        'RandomStream',
                        'RegionMapping',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
                        'NDArray',
                        'Mesh']} })
     unit: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
@@ -7997,8 +8875,11 @@ class SpatialDomain(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
 
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -8026,7 +8907,6 @@ class SpatialDomain(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -8036,7 +8916,11 @@ class SpatialDomain(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -8073,9 +8957,6 @@ class SpatialDomain(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -8084,8 +8965,8 @@ class SpatialDomain(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    coordinate_space: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
-                       'Subject',
+    coordinate_space: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['DBSDataset',
+                       'DBSSubject',
                        'Electrode',
                        'EField',
                        'Network',
@@ -8099,8 +8980,11 @@ class Mesh(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
 
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -8128,7 +9012,6 @@ class Mesh(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -8138,7 +9021,11 @@ class Mesh(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -8175,9 +9062,6 @@ class Mesh(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -8187,20 +9071,20 @@ class Mesh(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE']} })
     dataLocation: Optional[str] = Field(default=None, description="""Add the location of the data file containing the parcellation terminology.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Stimulus',
                        'Matrix',
                        'RandomStream',
                        'RegionMapping',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
                        'NDArray',
                        'Mesh']} })
     element_type: Optional[ElementType] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Mesh']} })
     coordinates: Optional[list[Coordinate]] = Field(default=None, description="""Node coordinates (x,y,z) in the given coordinate space.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Mesh']} })
     elements: Optional[str] = Field(default=None, description="""Connectivity (indices) or file reference to topology.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Mesh']} })
-    coordinate_space: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
-                       'Subject',
+    coordinate_space: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['DBSDataset',
+                       'DBSSubject',
                        'Electrode',
                        'EField',
                        'Network',
@@ -8216,8 +9100,11 @@ class SpatialField(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
 
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -8245,7 +9132,6 @@ class SpatialField(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -8255,7 +9141,11 @@ class SpatialField(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -8292,9 +9182,6 @@ class SpatialField(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -8329,8 +9216,11 @@ class FieldStateVariable(StateVariable):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
 
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -8358,7 +9248,6 @@ class FieldStateVariable(StateVariable):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -8368,7 +9257,11 @@ class FieldStateVariable(StateVariable):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -8405,9 +9298,6 @@ class FieldStateVariable(StateVariable):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -8424,6 +9314,9 @@ class FieldStateVariable(StateVariable):
                        'DBSProtocol',
                        'ClinicalScale',
                        'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Event',
                        'Tractogram',
                        'GraphGenerator',
@@ -8449,10 +9342,7 @@ class FieldStateVariable(StateVariable):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage']} })
+                       'Coupling']} })
     symbol: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable',
                        'Parameter',
                        'DerivedParameter',
@@ -8510,8 +9400,11 @@ class DifferentialOperator(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
 
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -8539,7 +9432,6 @@ class DifferentialOperator(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -8578,8 +9470,11 @@ class BoundaryCondition(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
 
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -8607,7 +9502,6 @@ class BoundaryCondition(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -8617,7 +9511,11 @@ class BoundaryCondition(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -8654,9 +9552,6 @@ class BoundaryCondition(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -8682,8 +9577,11 @@ class PDESolver(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
 
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -8711,7 +9609,6 @@ class PDESolver(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -8721,7 +9618,11 @@ class PDESolver(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -8758,9 +9659,6 @@ class PDESolver(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -8769,7 +9667,7 @@ class PDESolver(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    requirements: Optional[list[str]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'SoftwareEnvironment', 'PDESolver']} })
+    requirements: Optional[list[str]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareEnvironment', 'Function', 'PDESolver']} })
     environment: Optional[SoftwareEnvironment] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'SimulationExperiment', 'PDESolver']} })
     discretization: Optional[DiscretizationMethod] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['BranchSwitch', 'PDESolver']} })
     time_integrator: Optional[str] = Field(default=None, description="""e.g., implicit Euler, Crank-Nicolson.""", json_schema_extra = { "linkml_meta": {'domain_of': ['PDESolver']} })
@@ -8785,8 +9683,11 @@ class PDE(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
 
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
                        'Dataset',
                        'Contact',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -8814,7 +9715,6 @@ class PDE(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -8824,7 +9724,11 @@ class PDE(ConfiguredBaseModel):
                        'BoundaryCondition',
                        'PDESolver',
                        'PDE']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore',
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
                        'Equation',
                        'Stimulus',
                        'Event',
@@ -8861,9 +9765,6 @@ class PDE(ConfiguredBaseModel):
                        'SimulationExperiment',
                        'SimulationStudy',
                        'TimeSeries',
-                       'SoftwareEnvironment',
-                       'SoftwareRequirement',
-                       'SoftwarePackage',
                        'NDArray',
                        'SpatialDomain',
                        'Mesh',
@@ -8915,8 +9816,11 @@ BrainAtlas.model_rebuild()
 CommonCoordinateSpace.model_rebuild()
 ParcellationEntity.model_rebuild()
 ParcellationTerminology.model_rebuild()
-Dataset.model_rebuild()
 Subject.model_rebuild()
+Session.model_rebuild()
+Dataset.model_rebuild()
+DBSDataset.model_rebuild()
+DBSSubject.model_rebuild()
 Electrode.model_rebuild()
 Contact.model_rebuild()
 StimulationSetting.model_rebuild()
@@ -8925,6 +9829,10 @@ ClinicalScale.model_rebuild()
 ClinicalScore.model_rebuild()
 ClinicalImprovement.model_rebuild()
 EField.model_rebuild()
+SoftwarePackage.model_rebuild()
+SimulationTool.model_rebuild()
+SoftwareRequirement.model_rebuild()
+SoftwareEnvironment.model_rebuild()
 Range.model_rebuild()
 Equation.model_rebuild()
 ConditionalBlock.model_rebuild()
@@ -8984,9 +9892,6 @@ ExecutionConfig.model_rebuild()
 SimulationExperiment.model_rebuild()
 SimulationStudy.model_rebuild()
 TimeSeries.model_rebuild()
-SoftwareEnvironment.model_rebuild()
-SoftwareRequirement.model_rebuild()
-SoftwarePackage.model_rebuild()
 NDArray.model_rebuild()
 SpatialDomain.model_rebuild()
 Mesh.model_rebuild()

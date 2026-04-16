@@ -1,6 +1,6 @@
 ---
 title: "Ex18: Goldman-Hodgkin-Katz"
-description: "GHK current equation for ion channel permeability"
+description: "GHK current equation for ion channel permeability with calcium dynamics"
 ---
 
 ## Model: GHK Current Equation
@@ -11,11 +11,15 @@ accounting for ionic concentrations on both sides of the membrane:
 
 $$I = P \cdot z^2 \cdot \frac{F^2 V}{RT} \cdot \frac{[\text{ion}]_i - [\text{ion}]_o \exp(-zFV/RT)}{1 - \exp(-zFV/RT)}$$
 
-The underlying cell is Hodgkin-Huxley with GHK ion currents.
+This example uses a Hodgkin-Huxley cell with Na, K, and Ca channels.
+The calcium current uses `channelDensityGHK` with a `permeability` instead of
+`condDensity`/`erev`, and includes an exponentially decaying calcium pool
+(`fixedFactorConcentrationModel`). The Ca gate uses `q10Fixed` with a hardcoded
+time factor.
 
 ---
 
-## 1. Define HH Cell in TVBO
+## 1. Define HH+GHK Cell in TVBO
 
 ```{python}
 from tvbo import SimulationExperiment
@@ -23,66 +27,199 @@ from tvbo import SimulationExperiment
 exp = SimulationExperiment.from_string("""
 label: "NeuroML Ex18: HH with GHK"
 dynamics:
-  name: HodgkinHuxley
+  name: na_k_ca
+  iri: neuroml:cell
   parameters:
-    C:     { value: 10.0 }
-    g_Na:  { value: 1200.0 }
-    g_K:   { value: 360.0 }
-    g_L:   { value: 3.0 }
-    E_Na:  { value: 50.0 }
-    E_K:   { value: -77.0 }
-    E_L:   { value: -54.3 }
-    I_ext: { value: 0.08 }
-  derived_variables:
-    alpha_m:
-      equation:
-        rhs: "Piecewise((1.0, Eq(v, -40.0)), (0.1*(v + 40.0)/(1.0 - exp(-(v + 40.0)/10.0)), True))"
-    beta_m:
-      equation:
-        rhs: "4.0*exp(-(v + 65.0)/18.0)"
-    alpha_h:
-      equation:
-        rhs: "0.07*exp(-(v + 65.0)/20.0)"
-    beta_h:
-      equation:
-        rhs: "1.0/(1.0 + exp(-(v + 35.0)/10.0))"
-    alpha_n:
-      equation:
-        rhs: "Piecewise((0.1, Eq(v, -55.0)), (0.01*(v + 55.0)/(1.0 - exp(-(v + 55.0)/10.0)), True))"
-    beta_n:
-      equation:
-        rhs: "0.125*exp(-(v + 65.0)/80.0)"
-  state_variables:
-    v:
-      equation:
-        rhs: "(-g_Na*m**3*h*(v - E_Na) - g_K*n**4*(v - E_K) - g_L*(v - E_L) + I_ext*1000) / C"
-      initial_value: -65.0
-      variable_of_interest: true
-    m:
-      equation: { rhs: "alpha_m*(1 - m) - beta_m*m" }
-      initial_value: 0.05
-    h:
-      equation: { rhs: "alpha_h*(1 - h) - beta_h*h" }
-      initial_value: 0.6
-    n:
-      equation: { rhs: "alpha_n*(1 - n) - beta_n*n" }
-      initial_value: 0.32
+    diameter:           { value: 1.0 }
+    length:             { value: 10.0 }
+    specificCapacitance: { value: 1.0, unit: uF_per_cm2 }
+    initMembPotential:  { value: -65.0, unit: mV }
+    spikeThresh:        { value: 0, unit: mV }
+    resistivity:        { value: 0.1, unit: kohm_cm }
+    network_temperature: { value: 16.3, unit: degC }
+  components:
+    # ── Na channel ──
+    na_chan:
+      name: na_chan
+      iri: neuroml:ionChannelHH
+      parameters:
+        conductance: { value: 10, unit: pS }
+        species:     { description: na }
+        condDensity: { value: 0.12, unit: S_per_cm2 }
+        erev:        { value: 50.799202, unit: mV }
+        ion:         { description: na }
+      components:
+        m:
+          name: m
+          iri: neuroml:gateHHrates
+          parameters:
+            instances: { value: 3 }
+          components:
+            q10Settings:
+              name: q10Settings
+              iri: neuroml:q10ExpTemp
+              parameters:
+                q10Factor:        { value: 3 }
+                experimentalTemp: { value: 6.3, unit: degC }
+            forwardRate:
+              name: forwardRate
+              iri: neuroml:HHExpLinearRate
+              parameters:
+                rate:     { value: 1, unit: per_ms }
+                midpoint: { value: -40, unit: mV }
+                scale:    { value: 10, unit: mV }
+            reverseRate:
+              name: reverseRate
+              iri: neuroml:HHExpRate
+              parameters:
+                rate:     { value: 4, unit: per_ms }
+                midpoint: { value: -65, unit: mV }
+                scale:    { value: -18, unit: mV }
+        h:
+          name: h
+          iri: neuroml:gateHHrates
+          parameters:
+            instances: { value: 1 }
+          components:
+            q10Settings:
+              name: q10Settings
+              iri: neuroml:q10ExpTemp
+              parameters:
+                q10Factor:        { value: 3 }
+                experimentalTemp: { value: 6.3, unit: degC }
+            forwardRate:
+              name: forwardRate
+              iri: neuroml:HHExpRate
+              parameters:
+                rate:     { value: 0.07, unit: per_ms }
+                midpoint: { value: -65, unit: mV }
+                scale:    { value: -20, unit: mV }
+            reverseRate:
+              name: reverseRate
+              iri: neuroml:HHSigmoidRate
+              parameters:
+                rate:     { value: 1, unit: per_ms }
+                midpoint: { value: -35, unit: mV }
+                scale:    { value: 10, unit: mV }
+    # ── K channel ──
+    k_chan:
+      name: k_chan
+      iri: neuroml:ionChannelHH
+      parameters:
+        conductance: { value: 10, unit: pS }
+        species:     { description: k }
+        condDensity: { value: 0.036, unit: S_per_cm2 }
+        erev:        { value: -77.0, unit: mV }
+        ion:         { description: k }
+      components:
+        n:
+          name: n
+          iri: neuroml:gateHHrates
+          parameters:
+            instances: { value: 4 }
+          components:
+            q10Settings:
+              name: q10Settings
+              iri: neuroml:q10ExpTemp
+              parameters:
+                q10Factor:        { value: 3 }
+                experimentalTemp: { value: 6.3, unit: degC }
+            forwardRate:
+              name: forwardRate
+              iri: neuroml:HHExpLinearRate
+              parameters:
+                rate:     { value: 0.1, unit: per_ms }
+                midpoint: { value: -55, unit: mV }
+                scale:    { value: 10, unit: mV }
+            reverseRate:
+              name: reverseRate
+              iri: neuroml:HHExpRate
+              parameters:
+                rate:     { value: 0.125, unit: per_ms }
+                midpoint: { value: -65, unit: mV }
+                scale:    { value: -80, unit: mV }
+    # ── Ca channel (uses GHK permeability) ──
+    ca_chan:
+      name: ca_chan
+      iri: neuroml:ionChannelHH
+      parameters:
+        conductance:  { value: 10, unit: pS }
+        species:      { description: ca }
+        permeability: { value: 2.5e-7, unit: m_per_s }
+        ion:          { description: ca }
+      components:
+        p:
+          name: p
+          iri: neuroml:gateHHrates
+          parameters:
+            instances: { value: 2 }
+          components:
+            q10Settings:
+              name: q10Settings
+              iri: neuroml:q10Fixed
+              parameters:
+                fixedQ10:         { value: 0.5 }
+                experimentalTemp: { value: 6.3, unit: degC }
+            forwardRate:
+              name: forwardRate
+              iri: neuroml:HHExpLinearRate
+              parameters:
+                rate:     { value: 1, unit: per_ms }
+                midpoint: { value: -40, unit: mV }
+                scale:    { value: 10, unit: mV }
+            reverseRate:
+              name: reverseRate
+              iri: neuroml:HHExpRate
+              parameters:
+                rate:     { value: 4, unit: per_ms }
+                midpoint: { value: -65, unit: mV }
+                scale:    { value: -18, unit: mV }
+    # ── Leak channel ──
+    leak:
+      name: leak
+      iri: neuroml:ionChannelPassive
+      parameters:
+        conductance: { value: 10, unit: pS }
+        species:     { description: non_specific }
+        condDensity: { value: 0.0003, unit: S_per_cm2 }
+        erev:        { value: -53.1, unit: mV }
+        ion:         { description: non_specific }
+    # ── Calcium concentration model ──
+    simple_decay:
+      name: simple_decay
+      iri: neuroml:fixedFactorConcentrationModel
+      parameters:
+        ion:           { description: ca }
+        restingConc:   { value: 3e-6, unit: mM }
+        decayConstant: { value: 1.0, unit: ms }
+        rho:           { value: 3e-1, unit: mol_per_m_per_A_per_s }
+        initialConcentration:    { value: 5e-6, unit: mM }
+        initialExtConcentration: { value: 2, unit: mM }
+    # ── Current clamp ──
+    IClamp:
+      name: IClamp
+      iri: neuroml:pulseGenerator
+      parameters:
+        delay:     { value: 4, unit: ms }
+        duration:  { value: 6.0, unit: ms }
+        amplitude: { value: 0.005, unit: nA }
 network:
   number_of_nodes: 1
 integration:
   method: euler
-  step_size: 0.01
-  duration: 300.0
+  step_size: 0.001
+  duration: 50.0
   time_scale: ms
 """)
 print(f"Model: {exp.dynamics.name}")
+print(f"Components: {list(exp.dynamics.modes.keys())}")
 ```
 
 ## 2. Render LEMS XML
 
 ```{python}
-xml = exp.render("lems")
-print(xml[:1200])
+xml = exp.render("lems", use_standard_types=True)
+print(xml[:3000])
 ```
 
 ## 3. Run Reference
@@ -108,28 +245,52 @@ tvbo_arr = np.column_stack([da.coords['time'].values, da.values])
 print(f"TVBO: shape={tvbo_arr.shape}")
 ```
 
-## 5. Plot Reference
+## 5. Compare
 
 ```{python}
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.stats import pearsonr
 
-for name, ref_arr in ref_outputs.items():
-    t = ref_arr[:, 0] * 1000
-    fig, ax = plt.subplots(figsize=(10, 4))
-    for i in range(1, min(ref_arr.shape[1], 4)):
-        ax.plot(t, ref_arr[:, i] * 1000, alpha=0.8, label=f'Cell {i}')
-    ax.set_xlabel("Time (ms)")
-    ax.set_ylabel("Voltage (mV)")
-    ax.set_title(f"Ex18: GHK — {name}")
-    ax.legend(fontsize=7)
-    ax.grid(True, alpha=0.3)
+ref_v = ref_outputs.get("ex18.dat")
+if ref_v is not None:
+    t_ref = ref_v[:, 0] * 1000
+    v_ref = ref_v[:, 1] * 1000
+    t_tvbo = tvbo_arr[:, 0]
+    v_tvbo = tvbo_arr[:, 1]
+
+    n = min(len(v_ref), len(v_tvbo))
+    corr, _ = pearsonr(v_ref[:n], v_tvbo[:n])
+    rmse = np.sqrt(np.mean((v_ref[:n] - v_tvbo[:n])**2))
+
+    fig, axes = plt.subplots(2, 1, figsize=(10, 6), gridspec_kw={"height_ratios": [3, 1]})
+
+    axes[0].plot(t_ref, v_ref, label="Reference", alpha=0.8)
+    axes[0].plot(t_tvbo[:n], v_tvbo[:n], '--', label="TVBO", alpha=0.8)
+    axes[0].set_xlabel("Time (ms)")
+    axes[0].set_ylabel("Voltage (mV)")
+    axes[0].set_title(f"Ex18: GHK — corr={corr:.4f}, RMSE={rmse:.2f} mV")
+    axes[0].legend()
+    axes[0].grid(True, alpha=0.3)
+
+    axes[1].plot(t_ref[:n], v_ref[:n] - v_tvbo[:n], color='red', alpha=0.6)
+    axes[1].set_xlabel("Time (ms)")
+    axes[1].set_ylabel("Residual (mV)")
+    axes[1].grid(True, alpha=0.3)
+
     plt.tight_layout()
     plt.show()
+
+    print(f"Correlation: {corr:.6f}")
+    print(f"RMSE: {rmse:.4f} mV")
+else:
+    print("No reference voltage data found")
 ```
 
 ::: {.callout-note}
 ## GHK in TVBO
-The GHK flux equation can be expressed as a derived variable in TVBO.
-The full GHK current replaces the Ohmic $g(V-E)$ formulation in the voltage ODE.
+The GHK flux equation is handled natively by NeuroML's `channelDensityGHK`
+component type. TVBO expresses this via `permeability` instead of `condDensity`/`erev`
+on the Ca channel. The `fixedFactorConcentrationModel` tracks intracellular calcium
+with exponential decay.
 :::

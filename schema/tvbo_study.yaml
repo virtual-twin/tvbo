@@ -1,0 +1,160 @@
+id: http://www.thevirtualbrain.org/tvbo/study
+name: tvbo_study
+title: TVB-O Study Schema
+description: >-
+  General-purpose classes for multi-subject, multi-session study metadata.
+  Defines Subject, Session, and Dataset for workflow orchestration and
+  BIDS-compatible data organization. Domain-specific schemas (e.g., tvb_dbs)
+  extend these with specialized attributes.
+
+prefixes:
+  linkml: https://w3id.org/linkml/
+  tvbo_study: http://www.thevirtualbrain.org/tvb-o/study/
+  bids: https://bids-specification.readthedocs.io/en/stable/
+  obo: http://purl.obolibrary.org/obo/
+  schema: http://schema.org/
+
+default_prefix: tvbo_study
+
+imports:
+  - linkml:types
+
+slots:
+  subject_id:
+    identifier: true
+    range: string
+    required: true
+    description: >-
+      BIDS-compatible subject identifier (without 'sub-' prefix).
+      Examples: '01', 'ctrl03', 'patient17'.
+    exact_mappings:
+      - schema:identifier
+
+  session_id:
+    identifier: true
+    range: string
+    required: true
+    description: >-
+      BIDS session identifier (without 'ses-' prefix).
+      Examples: 'baseline', '6month', 'pre', 'post'.
+
+  dataset_id:
+    identifier: true
+    range: string
+    required: true
+    description: >-
+      Unique identifier for the dataset.
+
+classes:
+
+  Subject:
+    description: >-
+      A participant in a study. Each subject typically has their own
+      brain network (connectome) and empirical recordings. Corresponds
+      to a BIDS 'sub-' entity.
+    slots:
+      - subject_id
+    attributes:
+      label:
+        range: string
+        description: "Human-readable label for the subject."
+      group:
+        range: string
+        description: >-
+          Group assignment (e.g., 'control', 'patient', 'healthy').
+          Maps to participants.tsv 'group' column in BIDS.
+      age:
+        range: float
+        description: "Age at time of study (years)."
+      sex:
+        range: SexEnum
+        description: "Biological sex."
+      sessions:
+        multivalued: true
+        range: Session
+        inlined: true
+        description: >-
+          Data collection sessions for this subject. Each session
+          can have its own network, empirical data, and conditions.
+      network:
+        range: string
+        description: >-
+          Path to subject-specific connectome (when not session-dependent).
+          Relative to dataset root or BIDS derivatives.
+          For session-specific networks, use Session.network instead.
+      metadata:
+        range: string
+        description: >-
+          Additional subject metadata as key-value pairs or path
+          to a sidecar JSON file.
+
+  Session:
+    description: >-
+      A data collection session for a subject. Corresponds to a BIDS
+      'ses-' entity. Sessions capture longitudinal timepoints (baseline,
+      follow-up), different experimental conditions, or repeated measures.
+    slots:
+      - session_id
+    attributes:
+      label:
+        range: string
+        description: "Human-readable session label."
+      network:
+        range: string
+        description: >-
+          Path to session-specific connectome. Overrides Subject.network
+          when set. Relative to dataset root or BIDS derivatives.
+      empirical_data:
+        multivalued: true
+        range: string
+        description: >-
+          Paths to empirical recordings for this session (e.g., BOLD
+          time series, MEG/EEG). Relative to dataset root.
+      condition:
+        range: string
+        description: >-
+          Experimental condition label (e.g., 'rest', 'task-nback').
+          Maps to BIDS 'task-' entity.
+
+  Dataset:
+    description: >-
+      A collection of subjects for a multi-subject study. Provides the
+      subject/session structure needed for workflow rendering. Optionally
+      backed by a BIDS directory layout.
+    slots:
+      - dataset_id
+    attributes:
+      label:
+        range: string
+        description: "Human-readable dataset name."
+      description:
+        range: string
+      bids_root:
+        range: string
+        description: >-
+          Path to BIDS dataset root directory. When set, subject networks
+          and empirical data paths are resolved relative to this root.
+      subjects:
+        multivalued: true
+        range: Subject
+        inlined: true
+        description: "Subjects in this dataset."
+      conditions:
+        multivalued: true
+        range: string
+        description: >-
+          Global condition labels applied across all subjects
+          (e.g., ['rest', 'task-nback', 'task-motor']).
+      reference:
+        range: string
+        description: "DOI or citation for this dataset."
+
+enums:
+  SexEnum:
+    permissible_values:
+      male:
+        description: "Male"
+      female:
+        description: "Female"
+      other:
+        description: "Other or not reported"

@@ -1,0 +1,44 @@
+name: PyRates
+description: A Python framework for rate-based and neural mass network simulations.
+  Provides symbolic equation parsing, automatic code generation, and parameter continuation
+  support.
+homepage: https://pyrates.readthedocs.io
+repository: https://github.com/pyrates-neuroscience/PyRates
+doi: 10.1371/journal.pone.0244637
+reference_publication: 10.1371/journal.pone.0225900
+license: BSD-3-Clause
+is_accessible_for_free: true
+ecosystem:
+- pypi
+application_category: simulation
+date_created: '2019-01-01'
+development_status: active
+scale:
+- neural_mass
+- network_system
+model_paradigm:
+- rate_based
+- neural_mass
+tool_role:
+- simulator
+- framework
+programming_language:
+- Python
+runtime_platform:
+- Python
+- NumPy
+- TensorFlow
+interoperates_with:
+- TVB
+author:
+- Richard Gast
+- Daniel Rose
+maintainer:
+- Richard Gast
+keywords:
+- neural mass
+- rate model
+- mean-field
+- code generation
+- graph-based
+issue_tracker: https://github.com/pyrates-neuroscience/PyRates/issues

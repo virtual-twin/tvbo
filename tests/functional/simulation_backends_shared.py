@@ -21,7 +21,7 @@ _HAVE_NEUROML = _has("pyneuroml")
 _HAVE_NEURON = _has("neuron")
 _HAVE_BRIAN2 = _has("brian2")
 _HAVE_NETPYNE = _has("netpyne")
-_HAVE_EDEN = _has("eden")
+_HAVE_EDEN = _has("eden_simulator")
 
 
 from tvbo import database_path

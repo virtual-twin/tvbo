@@ -18,6 +18,7 @@ description: >
 
 dynamics:
   name: FitzHughNagumo
+  iri: "neuroml:fitzHughNagumoCell"
   description: >
     Classic FitzHugh-Nagumo model as defined in the NeuroML2 built-in
     fitzHughNagumoCell ComponentType.
