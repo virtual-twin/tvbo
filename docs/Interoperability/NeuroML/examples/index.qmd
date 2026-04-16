@@ -116,7 +116,7 @@ Each example notebook below:
 | **Single-cell ODE** | Ex0 (IaF), Ex2 (Izh), Ex8 (AdEx), Ex9 (FN) | Simple 1–2 variable models with event-driven spikes |
 | **Conductance-based** | Ex1 (HH), Ex5 (DetCell) | Hodgkin-Huxley-style cells with gating variables |
 | **Channels & Kinetics** | Ex4 (KS), Ex10 (Q10), Ex15 (Ca), Ex18 (GHK), Ex24 (Frac) | Ion channel biophysics |
-| **Synapses** | Ex3 (Net), Ex6 (NMDA), Ex7 (STP), Ex11 (STDP), Ex20/21 (Analog/Current), Ex27 (Multi) | Synaptic dynamics and plasticity |
+| **Synapses** | Ex3 (Net), Ex6 (NMDA), Ex7 (STP), Ex20/21 (Analog/Current), Ex27 (Multi) | Synaptic dynamics and plasticity |
 | **Networks** | Ex12 (Net2), Ex13 (Instances), Ex19 (GapJ), Ex25 (MultiComp), Ex26 (Weights) | Multi-cell networks and connectivity |
 | **Other** | Ex14 (PyNN), Ex16 (Inputs), Ex17 (Tissue), Ex22 (PinskyRinzel), Ex23 (Spiketimes) | Specialized examples |
 

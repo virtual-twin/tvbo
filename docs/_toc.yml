@@ -172,8 +172,6 @@ website:
                             href: Interoperability/NeuroML/examples/Ex9_FN.qmd
                           - text: "Ex10: Q10 Temperature Dependence"
                             href: Interoperability/NeuroML/examples/Ex10_Q10.qmd
-                          - text: "Ex11: STDP"
-                            href: Interoperability/NeuroML/examples/Ex11_STDP.qmd
                           - text: "Ex12: Network 2"
                             href: Interoperability/NeuroML/examples/Ex12_Net2.qmd
                           - text: "Ex13: Population Instances"
