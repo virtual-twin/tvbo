@@ -2,6 +2,8 @@
 
 ## Code Organization Principles
 
+have a look at skills folder for context
+
 ### Where to Put Code
 
 1. **General Python Classes/Functions:** Add to `tvbo/` source code (e.g., `tvbo/data/types.py`, `tvbo/utils.py`)

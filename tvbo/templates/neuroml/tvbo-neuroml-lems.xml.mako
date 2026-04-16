@@ -516,14 +516,16 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
   inp_type = pop['input_type']
   inp_id = pop['input_id']
   inp_params = pop.get('input_params', {})
-  spike_times = pop.get('spike_times', [])
+  spike_children_xml = pop.get('spike_children_xml', '')
 %>\
-% if inp_type == 'spikeArray':
-  <spikeArray id="${inp_id}">
-% for st_idx, st_time in enumerate(spike_times):
-    <spike id="${st_idx}" time="${st_time}"/>
+% if spike_children_xml:
+  <${inp_type} id="${inp_id}"\
+% for pk, pv in inp_params.items():
+ ${pk}="${pv}"\
 % endfor
-  </spikeArray>
+>
+${spike_children_xml}
+  </${inp_type}>
 % else:
   <${inp_type} id="${inp_id}"\
 % for pk, pv in inp_params.items():

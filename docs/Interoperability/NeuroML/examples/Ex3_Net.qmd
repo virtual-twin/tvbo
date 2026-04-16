@@ -8,10 +8,10 @@ description: "Network of HH cells connected by expOneSynapse, expTwoSynapse, and
 This example connects a pre-synaptic HH cell to three post-synaptic passive
 cells via different synapse types (expOneSynapse, expTwoSynapse, alphaSynapse).
 
-The cell dynamics use proper LEMS dimensions (voltage, conductance, capacitance)
-to interface correctly with standard NeuroML synapse types. HH rate equations
-are parameterized with (rate, midpoint, scale) triples matching the standard
-HHExpLinearRate / HHExpRate / HHSigmoidRate patterns.
+Cell types use standard NeuroML types (`pointCellCondBased`) with hierarchical
+`components:` composition trees.  Synapses use standard NeuroML synapse types
+on network edges.  This gives exact numerical identity with the reference
+jNeuroML simulation.
 
 ---
 
@@ -24,169 +24,199 @@ exp = SimulationExperiment.from_string("""
 label: "NeuroML Ex3: HH Network"
 dynamics:
   name: hhcell_1
+  iri: neuroml:pointCellCondBased
   parameters:
-    C:     { value: 10.0, unit: pF }
-    g_Na:  { value: 1200.0, unit: nS }
-    g_K:   { value: 360.0, unit: nS }
-    g_L:   { value: 3.0, unit: nS }
-    E_Na:  { value: 50.0, unit: mV }
-    E_K:   { value: -77.0, unit: mV }
-    E_L:   { value: -54.3, unit: mV }
-    thresh: { value: 20.0, unit: mV }
-    rate_am:     { value: 1.0, unit: per_ms }
-    midpoint_am: { value: -40.0, unit: mV }
-    scale_am:    { value: 10.0, unit: mV }
-    rate_bm:     { value: 4.0, unit: per_ms }
-    midpoint_bm: { value: -65.0, unit: mV }
-    scale_bm:    { value: -18.0, unit: mV }
-    rate_ah:     { value: 0.07, unit: per_ms }
-    midpoint_ah: { value: -65.0, unit: mV }
-    scale_ah:    { value: -20.0, unit: mV }
-    rate_bh:     { value: 1.0, unit: per_ms }
-    midpoint_bh: { value: -35.0, unit: mV }
-    scale_bh:    { value: 10.0, unit: mV }
-    rate_an:     { value: 0.1, unit: per_ms }
-    midpoint_an: { value: -55.0, unit: mV }
-    scale_an:    { value: 10.0, unit: mV }
-    rate_bn:     { value: 0.125, unit: per_ms }
-    midpoint_bn: { value: -65.0, unit: mV }
-    scale_bn:    { value: -80.0, unit: mV }
-  derived_variables:
-    alpha_m:
-      equation:
-        rhs: "rate_am * (v - midpoint_am) / scale_am / (1 - exp(-(v - midpoint_am) / scale_am))"
-      unit: per_ms
-    beta_m:
-      equation:
-        rhs: "rate_bm * exp((v - midpoint_bm) / scale_bm)"
-      unit: per_ms
-    alpha_h:
-      equation:
-        rhs: "rate_ah * exp((v - midpoint_ah) / scale_ah)"
-      unit: per_ms
-    beta_h:
-      equation:
-        rhs: "rate_bh / (1 + exp(-(v - midpoint_bh) / scale_bh))"
-      unit: per_ms
-    alpha_n:
-      equation:
-        rhs: "rate_an * (v - midpoint_an) / scale_an / (1 - exp(-(v - midpoint_an) / scale_an))"
-      unit: per_ms
-    beta_n:
-      equation:
-        rhs: "rate_bn * exp((v - midpoint_bn) / scale_bn)"
-      unit: per_ms
-  state_variables:
-    v:
-      equation:
-        rhs: "(-g_Na * m**3 * h * (v - E_Na) - g_K * n**4 * (v - E_K) - g_L * (v - E_L) + I_syn) / C"
-      initial_value: -65.0
-      unit: mV
-    m:
-      equation: { rhs: "alpha_m * (1 - m) - beta_m * m" }
-      initial_value: 0.05
-    h:
-      equation: { rhs: "alpha_h * (1 - h) - beta_h * h" }
-      initial_value: 0.6
-    n:
-      equation: { rhs: "alpha_n * (1 - n) - beta_n * n" }
-      initial_value: 0.32
-  coupling_inputs: [I_syn]
-  events:
-    spike:
-      condition:
-        rhs: "v .gt. thresh"
+    C:      { value: 10, unit: pF }
+    v0:     { value: -65, unit: mV }
+    thresh: { value: 20, unit: mV }
+  components:
+    passive:
+      name: passive
+      iri: neuroml:ionChannelPassive
+      parameters:
+        conductance: { value: 10, unit: pS }
+        number:      { value: 300 }
+        erev:        { value: -54.3, unit: mV }
+    na:
+      name: na
+      iri: neuroml:ionChannelHH
+      parameters:
+        conductance: { value: 10, unit: pS }
+        number:      { value: 120000 }
+        erev:        { value: 50, unit: mV }
+      components:
+        m:
+          name: m
+          iri: neuroml:gateHHrates
+          parameters: { instances: { value: 3 } }
+          components:
+            forwardRate:
+              name: forwardRate
+              iri: neuroml:HHExpLinearRate
+              parameters:
+                rate:     { value: 1, unit: per_ms }
+                midpoint: { value: -40, unit: mV }
+                scale:    { value: 10, unit: mV }
+            reverseRate:
+              name: reverseRate
+              iri: neuroml:HHExpRate
+              parameters:
+                rate:     { value: 4, unit: per_ms }
+                midpoint: { value: -65, unit: mV }
+                scale:    { value: -18, unit: mV }
+        h:
+          name: h
+          iri: neuroml:gateHHrates
+          parameters: { instances: { value: 1 } }
+          components:
+            forwardRate:
+              name: forwardRate
+              iri: neuroml:HHExpRate
+              parameters:
+                rate:     { value: 0.07, unit: per_ms }
+                midpoint: { value: -65, unit: mV }
+                scale:    { value: -20, unit: mV }
+            reverseRate:
+              name: reverseRate
+              iri: neuroml:HHSigmoidRate
+              parameters:
+                rate:     { value: 1, unit: per_ms }
+                midpoint: { value: -35, unit: mV }
+                scale:    { value: 10, unit: mV }
+    k:
+      name: k
+      iri: neuroml:ionChannelHH
+      parameters:
+        conductance: { value: 10, unit: pS }
+        number:      { value: 36000 }
+        erev:        { value: -77, unit: mV }
+      components:
+        n:
+          name: n
+          iri: neuroml:gateHHrates
+          parameters: { instances: { value: 4 } }
+          components:
+            forwardRate:
+              name: forwardRate
+              iri: neuroml:HHExpLinearRate
+              parameters:
+                rate:     { value: 0.1, unit: per_ms }
+                midpoint: { value: -55, unit: mV }
+                scale:    { value: 10, unit: mV }
+            reverseRate:
+              name: reverseRate
+              iri: neuroml:HHExpRate
+              parameters:
+                rate:     { value: 0.125, unit: per_ms }
+                midpoint: { value: -65, unit: mV }
+                scale:    { value: -80, unit: mV }
 
 network:
   number_of_nodes: 5
   dynamics:
     hhcell_1:
       name: hhcell_1
+      iri: neuroml:pointCellCondBased
       parameters:
-        C:     { value: 10.0, unit: pF }
-        g_Na:  { value: 1200.0, unit: nS }
-        g_K:   { value: 360.0, unit: nS }
-        g_L:   { value: 3.0, unit: nS }
-        E_Na:  { value: 50.0, unit: mV }
-        E_K:   { value: -77.0, unit: mV }
-        E_L:   { value: -54.3, unit: mV }
-        thresh: { value: 20.0, unit: mV }
-        rate_am:     { value: 1.0, unit: per_ms }
-        midpoint_am: { value: -40.0, unit: mV }
-        scale_am:    { value: 10.0, unit: mV }
-        rate_bm:     { value: 4.0, unit: per_ms }
-        midpoint_bm: { value: -65.0, unit: mV }
-        scale_bm:    { value: -18.0, unit: mV }
-        rate_ah:     { value: 0.07, unit: per_ms }
-        midpoint_ah: { value: -65.0, unit: mV }
-        scale_ah:    { value: -20.0, unit: mV }
-        rate_bh:     { value: 1.0, unit: per_ms }
-        midpoint_bh: { value: -35.0, unit: mV }
-        scale_bh:    { value: 10.0, unit: mV }
-        rate_an:     { value: 0.1, unit: per_ms }
-        midpoint_an: { value: -55.0, unit: mV }
-        scale_an:    { value: 10.0, unit: mV }
-        rate_bn:     { value: 0.125, unit: per_ms }
-        midpoint_bn: { value: -65.0, unit: mV }
-        scale_bn:    { value: -80.0, unit: mV }
-      derived_variables:
-        alpha_m:
-          equation:
-            rhs: "rate_am * (v - midpoint_am) / scale_am / (1 - exp(-(v - midpoint_am) / scale_am))"
-          unit: per_ms
-        beta_m:
-          equation:
-            rhs: "rate_bm * exp((v - midpoint_bm) / scale_bm)"
-          unit: per_ms
-        alpha_h:
-          equation:
-            rhs: "rate_ah * exp((v - midpoint_ah) / scale_ah)"
-          unit: per_ms
-        beta_h:
-          equation:
-            rhs: "rate_bh / (1 + exp(-(v - midpoint_bh) / scale_bh))"
-          unit: per_ms
-        alpha_n:
-          equation:
-            rhs: "rate_an * (v - midpoint_an) / scale_an / (1 - exp(-(v - midpoint_an) / scale_an))"
-          unit: per_ms
-        beta_n:
-          equation:
-            rhs: "rate_bn * exp((v - midpoint_bn) / scale_bn)"
-          unit: per_ms
-      state_variables:
-        v:
-          equation:
-            rhs: "(-g_Na * m**3 * h * (v - E_Na) - g_K * n**4 * (v - E_K) - g_L * (v - E_L) + I_syn) / C"
-          initial_value: -65.0
-          unit: mV
-        m:
-          equation: { rhs: "alpha_m * (1 - m) - beta_m * m" }
-          initial_value: 0.05
-        h:
-          equation: { rhs: "alpha_h * (1 - h) - beta_h * h" }
-          initial_value: 0.6
-        n:
-          equation: { rhs: "alpha_n * (1 - n) - beta_n * n" }
-          initial_value: 0.32
-      coupling_inputs: [I_syn]
-      events:
-        spike:
-          condition:
-            rhs: "v .gt. thresh"
+        C:      { value: 10, unit: pF }
+        v0:     { value: -65, unit: mV }
+        thresh: { value: 20, unit: mV }
+      components:
+        passive:
+          name: passive
+          iri: neuroml:ionChannelPassive
+          parameters:
+            conductance: { value: 10, unit: pS }
+            number:      { value: 300 }
+            erev:        { value: -54.3, unit: mV }
+        na:
+          name: na
+          iri: neuroml:ionChannelHH
+          parameters:
+            conductance: { value: 10, unit: pS }
+            number:      { value: 120000 }
+            erev:        { value: 50, unit: mV }
+          components:
+            m:
+              name: m
+              iri: neuroml:gateHHrates
+              parameters: { instances: { value: 3 } }
+              components:
+                forwardRate:
+                  name: forwardRate
+                  iri: neuroml:HHExpLinearRate
+                  parameters:
+                    rate:     { value: 1, unit: per_ms }
+                    midpoint: { value: -40, unit: mV }
+                    scale:    { value: 10, unit: mV }
+                reverseRate:
+                  name: reverseRate
+                  iri: neuroml:HHExpRate
+                  parameters:
+                    rate:     { value: 4, unit: per_ms }
+                    midpoint: { value: -65, unit: mV }
+                    scale:    { value: -18, unit: mV }
+            h:
+              name: h
+              iri: neuroml:gateHHrates
+              parameters: { instances: { value: 1 } }
+              components:
+                forwardRate:
+                  name: forwardRate
+                  iri: neuroml:HHExpRate
+                  parameters:
+                    rate:     { value: 0.07, unit: per_ms }
+                    midpoint: { value: -65, unit: mV }
+                    scale:    { value: -20, unit: mV }
+                reverseRate:
+                  name: reverseRate
+                  iri: neuroml:HHSigmoidRate
+                  parameters:
+                    rate:     { value: 1, unit: per_ms }
+                    midpoint: { value: -35, unit: mV }
+                    scale:    { value: 10, unit: mV }
+        k:
+          name: k
+          iri: neuroml:ionChannelHH
+          parameters:
+            conductance: { value: 10, unit: pS }
+            number:      { value: 36000 }
+            erev:        { value: -77, unit: mV }
+          components:
+            n:
+              name: n
+              iri: neuroml:gateHHrates
+              parameters: { instances: { value: 4 } }
+              components:
+                forwardRate:
+                  name: forwardRate
+                  iri: neuroml:HHExpLinearRate
+                  parameters:
+                    rate:     { value: 0.1, unit: per_ms }
+                    midpoint: { value: -55, unit: mV }
+                    scale:    { value: 10, unit: mV }
+                reverseRate:
+                  name: reverseRate
+                  iri: neuroml:HHExpRate
+                  parameters:
+                    rate:     { value: 0.125, unit: per_ms }
+                    midpoint: { value: -65, unit: mV }
+                    scale:    { value: -80, unit: mV }
     hhcell_2:
       name: hhcell_2
+      iri: neuroml:pointCellCondBased
       parameters:
-        C:   { value: 10.0, unit: pF }
-        g_L: { value: 3.0, unit: nS }
-        E_L: { value: -54.3, unit: mV }
-      state_variables:
-        v:
-          equation:
-            rhs: "(-g_L * (v - E_L) + I_syn) / C"
-          initial_value: -55.0
-          unit: mV
-      coupling_inputs: [I_syn]
+        C:      { value: 10, unit: pF }
+        v0:     { value: -55, unit: mV }
+        thresh: { value: 20, unit: mV }
+      components:
+        leak:
+          name: leak
+          iri: neuroml:ionChannelPassive
+          parameters:
+            conductance: { value: 10, unit: pS }
+            number:      { value: 300 }
+            erev:        { value: -54.3, unit: mV }
   nodes:
     - id: 0
       dynamics: hhcell_1
@@ -242,7 +272,7 @@ print(f"Network nodes: {len(exp.network.nodes)}")
 
 ```{python}
 xml = exp.render("lems")
-print(xml[:2000])
+print(xml[:3000])
 ```
 
 ## 3. Run Reference

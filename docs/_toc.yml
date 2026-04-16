@@ -145,13 +145,92 @@ website:
                     contents:
                       - text: "LEMS Export"
                         href: Interoperability/NeuroML/LEMS_Export.qmd
+                      - text: "IRI vs. Inline YAML"
+                        href: Interoperability/NeuroML/IRI_vs_YAML.qmd
                       - section: "LEMS Examples"
                         href: Interoperability/NeuroML/examples/index.qmd
                         contents:
-                          - auto: Interoperability/NeuroML/examples/Ex*.qmd
-                      - section: "NML2 File Documentation"
+                          - text: "Ex0: Integrate-and-Fire"
+                            href: Interoperability/NeuroML/examples/Ex0_IaF.qmd
+                          - text: "Ex1: Hodgkin-Huxley"
+                            href: Interoperability/NeuroML/examples/Ex1_HH.qmd
+                          - text: "Ex2: Izhikevich"
+                            href: Interoperability/NeuroML/examples/Ex2_Izh.qmd
+                          - text: "Ex3: HH Network with Synapses"
+                            href: Interoperability/NeuroML/examples/Ex3_Net.qmd
+                          - text: "Ex4: Kinetic Scheme Channels"
+                            href: Interoperability/NeuroML/examples/Ex4_KS.qmd
+                          - text: "Ex5: Detailed HH Cell"
+                            href: Interoperability/NeuroML/examples/Ex5_DetCell.qmd
+                          - text: "Ex6: NMDA Synapse"
+                            href: Interoperability/NeuroML/examples/Ex6_NMDA.qmd
+                          - text: "Ex7: Short-Term Plasticity"
+                            href: Interoperability/NeuroML/examples/Ex7_STP.qmd
+                          - text: "Ex8: Adaptive Exponential IF"
+                            href: Interoperability/NeuroML/examples/Ex8_AdEx.qmd
+                          - text: "Ex9: FitzHugh-Nagumo"
+                            href: Interoperability/NeuroML/examples/Ex9_FN.qmd
+                          - text: "Ex10: Q10 Temperature Dependence"
+                            href: Interoperability/NeuroML/examples/Ex10_Q10.qmd
+                          - text: "Ex11: STDP"
+                            href: Interoperability/NeuroML/examples/Ex11_STDP.qmd
+                          - text: "Ex12: Network 2"
+                            href: Interoperability/NeuroML/examples/Ex12_Net2.qmd
+                          - text: "Ex13: Population Instances"
+                            href: Interoperability/NeuroML/examples/Ex13_Instances.qmd
+                          - text: "Ex14: PyNN Cells"
+                            href: Interoperability/NeuroML/examples/Ex14_PyNN.qmd
+                          - text: "Ex15: Calcium Dynamics"
+                            href: Interoperability/NeuroML/examples/Ex15_CaDynamics.qmd
+                          - text: "Ex16: Input Types"
+                            href: Interoperability/NeuroML/examples/Ex16_Inputs.qmd
+                          - text: "Ex17: Tissue Simulation"
+                            href: Interoperability/NeuroML/examples/Ex17_Tissue.qmd
+                          - text: "Ex18: Goldman-Hodgkin-Katz"
+                            href: Interoperability/NeuroML/examples/Ex18_GHK.qmd
+                          - text: "Ex19: Gap Junctions"
+                            href: Interoperability/NeuroML/examples/Ex19_GapJunctions.qmd
+                          - text: "Ex20: Analog Synapses"
+                            href: Interoperability/NeuroML/examples/Ex20_AnalogSynapses.qmd
+                          - text: "Ex21: Current-Based Synapses"
+                            href: Interoperability/NeuroML/examples/Ex21_CurrentBasedSynapses.qmd
+                          - text: "Ex22: Pinsky-Rinzel CA3"
+                            href: Interoperability/NeuroML/examples/Ex22_PinskyRinzel.qmd
+                          - text: "Ex23: Spike Times"
+                            href: Interoperability/NeuroML/examples/Ex23_Spiketimes.qmd
+                          - text: "Ex24: Fractional Conductance"
+                            href: Interoperability/NeuroML/examples/Ex24_FractionalConductance.qmd
+                          - text: "Ex25: Multi-Compartment Cells"
+                            href: Interoperability/NeuroML/examples/Ex25_MultiComp.qmd
+                          - text: "Ex26: Connection Weights"
+                            href: Interoperability/NeuroML/examples/Ex26_Weights.qmd
+                          - text: "Ex27: Multi-Synapses"
+                            href: Interoperability/NeuroML/examples/Ex27_MultiSynapses.qmd
+                      - section: "NML2 Documentation"
+                        href: Interoperability/NeuroML/examples/index.qmd
                         contents:
-                          - auto: Interoperability/NeuroML/examples/NML2_*.qmd
+                          - text: "Abstract Cells"
+                            href: Interoperability/NeuroML/examples/NML2_AbstractCells.qmd
+                          - text: "Single-Compartment HH Cell"
+                            href: Interoperability/NeuroML/examples/NML2_SingleCompHHCell.qmd
+                          - text: "Full Cell"
+                            href: Interoperability/NeuroML/examples/NML2_FullCell.qmd
+                          - text: "Simple Morphology"
+                            href: Interoperability/NeuroML/examples/NML2_SimpleMorphology.qmd
+                          - text: "Simple Ion Channel"
+                            href: Interoperability/NeuroML/examples/NML2_SimpleIonChannel.qmd
+                          - text: "Synapse Types"
+                            href: Interoperability/NeuroML/examples/NML2_SynapseTypes.qmd
+                          - text: "Analog Synapses"
+                            href: Interoperability/NeuroML/examples/NML2_AnalogSynapses.qmd
+                          - text: "Gap Junctions"
+                            href: Interoperability/NeuroML/examples/NML2_GapJunctions.qmd
+                          - text: "Inputs"
+                            href: Interoperability/NeuroML/examples/NML2_Inputs.qmd
+                          - text: "Instance-Based Network"
+                            href: Interoperability/NeuroML/examples/NML2_InstanceBasedNetwork.qmd
+                          - text: "Full NeuroML"
+                            href: Interoperability/NeuroML/examples/NML2_FullNeuroML.qmd
                   - section: "BIDS"
                     href: Interoperability/BIDS/index.qmd
                     contents:
