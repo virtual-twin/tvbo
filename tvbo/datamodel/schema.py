@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-04-15T22:21:15
+# Generation date: 2026-04-16T16:27:51
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -1003,6 +1003,7 @@ class Node(YAMLRoot):
     label: Optional[str] = None
     description: Optional[str] = None
     parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
+    record: Optional[Union[bool, Bool]] = True
     dynamics: Optional[Union[str, DynamicsName]] = None
     position: Optional[Union[dict, "Coordinate"]] = None
     region: Optional[str] = None
@@ -1022,6 +1023,9 @@ class Node(YAMLRoot):
             self.description = str(self.description)
 
         self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
+
+        if self.record is not None and not isinstance(self.record, Bool):
+            self.record = Bool(self.record)
 
         if self.dynamics is not None and not isinstance(self.dynamics, DynamicsName):
             self.dynamics = DynamicsName(self.dynamics)
@@ -1423,6 +1427,7 @@ class StateVariable(YAMLRoot):
     description: Optional[str] = None
     equation: Optional[Union[dict, Equation]] = None
     unit: Optional[Union[str, "UnitEnum"]] = None
+    record: Optional[Union[bool, Bool]] = True
     variable_of_interest: Optional[Union[bool, Bool]] = True
     coupling_variable: Optional[Union[bool, Bool]] = False
     equation_type: Optional[str] = "differential"
@@ -1461,6 +1466,9 @@ class StateVariable(YAMLRoot):
 
         if self.unit is not None and not isinstance(self.unit, UnitEnum):
             self.unit = UnitEnum(self.unit)
+
+        if self.record is not None and not isinstance(self.record, Bool):
+            self.record = Bool(self.record)
 
         if self.variable_of_interest is not None and not isinstance(self.variable_of_interest, Bool):
             self.variable_of_interest = Bool(self.variable_of_interest)
@@ -2076,6 +2084,7 @@ class DerivedVariable(YAMLRoot):
     description: Optional[str] = None
     equation: Optional[Union[dict, Equation]] = None
     unit: Optional[Union[str, "UnitEnum"]] = None
+    record: Optional[Union[bool, Bool]] = False
     conditional: Optional[Union[bool, Bool]] = False
     cases: Optional[Union[Union[dict, Case], list[Union[dict, Case]]]] = empty_list()
 
@@ -2099,6 +2108,9 @@ class DerivedVariable(YAMLRoot):
 
         if self.unit is not None and not isinstance(self.unit, UnitEnum):
             self.unit = UnitEnum(self.unit)
+
+        if self.record is not None and not isinstance(self.record, Bool):
+            self.record = Bool(self.record)
 
         if self.conditional is not None and not isinstance(self.conditional, Bool):
             self.conditional = Bool(self.conditional)
@@ -5102,6 +5114,9 @@ class UnitEnum(EnumDefinitionImpl):
         text="pA",
         description="Picoampere",
         meaning=QUDT["PicoA"])
+    uA_per_cm2 = PermissibleValue(
+        text="uA_per_cm2",
+        description="Microampere per square centimetre (current density)")
     pF = PermissibleValue(
         text="pF",
         description="Picofarad",
@@ -5131,6 +5146,12 @@ class UnitEnum(EnumDefinitionImpl):
     mS_per_cm2 = PermissibleValue(
         text="mS_per_cm2",
         description="Millisiemens per square centimetre (conductance density)")
+    S_per_m2 = PermissibleValue(
+        text="S_per_m2",
+        description="Siemens per square metre (conductance density, SI)")
+    nS_per_mV = PermissibleValue(
+        text="nS_per_mV",
+        description="Nanosiemens per millivolt")
     per_nC = PermissibleValue(
         text="per_nC",
         description="Reciprocal nanocoulomb (nC⁻¹)",
@@ -5188,6 +5209,13 @@ class UnitEnum(EnumDefinitionImpl):
         text="H_per_m",
         description="Henry per metre (permeability)",
         meaning=QUDT["H-PER-M"])
+    ohm = PermissibleValue(
+        text="ohm",
+        description="Ohm (Ω)",
+        meaning=QUDT["OHM"])
+    Mohm = PermissibleValue(
+        text="Mohm",
+        description="Megaohm (MΩ)")
     kohm_cm = PermissibleValue(
         text="kohm_cm",
         description="Kilo-ohm centimetre (axial resistivity)")
@@ -6097,6 +6125,9 @@ slots.source = Slot(uri=TVBO.source, name="source", curie=TVBO.curie('source'),
 
 slots.dataset_path = Slot(uri=TVBO.dataset_path, name="dataset_path", curie=TVBO.curie('dataset_path'),
                    model_uri=TVBO.dataset_path, domain=None, range=Optional[str])
+
+slots.record = Slot(uri=TVBO.record, name="record", curie=TVBO.curie('record'),
+                   model_uri=TVBO.record, domain=None, range=Optional[Union[bool, Bool]])
 
 slots.abbreviation = Slot(uri=ATOM.abbreviation, name="abbreviation", curie=ATOM.curie('abbreviation'),
                    model_uri=TVBO.abbreviation, domain=None, range=Optional[str])
@@ -7880,14 +7911,23 @@ slots.softwareEnvironment__requirements = Slot(uri=TVBO_SW.requirements, name="s
 slots.system_type = Slot(uri=TVBO.system_type, name="system_type", curie=TVBO.curie('system_type'),
                    model_uri=TVBO.system_type, domain=None, range=Optional[str])
 
+slots.Node_record = Slot(uri=TVBO.record, name="Node_record", curie=TVBO.curie('record'),
+                   model_uri=TVBO.Node_record, domain=Node, range=Optional[Union[bool, Bool]])
+
 slots.Dynamics_name = Slot(uri=TVBO.name, name="Dynamics_name", curie=TVBO.curie('name'),
                    model_uri=TVBO.Dynamics_name, domain=Dynamics, range=Union[str, DynamicsName])
 
 slots.Dynamics_system_type = Slot(uri=TVBO.system_type, name="Dynamics_system_type", curie=TVBO.curie('system_type'),
                    model_uri=TVBO.Dynamics_system_type, domain=Dynamics, range=Optional[str])
 
+slots.StateVariable_record = Slot(uri=TVBO.record, name="StateVariable_record", curie=TVBO.curie('record'),
+                   model_uri=TVBO.StateVariable_record, domain=StateVariable, range=Optional[Union[bool, Bool]])
+
 slots.Distribution_name = Slot(uri=TVBO.name, name="Distribution_name", curie=TVBO.curie('name'),
                    model_uri=TVBO.Distribution_name, domain=Distribution, range=Union[str, DistributionName])
+
+slots.DerivedVariable_record = Slot(uri=TVBO.record, name="DerivedVariable_record", curie=TVBO.curie('record'),
+                   model_uri=TVBO.DerivedVariable_record, domain=DerivedVariable, range=Optional[Union[bool, Bool]])
 
 slots.Coupling_name = Slot(uri=TVBO.name, name="Coupling_name", curie=TVBO.curie('name'),
                    model_uri=TVBO.Coupling_name, domain=Coupling, range=Union[str, CouplingName])

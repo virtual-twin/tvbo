@@ -437,7 +437,7 @@ _CONCENTRATION_MODEL_TYPES = frozenset({
 # Standard NeuroML synapse types — rendered as standalone XML components
 # with parameter attributes (no ComponentType definition needed).
 _SYNAPSE_TYPES = frozenset({
-    'expOneSynapse', 'expTwoSynapse', 'alphaSynapse',
+    'expOneSynapse', 'expTwoSynapse', 'expThreeSynapse', 'alphaSynapse',
     'alphaCurrentSynapse',
     'blockingPlasticSynapse', 'doubleSynapse',
     'gapJunction', 'linearGradedSynapse', 'gradedSynapse',
@@ -838,6 +838,7 @@ def _render_fhn_lems(experiment, cell_type):
         '',
         '  <Include file="Cells.xml"/>',
         '  <Include file="Networks.xml"/>',
+        '  <Include file="Inputs.xml"/>',
         '  <Include file="Simulation.xml"/>',
         '',
         f'  <{cell_tag} id="{dyn_id}" {cell_attrs}/>',
@@ -944,6 +945,8 @@ def _render_cell_xml(dyn, dyn_id=None, custom_types=None):
     channels = {}
     inputs = {}
     conc_models = {}
+    segments = {}
+    segment_groups = {}
     for comp_name, comp in components.items():
         comp_type = _nml_type_name(comp) or ''
         if comp_type in _CHANNEL_TYPES:
@@ -952,6 +955,10 @@ def _render_cell_xml(dyn, dyn_id=None, custom_types=None):
             inputs[comp_name] = comp
         elif comp_type in _CONCENTRATION_MODEL_TYPES:
             conc_models[comp_name] = comp
+        elif comp_type == 'segment':
+            segments[comp_name] = comp
+        elif comp_type == 'segmentGroup':
+            segment_groups[comp_name] = comp
 
     # ── Render channels with generic tree walker ──
     channel_xmls = []
@@ -1053,6 +1060,8 @@ def _render_cell_xml(dyn, dyn_id=None, custom_types=None):
 
     # ── Build cell definition XML ──
     cell_lines = []
+    segment_id_list = []
+
     if cell_type == 'pointCellCondBased':
         C_attr = _nml_attr(params.get('C'), '10pF')
         v0_attr = _nml_attr(params.get('v0'), '-65mV')
@@ -1066,8 +1075,6 @@ def _render_cell_xml(dyn, dyn_id=None, custom_types=None):
         cell_lines.append('    </pointCellCondBased>')
 
     elif cell_type == 'cell':
-        diameter = float(_nml_attr(params.get('diameter'), '10'))
-        length = float(_nml_attr(params.get('length'), '0'))
         spec_cap = _nml_attr(params.get('specificCapacitance'), '1.0 uF_per_cm2')
         init_v = _nml_attr(
             params.get('initMembPotential') or params.get('v0'), '-65.0 mV')
@@ -1075,30 +1082,121 @@ def _render_cell_xml(dyn, dyn_id=None, custom_types=None):
         resistivity_val = _nml_attr(params.get('resistivity'), '0.1 kohm_cm')
 
         cell_lines.append(f'    <cell id="{dyn_id}">')
-        cell_lines.append('        <morphology id="morphology">')
-        cell_lines.append('            <segment id="0" name="Soma">')
-        cell_lines.append(f'                <proximal x="0.0" y="0.0" z="0.0" diameter="{diameter}"/>')
-        cell_lines.append(f'                <distal x="0.0" y="0.0" z="{length}" diameter="{diameter}"/>')
-        cell_lines.append('            </segment>')
-        cell_lines.append('            <segmentGroup id="all">')
-        cell_lines.append('                <member segment="0"/>')
-        cell_lines.append('            </segmentGroup>')
-        cell_lines.append('            <segmentGroup id="soma_group">')
-        cell_lines.append('                <member segment="0"/>')
-        cell_lines.append('            </segmentGroup>')
+        cell_lines.append(f'        <morphology id="{dyn_id}_morphology">')
+
+        if segments:
+            # Multi-segment morphology from neuroml:segment modes
+            seg_list = sorted(
+                segments.items(),
+                key=lambda x: int(getattr(
+                    (x[1].parameters or {}).get('id'), 'value', 0)))
+            for seg_name, seg in seg_list:
+                sp = seg.parameters or {}
+                seg_id = int(getattr(sp.get('id'), 'value', 0))
+                segment_id_list.append(seg_id)
+                parent_param = sp.get('parent')
+                parent_id = (int(getattr(parent_param, 'value', -1))
+                             if parent_param else -1)
+                cell_lines.append(
+                    f'            <segment id ="{seg_id}" name="{seg_name}">')
+                if parent_id >= 0:
+                    cell_lines.append(
+                        f'                <parent segment="{parent_id}"/>')
+                px = sp.get('proximal_x')
+                if px is not None:
+                    cell_lines.append(
+                        f'                <proximal '
+                        f'x="{getattr(px, "value", 0)}" '
+                        f'y="{getattr(sp.get("proximal_y"), "value", 0)}" '
+                        f'z="{getattr(sp.get("proximal_z"), "value", 0)}" '
+                        f'diameter='
+                        f'"{getattr(sp.get("proximal_diameter"), "value", 1)}'
+                        f'"/>')
+                dx = sp.get('distal_x')
+                if dx is not None:
+                    cell_lines.append(
+                        f'                <distal '
+                        f'x="{getattr(dx, "value", 0)}" '
+                        f'y="{getattr(sp.get("distal_y"), "value", 0)}" '
+                        f'z="{getattr(sp.get("distal_z"), "value", 0)}" '
+                        f'diameter='
+                        f'"{getattr(sp.get("distal_diameter"), "value", 1)}'
+                        f'"/>')
+                cell_lines.append('            </segment>')
+
+            # Segment groups from neuroml:segmentGroup modes
+            for grp_name, grp in segment_groups.items():
+                gp = grp.parameters or {}
+                nlid_param = gp.get('neuroLexId')
+                nlid = (getattr(nlid_param, 'label', None)
+                        if nlid_param else None)
+                nlid_attr = f' neuroLexId="{nlid}"' if nlid else ''
+                cell_lines.append(
+                    f'            <segmentGroup id="{grp_name}"{nlid_attr}>')
+                for pn, pv in gp.items():
+                    if pn in ('neuroLexId', 'members', 'includes'):
+                        continue
+                    val = getattr(pv, 'value', pv)
+                    if val is not None:
+                        cell_lines.append(
+                            f'                <property tag="{pn}" '
+                            f'value="{int(val)}"/>')
+                members_param = gp.get('members')
+                if members_param:
+                    members_str = getattr(members_param, 'shape', '') or ''
+                    for mid in str(members_str).split(','):
+                        mid = mid.strip()
+                        if mid:
+                            cell_lines.append(
+                                f'                <member segment="{mid}"/>')
+                includes_param = gp.get('includes')
+                if includes_param:
+                    includes_str = (
+                        getattr(includes_param, 'shape', '') or '')
+                    for inc in str(includes_str).split(','):
+                        inc = inc.strip()
+                        if inc:
+                            cell_lines.append(
+                                f'                <include '
+                                f'segmentGroup="{inc}"/>')
+                cell_lines.append('            </segmentGroup>')
+        else:
+            # Single-segment morphology (backward compatible)
+            diameter = float(_nml_attr(params.get('diameter'), '10'))
+            length = float(_nml_attr(params.get('length'), '0'))
+            segment_id_list = [0]
+            cell_lines.append('            <segment id="0" name="Soma">')
+            cell_lines.append(
+                f'                <proximal x="0.0" y="0.0" z="0.0" '
+                f'diameter="{diameter}"/>')
+            cell_lines.append(
+                f'                <distal x="0.0" y="0.0" z="{length}" '
+                f'diameter="{diameter}"/>')
+            cell_lines.append('            </segment>')
+            cell_lines.append('            <segmentGroup id="all">')
+            cell_lines.append('                <member segment="0"/>')
+            cell_lines.append('            </segmentGroup>')
+            cell_lines.append('            <segmentGroup id="soma_group">')
+            cell_lines.append('                <member segment="0"/>')
+            cell_lines.append('            </segmentGroup>')
+
         cell_lines.append('        </morphology>')
         cell_lines.append('        <biophysicalProperties id="biophys">')
         cell_lines.append('            <membraneProperties>')
         for cd in channel_densities:
             cell_lines.append(cd)
-        cell_lines.append(f'                <specificCapacitance value="{spec_cap}"/>')
-        cell_lines.append(f'                <initMembPotential value="{init_v}"/>')
-        cell_lines.append(f'                <spikeThresh value="{spike_thresh}"/>')
+        cell_lines.append(
+            f'                <specificCapacitance value="{spec_cap}"/>')
+        cell_lines.append(
+            f'                <initMembPotential value="{init_v}"/>')
+        cell_lines.append(
+            f'                <spikeThresh value="{spike_thresh}"/>')
         cell_lines.append('            </membraneProperties>')
         cell_lines.append('            <intracellularProperties>')
         for sp in species_xmls:
             cell_lines.append(sp)
-        cell_lines.append(f'                <resistivity value="{resistivity_val}"/>')
+        cell_lines.append(
+            f'                <resistivity value="{resistivity_val}"/>')
         cell_lines.append('            </intracellularProperties>')
         cell_lines.append('        </biophysicalProperties>')
         cell_lines.append('    </cell>')
@@ -1112,6 +1210,7 @@ def _render_cell_xml(dyn, dyn_id=None, custom_types=None):
         'custom_types': custom_types,
         'cell_type': cell_type,
         'dyn_id': dyn_id,
+        'segment_ids': segment_id_list,
     }
 
 
@@ -1181,12 +1280,17 @@ def _render_standard_neuroml_lems(experiment):
     sim_id = 'sim_' + (safe_id(label) if label else dyn_id)
 
     # ── Assemble XML ──
+    _has_inputs = bool(cell_result.get('input_xmls'))
     lines = [
         '<Lems>',
         f'  <Target component="{sim_id}"/>',
         '',
         '  <Include file="Cells.xml"/>',
         '  <Include file="Networks.xml"/>',
+    ]
+    if _has_inputs:
+        lines.append('  <Include file="Inputs.xml"/>')
+    lines += [
         '  <Include file="Simulation.xml"/>',
         '',
     ]
@@ -1372,12 +1476,18 @@ def _render_network_standard_neuroml_lems(experiment):
                 for pn, pv in merged_params.items():
                     val = getattr(pv, 'value', pv)
                     unit = getattr(pv, 'unit', None) or ''
+                    # For string-valued params (e.g. synapse, spikeTarget),
+                    # fall back to description
+                    if val is None:
+                        val = getattr(pv, 'description', None)
+                    if val is None:
+                        continue
                     if unit:
                         nml_unit = _TVBO_TO_NML_UNIT.get(str(unit), str(unit))
                         param_strs[str(pn)] = f"{val} {nml_unit}"
                     else:
                         param_strs[str(pn)] = str(val)
-                input_id = f"{safe_id(dyn_name)}_{nid}"
+                input_id = safe_id(dyn_name)
                 input_nodes[nid] = {
                     'type': _nml_type,
                     'id': input_id,
@@ -1387,9 +1497,34 @@ def _render_network_standard_neuroml_lems(experiment):
                 attr_parts = [f'id="{input_id}"']
                 for pk, pv_str in param_strs.items():
                     attr_parts.append(f'{pk}="{pv_str}"')
-                input_xmls_all.append(
-                    f'    <{_nml_type} {" ".join(attr_parts)}/>'
-                )
+
+                # compoundInput: render children from components
+                if _nml_type == 'compoundInput':
+                    children_xml = _render_compound_input_children(
+                        _dyn_lib_obj, indent=8)
+                    input_xmls_all.append(
+                        f'    <{_nml_type} {" ".join(attr_parts)}>\n'
+                        f'{children_xml}\n'
+                        f'    </{_nml_type}>'
+                    )
+                # timedSynapticInput: render <spike> children from events
+                elif _nml_type == 'timedSynapticInput':
+                    spike_xml = _render_event_children(
+                        _dyn_lib_obj, time_scale)
+                    if spike_xml:
+                        input_xmls_all.append(
+                            f'    <{_nml_type} {" ".join(attr_parts)}>\n'
+                            f'{spike_xml}\n'
+                            f'    </{_nml_type}>'
+                        )
+                    else:
+                        input_xmls_all.append(
+                            f'    <{_nml_type} {" ".join(attr_parts)}/>'
+                        )
+                else:
+                    input_xmls_all.append(
+                        f'    <{_nml_type} {" ".join(attr_parts)}/>'
+                    )
             continue
 
         if is_event_source:
@@ -1413,8 +1548,8 @@ def _render_network_standard_neuroml_lems(experiment):
                         else:
                             param_strs[str(pn)] = str(val)
 
-                comp_id = f"{safe_id(dyn_name)}_{nid}"
-                pop_id = f"{safe_id(dyn_name)}_{nid}_pop"
+                comp_id = safe_id(dyn_name)
+                pop_id = f"{safe_id(dyn_name)}_pop"
                 node_pop_map[nid] = (pop_id, 0)
                 populations.append({
                     "id": pop_id,
@@ -1480,14 +1615,40 @@ def _render_network_standard_neuroml_lems(experiment):
             node_pop_map[nid] = (pop_id, idx)
             node_ids.append(nid)
 
+        # Detect positioned nodes → populationList
+        has_positions = any(
+            getattr(n, 'position', None) is not None
+            for n in group_nodes)
+        node_positions = []
+        if has_positions:
+            for node in group_nodes:
+                pos = getattr(node, 'position', None)
+                if pos:
+                    node_positions.append(
+                        (pos.x or 0, pos.y or 0, pos.z or 0))
+                else:
+                    node_positions.append((0, 0, 0))
+
+        seg_ids = (cell_result.get('segment_ids', [])
+                   if cell_result else [])
+
         populations.append({
             "id": pop_id,
             "component": cell_id,
             "size": len(group_nodes),
             "node_ids": node_ids,
             "dyn_name": dyn_name,
+            "is_populationlist": has_positions,
+            "node_positions": node_positions,
+            "segment_ids": seg_ids,
         })
-        output_pops.append((pop_id, len(group_nodes), sv_var))
+        # Respect record flag on nodes (default True)
+        recorded_nodes = [
+            n for n in group_nodes
+            if getattr(n, 'record', None) is not False
+        ]
+        if recorded_nodes:
+            output_pops.append((pop_id, len(recorded_nodes), sv_var))
 
     # ── Process edges → synapses + connections + inputs ──
     synapse_set = {}    # dedup_key -> synapse_id
@@ -1510,14 +1671,24 @@ def _render_network_standard_neuroml_lems(experiment):
             inp_edge_params = _normalize_edge_params(
                 getattr(edge, 'parameters', None))
             inp_weight = None
+            inp_segmentId = None
+            inp_fractionAlong = None
             for pn, pv in inp_edge_params.items():
-                if str(pn) == 'weight':
-                    inp_weight = float(getattr(pv, 'value', pv))
+                pn_str = str(pn)
+                val = getattr(pv, 'value', pv)
+                if pn_str == 'weight':
+                    inp_weight = float(val) if val is not None else None
+                elif pn_str == 'segmentId' and val is not None:
+                    inp_segmentId = int(float(val))
+                elif pn_str == 'fractionAlong' and val is not None:
+                    inp_fractionAlong = float(val)
             explicit_inputs.append({
                 'input_id': inp_info['id'],
                 'target_pop': tgt_pop,
                 'target_idx': tgt_idx,
                 'weight': inp_weight,
+                'segmentId': inp_segmentId,
+                'fractionAlong': inp_fractionAlong,
             })
             continue
 
@@ -1527,10 +1698,12 @@ def _render_network_standard_neuroml_lems(experiment):
         src_pop, src_idx = node_pop_map[src]
         tgt_pop, tgt_idx = node_pop_map[tgt]
 
-        # Get synapse type from coupling name.
-        # If the coupling name matches a dynamics library entry, resolve
+        # Get synapse type from coupling or dynamics name.
+        # If the coupling/dynamics name matches a dynamics library entry, resolve
         # the IRI and parameters from that entry (TVBO-native definition).
         edge_coupling = getattr(edge, 'coupling', None)
+        if not edge_coupling:
+            edge_coupling = getattr(edge, 'dynamics', None)
         resolved_syn_dyn = None
         if edge_coupling:
             coup_str = str(edge_coupling)
@@ -1543,8 +1716,14 @@ def _render_network_standard_neuroml_lems(experiment):
         weight = None
         delay = None
         syn_params = {}  # {name: "formatted value string"}
+        # Segment targeting parameters
+        _seg_targeting = {}
 
-        # 1) Edge parameters → weight/delay + synapse params
+        # 1) Edge parameters → weight/delay + segment targeting + synapse params
+        _SEG_TARGETING_KEYS = {
+            'preSegmentId', 'preFractionAlong',
+            'postSegmentId', 'postFractionAlong',
+        }
         for pname, pval in edge_params.items():
             pname = str(pname)
             val = getattr(pval, 'value', pval)
@@ -1555,6 +1734,12 @@ def _render_network_standard_neuroml_lems(experiment):
                 delay = val
                 if unit:
                     delay = f"{val} {unit}"
+            elif pname in _SEG_TARGETING_KEYS:
+                if val is not None:
+                    if 'Segment' in pname:
+                        _seg_targeting[pname] = int(float(val))
+                    else:
+                        _seg_targeting[pname] = float(val)
             else:
                 if unit:
                     nml_unit = _TVBO_TO_NML_UNIT.get(str(unit), str(unit))
@@ -1636,15 +1821,65 @@ def _render_network_standard_neuroml_lems(experiment):
             'delay': delay,
             'conn_class': conn_class,
             'pre_component': pre_component,
+            **_seg_targeting,
         })
 
     # ── Assemble LEMS XML ──
+
+    # Detect if PyNN types are used (cells, synapses, or spike sources)
+    _PYNN_TYPES = {
+        'IF_curr_alpha', 'IF_curr_exp', 'IF_cond_alpha', 'IF_cond_exp',
+        'EIF_cond_exp_isfa_ista', 'EIF_cond_alpha_isfa_ista', 'HH_cond_exp',
+        'expCondSynapse', 'alphaCondSynapse', 'expCurrSynapse',
+        'alphaCurrSynapse', 'SpikeSourcePoisson',
+    }
+    _used_nml_types = set()
+    for pop in populations:
+        _pop_dyn = dynamics_lib.get(pop['dyn_name'])
+        if _pop_dyn:
+            _t = _nml_type_name(_pop_dyn)
+            if _t:
+                _used_nml_types.add(_t)
+    for sid in synapse_set.values():
+        _used_nml_types.add(sid)
+    for inp in input_nodes.values():
+        _used_nml_types.add(inp['type'])
+    # Also check input components rendered (current inputs)
+    for inp_xml in input_xmls_all:
+        for pt in _PYNN_TYPES:
+            if f'<{pt} ' in inp_xml or f'<{pt}/' in inp_xml:
+                _used_nml_types.add(pt)
+    needs_pynn = bool(_used_nml_types & _PYNN_TYPES)
+
+    # Render standalone synapse components from dynamics_lib that weren't
+    # already rendered as edge couplings (e.g. synapses referenced by
+    # poissonFiringSynapse via synapse="..." attribute).
+    rendered_syn_ids = set(synapse_set.values())
+    for dlib_name, dlib_obj in dynamics_lib.items():
+        dlib_type = _nml_type_name(dlib_obj)
+        if dlib_type and dlib_type in _SYNAPSE_TYPES:
+            sid = safe_id(dlib_name)
+            if sid not in rendered_syn_ids:
+                syn_lines = _render_nml_subtree(
+                    dlib_obj, dlib_name, indent=4, custom_types=None)
+                if syn_lines:
+                    synapse_xmls.append('\n'.join(syn_lines))
+                    rendered_syn_ids.add(sid)
+
+    needs_inputs_include = bool(input_nodes) or any(
+        p.get('is_input') for p in populations)
     lines = [
         '<Lems>',
         f'  <Target component="{sim_id}"/>',
         '',
         '  <Include file="Cells.xml"/>',
-        '  <Include file="Networks.xml"/>',
+    ]
+    if needs_pynn:
+        lines.append('  <Include file="PyNN.xml"/>')
+    lines.append('  <Include file="Networks.xml"/>')
+    if needs_inputs_include:
+        lines.append('  <Include file="Inputs.xml"/>')
+    lines += [
         '  <Include file="Simulation.xml"/>',
         '',
     ]
@@ -1681,14 +1916,28 @@ def _render_network_standard_neuroml_lems(experiment):
     # Network block
     lines.append('    <network id="net1">')
 
+    # Build pop lookup
+    pop_map = {p['id']: p for p in populations}
+
     # Populations
     for pop in populations:
         if pop.get('is_input'):
             continue
-        lines.append(
-            f'        <population id="{pop["id"]}" '
-            f'component="{pop["component"]}" size="{pop["size"]}"/>'
-        )
+        if pop.get('is_populationlist'):
+            lines.append(
+                f'        <population id="{pop["id"]}" '
+                f'type="populationList" component="{pop["component"]}">')
+            for idx, pos in enumerate(pop['node_positions']):
+                lines.append(
+                    f'            <instance id="{idx}">'
+                    f'<location x="{pos[0]}" y="{pos[1]}" z="{pos[2]}"/>'
+                    f'</instance>')
+            lines.append('        </population>')
+        else:
+            lines.append(
+                f'        <population id="{pop["id"]}" '
+                f'component="{pop["component"]}" size="{pop["size"]}"/>'
+            )
 
     # Event source populations (spikeGenerator, spikeArray, etc.)
     for pop in populations:
@@ -1703,38 +1952,99 @@ def _render_network_standard_neuroml_lems(experiment):
     elec_conns = [c for c in connections if c['conn_class'] == 'electrical']
     cont_conns = [c for c in connections if c['conn_class'] == 'continuous']
 
-    # Chemical projections (group by from_pop, to_pop, synapse)
+    # Chemical connections — use <synapticConnection> for simple
+    # connections (universally compatible with all cell types including
+    # pointCellCondBased) and <projection>+<connection> only when segment
+    # targeting attributes are present (multi-compartment cells).
     if chem_conns:
-        chem_projs = OrderedDict()
-        for conn in chem_conns:
-            key = (conn['from_pop'], conn['to_pop'], conn['synapse'])
-            chem_projs.setdefault(key, []).append(conn)
-        for pidx, ((fp, tp, syn), proj_conns) in enumerate(
-            chem_projs.items()
-        ):
-            proj_id = f"projection{pidx}"
-            lines.append(
-                f'        <projection id="{proj_id}" '
-                f'presynapticPopulation="{fp}" '
-                f'postsynapticPopulation="{tp}" synapse="{syn}">')
-            for cidx, conn in enumerate(proj_conns):
-                pre = f'../{fp}[{conn["from_idx"]}]'
-                post = f'../{tp}[{conn["to_idx"]}]'
+        _SEG_KEYS = {'preSegmentId', 'preFractionAlong',
+                     'postSegmentId', 'postFractionAlong'}
+        needs_projection = any(
+            any(conn.get(sk) is not None for sk in _SEG_KEYS)
+            for conn in chem_conns
+        )
+
+        if needs_projection:
+            # Projection mode — needed for segment targeting
+            chem_projs = OrderedDict()
+            for conn in chem_conns:
+                key = (conn['from_pop'], conn['to_pop'], conn['synapse'])
+                chem_projs.setdefault(key, []).append(conn)
+            for pidx, ((fp, tp, syn), proj_conns) in enumerate(
+                chem_projs.items()
+            ):
+                proj_id = f"projection{pidx}"
+                lines.append(
+                    f'        <projection id="{proj_id}" '
+                    f'presynapticPopulation="{fp}" '
+                    f'postsynapticPopulation="{tp}" synapse="{syn}">')
+                for cidx, conn in enumerate(proj_conns):
+                    fp_pop = pop_map.get(fp)
+                    tp_pop = pop_map.get(tp)
+                    if fp_pop and fp_pop.get('is_populationlist'):
+                        pre = (f'../{fp}/{conn["from_idx"]}/'
+                               f'{fp_pop["component"]}')
+                    else:
+                        pre = f'../{fp}[{conn["from_idx"]}]'
+                    if tp_pop and tp_pop.get('is_populationlist'):
+                        post = (f'../{tp}/{conn["to_idx"]}/'
+                                f'{tp_pop["component"]}')
+                    else:
+                        post = f'../{tp}[{conn["to_idx"]}]'
+
+                    seg_attrs = ''
+                    for sk in _SEG_KEYS:
+                        sv = conn.get(sk)
+                        if sv is not None:
+                            seg_attrs += f' {sk}="{sv}"'
+
+                    if (conn.get('weight') is not None
+                            or conn.get('delay') is not None):
+                        w = conn.get('weight', 1.0) or 1.0
+                        d = conn.get('delay', '0ms') or '0ms'
+                        lines.append(
+                            f'            <connectionWD id="{cidx}" '
+                            f'preCellId="{pre}" postCellId="{post}" '
+                            f'weight="{w}" delay="{d}"{seg_attrs}/>')
+                    else:
+                        lines.append(
+                            f'            <connection id="{cidx}" '
+                            f'preCellId="{pre}" '
+                            f'postCellId="{post}"{seg_attrs}/>')
+                lines.append('        </projection>')
+        else:
+            # synapticConnection mode — works with all cell types
+            for conn in chem_conns:
+                fp = conn['from_pop']
+                tp = conn['to_pop']
+                syn = conn['synapse']
+                fp_pop = pop_map.get(fp)
+                tp_pop = pop_map.get(tp)
+                if fp_pop and fp_pop.get('is_populationlist'):
+                    pre = (f'{fp}/{conn["from_idx"]}/'
+                           f'{fp_pop["component"]}')
+                else:
+                    pre = f'{fp}[{conn["from_idx"]}]'
+                if tp_pop and tp_pop.get('is_populationlist'):
+                    post = (f'{tp}/{conn["to_idx"]}/'
+                            f'{tp_pop["component"]}')
+                else:
+                    post = f'{tp}[{conn["to_idx"]}]'
+
                 if (conn.get('weight') is not None
                         or conn.get('delay') is not None):
                     w = conn.get('weight', 1.0) or 1.0
                     d = conn.get('delay', '0ms') or '0ms'
                     lines.append(
-                        f'            <connectionWD id="{cidx}" '
-                        f'preCellId="{pre}" postCellId="{post}" '
-                        f'weight="{w}" delay="{d}" '
-                        f'destination="synapses"/>')
+                        f'        <synapticConnectionWD from="{pre}" '
+                        f'to="{post}" synapse="{syn}" '
+                        f'destination="synapses" '
+                        f'weight="{w}" delay="{d}"/>')
                 else:
                     lines.append(
-                        f'            <connection id="{cidx}" '
-                        f'preCellId="{pre}" postCellId="{post}" '
+                        f'        <synapticConnection from="{pre}" '
+                        f'to="{post}" synapse="{syn}" '
                         f'destination="synapses"/>')
-            lines.append('        </projection>')
 
     # Electrical projections (gap junctions)
     if elec_conns:
@@ -1796,10 +2106,18 @@ def _render_network_standard_neuroml_lems(experiment):
                         f'postComponent="{syn}"/>')
             lines.append('        </continuousProjection>')
 
-    # Explicit inputs (current injection) — use <inputList>/<inputW> if weighted
-    has_weighted = any(inp.get('weight') is not None for inp in explicit_inputs)
-    if has_weighted:
-        # Group by (input_id, target_pop) → one inputList per group
+    # Explicit inputs — use <inputList> when weighted, segment-targeted,
+    # or targeting a populationList; otherwise use <explicitInput>.
+    has_weighted = any(
+        inp.get('weight') is not None for inp in explicit_inputs)
+    has_segment_targeting = any(
+        inp.get('segmentId') is not None for inp in explicit_inputs)
+    needs_input_list = (
+        has_weighted or has_segment_targeting
+        or any(pop_map.get(inp['target_pop'], {}).get('is_populationlist')
+               for inp in explicit_inputs))
+
+    if needs_input_list:
         from collections import OrderedDict as _OD
         input_groups = _OD()
         for inp in explicit_inputs:
@@ -1811,16 +2129,27 @@ def _render_network_standard_neuroml_lems(experiment):
                 f'        <inputList id="inputList_{gidx}" '
                 f'component="{inp_id}" population="{tgt_pop}">')
             for iidx, inp in enumerate(group):
+                tp_pop = pop_map.get(tgt_pop)
+                if tp_pop and tp_pop.get('is_populationlist'):
+                    target = (f'../{tgt_pop}/{inp["target_idx"]}/'
+                              f'{tp_pop["component"]}')
+                else:
+                    target = f'../{tgt_pop}[{inp["target_idx"]}]'
+                seg_attrs = ''
+                if inp.get('segmentId') is not None:
+                    seg_attrs += f' segmentId="{inp["segmentId"]}"'
+                if inp.get('fractionAlong') is not None:
+                    seg_attrs += f' fractionAlong="{inp["fractionAlong"]}"'
                 w = inp.get('weight')
                 if w is not None:
                     lines.append(
                         f'            <inputW id="{iidx}" '
-                        f'target="../{tgt_pop}[{inp["target_idx"]}]" '
+                        f'target="{target}"{seg_attrs} '
                         f'destination="synapses" weight="{w}"/>')
                 else:
                     lines.append(
                         f'            <input id="{iidx}" '
-                        f'target="../{tgt_pop}[{inp["target_idx"]}]" '
+                        f'target="{target}"{seg_attrs} '
                         f'destination="synapses"/>')
             lines.append('        </inputList>')
     else:
@@ -1835,21 +2164,56 @@ def _render_network_standard_neuroml_lems(experiment):
     lines.append('')
 
     # Simulation block with output columns
+    seed = getattr(integration, 'seed', None) if integration else None
+    if seed is None and integration:
+        int_params = getattr(integration, 'parameters', None) or {}
+        seed_param = int_params.get('seed')
+        if seed_param is not None:
+            seed = getattr(seed_param, 'value', seed_param)
+    seed_attr = f' seed="{int(seed)}"' if seed is not None else ''
     lines.append(
         f'    <Simulation id="{sim_id}" length="{duration}{time_scale}" '
-        f'step="{dt}{time_scale}" target="net1">'
+        f'step="{dt}{time_scale}" target="net1"{seed_attr}>'
     )
-    lines.append(f'        <OutputFile id="of0" fileName="results/{dyn_id}.dat">')
 
+    of_idx = 0
     for pop_id, pop_size, sv_var in output_pops:
-        for idx in range(pop_size):
-            col_id = f"{pop_id}_{idx}_{sv_var}"
-            lines.append(
-                f'            <OutputColumn id="{col_id}" '
-                f'quantity="{pop_id}[{idx}]/{sv_var}"/>'
-            )
+        pop_obj = pop_map.get(pop_id)
+        seg_ids = pop_obj.get('segment_ids', []) if pop_obj else []
+        is_poplist = (pop_obj.get('is_populationlist', False)
+                      if pop_obj else False)
+        comp = pop_obj.get('component', '') if pop_obj else ''
 
-    lines.append('        </OutputFile>')
+        if seg_ids and len(seg_ids) > 1 and is_poplist:
+            # Multi-compartment: separate OutputFile per cell instance
+            for idx in range(pop_size):
+                lines.append(
+                    f'        <OutputFile id="of{of_idx}" '
+                    f'fileName="results/{comp}_{idx}.dat">')
+                for seg_id in seg_ids:
+                    col_id = f"{idx}_{seg_id}"
+                    lines.append(
+                        f'            <OutputColumn id="{col_id}" '
+                        f'quantity="{pop_id}/{idx}/{comp}/{seg_id}/'
+                        f'{sv_var}"/>')
+                lines.append('        </OutputFile>')
+                of_idx += 1
+        else:
+            lines.append(
+                f'        <OutputFile id="of{of_idx}" '
+                f'fileName="results/{comp or dyn_id}.dat">')
+            for idx in range(pop_size):
+                col_id = f"{pop_id}_{idx}_{sv_var}"
+                if is_poplist:
+                    quantity = f'{pop_id}/{idx}/{comp}/{sv_var}'
+                else:
+                    quantity = f'{pop_id}[{idx}]/{sv_var}'
+                lines.append(
+                    f'            <OutputColumn id="{col_id}" '
+                    f'quantity="{quantity}"/>')
+            lines.append('        </OutputFile>')
+            of_idx += 1
+
     lines.append('    </Simulation>')
     lines.append('')
     lines.append('</Lems>')
@@ -1860,22 +2224,49 @@ def _render_network_standard_neuroml_lems(experiment):
 # ── Standard NeuroML input type detection ────────────────────────────
 
 # Current injection sources: standalone <Component>, injected via <explicitInput>
+# poissonFiringSynapse / transientPoissonFiringSynapse are combined spike+synapse
+# components applied via <explicitInput destination="synapses">.
 CURRENT_INPUT_TYPES = frozenset({
     'pulseGenerator', 'pulseGeneratorDL',
-    'compoundPulseGenerator', 'rampGenerator', 'rampGeneratorDL',
+    'compoundPulseGenerator', 'compoundInput',
+    'sineGenerator', 'sineGeneratorDL',
+    'rampGenerator', 'rampGeneratorDL',
     'voltageClamp', 'voltageClampTriple',
+    'poissonFiringSynapse', 'transientPoissonFiringSynapse',
+    'timedSynapticInput',
 })
 
 # Event (spike) sources: become <population> with synapticConnection
 EVENT_SOURCE_TYPES = frozenset({
     'spikeGenerator', 'spikeGeneratorRandom', 'spikeGeneratorRefPoisson',
     'spikeGeneratorPoisson', 'spikeArray',
-    'poissonFiringSynapse', 'transientPoissonFiringSynapse',
-    'timedSynapticInput',
     'SpikeSourcePoisson',
 })
 
 ALL_INPUT_TYPES = CURRENT_INPUT_TYPES | EVENT_SOURCE_TYPES
+
+
+def _render_compound_input_children(dyn_obj, indent=8):
+    """Render child input components of a compoundInput from Dynamics.components.
+
+    Each child component (pulseGenerator, sineGenerator, etc.) is rendered as
+    a self-closing XML element with its parameters as attributes.
+    """
+    components = getattr(dyn_obj, 'components', None) or getattr(dyn_obj, 'modes', None) or {}
+    if not components:
+        return ''
+    pad = ' ' * indent
+    lines = []
+    for comp_name, comp_obj in components.items():
+        comp_iri = getattr(comp_obj, 'iri', '') or ''
+        comp_type = comp_iri.split(':', 1)[1] if comp_iri.startswith('neuroml:') else str(comp_name)
+        comp_id = safe_id(str(comp_name))
+        attr_parts = [f'id="{comp_id}"']
+        params = getattr(comp_obj, 'parameters', None) or {}
+        for pn, pv in params.items():
+            attr_parts.append(f'{pn}="{_nml_attr(pv)}"')
+        lines.append(f'{pad}<{comp_type} {" ".join(attr_parts)}/>')
+    return '\n'.join(lines)
 
 
 def _render_event_children(dyn_obj, time_scale='ms', indent=8):
@@ -1970,7 +2361,7 @@ def _build_network_context(experiment):
                     val = getattr(pv, 'value', pv)
                     unit = getattr(pv, 'unit', None) or ''
                     param_strs[str(pn)] = f"{val}{unit}"
-                input_id = f"{safe_id(dyn_name)}_{nid}"
+                input_id = safe_id(dyn_name)
                 input_nodes[nid] = {
                     'type': _nml_type,
                     'id': input_id,
@@ -1994,8 +2385,8 @@ def _build_network_context(experiment):
                     unit = getattr(pv, 'unit', None) or ''
                     if val is not None:
                         param_strs[str(pn)] = f"{val}{unit}"
-                comp_id = f"{safe_id(dyn_name)}_{nid}"
-                pop_id = f"{safe_id(dyn_name)}_{nid}_pop"
+                comp_id = safe_id(dyn_name)
+                pop_id = f"{safe_id(dyn_name)}_pop"
                 node_pop_map[nid] = (pop_id, 0)
                 spike_children = _render_event_children(dyn_obj, ts)
                 populations.append({
@@ -2385,29 +2776,26 @@ def build_lems_context(experiment):
     if regime_data and net_ctx is None and not has_refract_param:
         regime_data = None
 
-    # ── Dimension/symbol helpers: conditional on whether model is dimensioned ──
-    _needs_sec = not _model_has_time_units
-    if _needs_sec:
-        # Dimensionless model: suppress dimensions EXCEPT for pure time params.
-        # Parameters with unit="ms"/"s" (LEMS dimension "time") must keep
-        # dimension="time" so LEMS converts their values to SI seconds,
-        # allowing correct comparison with the built-in time variable ``t``
-        # (e.g. pulse_delay, pulse_duration).
-        #
-        # Rate constants (per_ms → "per_time") and all other non-time
-        # dimensions are suppressed to "none" — they are numerical
-        # coefficients in the dimensionless equation.
-        def _lems_dim(unit):
-            if unit_to_lems_dimension(unit) == "time":
-                return "time"
-            return "none"
-        def _lems_sym(unit):
-            if unit_to_lems_dimension(unit) == "time":
-                return unit_to_lems_symbol(unit)
-            return ""
-    else:
-        _lems_dim = unit_to_lems_dimension
-        _lems_sym = unit_to_lems_symbol
+    # ── Dimension/symbol helpers ──
+    # Use real LEMS dimensions and symbols so that jNeuroML outputs SI.
+    # Parameter values in the YAML are in model units (e.g. -50 mV); the
+    # LEMS symbol suffix (e.g. "mV") tells LEMS how to convert to SI.
+    def _lems_dim(unit):
+        return unit_to_lems_dimension(unit)
+    def _lems_sym(unit):
+        return unit_to_lems_symbol(unit)
+
+    # needs_sec: whether TimeDerivative needs "/ SEC" to convert from
+    # model time to SI seconds.  When all parameters and state variables
+    # carry real LEMS dimensions, LEMS handles unit conversion natively
+    # (e.g. tau="30 ms" → 0.03 s internally), so / SEC would double-count.
+    # When any variable is dimensionless ("none"), the equations use raw
+    # numbers in model-time units, so / SEC provides the numeric scaling.
+    _all_dimensioned = all(
+        unit_to_lems_dimension(getattr(p, 'unit', None)) != "none"
+        for p in list(params.values()) + list(svs.values()) + list(dvs.values())
+    )
+    _needs_sec = (time_scale != "s") and not _all_dimensioned
 
     ctx = dict(
         dyn=dyn,
@@ -2436,6 +2824,7 @@ def build_lems_context(experiment):
         safe_id=safe_id,
         time_scale=time_scale,
         needs_sec=_needs_sec,
+        all_dimensioned=_all_dimensioned,
         max_output_nodes=100,
         # Regime rendering for spike events
         regime_data=regime_data,
@@ -2510,13 +2899,11 @@ def build_lems_context(experiment):
                 if getattr(getattr(v, 'condition', None), 'rhs', None) is not None
             ]
 
-            ct_needs_sec = not ct_has_time_units
-            if ct_needs_sec:
-                ct_lems_dim = lambda u: "time" if unit_has_time_dimension(u) else "none"
-                ct_lems_sym_fn = lambda u: unit_to_lems_symbol(u) if unit_has_time_dimension(u) else ""
-            else:
-                ct_lems_dim = unit_to_lems_dimension
-                ct_lems_sym_fn = unit_to_lems_symbol
+            # Use real LEMS dimensions so jNeuroML outputs SI.
+            ct_time_scale = str(getattr(getattr(ct_dyn, 'time_scale', None), 'value', time_scale) or time_scale)
+            ct_needs_sec = ct_time_scale != "s"
+            ct_lems_dim = lambda u: unit_to_lems_dimension(u)
+            ct_lems_sym_fn = lambda u: unit_to_lems_symbol(u)
 
             cell_contexts[ct_name] = {
                 "dyn": ct_dyn,
@@ -2572,13 +2959,10 @@ def build_lems_context(experiment):
                 has_i_exposure = 'i' in ct_dvs or any(str(k) == 'i' for k in ct_svs)
                 has_v_req = any(str(ci) == 'v' for ci in ct_coupling_inputs)
 
-                syn_needs_sec = not ct_has_time_units
-                if syn_needs_sec:
-                    syn_lems_dim = lambda u: "none"
-                    syn_lems_sym_fn = lambda u: ""
-                else:
-                    syn_lems_dim = unit_to_lems_dimension
-                    syn_lems_sym_fn = unit_to_lems_symbol
+                # Use real LEMS dimensions so jNeuroML outputs SI.
+                syn_needs_sec = True  # synapse CTs always need SEC
+                syn_lems_dim = lambda u: unit_to_lems_dimension(u)
+                syn_lems_sym_fn = lambda u: unit_to_lems_symbol(u)
 
                 cell_contexts[ct_name] = {
                     "dyn": ct_dyn,
@@ -2958,8 +3342,15 @@ class NeuroMLAdapter(BaseAdapter):
                 _dnml = _diri.split(':', 1)[1] if _diri.startswith('neuroml:') else dname
                 if _dnml in CURRENT_INPUT_TYPES or _dnml in EVENT_SOURCE_TYPES:
                     continue
+                # Respect record flag on nodes (default True)
+                recorded = [
+                    n for n in gnodes
+                    if getattr(n, 'record', None) is not False
+                ]
+                if not recorded:
+                    continue
                 pop_id = safe_id(dname) + "_pop"
-                pop_size = len(gnodes)
+                pop_size = len(recorded)
                 _std_net_output_pops.append((pop_id, pop_size, 'v'))
 
             sv_names = ['v']
@@ -2995,25 +3386,87 @@ class NeuroMLAdapter(BaseAdapter):
             # Different backends write output to different locations:
             # jNeuroML/NEURON respect the LEMS path ("results/*.dat"),
             # Brian2 and EDEN write to the working directory.
-            dat_files = list(tmpdir.glob("results/*.dat"))
+            dat_files = sorted(tmpdir.glob("results/*.dat"))
             if not dat_files:
-                dat_files = list(tmpdir.glob("*.dat"))
+                dat_files = sorted(tmpdir.glob("*.dat"))
             if not dat_files:
                 raise RuntimeError(
                     f"Backend {backend!r} produced no .dat output files "
                     f"in {tmpdir}"
                 )
 
-            raw = np.loadtxt(str(dat_files[0]))
-
-        time_data = raw[:, 0]
-        values_data = raw[:, 1:]
+            if len(dat_files) == 1:
+                raw = np.loadtxt(str(dat_files[0]))
+                time_data = raw[:, 0]
+                values_data = raw[:, 1:]
+            else:
+                # Multi-population or multi-compartment: each file has its own
+                # columns.  Load all and horizontally concatenate value columns.
+                # Sort by stem to get deterministic order matching OutputFile order.
+                dat_by_stem = {
+                    f.stem: np.loadtxt(str(f))
+                    for f in sorted(dat_files, key=lambda f: f.stem)
+                }
+                first = next(iter(dat_by_stem.values()))
+                time_data = first[:, 0]
+                value_parts = []
+                if _is_std_network and _std_net_output_pops:
+                    # Try to match file stems to output pops/components
+                    matched_stems = set()
+                    for pop_id, pop_size, sv_var in _std_net_output_pops:
+                        comp = pop_id.removesuffix("_pop")
+                        # Per-cell files: comp_0.dat, comp_1.dat, ...
+                        cell_files = sorted(
+                            [s for s in dat_by_stem
+                             if re.match(rf'^{re.escape(comp)}_\d+$', s)],
+                            key=lambda s: int(s.rsplit('_', 1)[1]))
+                        if cell_files:
+                            for cf in cell_files:
+                                value_parts.append(dat_by_stem[cf][:, 1:])
+                                matched_stems.add(cf)
+                        elif comp in dat_by_stem:
+                            value_parts.append(dat_by_stem[comp][:, 1:])
+                            matched_stems.add(comp)
+                        else:
+                            for stem, arr in dat_by_stem.items():
+                                if stem not in matched_stems and (
+                                    stem.startswith(comp)
+                                        or comp.startswith(stem)):
+                                    value_parts.append(arr[:, 1:])
+                                    matched_stems.add(stem)
+                                    break
+                    if not value_parts:
+                        value_parts = [
+                            arr[:, 1:] for arr in dat_by_stem.values()]
+                else:
+                    value_parts = [
+                        arr[:, 1:] for arr in dat_by_stem.values()]
+                values_data = np.column_stack(value_parts)
 
         if _is_std_network and _std_net_output_pops:
+            # Build column names from the rendered LEMS OutputColumn quantities
+            # — this is the most robust approach as it matches what was written.
             col_names = []
-            for pop_id, pop_size, sv_var in _std_net_output_pops:
-                for idx in range(pop_size):
-                    col_names.append(f"{pop_id}[{idx}]/{sv_var}")
+            try:
+                import xml.etree.ElementTree as _ET
+                _root = _ET.fromstring(xml)
+                for _of in _root.iter():
+                    if _of.tag.endswith('OutputFile') or _of.tag == 'OutputFile':
+                        for _oc in _of:
+                            if (_oc.tag.endswith('OutputColumn')
+                                    or _oc.tag == 'OutputColumn'):
+                                q = _oc.get('quantity', '')
+                                if q:
+                                    col_names.append(q)
+            except Exception:
+                col_names = []
+
+            if not col_names or len(col_names) != values_data.shape[1]:
+                # Fallback: generate from pop metadata
+                col_names = []
+                for pop_id, pop_size, sv_var in _std_net_output_pops:
+                    for idx in range(pop_size):
+                        col_names.append(f"{pop_id}[{idx}]/{sv_var}")
 
             da = xr.DataArray(
                 data=values_data,
@@ -3078,6 +3531,15 @@ class NeuroMLAdapter(BaseAdapter):
             if nrniv:
                 from pathlib import Path
                 env_patch['NEURON_HOME'] = str(Path(nrniv).parent.parent)
+
+        # On macOS the JVM grabs foreground / bounces in the Dock even when
+        # -Djava.awt.headless=true is set.  -Dapple.awt.UIElement=true
+        # suppresses the Dock icon and foreground activation entirely.
+        if sys.platform == 'darwin':
+            existing = os.environ.get('JDK_JAVA_OPTIONS', '')
+            extra = '-Dapple.awt.UIElement=true'
+            if extra not in existing:
+                env_patch['JDK_JAVA_OPTIONS'] = (existing + ' ' + extra).strip()
 
         old_env = {k: os.environ.get(k) for k in env_patch}
         os.environ.update(env_patch)

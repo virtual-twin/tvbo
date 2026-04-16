@@ -518,6 +518,10 @@ class UnitEnum(str, Enum):
     """
     Picoampere
     """
+    uA_per_cm2 = "uA_per_cm2"
+    """
+    Microampere per square centimetre (current density)
+    """
     pF = "pF"
     """
     Picofarad
@@ -549,6 +553,14 @@ class UnitEnum(str, Enum):
     mS_per_cm2 = "mS_per_cm2"
     """
     Millisiemens per square centimetre (conductance density)
+    """
+    S_per_m2 = "S_per_m2"
+    """
+    Siemens per square metre (conductance density, SI)
+    """
+    nS_per_mV = "nS_per_mV"
+    """
+    Nanosiemens per millivolt
     """
     per_nC = "per_nC"
     """
@@ -609,6 +621,14 @@ class UnitEnum(str, Enum):
     H_per_m = "H_per_m"
     """
     Henry per metre (permeability)
+    """
+    ohm = "ohm"
+    """
+    Ohm (Ω)
+    """
+    Mohm = "Mohm"
+    """
+    Megaohm (MΩ)
     """
     kohm_cm = "kohm_cm"
     """
@@ -3900,7 +3920,9 @@ class Node(ConfiguredBaseModel):
     """
     A node in a network with its own dynamics and properties
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Node', 'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Node',
+         'from_schema': 'https://w3id.org/tvbo',
+         'slot_usage': {'record': {'ifabsent': 'True', 'name': 'record'}}})
 
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Subject',
@@ -4011,6 +4033,7 @@ class Node(ConfiguredBaseModel):
                        'Integrator',
                        'Coupling',
                        'PDE']} })
+    record: Optional[bool] = Field(default=True, description="""Whether to include this element in simulation output files. Applicable to state variables (default true), derived variables (default false), and network nodes (default true). Set false to suppress recording.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'StateVariable', 'DerivedVariable'], 'ifabsent': 'True'} })
     id: int = Field(default=..., description="""Unique node identifier""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'SimulationExperiment']} })
     dynamics: Optional[str] = Field(default=None, description="""Dynamics model governing this node's behavior. Can be a reference (by name) or inline definition. If not provided, uses experiment's dynamics.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network',
                        'Node',
@@ -4769,7 +4792,9 @@ class Dynamics(ConfiguredBaseModel):
 
 
 class StateVariable(ConfiguredBaseModel):
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:StateVariable', 'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:StateVariable',
+         'from_schema': 'https://w3id.org/tvbo',
+         'slot_usage': {'record': {'ifabsent': 'True', 'name': 'record'}}})
 
     name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
@@ -4937,6 +4962,7 @@ class StateVariable(ConfiguredBaseModel):
                        'TimeSeries',
                        'NDArray',
                        'SpatialField']} })
+    record: Optional[bool] = Field(default=True, description="""Whether to include this element in simulation output files. Applicable to state variables (default true), derived variables (default false), and network nodes (default true). Set false to suppress recording.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'StateVariable', 'DerivedVariable'], 'ifabsent': 'True'} })
     variable_of_interest: Optional[bool] = Field(default=True, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable'], 'ifabsent': 'True'} })
     coupling_variable: Optional[bool] = Field(default=False, description="""Whether this state variable is transmitted to connected nodes through the coupling function. In TVB terms, this determines the cvar indices (state variables extracted from history and fed into the coupling function). The coupling function may override this via its incoming_states attribute.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable'], 'ifabsent': 'False'} })
     equation_type: Optional[str] = Field(default="differential", description="""Type of equation: 'differential' (default) means dx/dt = rhs, 'algebraic' means 0 = rhs or x ~ rhs (DAE constraint). Algebraic equations are used by ModelingToolkit.jl backend.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable'], 'ifabsent': 'string(differential)'} })
@@ -6323,7 +6349,9 @@ class DerivedParameter(Parameter):
 
 
 class DerivedVariable(ConfiguredBaseModel):
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:DerivedVariable', 'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:DerivedVariable',
+         'from_schema': 'https://w3id.org/tvbo',
+         'slot_usage': {'record': {'ifabsent': 'False', 'name': 'record'}}})
 
     name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
@@ -6480,6 +6508,7 @@ class DerivedVariable(ConfiguredBaseModel):
                        'TimeSeries',
                        'NDArray',
                        'SpatialField']} })
+    record: Optional[bool] = Field(default=False, description="""Whether to include this element in simulation output files. Applicable to state variables (default true), derived variables (default false), and network nodes (default true). Set false to suppress recording.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'StateVariable', 'DerivedVariable'], 'ifabsent': 'False'} })
     conditional: Optional[bool] = Field(default=False, json_schema_extra = { "linkml_meta": {'domain_of': ['DerivedVariable'], 'ifabsent': 'False'} })
     cases: Optional[list[Case]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['DerivedVariable']} })
 
@@ -9383,6 +9412,7 @@ class FieldStateVariable(StateVariable):
                        'TimeSeries',
                        'NDArray',
                        'SpatialField']} })
+    record: Optional[bool] = Field(default=True, description="""Whether to include this element in simulation output files. Applicable to state variables (default true), derived variables (default false), and network nodes (default true). Set false to suppress recording.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'StateVariable', 'DerivedVariable'], 'ifabsent': 'True'} })
     variable_of_interest: Optional[bool] = Field(default=True, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable'], 'ifabsent': 'True'} })
     coupling_variable: Optional[bool] = Field(default=False, description="""Whether this state variable is transmitted to connected nodes through the coupling function. In TVB terms, this determines the cvar indices (state variables extracted from history and fed into the coupling function). The coupling function may override this via its incoming_states attribute.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable'], 'ifabsent': 'False'} })
     equation_type: Optional[str] = Field(default="differential", description="""Type of equation: 'differential' (default) means dx/dt = rhs, 'algebraic' means 0 = rhs or x ~ rhs (DAE constraint). Algebraic equations are used by ModelingToolkit.jl backend.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable'], 'ifabsent': 'string(differential)'} })

@@ -1,77 +1,128 @@
 ---
 title: "Ex8: Adaptive Exponential IF"
-description: "AdEx integrate-and-fire neuron with adaptation current — bursting variant"
+description: "AdEx integrate-and-fire neuron with adaptation current — four variants"
 ---
 
 ## Model: AdEx (adExIaFCell)
 
-The Adaptive Exponential Integrate-and-Fire model [@Brette2005]:
+Four variants: burst2, burst4, burstChaos (excitatory input), and rebound (inhibitory input).
 
-$$C\frac{dv}{dt} = -g_L(v - E_L) + g_L \Delta_T \exp\!\left(\frac{v - V_T}{\Delta_T}\right) - w + I_{\text{ext}}$$
-$$\tau_w\frac{dw}{dt} = a(v - E_L) - w$$
-
-Spike event: if $v > \text{thresh}$, then $v \leftarrow \text{reset}$, $w \leftarrow w + b$.
-
-The NeuroML example includes four variants (burst2, burst4, burstChaos, rebound).
+Reference: NeuroML2 LEMS_NML2_Ex8_AdEx.xml
 
 ---
 
-## 1. Define in TVBO (bursting variant)
+## 1. Define Network in TVBO
 
 ```{python}
 from tvbo import SimulationExperiment
 
 exp = SimulationExperiment.from_string("""
-label: "NeuroML Ex8: AdEx (bursting)"
+label: "NeuroML Ex8: AdEx"
 dynamics:
-  name: AdaptiveExponentialIF
-  parameters:
-    C:      { value: 281.0,  description: "Capacitance (pF)" }
-    gL:     { value: 30.0,   description: "Leak conductance (nS)" }
-    EL:     { value: -70.6,  description: "Leak reversal (mV)" }
-    VT:     { value: -50.4 }
-    thresh: { value: -40.4 }
-    reset:  { value: -48.5 }
-    delT:   { value: 2.0 }
-    tauw:   { value: 40.0 }
-    a:      { value: 4.0,    description: "Subthreshold adaptation (nS)" }
-    b:      { value: 80.0,   description: "Spike-triggered adaptation (pA, = 0.08 nA)" }
-    refract: { value: 0.0, unit: ms, description: "Refractory period" }
-  derived_variables:
-    I_ext:
-      equation:
-        rhs: "800.0"
-      description: "Constant current 0.8 nA = 800 pA (pulseGen1: delay=0, duration=2000ms)"
-  state_variables:
-    v:
-      equation:
-        rhs: "(-gL*(v - EL) + gL*delT*exp((v - VT)/delT) - w + I_ext) / C"
-      initial_value: -70.6
-      variable_of_interest: true
-    w:
-      equation:
-        rhs: "(a*(v - EL) - w) / tauw"
-      initial_value: 0.0
-  events:
-    spike:
-      condition: { rhs: "v > thresh" }
-      affect:    { rhs: "v = reset; w = w + b" }
+  name: adExBurst2
+  iri: neuroml:adExIaFCell
 network:
-  number_of_nodes: 1
+  dynamics:
+    adExBurst2:
+      name: adExBurst2
+      iri: neuroml:adExIaFCell
+      parameters:
+        C: {value: 281, unit: pF}
+        gL: {value: 30, unit: nS}
+        EL: {value: -70.6, unit: mV}
+        reset: {value: -48.5, unit: mV}
+        VT: {value: -50.4, unit: mV}
+        thresh: {value: -40.4, unit: mV}
+        delT: {value: 2, unit: mV}
+        tauw: {value: 40, unit: ms}
+        a: {value: 4, unit: nS}
+        b: {value: 0.08, unit: nA}
+        refract: {value: 0, unit: ms}
+    adExBurst4:
+      name: adExBurst4
+      iri: neuroml:adExIaFCell
+      parameters:
+        C: {value: 281, unit: pF}
+        gL: {value: 30, unit: nS}
+        EL: {value: -70.6, unit: mV}
+        reset: {value: -47.2, unit: mV}
+        VT: {value: -50.4, unit: mV}
+        thresh: {value: -40.4, unit: mV}
+        delT: {value: 2, unit: mV}
+        tauw: {value: 40, unit: ms}
+        a: {value: 4, unit: nS}
+        b: {value: 0.08, unit: nA}
+        refract: {value: 0, unit: ms}
+    adExBurstChaos:
+      name: adExBurstChaos
+      iri: neuroml:adExIaFCell
+      parameters:
+        C: {value: 281, unit: pF}
+        gL: {value: 30, unit: nS}
+        EL: {value: -70.6, unit: mV}
+        reset: {value: -48, unit: mV}
+        VT: {value: -50.4, unit: mV}
+        thresh: {value: -40.4, unit: mV}
+        delT: {value: 2, unit: mV}
+        tauw: {value: 40, unit: ms}
+        a: {value: 4, unit: nS}
+        b: {value: 0.08, unit: nA}
+        refract: {value: 0, unit: ms}
+    adExRebound:
+      name: adExRebound
+      iri: neuroml:adExIaFCell
+      parameters:
+        C: {value: 281, unit: pF}
+        gL: {value: 30, unit: nS}
+        EL: {value: -60, unit: mV}
+        reset: {value: -51, unit: mV}
+        VT: {value: -54, unit: mV}
+        thresh: {value: -30, unit: mV}
+        delT: {value: 2, unit: mV}
+        tauw: {value: 150, unit: ms}
+        a: {value: 200, unit: nS}
+        b: {value: 0.1, unit: nA}
+        refract: {value: 0, unit: ms}
+    pulseGen1:
+      name: pulseGen1
+      iri: neuroml:pulseGenerator
+      parameters:
+        delay: {value: 0, unit: ms}
+        duration: {value: 2000, unit: ms}
+        amplitude: {value: 0.8, unit: nA}
+    pulseGen2:
+      name: pulseGen2
+      iri: neuroml:pulseGenerator
+      parameters:
+        delay: {value: 150, unit: ms}
+        duration: {value: 50, unit: ms}
+        amplitude: {value: -0.5, unit: nA}
+  nodes:
+    - {id: 0, dynamics: adExBurst2}
+    - {id: 1, dynamics: adExBurst4}
+    - {id: 2, dynamics: adExBurstChaos}
+    - {id: 3, dynamics: adExRebound}
+    - {id: 10, dynamics: pulseGen1, record: false}
+    - {id: 11, dynamics: pulseGen2, record: false}
+  edges:
+    - {source: 10, target: 0}
+    - {source: 10, target: 1}
+    - {source: 10, target: 2}
+    - {source: 11, target: 3}
 integration:
   method: euler
   step_size: 0.025
   duration: 300.0
   time_scale: ms
 """)
-print(f"Model: {exp.dynamics.name}, SVs: {list(exp.dynamics.state_variables.keys())}")
+print(f"Network dynamics: {list(exp.network.dynamics.keys())}")
 ```
 
 ## 2. Render LEMS XML
 
 ```{python}
 xml = exp.render("lems")
-print(xml[:1500])
+print(xml[:2000])
 ```
 
 ## 3. Run Reference
@@ -95,45 +146,24 @@ result = exp.run("neuroml")
 da = result.integration.data
 tvbo_arr = np.column_stack([da.coords['time'].values, da.values])
 print(f"TVBO: shape={tvbo_arr.shape}")
+print(f"Columns: {list(da.coords['variable'].values)}")
 ```
 
-## 5. Comparison
-
-The NeuroML example has 4 cells. We compare the burst2 variant (first column):
-
-```{python}
-from _nml_helpers import compare_traces, plot_comparison
-import numpy as np
-
-ref_arr = list(ref_outputs.values())[0]
-# First data column should be adExBurst2/v
-ref_v = ref_arr[:, [0, 1]]
-tvbo_v = tvbo_arr[:, [0, 1]]
-
-compare_traces(ref_v, tvbo_v, ref_cols=['time', 'v'], tvbo_cols=['time', 'v'])
-
-plot_comparison(
-    ref_v, tvbo_v,
-    ref_cols=['time', 'v'], tvbo_cols=['time', 'v'],
-    title="Ex8: AdEx (bursting) — NeuroML vs TVBO",
-)
-```
-
-### All AdEx Variants (NeuroML reference)
+## 5. Compare
 
 ```{python}
 import matplotlib.pyplot as plt
 
-fig, axes = plt.subplots(4, 1, figsize=(10, 10), sharex=True)
-labels = ['Burst2', 'Burst4', 'BurstChaos', 'Rebound']
-t_ref = ref_arr[:, 0] * 1000  # ms
-for i in range(min(4, ref_arr.shape[1]-1)):
-    axes[i].plot(t_ref, ref_arr[:, i+1] * 1000, color='C0')
-    axes[i].set_ylabel('v (mV)')
-    axes[i].set_title(labels[i] if i < len(labels) else f'col {i+1}')
-    axes[i].grid(True, alpha=0.3)
-axes[-1].set_xlabel("Time (ms)")
-fig.suptitle("Ex8: All AdEx Variants (NeuroML reference)", fontsize=13)
-fig.tight_layout()
-plt.show()
+for name, ref_arr in ref_outputs.items():
+    t = ref_arr[:, 0] * 1000
+    fig, ax = plt.subplots(figsize=(10, 4))
+    for i in range(1, min(ref_arr.shape[1], 6)):
+        ax.plot(t, ref_arr[:, i] * 1000, alpha=0.8, label=f'Col {i}')
+    ax.set_xlabel("Time (ms)")
+    ax.set_ylabel("Voltage (mV)")
+    ax.set_title(f"Ex8: AdEx — {name}")
+    ax.legend(fontsize=7)
+    ax.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.show()
 ```

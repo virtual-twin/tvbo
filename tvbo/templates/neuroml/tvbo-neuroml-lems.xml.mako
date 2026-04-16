@@ -76,9 +76,9 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
       if str(ci) not in ct_sv_names_set
       and str(ci) not in [str(k) for k in ct_params.keys()]
   ]
-  # In network mode, cells with synaptic inputs extend baseCellMembPot
-  # (provides Exposure v dimension=voltage, EventPort spike via baseCell).
-  ct_extends_cell = bool(ct_syn_inputs)
+  # In network mode, all non-synapse cells extend baseCellMembPot and get
+  # Attachments so they can receive current from explicitInput / synapses.
+  ct_extends_cell = True
   # v Exposure and spike EventPort come from the base type when extending
   ct_v_from_base = ct_extends_cell and 'v' in ct_sv_names_set
 %>\
@@ -111,7 +111,7 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
 % if ct_has_threshold and not ct_extends_cell:
     <EventPort name="spike" direction="out"/>
 % endif
-% if ct_syn_inputs:
+% if ct_extends_cell:
     <!-- Dynamically attached synapses/inputs from network connections -->
     <Attachments name="synapses" type="basePointCurrent"/>
 % endif
