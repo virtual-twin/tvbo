@@ -1091,6 +1091,8 @@ website:
                         href: datamodel/slots/recon_path.qmd
                       - text: "reconstruction"
                         href: datamodel/slots/reconstruction.qmd
+                      - text: "record"
+                        href: datamodel/slots/record.qmd
                       - text: "reference"
                         href: datamodel/slots/reference.qmd
                       - text: "reference_publication"

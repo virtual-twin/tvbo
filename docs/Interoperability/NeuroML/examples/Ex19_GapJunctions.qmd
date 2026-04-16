@@ -66,7 +66,7 @@ integration:
   duration: 700.0
   time_scale: ms
 """)
-print(f"Model: {exp.dynamics.name}")
+print(f"Model: {exp.dynamics.name if exp.dynamics else 'network'}")
 ```
 
 ## 2. Render LEMS XML
@@ -91,37 +91,14 @@ for name, arr in ref_outputs.items():
 ## 4. Run TVBO
 
 ```{python}
-import numpy as np
-
 result = exp.run("neuroml")
 da = result.integration.data
-tvbo_arr = np.column_stack([da.coords['time'].values, da.values])
-print(f"TVBO: shape={tvbo_arr.shape}")
+print(f"TVBO: {da.dims}, shape={da.shape}")
 ```
 
-## 5. Compare
+## 5. Compare & Plot
 
 ```{python}
-import matplotlib.pyplot as plt
-import numpy as np
-
-for name, ref_arr in ref_outputs.items():
-    t = ref_arr[:, 0] * 1000
-    fig, ax = plt.subplots(figsize=(10, 4))
-    for i in range(1, min(ref_arr.shape[1], 6)):
-        ax.plot(t, ref_arr[:, i] * 1000, alpha=0.8, label=f'Ref {i}')
-    ax.set_xlabel("Time (ms)")
-    ax.set_ylabel("Voltage (mV)")
-    ax.set_title(f"Ex19: Gap Junctions — {name}")
-    ax.legend(fontsize=7)
-    ax.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.show()
+from _nml_helpers import plot_lems_comparison
+plot_lems_comparison("LEMS_NML2_Ex19_GapJunctions.xml", ref_outputs, result.integration.data, title_prefix="Ex19")
 ```
-
-::: {.callout-note}
-## Gap Junctions
-Gap junctions (electrical synapses) allow bidirectional current flow between cells.
-When cell 1 fires (driven by pulseGen1), current flows to cell 2 and vice versa.
-Modeled as `gapJunction` with `electricalProjection` in NeuroML.
-:::

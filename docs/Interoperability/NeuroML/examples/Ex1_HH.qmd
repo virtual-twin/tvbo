@@ -132,7 +132,7 @@ integration:
   duration: 150.0
   time_scale: ms
 """)
-print(f"Model: {exp.dynamics.name}")
+print(f"Model: {exp.dynamics.name if exp.dynamics else 'network'}")
 print(f"IRI: {exp.dynamics.iri}")
 print(f"Components: {list(exp.dynamics.components.keys())}")
 ```
@@ -174,43 +174,14 @@ for name, arr in ref_outputs.items():
 ## 4. Run TVBO Version
 
 ```{python}
-import numpy as np
-
 result = exp.run("neuroml")
 da = result.integration.data
-time = da.coords['time'].values
-# Standard NeuroML output has only voltage
-v_data = da.sel(variable='v').values
-tvbo_arr = np.column_stack([time, v_data])
-print(f"TVBO: shape={tvbo_arr.shape}, t=[{tvbo_arr[0,0]:.4f}, {tvbo_arr[-1,0]:.4f}]")
+print(f"TVBO: {da.dims}, shape={da.shape}")
 ```
 
-## 5. Numerical Comparison
+## 5. Compare & Plot
 
 ```{python}
-from _nml_helpers import compare_traces
-import numpy as np
-
-ref_arr = list(ref_outputs.values())[0]
-
-# Compare voltage traces
-ref_v = ref_arr[:, [0, 1]]
-tvbo_v = tvbo_arr[:, [0, 1]]
-compare_traces(ref_v, tvbo_v, ref_cols=['time', 'v'], tvbo_cols=['time', 'v'])
-```
-
-## 6. Plot
-
-```{python}
-from _nml_helpers import plot_comparison
-
-ref_v = ref_arr[:, [0, 1]]
-tvbo_v = tvbo_arr[:, [0, 1]]
-
-plot_comparison(
-    ref_v, tvbo_v,
-    ref_cols=['time', 'v'], tvbo_cols=['time', 'v'],
-    title="Ex1: Hodgkin-Huxley — NeuroML vs TVBO",
-    time_scale=1.0, time_unit="s",
-)
+from _nml_helpers import plot_lems_comparison
+plot_lems_comparison("LEMS_NML2_Ex1_HH.xml", ref_outputs, result.integration.data, title_prefix="Ex1")
 ```
