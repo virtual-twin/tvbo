@@ -487,6 +487,16 @@ _UNIT_TO_DIMENSION = {
     'S_per_cm2': 'conductance_density', 'mS_per_cm2': 'conductance_density',
     # temperature
     'degC': 'temperature',
+    # current
+    'A': 'current', 'mA': 'current', 'uA': 'current', 'nA': 'current', 'pA': 'current',
+    # capacitance
+    'F': 'capacitance', 'mF': 'capacitance', 'uF': 'capacitance', 'nF': 'capacitance', 'pF': 'capacitance',
+    # per_time (rates)
+    'per_s': 'per_time', 'per_ms': 'per_time', 'Hz': 'per_time',
+    # resistance
+    'ohm': 'resistance', 'kohm': 'resistance', 'Mohm': 'resistance',
+    # specific capacitance
+    'F_per_m2': 'specificCapacitance', 'uF_per_cm2': 'specificCapacitance',
 }
 
 # Well-known constant names → LEMS dimension (fallback when no unit)
@@ -1189,6 +1199,492 @@ def _render_event_children(dyn_obj, time_scale='ms', indent=8):
     return '\n'.join(children)
 
 
+# ── Hierarchical custom LEMS context builder ─────────────────────────
+#
+# When a dynamics tree uses ``iri: extends:base*`` on its components,
+# the user defines all equations explicitly (no standard NeuroML
+# biological types).  The adapter generates custom ComponentTypes that
+# extend the LEMS base types for type-system compatibility.
+#
+# The lookup tables below encode the LEMS *type-system infrastructure*
+# (what Child/Children/Attachments slots each base type declares, which
+# parameters are inherited, etc.).  This is NOT biological knowledge —
+# it's the equivalent of knowing that an abstract base class has certain
+# methods.
+
+_BASE_TYPE_META = {
+    'baseCellMembPot': {
+        'inherited_params': set(),
+        'exposures': {'v': 'voltage'},
+        'requirements': {},
+        'channel_wrapper': True,
+        'attachments': [('synapses', 'basePointCurrent')],
+        'on_start_refs': {'v': 'v0'},
+    },
+    'baseIonChannel': {
+        'inherited_params': {'conductance'},
+        'exposures': {'g': 'conductance'},
+        'requirements': {},
+        'children': ('gates', 'baseGate'),
+    },
+    'baseGate': {
+        'inherited_params': {'instances'},
+        'exposures': {'q': 'none', 'fcond': 'none'},
+        'requirements': {},
+        'child_roles': {
+            'forwardRate': 'baseVoltageDepRate',
+            'reverseRate': 'baseVoltageDepRate',
+        },
+        'on_start_refs': {'q': 'inf'},
+    },
+    'baseVoltageDepRate': {
+        'inherited_params': set(),
+        'exposures': {'r': 'per_time'},
+        'requirements': {'v': 'voltage'},
+    },
+}
+
+
+def _hier_format_attr_value(param):
+    """Format a parameter as a compact LEMS attribute value (``10pS``)."""
+    val = getattr(param, 'value', None)
+    unit = str(getattr(param, 'unit', '') or '')
+    if val is None:
+        return str(getattr(param, 'description', '') or '')
+    if isinstance(val, float) and val == int(val) and abs(val) < 1e15:
+        formatted = str(int(val))
+    else:
+        formatted = str(val)
+    if unit:
+        nml_unit = _TVBO_TO_NML_UNIT.get(unit, unit)
+        return f"{formatted}{nml_unit}"
+    return formatted
+
+
+def _hier_attrs_string(params, skip=None):
+    """Build an XML attributes string from a dict of Parameters.
+
+    Parameters in *skip* (e.g. inherited from base type) are excluded.
+    """
+    skip = skip or set()
+    parts = []
+    for k, v in params.items():
+        if k in skip:
+            continue
+        parts.append(f'{k}="{_hier_format_attr_value(v)}"')
+    return ' '.join(parts)
+
+
+def _hier_parse_select_label(label_str):
+    """Parse a DerivedVariable label like ``select:populations[*]/i reduce:add``.
+
+    Returns a dict with keys ``select``, ``reduce``, ``required_false``
+    or None if the label doesn't encode select metadata.
+    """
+    if not label_str or 'select:' not in label_str:
+        return None
+    result = {'select': None, 'reduce': None, 'required_false': False}
+    for token in label_str.split():
+        if token.startswith('select:'):
+            result['select'] = token[7:]
+        elif token.startswith('reduce:'):
+            result['reduce'] = token[7:]
+        elif token == 'required:false':
+            result['required_false'] = True
+    return result if result['select'] else None
+
+
+def _hier_build_dynamics(dyn, extends, all_params):
+    """Build the ``dynamics`` sub-dict for a custom ComponentType.
+
+    Reads state_variables, derived_variables, and events from the
+    Dynamics object and converts them to LEMS template data.
+    """
+    from collections import OrderedDict
+    meta = _BASE_TYPE_META.get(extends, {})
+    exposures = meta.get('exposures', {})
+
+    # Collect all symbol names for expression conversion
+    param_names = list((dyn.parameters or {}).keys())
+    sv_names = list((dyn.state_variables or {}).keys())
+    dv_names = list((dyn.derived_variables or {}).keys())
+    all_names = param_names + sv_names + dv_names
+
+    # Add any requirement names (e.g. v for rates)
+    for req_name in meta.get('requirements', {}):
+        if req_name not in all_names:
+            all_names.append(req_name)
+
+    inherited = meta.get('inherited_params', set())
+
+    dynamics = {
+        'derived_variables': [],
+        'cdvs': [],
+        'state_variables': [],
+        'time_derivatives': [],
+        'on_start': [],
+        'on_condition': [],
+    }
+
+    # ── Derived variables ──
+    for dv_key, dv in (dyn.derived_variables or {}).items():
+        dim = _UNIT_TO_DIMENSION.get(str(getattr(dv, 'unit', '') or ''), 'none')
+        exposure = dv_key if dv_key in exposures else None
+        if exposure:
+            dim = exposures[exposure]
+
+        # Check for select/reduce via label
+        sel = _hier_parse_select_label(getattr(dv, 'label', None))
+        if sel:
+            dynamics['derived_variables'].append({
+                'name': dv_key,
+                'dimension': dim,
+                'exposure': exposure,
+                'select': sel['select'],
+                'reduce': sel['reduce'],
+                'required_false': sel.get('required_false', False),
+            })
+            continue
+
+        # Check for conditional derived variable
+        if getattr(dv, 'conditional', False) and getattr(dv, 'cases', None):
+            cases = []
+            for case in dv.cases:
+                cond_str = case.condition if case.condition else None
+                val_str = case.equation.rhs if case.equation else ''
+                # Default case (True or None) → no condition in LEMS
+                if cond_str and cond_str.strip() == 'True':
+                    cond_str = None
+                # Convert Python conditions to LEMS
+                elif cond_str:
+                    cond_str = _python_cond_to_lems(cond_str, all_names)
+                val_str = sympy_to_lems(val_str, parameters=all_names)
+                cases.append({
+                    'condition': cond_str,
+                    'value': val_str,
+                })
+            dynamics['cdvs'].append({
+                'name': dv_key,
+                'dimension': dim,
+                'exposure': exposure or dv_key,
+                'cases': cases,
+            })
+            continue
+
+        # Regular derived variable
+        rhs = dv.equation.rhs if dv.equation else '0'
+        value = sympy_to_lems(rhs, parameters=all_names)
+        dynamics['derived_variables'].append({
+            'name': dv_key,
+            'dimension': dim,
+            'exposure': exposure,
+            'value': value,
+        })
+
+    # ── State variables & time derivatives ──
+    for sv_key, sv in (dyn.state_variables or {}).items():
+        dim = _UNIT_TO_DIMENSION.get(str(getattr(sv, 'unit', '') or ''), 'none')
+        exposure = sv_key if sv_key in exposures else None
+        if exposure:
+            dim = exposures[exposure]
+
+        dynamics['state_variables'].append({
+            'name': sv_key,
+            'dimension': dim,
+            'exposure': exposure or sv_key,
+        })
+
+        # Time derivative
+        rhs = sv.equation.rhs if sv.equation else '0'
+        td_value = sympy_to_lems(rhs, parameters=all_names)
+        dynamics['time_derivatives'].append({
+            'variable': sv_key,
+            'value': td_value,
+        })
+
+        # OnStart: use named reference from base type meta, fallback to literal
+        on_start_refs = meta.get('on_start_refs', {})
+        iv = getattr(sv, 'initial_value', None)
+        if iv is not None:
+            on_start_value = on_start_refs.get(sv_key, str(iv))
+            dynamics['on_start'].append({
+                'variable': sv_key,
+                'value': on_start_value,
+            })
+
+    # ── Events → OnCondition ──
+    for ev_key, ev in (getattr(dyn, 'events', None) or {}).items():
+        cond = getattr(getattr(ev, 'condition', None), 'rhs', None)
+        if cond:
+            cond_lems = _python_cond_to_lems(str(cond), all_names)
+            dynamics['on_condition'].append({
+                'test': cond_lems,
+                'port': ev_key,
+            })
+
+    return dynamics
+
+
+def _python_cond_to_lems(cond_str, all_names=None):
+    """Convert a Python-style condition to LEMS syntax.
+
+    ``x != 0`` → ``x .neq. 0``
+    ``v > thresh`` → ``v .gt. thresh``
+    ``v >= thresh`` → ``v .geq. thresh``
+    """
+    s = str(cond_str)
+    s = s.replace('!=', ' .neq. ')
+    s = s.replace('>=', ' .geq. ')
+    s = s.replace('<=', ' .leq. ')
+    # Must check > and < AFTER >= and <=
+    s = s.replace('>', ' .gt. ')
+    s = s.replace('<', ' .lt. ')
+    # Clean up multiple spaces
+    s = ' '.join(s.split())
+    return s
+
+
+def _build_hier_custom_context(experiment):
+    """Build context dict for hierarchical custom LEMS ComponentTypes.
+
+    Used when the root dynamics has ``iri: extends:base*``, meaning the
+    user defines all equations explicitly while extending LEMS base types
+    for type-system compatibility.
+
+    The context is consumed by ``tvbo-neuroml-hier-custom-lems.xml.mako``.
+    """
+    from collections import OrderedDict
+
+    dyn = experiment.dynamics
+    integration = getattr(experiment, 'integration', None)
+
+    # ── Integration settings ──
+    dt = integration.step_size if integration else 0.01
+    duration = integration.duration if integration else 1000.0
+    raw_ts = str(getattr(integration, 'time_scale', None) or 'ms')
+    time_unit = raw_ts if raw_ts in ('s', 'ms', 'us') else 'ms'
+
+    label = getattr(experiment, 'label', None)
+    dyn_id = safe_id(dyn.name or 'dynamics')
+    sim_id = 'sim_' + (safe_id(label) if label else dyn_id)
+
+    # ── Collect ComponentType definitions (leaf-first) ──
+    type_defs = OrderedDict()
+    type_order = []
+
+    root_extends = dyn.iri.split(':', 1)[1]
+    root_type_name = getattr(dyn, 'label', None) or f'custom{root_extends}'
+    root_meta = _BASE_TYPE_META.get(root_extends, {})
+
+    channels = []
+    channel_pops = []
+
+    for ch_key, ch_dyn in (dyn.modes or {}).items():
+        ch_iri = getattr(ch_dyn, 'iri', '') or ''
+        if not ch_iri.startswith('extends:'):
+            continue
+        ch_extends = ch_iri.split(':', 1)[1]
+        ch_meta = _BASE_TYPE_META.get(ch_extends, {})
+        ch_type_name = getattr(ch_dyn, 'label', None) or f'custom{ch_extends}'
+        ch_params = ch_dyn.parameters or {}
+
+        # channelPopulation params: number, erev (belong to the wrapper)
+        number = _hier_format_attr_value(ch_params['number']) if 'number' in ch_params else '1'
+        erev = _hier_format_attr_value(ch_params['erev']) if 'erev' in ch_params else '0mV'
+
+        # Channel-level instance attrs (exclude pop params)
+        ch_inst_params = {k: v for k, v in ch_params.items()
+                         if k not in ('number', 'erev')}
+        ch_inherited = ch_meta.get('inherited_params', set())
+        ch_attrs_str = _hier_attrs_string(ch_inst_params)
+
+        # ── Process gates (Children of channel) ──
+        gate_instances = []
+        for g_key, g_dyn in (ch_dyn.modes or {}).items():
+            g_iri = getattr(g_dyn, 'iri', '') or ''
+            if not g_iri.startswith('extends:'):
+                continue
+            g_extends = g_iri.split(':', 1)[1]
+            g_meta = _BASE_TYPE_META.get(g_extends, {})
+            g_type_name = getattr(g_dyn, 'label', None) or f'custom{g_extends}'
+            g_params = g_dyn.parameters or {}
+            g_inherited = g_meta.get('inherited_params', set())
+            g_attrs_str = _hier_attrs_string(g_params, skip=set())
+
+            # ── Process rates (Child of gate) ──
+            rate_children = OrderedDict()
+            for r_key, r_dyn in (g_dyn.modes or {}).items():
+                r_iri = getattr(r_dyn, 'iri', '') or ''
+                if not r_iri.startswith('extends:'):
+                    continue
+                r_extends = r_iri.split(':', 1)[1]
+                r_meta = _BASE_TYPE_META.get(r_extends, {})
+                r_type_name = getattr(r_dyn, 'label', None) or f'custom{r_extends}'
+                r_params = r_dyn.parameters or {}
+                r_inherited = r_meta.get('inherited_params', set())
+                r_attrs_str = _hier_attrs_string(r_params, skip=r_inherited)
+
+                # Add rate ComponentType definition
+                if r_type_name not in type_defs:
+                    r_ct_params = [
+                        {'name': k, 'dimension': _param_dimension(k, v)}
+                        for k, v in r_params.items()
+                        if k not in r_inherited
+                    ]
+                    type_defs[r_type_name] = {
+                        'name': r_type_name,
+                        'extends': r_extends,
+                        'parameters': r_ct_params,
+                        'child_slots': [],
+                        'children_slots': [],
+                        'attachments': [],
+                        'dynamics': _hier_build_dynamics(r_dyn, r_extends, r_params),
+                    }
+                    type_order.append(r_type_name)
+
+                rate_children[r_key] = {
+                    'type_name': r_type_name,
+                    'attrs_str': r_attrs_str,
+                }
+
+            # Add gate ComponentType definition
+            if g_type_name not in type_defs:
+                g_ct_params = [
+                    {'name': k, 'dimension': _param_dimension(k, v)}
+                    for k, v in g_params.items()
+                    if k not in g_inherited
+                ]
+                # Child slots from base type meta
+                child_roles = g_meta.get('child_roles', {})
+                child_slots = [(role, base_t) for role, base_t in child_roles.items()]
+                type_defs[g_type_name] = {
+                    'name': g_type_name,
+                    'extends': g_extends,
+                    'parameters': g_ct_params,
+                    'child_slots': child_slots,
+                    'children_slots': [],
+                    'attachments': [],
+                    'dynamics': _hier_build_dynamics(g_dyn, g_extends, g_params),
+                }
+                type_order.append(g_type_name)
+
+            gate_instances.append({
+                'type_name': g_type_name,
+                'id': g_key,
+                'attrs_str': g_attrs_str,
+                'role_children': rate_children,
+            })
+
+        # Add channel ComponentType definition
+        if ch_type_name not in type_defs:
+            ch_ct_params = [
+                {'name': k, 'dimension': _param_dimension(k, v)}
+                for k, v in ch_params.items()
+                if k not in ch_inherited and k not in ('number', 'erev')
+            ]
+            # Children slot from base type meta
+            children_info = ch_meta.get('children', None)
+            ch_children_slots = [(children_info[0], children_info[1])] if children_info else []
+            type_defs[ch_type_name] = {
+                'name': ch_type_name,
+                'extends': ch_extends,
+                'parameters': ch_ct_params,
+                'child_slots': [],
+                'children_slots': ch_children_slots,
+                'attachments': [],
+                'dynamics': _hier_build_dynamics(ch_dyn, ch_extends, ch_params),
+            }
+            type_order.append(ch_type_name)
+
+        channels.append({
+            'type_name': ch_type_name,
+            'id': ch_key,
+            'attrs_str': ch_attrs_str,
+            'children': gate_instances,
+        })
+
+        # channelPopulation entry
+        pop_id = ch_key if ch_key in ('passive', 'leak') else f'{ch_key}Chans'
+        channel_pops.append({
+            'id': pop_id,
+            'ion_channel': ch_key,
+            'number': number,
+            'erev': erev,
+        })
+
+    # ── Root cell ComponentType definition ──
+    cell_params = {k: v for k, v in (dyn.parameters or {}).items()
+                   if k not in ('pulse_delay', 'pulse_duration', 'I_amp')}
+    cell_inherited = root_meta.get('inherited_params', set())
+    cell_ct_params = [
+        {'name': k, 'dimension': _param_dimension(k, v)}
+        for k, v in cell_params.items()
+        if k not in cell_inherited
+    ]
+    # Children: channelPopulations via wrapper
+    cell_children_slots = []
+    if root_meta.get('channel_wrapper'):
+        cell_children_slots.append(('populations', 'baseChannelPopulation'))
+    cell_attachments = root_meta.get('attachments', [])
+
+    type_defs[root_type_name] = {
+        'name': root_type_name,
+        'extends': root_extends,
+        'parameters': cell_ct_params,
+        'child_slots': [],
+        'children_slots': cell_children_slots,
+        'attachments': cell_attachments,
+        'dynamics': _hier_build_dynamics(dyn, root_extends, cell_params),
+    }
+    type_order.append(root_type_name)
+
+    # ── Cell instance attributes ──
+    cell_attrs_str = _hier_attrs_string(cell_params, skip=cell_inherited)
+
+    # ── Input generators ──
+    inputs = []
+    ip = dyn.parameters or {}
+    if 'pulse_delay' in ip and 'pulse_duration' in ip and 'I_amp' in ip:
+        inputs.append({
+            'type': 'pulseGenerator',
+            'id': 'pulseGen1',
+            'delay': _hier_format_attr_value(ip['pulse_delay']),
+            'duration': _hier_format_attr_value(ip['pulse_duration']),
+            'amplitude': _hier_format_attr_value(ip['I_amp']),
+        })
+
+    # ── Output variable ──
+    output_var = None
+    for sv_key, sv in (dyn.state_variables or {}).items():
+        if getattr(sv, 'variable_of_interest', False):
+            output_var = sv_key
+            break
+    if output_var is None:
+        output_var = next(iter(dyn.state_variables or {}), 'v')
+
+    # ── Population ID ──
+    pop_id = f'{dyn_id}pop'
+
+    return {
+        'component_types': [type_defs[tn] for tn in type_order],
+        'channels': channels,
+        'cell_type_name': root_type_name,
+        'cell_id': dyn_id,
+        'cell_attrs_str': cell_attrs_str,
+        'channel_pops': channel_pops,
+        'inputs': inputs,
+        'network_id': 'net1',
+        'population_id': pop_id,
+        'sim_id': sim_id,
+        'sim_length': f'{duration}{time_unit}',
+        'sim_step': f'{dt}{time_unit}',
+        'output_var': output_var,
+        'dyn_id': dyn_id,
+        'is_network': False,
+        'is_hier_custom': True,
+    }
+
+
 # ── Standard-types context builder (for Mako templates) ──────────────
 
 def build_std_lems_context(experiment):
@@ -1233,6 +1729,11 @@ def build_std_lems_context(experiment):
         return None
 
     iri = getattr(dyn, 'iri', None) or ''
+
+    # Hierarchical custom types: iri starts with "extends:"
+    if iri.startswith('extends:'):
+        return _build_hier_custom_context(experiment)
+
     if not iri.startswith('neuroml:'):
         return None
 
@@ -2620,6 +3121,7 @@ class NeuroMLAdapter(BaseAdapter):
     SIMULATION_TEMPLATE = "neuroml/tvbo-neuroml-simulation.xml.mako"
     STD_LEMS_TEMPLATE = "neuroml/tvbo-neuroml-std-lems.xml.mako"
     STD_NETWORK_TEMPLATE = "neuroml/tvbo-neuroml-std-network-lems.xml.mako"
+    HIER_CUSTOM_TEMPLATE = "neuroml/tvbo-neuroml-hier-custom-lems.xml.mako"
 
     def __init__(self, source=None):
         from tvbo.classes.dynamics import Dynamics
@@ -2655,7 +3157,10 @@ class NeuroMLAdapter(BaseAdapter):
             ctx = build_std_lems_context(self.experiment)
             if ctx is not None:
                 from tvbo import templates
-                if ctx['is_network']:
+                if ctx.get('is_hier_custom'):
+                    tpl = templates.lookup.get_template(
+                        self.HIER_CUSTOM_TEMPLATE)
+                elif ctx['is_network']:
                     tpl = templates.lookup.get_template(
                         self.STD_NETWORK_TEMPLATE)
                 else:
