@@ -30,7 +30,7 @@ def _build_graph(network: "Network", delays: bool = True):
     lengths = network.lengths_matrix
 
     if delays and lengths is not None and np.any(lengths > 0):
-        delay_matrix = jnp.asarray(np.asarray(lengths, dtype=float))
+        delay_matrix = jnp.asarray(np.asarray(network.calculate_delays(), dtype=float))
         return DenseDelayGraph(
             weights=weights, delays=delay_matrix, region_labels=labels,
         )
