@@ -1695,7 +1695,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         """Compute the maximum delay (ms) from the current network/connectome."""
         if self.network is None:
             return 0.0
-        delays = self.network.compute_delays()
+        delays = self.network.calculate_delays()
         # Use nanmax to ignore NaN values for non-existent edges
         max_val = np.nanmax(delays)
         return float(max_val) if not np.isnan(max_val) else 0.0
