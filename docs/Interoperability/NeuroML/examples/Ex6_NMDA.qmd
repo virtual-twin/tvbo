@@ -95,9 +95,7 @@ print(xml[:3000])
 ## 3. Run Reference
 
 ```{python}
-import sys, os
-sys.path.insert(0, os.path.dirname(os.path.abspath(".")))
-from _nml_helpers import run_lems_example
+from tvbo.adapters.neuroml import run_lems_example
 
 ref_outputs = run_lems_example("LEMS_NML2_Ex6_NMDA.xml")
 for name, arr in ref_outputs.items():
@@ -115,6 +113,6 @@ print(f"TVBO: {da.dims}, shape={da.shape}")
 ## 5. Compare & Plot
 
 ```{python}
-from _nml_helpers import plot_lems_comparison
+from tvbo.adapters.neuroml import plot_lems_comparison
 plot_lems_comparison("LEMS_NML2_Ex6_NMDA.xml", ref_outputs, result.integration.data, title_prefix="Ex6")
 ```
