@@ -4,81 +4,9 @@
   <!-- Tell jLEMS/jNeuroML which component is the simulation entry point. -->
   <Target component="sim_JansenRit_LEMS_Export"/>
 
-  <!-- ════════════════════════════════════════════════════════════════
-       Dimensions & Units (inline — no external includes needed)
-       ════════════════════════════════════════════════════════════════ -->
-
-  <!-- Dimensions -->
-  <Dimension name="none"/>
-  <Dimension name="time" t="1"/>
-  <Dimension name="voltage" m="1" l="2" t="-3" i="-1"/>
-  <Dimension name="per_time" t="-1"/>
-  <Dimension name="conductance" m="-1" l="-2" t="3" i="2"/>
-  <Dimension name="capacitance" m="-1" l="-2" t="4" i="2"/>
-  <Dimension name="current" i="1"/>
-  <Dimension name="resistance" m="1" l="2" t="-3" i="-2"/>
-  <Dimension name="concentration" l="-3" n="1"/>
-  <Dimension name="substance" n="1"/>
-  <Dimension name="charge" t="1" i="1"/>
-  <Dimension name="temperature" k="1"/>
-
-  <!-- Units -->
-  <Unit symbol="s" dimension="time" power="0"/>
-  <Unit symbol="ms" dimension="time" power="-3"/>
-  <Unit symbol="us" dimension="time" power="-6"/>
-  <Unit symbol="V" dimension="voltage" power="0"/>
-  <Unit symbol="mV" dimension="voltage" power="-3"/>
-  <Unit symbol="A" dimension="current" power="0"/>
-  <Unit symbol="mA" dimension="current" power="-3"/>
-  <Unit symbol="nA" dimension="current" power="-9"/>
-  <Unit symbol="pA" dimension="current" power="-12"/>
-  <Unit symbol="S" dimension="conductance" power="0"/>
-  <Unit symbol="mS" dimension="conductance" power="-3"/>
-  <Unit symbol="nS" dimension="conductance" power="-9"/>
-  <Unit symbol="F" dimension="capacitance" power="0"/>
-  <Unit symbol="uF" dimension="capacitance" power="-6"/>
-  <Unit symbol="nF" dimension="capacitance" power="-9"/>
-  <Unit symbol="ohm" dimension="resistance" power="0"/>
-  <Unit symbol="Mohm" dimension="resistance" power="6"/>
-  <Unit symbol="per_s" dimension="per_time" power="0"/>
-  <Unit symbol="per_ms" dimension="per_time" power="3"/>
-  <Unit symbol="degC" dimension="temperature" offset="273.15"/>
-  <Unit symbol="K" dimension="temperature" power="0"/>
-
-
-  <!-- ════════════════════════════════════════════════════════════════
-       LEMS Simulation infrastructure types
-       (normally provided by Simulation.xml — defined inline to avoid
-       the jNeuroML double-read bug)
-       ════════════════════════════════════════════════════════════════ -->
-  <ComponentType name="Simulation">
-    <Parameter name="length" dimension="time"/>
-    <Parameter name="step" dimension="time"/>
-    <Children name="outputs" type="OutputFile"/>
-    <ComponentReference name="target" type="Component"/>
-    <Dynamics>
-      <StateVariable name="t" dimension="time"/>
-    </Dynamics>
-    <Simulation>
-      <Run component="target" variable="t" increment="step" total="length"/>
-    </Simulation>
-  </ComponentType>
-
-  <ComponentType name="OutputFile">
-    <Children name="outputColumn" type="OutputColumn"/>
-    <Text name="fileName"/>
-    <Text name="path"/>
-    <Simulation>
-      <DataWriter path="path" fileName="fileName"/>
-    </Simulation>
-  </ComponentType>
-
-  <ComponentType name="OutputColumn">
-    <Path name="quantity"/>
-    <Simulation>
-      <Record quantity="quantity"/>
-    </Simulation>
-  </ComponentType>
+  <Include file="Cells.xml"/>
+  <Include file="Networks.xml"/>
+  <Include file="Simulation.xml"/>
 
   <!-- ════════════════════════════════════════════════════════════════
        Dynamics ComponentType & Component instances
@@ -182,19 +110,25 @@
 
 
 
+  <!-- Wrap the single cell in a network so quantity paths use the standard
+       pop[idx]/variable form, which works across jNeuroML, NEURON, Brian2,
+       NetPyNE and EDEN backends. -->
+  <network id="net">
+    <population id="pop" component="JansenRit_inst" size="1"/>
+  </network>
+
   <!-- ════════════════════════════════════════════════════════════════
-       Simulation — target the component instance directly.
-       Output: one file with all state variables.
+       Simulation — target the network (all-backend compatible)
        ════════════════════════════════════════════════════════════════ -->
-  <Simulation id="sim_JansenRit_LEMS_Export" length="1000.0ms" step="0.01220703125ms" target="JansenRit_inst">
+  <Simulation id="sim_JansenRit_LEMS_Export" length="1000.0ms" step="0.01220703125ms" target="net">
 
     <OutputFile id="of1" fileName="results/JansenRit.dat">
-      <OutputColumn id="y0" quantity="y0"/>
-      <OutputColumn id="y1" quantity="y1"/>
-      <OutputColumn id="y2" quantity="y2"/>
-      <OutputColumn id="y3" quantity="y3"/>
-      <OutputColumn id="y4" quantity="y4"/>
-      <OutputColumn id="y5" quantity="y5"/>
+      <OutputColumn id="y0" quantity="pop[0]/y0"/>
+      <OutputColumn id="y1" quantity="pop[0]/y1"/>
+      <OutputColumn id="y2" quantity="pop[0]/y2"/>
+      <OutputColumn id="y3" quantity="pop[0]/y3"/>
+      <OutputColumn id="y4" quantity="pop[0]/y4"/>
+      <OutputColumn id="y5" quantity="pop[0]/y5"/>
     </OutputFile>
 
   </Simulation>

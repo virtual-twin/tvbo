@@ -1,0 +1,43 @@
+name: MCell
+description: Monte Carlo Cell — a program for realistic simulation of cellular signaling
+  using spatially realistic 3D models of sub-cellular reaction-diffusion dynamics.
+homepage: https://mcell.org
+repository: https://github.com/mcellteam/mcell
+doi: 10.1016/j.cpc.2016.06.013
+reference_publication: 10.1016/j.tins.2006.07.001
+license: GPL-2.0-only
+is_accessible_for_free: true
+application_category: simulation
+date_created: '1996-01-01'
+development_status: active
+scale:
+- channel
+- neuron
+model_paradigm:
+- reaction_diffusion
+tool_role:
+- simulator
+programming_language:
+- C++
+- Python
+runtime_platform:
+- Python
+interoperates_with:
+- CellBlender
+- NeuroML
+author:
+- Thomas Bartol
+- Joel Stiles
+maintainer:
+- Salk Institute
+funder:
+- NIH
+- Salk Institute
+keywords:
+- Monte Carlo
+- reaction-diffusion
+- synapse
+- sub-cellular
+same_as:
+- https://scicrunch.org/resolver/RRID:SCR_004551
+issue_tracker: https://github.com/mcellteam/mcell/issues

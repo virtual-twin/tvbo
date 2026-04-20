@@ -10,6 +10,11 @@ template (tvbo-neuroml-lems.xml.mako) and the standalone dynamics template
 All template variables are injected by the calling template's render context
 (from build_lems_context()).
 </%doc>
+## lems_dim() (from build_lems_context) already suppresses non-time dimensions
+## to "none" for custom types.  No extra wrapper needed.
+<%
+  _dim = lems_dim  # alias for backward compat in template expressions
+%>\
   <!-- ════════════════════════════════════════════════════════════════
        ComponentType: ${dyn_id}
        Generated from TVBO Dynamics: ${dyn.name or '(unnamed)'}
@@ -18,7 +23,7 @@ All template variables are injected by the calling template's render context
 
     <!-- Parameters -->
 % for pname, p in params.items():
-    <Parameter name="${pname}" dimension="${lems_dim(getattr(p, 'unit', None))}"/>
+    <Parameter name="${pname}" dimension="${_dim(getattr(p, 'unit', None))}"/>
 % endfor
 % if regime_data and 'refract' not in params:
     <Parameter name="refract" dimension="time"/>
@@ -32,26 +37,27 @@ All template variables are injected by the calling template's render context
 % endfor
     <!-- Initial condition parameters -->
 % for sv_name in svs:
-    <Parameter name="${sv_name}_0" dimension="${lems_dim(getattr(svs[sv_name], 'unit', None))}"/>
+    <Parameter name="${sv_name}_0" dimension="${_dim(getattr(svs[sv_name], 'unit', None))}"/>
 % endfor
 
-    <!-- Time constant for derivatives.
-         All parameters use dimension="none" to avoid jLEMS dimensional
-         analysis failures (neural-mass models mix units freely).
-         / SEC is always applied so the TimeDerivative has per_time
-         dimension.  When the model already has time units in parameters,
-         SEC = 1s (numerically 1.0 — identity); otherwise SEC = 1<time_scale>
-         provides the actual numeric conversion.
-         needs_sec=${needs_sec}  time_scale=${time_scale} -->
+    <!-- Time conversion for derivatives.
+         When all parameters and state variables carry proper LEMS dimensions,
+         LEMS handles unit conversion natively (e.g. tau="30 ms" → 0.03 s).
+         No SEC constant is needed and TimeDerivatives use the RHS directly.
+         When dimensions are "none" (dimensionless models), / SEC converts
+         from model time to SI seconds.
+         all_dimensioned=${all_dimensioned}  needs_sec=${needs_sec}  time_scale=${time_scale} -->
+% if not all_dimensioned:
 % if needs_sec:
     <Constant name="SEC" dimension="time" value="1${time_scale}"/>
 % else:
     <Constant name="SEC" dimension="time" value="1s"/>
 % endif
+% endif
 
     <!-- Exposures (one per state variable) -->
 % for sv_name, sv in svs.items():
-    <Exposure name="${sv_name}" dimension="${lems_dim(getattr(sv, 'unit', None))}"/>
+    <Exposure name="${sv_name}" dimension="${_dim(getattr(sv, 'unit', None))}"/>
 % endfor
 % if regime_data:
     <EventPort name="spike" direction="out"/>
@@ -61,7 +67,7 @@ All template variables are injected by the calling template's render context
 
       <!-- State variables -->
 % for sv_name, sv in svs.items():
-      <StateVariable name="${sv_name}" dimension="${lems_dim(getattr(sv, 'unit', None))}" exposure="${sv_name}"/>
+      <StateVariable name="${sv_name}" dimension="${_dim(getattr(sv, 'unit', None))}" exposure="${sv_name}"/>
 % endfor
 % if regime_data:
       <StateVariable name="lastSpikeTime" dimension="time"/>
@@ -72,7 +78,7 @@ All template variables are injected by the calling template's render context
 <%
   eq = getattr(dv, 'equation', None)
   rhs = getattr(eq, 'rhs', None) if eq else None
-  dv_dim = lems_dim(getattr(dv, 'unit', None))
+  dv_dim = _dim(getattr(dv, 'unit', None))
   pw_cases = _parse_piecewise(rhs) if rhs else None
 %>\
 % if rhs:
@@ -114,7 +120,11 @@ All template variables are injected by the calling template's render context
   rhs = getattr(eq, 'rhs', None) if eq else None
 %>\
 % if rhs:
+% if all_dimensioned:
+        <TimeDerivative variable="${sv_name}" value="${lems_expr(rhs)}"/>
+% else:
         <TimeDerivative variable="${sv_name}" value="(${lems_expr(rhs)}) / SEC"/>
+% endif
 % endif
 % endfor
         <OnCondition test="${lems_expr(regime_data['condition'])}">
@@ -131,7 +141,11 @@ All template variables are injected by the calling template's render context
   rhs = getattr(eq, 'rhs', None) if eq else None
 %>\
 % if rhs and sv_name not in regime_data['reset_vars']:
+% if all_dimensioned:
+        <TimeDerivative variable="${sv_name}" value="${lems_expr(rhs)}"/>
+% else:
         <TimeDerivative variable="${sv_name}" value="(${lems_expr(rhs)}) / SEC"/>
+% endif
 % endif
 % endfor
         <OnEntry>
@@ -155,7 +169,11 @@ All template variables are injected by the calling template's render context
   rhs = getattr(eq, 'rhs', None) if eq else None
 %>\
 % if rhs:
+% if all_dimensioned:
+      <TimeDerivative variable="${sv_name}" value="${lems_expr(rhs)}"/>
+% else:
       <TimeDerivative variable="${sv_name}" value="(${lems_expr(rhs)}) / SEC"/>
+% endif
 % endif
 % endfor
 
@@ -205,7 +223,7 @@ All template variables are injected by the calling template's render context
 % for pname, p in coupling_params.items():
 <% pname_str = str(pname) %>\
 % if pname_str != "global_coupling":
-    <Parameter name="${pname_str}" dimension="${lems_dim(getattr(p, 'unit', None))}"/>
+    <Parameter name="${pname_str}" dimension="${_dim(getattr(p, 'unit', None))}"/>
 % endif
 % endfor
     <Dynamics>
@@ -236,7 +254,8 @@ All template variables are injected by the calling template's render context
 % endfor
 % for sv_name, sv in svs.items():
 <% iv = getattr(sv, 'initial_value', None) %>\
- ${sv_name}_0="${iv if iv is not None else 0.0}"\
+<% sv_unit = lems_sym(getattr(sv, 'unit', None)) %>\
+ ${sv_name}_0="${iv if iv is not None else 0.0}${(' ' + sv_unit) if sv_unit else ''}"\
 % endfor
 />
 

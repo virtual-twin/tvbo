@@ -40,44 +40,9 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
   <Include file="Networks.xml"/>
   <Include file="Simulation.xml"/>
 % else:
-  <!-- ════════════════════════════════════════════════════════════════
-       Dimensions & Units (inline — no external includes needed)
-       ════════════════════════════════════════════════════════════════ -->
-<%include file="_lems_dims_units.xml.mako"/>
-
-  <!-- ════════════════════════════════════════════════════════════════
-       LEMS Simulation infrastructure types
-       (normally provided by Simulation.xml — defined inline to avoid
-       the jNeuroML double-read bug)
-       ════════════════════════════════════════════════════════════════ -->
-  <ComponentType name="Simulation">
-    <Parameter name="length" dimension="time"/>
-    <Parameter name="step" dimension="time"/>
-    <Children name="outputs" type="OutputFile"/>
-    <ComponentReference name="target" type="Component"/>
-    <Dynamics>
-      <StateVariable name="t" dimension="time"/>
-    </Dynamics>
-    <Simulation>
-      <Run component="target" variable="t" increment="step" total="length"/>
-    </Simulation>
-  </ComponentType>
-
-  <ComponentType name="OutputFile">
-    <Children name="outputColumn" type="OutputColumn"/>
-    <Text name="fileName"/>
-    <Text name="path"/>
-    <Simulation>
-      <DataWriter path="path" fileName="fileName"/>
-    </Simulation>
-  </ComponentType>
-
-  <ComponentType name="OutputColumn">
-    <Path name="quantity"/>
-    <Simulation>
-      <Record quantity="quantity"/>
-    </Simulation>
-  </ComponentType>
+  <Include file="Cells.xml"/>
+  <Include file="Networks.xml"/>
+  <Include file="Simulation.xml"/>
 % endif
 
   <!-- ════════════════════════════════════════════════════════════════
@@ -111,9 +76,9 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
       if str(ci) not in ct_sv_names_set
       and str(ci) not in [str(k) for k in ct_params.keys()]
   ]
-  # In network mode, cells with synaptic inputs extend baseCellMembPot
-  # (provides Exposure v dimension=voltage, EventPort spike via baseCell).
-  ct_extends_cell = bool(ct_syn_inputs)
+  # In network mode, all non-synapse cells extend baseCellMembPot and get
+  # Attachments so they can receive current from explicitInput / synapses.
+  ct_extends_cell = True
   # v Exposure and spike EventPort come from the base type when extending
   ct_v_from_base = ct_extends_cell and 'v' in ct_sv_names_set
 %>\
@@ -146,7 +111,7 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
 % if ct_has_threshold and not ct_extends_cell:
     <EventPort name="spike" direction="out"/>
 % endif
-% if ct_syn_inputs:
+% if ct_extends_cell:
     <!-- Dynamically attached synapses/inputs from network connections -->
     <Attachments name="synapses" type="basePointCurrent"/>
 % endif
@@ -551,14 +516,16 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
   inp_type = pop['input_type']
   inp_id = pop['input_id']
   inp_params = pop.get('input_params', {})
-  spike_times = pop.get('spike_times', [])
+  spike_children_xml = pop.get('spike_children_xml', '')
 %>\
-% if inp_type == 'spikeArray':
-  <spikeArray id="${inp_id}">
-% for st_idx, st_time in enumerate(spike_times):
-    <spike id="${st_idx}" time="${st_time}"/>
+% if spike_children_xml:
+  <${inp_type} id="${inp_id}"\
+% for pk, pv in inp_params.items():
+ ${pk}="${pv}"\
 % endfor
-  </spikeArray>
+>
+${spike_children_xml}
+  </${inp_type}>
 % else:
   <${inp_type} id="${inp_id}"\
 % for pk, pv in inp_params.items():
@@ -628,18 +595,26 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
   </Simulation>
 
 % else:
-## ── Single-population: original behavior ──
+## ── Single-population: wrapped in NeuroML network for all-backend compatibility ──
+## Quantity paths of the form pop[0]/sv_name are required by DLemsWriter (NetPyNE)
+## and are also resolved correctly by the jNeuroML reference simulation engine.
 <%include file="_lems_componenttype.xml.mako"/>
 
+  <!-- Wrap the single cell in a network so quantity paths use the standard
+       pop[idx]/variable form, which works across jNeuroML, NEURON, Brian2,
+       NetPyNE and EDEN backends. -->
+  <network id="net">
+    <population id="pop" component="${dyn_id}_inst" size="1"/>
+  </network>
+
   <!-- ════════════════════════════════════════════════════════════════
-       Simulation — target the component instance directly.
-       Output: one file with all state variables.
+       Simulation — target the network (all-backend compatible)
        ════════════════════════════════════════════════════════════════ -->
-  <Simulation id="${sim_id}" length="${duration}${time_scale}" step="${dt}${time_scale}" target="${dyn_id}_inst">
+  <Simulation id="${sim_id}" length="${duration}${time_scale}" step="${dt}${time_scale}" target="net">
 
     <OutputFile id="of1" fileName="results/${dyn_id}.dat">
 % for sv_name in svs:
-      <OutputColumn id="${sv_name}" quantity="${sv_name}"/>
+      <OutputColumn id="${sv_name}" quantity="pop[0]/${sv_name}"/>
 % endfor
     </OutputFile>
 

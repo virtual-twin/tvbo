@@ -1,0 +1,39 @@
+name: AUTO-07p
+description: A software package for continuation and bifurcation problems in ordinary
+  differential equations. The standard tool for numerical continuation in dynamical
+  systems since 1980.
+homepage: https://github.com/auto-07p/auto-07p
+repository: https://github.com/auto-07p/auto-07p
+doi: 10.1007/978-1-4614-6141-2_3
+reference_publication: 10.1007/978-1-4020-6356-5_4
+license: BSD-2-Clause
+is_accessible_for_free: true
+application_category: analysis
+date_created: '1980-01-01'
+development_status: active
+scale:
+- neural_mass
+- network_system
+model_paradigm:
+- bifurcation_analysis
+tool_role:
+- continuation_tool
+programming_language:
+- Fortran
+- C
+runtime_platform:
+- Fortran runtime
+interoperates_with:
+- MatCont
+- BifurcationKit.jl
+author:
+- Eusebius Doedel
+maintainer:
+- Eusebius Doedel
+keywords:
+- continuation
+- bifurcation
+- periodic orbits
+- boundary value problems
+same_as:
+- https://www.wikidata.org/entity/Q4824289

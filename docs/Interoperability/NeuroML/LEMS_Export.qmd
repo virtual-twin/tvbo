@@ -230,17 +230,25 @@ For split-file export or other adapter-specific options, use `NeuroMLAdapter` di
 
 ---
 
-## 8. Running via jNeuroML
+## 8. Running via Downstream Simulators
 
-Once a valid LEMS file is produced, simulate it with jNeuroML:
+Once a valid LEMS file is produced, simulate it with any pyNeuroML-supported backend:
 
 ```{python}
-# Via the adapter
+# Via the adapter (default: jNeuroML reference engine)
 adapter.run()
 
 # Via SimulationExperiment.run()
 exp.run("neuroml")
+
+# Use a specific downstream simulator
+adapter.run(backend="neuron")    # NEURON
+adapter.run(backend="brian2")    # Brian2
+adapter.run(backend="netpyne")   # NetPyNE
+adapter.run(backend="eden")      # EDEN
 ```
+
+Supported backends: `jneuroml` (default), `neuron`, `brian2`, `netpyne`, `eden`.
 
 Or from the command line:
 

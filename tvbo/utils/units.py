@@ -138,6 +138,42 @@ def unit_has_time_dimension(unit):
     return key in _TIME_UNITS
 
 
+# ── UnitEnum → SI conversion factor ─────────────────────────────────
+
+_UNIT_TO_SI_FACTOR = {
+    # Time
+    "s": 1.0, "ms": 1e-3, "us": 1e-6,
+    # Rates / inverse time
+    "per_s": 1.0, "per_ms": 1e3, "Hz": 1.0, "kHz": 1e3,
+    # Voltage
+    "V": 1.0, "mV": 1e-3,
+    # Current
+    "A": 1.0, "nA": 1e-9, "pA": 1e-12,
+    # Capacitance
+    "pF": 1e-12, "nF": 1e-9,
+    # Conductance
+    "nS": 1e-9, "uS": 1e-6,
+    # Concentration
+    "mol_per_m3": 1.0, "mmol_per_m3": 1e-3,
+}
+
+
+def unit_to_si_factor(unit):
+    """Return the multiplicative factor to convert from *unit* to SI base units.
+
+    >>> unit_to_si_factor("mV")
+    0.001
+    >>> unit_to_si_factor("ms")
+    0.001
+    >>> unit_to_si_factor(None)
+    1.0
+    """
+    if unit is None:
+        return 1.0
+    key = str(unit).strip()
+    return _UNIT_TO_SI_FACTOR.get(key, 1.0)
+
+
 # ── UnitEnum → LaTeX display symbol ──────────────────────────────────
 
 _UNIT_TO_LATEX = {

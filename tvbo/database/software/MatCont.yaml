@@ -1,0 +1,39 @@
+name: MatCont
+description: A MATLAB continuation toolbox for interactive bifurcation analysis of
+  dynamical systems. Computes equilibria, limit cycles, and bifurcation curves with
+  graphical user interface.
+homepage: https://sourceforge.net/projects/matcont/
+repository: https://sourceforge.net/projects/matcont/
+reference_publication: 10.1145/779359.779362
+license: GPL-3.0-only
+is_accessible_for_free: true
+application_category: analysis
+date_created: '2003-01-01'
+development_status: active
+scale:
+- neural_mass
+- network_system
+model_paradigm:
+- bifurcation_analysis
+tool_role:
+- continuation_tool
+programming_language:
+- MATLAB
+runtime_platform:
+- MATLAB
+interoperates_with:
+- AUTO-07p
+author:
+- Willy Govaerts
+- Yuri Kuznetsov
+maintainer:
+- Willy Govaerts
+- Yuri Kuznetsov
+keywords:
+- MATLAB
+- continuation
+- bifurcation
+- limit cycles
+- GUI
+same_as:
+- https://www.wikidata.org/entity/Q6785071

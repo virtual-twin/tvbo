@@ -1,0 +1,36 @@
+name: pynn_genn
+description: PyNN interface for the GeNN GPU simulator, enabling PyNN models to run
+  on NVIDIA GPUs via the GeNN backend.
+repository: https://github.com/genn-team/pynn_genn
+license: GPL-2.0-only
+is_accessible_for_free: true
+ecosystem:
+- pypi
+application_category: interface
+date_created: '2020-01-01'
+development_status: active
+scale:
+- neuron
+- neural_network
+- network_system
+model_paradigm:
+- spiking
+tool_role:
+- workflow_framework
+programming_language:
+- Python
+runtime_platform:
+- CUDA
+interoperates_with:
+- PyNN
+- GeNN
+author:
+- James Turner
+- Thomas Nowotny
+maintainer:
+- University of Sussex
+keywords:
+- PyNN
+- GeNN
+- GPU backend
+issue_tracker: https://github.com/genn-team/pynn_genn/issues

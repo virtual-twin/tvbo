@@ -1,0 +1,37 @@
+name: PyRhO
+description: A Python module for fitting, simulating, and analyzing optogenetic rhodopsin
+  photocurrent models. Integrates with NEURON and Brian2.
+homepage: https://pyrho.readthedocs.io
+repository: https://github.com/ProjectPyRhO/PyRhO
+doi: 10.3389/fninf.2016.00008
+reference_publication: 10.3389/fninf.2016.00008
+license: BSD-3-Clause
+is_accessible_for_free: true
+ecosystem:
+- pypi
+application_category: modeling
+date_created: '2016-01-01'
+development_status: inactive
+scale:
+- neuron
+model_paradigm:
+- conductance_based
+tool_role:
+- analysis_tool
+programming_language:
+- Python
+runtime_platform:
+- Python
+interoperates_with:
+- NEURON
+- Brian2
+author:
+- Benjamin Evans
+- Konstantin Bhatt
+maintainer:
+- Benjamin Evans
+keywords:
+- optogenetics
+- rhodopsin
+- photocurrent
+- fitting

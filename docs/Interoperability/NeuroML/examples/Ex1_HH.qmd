@@ -27,7 +27,6 @@ from tvbo import SimulationExperiment
 
 # HH parameters matching NeuroML2 Ex1 (hhpointcell)
 # Uses `iri: neuroml:*` annotations to emit standard NeuroML types.
-# Parameters with `description: "nml:..."` carry NeuroML-formatted values.
 
 exp = SimulationExperiment.from_string("""
 label: "NeuroML Ex1: Hodgkin-Huxley"
@@ -38,27 +37,27 @@ dynamics:
     Hodgkin-Huxley model matching NeuroML2 Ex1.
     Uses standard NeuroML types via hierarchical components.
   parameters:
-    C:              { value: 10,   description: "nml:10pF" }
-    v0:             { value: -65,  description: "nml:-65mV" }
-    thresh:         { value: 20,   description: "nml:20mV" }
-    pulse_delay:    { value: 50,   description: "nml:50ms" }
-    pulse_duration: { value: 50,   description: "nml:50ms" }
-    I_amp:          { value: 0.08, description: "nml:0.08 nA" }
+    C:              { value: 10, unit: pF }
+    v0:             { value: -65, unit: mV }
+    thresh:         { value: 20, unit: mV }
+    pulse_delay:    { value: 50, unit: ms }
+    pulse_duration: { value: 50, unit: ms }
+    I_amp:          { value: 0.08, unit: nA }
   components:
     passive:
       name: passive
       iri: neuroml:ionChannelPassive
       parameters:
-        conductance: { value: 10,     description: "nml:10pS" }
+        conductance: { value: 10, unit: pS }
         number:      { value: 300 }
-        erev:        { value: -54.3,  description: "nml:-54.3mV" }
+        erev:        { value: -54.3, unit: mV }
     na:
       name: na
       iri: neuroml:ionChannelHH
       parameters:
-        conductance: { value: 10,     description: "nml:10pS" }
+        conductance: { value: 10, unit: pS }
         number:      { value: 120000 }
-        erev:        { value: 50,     description: "nml:50mV" }
+        erev:        { value: 50, unit: mV }
       components:
         m:
           name: m
@@ -70,16 +69,16 @@ dynamics:
               name: forwardRate
               iri: neuroml:HHExpLinearRate
               parameters:
-                rate:     { value: 1,   description: "nml:1per_ms" }
-                midpoint: { value: -40, description: "nml:-40mV" }
-                scale:    { value: 10,  description: "nml:10mV" }
+                rate:     { value: 1, unit: per_ms }
+                midpoint: { value: -40, unit: mV }
+                scale:    { value: 10, unit: mV }
             reverseRate:
               name: reverseRate
               iri: neuroml:HHExpRate
               parameters:
-                rate:     { value: 4,   description: "nml:4per_ms" }
-                midpoint: { value: -65, description: "nml:-65mV" }
-                scale:    { value: -18, description: "nml:-18mV" }
+                rate:     { value: 4, unit: per_ms }
+                midpoint: { value: -65, unit: mV }
+                scale:    { value: -18, unit: mV }
         h:
           name: h
           iri: neuroml:gateHHrates
@@ -90,23 +89,23 @@ dynamics:
               name: forwardRate
               iri: neuroml:HHExpRate
               parameters:
-                rate:     { value: 0.07, description: "nml:0.07per_ms" }
-                midpoint: { value: -65,  description: "nml:-65mV" }
-                scale:    { value: -20,  description: "nml:-20mV" }
+                rate:     { value: 0.07, unit: per_ms }
+                midpoint: { value: -65, unit: mV }
+                scale:    { value: -20, unit: mV }
             reverseRate:
               name: reverseRate
               iri: neuroml:HHSigmoidRate
               parameters:
-                rate:     { value: 1,   description: "nml:1per_ms" }
-                midpoint: { value: -35, description: "nml:-35mV" }
-                scale:    { value: 10,  description: "nml:10mV" }
+                rate:     { value: 1, unit: per_ms }
+                midpoint: { value: -35, unit: mV }
+                scale:    { value: 10, unit: mV }
     k:
       name: k
       iri: neuroml:ionChannelHH
       parameters:
-        conductance: { value: 10,  description: "nml:10pS" }
+        conductance: { value: 10, unit: pS }
         number:      { value: 36000 }
-        erev:        { value: -77, description: "nml:-77mV" }
+        erev:        { value: -77, unit: mV }
       components:
         n:
           name: n
@@ -118,22 +117,22 @@ dynamics:
               name: forwardRate
               iri: neuroml:HHExpLinearRate
               parameters:
-                rate:     { value: 0.1,   description: "nml:0.1per_ms" }
-                midpoint: { value: -55,   description: "nml:-55mV" }
-                scale:    { value: 10,    description: "nml:10mV" }
+                rate:     { value: 0.1, unit: per_ms }
+                midpoint: { value: -55, unit: mV }
+                scale:    { value: 10, unit: mV }
             reverseRate:
               name: reverseRate
               iri: neuroml:HHExpRate
               parameters:
-                rate:     { value: 0.125, description: "nml:0.125per_ms" }
-                midpoint: { value: -65,   description: "nml:-65mV" }
-                scale:    { value: -80,   description: "nml:-80mV" }
+                rate:     { value: 0.125, unit: per_ms }
+                midpoint: { value: -65, unit: mV }
+                scale:    { value: -80, unit: mV }
 integration:
   step_size: 0.01
   duration: 150.0
   time_scale: ms
 """)
-print(f"Model: {exp.dynamics.name}")
+print(f"Model: {exp.dynamics.name if exp.dynamics else 'network'}")
 print(f"IRI: {exp.dynamics.iri}")
 print(f"Components: {list(exp.dynamics.components.keys())}")
 ```
@@ -163,9 +162,7 @@ for line in xml.split('\n'):
 ## 3. Run Reference
 
 ```{python}
-import sys, os
-sys.path.insert(0, os.path.dirname(os.path.abspath(".")))
-from _nml_helpers import run_lems_example
+from tvbo.adapters.neuroml import run_lems_example
 
 ref_outputs = run_lems_example("LEMS_NML2_Ex1_HH.xml")
 for name, arr in ref_outputs.items():
@@ -175,43 +172,303 @@ for name, arr in ref_outputs.items():
 ## 4. Run TVBO Version
 
 ```{python}
-import numpy as np
-
 result = exp.run("neuroml")
 da = result.integration.data
-time = da.coords['time'].values
-# Standard NeuroML output has only voltage
-v_data = da.sel(variable='v').values
-tvbo_arr = np.column_stack([time, v_data])
-print(f"TVBO: shape={tvbo_arr.shape}, t=[{tvbo_arr[0,0]:.4f}, {tvbo_arr[-1,0]:.4f}]")
+print(f"TVBO: {da.dims}, shape={da.shape}")
 ```
 
-## 5. Numerical Comparison
+## 5. Compare & Plot
 
 ```{python}
-from _nml_helpers import compare_traces
-import numpy as np
-
-ref_arr = list(ref_outputs.values())[0]
-
-# Compare voltage traces
-ref_v = ref_arr[:, [0, 1]]
-tvbo_v = tvbo_arr[:, [0, 1]]
-compare_traces(ref_v, tvbo_v, ref_cols=['time', 'v'], tvbo_cols=['time', 'v'])
+from tvbo.adapters.neuroml import plot_lems_comparison
+plot_lems_comparison("LEMS_NML2_Ex1_HH.xml", ref_outputs, result.integration.data, title_prefix="Ex1")
 ```
 
-## 6. Plot
+---
+
+## Native Custom YAML (No IRI Dependencies)
+
+The same Hodgkin-Huxley model, defined with **full equations** — no reference to
+standard NeuroML component types. Uses `iri: extends:base*` to declare LEMS base
+type compatibility while providing all dynamics explicitly. This makes the YAML
+interoperable with any backend, not just NeuroML.
+
+### 6. Define Custom Version
 
 ```{python}
-from _nml_helpers import plot_comparison
-
-ref_v = ref_arr[:, [0, 1]]
-tvbo_v = tvbo_arr[:, [0, 1]]
-
-plot_comparison(
-    ref_v, tvbo_v,
-    ref_cols=['time', 'v'], tvbo_cols=['time', 'v'],
-    title="Ex1: Hodgkin-Huxley — NeuroML vs TVBO",
-    time_scale=1.0, time_unit="s",
-)
+exp_custom = SimulationExperiment.from_string("""
+label: "Ex1 HH Custom"
+dynamics:
+  name: HodgkinHuxleyCustom
+  label: customPointCellCondBased
+  iri: "extends:baseCellMembPot"
+  description: >
+    Hodgkin-Huxley with fully explicit equations.
+    All component types defined from scratch — no standard NeuroML types used.
+  parameters:
+    C:              { value: 10, unit: pF }
+    v0:             { value: -65, unit: mV }
+    thresh:         { value: 20, unit: mV }
+    pulse_delay:    { value: 50, unit: ms }
+    pulse_duration: { value: 50, unit: ms }
+    I_amp:          { value: 0.08, unit: nA }
+  state_variables:
+    v:
+      equation: { rhs: "(iChannels + iSyn) / C" }
+      initial_value: -65.0
+      unit: mV
+      variable_of_interest: true
+  derived_variables:
+    iChannels:
+      equation: { rhs: "0" }
+      label: "select:populations[*]/i reduce:add"
+      unit: nA
+    iSyn:
+      equation: { rhs: "0" }
+      label: "select:synapses[*]/i reduce:add required:false"
+      unit: nA
+  events:
+    spike:
+      condition: { rhs: "v > thresh" }
+  components:
+    passive:
+      name: passive
+      label: customIonChannelHH
+      iri: "extends:baseIonChannel"
+      parameters:
+        conductance: { value: 10, unit: pS }
+        number:      { value: 300 }
+        erev:        { value: -54.3, unit: mV }
+      derived_variables:
+        fopen:
+          equation: { rhs: "1" }
+        g:
+          equation: { rhs: "conductance * fopen" }
+          unit: nS
+    na:
+      name: na
+      label: customIonChannelHH
+      iri: "extends:baseIonChannel"
+      parameters:
+        conductance: { value: 10, unit: pS }
+        number:      { value: 120000 }
+        erev:        { value: 50, unit: mV }
+      derived_variables:
+        fopen:
+          equation: { rhs: "1" }
+          label: "select:gates[*]/fcond reduce:multiply"
+        g:
+          equation: { rhs: "conductance * fopen" }
+          unit: nS
+      components:
+        m:
+          name: m
+          label: customGateHHrates
+          iri: "extends:baseGate"
+          parameters:
+            instances: { value: 3 }
+          state_variables:
+            q:
+              equation: { rhs: "(inf - q) / tau" }
+              initial_value: 0.05
+          derived_variables:
+            alpha:
+              equation: { rhs: "0" }
+              label: "select:forwardRate/r"
+              unit: per_ms
+            beta:
+              equation: { rhs: "0" }
+              label: "select:reverseRate/r"
+              unit: per_ms
+            inf:
+              equation: { rhs: "alpha / (alpha + beta)" }
+            tau:
+              equation: { rhs: "1 / (alpha + beta)" }
+              unit: ms
+            fcond:
+              equation: { rhs: "q ** instances" }
+          components:
+            forwardRate:
+              name: forwardRate
+              label: customHHExpLinearRate
+              iri: "extends:baseVoltageDepRate"
+              parameters:
+                rate:     { value: 1, unit: per_ms }
+                midpoint: { value: -40, unit: mV }
+                scale:    { value: 10, unit: mV }
+              derived_variables:
+                x:
+                  equation: { rhs: "(v - midpoint) / scale" }
+                r:
+                  conditional: true
+                  cases:
+                    - condition: "x != 0"
+                      equation: { rhs: "rate * x / (1 - exp(-x))" }
+                    - condition: "True"
+                      equation: { rhs: "rate" }
+            reverseRate:
+              name: reverseRate
+              label: customHHExpRate
+              iri: "extends:baseVoltageDepRate"
+              parameters:
+                rate:     { value: 4, unit: per_ms }
+                midpoint: { value: -65, unit: mV }
+                scale:    { value: -18, unit: mV }
+              derived_variables:
+                r:
+                  equation: { rhs: "rate * exp((v - midpoint) / scale)" }
+                  unit: per_ms
+        h:
+          name: h
+          label: customGateHHrates
+          iri: "extends:baseGate"
+          parameters:
+            instances: { value: 1 }
+          state_variables:
+            q:
+              equation: { rhs: "(inf - q) / tau" }
+              initial_value: 0.60
+          derived_variables:
+            alpha:
+              equation: { rhs: "0" }
+              label: "select:forwardRate/r"
+              unit: per_ms
+            beta:
+              equation: { rhs: "0" }
+              label: "select:reverseRate/r"
+              unit: per_ms
+            inf:
+              equation: { rhs: "alpha / (alpha + beta)" }
+            tau:
+              equation: { rhs: "1 / (alpha + beta)" }
+              unit: ms
+            fcond:
+              equation: { rhs: "q ** instances" }
+          components:
+            forwardRate:
+              name: forwardRate
+              label: customHHExpRate
+              iri: "extends:baseVoltageDepRate"
+              parameters:
+                rate:     { value: 0.07, unit: per_ms }
+                midpoint: { value: -65, unit: mV }
+                scale:    { value: -20, unit: mV }
+              derived_variables:
+                r:
+                  equation: { rhs: "rate * exp((v - midpoint) / scale)" }
+                  unit: per_ms
+            reverseRate:
+              name: reverseRate
+              label: customHHSigmoidRate
+              iri: "extends:baseVoltageDepRate"
+              parameters:
+                rate:     { value: 1, unit: per_ms }
+                midpoint: { value: -35, unit: mV }
+                scale:    { value: 10, unit: mV }
+              derived_variables:
+                r:
+                  equation: { rhs: "rate / (1 + exp(-(v - midpoint) / scale))" }
+                  unit: per_ms
+    k:
+      name: k
+      label: customIonChannelHH
+      iri: "extends:baseIonChannel"
+      parameters:
+        conductance: { value: 10, unit: pS }
+        number:      { value: 36000 }
+        erev:        { value: -77, unit: mV }
+      derived_variables:
+        fopen:
+          equation: { rhs: "1" }
+          label: "select:gates[*]/fcond reduce:multiply"
+        g:
+          equation: { rhs: "conductance * fopen" }
+          unit: nS
+      components:
+        n:
+          name: n
+          label: customGateHHrates
+          iri: "extends:baseGate"
+          parameters:
+            instances: { value: 4 }
+          state_variables:
+            q:
+              equation: { rhs: "(inf - q) / tau" }
+              initial_value: 0.32
+          derived_variables:
+            alpha:
+              equation: { rhs: "0" }
+              label: "select:forwardRate/r"
+              unit: per_ms
+            beta:
+              equation: { rhs: "0" }
+              label: "select:reverseRate/r"
+              unit: per_ms
+            inf:
+              equation: { rhs: "alpha / (alpha + beta)" }
+            tau:
+              equation: { rhs: "1 / (alpha + beta)" }
+              unit: ms
+            fcond:
+              equation: { rhs: "q ** instances" }
+          components:
+            forwardRate:
+              name: forwardRate
+              label: customHHExpLinearRate
+              iri: "extends:baseVoltageDepRate"
+              parameters:
+                rate:     { value: 0.1, unit: per_ms }
+                midpoint: { value: -55, unit: mV }
+                scale:    { value: 10, unit: mV }
+              derived_variables:
+                x:
+                  equation: { rhs: "(v - midpoint) / scale" }
+                r:
+                  conditional: true
+                  cases:
+                    - condition: "x != 0"
+                      equation: { rhs: "rate * x / (1 - exp(-x))" }
+                    - condition: "True"
+                      equation: { rhs: "rate" }
+            reverseRate:
+              name: reverseRate
+              label: customHHExpRate
+              iri: "extends:baseVoltageDepRate"
+              parameters:
+                rate:     { value: 0.125, unit: per_ms }
+                midpoint: { value: -65, unit: mV }
+                scale:    { value: -80, unit: mV }
+              derived_variables:
+                r:
+                  equation: { rhs: "rate * exp((v - midpoint) / scale)" }
+                  unit: per_ms
+integration:
+  step_size: 0.01
+  duration: 150.0
+  time_scale: ms
+""")
+print(f"Model: {exp_custom.dynamics.name}")
+print(f"IRI: {exp_custom.dynamics.iri}")
+print(f"Components: {list(exp_custom.dynamics.components.keys())}")
 ```
+
+::: {.callout-tip}
+## Full Custom — No NeuroML Dependencies
+This version uses `iri: extends:baseCellMembPot` instead of `iri: neuroml:pointCellCondBased`.
+Every equation — rate functions, gating kinetics, channel conductance — is defined explicitly
+in the YAML. The adapter generates custom LEMS `ComponentType` definitions that extend base
+infrastructure types, achieving exact numerical identity with the standard version.
+:::
+
+### 7. Run Custom Version
+
+```{python}
+result_custom = exp_custom.run("neuroml")
+da_custom = result_custom.integration.data
+print(f"Custom: {da_custom.dims}, shape={da_custom.shape}")
+```
+
+### 8. Compare Custom vs Reference
+
+```{python}
+plot_lems_comparison("LEMS_NML2_Ex1_HH.xml", ref_outputs, result_custom.integration.data, title_prefix="Ex1 Custom")

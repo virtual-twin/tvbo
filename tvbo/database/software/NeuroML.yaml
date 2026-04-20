@@ -1,0 +1,56 @@
+name: NeuroML
+description: An XML-based model description language for computational neuroscience.
+  Provides a standardized format for defining models of neurons, synapses, networks,
+  and channels that can be simulated across multiple platforms.
+homepage: https://neuroml.org
+repository: https://github.com/NeuroML/NeuroML2
+doi: 10.1371/journal.pcbi.1008349
+reference_publication: 10.3389/fninf.2014.00079
+license: LGPL-3.0-only
+is_accessible_for_free: true
+application_category: specification
+date_created: '2004-01-01'
+development_status: active
+scale:
+- channel
+- neuron
+- neural_network
+- network_system
+model_paradigm:
+- conductance_based
+- spiking
+- neural_mass
+tool_role:
+- specification_language
+programming_language:
+- XML
+- Python
+- Java
+runtime_platform:
+- backend-dependent
+interoperates_with:
+- NEURON
+- NEST
+- Arbor
+- Brian2
+- jNeuroML
+- pyNeuroML
+author:
+- Padraig Gleeson
+- Sharon Crook
+maintainer:
+- Padraig Gleeson
+- NeuroML Editorial Board
+funder:
+- NIH
+- Wellcome Trust
+- EU HBP
+keywords:
+- model description language
+- XML
+- standardization
+- interoperability
+same_as:
+- https://www.wikidata.org/entity/Q7003628
+- https://scicrunch.org/resolver/RRID:SCR_004594
+issue_tracker: https://github.com/NeuroML/NeuroML2/issues

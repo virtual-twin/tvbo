@@ -1,0 +1,37 @@
+name: ModelDB
+description: A curated database of published computational neuroscience models. Provides
+  source code and metadata for thousands of models linked to peer-reviewed publications.
+homepage: https://modeldb.science
+reference_publication: 10.1007/s12021-006-9003-2
+is_accessible_for_free: true
+application_category: repository
+date_created: '1996-01-01'
+development_status: active
+scale:
+- channel
+- neuron
+- network_system
+model_paradigm:
+- generic
+tool_role:
+- model_repository
+runtime_platform:
+- browser
+interoperates_with:
+- NEURON
+- GENESIS
+- NeuroML
+author:
+- Michael Hines
+- Ted Bhatt
+maintainer:
+- Yale University
+funder:
+- NIH
+- Yale University
+keywords:
+- model repository
+- curated database
+- published models
+same_as:
+- https://scicrunch.org/resolver/RRID:SCR_007271

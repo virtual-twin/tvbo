@@ -1,0 +1,49 @@
+name: NWB
+description: Neurodata Without Borders — a data standard for neurophysiology providing
+  a common format for storing diverse cellular and systems neuroscience data in HDF5
+  files.
+homepage: https://www.nwb.org
+repository: https://github.com/NeurodataWithoutBorders/pynwb
+doi: 10.7554/eLife.78362
+reference_publication: 10.7554/eLife.78362
+license: BSD-3-Clause
+is_accessible_for_free: true
+ecosystem:
+- pypi
+application_category: specification
+date_created: '2017-01-01'
+development_status: active
+scale:
+- network_system
+model_paradigm:
+- data_standard
+tool_role:
+- specification_language
+programming_language:
+- Python
+runtime_platform:
+- Python
+- HDF5
+interoperates_with:
+- HNN-core
+- TVB
+- LFPy
+- MNE-Python
+- SpikeInterface
+author:
+- Oliver Rübel
+- Andrew Tritt
+maintainer:
+- NWB Team
+funder:
+- NIH BRAIN Initiative
+- Kavli Foundation
+keywords:
+- neurophysiology data
+- HDF5
+- standardization
+- FAIR
+same_as:
+- https://www.wikidata.org/entity/Q56279569
+- https://scicrunch.org/resolver/RRID:SCR_015242
+issue_tracker: https://github.com/NeurodataWithoutBorders/pynwb/issues

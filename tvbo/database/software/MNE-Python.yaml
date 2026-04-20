@@ -1,0 +1,47 @@
+name: MNE-Python
+description: 'Open-source Python package for exploring, visualizing, and analyzing
+  human neurophysiological data: MEG, EEG, sEEG, ECoG, NIRS, and more.'
+homepage: https://mne.tools
+repository: https://github.com/mne-tools/mne-python
+doi: 10.3389/fnins.2013.00267
+reference_publication: 10.3389/fnins.2013.00267
+license: BSD-3-Clause
+is_accessible_for_free: true
+ecosystem:
+- pypi
+application_category: analysis
+date_created: '2011-01-01'
+development_status: active
+scale:
+- network_system
+model_paradigm:
+- generic
+tool_role:
+- analysis_tool
+programming_language:
+- Python
+runtime_platform:
+- Python
+- NumPy
+interoperates_with:
+- NWB
+- FieldTrip
+- EEGLAB
+author:
+- Alexandre Gramfort
+- Martin Luessi
+maintainer:
+- MNE-Python Developers
+funder:
+- NIH
+- NSF
+- ANR
+keywords:
+- MEG
+- EEG
+- source estimation
+- time-frequency
+- Python
+same_as:
+- https://scicrunch.org/resolver/RRID:SCR_005972
+issue_tracker: https://github.com/mne-tools/mne-python/issues
