@@ -41,27 +41,27 @@ dynamics:
     Single-compartment HH cell matching NeuroML2 Ex5.
     Uses pointCellCondBased with equivalent channel populations.
   parameters:
-    C:              { value: 10,   description: "nml:10pF" }
-    v0:             { value: -65,  description: "nml:-65mV" }
-    thresh:         { value: -20,  description: "nml:-20mV" }
-    pulse_delay:    { value: 100,  description: "nml:100ms" }
-    pulse_duration: { value: 100,  description: "nml:100ms" }
-    I_amp:          { value: 0.08, description: "nml:0.08nA" }
+    C:              { value: 10, unit: pF }
+    v0:             { value: -65, unit: mV }
+    thresh:         { value: -20, unit: mV }
+    pulse_delay:    { value: 100, unit: ms }
+    pulse_duration: { value: 100, unit: ms }
+    I_amp:          { value: 0.08, unit: nA }
   components:
     passive:
       name: passive
       iri: neuroml:ionChannelPassive
       parameters:
-        conductance: { value: 10,     description: "nml:10pS" }
+        conductance: { value: 10, unit: pS }
         number:      { value: 300 }
-        erev:        { value: -54.3,  description: "nml:-54.3mV" }
+        erev:        { value: -54.3, unit: mV }
     na:
       name: na
       iri: neuroml:ionChannelHH
       parameters:
-        conductance: { value: 10,     description: "nml:10pS" }
+        conductance: { value: 10, unit: pS }
         number:      { value: 120000 }
-        erev:        { value: 50,     description: "nml:50mV" }
+        erev:        { value: 50, unit: mV }
       components:
         m:
           name: m
@@ -73,16 +73,16 @@ dynamics:
               name: forwardRate
               iri: neuroml:HHExpLinearRate
               parameters:
-                rate:     { value: 1,   description: "nml:1per_ms" }
-                midpoint: { value: -40, description: "nml:-40mV" }
-                scale:    { value: 10,  description: "nml:10mV" }
+                rate:     { value: 1, unit: per_ms }
+                midpoint: { value: -40, unit: mV }
+                scale:    { value: 10, unit: mV }
             reverseRate:
               name: reverseRate
               iri: neuroml:HHExpRate
               parameters:
-                rate:     { value: 4,   description: "nml:4per_ms" }
-                midpoint: { value: -65, description: "nml:-65mV" }
-                scale:    { value: -18, description: "nml:-18mV" }
+                rate:     { value: 4, unit: per_ms }
+                midpoint: { value: -65, unit: mV }
+                scale:    { value: -18, unit: mV }
         h:
           name: h
           iri: neuroml:gateHHrates
@@ -93,23 +93,23 @@ dynamics:
               name: forwardRate
               iri: neuroml:HHExpRate
               parameters:
-                rate:     { value: 0.07, description: "nml:0.07per_ms" }
-                midpoint: { value: -65,  description: "nml:-65mV" }
-                scale:    { value: -20,  description: "nml:-20mV" }
+                rate:     { value: 0.07, unit: per_ms }
+                midpoint: { value: -65, unit: mV }
+                scale:    { value: -20, unit: mV }
             reverseRate:
               name: reverseRate
               iri: neuroml:HHSigmoidRate
               parameters:
-                rate:     { value: 1,   description: "nml:1per_ms" }
-                midpoint: { value: -35, description: "nml:-35mV" }
-                scale:    { value: 10,  description: "nml:10mV" }
+                rate:     { value: 1, unit: per_ms }
+                midpoint: { value: -35, unit: mV }
+                scale:    { value: 10, unit: mV }
     k:
       name: k
       iri: neuroml:ionChannelHH
       parameters:
-        conductance: { value: 10,  description: "nml:10pS" }
+        conductance: { value: 10, unit: pS }
         number:      { value: 36000 }
-        erev:        { value: -77, description: "nml:-77mV" }
+        erev:        { value: -77, unit: mV }
       components:
         n:
           name: n
@@ -121,22 +121,22 @@ dynamics:
               name: forwardRate
               iri: neuroml:HHExpLinearRate
               parameters:
-                rate:     { value: 0.1,   description: "nml:0.1per_ms" }
-                midpoint: { value: -55,   description: "nml:-55mV" }
-                scale:    { value: 10,    description: "nml:10mV" }
+                rate:     { value: 0.1, unit: per_ms }
+                midpoint: { value: -55, unit: mV }
+                scale:    { value: 10, unit: mV }
             reverseRate:
               name: reverseRate
               iri: neuroml:HHExpRate
               parameters:
-                rate:     { value: 0.125, description: "nml:0.125per_ms" }
-                midpoint: { value: -65,   description: "nml:-65mV" }
-                scale:    { value: -80,   description: "nml:-80mV" }
+                rate:     { value: 0.125, unit: per_ms }
+                midpoint: { value: -65, unit: mV }
+                scale:    { value: -80, unit: mV }
 integration:
   step_size: 0.01
   duration: 300.0
   time_scale: ms
 """)
-print(f"Model: {exp.dynamics.name}")
+print(f"Model: {exp.dynamics.name if exp.dynamics else 'network'}")
 print(f"IRI: {exp.dynamics.iri}")
 print(f"Components: {list(exp.dynamics.components.keys())}")
 ```
@@ -163,9 +163,7 @@ for line in xml.split('\n'):
 ## 3. Run Reference
 
 ```{python}
-import sys, os
-sys.path.insert(0, os.path.dirname(os.path.abspath(".")))
-from _nml_helpers import run_lems_example
+from tvbo.adapters.neuroml import run_lems_example
 
 ref_outputs = run_lems_example("LEMS_NML2_Ex5_DetCell.xml")
 for name, arr in ref_outputs.items():
@@ -175,38 +173,14 @@ for name, arr in ref_outputs.items():
 ## 4. Run TVBO Version
 
 ```{python}
-import numpy as np
-
 result = exp.run("neuroml")
 da = result.integration.data
-time = da.coords['time'].values
-v_data = da.sel(variable='v').values
-tvbo_arr = np.column_stack([time, v_data])
-print(f"TVBO: shape={tvbo_arr.shape}, t=[{tvbo_arr[0,0]:.4f}, {tvbo_arr[-1,0]:.4f}]")
+print(f"TVBO: {da.dims}, shape={da.shape}")
 ```
 
-## 5. Numerical Comparison
+## 5. Compare & Plot
 
 ```{python}
-from _nml_helpers import compare_traces
-import numpy as np
-
-ref_arr = list(ref_outputs.values())[0]
-ref_v = ref_arr[:, [0, 1]]
-tvbo_v = tvbo_arr[:, [0, 1]]
-
-compare_traces(ref_v, tvbo_v, ref_cols=['time', 'v'], tvbo_cols=['time', 'v'])
-```
-
-## 6. Plot
-
-```{python}
-from _nml_helpers import plot_comparison
-
-plot_comparison(
-    ref_v, tvbo_v,
-    ref_cols=['time', 'v'], tvbo_cols=['time', 'v'],
-    title="Ex5: Detailed HH Cell — NeuroML vs TVBO",
-    time_scale=1.0, time_unit="s",
-)
+from tvbo.adapters.neuroml import plot_lems_comparison
+plot_lems_comparison("LEMS_NML2_Ex5_DetCell.xml", ref_outputs, result.integration.data, title_prefix="Ex5")
 ```

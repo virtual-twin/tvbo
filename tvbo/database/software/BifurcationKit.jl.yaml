@@ -1,0 +1,40 @@
+name: BifurcationKit.jl
+description: A Julia package for bifurcation analysis of large-dimensional equations.
+  Supports continuation of equilibria, periodic orbits, and detection of bifurcation
+  points for ODE and PDE systems.
+homepage: https://bifurcationkit.github.io/BifurcationKitDocs.jl/stable/
+repository: https://github.com/bifurcationkit/BifurcationKit.jl
+doi: 10.21105/joss.06316
+license: MIT
+is_accessible_for_free: true
+ecosystem:
+- julia_registry
+application_category: analysis
+date_created: '2019-01-01'
+development_status: active
+scale:
+- neural_mass
+- network_system
+model_paradigm:
+- bifurcation_analysis
+tool_role:
+- continuation_tool
+programming_language:
+- Julia
+runtime_platform:
+- DifferentialEquations.jl
+interoperates_with:
+- NetworkDynamics.jl
+- AUTO-07p
+author:
+- Romain Veltz
+maintainer:
+- Romain Veltz
+funder:
+- INRIA
+keywords:
+- Julia
+- bifurcation analysis
+- continuation
+- dynamical systems
+issue_tracker: https://github.com/bifurcationkit/BifurcationKit.jl/issues

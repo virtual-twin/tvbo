@@ -1,0 +1,41 @@
+name: TVB-Optim
+description: Differentiable whole-brain simulation and optimization framework using
+  JAX. Supports gradient-based fitting of neural mass models to empirical neuroimaging
+  data.
+homepage: https://virtual-twin.github.io/tvboptim/
+repository: https://github.com/virtual-twin/tvboptim
+license: EUPL-1.2
+is_accessible_for_free: true
+ecosystem:
+- pypi
+application_category: optimization
+date_created: '2024-01-01'
+development_status: active
+scale:
+- neural_mass
+- network_system
+model_paradigm:
+- neural_mass
+- dynamic_mean_field
+tool_role:
+- optimization_framework
+programming_language:
+- Python
+runtime_platform:
+- JAX
+interoperates_with:
+- TVB
+author:
+- Leon Martin
+maintainer:
+- Virtual Twin Project
+funder:
+- BIH Charité
+- EU Horizon Europe 101147319 (EBRAINS 2.0)
+keywords:
+- TVB
+- JAX
+- automatic differentiation
+- parameter optimization
+- whole-brain
+issue_tracker: https://github.com/virtual-twin/tvboptim/issues

@@ -367,6 +367,15 @@ class Network(tvbo_datamodel.Network):
                 tvbo_datamodel.Node(id=i, label=f"node_{i}") for i in range(n_nodes)
             ]
 
+        # Resolve Dynamics slot aliases (components → modes) in network dynamics
+        # so the LinkML loader can construct Dynamics objects correctly.
+        _net_dynamics = kwargs.get("dynamics")
+        if isinstance(_net_dynamics, dict):
+            from tvbo.classes.dynamics import _resolve_dynamics_aliases
+            for _dk, _dv in _net_dynamics.items():
+                if isinstance(_dv, dict):
+                    _resolve_dynamics_aliases(_dv)
+
         super().__init__(**kwargs)
 
         # Sync number_of_nodes from nodes list (authoritative after init)

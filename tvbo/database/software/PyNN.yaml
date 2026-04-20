@@ -1,0 +1,51 @@
+name: PyNN
+description: A Python package for simulator-independent specification of spiking neuronal
+  network models. Provides a common API for NEST, NEURON, Brian2, GeNN, and SpiNNaker
+  backends.
+homepage: https://neuralensemble.org/PyNN/
+repository: https://github.com/NeuralEnsemble/PyNN
+doi: 10.3389/fninf.2008.00011
+reference_publication: 10.3389/neuro.11.011.2008
+license: CeCILL-2.0
+is_accessible_for_free: true
+ecosystem:
+- pypi
+application_category: interoperability
+date_created: '2008-01-01'
+development_status: active
+scale:
+- neuron
+- neural_network
+- network_system
+model_paradigm:
+- spiking
+- generic
+tool_role:
+- specification_language
+- workflow_framework
+programming_language:
+- Python
+runtime_platform:
+- backend-dependent
+interoperates_with:
+- NEST
+- NEURON
+- Brian2
+- sPyNNaker
+- GeNN
+author:
+- Andrew Davison
+maintainer:
+- Andrew Davison
+funder:
+- EU HBP
+- CNRS
+keywords:
+- simulator-independent
+- abstraction layer
+- NEST
+- NEURON
+- Brian2
+same_as:
+- https://scicrunch.org/resolver/RRID:SCR_002715
+issue_tracker: https://github.com/NeuralEnsemble/PyNN/issues

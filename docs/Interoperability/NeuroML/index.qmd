@@ -112,15 +112,32 @@ paths = adapter.export("./output")   # split=False
 # paths == {'simulation': './output/ses-..._simulation.xml'}
 ```
 
-### Run via jNeuroML
+### Run via Downstream Simulators
+
+The NeuroML adapter supports multiple downstream simulators via [pyNeuroML](https://pyneuroml.readthedocs.io/) runners:
 
 ```python
-# Via adapter directly
+# Via adapter directly (default: jNeuroML reference engine)
 adapter.run()
 
 # Via SimulationExperiment.run()
 exp.run("neuroml")
+
+# Specify a downstream backend
+adapter.run(backend="neuron")    # NEURON
+adapter.run(backend="brian2")    # Brian2
+adapter.run(backend="netpyne")   # NetPyNE
+adapter.run(backend="eden")      # EDEN simulator
+exp.run("neuroml", backend="neuron")  # also via experiment
 ```
+
+| Backend | pyNeuroML Runner | Install |
+|---------|-----------------|---------|
+| `jneuroml` (default) | `run_lems_with_jneuroml` | Bundled with pyNeuroML |
+| `neuron` | `run_lems_with_jneuroml_neuron` | `pip install NEURON` |
+| `brian2` | `run_lems_with_jneuroml_brian2` | `pip install brian2` |
+| `netpyne` | `run_lems_with_jneuroml_netpyne` | `pip install netpyne` |
+| `eden` | `run_lems_with_eden` | `pip install eden-simulator` |
 
 ---
 

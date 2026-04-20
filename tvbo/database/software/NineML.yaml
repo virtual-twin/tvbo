@@ -1,0 +1,40 @@
+name: NineML
+description: A language for describing the dynamics and connectivity of spiking neuronal
+  network models. Designed by the INCF to enable simulator-independent model exchange.
+homepage: https://nineml.net
+repository: https://github.com/INCF/nineml-spec
+reference_publication: 10.1186/1471-2202-11-S1-P56
+license: BSD-2-Clause
+is_accessible_for_free: true
+application_category: specification
+date_created: '2011-01-01'
+development_status: inactive
+scale:
+- neuron
+- neural_network
+- network_system
+model_paradigm:
+- spiking
+- generic
+tool_role:
+- specification_language
+programming_language:
+- Python
+- XML
+runtime_platform:
+- backend-dependent
+interoperates_with:
+- PyNN
+- NeuroML
+author:
+- Andrew Davison
+- Ivan Raikov
+maintainer:
+- INCF
+funder:
+- INCF
+keywords:
+- model description
+- abstraction layers
+- XML
+- standardization

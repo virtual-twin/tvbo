@@ -5,14 +5,15 @@ description: "Current-based (as opposed to conductance-based) synaptic models"
 
 ## Model: Current-Based Synapses
 
-Current-based synapses inject a fixed current waveform on spike arrival,
-as opposed to conductance-based synapses where current depends on driving force.
+Current-based synapses inject a fixed current waveform (alpha kernel) on spike arrival,
+independent of membrane voltage. Uses `iafRefCell` (IaF with refractory period) and
+`alphaCurrentSynapse` with `spikeArray` input.
 
-Models: `alphaCurrSynapse`, `expCurrSynapse`.
+Reference: NeuroML2 LEMS_NML2_Ex21_CurrentBasedSynapses.xml
 
 ---
 
-## 1. Define IaF Cell in TVBO
+## 1. Define Network in TVBO
 
 ```{python}
 from tvbo import SimulationExperiment
@@ -20,45 +21,59 @@ from tvbo import SimulationExperiment
 exp = SimulationExperiment.from_string("""
 label: "NeuroML Ex21: IaF with Current-Based Synapses"
 dynamics:
-  name: IntegrateAndFire
-  parameters:
-    leakReversal: { value: -50.0 }
-    tau:          { value: 30.0 }
-    thresh:       { value: -55.0 }
-    reset:        { value: -70.0 }
-  state_variables:
-    v:
-      equation: { rhs: "(leakReversal - v) / tau" }
-      initial_value: -50.0
-      variable_of_interest: true
-  events:
-    spike:
-      condition: { rhs: "v > thresh" }
-      affect:    { rhs: "v = reset" }
+  name: iafRefCell
+  iri: neuroml:iafRefCell
 network:
-  number_of_nodes: 1
+  dynamics:
+    iaf:
+      name: iaf
+      iri: neuroml:iafRefCell
+      parameters:
+        C: {value: 250, unit: pF}
+        thresh: {value: 1, unit: mV}
+        reset: {value: -1, unit: mV}
+        leakConductance: {value: 12.5, unit: nS}
+        leakReversal: {value: 0, unit: mV}
+        refract: {value: 2, unit: ms}
+    spks:
+      name: spks
+      iri: neuroml:spikeArray
+      events:
+        spikes:
+          event_type: preset_time
+          trigger_times: [100, 120, 126, 135]
+  nodes:
+    - {id: 0, dynamics: iaf}
+    - {id: 1, dynamics: spks}
+  edges:
+    - source: 1
+      target: 0
+      coupling: alphaCurrentSynapse
+      parameters:
+        tau: {value: 1.0, unit: ms}
+        ibase: {value: 1, unit: nA}
+        weight: {value: 0.05}
+        delay: {value: 1, unit: ms}
 integration:
   method: euler
-  step_size: 0.005
+  step_size: 0.001
   duration: 300.0
   time_scale: ms
 """)
-print(f"Model: {exp.dynamics.name}")
+print(f"Model: {exp.dynamics.name if exp.dynamics else 'network'}")
 ```
 
 ## 2. Render LEMS XML
 
 ```{python}
 xml = exp.render("lems")
-print(xml[:1200])
+print(xml[:1500])
 ```
 
 ## 3. Run Reference
 
 ```{python}
-import sys, os
-sys.path.insert(0, os.path.dirname(os.path.abspath(".")))
-from _nml_helpers import run_lems_example
+from tvbo.adapters.neuroml import run_lems_example
 
 ref_outputs = run_lems_example("LEMS_NML2_Ex21_CurrentBasedSynapses.xml")
 for name, arr in ref_outputs.items():
@@ -68,37 +83,14 @@ for name, arr in ref_outputs.items():
 ## 4. Run TVBO
 
 ```{python}
-import numpy as np
-
 result = exp.run("neuroml")
 da = result.integration.data
-tvbo_arr = np.column_stack([da.coords['time'].values, da.values])
-print(f"TVBO: shape={tvbo_arr.shape}")
+print(f"TVBO: {da.dims}, shape={da.shape}")
 ```
 
-## 5. Plot Reference
+## 5. Compare & Plot
 
 ```{python}
-import matplotlib.pyplot as plt
-import numpy as np
-
-for name, ref_arr in ref_outputs.items():
-    t = ref_arr[:, 0] * 1000
-    fig, ax = plt.subplots(figsize=(10, 4))
-    for i in range(1, min(ref_arr.shape[1], 6)):
-        ax.plot(t, ref_arr[:, i] * 1000, alpha=0.8, label=f'Cell {i}')
-    ax.set_xlabel("Time (ms)")
-    ax.set_ylabel("Voltage (mV)")
-    ax.set_title(f"Ex21: Current-Based Synapses — {name}")
-    ax.legend(fontsize=7)
-    ax.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.show()
+from tvbo.adapters.neuroml import plot_lems_comparison
+plot_lems_comparison("LEMS_NML2_Ex21_CurrentBasedSynapses.xml", ref_outputs, result.integration.data, title_prefix="Ex21")
 ```
-
-::: {.callout-note}
-## Current-Based Synapses
-Synaptic models (`alphaCurrSynapse`, `expCurrSynapse`) are NeuroML-native network
-features.  TVBO represents the cell dynamics; synaptic kinetics are handled
-by the NeuroML adapter.
-:::

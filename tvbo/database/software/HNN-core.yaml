@@ -1,0 +1,45 @@
+name: HNN-core
+description: Human Neocortical Neurosolver — a tool for simulating the cellular and
+  network-level origin of MEG/EEG signals using biophysically detailed neocortical
+  column models on NEURON.
+homepage: https://jonescompneurolab.github.io/hnn-core/
+repository: https://github.com/jonescompneurolab/hnn-core
+doi: 10.1523/ENEURO.0460-21.2022
+reference_publication: 10.7554/eLife.92862
+license: BSD-3-Clause
+is_accessible_for_free: true
+ecosystem:
+- pypi
+application_category: simulation
+date_created: '2020-01-01'
+development_status: active
+scale:
+- neuron
+- network_system
+model_paradigm:
+- spiking
+- compartmental
+tool_role:
+- simulator
+programming_language:
+- Python
+runtime_platform:
+- NEURON backend
+interoperates_with:
+- TVB
+- LFPy
+- NWB
+- MNE-Python
+author:
+- Mainak Jas
+- Stephanie Jones
+maintainer:
+- Jones Lab, Brown University
+funder:
+- NIH BRAIN Initiative
+keywords:
+- MEG
+- EEG
+- cortical column
+- evoked response
+issue_tracker: https://github.com/jonescompneurolab/hnn-core/issues

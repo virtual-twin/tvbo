@@ -1,0 +1,30 @@
+name: BrainSimII
+description: A neural simulator exploring AGI-inspired approaches to brain simulation,
+  with a focus on large-scale spiking neuron models and real-time interaction.
+repository: https://github.com/FutureAIGuru/BrainSimII
+license: MIT
+is_accessible_for_free: true
+application_category: simulation
+date_created: '2020-01-01'
+development_status: active
+scale:
+- neuron
+- network_system
+model_paradigm:
+- spiking
+tool_role:
+- simulator
+programming_language:
+- C#
+runtime_platform:
+- Windows
+author:
+- Charles Simon
+maintainer:
+- Charles Simon
+keywords:
+- AGI
+- spiking model
+- Windows
+- C#
+issue_tracker: https://github.com/FutureAIGuru/BrainSimII/issues

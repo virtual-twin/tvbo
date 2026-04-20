@@ -1538,6 +1538,8 @@ class Dynamics(tvbo_datamodel.Dynamics):
 
         equations["state-equations"] = []
         for k, sv in self.state_variables.items():
+            if not getattr(sv, "equation", None):
+                continue
             t = Symbol("t")
             sv_symbol = Symbol(k)
             # Prefer conditionals on the Equation if present; fallback to rhs parsing
