@@ -1688,7 +1688,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             if self.network and self.network.parcellation
             else ""
         )
-        return f"ses-{self.id}_desc-{self.dynamics.label}"
+        desc = self.dynamics.label or self.dynamics.name or "simulation"
+        return f"ses-{self.id}_desc-{desc}"
 
     @property
     def max_delay(self) -> float:
@@ -2069,7 +2070,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         return self.render_code(format=format, **kwargs)
 
     def save_code(self, dir, file_name=None):
-        if file_name is not None:
+        if file_name is None:
             file_prefix = self.get_experiment_file_prefix()
         else:
             file_prefix = file_name
