@@ -140,10 +140,18 @@ class ${class_name}(AbstractDynamics):
     INITIAL_STATE = ${tuple(initial_state)}
     % if aux_names:
     AUXILIARY_NAMES = ${tuple(aux_names)}
-    # Record states + auxiliaries so output-derived variables appear in results
-    VARIABLES_OF_INTEREST = ${tuple(state_names + aux_names)}
     % else:
     AUXILIARY_NAMES = ()
+    % endif
+<%
+    # Build VARIABLES_OF_INTEREST: all states + only explicitly requested auxiliaries
+    # When output lists derived variables, include them so the solver records them.
+    # When output is empty, record states only (tvboptim default).
+    requested_aux = [v for v in (output_vars or []) if v in aux_names]
+    voi = tuple(state_names + requested_aux) if requested_aux else ()
+%>\
+    % if voi:
+    VARIABLES_OF_INTEREST = ${voi}
     % endif
 
     DEFAULT_PARAMS = Bunch(
