@@ -8,21 +8,21 @@ bibliography: ../../references.bib
 
 This tutorial walks through the complete LEMS export workflow for three representative model types:
 
-1. A mean-field neural mass model (FitzHugh-Nagumo)
+1. A mean-field neural mass model (Generic2dOscillator)
 2. A spiking integrate-and-fire model with spike/reset events
 3. A full simulation experiment with network, coupling, and output
 
 ---
 
-## 1. FitzHugh-Nagumo — Basic Export
+## 1. Generic 2D Oscillator — Basic Export
 
-FitzHugh-Nagumo is already in the TVBO database as a `Dynamics` that maps cleanly to a LEMS `ComponentType`:
+`Generic2dOscillator` is in the TVBO database as a `Dynamics` that maps cleanly to a LEMS `ComponentType` and executes with the default jNeuroML backend:
 
 ```{python}
 from tvbo import Dynamics
 from tvbo.adapters.neuroml import NeuroMLAdapter
 
-fhn = Dynamics.from_db("JansenRit")
+fhn = Dynamics.from_db("Generic2dOscillator")
 adapter = NeuroMLAdapter(fhn)
 xml = adapter.render_code()
 print(xml)
@@ -30,12 +30,12 @@ print(xml)
 
 The rendered XML includes:
 
-- `<ComponentType name="FitzHughNagumo">` with all model parameters as `<Parameter>`
+- `<ComponentType name="Generic2dOscillator">` with all model parameters as `<Parameter>`
 - `<StateVariable name="V" ...>` and `<StateVariable name="W" ...>` with `<Exposure>`
-- `<TimeDerivative variable="V" value="(V - V^3/3 - W + I) / SEC"/>` — note the `/ SEC` to
+- `<TimeDerivative variable="V" value="..."/>` — note the `/ SEC` when needed to
   account for the TVBO convention of millisecond-based integration with a `1s` constant
 - `<OnStart>` with `<StateAssignment>` from initial conditions
-- A `<Component id="FitzHughNagumo" ...>` instance with default parameter values
+- A `<Component id="Generic2dOscillator" ...>` instance with default parameter values
 - A `<Simulation>` block with output files per state variable
 
 ---
@@ -146,9 +146,9 @@ from tvbo import SimulationExperiment
 from tvbo.adapters.neuroml import NeuroMLAdapter
 
 exp = SimulationExperiment.from_string("""
-label: JansenRit LEMS Export
+label: Generic2dOscillator LEMS Export
 dynamics:
-  name: JansenRit
+  name: Generic2dOscillator
 """)
 adapter = NeuroMLAdapter(exp)
 
@@ -241,11 +241,11 @@ adapter.run()
 # Via SimulationExperiment.run()
 exp.run("neuroml")
 
-# Use a specific downstream simulator
-adapter.run(backend="neuron")    # NEURON
-adapter.run(backend="brian2")    # Brian2
-adapter.run(backend="netpyne")   # NetPyNE
-adapter.run(backend="eden")      # EDEN
+# Optional downstream simulators (uncomment when installed)
+# adapter.run(backend="neuron")    # NEURON
+# adapter.run(backend="brian2")    # Brian2
+# adapter.run(backend="netpyne")   # NetPyNE
+# adapter.run(backend="eden")      # EDEN
 ```
 
 Supported backends: `jneuroml` (default), `neuron`, `brian2`, `netpyne`, `eden`.
