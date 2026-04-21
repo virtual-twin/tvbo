@@ -195,7 +195,7 @@ Run both experiments with jNeuroML and confirm the traces are identical.
 ```{python}
 import sys, os
 sys.path.insert(0, os.path.join(os.path.abspath("."), "examples"))
-from _nml_helpers import run_lems_example
+from tvbo.adapters.neuroml import run_lems_example
 import numpy as np
 
 # Run the database version which uses the IRI — it matches the canonical
