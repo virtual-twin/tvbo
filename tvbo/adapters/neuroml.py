@@ -4081,13 +4081,13 @@ def run_lems_example(lems_file: str, cwd: str | _Path | None = None) -> dict[str
             env["PATH"] = venv_bin + _os.pathsep + cur_path
         return env
 
-    def _run(lems_name: str) -> subprocess.CompletedProcess:
+    def _run(lems_name: str) -> _subprocess.CompletedProcess:
         return _subprocess.run(
             ["java", "-jar", str(jar), str(lems_name), "-nogui"],
             capture_output=True, text=True, cwd=str(cwd), timeout=600,
         )
 
-    def _run_neuron_backend(lems_name: str) -> subprocess.CompletedProcess:
+    def _run_neuron_backend(lems_name: str) -> _subprocess.CompletedProcess:
         """Generate and execute a LEMS model through NEURON backend."""
         env = _build_neuron_env()
 
