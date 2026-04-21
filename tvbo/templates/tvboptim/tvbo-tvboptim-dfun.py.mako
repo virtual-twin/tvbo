@@ -237,14 +237,18 @@ ${_fdef}
         d${sv.name}_dt = ${jaxcode_obj(sv)}
         % endfor
 
-        derivatives = jnp.array([
+        derivatives = jnp.stack([
             % for sv in model.state_variables.values():
-            d${sv.name}_dt,
+            jnp.atleast_1d(d${sv.name}_dt),
             % endfor
-        ])
+        ], axis=0)
 
         % if aux_names:
-        auxiliaries = jnp.array([${', '.join(aux_names)}])
+        auxiliaries = jnp.stack([
+            % for aux in aux_names:
+            jnp.atleast_1d(${aux}),
+            % endfor
+        ], axis=0)
         % else:
         auxiliaries = jnp.array([])
         % endif
