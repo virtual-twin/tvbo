@@ -16,14 +16,16 @@ Output:
 <%
 import textwrap
 from tvbo.codegen import render_expression
-from tvbo.templates.tvboptim.utils import get_param_info
+from tvbo.templates.tvboptim.utils import get_param_info, get_recorded_variable_names
 
 # Get model from context
 if 'experiment' in context.keys():
+    _experiment_ctx = experiment
     model = experiment.dynamics
     # Also collect experiment-level functions if available
     _exp_functions = getattr(experiment, 'functions', None) or {}
 else:
+    _experiment_ctx = None
     model = context['model']
     _exp_functions = {}
 
@@ -45,18 +47,15 @@ state_names = list(model.state_variables.keys())
 initial_state = [float(sv.initial_value) if sv.initial_value is not None else 0.0
                  for sv in model.state_variables.values()]
 
-# Determine auxiliary variables from 'output' attribute.
-# output is a list of derived_variable names (schema: range: string, multivalued: true).
-# State variables in output are silently ignored (already in state array).
-output_vars = getattr(model, 'output', None) or []
-if isinstance(output_vars, str):
-    output_vars = [output_vars]
-
-if output_vars:
-    aux_names = [v for v in output_vars if v in (model.derived_variables or {})]
-else:
-    # Default: all derived variables become auxiliaries
-    aux_names = list(model.derived_variables.keys()) if model.derived_variables else []
+# Determine auxiliaries to record. Includes:
+#   * derived variables listed in model.output, and
+#   * derived variables referenced as observation sources (auto-included so that
+#     observing an auxiliary does not require also adding it to model.output).
+# all_aux_names = every derived variable defined by the model (the AUXILIARY_NAMES tuple).
+# requested_aux = subset that the solver should record (extends VARIABLES_OF_INTEREST).
+all_aux_names = list(model.derived_variables.keys()) if model.derived_variables else []
+_, requested_aux, recorded_var_names = get_recorded_variable_names(model, _experiment_ctx)
+aux_names = all_aux_names
 
 # Extract parameter info using shared utility
 param_names, param_defaults, param_shapes = get_param_info(model.parameters)
@@ -144,10 +143,9 @@ class ${class_name}(AbstractDynamics):
     AUXILIARY_NAMES = ()
     % endif
 <%
-    # Build VARIABLES_OF_INTEREST: all states + only explicitly requested auxiliaries
-    # When output lists derived variables, include them so the solver records them.
-    # When output is empty, record states only (tvboptim default).
-    requested_aux = [v for v in (output_vars or []) if v in aux_names]
+    # VARIABLES_OF_INTEREST: all states (in order) + only auxiliaries that are
+    # explicitly requested via model.output OR referenced by an observation source.
+    # Empty tuple = tvboptim default (record all states only).
     voi = tuple(state_names + requested_aux) if requested_aux else ()
 %>\
     % if voi:

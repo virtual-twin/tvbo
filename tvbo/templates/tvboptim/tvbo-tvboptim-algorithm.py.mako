@@ -119,6 +119,11 @@ model = experiment.dynamics
 state_var_names = list(model.state_variables.keys()) if model and model.state_variables else []
 state_names = state_var_names
 
+# Recorded variable layout (states + auxiliaries-in-VOI). Matches the dfun's
+# VARIABLES_OF_INTEREST and solution.variable_names from tvboptim >= 0.2.7.
+from tvbo.templates.tvboptim.utils import get_recorded_variable_names
+_, _recorded_aux, var_names = get_recorded_variable_names(model, experiment) if model else ([], [], [])
+
 # Build coupling parameter lookup: param_name -> coupling_key
 coupling_param_to_key = {}
 network = experiment.network
@@ -495,10 +500,11 @@ def run_${algo_name}(
     agg_str = str(obs_aggregation) if obs_aggregation else None
 
     if obs_def and obs_source and agg_str == 'mean' and not has_pipeline:
-        if str(obs_source) in state_var_names:
-            state_idx = state_var_names.index(str(obs_source))
+        # Source must be a recorded variable (state or auxiliary in VOI).
+        if str(obs_source) in var_names:
+            state_idx = var_names.index(str(obs_source))
         else:
-            raise ValueError(f"Observation '{obs}' source '{obs_source}' not found in state variables: {state_var_names}")
+            raise ValueError(f"Observation '{obs}' source '{obs_source}' not in recorded variables: {var_names}. Add it to model.output or to an observation source so the solver records it.")
     else:
         state_idx = None
 
@@ -574,9 +580,9 @@ def run_${algo_name}(
         # Convert enum to string for comparison
         agg_str = str(obs_aggregation) if obs_aggregation else None
         if obs_source and agg_str == 'mean' and not has_pipeline:
-            # Simple aggregation case
-            if str(obs_source) in state_var_names:
-                state_idx = state_var_names.index(str(obs_source))
+            # Simple aggregation case: source must be a recorded variable.
+            if str(obs_source) in var_names:
+                state_idx = var_names.index(str(obs_source))
             else:
                 state_idx = 0
         else:

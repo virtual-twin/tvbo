@@ -80,6 +80,45 @@ def get_param_info(parameters: dict) -> Tuple[List[str], Dict[str, float], Dict[
     return param_names, param_defaults, param_shapes
 
 
+def get_recorded_variable_names(model: Any, experiment: Any = None) -> Tuple[List[str], List[str], List[str]]:
+    """Compute the variable layout recorded by tvboptim's solver.
+
+    The generated dynamics class declares ``VARIABLES_OF_INTEREST = state_names + recorded_aux``
+    where ``recorded_aux`` is the union of:
+      * model.output entries that are derived (auxiliary) variables, and
+      * derived variables referenced as the ``source`` of any experiment observation
+        (so observations of auxiliaries work without requiring users to also list them
+        in ``model.output``).
+
+    Returns ``(state_names, recorded_aux, all_var_names)`` where ``all_var_names`` is
+    the runtime ordering on axis 1 of ``solution.ys`` / ``result.data`` and matches
+    ``solution.variable_names`` produced by tvboptim >= 0.2.7.
+
+    Args:
+        model: Dynamics object (with state_variables and derived_variables).
+        experiment: Optional SimulationExperiment; observations are scanned when present.
+    """
+    state_names = list(model.state_variables.keys()) if model and model.state_variables else []
+    aux_names = list(model.derived_variables.keys()) if model and getattr(model, 'derived_variables', None) else []
+
+    output_vars = getattr(model, 'output', None) or []
+    if isinstance(output_vars, str):
+        output_vars = [output_vars]
+    requested_aux = [v for v in output_vars if v in aux_names]
+
+    if experiment is not None and getattr(experiment, 'observations', None):
+        for obs in experiment.observations.values():
+            src = getattr(obs, 'source', None)
+            if not src:
+                continue
+            src_name = str(src)
+            if src_name in aux_names and src_name not in requested_aux:
+                requested_aux.append(src_name)
+
+    all_var_names = state_names + requested_aux
+    return state_names, requested_aux, all_var_names
+
+
 def get_node_state_overrides(
     network: Any, n_nodes: int, state_names: List[str],
     default_initial_state: List[float]
