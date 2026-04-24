@@ -1,0 +1,53 @@
+name: NEST
+description: NEST is a simulator for spiking neural network models that focuses on
+  the dynamics, size, and structure of neural systems rather than on the exact morphology
+  of individual neurons.
+homepage: https://www.nest-simulator.org
+repository: https://github.com/nest/nest-simulator
+doi: 10.5281/zenodo.882971
+reference_publication: 10.3389/fninf.2007.00011
+license: GPL-2.0-or-later
+is_accessible_for_free: true
+ecosystem:
+- pypi
+application_category: simulation
+date_created: '2004-01-01'
+development_status: active
+scale:
+- neuron
+- neural_network
+- network_system
+model_paradigm:
+- spiking
+- plasticity
+tool_role:
+- simulator
+programming_language:
+- C++
+- Python
+runtime_platform:
+- MPI
+- OpenMP
+interoperates_with:
+- PyNN
+- NeuroML
+- TVB
+- SONATA
+author:
+- Marc-Oliver Gewaltig
+- Markus Diesmann
+maintainer:
+- NEST Initiative
+funder:
+- EU HBP
+- Helmholtz Association
+- Jülich Research Centre
+keywords:
+- spiking neural network
+- point neuron
+- large-scale simulation
+- plasticity
+same_as:
+- https://www.wikidata.org/entity/Q51142269
+- https://scicrunch.org/resolver/RRID:SCR_002963
+issue_tracker: https://github.com/nest/nest-simulator/issues

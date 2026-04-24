@@ -1,0 +1,50 @@
+name: NetPyNE
+description: A high-level Python interface for NEURON that facilitates the development,
+  simulation, and analysis of biological neuronal networks. Supports multiscale models
+  from detailed to abstract.
+homepage: http://netpyne.org
+repository: https://github.com/Neurosim-lab/netpyne
+doi: 10.7554/eLife.44494
+reference_publication: 10.7554/eLife.44494
+license: MIT
+is_accessible_for_free: true
+ecosystem:
+- pypi
+application_category: simulation
+date_created: '2016-01-01'
+development_status: active
+scale:
+- neuron
+- neural_network
+- network_system
+model_paradigm:
+- spiking
+- multiscale
+tool_role:
+- workflow_framework
+programming_language:
+- Python
+runtime_platform:
+- NEURON backend
+interoperates_with:
+- NEURON
+- TVB
+- PyNN
+- NeuroML
+- SONATA
+author:
+- Salvador Dura-Bernal
+- William Lytton
+maintainer:
+- SUNY Downstate
+funder:
+- NIH
+- SUNY Downstate
+keywords:
+- NEURON
+- network builder
+- Python
+- GUI
+same_as:
+- https://scicrunch.org/resolver/RRID:SCR_017603
+issue_tracker: https://github.com/Neurosim-lab/netpyne/issues

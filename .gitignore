@@ -131,3 +131,4 @@ tvbo/templates/modules/*.py.mako.py
 docs/Interoperability/NeuroML/examples/_*.*
 results/*.dat
 var
+docs/Interoperability/NeuroML/examples/Ex15_CaDynamics_files/execute-results/html.json

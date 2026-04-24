@@ -23,6 +23,7 @@ description: >
 
 dynamics:
   name: FitzHughNagumo1969
+  iri: "neuroml:fitzHughNagumo1969Cell"
   description: >
     FitzHugh-Nagumo 1969 model (Scholarpedia variant).
     NeuroML2 defines this as fitzHughNagumo1969Cell in Cells.xml.

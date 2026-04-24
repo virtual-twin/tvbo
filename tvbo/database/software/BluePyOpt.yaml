@@ -1,0 +1,42 @@
+name: BluePyOpt
+description: Blue Brain Python Optimisation Library — a framework for data-driven
+  model parameter optimisation using multi-objective evolutionary algorithms on NEURON
+  models.
+homepage: https://bluepyopt.readthedocs.io
+repository: https://github.com/BlueBrain/BluePyOpt
+doi: 10.3389/fninf.2016.00017
+reference_publication: 10.3389/fninf.2016.00017
+license: LGPL-3.0-only
+is_accessible_for_free: true
+ecosystem:
+- pypi
+application_category: optimization
+date_created: '2016-01-01'
+development_status: active
+scale:
+- channel
+- neuron
+model_paradigm:
+- conductance_based
+tool_role:
+- optimization_framework
+programming_language:
+- Python
+runtime_platform:
+- Python
+- iPyParallel
+interoperates_with:
+- NEURON
+- eFEL
+author:
+- Werner Van Geit
+maintainer:
+- Blue Brain Project
+funder:
+- EPFL Blue Brain Project
+keywords:
+- optimization
+- evolutionary algorithm
+- NEURON
+- parameter fitting
+issue_tracker: https://github.com/BlueBrain/BluePyOpt/issues

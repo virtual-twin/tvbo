@@ -1,0 +1,48 @@
+name: MOOSE
+description: Multiscale Object-Oriented Simulation Environment. Supports models from
+  sub-cellular signaling to large networks, including reaction-diffusion, electrical,
+  and chemical compartmental models.
+homepage: https://moose.ncbs.res.in
+repository: https://github.com/BhallaLab/moose-core
+doi: 10.3389/fninf.2014.00094
+reference_publication: 10.3389/fninf.2008.00006
+license: GPL-3.0-only
+is_accessible_for_free: true
+ecosystem:
+- pypi
+application_category: simulation
+date_created: '2008-01-01'
+development_status: active
+scale:
+- channel
+- neuron
+- network_system
+model_paradigm:
+- reaction_diffusion
+- compartmental
+- spiking
+tool_role:
+- simulator
+programming_language:
+- C++
+- Python
+runtime_platform:
+- Python
+interoperates_with:
+- NeuroML
+- NEURON
+author:
+- Upinder Bhalla
+maintainer:
+- NCBS Bangalore
+funder:
+- NCBS
+- DBT India
+keywords:
+- multi-scale
+- compartmental
+- signaling pathway
+- reaction-diffusion
+same_as:
+- https://scicrunch.org/resolver/RRID:SCR_008031
+issue_tracker: https://github.com/BhallaLab/moose-core/issues

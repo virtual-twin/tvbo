@@ -149,6 +149,16 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             from tvbo.classes.dynamics import _resolve_dynamics_aliases
             _resolve_dynamics_aliases(dyn_kw)
 
+        # Also resolve aliases in network.dynamics entries
+        net_kw = kwargs.get("network")
+        if isinstance(net_kw, dict):
+            net_dyn = net_kw.get("dynamics")
+            if isinstance(net_dyn, dict):
+                from tvbo.classes.dynamics import _resolve_dynamics_aliases
+                for _dv in net_dyn.values():
+                    if isinstance(_dv, dict):
+                        _resolve_dynamics_aliases(_dv)
+
         # Delegate to the parent dataclass initializer
         super().__init__(**kwargs)
 
@@ -1678,14 +1688,15 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             if self.network and self.network.parcellation
             else ""
         )
-        return f"ses-{self.id}_desc-{self.dynamics.label}"
+        desc = self.dynamics.label or self.dynamics.name or "simulation"
+        return f"ses-{self.id}_desc-{desc}"
 
     @property
     def max_delay(self) -> float:
         """Compute the maximum delay (ms) from the current network/connectome."""
         if self.network is None:
             return 0.0
-        delays = self.network.compute_delays()
+        delays = self.network.calculate_delays()
         # Use nanmax to ignore NaN values for non-existent edges
         max_val = np.nanmax(delays)
         return float(max_val) if not np.isnan(max_val) else 0.0
@@ -1993,6 +2004,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         elif format.lower() in ["lems", "neuroml", "nml"]:
             from tvbo.adapters.neuroml import NeuroMLAdapter
             adapter = NeuroMLAdapter(self)
+            kwargs.setdefault("use_standard_types", True)
             rendered_code = adapter.render_code(**kwargs)
 
         else:
@@ -2058,7 +2070,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         return self.render_code(format=format, **kwargs)
 
     def save_code(self, dir, file_name=None):
-        if file_name is not None:
+        if file_name is None:
             file_prefix = self.get_experiment_file_prefix()
         else:
             file_prefix = file_name

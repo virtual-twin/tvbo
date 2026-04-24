@@ -1,0 +1,42 @@
+name: GENESIS
+description: GEneral NEural SImulation System — one of the earliest simulators for
+  biologically realistic modeling of neural systems, from sub-cellular components
+  to large networks.
+homepage: http://www.genesis-sim.org
+repository: https://github.com/genesis-sim/genesis-2.4
+reference_publication: 10.1007/978-1-4612-1634-6_10
+license: GPL-2.0-only
+is_accessible_for_free: true
+application_category: simulation
+date_created: '1988-01-01'
+development_status: inactive
+scale:
+- channel
+- neuron
+- network_system
+model_paradigm:
+- compartmental
+- conductance_based
+- spiking
+tool_role:
+- simulator
+programming_language:
+- C
+runtime_platform:
+- C
+interoperates_with:
+- NEURON
+- NeuroML
+- neuroConstruct
+author:
+- James Bower
+- David Beeman
+maintainer:
+- Caltech / University of Essex
+keywords:
+- compartmental model
+- ion channel
+- classic simulator
+same_as:
+- https://www.wikidata.org/entity/Q5533484
+- https://scicrunch.org/resolver/RRID:SCR_002807

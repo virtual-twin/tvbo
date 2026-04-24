@@ -1,0 +1,42 @@
+name: jNeuroML
+description: Java-based toolchain for NeuroML/LEMS model validation, simulation, and
+  export to multiple simulator backends including NEURON, NEST, and Brian2.
+homepage: https://docs.neuroml.org/Userdocs/Software/jNeuroML.html
+repository: https://github.com/NeuroML/jNeuroML
+reference_publication: 10.1098/rstb.2017.0380
+license: LGPL-3.0-only
+is_accessible_for_free: true
+application_category: specification
+date_created: '2014-01-01'
+development_status: active
+scale:
+- channel
+- neuron
+- neural_network
+- network_system
+model_paradigm:
+- conductance_based
+- spiking
+tool_role:
+- simulator
+- specification_language
+programming_language:
+- Java
+runtime_platform:
+- JVM
+interoperates_with:
+- NeuroML
+- LEMS
+- NEURON
+- NEST
+- Brian2
+author:
+- Padraig Gleeson
+maintainer:
+- Padraig Gleeson
+keywords:
+- NeuroML
+- LEMS
+- validation
+- Java
+issue_tracker: https://github.com/NeuroML/jNeuroML/issues

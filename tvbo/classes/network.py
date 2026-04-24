@@ -367,6 +367,15 @@ class Network(tvbo_datamodel.Network):
                 tvbo_datamodel.Node(id=i, label=f"node_{i}") for i in range(n_nodes)
             ]
 
+        # Resolve Dynamics slot aliases (components → modes) in network dynamics
+        # so the LinkML loader can construct Dynamics objects correctly.
+        _net_dynamics = kwargs.get("dynamics")
+        if isinstance(_net_dynamics, dict):
+            from tvbo.classes.dynamics import _resolve_dynamics_aliases
+            for _dk, _dv in _net_dynamics.items():
+                if isinstance(_dv, dict):
+                    _resolve_dynamics_aliases(_dv)
+
         super().__init__(**kwargs)
 
         # Sync number_of_nodes from nodes list (authoritative after init)
@@ -2134,81 +2143,21 @@ class Network(tvbo_datamodel.Network):
     def compute_delays(
         self, output_unit: Optional[str] = None
     ) -> Union[np.ndarray, JaxArray]:
-        """Compute transmission delays from lengths and conduction speed.
-
-        Uses sympy for unit-aware computation: delay = length / speed.
-        For explicit edge-based networks, extracts delays from edge parameters.
+        """Deprecated: use :meth:`calculate_delays` instead.
 
         Parameters
         ----------
         output_unit : str, optional
-            Desired output time unit (e.g., "ms", "s"). If None, uses network's time_unit.
-
-        Returns
-        -------
-        np.ndarray or jax.Array
-            Delay matrix (N x N) in the specified time unit. NaN for non-existent edges.
-
-        Raises
-        ------
-        ValueError
-            If lengths matrix or conduction speed is not available.
+            Passed through to ``calculate_delays(output_unit=...)``.
         """
-        import sympy.physics.units as u
-        from sympy import nsimplify
-        from sympy.parsing.sympy_parser import parse_expr
+        import warnings
 
-        # If using explicit edges, construct delay matrix from edge parameters
-        if hasattr(self, "edges") and self.edges:
-            n = self.number_of_nodes or 1
-            delays = np.full((n, n), np.nan)
-            for edge in self.edges:
-                if hasattr(edge, "source") and hasattr(edge, "target"):
-                    delay_val = 0.0
-                    if hasattr(edge, "parameters") and edge.parameters:
-                        delay_param = (
-                            edge.parameters["delay"]
-                            if "delay" in edge.parameters
-                            else None
-                        )
-                        if delay_param and hasattr(delay_param, "value"):
-                            delay_val = float(delay_param.value)
-                    delays[edge.source, edge.target] = delay_val
-            return delays
-
-        lengths = self.lengths_matrix
-        if lengths is None:
-            return np.zeros((self.number_of_nodes or 1, self.number_of_nodes or 1))
-        cs = self.conduction_speed
-        if cs is None or not hasattr(cs, "value"):
-            raise ValueError("Conduction speed not set")
-
-        # Use sympy's full unit namespace - no hardcoded mapping needed
-        unit_ns = dict(vars(u))
-
-        # Get units as SymPy-parseable symbols (e.g. "mm/ms" not "mm_per_ms")
-        from tvbo.utils.units import unit_to_symbol
-
-        distance_unit_str = unit_to_symbol(getattr(self, "distance_unit", None) or "mm")
-        time_unit_str = unit_to_symbol(
-            output_unit or getattr(self, "time_unit", None) or "ms"
+        warnings.warn(
+            "compute_delays() is deprecated, use calculate_delays() instead",
+            DeprecationWarning,
+            stacklevel=2,
         )
-        speed_unit_str = (
-            unit_to_symbol(cs.unit)
-            if cs.unit
-            else f"{distance_unit_str}/{time_unit_str}"
-        )
-
-        length_unit = parse_expr(distance_unit_str, local_dict=unit_ns)
-        speed_unit = parse_expr(speed_unit_str, local_dict=unit_ns)
-        target_unit = parse_expr(time_unit_str, local_dict=unit_ns)
-
-        # delay = length / speed, then convert to target unit
-        delay_unit = length_unit / speed_unit
-        converted = u.convert_to(delay_unit, target_unit)
-        factor = float(nsimplify(converted / target_unit))
-
-        return lengths / cs.value * factor
+        return self.calculate_delays(output_unit=output_unit)
 
     def execute(
         self,
@@ -2545,24 +2494,38 @@ class Network(tvbo_datamodel.Network):
         return fig
 
     def calculate_delays(
-        self, conduction_speed: Optional[float] = None
+        self,
+        conduction_speed: Optional[float] = None,
+        output_unit: Optional[str] = None,
     ) -> Union[np.ndarray, JaxArray]:
         """Calculate signal propagation delays between regions.
+
+        Supports two network representations:
+
+        1. **Matrix-based** — delays are ``lengths / conduction_speed``, with
+           optional unit conversion via *output_unit*.
+        2. **Edge-based** — delays are extracted from explicit edge objects that
+           carry ``source``, ``target``, and a ``"delay"`` parameter.
 
         Parameters
         ----------
         conduction_speed : float, optional
-            Conduction speed in mm/ms. If None, uses `self.conduction_speed.value`
+            Override conduction speed. If *None*, uses ``self.conduction_speed``.
+        output_unit : str, optional
+            Desired output time unit (e.g. ``"ms"``, ``"s"``). When given,
+            sympy unit conversion is applied. If *None*, the result is in the
+            network's native time unit (defaults to ms).
 
         Returns
         -------
         np.ndarray or jax.Array
-            Delay matrix (N x N) in milliseconds
+            Delay matrix (N x N). For edge-based networks, entries without an
+            edge are ``NaN``.
 
         Raises
         ------
         ValueError
-            If lengths matrix is not available
+            If neither lengths matrix nor edge-based delays are available.
 
         Examples
         --------
@@ -2573,21 +2536,89 @@ class Network(tvbo_datamodel.Network):
         plt.imshow(delays, cmap='viridis')
         plt.colorbar(label='Delay (ms)')
         ```
-
-        See Also
-        --------
-        compute_delays : Alternative method with string "default" option
         """
+        # --- Edge-based path: edges with source/target indices ---
+        if hasattr(self, "edges") and self.edges:
+            # Only use edge path when edges are actual connections (have source/target)
+            edge_delays = self._delays_from_edges()
+            if edge_delays is not None:
+                return edge_delays
+
+        # --- Matrix-based path: lengths / conduction_speed ---
         if conduction_speed is None:
             cs_param = getattr(self, "conduction_speed", None)
             if cs_param and hasattr(cs_param, "value"):
                 conduction_speed = cs_param.value  # type: ignore[attr-defined]
             else:
                 conduction_speed = 3.0  # default fallback
+
         lengths = self.lengths_matrix
         if lengths is None:
             raise ValueError("Lengths matrix is not available")
-        return lengths / conduction_speed  # type: ignore[operator]
+
+        delays = lengths / conduction_speed  # type: ignore[operator]
+
+        if output_unit is not None:
+            delays = delays * self._unit_conversion_factor(output_unit)
+
+        return delays
+
+    def _delays_from_edges(self) -> Optional[np.ndarray]:
+        """Build delay matrix from explicit edge objects.
+
+        Returns None if edges don't represent point-to-point connections
+        (i.e. they lack source/target attributes).
+        """
+        edges_with_endpoints = [
+            e for e in self.edges
+            if hasattr(e, "source") and hasattr(e, "target")
+            and e.source is not None and e.target is not None
+        ]
+        if not edges_with_endpoints:
+            return None
+
+        n = self.number_of_nodes or 1
+        delays = np.full((n, n), np.nan)
+        for edge in edges_with_endpoints:
+            delay_val = 0.0
+            if hasattr(edge, "parameters") and edge.parameters:
+                delay_param = edge.parameters.get("delay")
+                if delay_param and hasattr(delay_param, "value"):
+                    delay_val = float(delay_param.value)
+            delays[edge.source, edge.target] = delay_val
+        return delays
+
+    def _unit_conversion_factor(self, output_unit: str) -> float:
+        """Compute multiplicative factor to convert native delay units to *output_unit*."""
+        import sympy.physics.units as u
+        from sympy import nsimplify
+        from sympy.parsing.sympy_parser import parse_expr
+        from tvbo.utils.units import unit_to_symbol
+
+        unit_ns = dict(vars(u))
+
+        distance_unit_str = unit_to_symbol(
+            getattr(self, "distance_unit", None) or "mm"
+        )
+        cs_param = self.conduction_speed
+        speed_unit_str = (
+            unit_to_symbol(cs_param.unit)
+            if cs_param and cs_param.unit
+            else f"{distance_unit_str}/{unit_to_symbol(getattr(self, 'time_unit', None) or 'ms')}"
+        )
+        native_time_str = unit_to_symbol(
+            getattr(self, "time_unit", None) or "ms"
+        )
+        target_time_str = unit_to_symbol(output_unit)
+
+        # Native delay unit: distance / speed  (e.g. mm / (mm/ms) = ms)
+        native_delay = parse_expr(distance_unit_str, local_dict=unit_ns) / parse_expr(
+            speed_unit_str, local_dict=unit_ns
+        )
+        target_unit = parse_expr(target_time_str, local_dict=unit_ns)
+
+        converted = u.convert_to(native_delay, target_unit)
+        return float(nsimplify(converted / target_unit))
 
     def create_graph(self, weight_threshold: float = 0) -> nx.MultiDiGraph:
         """Create NetworkX graph from network structure.

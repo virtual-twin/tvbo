@@ -1,0 +1,42 @@
+name: EEGLAB
+description: An interactive MATLAB toolbox for processing continuous and event-related
+  EEG, MEG, and other electrophysiological data using independent component analysis,
+  time/frequency analysis, and other methods.
+homepage: https://eeglab.org
+repository: https://github.com/sccn/eeglab
+doi: 10.1016/j.jneumeth.2003.10.009
+reference_publication: 10.1016/j.jneumeth.2003.10.009
+license: BSD-2-Clause
+is_accessible_for_free: true
+application_category: analysis
+date_created: '2004-01-01'
+development_status: active
+scale:
+- network_system
+model_paradigm:
+- generic
+tool_role:
+- analysis_tool
+programming_language:
+- MATLAB
+runtime_platform:
+- MATLAB
+interoperates_with:
+- FieldTrip
+- MNE-Python
+author:
+- Arnaud Delorme
+- Scott Makeig
+maintainer:
+- SCCN, UC San Diego
+funder:
+- NIH
+- UCSD
+keywords:
+- EEG
+- ICA
+- MATLAB
+- signal processing
+same_as:
+- https://www.wikidata.org/entity/Q18030316
+- https://scicrunch.org/resolver/RRID:SCR_007292
