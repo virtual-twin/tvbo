@@ -1898,10 +1898,11 @@ def run_experiment(
 
 <%
     # Result labels must match what the solver actually records (VARIABLES_OF_INTEREST).
-    # The solver records: all states + only explicitly requested auxiliaries (from model.output).
-    # When model.output is empty, only states are recorded.
-    _requested_aux = [v for v in (model_output_vars or []) if v in (model.derived_variables or {}).keys()]
-    result_var_names = state_names + _requested_aux
+    # Same logic as the dfun template: states + (auxiliaries listed in model.output OR
+    # referenced by an observation source). Mirrors solution.variable_names produced
+    # by tvboptim >= 0.2.7.
+    from tvbo.templates.tvboptim.utils import get_recorded_variable_names as _grvn
+    _, _requested_aux, result_var_names = _grvn(model, experiment)
 %>
     transient_result = SimulationResult(result=transient, state_names=${result_var_names}) if transient is not None else None
     main_result = SimulationResult(result=result, observations=observations, state_names=${result_var_names}, transient=transient_result) if result is not None else None

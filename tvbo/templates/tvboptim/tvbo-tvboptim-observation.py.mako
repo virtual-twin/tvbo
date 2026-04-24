@@ -2,11 +2,38 @@
 <%doc>TVB-Optim Observation Template. Context: experiment (SimulationExperiment).</%doc>
 <%
 from tvbo.codegen import render_expression
-from tvbo.templates.tvboptim.utils import get_attr, to_numeric
+from tvbo.templates.tvboptim.utils import get_attr, to_numeric, get_recorded_variable_names
 
 model = experiment.dynamics
 state_names = list(model.state_variables.keys()) if model else ['x']
+# Recorded variable layout (states + auxiliaries-in-VOI). Matches solution.variable_names
+# produced by tvboptim >= 0.2.7 and the dfun's VARIABLES_OF_INTEREST tuple.
+_, _recorded_aux, var_names = get_recorded_variable_names(model, experiment) if model else ([], [], ['x'])
 dt = experiment.integration.step_size if experiment.integration else 0.1
+
+
+def resolve_var_index(source, label: str) -> int:
+    """Resolve an observation source to its column in result.data / solution.ys.
+
+    Returns the index of ``source`` within the recorded variable layout
+    (states + auxiliaries-in-VOI). Network/edge/class-reference sources and
+    missing sources fall back to ``0`` to preserve prior behavior for the
+    external-monitor and BIDS paths. Raises only for unknown plain names —
+    this catches typos and aux observations whose source was not wired into
+    VARIABLES_OF_INTEREST.
+    """
+    if not source:
+        return 0
+    src = str(source)
+    if src.startswith('network.'):
+        return 0
+    if src in var_names:
+        return var_names.index(src)
+    raise ValueError(
+        f"Observation '{label}' source '{src}' not in recorded variables "
+        f"{var_names}. Add it to model.output or reference it from an "
+        f"observation so the solver records it."
+    )
 
 def is_numeric_string(s):
     """Check if string represents a number."""
@@ -593,8 +620,9 @@ from ${module} import ${class_name} as _Ext${class_name}
     is_network_edge = obs_source and str(obs_source).startswith('network.edges.')
     network_edge_label = str(obs_source).split('network.edges.')[1] if is_network_edge else None
 
-    # Determine state index from source (only for state variable sources)
-    state_idx = state_names.index(obs_source) if obs_source and obs_source in state_names else 0
+    # Resolve source to its column in the recorded variable layout (states + recorded aux).
+    # Returns 0 for network/external/empty sources (back-compat for external monitor paths).
+    state_idx = resolve_var_index(obs_source, obs_name)
 %>
 % if is_network_edge and network_edge_label in network_edge_data:
 ## =============================================================================
@@ -680,8 +708,8 @@ class ${class_name}(eqx.Module):
     # Analyze pipeline for data requirements
     needs_transient, needs_result_from_pipeline = analyze_pipeline(pipeline)
 
-    # Determine state index from source
-    state_idx = state_names.index(obs_source) if obs_source and obs_source in state_names else 0
+    # Resolve source to its column in the recorded variable layout.
+    state_idx = resolve_var_index(obs_source, obs_name)
 
     # Declarative observation attributes (language-independent)
     tail_samples = obs.get('tail_samples')  # Last N samples before aggregation
