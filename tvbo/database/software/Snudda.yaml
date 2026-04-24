@@ -1,0 +1,43 @@
+name: Snudda
+description: A Python tool for creating detailed neuronal network models with realistic
+  3D neuron placement, morphology, and connectivity using touch detection. Exports
+  to NEURON via SONATA format.
+homepage: https://snudda.readthedocs.io
+repository: https://github.com/Hjorthmedansen/Snudda
+reference_publication: 10.1038/s41467-022-30979-w
+license: GPL-3.0-only
+is_accessible_for_free: true
+ecosystem:
+- pypi
+application_category: simulation
+date_created: '2021-01-01'
+development_status: active
+scale:
+- neuron
+- network_system
+model_paradigm:
+- spiking
+- compartmental
+tool_role:
+- workflow_framework
+programming_language:
+- Python
+runtime_platform:
+- NEURON backend
+interoperates_with:
+- NEURON
+- SONATA
+author:
+- Johannes Hjorth
+- Jeanette Hellgren Kotaleski
+maintainer:
+- Johannes Hjorth
+funder:
+- KTH Stockholm
+- EU HBP
+keywords:
+- striatum
+- basal ganglia
+- detailed network
+- touch detection
+issue_tracker: https://github.com/Hjorthmedansen/Snudda/issues

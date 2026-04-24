@@ -25,6 +25,9 @@ TYPE_MAPPING = {
     "coupling": "Coupling",
     "experiment": "SimulationExperiment",
     "study": "SimulationStudy",
+    "observation": "ObservationModel",
+    "atlas": "BrainAtlas",
+    "software": "Software",
 }
 
 CURIE_PREFIXES = {

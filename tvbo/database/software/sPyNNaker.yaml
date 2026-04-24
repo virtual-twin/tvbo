@@ -1,0 +1,41 @@
+name: sPyNNaker
+description: Software stack enabling PyNN models to execute on the SpiNNaker neuromorphic
+  computing platform. Translates PyNN network descriptions into configurations for
+  SpiNNaker's many-core ARM processors.
+homepage: https://spinnakermanchester.github.io
+repository: https://github.com/SpiNNakerManchester/sPyNNaker
+reference_publication: 10.3389/fnins.2018.00816
+license: GPL-3.0-only
+is_accessible_for_free: true
+application_category: simulation
+date_created: '2015-01-01'
+development_status: active
+scale:
+- neuron
+- neural_network
+- network_system
+model_paradigm:
+- spiking
+tool_role:
+- backend_runtime
+programming_language:
+- Python
+runtime_platform:
+- SpiNNaker hardware
+interoperates_with:
+- PyNN
+author:
+- Andrew Rowley
+- Steve Furber
+maintainer:
+- University of Manchester
+funder:
+- EU HBP
+- EPSRC
+- University of Manchester
+keywords:
+- SpiNNaker
+- neuromorphic
+- PyNN
+- real-time
+issue_tracker: https://github.com/SpiNNakerManchester/sPyNNaker/issues

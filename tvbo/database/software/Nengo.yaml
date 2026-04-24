@@ -1,0 +1,52 @@
+name: Nengo
+description: A Python library for building and simulating large-scale brain models
+  using the Neural Engineering Framework (NEF). Supports spiking and rate-based neurons
+  with backends including NumPy, TensorFlow (NengoDL), and neuromorphic hardware (NengoLoihi).
+homepage: https://www.nengo.ai
+repository: https://github.com/nengo/nengo
+doi: 10.3389/fninf.2013.00048
+reference_publication: 10.3389/fninf.2013.00048
+license: MIT
+is_accessible_for_free: true
+ecosystem:
+- pypi
+application_category: simulation
+date_created: '2013-01-01'
+development_status: active
+scale:
+- neuron
+- neural_network
+- network_system
+model_paradigm:
+- spiking
+- rate_based
+tool_role:
+- framework
+programming_language:
+- Python
+runtime_platform:
+- Python
+- NumPy
+- TensorFlow
+- NengoLoihi
+interoperates_with:
+- NengoLoihi
+- NengoDL
+- SpiNNaker
+author:
+- Chris Eliasmith
+- Trevor Bekolay
+maintainer:
+- Applied Brain Research
+funder:
+- NSERC
+- CFI
+- Applied Brain Research
+keywords:
+- Neural Engineering Framework
+- semantic pointer
+- SPA
+- functional model
+same_as:
+- https://scicrunch.org/resolver/RRID:SCR_013828
+issue_tracker: https://github.com/nengo/nengo/issues

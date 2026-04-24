@@ -1,0 +1,41 @@
+name: CARLsim
+description: An efficient, easy-to-use, GPU-accelerated library for simulating large-scale
+  spiking neural network models with conductance-based synapses, STDP, and neuromodulation.
+homepage: https://uci-carl.github.io/CARLsim6/
+repository: https://github.com/UCI-CARL/CARLsim6
+reference_publication: 10.1162/neco_a_01208
+license: MIT
+is_accessible_for_free: true
+application_category: simulation
+date_created: '2014-01-01'
+development_status: active
+scale:
+- neuron
+- neural_network
+- network_system
+model_paradigm:
+- spiking
+- plasticity
+tool_role:
+- simulator
+programming_language:
+- C++
+- Python
+runtime_platform:
+- CUDA
+interoperates_with:
+- PyNN
+author:
+- Michael Beyeler
+- Nikil Dutt
+maintainer:
+- UCI CARL Lab
+funder:
+- NSF
+- UC Irvine
+keywords:
+- GPU
+- spiking neural network
+- CUDA
+- plasticity
+issue_tracker: https://github.com/UCI-CARL/CARLsim6/issues

@@ -5,93 +5,478 @@ description: "Intracellular calcium concentration pool and calcium-dependent K c
 
 ## Model: Calcium Dynamics
 
-Demonstrates `decayingPoolConcentrationModel` — a first-order calcium pool:
+A cerebellar granule cell (Maex & De Schutter, 1998) with 7 ion channel types,
+a decaying calcium concentration pool, and a calcium-dependent K channel:
 
 $$\frac{d[\text{Ca}^{2+}]}{dt} = -\frac{I_{Ca}}{2 F \cdot \text{shell}} - \frac{[\text{Ca}^{2+}] - [\text{Ca}^{2+}]_{\text{rest}}}{\tau}$$
 
-This is a granule cell with 7 channel types (Na, KDr, H, CaHVA, KA, KCa, leak)
-plus the Ca concentration pool.  All are expressible as TVBO state variables
-and derived variables.
+The full composition tree uses `neuroml:cell` with detailed morphology,
+`channelDensity` for each channel, species for Ca²⁺, and a mix of standard
+NeuroML rate types and custom `ComponentType` definitions.
 
 ---
 
-## 1. Define HH Cell in TVBO
+## 1. Define Granule Cell in TVBO
 
 ```{python}
 from tvbo import SimulationExperiment
 
-# Standard HH representing the core membrane dynamics
 exp = SimulationExperiment.from_string("""
-label: "NeuroML Ex15: HH Cell (Ca Dynamics)"
+label: "NeuroML Ex15: Ca Dynamics"
 dynamics:
-  name: HodgkinHuxley
+  name: Granule_98
+  iri: neuroml:cell
   parameters:
-    C:     { value: 10.0 }
-    g_Na:  { value: 1200.0 }
-    g_K:   { value: 360.0 }
-    g_L:   { value: 3.0 }
-    E_Na:  { value: 55.0 }
-    E_K:   { value: -90.0 }
-    E_L:   { value: -65.0 }
-    I_ext: { value: 0.01 }
-  derived_variables:
-    alpha_m:
-      equation:
-        rhs: "Piecewise((1.0, Eq(v, -40.0)), (0.1*(v + 40.0)/(1.0 - exp(-(v + 40.0)/10.0)), True))"
-    beta_m:
-      equation:
-        rhs: "4.0*exp(-(v + 65.0)/18.0)"
-    alpha_h:
-      equation:
-        rhs: "0.07*exp(-(v + 65.0)/20.0)"
-    beta_h:
-      equation:
-        rhs: "1.0/(1.0 + exp(-(v + 35.0)/10.0))"
-    alpha_n:
-      equation:
-        rhs: "Piecewise((0.1, Eq(v, -55.0)), (0.01*(v + 55.0)/(1.0 - exp(-(v + 55.0)/10.0)), True))"
-    beta_n:
-      equation:
-        rhs: "0.125*exp(-(v + 65.0)/80.0)"
-  state_variables:
-    v:
-      equation:
-        rhs: "(-g_Na*m**3*h*(v - E_Na) - g_K*n**4*(v - E_K) - g_L*(v - E_L) + I_ext*1000) / C"
-      initial_value: -65.0
-      variable_of_interest: true
-    m:
-      equation: { rhs: "alpha_m*(1 - m) - beta_m*m" }
-      initial_value: 0.05
-    h:
-      equation: { rhs: "alpha_h*(1 - h) - beta_h*h" }
-      initial_value: 0.6
-    n:
-      equation: { rhs: "alpha_n*(1 - n) - beta_n*n" }
-      initial_value: 0.32
+    diameter:            { value: 10.0 }
+    length:              { value: 10.0 }
+    specificCapacitance: { value: 1.0, unit: uF_per_cm2 }
+    initMembPotential:   { value: -65.0, unit: mV }
+    spikeThresh:         { value: 0, unit: mV }
+    resistivity:         { value: 0.1, unit: kohm_cm }
+    network_temperature: { value: 32, unit: degC }
+  components:
+    # ── Passive leak ──
+    GranPassiveCond:
+      name: GranPassiveCond
+      iri: neuroml:ionChannelPassive
+      parameters:
+        conductance: { value: 10, unit: pS }
+        condDensity: { value: 0.0330033, unit: mS_per_cm2 }
+        erev:        { value: -65.0, unit: mV }
+        ion:         { description: non_specific }
+
+    # ── Na fast inactivating channel (gateHHratesTau with custom timeCourse) ──
+    Gran_NaF_98:
+      name: Gran_NaF_98
+      iri: neuroml:ionChannelHH
+      parameters:
+        conductance: { value: 10, unit: pS }
+        species:     { description: na }
+        condDensity: { value: 55.7227, unit: mS_per_cm2 }
+        erev:        { value: 55.0, unit: mV }
+        ion:         { description: na }
+      components:
+        m:
+          name: m
+          iri: neuroml:gateHHratesTau
+          parameters:
+            instances: { value: 3 }
+          components:
+            q10Settings:
+              name: q10Settings
+              iri: neuroml:q10ExpTemp
+              parameters:
+                q10Factor:        { value: 3 }
+                experimentalTemp: { value: 17.350264793, unit: degC }
+            forwardRate:
+              name: forwardRate
+              iri: neuroml:HHExpRate
+              parameters:
+                rate:     { value: 1500, unit: per_s }
+                scale:    { value: 0.012345679, unit: V }
+                midpoint: { value: -0.028999999999999998, unit: V }
+            reverseRate:
+              name: reverseRate
+              iri: neuroml:HHExpRate
+              parameters:
+                rate:     { value: 1500, unit: per_s }
+                scale:    { value: -0.0151515, unit: V }
+                midpoint: { value: -0.028999999999999998, unit: V }
+            timeCourse:
+              name: timeCourse
+              iri: neuroml:Gran_NaF_98_m_tau_tau
+              parameters:
+                TIME_SCALE: { value: 1, unit: s }
+                VOLT_SCALE: { value: 1, unit: V }
+                offset:     { value: 0.010, unit: V }
+              derived_variables:
+                V:     { equation: { rhs: "(v - offset) / VOLT_SCALE" } }
+                ALPHA: { equation: { rhs: "alpha * TIME_SCALE" } }
+                BETA:  { equation: { rhs: "beta * TIME_SCALE" } }
+                t:     { equation: { rhs: "Piecewise(( ( 0 ) * TIME_SCALE , (ALPHA + BETA) == 0), ( ( 0.00005 ) * TIME_SCALE , 1/(ALPHA + BETA) < ( 0.00005 ) ), ( ( 1/(ALPHA + BETA)) * TIME_SCALE , True))" } }
+        h:
+          name: h
+          iri: neuroml:gateHHratesTau
+          parameters:
+            instances: { value: 1 }
+          components:
+            q10Settings:
+              name: q10Settings
+              iri: neuroml:q10ExpTemp
+              parameters:
+                q10Factor:        { value: 3 }
+                experimentalTemp: { value: 17.350264793, unit: degC }
+            forwardRate:
+              name: forwardRate
+              iri: neuroml:HHExpRate
+              parameters:
+                rate:     { value: 120, unit: per_s }
+                scale:    { value: -0.01123596, unit: V }
+                midpoint: { value: -0.04, unit: V }
+            reverseRate:
+              name: reverseRate
+              iri: neuroml:HHExpRate
+              parameters:
+                rate:     { value: 120, unit: per_s }
+                scale:    { value: 0.01123596, unit: V }
+                midpoint: { value: -0.04, unit: V }
+            timeCourse:
+              name: timeCourse
+              iri: neuroml:Gran_NaF_98_h_tau_tau
+              parameters:
+                TIME_SCALE: { value: 1, unit: s }
+                VOLT_SCALE: { value: 1, unit: V }
+                offset:     { value: 0.010, unit: V }
+              derived_variables:
+                V:     { equation: { rhs: "(v - offset) / VOLT_SCALE" } }
+                ALPHA: { equation: { rhs: "alpha * TIME_SCALE" } }
+                BETA:  { equation: { rhs: "beta * TIME_SCALE" } }
+                t:     { equation: { rhs: "Piecewise(( ( 0 ) * TIME_SCALE , (ALPHA + BETA) == 0), ( ( 0.000225 ) * TIME_SCALE , 1/(ALPHA + BETA) < ( 0.000225 ) ), ( ( 1/(ALPHA + BETA)) * TIME_SCALE , True))" } }
+
+    # ── Delayed rectifier K channel (custom rates) ──
+    Gran_KDr_98:
+      name: Gran_KDr_98
+      iri: neuroml:ionChannelHH
+      parameters:
+        conductance: { value: 10, unit: pS }
+        species:     { description: k }
+        condDensity: { value: 8.89691, unit: mS_per_cm2 }
+        erev:        { value: -90.0, unit: mV }
+        ion:         { description: k }
+      components:
+        m:
+          name: m
+          iri: neuroml:gateHHrates
+          parameters:
+            instances: { value: 4 }
+          components:
+            q10Settings:
+              name: q10Settings
+              iri: neuroml:q10ExpTemp
+              parameters:
+                q10Factor:        { value: 3 }
+                experimentalTemp: { value: 17.350264793, unit: degC }
+            forwardRate:
+              name: forwardRate
+              iri: neuroml:Gran_KDr_98_m_alpha_rate
+              parameters:
+                TIME_SCALE: { value: 1, unit: s }
+                VOLT_SCALE: { value: 1, unit: V }
+                offset:     { value: 0.010, unit: V }
+              derived_variables:
+                V: { equation: { rhs: "(v - offset) / VOLT_SCALE" } }
+                r: { equation: { rhs: "(170 * (exp (73 *(V - (-0.038))))) / TIME_SCALE" } }
+            reverseRate:
+              name: reverseRate
+              iri: neuroml:Gran_KDr_98_m_beta_rate
+              parameters:
+                TIME_SCALE: { value: 1, unit: s }
+                VOLT_SCALE: { value: 1, unit: V }
+                offset:     { value: 0.010, unit: V }
+              derived_variables:
+                V: { equation: { rhs: "(v - offset) / VOLT_SCALE" } }
+                r: { equation: { rhs: "(170 * (exp ((-18) *(V - (-0.038))))) / TIME_SCALE" } }
+        h:
+          name: h
+          iri: neuroml:gateHHrates
+          parameters:
+            instances: { value: 1 }
+          components:
+            q10Settings:
+              name: q10Settings
+              iri: neuroml:q10ExpTemp
+              parameters:
+                q10Factor:        { value: 3 }
+                experimentalTemp: { value: 17.350264793, unit: degC }
+            forwardRate:
+              name: forwardRate
+              iri: neuroml:Gran_KDr_98_h_alpha_rate
+              parameters:
+                TIME_SCALE: { value: 1, unit: s }
+                VOLT_SCALE: { value: 1, unit: V }
+                offset:     { value: 0.010, unit: V }
+              derived_variables:
+                V: { equation: { rhs: "(v - offset) / VOLT_SCALE" } }
+                r: { equation: { rhs: "Piecewise(( ( 0.76 ) / TIME_SCALE , V > ( -0.046 ) ), ( ( 0.7 + 0.065*(exp (-80*(V - (-0.046))))) / TIME_SCALE , True))" } }
+            reverseRate:
+              name: reverseRate
+              iri: neuroml:Gran_KDr_98_h_beta_rate
+              parameters:
+                TIME_SCALE: { value: 1, unit: s }
+                VOLT_SCALE: { value: 1, unit: V }
+                offset:     { value: 0.010, unit: V }
+              derived_variables:
+                V: { equation: { rhs: "(v - offset) / VOLT_SCALE" } }
+                r: { equation: { rhs: "(1.1/(1 + (exp (-80.7 * (V - (-0.044)))))) / TIME_SCALE" } }
+
+    # ── Anomalous inward rectifier H channel (standard rates) ──
+    Gran_H_98:
+      name: Gran_H_98
+      iri: neuroml:ionChannelHH
+      parameters:
+        conductance: { value: 10, unit: pS }
+        species:     { description: h }
+        condDensity: { value: 0.03090506, unit: mS_per_cm2 }
+        erev:        { value: -42.0, unit: mV }
+        ion:         { description: h }
+      components:
+        n:
+          name: n
+          iri: neuroml:gateHHrates
+          parameters:
+            instances: { value: 1 }
+          components:
+            q10Settings:
+              name: q10Settings
+              iri: neuroml:q10ExpTemp
+              parameters:
+                q10Factor:        { value: 3 }
+                experimentalTemp: { value: 17.350264793, unit: degC }
+            forwardRate:
+              name: forwardRate
+              iri: neuroml:HHExpRate
+              parameters:
+                rate:     { value: 0.8, unit: per_s }
+                scale:    { value: -0.01100110011, unit: V }
+                midpoint: { value: -0.065, unit: V }
+            reverseRate:
+              name: reverseRate
+              iri: neuroml:HHExpRate
+              parameters:
+                rate:     { value: 0.8, unit: per_s }
+                scale:    { value: 0.01100110011, unit: V }
+                midpoint: { value: -0.065, unit: V }
+
+    # ── High-voltage activated Ca channel (custom h-gate rates) ──
+    Gran_CaHVA_98:
+      name: Gran_CaHVA_98
+      iri: neuroml:ionChannelHH
+      parameters:
+        conductance: { value: 10, unit: pS }
+        species:     { description: ca }
+        condDensity: { value: 0.9084216, unit: mS_per_cm2 }
+        erev:        { value: 80.0, unit: mV }
+        ion:         { description: ca }
+      components:
+        m:
+          name: m
+          iri: neuroml:gateHHrates
+          parameters:
+            instances: { value: 2 }
+          components:
+            q10Settings:
+              name: q10Settings
+              iri: neuroml:q10ExpTemp
+              parameters:
+                q10Factor:        { value: 3 }
+                experimentalTemp: { value: 17.350264793, unit: degC }
+            forwardRate:
+              name: forwardRate
+              iri: neuroml:HHSigmoidRate
+              parameters:
+                rate:     { value: 1600, unit: per_s }
+                scale:    { value: 0.01388888889, unit: V }
+                midpoint: { value: 0.015, unit: V }
+            reverseRate:
+              name: reverseRate
+              iri: neuroml:HHExpLinearRate
+              parameters:
+                rate:     { value: 100, unit: per_s }
+                scale:    { value: -0.005, unit: V }
+                midpoint: { value: 0.0011000000000000003, unit: V }
+        h:
+          name: h
+          iri: neuroml:gateHHrates
+          parameters:
+            instances: { value: 1 }
+          components:
+            q10Settings:
+              name: q10Settings
+              iri: neuroml:q10ExpTemp
+              parameters:
+                q10Factor:        { value: 3 }
+                experimentalTemp: { value: 17.350264793, unit: degC }
+            forwardRate:
+              name: forwardRate
+              iri: neuroml:Gran_CaHVA_98_h_alpha_rate
+              parameters:
+                TIME_SCALE: { value: 1, unit: s }
+                VOLT_SCALE: { value: 1, unit: V }
+                offset:     { value: 0.010, unit: V }
+              derived_variables:
+                V: { equation: { rhs: "(v - offset) / VOLT_SCALE" } }
+                r: { equation: { rhs: "Piecewise(( ( 5.0 ) / TIME_SCALE , V < ( -0.060 ) ), ( ( 5 * (exp (-50 * (V - (-0.060))))) / TIME_SCALE , V >= ( -0.060 ) ))" } }
+            reverseRate:
+              name: reverseRate
+              iri: neuroml:Gran_CaHVA_98_h_beta_rate
+              parameters:
+                TIME_SCALE: { value: 1, unit: s }
+                VOLT_SCALE: { value: 1, unit: V }
+                offset:     { value: 0.010, unit: V }
+              derived_variables:
+                V: { equation: { rhs: "(v - offset) / VOLT_SCALE" } }
+                r: { equation: { rhs: "Piecewise(( ( 0 ) / TIME_SCALE , V < ( -0.060 ) ), ( ( 5 - (5 * (exp (-50 * (V - (-0.060)))))) / TIME_SCALE , V >= ( -0.060 ) ))" } }
+
+    # ── A-type K channel (gateHHtauInf with custom timeCourse) ──
+    Gran_KA_98:
+      name: Gran_KA_98
+      iri: neuroml:ionChannelHH
+      parameters:
+        conductance: { value: 10, unit: pS }
+        species:     { description: k }
+        condDensity: { value: 1.14567, unit: mS_per_cm2 }
+        erev:        { value: -90.0, unit: mV }
+        ion:         { description: k }
+      components:
+        m:
+          name: m
+          iri: neuroml:gateHHtauInf
+          parameters:
+            instances: { value: 3 }
+          components:
+            q10Settings:
+              name: q10Settings
+              iri: neuroml:q10ExpTemp
+              parameters:
+                q10Factor:        { value: 1 }
+                experimentalTemp: { value: 17.350264793, unit: degC }
+            timeCourse:
+              name: timeCourse
+              iri: neuroml:Gran_KA_98_m_tau_tau
+              parameters:
+                TIME_SCALE: { value: 1, unit: s }
+                VOLT_SCALE: { value: 1, unit: V }
+                offset:     { value: 0.010, unit: V }
+              derived_variables:
+                V: { equation: { rhs: "(v - offset) / VOLT_SCALE" } }
+                t: { equation: { rhs: "(0.410e-3 * ((exp (( ((V) + 0.0435) / (-0.0428))))) + 0.167e-3) * TIME_SCALE" } }
+            steadyState:
+              name: steadyState
+              iri: neuroml:HHSigmoidVariable
+              parameters:
+                rate:     { value: 1 }
+                scale:    { value: 0.0198, unit: V }
+                midpoint: { value: -0.036699999999999997, unit: V }
+        h:
+          name: h
+          iri: neuroml:gateHHtauInf
+          parameters:
+            instances: { value: 1 }
+          components:
+            q10Settings:
+              name: q10Settings
+              iri: neuroml:q10ExpTemp
+              parameters:
+                q10Factor:        { value: 1 }
+                experimentalTemp: { value: 17.350264793, unit: degC }
+            timeCourse:
+              name: timeCourse
+              iri: neuroml:Gran_KA_98_h_tau_tau
+              parameters:
+                TIME_SCALE: { value: 1, unit: s }
+                VOLT_SCALE: { value: 1, unit: V }
+                offset:     { value: 0.010, unit: V }
+              derived_variables:
+                V: { equation: { rhs: "(v - offset) / VOLT_SCALE" } }
+                t: { equation: { rhs: "(0.001) * (10.8 + (0.03 * V * 1000) + (1 / (57.9 * (exp (V * 0.127 * 1000)) + (134e-6 * (exp (V * (-0.059 * 1000))))))) * TIME_SCALE" } }
+            steadyState:
+              name: steadyState
+              iri: neuroml:HHSigmoidVariable
+              parameters:
+                rate:     { value: 1 }
+                scale:    { value: -0.0084, unit: V }
+                midpoint: { value: -0.0688, unit: V }
+
+    # ── Ca-dependent K channel (custom rates depending on caConc) ──
+    Gran_KCa_98:
+      name: Gran_KCa_98
+      iri: neuroml:ionChannelHH
+      parameters:
+        conductance: { value: 10, unit: pS }
+        species:     { description: k }
+        condDensity: { value: 17.9811, unit: mS_per_cm2 }
+        erev:        { value: -90.0, unit: mV }
+        ion:         { description: k }
+      components:
+        m:
+          name: m
+          iri: neuroml:gateHHrates
+          parameters:
+            instances: { value: 1 }
+          components:
+            q10Settings:
+              name: q10Settings
+              iri: neuroml:q10ExpTemp
+              parameters:
+                q10Factor:        { value: 3 }
+                experimentalTemp: { value: 17.350264793, unit: degC }
+            forwardRate:
+              name: forwardRate
+              iri: neuroml:Gran_KCa_98_m_alpha_rate
+              parameters:
+                TIME_SCALE: { value: 1, unit: s }
+                VOLT_SCALE: { value: 1, unit: V }
+                CONC_SCALE: { value: 1, unit: mol_per_m3 }
+                offset:     { value: 0.010, unit: V }
+              derived_variables:
+                V:      { equation: { rhs: "(v - offset) / VOLT_SCALE" } }
+                CACONC: { equation: { rhs: "caConc / CONC_SCALE" } }
+                r:      { equation: { rhs: "(2500/(1 + ( (1.5e-3 *(exp (-85*V))) / CACONC))) / TIME_SCALE" } }
+            reverseRate:
+              name: reverseRate
+              iri: neuroml:Gran_KCa_98_m_beta_rate
+              parameters:
+                TIME_SCALE: { value: 1, unit: s }
+                VOLT_SCALE: { value: 1, unit: V }
+                CONC_SCALE: { value: 1, unit: mol_per_m3 }
+                offset:     { value: 0.010, unit: V }
+              derived_variables:
+                V:      { equation: { rhs: "(v - offset) / VOLT_SCALE" } }
+                CACONC: { equation: { rhs: "caConc / CONC_SCALE" } }
+                r:      { equation: { rhs: "(1500/(1 + (CACONC / (1.5e-4 * (exp (-77*V)))))) / TIME_SCALE" } }
+
+    # ── Calcium concentration pool ──
+    Gran_CaPool:
+      name: Gran_CaPool
+      iri: neuroml:decayingPoolConcentrationModel
+      parameters:
+        ion:                    { description: ca }
+        restingConc:            { value: 7.55e-11, unit: mol_per_cm3 }
+        decayConstant:          { value: 10.0, unit: ms }
+        shellThickness:         { value: 8.4e-6, unit: cm }
+        initialConcentration:   { value: 7.55e-11, unit: mol_per_cm3 }
+        initialExtConcentration: { value: 2.4e-6, unit: mol_per_cm3 }
+
+    # ── Pulse generator input ──
+    pulseGen1:
+      name: pulseGen1
+      iri: neuroml:pulseGenerator
+      parameters:
+        delay:     { value: 100, unit: ms }
+        duration:  { value: 500, unit: ms }
+        amplitude: { value: 0.01, unit: nA }
 network:
   number_of_nodes: 1
 integration:
   method: euler
-  step_size: 0.01
+  step_size: 0.001
   duration: 700.0
   time_scale: ms
 """)
-print(f"Model: {exp.dynamics.name}")
+print(f"Model: {exp.dynamics.name if exp.dynamics else 'network'}")
 ```
 
 ## 2. Render LEMS XML
 
 ```{python}
 xml = exp.render("lems")
-print(xml[:1200])
+print(xml[:1500])
 ```
 
 ## 3. Run Reference
 
 ```{python}
-import sys, os
-sys.path.insert(0, os.path.dirname(os.path.abspath(".")))
-from _nml_helpers import run_lems_example
+from tvbo.adapters.neuroml import run_lems_example
 
 ref_outputs = run_lems_example("LEMS_NML2_Ex15_CaDynamics.xml")
 for name, arr in ref_outputs.items():
@@ -101,36 +486,14 @@ for name, arr in ref_outputs.items():
 ## 4. Run TVBO
 
 ```{python}
-import numpy as np
-
 result = exp.run("neuroml")
 da = result.integration.data
-tvbo_arr = np.column_stack([da.coords['time'].values, da.values])
-print(f"TVBO: shape={tvbo_arr.shape}")
+print(f"TVBO: {da.dims}, shape={da.shape}")
 ```
 
-## 5. Plot Reference (Full Granule Cell)
+## 5. Compare & Plot
 
 ```{python}
-import matplotlib.pyplot as plt
-import numpy as np
-
-for name, ref_arr in ref_outputs.items():
-    t = ref_arr[:, 0] * 1000
-    fig, ax = plt.subplots(figsize=(10, 4))
-    for i in range(1, min(ref_arr.shape[1], 4)):
-        ax.plot(t, ref_arr[:, i], alpha=0.8, label=f'col {i}')
-    ax.set_xlabel("Time (ms)")
-    ax.set_title(f"Ex15: Ca Dynamics — {name}")
-    ax.legend(fontsize=7)
-    ax.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.show()
+from tvbo.adapters.neuroml import plot_lems_comparison
+plot_lems_comparison("LEMS_NML2_Ex15_CaDynamics.xml", ref_outputs, result.integration.data, title_prefix="Ex15")
 ```
-
-::: {.callout-note}
-## Ca Dynamics in TVBO
-The calcium pool ODE and Ca-dependent channel rates are expressible as TVBO
-state variables and derived variables.  The full model (~17 state variables)
-could be defined as a single TVBO Dynamics.
-:::

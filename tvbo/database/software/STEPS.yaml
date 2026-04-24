@@ -1,0 +1,44 @@
+name: STEPS
+description: STochastic Engine for Pathway Simulation — a stochastic reaction-diffusion
+  simulator for modeling biochemical signaling pathways in realistic 3D cellular morphologies.
+homepage: https://steps.sourceforge.net
+repository: https://github.com/CNS-OIST/STEPS
+doi: 10.3389/fninf.2014.00068
+reference_publication: 10.3389/fninf.2009.00002
+license: GPL-3.0-only
+is_accessible_for_free: true
+ecosystem:
+- pypi
+application_category: simulation
+date_created: '2012-01-01'
+development_status: active
+scale:
+- channel
+- neuron
+model_paradigm:
+- reaction_diffusion
+tool_role:
+- simulator
+programming_language:
+- C++
+- Python
+runtime_platform:
+- MPI
+- Python
+interoperates_with:
+- NeuroML
+author:
+- Erik De Schutter
+- Weiliang Chen
+maintainer:
+- OIST Computational Neuroscience Unit
+funder:
+- OIST
+keywords:
+- stochastic
+- reaction-diffusion
+- tetrahedral mesh
+- compartmental
+same_as:
+- https://scicrunch.org/resolver/RRID:SCR_008742
+issue_tracker: https://github.com/CNS-OIST/STEPS/issues

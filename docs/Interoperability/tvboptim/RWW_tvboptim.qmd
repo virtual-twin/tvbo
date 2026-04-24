@@ -15,10 +15,6 @@ exp = SimulationExperiment.from_db("RWW_BOLD_FC_Optimization")
 results = exp.run("tvboptim")
 ```
 
-```{python}
-
-```
-
 ## Results
 
 ```{python}

@@ -887,11 +887,9 @@ def run_simulation(
         _inject_stochastic_trajectories(state_init, t_transient, dt, key=jax.random.key(${list(stochastic_param_info.values())[0]['seed']}))
         % endif
         result_transient = model_fn_init(state_init)
-        # update_history expects states-only (no auxiliaries).
-        # When VARIABLES_OF_INTEREST records all (states+aux), slice to states only.
-        _n_states = ${len(state_names)}
-        _hist = Bunch(ts=result_transient.ts, ys=result_transient.ys[:, :_n_states, :])
-        network.update_history(_hist)
+        # tvboptim >= 0.2.7: NativeSolution carries variable_names; update_history
+        # slices state columns by name, so we can hand the solution over directly.
+        network.update_history(result_transient)
     % endif
 
     model_fn, state = prepare(network, solver, t0=t0, t1=t1, dt=dt)
@@ -1461,7 +1459,10 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
         # Wrap model_fn to trim transient — downstream observable code sees main sim only
         def _expl_model_fn(s):
             result = _expl_model_fn_raw(s)
-            return NativeSolution(result.ts[_n_transient:], result.data[_n_transient:], dt=${dt})
+            return NativeSolution(
+                result.ts[_n_transient:], result.data[_n_transient:],
+                dt=${dt}, variable_names=getattr(result, 'variable_names', None),
+            )
 % else:
         _expl_model_fn, _expl_state = prepare(_network, _solver, t0=0.0, t1=${t1_default}, dt=${dt})
         _expl_state = copy.deepcopy(_expl_state)  # isolate from shared network params
@@ -1898,10 +1899,11 @@ def run_experiment(
 
 <%
     # Result labels must match what the solver actually records (VARIABLES_OF_INTEREST).
-    # The solver records: all states + only explicitly requested auxiliaries (from model.output).
-    # When model.output is empty, only states are recorded.
-    _requested_aux = [v for v in (model_output_vars or []) if v in (model.derived_variables or {}).keys()]
-    result_var_names = state_names + _requested_aux
+    # Same logic as the dfun template: states + (auxiliaries listed in model.output OR
+    # referenced by an observation source). Mirrors solution.variable_names produced
+    # by tvboptim >= 0.2.7.
+    from tvbo.templates.tvboptim.utils import get_recorded_variable_names as _grvn
+    _, _requested_aux, result_var_names = _grvn(model, experiment)
 %>
     transient_result = SimulationResult(result=transient, state_names=${result_var_names}) if transient is not None else None
     main_result = SimulationResult(result=result, observations=observations, state_names=${result_var_names}, transient=transient_result) if result is not None else None

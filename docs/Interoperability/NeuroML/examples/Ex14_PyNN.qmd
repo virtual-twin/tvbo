@@ -1,78 +1,252 @@
 ---
 title: "Ex14: PyNN Cells"
-description: "PyNN-compatible cell types — IF_curr_alpha, IF_cond_exp, EIF_cond_exp_isfa_ista, HH_cond_exp"
+description: "Full PyNN network — 7 cell types, 4 targets, 2 spike sources, 4 projections"
 ---
 
-## Model: PyNN Cell Types
+## Model: PyNN Cell Types Network
 
-NeuroML2 includes PyNN-compatible cell types, all expressible as ODEs:
+NeuroML2 includes PyNN-compatible cell types.  This example creates the full
+`netAll` network from LEMS_NML2_Ex14_PyNN.xml:
 
-- **IF_curr_alpha**: $C\frac{dv}{dt} = -g_L(v - E_L) + I_{syn}$
-- **IF_cond_exp**: $C\frac{dv}{dt} = -g_L(v - E_L) - g_{syn}(v - E_{syn})$
-- **EIF_cond_exp**: AdEx model (same as Ex8)
-- **HH_cond_exp**: Hodgkin-Huxley (same as Ex1)
+- 7 PyNN cell populations (IF_curr_alpha, IF_curr_exp, IF_cond_alpha,
+  IF_cond_exp, EIF_cond_exp_isfa_ista, EIF_cond_alpha_isfa_ista, HH_cond_exp)
+- 4 silent target cells (IF_cond_alpha with i_offset=0)
+- 2 SpikeSourcePoisson inputs (50 Hz and 80 Hz)
+- 4 projections with PyNN synapse types and weight/delay
 
 ---
 
-## 1. Define AdEx (EIF) in TVBO
+## 1. Define Network in TVBO
 
 ```{python}
 from tvbo import SimulationExperiment
 
 exp = SimulationExperiment.from_string("""
-label: "NeuroML Ex14: PyNN AdEx Cell"
+label: "NeuroML Ex14: PyNN Cells"
 dynamics:
-  name: AdaptiveExponentialIF
-  parameters:
-    C:      { value: 281.0 }
-    gL:     { value: 30.0 }
-    EL:     { value: -70.6 }
-    VT:     { value: -50.4 }
-    thresh: { value: -40.4 }
-    reset:  { value: -48.5 }
-    delT:   { value: 2.0 }
-    tauw:   { value: 40.0 }
-    a:      { value: 4.0 }
-    b:      { value: 0.08 }
-    I_ext:  { value: 0.8 }
-  state_variables:
-    v:
-      equation:
-        rhs: "(-gL*(v - EL) + gL*delT*exp((v - VT)/delT) - w + I_ext) / C"
-      initial_value: -70.6
-      variable_of_interest: true
-    w:
-      equation:
-        rhs: "(a*(v - EL) - w) / tauw"
-      initial_value: 0.0
-  events:
-    spike:
-      condition: { rhs: "v > thresh" }
-      affect:    { rhs: "v = reset; w = w + b" }
+  name: IF_curr_alpha
+  iri: neuroml:IF_curr_alpha
 network:
-  number_of_nodes: 1
+  dynamics:
+    IF_curr_alpha:
+      name: IF_curr_alpha
+      iri: neuroml:IF_curr_alpha
+      parameters:
+        cm: {value: 1.0}
+        i_offset: {value: 0.9}
+        tau_m: {value: 20.0}
+        tau_refrac: {value: 10.0}
+        tau_syn_E: {value: 0.5}
+        tau_syn_I: {value: 0.5}
+        v_init: {value: -65}
+        v_reset: {value: -62.0}
+        v_rest: {value: -65.0}
+        v_thresh: {value: -52.0}
+    IF_curr_exp:
+      name: IF_curr_exp
+      iri: neuroml:IF_curr_exp
+      parameters:
+        cm: {value: 1.0}
+        i_offset: {value: 1.0}
+        tau_m: {value: 20.0}
+        tau_refrac: {value: 8.0}
+        tau_syn_E: {value: 5.0}
+        tau_syn_I: {value: 5.0}
+        v_init: {value: -65}
+        v_reset: {value: -70.0}
+        v_rest: {value: -65.0}
+        v_thresh: {value: -50.0}
+    IF_cond_alpha:
+      name: IF_cond_alpha
+      iri: neuroml:IF_cond_alpha
+      parameters:
+        cm: {value: 1.0}
+        e_rev_E: {value: 0.0}
+        e_rev_I: {value: -70.0}
+        i_offset: {value: 0.9}
+        tau_m: {value: 20.0}
+        tau_refrac: {value: 5.0}
+        tau_syn_E: {value: 0.3}
+        tau_syn_I: {value: 0.5}
+        v_init: {value: -65}
+        v_reset: {value: -65.0}
+        v_rest: {value: -65.0}
+        v_thresh: {value: -50.0}
+    silent_cell:
+      name: silent_cell
+      iri: neuroml:IF_cond_alpha
+      parameters:
+        cm: {value: 1.0}
+        e_rev_E: {value: 0.0}
+        e_rev_I: {value: -70.0}
+        i_offset: {value: 0}
+        tau_m: {value: 20.0}
+        tau_refrac: {value: 5.0}
+        tau_syn_E: {value: 5}
+        tau_syn_I: {value: 10}
+        v_init: {value: -65}
+        v_reset: {value: -65.0}
+        v_rest: {value: -65.0}
+        v_thresh: {value: -50.0}
+    IF_cond_exp:
+      name: IF_cond_exp
+      iri: neuroml:IF_cond_exp
+      parameters:
+        cm: {value: 1.0}
+        e_rev_E: {value: 0.0}
+        e_rev_I: {value: -70.0}
+        i_offset: {value: 1.0}
+        tau_m: {value: 20.0}
+        tau_refrac: {value: 5.0}
+        tau_syn_E: {value: 5.0}
+        tau_syn_I: {value: 5.0}
+        v_init: {value: -65}
+        v_reset: {value: -68.0}
+        v_rest: {value: -65.0}
+        v_thresh: {value: -52.0}
+    EIF_cond_exp_isfa_ista:
+      name: EIF_cond_exp_isfa_ista
+      iri: neuroml:EIF_cond_exp_isfa_ista
+      parameters:
+        a: {value: 0.0}
+        b: {value: 0.0805}
+        cm: {value: 0.281}
+        delta_T: {value: 2.0}
+        e_rev_E: {value: 0.0}
+        e_rev_I: {value: -80.0}
+        i_offset: {value: 0.6}
+        tau_m: {value: 9.3667}
+        tau_refrac: {value: 5}
+        tau_syn_E: {value: 5.0}
+        tau_syn_I: {value: 5.0}
+        tau_w: {value: 144.0}
+        v_init: {value: -65}
+        v_reset: {value: -68.0}
+        v_rest: {value: -70.6}
+        v_spike: {value: -40.0}
+        v_thresh: {value: -52.0}
+    EIF_cond_alpha_isfa_ista:
+      name: EIF_cond_alpha_isfa_ista
+      iri: neuroml:EIF_cond_alpha_isfa_ista
+      parameters:
+        a: {value: 0.0}
+        b: {value: 0.0805}
+        cm: {value: 0.281}
+        delta_T: {value: 0}
+        e_rev_E: {value: 0.0}
+        e_rev_I: {value: -80.0}
+        i_offset: {value: 0.6}
+        tau_m: {value: 9.3667}
+        tau_refrac: {value: 5}
+        tau_syn_E: {value: 5.0}
+        tau_syn_I: {value: 5.0}
+        tau_w: {value: 144.0}
+        v_init: {value: -65}
+        v_reset: {value: -68.0}
+        v_rest: {value: -70.6}
+        v_spike: {value: -40.0}
+        v_thresh: {value: -52.0}
+    HH_cond_exp:
+      name: HH_cond_exp
+      iri: neuroml:HH_cond_exp
+      parameters:
+        cm: {value: 0.2}
+        e_rev_E: {value: 0.0}
+        e_rev_I: {value: -80.0}
+        e_rev_K: {value: -90.0}
+        e_rev_Na: {value: 50.0}
+        e_rev_leak: {value: -65.0}
+        g_leak: {value: 0.01}
+        gbar_K: {value: 6.0}
+        gbar_Na: {value: 20.0}
+        i_offset: {value: 0.2}
+        tau_syn_E: {value: 0.2}
+        tau_syn_I: {value: 2.0}
+        v_init: {value: -65}
+        v_offset: {value: -63.0}
+    spikes1:
+      name: spikes1
+      iri: neuroml:SpikeSourcePoisson
+      parameters:
+        start: {value: 50, unit: ms}
+        duration: {value: 400, unit: ms}
+        rate: {value: 50, unit: Hz}
+    spikes2:
+      name: spikes2
+      iri: neuroml:SpikeSourcePoisson
+      parameters:
+        start: {value: 50, unit: ms}
+        duration: {value: 300, unit: ms}
+        rate: {value: 80, unit: Hz}
+    syn1:
+      name: syn1
+      iri: neuroml:expCondSynapse
+      parameters:
+        tau_syn: {value: 5}
+        e_rev: {value: 0}
+    syn2:
+      name: syn2
+      iri: neuroml:alphaCondSynapse
+      parameters:
+        tau_syn: {value: 5}
+        e_rev: {value: 0}
+    syn3:
+      name: syn3
+      iri: neuroml:expCurrSynapse
+      parameters:
+        tau_syn: {value: 5}
+    syn4:
+      name: syn4
+      iri: neuroml:alphaCurrSynapse
+      parameters:
+        tau_syn: {value: 5}
+  nodes:
+    # 7 cell populations (1 each) — only 4 are recorded in reference output
+    - {id: 0, dynamics: IF_curr_alpha, record: false}
+    - {id: 1, dynamics: IF_curr_exp}
+    - {id: 2, dynamics: IF_cond_alpha}
+    - {id: 3, dynamics: IF_cond_exp, record: false}
+    - {id: 4, dynamics: EIF_cond_exp_isfa_ista}
+    - {id: 5, dynamics: EIF_cond_alpha_isfa_ista, record: false}
+    - {id: 6, dynamics: HH_cond_exp}
+    # 4 silent target cells
+    - {id: 10, dynamics: silent_cell}
+    - {id: 11, dynamics: silent_cell}
+    - {id: 12, dynamics: silent_cell}
+    - {id: 13, dynamics: silent_cell}
+    # 2 spike sources (standalone, no connections)
+    - {id: 20, dynamics: spikes1, record: false}
+    - {id: 21, dynamics: spikes2, record: false}
+  edges:
+    # EIF_cond_exp_isfa_ista → target[0] via expCondSynapse
+    - {source: 4, target: 10, coupling: syn1, parameters: {weight: {value: 0.01}, delay: {value: 10, unit: ms}}}
+    # EIF_cond_alpha_isfa_ista → target[1] via alphaCondSynapse
+    - {source: 5, target: 11, coupling: syn2, parameters: {weight: {value: 0.005}, delay: {value: 20, unit: ms}}}
+    # IF_curr_alpha → target[2] via expCurrSynapse
+    - {source: 0, target: 12, coupling: syn3, parameters: {weight: {value: 1}, delay: {value: 30, unit: ms}}}
+    # IF_cond_exp → target[3] via alphaCurrSynapse
+    - {source: 3, target: 13, coupling: syn4, parameters: {weight: {value: 0.5}, delay: {value: 40, unit: ms}}}
 integration:
   method: euler
-  step_size: 0.025
-  duration: 300.0
+  step_size: 0.01
+  duration: 500.0
   time_scale: ms
 """)
-print(f"Model: {exp.dynamics.name}")
+dyn_name = next(iter(exp.network.dynamics)) if exp.network and exp.network.dynamics else 'network'
+print(f"TVBO model: {dyn_name}  (source var: exp)")
 ```
 
 ## 2. Render LEMS XML
 
 ```{python}
 xml = exp.render("lems")
-print(xml[:1200])
+print(xml[:3000])
 ```
 
 ## 3. Run Reference
 
 ```{python}
-import sys, os
-sys.path.insert(0, os.path.dirname(os.path.abspath(".")))
-from _nml_helpers import run_lems_example
+from tvbo.adapters.neuroml import run_lems_example
 
 ref_outputs = run_lems_example("LEMS_NML2_Ex14_PyNN.xml")
 for name, arr in ref_outputs.items():
@@ -82,36 +256,14 @@ for name, arr in ref_outputs.items():
 ## 4. Run TVBO
 
 ```{python}
-import numpy as np
-
 result = exp.run("neuroml")
 da = result.integration.data
-tvbo_arr = np.column_stack([da.coords['time'].values, da.values])
-print(f"TVBO: shape={tvbo_arr.shape}")
+print(f"TVBO: {da.dims}, shape={da.shape}")
 ```
 
-## 5. Plot All PyNN Variants (Reference)
+## 5. Compare & Plot
 
 ```{python}
-import matplotlib.pyplot as plt
-import numpy as np
-
-for name, ref_arr in ref_outputs.items():
-    t = ref_arr[:, 0] * 1000
-    fig, ax = plt.subplots(figsize=(10, 4))
-    for i in range(1, min(ref_arr.shape[1], 6)):
-        ax.plot(t, ref_arr[:, i] * 1000, alpha=0.8, label=f'Cell {i}')
-    ax.set_xlabel("Time (ms)")
-    ax.set_ylabel("Voltage (mV)")
-    ax.set_title(f"Ex14: PyNN Cells — {name}")
-    ax.legend(fontsize=7)
-    ax.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.show()
+from tvbo.adapters.neuroml import plot_lems_comparison
+plot_lems_comparison("LEMS_NML2_Ex14_PyNN.xml", ref_outputs, result.integration.data, title_prefix="Ex14")
 ```
-
-::: {.callout-note}
-## PyNN Cell Coverage
-All four PyNN cell types are expressible as TVBO ODE systems: IaF (Ex0),
-conductance-based IaF, AdEx (Ex8), and HH (Ex1).
-:::

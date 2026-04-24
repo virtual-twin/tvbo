@@ -1,0 +1,39 @@
+name: LEMS
+description: Low Entropy Model Specification — an XML-based language for defining
+  the structure and dynamics of hierarchically structured models of biological systems.
+  Foundation for NeuroML2.
+homepage: https://lems.github.io/LEMS/
+repository: https://github.com/LEMS/jLEMS
+reference_publication: 10.3389/fninf.2014.00079
+license: MIT
+is_accessible_for_free: true
+application_category: specification
+date_created: '2012-01-01'
+development_status: active
+scale:
+- channel
+- neuron
+- neural_network
+- network_system
+model_paradigm:
+- model_description
+tool_role:
+- specification_language
+programming_language:
+- XML
+- Java
+runtime_platform:
+- JVM
+interoperates_with:
+- NeuroML
+author:
+- Robert Cannon
+- Padraig Gleeson
+maintainer:
+- NeuroML Editorial Board
+keywords:
+- model exchange
+- XML
+- dynamics specification
+- simulator-neutral
+issue_tracker: https://github.com/LEMS/jLEMS/issues
