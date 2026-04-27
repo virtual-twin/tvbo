@@ -194,4 +194,11 @@ slots:
 
   coordinateSpace:
     range: CommonCoordinateSpace
-    description: "Add the common coordinate space used for this brain atlas version."
+    description: >-
+        Common coordinate space used for this brain atlas version. Accepts
+        either a string identifier (e.g. 'FSLMNI152', referencing a
+        CommonCoordinateSpace by name) or an inline CommonCoordinateSpace
+        object.
+    any_of:
+      - range: CommonCoordinateSpace
+      - range: string

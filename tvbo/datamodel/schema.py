@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-04-27T15:07:47
+# Generation date: 2026-04-27T15:22:47
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -273,24 +273,15 @@ class Range(YAMLRoot):
     class_name: ClassVar[str] = "Range"
     class_model_uri: ClassVar[URIRef] = TVBO.Range
 
-    lo: Optional[str] = "0"
-    hi: Optional[str] = None
-    step: Optional[str] = None
+    lo: Optional[Union[dict, ScalarValue]] = None
+    hi: Optional[Union[dict, ScalarValue]] = None
+    step: Optional[Union[dict, ScalarValue]] = None
     n: Optional[int] = None
     log_scale: Optional[Union[bool, Bool]] = False
     explored_values: Optional[Union[float, list[float]]] = empty_list()
     element: Optional[int] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
-        if self.lo is not None and not isinstance(self.lo, str):
-            self.lo = str(self.lo)
-
-        if self.hi is not None and not isinstance(self.hi, str):
-            self.hi = str(self.hi)
-
-        if self.step is not None and not isinstance(self.step, str):
-            self.step = str(self.step)
-
         if self.n is not None and not isinstance(self.n, int):
             self.n = int(self.n)
 
@@ -6183,13 +6174,13 @@ slots.id = Slot(uri=DCTERMS.identifier, name="id", curie=DCTERMS.curie('identifi
                    model_uri=TVBO.id, domain=None, range=Optional[int])
 
 slots.range__lo = Slot(uri=TVBO.lo, name="range__lo", curie=TVBO.curie('lo'),
-                   model_uri=TVBO.range__lo, domain=None, range=Optional[str])
+                   model_uri=TVBO.range__lo, domain=None, range=Optional[Union[dict, ScalarValue]])
 
 slots.range__hi = Slot(uri=TVBO.hi, name="range__hi", curie=TVBO.curie('hi'),
-                   model_uri=TVBO.range__hi, domain=None, range=Optional[str])
+                   model_uri=TVBO.range__hi, domain=None, range=Optional[Union[dict, ScalarValue]])
 
 slots.range__step = Slot(uri=TVBO.step, name="range__step", curie=TVBO.curie('step'),
-                   model_uri=TVBO.range__step, domain=None, range=Optional[str])
+                   model_uri=TVBO.range__step, domain=None, range=Optional[Union[dict, ScalarValue]])
 
 slots.range__n = Slot(uri=TVBO.n, name="range__n", curie=TVBO.curie('n'),
                    model_uri=TVBO.range__n, domain=None, range=Optional[int])

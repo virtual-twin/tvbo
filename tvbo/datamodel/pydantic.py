@@ -1125,7 +1125,8 @@ class Coordinate(ConfiguredBaseModel):
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://openminds.ebrains.eu/sands/BrainAtlas'})
 
-    coordinateSpace: Optional[str] = Field(default=None, description="""Add the common coordinate space used for this brain atlas version.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coordinate', 'BrainAtlas']} })
+    coordinateSpace: Optional[str] = Field(default=None, description="""Common coordinate space used for this brain atlas version. Accepts either a string identifier (e.g. 'FSLMNI152', referencing a CommonCoordinateSpace by name) or an inline CommonCoordinateSpace object.""", json_schema_extra = { "linkml_meta": {'any_of': [{'range': 'CommonCoordinateSpace'}, {'range': 'string'}],
+         'domain_of': ['Coordinate', 'BrainAtlas']} })
     x: Optional[float] = Field(default=None, description="""X coordinate""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coordinate', 'Matrix']} })
     y: Optional[float] = Field(default=None, description="""Y coordinate""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coordinate', 'Matrix']} })
     z: Optional[float] = Field(default=None, description="""Z coordinate""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coordinate']} })
@@ -1138,7 +1139,8 @@ class BrainAtlas(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'atom:atlas/Atlas',
          'from_schema': 'https://openminds.ebrains.eu/sands/BrainAtlas'})
 
-    coordinateSpace: Optional[str] = Field(default=None, description="""Add the common coordinate space used for this brain atlas version.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coordinate', 'BrainAtlas']} })
+    coordinateSpace: Optional[str] = Field(default=None, description="""Common coordinate space used for this brain atlas version. Accepts either a string identifier (e.g. 'FSLMNI152', referencing a CommonCoordinateSpace by name) or an inline CommonCoordinateSpace object.""", json_schema_extra = { "linkml_meta": {'any_of': [{'range': 'CommonCoordinateSpace'}, {'range': 'string'}],
+         'domain_of': ['Coordinate', 'BrainAtlas']} })
     name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
@@ -2662,11 +2664,9 @@ class Range(ConfiguredBaseModel):
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Range', 'from_schema': 'https://w3id.org/tvbo'})
 
-    lo: Optional[Union[float, str]] = Field(default="0", description="""Lower bound or starting value. Can be a number or argument name.""", json_schema_extra = { "linkml_meta": {'any_of': [{'range': 'float'}, {'range': 'string'}],
-         'domain_of': ['Range'],
-         'ifabsent': 'string(0)'} })
-    hi: Optional[Union[float, str]] = Field(default=None, description="""Upper bound or stopping value. Can be a number or argument name.""", json_schema_extra = { "linkml_meta": {'any_of': [{'range': 'float'}, {'range': 'string'}], 'domain_of': ['Range']} })
-    step: Optional[Union[float, str]] = Field(default=None, description="""Step size. Can be: number, argument name, or expression.""", json_schema_extra = { "linkml_meta": {'any_of': [{'range': 'float'}, {'range': 'string'}], 'domain_of': ['Range']} })
+    lo: Optional[Any] = Field(default=None, description="""Lower bound or starting value. Can be a number or argument name.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Range']} })
+    hi: Optional[Any] = Field(default=None, description="""Upper bound or stopping value. Can be a number or argument name.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Range']} })
+    step: Optional[Any] = Field(default=None, description="""Step size. Can be: number, argument name, or expression.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Range']} })
     n: Optional[int] = Field(default=None, description="""Number of points (alternative to step for grid exploration).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Range']} })
     log_scale: Optional[bool] = Field(default=False, description="""Whether to use logarithmic spacing.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Range'], 'ifabsent': 'False'} })
     explored_values: Optional[AnyShapeArray[float]] = Field(default=None, description="""Explicit explored values for this element. When set on an element_domain entry, overrides the parent parameter's explored_values for this specific element.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Range', 'Parameter']} })
