@@ -28,26 +28,33 @@ RUN QUARTO_VERSION=$(curl -s https://api.github.com/repos/quarto-dev/quarto-cli/
 WORKDIR /app
 RUN pip install --no-cache-dir --upgrade pip
 
-# 1. Stub package skeleton: enough for hatchling to read __version__ and for
-#    juliacall to find tvbo/juliapkg.json on sys.path.
-COPY pyproject.toml /app/pyproject.toml
-COPY tvbo/juliapkg.json /app/tvbo/juliapkg.json
-RUN echo '__version__ = "0.0.0"' > /app/tvbo/__init__.py \
-    && touch /app/README.md
+# 1. Resolve & install ONLY external dependencies (no tvbo build).
+#    Cached on pyproject.toml hash. Source-only changes don't invalidate.
+COPY pyproject.toml /tmp/pyproject.toml
+RUN python3 -c "\
+import tomllib, pathlib;\
+d = tomllib.loads(pathlib.Path('/tmp/pyproject.toml').read_text());\
+deps = list(d['project']['dependencies']);\
+opt = d['project'].get('optional-dependencies', {});\
+deps += opt.get('julia', []) + opt.get('pyrates', []);\
+pathlib.Path('/tmp/requirements.txt').write_text('\n'.join(deps) + '\n')" \
+    && pip install --no-cache-dir -r /tmp/requirements.txt jupyterlab uvicorn fastapi tvboptim
 
-# 2. Install all deps (heavy layer, cached on pyproject.toml hash).
-RUN pip install --no-cache-dir jupyterlab uvicorn fastapi ".[julia,pyrates]" tvboptim
-
-# 3. Pre-warm Julia. Cached on tvbo/juliapkg.json hash, NOT on Python source.
+# 2. Pre-warm Julia. juliacall just needs juliapkg.json on sys.path.
+#    Cached on tvbo/juliapkg.json hash, NOT on Python source.
 ENV JULIA_DEPOT_PATH="/opt/julia-depot" \
-    JULIA_NUM_PRECOMPILE_TASKS="auto"
-RUN mkdir -p /opt/julia-depot \
+    JULIA_NUM_PRECOMPILE_TASKS="auto" \
+    PYTHONPATH="/tmp/jl-stub"
+RUN mkdir -p /tmp/jl-stub/tvbo /opt/julia-depot
+COPY tvbo/juliapkg.json /tmp/jl-stub/tvbo/juliapkg.json
+RUN echo "" > /tmp/jl-stub/tvbo/__init__.py \
     && python3 -c "from juliacall import Main" \
     && chmod -R a+rw /opt/julia-depot
+ENV PYTHONPATH=""
 
-# 4. Now copy the real source and reinstall tvbo only (no deps → instant).
+# 3. Copy real source and install tvbo only (deps already satisfied → fast).
 COPY . /app
-RUN pip install --no-cache-dir --no-deps --force-reinstall .
+RUN pip install --no-cache-dir --no-deps .
 
 ENV AUTO_DIR=/auto-07p
 EXPOSE 8000 8888
