@@ -352,21 +352,14 @@ classes:
         description: "Specifies a range for array generation, parameter bounds, or grid exploration."
         attributes:
             lo:
+                range: ScalarValue
                 description: "Lower bound or starting value. Can be a number or argument name."
-                ifabsent: string(0)
-                any_of:
-                    - range: float
-                    - range: string
             hi:
+                range: ScalarValue
                 description: "Upper bound or stopping value. Can be a number or argument name."
-                any_of:
-                    - range: float
-                    - range: string
             step:
+                range: ScalarValue
                 description: "Step size. Can be: number, argument name, or expression."
-                any_of:
-                    - range: float
-                    - range: string
             n:
                 range: integer
                 description: "Number of points (alternative to step for grid exploration)."
