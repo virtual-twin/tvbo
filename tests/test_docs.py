@@ -130,7 +130,7 @@ def test_doc_executes(qmd_path, doc_name):
                 "print('.so in /tmp:', glob.glob('/tmp/**/*.so', recursive=True))\n",
             ],
         }
-        nb["cells"].insert(1, diagnostic_cell)
+        nb["cells"].append(diagnostic_cell)
         with open(ipynb_path, "w", encoding="utf-8") as f:
             json.dump(nb, f)
 
@@ -155,7 +155,7 @@ def test_doc_executes(qmd_path, doc_name):
                 else "Unknown error"
             )
             pytest.fail(
-                f"Notebook execution failed: {error_msg}\n\nFull stderr:\n{result.stderr}"
+                f"Notebook execution failed: {error_msg}\n\nFull stdout:\n{result.stdout}\n\nFull stderr:\n{result.stderr}"
             )
     finally:
         # Clean up generated notebook
