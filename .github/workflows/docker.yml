@@ -247,9 +247,9 @@ jobs:
             extra_args: ""
           # Core: Usage, Specification, api, examples (non-NeuroML), OpenMINDS, BIDS, root index
           # Negative catch-all: everything not covered by the specialised shards above.
-          - shard: core
-            doc_pattern: "not NeuroML and not BifurcationKit and not ModelingToolkit and not NetworkDynamics and not Pyrates and not TVB and not tvboptim and not Replication"
-            extra_args: ""
+        #   - shard: core
+        #     doc_pattern: "not NeuroML and not BifurcationKit and not ModelingToolkit and not NetworkDynamics and not Pyrates and not TVB and not tvboptim and not Replication"
+        #     extra_args: ""
     env:
       JAX_PLATFORMS: cpu
       XLA_PYTHON_CLIENT_ALLOCATOR: platform

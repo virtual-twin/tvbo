@@ -83,6 +83,7 @@ def test_doc_executes(qmd_path, doc_name):
             "source": [
                 "import sys, os\n",
                 f"sys.path.insert(0, {str(doc_dir)!r})\n",
+                "sys.path.insert(0, '')  # ensure CWD is always on sys.path for f2py artifacts\n",
                 f"os.chdir({str(doc_dir)!r})\n",
             ],
         }
