@@ -20,2421 +20,2421 @@ parameters:
 parcellation:
   atlas:
     name: Schaefer2018
-    coordinateSpace: {name: FSLMNI152}
+    coordinateSpace: FSLMNI152
 tractogram:
   name: dTOR
 nodes:
-- id: 0
-  label: 17Networks_LH_VisCent_ExStr_1
-  position:
-    x: -36.0
-    y: -62.0
-    z: -17.0
-- id: 1
-  label: 17Networks_LH_VisCent_ExStr_2
-  position:
-    x: -23.0
-    y: -73.0
-    z: -10.0
-- id: 2
-  label: 17Networks_LH_VisCent_ExStr_3
-  position:
-    x: -36.0
-    y: -81.0
-    z: -16.0
-- id: 3
-  label: 17Networks_LH_VisCent_ExStr_4
-  position:
-    x: -17.0
-    y: -86.0
-    z: -15.0
-- id: 4
-  label: 17Networks_LH_VisCent_ExStr_5
-  position:
-    x: -24.0
-    y: -97.0
-    z: -12.0
-- id: 5
-  label: 17Networks_LH_VisCent_ExStr_6
-  position:
-    x: -41.0
-    y: -87.0
-    z: -3.0
-- id: 6
-  label: 17Networks_LH_VisCent_Striate_1
-  position:
-    x: -7.0
-    y: -98.0
-    z: -7.0
-- id: 7
-  label: 17Networks_LH_VisCent_ExStr_7
-  position:
-    x: -46.0
-    y: -73.0
-    z: 6.0
-- id: 8
-  label: 17Networks_LH_VisCent_ExStr_8
-  position:
-    x: -24.0
-    y: -96.0
-    z: 6.0
-- id: 9
-  label: 17Networks_LH_VisCent_ExStr_9
-  position:
-    x: -39.0
-    y: -84.0
-    z: 14.0
-- id: 10
-  label: 17Networks_LH_VisCent_ExStr_10
-  position:
-    x: -11.0
-    y: -97.0
-    z: 17.0
-- id: 11
-  label: 17Networks_LH_VisCent_ExStr_11
-  position:
-    x: -25.0
-    y: -85.0
-    z: 21.0
-- id: 12
-  label: 17Networks_LH_VisPeri_ExStrInf_1
-  position:
-    x: -24.0
-    y: -55.0
-    z: -8.0
-- id: 13
-  label: 17Networks_LH_VisPeri_ExStrInf_2
-  position:
-    x: -12.0
-    y: -62.0
-    z: -5.0
-- id: 14
-  label: 17Networks_LH_VisPeri_ExStrInf_3
-  position:
-    x: -7.0
-    y: -76.0
-    z: -6.0
-- id: 15
-  label: 17Networks_LH_VisPeri_ExStrInf_4
-  position:
-    x: -13.0
-    y: -43.0
-    z: -5.0
-- id: 16
-  label: 17Networks_LH_VisPeri_ExStrInf_5
-  position:
-    x: -14.0
-    y: -57.0
-    z: 1.0
-- id: 17
-  label: 17Networks_LH_VisPeri_StriCal_1
-  position:
-    x: -5.0
-    y: -88.0
-    z: 2.0
-- id: 18
-  label: 17Networks_LH_VisPeri_StriCal_2
-  position:
-    x: -7.0
-    y: -74.0
-    z: 9.0
-- id: 19
-  label: 17Networks_LH_VisPeri_ExStrSup_1
-  position:
-    x: -19.0
-    y: -65.0
-    z: 7.0
-- id: 20
-  label: 17Networks_LH_VisPeri_ExStrSup_2
-  position:
-    x: -3.0
-    y: -84.0
-    z: 24.0
-- id: 21
-  label: 17Networks_LH_VisPeri_ExStrSup_3
-  position:
-    x: -12.0
-    y: -71.0
-    z: 20.0
-- id: 22
-  label: 17Networks_LH_VisPeri_ExStrSup_4
-  position:
-    x: -16.0
-    y: -89.0
-    z: 33.0
-- id: 23
-  label: 17Networks_LH_VisPeri_ExStrSup_5
-  position:
-    x: -12.0
-    y: -81.0
-    z: 36.0
-- id: 24
-  label: 17Networks_LH_SomMotA_1
-  position:
-    x: -8.0
-    y: -15.0
-    z: 47.0
-- id: 25
-  label: 17Networks_LH_SomMotA_2
-  position:
-    x: -41.0
-    y: -14.0
-    z: 47.0
-- id: 26
-  label: 17Networks_LH_SomMotA_3
-  position:
-    x: -49.0
-    y: -17.0
-    z: 54.0
-- id: 27
-  label: 17Networks_LH_SomMotA_4
-  position:
-    x: -48.0
-    y: -29.0
-    z: 58.0
-- id: 28
-  label: 17Networks_LH_SomMotA_5
-  position:
-    x: -39.0
-    y: -25.0
-    z: 53.0
-- id: 29
-  label: 17Networks_LH_SomMotA_6
-  position:
-    x: -9.0
-    y: -38.0
-    z: 54.0
-- id: 30
-  label: 17Networks_LH_SomMotA_7
-  position:
-    x: -4.0
-    y: -25.0
-    z: 56.0
-- id: 31
-  label: 17Networks_LH_SomMotA_8
-  position:
-    x: -4.0
-    y: -9.0
-    z: 59.0
-- id: 32
-  label: 17Networks_LH_SomMotA_9
-  position:
-    x: -36.0
-    y: -19.0
-    z: 65.0
-- id: 33
-  label: 17Networks_LH_SomMotA_10
-  position:
-    x: -32.0
-    y: -29.0
-    z: 63.0
-- id: 34
-  label: 17Networks_LH_SomMotA_11
-  position:
-    x: -30.0
-    y: -38.0
-    z: 65.0
-- id: 35
-  label: 17Networks_LH_SomMotA_12
-  position:
-    x: -23.0
-    y: -11.0
-    z: 65.0
-- id: 36
-  label: 17Networks_LH_SomMotA_13
-  position:
-    x: -19.0
-    y: -24.0
-    z: 67.0
-- id: 37
-  label: 17Networks_LH_SomMotA_14
-  position:
-    x: -9.0
-    y: -42.0
-    z: 70.0
-- id: 38
-  label: 17Networks_LH_SomMotA_15
-  position:
-    x: -4.0
-    y: -25.0
-    z: 69.0
-- id: 39
-  label: 17Networks_LH_SomMotA_16
-  position:
-    x: -14.0
-    y: -11.0
-    z: 73.0
-- id: 40
-  label: 17Networks_LH_SomMotA_17
-  position:
-    x: -19.0
-    y: -31.0
-    z: 69.0
-- id: 41
-  label: 17Networks_LH_SomMotA_18
-  position:
-    x: -19.0
-    y: -40.0
-    z: 72.0
-- id: 42
-  label: 17Networks_LH_SomMotA_19
-  position:
-    x: -12.0
-    y: -27.0
-    z: 73.0
-- id: 43
-  label: 17Networks_LH_SomMotB_Aud_1
-  position:
-    x: -50.0
-    y: -9.0
-    z: 0.0
-- id: 44
-  label: 17Networks_LH_SomMotB_Aud_2
-  position:
-    x: -56.0
-    y: -22.0
-    z: 8.0
-- id: 45
-  label: 17Networks_LH_SomMotB_Ins_1
-  position:
-    x: -36.0
-    y: -24.0
-    z: 10.0
-- id: 46
-  label: 17Networks_LH_SomMotB_S2_1
-  position:
-    x: -38.0
-    y: -9.0
-    z: 13.0
-- id: 47
-  label: 17Networks_LH_SomMotB_S2_2
-  position:
-    x: -36.0
-    y: -26.0
-    z: 19.0
-- id: 48
-  label: 17Networks_LH_SomMotB_Aud_3
-  position:
-    x: -59.0
-    y: -37.0
-    z: 16.0
-- id: 49
-  label: 17Networks_LH_SomMotB_Aud_4
-  position:
-    x: -41.0
-    y: -35.0
-    z: 14.0
-- id: 50
-  label: 17Networks_LH_SomMotB_S2_3
-  position:
-    x: -49.0
-    y: -13.0
-    z: 14.0
-- id: 51
-  label: 17Networks_LH_SomMotB_S2_4
-  position:
-    x: -60.0
-    y: -2.0
-    z: 11.0
-- id: 52
-  label: 17Networks_LH_SomMotB_S2_5
-  position:
-    x: -48.0
-    y: -24.0
-    z: 18.0
-- id: 53
-  label: 17Networks_LH_SomMotB_S2_6
-  position:
-    x: -61.0
-    y: -18.0
-    z: 19.0
-- id: 54
-  label: 17Networks_LH_SomMotB_Cent_1
-  position:
-    x: -59.0
-    y: -2.0
-    z: 23.0
-- id: 55
-  label: 17Networks_LH_SomMotB_Cent_2
-  position:
-    x: -63.0
-    y: -10.0
-    z: 31.0
-- id: 56
-  label: 17Networks_LH_SomMotB_Cent_3
-  position:
-    x: -53.0
-    y: -9.0
-    z: 30.0
-- id: 57
-  label: 17Networks_LH_SomMotB_Cent_4
-  position:
-    x: -51.0
-    y: -7.0
-    z: 43.0
-- id: 58
-  label: 17Networks_LH_SomMotB_Cent_5
-  position:
-    x: -48.0
-    y: -16.0
-    z: 40.0
-- id: 59
-  label: 17Networks_LH_DorsAttnA_TempOcc_1
-  position:
-    x: -45.0
-    y: -42.0
-    z: -21.0
-- id: 60
-  label: 17Networks_LH_DorsAttnA_TempOcc_2
-  position:
-    x: -33.0
-    y: -42.0
-    z: -21.0
-- id: 61
-  label: 17Networks_LH_DorsAttnA_TempOcc_3
-  position:
-    x: -49.0
-    y: -56.0
-    z: -15.0
-- id: 62
-  label: 17Networks_LH_DorsAttnA_TempOcc_4
-  position:
-    x: -45.0
-    y: -70.0
-    z: -8.0
-- id: 63
-  label: 17Networks_LH_DorsAttnA_ParOcc_1
-  position:
-    x: -48.0
-    y: -65.0
-    z: 15.0
-- id: 64
-  label: 17Networks_LH_DorsAttnA_ParOcc_2
-  position:
-    x: -32.0
-    y: -84.0
-    z: 27.0
-- id: 65
-  label: 17Networks_LH_DorsAttnA_SPL_1
-  position:
-    x: -26.0
-    y: -70.0
-    z: 31.0
-- id: 66
-  label: 17Networks_LH_DorsAttnA_SPL_2
-  position:
-    x: -21.0
-    y: -79.0
-    z: 45.0
-- id: 67
-  label: 17Networks_LH_DorsAttnA_SPL_3
-  position:
-    x: -23.0
-    y: -65.0
-    z: 46.0
-- id: 68
-  label: 17Networks_LH_DorsAttnA_SPL_4
-  position:
-    x: -29.0
-    y: -58.0
-    z: 50.0
-- id: 69
-  label: 17Networks_LH_DorsAttnA_SPL_5
-  position:
-    x: -36.0
-    y: -52.0
-    z: 56.0
-- id: 70
-  label: 17Networks_LH_DorsAttnA_SPL_6
-  position:
-    x: -15.0
-    y: -71.0
-    z: 57.0
-- id: 71
-  label: 17Networks_LH_DorsAttnA_SPL_7
-  position:
-    x: -29.0
-    y: -61.0
-    z: 62.0
-- id: 72
-  label: 17Networks_LH_DorsAttnB_PostC_1
-  position:
-    x: -61.0
-    y: -23.0
-    z: 33.0
-- id: 73
-  label: 17Networks_LH_DorsAttnB_PostC_2
-  position:
-    x: -55.0
-    y: -20.0
-    z: 41.0
-- id: 74
-  label: 17Networks_LH_DorsAttnB_PostC_3
-  position:
-    x: -55.0
-    y: -32.0
-    z: 45.0
-- id: 75
-  label: 17Networks_LH_DorsAttnB_PostC_4
-  position:
-    x: -46.0
-    y: -29.0
-    z: 44.0
-- id: 76
-  label: 17Networks_LH_DorsAttnB_PostC_5
-  position:
-    x: -39.0
-    y: -37.0
-    z: 49.0
-- id: 77
-  label: 17Networks_LH_DorsAttnB_PostC_6
-  position:
-    x: -30.0
-    y: -46.0
-    z: 63.0
-- id: 78
-  label: 17Networks_LH_DorsAttnB_PostC_7
-  position:
-    x: -7.0
-    y: -59.0
-    z: 63.0
-- id: 79
-  label: 17Networks_LH_DorsAttnB_PostC_8
-  position:
-    x: -20.0
-    y: -57.0
-    z: 66.0
-- id: 80
-  label: 17Networks_LH_DorsAttnB_PostC_9
-  position:
-    x: -13.0
-    y: -50.0
-    z: 72.0
-- id: 81
-  label: 17Networks_LH_DorsAttnB_FEF_1
-  position:
-    x: -40.0
-    y: -3.0
-    z: 51.0
-- id: 82
-  label: 17Networks_LH_DorsAttnB_FEF_2
-  position:
-    x: -25.0
-    y: -1.0
-    z: 55.0
-- id: 83
-  label: 17Networks_LH_DorsAttnB_FEF_3
-  position:
-    x: -30.0
-    y: -8.0
-    z: 52.0
-- id: 84
-  label: 17Networks_LH_DorsAttnB_PrCv_1
-  position:
-    x: -50.0
-    y: 3.0
-    z: 38.0
-- id: 85
-  label: 17Networks_LH_SalVentAttnA_ParOper_1
-  position:
-    x: -55.0
-    y: -32.0
-    z: 22.0
-- id: 86
-  label: 17Networks_LH_SalVentAttnA_ParOper_2
-  position:
-    x: -58.0
-    y: -44.0
-    z: 27.0
-- id: 87
-  label: 17Networks_LH_SalVentAttnA_ParOper_3
-  position:
-    x: -61.0
-    y: -36.0
-    z: 33.0
-- id: 88
-  label: 17Networks_LH_SalVentAttnA_Ins_1
-  position:
-    x: -39.0
-    y: 2.0
-    z: -4.0
-- id: 89
-  label: 17Networks_LH_SalVentAttnA_Ins_2
-  position:
-    x: -40.0
-    y: -15.0
-    z: -2.0
-- id: 90
-  label: 17Networks_LH_SalVentAttnA_Ins_3
-  position:
-    x: -33.0
-    y: 19.0
-    z: 8.0
-- id: 91
-  label: 17Networks_LH_SalVentAttnA_Ins_4
-  position:
-    x: -36.0
-    y: 4.0
-    z: 11.0
-- id: 92
-  label: 17Networks_LH_SalVentAttnA_FrOper_1
-  position:
-    x: -50.0
-    y: 1.0
-    z: 5.0
-- id: 93
-  label: 17Networks_LH_SalVentAttnA_FrOper_2
-  position:
-    x: -52.0
-    y: 9.0
-    z: 13.0
-- id: 94
-  label: 17Networks_LH_SalVentAttnA_ParMed_1
-  position:
-    x: -11.0
-    y: -27.0
-    z: 41.0
-- id: 95
-  label: 17Networks_LH_SalVentAttnA_ParMed_2
-  position:
-    x: -13.0
-    y: -41.0
-    z: 47.0
-- id: 96
-  label: 17Networks_LH_SalVentAttnA_ParMed_3
-  position:
-    x: -6.0
-    y: -49.0
-    z: 57.0
-- id: 97
-  label: 17Networks_LH_SalVentAttnA_FrMed_1
-  position:
-    x: -7.0
-    y: 0.0
-    z: 41.0
-- id: 98
-  label: 17Networks_LH_SalVentAttnA_FrMed_2
-  position:
-    x: -5.0
-    y: 9.0
-    z: 48.0
-- id: 99
-  label: 17Networks_LH_SalVentAttnA_FrMed_3
-  position:
-    x: -8.0
-    y: -3.0
-    z: 71.0
-- id: 100
-  label: 17Networks_LH_SalVentAttnB_PFCl_1
-  position:
-    x: -38.0
-    y: 49.0
-    z: 11.0
-- id: 101
-  label: 17Networks_LH_SalVentAttnB_PFCl_2
-  position:
-    x: -29.0
-    y: 43.0
-    z: 30.0
-- id: 102
-  label: 17Networks_LH_SalVentAttnB_PFCl_3
-  position:
-    x: -36.0
-    y: 32.0
-    z: 38.0
-- id: 103
-  label: 17Networks_LH_SalVentAttnB_Ins_1
-  position:
-    x: -34.0
-    y: 16.0
-    z: -8.0
-- id: 104
-  label: 17Networks_LH_SalVentAttnB_Ins_2
-  position:
-    x: -33.0
-    y: 25.0
-    z: -1.0
-- id: 105
-  label: 17Networks_LH_SalVentAttnB_Ins_3
-  position:
-    x: -43.0
-    y: 12.0
-    z: 2.0
-- id: 106
-  label: 17Networks_LH_SalVentAttnB_OFC_1
-  position:
-    x: -27.0
-    y: 49.0
-    z: -14.0
-- id: 107
-  label: 17Networks_LH_SalVentAttnB_PFCmp_1
-  position:
-    x: -6.0
-    y: 22.0
-    z: 31.0
-- id: 108
-  label: 17Networks_LH_LimbicB_OFC_1
-  position:
-    x: -12.0
-    y: 25.0
-    z: -21.0
-- id: 109
-  label: 17Networks_LH_LimbicB_OFC_2
-  position:
-    x: -24.0
-    y: 23.0
-    z: -20.0
-- id: 110
-  label: 17Networks_LH_LimbicB_OFC_3
-  position:
-    x: -10.0
-    y: 47.0
-    z: -21.0
-- id: 111
-  label: 17Networks_LH_LimbicB_OFC_4
-  position:
-    x: -4.0
-    y: 23.0
-    z: -19.0
-- id: 112
-  label: 17Networks_LH_LimbicB_OFC_5
-  position:
-    x: -15.0
-    y: 65.0
-    z: -8.0
-- id: 113
-  label: 17Networks_LH_LimbicA_TempPole_1
-  position:
-    x: -37.0
-    y: -5.0
-    z: -42.0
-- id: 114
-  label: 17Networks_LH_LimbicA_TempPole_2
-  position:
-    x: -25.0
-    y: 6.0
-    z: -39.0
-- id: 115
-  label: 17Networks_LH_LimbicA_TempPole_3
-  position:
-    x: -26.0
-    y: -9.0
-    z: -33.0
-- id: 116
-  label: 17Networks_LH_LimbicA_TempPole_4
-  position:
-    x: -54.0
-    y: -21.0
-    z: -31.0
-- id: 117
-  label: 17Networks_LH_LimbicA_TempPole_5
-  position:
-    x: -40.0
-    y: -21.0
-    z: -27.0
-- id: 118
-  label: 17Networks_LH_LimbicA_TempPole_6
-  position:
-    x: -32.0
-    y: 12.0
-    z: -29.0
-- id: 119
-  label: 17Networks_LH_LimbicA_TempPole_7
-  position:
-    x: -44.0
-    y: 5.0
-    z: -17.0
-- id: 120
-  label: 17Networks_LH_ContA_Temp_1
-  position:
-    x: -55.0
-    y: -62.0
-    z: -1.0
-- id: 121
-  label: 17Networks_LH_ContA_IPS_1
-  position:
-    x: -29.0
-    y: -74.0
-    z: 42.0
-- id: 122
-  label: 17Networks_LH_ContA_IPS_2
-  position:
-    x: -58.0
-    y: -42.0
-    z: 45.0
-- id: 123
-  label: 17Networks_LH_ContA_IPS_3
-  position:
-    x: -35.0
-    y: -62.0
-    z: 48.0
-- id: 124
-  label: 17Networks_LH_ContA_IPS_4
-  position:
-    x: -45.0
-    y: -41.0
-    z: 47.0
-- id: 125
-  label: 17Networks_LH_ContA_IPS_5
-  position:
-    x: -33.0
-    y: -46.0
-    z: 41.0
-- id: 126
-  label: 17Networks_LH_ContA_PFCd_1
-  position:
-    x: -21.0
-    y: 5.0
-    z: 65.0
-- id: 127
-  label: 17Networks_LH_ContA_PFClv_1
-  position:
-    x: -48.0
-    y: 35.0
-    z: 10.0
-- id: 128
-  label: 17Networks_LH_ContA_PFClv_2
-  position:
-    x: -42.0
-    y: 38.0
-    z: 22.0
-- id: 129
-  label: 17Networks_LH_ContA_PFCl_1
-  position:
-    x: -49.0
-    y: 6.0
-    z: 26.0
-- id: 130
-  label: 17Networks_LH_ContA_PFCl_2
-  position:
-    x: -45.0
-    y: 20.0
-    z: 27.0
-- id: 131
-  label: 17Networks_LH_ContA_PFCl_3
-  position:
-    x: -39.0
-    y: 7.0
-    z: 34.0
-- id: 132
-  label: 17Networks_LH_ContA_Cingm_1
-  position:
-    x: -3.0
-    y: 5.0
-    z: 29.0
-- id: 133
-  label: 17Networks_LH_ContB_Temp_1
-  position:
-    x: -60.0
-    y: -36.0
-    z: -18.0
-- id: 134
-  label: 17Networks_LH_ContB_Temp_2
-  position:
-    x: -60.0
-    y: -49.0
-    z: -10.0
-- id: 135
-  label: 17Networks_LH_ContB_IPL_1
-  position:
-    x: -49.0
-    y: -60.0
-    z: 47.0
-- id: 136
-  label: 17Networks_LH_ContB_IPL_2
-  position:
-    x: -53.0
-    y: -50.0
-    z: 45.0
-- id: 137
-  label: 17Networks_LH_ContB_IPL_3
-  position:
-    x: -42.0
-    y: -52.0
-    z: 49.0
-- id: 138
-  label: 17Networks_LH_ContB_PFCd_1
-  position:
-    x: -30.0
-    y: 14.0
-    z: 57.0
-- id: 139
-  label: 17Networks_LH_ContB_PFClv_1
-  position:
-    x: -42.0
-    y: 49.0
-    z: -6.0
-- id: 140
-  label: 17Networks_LH_ContB_PFClv_2
-  position:
-    x: -28.0
-    y: 58.0
-    z: -1.0
-- id: 141
-  label: 17Networks_LH_ContB_PFClv_3
-  position:
-    x: -28.0
-    y: 57.0
-    z: 13.0
-- id: 142
-  label: 17Networks_LH_ContB_PFCmp_1
-  position:
-    x: -4.0
-    y: 28.0
-    z: 47.0
-- id: 143
-  label: 17Networks_LH_ContC_pCun_1
-  position:
-    x: -10.0
-    y: -70.0
-    z: 32.0
-- id: 144
-  label: 17Networks_LH_ContC_pCun_2
-  position:
-    x: -9.0
-    y: -77.0
-    z: 45.0
-- id: 145
-  label: 17Networks_LH_ContC_pCun_3
-  position:
-    x: -5.0
-    y: -64.0
-    z: 52.0
-- id: 146
-  label: 17Networks_LH_ContC_Cingp_1
-  position:
-    x: -6.0
-    y: -41.0
-    z: 24.0
-- id: 147
-  label: 17Networks_LH_ContC_Cingp_2
-  position:
-    x: -4.0
-    y: -22.0
-    z: 29.0
-- id: 148
-  label: 17Networks_LH_DefaultA_IPL_1
-  position:
-    x: -47.0
-    y: -64.0
-    z: 31.0
-- id: 149
-  label: 17Networks_LH_DefaultA_IPL_2
-  position:
-    x: -41.0
-    y: -72.0
-    z: 43.0
-- id: 150
-  label: 17Networks_LH_DefaultA_PFCd_1
-  position:
-    x: -25.0
-    y: 28.0
-    z: 43.0
-- id: 151
-  label: 17Networks_LH_DefaultA_PFCd_2
-  position:
-    x: -18.0
-    y: 36.0
-    z: 48.0
-- id: 152
-  label: 17Networks_LH_DefaultA_PFCd_3
-  position:
-    x: -22.0
-    y: 20.0
-    z: 52.0
-- id: 153
-  label: 17Networks_LH_DefaultA_pCunPCC_1
-  position:
-    x: -4.0
-    y: -53.0
-    z: 20.0
-- id: 154
-  label: 17Networks_LH_DefaultA_pCunPCC_2
-  position:
-    x: -5.0
-    y: -60.0
-    z: 30.0
-- id: 155
-  label: 17Networks_LH_DefaultA_pCunPCC_3
-  position:
-    x: -7.0
-    y: -44.0
-    z: 32.0
-- id: 156
-  label: 17Networks_LH_DefaultA_pCunPCC_4
-  position:
-    x: -4.0
-    y: -34.0
-    z: 38.0
-- id: 157
-  label: 17Networks_LH_DefaultA_pCunPCC_5
-  position:
-    x: -3.0
-    y: -15.0
-    z: 37.0
-- id: 158
-  label: 17Networks_LH_DefaultA_pCunPCC_6
-  position:
-    x: -3.0
-    y: -68.0
-    z: 41.0
-- id: 159
-  label: 17Networks_LH_DefaultA_pCunPCC_7
-  position:
-    x: -7.0
-    y: -51.0
-    z: 43.0
-- id: 160
-  label: 17Networks_LH_DefaultA_PFCm_1
-  position:
-    x: -5.0
-    y: 55.0
-    z: -10.0
-- id: 161
-  label: 17Networks_LH_DefaultA_PFCm_2
-  position:
-    x: -6.0
-    y: 35.0
-    z: -9.0
-- id: 162
-  label: 17Networks_LH_DefaultA_PFCm_3
-  position:
-    x: -6.0
-    y: 59.0
-    z: 7.0
-- id: 163
-  label: 17Networks_LH_DefaultA_PFCm_4
-  position:
-    x: -6.0
-    y: 45.0
-    z: 6.0
-- id: 164
-  label: 17Networks_LH_DefaultA_PFCm_5
-  position:
-    x: -16.0
-    y: 67.0
-    z: 8.0
-- id: 165
-  label: 17Networks_LH_DefaultA_PFCm_6
-  position:
-    x: -5.0
-    y: 34.0
-    z: 21.0
-- id: 166
-  label: 17Networks_LH_DefaultB_Temp_1
-  position:
-    x: -44.0
-    y: 13.0
-    z: -34.0
-- id: 167
-  label: 17Networks_LH_DefaultB_Temp_2
-  position:
-    x: -54.0
-    y: -2.0
-    z: -30.0
-- id: 168
-  label: 17Networks_LH_DefaultB_Temp_3
-  position:
-    x: -62.0
-    y: -18.0
-    z: -21.0
-- id: 169
-  label: 17Networks_LH_DefaultB_Temp_4
-  position:
-    x: -57.0
-    y: -9.0
-    z: -14.0
-- id: 170
-  label: 17Networks_LH_DefaultB_Temp_5
-  position:
-    x: -61.0
-    y: -35.0
-    z: -3.0
-- id: 171
-  label: 17Networks_LH_DefaultB_Temp_6
-  position:
-    x: -52.0
-    y: -22.0
-    z: -6.0
-- id: 172
-  label: 17Networks_LH_DefaultB_IPL_1
-  position:
-    x: -45.0
-    y: -58.0
-    z: 21.0
-- id: 173
-  label: 17Networks_LH_DefaultB_IPL_2
-  position:
-    x: -57.0
-    y: -55.0
-    z: 30.0
-- id: 174
-  label: 17Networks_LH_DefaultB_PFCd_1
-  position:
-    x: -4.0
-    y: 51.0
-    z: 28.0
-- id: 175
-  label: 17Networks_LH_DefaultB_PFCd_2
-  position:
-    x: -14.0
-    y: 58.0
-    z: 31.0
-- id: 176
-  label: 17Networks_LH_DefaultB_PFCd_3
-  position:
-    x: -22.0
-    y: 51.0
-    z: 31.0
-- id: 177
-  label: 17Networks_LH_DefaultB_PFCd_4
-  position:
-    x: -8.0
-    y: 43.0
-    z: 51.0
-- id: 178
-  label: 17Networks_LH_DefaultB_PFCd_5
-  position:
-    x: -13.0
-    y: 24.0
-    z: 61.0
-- id: 179
-  label: 17Networks_LH_DefaultB_PFCd_6
-  position:
-    x: -6.0
-    y: 10.0
-    z: 65.0
-- id: 180
-  label: 17Networks_LH_DefaultB_PFCl_1
-  position:
-    x: -41.0
-    y: 19.0
-    z: 48.0
-- id: 181
-  label: 17Networks_LH_DefaultB_PFCl_2
-  position:
-    x: -42.0
-    y: 7.0
-    z: 48.0
-- id: 182
-  label: 17Networks_LH_DefaultB_PFCv_1
-  position:
-    x: -36.0
-    y: 22.0
-    z: -16.0
-- id: 183
-  label: 17Networks_LH_DefaultB_PFCv_2
-  position:
-    x: -36.0
-    y: 37.0
-    z: -13.0
-- id: 184
-  label: 17Networks_LH_DefaultB_PFCv_3
-  position:
-    x: -46.0
-    y: 32.0
-    z: -10.0
-- id: 185
-  label: 17Networks_LH_DefaultB_PFCv_4
-  position:
-    x: -48.0
-    y: 28.0
-    z: 0.0
-- id: 186
-  label: 17Networks_LH_DefaultB_PFCv_5
-  position:
-    x: -53.0
-    y: 19.0
-    z: 11.0
-- id: 187
-  label: 17Networks_LH_DefaultC_IPL_1
-  position:
-    x: -40.0
-    y: -79.0
-    z: 30.0
-- id: 188
-  label: 17Networks_LH_DefaultC_Rsp_1
-  position:
-    x: -13.0
-    y: -49.0
-    z: 4.0
-- id: 189
-  label: 17Networks_LH_DefaultC_Rsp_2
-  position:
-    x: -8.0
-    y: -52.0
-    z: 9.0
-- id: 190
-  label: 17Networks_LH_DefaultC_Rsp_3
-  position:
-    x: -13.0
-    y: -61.0
-    z: 19.0
-- id: 191
-  label: 17Networks_LH_DefaultC_PHC_1
-  position:
-    x: -21.0
-    y: -21.0
-    z: -26.0
-- id: 192
-  label: 17Networks_LH_DefaultC_PHC_2
-  position:
-    x: -30.0
-    y: -33.0
-    z: -18.0
-- id: 193
-  label: 17Networks_LH_DefaultC_PHC_3
-  position:
-    x: -18.0
-    y: -37.0
-    z: -12.0
-- id: 194
-  label: 17Networks_LH_TempPar_1
-  position:
-    x: -53.0
-    y: 6.0
-    z: -11.0
-- id: 195
-  label: 17Networks_LH_TempPar_2
-  position:
-    x: -61.0
-    y: -13.0
-    z: -3.0
-- id: 196
-  label: 17Networks_LH_TempPar_3
-  position:
-    x: -62.0
-    y: -32.0
-    z: 5.0
-- id: 197
-  label: 17Networks_LH_TempPar_4
-  position:
-    x: -52.0
-    y: -43.0
-    z: 5.0
-- id: 198
-  label: 17Networks_LH_TempPar_5
-  position:
-    x: -57.0
-    y: -54.0
-    z: 10.0
-- id: 199
-  label: 17Networks_LH_TempPar_6
-  position:
-    x: -59.0
-    y: -49.0
-    z: 16.0
-- id: 200
-  label: 17Networks_RH_VisCent_ExStr_1
-  position:
-    x: 36.0
-    y: -53.0
-    z: -17.0
-- id: 201
-  label: 17Networks_RH_VisCent_ExStr_2
-  position:
-    x: 37.0
-    y: -73.0
-    z: -16.0
-- id: 202
-  label: 17Networks_RH_VisCent_ExStr_3
-  position:
-    x: 23.0
-    y: -74.0
-    z: -11.0
-- id: 203
-  label: 17Networks_RH_VisCent_ExStr_4
-  position:
-    x: 20.0
-    y: -88.0
-    z: -13.0
-- id: 204
-  label: 17Networks_RH_VisCent_ExStr_5
-  position:
-    x: 42.0
-    y: -84.0
-    z: -12.0
-- id: 205
-  label: 17Networks_RH_VisCent_ExStr_6
-  position:
-    x: 25.0
-    y: -97.0
-    z: -10.0
-- id: 206
-  label: 17Networks_RH_VisCent_Striate_1
-  position:
-    x: 8.0
-    y: -92.0
-    z: -2.0
-- id: 207
-  label: 17Networks_RH_VisCent_ExStr_7
-  position:
-    x: 35.0
-    y: -89.0
-    z: 2.0
-- id: 208
-  label: 17Networks_RH_VisCent_ExStr_8
-  position:
-    x: 24.0
-    y: -99.0
-    z: 7.0
-- id: 209
-  label: 17Networks_RH_VisCent_ExStr_9
-  position:
-    x: 43.0
-    y: -79.0
-    z: 10.0
-- id: 210
-  label: 17Networks_RH_VisCent_ExStr_10
-  position:
-    x: 13.0
-    y: -94.0
-    z: 19.0
-- id: 211
-  label: 17Networks_RH_VisCent_ExStr_11
-  position:
-    x: 27.0
-    y: -87.0
-    z: 21.0
-- id: 212
-  label: 17Networks_RH_VisPeri_ExStrInf_1
-  position:
-    x: 26.0
-    y: -52.0
-    z: -9.0
-- id: 213
-  label: 17Networks_RH_VisPeri_ExStrInf_2
-  position:
-    x: 18.0
-    y: -36.0
-    z: -12.0
-- id: 214
-  label: 17Networks_RH_VisPeri_ExStrInf_3
-  position:
-    x: 9.0
-    y: -72.0
-    z: -5.0
-- id: 215
-  label: 17Networks_RH_VisPeri_ExStrInf_4
-  position:
-    x: 13.0
-    y: -58.0
-    z: -3.0
-- id: 216
-  label: 17Networks_RH_VisPeri_ExStrInf_5
-  position:
-    x: 18.0
-    y: -45.0
-    z: -3.0
-- id: 217
-  label: 17Networks_RH_VisPeri_StriCal_1
-  position:
-    x: 9.0
-    y: -74.0
-    z: 9.0
-- id: 218
-  label: 17Networks_RH_VisPeri_StriCal_2
-  position:
-    x: 22.0
-    y: -59.0
-    z: 6.0
-- id: 219
-  label: 17Networks_RH_VisPeri_ExStrSup_1
-  position:
-    x: 16.0
-    y: -66.0
-    z: 19.0
-- id: 220
-  label: 17Networks_RH_VisPeri_ExStrSup_2
-  position:
-    x: 5.0
-    y: -80.0
-    z: 24.0
-- id: 221
-  label: 17Networks_RH_VisPeri_ExStrSup_3
-  position:
-    x: 14.0
-    y: -78.0
-    z: 34.0
-- id: 222
-  label: 17Networks_RH_VisPeri_ExStrSup_4
-  position:
-    x: 16.0
-    y: -87.0
-    z: 36.0
-- id: 223
-  label: 17Networks_RH_SomMotA_1
-  position:
-    x: 54.0
-    y: -17.0
-    z: 40.0
-- id: 224
-  label: 17Networks_RH_SomMotA_2
-  position:
-    x: 52.0
-    y: -13.0
-    z: 49.0
-- id: 225
-  label: 17Networks_RH_SomMotA_3
-  position:
-    x: 44.0
-    y: -10.0
-    z: 49.0
-- id: 226
-  label: 17Networks_RH_SomMotA_4
-  position:
-    x: 49.0
-    y: -26.0
-    z: 56.0
-- id: 227
-  label: 17Networks_RH_SomMotA_5
-  position:
-    x: 7.0
-    y: -10.0
-    z: 51.0
-- id: 228
-  label: 17Networks_RH_SomMotA_6
-  position:
-    x: 43.0
-    y: -21.0
-    z: 54.0
-- id: 229
-  label: 17Networks_RH_SomMotA_7
-  position:
-    x: 37.0
-    y: -20.0
-    z: 64.0
-- id: 230
-  label: 17Networks_RH_SomMotA_8
-  position:
-    x: 32.0
-    y: -34.0
-    z: 63.0
-- id: 231
-  label: 17Networks_RH_SomMotA_9
-  position:
-    x: 31.0
-    y: -41.0
-    z: 64.0
-- id: 232
-  label: 17Networks_RH_SomMotA_10
-  position:
-    x: 34.0
-    y: -27.0
-    z: 61.0
-- id: 233
-  label: 17Networks_RH_SomMotA_11
-  position:
-    x: 4.0
-    y: -25.0
-    z: 58.0
-- id: 234
-  label: 17Networks_RH_SomMotA_12
-  position:
-    x: 29.0
-    y: -11.0
-    z: 65.0
-- id: 235
-  label: 17Networks_RH_SomMotA_13
-  position:
-    x: 9.0
-    y: -40.0
-    z: 68.0
-- id: 236
-  label: 17Networks_RH_SomMotA_14
-  position:
-    x: 21.0
-    y: -24.0
-    z: 67.0
-- id: 237
-  label: 17Networks_RH_SomMotA_15
-  position:
-    x: 22.0
-    y: -29.0
-    z: 68.0
-- id: 238
-  label: 17Networks_RH_SomMotA_16
-  position:
-    x: 22.0
-    y: -35.0
-    z: 71.0
-- id: 239
-  label: 17Networks_RH_SomMotA_17
-  position:
-    x: 17.0
-    y: -6.0
-    z: 69.0
-- id: 240
-  label: 17Networks_RH_SomMotA_18
-  position:
-    x: 5.0
-    y: -22.0
-    z: 72.0
-- id: 241
-  label: 17Networks_RH_SomMotA_19
-  position:
-    x: 17.0
-    y: -18.0
-    z: 73.0
-- id: 242
-  label: 17Networks_RH_SomMotA_20
-  position:
-    x: 13.0
-    y: -33.0
-    z: 76.0
-- id: 243
-  label: 17Networks_RH_SomMotB_Aud_1
-  position:
-    x: 53.0
-    y: 3.0
-    z: -6.0
-- id: 244
-  label: 17Networks_RH_SomMotB_Aud_2
-  position:
-    x: 53.0
-    y: -14.0
-    z: 6.0
-- id: 245
-  label: 17Networks_RH_SomMotB_Ins_1
-  position:
-    x: 39.0
-    y: -19.0
-    z: 5.0
-- id: 246
-  label: 17Networks_RH_SomMotB_S2_1
-  position:
-    x: 37.0
-    y: -8.0
-    z: 14.0
-- id: 247
-  label: 17Networks_RH_SomMotB_S2_2
-  position:
-    x: 35.0
-    y: -21.0
-    z: 14.0
-- id: 248
-  label: 17Networks_RH_SomMotB_Aud_3
-  position:
-    x: 60.0
-    y: -24.0
-    z: 11.0
-- id: 249
-  label: 17Networks_RH_SomMotB_S2_3
-  position:
-    x: 41.0
-    y: -13.0
-    z: 18.0
-- id: 250
-  label: 17Networks_RH_SomMotB_S2_4
-  position:
-    x: 41.0
-    y: -29.0
-    z: 18.0
-- id: 251
-  label: 17Networks_RH_SomMotB_S2_5
-  position:
-    x: 50.0
-    y: -10.0
-    z: 13.0
-- id: 252
-  label: 17Networks_RH_SomMotB_S2_6
-  position:
-    x: 59.0
-    y: 1.0
-    z: 10.0
-- id: 253
-  label: 17Networks_RH_SomMotB_S2_7
-  position:
-    x: 49.0
-    y: -21.0
-    z: 19.0
-- id: 254
-  label: 17Networks_RH_SomMotB_S2_8
-  position:
-    x: 62.0
-    y: -12.0
-    z: 15.0
-- id: 255
-  label: 17Networks_RH_SomMotB_Cent_1
-  position:
-    x: 61.0
-    y: 6.0
-    z: 30.0
-- id: 256
-  label: 17Networks_RH_SomMotB_Cent_2
-  position:
-    x: 60.0
-    y: -5.0
-    z: 27.0
-- id: 257
-  label: 17Networks_RH_SomMotB_Cent_3
-  position:
-    x: 52.0
-    y: -6.0
-    z: 37.0
-- id: 258
-  label: 17Networks_RH_DorsAttnA_TempOcc_1
-  position:
-    x: 34.0
-    y: -37.0
-    z: -23.0
-- id: 259
-  label: 17Networks_RH_DorsAttnA_TempOcc_2
-  position:
-    x: 50.0
-    y: -49.0
-    z: -18.0
-- id: 260
-  label: 17Networks_RH_DorsAttnA_TempOcc_3
-  position:
-    x: 50.0
-    y: -64.0
-    z: -9.0
-- id: 261
-  label: 17Networks_RH_DorsAttnA_ParOcc_1
-  position:
-    x: 48.0
-    y: -66.0
-    z: 4.0
-- id: 262
-  label: 17Networks_RH_DorsAttnA_ParOcc_2
-  position:
-    x: 54.0
-    y: -56.0
-    z: 12.0
-- id: 263
-  label: 17Networks_RH_DorsAttnA_ParOcc_3
-  position:
-    x: 36.0
-    y: -79.0
-    z: 24.0
-- id: 264
-  label: 17Networks_RH_DorsAttnA_SPL_1
-  position:
-    x: 29.0
-    y: -78.0
-    z: 37.0
-- id: 265
-  label: 17Networks_RH_DorsAttnA_SPL_2
-  position:
-    x: 32.0
-    y: -66.0
-    z: 35.0
-- id: 266
-  label: 17Networks_RH_DorsAttnA_SPL_3
-  position:
-    x: 19.0
-    y: -79.0
-    z: 50.0
-- id: 267
-  label: 17Networks_RH_DorsAttnA_SPL_4
-  position:
-    x: 31.0
-    y: -64.0
-    z: 53.0
-- id: 268
-  label: 17Networks_RH_DorsAttnA_SPL_5
-  position:
-    x: 21.0
-    y: -69.0
-    z: 53.0
-- id: 269
-  label: 17Networks_RH_DorsAttnA_SPL_6
-  position:
-    x: 34.0
-    y: -50.0
-    z: 54.0
-- id: 270
-  label: 17Networks_RH_DorsAttnA_SPL_7
-  position:
-    x: 27.0
-    y: -58.0
-    z: 61.0
-- id: 271
-  label: 17Networks_RH_DorsAttnA_SPL_8
-  position:
-    x: 14.0
-    y: -64.0
-    z: 65.0
-- id: 272
-  label: 17Networks_RH_DorsAttnB_TempOcc_1
-  position:
-    x: 59.0
-    y: -55.0
-    z: -2.0
-- id: 273
-  label: 17Networks_RH_DorsAttnB_PostC_1
-  position:
-    x: 61.0
-    y: -14.0
-    z: 30.0
-- id: 274
-  label: 17Networks_RH_DorsAttnB_PostC_2
-  position:
-    x: 57.0
-    y: -23.0
-    z: 44.0
-- id: 275
-  label: 17Networks_RH_DorsAttnB_PostC_3
-  position:
-    x: 44.0
-    y: -37.0
-    z: 50.0
-- id: 276
-  label: 17Networks_RH_DorsAttnB_PostC_4
-  position:
-    x: 45.0
-    y: -28.0
-    z: 42.0
-- id: 277
-  label: 17Networks_RH_DorsAttnB_PostC_5
-  position:
-    x: 35.0
-    y: -36.0
-    z: 51.0
-- id: 278
-  label: 17Networks_RH_DorsAttnB_PostC_6
-  position:
-    x: 7.0
-    y: -54.0
-    z: 59.0
-- id: 279
-  label: 17Networks_RH_DorsAttnB_PostC_7
-  position:
-    x: 24.0
-    y: -50.0
-    z: 68.0
-- id: 280
-  label: 17Networks_RH_DorsAttnB_PostC_8
-  position:
-    x: 16.0
-    y: -47.0
-    z: 74.0
-- id: 281
-  label: 17Networks_RH_DorsAttnB_FEF_1
-  position:
-    x: 39.0
-    y: -3.0
-    z: 53.0
-- id: 282
-  label: 17Networks_RH_DorsAttnB_FEF_2
-  position:
-    x: 27.0
-    y: -3.0
-    z: 52.0
-- id: 283
-  label: 17Networks_RH_DorsAttnB_FEF_3
-  position:
-    x: 25.0
-    y: -3.0
-    z: 64.0
-- id: 284
-  label: 17Networks_RH_SalVentAttnA_ParOper_1
-  position:
-    x: 58.0
-    y: -31.0
-    z: 24.0
-- id: 285
-  label: 17Networks_RH_SalVentAttnA_ParOper_2
-  position:
-    x: 60.0
-    y: -22.0
-    z: 22.0
-- id: 286
-  label: 17Networks_RH_SalVentAttnA_ParOper_3
-  position:
-    x: 63.0
-    y: -26.0
-    z: 38.0
-- id: 287
-  label: 17Networks_RH_SalVentAttnA_PrC_1
-  position:
-    x: 51.0
-    y: 3.0
-    z: 41.0
-- id: 288
-  label: 17Networks_RH_SalVentAttnA_Ins_1
-  position:
-    x: 40.0
-    y: 5.0
-    z: -15.0
-- id: 289
-  label: 17Networks_RH_SalVentAttnA_Ins_2
-  position:
-    x: 41.0
-    y: 8.0
-    z: -3.0
-- id: 290
-  label: 17Networks_RH_SalVentAttnA_Ins_3
-  position:
-    x: 40.0
-    y: -10.0
-    z: -4.0
-- id: 291
-  label: 17Networks_RH_SalVentAttnA_Ins_4
-  position:
-    x: 39.0
-    y: -2.0
-    z: 6.0
-- id: 292
-  label: 17Networks_RH_SalVentAttnA_FrOper_1
-  position:
-    x: 38.0
-    y: 7.0
-    z: 11.0
-- id: 293
-  label: 17Networks_RH_SalVentAttnA_FrOper_2
-  position:
-    x: 49.0
-    y: 5.0
-    z: 3.0
-- id: 294
-  label: 17Networks_RH_SalVentAttnA_FrOper_3
-  position:
-    x: 54.0
-    y: 12.0
-    z: 12.0
-- id: 295
-  label: 17Networks_RH_SalVentAttnA_FrMed_1
-  position:
-    x: 7.0
-    y: 2.0
-    z: 43.0
-- id: 296
-  label: 17Networks_RH_SalVentAttnA_ParMed_1
-  position:
-    x: 11.0
-    y: -17.0
-    z: 41.0
-- id: 297
-  label: 17Networks_RH_SalVentAttnA_ParMed_2
-  position:
-    x: 12.0
-    y: -34.0
-    z: 43.0
-- id: 298
-  label: 17Networks_RH_SalVentAttnA_FrMed_2
-  position:
-    x: 6.0
-    y: 11.0
-    z: 58.0
-- id: 299
-  label: 17Networks_RH_SalVentAttnA_ParMed_3
-  position:
-    x: 10.0
-    y: -43.0
-    z: 53.0
-- id: 300
-  label: 17Networks_RH_SalVentAttnA_ParMed_4
-  position:
-    x: 11.0
-    y: -32.0
-    z: 50.0
-- id: 301
-  label: 17Networks_RH_SalVentAttnA_FrMed_3
-  position:
-    x: 7.0
-    y: -2.0
-    z: 67.0
-- id: 302
-  label: 17Networks_RH_SalVentAttnA_FrMed_4
-  position:
-    x: 16.0
-    y: 7.0
-    z: 69.0
-- id: 303
-  label: 17Networks_RH_SalVentAttnB_IPL_1
-  position:
-    x: 62.0
-    y: -37.0
-    z: 37.0
-- id: 304
-  label: 17Networks_RH_SalVentAttnB_PFClv_1
-  position:
-    x: 49.0
-    y: 40.0
-    z: 5.0
-- id: 305
-  label: 17Networks_RH_SalVentAttnB_PFCl_1
-  position:
-    x: 42.0
-    y: 46.0
-    z: 14.0
-- id: 306
-  label: 17Networks_RH_SalVentAttnB_PFCl_2
-  position:
-    x: 25.0
-    y: 54.0
-    z: 25.0
-- id: 307
-  label: 17Networks_RH_SalVentAttnB_PFCl_3
-  position:
-    x: 33.0
-    y: 45.0
-    z: 28.0
-- id: 308
-  label: 17Networks_RH_SalVentAttnB_Ins_1
-  position:
-    x: 34.0
-    y: 21.0
-    z: -8.0
-- id: 309
-  label: 17Networks_RH_SalVentAttnB_Ins_2
-  position:
-    x: 37.0
-    y: 23.0
-    z: 5.0
-- id: 310
-  label: 17Networks_RH_SalVentAttnB_PFCmp_1
-  position:
-    x: 8.0
-    y: 35.0
-    z: 25.0
-- id: 311
-  label: 17Networks_RH_SalVentAttnB_PFCmp_2
-  position:
-    x: 7.0
-    y: 19.0
-    z: 35.0
-- id: 312
-  label: 17Networks_RH_LimbicB_OFC_1
-  position:
-    x: 13.0
-    y: 24.0
-    z: -21.0
-- id: 313
-  label: 17Networks_RH_LimbicB_OFC_2
-  position:
-    x: 23.0
-    y: 22.0
-    z: -21.0
-- id: 314
-  label: 17Networks_RH_LimbicB_OFC_3
-  position:
-    x: 8.0
-    y: 47.0
-    z: -23.0
-- id: 315
-  label: 17Networks_RH_LimbicB_OFC_4
-  position:
-    x: 20.0
-    y: 43.0
-    z: -18.0
-- id: 316
-  label: 17Networks_RH_LimbicB_OFC_5
-  position:
-    x: 5.0
-    y: 22.0
-    z: -21.0
-- id: 317
-  label: 17Networks_RH_LimbicB_OFC_6
-  position:
-    x: 9.0
-    y: 63.0
-    z: -14.0
-- id: 318
-  label: 17Networks_RH_LimbicA_TempPole_1
-  position:
-    x: 28.0
-    y: -1.0
-    z: -40.0
-- id: 319
-  label: 17Networks_RH_LimbicA_TempPole_2
-  position:
-    x: 49.0
-    y: -7.0
-    z: -39.0
-- id: 320
-  label: 17Networks_RH_LimbicA_TempPole_3
-  position:
-    x: 37.0
-    y: 17.0
-    z: -38.0
-- id: 321
-  label: 17Networks_RH_LimbicA_TempPole_4
-  position:
-    x: 39.0
-    y: -15.0
-    z: -31.0
-- id: 322
-  label: 17Networks_RH_LimbicA_TempPole_5
-  position:
-    x: 29.0
-    y: 12.0
-    z: -30.0
-- id: 323
-  label: 17Networks_RH_LimbicA_TempPole_6
-  position:
-    x: 50.0
-    y: -28.0
-    z: -26.0
-- id: 324
-  label: 17Networks_RH_ContA_IPS_1
-  position:
-    x: 35.0
-    y: -71.0
-    z: 47.0
-- id: 325
-  label: 17Networks_RH_ContA_IPS_2
-  position:
-    x: 54.0
-    y: -33.0
-    z: 51.0
-- id: 326
-  label: 17Networks_RH_ContA_IPS_3
-  position:
-    x: 47.0
-    y: -44.0
-    z: 46.0
-- id: 327
-  label: 17Networks_RH_ContA_IPS_4
-  position:
-    x: 36.0
-    y: -44.0
-    z: 45.0
-- id: 328
-  label: 17Networks_RH_ContA_PFCd_1
-  position:
-    x: 24.0
-    y: 10.0
-    z: 58.0
-- id: 329
-  label: 17Networks_RH_ContA_PFCl_1
-  position:
-    x: 50.0
-    y: 30.0
-    z: 18.0
-- id: 330
-  label: 17Networks_RH_ContA_PFCl_2
-  position:
-    x: 48.0
-    y: 18.0
-    z: 23.0
-- id: 331
-  label: 17Networks_RH_ContA_PFCl_3
-  position:
-    x: 47.0
-    y: 29.0
-    z: 28.0
-- id: 332
-  label: 17Networks_RH_ContA_PFCl_4
-  position:
-    x: 49.0
-    y: 8.0
-    z: 25.0
-- id: 333
-  label: 17Networks_RH_ContA_PFCl_5
-  position:
-    x: 39.0
-    y: 11.0
-    z: 34.0
-- id: 334
-  label: 17Networks_RH_ContA_Cingm_1
-  position:
-    x: 5.0
-    y: 1.0
-    z: 30.0
-- id: 335
-  label: 17Networks_RH_ContB_Temp_1
-  position:
-    x: 62.0
-    y: -28.0
-    z: -20.0
-- id: 336
-  label: 17Networks_RH_ContB_Temp_2
-  position:
-    x: 63.0
-    y: -42.0
-    z: -11.0
-- id: 337
-  label: 17Networks_RH_ContB_IPL_1
-  position:
-    x: 55.0
-    y: -45.0
-    z: 33.0
-- id: 338
-  label: 17Networks_RH_ContB_IPL_2
-  position:
-    x: 54.0
-    y: -53.0
-    z: 44.0
-- id: 339
-  label: 17Networks_RH_ContB_IPL_3
-  position:
-    x: 56.0
-    y: -41.0
-    z: 48.0
-- id: 340
-  label: 17Networks_RH_ContB_IPL_4
-  position:
-    x: 41.0
-    y: -55.0
-    z: 48.0
-- id: 341
-  label: 17Networks_RH_ContB_PFCld_1
-  position:
-    x: 39.0
-    y: 33.0
-    z: 38.0
-- id: 342
-  label: 17Networks_RH_ContB_PFCld_2
-  position:
-    x: 45.0
-    y: 19.0
-    z: 44.0
-- id: 343
-  label: 17Networks_RH_ContB_PFCld_3
-  position:
-    x: 43.0
-    y: 7.0
-    z: 51.0
-- id: 344
-  label: 17Networks_RH_ContB_PFCld_4
-  position:
-    x: 34.0
-    y: 15.0
-    z: 56.0
-- id: 345
-  label: 17Networks_RH_ContB_PFClv_1
-  position:
-    x: 35.0
-    y: 38.0
-    z: -13.0
-- id: 346
-  label: 17Networks_RH_ContB_PFClv_2
-  position:
-    x: 28.0
-    y: 55.0
-    z: -14.0
-- id: 347
-  label: 17Networks_RH_ContB_PFClv_3
-  position:
-    x: 42.0
-    y: 51.0
-    z: -6.0
-- id: 348
-  label: 17Networks_RH_ContB_PFClv_4
-  position:
-    x: 27.0
-    y: 59.0
-    z: 3.0
-- id: 349
-  label: 17Networks_RH_ContB_PFCmp_1
-  position:
-    x: 5.0
-    y: 28.0
-    z: 48.0
-- id: 350
-  label: 17Networks_RH_ContC_pCun_1
-  position:
-    x: 17.0
-    y: -63.0
-    z: 28.0
-- id: 351
-  label: 17Networks_RH_ContC_pCun_2
-  position:
-    x: 13.0
-    y: -71.0
-    z: 39.0
-- id: 352
-  label: 17Networks_RH_ContC_pCun_3
-  position:
-    x: 5.0
-    y: -64.0
-    z: 44.0
-- id: 353
-  label: 17Networks_RH_ContC_pCun_4
-  position:
-    x: 7.0
-    y: -50.0
-    z: 45.0
-- id: 354
-  label: 17Networks_RH_ContC_pCun_5
-  position:
-    x: 8.0
-    y: -71.0
-    z: 53.0
-- id: 355
-  label: 17Networks_RH_ContC_Cingp_1
-  position:
-    x: 7.0
-    y: -44.0
-    z: 20.0
-- id: 356
-  label: 17Networks_RH_ContC_Cingp_2
-  position:
-    x: 6.0
-    y: -26.0
-    z: 28.0
-- id: 357
-  label: 17Networks_RH_DefaultA_Temp_1
-  position:
-    x: 61.0
-    y: -8.0
-    z: -23.0
-- id: 358
-  label: 17Networks_RH_DefaultA_IPL_1
-  position:
-    x: 53.0
-    y: -53.0
-    z: 26.0
-- id: 359
-  label: 17Networks_RH_DefaultA_IPL_2
-  position:
-    x: 47.0
-    y: -64.0
-    z: 42.0
-- id: 360
-  label: 17Networks_RH_DefaultA_PFCd_1
-  position:
-    x: 26.0
-    y: 34.0
-    z: 39.0
-- id: 361
-  label: 17Networks_RH_DefaultA_PFCd_2
-  position:
-    x: 24.0
-    y: 26.0
-    z: 51.0
-- id: 362
-  label: 17Networks_RH_DefaultA_pCunPCC_1
-  position:
-    x: 6.0
-    y: -52.0
-    z: 23.0
-- id: 363
-  label: 17Networks_RH_DefaultA_pCunPCC_2
-  position:
-    x: 5.0
-    y: -63.0
-    z: 31.0
-- id: 364
-  label: 17Networks_RH_DefaultA_pCunPCC_3
-  position:
-    x: 7.0
-    y: -39.0
-    z: 35.0
-- id: 365
-  label: 17Networks_RH_DefaultA_pCunPCC_4
-  position:
-    x: 4.0
-    y: -20.0
-    z: 37.0
-- id: 366
-  label: 17Networks_RH_DefaultA_pCunPCC_5
-  position:
-    x: 10.0
-    y: -53.0
-    z: 35.0
-- id: 367
-  label: 17Networks_RH_DefaultA_PFCm_1
-  position:
-    x: 5.0
-    y: 41.0
-    z: -11.0
-- id: 368
-  label: 17Networks_RH_DefaultA_PFCm_2
-  position:
-    x: 9.0
-    y: 67.0
-    z: 1.0
-- id: 369
-  label: 17Networks_RH_DefaultA_PFCm_3
-  position:
-    x: 7.0
-    y: 42.0
-    z: 4.0
-- id: 370
-  label: 17Networks_RH_DefaultA_PFCm_4
-  position:
-    x: 7.0
-    y: 54.0
-    z: 13.0
-- id: 371
-  label: 17Networks_RH_DefaultA_PFCm_5
-  position:
-    x: 17.0
-    y: 65.0
-    z: 16.0
-- id: 372
-  label: 17Networks_RH_DefaultA_PFCm_6
-  position:
-    x: 6.0
-    y: 25.0
-    z: 18.0
-- id: 373
-  label: 17Networks_RH_DefaultB_Temp_1
-  position:
-    x: 63.0
-    y: -23.0
-    z: -7.0
-- id: 374
-  label: 17Networks_RH_DefaultB_Temp_2
-  position:
-    x: 63.0
-    y: -38.0
-    z: 0.0
-- id: 375
-  label: 17Networks_RH_DefaultB_AntTemp_1
-  position:
-    x: 49.0
-    y: 9.0
-    z: -33.0
-- id: 376
-  label: 17Networks_RH_DefaultB_PFCd_1
-  position:
-    x: 6.0
-    y: 58.0
-    z: 29.0
-- id: 377
-  label: 17Networks_RH_DefaultB_PFCd_2
-  position:
-    x: 16.0
-    y: 52.0
-    z: 36.0
-- id: 378
-  label: 17Networks_RH_DefaultB_PFCd_3
-  position:
-    x: 5.0
-    y: 44.0
-    z: 40.0
-- id: 379
-  label: 17Networks_RH_DefaultB_PFCd_4
-  position:
-    x: 14.0
-    y: 39.0
-    z: 52.0
-- id: 380
-  label: 17Networks_RH_DefaultB_PFCd_5
-  position:
-    x: 12.0
-    y: 20.0
-    z: 63.0
-- id: 381
-  label: 17Networks_RH_DefaultB_PFCv_1
-  position:
-    x: 35.0
-    y: 23.0
-    z: -18.0
-- id: 382
-  label: 17Networks_RH_DefaultB_PFCv_2
-  position:
-    x: 48.0
-    y: 32.0
-    z: -8.0
-- id: 383
-  label: 17Networks_RH_DefaultB_PFCv_3
-  position:
-    x: 54.0
-    y: 24.0
-    z: 6.0
-- id: 384
-  label: 17Networks_RH_DefaultC_IPL_1
-  position:
-    x: 48.0
-    y: -64.0
-    z: 22.0
-- id: 385
-  label: 17Networks_RH_DefaultC_IPL_2
-  position:
-    x: 45.0
-    y: -75.0
-    z: 31.0
-- id: 386
-  label: 17Networks_RH_DefaultC_Rsp_1
-  position:
-    x: 14.0
-    y: -46.0
-    z: 4.0
-- id: 387
-  label: 17Networks_RH_DefaultC_Rsp_2
-  position:
-    x: 12.0
-    y: -55.0
-    z: 15.0
-- id: 388
-  label: 17Networks_RH_DefaultC_PHC_1
-  position:
-    x: 23.0
-    y: -18.0
-    z: -27.0
-- id: 389
-  label: 17Networks_RH_DefaultC_PHC_2
-  position:
-    x: 31.0
-    y: -31.0
-    z: -18.0
-- id: 390
-  label: 17Networks_RH_TempPar_1
-  position:
-    x: 47.0
-    y: 16.0
-    z: -20.0
-- id: 391
-  label: 17Networks_RH_TempPar_2
-  position:
-    x: 55.0
-    y: -4.0
-    z: -14.0
-- id: 392
-  label: 17Networks_RH_TempPar_3
-  position:
-    x: 49.0
-    y: -20.0
-    z: -8.0
-- id: 393
-  label: 17Networks_RH_TempPar_4
-  position:
-    x: 62.0
-    y: -19.0
-    z: 0.0
-- id: 394
-  label: 17Networks_RH_TempPar_5
-  position:
-    x: 50.0
-    y: -33.0
-    z: 2.0
-- id: 395
-  label: 17Networks_RH_TempPar_6
-  position:
-    x: 59.0
-    y: -46.0
-    z: 7.0
-- id: 396
-  label: 17Networks_RH_TempPar_7
-  position:
-    x: 51.0
-    y: -41.0
-    z: 13.0
-- id: 397
-  label: 17Networks_RH_TempPar_8
-  position:
-    x: 65.0
-    y: -34.0
-    z: 11.0
-- id: 398
-  label: 17Networks_RH_TempPar_9
-  position:
-    x: 55.0
-    y: -46.0
-    z: 19.0
-- id: 399
-  label: 17Networks_RH_TempPar_10
-  position:
-    x: 62.0
-    y: -40.0
-    z: 22.0
+  - id: 0
+    label: 17Networks_LH_VisCent_ExStr_1
+    position:
+      x: -36.0
+      y: -62.0
+      z: -17.0
+  - id: 1
+    label: 17Networks_LH_VisCent_ExStr_2
+    position:
+      x: -23.0
+      y: -73.0
+      z: -10.0
+  - id: 2
+    label: 17Networks_LH_VisCent_ExStr_3
+    position:
+      x: -36.0
+      y: -81.0
+      z: -16.0
+  - id: 3
+    label: 17Networks_LH_VisCent_ExStr_4
+    position:
+      x: -17.0
+      y: -86.0
+      z: -15.0
+  - id: 4
+    label: 17Networks_LH_VisCent_ExStr_5
+    position:
+      x: -24.0
+      y: -97.0
+      z: -12.0
+  - id: 5
+    label: 17Networks_LH_VisCent_ExStr_6
+    position:
+      x: -41.0
+      y: -87.0
+      z: -3.0
+  - id: 6
+    label: 17Networks_LH_VisCent_Striate_1
+    position:
+      x: -7.0
+      y: -98.0
+      z: -7.0
+  - id: 7
+    label: 17Networks_LH_VisCent_ExStr_7
+    position:
+      x: -46.0
+      y: -73.0
+      z: 6.0
+  - id: 8
+    label: 17Networks_LH_VisCent_ExStr_8
+    position:
+      x: -24.0
+      y: -96.0
+      z: 6.0
+  - id: 9
+    label: 17Networks_LH_VisCent_ExStr_9
+    position:
+      x: -39.0
+      y: -84.0
+      z: 14.0
+  - id: 10
+    label: 17Networks_LH_VisCent_ExStr_10
+    position:
+      x: -11.0
+      y: -97.0
+      z: 17.0
+  - id: 11
+    label: 17Networks_LH_VisCent_ExStr_11
+    position:
+      x: -25.0
+      y: -85.0
+      z: 21.0
+  - id: 12
+    label: 17Networks_LH_VisPeri_ExStrInf_1
+    position:
+      x: -24.0
+      y: -55.0
+      z: -8.0
+  - id: 13
+    label: 17Networks_LH_VisPeri_ExStrInf_2
+    position:
+      x: -12.0
+      y: -62.0
+      z: -5.0
+  - id: 14
+    label: 17Networks_LH_VisPeri_ExStrInf_3
+    position:
+      x: -7.0
+      y: -76.0
+      z: -6.0
+  - id: 15
+    label: 17Networks_LH_VisPeri_ExStrInf_4
+    position:
+      x: -13.0
+      y: -43.0
+      z: -5.0
+  - id: 16
+    label: 17Networks_LH_VisPeri_ExStrInf_5
+    position:
+      x: -14.0
+      y: -57.0
+      z: 1.0
+  - id: 17
+    label: 17Networks_LH_VisPeri_StriCal_1
+    position:
+      x: -5.0
+      y: -88.0
+      z: 2.0
+  - id: 18
+    label: 17Networks_LH_VisPeri_StriCal_2
+    position:
+      x: -7.0
+      y: -74.0
+      z: 9.0
+  - id: 19
+    label: 17Networks_LH_VisPeri_ExStrSup_1
+    position:
+      x: -19.0
+      y: -65.0
+      z: 7.0
+  - id: 20
+    label: 17Networks_LH_VisPeri_ExStrSup_2
+    position:
+      x: -3.0
+      y: -84.0
+      z: 24.0
+  - id: 21
+    label: 17Networks_LH_VisPeri_ExStrSup_3
+    position:
+      x: -12.0
+      y: -71.0
+      z: 20.0
+  - id: 22
+    label: 17Networks_LH_VisPeri_ExStrSup_4
+    position:
+      x: -16.0
+      y: -89.0
+      z: 33.0
+  - id: 23
+    label: 17Networks_LH_VisPeri_ExStrSup_5
+    position:
+      x: -12.0
+      y: -81.0
+      z: 36.0
+  - id: 24
+    label: 17Networks_LH_SomMotA_1
+    position:
+      x: -8.0
+      y: -15.0
+      z: 47.0
+  - id: 25
+    label: 17Networks_LH_SomMotA_2
+    position:
+      x: -41.0
+      y: -14.0
+      z: 47.0
+  - id: 26
+    label: 17Networks_LH_SomMotA_3
+    position:
+      x: -49.0
+      y: -17.0
+      z: 54.0
+  - id: 27
+    label: 17Networks_LH_SomMotA_4
+    position:
+      x: -48.0
+      y: -29.0
+      z: 58.0
+  - id: 28
+    label: 17Networks_LH_SomMotA_5
+    position:
+      x: -39.0
+      y: -25.0
+      z: 53.0
+  - id: 29
+    label: 17Networks_LH_SomMotA_6
+    position:
+      x: -9.0
+      y: -38.0
+      z: 54.0
+  - id: 30
+    label: 17Networks_LH_SomMotA_7
+    position:
+      x: -4.0
+      y: -25.0
+      z: 56.0
+  - id: 31
+    label: 17Networks_LH_SomMotA_8
+    position:
+      x: -4.0
+      y: -9.0
+      z: 59.0
+  - id: 32
+    label: 17Networks_LH_SomMotA_9
+    position:
+      x: -36.0
+      y: -19.0
+      z: 65.0
+  - id: 33
+    label: 17Networks_LH_SomMotA_10
+    position:
+      x: -32.0
+      y: -29.0
+      z: 63.0
+  - id: 34
+    label: 17Networks_LH_SomMotA_11
+    position:
+      x: -30.0
+      y: -38.0
+      z: 65.0
+  - id: 35
+    label: 17Networks_LH_SomMotA_12
+    position:
+      x: -23.0
+      y: -11.0
+      z: 65.0
+  - id: 36
+    label: 17Networks_LH_SomMotA_13
+    position:
+      x: -19.0
+      y: -24.0
+      z: 67.0
+  - id: 37
+    label: 17Networks_LH_SomMotA_14
+    position:
+      x: -9.0
+      y: -42.0
+      z: 70.0
+  - id: 38
+    label: 17Networks_LH_SomMotA_15
+    position:
+      x: -4.0
+      y: -25.0
+      z: 69.0
+  - id: 39
+    label: 17Networks_LH_SomMotA_16
+    position:
+      x: -14.0
+      y: -11.0
+      z: 73.0
+  - id: 40
+    label: 17Networks_LH_SomMotA_17
+    position:
+      x: -19.0
+      y: -31.0
+      z: 69.0
+  - id: 41
+    label: 17Networks_LH_SomMotA_18
+    position:
+      x: -19.0
+      y: -40.0
+      z: 72.0
+  - id: 42
+    label: 17Networks_LH_SomMotA_19
+    position:
+      x: -12.0
+      y: -27.0
+      z: 73.0
+  - id: 43
+    label: 17Networks_LH_SomMotB_Aud_1
+    position:
+      x: -50.0
+      y: -9.0
+      z: 0.0
+  - id: 44
+    label: 17Networks_LH_SomMotB_Aud_2
+    position:
+      x: -56.0
+      y: -22.0
+      z: 8.0
+  - id: 45
+    label: 17Networks_LH_SomMotB_Ins_1
+    position:
+      x: -36.0
+      y: -24.0
+      z: 10.0
+  - id: 46
+    label: 17Networks_LH_SomMotB_S2_1
+    position:
+      x: -38.0
+      y: -9.0
+      z: 13.0
+  - id: 47
+    label: 17Networks_LH_SomMotB_S2_2
+    position:
+      x: -36.0
+      y: -26.0
+      z: 19.0
+  - id: 48
+    label: 17Networks_LH_SomMotB_Aud_3
+    position:
+      x: -59.0
+      y: -37.0
+      z: 16.0
+  - id: 49
+    label: 17Networks_LH_SomMotB_Aud_4
+    position:
+      x: -41.0
+      y: -35.0
+      z: 14.0
+  - id: 50
+    label: 17Networks_LH_SomMotB_S2_3
+    position:
+      x: -49.0
+      y: -13.0
+      z: 14.0
+  - id: 51
+    label: 17Networks_LH_SomMotB_S2_4
+    position:
+      x: -60.0
+      y: -2.0
+      z: 11.0
+  - id: 52
+    label: 17Networks_LH_SomMotB_S2_5
+    position:
+      x: -48.0
+      y: -24.0
+      z: 18.0
+  - id: 53
+    label: 17Networks_LH_SomMotB_S2_6
+    position:
+      x: -61.0
+      y: -18.0
+      z: 19.0
+  - id: 54
+    label: 17Networks_LH_SomMotB_Cent_1
+    position:
+      x: -59.0
+      y: -2.0
+      z: 23.0
+  - id: 55
+    label: 17Networks_LH_SomMotB_Cent_2
+    position:
+      x: -63.0
+      y: -10.0
+      z: 31.0
+  - id: 56
+    label: 17Networks_LH_SomMotB_Cent_3
+    position:
+      x: -53.0
+      y: -9.0
+      z: 30.0
+  - id: 57
+    label: 17Networks_LH_SomMotB_Cent_4
+    position:
+      x: -51.0
+      y: -7.0
+      z: 43.0
+  - id: 58
+    label: 17Networks_LH_SomMotB_Cent_5
+    position:
+      x: -48.0
+      y: -16.0
+      z: 40.0
+  - id: 59
+    label: 17Networks_LH_DorsAttnA_TempOcc_1
+    position:
+      x: -45.0
+      y: -42.0
+      z: -21.0
+  - id: 60
+    label: 17Networks_LH_DorsAttnA_TempOcc_2
+    position:
+      x: -33.0
+      y: -42.0
+      z: -21.0
+  - id: 61
+    label: 17Networks_LH_DorsAttnA_TempOcc_3
+    position:
+      x: -49.0
+      y: -56.0
+      z: -15.0
+  - id: 62
+    label: 17Networks_LH_DorsAttnA_TempOcc_4
+    position:
+      x: -45.0
+      y: -70.0
+      z: -8.0
+  - id: 63
+    label: 17Networks_LH_DorsAttnA_ParOcc_1
+    position:
+      x: -48.0
+      y: -65.0
+      z: 15.0
+  - id: 64
+    label: 17Networks_LH_DorsAttnA_ParOcc_2
+    position:
+      x: -32.0
+      y: -84.0
+      z: 27.0
+  - id: 65
+    label: 17Networks_LH_DorsAttnA_SPL_1
+    position:
+      x: -26.0
+      y: -70.0
+      z: 31.0
+  - id: 66
+    label: 17Networks_LH_DorsAttnA_SPL_2
+    position:
+      x: -21.0
+      y: -79.0
+      z: 45.0
+  - id: 67
+    label: 17Networks_LH_DorsAttnA_SPL_3
+    position:
+      x: -23.0
+      y: -65.0
+      z: 46.0
+  - id: 68
+    label: 17Networks_LH_DorsAttnA_SPL_4
+    position:
+      x: -29.0
+      y: -58.0
+      z: 50.0
+  - id: 69
+    label: 17Networks_LH_DorsAttnA_SPL_5
+    position:
+      x: -36.0
+      y: -52.0
+      z: 56.0
+  - id: 70
+    label: 17Networks_LH_DorsAttnA_SPL_6
+    position:
+      x: -15.0
+      y: -71.0
+      z: 57.0
+  - id: 71
+    label: 17Networks_LH_DorsAttnA_SPL_7
+    position:
+      x: -29.0
+      y: -61.0
+      z: 62.0
+  - id: 72
+    label: 17Networks_LH_DorsAttnB_PostC_1
+    position:
+      x: -61.0
+      y: -23.0
+      z: 33.0
+  - id: 73
+    label: 17Networks_LH_DorsAttnB_PostC_2
+    position:
+      x: -55.0
+      y: -20.0
+      z: 41.0
+  - id: 74
+    label: 17Networks_LH_DorsAttnB_PostC_3
+    position:
+      x: -55.0
+      y: -32.0
+      z: 45.0
+  - id: 75
+    label: 17Networks_LH_DorsAttnB_PostC_4
+    position:
+      x: -46.0
+      y: -29.0
+      z: 44.0
+  - id: 76
+    label: 17Networks_LH_DorsAttnB_PostC_5
+    position:
+      x: -39.0
+      y: -37.0
+      z: 49.0
+  - id: 77
+    label: 17Networks_LH_DorsAttnB_PostC_6
+    position:
+      x: -30.0
+      y: -46.0
+      z: 63.0
+  - id: 78
+    label: 17Networks_LH_DorsAttnB_PostC_7
+    position:
+      x: -7.0
+      y: -59.0
+      z: 63.0
+  - id: 79
+    label: 17Networks_LH_DorsAttnB_PostC_8
+    position:
+      x: -20.0
+      y: -57.0
+      z: 66.0
+  - id: 80
+    label: 17Networks_LH_DorsAttnB_PostC_9
+    position:
+      x: -13.0
+      y: -50.0
+      z: 72.0
+  - id: 81
+    label: 17Networks_LH_DorsAttnB_FEF_1
+    position:
+      x: -40.0
+      y: -3.0
+      z: 51.0
+  - id: 82
+    label: 17Networks_LH_DorsAttnB_FEF_2
+    position:
+      x: -25.0
+      y: -1.0
+      z: 55.0
+  - id: 83
+    label: 17Networks_LH_DorsAttnB_FEF_3
+    position:
+      x: -30.0
+      y: -8.0
+      z: 52.0
+  - id: 84
+    label: 17Networks_LH_DorsAttnB_PrCv_1
+    position:
+      x: -50.0
+      y: 3.0
+      z: 38.0
+  - id: 85
+    label: 17Networks_LH_SalVentAttnA_ParOper_1
+    position:
+      x: -55.0
+      y: -32.0
+      z: 22.0
+  - id: 86
+    label: 17Networks_LH_SalVentAttnA_ParOper_2
+    position:
+      x: -58.0
+      y: -44.0
+      z: 27.0
+  - id: 87
+    label: 17Networks_LH_SalVentAttnA_ParOper_3
+    position:
+      x: -61.0
+      y: -36.0
+      z: 33.0
+  - id: 88
+    label: 17Networks_LH_SalVentAttnA_Ins_1
+    position:
+      x: -39.0
+      y: 2.0
+      z: -4.0
+  - id: 89
+    label: 17Networks_LH_SalVentAttnA_Ins_2
+    position:
+      x: -40.0
+      y: -15.0
+      z: -2.0
+  - id: 90
+    label: 17Networks_LH_SalVentAttnA_Ins_3
+    position:
+      x: -33.0
+      y: 19.0
+      z: 8.0
+  - id: 91
+    label: 17Networks_LH_SalVentAttnA_Ins_4
+    position:
+      x: -36.0
+      y: 4.0
+      z: 11.0
+  - id: 92
+    label: 17Networks_LH_SalVentAttnA_FrOper_1
+    position:
+      x: -50.0
+      y: 1.0
+      z: 5.0
+  - id: 93
+    label: 17Networks_LH_SalVentAttnA_FrOper_2
+    position:
+      x: -52.0
+      y: 9.0
+      z: 13.0
+  - id: 94
+    label: 17Networks_LH_SalVentAttnA_ParMed_1
+    position:
+      x: -11.0
+      y: -27.0
+      z: 41.0
+  - id: 95
+    label: 17Networks_LH_SalVentAttnA_ParMed_2
+    position:
+      x: -13.0
+      y: -41.0
+      z: 47.0
+  - id: 96
+    label: 17Networks_LH_SalVentAttnA_ParMed_3
+    position:
+      x: -6.0
+      y: -49.0
+      z: 57.0
+  - id: 97
+    label: 17Networks_LH_SalVentAttnA_FrMed_1
+    position:
+      x: -7.0
+      y: 0.0
+      z: 41.0
+  - id: 98
+    label: 17Networks_LH_SalVentAttnA_FrMed_2
+    position:
+      x: -5.0
+      y: 9.0
+      z: 48.0
+  - id: 99
+    label: 17Networks_LH_SalVentAttnA_FrMed_3
+    position:
+      x: -8.0
+      y: -3.0
+      z: 71.0
+  - id: 100
+    label: 17Networks_LH_SalVentAttnB_PFCl_1
+    position:
+      x: -38.0
+      y: 49.0
+      z: 11.0
+  - id: 101
+    label: 17Networks_LH_SalVentAttnB_PFCl_2
+    position:
+      x: -29.0
+      y: 43.0
+      z: 30.0
+  - id: 102
+    label: 17Networks_LH_SalVentAttnB_PFCl_3
+    position:
+      x: -36.0
+      y: 32.0
+      z: 38.0
+  - id: 103
+    label: 17Networks_LH_SalVentAttnB_Ins_1
+    position:
+      x: -34.0
+      y: 16.0
+      z: -8.0
+  - id: 104
+    label: 17Networks_LH_SalVentAttnB_Ins_2
+    position:
+      x: -33.0
+      y: 25.0
+      z: -1.0
+  - id: 105
+    label: 17Networks_LH_SalVentAttnB_Ins_3
+    position:
+      x: -43.0
+      y: 12.0
+      z: 2.0
+  - id: 106
+    label: 17Networks_LH_SalVentAttnB_OFC_1
+    position:
+      x: -27.0
+      y: 49.0
+      z: -14.0
+  - id: 107
+    label: 17Networks_LH_SalVentAttnB_PFCmp_1
+    position:
+      x: -6.0
+      y: 22.0
+      z: 31.0
+  - id: 108
+    label: 17Networks_LH_LimbicB_OFC_1
+    position:
+      x: -12.0
+      y: 25.0
+      z: -21.0
+  - id: 109
+    label: 17Networks_LH_LimbicB_OFC_2
+    position:
+      x: -24.0
+      y: 23.0
+      z: -20.0
+  - id: 110
+    label: 17Networks_LH_LimbicB_OFC_3
+    position:
+      x: -10.0
+      y: 47.0
+      z: -21.0
+  - id: 111
+    label: 17Networks_LH_LimbicB_OFC_4
+    position:
+      x: -4.0
+      y: 23.0
+      z: -19.0
+  - id: 112
+    label: 17Networks_LH_LimbicB_OFC_5
+    position:
+      x: -15.0
+      y: 65.0
+      z: -8.0
+  - id: 113
+    label: 17Networks_LH_LimbicA_TempPole_1
+    position:
+      x: -37.0
+      y: -5.0
+      z: -42.0
+  - id: 114
+    label: 17Networks_LH_LimbicA_TempPole_2
+    position:
+      x: -25.0
+      y: 6.0
+      z: -39.0
+  - id: 115
+    label: 17Networks_LH_LimbicA_TempPole_3
+    position:
+      x: -26.0
+      y: -9.0
+      z: -33.0
+  - id: 116
+    label: 17Networks_LH_LimbicA_TempPole_4
+    position:
+      x: -54.0
+      y: -21.0
+      z: -31.0
+  - id: 117
+    label: 17Networks_LH_LimbicA_TempPole_5
+    position:
+      x: -40.0
+      y: -21.0
+      z: -27.0
+  - id: 118
+    label: 17Networks_LH_LimbicA_TempPole_6
+    position:
+      x: -32.0
+      y: 12.0
+      z: -29.0
+  - id: 119
+    label: 17Networks_LH_LimbicA_TempPole_7
+    position:
+      x: -44.0
+      y: 5.0
+      z: -17.0
+  - id: 120
+    label: 17Networks_LH_ContA_Temp_1
+    position:
+      x: -55.0
+      y: -62.0
+      z: -1.0
+  - id: 121
+    label: 17Networks_LH_ContA_IPS_1
+    position:
+      x: -29.0
+      y: -74.0
+      z: 42.0
+  - id: 122
+    label: 17Networks_LH_ContA_IPS_2
+    position:
+      x: -58.0
+      y: -42.0
+      z: 45.0
+  - id: 123
+    label: 17Networks_LH_ContA_IPS_3
+    position:
+      x: -35.0
+      y: -62.0
+      z: 48.0
+  - id: 124
+    label: 17Networks_LH_ContA_IPS_4
+    position:
+      x: -45.0
+      y: -41.0
+      z: 47.0
+  - id: 125
+    label: 17Networks_LH_ContA_IPS_5
+    position:
+      x: -33.0
+      y: -46.0
+      z: 41.0
+  - id: 126
+    label: 17Networks_LH_ContA_PFCd_1
+    position:
+      x: -21.0
+      y: 5.0
+      z: 65.0
+  - id: 127
+    label: 17Networks_LH_ContA_PFClv_1
+    position:
+      x: -48.0
+      y: 35.0
+      z: 10.0
+  - id: 128
+    label: 17Networks_LH_ContA_PFClv_2
+    position:
+      x: -42.0
+      y: 38.0
+      z: 22.0
+  - id: 129
+    label: 17Networks_LH_ContA_PFCl_1
+    position:
+      x: -49.0
+      y: 6.0
+      z: 26.0
+  - id: 130
+    label: 17Networks_LH_ContA_PFCl_2
+    position:
+      x: -45.0
+      y: 20.0
+      z: 27.0
+  - id: 131
+    label: 17Networks_LH_ContA_PFCl_3
+    position:
+      x: -39.0
+      y: 7.0
+      z: 34.0
+  - id: 132
+    label: 17Networks_LH_ContA_Cingm_1
+    position:
+      x: -3.0
+      y: 5.0
+      z: 29.0
+  - id: 133
+    label: 17Networks_LH_ContB_Temp_1
+    position:
+      x: -60.0
+      y: -36.0
+      z: -18.0
+  - id: 134
+    label: 17Networks_LH_ContB_Temp_2
+    position:
+      x: -60.0
+      y: -49.0
+      z: -10.0
+  - id: 135
+    label: 17Networks_LH_ContB_IPL_1
+    position:
+      x: -49.0
+      y: -60.0
+      z: 47.0
+  - id: 136
+    label: 17Networks_LH_ContB_IPL_2
+    position:
+      x: -53.0
+      y: -50.0
+      z: 45.0
+  - id: 137
+    label: 17Networks_LH_ContB_IPL_3
+    position:
+      x: -42.0
+      y: -52.0
+      z: 49.0
+  - id: 138
+    label: 17Networks_LH_ContB_PFCd_1
+    position:
+      x: -30.0
+      y: 14.0
+      z: 57.0
+  - id: 139
+    label: 17Networks_LH_ContB_PFClv_1
+    position:
+      x: -42.0
+      y: 49.0
+      z: -6.0
+  - id: 140
+    label: 17Networks_LH_ContB_PFClv_2
+    position:
+      x: -28.0
+      y: 58.0
+      z: -1.0
+  - id: 141
+    label: 17Networks_LH_ContB_PFClv_3
+    position:
+      x: -28.0
+      y: 57.0
+      z: 13.0
+  - id: 142
+    label: 17Networks_LH_ContB_PFCmp_1
+    position:
+      x: -4.0
+      y: 28.0
+      z: 47.0
+  - id: 143
+    label: 17Networks_LH_ContC_pCun_1
+    position:
+      x: -10.0
+      y: -70.0
+      z: 32.0
+  - id: 144
+    label: 17Networks_LH_ContC_pCun_2
+    position:
+      x: -9.0
+      y: -77.0
+      z: 45.0
+  - id: 145
+    label: 17Networks_LH_ContC_pCun_3
+    position:
+      x: -5.0
+      y: -64.0
+      z: 52.0
+  - id: 146
+    label: 17Networks_LH_ContC_Cingp_1
+    position:
+      x: -6.0
+      y: -41.0
+      z: 24.0
+  - id: 147
+    label: 17Networks_LH_ContC_Cingp_2
+    position:
+      x: -4.0
+      y: -22.0
+      z: 29.0
+  - id: 148
+    label: 17Networks_LH_DefaultA_IPL_1
+    position:
+      x: -47.0
+      y: -64.0
+      z: 31.0
+  - id: 149
+    label: 17Networks_LH_DefaultA_IPL_2
+    position:
+      x: -41.0
+      y: -72.0
+      z: 43.0
+  - id: 150
+    label: 17Networks_LH_DefaultA_PFCd_1
+    position:
+      x: -25.0
+      y: 28.0
+      z: 43.0
+  - id: 151
+    label: 17Networks_LH_DefaultA_PFCd_2
+    position:
+      x: -18.0
+      y: 36.0
+      z: 48.0
+  - id: 152
+    label: 17Networks_LH_DefaultA_PFCd_3
+    position:
+      x: -22.0
+      y: 20.0
+      z: 52.0
+  - id: 153
+    label: 17Networks_LH_DefaultA_pCunPCC_1
+    position:
+      x: -4.0
+      y: -53.0
+      z: 20.0
+  - id: 154
+    label: 17Networks_LH_DefaultA_pCunPCC_2
+    position:
+      x: -5.0
+      y: -60.0
+      z: 30.0
+  - id: 155
+    label: 17Networks_LH_DefaultA_pCunPCC_3
+    position:
+      x: -7.0
+      y: -44.0
+      z: 32.0
+  - id: 156
+    label: 17Networks_LH_DefaultA_pCunPCC_4
+    position:
+      x: -4.0
+      y: -34.0
+      z: 38.0
+  - id: 157
+    label: 17Networks_LH_DefaultA_pCunPCC_5
+    position:
+      x: -3.0
+      y: -15.0
+      z: 37.0
+  - id: 158
+    label: 17Networks_LH_DefaultA_pCunPCC_6
+    position:
+      x: -3.0
+      y: -68.0
+      z: 41.0
+  - id: 159
+    label: 17Networks_LH_DefaultA_pCunPCC_7
+    position:
+      x: -7.0
+      y: -51.0
+      z: 43.0
+  - id: 160
+    label: 17Networks_LH_DefaultA_PFCm_1
+    position:
+      x: -5.0
+      y: 55.0
+      z: -10.0
+  - id: 161
+    label: 17Networks_LH_DefaultA_PFCm_2
+    position:
+      x: -6.0
+      y: 35.0
+      z: -9.0
+  - id: 162
+    label: 17Networks_LH_DefaultA_PFCm_3
+    position:
+      x: -6.0
+      y: 59.0
+      z: 7.0
+  - id: 163
+    label: 17Networks_LH_DefaultA_PFCm_4
+    position:
+      x: -6.0
+      y: 45.0
+      z: 6.0
+  - id: 164
+    label: 17Networks_LH_DefaultA_PFCm_5
+    position:
+      x: -16.0
+      y: 67.0
+      z: 8.0
+  - id: 165
+    label: 17Networks_LH_DefaultA_PFCm_6
+    position:
+      x: -5.0
+      y: 34.0
+      z: 21.0
+  - id: 166
+    label: 17Networks_LH_DefaultB_Temp_1
+    position:
+      x: -44.0
+      y: 13.0
+      z: -34.0
+  - id: 167
+    label: 17Networks_LH_DefaultB_Temp_2
+    position:
+      x: -54.0
+      y: -2.0
+      z: -30.0
+  - id: 168
+    label: 17Networks_LH_DefaultB_Temp_3
+    position:
+      x: -62.0
+      y: -18.0
+      z: -21.0
+  - id: 169
+    label: 17Networks_LH_DefaultB_Temp_4
+    position:
+      x: -57.0
+      y: -9.0
+      z: -14.0
+  - id: 170
+    label: 17Networks_LH_DefaultB_Temp_5
+    position:
+      x: -61.0
+      y: -35.0
+      z: -3.0
+  - id: 171
+    label: 17Networks_LH_DefaultB_Temp_6
+    position:
+      x: -52.0
+      y: -22.0
+      z: -6.0
+  - id: 172
+    label: 17Networks_LH_DefaultB_IPL_1
+    position:
+      x: -45.0
+      y: -58.0
+      z: 21.0
+  - id: 173
+    label: 17Networks_LH_DefaultB_IPL_2
+    position:
+      x: -57.0
+      y: -55.0
+      z: 30.0
+  - id: 174
+    label: 17Networks_LH_DefaultB_PFCd_1
+    position:
+      x: -4.0
+      y: 51.0
+      z: 28.0
+  - id: 175
+    label: 17Networks_LH_DefaultB_PFCd_2
+    position:
+      x: -14.0
+      y: 58.0
+      z: 31.0
+  - id: 176
+    label: 17Networks_LH_DefaultB_PFCd_3
+    position:
+      x: -22.0
+      y: 51.0
+      z: 31.0
+  - id: 177
+    label: 17Networks_LH_DefaultB_PFCd_4
+    position:
+      x: -8.0
+      y: 43.0
+      z: 51.0
+  - id: 178
+    label: 17Networks_LH_DefaultB_PFCd_5
+    position:
+      x: -13.0
+      y: 24.0
+      z: 61.0
+  - id: 179
+    label: 17Networks_LH_DefaultB_PFCd_6
+    position:
+      x: -6.0
+      y: 10.0
+      z: 65.0
+  - id: 180
+    label: 17Networks_LH_DefaultB_PFCl_1
+    position:
+      x: -41.0
+      y: 19.0
+      z: 48.0
+  - id: 181
+    label: 17Networks_LH_DefaultB_PFCl_2
+    position:
+      x: -42.0
+      y: 7.0
+      z: 48.0
+  - id: 182
+    label: 17Networks_LH_DefaultB_PFCv_1
+    position:
+      x: -36.0
+      y: 22.0
+      z: -16.0
+  - id: 183
+    label: 17Networks_LH_DefaultB_PFCv_2
+    position:
+      x: -36.0
+      y: 37.0
+      z: -13.0
+  - id: 184
+    label: 17Networks_LH_DefaultB_PFCv_3
+    position:
+      x: -46.0
+      y: 32.0
+      z: -10.0
+  - id: 185
+    label: 17Networks_LH_DefaultB_PFCv_4
+    position:
+      x: -48.0
+      y: 28.0
+      z: 0.0
+  - id: 186
+    label: 17Networks_LH_DefaultB_PFCv_5
+    position:
+      x: -53.0
+      y: 19.0
+      z: 11.0
+  - id: 187
+    label: 17Networks_LH_DefaultC_IPL_1
+    position:
+      x: -40.0
+      y: -79.0
+      z: 30.0
+  - id: 188
+    label: 17Networks_LH_DefaultC_Rsp_1
+    position:
+      x: -13.0
+      y: -49.0
+      z: 4.0
+  - id: 189
+    label: 17Networks_LH_DefaultC_Rsp_2
+    position:
+      x: -8.0
+      y: -52.0
+      z: 9.0
+  - id: 190
+    label: 17Networks_LH_DefaultC_Rsp_3
+    position:
+      x: -13.0
+      y: -61.0
+      z: 19.0
+  - id: 191
+    label: 17Networks_LH_DefaultC_PHC_1
+    position:
+      x: -21.0
+      y: -21.0
+      z: -26.0
+  - id: 192
+    label: 17Networks_LH_DefaultC_PHC_2
+    position:
+      x: -30.0
+      y: -33.0
+      z: -18.0
+  - id: 193
+    label: 17Networks_LH_DefaultC_PHC_3
+    position:
+      x: -18.0
+      y: -37.0
+      z: -12.0
+  - id: 194
+    label: 17Networks_LH_TempPar_1
+    position:
+      x: -53.0
+      y: 6.0
+      z: -11.0
+  - id: 195
+    label: 17Networks_LH_TempPar_2
+    position:
+      x: -61.0
+      y: -13.0
+      z: -3.0
+  - id: 196
+    label: 17Networks_LH_TempPar_3
+    position:
+      x: -62.0
+      y: -32.0
+      z: 5.0
+  - id: 197
+    label: 17Networks_LH_TempPar_4
+    position:
+      x: -52.0
+      y: -43.0
+      z: 5.0
+  - id: 198
+    label: 17Networks_LH_TempPar_5
+    position:
+      x: -57.0
+      y: -54.0
+      z: 10.0
+  - id: 199
+    label: 17Networks_LH_TempPar_6
+    position:
+      x: -59.0
+      y: -49.0
+      z: 16.0
+  - id: 200
+    label: 17Networks_RH_VisCent_ExStr_1
+    position:
+      x: 36.0
+      y: -53.0
+      z: -17.0
+  - id: 201
+    label: 17Networks_RH_VisCent_ExStr_2
+    position:
+      x: 37.0
+      y: -73.0
+      z: -16.0
+  - id: 202
+    label: 17Networks_RH_VisCent_ExStr_3
+    position:
+      x: 23.0
+      y: -74.0
+      z: -11.0
+  - id: 203
+    label: 17Networks_RH_VisCent_ExStr_4
+    position:
+      x: 20.0
+      y: -88.0
+      z: -13.0
+  - id: 204
+    label: 17Networks_RH_VisCent_ExStr_5
+    position:
+      x: 42.0
+      y: -84.0
+      z: -12.0
+  - id: 205
+    label: 17Networks_RH_VisCent_ExStr_6
+    position:
+      x: 25.0
+      y: -97.0
+      z: -10.0
+  - id: 206
+    label: 17Networks_RH_VisCent_Striate_1
+    position:
+      x: 8.0
+      y: -92.0
+      z: -2.0
+  - id: 207
+    label: 17Networks_RH_VisCent_ExStr_7
+    position:
+      x: 35.0
+      y: -89.0
+      z: 2.0
+  - id: 208
+    label: 17Networks_RH_VisCent_ExStr_8
+    position:
+      x: 24.0
+      y: -99.0
+      z: 7.0
+  - id: 209
+    label: 17Networks_RH_VisCent_ExStr_9
+    position:
+      x: 43.0
+      y: -79.0
+      z: 10.0
+  - id: 210
+    label: 17Networks_RH_VisCent_ExStr_10
+    position:
+      x: 13.0
+      y: -94.0
+      z: 19.0
+  - id: 211
+    label: 17Networks_RH_VisCent_ExStr_11
+    position:
+      x: 27.0
+      y: -87.0
+      z: 21.0
+  - id: 212
+    label: 17Networks_RH_VisPeri_ExStrInf_1
+    position:
+      x: 26.0
+      y: -52.0
+      z: -9.0
+  - id: 213
+    label: 17Networks_RH_VisPeri_ExStrInf_2
+    position:
+      x: 18.0
+      y: -36.0
+      z: -12.0
+  - id: 214
+    label: 17Networks_RH_VisPeri_ExStrInf_3
+    position:
+      x: 9.0
+      y: -72.0
+      z: -5.0
+  - id: 215
+    label: 17Networks_RH_VisPeri_ExStrInf_4
+    position:
+      x: 13.0
+      y: -58.0
+      z: -3.0
+  - id: 216
+    label: 17Networks_RH_VisPeri_ExStrInf_5
+    position:
+      x: 18.0
+      y: -45.0
+      z: -3.0
+  - id: 217
+    label: 17Networks_RH_VisPeri_StriCal_1
+    position:
+      x: 9.0
+      y: -74.0
+      z: 9.0
+  - id: 218
+    label: 17Networks_RH_VisPeri_StriCal_2
+    position:
+      x: 22.0
+      y: -59.0
+      z: 6.0
+  - id: 219
+    label: 17Networks_RH_VisPeri_ExStrSup_1
+    position:
+      x: 16.0
+      y: -66.0
+      z: 19.0
+  - id: 220
+    label: 17Networks_RH_VisPeri_ExStrSup_2
+    position:
+      x: 5.0
+      y: -80.0
+      z: 24.0
+  - id: 221
+    label: 17Networks_RH_VisPeri_ExStrSup_3
+    position:
+      x: 14.0
+      y: -78.0
+      z: 34.0
+  - id: 222
+    label: 17Networks_RH_VisPeri_ExStrSup_4
+    position:
+      x: 16.0
+      y: -87.0
+      z: 36.0
+  - id: 223
+    label: 17Networks_RH_SomMotA_1
+    position:
+      x: 54.0
+      y: -17.0
+      z: 40.0
+  - id: 224
+    label: 17Networks_RH_SomMotA_2
+    position:
+      x: 52.0
+      y: -13.0
+      z: 49.0
+  - id: 225
+    label: 17Networks_RH_SomMotA_3
+    position:
+      x: 44.0
+      y: -10.0
+      z: 49.0
+  - id: 226
+    label: 17Networks_RH_SomMotA_4
+    position:
+      x: 49.0
+      y: -26.0
+      z: 56.0
+  - id: 227
+    label: 17Networks_RH_SomMotA_5
+    position:
+      x: 7.0
+      y: -10.0
+      z: 51.0
+  - id: 228
+    label: 17Networks_RH_SomMotA_6
+    position:
+      x: 43.0
+      y: -21.0
+      z: 54.0
+  - id: 229
+    label: 17Networks_RH_SomMotA_7
+    position:
+      x: 37.0
+      y: -20.0
+      z: 64.0
+  - id: 230
+    label: 17Networks_RH_SomMotA_8
+    position:
+      x: 32.0
+      y: -34.0
+      z: 63.0
+  - id: 231
+    label: 17Networks_RH_SomMotA_9
+    position:
+      x: 31.0
+      y: -41.0
+      z: 64.0
+  - id: 232
+    label: 17Networks_RH_SomMotA_10
+    position:
+      x: 34.0
+      y: -27.0
+      z: 61.0
+  - id: 233
+    label: 17Networks_RH_SomMotA_11
+    position:
+      x: 4.0
+      y: -25.0
+      z: 58.0
+  - id: 234
+    label: 17Networks_RH_SomMotA_12
+    position:
+      x: 29.0
+      y: -11.0
+      z: 65.0
+  - id: 235
+    label: 17Networks_RH_SomMotA_13
+    position:
+      x: 9.0
+      y: -40.0
+      z: 68.0
+  - id: 236
+    label: 17Networks_RH_SomMotA_14
+    position:
+      x: 21.0
+      y: -24.0
+      z: 67.0
+  - id: 237
+    label: 17Networks_RH_SomMotA_15
+    position:
+      x: 22.0
+      y: -29.0
+      z: 68.0
+  - id: 238
+    label: 17Networks_RH_SomMotA_16
+    position:
+      x: 22.0
+      y: -35.0
+      z: 71.0
+  - id: 239
+    label: 17Networks_RH_SomMotA_17
+    position:
+      x: 17.0
+      y: -6.0
+      z: 69.0
+  - id: 240
+    label: 17Networks_RH_SomMotA_18
+    position:
+      x: 5.0
+      y: -22.0
+      z: 72.0
+  - id: 241
+    label: 17Networks_RH_SomMotA_19
+    position:
+      x: 17.0
+      y: -18.0
+      z: 73.0
+  - id: 242
+    label: 17Networks_RH_SomMotA_20
+    position:
+      x: 13.0
+      y: -33.0
+      z: 76.0
+  - id: 243
+    label: 17Networks_RH_SomMotB_Aud_1
+    position:
+      x: 53.0
+      y: 3.0
+      z: -6.0
+  - id: 244
+    label: 17Networks_RH_SomMotB_Aud_2
+    position:
+      x: 53.0
+      y: -14.0
+      z: 6.0
+  - id: 245
+    label: 17Networks_RH_SomMotB_Ins_1
+    position:
+      x: 39.0
+      y: -19.0
+      z: 5.0
+  - id: 246
+    label: 17Networks_RH_SomMotB_S2_1
+    position:
+      x: 37.0
+      y: -8.0
+      z: 14.0
+  - id: 247
+    label: 17Networks_RH_SomMotB_S2_2
+    position:
+      x: 35.0
+      y: -21.0
+      z: 14.0
+  - id: 248
+    label: 17Networks_RH_SomMotB_Aud_3
+    position:
+      x: 60.0
+      y: -24.0
+      z: 11.0
+  - id: 249
+    label: 17Networks_RH_SomMotB_S2_3
+    position:
+      x: 41.0
+      y: -13.0
+      z: 18.0
+  - id: 250
+    label: 17Networks_RH_SomMotB_S2_4
+    position:
+      x: 41.0
+      y: -29.0
+      z: 18.0
+  - id: 251
+    label: 17Networks_RH_SomMotB_S2_5
+    position:
+      x: 50.0
+      y: -10.0
+      z: 13.0
+  - id: 252
+    label: 17Networks_RH_SomMotB_S2_6
+    position:
+      x: 59.0
+      y: 1.0
+      z: 10.0
+  - id: 253
+    label: 17Networks_RH_SomMotB_S2_7
+    position:
+      x: 49.0
+      y: -21.0
+      z: 19.0
+  - id: 254
+    label: 17Networks_RH_SomMotB_S2_8
+    position:
+      x: 62.0
+      y: -12.0
+      z: 15.0
+  - id: 255
+    label: 17Networks_RH_SomMotB_Cent_1
+    position:
+      x: 61.0
+      y: 6.0
+      z: 30.0
+  - id: 256
+    label: 17Networks_RH_SomMotB_Cent_2
+    position:
+      x: 60.0
+      y: -5.0
+      z: 27.0
+  - id: 257
+    label: 17Networks_RH_SomMotB_Cent_3
+    position:
+      x: 52.0
+      y: -6.0
+      z: 37.0
+  - id: 258
+    label: 17Networks_RH_DorsAttnA_TempOcc_1
+    position:
+      x: 34.0
+      y: -37.0
+      z: -23.0
+  - id: 259
+    label: 17Networks_RH_DorsAttnA_TempOcc_2
+    position:
+      x: 50.0
+      y: -49.0
+      z: -18.0
+  - id: 260
+    label: 17Networks_RH_DorsAttnA_TempOcc_3
+    position:
+      x: 50.0
+      y: -64.0
+      z: -9.0
+  - id: 261
+    label: 17Networks_RH_DorsAttnA_ParOcc_1
+    position:
+      x: 48.0
+      y: -66.0
+      z: 4.0
+  - id: 262
+    label: 17Networks_RH_DorsAttnA_ParOcc_2
+    position:
+      x: 54.0
+      y: -56.0
+      z: 12.0
+  - id: 263
+    label: 17Networks_RH_DorsAttnA_ParOcc_3
+    position:
+      x: 36.0
+      y: -79.0
+      z: 24.0
+  - id: 264
+    label: 17Networks_RH_DorsAttnA_SPL_1
+    position:
+      x: 29.0
+      y: -78.0
+      z: 37.0
+  - id: 265
+    label: 17Networks_RH_DorsAttnA_SPL_2
+    position:
+      x: 32.0
+      y: -66.0
+      z: 35.0
+  - id: 266
+    label: 17Networks_RH_DorsAttnA_SPL_3
+    position:
+      x: 19.0
+      y: -79.0
+      z: 50.0
+  - id: 267
+    label: 17Networks_RH_DorsAttnA_SPL_4
+    position:
+      x: 31.0
+      y: -64.0
+      z: 53.0
+  - id: 268
+    label: 17Networks_RH_DorsAttnA_SPL_5
+    position:
+      x: 21.0
+      y: -69.0
+      z: 53.0
+  - id: 269
+    label: 17Networks_RH_DorsAttnA_SPL_6
+    position:
+      x: 34.0
+      y: -50.0
+      z: 54.0
+  - id: 270
+    label: 17Networks_RH_DorsAttnA_SPL_7
+    position:
+      x: 27.0
+      y: -58.0
+      z: 61.0
+  - id: 271
+    label: 17Networks_RH_DorsAttnA_SPL_8
+    position:
+      x: 14.0
+      y: -64.0
+      z: 65.0
+  - id: 272
+    label: 17Networks_RH_DorsAttnB_TempOcc_1
+    position:
+      x: 59.0
+      y: -55.0
+      z: -2.0
+  - id: 273
+    label: 17Networks_RH_DorsAttnB_PostC_1
+    position:
+      x: 61.0
+      y: -14.0
+      z: 30.0
+  - id: 274
+    label: 17Networks_RH_DorsAttnB_PostC_2
+    position:
+      x: 57.0
+      y: -23.0
+      z: 44.0
+  - id: 275
+    label: 17Networks_RH_DorsAttnB_PostC_3
+    position:
+      x: 44.0
+      y: -37.0
+      z: 50.0
+  - id: 276
+    label: 17Networks_RH_DorsAttnB_PostC_4
+    position:
+      x: 45.0
+      y: -28.0
+      z: 42.0
+  - id: 277
+    label: 17Networks_RH_DorsAttnB_PostC_5
+    position:
+      x: 35.0
+      y: -36.0
+      z: 51.0
+  - id: 278
+    label: 17Networks_RH_DorsAttnB_PostC_6
+    position:
+      x: 7.0
+      y: -54.0
+      z: 59.0
+  - id: 279
+    label: 17Networks_RH_DorsAttnB_PostC_7
+    position:
+      x: 24.0
+      y: -50.0
+      z: 68.0
+  - id: 280
+    label: 17Networks_RH_DorsAttnB_PostC_8
+    position:
+      x: 16.0
+      y: -47.0
+      z: 74.0
+  - id: 281
+    label: 17Networks_RH_DorsAttnB_FEF_1
+    position:
+      x: 39.0
+      y: -3.0
+      z: 53.0
+  - id: 282
+    label: 17Networks_RH_DorsAttnB_FEF_2
+    position:
+      x: 27.0
+      y: -3.0
+      z: 52.0
+  - id: 283
+    label: 17Networks_RH_DorsAttnB_FEF_3
+    position:
+      x: 25.0
+      y: -3.0
+      z: 64.0
+  - id: 284
+    label: 17Networks_RH_SalVentAttnA_ParOper_1
+    position:
+      x: 58.0
+      y: -31.0
+      z: 24.0
+  - id: 285
+    label: 17Networks_RH_SalVentAttnA_ParOper_2
+    position:
+      x: 60.0
+      y: -22.0
+      z: 22.0
+  - id: 286
+    label: 17Networks_RH_SalVentAttnA_ParOper_3
+    position:
+      x: 63.0
+      y: -26.0
+      z: 38.0
+  - id: 287
+    label: 17Networks_RH_SalVentAttnA_PrC_1
+    position:
+      x: 51.0
+      y: 3.0
+      z: 41.0
+  - id: 288
+    label: 17Networks_RH_SalVentAttnA_Ins_1
+    position:
+      x: 40.0
+      y: 5.0
+      z: -15.0
+  - id: 289
+    label: 17Networks_RH_SalVentAttnA_Ins_2
+    position:
+      x: 41.0
+      y: 8.0
+      z: -3.0
+  - id: 290
+    label: 17Networks_RH_SalVentAttnA_Ins_3
+    position:
+      x: 40.0
+      y: -10.0
+      z: -4.0
+  - id: 291
+    label: 17Networks_RH_SalVentAttnA_Ins_4
+    position:
+      x: 39.0
+      y: -2.0
+      z: 6.0
+  - id: 292
+    label: 17Networks_RH_SalVentAttnA_FrOper_1
+    position:
+      x: 38.0
+      y: 7.0
+      z: 11.0
+  - id: 293
+    label: 17Networks_RH_SalVentAttnA_FrOper_2
+    position:
+      x: 49.0
+      y: 5.0
+      z: 3.0
+  - id: 294
+    label: 17Networks_RH_SalVentAttnA_FrOper_3
+    position:
+      x: 54.0
+      y: 12.0
+      z: 12.0
+  - id: 295
+    label: 17Networks_RH_SalVentAttnA_FrMed_1
+    position:
+      x: 7.0
+      y: 2.0
+      z: 43.0
+  - id: 296
+    label: 17Networks_RH_SalVentAttnA_ParMed_1
+    position:
+      x: 11.0
+      y: -17.0
+      z: 41.0
+  - id: 297
+    label: 17Networks_RH_SalVentAttnA_ParMed_2
+    position:
+      x: 12.0
+      y: -34.0
+      z: 43.0
+  - id: 298
+    label: 17Networks_RH_SalVentAttnA_FrMed_2
+    position:
+      x: 6.0
+      y: 11.0
+      z: 58.0
+  - id: 299
+    label: 17Networks_RH_SalVentAttnA_ParMed_3
+    position:
+      x: 10.0
+      y: -43.0
+      z: 53.0
+  - id: 300
+    label: 17Networks_RH_SalVentAttnA_ParMed_4
+    position:
+      x: 11.0
+      y: -32.0
+      z: 50.0
+  - id: 301
+    label: 17Networks_RH_SalVentAttnA_FrMed_3
+    position:
+      x: 7.0
+      y: -2.0
+      z: 67.0
+  - id: 302
+    label: 17Networks_RH_SalVentAttnA_FrMed_4
+    position:
+      x: 16.0
+      y: 7.0
+      z: 69.0
+  - id: 303
+    label: 17Networks_RH_SalVentAttnB_IPL_1
+    position:
+      x: 62.0
+      y: -37.0
+      z: 37.0
+  - id: 304
+    label: 17Networks_RH_SalVentAttnB_PFClv_1
+    position:
+      x: 49.0
+      y: 40.0
+      z: 5.0
+  - id: 305
+    label: 17Networks_RH_SalVentAttnB_PFCl_1
+    position:
+      x: 42.0
+      y: 46.0
+      z: 14.0
+  - id: 306
+    label: 17Networks_RH_SalVentAttnB_PFCl_2
+    position:
+      x: 25.0
+      y: 54.0
+      z: 25.0
+  - id: 307
+    label: 17Networks_RH_SalVentAttnB_PFCl_3
+    position:
+      x: 33.0
+      y: 45.0
+      z: 28.0
+  - id: 308
+    label: 17Networks_RH_SalVentAttnB_Ins_1
+    position:
+      x: 34.0
+      y: 21.0
+      z: -8.0
+  - id: 309
+    label: 17Networks_RH_SalVentAttnB_Ins_2
+    position:
+      x: 37.0
+      y: 23.0
+      z: 5.0
+  - id: 310
+    label: 17Networks_RH_SalVentAttnB_PFCmp_1
+    position:
+      x: 8.0
+      y: 35.0
+      z: 25.0
+  - id: 311
+    label: 17Networks_RH_SalVentAttnB_PFCmp_2
+    position:
+      x: 7.0
+      y: 19.0
+      z: 35.0
+  - id: 312
+    label: 17Networks_RH_LimbicB_OFC_1
+    position:
+      x: 13.0
+      y: 24.0
+      z: -21.0
+  - id: 313
+    label: 17Networks_RH_LimbicB_OFC_2
+    position:
+      x: 23.0
+      y: 22.0
+      z: -21.0
+  - id: 314
+    label: 17Networks_RH_LimbicB_OFC_3
+    position:
+      x: 8.0
+      y: 47.0
+      z: -23.0
+  - id: 315
+    label: 17Networks_RH_LimbicB_OFC_4
+    position:
+      x: 20.0
+      y: 43.0
+      z: -18.0
+  - id: 316
+    label: 17Networks_RH_LimbicB_OFC_5
+    position:
+      x: 5.0
+      y: 22.0
+      z: -21.0
+  - id: 317
+    label: 17Networks_RH_LimbicB_OFC_6
+    position:
+      x: 9.0
+      y: 63.0
+      z: -14.0
+  - id: 318
+    label: 17Networks_RH_LimbicA_TempPole_1
+    position:
+      x: 28.0
+      y: -1.0
+      z: -40.0
+  - id: 319
+    label: 17Networks_RH_LimbicA_TempPole_2
+    position:
+      x: 49.0
+      y: -7.0
+      z: -39.0
+  - id: 320
+    label: 17Networks_RH_LimbicA_TempPole_3
+    position:
+      x: 37.0
+      y: 17.0
+      z: -38.0
+  - id: 321
+    label: 17Networks_RH_LimbicA_TempPole_4
+    position:
+      x: 39.0
+      y: -15.0
+      z: -31.0
+  - id: 322
+    label: 17Networks_RH_LimbicA_TempPole_5
+    position:
+      x: 29.0
+      y: 12.0
+      z: -30.0
+  - id: 323
+    label: 17Networks_RH_LimbicA_TempPole_6
+    position:
+      x: 50.0
+      y: -28.0
+      z: -26.0
+  - id: 324
+    label: 17Networks_RH_ContA_IPS_1
+    position:
+      x: 35.0
+      y: -71.0
+      z: 47.0
+  - id: 325
+    label: 17Networks_RH_ContA_IPS_2
+    position:
+      x: 54.0
+      y: -33.0
+      z: 51.0
+  - id: 326
+    label: 17Networks_RH_ContA_IPS_3
+    position:
+      x: 47.0
+      y: -44.0
+      z: 46.0
+  - id: 327
+    label: 17Networks_RH_ContA_IPS_4
+    position:
+      x: 36.0
+      y: -44.0
+      z: 45.0
+  - id: 328
+    label: 17Networks_RH_ContA_PFCd_1
+    position:
+      x: 24.0
+      y: 10.0
+      z: 58.0
+  - id: 329
+    label: 17Networks_RH_ContA_PFCl_1
+    position:
+      x: 50.0
+      y: 30.0
+      z: 18.0
+  - id: 330
+    label: 17Networks_RH_ContA_PFCl_2
+    position:
+      x: 48.0
+      y: 18.0
+      z: 23.0
+  - id: 331
+    label: 17Networks_RH_ContA_PFCl_3
+    position:
+      x: 47.0
+      y: 29.0
+      z: 28.0
+  - id: 332
+    label: 17Networks_RH_ContA_PFCl_4
+    position:
+      x: 49.0
+      y: 8.0
+      z: 25.0
+  - id: 333
+    label: 17Networks_RH_ContA_PFCl_5
+    position:
+      x: 39.0
+      y: 11.0
+      z: 34.0
+  - id: 334
+    label: 17Networks_RH_ContA_Cingm_1
+    position:
+      x: 5.0
+      y: 1.0
+      z: 30.0
+  - id: 335
+    label: 17Networks_RH_ContB_Temp_1
+    position:
+      x: 62.0
+      y: -28.0
+      z: -20.0
+  - id: 336
+    label: 17Networks_RH_ContB_Temp_2
+    position:
+      x: 63.0
+      y: -42.0
+      z: -11.0
+  - id: 337
+    label: 17Networks_RH_ContB_IPL_1
+    position:
+      x: 55.0
+      y: -45.0
+      z: 33.0
+  - id: 338
+    label: 17Networks_RH_ContB_IPL_2
+    position:
+      x: 54.0
+      y: -53.0
+      z: 44.0
+  - id: 339
+    label: 17Networks_RH_ContB_IPL_3
+    position:
+      x: 56.0
+      y: -41.0
+      z: 48.0
+  - id: 340
+    label: 17Networks_RH_ContB_IPL_4
+    position:
+      x: 41.0
+      y: -55.0
+      z: 48.0
+  - id: 341
+    label: 17Networks_RH_ContB_PFCld_1
+    position:
+      x: 39.0
+      y: 33.0
+      z: 38.0
+  - id: 342
+    label: 17Networks_RH_ContB_PFCld_2
+    position:
+      x: 45.0
+      y: 19.0
+      z: 44.0
+  - id: 343
+    label: 17Networks_RH_ContB_PFCld_3
+    position:
+      x: 43.0
+      y: 7.0
+      z: 51.0
+  - id: 344
+    label: 17Networks_RH_ContB_PFCld_4
+    position:
+      x: 34.0
+      y: 15.0
+      z: 56.0
+  - id: 345
+    label: 17Networks_RH_ContB_PFClv_1
+    position:
+      x: 35.0
+      y: 38.0
+      z: -13.0
+  - id: 346
+    label: 17Networks_RH_ContB_PFClv_2
+    position:
+      x: 28.0
+      y: 55.0
+      z: -14.0
+  - id: 347
+    label: 17Networks_RH_ContB_PFClv_3
+    position:
+      x: 42.0
+      y: 51.0
+      z: -6.0
+  - id: 348
+    label: 17Networks_RH_ContB_PFClv_4
+    position:
+      x: 27.0
+      y: 59.0
+      z: 3.0
+  - id: 349
+    label: 17Networks_RH_ContB_PFCmp_1
+    position:
+      x: 5.0
+      y: 28.0
+      z: 48.0
+  - id: 350
+    label: 17Networks_RH_ContC_pCun_1
+    position:
+      x: 17.0
+      y: -63.0
+      z: 28.0
+  - id: 351
+    label: 17Networks_RH_ContC_pCun_2
+    position:
+      x: 13.0
+      y: -71.0
+      z: 39.0
+  - id: 352
+    label: 17Networks_RH_ContC_pCun_3
+    position:
+      x: 5.0
+      y: -64.0
+      z: 44.0
+  - id: 353
+    label: 17Networks_RH_ContC_pCun_4
+    position:
+      x: 7.0
+      y: -50.0
+      z: 45.0
+  - id: 354
+    label: 17Networks_RH_ContC_pCun_5
+    position:
+      x: 8.0
+      y: -71.0
+      z: 53.0
+  - id: 355
+    label: 17Networks_RH_ContC_Cingp_1
+    position:
+      x: 7.0
+      y: -44.0
+      z: 20.0
+  - id: 356
+    label: 17Networks_RH_ContC_Cingp_2
+    position:
+      x: 6.0
+      y: -26.0
+      z: 28.0
+  - id: 357
+    label: 17Networks_RH_DefaultA_Temp_1
+    position:
+      x: 61.0
+      y: -8.0
+      z: -23.0
+  - id: 358
+    label: 17Networks_RH_DefaultA_IPL_1
+    position:
+      x: 53.0
+      y: -53.0
+      z: 26.0
+  - id: 359
+    label: 17Networks_RH_DefaultA_IPL_2
+    position:
+      x: 47.0
+      y: -64.0
+      z: 42.0
+  - id: 360
+    label: 17Networks_RH_DefaultA_PFCd_1
+    position:
+      x: 26.0
+      y: 34.0
+      z: 39.0
+  - id: 361
+    label: 17Networks_RH_DefaultA_PFCd_2
+    position:
+      x: 24.0
+      y: 26.0
+      z: 51.0
+  - id: 362
+    label: 17Networks_RH_DefaultA_pCunPCC_1
+    position:
+      x: 6.0
+      y: -52.0
+      z: 23.0
+  - id: 363
+    label: 17Networks_RH_DefaultA_pCunPCC_2
+    position:
+      x: 5.0
+      y: -63.0
+      z: 31.0
+  - id: 364
+    label: 17Networks_RH_DefaultA_pCunPCC_3
+    position:
+      x: 7.0
+      y: -39.0
+      z: 35.0
+  - id: 365
+    label: 17Networks_RH_DefaultA_pCunPCC_4
+    position:
+      x: 4.0
+      y: -20.0
+      z: 37.0
+  - id: 366
+    label: 17Networks_RH_DefaultA_pCunPCC_5
+    position:
+      x: 10.0
+      y: -53.0
+      z: 35.0
+  - id: 367
+    label: 17Networks_RH_DefaultA_PFCm_1
+    position:
+      x: 5.0
+      y: 41.0
+      z: -11.0
+  - id: 368
+    label: 17Networks_RH_DefaultA_PFCm_2
+    position:
+      x: 9.0
+      y: 67.0
+      z: 1.0
+  - id: 369
+    label: 17Networks_RH_DefaultA_PFCm_3
+    position:
+      x: 7.0
+      y: 42.0
+      z: 4.0
+  - id: 370
+    label: 17Networks_RH_DefaultA_PFCm_4
+    position:
+      x: 7.0
+      y: 54.0
+      z: 13.0
+  - id: 371
+    label: 17Networks_RH_DefaultA_PFCm_5
+    position:
+      x: 17.0
+      y: 65.0
+      z: 16.0
+  - id: 372
+    label: 17Networks_RH_DefaultA_PFCm_6
+    position:
+      x: 6.0
+      y: 25.0
+      z: 18.0
+  - id: 373
+    label: 17Networks_RH_DefaultB_Temp_1
+    position:
+      x: 63.0
+      y: -23.0
+      z: -7.0
+  - id: 374
+    label: 17Networks_RH_DefaultB_Temp_2
+    position:
+      x: 63.0
+      y: -38.0
+      z: 0.0
+  - id: 375
+    label: 17Networks_RH_DefaultB_AntTemp_1
+    position:
+      x: 49.0
+      y: 9.0
+      z: -33.0
+  - id: 376
+    label: 17Networks_RH_DefaultB_PFCd_1
+    position:
+      x: 6.0
+      y: 58.0
+      z: 29.0
+  - id: 377
+    label: 17Networks_RH_DefaultB_PFCd_2
+    position:
+      x: 16.0
+      y: 52.0
+      z: 36.0
+  - id: 378
+    label: 17Networks_RH_DefaultB_PFCd_3
+    position:
+      x: 5.0
+      y: 44.0
+      z: 40.0
+  - id: 379
+    label: 17Networks_RH_DefaultB_PFCd_4
+    position:
+      x: 14.0
+      y: 39.0
+      z: 52.0
+  - id: 380
+    label: 17Networks_RH_DefaultB_PFCd_5
+    position:
+      x: 12.0
+      y: 20.0
+      z: 63.0
+  - id: 381
+    label: 17Networks_RH_DefaultB_PFCv_1
+    position:
+      x: 35.0
+      y: 23.0
+      z: -18.0
+  - id: 382
+    label: 17Networks_RH_DefaultB_PFCv_2
+    position:
+      x: 48.0
+      y: 32.0
+      z: -8.0
+  - id: 383
+    label: 17Networks_RH_DefaultB_PFCv_3
+    position:
+      x: 54.0
+      y: 24.0
+      z: 6.0
+  - id: 384
+    label: 17Networks_RH_DefaultC_IPL_1
+    position:
+      x: 48.0
+      y: -64.0
+      z: 22.0
+  - id: 385
+    label: 17Networks_RH_DefaultC_IPL_2
+    position:
+      x: 45.0
+      y: -75.0
+      z: 31.0
+  - id: 386
+    label: 17Networks_RH_DefaultC_Rsp_1
+    position:
+      x: 14.0
+      y: -46.0
+      z: 4.0
+  - id: 387
+    label: 17Networks_RH_DefaultC_Rsp_2
+    position:
+      x: 12.0
+      y: -55.0
+      z: 15.0
+  - id: 388
+    label: 17Networks_RH_DefaultC_PHC_1
+    position:
+      x: 23.0
+      y: -18.0
+      z: -27.0
+  - id: 389
+    label: 17Networks_RH_DefaultC_PHC_2
+    position:
+      x: 31.0
+      y: -31.0
+      z: -18.0
+  - id: 390
+    label: 17Networks_RH_TempPar_1
+    position:
+      x: 47.0
+      y: 16.0
+      z: -20.0
+  - id: 391
+    label: 17Networks_RH_TempPar_2
+    position:
+      x: 55.0
+      y: -4.0
+      z: -14.0
+  - id: 392
+    label: 17Networks_RH_TempPar_3
+    position:
+      x: 49.0
+      y: -20.0
+      z: -8.0
+  - id: 393
+    label: 17Networks_RH_TempPar_4
+    position:
+      x: 62.0
+      y: -19.0
+      z: 0.0
+  - id: 394
+    label: 17Networks_RH_TempPar_5
+    position:
+      x: 50.0
+      y: -33.0
+      z: 2.0
+  - id: 395
+    label: 17Networks_RH_TempPar_6
+    position:
+      x: 59.0
+      y: -46.0
+      z: 7.0
+  - id: 396
+    label: 17Networks_RH_TempPar_7
+    position:
+      x: 51.0
+      y: -41.0
+      z: 13.0
+  - id: 397
+    label: 17Networks_RH_TempPar_8
+    position:
+      x: 65.0
+      y: -34.0
+      z: 11.0
+  - id: 398
+    label: 17Networks_RH_TempPar_9
+    position:
+      x: 55.0
+      y: -46.0
+      z: 19.0
+  - id: 399
+    label: 17Networks_RH_TempPar_10
+    position:
+      x: 62.0
+      y: -40.0
+      z: 22.0
 edges:
-- label: weight
-  format: dense
-  weighted: true
-  valid_diagonal: false
-  non_negative: true
-  directed: false
-- label: length
-  format: dense
-  weighted: true
-  valid_diagonal: false
-  non_negative: true
-  directed: false
+  - label: weight
+    format: dense
+    weighted: true
+    valid_diagonal: false
+    non_negative: true
+    directed: false
+  - label: length
+    format: dense
+    weighted: true
+    valid_diagonal: false
+    non_negative: true
+    directed: false
 node_mapping: /nodes/parent_index

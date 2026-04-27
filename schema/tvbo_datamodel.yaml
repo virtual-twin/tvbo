@@ -1486,14 +1486,18 @@ classes:
             OR inline a callable directly for external library functions,
             OR inline an equation, OR use class_call for class instantiation.
             Mirrors Function attributes so pipeline steps can be self-contained.
-            The `name` is the unique step key within its containing pipeline (used for keyed access to step outputs).
+            The `name` is an optional step label (used in pipelines for keyed access to step outputs);
+            it is NOT a global identifier (singleton uses like `loss`, `observable` may omit it).
         slots:
-            - name
             - acronym
             - label
             - equation
             - description
         attributes:
+            name:
+                slot_uri: schema:name
+                range: string
+                description: "Optional step label; used in pipelines to key step outputs."
             function:
                 description: "Reference to a defined Function (by name)"
                 range: Function

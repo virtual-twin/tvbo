@@ -1126,7 +1126,7 @@ class Coordinate(ConfiguredBaseModel):
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://openminds.ebrains.eu/sands/BrainAtlas'})
 
-    coordinateSpace: Optional[str] = Field(default=None, description="""Add the common coordinate space used for this brain atlas version.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coordinate', 'BrainAtlas']} })
+    coordinateSpace: Optional[str] = Field(default=None, description="""Common coordinate space (e.g. FSLMNI152, MNI152NLin2009cAsym). Reference by name; the CommonCoordinateSpace must be defined in tvbo/database/coordinate_spaces/ (or future equivalent location).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coordinate', 'BrainAtlas']} })
     x: Optional[float] = Field(default=None, description="""X coordinate""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coordinate', 'Matrix']} })
     y: Optional[float] = Field(default=None, description="""Y coordinate""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coordinate', 'Matrix']} })
     z: Optional[float] = Field(default=None, description="""Z coordinate""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coordinate']} })
@@ -1139,7 +1139,7 @@ class BrainAtlas(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'atom:atlas/Atlas',
          'from_schema': 'https://openminds.ebrains.eu/sands/BrainAtlas'})
 
-    coordinateSpace: Optional[str] = Field(default=None, description="""Add the common coordinate space used for this brain atlas version.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coordinate', 'BrainAtlas']} })
+    coordinateSpace: Optional[str] = Field(default=None, description="""Common coordinate space (e.g. FSLMNI152, MNI152NLin2009cAsym). Reference by name; the CommonCoordinateSpace must be defined in tvbo/database/coordinate_spaces/ (or future equivalent location).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coordinate', 'BrainAtlas']} })
     name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
@@ -5945,46 +5945,10 @@ class LossFunction(Function):
 
 class FunctionCall(ConfiguredBaseModel):
     """
-    Invocation of a function in a pipeline. Can reference a defined Function by name, OR inline a callable directly for external library functions, OR inline an equation, OR use class_call for class instantiation. Mirrors Function attributes so pipeline steps can be self-contained. The `name` is the unique step key within its containing pipeline (used for keyed access to step outputs).
+    Invocation of a function in a pipeline. Can reference a defined Function by name, OR inline a callable directly for external library functions, OR inline an equation, OR use class_call for class instantiation. Mirrors Function attributes so pipeline steps can be self-contained. The `name` is an optional step label (used in pipelines for keyed access to step outputs); it is NOT a global identifier (singleton uses like `loss`, `observable` may omit it).
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:FunctionCall', 'from_schema': 'https://w3id.org/tvbo'})
 
-    name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
-                       'CommonCoordinateSpace',
-                       'ParcellationEntity',
-                       'DBSProtocol',
-                       'ClinicalScale',
-                       'ClinicalScore',
-                       'SoftwarePackage',
-                       'SoftwareRequirement',
-                       'SoftwareEnvironment',
-                       'Event',
-                       'Tractogram',
-                       'GraphGenerator',
-                       'File',
-                       'StateValue',
-                       'Observation',
-                       'Dynamics',
-                       'StateVariable',
-                       'Distribution',
-                       'Parameter',
-                       'CouplingInput',
-                       'Argument',
-                       'Function',
-                       'FunctionCall',
-                       'Callable',
-                       'DerivedParameter',
-                       'DerivedVariable',
-                       'DataSource',
-                       'OptimizationStage',
-                       'Exploration',
-                       'UpdateRule',
-                       'Algorithm',
-                       'Option',
-                       'BranchSwitch',
-                       'Continuation',
-                       'Coupling'],
-         'slot_uri': 'schema:name'} })
     acronym: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
                        'ClinicalScore',
                        'Observation',
@@ -6098,6 +6062,42 @@ class FunctionCall(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE'],
          'slot_uri': 'dcterms:description'} })
+    name: Optional[str] = Field(default=None, description="""Optional step label; used in pipelines to key step outputs.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+                       'CommonCoordinateSpace',
+                       'ParcellationEntity',
+                       'DBSProtocol',
+                       'ClinicalScale',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
+                       'Event',
+                       'Tractogram',
+                       'GraphGenerator',
+                       'File',
+                       'StateValue',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Distribution',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'FunctionCall',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Exploration',
+                       'UpdateRule',
+                       'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
+                       'Coupling'],
+         'slot_uri': 'schema:name'} })
     function: Optional[str] = Field(default=None, description="""Reference to a defined Function (by name)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Distribution', 'FunctionCall', 'Noise']} })
     callable: Optional[Callable] = Field(default=None, description="""Direct callable specification (alternative to function reference)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall']} })
     class_call: Optional[ClassReference] = Field(default=None, description="""Class instantiation and call (alternative to callable/function). Use for external library classes that need __init__ then __call__. Example: Bold monitor from tvboptim.""", json_schema_extra = { "linkml_meta": {'domain_of': ['FunctionCall']} })

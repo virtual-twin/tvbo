@@ -21,4 +21,4 @@ parameters:
 parcellation:
   atlas:
     name: Lobar
-    coordinateSpace: {name: MNI152NLin2009cAsym}
+    coordinateSpace: MNI152NLin2009cAsym

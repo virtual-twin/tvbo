@@ -8,7 +8,7 @@ description: >-
   continuation parameter. Two fold bifurcations and a Hopf bifurcation
   delimit the oscillatory regime.
 
-dynamics: &dyn
+dynamics:
   name: JansenRit
   iri: tvbo:JansenRit
 
@@ -17,7 +17,7 @@ continuations:
   eq_in_p:
     name: eq_in_p
     label: "Equilibrium branch in p"
-    dynamics: *dyn
+    dynamics: JansenRit
     free_parameters:
       - name: p
         domain:
@@ -43,9 +43,9 @@ continuations:
         discretization:
           method: collocation
           parameters:
-            - name: mesh_intervals
+            mesh_intervals:
               value: 50
-            - name: degree
+            degree:
               value: 4
         continuation:
           name: po_alpha_continuation
