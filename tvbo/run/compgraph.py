@@ -5,8 +5,10 @@ from scipy.interpolate import interp1d
 try:
     from tqdm import tqdm
 except ImportError:
+
     def tqdm(x, **kwargs):
         return x  # No-op if tqdm not available
+
 
 from tvbo.classes.observation import expand_to_4d
 from tvbo.data.types import TimeSeries
