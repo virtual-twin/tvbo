@@ -1485,8 +1485,8 @@ classes:
             OR inline a callable directly for external library functions,
             OR inline an equation, OR use class_call for class instantiation.
             Mirrors Function attributes so pipeline steps can be self-contained.
+            Anonymous: identity is positional within its containing list and via its `output` name.
         slots:
-            - name
             - acronym
             - label
             - equation
@@ -2301,7 +2301,6 @@ classes:
                 multivalued: true
                 range: BranchSwitch
                 inlined: true
-                inlined_as_list: true
                 description: >-
                     Child branches to continue from detected bifurcation
                     points (PO from Hopf, fold continuation, etc.).
@@ -2637,30 +2636,25 @@ classes:
                 multivalued: true
                 range: Optimization
                 inlined: true
-                inlined_as_list: true
                 description: "Parameter optimization configurations"
             explorations:
                 multivalued: true
                 range: Exploration
                 inlined: true
-                inlined_as_list: true
                 description: "Parameter exploration/grid search specifications"
             algorithms:
                 multivalued: true
                 range: Algorithm
                 inlined: true
-                inlined_as_list: true
                 description: "Iterative parameter tuning algorithms (FIC, EIB, etc.)"
             continuations:
                 multivalued: true
                 range: Continuation
                 inlined: true
-                inlined_as_list: true
                 description: >-
                     Numerical continuation and bifurcation analysis specifications.
                     Each entry defines a continuation experiment (equilibrium branch,
-                    codim-2 curve, periodic orbit family, etc.).
-            # Either reference a full reusable environment (preferred) or, for
+                    codim-2 curve, periodic orbit family, etc.).            # Either reference a full reusable environment (preferred) or, for
             # legacy/simple cases, a single software requirement.
             environment:
                 range: SoftwareEnvironment

@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-04-27T16:25:55
+# Generation date: 2026-04-27T16:31:56
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -144,6 +144,10 @@ class FunctionName(extended_str):
 
 
 class LossFunctionName(FunctionName):
+    pass
+
+
+class FunctionCallName(extended_str):
     pass
 
 
@@ -1207,7 +1211,7 @@ class Observation(YAMLRoot):
     tail_samples: Optional[int] = None
     aggregation: Optional[Union[str, "AggregationType"]] = None
     window_size: Optional[int] = None
-    pipeline: Optional[Union[Union[dict, "FunctionCall"], list[Union[dict, "FunctionCall"]]]] = empty_list()
+    pipeline: Optional[Union[dict[Union[str, FunctionCallName], Union[dict, "FunctionCall"]], list[Union[dict, "FunctionCall"]]]] = empty_dict()
     class_reference: Optional[Union[dict, "ClassReference"]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -1269,9 +1273,7 @@ class Observation(YAMLRoot):
         if self.window_size is not None and not isinstance(self.window_size, int):
             self.window_size = int(self.window_size)
 
-        if not isinstance(self.pipeline, list):
-            self.pipeline = [self.pipeline] if self.pipeline is not None else []
-        self.pipeline = [v if isinstance(v, FunctionCall) else FunctionCall(**as_dict(v)) for v in self.pipeline]
+        self._normalize_inlined_as_list(slot_name="pipeline", slot_type=FunctionCall, key_name="name", keyed=True)
 
         if self.class_reference is not None and not isinstance(self.class_reference, ClassReference):
             self.class_reference = ClassReference(**as_dict(self.class_reference))
@@ -1897,6 +1899,7 @@ class FunctionCall(YAMLRoot):
     class_name: ClassVar[str] = "FunctionCall"
     class_model_uri: ClassVar[URIRef] = TVBO.FunctionCall
 
+    name: Union[str, FunctionCallName] = None
     acronym: Optional[str] = None
     label: Optional[str] = None
     equation: Optional[Union[dict, Equation]] = None
@@ -1913,6 +1916,11 @@ class FunctionCall(YAMLRoot):
     source_code: Optional[str] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
+        if self._is_empty(self.name):
+            self.MissingRequiredField("name")
+        if not isinstance(self.name, FunctionCallName):
+            self.name = FunctionCallName(self.name)
+
         if self.acronym is not None and not isinstance(self.acronym, str):
             self.acronym = str(self.acronym)
 
@@ -2288,7 +2296,7 @@ class OptimizationStage(YAMLRoot):
     name: Union[str, OptimizationStageName] = None
     label: Optional[str] = None
     description: Optional[str] = None
-    free_parameters: Optional[Union[Union[str, ParameterName], list[Union[str, ParameterName]]]] = empty_list()
+    free_parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
     algorithm: Optional[str] = "adam"
     learning_rate: Optional[float] = 0.001
     max_iterations: Optional[int] = 100
@@ -2308,9 +2316,7 @@ class OptimizationStage(YAMLRoot):
         if self.description is not None and not isinstance(self.description, str):
             self.description = str(self.description)
 
-        if not isinstance(self.free_parameters, list):
-            self.free_parameters = [self.free_parameters] if self.free_parameters is not None else []
-        self.free_parameters = [v if isinstance(v, ParameterName) else ParameterName(v) for v in self.free_parameters]
+        self._normalize_inlined_as_list(slot_name="free_parameters", slot_type=Parameter, key_name="name", keyed=True)
 
         if self.algorithm is not None and not isinstance(self.algorithm, str):
             self.algorithm = str(self.algorithm)
@@ -2588,7 +2594,7 @@ class Algorithm(YAMLRoot):
     learning_rate_schedule: Optional[str] = None
     simulation_period: Optional[float] = None
     apply_every: Optional[int] = 1
-    functions: Optional[Union[Union[dict, FunctionCall], list[Union[dict, FunctionCall]]]] = empty_list()
+    functions: Optional[Union[dict[Union[str, FunctionCallName], Union[dict, FunctionCall]], list[Union[dict, FunctionCall]]]] = empty_dict()
     depends_on: Optional[Union[Union[str, AlgorithmName], list[Union[str, AlgorithmName]]]] = empty_list()
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -2639,9 +2645,7 @@ class Algorithm(YAMLRoot):
         if self.apply_every is not None and not isinstance(self.apply_every, int):
             self.apply_every = int(self.apply_every)
 
-        if not isinstance(self.functions, list):
-            self.functions = [self.functions] if self.functions is not None else []
-        self.functions = [v if isinstance(v, FunctionCall) else FunctionCall(**as_dict(v)) for v in self.functions]
+        self._normalize_inlined_as_list(slot_name="functions", slot_type=FunctionCall, key_name="name", keyed=True)
 
         if not isinstance(self.depends_on, list):
             self.depends_on = [self.depends_on] if self.depends_on is not None else []
@@ -2928,7 +2932,7 @@ class Continuation(YAMLRoot):
         if self.initial_state is not None and not isinstance(self.initial_state, InitialState):
             self.initial_state = InitialState(**as_dict(self.initial_state))
 
-        self._normalize_inlined_as_list(slot_name="branches", slot_type=BranchSwitch, key_name="name", keyed=True)
+        self._normalize_inlined_as_dict(slot_name="branches", slot_type=BranchSwitch, key_name="name", keyed=True)
 
         if self.bothside is not None and not isinstance(self.bothside, Bool):
             self.bothside = Bool(self.bothside)
@@ -3346,13 +3350,13 @@ class SimulationExperiment(YAMLRoot):
         if self.field_dynamics is not None and not isinstance(self.field_dynamics, PDE):
             self.field_dynamics = PDE(**as_dict(self.field_dynamics))
 
-        self._normalize_inlined_as_list(slot_name="optimizations", slot_type=Optimization, key_name="name", keyed=True)
+        self._normalize_inlined_as_dict(slot_name="optimizations", slot_type=Optimization, key_name="name", keyed=True)
 
-        self._normalize_inlined_as_list(slot_name="explorations", slot_type=Exploration, key_name="name", keyed=True)
+        self._normalize_inlined_as_dict(slot_name="explorations", slot_type=Exploration, key_name="name", keyed=True)
 
-        self._normalize_inlined_as_list(slot_name="algorithms", slot_type=Algorithm, key_name="name", keyed=True)
+        self._normalize_inlined_as_dict(slot_name="algorithms", slot_type=Algorithm, key_name="name", keyed=True)
 
-        self._normalize_inlined_as_list(slot_name="continuations", slot_type=Continuation, key_name="name", keyed=True)
+        self._normalize_inlined_as_dict(slot_name="continuations", slot_type=Continuation, key_name="name", keyed=True)
 
         if self.environment is not None and not isinstance(self.environment, SoftwareEnvironment):
             self.environment = SoftwareEnvironment(**as_dict(self.environment))
@@ -5057,7 +5061,7 @@ class SoftwareEnvironment(YAMLRoot):
         if self.build_hash is not None and not isinstance(self.build_hash, str):
             self.build_hash = str(self.build_hash)
 
-        self._normalize_inlined_as_dict(slot_name="requirements", slot_type=SoftwareRequirement, key_name="name", keyed=True)
+        self._normalize_inlined_as_list(slot_name="requirements", slot_type=SoftwareRequirement, key_name="name", keyed=True)
 
         super().__post_init__(**kwargs)
 
@@ -6559,7 +6563,7 @@ slots.observation__window_size = Slot(uri=TVBO.window_size, name="observation__w
                    model_uri=TVBO.observation__window_size, domain=None, range=Optional[int])
 
 slots.observation__pipeline = Slot(uri=TVBO.pipeline, name="observation__pipeline", curie=TVBO.curie('pipeline'),
-                   model_uri=TVBO.observation__pipeline, domain=None, range=Optional[Union[Union[dict, FunctionCall], list[Union[dict, FunctionCall]]]])
+                   model_uri=TVBO.observation__pipeline, domain=None, range=Optional[Union[dict[Union[str, FunctionCallName], Union[dict, FunctionCall]], list[Union[dict, FunctionCall]]]])
 
 slots.observation__class_reference = Slot(uri=TVBO.class_reference, name="observation__class_reference", curie=TVBO.curie('class_reference'),
                    model_uri=TVBO.observation__class_reference, domain=None, range=Optional[Union[dict, ClassReference]])
@@ -6844,7 +6848,7 @@ slots.dataSource__preprocessing = Slot(uri=TVBO.preprocessing, name="dataSource_
                    model_uri=TVBO.dataSource__preprocessing, domain=None, range=Optional[Union[dict, Function]])
 
 slots.optimizationStage__free_parameters = Slot(uri=TVBO.free_parameters, name="optimizationStage__free_parameters", curie=TVBO.curie('free_parameters'),
-                   model_uri=TVBO.optimizationStage__free_parameters, domain=None, range=Optional[Union[Union[str, ParameterName], list[Union[str, ParameterName]]]])
+                   model_uri=TVBO.optimizationStage__free_parameters, domain=None, range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]])
 
 slots.optimizationStage__algorithm = Slot(uri=TVBO.algorithm, name="optimizationStage__algorithm", curie=TVBO.curie('algorithm'),
                    model_uri=TVBO.optimizationStage__algorithm, domain=None, range=Optional[str])
@@ -6976,7 +6980,7 @@ slots.algorithm__apply_every = Slot(uri=TVBO.apply_every, name="algorithm__apply
                    model_uri=TVBO.algorithm__apply_every, domain=None, range=Optional[int])
 
 slots.algorithm__functions = Slot(uri=TVBO.functions, name="algorithm__functions", curie=TVBO.curie('functions'),
-                   model_uri=TVBO.algorithm__functions, domain=None, range=Optional[Union[Union[dict, FunctionCall], list[Union[dict, FunctionCall]]]])
+                   model_uri=TVBO.algorithm__functions, domain=None, range=Optional[Union[dict[Union[str, FunctionCallName], Union[dict, FunctionCall]], list[Union[dict, FunctionCall]]]])
 
 slots.algorithm__depends_on = Slot(uri=TVBO.depends_on, name="algorithm__depends_on", curie=TVBO.curie('depends_on'),
                    model_uri=TVBO.algorithm__depends_on, domain=None, range=Optional[Union[Union[str, AlgorithmName], list[Union[str, AlgorithmName]]]])
