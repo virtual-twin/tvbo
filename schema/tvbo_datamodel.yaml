@@ -343,15 +343,21 @@ classes:
         description: "Specifies a range for array generation, parameter bounds, or grid exploration."
         attributes:
             lo:
-                range: string
                 description: "Lower bound or starting value. Can be a number or argument name."
                 ifabsent: string(0)
+                any_of:
+                    - range: float
+                    - range: string
             hi:
-                range: string
                 description: "Upper bound or stopping value. Can be a number or argument name."
+                any_of:
+                    - range: float
+                    - range: string
             step:
-                range: string
                 description: "Step size. Can be: number, argument name, or expression."
+                any_of:
+                    - range: float
+                    - range: string
             n:
                 range: integer
                 description: "Number of points (alternative to step for grid exploration)."
@@ -1366,13 +1372,14 @@ classes:
             value:
                 description: >-
                     Argument value. Can be:
-                    - Literal: 1.0, "string", etc.
+                    - Literal: 1.0, "string", boolean, etc.
                     - Input reference: "input.frequencies" (from source_observation outputs)
                     - Cross-observation: "target_frequencies.peak_freqs" (from another observation)
                 any_of:
                     - range: float
                     - range: integer
                     - range: string
+                    - range: boolean
             unit:
                 range: string
 
