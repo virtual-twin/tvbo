@@ -17,10 +17,12 @@ Catalog of all NeuroML2 built-in synapse types:
 | `doubleSynapse` | Two conductance components | gbase1, gbase2, ... |
 
 ```{python}
-from pathlib import Path
 
-nml_file = Path.home() / "work_data/toolboxes/NeuroML2/examples/NML2_SynapseTypes.nml"
-text = nml_file.read_text()
+import urllib.request
+
+url = "https://raw.githubusercontent.com/NeuroML/NeuroML2/master/examples/NML2_SynapseTypes.nml"
+with urllib.request.urlopen(url) as resp:
+    text = resp.read().decode()
 
 for line in text.split('\n'):
     stripped = line.strip()
