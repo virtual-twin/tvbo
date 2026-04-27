@@ -43,7 +43,6 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 # 2. Pre-warm Julia. juliacall just needs juliapkg.json on sys.path.
 ENV JULIA_DEPOT_PATH="/opt/julia-depot" \
-    JULIA_NUM_PRECOMPILE_TASKS="auto" \
     PYTHONPATH="/tmp/jl-stub"
 RUN mkdir -p /tmp/jl-stub/tvbo /opt/julia-depot
 COPY tvbo/juliapkg.json /tmp/jl-stub/tvbo/juliapkg.json
