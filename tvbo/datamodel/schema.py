@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-04-27T11:30:52
+# Generation date: 2026-04-27T15:02:30
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -9,18 +9,52 @@
 import dataclasses
 import re
 from dataclasses import dataclass
-from datetime import date, datetime, time
-from typing import Any, ClassVar, Dict, List, Optional, Union
+from datetime import (
+    date,
+    datetime,
+    time
+)
+from typing import (
+    Any,
+    ClassVar,
+    Dict,
+    List,
+    Optional,
+    Union
+)
 
-from jsonasobj2 import JsonObj, as_dict
-from linkml_runtime.linkml_model.meta import EnumDefinition, PermissibleValue, PvFormulaOptions
+from jsonasobj2 import (
+    JsonObj,
+    as_dict
+)
+from linkml_runtime.linkml_model.meta import (
+    EnumDefinition,
+    PermissibleValue,
+    PvFormulaOptions
+)
 from linkml_runtime.utils.curienamespace import CurieNamespace
 from linkml_runtime.utils.enumerations import EnumDefinitionImpl
-from linkml_runtime.utils.formatutils import camelcase, sfx, underscore
-from linkml_runtime.utils.metamodelcore import bnode, empty_dict, empty_list
+from linkml_runtime.utils.formatutils import (
+    camelcase,
+    sfx,
+    underscore
+)
+from linkml_runtime.utils.metamodelcore import (
+    bnode,
+    empty_dict,
+    empty_list
+)
 from linkml_runtime.utils.slot import Slot
-from linkml_runtime.utils.yamlutils import YAMLRoot, extended_float, extended_int, extended_str
-from rdflib import Namespace, URIRef
+from linkml_runtime.utils.yamlutils import (
+    YAMLRoot,
+    extended_float,
+    extended_int,
+    extended_str
+)
+from rdflib import (
+    Namespace,
+    URIRef
+)
 
 from linkml_runtime.linkml_model.types import Boolean, Date, Datetime, Float, Integer, String, Uri
 from linkml_runtime.utils.metamodelcore import Bool, URI, XSDDate, XSDDateTime
@@ -29,26 +63,25 @@ metamodel_version = "1.7.0"
 version = None
 
 # Namespaces
-UO = CurieNamespace("UO", "http://purl.obolibrary.org/obo/UO_")
-ATOM = CurieNamespace("atom", "http://uri.interlex.org/tgbugs/uris/readable/")
-BIOTOOLS = CurieNamespace("biotools", "https://bio.tools/ontology/")
-LINKML = CurieNamespace("linkml", "https://w3id.org/linkml/")
-NIDM = CurieNamespace("nidm", "http://purl.org/nidash/nidm#")
-PROV = CurieNamespace("prov", "http://www.w3.org/ns/prov#")
-QUDT = CurieNamespace("qudt", "http://qudt.org/vocab/unit/")
-RDFS = CurieNamespace("rdfs", "http://www.w3.org/2000/01/rdf-schema#")
-SCHEMA = CurieNamespace("schema", "http://schema.org/")
-SIO = CurieNamespace("sio", "http://semanticscience.org/resource/")
-TVBO = CurieNamespace("tvbo", "http://www.thevirtualbrain.org/tvb-o/")
-TVBO_DBS = CurieNamespace("tvbo_dbs", "http://www.thevirtualbrain.org/tvb-o/dbs/")
-TVBO_STUDY = CurieNamespace("tvbo_study", "http://www.thevirtualbrain.org/tvb-o/study/")
-TVBO_SW = CurieNamespace("tvbo_sw", "http://www.thevirtualbrain.org/tvb-o/software/")
-WD = CurieNamespace("wd", "http://www.wikidata.org/entity/")
+UO = CurieNamespace('UO', 'http://purl.obolibrary.org/obo/UO_')
+ATOM = CurieNamespace('atom', 'http://uri.interlex.org/tgbugs/uris/readable/')
+BIOTOOLS = CurieNamespace('biotools', 'https://bio.tools/ontology/')
+LINKML = CurieNamespace('linkml', 'https://w3id.org/linkml/')
+NIDM = CurieNamespace('nidm', 'http://purl.org/nidash/nidm#')
+PROV = CurieNamespace('prov', 'http://www.w3.org/ns/prov#')
+QUDT = CurieNamespace('qudt', 'http://qudt.org/vocab/unit/')
+RDFS = CurieNamespace('rdfs', 'http://www.w3.org/2000/01/rdf-schema#')
+SCHEMA = CurieNamespace('schema', 'http://schema.org/')
+SIO = CurieNamespace('sio', 'http://semanticscience.org/resource/')
+TVBO = CurieNamespace('tvbo', 'http://www.thevirtualbrain.org/tvb-o/')
+TVBO_DBS = CurieNamespace('tvbo_dbs', 'http://www.thevirtualbrain.org/tvb-o/dbs/')
+TVBO_STUDY = CurieNamespace('tvbo_study', 'http://www.thevirtualbrain.org/tvb-o/study/')
+TVBO_SW = CurieNamespace('tvbo_sw', 'http://www.thevirtualbrain.org/tvb-o/software/')
+WD = CurieNamespace('wd', 'http://www.wikidata.org/entity/')
 DEFAULT_ = TVBO
 
 
 # Types
-
 
 # Class references
 class EventName(extended_str):
@@ -228,7 +261,6 @@ class Range(YAMLRoot):
     """
     Specifies a range for array generation, parameter bounds, or grid exploration.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["Range"]
@@ -281,9 +313,7 @@ class Equation(YAMLRoot):
 
     label: Optional[str] = None
     definition: Optional[str] = None
-    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = (
-        empty_dict()
-    )
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
     description: Optional[str] = None
     lhs: Optional[str] = None
     rhs: Optional[str] = None
@@ -312,9 +342,7 @@ class Equation(YAMLRoot):
 
         if not isinstance(self.conditionals, list):
             self.conditionals = [self.conditionals] if self.conditionals is not None else []
-        self.conditionals = [
-            v if isinstance(v, ConditionalBlock) else ConditionalBlock(**as_dict(v)) for v in self.conditionals
-        ]
+        self.conditionals = [v if isinstance(v, ConditionalBlock) else ConditionalBlock(**as_dict(v)) for v in self.conditionals]
 
         if self.engine is not None and not isinstance(self.engine, SoftwareRequirement):
             self.engine = SoftwareRequirement(**as_dict(self.engine))
@@ -333,7 +361,6 @@ class ConditionalBlock(YAMLRoot):
     """
     A single condition and its corresponding equation segment.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["ConditionalBlock"]
@@ -364,9 +391,7 @@ class Stimulus(YAMLRoot):
     class_model_uri: ClassVar[URIRef] = TVBO.Stimulus
 
     equation: Optional[Union[dict, Equation]] = None
-    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = (
-        empty_dict()
-    )
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
     description: Optional[str] = None
     dataLocation: Optional[str] = None
     duration: Optional[float] = 1000
@@ -410,7 +435,6 @@ class Event(YAMLRoot):
     external inputs (stimulus type), threshold-triggered state changes (continuous/discrete type), or time-scheduled
     interventions (preset_time type). Attaches to components (nodes/edges) or to the experiment level.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["Event"]
@@ -421,10 +445,8 @@ class Event(YAMLRoot):
     name: Union[str, EventName] = None
     label: Optional[str] = None
     description: Optional[str] = None
-    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = (
-        empty_dict()
-    )
-    event_type: Optional[Union[str, "EventType"]] = "stimulus"
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
+    event_type: Optional[Union[str, "EventType"]] = 'stimulus'
     condition: Optional[Union[dict, Equation]] = None
     condition_states: Optional[Union[str, list[str]]] = empty_list()
     condition_parameters: Optional[Union[str, list[str]]] = empty_list()
@@ -514,9 +536,7 @@ class TemporalApplicableEquation(Equation):
     class_name: ClassVar[str] = "TemporalApplicableEquation"
     class_model_uri: ClassVar[URIRef] = TVBO.TemporalApplicableEquation
 
-    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = (
-        empty_dict()
-    )
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
     time_dependent: Optional[Union[bool, Bool]] = False
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -561,7 +581,6 @@ class Tractogram(YAMLRoot):
     """
     Reference to tractography/diffusion MRI data used to derive structural connectivity
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["Tractogram"]
@@ -613,7 +632,6 @@ class Matrix(YAMLRoot):
     """
     Adjacency matrix of a network.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["Matrix"]
@@ -669,7 +687,6 @@ class BrainRegionSeries(YAMLRoot):
     """
     A series whose values represent latitude
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["BrainRegionSeries"]
@@ -692,7 +709,6 @@ class Provenance(YAMLRoot):
     """
     W3C PROV-O aligned provenance. Reusable on any entity (Network, TimeSeries, Dynamics, etc.).
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = PROV["Entity"]
@@ -732,7 +748,6 @@ class BidsEntities(YAMLRoot):
     BIDS filename entities (BEP017-aligned) for provenance and data discovery. Reusable on Network, BrainAtlas,
     Tractogram, or any dataset with BIDS-conformant naming.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["BidsEntities"]
@@ -779,7 +794,6 @@ class Network(YAMLRoot):
     Network specification with nodes, edges, and reusable coupling configurations. Supports both explicit node/edge
     representation and matrix-based connectivity (Connectome compatibility).
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["Network"]
@@ -789,24 +803,16 @@ class Network(YAMLRoot):
 
     label: Optional[str] = None
     description: Optional[str] = None
-    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = (
-        empty_dict()
-    )
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
     nodes: Optional[Union[Union[dict, "Node"], list[Union[dict, "Node"]]]] = empty_list()
     edges: Optional[Union[Union[dict, "Edge"], list[Union[dict, "Edge"]]]] = empty_list()
-    coupling: Optional[Union[dict[Union[str, CouplingName], Union[dict, "Coupling"]], list[Union[dict, "Coupling"]]]] = (
-        empty_dict()
-    )
-    dynamics: Optional[Union[dict[Union[str, DynamicsName], Union[dict, "Dynamics"]], list[Union[dict, "Dynamics"]]]] = (
-        empty_dict()
-    )
+    coupling: Optional[Union[dict[Union[str, CouplingName], Union[dict, "Coupling"]], list[Union[dict, "Coupling"]]]] = empty_dict()
+    dynamics: Optional[Union[dict[Union[str, DynamicsName], Union[dict, "Dynamics"]], list[Union[dict, "Dynamics"]]]] = empty_dict()
     number_of_nodes: Optional[int] = 1
     coordinate_space: Optional[Union[dict, "CommonCoordinateSpace"]] = None
     parcellation: Optional[Union[dict, Parcellation]] = None
     tractogram: Optional[Union[dict, Tractogram]] = None
-    transforms: Optional[Union[dict[Union[str, FunctionName], Union[dict, "Function"]], list[Union[dict, "Function"]]]] = (
-        empty_dict()
-    )
+    transforms: Optional[Union[dict[Union[str, FunctionName], Union[dict, "Function"]], list[Union[dict, "Function"]]]] = empty_dict()
     data_file: Optional[str] = None
     descriptor: Optional[str] = None
     bids_dir: Optional[str] = None
@@ -816,8 +822,8 @@ class Network(YAMLRoot):
     provenance: Optional[Union[dict, Provenance]] = None
     parent_network: Optional[str] = None
     node_mapping: Optional[str] = None
-    distance_unit: Optional[Union[str, "UnitEnum"]] = "mm"
-    time_unit: Optional[Union[str, "UnitEnum"]] = "ms"
+    distance_unit: Optional[Union[str, "UnitEnum"]] = 'mm'
+    time_unit: Optional[Union[str, "UnitEnum"]] = 'ms'
     edge_matrix_files: Optional[Union[Union[str, FileName], list[Union[str, FileName]]]] = empty_list()
     graph_generator: Optional[Union[dict, "GraphGenerator"]] = None
 
@@ -906,7 +912,6 @@ class GraphGenerator(YAMLRoot):
     each backend can emit the correct constructor call (Graphs.jl, NetworkX, etc.). The number of nodes is always
     taken from Network.number_of_nodes.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["GraphGenerator"]
@@ -919,9 +924,7 @@ class GraphGenerator(YAMLRoot):
     description: Optional[str] = None
     seed: Optional[int] = None
     directed: Optional[Union[bool, Bool]] = False
-    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = (
-        empty_dict()
-    )
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
@@ -989,7 +992,6 @@ class Node(YAMLRoot):
     """
     A node in a network with its own dynamics and properties
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["Node"]
@@ -1000,16 +1002,12 @@ class Node(YAMLRoot):
     id: int = None
     label: Optional[str] = None
     description: Optional[str] = None
-    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = (
-        empty_dict()
-    )
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
     record: Optional[Union[bool, Bool]] = True
     dynamics: Optional[Union[str, DynamicsName]] = None
     position: Optional[Union[dict, "Coordinate"]] = None
     region: Optional[str] = None
-    state: Optional[Union[dict[Union[str, StateValueName], Union[dict, "StateValue"]], list[Union[dict, "StateValue"]]]] = (
-        empty_dict()
-    )
+    state: Optional[Union[dict[Union[str, StateValueName], Union[dict, "StateValue"]], list[Union[dict, "StateValue"]]]] = empty_dict()
     events: Optional[Union[dict[Union[str, EventName], Union[dict, Event]], list[Union[dict, Event]]]] = empty_dict()
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -1050,7 +1048,6 @@ class StateValue(YAMLRoot):
     """
     A named state variable value for per-node initialization.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["StateValue"]
@@ -1079,7 +1076,6 @@ class Edge(YAMLRoot):
     An edge in a network. Two modes: explicit (source+target set, scalar parameters in YAML) or template (no
     source/target, N×N matrix measure in HDF5). Both coexist in the same edges list.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["Edge"]
@@ -1089,9 +1085,7 @@ class Edge(YAMLRoot):
 
     label: Optional[str] = None
     description: Optional[str] = None
-    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = (
-        empty_dict()
-    )
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
     source: Optional[int] = None
     target: Optional[int] = None
     unit: Optional[str] = None
@@ -1171,7 +1165,6 @@ class Observation(YAMLRoot):
     Unified class for all observation/measurement specifications. Covers monitors (BOLD, EEG), tuning observables, and
     derived quantities. Pipeline is a sequence of Functions with input -> output flow.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["Observation"]
@@ -1184,11 +1177,9 @@ class Observation(YAMLRoot):
     label: Optional[str] = None
     description: Optional[str] = None
     equation: Optional[Union[dict, Equation]] = None
-    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = (
-        empty_dict()
-    )
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
     environment: Optional[Union[dict, "SoftwareEnvironment"]] = None
-    time_scale: Optional[Union[str, "UnitEnum"]] = "ms"
+    time_scale: Optional[Union[str, "UnitEnum"]] = 'ms'
     source: Optional[Union[str, StateVariableName]] = None
     period: Optional[float] = None
     downsample_period: Optional[float] = None
@@ -1279,7 +1270,6 @@ class DerivedObservation(Observation):
     - fc_corr (from fc and fc_target) - multi-source comparison Unlike regular Observations, these don't generate
     monitor classes but are computed from existing observation values.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["DerivedObservation"]
@@ -1300,9 +1290,7 @@ class DerivedObservation(Observation):
             self.MissingRequiredField("source_observations")
         if not isinstance(self.source_observations, list):
             self.source_observations = [self.source_observations] if self.source_observations is not None else []
-        self.source_observations = [
-            v if isinstance(v, ObservationName) else ObservationName(v) for v in self.source_observations
-        ]
+        self.source_observations = [v if isinstance(v, ObservationName) else ObservationName(v) for v in self.source_observations]
 
         super().__post_init__(**kwargs)
 
@@ -1320,45 +1308,27 @@ class Dynamics(YAMLRoot):
     has_reference: Optional[str] = None
     label: Optional[str] = None
     iri: Optional[str] = None
-    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = (
-        empty_dict()
-    )
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
     description: Optional[str] = None
     source: Optional[str] = None
     references: Optional[Union[str, list[str]]] = empty_list()
-    derived_parameters: Optional[
-        Union[dict[Union[str, DerivedParameterName], Union[dict, "DerivedParameter"]], list[Union[dict, "DerivedParameter"]]]
-    ] = empty_dict()
-    derived_variables: Optional[
-        Union[dict[Union[str, DerivedVariableName], Union[dict, "DerivedVariable"]], list[Union[dict, "DerivedVariable"]]]
-    ] = empty_dict()
-    coupling_terms: Optional[
-        Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]
-    ] = empty_dict()
-    coupling_inputs: Optional[
-        Union[dict[Union[str, CouplingInputName], Union[dict, "CouplingInput"]], list[Union[dict, "CouplingInput"]]]
-    ] = empty_dict()
-    state_variables: Optional[
-        Union[dict[Union[str, StateVariableName], Union[dict, "StateVariable"]], list[Union[dict, "StateVariable"]]]
-    ] = empty_dict()
+    derived_parameters: Optional[Union[dict[Union[str, DerivedParameterName], Union[dict, "DerivedParameter"]], list[Union[dict, "DerivedParameter"]]]] = empty_dict()
+    derived_variables: Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, "DerivedVariable"]], list[Union[dict, "DerivedVariable"]]]] = empty_dict()
+    coupling_terms: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
+    coupling_inputs: Optional[Union[dict[Union[str, CouplingInputName], Union[dict, "CouplingInput"]], list[Union[dict, "CouplingInput"]]]] = empty_dict()
+    state_variables: Optional[Union[dict[Union[str, StateVariableName], Union[dict, "StateVariable"]], list[Union[dict, "StateVariable"]]]] = empty_dict()
     modified: Optional[Union[bool, Bool]] = None
     output: Optional[Union[str, list[str]]] = empty_list()
     derived_from_model: Optional[Union[str, DynamicsName]] = None
     number_of_modes: Optional[int] = 1
     local_coupling_term: Optional[Union[str, ParameterName]] = None
-    functions: Optional[Union[dict[Union[str, FunctionName], Union[dict, "Function"]], list[Union[dict, "Function"]]]] = (
-        empty_dict()
-    )
+    functions: Optional[Union[dict[Union[str, FunctionName], Union[dict, "Function"]], list[Union[dict, "Function"]]]] = empty_dict()
     stimulus: Optional[Union[dict, Stimulus]] = None
-    modes: Optional[Union[dict[Union[str, DynamicsName], Union[dict, "Dynamics"]], list[Union[dict, "Dynamics"]]]] = (
-        empty_dict()
-    )
+    modes: Optional[Union[dict[Union[str, DynamicsName], Union[dict, "Dynamics"]], list[Union[dict, "Dynamics"]]]] = empty_dict()
     model_type: Optional[Union[str, "ModelType"]] = None
     system_type: Optional[Union[str, "SystemType"]] = None
     autonomous: Optional[Union[bool, Bool]] = True
-    observed: Optional[
-        Union[dict[Union[str, DerivedVariableName], Union[dict, "DerivedVariable"]], list[Union[dict, "DerivedVariable"]]]
-    ] = empty_dict()
+    observed: Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, "DerivedVariable"]], list[Union[dict, "DerivedVariable"]]]] = empty_dict()
     events: Optional[Union[dict[Union[str, EventName], Union[dict, Event]], list[Union[dict, Event]]]] = empty_dict()
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -1388,9 +1358,7 @@ class Dynamics(YAMLRoot):
             self.references = [self.references] if self.references is not None else []
         self.references = [v if isinstance(v, str) else str(v) for v in self.references]
 
-        self._normalize_inlined_as_dict(
-            slot_name="derived_parameters", slot_type=DerivedParameter, key_name="name", keyed=True
-        )
+        self._normalize_inlined_as_dict(slot_name="derived_parameters", slot_type=DerivedParameter, key_name="name", keyed=True)
 
         self._normalize_inlined_as_dict(slot_name="derived_variables", slot_type=DerivedVariable, key_name="name", keyed=True)
 
@@ -1545,7 +1513,6 @@ class Distribution(YAMLRoot):
     Gaussian) are specified by name and domain/parameters. Custom distributions use a Function for the PDF/sampling
     rule. Default name is Uniform when only domain is given.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["Distribution"]
@@ -1554,13 +1521,11 @@ class Distribution(YAMLRoot):
     class_model_uri: ClassVar[URIRef] = TVBO.Distribution
 
     name: Union[str, DistributionName] = "Uniform"
-    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = (
-        empty_dict()
-    )
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
     domain: Optional[Union[dict, Range]] = None
     function: Optional[Union[dict, "Function"]] = None
     seed: Optional[int] = None
-    axis: Optional[Union[str, "SamplingAxis"]] = "space"
+    axis: Optional[Union[str, "SamplingAxis"]] = 'space'
     correlation: Optional[Union[dict, Matrix]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -1688,7 +1653,6 @@ class CouplingInput(YAMLRoot):
     """
     Specification of a coupling input channel for multi-coupling dynamics
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["CouplingInput"]
@@ -1730,7 +1694,6 @@ class Argument(YAMLRoot):
     A function argument with explicit value specification. Value can be: literal (number/string), reference to input
     (input.key), or cross-observation reference (observation_name.output_key).
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["Argument"]
@@ -1767,7 +1730,6 @@ class Function(YAMLRoot):
     A function with explicit input -> transformation -> output flow. Can be equation-based (symbolic) or
     software-based (callable). In a pipeline, functions are chained: output of one becomes input of next.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["Function"]
@@ -1781,15 +1743,11 @@ class Function(YAMLRoot):
     equation: Optional[Union[dict, Equation]] = None
     definition: Optional[str] = None
     description: Optional[str] = None
-    requirements: Optional[Union[Union[str, SoftwareRequirementName], list[Union[str, SoftwareRequirementName]]]] = (
-        empty_list()
-    )
+    requirements: Optional[Union[Union[str, SoftwareRequirementName], list[Union[str, SoftwareRequirementName]]]] = empty_list()
     input: Optional[Union[str, FunctionName]] = None
     output: Optional[str] = None
     iri: Optional[str] = None
-    arguments: Optional[Union[dict[Union[str, ArgumentName], Union[dict, Argument]], list[Union[dict, Argument]]]] = (
-        empty_dict()
-    )
+    arguments: Optional[Union[dict[Union[str, ArgumentName], Union[dict, Argument]], list[Union[dict, Argument]]]] = empty_dict()
     output_equation: Optional[Union[dict, Equation]] = None
     source_code: Optional[str] = None
     callable: Optional[Union[dict, "Callable"]] = None
@@ -1820,9 +1778,7 @@ class Function(YAMLRoot):
 
         if not isinstance(self.requirements, list):
             self.requirements = [self.requirements] if self.requirements is not None else []
-        self.requirements = [
-            v if isinstance(v, SoftwareRequirementName) else SoftwareRequirementName(v) for v in self.requirements
-        ]
+        self.requirements = [v if isinstance(v, SoftwareRequirementName) else SoftwareRequirementName(v) for v in self.requirements]
 
         if self.input is not None and not isinstance(self.input, FunctionName):
             self.input = FunctionName(self.input)
@@ -1862,7 +1818,6 @@ class Aggregation(YAMLRoot):
     Specifies how to aggregate values across a dimension. Used for loss functions to define per-element loss with
     reduction.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["Aggregation"]
@@ -1871,7 +1826,7 @@ class Aggregation(YAMLRoot):
     class_model_uri: ClassVar[URIRef] = TVBO.Aggregation
 
     over: Optional[Union[str, "DimensionType"]] = None
-    type: Optional[Union[str, "ReductionType"]] = "mean"
+    type: Optional[Union[str, "ReductionType"]] = 'mean'
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self.over is not None and not isinstance(self.over, DimensionType):
@@ -1889,7 +1844,6 @@ class LossFunction(Function):
     A loss function for optimization with optional aggregation. Extends Function with aggregation specification for
     per-element losses.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["LossFunction"]
@@ -1919,7 +1873,6 @@ class FunctionCall(YAMLRoot):
     for external library functions, OR inline an equation, OR use class_call for class instantiation. Mirrors Function
     attributes so pipeline steps can be self-contained.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["FunctionCall"]
@@ -1939,9 +1892,7 @@ class FunctionCall(YAMLRoot):
     output: Optional[str] = None
     apply_on_dimension: Optional[Union[str, "DimensionType"]] = None
     aggregate: Optional[Union[dict, Aggregation]] = None
-    arguments: Optional[Union[dict[Union[str, ArgumentName], Union[dict, Argument]], list[Union[dict, Argument]]]] = (
-        empty_dict()
-    )
+    arguments: Optional[Union[dict[Union[str, ArgumentName], Union[dict, Argument]], list[Union[dict, Argument]]]] = empty_dict()
     time_range: Optional[Union[dict, Range]] = None
     source_code: Optional[str] = None
 
@@ -2032,7 +1983,6 @@ class ClassReference(Callable):
     custom monitors). The class is instantiated with constructor_args, then called with call_args. Generalizable
     pattern: works for tvboptim, TVB, or any Python class.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["ClassReference"]
@@ -2041,12 +1991,8 @@ class ClassReference(Callable):
     class_model_uri: ClassVar[URIRef] = TVBO.ClassReference
 
     name: Union[str, ClassReferenceName] = None
-    constructor_args: Optional[Union[dict[Union[str, ArgumentName], Union[dict, Argument]], list[Union[dict, Argument]]]] = (
-        empty_dict()
-    )
-    call_args: Optional[Union[dict[Union[str, ArgumentName], Union[dict, Argument]], list[Union[dict, Argument]]]] = (
-        empty_dict()
-    )
+    constructor_args: Optional[Union[dict[Union[str, ArgumentName], Union[dict, Argument]], list[Union[dict, Argument]]]] = empty_dict()
+    call_args: Optional[Union[dict[Union[str, ArgumentName], Union[dict, Argument]], list[Union[dict, Argument]]]] = empty_dict()
     warmup_source: Optional[str] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -2185,9 +2131,7 @@ class Noise(YAMLRoot):
     class_name: ClassVar[str] = "Noise"
     class_model_uri: ClassVar[URIRef] = TVBO.Noise
 
-    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = (
-        empty_dict()
-    )
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
     equation: Optional[Union[dict, Equation]] = None
     noise_type: Optional[str] = "gaussian"
     correlated: Optional[Union[bool, Bool]] = False
@@ -2198,9 +2142,7 @@ class Noise(YAMLRoot):
     intensity: Optional[Union[dict, Parameter]] = None
     function: Optional[Union[dict, Function]] = None
     pycode: Optional[str] = None
-    targets: Optional[
-        Union[dict[Union[str, StateVariableName], Union[dict, StateVariable]], list[Union[dict, StateVariable]]]
-    ] = empty_dict()
+    targets: Optional[Union[dict[Union[str, StateVariableName], Union[dict, StateVariable]], list[Union[dict, StateVariable]]]] = empty_dict()
 
     def __post_init__(self, *_: str, **kwargs: Any):
         self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
@@ -2271,7 +2213,6 @@ class DataSource(YAMLRoot):
     """
     Specification for loading external/empirical data.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["DataSource"]
@@ -2324,7 +2265,6 @@ class OptimizationStage(YAMLRoot):
     A single stage in a multi-stage optimization workflow. Stages run sequentially, with each stage potentially using
     different parameters, shapes, learning rates, and algorithms.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["OptimizationStage"]
@@ -2339,9 +2279,7 @@ class OptimizationStage(YAMLRoot):
     algorithm: Optional[str] = "adam"
     learning_rate: Optional[float] = 0.001
     max_iterations: Optional[int] = 100
-    hyperparameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = (
-        empty_dict()
-    )
+    hyperparameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
     freeze_parameters: Optional[Union[Union[str, ParameterName], list[Union[str, ParameterName]]]] = empty_list()
     warmup_from: Optional[Union[str, OptimizationStageName]] = None
 
@@ -2389,7 +2327,6 @@ class Optimization(OptimizationStage):
     workflows, use 'stages' (ignores inherited single-stage fields). Loss equation references observations directly by
     name.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["Optimization"]
@@ -2401,9 +2338,7 @@ class Optimization(OptimizationStage):
     execution: Optional[Union[dict, "ExecutionConfig"]] = None
     integration: Optional[Union[dict, "Integrator"]] = None
     loss: Optional[Union[dict, FunctionCall]] = None
-    stages: Optional[
-        Union[dict[Union[str, OptimizationStageName], Union[dict, OptimizationStage]], list[Union[dict, OptimizationStage]]]
-    ] = empty_dict()
+    stages: Optional[Union[dict[Union[str, OptimizationStageName], Union[dict, OptimizationStage]], list[Union[dict, OptimizationStage]]]] = empty_dict()
     depends_on: Optional[Union[str, AlgorithmName]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -2434,7 +2369,6 @@ class Exploration(YAMLRoot):
     """
     Parameter space exploration (grid search, sweep).
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["Exploration"]
@@ -2446,9 +2380,7 @@ class Exploration(YAMLRoot):
     label: Optional[str] = None
     description: Optional[str] = None
     execution: Optional[Union[dict, "ExecutionConfig"]] = None
-    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = (
-        empty_dict()
-    )
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
     mode: Optional[str] = "product"
     observable: Optional[Union[dict, FunctionCall]] = None
     n_parallel: Optional[int] = 1
@@ -2496,7 +2428,6 @@ class UpdateRule(YAMLRoot):
     Defines how a parameter is updated based on observables. Represents iterative learning rules like FIC or EIB
     updates. Functions from experiment.functions are available in the equation.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["UpdateRule"]
@@ -2550,7 +2481,6 @@ class AlgorithmInclude(YAMLRoot):
     Reference to an included algorithm with optional argument overrides. Allows combining algorithms with different
     hyperparameter values.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["AlgorithmInclude"]
@@ -2559,9 +2489,7 @@ class AlgorithmInclude(YAMLRoot):
     class_model_uri: ClassVar[URIRef] = TVBO.AlgorithmInclude
 
     algorithm: Union[str, AlgorithmName] = None
-    arguments: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = (
-        empty_dict()
-    )
+    arguments: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.algorithm):
@@ -2579,7 +2507,6 @@ class TuningObjective(YAMLRoot):
     """
     Defines what the tuning algorithm optimizes for. Can be an activity target (FIC) or a connectivity target (EIB).
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["TuningObjective"]
@@ -2626,7 +2553,6 @@ class Algorithm(YAMLRoot):
     A complete specification of an iterative parameter tuning algorithm. Combines update rules, objectives,
     observations, and hyperparameters.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["Algorithm"]
@@ -2641,12 +2567,8 @@ class Algorithm(YAMLRoot):
     includes: Optional[Union[Union[dict, AlgorithmInclude], list[Union[dict, AlgorithmInclude]]]] = empty_list()
     objective: Optional[Union[dict, TuningObjective]] = None
     observations: Optional[Union[Union[str, ObservationName], list[Union[str, ObservationName]]]] = empty_list()
-    update_rules: Optional[Union[dict[Union[str, UpdateRuleName], Union[dict, UpdateRule]], list[Union[dict, UpdateRule]]]] = (
-        empty_dict()
-    )
-    hyperparameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = (
-        empty_dict()
-    )
+    update_rules: Optional[Union[dict[Union[str, UpdateRuleName], Union[dict, UpdateRule]], list[Union[dict, UpdateRule]]]] = empty_dict()
+    hyperparameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
     learning_rate: Optional[float] = None
     learning_rate_warmup: Optional[Union[bool, Bool]] = False
     n_iterations: Optional[int] = None
@@ -2721,7 +2643,6 @@ class Option(YAMLRoot):
     A toolkit-specific key-value option (string name + string value). Used for backend settings that are not universal
     numeric parameters (e.g., solver name, tangent method, jacobian type).
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["Option"]
@@ -2752,7 +2673,6 @@ class Discretization(YAMLRoot):
     Discretization method for boundary value problems in continuation (periodic orbits, connecting orbits,
     quasi-periodic tori). Specifies the method; method-specific numerics go in parameters.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["Discretization"]
@@ -2760,10 +2680,8 @@ class Discretization(YAMLRoot):
     class_name: ClassVar[str] = "Discretization"
     class_model_uri: ClassVar[URIRef] = TVBO.Discretization
 
-    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = (
-        empty_dict()
-    )
-    method: Optional[Union[str, "NumericalDiscretizationMethod"]] = "collocation"
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
+    method: Optional[Union[str, "NumericalDiscretizationMethod"]] = 'collocation'
     ode_solver: Optional[Union[dict, "Solver"]] = None
     linear_solver: Optional[Union[dict, "Solver"]] = None
     mesh_intervals: Optional[int] = 50
@@ -2803,7 +2721,6 @@ class InitialState(YAMLRoot):
     How to obtain the starting equilibrium or periodic orbit for continuation. Most robust: time-integrate to steady
     state.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["InitialState"]
@@ -2811,7 +2728,7 @@ class InitialState(YAMLRoot):
     class_name: ClassVar[str] = "InitialState"
     class_model_uri: ClassVar[URIRef] = TVBO.InitialState
 
-    method: Optional[Union[str, "InitialStateMethod"]] = "time_integration"
+    method: Optional[Union[str, "InitialStateMethod"]] = 'time_integration'
     duration: Optional[float] = 2000.0
     abs_tol: Optional[float] = 1e-10
     rel_tol: Optional[float] = 1e-10
@@ -2852,7 +2769,6 @@ class BranchSwitch(YAMLRoot):
     object, with what settings." Override parent solver settings via the inline continuation field — only explicitly
     set attributes take effect; everything else is inherited from the parent Continuation.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["BranchSwitch"]
@@ -2862,9 +2778,7 @@ class BranchSwitch(YAMLRoot):
 
     name: Union[str, BranchSwitchName] = None
     description: Optional[str] = None
-    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = (
-        empty_dict()
-    )
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
     source_point: Optional[str] = None
     delta_p: Optional[float] = None
     continuation: Optional[Union[dict, "Continuation"]] = None
@@ -2910,7 +2824,6 @@ class Continuation(YAMLRoot):
     directly here. Toolkit-specific string options go in the options slot. When used inside a BranchSwitch, only
     explicitly set attributes override the parent's values.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["Continuation"]
@@ -2922,9 +2835,7 @@ class Continuation(YAMLRoot):
     label: Optional[str] = None
     description: Optional[str] = None
     dynamics: Optional[Union[str, DynamicsName]] = None
-    free_parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = (
-        empty_dict()
-    )
+    free_parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
     ds: Optional[float] = None
     ds_min: Optional[float] = None
     ds_max: Optional[float] = None
@@ -2937,11 +2848,9 @@ class Continuation(YAMLRoot):
     detect_fold: Optional[Union[bool, Bool]] = None
     n_inversion: Optional[int] = None
     max_bisection_steps: Optional[int] = None
-    algorithm: Optional[Union[str, "ContinuationAlgorithm"]] = "PALC"
+    algorithm: Optional[Union[str, "ContinuationAlgorithm"]] = 'PALC'
     initial_state: Optional[Union[dict, InitialState]] = None
-    branches: Optional[
-        Union[dict[Union[str, BranchSwitchName], Union[dict, BranchSwitch]], list[Union[dict, BranchSwitch]]]
-    ] = empty_dict()
+    branches: Optional[Union[dict[Union[str, BranchSwitchName], Union[dict, BranchSwitch]], list[Union[dict, BranchSwitch]]]] = empty_dict()
     bothside: Optional[Union[bool, Bool]] = None
     execution: Optional[Union[dict, "ExecutionConfig"]] = None
     software: Optional[Union[dict, "SoftwareRequirement"]] = None
@@ -3029,7 +2938,6 @@ class Solver(YAMLRoot):
     etc.) used in shooting methods, initial-state integration, and other contexts where only the algorithm and
     tolerances matter.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["Solver"]
@@ -3060,7 +2968,6 @@ class Integrator(Solver):
     Fixed-step or adaptive ODE integrator with TVB-specific extensions (noise, transient time, etc.). Inherits
     abs_tol, rel_tol from Solver. Overrides method default to 'euler'.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["Integrator"]
@@ -3068,11 +2975,9 @@ class Integrator(Solver):
     class_name: ClassVar[str] = "Integrator"
     class_model_uri: ClassVar[URIRef] = TVBO.Integrator
 
-    time_scale: Optional[Union[str, "UnitEnum"]] = "ms"
+    time_scale: Optional[Union[str, "UnitEnum"]] = 'ms'
     unit: Optional[Union[str, "UnitEnum"]] = None
-    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = (
-        empty_dict()
-    )
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
     duration: Optional[float] = 1000
     description: Optional[str] = None
     method: Optional[str] = "euler"
@@ -3083,9 +2988,7 @@ class Integrator(Solver):
     transient_time: Optional[float] = 0
     scipy_ode_base: Optional[Union[bool, Bool]] = False
     number_of_stages: Optional[int] = 1
-    intermediate_expressions: Optional[
-        Union[dict[Union[str, DerivedVariableName], Union[dict, DerivedVariable]], list[Union[dict, DerivedVariable]]]
-    ] = empty_dict()
+    intermediate_expressions: Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, DerivedVariable]], list[Union[dict, DerivedVariable]]]] = empty_dict()
     update_expression: Optional[Union[dict, DerivedVariable]] = None
     delayed: Optional[Union[bool, Bool]] = True
 
@@ -3129,9 +3032,7 @@ class Integrator(Solver):
         if self.number_of_stages is not None and not isinstance(self.number_of_stages, int):
             self.number_of_stages = int(self.number_of_stages)
 
-        self._normalize_inlined_as_dict(
-            slot_name="intermediate_expressions", slot_type=DerivedVariable, key_name="name", keyed=True
-        )
+        self._normalize_inlined_as_dict(slot_name="intermediate_expressions", slot_type=DerivedVariable, key_name="name", keyed=True)
 
         if self.update_expression is not None and not isinstance(self.update_expression, DerivedVariable):
             self.update_expression = DerivedVariable(**as_dict(self.update_expression))
@@ -3154,9 +3055,7 @@ class Coupling(YAMLRoot):
     name: Union[str, CouplingName] = "Linear"
     label: Optional[str] = None
     iri: Optional[str] = None
-    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = (
-        empty_dict()
-    )
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
     description: Optional[str] = None
     coupling_function: Optional[Union[dict, Equation]] = None
     sparse: Optional[Union[bool, Bool]] = False
@@ -3167,9 +3066,7 @@ class Coupling(YAMLRoot):
     delayed: Optional[Union[bool, Bool]] = True
     symmetry: Optional[str] = "directed"
     outsym: Optional[Union[str, list[str]]] = empty_list()
-    observed: Optional[
-        Union[dict[Union[str, DerivedVariableName], Union[dict, DerivedVariable]], list[Union[dict, DerivedVariable]]]
-    ] = empty_dict()
+    observed: Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, DerivedVariable]], list[Union[dict, DerivedVariable]]]] = empty_dict()
     inner_coupling: Optional[Union[dict, "Coupling"]] = None
     region_mapping: Optional[Union[dict, "RegionMapping"]] = None
     regional_connectivity: Optional[Union[dict, Network]] = None
@@ -3248,7 +3145,6 @@ class RegionMapping(YAMLRoot):
     """
     Maps vertices to parent regions for hierarchical/aggregated coupling
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["RegionMapping"]
@@ -3314,7 +3210,6 @@ class ExecutionConfig(YAMLRoot):
     """
     Configuration for computational execution (parallelization, precision, hardware).
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["ExecutionConfig"]
@@ -3374,30 +3269,16 @@ class SimulationExperiment(YAMLRoot):
     connectivity: Optional[Union[dict, Network]] = None
     network: Optional[Union[dict, Network]] = None
     coupling: Optional[Union[dict, Coupling]] = None
-    observations: Optional[
-        Union[dict[Union[str, ObservationName], Union[dict, Observation]], list[Union[dict, Observation]]]
-    ] = empty_dict()
-    derived_observations: Optional[
-        Union[dict[Union[str, DerivedObservationName], Union[dict, DerivedObservation]], list[Union[dict, DerivedObservation]]]
-    ] = empty_dict()
-    functions: Optional[Union[dict[Union[str, FunctionName], Union[dict, Function]], list[Union[dict, Function]]]] = (
-        empty_dict()
-    )
+    observations: Optional[Union[dict[Union[str, ObservationName], Union[dict, Observation]], list[Union[dict, Observation]]]] = empty_dict()
+    derived_observations: Optional[Union[dict[Union[str, DerivedObservationName], Union[dict, DerivedObservation]], list[Union[dict, DerivedObservation]]]] = empty_dict()
+    functions: Optional[Union[dict[Union[str, FunctionName], Union[dict, Function]], list[Union[dict, Function]]]] = empty_dict()
     stimulation: Optional[Union[dict, Stimulus]] = None
     events: Optional[Union[dict[Union[str, EventName], Union[dict, Event]], list[Union[dict, Event]]]] = empty_dict()
     field_dynamics: Optional[Union[dict, "PDE"]] = None
-    optimizations: Optional[
-        Union[dict[Union[str, OptimizationName], Union[dict, Optimization]], list[Union[dict, Optimization]]]
-    ] = empty_dict()
-    explorations: Optional[
-        Union[dict[Union[str, ExplorationName], Union[dict, Exploration]], list[Union[dict, Exploration]]]
-    ] = empty_dict()
-    algorithms: Optional[Union[dict[Union[str, AlgorithmName], Union[dict, Algorithm]], list[Union[dict, Algorithm]]]] = (
-        empty_dict()
-    )
-    continuations: Optional[
-        Union[dict[Union[str, ContinuationName], Union[dict, Continuation]], list[Union[dict, Continuation]]]
-    ] = empty_dict()
+    optimizations: Optional[Union[dict[Union[str, OptimizationName], Union[dict, Optimization]], list[Union[dict, Optimization]]]] = empty_dict()
+    explorations: Optional[Union[dict[Union[str, ExplorationName], Union[dict, Exploration]], list[Union[dict, Exploration]]]] = empty_dict()
+    algorithms: Optional[Union[dict[Union[str, AlgorithmName], Union[dict, Algorithm]], list[Union[dict, Algorithm]]]] = empty_dict()
+    continuations: Optional[Union[dict[Union[str, ContinuationName], Union[dict, Continuation]], list[Union[dict, Continuation]]]] = empty_dict()
     environment: Optional[Union[dict, "SoftwareEnvironment"]] = None
     execution: Optional[Union[dict, ExecutionConfig]] = None
     software: Optional[Union[dict, "SoftwareRequirement"]] = None
@@ -3418,9 +3299,7 @@ class SimulationExperiment(YAMLRoot):
 
         if not isinstance(self.additional_equations, list):
             self.additional_equations = [self.additional_equations] if self.additional_equations is not None else []
-        self.additional_equations = [
-            v if isinstance(v, Equation) else Equation(**as_dict(v)) for v in self.additional_equations
-        ]
+        self.additional_equations = [v if isinstance(v, Equation) else Equation(**as_dict(v)) for v in self.additional_equations]
 
         if self.label is not None and not isinstance(self.label, str):
             self.label = str(self.label)
@@ -3442,9 +3321,7 @@ class SimulationExperiment(YAMLRoot):
 
         self._normalize_inlined_as_dict(slot_name="observations", slot_type=Observation, key_name="name", keyed=True)
 
-        self._normalize_inlined_as_dict(
-            slot_name="derived_observations", slot_type=DerivedObservation, key_name="name", keyed=True
-        )
+        self._normalize_inlined_as_dict(slot_name="derived_observations", slot_type=DerivedObservation, key_name="name", keyed=True)
 
         self._normalize_inlined_as_dict(slot_name="functions", slot_type=Function, key_name="name", keyed=True)
 
@@ -3501,12 +3378,7 @@ class SimulationStudy(YAMLRoot):
     year: Optional[int] = None
     doi: Optional[str] = None
     sample: Optional[Union[dict, Sample]] = None
-    experiments: Optional[
-        Union[
-            dict[Union[int, SimulationExperimentId], Union[dict, SimulationExperiment]],
-            list[Union[dict, SimulationExperiment]],
-        ]
-    ] = empty_dict()
+    experiments: Optional[Union[dict[Union[int, SimulationExperimentId], Union[dict, SimulationExperiment]], list[Union[dict, SimulationExperiment]]]] = empty_dict()
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self.label is not None and not isinstance(self.label, str):
@@ -3547,7 +3419,6 @@ class TimeSeries(YAMLRoot):
     Time series data from simulations or measurements. Supports BIDS-compatible export for computational modeling
     (BEP034).
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["TimeSeries"]
@@ -3844,9 +3715,7 @@ class FieldStateVariable(StateVariable):
     label: Optional[str] = None
     description: Optional[str] = None
     mesh: Optional[Union[dict, Mesh]] = None
-    boundary_conditions: Optional[Union[Union[dict, "BoundaryCondition"], list[Union[dict, "BoundaryCondition"]]]] = (
-        empty_list()
-    )
+    boundary_conditions: Optional[Union[Union[dict, "BoundaryCondition"], list[Union[dict, "BoundaryCondition"]]]] = empty_list()
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
@@ -3865,9 +3734,7 @@ class FieldStateVariable(StateVariable):
 
         if not isinstance(self.boundary_conditions, list):
             self.boundary_conditions = [self.boundary_conditions] if self.boundary_conditions is not None else []
-        self.boundary_conditions = [
-            v if isinstance(v, BoundaryCondition) else BoundaryCondition(**as_dict(v)) for v in self.boundary_conditions
-        ]
+        self.boundary_conditions = [v if isinstance(v, BoundaryCondition) else BoundaryCondition(**as_dict(v)) for v in self.boundary_conditions]
 
         super().__post_init__(**kwargs)
 
@@ -3963,9 +3830,7 @@ class PDESolver(YAMLRoot):
 
     label: Optional[str] = None
     description: Optional[str] = None
-    requirements: Optional[Union[Union[str, SoftwareRequirementName], list[Union[str, SoftwareRequirementName]]]] = (
-        empty_list()
-    )
+    requirements: Optional[Union[Union[str, SoftwareRequirementName], list[Union[str, SoftwareRequirementName]]]] = empty_list()
     environment: Optional[Union[dict, "SoftwareEnvironment"]] = None
     discretization: Optional[Union[str, "DiscretizationMethod"]] = None
     time_integrator: Optional[str] = None
@@ -3982,9 +3847,7 @@ class PDESolver(YAMLRoot):
 
         if not isinstance(self.requirements, list):
             self.requirements = [self.requirements] if self.requirements is not None else []
-        self.requirements = [
-            v if isinstance(v, SoftwareRequirementName) else SoftwareRequirementName(v) for v in self.requirements
-        ]
+        self.requirements = [v if isinstance(v, SoftwareRequirementName) else SoftwareRequirementName(v) for v in self.requirements]
 
         if self.environment is not None and not isinstance(self.environment, SoftwareEnvironment):
             self.environment = SoftwareEnvironment(**as_dict(self.environment))
@@ -4012,7 +3875,6 @@ class PDE(YAMLRoot):
     """
     Partial differential equation problem definition.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["PDE"]
@@ -4022,22 +3884,16 @@ class PDE(YAMLRoot):
 
     label: Optional[str] = None
     description: Optional[str] = None
-    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = (
-        empty_dict()
-    )
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
     domain: Optional[Union[dict, SpatialDomain]] = None
     mesh: Optional[Union[dict, Mesh]] = None
-    state_variables: Optional[
-        Union[dict[Union[str, FieldStateVariableName], Union[dict, FieldStateVariable]], list[Union[dict, FieldStateVariable]]]
-    ] = empty_dict()
+    state_variables: Optional[Union[dict[Union[str, FieldStateVariableName], Union[dict, FieldStateVariable]], list[Union[dict, FieldStateVariable]]]] = empty_dict()
     field: Optional[Union[dict, SpatialField]] = None
     operators: Optional[Union[Union[dict, DifferentialOperator], list[Union[dict, DifferentialOperator]]]] = empty_list()
     sources: Optional[Union[Union[dict, Equation], list[Union[dict, Equation]]]] = empty_list()
     boundary_conditions: Optional[Union[Union[dict, BoundaryCondition], list[Union[dict, BoundaryCondition]]]] = empty_list()
     solver: Optional[Union[dict, PDESolver]] = None
-    derived_parameters: Optional[Union[Union[str, DerivedParameterName], list[Union[str, DerivedParameterName]]]] = (
-        empty_list()
-    )
+    derived_parameters: Optional[Union[Union[str, DerivedParameterName], list[Union[str, DerivedParameterName]]]] = empty_list()
     derived_variables: Optional[Union[Union[str, DerivedVariableName], list[Union[str, DerivedVariableName]]]] = empty_list()
     functions: Optional[Union[Union[str, FunctionName], list[Union[str, FunctionName]]]] = empty_list()
 
@@ -4063,9 +3919,7 @@ class PDE(YAMLRoot):
 
         if not isinstance(self.operators, list):
             self.operators = [self.operators] if self.operators is not None else []
-        self.operators = [
-            v if isinstance(v, DifferentialOperator) else DifferentialOperator(**as_dict(v)) for v in self.operators
-        ]
+        self.operators = [v if isinstance(v, DifferentialOperator) else DifferentialOperator(**as_dict(v)) for v in self.operators]
 
         if not isinstance(self.sources, list):
             self.sources = [self.sources] if self.sources is not None else []
@@ -4073,24 +3927,18 @@ class PDE(YAMLRoot):
 
         if not isinstance(self.boundary_conditions, list):
             self.boundary_conditions = [self.boundary_conditions] if self.boundary_conditions is not None else []
-        self.boundary_conditions = [
-            v if isinstance(v, BoundaryCondition) else BoundaryCondition(**as_dict(v)) for v in self.boundary_conditions
-        ]
+        self.boundary_conditions = [v if isinstance(v, BoundaryCondition) else BoundaryCondition(**as_dict(v)) for v in self.boundary_conditions]
 
         if self.solver is not None and not isinstance(self.solver, PDESolver):
             self.solver = PDESolver(**as_dict(self.solver))
 
         if not isinstance(self.derived_parameters, list):
             self.derived_parameters = [self.derived_parameters] if self.derived_parameters is not None else []
-        self.derived_parameters = [
-            v if isinstance(v, DerivedParameterName) else DerivedParameterName(v) for v in self.derived_parameters
-        ]
+        self.derived_parameters = [v if isinstance(v, DerivedParameterName) else DerivedParameterName(v) for v in self.derived_parameters]
 
         if not isinstance(self.derived_variables, list):
             self.derived_variables = [self.derived_variables] if self.derived_variables is not None else []
-        self.derived_variables = [
-            v if isinstance(v, DerivedVariableName) else DerivedVariableName(v) for v in self.derived_variables
-        ]
+        self.derived_variables = [v if isinstance(v, DerivedVariableName) else DerivedVariableName(v) for v in self.derived_variables]
 
         if not isinstance(self.functions, list):
             self.functions = [self.functions] if self.functions is not None else []
@@ -4104,7 +3952,6 @@ class Coordinate(YAMLRoot):
     """
     A 3D coordinate with X, Y, Z values.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = ATOM["Coordinate"]
@@ -4138,7 +3985,6 @@ class BrainAtlas(YAMLRoot):
     """
     A schema for representing a version of a brain atlas.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = ATOM["atlas/Atlas"]
@@ -4187,7 +4033,6 @@ class CommonCoordinateSpace(YAMLRoot):
     """
     A schema for representing a version of a common coordinate space.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = ATOM["atlas/Transformation"]
@@ -4240,7 +4085,6 @@ class ParcellationEntity(YAMLRoot):
     """
     A schema for representing a parcellation entity, which is an anatomical location or study target.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = ATOM["atlas/Region"]
@@ -4311,7 +4155,6 @@ class ParcellationTerminology(YAMLRoot):
     """
     A schema for representing a parcellation terminology, which consists of parcellation entities.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = ATOM["parcellationTerminology"]
@@ -4323,9 +4166,7 @@ class ParcellationTerminology(YAMLRoot):
     dataLocation: Optional[str] = None
     ontologyIdentifier: Optional[Union[str, list[str]]] = empty_list()
     versionIdentifier: Optional[str] = None
-    entities: Optional[
-        Union[dict[Union[str, ParcellationEntityName], Union[dict, ParcellationEntity]], list[Union[dict, ParcellationEntity]]]
-    ] = empty_dict()
+    entities: Optional[Union[dict[Union[str, ParcellationEntityName], Union[dict, ParcellationEntity]], list[Union[dict, ParcellationEntity]]]] = empty_dict()
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self.label is not None and not isinstance(self.label, str):
@@ -4352,7 +4193,6 @@ class Subject(YAMLRoot):
     A participant in a study. Each subject typically has their own brain network (connectome) and empirical
     recordings. Corresponds to a BIDS 'sub-' entity.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO_STUDY["Subject"]
@@ -4365,9 +4205,7 @@ class Subject(YAMLRoot):
     group: Optional[str] = None
     age: Optional[float] = None
     sex: Optional[Union[str, "SexEnum"]] = None
-    sessions: Optional[Union[dict[Union[str, SessionSessionId], Union[dict, "Session"]], list[Union[dict, "Session"]]]] = (
-        empty_dict()
-    )
+    sessions: Optional[Union[dict[Union[str, SessionSessionId], Union[dict, "Session"]], list[Union[dict, "Session"]]]] = empty_dict()
     network: Optional[str] = None
     metadata: Optional[str] = None
 
@@ -4406,7 +4244,6 @@ class Session(YAMLRoot):
     A data collection session for a subject. Corresponds to a BIDS 'ses-' entity. Sessions capture longitudinal
     timepoints (baseline, follow-up), different experimental conditions, or repeated measures.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO_STUDY["Session"]
@@ -4448,7 +4285,6 @@ class Dataset(YAMLRoot):
     A collection of subjects for a multi-subject study. Provides the subject/session structure needed for workflow
     rendering. Optionally backed by a BIDS directory layout.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO_STUDY["Dataset"]
@@ -4460,9 +4296,7 @@ class Dataset(YAMLRoot):
     label: Optional[str] = None
     description: Optional[str] = None
     bids_root: Optional[str] = None
-    subjects: Optional[Union[dict[Union[str, SubjectSubjectId], Union[dict, Subject]], list[Union[dict, Subject]]]] = (
-        empty_dict()
-    )
+    subjects: Optional[Union[dict[Union[str, SubjectSubjectId], Union[dict, Subject]], list[Union[dict, Subject]]]] = empty_dict()
     conditions: Optional[Union[str, list[str]]] = empty_list()
     reference: Optional[str] = None
 
@@ -4498,7 +4332,6 @@ class DBSDataset(Dataset):
     """
     Collection of data related to a specific DBS study.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO_DBS["DBSDataset"]
@@ -4509,9 +4342,7 @@ class DBSDataset(Dataset):
     dataset_id: Union[str, DBSDatasetDatasetId] = None
     clinical_scores: Optional[Union[Union[dict, "ClinicalScore"], list[Union[dict, "ClinicalScore"]]]] = empty_list()
     coordinate_space: Optional[Union[str, CommonCoordinateSpaceName]] = None
-    subjects: Optional[
-        Union[dict[Union[str, DBSSubjectSubjectId], Union[dict, "DBSSubject"]], list[Union[dict, "DBSSubject"]]]
-    ] = empty_dict()
+    subjects: Optional[Union[dict[Union[str, DBSSubjectSubjectId], Union[dict, "DBSSubject"]], list[Union[dict, "DBSSubject"]]]] = empty_dict()
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.dataset_id):
@@ -4521,9 +4352,7 @@ class DBSDataset(Dataset):
 
         if not isinstance(self.clinical_scores, list):
             self.clinical_scores = [self.clinical_scores] if self.clinical_scores is not None else []
-        self.clinical_scores = [
-            v if isinstance(v, ClinicalScore) else ClinicalScore(**as_dict(v)) for v in self.clinical_scores
-        ]
+        self.clinical_scores = [v if isinstance(v, ClinicalScore) else ClinicalScore(**as_dict(v)) for v in self.clinical_scores]
 
         if self.coordinate_space is not None and not isinstance(self.coordinate_space, CommonCoordinateSpaceName):
             self.coordinate_space = CommonCoordinateSpaceName(self.coordinate_space)
@@ -4538,7 +4367,6 @@ class DBSSubject(Subject):
     """
     Human or animal subject receiving DBS.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO_DBS["DBSSubject"]
@@ -4579,7 +4407,6 @@ class Electrode(YAMLRoot):
     """
     Implanted DBS electrode and contact geometry.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO_DBS["Electrode"]
@@ -4643,7 +4470,6 @@ class Contact(YAMLRoot):
     """
     Individual contact on a DBS electrode.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO_DBS["Contact"]
@@ -4673,7 +4499,6 @@ class StimulationSetting(YAMLRoot):
     """
     DBS parameters for a specific session.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO_DBS["StimulationSetting"]
@@ -4720,7 +4545,6 @@ class DBSProtocol(YAMLRoot):
     """
     A protocol describing DBS therapy, potentially bilateral or multi-lead.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO_DBS["DBSProtocol"]
@@ -4733,9 +4557,7 @@ class DBSProtocol(YAMLRoot):
     settings: Optional[Union[Union[dict, StimulationSetting], list[Union[dict, StimulationSetting]]]] = empty_list()
     timing_info: Optional[str] = None
     notes: Optional[str] = None
-    clinical_improvement: Optional[Union[Union[dict, "ClinicalImprovement"], list[Union[dict, "ClinicalImprovement"]]]] = (
-        empty_list()
-    )
+    clinical_improvement: Optional[Union[Union[dict, "ClinicalImprovement"], list[Union[dict, "ClinicalImprovement"]]]] = empty_list()
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
@@ -4759,9 +4581,7 @@ class DBSProtocol(YAMLRoot):
 
         if not isinstance(self.clinical_improvement, list):
             self.clinical_improvement = [self.clinical_improvement] if self.clinical_improvement is not None else []
-        self.clinical_improvement = [
-            v if isinstance(v, ClinicalImprovement) else ClinicalImprovement(**as_dict(v)) for v in self.clinical_improvement
-        ]
+        self.clinical_improvement = [v if isinstance(v, ClinicalImprovement) else ClinicalImprovement(**as_dict(v)) for v in self.clinical_improvement]
 
         super().__post_init__(**kwargs)
 
@@ -4771,7 +4591,6 @@ class ClinicalScale(YAMLRoot):
     """
     A clinical assessment inventory or structured scale composed of multiple scores or items.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO_DBS["ClinicalScale"]
@@ -4812,7 +4631,6 @@ class ClinicalScore(YAMLRoot):
     """
     Metadata about a clinical score or scale.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO_DBS["ClinicalScore"]
@@ -4861,7 +4679,6 @@ class ClinicalImprovement(YAMLRoot):
     """
     Relative improvement on a defined clinical score.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO_DBS["ClinicalImprovement"]
@@ -4907,7 +4724,6 @@ class EField(YAMLRoot):
     """
     Simulated electric field from DBS modeling.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO_DBS["EField"]
@@ -4937,7 +4753,6 @@ class SoftwarePackage(YAMLRoot):
     """
     Identity and metadata for a software package, aligned with schema.org/SoftwareApplication and CodeMeta v3.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = SCHEMA["SoftwareApplication"]
@@ -4988,7 +4803,6 @@ class SimulationTool(SoftwarePackage):
     SoftwarePackage with neuroscience-specific controlled vocabularies for scale, paradigm, role, and
     interoperability. Aligned with CodeMeta v3 and DOAP.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = SCHEMA["SoftwareApplication"]
@@ -5001,9 +4815,7 @@ class SimulationTool(SoftwarePackage):
     scale: Optional[Union[Union[str, "SimulationScale"], list[Union[str, "SimulationScale"]]]] = empty_list()
     model_paradigm: Optional[Union[Union[str, "ModelParadigm"], list[Union[str, "ModelParadigm"]]]] = empty_list()
     tool_role: Optional[Union[Union[str, "ToolRole"], list[Union[str, "ToolRole"]]]] = empty_list()
-    programming_language: Optional[
-        Union[Union[str, "ProgrammingLanguageEnum"], list[Union[str, "ProgrammingLanguageEnum"]]]
-    ] = empty_list()
+    programming_language: Optional[Union[Union[str, "ProgrammingLanguageEnum"], list[Union[str, "ProgrammingLanguageEnum"]]]] = empty_list()
     runtime_platform: Optional[Union[str, list[str]]] = empty_list()
     operating_system: Optional[Union[str, list[str]]] = empty_list()
     interoperates_with: Optional[Union[Union[str, SimulationToolName], list[Union[str, SimulationToolName]]]] = empty_list()
@@ -5044,9 +4856,7 @@ class SimulationTool(SoftwarePackage):
 
         if not isinstance(self.programming_language, list):
             self.programming_language = [self.programming_language] if self.programming_language is not None else []
-        self.programming_language = [
-            v if isinstance(v, ProgrammingLanguageEnum) else ProgrammingLanguageEnum(v) for v in self.programming_language
-        ]
+        self.programming_language = [v if isinstance(v, ProgrammingLanguageEnum) else ProgrammingLanguageEnum(v) for v in self.programming_language]
 
         if not isinstance(self.runtime_platform, list):
             self.runtime_platform = [self.runtime_platform] if self.runtime_platform is not None else []
@@ -5058,9 +4868,7 @@ class SimulationTool(SoftwarePackage):
 
         if not isinstance(self.interoperates_with, list):
             self.interoperates_with = [self.interoperates_with] if self.interoperates_with is not None else []
-        self.interoperates_with = [
-            v if isinstance(v, SimulationToolName) else SimulationToolName(v) for v in self.interoperates_with
-        ]
+        self.interoperates_with = [v if isinstance(v, SimulationToolName) else SimulationToolName(v) for v in self.interoperates_with]
 
         if self.version is not None and not isinstance(self.version, str):
             self.version = str(self.version)
@@ -5115,7 +4923,6 @@ class SoftwareRequirement(YAMLRoot):
     """
     An individual software requirement binding a package to a version constraint and a role within an environment.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO_SW["SoftwareRequirement"]
@@ -5128,7 +4935,7 @@ class SoftwareRequirement(YAMLRoot):
     dataLocation: Optional[str] = None
     package: Optional[Union[str, SoftwarePackageName]] = None
     version_spec: Optional[str] = None
-    role: Optional[Union[str, "RequirementRole"]] = "runtime"
+    role: Optional[Union[str, "RequirementRole"]] = 'runtime'
     optional: Optional[Union[bool, Bool]] = False
     hash: Optional[str] = None
     source_url: Optional[str] = None
@@ -5189,7 +4996,6 @@ class SoftwareEnvironment(YAMLRoot):
     A reproducible software environment aggregating one or more SoftwareRequirement entries. Used by
     SimulationExperiment to specify the execution context.
     """
-
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO_SW["SoftwareEnvironment"]
@@ -5206,11 +5012,7 @@ class SoftwareEnvironment(YAMLRoot):
     environment_type: Optional[Union[str, "EnvironmentType"]] = None
     container_image: Optional[str] = None
     build_hash: Optional[str] = None
-    requirements: Optional[
-        Union[
-            dict[Union[str, SoftwareRequirementName], Union[dict, SoftwareRequirement]], list[Union[dict, SoftwareRequirement]]
-        ]
-    ] = empty_dict()
+    requirements: Optional[Union[dict[Union[str, SoftwareRequirementName], Union[dict, SoftwareRequirement]], list[Union[dict, SoftwareRequirement]]]] = empty_dict()
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self.label is not None and not isinstance(self.label, str):
@@ -5252,172 +5054,347 @@ class UnitEnum(EnumDefinitionImpl):
     abbreviations as values, mapped to the QUDT ontology (http://qudt.org/vocab/unit/) with UO cross-references where
     available.
     """
-
-    s = PermissibleValue(text="s", description="Second", meaning=QUDT["SEC"])
-    ms = PermissibleValue(text="ms", description="Millisecond", meaning=QUDT["MilliSEC"])
-    us = PermissibleValue(text="us", description="Microsecond", meaning=QUDT["MicroSEC"])
-    per_s = PermissibleValue(text="per_s", description="Per second (s⁻¹)", meaning=QUDT["PER-SEC"])
-    per_ms = PermissibleValue(text="per_ms", description="Per millisecond (ms⁻¹)", meaning=QUDT["PER-MilliSEC"])
-    Hz = PermissibleValue(text="Hz", description="Hertz (s⁻¹)", meaning=QUDT["HZ"])
-    kHz = PermissibleValue(text="kHz", description="Kilohertz", meaning=QUDT["KiloHZ"])
-    V = PermissibleValue(text="V", description="Volt", meaning=QUDT["V"])
-    mV = PermissibleValue(text="mV", description="Millivolt", meaning=QUDT["MilliV"])
-    per_mV = PermissibleValue(text="per_mV", description="Reciprocal millivolt (mV⁻¹)", meaning=QUDT["PER-MilliV"])
+    s = PermissibleValue(
+        text="s",
+        description="Second",
+        meaning=QUDT["SEC"])
+    ms = PermissibleValue(
+        text="ms",
+        description="Millisecond",
+        meaning=QUDT["MilliSEC"])
+    us = PermissibleValue(
+        text="us",
+        description="Microsecond",
+        meaning=QUDT["MicroSEC"])
+    per_s = PermissibleValue(
+        text="per_s",
+        description="Per second (s⁻¹)",
+        meaning=QUDT["PER-SEC"])
+    per_ms = PermissibleValue(
+        text="per_ms",
+        description="Per millisecond (ms⁻¹)",
+        meaning=QUDT["PER-MilliSEC"])
+    Hz = PermissibleValue(
+        text="Hz",
+        description="Hertz (s⁻¹)",
+        meaning=QUDT["HZ"])
+    kHz = PermissibleValue(
+        text="kHz",
+        description="Kilohertz",
+        meaning=QUDT["KiloHZ"])
+    V = PermissibleValue(
+        text="V",
+        description="Volt",
+        meaning=QUDT["V"])
+    mV = PermissibleValue(
+        text="mV",
+        description="Millivolt",
+        meaning=QUDT["MilliV"])
+    per_mV = PermissibleValue(
+        text="per_mV",
+        description="Reciprocal millivolt (mV⁻¹)",
+        meaning=QUDT["PER-MilliV"])
     mV_per_ms = PermissibleValue(
-        text="mV_per_ms", description="Millivolt per millisecond", meaning=QUDT["MilliV-PER-MilliSEC"]
-    )
-    mV_per_s = PermissibleValue(text="mV_per_s", description="Millivolt per second", meaning=QUDT["MilliV-PER-SEC"])
-    A = PermissibleValue(text="A", description="Ampere", meaning=QUDT["A"])
-    nA = PermissibleValue(text="nA", description="Nanoampere", meaning=QUDT["NanoA"])
-    pA = PermissibleValue(text="pA", description="Picoampere", meaning=QUDT["PicoA"])
-    uA_per_cm2 = PermissibleValue(text="uA_per_cm2", description="Microampere per square centimetre (current density)")
-    pF = PermissibleValue(text="pF", description="Picofarad", meaning=QUDT["PicoFARAD"])
-    nF = PermissibleValue(text="nF", description="Nanofarad", meaning=QUDT["NanoFARAD"])
-    uF_per_cm2 = PermissibleValue(text="uF_per_cm2", description="Microfarad per square centimetre (specific capacitance)")
-    nS = PermissibleValue(text="nS", description="Nanosiemens", meaning=QUDT["NanoS"])
-    uS = PermissibleValue(text="uS", description="Microsiemens", meaning=QUDT["MicroS"])
-    pS = PermissibleValue(text="pS", description="Picosiemens", meaning=QUDT["PicoS"])
-    S_per_cm2 = PermissibleValue(text="S_per_cm2", description="Siemens per square centimetre (conductance density)")
-    mS_per_cm2 = PermissibleValue(text="mS_per_cm2", description="Millisiemens per square centimetre (conductance density)")
-    S_per_m2 = PermissibleValue(text="S_per_m2", description="Siemens per square metre (conductance density, SI)")
-    nS_per_mV = PermissibleValue(text="nS_per_mV", description="Nanosiemens per millivolt")
-    per_nC = PermissibleValue(text="per_nC", description="Reciprocal nanocoulomb (nC⁻¹)", meaning=QUDT["PER-NanoC"])
-    per_pC = PermissibleValue(text="per_pC", description="Reciprocal picocoulomb (pC⁻¹)", meaning=QUDT["PER-PicoC"])
-    mol_per_m3 = PermissibleValue(text="mol_per_m3", description="Mole per cubic metre (mol/m³)", meaning=QUDT["MOL-PER-M3"])
-    mol_per_cm3 = PermissibleValue(text="mol_per_cm3", description="Mole per cubic centimetre (mol/cm³)")
+        text="mV_per_ms",
+        description="Millivolt per millisecond",
+        meaning=QUDT["MilliV-PER-MilliSEC"])
+    mV_per_s = PermissibleValue(
+        text="mV_per_s",
+        description="Millivolt per second",
+        meaning=QUDT["MilliV-PER-SEC"])
+    A = PermissibleValue(
+        text="A",
+        description="Ampere",
+        meaning=QUDT["A"])
+    nA = PermissibleValue(
+        text="nA",
+        description="Nanoampere",
+        meaning=QUDT["NanoA"])
+    pA = PermissibleValue(
+        text="pA",
+        description="Picoampere",
+        meaning=QUDT["PicoA"])
+    uA_per_cm2 = PermissibleValue(
+        text="uA_per_cm2",
+        description="Microampere per square centimetre (current density)")
+    pF = PermissibleValue(
+        text="pF",
+        description="Picofarad",
+        meaning=QUDT["PicoFARAD"])
+    nF = PermissibleValue(
+        text="nF",
+        description="Nanofarad",
+        meaning=QUDT["NanoFARAD"])
+    uF_per_cm2 = PermissibleValue(
+        text="uF_per_cm2",
+        description="Microfarad per square centimetre (specific capacitance)")
+    nS = PermissibleValue(
+        text="nS",
+        description="Nanosiemens",
+        meaning=QUDT["NanoS"])
+    uS = PermissibleValue(
+        text="uS",
+        description="Microsiemens",
+        meaning=QUDT["MicroS"])
+    pS = PermissibleValue(
+        text="pS",
+        description="Picosiemens",
+        meaning=QUDT["PicoS"])
+    S_per_cm2 = PermissibleValue(
+        text="S_per_cm2",
+        description="Siemens per square centimetre (conductance density)")
+    mS_per_cm2 = PermissibleValue(
+        text="mS_per_cm2",
+        description="Millisiemens per square centimetre (conductance density)")
+    S_per_m2 = PermissibleValue(
+        text="S_per_m2",
+        description="Siemens per square metre (conductance density, SI)")
+    nS_per_mV = PermissibleValue(
+        text="nS_per_mV",
+        description="Nanosiemens per millivolt")
+    per_nC = PermissibleValue(
+        text="per_nC",
+        description="Reciprocal nanocoulomb (nC⁻¹)",
+        meaning=QUDT["PER-NanoC"])
+    per_pC = PermissibleValue(
+        text="per_pC",
+        description="Reciprocal picocoulomb (pC⁻¹)",
+        meaning=QUDT["PER-PicoC"])
+    mol_per_m3 = PermissibleValue(
+        text="mol_per_m3",
+        description="Mole per cubic metre (mol/m³)",
+        meaning=QUDT["MOL-PER-M3"])
+    mol_per_cm3 = PermissibleValue(
+        text="mol_per_cm3",
+        description="Mole per cubic centimetre (mol/cm³)")
     mmol_per_m3 = PermissibleValue(
-        text="mmol_per_m3", description="Millimole per cubic metre (mmol/m³ ≈ mM)", meaning=QUDT["MilliMOL-PER-M3"]
-    )
+        text="mmol_per_m3",
+        description="Millimole per cubic metre (mmol/m³ ≈ mM)",
+        meaning=QUDT["MilliMOL-PER-M3"])
     mol_per_m_per_A_per_s = PermissibleValue(
-        text="mol_per_m_per_A_per_s", description="Mole per metre per ampere per second (concentration-current coupling)"
-    )
-    um3 = PermissibleValue(text="um3", description="Cubic micrometre (µm³)", meaning=QUDT["MicroM3"])
-    m = PermissibleValue(text="m", description="Metre", meaning=QUDT["M"])
-    mm = PermissibleValue(text="mm", description="Millimetre", meaning=QUDT["MilliM"])
-    cm = PermissibleValue(text="cm", description="Centimetre", meaning=QUDT["CentiM"])
-    m_per_s = PermissibleValue(text="m_per_s", description="Metre per second", meaning=QUDT["M-PER-SEC"])
+        text="mol_per_m_per_A_per_s",
+        description="Mole per metre per ampere per second (concentration-current coupling)")
+    um3 = PermissibleValue(
+        text="um3",
+        description="Cubic micrometre (µm³)",
+        meaning=QUDT["MicroM3"])
+    m = PermissibleValue(
+        text="m",
+        description="Metre",
+        meaning=QUDT["M"])
+    mm = PermissibleValue(
+        text="mm",
+        description="Millimetre",
+        meaning=QUDT["MilliM"])
+    cm = PermissibleValue(
+        text="cm",
+        description="Centimetre",
+        meaning=QUDT["CentiM"])
+    m_per_s = PermissibleValue(
+        text="m_per_s",
+        description="Metre per second",
+        meaning=QUDT["M-PER-SEC"])
     mm_per_ms = PermissibleValue(
-        text="mm_per_ms", description="Millimetre per millisecond (= m/s)", meaning=QUDT["MilliM-PER-MilliSEC"]
-    )
-    Hz_per_nA = PermissibleValue(text="Hz_per_nA", description="Hertz per nanoampere (neural gain)")
-    S_per_m = PermissibleValue(text="S_per_m", description="Siemens per metre (conductivity)", meaning=QUDT["S-PER-M"])
-    H_per_m = PermissibleValue(text="H_per_m", description="Henry per metre (permeability)", meaning=QUDT["H-PER-M"])
-    ohm = PermissibleValue(text="ohm", description="Ohm (Ω)", meaning=QUDT["OHM"])
-    Mohm = PermissibleValue(text="Mohm", description="Megaohm (MΩ)")
-    kohm_cm = PermissibleValue(text="kohm_cm", description="Kilo-ohm centimetre (axial resistivity)")
-    degC = PermissibleValue(text="degC", description="Degree Celsius", meaning=QUDT["DEG_C"])
-    rad_per_ms = PermissibleValue(text="rad_per_ms", description="Radian per millisecond")
-    dimensionless = PermissibleValue(text="dimensionless", description="Dimensionless (unitless)", meaning=QUDT["UNITLESS"])
-    percent = PermissibleValue(text="percent", description="Percent (%)", meaning=QUDT["PERCENT"])
-    arbitrary_unit = PermissibleValue(text="arbitrary_unit", description="Arbitrary units (a.u.)")
-    kg = PermissibleValue(text="kg", description="Kilogram", meaning=QUDT["KiloGM"])
-    kg_per_s = PermissibleValue(text="kg_per_s", description="Kilogram per second")
+        text="mm_per_ms",
+        description="Millimetre per millisecond (= m/s)",
+        meaning=QUDT["MilliM-PER-MilliSEC"])
+    Hz_per_nA = PermissibleValue(
+        text="Hz_per_nA",
+        description="Hertz per nanoampere (neural gain)")
+    S_per_m = PermissibleValue(
+        text="S_per_m",
+        description="Siemens per metre (conductivity)",
+        meaning=QUDT["S-PER-M"])
+    H_per_m = PermissibleValue(
+        text="H_per_m",
+        description="Henry per metre (permeability)",
+        meaning=QUDT["H-PER-M"])
+    ohm = PermissibleValue(
+        text="ohm",
+        description="Ohm (Ω)",
+        meaning=QUDT["OHM"])
+    Mohm = PermissibleValue(
+        text="Mohm",
+        description="Megaohm (MΩ)")
+    kohm_cm = PermissibleValue(
+        text="kohm_cm",
+        description="Kilo-ohm centimetre (axial resistivity)")
+    degC = PermissibleValue(
+        text="degC",
+        description="Degree Celsius",
+        meaning=QUDT["DEG_C"])
+    rad_per_ms = PermissibleValue(
+        text="rad_per_ms",
+        description="Radian per millisecond")
+    dimensionless = PermissibleValue(
+        text="dimensionless",
+        description="Dimensionless (unitless)",
+        meaning=QUDT["UNITLESS"])
+    percent = PermissibleValue(
+        text="percent",
+        description="Percent (%)",
+        meaning=QUDT["PERCENT"])
+    arbitrary_unit = PermissibleValue(
+        text="arbitrary_unit",
+        description="Arbitrary units (a.u.)")
+    kg = PermissibleValue(
+        text="kg",
+        description="Kilogram",
+        meaning=QUDT["KiloGM"])
+    kg_per_s = PermissibleValue(
+        text="kg_per_s",
+        description="Kilogram per second")
     m_per_s2 = PermissibleValue(
-        text="m_per_s2", description="Metre per second squared (acceleration)", meaning=QUDT["M-PER-SEC2"]
-    )
-    N_per_m = PermissibleValue(text="N_per_m", description="Newton per metre (spring constant)", meaning=QUDT["N-PER-M"])
-    rad = PermissibleValue(text="rad", description="Radian", meaning=QUDT["RAD"])
+        text="m_per_s2",
+        description="Metre per second squared (acceleration)",
+        meaning=QUDT["M-PER-SEC2"])
+    N_per_m = PermissibleValue(
+        text="N_per_m",
+        description="Newton per metre (spring constant)",
+        meaning=QUDT["N-PER-M"])
+    rad = PermissibleValue(
+        text="rad",
+        description="Radian",
+        meaning=QUDT["RAD"])
     rad_per_s = PermissibleValue(
-        text="rad_per_s", description="Radian per second (angular velocity)", meaning=QUDT["RAD-PER-SEC"]
-    )
-    s2 = PermissibleValue(text="s2", description="Second squared (inertia constant)", meaning=QUDT["SEC2"])
-    per_unit = PermissibleValue(text="per_unit", description="Per-unit (dimensionless power-systems convention)")
+        text="rad_per_s",
+        description="Radian per second (angular velocity)",
+        meaning=QUDT["RAD-PER-SEC"])
+    s2 = PermissibleValue(
+        text="s2",
+        description="Second squared (inertia constant)",
+        meaning=QUDT["SEC2"])
+    per_unit = PermissibleValue(
+        text="per_unit",
+        description="Per-unit (dimensionless power-systems convention)")
 
     _defn = EnumDefinition(
         name="UnitEnum",
         description="""Physical units of measurement for model parameters, state variables, and integration settings. Uses conventional abbreviations as values, mapped to the QUDT ontology (http://qudt.org/vocab/unit/) with UO cross-references where available.""",
     )
 
-
 class PhysicalDimension(EnumDefinitionImpl):
     """
     Physical dimension categories for LEMS and dimensional analysis. Each dimension decomposes into SI base dimensions
     (M, L, T, I, K, N).
     """
-
-    none = PermissibleValue(text="none", description="Dimensionless")
-    time = PermissibleValue(text="time", description="Time [T]")
-    per_time = PermissibleValue(text="per_time", description="Inverse time [T⁻¹]")
-    voltage = PermissibleValue(text="voltage", description="Voltage [M L² T⁻³ I⁻¹]")
-    current = PermissibleValue(text="current", description="Electric current [I]")
-    capacitance = PermissibleValue(text="capacitance", description="Capacitance [M⁻¹ L⁻² T⁴ I²]")
-    conductance = PermissibleValue(text="conductance", description="Conductance [M⁻¹ L⁻² T³ I²]")
-    resistance = PermissibleValue(text="resistance", description="Resistance [M L² T⁻³ I⁻²]")
-    charge = PermissibleValue(text="charge", description="Electric charge [T I]")
-    concentration = PermissibleValue(text="concentration", description="Concentration [L⁻³ N]")
-    substance = PermissibleValue(text="substance", description="Amount of substance [N]")
-    length = PermissibleValue(text="length", description="Length [L]")
-    volume = PermissibleValue(text="volume", description="Volume [L³]")
-    temperature = PermissibleValue(text="temperature", description="Temperature [K]")
+    none = PermissibleValue(
+        text="none",
+        description="Dimensionless")
+    time = PermissibleValue(
+        text="time",
+        description="Time [T]")
+    per_time = PermissibleValue(
+        text="per_time",
+        description="Inverse time [T⁻¹]")
+    voltage = PermissibleValue(
+        text="voltage",
+        description="Voltage [M L² T⁻³ I⁻¹]")
+    current = PermissibleValue(
+        text="current",
+        description="Electric current [I]")
+    capacitance = PermissibleValue(
+        text="capacitance",
+        description="Capacitance [M⁻¹ L⁻² T⁴ I²]")
+    conductance = PermissibleValue(
+        text="conductance",
+        description="Conductance [M⁻¹ L⁻² T³ I²]")
+    resistance = PermissibleValue(
+        text="resistance",
+        description="Resistance [M L² T⁻³ I⁻²]")
+    charge = PermissibleValue(
+        text="charge",
+        description="Electric charge [T I]")
+    concentration = PermissibleValue(
+        text="concentration",
+        description="Concentration [L⁻³ N]")
+    substance = PermissibleValue(
+        text="substance",
+        description="Amount of substance [N]")
+    length = PermissibleValue(
+        text="length",
+        description="Length [L]")
+    volume = PermissibleValue(
+        text="volume",
+        description="Volume [L³]")
+    temperature = PermissibleValue(
+        text="temperature",
+        description="Temperature [K]")
 
     _defn = EnumDefinition(
         name="PhysicalDimension",
         description="""Physical dimension categories for LEMS and dimensional analysis. Each dimension decomposes into SI base dimensions (M, L, T, I, K, N).""",
     )
 
-
 class ImagingModality(EnumDefinitionImpl):
-    BOLD = PermissibleValue(text="BOLD", description="Blood Oxygen Level Dependent signal.")
-    EEG = PermissibleValue(text="EEG", description="Electroencephalography.")
-    MEG = PermissibleValue(text="MEG", description="Magnetoencephalography.")
-    SEEG = PermissibleValue(text="SEEG", description="Stereoelectroencephalography.")
-    IEEG = PermissibleValue(text="IEEG", description="Intracranial Electroencephalography.")
+
+    BOLD = PermissibleValue(
+        text="BOLD",
+        description="Blood Oxygen Level Dependent signal.")
+    EEG = PermissibleValue(
+        text="EEG",
+        description="Electroencephalography.")
+    MEG = PermissibleValue(
+        text="MEG",
+        description="Magnetoencephalography.")
+    SEEG = PermissibleValue(
+        text="SEEG",
+        description="Stereoelectroencephalography.")
+    IEEG = PermissibleValue(
+        text="IEEG",
+        description="Intracranial Electroencephalography.")
 
     _defn = EnumDefinition(
         name="ImagingModality",
     )
-
 
 class ModelType(EnumDefinitionImpl):
     """
     Coarse classification of a Dynamics model by its mathematical/biological origin. Used for filtering and display in
     list_db().
     """
-
     mean_field = PermissibleValue(
         text="mean_field",
-        description="""Mathematically derived mean-field models obtained by exact reduction of spiking networks (Ott-Antonsen ansatz, Lorentzian heterogeneity, etc.). Examples: MontbrioPazoRoxin, CoombesByrne, ReducedWongWang, ZerlautAdaptationFirstOrder.""",
-    )
+        description="""Mathematically derived mean-field models obtained by exact reduction of spiking networks (Ott-Antonsen ansatz, Lorentzian heterogeneity, etc.). Examples: MontbrioPazoRoxin, CoombesByrne, ReducedWongWang, ZerlautAdaptationFirstOrder.""")
     neural_mass = PermissibleValue(
         text="neural_mass",
-        description="""Phenomenological population-rate / neural-mass models that describe synaptic and firing-rate dynamics without an explicit derivation from single-neuron statistics. Examples: JansenRit, WilsonCowan, LarterBreakspear, TsodyksMarkram.""",
-    )
+        description="""Phenomenological population-rate / neural-mass models that describe synaptic and firing-rate dynamics without an explicit derivation from single-neuron statistics. Examples: JansenRit, WilsonCowan, LarterBreakspear, TsodyksMarkram.""")
     phase_oscillator = PermissibleValue(
-        text="phase_oscillator", description="Phase-reduced or Kuramoto-type oscillator models. Examples: Kuramoto, SupHopf."
-    )
+        text="phase_oscillator",
+        description="Phase-reduced or Kuramoto-type oscillator models. Examples: Kuramoto, SupHopf.")
     phenomenological = PermissibleValue(
         text="phenomenological",
-        description="""Empirical / phenomenological models that capture macroscopic dynamics without direct biophysical derivation. Examples: Epileptor2D, Epileptor5D.""",
-    )
+        description="""Empirical / phenomenological models that capture macroscopic dynamics without direct biophysical derivation. Examples: Epileptor2D, Epileptor5D.""")
     spiking = PermissibleValue(
         text="spiking",
-        description="""Single-neuron or conductance-based spiking models (HH, AdEx, LIF, Izhikevich, etc.). These can be used as nodes in a network alongside mean-field models.""",
-    )
+        description="""Single-neuron or conductance-based spiking models (HH, AdEx, LIF, Izhikevich, etc.). These can be used as nodes in a network alongside mean-field models.""")
     generic = PermissibleValue(
         text="generic",
-        description="""Generic / normal-form dynamical systems not specific to neural modelling (e.g. Generic2dOscillator, GenericLinear).""",
-    )
+        description="""Generic / normal-form dynamical systems not specific to neural modelling (e.g. Generic2dOscillator, GenericLinear).""")
     field = PermissibleValue(
         text="field",
-        description="""Spatially distributed neural-field models described by integro- differential or PDE formulations.""",
-    )
+        description="""Spatially distributed neural-field models described by integro- differential or PDE formulations.""")
 
     _defn = EnumDefinition(
         name="ModelType",
         description="""Coarse classification of a Dynamics model by its mathematical/biological origin. Used for filtering and display in list_db().""",
     )
 
-
 class SystemType(EnumDefinitionImpl):
-    continuous = PermissibleValue(text="continuous", description="Continuous-time dynamics (e.g., ODE/SDE).")
-    discrete = PermissibleValue(text="discrete", description="Discrete-time dynamics (e.g., maps, iterated updates).")
+
+    continuous = PermissibleValue(
+        text="continuous",
+        description="Continuous-time dynamics (e.g., ODE/SDE).")
+    discrete = PermissibleValue(
+        text="discrete",
+        description="Discrete-time dynamics (e.g., maps, iterated updates).")
 
     _defn = EnumDefinition(
         name="SystemType",
     )
 
-
 class BoundaryConditionType(EnumDefinitionImpl):
+
     Dirichlet = PermissibleValue(text="Dirichlet")
     Neumann = PermissibleValue(text="Neumann")
     Robin = PermissibleValue(text="Robin")
@@ -5427,19 +5404,25 @@ class BoundaryConditionType(EnumDefinitionImpl):
         name="BoundaryConditionType",
     )
 
-
 class DiscretizationMethod(EnumDefinitionImpl):
-    FDM = PermissibleValue(text="FDM", description="Finite Difference Method")
-    FEM = PermissibleValue(text="FEM", description="Finite Element Method")
-    FVM = PermissibleValue(text="FVM", description="Finite Volume Method")
+
+    FDM = PermissibleValue(
+        text="FDM",
+        description="Finite Difference Method")
+    FEM = PermissibleValue(
+        text="FEM",
+        description="Finite Element Method")
+    FVM = PermissibleValue(
+        text="FVM",
+        description="Finite Volume Method")
     Spectral = PermissibleValue(text="Spectral")
 
     _defn = EnumDefinition(
         name="DiscretizationMethod",
     )
 
-
 class ElementType(EnumDefinitionImpl):
+
     triangle = PermissibleValue(text="triangle")
     quad = PermissibleValue(text="quad")
     tetrahedron = PermissibleValue(text="tetrahedron")
@@ -5449,8 +5432,8 @@ class ElementType(EnumDefinitionImpl):
         name="ElementType",
     )
 
-
 class OperatorType(EnumDefinitionImpl):
+
     gradient = PermissibleValue(text="gradient")
     divergence = PermissibleValue(text="divergence")
     laplacian = PermissibleValue(text="laplacian")
@@ -5460,24 +5443,24 @@ class OperatorType(EnumDefinitionImpl):
         name="OperatorType",
     )
 
-
 class SamplingAxis(EnumDefinitionImpl):
     """
     Dimension along which a distribution is sampled.
     """
-
     space = PermissibleValue(
-        text="space", description="Sample once per node (heterogeneous parameter or spatially varying IC)."
-    )
-    time = PermissibleValue(text="time", description="Resample every integration timestep (stochastic time-varying input).")
+        text="space",
+        description="Sample once per node (heterogeneous parameter or spatially varying IC).")
+    time = PermissibleValue(
+        text="time",
+        description="Resample every integration timestep (stochastic time-varying input).")
 
     _defn = EnumDefinition(
         name="SamplingAxis",
         description="Dimension along which a distribution is sampled.",
     )
 
-
 class NoiseType(EnumDefinitionImpl):
+
     gaussian = PermissibleValue(text="gaussian")
     white = PermissibleValue(text="white")
     brown = PermissibleValue(text="brown")
@@ -5487,51 +5470,52 @@ class NoiseType(EnumDefinitionImpl):
         name="NoiseType",
     )
 
-
 class AggregationType(EnumDefinitionImpl):
     """
     How to aggregate time series data
     """
-
-    mean = PermissibleValue(text="mean", description="Average over time")
-    last = PermissibleValue(text="last", description="Last value in window")
-    first = PermissibleValue(text="first", description="First value in window")
-    window = PermissibleValue(text="window", description="Sliding window aggregation")
-    none = PermissibleValue(text="none", description="No aggregation")
+    mean = PermissibleValue(
+        text="mean",
+        description="Average over time")
+    last = PermissibleValue(
+        text="last",
+        description="Last value in window")
+    first = PermissibleValue(
+        text="first",
+        description="First value in window")
+    window = PermissibleValue(
+        text="window",
+        description="Sliding window aggregation")
+    none = PermissibleValue(
+        text="none",
+        description="No aggregation")
 
     _defn = EnumDefinition(
         name="AggregationType",
         description="How to aggregate time series data",
     )
 
-
 class EventType(EnumDefinitionImpl):
     """
     Type of event triggering mechanism.
     """
-
     continuous = PermissibleValue(
         text="continuous",
-        description="""Triggered when condition function crosses zero (root-finding). Maps to ContinuousCallback / ContinuousComponentCallback.""",
-    )
+        description="""Triggered when condition function crosses zero (root-finding). Maps to ContinuousCallback / ContinuousComponentCallback.""")
     discrete = PermissibleValue(
         text="discrete",
-        description="""Triggered when condition function returns true (checked at each step). Maps to DiscreteCallback / DiscreteComponentCallback.""",
-    )
+        description="""Triggered when condition function returns true (checked at each step). Maps to DiscreteCallback / DiscreteComponentCallback.""")
     preset_time = PermissibleValue(
         text="preset_time",
-        description="""Triggered at predetermined time points. Maps to PresetTimeCallback / PresetTimeComponentCallback.""",
-    )
+        description="""Triggered at predetermined time points. Maps to PresetTimeCallback / PresetTimeComponentCallback.""")
     stimulus = PermissibleValue(
         text="stimulus",
-        description="Continuous time-dependent input signal (e.g., external current). Legacy Stimulus behavior.",
-    )
+        description="Continuous time-dependent input signal (e.g., external current). Legacy Stimulus behavior.")
 
     _defn = EnumDefinition(
         name="EventType",
         description="Type of event triggering mechanism.",
     )
-
 
 class StandardGraphType(EnumDefinitionImpl):
     """
@@ -5539,128 +5523,179 @@ class StandardGraphType(EnumDefinitionImpl):
     string; this enum lists common types that get automatic code generation for Julia (Graphs.jl) and Python
     (NetworkX).
     """
-
-    BarabasiAlbert = PermissibleValue(text="BarabasiAlbert", description="Barabasi-Albert preferential attachment (params: k)")
-    WattsStrogatz = PermissibleValue(text="WattsStrogatz", description="Watts-Strogatz small-world (params: k, p)")
-    ErdosRenyi = PermissibleValue(text="ErdosRenyi", description="Erdos-Renyi random graph (params: p)")
-    Complete = PermissibleValue(text="Complete", description="Complete graph (all-to-all)")
-    Cycle = PermissibleValue(text="Cycle", description="Cycle graph (ring)")
-    Star = PermissibleValue(text="Star", description="Star graph")
-    RandomRegular = PermissibleValue(text="RandomRegular", description="Random regular graph (params: k)")
-    Grid = PermissibleValue(text="Grid", description="Grid/lattice graph (params: dims)")
+    BarabasiAlbert = PermissibleValue(
+        text="BarabasiAlbert",
+        description="Barabasi-Albert preferential attachment (params: k)")
+    WattsStrogatz = PermissibleValue(
+        text="WattsStrogatz",
+        description="Watts-Strogatz small-world (params: k, p)")
+    ErdosRenyi = PermissibleValue(
+        text="ErdosRenyi",
+        description="Erdos-Renyi random graph (params: p)")
+    Complete = PermissibleValue(
+        text="Complete",
+        description="Complete graph (all-to-all)")
+    Cycle = PermissibleValue(
+        text="Cycle",
+        description="Cycle graph (ring)")
+    Star = PermissibleValue(
+        text="Star",
+        description="Star graph")
+    RandomRegular = PermissibleValue(
+        text="RandomRegular",
+        description="Random regular graph (params: k)")
+    Grid = PermissibleValue(
+        text="Grid",
+        description="Grid/lattice graph (params: dims)")
 
     _defn = EnumDefinition(
         name="StandardGraphType",
         description="""Well-known graph generator families with automatic backend mapping. The type field on GraphGenerator is a free string; this enum lists common types that get automatic code generation for Julia (Graphs.jl) and Python (NetworkX).""",
     )
 
-
 class DimensionType(EnumDefinitionImpl):
     """
     Dimensions along which operations can be applied
     """
-
-    time = PermissibleValue(text="time", description="Temporal dimension")
-    state = PermissibleValue(text="state", description="State variable dimension")
-    node = PermissibleValue(text="node", description="Network node dimension (general graph term)")
-    region = PermissibleValue(text="region", description="Spatial/regional dimension (alias for node in brain networks)")
-    mode = PermissibleValue(text="mode", description="Mode dimension (e.g., coupling modes)")
-    sample = PermissibleValue(text="sample", description="Sample/trial/realization dimension")
-    batch = PermissibleValue(text="batch", description="Batch dimension (for parallel processing)")
-    frequency = PermissibleValue(text="frequency", description="Frequency dimension (spectral analysis)")
+    time = PermissibleValue(
+        text="time",
+        description="Temporal dimension")
+    state = PermissibleValue(
+        text="state",
+        description="State variable dimension")
+    node = PermissibleValue(
+        text="node",
+        description="Network node dimension (general graph term)")
+    region = PermissibleValue(
+        text="region",
+        description="Spatial/regional dimension (alias for node in brain networks)")
+    mode = PermissibleValue(
+        text="mode",
+        description="Mode dimension (e.g., coupling modes)")
+    sample = PermissibleValue(
+        text="sample",
+        description="Sample/trial/realization dimension")
+    batch = PermissibleValue(
+        text="batch",
+        description="Batch dimension (for parallel processing)")
+    frequency = PermissibleValue(
+        text="frequency",
+        description="Frequency dimension (spectral analysis)")
 
     _defn = EnumDefinition(
         name="DimensionType",
         description="Dimensions along which operations can be applied",
     )
 
-
 class ReductionType(EnumDefinitionImpl):
     """
     Operations for reducing/aggregating values across dimensions
     """
-
-    mean = PermissibleValue(text="mean", description="Arithmetic mean")
-    sum = PermissibleValue(text="sum", description="Sum of values")
-    max = PermissibleValue(text="max", description="Maximum value")
-    min = PermissibleValue(text="min", description="Minimum value")
-    none = PermissibleValue(text="none", description="No reduction (return per-element values)")
+    mean = PermissibleValue(
+        text="mean",
+        description="Arithmetic mean")
+    sum = PermissibleValue(
+        text="sum",
+        description="Sum of values")
+    max = PermissibleValue(
+        text="max",
+        description="Maximum value")
+    min = PermissibleValue(
+        text="min",
+        description="Minimum value")
+    none = PermissibleValue(
+        text="none",
+        description="No reduction (return per-element values)")
 
     _defn = EnumDefinition(
         name="ReductionType",
         description="Operations for reducing/aggregating values across dimensions",
     )
 
-
 class ContinuationAlgorithm(EnumDefinitionImpl):
     """
     Predictor-corrector algorithm for numerical continuation.
     """
-
     PALC = PermissibleValue(
-        text="PALC", description="Pseudo-arclength continuation (default). Uses weighted dot product constraint."
-    )
-    MoorePenrose = PermissibleValue(text="MoorePenrose", description="Moore-Penrose continuation.")
+        text="PALC",
+        description="Pseudo-arclength continuation (default). Uses weighted dot product constraint.")
+    MoorePenrose = PermissibleValue(
+        text="MoorePenrose",
+        description="Moore-Penrose continuation.")
     Natural = PermissibleValue(
-        text="Natural", description="Natural parameter continuation. Simple parameter stepping, no arc-length constraint."
-    )
+        text="Natural",
+        description="Natural parameter continuation. Simple parameter stepping, no arc-length constraint.")
 
     _defn = EnumDefinition(
         name="ContinuationAlgorithm",
         description="Predictor-corrector algorithm for numerical continuation.",
     )
 
-
 class NumericalDiscretizationMethod(EnumDefinitionImpl):
     """
     Numerical discretization method for boundary value problems (periodic orbits, connecting orbits, quasi-periodic
     tori).
     """
-
-    collocation = PermissibleValue(text="collocation", description="Orthogonal collocation at Gauss points.")
-    trapezoid = PermissibleValue(text="trapezoid", description="Trapezoidal rule discretization.")
-    shooting = PermissibleValue(text="shooting", description="Standard multiple shooting.")
-    poincare = PermissibleValue(text="poincare", description="Poincaré shooting.")
+    collocation = PermissibleValue(
+        text="collocation",
+        description="Orthogonal collocation at Gauss points.")
+    trapezoid = PermissibleValue(
+        text="trapezoid",
+        description="Trapezoidal rule discretization.")
+    shooting = PermissibleValue(
+        text="shooting",
+        description="Standard multiple shooting.")
+    poincare = PermissibleValue(
+        text="poincare",
+        description="Poincaré shooting.")
 
     _defn = EnumDefinition(
         name="NumericalDiscretizationMethod",
         description="""Numerical discretization method for boundary value problems (periodic orbits, connecting orbits, quasi-periodic tori).""",
     )
 
-
 class InitialStateMethod(EnumDefinitionImpl):
     """
     Strategy for obtaining the starting equilibrium or periodic orbit.
     """
-
     time_integration = PermissibleValue(
-        text="time_integration", description="Integrate the ODE forward until convergence (robust, default)."
-    )
-    newton = PermissibleValue(text="newton", description="Use Newton's method to find the nearest fixed point.")
-    given = PermissibleValue(text="given", description="Use the model's default initial values directly.")
-    from_branch = PermissibleValue(text="from_branch", description="Start from a point on a previously computed branch.")
+        text="time_integration",
+        description="Integrate the ODE forward until convergence (robust, default).")
+    newton = PermissibleValue(
+        text="newton",
+        description="Use Newton's method to find the nearest fixed point.")
+    given = PermissibleValue(
+        text="given",
+        description="Use the model's default initial values directly.")
+    from_branch = PermissibleValue(
+        text="from_branch",
+        description="Start from a point on a previously computed branch.")
 
     _defn = EnumDefinition(
         name="InitialStateMethod",
         description="Strategy for obtaining the starting equilibrium or periodic orbit.",
     )
 
-
 class SparseFormat(EnumDefinitionImpl):
-    dense = PermissibleValue(text="dense", description="Dense N×N array with gzip compression")
-    csr = PermissibleValue(text="csr", description="Compressed Sparse Row (data, indices, indptr)")
-    coo = PermissibleValue(text="coo", description="Coordinate list (data, row, col)")
+
+    dense = PermissibleValue(
+        text="dense",
+        description="Dense N×N array with gzip compression")
+    csr = PermissibleValue(
+        text="csr",
+        description="Compressed Sparse Row (data, indices, indptr)")
+    coo = PermissibleValue(
+        text="coo",
+        description="Coordinate list (data, row, col)")
 
     _defn = EnumDefinition(
         name="SparseFormat",
     )
 
-
 class SpecimenEnum(EnumDefinitionImpl):
     """
     A set of permissible types for specimens used in brain atlas creation.
     """
-
     Subject = PermissibleValue(text="Subject")
     SubjectGroup = PermissibleValue(text="SubjectGroup")
     TissueSample = PermissibleValue(text="TissueSample")
@@ -5671,8 +5706,8 @@ class SpecimenEnum(EnumDefinitionImpl):
         description="A set of permissible types for specimens used in brain atlas creation.",
     )
 
-
 class Hemisphere(EnumDefinitionImpl):
+
     left = PermissibleValue(text="left")
     right = PermissibleValue(text="right")
     both = PermissibleValue(text="both")
@@ -5681,192 +5716,279 @@ class Hemisphere(EnumDefinitionImpl):
         name="Hemisphere",
     )
 
-
 class SexEnum(EnumDefinitionImpl):
-    male = PermissibleValue(text="male", description="Male")
-    female = PermissibleValue(text="female", description="Female")
-    other = PermissibleValue(text="other", description="Other or not reported")
+
+    male = PermissibleValue(
+        text="male",
+        description="Male")
+    female = PermissibleValue(
+        text="female",
+        description="Female")
+    other = PermissibleValue(
+        text="other",
+        description="Other or not reported")
 
     _defn = EnumDefinition(
         name="SexEnum",
     )
-
 
 class SimulationScale(EnumDefinitionImpl):
     """
     Spatial / organizational scale at which a tool operates. Multi-valued: a tool can span multiple scales. Mapped to
     SIO and Wikidata where possible.
     """
-
     channel = PermissibleValue(
-        text="channel", description="Ion channel / sub-cellular molecular dynamics.", meaning=WD["Q898786"]
-    )
-    neuron = PermissibleValue(text="neuron", description="Single neuron (compartmental or point).", meaning=WD["Q43054"])
+        text="channel",
+        description="Ion channel / sub-cellular molecular dynamics.",
+        meaning=WD["Q898786"])
+    neuron = PermissibleValue(
+        text="neuron",
+        description="Single neuron (compartmental or point).",
+        meaning=WD["Q43054"])
     neural_network = PermissibleValue(
-        text="neural_network", description="Microcircuit / local network of neurons.", meaning=WD["Q484761"]
-    )
+        text="neural_network",
+        description="Microcircuit / local network of neurons.",
+        meaning=WD["Q484761"])
     neural_mass = PermissibleValue(
-        text="neural_mass", description="Population-level neural mass or mean-field model.", meaning=WD["Q7003015"]
-    )
+        text="neural_mass",
+        description="Population-level neural mass or mean-field model.",
+        meaning=WD["Q7003015"])
     network_system = PermissibleValue(
-        text="network_system", description="Whole-brain or large-scale network of regions.", meaning=WD["Q1073340"]
-    )
+        text="network_system",
+        description="Whole-brain or large-scale network of regions.",
+        meaning=WD["Q1073340"])
 
     _defn = EnumDefinition(
         name="SimulationScale",
         description="""Spatial / organizational scale at which a tool operates. Multi-valued: a tool can span multiple scales. Mapped to SIO and Wikidata where possible.""",
     )
 
-
 class ToolRole(EnumDefinitionImpl):
     """
     Primary function of the tool in a simulation workflow.
     """
-
-    simulator = PermissibleValue(text="simulator", description="Core numerical simulator.", meaning=WD["Q1569346"])
-    framework = PermissibleValue(text="framework", description="Multi-paradigm simulation framework.", meaning=WD["Q271680"])
+    simulator = PermissibleValue(
+        text="simulator",
+        description="Core numerical simulator.",
+        meaning=WD["Q1569346"])
+    framework = PermissibleValue(
+        text="framework",
+        description="Multi-paradigm simulation framework.",
+        meaning=WD["Q271680"])
     backend_runtime = PermissibleValue(
-        text="backend_runtime", description="Optimized execution backend for another simulator."
-    )
+        text="backend_runtime",
+        description="Optimized execution backend for another simulator.")
     optimization_framework = PermissibleValue(
-        text="optimization_framework", description="Parameter optimization / fitting tool.", meaning=WD["Q816286"]
-    )
+        text="optimization_framework",
+        description="Parameter optimization / fitting tool.",
+        meaning=WD["Q816286"])
     specification_language = PermissibleValue(
-        text="specification_language", description="Model description language or data standard.", meaning=WD["Q2661442"]
-    )
+        text="specification_language",
+        description="Model description language or data standard.",
+        meaning=WD["Q2661442"])
     workflow_framework = PermissibleValue(
-        text="workflow_framework", description="Orchestration, model-building, or pipeline tool."
-    )
+        text="workflow_framework",
+        description="Orchestration, model-building, or pipeline tool.")
     analysis_tool = PermissibleValue(
         text="analysis_tool",
         description="Post-processing, signal analysis, or statistics.",
-        meaning=BIOTOOLS["operation_2945"],
-    )
+        meaning=BIOTOOLS["operation_2945"])
     visualization_tool = PermissibleValue(
-        text="visualization_tool", description="Visualization or graphical user interface.", meaning=BIOTOOLS["operation_0337"]
-    )
+        text="visualization_tool",
+        description="Visualization or graphical user interface.",
+        meaning=BIOTOOLS["operation_0337"])
     model_repository = PermissibleValue(
-        text="model_repository", description="Database or repository of published models.", meaning=WD["Q7397"]
-    )
+        text="model_repository",
+        description="Database or repository of published models.",
+        meaning=WD["Q7397"])
     continuation_tool = PermissibleValue(
-        text="continuation_tool", description="Numerical continuation / bifurcation analysis.", meaning=WD["Q858926"]
-    )
+        text="continuation_tool",
+        description="Numerical continuation / bifurcation analysis.",
+        meaning=WD["Q858926"])
 
     _defn = EnumDefinition(
         name="ToolRole",
         description="Primary function of the tool in a simulation workflow.",
     )
 
-
 class ModelParadigm(EnumDefinitionImpl):
     """
     Computational paradigm or modeling approach supported by the tool.
     """
-
     neural_mass = PermissibleValue(
-        text="neural_mass", description="Phenomenological population-rate / neural-mass models.", meaning=WD["Q7003015"]
-    )
+        text="neural_mass",
+        description="Phenomenological population-rate / neural-mass models.",
+        meaning=WD["Q7003015"])
     mean_field = PermissibleValue(
-        text="mean_field", description="Mean-field reductions of spiking networks.", meaning=WD["Q1368960"]
-    )
+        text="mean_field",
+        description="Mean-field reductions of spiking networks.",
+        meaning=WD["Q1368960"])
     spiking = PermissibleValue(
-        text="spiking", description="Spiking neuron models (LIF, AdEx, Izhikevich, etc.).", meaning=WD["Q7579783"]
-    )
+        text="spiking",
+        description="Spiking neuron models (LIF, AdEx, Izhikevich, etc.).",
+        meaning=WD["Q7579783"])
     conductance_based = PermissibleValue(
-        text="conductance_based", description="Conductance-based / Hodgkin-Huxley-type models.", meaning=WD["Q72484"]
-    )
+        text="conductance_based",
+        description="Conductance-based / Hodgkin-Huxley-type models.",
+        meaning=WD["Q72484"])
     compartmental = PermissibleValue(
-        text="compartmental", description="Multi-compartment morphologically detailed models.", meaning=WD["Q5155691"]
-    )
-    rate_based = PermissibleValue(text="rate_based", description="Firing-rate models.", meaning=WD["Q3685405"])
+        text="compartmental",
+        description="Multi-compartment morphologically detailed models.",
+        meaning=WD["Q5155691"])
+    rate_based = PermissibleValue(
+        text="rate_based",
+        description="Firing-rate models.",
+        meaning=WD["Q3685405"])
     phase_oscillator = PermissibleValue(
-        text="phase_oscillator", description="Phase-reduced or Kuramoto-type oscillator models.", meaning=WD["Q634884"]
-    )
+        text="phase_oscillator",
+        description="Phase-reduced or Kuramoto-type oscillator models.",
+        meaning=WD["Q634884"])
     reaction_diffusion = PermissibleValue(
-        text="reaction_diffusion", description="Stochastic or deterministic reaction-diffusion.", meaning=WD["Q851270"]
-    )
+        text="reaction_diffusion",
+        description="Stochastic or deterministic reaction-diffusion.",
+        meaning=WD["Q851270"])
     plasticity = PermissibleValue(
-        text="plasticity", description="Synaptic plasticity (STDP, homeostatic, etc.).", meaning=WD["Q747830"]
-    )
-    generic = PermissibleValue(text="generic", description="General-purpose, not specific to neuroscience.")
+        text="plasticity",
+        description="Synaptic plasticity (STDP, homeostatic, etc.).",
+        meaning=WD["Q747830"])
+    generic = PermissibleValue(
+        text="generic",
+        description="General-purpose, not specific to neuroscience.")
     multiscale = PermissibleValue(
-        text="multiscale", description="Bridging multiple spatial/temporal scales.", meaning=WD["Q1948412"]
-    )
+        text="multiscale",
+        description="Bridging multiple spatial/temporal scales.",
+        meaning=WD["Q1948412"])
     dynamic_mean_field = PermissibleValue(
-        text="dynamic_mean_field", description="Dynamic mean-field approximation (e.g., Deco et al.)."
-    )
+        text="dynamic_mean_field",
+        description="Dynamic mean-field approximation (e.g., Deco et al.).")
     data_standard = PermissibleValue(
-        text="data_standard", description="Data format or exchange standard.", meaning=WD["Q317623"]
-    )
-    model_description = PermissibleValue(text="model_description", description="Declarative model specification language.")
+        text="data_standard",
+        description="Data format or exchange standard.",
+        meaning=WD["Q317623"])
+    model_description = PermissibleValue(
+        text="model_description",
+        description="Declarative model specification language.")
     bifurcation_analysis = PermissibleValue(
         text="bifurcation_analysis",
         description="Dynamical systems bifurcation / continuation analysis.",
-        meaning=WD["Q858926"],
-    )
+        meaning=WD["Q858926"])
 
     _defn = EnumDefinition(
         name="ModelParadigm",
         description="Computational paradigm or modeling approach supported by the tool.",
     )
 
-
 class DevelopmentStatus(EnumDefinitionImpl):
     """
     Development status of the software. Based on repostatus.org categories.
     """
-
-    active = PermissibleValue(text="active", description="Actively developed with regular releases.")
-    inactive = PermissibleValue(text="inactive", description="No longer actively developed; may still work.")
-    concept = PermissibleValue(text="concept", description="Minimal or no implementation; ideas / prototypes.")
-    wip = PermissibleValue(text="wip", description="Work in progress; not yet feature-complete.")
-    suspended = PermissibleValue(text="suspended", description="Development paused; may resume in future.")
-    unsupported = PermissibleValue(text="unsupported", description="Released but no longer supported.")
-    moved = PermissibleValue(text="moved", description="Project has been moved to a different location.")
+    active = PermissibleValue(
+        text="active",
+        description="Actively developed with regular releases.")
+    inactive = PermissibleValue(
+        text="inactive",
+        description="No longer actively developed; may still work.")
+    concept = PermissibleValue(
+        text="concept",
+        description="Minimal or no implementation; ideas / prototypes.")
+    wip = PermissibleValue(
+        text="wip",
+        description="Work in progress; not yet feature-complete.")
+    suspended = PermissibleValue(
+        text="suspended",
+        description="Development paused; may resume in future.")
+    unsupported = PermissibleValue(
+        text="unsupported",
+        description="Released but no longer supported.")
+    moved = PermissibleValue(
+        text="moved",
+        description="Project has been moved to a different location.")
 
     _defn = EnumDefinition(
         name="DevelopmentStatus",
         description="Development status of the software. Based on repostatus.org categories.",
     )
 
-
 class EcosystemEnum(EnumDefinitionImpl):
     """
     Package ecosystem or registry the software is distributed through.
     """
-
-    pypi = PermissibleValue(text="pypi", description="Python Package Index.", meaning=WD["Q2984888"])
-    conda_forge = PermissibleValue(text="conda_forge", description="Conda-Forge community channel.", meaning=WD["Q105593788"])
-    cran = PermissibleValue(text="cran", description="Comprehensive R Archive Network.", meaning=WD["Q901584"])
-    julia_registry = PermissibleValue(text="julia_registry", description="Julia General package registry.")
-    npm = PermissibleValue(text="npm", description="Node Package Manager registry.", meaning=WD["Q7067518"])
-    bioconda = PermissibleValue(text="bioconda", description="Bioinformatics Conda channel.")
-    github = PermissibleValue(text="github", description="Distributed via GitHub releases.")
-    maven = PermissibleValue(text="maven", description="Maven Central Repository (Java).", meaning=WD["Q6795527"])
+    pypi = PermissibleValue(
+        text="pypi",
+        description="Python Package Index.",
+        meaning=WD["Q2984888"])
+    conda_forge = PermissibleValue(
+        text="conda_forge",
+        description="Conda-Forge community channel.",
+        meaning=WD["Q105593788"])
+    cran = PermissibleValue(
+        text="cran",
+        description="Comprehensive R Archive Network.",
+        meaning=WD["Q901584"])
+    julia_registry = PermissibleValue(
+        text="julia_registry",
+        description="Julia General package registry.")
+    npm = PermissibleValue(
+        text="npm",
+        description="Node Package Manager registry.",
+        meaning=WD["Q7067518"])
+    bioconda = PermissibleValue(
+        text="bioconda",
+        description="Bioinformatics Conda channel.")
+    github = PermissibleValue(
+        text="github",
+        description="Distributed via GitHub releases.")
+    maven = PermissibleValue(
+        text="maven",
+        description="Maven Central Repository (Java).",
+        meaning=WD["Q6795527"])
 
     _defn = EnumDefinition(
         name="EcosystemEnum",
         description="Package ecosystem or registry the software is distributed through.",
     )
 
-
 class ProgrammingLanguageEnum(EnumDefinitionImpl):
     """
     Programming languages relevant to computational neuroscience tools. Mapped to Wikidata identifiers.
     """
-
-    Python = PermissibleValue(text="Python", meaning=WD["Q28865"])
-    C = PermissibleValue(text="C", meaning=WD["Q15777"])
-    Java = PermissibleValue(text="Java", meaning=WD["Q251"])
-    Julia = PermissibleValue(text="Julia", meaning=WD["Q4010477"])
-    MATLAB = PermissibleValue(text="MATLAB", meaning=WD["Q182017"])
-    R = PermissibleValue(text="R", meaning=WD["Q206904"])
-    Fortran = PermissibleValue(text="Fortran", meaning=WD["Q83303"])
-    Haskell = PermissibleValue(text="Haskell", meaning=WD["Q34010"])
-    Rust = PermissibleValue(text="Rust", meaning=WD["Q575650"])
-    JavaScript = PermissibleValue(text="JavaScript", meaning=WD["Q2005"])
-    XML = PermissibleValue(text="XML", meaning=WD["Q2115"])
-    HOC = PermissibleValue(text="HOC", description="NEURON's high-level interpreted language.", meaning=WD["Q5765633"])
+    Python = PermissibleValue(
+        text="Python",
+        meaning=WD["Q28865"])
+    C = PermissibleValue(
+        text="C",
+        meaning=WD["Q15777"])
+    Java = PermissibleValue(
+        text="Java",
+        meaning=WD["Q251"])
+    Julia = PermissibleValue(
+        text="Julia",
+        meaning=WD["Q4010477"])
+    MATLAB = PermissibleValue(
+        text="MATLAB",
+        meaning=WD["Q182017"])
+    R = PermissibleValue(
+        text="R",
+        meaning=WD["Q206904"])
+    Fortran = PermissibleValue(
+        text="Fortran",
+        meaning=WD["Q83303"])
+    Haskell = PermissibleValue(
+        text="Haskell",
+        meaning=WD["Q34010"])
+    Rust = PermissibleValue(
+        text="Rust",
+        meaning=WD["Q575650"])
+    JavaScript = PermissibleValue(
+        text="JavaScript",
+        meaning=WD["Q2005"])
+    XML = PermissibleValue(
+        text="XML",
+        meaning=WD["Q2115"])
+    HOC = PermissibleValue(
+        text="HOC",
+        description="NEURON's high-level interpreted language.",
+        meaning=WD["Q5765633"])
 
     _defn = EnumDefinition(
         name="ProgrammingLanguageEnum",
@@ -5875,5563 +5997,1941 @@ class ProgrammingLanguageEnum(EnumDefinitionImpl):
 
     @classmethod
     def _addvals(cls):
-        setattr(cls, "C++", PermissibleValue(text="C++", meaning=WD["Q2407"]))
-        setattr(cls, "C#", PermissibleValue(text="C#", meaning=WD["Q2370"]))
-
+        setattr(cls, "C++",
+            PermissibleValue(
+                text="C++",
+                meaning=WD["Q2407"]))
+        setattr(cls, "C#",
+            PermissibleValue(
+                text="C#",
+                meaning=WD["Q2370"]))
 
 class RequirementRole(EnumDefinitionImpl):
-    engine = PermissibleValue(text="engine", description="Primary simulation/processing engine.")
-    runtime = PermissibleValue(text="runtime", description="General runtime dependency.")
-    analysis = PermissibleValue(text="analysis", description="Post-processing / analysis tool.")
-    dev = PermissibleValue(text="dev", description="Development / build dependency.")
-    optional = PermissibleValue(text="optional", description="Optional or extra feature dependency.")
+
+    engine = PermissibleValue(
+        text="engine",
+        description="Primary simulation/processing engine.")
+    runtime = PermissibleValue(
+        text="runtime",
+        description="General runtime dependency.")
+    analysis = PermissibleValue(
+        text="analysis",
+        description="Post-processing / analysis tool.")
+    dev = PermissibleValue(
+        text="dev",
+        description="Development / build dependency.")
+    optional = PermissibleValue(
+        text="optional",
+        description="Optional or extra feature dependency.")
 
     _defn = EnumDefinition(
         name="RequirementRole",
     )
 
-
 class EnvironmentType(EnumDefinitionImpl):
-    conda = PermissibleValue(text="conda", description="Conda environment.")
-    venv = PermissibleValue(text="venv", description="Python virtual environment.")
-    docker = PermissibleValue(text="docker", description="Docker container.")
-    singularity = PermissibleValue(text="singularity", description="Singularity/Apptainer container.")
+
+    conda = PermissibleValue(
+        text="conda",
+        description="Conda environment.")
+    venv = PermissibleValue(
+        text="venv",
+        description="Python virtual environment.")
+    docker = PermissibleValue(
+        text="docker",
+        description="Docker container.")
+    singularity = PermissibleValue(
+        text="singularity",
+        description="Singularity/Apptainer container.")
 
     _defn = EnumDefinition(
         name="EnvironmentType",
     )
 
-
 # Slots
 class slots:
     pass
 
+slots.name = Slot(uri=TVBO.name, name="name", curie=TVBO.curie('name'),
+                   model_uri=TVBO.name, domain=None, range=URIRef)
 
-slots.name = Slot(uri=TVBO.name, name="name", curie=TVBO.curie("name"), model_uri=TVBO.name, domain=None, range=URIRef)
-
-slots.time_scale = Slot(
-    uri=TVBO.time_scale,
-    name="time_scale",
-    curie=TVBO.curie("time_scale"),
-    model_uri=TVBO.time_scale,
-    domain=None,
-    range=Optional[Union[str, "UnitEnum"]],
-)
-
-slots.environment = Slot(
-    uri=TVBO.environment,
-    name="environment",
-    curie=TVBO.curie("environment"),
-    model_uri=TVBO.environment,
-    domain=None,
-    range=Optional[Union[dict, SoftwareEnvironment]],
-)
-
-slots.requirements = Slot(
-    uri=TVBO.requirements,
-    name="requirements",
-    curie=TVBO.curie("requirements"),
-    model_uri=TVBO.requirements,
-    domain=None,
-    range=Optional[Union[Union[str, SoftwareRequirementName], list[Union[str, SoftwareRequirementName]]]],
-)
-
-slots.duration = Slot(
-    uri=TVBO.duration,
-    name="duration",
-    curie=TVBO.curie("duration"),
-    model_uri=TVBO.duration,
-    domain=None,
-    range=Optional[float],
-)
-
-slots.model = Slot(
-    uri=TVBO.model,
-    name="model",
-    curie=TVBO.curie("model"),
-    model_uri=TVBO.model,
-    domain=None,
-    range=Optional[Union[str, DynamicsName]],
-)
-
-slots.has_reference = Slot(
-    uri=TVBO.has_reference,
-    name="has_reference",
-    curie=TVBO.curie("has_reference"),
-    model_uri=TVBO.has_reference,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.references = Slot(
-    uri=TVBO.references,
-    name="references",
-    curie=TVBO.curie("references"),
-    model_uri=TVBO.references,
-    domain=None,
-    range=Optional[Union[str, list[str]]],
-)
-
-slots.label = Slot(
-    uri=TVBO.label, name="label", curie=TVBO.curie("label"), model_uri=TVBO.label, domain=None, range=Optional[str]
-)
-
-slots.acronym = Slot(
-    uri=TVBO.acronym, name="acronym", curie=TVBO.curie("acronym"), model_uri=TVBO.acronym, domain=None, range=Optional[str]
-)
-
-slots.symbol = Slot(
-    uri=TVBO.symbol, name="symbol", curie=TVBO.curie("symbol"), model_uri=TVBO.symbol, domain=None, range=Optional[str]
-)
-
-slots.domain = Slot(
-    uri=TVBO.domain,
-    name="domain",
-    curie=TVBO.curie("domain"),
-    model_uri=TVBO.domain,
-    domain=None,
-    range=Optional[Union[dict, Range]],
-)
-
-slots.iri = Slot(uri=TVBO.iri, name="iri", curie=TVBO.curie("iri"), model_uri=TVBO.iri, domain=None, range=Optional[str])
-
-slots.value = Slot(
-    uri=TVBO.value, name="value", curie=TVBO.curie("value"), model_uri=TVBO.value, domain=None, range=Optional[float]
-)
-
-slots.file = Slot(uri=TVBO.file, name="file", curie=TVBO.curie("file"), model_uri=TVBO.file, domain=None, range=Optional[str])
-
-slots.reported_optimum = Slot(
-    uri=TVBO.reported_optimum,
-    name="reported_optimum",
-    curie=TVBO.curie("reported_optimum"),
-    model_uri=TVBO.reported_optimum,
-    domain=None,
-    range=Optional[float],
-)
-
-slots.default = Slot(
-    uri=TVBO.default, name="default", curie=TVBO.curie("default"), model_uri=TVBO.default, domain=None, range=Optional[str]
-)
-
-slots.description = Slot(
-    uri=TVBO.description,
-    name="description",
-    curie=TVBO.curie("description"),
-    model_uri=TVBO.description,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.definition = Slot(
-    uri=TVBO.definition,
-    name="definition",
-    curie=TVBO.curie("definition"),
-    model_uri=TVBO.definition,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.parameters = Slot(
-    uri=TVBO.parameters,
-    name="parameters",
-    curie=TVBO.curie("parameters"),
-    model_uri=TVBO.parameters,
-    domain=None,
-    range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]],
-)
-
-slots.equation = Slot(
-    uri=TVBO.Equation,
-    name="equation",
-    curie=TVBO.curie("Equation"),
-    model_uri=TVBO.equation,
-    domain=None,
-    range=Optional[Union[dict, Equation]],
-)
-
-slots.unit = Slot(
-    uri=TVBO.unit,
-    name="unit",
-    curie=TVBO.curie("unit"),
-    model_uri=TVBO.unit,
-    domain=None,
-    range=Optional[Union[str, "UnitEnum"]],
-)
-
-slots.derived_from = Slot(
-    uri=TVBO.derived_from,
-    name="derived_from",
-    curie=TVBO.curie("derived_from"),
-    model_uri=TVBO.derived_from,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.source = Slot(
-    uri=TVBO.source, name="source", curie=TVBO.curie("source"), model_uri=TVBO.source, domain=None, range=Optional[str]
-)
-
-slots.dataset_path = Slot(
-    uri=TVBO.dataset_path,
-    name="dataset_path",
-    curie=TVBO.curie("dataset_path"),
-    model_uri=TVBO.dataset_path,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.record = Slot(
-    uri=TVBO.record,
-    name="record",
-    curie=TVBO.curie("record"),
-    model_uri=TVBO.record,
-    domain=None,
-    range=Optional[Union[bool, Bool]],
-)
-
-slots.abbreviation = Slot(
-    uri=ATOM.abbreviation,
-    name="abbreviation",
-    curie=ATOM.curie("abbreviation"),
-    model_uri=TVBO.abbreviation,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.alternateName = Slot(
-    uri=ATOM["atlas/hasName"],
-    name="alternateName",
-    curie=ATOM.curie("atlas/hasName"),
-    model_uri=TVBO.alternateName,
-    domain=None,
-    range=Optional[Union[str, list[str]]],
-)
-
-slots.author = Slot(
-    uri=ATOM.author,
-    name="author",
-    curie=ATOM.curie("author"),
-    model_uri=TVBO.author,
-    domain=None,
-    range=Optional[Union[str, list[str]]],
-)
-
-slots.digitalIdentifier = Slot(
-    uri=ATOM.digitalIdentifier,
-    name="digitalIdentifier",
-    curie=ATOM.curie("digitalIdentifier"),
-    model_uri=TVBO.digitalIdentifier,
-    domain=None,
-    range=Optional[Union[str, list[str]]],
-)
-
-slots.hasParent = Slot(
-    uri=ATOM["atlas/hasParent"],
-    name="hasParent",
-    curie=ATOM.curie("atlas/hasParent"),
-    model_uri=TVBO.hasParent,
-    domain=None,
-    range=Optional[Union[Union[str, ParcellationEntityName], list[Union[str, ParcellationEntityName]]]],
-)
-
-slots.isVersionOf = Slot(
-    uri=ATOM.isVersionOf,
-    name="isVersionOf",
-    curie=ATOM.curie("isVersionOf"),
-    model_uri=TVBO.isVersionOf,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.license = Slot(
-    uri=ATOM.license, name="license", curie=ATOM.curie("license"), model_uri=TVBO.license, domain=None, range=Optional[str]
-)
-
-slots.lookupLabel = Slot(
-    uri=ATOM["atlas/lookupLabel"],
-    name="lookupLabel",
-    curie=ATOM.curie("atlas/lookupLabel"),
-    model_uri=TVBO.lookupLabel,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.ontologyIdentifier = Slot(
-    uri=ATOM["atlas/hasIlxId"],
-    name="ontologyIdentifier",
-    curie=ATOM.curie("atlas/hasIlxId"),
-    model_uri=TVBO.ontologyIdentifier,
-    domain=None,
-    range=Optional[Union[str, list[str]]],
-)
-
-slots.versionIdentifier = Slot(
-    uri=ATOM.versionIdentifier,
-    name="versionIdentifier",
-    curie=ATOM.curie("versionIdentifier"),
-    model_uri=TVBO.versionIdentifier,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.dataLocation = Slot(
-    uri=ATOM.dataLocation,
-    name="dataLocation",
-    curie=ATOM.curie("dataLocation"),
-    model_uri=TVBO.dataLocation,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.coordinateSpace = Slot(
-    uri=ATOM.coordinateSpace,
-    name="coordinateSpace",
-    curie=ATOM.curie("coordinateSpace"),
-    model_uri=TVBO.coordinateSpace,
-    domain=None,
-    range=Optional[Union[str, CommonCoordinateSpaceName]],
-)
-
-slots.subject_id = Slot(
-    uri=TVBO_STUDY.subject_id,
-    name="subject_id",
-    curie=TVBO_STUDY.curie("subject_id"),
-    model_uri=TVBO.subject_id,
-    domain=None,
-    range=URIRef,
-)
-
-slots.session_id = Slot(
-    uri=TVBO_STUDY.session_id,
-    name="session_id",
-    curie=TVBO_STUDY.curie("session_id"),
-    model_uri=TVBO.session_id,
-    domain=None,
-    range=URIRef,
-)
-
-slots.dataset_id = Slot(
-    uri=TVBO_STUDY.dataset_id,
-    name="dataset_id",
-    curie=TVBO_STUDY.curie("dataset_id"),
-    model_uri=TVBO.dataset_id,
-    domain=None,
-    range=URIRef,
-)
-
-slots.id = Slot(uri=TVBO_DBS.id, name="id", curie=TVBO_DBS.curie("id"), model_uri=TVBO.id, domain=None, range=Optional[int])
-
-slots.range__lo = Slot(
-    uri=TVBO.lo, name="range__lo", curie=TVBO.curie("lo"), model_uri=TVBO.range__lo, domain=None, range=Optional[str]
-)
-
-slots.range__hi = Slot(
-    uri=TVBO.hi, name="range__hi", curie=TVBO.curie("hi"), model_uri=TVBO.range__hi, domain=None, range=Optional[str]
-)
-
-slots.range__step = Slot(
-    uri=TVBO.step, name="range__step", curie=TVBO.curie("step"), model_uri=TVBO.range__step, domain=None, range=Optional[str]
-)
-
-slots.range__n = Slot(
-    uri=TVBO.n, name="range__n", curie=TVBO.curie("n"), model_uri=TVBO.range__n, domain=None, range=Optional[int]
-)
-
-slots.range__log_scale = Slot(
-    uri=TVBO.log_scale,
-    name="range__log_scale",
-    curie=TVBO.curie("log_scale"),
-    model_uri=TVBO.range__log_scale,
-    domain=None,
-    range=Optional[Union[bool, Bool]],
-)
-
-slots.range__explored_values = Slot(
-    uri=TVBO.explored_values,
-    name="range__explored_values",
-    curie=TVBO.curie("explored_values"),
-    model_uri=TVBO.range__explored_values,
-    domain=None,
-    range=Optional[Union[float, list[float]]],
-)
-
-slots.range__element = Slot(
-    uri=TVBO.element,
-    name="range__element",
-    curie=TVBO.curie("element"),
-    model_uri=TVBO.range__element,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.equation__lefthandside = Slot(
-    uri=TVBO.lhs,
-    name="equation__lefthandside",
-    curie=TVBO.curie("lhs"),
-    model_uri=TVBO.equation__lefthandside,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.equation__righthandside = Slot(
-    uri=TVBO.rhs,
-    name="equation__righthandside",
-    curie=TVBO.curie("rhs"),
-    model_uri=TVBO.equation__righthandside,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.equation__conditionals = Slot(
-    uri=TVBO.conditionals,
-    name="equation__conditionals",
-    curie=TVBO.curie("conditionals"),
-    model_uri=TVBO.equation__conditionals,
-    domain=None,
-    range=Optional[Union[Union[dict, ConditionalBlock], list[Union[dict, ConditionalBlock]]]],
-)
-
-slots.equation__engine = Slot(
-    uri=TVBO.engine,
-    name="equation__engine",
-    curie=TVBO.curie("engine"),
-    model_uri=TVBO.equation__engine,
-    domain=None,
-    range=Optional[Union[dict, SoftwareRequirement]],
-)
-
-slots.equation__pycode = Slot(
-    uri=TVBO.pycode,
-    name="equation__pycode",
-    curie=TVBO.curie("pycode"),
-    model_uri=TVBO.equation__pycode,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.equation__latex = Slot(
-    uri=TVBO.latex,
-    name="equation__latex",
-    curie=TVBO.curie("latex"),
-    model_uri=TVBO.equation__latex,
-    domain=None,
-    range=Optional[Union[bool, Bool]],
-)
-
-slots.conditionalBlock__condition = Slot(
-    uri=TVBO.condition,
-    name="conditionalBlock__condition",
-    curie=TVBO.curie("condition"),
-    model_uri=TVBO.conditionalBlock__condition,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.conditionalBlock__expression = Slot(
-    uri=TVBO.expression,
-    name="conditionalBlock__expression",
-    curie=TVBO.curie("expression"),
-    model_uri=TVBO.conditionalBlock__expression,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.stimulus__regions = Slot(
-    uri=TVBO.regions,
-    name="stimulus__regions",
-    curie=TVBO.curie("regions"),
-    model_uri=TVBO.stimulus__regions,
-    domain=None,
-    range=Optional[Union[int, list[int]]],
-)
-
-slots.stimulus__weighting = Slot(
-    uri=TVBO.weighting,
-    name="stimulus__weighting",
-    curie=TVBO.curie("weighting"),
-    model_uri=TVBO.stimulus__weighting,
-    domain=None,
-    range=Optional[Union[float, list[float]]],
-)
-
-slots.event__event_type = Slot(
-    uri=TVBO.event_type,
-    name="event__event_type",
-    curie=TVBO.curie("event_type"),
-    model_uri=TVBO.event__event_type,
-    domain=None,
-    range=Optional[Union[str, "EventType"]],
-)
-
-slots.event__condition = Slot(
-    uri=TVBO.condition,
-    name="event__condition",
-    curie=TVBO.curie("condition"),
-    model_uri=TVBO.event__condition,
-    domain=None,
-    range=Optional[Union[dict, Equation]],
-)
-
-slots.event__condition_states = Slot(
-    uri=TVBO.condition_states,
-    name="event__condition_states",
-    curie=TVBO.curie("condition_states"),
-    model_uri=TVBO.event__condition_states,
-    domain=None,
-    range=Optional[Union[str, list[str]]],
-)
-
-slots.event__condition_parameters = Slot(
-    uri=TVBO.condition_parameters,
-    name="event__condition_parameters",
-    curie=TVBO.curie("condition_parameters"),
-    model_uri=TVBO.event__condition_parameters,
-    domain=None,
-    range=Optional[Union[str, list[str]]],
-)
-
-slots.event__affect = Slot(
-    uri=TVBO.affect,
-    name="event__affect",
-    curie=TVBO.curie("affect"),
-    model_uri=TVBO.event__affect,
-    domain=None,
-    range=Optional[Union[dict, Equation]],
-)
-
-slots.event__affect_states = Slot(
-    uri=TVBO.affect_states,
-    name="event__affect_states",
-    curie=TVBO.curie("affect_states"),
-    model_uri=TVBO.event__affect_states,
-    domain=None,
-    range=Optional[Union[str, list[str]]],
-)
-
-slots.event__affect_parameters = Slot(
-    uri=TVBO.affect_parameters,
-    name="event__affect_parameters",
-    curie=TVBO.curie("affect_parameters"),
-    model_uri=TVBO.event__affect_parameters,
-    domain=None,
-    range=Optional[Union[str, list[str]]],
-)
-
-slots.event__affect_negative = Slot(
-    uri=TVBO.affect_negative,
-    name="event__affect_negative",
-    curie=TVBO.curie("affect_negative"),
-    model_uri=TVBO.event__affect_negative,
-    domain=None,
-    range=Optional[Union[dict, Equation]],
-)
-
-slots.event__trigger_times = Slot(
-    uri=TVBO.trigger_times,
-    name="event__trigger_times",
-    curie=TVBO.curie("trigger_times"),
-    model_uri=TVBO.event__trigger_times,
-    domain=None,
-    range=Optional[Union[float, list[float]]],
-)
-
-slots.event__target_component = Slot(
-    uri=TVBO.target_component,
-    name="event__target_component",
-    curie=TVBO.curie("target_component"),
-    model_uri=TVBO.event__target_component,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.event__equation = Slot(
-    uri=TVBO.equation,
-    name="event__equation",
-    curie=TVBO.curie("equation"),
-    model_uri=TVBO.event__equation,
-    domain=None,
-    range=Optional[Union[dict, Equation]],
-)
-
-slots.event__regions = Slot(
-    uri=TVBO.regions,
-    name="event__regions",
-    curie=TVBO.curie("regions"),
-    model_uri=TVBO.event__regions,
-    domain=None,
-    range=Optional[Union[int, list[int]]],
-)
-
-slots.event__weighting = Slot(
-    uri=TVBO.weighting,
-    name="event__weighting",
-    curie=TVBO.curie("weighting"),
-    model_uri=TVBO.event__weighting,
-    domain=None,
-    range=Optional[Union[float, list[float]]],
-)
-
-slots.event__duration = Slot(
-    uri=TVBO.duration,
-    name="event__duration",
-    curie=TVBO.curie("duration"),
-    model_uri=TVBO.event__duration,
-    domain=None,
-    range=Optional[float],
-)
-
-slots.temporalApplicableEquation__time_dependent = Slot(
-    uri=TVBO.time_dependent,
-    name="temporalApplicableEquation__time_dependent",
-    curie=TVBO.curie("time_dependent"),
-    model_uri=TVBO.temporalApplicableEquation__time_dependent,
-    domain=None,
-    range=Optional[Union[bool, Bool]],
-)
-
-slots.parcellation__data_source = Slot(
-    uri=TVBO.data_source,
-    name="parcellation__data_source",
-    curie=TVBO.curie("data_source"),
-    model_uri=TVBO.parcellation__data_source,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.parcellation__atlas = Slot(
-    uri=TVBO.atlas,
-    name="parcellation__atlas",
-    curie=TVBO.curie("atlas"),
-    model_uri=TVBO.parcellation__atlas,
-    domain=None,
-    range=Union[dict, BrainAtlas],
-)
-
-slots.tractogram__data_source = Slot(
-    uri=TVBO.data_source,
-    name="tractogram__data_source",
-    curie=TVBO.curie("data_source"),
-    model_uri=TVBO.tractogram__data_source,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.tractogram__number_of_subjects = Slot(
-    uri=TVBO.number_of_subjects,
-    name="tractogram__number_of_subjects",
-    curie=TVBO.curie("number_of_subjects"),
-    model_uri=TVBO.tractogram__number_of_subjects,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.tractogram__acquisition = Slot(
-    uri=TVBO.acquisition,
-    name="tractogram__acquisition",
-    curie=TVBO.curie("acquisition"),
-    model_uri=TVBO.tractogram__acquisition,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.tractogram__processing_pipeline = Slot(
-    uri=TVBO.processing_pipeline,
-    name="tractogram__processing_pipeline",
-    curie=TVBO.curie("processing_pipeline"),
-    model_uri=TVBO.tractogram__processing_pipeline,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.tractogram__reference = Slot(
-    uri=TVBO.reference,
-    name="tractogram__reference",
-    curie=TVBO.curie("reference"),
-    model_uri=TVBO.tractogram__reference,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.matrix__x = Slot(
-    uri=TVBO.x,
-    name="matrix__x",
-    curie=TVBO.curie("x"),
-    model_uri=TVBO.matrix__x,
-    domain=None,
-    range=Optional[Union[dict, BrainRegionSeries]],
-)
-
-slots.matrix__y = Slot(
-    uri=TVBO.y,
-    name="matrix__y",
-    curie=TVBO.curie("y"),
-    model_uri=TVBO.matrix__y,
-    domain=None,
-    range=Optional[Union[dict, BrainRegionSeries]],
-)
-
-slots.matrix__values = Slot(
-    uri=TVBO.values,
-    name="matrix__values",
-    curie=TVBO.curie("values"),
-    model_uri=TVBO.matrix__values,
-    domain=None,
-    range=Optional[Union[float, list[float]]],
-)
-
-slots.matrix__format = Slot(
-    uri=TVBO.format,
-    name="matrix__format",
-    curie=TVBO.curie("format"),
-    model_uri=TVBO.matrix__format,
-    domain=None,
-    range=Optional[Union[str, "SparseFormat"]],
-)
-
-slots.matrix__shape = Slot(
-    uri=TVBO.shape,
-    name="matrix__shape",
-    curie=TVBO.curie("shape"),
-    model_uri=TVBO.matrix__shape,
-    domain=None,
-    range=Optional[Union[int, list[int]]],
-)
-
-slots.matrix__dtype = Slot(
-    uri=TVBO.dtype,
-    name="matrix__dtype",
-    curie=TVBO.curie("dtype"),
-    model_uri=TVBO.matrix__dtype,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.brainRegionSeries__values = Slot(
-    uri=TVBO.values,
-    name="brainRegionSeries__values",
-    curie=TVBO.curie("values"),
-    model_uri=TVBO.brainRegionSeries__values,
-    domain=None,
-    range=Optional[Union[str, list[str]]],
-)
-
-slots.provenance__date_created = Slot(
-    uri=TVBO.date_created,
-    name="provenance__date_created",
-    curie=TVBO.curie("date_created"),
-    model_uri=TVBO.provenance__date_created,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.provenance__license = Slot(
-    uri=TVBO.license,
-    name="provenance__license",
-    curie=TVBO.curie("license"),
-    model_uri=TVBO.provenance__license,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.provenance__generated_by = Slot(
-    uri=TVBO.generated_by,
-    name="provenance__generated_by",
-    curie=TVBO.curie("generated_by"),
-    model_uri=TVBO.provenance__generated_by,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.bidsEntities__template = Slot(
-    uri=TVBO.template,
-    name="bidsEntities__template",
-    curie=TVBO.curie("template"),
-    model_uri=TVBO.bidsEntities__template,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.bidsEntities__cohort = Slot(
-    uri=TVBO.cohort,
-    name="bidsEntities__cohort",
-    curie=TVBO.curie("cohort"),
-    model_uri=TVBO.bidsEntities__cohort,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.bidsEntities__reconstruction = Slot(
-    uri=TVBO.reconstruction,
-    name="bidsEntities__reconstruction",
-    curie=TVBO.curie("reconstruction"),
-    model_uri=TVBO.bidsEntities__reconstruction,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.bidsEntities__segmentation = Slot(
-    uri=TVBO.segmentation,
-    name="bidsEntities__segmentation",
-    curie=TVBO.curie("segmentation"),
-    model_uri=TVBO.bidsEntities__segmentation,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.bidsEntities__scale = Slot(
-    uri=TVBO.scale,
-    name="bidsEntities__scale",
-    curie=TVBO.curie("scale"),
-    model_uri=TVBO.bidsEntities__scale,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.bidsEntities__atlas = Slot(
-    uri=TVBO.atlas,
-    name="bidsEntities__atlas",
-    curie=TVBO.curie("atlas"),
-    model_uri=TVBO.bidsEntities__atlas,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.bidsEntities__acquisition = Slot(
-    uri=TVBO.acquisition,
-    name="bidsEntities__acquisition",
-    curie=TVBO.curie("acquisition"),
-    model_uri=TVBO.bidsEntities__acquisition,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.network__nodes = Slot(
-    uri=TVBO.nodes,
-    name="network__nodes",
-    curie=TVBO.curie("nodes"),
-    model_uri=TVBO.network__nodes,
-    domain=None,
-    range=Optional[Union[Union[dict, Node], list[Union[dict, Node]]]],
-)
-
-slots.network__edges = Slot(
-    uri=TVBO.edges,
-    name="network__edges",
-    curie=TVBO.curie("edges"),
-    model_uri=TVBO.network__edges,
-    domain=None,
-    range=Optional[Union[Union[dict, Edge], list[Union[dict, Edge]]]],
-)
-
-slots.network__coupling = Slot(
-    uri=TVBO.coupling,
-    name="network__coupling",
-    curie=TVBO.curie("coupling"),
-    model_uri=TVBO.network__coupling,
-    domain=None,
-    range=Optional[Union[dict[Union[str, CouplingName], Union[dict, Coupling]], list[Union[dict, Coupling]]]],
-)
-
-slots.network__dynamics = Slot(
-    uri=TVBO.dynamics,
-    name="network__dynamics",
-    curie=TVBO.curie("dynamics"),
-    model_uri=TVBO.network__dynamics,
-    domain=None,
-    range=Optional[Union[dict[Union[str, DynamicsName], Union[dict, Dynamics]], list[Union[dict, Dynamics]]]],
-)
-
-slots.network__number_of_nodes = Slot(
-    uri=TVBO.number_of_nodes,
-    name="network__number_of_nodes",
-    curie=TVBO.curie("number_of_nodes"),
-    model_uri=TVBO.network__number_of_nodes,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.network__coordinate_space = Slot(
-    uri=TVBO.coordinate_space,
-    name="network__coordinate_space",
-    curie=TVBO.curie("coordinate_space"),
-    model_uri=TVBO.network__coordinate_space,
-    domain=None,
-    range=Optional[Union[dict, CommonCoordinateSpace]],
-)
-
-slots.network__parcellation = Slot(
-    uri=TVBO.parcellation,
-    name="network__parcellation",
-    curie=TVBO.curie("parcellation"),
-    model_uri=TVBO.network__parcellation,
-    domain=None,
-    range=Optional[Union[dict, Parcellation]],
-)
-
-slots.network__tractogram = Slot(
-    uri=TVBO.tractogram,
-    name="network__tractogram",
-    curie=TVBO.curie("tractogram"),
-    model_uri=TVBO.network__tractogram,
-    domain=None,
-    range=Optional[Union[dict, Tractogram]],
-)
-
-slots.network__transforms = Slot(
-    uri=TVBO.transforms,
-    name="network__transforms",
-    curie=TVBO.curie("transforms"),
-    model_uri=TVBO.network__transforms,
-    domain=None,
-    range=Optional[Union[dict[Union[str, FunctionName], Union[dict, Function]], list[Union[dict, Function]]]],
-)
-
-slots.network__data_file = Slot(
-    uri=TVBO.data_file,
-    name="network__data_file",
-    curie=TVBO.curie("data_file"),
-    model_uri=TVBO.network__data_file,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.network__descriptor = Slot(
-    uri=TVBO.descriptor,
-    name="network__descriptor",
-    curie=TVBO.curie("descriptor"),
-    model_uri=TVBO.network__descriptor,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.network__bids_dir = Slot(
-    uri=TVBO.bids_dir,
-    name="network__bids_dir",
-    curie=TVBO.curie("bids_dir"),
-    model_uri=TVBO.network__bids_dir,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.network__bids = Slot(
-    uri=TVBO.bids,
-    name="network__bids",
-    curie=TVBO.curie("bids"),
-    model_uri=TVBO.network__bids,
-    domain=None,
-    range=Optional[Union[dict, BidsEntities]],
-)
-
-slots.network__structural_measures = Slot(
-    uri=TVBO.structural_measures,
-    name="network__structural_measures",
-    curie=TVBO.curie("structural_measures"),
-    model_uri=TVBO.network__structural_measures,
-    domain=None,
-    range=Optional[Union[str, list[str]]],
-)
-
-slots.network__observational_measures = Slot(
-    uri=TVBO.observational_measures,
-    name="network__observational_measures",
-    curie=TVBO.curie("observational_measures"),
-    model_uri=TVBO.network__observational_measures,
-    domain=None,
-    range=Optional[Union[str, list[str]]],
-)
-
-slots.network__provenance = Slot(
-    uri=TVBO.provenance,
-    name="network__provenance",
-    curie=TVBO.curie("provenance"),
-    model_uri=TVBO.network__provenance,
-    domain=None,
-    range=Optional[Union[dict, Provenance]],
-)
-
-slots.network__parent_network = Slot(
-    uri=TVBO.parent_network,
-    name="network__parent_network",
-    curie=TVBO.curie("parent_network"),
-    model_uri=TVBO.network__parent_network,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.network__node_mapping = Slot(
-    uri=TVBO.node_mapping,
-    name="network__node_mapping",
-    curie=TVBO.curie("node_mapping"),
-    model_uri=TVBO.network__node_mapping,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.network__distance_unit = Slot(
-    uri=TVBO.distance_unit,
-    name="network__distance_unit",
-    curie=TVBO.curie("distance_unit"),
-    model_uri=TVBO.network__distance_unit,
-    domain=None,
-    range=Optional[Union[str, "UnitEnum"]],
-)
-
-slots.network__time_unit = Slot(
-    uri=TVBO.time_unit,
-    name="network__time_unit",
-    curie=TVBO.curie("time_unit"),
-    model_uri=TVBO.network__time_unit,
-    domain=None,
-    range=Optional[Union[str, "UnitEnum"]],
-)
-
-slots.network__edge_matrix_files = Slot(
-    uri=TVBO.edge_matrix_files,
-    name="network__edge_matrix_files",
-    curie=TVBO.curie("edge_matrix_files"),
-    model_uri=TVBO.network__edge_matrix_files,
-    domain=None,
-    range=Optional[Union[Union[str, FileName], list[Union[str, FileName]]]],
-)
-
-slots.network__graph_generator = Slot(
-    uri=TVBO.graph_generator,
-    name="network__graph_generator",
-    curie=TVBO.curie("graph_generator"),
-    model_uri=TVBO.network__graph_generator,
-    domain=None,
-    range=Optional[Union[dict, GraphGenerator]],
-)
-
-slots.graphGenerator__type = Slot(
-    uri=TVBO.type,
-    name="graphGenerator__type",
-    curie=TVBO.curie("type"),
-    model_uri=TVBO.graphGenerator__type,
-    domain=None,
-    range=str,
-)
-
-slots.graphGenerator__seed = Slot(
-    uri=TVBO.seed,
-    name="graphGenerator__seed",
-    curie=TVBO.curie("seed"),
-    model_uri=TVBO.graphGenerator__seed,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.graphGenerator__directed = Slot(
-    uri=TVBO.directed,
-    name="graphGenerator__directed",
-    curie=TVBO.curie("directed"),
-    model_uri=TVBO.graphGenerator__directed,
-    domain=None,
-    range=Optional[Union[bool, Bool]],
-)
-
-slots.graphGenerator__parameters = Slot(
-    uri=TVBO.parameters,
-    name="graphGenerator__parameters",
-    curie=TVBO.curie("parameters"),
-    model_uri=TVBO.graphGenerator__parameters,
-    domain=None,
-    range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]],
-)
-
-slots.file__type = Slot(
-    uri=TVBO.type, name="file__type", curie=TVBO.curie("type"), model_uri=TVBO.file__type, domain=None, range=Optional[str]
-)
-
-slots.file__path = Slot(
-    uri=TVBO.path, name="file__path", curie=TVBO.curie("path"), model_uri=TVBO.file__path, domain=None, range=Optional[str]
-)
-
-slots.file__extension = Slot(
-    uri=TVBO.extension,
-    name="file__extension",
-    curie=TVBO.curie("extension"),
-    model_uri=TVBO.file__extension,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.node__id = Slot(uri=TVBO.id, name="node__id", curie=TVBO.curie("id"), model_uri=TVBO.node__id, domain=None, range=int)
-
-slots.node__dynamics = Slot(
-    uri=TVBO.dynamics,
-    name="node__dynamics",
-    curie=TVBO.curie("dynamics"),
-    model_uri=TVBO.node__dynamics,
-    domain=None,
-    range=Optional[Union[str, DynamicsName]],
-)
-
-slots.node__position = Slot(
-    uri=TVBO.position,
-    name="node__position",
-    curie=TVBO.curie("position"),
-    model_uri=TVBO.node__position,
-    domain=None,
-    range=Optional[Union[dict, Coordinate]],
-)
-
-slots.node__region = Slot(
-    uri=TVBO.region,
-    name="node__region",
-    curie=TVBO.curie("region"),
-    model_uri=TVBO.node__region,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.node__state = Slot(
-    uri=TVBO.state,
-    name="node__state",
-    curie=TVBO.curie("state"),
-    model_uri=TVBO.node__state,
-    domain=None,
-    range=Optional[Union[dict[Union[str, StateValueName], Union[dict, StateValue]], list[Union[dict, StateValue]]]],
-)
-
-slots.node__events = Slot(
-    uri=TVBO.events,
-    name="node__events",
-    curie=TVBO.curie("events"),
-    model_uri=TVBO.node__events,
-    domain=None,
-    range=Optional[Union[dict[Union[str, EventName], Union[dict, Event]], list[Union[dict, Event]]]],
-)
-
-slots.edge__source = Slot(
-    uri=TVBO.source,
-    name="edge__source",
-    curie=TVBO.curie("source"),
-    model_uri=TVBO.edge__source,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.edge__target = Slot(
-    uri=TVBO.target,
-    name="edge__target",
-    curie=TVBO.curie("target"),
-    model_uri=TVBO.edge__target,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.edge__unit = Slot(
-    uri=TVBO.unit, name="edge__unit", curie=TVBO.curie("unit"), model_uri=TVBO.edge__unit, domain=None, range=Optional[str]
-)
-
-slots.edge__format = Slot(
-    uri=TVBO.format,
-    name="edge__format",
-    curie=TVBO.curie("format"),
-    model_uri=TVBO.edge__format,
-    domain=None,
-    range=Optional[Union[str, "SparseFormat"]],
-)
-
-slots.edge__weighted = Slot(
-    uri=TVBO.weighted,
-    name="edge__weighted",
-    curie=TVBO.curie("weighted"),
-    model_uri=TVBO.edge__weighted,
-    domain=None,
-    range=Optional[Union[bool, Bool]],
-)
-
-slots.edge__valid_diagonal = Slot(
-    uri=TVBO.valid_diagonal,
-    name="edge__valid_diagonal",
-    curie=TVBO.curie("valid_diagonal"),
-    model_uri=TVBO.edge__valid_diagonal,
-    domain=None,
-    range=Optional[Union[bool, Bool]],
-)
-
-slots.edge__non_negative = Slot(
-    uri=TVBO.non_negative,
-    name="edge__non_negative",
-    curie=TVBO.curie("non_negative"),
-    model_uri=TVBO.edge__non_negative,
-    domain=None,
-    range=Optional[Union[bool, Bool]],
-)
-
-slots.edge__source_var = Slot(
-    uri=TVBO.source_var,
-    name="edge__source_var",
-    curie=TVBO.curie("source_var"),
-    model_uri=TVBO.edge__source_var,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.edge__target_var = Slot(
-    uri=TVBO.target_var,
-    name="edge__target_var",
-    curie=TVBO.curie("target_var"),
-    model_uri=TVBO.edge__target_var,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.edge__coupling = Slot(
-    uri=TVBO.coupling,
-    name="edge__coupling",
-    curie=TVBO.curie("coupling"),
-    model_uri=TVBO.edge__coupling,
-    domain=None,
-    range=Optional[Union[str, CouplingName]],
-)
-
-slots.edge__directed = Slot(
-    uri=TVBO.directed,
-    name="edge__directed",
-    curie=TVBO.curie("directed"),
-    model_uri=TVBO.edge__directed,
-    domain=None,
-    range=Optional[Union[bool, Bool]],
-)
-
-slots.edge__target_network = Slot(
-    uri=TVBO.target_network,
-    name="edge__target_network",
-    curie=TVBO.curie("target_network"),
-    model_uri=TVBO.edge__target_network,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.edge__dimension_labels = Slot(
-    uri=TVBO.dimension_labels,
-    name="edge__dimension_labels",
-    curie=TVBO.curie("dimension_labels"),
-    model_uri=TVBO.edge__dimension_labels,
-    domain=None,
-    range=Optional[Union[str, list[str]]],
-)
-
-slots.edge__dynamics = Slot(
-    uri=TVBO.dynamics,
-    name="edge__dynamics",
-    curie=TVBO.curie("dynamics"),
-    model_uri=TVBO.edge__dynamics,
-    domain=None,
-    range=Optional[Union[str, DynamicsName]],
-)
-
-slots.edge__events = Slot(
-    uri=TVBO.events,
-    name="edge__events",
-    curie=TVBO.curie("events"),
-    model_uri=TVBO.edge__events,
-    domain=None,
-    range=Optional[Union[dict[Union[str, EventName], Union[dict, Event]], list[Union[dict, Event]]]],
-)
-
-slots.observation__source = Slot(
-    uri=TVBO.source,
-    name="observation__source",
-    curie=TVBO.curie("source"),
-    model_uri=TVBO.observation__source,
-    domain=None,
-    range=Optional[Union[str, StateVariableName]],
-)
-
-slots.observation__period = Slot(
-    uri=TVBO.period,
-    name="observation__period",
-    curie=TVBO.curie("period"),
-    model_uri=TVBO.observation__period,
-    domain=None,
-    range=Optional[float],
-)
-
-slots.observation__downsample_period = Slot(
-    uri=TVBO.downsample_period,
-    name="observation__downsample_period",
-    curie=TVBO.curie("downsample_period"),
-    model_uri=TVBO.observation__downsample_period,
-    domain=None,
-    range=Optional[float],
-)
-
-slots.observation__voi = Slot(
-    uri=TVBO.voi,
-    name="observation__voi",
-    curie=TVBO.curie("voi"),
-    model_uri=TVBO.observation__voi,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.observation__imaging_modality = Slot(
-    uri=TVBO.imaging_modality,
-    name="observation__imaging_modality",
-    curie=TVBO.curie("imaging_modality"),
-    model_uri=TVBO.observation__imaging_modality,
-    domain=None,
-    range=Optional[Union[str, "ImagingModality"]],
-)
-
-slots.observation__warmup_source = Slot(
-    uri=TVBO.warmup_source,
-    name="observation__warmup_source",
-    curie=TVBO.curie("warmup_source"),
-    model_uri=TVBO.observation__warmup_source,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.observation__data_source = Slot(
-    uri=TVBO.data_source,
-    name="observation__data_source",
-    curie=TVBO.curie("data_source"),
-    model_uri=TVBO.observation__data_source,
-    domain=None,
-    range=Optional[Union[dict, DataSource]],
-)
-
-slots.observation__skip_t = Slot(
-    uri=TVBO.skip_t,
-    name="observation__skip_t",
-    curie=TVBO.curie("skip_t"),
-    model_uri=TVBO.observation__skip_t,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.observation__tail_samples = Slot(
-    uri=TVBO.tail_samples,
-    name="observation__tail_samples",
-    curie=TVBO.curie("tail_samples"),
-    model_uri=TVBO.observation__tail_samples,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.observation__aggregation = Slot(
-    uri=TVBO.aggregation,
-    name="observation__aggregation",
-    curie=TVBO.curie("aggregation"),
-    model_uri=TVBO.observation__aggregation,
-    domain=None,
-    range=Optional[Union[str, "AggregationType"]],
-)
-
-slots.observation__window_size = Slot(
-    uri=TVBO.window_size,
-    name="observation__window_size",
-    curie=TVBO.curie("window_size"),
-    model_uri=TVBO.observation__window_size,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.observation__pipeline = Slot(
-    uri=TVBO.pipeline,
-    name="observation__pipeline",
-    curie=TVBO.curie("pipeline"),
-    model_uri=TVBO.observation__pipeline,
-    domain=None,
-    range=Optional[Union[Union[dict, FunctionCall], list[Union[dict, FunctionCall]]]],
-)
-
-slots.observation__class_reference = Slot(
-    uri=TVBO.class_reference,
-    name="observation__class_reference",
-    curie=TVBO.curie("class_reference"),
-    model_uri=TVBO.observation__class_reference,
-    domain=None,
-    range=Optional[Union[dict, ClassReference]],
-)
-
-slots.derivedObservation__source_observations = Slot(
-    uri=TVBO.source_observations,
-    name="derivedObservation__source_observations",
-    curie=TVBO.curie("source_observations"),
-    model_uri=TVBO.derivedObservation__source_observations,
-    domain=None,
-    range=Union[Union[str, ObservationName], list[Union[str, ObservationName]]],
-)
-
-slots.dynamics__derived_parameters = Slot(
-    uri=TVBO.derived_parameters,
-    name="dynamics__derived_parameters",
-    curie=TVBO.curie("derived_parameters"),
-    model_uri=TVBO.dynamics__derived_parameters,
-    domain=None,
-    range=Optional[
-        Union[dict[Union[str, DerivedParameterName], Union[dict, DerivedParameter]], list[Union[dict, DerivedParameter]]]
-    ],
-)
-
-slots.dynamics__derived_variables = Slot(
-    uri=TVBO.derived_variables,
-    name="dynamics__derived_variables",
-    curie=TVBO.curie("derived_variables"),
-    model_uri=TVBO.dynamics__derived_variables,
-    domain=None,
-    range=Optional[
-        Union[dict[Union[str, DerivedVariableName], Union[dict, DerivedVariable]], list[Union[dict, DerivedVariable]]]
-    ],
-)
-
-slots.dynamics__coupling_terms = Slot(
-    uri=TVBO.coupling_terms,
-    name="dynamics__coupling_terms",
-    curie=TVBO.curie("coupling_terms"),
-    model_uri=TVBO.dynamics__coupling_terms,
-    domain=None,
-    range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]],
-)
-
-slots.dynamics__coupling_inputs = Slot(
-    uri=TVBO.coupling_inputs,
-    name="dynamics__coupling_inputs",
-    curie=TVBO.curie("coupling_inputs"),
-    model_uri=TVBO.dynamics__coupling_inputs,
-    domain=None,
-    range=Optional[Union[dict[Union[str, CouplingInputName], Union[dict, CouplingInput]], list[Union[dict, CouplingInput]]]],
-)
-
-slots.dynamics__state_variables = Slot(
-    uri=TVBO.state_variables,
-    name="dynamics__state_variables",
-    curie=TVBO.curie("state_variables"),
-    model_uri=TVBO.dynamics__state_variables,
-    domain=None,
-    range=Optional[Union[dict[Union[str, StateVariableName], Union[dict, StateVariable]], list[Union[dict, StateVariable]]]],
-)
-
-slots.dynamics__modified = Slot(
-    uri=TVBO.modified,
-    name="dynamics__modified",
-    curie=TVBO.curie("modified"),
-    model_uri=TVBO.dynamics__modified,
-    domain=None,
-    range=Optional[Union[bool, Bool]],
-)
-
-slots.dynamics__output = Slot(
-    uri=TVBO.output,
-    name="dynamics__output",
-    curie=TVBO.curie("output"),
-    model_uri=TVBO.dynamics__output,
-    domain=None,
-    range=Optional[Union[str, list[str]]],
-)
-
-slots.dynamics__derived_from_model = Slot(
-    uri=TVBO.derived_from_model,
-    name="dynamics__derived_from_model",
-    curie=TVBO.curie("derived_from_model"),
-    model_uri=TVBO.dynamics__derived_from_model,
-    domain=None,
-    range=Optional[Union[str, DynamicsName]],
-)
-
-slots.dynamics__number_of_modes = Slot(
-    uri=TVBO.number_of_modes,
-    name="dynamics__number_of_modes",
-    curie=TVBO.curie("number_of_modes"),
-    model_uri=TVBO.dynamics__number_of_modes,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.dynamics__local_coupling_term = Slot(
-    uri=TVBO.local_coupling_term,
-    name="dynamics__local_coupling_term",
-    curie=TVBO.curie("local_coupling_term"),
-    model_uri=TVBO.dynamics__local_coupling_term,
-    domain=None,
-    range=Optional[Union[str, ParameterName]],
-)
-
-slots.dynamics__functions = Slot(
-    uri=TVBO.functions,
-    name="dynamics__functions",
-    curie=TVBO.curie("functions"),
-    model_uri=TVBO.dynamics__functions,
-    domain=None,
-    range=Optional[Union[dict[Union[str, FunctionName], Union[dict, Function]], list[Union[dict, Function]]]],
-)
-
-slots.dynamics__stimulus = Slot(
-    uri=TVBO.stimulus,
-    name="dynamics__stimulus",
-    curie=TVBO.curie("stimulus"),
-    model_uri=TVBO.dynamics__stimulus,
-    domain=None,
-    range=Optional[Union[dict, Stimulus]],
-)
-
-slots.dynamics__modes = Slot(
-    uri=TVBO.modes,
-    name="dynamics__modes",
-    curie=TVBO.curie("modes"),
-    model_uri=TVBO.dynamics__modes,
-    domain=None,
-    range=Optional[Union[dict[Union[str, DynamicsName], Union[dict, Dynamics]], list[Union[dict, Dynamics]]]],
-)
-
-slots.dynamics__model_type = Slot(
-    uri=TVBO.model_type,
-    name="dynamics__model_type",
-    curie=TVBO.curie("model_type"),
-    model_uri=TVBO.dynamics__model_type,
-    domain=None,
-    range=Optional[Union[str, "ModelType"]],
-)
-
-slots.dynamics__system_type = Slot(
-    uri=TVBO.system_type,
-    name="dynamics__system_type",
-    curie=TVBO.curie("system_type"),
-    model_uri=TVBO.dynamics__system_type,
-    domain=None,
-    range=Optional[Union[str, "SystemType"]],
-)
-
-slots.dynamics__autonomous = Slot(
-    uri=TVBO.autonomous,
-    name="dynamics__autonomous",
-    curie=TVBO.curie("autonomous"),
-    model_uri=TVBO.dynamics__autonomous,
-    domain=None,
-    range=Optional[Union[bool, Bool]],
-)
-
-slots.dynamics__observed = Slot(
-    uri=TVBO.observed,
-    name="dynamics__observed",
-    curie=TVBO.curie("observed"),
-    model_uri=TVBO.dynamics__observed,
-    domain=None,
-    range=Optional[
-        Union[dict[Union[str, DerivedVariableName], Union[dict, DerivedVariable]], list[Union[dict, DerivedVariable]]]
-    ],
-)
-
-slots.dynamics__events = Slot(
-    uri=TVBO.events,
-    name="dynamics__events",
-    curie=TVBO.curie("events"),
-    model_uri=TVBO.dynamics__events,
-    domain=None,
-    range=Optional[Union[dict[Union[str, EventName], Union[dict, Event]], list[Union[dict, Event]]]],
-)
-
-slots.stateVariable__variable_of_interest = Slot(
-    uri=TVBO.variable_of_interest,
-    name="stateVariable__variable_of_interest",
-    curie=TVBO.curie("variable_of_interest"),
-    model_uri=TVBO.stateVariable__variable_of_interest,
-    domain=None,
-    range=Optional[Union[bool, Bool]],
-)
-
-slots.stateVariable__coupling_variable = Slot(
-    uri=TVBO.coupling_variable,
-    name="stateVariable__coupling_variable",
-    curie=TVBO.curie("coupling_variable"),
-    model_uri=TVBO.stateVariable__coupling_variable,
-    domain=None,
-    range=Optional[Union[bool, Bool]],
-)
-
-slots.stateVariable__equation_type = Slot(
-    uri=TVBO.equation_type,
-    name="stateVariable__equation_type",
-    curie=TVBO.curie("equation_type"),
-    model_uri=TVBO.stateVariable__equation_type,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.stateVariable__equation_order = Slot(
-    uri=TVBO.equation_order,
-    name="stateVariable__equation_order",
-    curie=TVBO.curie("equation_order"),
-    model_uri=TVBO.stateVariable__equation_order,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.stateVariable__noise = Slot(
-    uri=TVBO.noise,
-    name="stateVariable__noise",
-    curie=TVBO.curie("noise"),
-    model_uri=TVBO.stateVariable__noise,
-    domain=None,
-    range=Optional[Union[dict, Noise]],
-)
-
-slots.stateVariable__stimulation_variable = Slot(
-    uri=TVBO.stimulation_variable,
-    name="stateVariable__stimulation_variable",
-    curie=TVBO.curie("stimulation_variable"),
-    model_uri=TVBO.stateVariable__stimulation_variable,
-    domain=None,
-    range=Optional[Union[bool, Bool]],
-)
-
-slots.stateVariable__boundaries = Slot(
-    uri=TVBO.boundaries,
-    name="stateVariable__boundaries",
-    curie=TVBO.curie("boundaries"),
-    model_uri=TVBO.stateVariable__boundaries,
-    domain=None,
-    range=Optional[Union[dict, Range]],
-)
-
-slots.stateVariable__initial_value = Slot(
-    uri=TVBO.initial_value,
-    name="stateVariable__initial_value",
-    curie=TVBO.curie("initial_value"),
-    model_uri=TVBO.stateVariable__initial_value,
-    domain=None,
-    range=Optional[float],
-)
-
-slots.stateVariable__derivative_initial_value = Slot(
-    uri=TVBO.derivative_initial_value,
-    name="stateVariable__derivative_initial_value",
-    curie=TVBO.curie("derivative_initial_value"),
-    model_uri=TVBO.stateVariable__derivative_initial_value,
-    domain=None,
-    range=Optional[float],
-)
-
-slots.stateVariable__distribution = Slot(
-    uri=TVBO.distribution,
-    name="stateVariable__distribution",
-    curie=TVBO.curie("distribution"),
-    model_uri=TVBO.stateVariable__distribution,
-    domain=None,
-    range=Optional[Union[dict, Distribution]],
-)
-
-slots.stateVariable__history = Slot(
-    uri=TVBO.history,
-    name="stateVariable__history",
-    curie=TVBO.curie("history"),
-    model_uri=TVBO.stateVariable__history,
-    domain=None,
-    range=Optional[Union[dict, TimeSeries]],
-)
-
-slots.distribution__domain = Slot(
-    uri=TVBO.domain,
-    name="distribution__domain",
-    curie=TVBO.curie("domain"),
-    model_uri=TVBO.distribution__domain,
-    domain=None,
-    range=Optional[Union[dict, Range]],
-)
-
-slots.distribution__function = Slot(
-    uri=TVBO.function,
-    name="distribution__function",
-    curie=TVBO.curie("function"),
-    model_uri=TVBO.distribution__function,
-    domain=None,
-    range=Optional[Union[dict, Function]],
-)
-
-slots.distribution__seed = Slot(
-    uri=TVBO.seed,
-    name="distribution__seed",
-    curie=TVBO.curie("seed"),
-    model_uri=TVBO.distribution__seed,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.distribution__axis = Slot(
-    uri=TVBO.axis,
-    name="distribution__axis",
-    curie=TVBO.curie("axis"),
-    model_uri=TVBO.distribution__axis,
-    domain=None,
-    range=Optional[Union[str, "SamplingAxis"]],
-)
-
-slots.distribution__correlation = Slot(
-    uri=TVBO.correlation,
-    name="distribution__correlation",
-    curie=TVBO.curie("correlation"),
-    model_uri=TVBO.distribution__correlation,
-    domain=None,
-    range=Optional[Union[dict, Matrix]],
-)
-
-slots.parameter__comment = Slot(
-    uri=TVBO.comment,
-    name="parameter__comment",
-    curie=TVBO.curie("comment"),
-    model_uri=TVBO.parameter__comment,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.parameter__heterogeneous = Slot(
-    uri=TVBO.heterogeneous,
-    name="parameter__heterogeneous",
-    curie=TVBO.curie("heterogeneous"),
-    model_uri=TVBO.parameter__heterogeneous,
-    domain=None,
-    range=Optional[Union[bool, Bool]],
-)
-
-slots.parameter__distribution = Slot(
-    uri=TVBO.distribution,
-    name="parameter__distribution",
-    curie=TVBO.curie("distribution"),
-    model_uri=TVBO.parameter__distribution,
-    domain=None,
-    range=Optional[Union[dict, Distribution]],
-)
-
-slots.parameter__free = Slot(
-    uri=TVBO.free,
-    name="parameter__free",
-    curie=TVBO.curie("free"),
-    model_uri=TVBO.parameter__free,
-    domain=None,
-    range=Optional[Union[bool, Bool]],
-)
-
-slots.parameter__shape = Slot(
-    uri=TVBO.shape,
-    name="parameter__shape",
-    curie=TVBO.curie("shape"),
-    model_uri=TVBO.parameter__shape,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.parameter__explored_values = Slot(
-    uri=TVBO.explored_values,
-    name="parameter__explored_values",
-    curie=TVBO.curie("explored_values"),
-    model_uri=TVBO.parameter__explored_values,
-    domain=None,
-    range=Optional[Union[float, list[float]]],
-)
-
-slots.parameter__element_domains = Slot(
-    uri=TVBO.element_domains,
-    name="parameter__element_domains",
-    curie=TVBO.curie("element_domains"),
-    model_uri=TVBO.parameter__element_domains,
-    domain=None,
-    range=Optional[Union[Union[dict, Range], list[Union[dict, Range]]]],
-)
-
-slots.couplingInput__source = Slot(
-    uri=TVBO.source,
-    name="couplingInput__source",
-    curie=TVBO.curie("source"),
-    model_uri=TVBO.couplingInput__source,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.couplingInput__dimension = Slot(
-    uri=TVBO.dimension,
-    name="couplingInput__dimension",
-    curie=TVBO.curie("dimension"),
-    model_uri=TVBO.couplingInput__dimension,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.couplingInput__keys = Slot(
-    uri=TVBO.keys,
-    name="couplingInput__keys",
-    curie=TVBO.curie("keys"),
-    model_uri=TVBO.couplingInput__keys,
-    domain=None,
-    range=Optional[Union[str, list[str]]],
-)
-
-slots.argument__value = Slot(
-    uri=TVBO.value,
-    name="argument__value",
-    curie=TVBO.curie("value"),
-    model_uri=TVBO.argument__value,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.argument__unit = Slot(
-    uri=TVBO.unit,
-    name="argument__unit",
-    curie=TVBO.curie("unit"),
-    model_uri=TVBO.argument__unit,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.function__input = Slot(
-    uri=TVBO.input,
-    name="function__input",
-    curie=TVBO.curie("input"),
-    model_uri=TVBO.function__input,
-    domain=None,
-    range=Optional[Union[str, FunctionName]],
-)
-
-slots.function__output = Slot(
-    uri=TVBO.output,
-    name="function__output",
-    curie=TVBO.curie("output"),
-    model_uri=TVBO.function__output,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.function__iri = Slot(
-    uri=TVBO.iri, name="function__iri", curie=TVBO.curie("iri"), model_uri=TVBO.function__iri, domain=None, range=Optional[str]
-)
-
-slots.function__arguments = Slot(
-    uri=TVBO.arguments,
-    name="function__arguments",
-    curie=TVBO.curie("arguments"),
-    model_uri=TVBO.function__arguments,
-    domain=None,
-    range=Optional[Union[dict[Union[str, ArgumentName], Union[dict, Argument]], list[Union[dict, Argument]]]],
-)
-
-slots.function__output_equation = Slot(
-    uri=TVBO.output_equation,
-    name="function__output_equation",
-    curie=TVBO.curie("output_equation"),
-    model_uri=TVBO.function__output_equation,
-    domain=None,
-    range=Optional[Union[dict, Equation]],
-)
-
-slots.function__source_code = Slot(
-    uri=TVBO.source_code,
-    name="function__source_code",
-    curie=TVBO.curie("source_code"),
-    model_uri=TVBO.function__source_code,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.function__callable = Slot(
-    uri=TVBO.callable,
-    name="function__callable",
-    curie=TVBO.curie("callable"),
-    model_uri=TVBO.function__callable,
-    domain=None,
-    range=Optional[Union[dict, Callable]],
-)
-
-slots.function__apply_on_dimension = Slot(
-    uri=TVBO.apply_on_dimension,
-    name="function__apply_on_dimension",
-    curie=TVBO.curie("apply_on_dimension"),
-    model_uri=TVBO.function__apply_on_dimension,
-    domain=None,
-    range=Optional[Union[str, "DimensionType"]],
-)
-
-slots.function__aggregate = Slot(
-    uri=TVBO.aggregate,
-    name="function__aggregate",
-    curie=TVBO.curie("aggregate"),
-    model_uri=TVBO.function__aggregate,
-    domain=None,
-    range=Optional[Union[dict, Aggregation]],
-)
-
-slots.function__time_range = Slot(
-    uri=TVBO.time_range,
-    name="function__time_range",
-    curie=TVBO.curie("time_range"),
-    model_uri=TVBO.function__time_range,
-    domain=None,
-    range=Optional[Union[dict, Range]],
-)
-
-slots.aggregation__over = Slot(
-    uri=TVBO.over,
-    name="aggregation__over",
-    curie=TVBO.curie("over"),
-    model_uri=TVBO.aggregation__over,
-    domain=None,
-    range=Optional[Union[str, "DimensionType"]],
-)
-
-slots.aggregation__type = Slot(
-    uri=TVBO.type,
-    name="aggregation__type",
-    curie=TVBO.curie("type"),
-    model_uri=TVBO.aggregation__type,
-    domain=None,
-    range=Optional[Union[str, "ReductionType"]],
-)
-
-slots.lossFunction__aggregate = Slot(
-    uri=TVBO.aggregate,
-    name="lossFunction__aggregate",
-    curie=TVBO.curie("aggregate"),
-    model_uri=TVBO.lossFunction__aggregate,
-    domain=None,
-    range=Optional[Union[dict, Aggregation]],
-)
-
-slots.functionCall__name = Slot(
-    uri=TVBO.name,
-    name="functionCall__name",
-    curie=TVBO.curie("name"),
-    model_uri=TVBO.functionCall__name,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.functionCall__function = Slot(
-    uri=TVBO.function,
-    name="functionCall__function",
-    curie=TVBO.curie("function"),
-    model_uri=TVBO.functionCall__function,
-    domain=None,
-    range=Optional[Union[str, FunctionName]],
-)
-
-slots.functionCall__callable = Slot(
-    uri=TVBO.callable,
-    name="functionCall__callable",
-    curie=TVBO.curie("callable"),
-    model_uri=TVBO.functionCall__callable,
-    domain=None,
-    range=Optional[Union[dict, Callable]],
-)
-
-slots.functionCall__class_call = Slot(
-    uri=TVBO.class_call,
-    name="functionCall__class_call",
-    curie=TVBO.curie("class_call"),
-    model_uri=TVBO.functionCall__class_call,
-    domain=None,
-    range=Optional[Union[dict, ClassReference]],
-)
-
-slots.functionCall__input = Slot(
-    uri=TVBO.input,
-    name="functionCall__input",
-    curie=TVBO.curie("input"),
-    model_uri=TVBO.functionCall__input,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.functionCall__output = Slot(
-    uri=TVBO.output,
-    name="functionCall__output",
-    curie=TVBO.curie("output"),
-    model_uri=TVBO.functionCall__output,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.functionCall__apply_on_dimension = Slot(
-    uri=TVBO.apply_on_dimension,
-    name="functionCall__apply_on_dimension",
-    curie=TVBO.curie("apply_on_dimension"),
-    model_uri=TVBO.functionCall__apply_on_dimension,
-    domain=None,
-    range=Optional[Union[str, "DimensionType"]],
-)
-
-slots.functionCall__aggregate = Slot(
-    uri=TVBO.aggregate,
-    name="functionCall__aggregate",
-    curie=TVBO.curie("aggregate"),
-    model_uri=TVBO.functionCall__aggregate,
-    domain=None,
-    range=Optional[Union[dict, Aggregation]],
-)
-
-slots.functionCall__arguments = Slot(
-    uri=TVBO.arguments,
-    name="functionCall__arguments",
-    curie=TVBO.curie("arguments"),
-    model_uri=TVBO.functionCall__arguments,
-    domain=None,
-    range=Optional[Union[dict[Union[str, ArgumentName], Union[dict, Argument]], list[Union[dict, Argument]]]],
-)
-
-slots.functionCall__time_range = Slot(
-    uri=TVBO.time_range,
-    name="functionCall__time_range",
-    curie=TVBO.curie("time_range"),
-    model_uri=TVBO.functionCall__time_range,
-    domain=None,
-    range=Optional[Union[dict, Range]],
-)
-
-slots.functionCall__source_code = Slot(
-    uri=TVBO.source_code,
-    name="functionCall__source_code",
-    curie=TVBO.curie("source_code"),
-    model_uri=TVBO.functionCall__source_code,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.callable__module = Slot(
-    uri=TVBO.module,
-    name="callable__module",
-    curie=TVBO.curie("module"),
-    model_uri=TVBO.callable__module,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.callable__software = Slot(
-    uri=TVBO.software,
-    name="callable__software",
-    curie=TVBO.curie("software"),
-    model_uri=TVBO.callable__software,
-    domain=None,
-    range=Optional[Union[dict, SoftwareRequirement]],
-)
-
-slots.classReference__constructor_args = Slot(
-    uri=TVBO.constructor_args,
-    name="classReference__constructor_args",
-    curie=TVBO.curie("constructor_args"),
-    model_uri=TVBO.classReference__constructor_args,
-    domain=None,
-    range=Optional[Union[dict[Union[str, ArgumentName], Union[dict, Argument]], list[Union[dict, Argument]]]],
-)
-
-slots.classReference__call_args = Slot(
-    uri=TVBO.call_args,
-    name="classReference__call_args",
-    curie=TVBO.curie("call_args"),
-    model_uri=TVBO.classReference__call_args,
-    domain=None,
-    range=Optional[Union[dict[Union[str, ArgumentName], Union[dict, Argument]], list[Union[dict, Argument]]]],
-)
-
-slots.classReference__warmup_source = Slot(
-    uri=TVBO.warmup_source,
-    name="classReference__warmup_source",
-    curie=TVBO.curie("warmup_source"),
-    model_uri=TVBO.classReference__warmup_source,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.case__condition = Slot(
-    uri=TVBO.condition,
-    name="case__condition",
-    curie=TVBO.curie("condition"),
-    model_uri=TVBO.case__condition,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.case__equation = Slot(
-    uri=TVBO.equation,
-    name="case__equation",
-    curie=TVBO.curie("equation"),
-    model_uri=TVBO.case__equation,
-    domain=None,
-    range=Optional[Union[dict, Equation]],
-)
-
-slots.derivedVariable__conditional = Slot(
-    uri=TVBO.conditional,
-    name="derivedVariable__conditional",
-    curie=TVBO.curie("conditional"),
-    model_uri=TVBO.derivedVariable__conditional,
-    domain=None,
-    range=Optional[Union[bool, Bool]],
-)
-
-slots.derivedVariable__cases = Slot(
-    uri=TVBO.cases,
-    name="derivedVariable__cases",
-    curie=TVBO.curie("cases"),
-    model_uri=TVBO.derivedVariable__cases,
-    domain=None,
-    range=Optional[Union[Union[dict, Case], list[Union[dict, Case]]]],
-)
-
-slots.noise__noise_type = Slot(
-    uri=TVBO.noise_type,
-    name="noise__noise_type",
-    curie=TVBO.curie("noise_type"),
-    model_uri=TVBO.noise__noise_type,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.noise__correlated = Slot(
-    uri=TVBO.correlated,
-    name="noise__correlated",
-    curie=TVBO.curie("correlated"),
-    model_uri=TVBO.noise__correlated,
-    domain=None,
-    range=Optional[Union[bool, Bool]],
-)
-
-slots.noise__gaussian = Slot(
-    uri=TVBO.gaussian,
-    name="noise__gaussian",
-    curie=TVBO.curie("gaussian"),
-    model_uri=TVBO.noise__gaussian,
-    domain=None,
-    range=Optional[Union[bool, Bool]],
-)
-
-slots.noise__additive = Slot(
-    uri=TVBO.additive,
-    name="noise__additive",
-    curie=TVBO.curie("additive"),
-    model_uri=TVBO.noise__additive,
-    domain=None,
-    range=Optional[Union[bool, Bool]],
-)
-
-slots.noise__seed = Slot(
-    uri=TVBO.seed, name="noise__seed", curie=TVBO.curie("seed"), model_uri=TVBO.noise__seed, domain=None, range=Optional[int]
-)
-
-slots.noise__random_state = Slot(
-    uri=TVBO.random_state,
-    name="noise__random_state",
-    curie=TVBO.curie("random_state"),
-    model_uri=TVBO.noise__random_state,
-    domain=None,
-    range=Optional[Union[dict, RandomStream]],
-)
-
-slots.noise__intensity = Slot(
-    uri=TVBO.intensity,
-    name="noise__intensity",
-    curie=TVBO.curie("intensity"),
-    model_uri=TVBO.noise__intensity,
-    domain=None,
-    range=Optional[Union[dict, Parameter]],
-)
-
-slots.noise__function = Slot(
-    uri=TVBO.function,
-    name="noise__function",
-    curie=TVBO.curie("function"),
-    model_uri=TVBO.noise__function,
-    domain=None,
-    range=Optional[Union[dict, Function]],
-)
-
-slots.noise__pycode = Slot(
-    uri=TVBO.pycode,
-    name="noise__pycode",
-    curie=TVBO.curie("pycode"),
-    model_uri=TVBO.noise__pycode,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.noise__targets = Slot(
-    uri=TVBO.targets,
-    name="noise__targets",
-    curie=TVBO.curie("targets"),
-    model_uri=TVBO.noise__targets,
-    domain=None,
-    range=Optional[Union[dict[Union[str, StateVariableName], Union[dict, StateVariable]], list[Union[dict, StateVariable]]]],
-)
-
-slots.dataSource__path = Slot(
-    uri=TVBO.path,
-    name="dataSource__path",
-    curie=TVBO.curie("path"),
-    model_uri=TVBO.dataSource__path,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.dataSource__loader = Slot(
-    uri=TVBO.loader,
-    name="dataSource__loader",
-    curie=TVBO.curie("loader"),
-    model_uri=TVBO.dataSource__loader,
-    domain=None,
-    range=Optional[Union[dict, Callable]],
-)
-
-slots.dataSource__format = Slot(
-    uri=TVBO.format,
-    name="dataSource__format",
-    curie=TVBO.curie("format"),
-    model_uri=TVBO.dataSource__format,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.dataSource__key = Slot(
-    uri=TVBO.key,
-    name="dataSource__key",
-    curie=TVBO.curie("key"),
-    model_uri=TVBO.dataSource__key,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.dataSource__preprocessing = Slot(
-    uri=TVBO.preprocessing,
-    name="dataSource__preprocessing",
-    curie=TVBO.curie("preprocessing"),
-    model_uri=TVBO.dataSource__preprocessing,
-    domain=None,
-    range=Optional[Union[dict, Function]],
-)
-
-slots.optimizationStage__free_parameters = Slot(
-    uri=TVBO.free_parameters,
-    name="optimizationStage__free_parameters",
-    curie=TVBO.curie("free_parameters"),
-    model_uri=TVBO.optimizationStage__free_parameters,
-    domain=None,
-    range=Optional[Union[Union[str, ParameterName], list[Union[str, ParameterName]]]],
-)
-
-slots.optimizationStage__algorithm = Slot(
-    uri=TVBO.algorithm,
-    name="optimizationStage__algorithm",
-    curie=TVBO.curie("algorithm"),
-    model_uri=TVBO.optimizationStage__algorithm,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.optimizationStage__learning_rate = Slot(
-    uri=TVBO.learning_rate,
-    name="optimizationStage__learning_rate",
-    curie=TVBO.curie("learning_rate"),
-    model_uri=TVBO.optimizationStage__learning_rate,
-    domain=None,
-    range=Optional[float],
-)
-
-slots.optimizationStage__max_iterations = Slot(
-    uri=TVBO.max_iterations,
-    name="optimizationStage__max_iterations",
-    curie=TVBO.curie("max_iterations"),
-    model_uri=TVBO.optimizationStage__max_iterations,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.optimizationStage__hyperparameters = Slot(
-    uri=TVBO.hyperparameters,
-    name="optimizationStage__hyperparameters",
-    curie=TVBO.curie("hyperparameters"),
-    model_uri=TVBO.optimizationStage__hyperparameters,
-    domain=None,
-    range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]],
-)
-
-slots.optimizationStage__freeze_parameters = Slot(
-    uri=TVBO.freeze_parameters,
-    name="optimizationStage__freeze_parameters",
-    curie=TVBO.curie("freeze_parameters"),
-    model_uri=TVBO.optimizationStage__freeze_parameters,
-    domain=None,
-    range=Optional[Union[Union[str, ParameterName], list[Union[str, ParameterName]]]],
-)
-
-slots.optimizationStage__warmup_from = Slot(
-    uri=TVBO.warmup_from,
-    name="optimizationStage__warmup_from",
-    curie=TVBO.curie("warmup_from"),
-    model_uri=TVBO.optimizationStage__warmup_from,
-    domain=None,
-    range=Optional[Union[str, OptimizationStageName]],
-)
-
-slots.optimization__execution = Slot(
-    uri=TVBO.execution,
-    name="optimization__execution",
-    curie=TVBO.curie("execution"),
-    model_uri=TVBO.optimization__execution,
-    domain=None,
-    range=Optional[Union[dict, ExecutionConfig]],
-)
-
-slots.optimization__integration = Slot(
-    uri=TVBO.integration,
-    name="optimization__integration",
-    curie=TVBO.curie("integration"),
-    model_uri=TVBO.optimization__integration,
-    domain=None,
-    range=Optional[Union[dict, Integrator]],
-)
-
-slots.optimization__loss = Slot(
-    uri=TVBO.loss,
-    name="optimization__loss",
-    curie=TVBO.curie("loss"),
-    model_uri=TVBO.optimization__loss,
-    domain=None,
-    range=Optional[Union[dict, FunctionCall]],
-)
-
-slots.optimization__stages = Slot(
-    uri=TVBO.stages,
-    name="optimization__stages",
-    curie=TVBO.curie("stages"),
-    model_uri=TVBO.optimization__stages,
-    domain=None,
-    range=Optional[
-        Union[dict[Union[str, OptimizationStageName], Union[dict, OptimizationStage]], list[Union[dict, OptimizationStage]]]
-    ],
-)
-
-slots.optimization__depends_on = Slot(
-    uri=TVBO.depends_on,
-    name="optimization__depends_on",
-    curie=TVBO.curie("depends_on"),
-    model_uri=TVBO.optimization__depends_on,
-    domain=None,
-    range=Optional[Union[str, AlgorithmName]],
-)
-
-slots.exploration__execution = Slot(
-    uri=TVBO.execution,
-    name="exploration__execution",
-    curie=TVBO.curie("execution"),
-    model_uri=TVBO.exploration__execution,
-    domain=None,
-    range=Optional[Union[dict, ExecutionConfig]],
-)
-
-slots.exploration__parameters = Slot(
-    uri=TVBO.parameters,
-    name="exploration__parameters",
-    curie=TVBO.curie("parameters"),
-    model_uri=TVBO.exploration__parameters,
-    domain=None,
-    range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]],
-)
-
-slots.exploration__mode = Slot(
-    uri=TVBO.mode,
-    name="exploration__mode",
-    curie=TVBO.curie("mode"),
-    model_uri=TVBO.exploration__mode,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.exploration__observable = Slot(
-    uri=TVBO.observable,
-    name="exploration__observable",
-    curie=TVBO.curie("observable"),
-    model_uri=TVBO.exploration__observable,
-    domain=None,
-    range=Optional[Union[dict, FunctionCall]],
-)
-
-slots.exploration__n_parallel = Slot(
-    uri=TVBO.n_parallel,
-    name="exploration__n_parallel",
-    curie=TVBO.curie("n_parallel"),
-    model_uri=TVBO.exploration__n_parallel,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.exploration__n_trials = Slot(
-    uri=TVBO.n_trials,
-    name="exploration__n_trials",
-    curie=TVBO.curie("n_trials"),
-    model_uri=TVBO.exploration__n_trials,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.exploration__average = Slot(
-    uri=TVBO.average,
-    name="exploration__average",
-    curie=TVBO.curie("average"),
-    model_uri=TVBO.exploration__average,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.updateRule__target_parameter = Slot(
-    uri=TVBO.target_parameter,
-    name="updateRule__target_parameter",
-    curie=TVBO.curie("target_parameter"),
-    model_uri=TVBO.updateRule__target_parameter,
-    domain=None,
-    range=Union[dict, Parameter],
-)
-
-slots.updateRule__equation = Slot(
-    uri=TVBO.equation,
-    name="updateRule__equation",
-    curie=TVBO.curie("equation"),
-    model_uri=TVBO.updateRule__equation,
-    domain=None,
-    range=Union[dict, Equation],
-)
-
-slots.updateRule__bounds = Slot(
-    uri=TVBO.bounds,
-    name="updateRule__bounds",
-    curie=TVBO.curie("bounds"),
-    model_uri=TVBO.updateRule__bounds,
-    domain=None,
-    range=Optional[Union[dict, Range]],
-)
-
-slots.updateRule__warmup = Slot(
-    uri=TVBO.warmup,
-    name="updateRule__warmup",
-    curie=TVBO.curie("warmup"),
-    model_uri=TVBO.updateRule__warmup,
-    domain=None,
-    range=Optional[Union[bool, Bool]],
-)
-
-slots.updateRule__requires = Slot(
-    uri=TVBO.requires,
-    name="updateRule__requires",
-    curie=TVBO.curie("requires"),
-    model_uri=TVBO.updateRule__requires,
-    domain=None,
-    range=Optional[Union[Union[str, ObservationName], list[Union[str, ObservationName]]]],
-)
-
-slots.algorithmInclude__algorithm = Slot(
-    uri=TVBO.algorithm,
-    name="algorithmInclude__algorithm",
-    curie=TVBO.curie("algorithm"),
-    model_uri=TVBO.algorithmInclude__algorithm,
-    domain=None,
-    range=Union[str, AlgorithmName],
-)
-
-slots.algorithmInclude__arguments = Slot(
-    uri=TVBO.arguments,
-    name="algorithmInclude__arguments",
-    curie=TVBO.curie("arguments"),
-    model_uri=TVBO.algorithmInclude__arguments,
-    domain=None,
-    range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]],
-)
-
-slots.tuningObjective__type = Slot(
-    uri=TVBO.type,
-    name="tuningObjective__type",
-    curie=TVBO.curie("type"),
-    model_uri=TVBO.tuningObjective__type,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.tuningObjective__target_variable = Slot(
-    uri=TVBO.target_variable,
-    name="tuningObjective__target_variable",
-    curie=TVBO.curie("target_variable"),
-    model_uri=TVBO.tuningObjective__target_variable,
-    domain=None,
-    range=Optional[Union[str, StateVariableName]],
-)
-
-slots.tuningObjective__target_value = Slot(
-    uri=TVBO.target_value,
-    name="tuningObjective__target_value",
-    curie=TVBO.curie("target_value"),
-    model_uri=TVBO.tuningObjective__target_value,
-    domain=None,
-    range=Optional[float],
-)
-
-slots.tuningObjective__target_data = Slot(
-    uri=TVBO.target_data,
-    name="tuningObjective__target_data",
-    curie=TVBO.curie("target_data"),
-    model_uri=TVBO.tuningObjective__target_data,
-    domain=None,
-    range=Optional[Union[str, ObservationName]],
-)
-
-slots.tuningObjective__metric = Slot(
-    uri=TVBO.metric,
-    name="tuningObjective__metric",
-    curie=TVBO.curie("metric"),
-    model_uri=TVBO.tuningObjective__metric,
-    domain=None,
-    range=Optional[Union[dict, Equation]],
-)
-
-slots.algorithm__execution = Slot(
-    uri=TVBO.execution,
-    name="algorithm__execution",
-    curie=TVBO.curie("execution"),
-    model_uri=TVBO.algorithm__execution,
-    domain=None,
-    range=Optional[Union[dict, ExecutionConfig]],
-)
-
-slots.algorithm__type = Slot(
-    uri=TVBO.type,
-    name="algorithm__type",
-    curie=TVBO.curie("type"),
-    model_uri=TVBO.algorithm__type,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.algorithm__includes = Slot(
-    uri=TVBO.includes,
-    name="algorithm__includes",
-    curie=TVBO.curie("includes"),
-    model_uri=TVBO.algorithm__includes,
-    domain=None,
-    range=Optional[Union[Union[dict, AlgorithmInclude], list[Union[dict, AlgorithmInclude]]]],
-)
-
-slots.algorithm__objective = Slot(
-    uri=TVBO.objective,
-    name="algorithm__objective",
-    curie=TVBO.curie("objective"),
-    model_uri=TVBO.algorithm__objective,
-    domain=None,
-    range=Optional[Union[dict, TuningObjective]],
-)
-
-slots.algorithm__observations = Slot(
-    uri=TVBO.observations,
-    name="algorithm__observations",
-    curie=TVBO.curie("observations"),
-    model_uri=TVBO.algorithm__observations,
-    domain=None,
-    range=Optional[Union[Union[str, ObservationName], list[Union[str, ObservationName]]]],
-)
-
-slots.algorithm__update_rules = Slot(
-    uri=TVBO.update_rules,
-    name="algorithm__update_rules",
-    curie=TVBO.curie("update_rules"),
-    model_uri=TVBO.algorithm__update_rules,
-    domain=None,
-    range=Optional[Union[dict[Union[str, UpdateRuleName], Union[dict, UpdateRule]], list[Union[dict, UpdateRule]]]],
-)
-
-slots.algorithm__hyperparameters = Slot(
-    uri=TVBO.hyperparameters,
-    name="algorithm__hyperparameters",
-    curie=TVBO.curie("hyperparameters"),
-    model_uri=TVBO.algorithm__hyperparameters,
-    domain=None,
-    range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]],
-)
-
-slots.algorithm__learning_rate = Slot(
-    uri=TVBO.learning_rate,
-    name="algorithm__learning_rate",
-    curie=TVBO.curie("learning_rate"),
-    model_uri=TVBO.algorithm__learning_rate,
-    domain=None,
-    range=Optional[float],
-)
-
-slots.algorithm__learning_rate_warmup = Slot(
-    uri=TVBO.learning_rate_warmup,
-    name="algorithm__learning_rate_warmup",
-    curie=TVBO.curie("learning_rate_warmup"),
-    model_uri=TVBO.algorithm__learning_rate_warmup,
-    domain=None,
-    range=Optional[Union[bool, Bool]],
-)
-
-slots.algorithm__n_iterations = Slot(
-    uri=TVBO.n_iterations,
-    name="algorithm__n_iterations",
-    curie=TVBO.curie("n_iterations"),
-    model_uri=TVBO.algorithm__n_iterations,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.algorithm__learning_rate_schedule = Slot(
-    uri=TVBO.learning_rate_schedule,
-    name="algorithm__learning_rate_schedule",
-    curie=TVBO.curie("learning_rate_schedule"),
-    model_uri=TVBO.algorithm__learning_rate_schedule,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.algorithm__simulation_period = Slot(
-    uri=TVBO.simulation_period,
-    name="algorithm__simulation_period",
-    curie=TVBO.curie("simulation_period"),
-    model_uri=TVBO.algorithm__simulation_period,
-    domain=None,
-    range=Optional[float],
-)
-
-slots.algorithm__apply_every = Slot(
-    uri=TVBO.apply_every,
-    name="algorithm__apply_every",
-    curie=TVBO.curie("apply_every"),
-    model_uri=TVBO.algorithm__apply_every,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.algorithm__functions = Slot(
-    uri=TVBO.functions,
-    name="algorithm__functions",
-    curie=TVBO.curie("functions"),
-    model_uri=TVBO.algorithm__functions,
-    domain=None,
-    range=Optional[Union[Union[dict, FunctionCall], list[Union[dict, FunctionCall]]]],
-)
-
-slots.algorithm__depends_on = Slot(
-    uri=TVBO.depends_on,
-    name="algorithm__depends_on",
-    curie=TVBO.curie("depends_on"),
-    model_uri=TVBO.algorithm__depends_on,
-    domain=None,
-    range=Optional[Union[Union[str, AlgorithmName], list[Union[str, AlgorithmName]]]],
-)
-
-slots.option__name = Slot(
-    uri=TVBO.name, name="option__name", curie=TVBO.curie("name"), model_uri=TVBO.option__name, domain=None, range=URIRef
-)
-
-slots.option__value = Slot(
-    uri=TVBO.value, name="option__value", curie=TVBO.curie("value"), model_uri=TVBO.option__value, domain=None, range=str
-)
-
-slots.discretization__method = Slot(
-    uri=TVBO.method,
-    name="discretization__method",
-    curie=TVBO.curie("method"),
-    model_uri=TVBO.discretization__method,
-    domain=None,
-    range=Optional[Union[str, "NumericalDiscretizationMethod"]],
-)
-
-slots.discretization__ode_solver = Slot(
-    uri=TVBO.ode_solver,
-    name="discretization__ode_solver",
-    curie=TVBO.curie("ode_solver"),
-    model_uri=TVBO.discretization__ode_solver,
-    domain=None,
-    range=Optional[Union[dict, Solver]],
-)
-
-slots.discretization__linear_solver = Slot(
-    uri=TVBO.linear_solver,
-    name="discretization__linear_solver",
-    curie=TVBO.curie("linear_solver"),
-    model_uri=TVBO.discretization__linear_solver,
-    domain=None,
-    range=Optional[Union[dict, Solver]],
-)
-
-slots.discretization__mesh_intervals = Slot(
-    uri=TVBO.mesh_intervals,
-    name="discretization__mesh_intervals",
-    curie=TVBO.curie("mesh_intervals"),
-    model_uri=TVBO.discretization__mesh_intervals,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.discretization__degree = Slot(
-    uri=TVBO.degree,
-    name="discretization__degree",
-    curie=TVBO.curie("degree"),
-    model_uri=TVBO.discretization__degree,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.discretization__n_sections = Slot(
-    uri=TVBO.n_sections,
-    name="discretization__n_sections",
-    curie=TVBO.curie("n_sections"),
-    model_uri=TVBO.discretization__n_sections,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.discretization__options = Slot(
-    uri=TVBO.options,
-    name="discretization__options",
-    curie=TVBO.curie("options"),
-    model_uri=TVBO.discretization__options,
-    domain=None,
-    range=Optional[Union[dict[Union[str, OptionName], Union[dict, Option]], list[Union[dict, Option]]]],
-)
-
-slots.initialState__method = Slot(
-    uri=TVBO.method,
-    name="initialState__method",
-    curie=TVBO.curie("method"),
-    model_uri=TVBO.initialState__method,
-    domain=None,
-    range=Optional[Union[str, "InitialStateMethod"]],
-)
-
-slots.initialState__duration = Slot(
-    uri=TVBO.duration,
-    name="initialState__duration",
-    curie=TVBO.curie("duration"),
-    model_uri=TVBO.initialState__duration,
-    domain=None,
-    range=Optional[float],
-)
-
-slots.initialState__abs_tol = Slot(
-    uri=TVBO.abs_tol,
-    name="initialState__abs_tol",
-    curie=TVBO.curie("abs_tol"),
-    model_uri=TVBO.initialState__abs_tol,
-    domain=None,
-    range=Optional[float],
-)
-
-slots.initialState__rel_tol = Slot(
-    uri=TVBO.rel_tol,
-    name="initialState__rel_tol",
-    curie=TVBO.curie("rel_tol"),
-    model_uri=TVBO.initialState__rel_tol,
-    domain=None,
-    range=Optional[float],
-)
-
-slots.initialState__solver = Slot(
-    uri=TVBO.solver,
-    name="initialState__solver",
-    curie=TVBO.curie("solver"),
-    model_uri=TVBO.initialState__solver,
-    domain=None,
-    range=Optional[Union[dict, Solver]],
-)
-
-slots.initialState__source_branch = Slot(
-    uri=TVBO.source_branch,
-    name="initialState__source_branch",
-    curie=TVBO.curie("source_branch"),
-    model_uri=TVBO.initialState__source_branch,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.initialState__source_point = Slot(
-    uri=TVBO.source_point,
-    name="initialState__source_point",
-    curie=TVBO.curie("source_point"),
-    model_uri=TVBO.initialState__source_point,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.branchSwitch__source_point = Slot(
-    uri=TVBO.source_point,
-    name="branchSwitch__source_point",
-    curie=TVBO.curie("source_point"),
-    model_uri=TVBO.branchSwitch__source_point,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.branchSwitch__delta_p = Slot(
-    uri=TVBO.delta_p,
-    name="branchSwitch__delta_p",
-    curie=TVBO.curie("delta_p"),
-    model_uri=TVBO.branchSwitch__delta_p,
-    domain=None,
-    range=Optional[float],
-)
-
-slots.branchSwitch__continuation = Slot(
-    uri=TVBO.continuation,
-    name="branchSwitch__continuation",
-    curie=TVBO.curie("continuation"),
-    model_uri=TVBO.branchSwitch__continuation,
-    domain=None,
-    range=Optional[Union[dict, Continuation]],
-)
-
-slots.branchSwitch__discretization = Slot(
-    uri=TVBO.discretization,
-    name="branchSwitch__discretization",
-    curie=TVBO.curie("discretization"),
-    model_uri=TVBO.branchSwitch__discretization,
-    domain=None,
-    range=Optional[Union[dict, Discretization]],
-)
-
-slots.branchSwitch__bothside = Slot(
-    uri=TVBO.bothside,
-    name="branchSwitch__bothside",
-    curie=TVBO.curie("bothside"),
-    model_uri=TVBO.branchSwitch__bothside,
-    domain=None,
-    range=Optional[Union[bool, Bool]],
-)
-
-slots.branchSwitch__options = Slot(
-    uri=TVBO.options,
-    name="branchSwitch__options",
-    curie=TVBO.curie("options"),
-    model_uri=TVBO.branchSwitch__options,
-    domain=None,
-    range=Optional[Union[dict[Union[str, OptionName], Union[dict, Option]], list[Union[dict, Option]]]],
-)
-
-slots.continuation__dynamics = Slot(
-    uri=TVBO.dynamics,
-    name="continuation__dynamics",
-    curie=TVBO.curie("dynamics"),
-    model_uri=TVBO.continuation__dynamics,
-    domain=None,
-    range=Optional[Union[str, DynamicsName]],
-)
-
-slots.continuation__free_parameters = Slot(
-    uri=TVBO.free_parameters,
-    name="continuation__free_parameters",
-    curie=TVBO.curie("free_parameters"),
-    model_uri=TVBO.continuation__free_parameters,
-    domain=None,
-    range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]],
-)
-
-slots.continuation__ds = Slot(
-    uri=TVBO.ds,
-    name="continuation__ds",
-    curie=TVBO.curie("ds"),
-    model_uri=TVBO.continuation__ds,
-    domain=None,
-    range=Optional[float],
-)
-
-slots.continuation__ds_min = Slot(
-    uri=TVBO.ds_min,
-    name="continuation__ds_min",
-    curie=TVBO.curie("ds_min"),
-    model_uri=TVBO.continuation__ds_min,
-    domain=None,
-    range=Optional[float],
-)
-
-slots.continuation__ds_max = Slot(
-    uri=TVBO.ds_max,
-    name="continuation__ds_max",
-    curie=TVBO.curie("ds_max"),
-    model_uri=TVBO.continuation__ds_max,
-    domain=None,
-    range=Optional[float],
-)
-
-slots.continuation__max_steps = Slot(
-    uri=TVBO.max_steps,
-    name="continuation__max_steps",
-    curie=TVBO.curie("max_steps"),
-    model_uri=TVBO.continuation__max_steps,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.continuation__newton_tol = Slot(
-    uri=TVBO.newton_tol,
-    name="continuation__newton_tol",
-    curie=TVBO.curie("newton_tol"),
-    model_uri=TVBO.continuation__newton_tol,
-    domain=None,
-    range=Optional[float],
-)
-
-slots.continuation__newton_max_iterations = Slot(
-    uri=TVBO.newton_max_iterations,
-    name="continuation__newton_max_iterations",
-    curie=TVBO.curie("newton_max_iterations"),
-    model_uri=TVBO.continuation__newton_max_iterations,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.continuation__nev = Slot(
-    uri=TVBO.nev,
-    name="continuation__nev",
-    curie=TVBO.curie("nev"),
-    model_uri=TVBO.continuation__nev,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.continuation__tol_stability = Slot(
-    uri=TVBO.tol_stability,
-    name="continuation__tol_stability",
-    curie=TVBO.curie("tol_stability"),
-    model_uri=TVBO.continuation__tol_stability,
-    domain=None,
-    range=Optional[float],
-)
-
-slots.continuation__detect_bifurcation = Slot(
-    uri=TVBO.detect_bifurcation,
-    name="continuation__detect_bifurcation",
-    curie=TVBO.curie("detect_bifurcation"),
-    model_uri=TVBO.continuation__detect_bifurcation,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.continuation__detect_fold = Slot(
-    uri=TVBO.detect_fold,
-    name="continuation__detect_fold",
-    curie=TVBO.curie("detect_fold"),
-    model_uri=TVBO.continuation__detect_fold,
-    domain=None,
-    range=Optional[Union[bool, Bool]],
-)
-
-slots.continuation__n_inversion = Slot(
-    uri=TVBO.n_inversion,
-    name="continuation__n_inversion",
-    curie=TVBO.curie("n_inversion"),
-    model_uri=TVBO.continuation__n_inversion,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.continuation__max_bisection_steps = Slot(
-    uri=TVBO.max_bisection_steps,
-    name="continuation__max_bisection_steps",
-    curie=TVBO.curie("max_bisection_steps"),
-    model_uri=TVBO.continuation__max_bisection_steps,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.continuation__algorithm = Slot(
-    uri=TVBO.algorithm,
-    name="continuation__algorithm",
-    curie=TVBO.curie("algorithm"),
-    model_uri=TVBO.continuation__algorithm,
-    domain=None,
-    range=Optional[Union[str, "ContinuationAlgorithm"]],
-)
-
-slots.continuation__initial_state = Slot(
-    uri=TVBO.initial_state,
-    name="continuation__initial_state",
-    curie=TVBO.curie("initial_state"),
-    model_uri=TVBO.continuation__initial_state,
-    domain=None,
-    range=Optional[Union[dict, InitialState]],
-)
-
-slots.continuation__branches = Slot(
-    uri=TVBO.branches,
-    name="continuation__branches",
-    curie=TVBO.curie("branches"),
-    model_uri=TVBO.continuation__branches,
-    domain=None,
-    range=Optional[Union[dict[Union[str, BranchSwitchName], Union[dict, BranchSwitch]], list[Union[dict, BranchSwitch]]]],
-)
-
-slots.continuation__bothside = Slot(
-    uri=TVBO.bothside,
-    name="continuation__bothside",
-    curie=TVBO.curie("bothside"),
-    model_uri=TVBO.continuation__bothside,
-    domain=None,
-    range=Optional[Union[bool, Bool]],
-)
-
-slots.continuation__execution = Slot(
-    uri=TVBO.execution,
-    name="continuation__execution",
-    curie=TVBO.curie("execution"),
-    model_uri=TVBO.continuation__execution,
-    domain=None,
-    range=Optional[Union[dict, ExecutionConfig]],
-)
-
-slots.continuation__software = Slot(
-    uri=TVBO.software,
-    name="continuation__software",
-    curie=TVBO.curie("software"),
-    model_uri=TVBO.continuation__software,
-    domain=None,
-    range=Optional[Union[dict, SoftwareRequirement]],
-)
-
-slots.continuation__options = Slot(
-    uri=TVBO.options,
-    name="continuation__options",
-    curie=TVBO.curie("options"),
-    model_uri=TVBO.continuation__options,
-    domain=None,
-    range=Optional[Union[dict[Union[str, OptionName], Union[dict, Option]], list[Union[dict, Option]]]],
-)
-
-slots.solver__method = Slot(
-    uri=TVBO.method,
-    name="solver__method",
-    curie=TVBO.curie("method"),
-    model_uri=TVBO.solver__method,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.solver__abs_tol = Slot(
-    uri=TVBO.abs_tol,
-    name="solver__abs_tol",
-    curie=TVBO.curie("abs_tol"),
-    model_uri=TVBO.solver__abs_tol,
-    domain=None,
-    range=Optional[float],
-)
-
-slots.solver__rel_tol = Slot(
-    uri=TVBO.rel_tol,
-    name="solver__rel_tol",
-    curie=TVBO.curie("rel_tol"),
-    model_uri=TVBO.solver__rel_tol,
-    domain=None,
-    range=Optional[float],
-)
-
-slots.integrator__method = Slot(
-    uri=TVBO.method,
-    name="integrator__method",
-    curie=TVBO.curie("method"),
-    model_uri=TVBO.integrator__method,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.integrator__step_size = Slot(
-    uri=TVBO.step_size,
-    name="integrator__step_size",
-    curie=TVBO.curie("step_size"),
-    model_uri=TVBO.integrator__step_size,
-    domain=None,
-    range=Optional[float],
-)
-
-slots.integrator__steps = Slot(
-    uri=TVBO.steps,
-    name="integrator__steps",
-    curie=TVBO.curie("steps"),
-    model_uri=TVBO.integrator__steps,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.integrator__noise = Slot(
-    uri=TVBO.noise,
-    name="integrator__noise",
-    curie=TVBO.curie("noise"),
-    model_uri=TVBO.integrator__noise,
-    domain=None,
-    range=Optional[Union[dict, Noise]],
-)
-
-slots.integrator__state_wise_sigma = Slot(
-    uri=TVBO.state_wise_sigma,
-    name="integrator__state_wise_sigma",
-    curie=TVBO.curie("state_wise_sigma"),
-    model_uri=TVBO.integrator__state_wise_sigma,
-    domain=None,
-    range=Optional[Union[float, list[float]]],
-)
-
-slots.integrator__transient_time = Slot(
-    uri=TVBO.transient_time,
-    name="integrator__transient_time",
-    curie=TVBO.curie("transient_time"),
-    model_uri=TVBO.integrator__transient_time,
-    domain=None,
-    range=Optional[float],
-)
-
-slots.integrator__scipy_ode_base = Slot(
-    uri=TVBO.scipy_ode_base,
-    name="integrator__scipy_ode_base",
-    curie=TVBO.curie("scipy_ode_base"),
-    model_uri=TVBO.integrator__scipy_ode_base,
-    domain=None,
-    range=Optional[Union[bool, Bool]],
-)
-
-slots.integrator__number_of_stages = Slot(
-    uri=TVBO.number_of_stages,
-    name="integrator__number_of_stages",
-    curie=TVBO.curie("number_of_stages"),
-    model_uri=TVBO.integrator__number_of_stages,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.integrator__intermediate_expressions = Slot(
-    uri=TVBO.intermediate_expressions,
-    name="integrator__intermediate_expressions",
-    curie=TVBO.curie("intermediate_expressions"),
-    model_uri=TVBO.integrator__intermediate_expressions,
-    domain=None,
-    range=Optional[
-        Union[dict[Union[str, DerivedVariableName], Union[dict, DerivedVariable]], list[Union[dict, DerivedVariable]]]
-    ],
-)
-
-slots.integrator__update_expression = Slot(
-    uri=TVBO.update_expression,
-    name="integrator__update_expression",
-    curie=TVBO.curie("update_expression"),
-    model_uri=TVBO.integrator__update_expression,
-    domain=None,
-    range=Optional[Union[dict, DerivedVariable]],
-)
-
-slots.integrator__delayed = Slot(
-    uri=TVBO.delayed,
-    name="integrator__delayed",
-    curie=TVBO.curie("delayed"),
-    model_uri=TVBO.integrator__delayed,
-    domain=None,
-    range=Optional[Union[bool, Bool]],
-)
-
-slots.coupling__coupling_function = Slot(
-    uri=TVBO.coupling_function,
-    name="coupling__coupling_function",
-    curie=TVBO.curie("coupling_function"),
-    model_uri=TVBO.coupling__coupling_function,
-    domain=None,
-    range=Optional[Union[dict, Equation]],
-)
-
-slots.coupling__sparse = Slot(
-    uri=TVBO.sparse,
-    name="coupling__sparse",
-    curie=TVBO.curie("sparse"),
-    model_uri=TVBO.coupling__sparse,
-    domain=None,
-    range=Optional[Union[bool, Bool]],
-)
-
-slots.coupling__pre_expression = Slot(
-    uri=TVBO.pre_expression,
-    name="coupling__pre_expression",
-    curie=TVBO.curie("pre_expression"),
-    model_uri=TVBO.coupling__pre_expression,
-    domain=None,
-    range=Optional[Union[dict, Equation]],
-)
-
-slots.coupling__post_expression = Slot(
-    uri=TVBO.post_expression,
-    name="coupling__post_expression",
-    curie=TVBO.curie("post_expression"),
-    model_uri=TVBO.coupling__post_expression,
-    domain=None,
-    range=Optional[Union[dict, Equation]],
-)
-
-slots.coupling__incoming_states = Slot(
-    uri=TVBO.incoming_states,
-    name="coupling__incoming_states",
-    curie=TVBO.curie("incoming_states"),
-    model_uri=TVBO.coupling__incoming_states,
-    domain=None,
-    range=Optional[Union[Union[str, StateVariableName], list[Union[str, StateVariableName]]]],
-)
-
-slots.coupling__local_states = Slot(
-    uri=TVBO.local_states,
-    name="coupling__local_states",
-    curie=TVBO.curie("local_states"),
-    model_uri=TVBO.coupling__local_states,
-    domain=None,
-    range=Optional[Union[Union[str, StateVariableName], list[Union[str, StateVariableName]]]],
-)
-
-slots.coupling__delayed = Slot(
-    uri=TVBO.delayed,
-    name="coupling__delayed",
-    curie=TVBO.curie("delayed"),
-    model_uri=TVBO.coupling__delayed,
-    domain=None,
-    range=Optional[Union[bool, Bool]],
-)
-
-slots.coupling__symmetry = Slot(
-    uri=TVBO.symmetry,
-    name="coupling__symmetry",
-    curie=TVBO.curie("symmetry"),
-    model_uri=TVBO.coupling__symmetry,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.coupling__outsym = Slot(
-    uri=TVBO.outsym,
-    name="coupling__outsym",
-    curie=TVBO.curie("outsym"),
-    model_uri=TVBO.coupling__outsym,
-    domain=None,
-    range=Optional[Union[str, list[str]]],
-)
-
-slots.coupling__observed = Slot(
-    uri=TVBO.observed,
-    name="coupling__observed",
-    curie=TVBO.curie("observed"),
-    model_uri=TVBO.coupling__observed,
-    domain=None,
-    range=Optional[
-        Union[dict[Union[str, DerivedVariableName], Union[dict, DerivedVariable]], list[Union[dict, DerivedVariable]]]
-    ],
-)
-
-slots.coupling__inner_coupling = Slot(
-    uri=TVBO.inner_coupling,
-    name="coupling__inner_coupling",
-    curie=TVBO.curie("inner_coupling"),
-    model_uri=TVBO.coupling__inner_coupling,
-    domain=None,
-    range=Optional[Union[dict, Coupling]],
-)
-
-slots.coupling__region_mapping = Slot(
-    uri=TVBO.region_mapping,
-    name="coupling__region_mapping",
-    curie=TVBO.curie("region_mapping"),
-    model_uri=TVBO.coupling__region_mapping,
-    domain=None,
-    range=Optional[Union[dict, RegionMapping]],
-)
-
-slots.coupling__regional_connectivity = Slot(
-    uri=TVBO.regional_connectivity,
-    name="coupling__regional_connectivity",
-    curie=TVBO.curie("regional_connectivity"),
-    model_uri=TVBO.coupling__regional_connectivity,
-    domain=None,
-    range=Optional[Union[dict, Network]],
-)
-
-slots.coupling__aggregation = Slot(
-    uri=TVBO.aggregation,
-    name="coupling__aggregation",
-    curie=TVBO.curie("aggregation"),
-    model_uri=TVBO.coupling__aggregation,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.coupling__distribution = Slot(
-    uri=TVBO.distribution,
-    name="coupling__distribution",
-    curie=TVBO.curie("distribution"),
-    model_uri=TVBO.coupling__distribution,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.regionMapping__vertex_to_region = Slot(
-    uri=TVBO.vertex_to_region,
-    name="regionMapping__vertex_to_region",
-    curie=TVBO.curie("vertex_to_region"),
-    model_uri=TVBO.regionMapping__vertex_to_region,
-    domain=None,
-    range=Optional[Union[int, list[int]]],
-)
-
-slots.regionMapping__n_vertices = Slot(
-    uri=TVBO.n_vertices,
-    name="regionMapping__n_vertices",
-    curie=TVBO.curie("n_vertices"),
-    model_uri=TVBO.regionMapping__n_vertices,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.regionMapping__n_regions = Slot(
-    uri=TVBO.n_regions,
-    name="regionMapping__n_regions",
-    curie=TVBO.curie("n_regions"),
-    model_uri=TVBO.regionMapping__n_regions,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.sample__groups = Slot(
-    uri=TVBO.groups,
-    name="sample__groups",
-    curie=TVBO.curie("groups"),
-    model_uri=TVBO.sample__groups,
-    domain=None,
-    range=Optional[Union[str, list[str]]],
-)
-
-slots.sample__size = Slot(
-    uri=TVBO.size, name="sample__size", curie=TVBO.curie("size"), model_uri=TVBO.sample__size, domain=None, range=Optional[int]
-)
-
-slots.executionConfig__n_workers = Slot(
-    uri=TVBO.n_workers,
-    name="executionConfig__n_workers",
-    curie=TVBO.curie("n_workers"),
-    model_uri=TVBO.executionConfig__n_workers,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.executionConfig__n_threads = Slot(
-    uri=TVBO.n_threads,
-    name="executionConfig__n_threads",
-    curie=TVBO.curie("n_threads"),
-    model_uri=TVBO.executionConfig__n_threads,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.executionConfig__precision = Slot(
-    uri=TVBO.precision,
-    name="executionConfig__precision",
-    curie=TVBO.curie("precision"),
-    model_uri=TVBO.executionConfig__precision,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.executionConfig__accelerator = Slot(
-    uri=TVBO.accelerator,
-    name="executionConfig__accelerator",
-    curie=TVBO.curie("accelerator"),
-    model_uri=TVBO.executionConfig__accelerator,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.executionConfig__batch_size = Slot(
-    uri=TVBO.batch_size,
-    name="executionConfig__batch_size",
-    curie=TVBO.curie("batch_size"),
-    model_uri=TVBO.executionConfig__batch_size,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.executionConfig__random_seed = Slot(
-    uri=TVBO.random_seed,
-    name="executionConfig__random_seed",
-    curie=TVBO.curie("random_seed"),
-    model_uri=TVBO.executionConfig__random_seed,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.executionConfig__find_fixpoint = Slot(
-    uri=TVBO.find_fixpoint,
-    name="executionConfig__find_fixpoint",
-    curie=TVBO.curie("find_fixpoint"),
-    model_uri=TVBO.executionConfig__find_fixpoint,
-    domain=None,
-    range=Optional[Union[bool, Bool]],
-)
-
-slots.simulationExperiment__id = Slot(
-    uri=TVBO.id,
-    name="simulationExperiment__id",
-    curie=TVBO.curie("id"),
-    model_uri=TVBO.simulationExperiment__id,
-    domain=None,
-    range=URIRef,
-)
-
-slots.simulationExperiment__description = Slot(
-    uri=TVBO.description,
-    name="simulationExperiment__description",
-    curie=TVBO.curie("description"),
-    model_uri=TVBO.simulationExperiment__description,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.simulationExperiment__additional_equations = Slot(
-    uri=TVBO.additional_equations,
-    name="simulationExperiment__additional_equations",
-    curie=TVBO.curie("additional_equations"),
-    model_uri=TVBO.simulationExperiment__additional_equations,
-    domain=None,
-    range=Optional[Union[Union[dict, Equation], list[Union[dict, Equation]]]],
-)
-
-slots.simulationExperiment__label = Slot(
-    uri=TVBO.label,
-    name="simulationExperiment__label",
-    curie=TVBO.curie("label"),
-    model_uri=TVBO.simulationExperiment__label,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.simulationExperiment__dynamics = Slot(
-    uri=TVBO.dynamics,
-    name="simulationExperiment__dynamics",
-    curie=TVBO.curie("dynamics"),
-    model_uri=TVBO.simulationExperiment__dynamics,
-    domain=None,
-    range=Optional[Union[dict, Dynamics]],
-)
-
-slots.simulationExperiment__integration = Slot(
-    uri=TVBO.integration,
-    name="simulationExperiment__integration",
-    curie=TVBO.curie("integration"),
-    model_uri=TVBO.simulationExperiment__integration,
-    domain=None,
-    range=Optional[Union[dict, Integrator]],
-)
-
-slots.simulationExperiment__connectivity = Slot(
-    uri=TVBO.connectivity,
-    name="simulationExperiment__connectivity",
-    curie=TVBO.curie("connectivity"),
-    model_uri=TVBO.simulationExperiment__connectivity,
-    domain=None,
-    range=Optional[Union[dict, Network]],
-)
-
-slots.simulationExperiment__network = Slot(
-    uri=TVBO.network,
-    name="simulationExperiment__network",
-    curie=TVBO.curie("network"),
-    model_uri=TVBO.simulationExperiment__network,
-    domain=None,
-    range=Optional[Union[dict, Network]],
-)
-
-slots.simulationExperiment__coupling = Slot(
-    uri=TVBO.coupling,
-    name="simulationExperiment__coupling",
-    curie=TVBO.curie("coupling"),
-    model_uri=TVBO.simulationExperiment__coupling,
-    domain=None,
-    range=Optional[Union[dict, Coupling]],
-)
-
-slots.simulationExperiment__observations = Slot(
-    uri=TVBO.observations,
-    name="simulationExperiment__observations",
-    curie=TVBO.curie("observations"),
-    model_uri=TVBO.simulationExperiment__observations,
-    domain=None,
-    range=Optional[Union[dict[Union[str, ObservationName], Union[dict, Observation]], list[Union[dict, Observation]]]],
-)
-
-slots.simulationExperiment__derived_observations = Slot(
-    uri=TVBO.derived_observations,
-    name="simulationExperiment__derived_observations",
-    curie=TVBO.curie("derived_observations"),
-    model_uri=TVBO.simulationExperiment__derived_observations,
-    domain=None,
-    range=Optional[
-        Union[dict[Union[str, DerivedObservationName], Union[dict, DerivedObservation]], list[Union[dict, DerivedObservation]]]
-    ],
-)
-
-slots.simulationExperiment__functions = Slot(
-    uri=TVBO.functions,
-    name="simulationExperiment__functions",
-    curie=TVBO.curie("functions"),
-    model_uri=TVBO.simulationExperiment__functions,
-    domain=None,
-    range=Optional[Union[dict[Union[str, FunctionName], Union[dict, Function]], list[Union[dict, Function]]]],
-)
-
-slots.simulationExperiment__stimulation = Slot(
-    uri=TVBO.stimulation,
-    name="simulationExperiment__stimulation",
-    curie=TVBO.curie("stimulation"),
-    model_uri=TVBO.simulationExperiment__stimulation,
-    domain=None,
-    range=Optional[Union[dict, Stimulus]],
-)
-
-slots.simulationExperiment__events = Slot(
-    uri=TVBO.events,
-    name="simulationExperiment__events",
-    curie=TVBO.curie("events"),
-    model_uri=TVBO.simulationExperiment__events,
-    domain=None,
-    range=Optional[Union[dict[Union[str, EventName], Union[dict, Event]], list[Union[dict, Event]]]],
-)
-
-slots.simulationExperiment__field_dynamics = Slot(
-    uri=TVBO.field_dynamics,
-    name="simulationExperiment__field_dynamics",
-    curie=TVBO.curie("field_dynamics"),
-    model_uri=TVBO.simulationExperiment__field_dynamics,
-    domain=None,
-    range=Optional[Union[dict, PDE]],
-)
-
-slots.simulationExperiment__optimizations = Slot(
-    uri=TVBO.optimizations,
-    name="simulationExperiment__optimizations",
-    curie=TVBO.curie("optimizations"),
-    model_uri=TVBO.simulationExperiment__optimizations,
-    domain=None,
-    range=Optional[Union[dict[Union[str, OptimizationName], Union[dict, Optimization]], list[Union[dict, Optimization]]]],
-)
-
-slots.simulationExperiment__explorations = Slot(
-    uri=TVBO.explorations,
-    name="simulationExperiment__explorations",
-    curie=TVBO.curie("explorations"),
-    model_uri=TVBO.simulationExperiment__explorations,
-    domain=None,
-    range=Optional[Union[dict[Union[str, ExplorationName], Union[dict, Exploration]], list[Union[dict, Exploration]]]],
-)
-
-slots.simulationExperiment__algorithms = Slot(
-    uri=TVBO.algorithms,
-    name="simulationExperiment__algorithms",
-    curie=TVBO.curie("algorithms"),
-    model_uri=TVBO.simulationExperiment__algorithms,
-    domain=None,
-    range=Optional[Union[dict[Union[str, AlgorithmName], Union[dict, Algorithm]], list[Union[dict, Algorithm]]]],
-)
-
-slots.simulationExperiment__continuations = Slot(
-    uri=TVBO.continuations,
-    name="simulationExperiment__continuations",
-    curie=TVBO.curie("continuations"),
-    model_uri=TVBO.simulationExperiment__continuations,
-    domain=None,
-    range=Optional[Union[dict[Union[str, ContinuationName], Union[dict, Continuation]], list[Union[dict, Continuation]]]],
-)
-
-slots.simulationExperiment__environment = Slot(
-    uri=TVBO.environment,
-    name="simulationExperiment__environment",
-    curie=TVBO.curie("environment"),
-    model_uri=TVBO.simulationExperiment__environment,
-    domain=None,
-    range=Optional[Union[dict, SoftwareEnvironment]],
-)
-
-slots.simulationExperiment__execution = Slot(
-    uri=TVBO.execution,
-    name="simulationExperiment__execution",
-    curie=TVBO.curie("execution"),
-    model_uri=TVBO.simulationExperiment__execution,
-    domain=None,
-    range=Optional[Union[dict, ExecutionConfig]],
-)
-
-slots.simulationExperiment__software = Slot(
-    uri=TVBO.software,
-    name="simulationExperiment__software",
-    curie=TVBO.curie("software"),
-    model_uri=TVBO.simulationExperiment__software,
-    domain=None,
-    range=Optional[Union[dict, SoftwareRequirement]],
-)
-
-slots.simulationExperiment__references = Slot(
-    uri=TVBO.references,
-    name="simulationExperiment__references",
-    curie=TVBO.curie("references"),
-    model_uri=TVBO.simulationExperiment__references,
-    domain=None,
-    range=Optional[Union[str, list[str]]],
-)
-
-slots.simulationExperiment__dataset = Slot(
-    uri=TVBO.dataset,
-    name="simulationExperiment__dataset",
-    curie=TVBO.curie("dataset"),
-    model_uri=TVBO.simulationExperiment__dataset,
-    domain=None,
-    range=Optional[Union[dict, Dataset]],
-)
-
-slots.simulationStudy__key = Slot(
-    uri=TVBO.key,
-    name="simulationStudy__key",
-    curie=TVBO.curie("key"),
-    model_uri=TVBO.simulationStudy__key,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.simulationStudy__title = Slot(
-    uri=TVBO.title,
-    name="simulationStudy__title",
-    curie=TVBO.curie("title"),
-    model_uri=TVBO.simulationStudy__title,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.simulationStudy__year = Slot(
-    uri=TVBO.year,
-    name="simulationStudy__year",
-    curie=TVBO.curie("year"),
-    model_uri=TVBO.simulationStudy__year,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.simulationStudy__doi = Slot(
-    uri=TVBO.doi,
-    name="simulationStudy__doi",
-    curie=TVBO.curie("doi"),
-    model_uri=TVBO.simulationStudy__doi,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.simulationStudy__sample = Slot(
-    uri=TVBO.sample,
-    name="simulationStudy__sample",
-    curie=TVBO.curie("sample"),
-    model_uri=TVBO.simulationStudy__sample,
-    domain=None,
-    range=Optional[Union[dict, Sample]],
-)
-
-slots.simulationStudy__simulation_experiments = Slot(
-    uri=TVBO.experiments,
-    name="simulationStudy__simulation_experiments",
-    curie=TVBO.curie("experiments"),
-    model_uri=TVBO.simulationStudy__simulation_experiments,
-    domain=None,
-    range=Optional[
-        Union[
-            dict[Union[int, SimulationExperimentId], Union[dict, SimulationExperiment]],
-            list[Union[dict, SimulationExperiment]],
-        ]
-    ],
-)
-
-slots.timeSeries__data = Slot(
-    uri=TVBO.data,
-    name="timeSeries__data",
-    curie=TVBO.curie("data"),
-    model_uri=TVBO.timeSeries__data,
-    domain=None,
-    range=Optional[Union[dict, Matrix]],
-)
-
-slots.timeSeries__time = Slot(
-    uri=TVBO.time,
-    name="timeSeries__time",
-    curie=TVBO.curie("time"),
-    model_uri=TVBO.timeSeries__time,
-    domain=None,
-    range=Optional[Union[dict, Matrix]],
-)
-
-slots.timeSeries__sampling_rate = Slot(
-    uri=TVBO.sampling_rate,
-    name="timeSeries__sampling_rate",
-    curie=TVBO.curie("sampling_rate"),
-    model_uri=TVBO.timeSeries__sampling_rate,
-    domain=None,
-    range=Optional[float],
-)
-
-slots.timeSeries__sampling_period = Slot(
-    uri=TVBO.sampling_period,
-    name="timeSeries__sampling_period",
-    curie=TVBO.curie("sampling_period"),
-    model_uri=TVBO.timeSeries__sampling_period,
-    domain=None,
-    range=Optional[float],
-)
-
-slots.timeSeries__sampling_period_unit = Slot(
-    uri=TVBO.sampling_period_unit,
-    name="timeSeries__sampling_period_unit",
-    curie=TVBO.curie("sampling_period_unit"),
-    model_uri=TVBO.timeSeries__sampling_period_unit,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.timeSeries__unit = Slot(
-    uri=TVBO.unit,
-    name="timeSeries__unit",
-    curie=TVBO.curie("unit"),
-    model_uri=TVBO.timeSeries__unit,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.timeSeries__labels_ordering = Slot(
-    uri=TVBO.labels_ordering,
-    name="timeSeries__labels_ordering",
-    curie=TVBO.curie("labels_ordering"),
-    model_uri=TVBO.timeSeries__labels_ordering,
-    domain=None,
-    range=Optional[Union[str, list[str]]],
-)
-
-slots.timeSeries__labels_dimensions = Slot(
-    uri=TVBO.labels_dimensions,
-    name="timeSeries__labels_dimensions",
-    curie=TVBO.curie("labels_dimensions"),
-    model_uri=TVBO.timeSeries__labels_dimensions,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.timeSeries__source_experiment = Slot(
-    uri=TVBO.source_experiment,
-    name="timeSeries__source_experiment",
-    curie=TVBO.curie("source_experiment"),
-    model_uri=TVBO.timeSeries__source_experiment,
-    domain=None,
-    range=Optional[Union[int, SimulationExperimentId]],
-)
-
-slots.timeSeries__generated_at = Slot(
-    uri=TVBO.generated_at,
-    name="timeSeries__generated_at",
-    curie=TVBO.curie("generated_at"),
-    model_uri=TVBO.timeSeries__generated_at,
-    domain=None,
-    range=Optional[Union[str, XSDDateTime]],
-)
-
-slots.timeSeries__software_environment = Slot(
-    uri=TVBO.software_environment,
-    name="timeSeries__software_environment",
-    curie=TVBO.curie("software_environment"),
-    model_uri=TVBO.timeSeries__software_environment,
-    domain=None,
-    range=Optional[Union[dict, SoftwareEnvironment]],
-)
-
-slots.timeSeries__task_name = Slot(
-    uri=TVBO.task_name,
-    name="timeSeries__task_name",
-    curie=TVBO.curie("task_name"),
-    model_uri=TVBO.timeSeries__task_name,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.timeSeries__subject_id = Slot(
-    uri=TVBO.subject_id,
-    name="timeSeries__subject_id",
-    curie=TVBO.curie("subject_id"),
-    model_uri=TVBO.timeSeries__subject_id,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.timeSeries__session_id = Slot(
-    uri=TVBO.session_id,
-    name="timeSeries__session_id",
-    curie=TVBO.curie("session_id"),
-    model_uri=TVBO.timeSeries__session_id,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.timeSeries__run_id = Slot(
-    uri=TVBO.run_id,
-    name="timeSeries__run_id",
-    curie=TVBO.curie("run_id"),
-    model_uri=TVBO.timeSeries__run_id,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.timeSeries__modality = Slot(
-    uri=TVBO.modality,
-    name="timeSeries__modality",
-    curie=TVBO.curie("modality"),
-    model_uri=TVBO.timeSeries__modality,
-    domain=None,
-    range=Optional[Union[str, "ImagingModality"]],
-)
-
-slots.timeSeries__model_equation_ref = Slot(
-    uri=TVBO.model_equation_ref,
-    name="timeSeries__model_equation_ref",
-    curie=TVBO.curie("model_equation_ref"),
-    model_uri=TVBO.timeSeries__model_equation_ref,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.timeSeries__model_param_ref = Slot(
-    uri=TVBO.model_param_ref,
-    name="timeSeries__model_param_ref",
-    curie=TVBO.curie("model_param_ref"),
-    model_uri=TVBO.timeSeries__model_param_ref,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.timeSeries__connectivity_ref = Slot(
-    uri=TVBO.connectivity_ref,
-    name="timeSeries__connectivity_ref",
-    curie=TVBO.curie("connectivity_ref"),
-    model_uri=TVBO.timeSeries__connectivity_ref,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.nDArray__shape = Slot(
-    uri=TVBO.shape,
-    name="nDArray__shape",
-    curie=TVBO.curie("shape"),
-    model_uri=TVBO.nDArray__shape,
-    domain=None,
-    range=Optional[Union[int, list[int]]],
-)
-
-slots.nDArray__dtype = Slot(
-    uri=TVBO.dtype,
-    name="nDArray__dtype",
-    curie=TVBO.curie("dtype"),
-    model_uri=TVBO.nDArray__dtype,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.nDArray__dataLocation = Slot(
-    uri=TVBO.dataLocation,
-    name="nDArray__dataLocation",
-    curie=TVBO.curie("dataLocation"),
-    model_uri=TVBO.nDArray__dataLocation,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.nDArray__unit = Slot(
-    uri=TVBO.unit,
-    name="nDArray__unit",
-    curie=TVBO.curie("unit"),
-    model_uri=TVBO.nDArray__unit,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.spatialDomain__coordinate_space = Slot(
-    uri=TVBO.coordinate_space,
-    name="spatialDomain__coordinate_space",
-    curie=TVBO.curie("coordinate_space"),
-    model_uri=TVBO.spatialDomain__coordinate_space,
-    domain=None,
-    range=Optional[Union[str, CommonCoordinateSpaceName]],
-)
-
-slots.spatialDomain__region = Slot(
-    uri=TVBO.region,
-    name="spatialDomain__region",
-    curie=TVBO.curie("region"),
-    model_uri=TVBO.spatialDomain__region,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.spatialDomain__geometry = Slot(
-    uri=TVBO.geometry,
-    name="spatialDomain__geometry",
-    curie=TVBO.curie("geometry"),
-    model_uri=TVBO.spatialDomain__geometry,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.mesh__element_type = Slot(
-    uri=TVBO.element_type,
-    name="mesh__element_type",
-    curie=TVBO.curie("element_type"),
-    model_uri=TVBO.mesh__element_type,
-    domain=None,
-    range=Optional[Union[str, "ElementType"]],
-)
-
-slots.mesh__coordinates = Slot(
-    uri=TVBO.coordinates,
-    name="mesh__coordinates",
-    curie=TVBO.curie("coordinates"),
-    model_uri=TVBO.mesh__coordinates,
-    domain=None,
-    range=Optional[Union[Union[dict, Coordinate], list[Union[dict, Coordinate]]]],
-)
-
-slots.mesh__elements = Slot(
-    uri=TVBO.elements,
-    name="mesh__elements",
-    curie=TVBO.curie("elements"),
-    model_uri=TVBO.mesh__elements,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.mesh__coordinate_space = Slot(
-    uri=TVBO.coordinate_space,
-    name="mesh__coordinate_space",
-    curie=TVBO.curie("coordinate_space"),
-    model_uri=TVBO.mesh__coordinate_space,
-    domain=None,
-    range=Optional[Union[str, CommonCoordinateSpaceName]],
-)
-
-slots.mesh__mesh_file = Slot(
-    uri=TVBO.mesh_file,
-    name="mesh__mesh_file",
-    curie=TVBO.curie("mesh_file"),
-    model_uri=TVBO.mesh__mesh_file,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.mesh__mesh_format = Slot(
-    uri=TVBO.mesh_format,
-    name="mesh__mesh_format",
-    curie=TVBO.curie("mesh_format"),
-    model_uri=TVBO.mesh__mesh_format,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.mesh__number_of_vertices = Slot(
-    uri=TVBO.number_of_vertices,
-    name="mesh__number_of_vertices",
-    curie=TVBO.curie("number_of_vertices"),
-    model_uri=TVBO.mesh__number_of_vertices,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.mesh__number_of_elements = Slot(
-    uri=TVBO.number_of_elements,
-    name="mesh__number_of_elements",
-    curie=TVBO.curie("number_of_elements"),
-    model_uri=TVBO.mesh__number_of_elements,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.spatialField__quantity_kind = Slot(
-    uri=TVBO.quantity_kind,
-    name="spatialField__quantity_kind",
-    curie=TVBO.curie("quantity_kind"),
-    model_uri=TVBO.spatialField__quantity_kind,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.spatialField__unit = Slot(
-    uri=TVBO.unit,
-    name="spatialField__unit",
-    curie=TVBO.curie("unit"),
-    model_uri=TVBO.spatialField__unit,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.spatialField__mesh = Slot(
-    uri=TVBO.mesh,
-    name="spatialField__mesh",
-    curie=TVBO.curie("mesh"),
-    model_uri=TVBO.spatialField__mesh,
-    domain=None,
-    range=Optional[Union[dict, Mesh]],
-)
-
-slots.spatialField__values = Slot(
-    uri=TVBO.values,
-    name="spatialField__values",
-    curie=TVBO.curie("values"),
-    model_uri=TVBO.spatialField__values,
-    domain=None,
-    range=Optional[Union[dict, NDArray]],
-)
-
-slots.spatialField__time_dependent = Slot(
-    uri=TVBO.time_dependent,
-    name="spatialField__time_dependent",
-    curie=TVBO.curie("time_dependent"),
-    model_uri=TVBO.spatialField__time_dependent,
-    domain=None,
-    range=Optional[Union[bool, Bool]],
-)
-
-slots.spatialField__initial_value = Slot(
-    uri=TVBO.initial_value,
-    name="spatialField__initial_value",
-    curie=TVBO.curie("initial_value"),
-    model_uri=TVBO.spatialField__initial_value,
-    domain=None,
-    range=Optional[float],
-)
-
-slots.spatialField__initial_expression = Slot(
-    uri=TVBO.initial_expression,
-    name="spatialField__initial_expression",
-    curie=TVBO.curie("initial_expression"),
-    model_uri=TVBO.spatialField__initial_expression,
-    domain=None,
-    range=Optional[Union[dict, Equation]],
-)
-
-slots.fieldStateVariable__mesh = Slot(
-    uri=TVBO.mesh,
-    name="fieldStateVariable__mesh",
-    curie=TVBO.curie("mesh"),
-    model_uri=TVBO.fieldStateVariable__mesh,
-    domain=None,
-    range=Optional[Union[dict, Mesh]],
-)
-
-slots.fieldStateVariable__boundary_conditions = Slot(
-    uri=TVBO.boundary_conditions,
-    name="fieldStateVariable__boundary_conditions",
-    curie=TVBO.curie("boundary_conditions"),
-    model_uri=TVBO.fieldStateVariable__boundary_conditions,
-    domain=None,
-    range=Optional[Union[Union[dict, BoundaryCondition], list[Union[dict, BoundaryCondition]]]],
-)
-
-slots.differentialOperator__operator_type = Slot(
-    uri=TVBO.operator_type,
-    name="differentialOperator__operator_type",
-    curie=TVBO.curie("operator_type"),
-    model_uri=TVBO.differentialOperator__operator_type,
-    domain=None,
-    range=Optional[Union[str, "OperatorType"]],
-)
-
-slots.differentialOperator__coefficient = Slot(
-    uri=TVBO.coefficient,
-    name="differentialOperator__coefficient",
-    curie=TVBO.curie("coefficient"),
-    model_uri=TVBO.differentialOperator__coefficient,
-    domain=None,
-    range=Optional[Union[str, ParameterName]],
-)
-
-slots.differentialOperator__tensor_coefficient = Slot(
-    uri=TVBO.tensor_coefficient,
-    name="differentialOperator__tensor_coefficient",
-    curie=TVBO.curie("tensor_coefficient"),
-    model_uri=TVBO.differentialOperator__tensor_coefficient,
-    domain=None,
-    range=Optional[Union[str, ParameterName]],
-)
-
-slots.differentialOperator__expression = Slot(
-    uri=TVBO.expression,
-    name="differentialOperator__expression",
-    curie=TVBO.curie("expression"),
-    model_uri=TVBO.differentialOperator__expression,
-    domain=None,
-    range=Optional[Union[dict, Equation]],
-)
-
-slots.boundaryCondition__bc_type = Slot(
-    uri=TVBO.bc_type,
-    name="boundaryCondition__bc_type",
-    curie=TVBO.curie("bc_type"),
-    model_uri=TVBO.boundaryCondition__bc_type,
-    domain=None,
-    range=Optional[Union[str, "BoundaryConditionType"]],
-)
-
-slots.boundaryCondition__on_region = Slot(
-    uri=TVBO.on_region,
-    name="boundaryCondition__on_region",
-    curie=TVBO.curie("on_region"),
-    model_uri=TVBO.boundaryCondition__on_region,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.boundaryCondition__value = Slot(
-    uri=TVBO.value,
-    name="boundaryCondition__value",
-    curie=TVBO.curie("value"),
-    model_uri=TVBO.boundaryCondition__value,
-    domain=None,
-    range=Optional[Union[dict, Equation]],
-)
-
-slots.boundaryCondition__time_dependent = Slot(
-    uri=TVBO.time_dependent,
-    name="boundaryCondition__time_dependent",
-    curie=TVBO.curie("time_dependent"),
-    model_uri=TVBO.boundaryCondition__time_dependent,
-    domain=None,
-    range=Optional[Union[bool, Bool]],
-)
-
-slots.pDESolver__discretization = Slot(
-    uri=TVBO.discretization,
-    name="pDESolver__discretization",
-    curie=TVBO.curie("discretization"),
-    model_uri=TVBO.pDESolver__discretization,
-    domain=None,
-    range=Optional[Union[str, "DiscretizationMethod"]],
-)
-
-slots.pDESolver__time_integrator = Slot(
-    uri=TVBO.time_integrator,
-    name="pDESolver__time_integrator",
-    curie=TVBO.curie("time_integrator"),
-    model_uri=TVBO.pDESolver__time_integrator,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.pDESolver__dt = Slot(
-    uri=TVBO.dt, name="pDESolver__dt", curie=TVBO.curie("dt"), model_uri=TVBO.pDESolver__dt, domain=None, range=Optional[float]
-)
-
-slots.pDESolver__tolerances = Slot(
-    uri=TVBO.tolerances,
-    name="pDESolver__tolerances",
-    curie=TVBO.curie("tolerances"),
-    model_uri=TVBO.pDESolver__tolerances,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.pDESolver__preconditioner = Slot(
-    uri=TVBO.preconditioner,
-    name="pDESolver__preconditioner",
-    curie=TVBO.curie("preconditioner"),
-    model_uri=TVBO.pDESolver__preconditioner,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.pDE__domain = Slot(
-    uri=TVBO.domain,
-    name="pDE__domain",
-    curie=TVBO.curie("domain"),
-    model_uri=TVBO.pDE__domain,
-    domain=None,
-    range=Optional[Union[dict, SpatialDomain]],
-)
-
-slots.pDE__mesh = Slot(
-    uri=TVBO.mesh,
-    name="pDE__mesh",
-    curie=TVBO.curie("mesh"),
-    model_uri=TVBO.pDE__mesh,
-    domain=None,
-    range=Optional[Union[dict, Mesh]],
-)
-
-slots.pDE__state_variables = Slot(
-    uri=TVBO.state_variables,
-    name="pDE__state_variables",
-    curie=TVBO.curie("state_variables"),
-    model_uri=TVBO.pDE__state_variables,
-    domain=None,
-    range=Optional[
-        Union[dict[Union[str, FieldStateVariableName], Union[dict, FieldStateVariable]], list[Union[dict, FieldStateVariable]]]
-    ],
-)
-
-slots.pDE__field = Slot(
-    uri=TVBO.field,
-    name="pDE__field",
-    curie=TVBO.curie("field"),
-    model_uri=TVBO.pDE__field,
-    domain=None,
-    range=Optional[Union[dict, SpatialField]],
-)
-
-slots.pDE__operators = Slot(
-    uri=TVBO.operators,
-    name="pDE__operators",
-    curie=TVBO.curie("operators"),
-    model_uri=TVBO.pDE__operators,
-    domain=None,
-    range=Optional[Union[Union[dict, DifferentialOperator], list[Union[dict, DifferentialOperator]]]],
-)
-
-slots.pDE__sources = Slot(
-    uri=TVBO.sources,
-    name="pDE__sources",
-    curie=TVBO.curie("sources"),
-    model_uri=TVBO.pDE__sources,
-    domain=None,
-    range=Optional[Union[Union[dict, Equation], list[Union[dict, Equation]]]],
-)
-
-slots.pDE__boundary_conditions = Slot(
-    uri=TVBO.boundary_conditions,
-    name="pDE__boundary_conditions",
-    curie=TVBO.curie("boundary_conditions"),
-    model_uri=TVBO.pDE__boundary_conditions,
-    domain=None,
-    range=Optional[Union[Union[dict, BoundaryCondition], list[Union[dict, BoundaryCondition]]]],
-)
-
-slots.pDE__solver = Slot(
-    uri=TVBO.solver,
-    name="pDE__solver",
-    curie=TVBO.curie("solver"),
-    model_uri=TVBO.pDE__solver,
-    domain=None,
-    range=Optional[Union[dict, PDESolver]],
-)
-
-slots.pDE__derived_parameters = Slot(
-    uri=TVBO.derived_parameters,
-    name="pDE__derived_parameters",
-    curie=TVBO.curie("derived_parameters"),
-    model_uri=TVBO.pDE__derived_parameters,
-    domain=None,
-    range=Optional[Union[Union[str, DerivedParameterName], list[Union[str, DerivedParameterName]]]],
-)
-
-slots.pDE__derived_variables = Slot(
-    uri=TVBO.derived_variables,
-    name="pDE__derived_variables",
-    curie=TVBO.curie("derived_variables"),
-    model_uri=TVBO.pDE__derived_variables,
-    domain=None,
-    range=Optional[Union[Union[str, DerivedVariableName], list[Union[str, DerivedVariableName]]]],
-)
-
-slots.pDE__functions = Slot(
-    uri=TVBO.functions,
-    name="pDE__functions",
-    curie=TVBO.curie("functions"),
-    model_uri=TVBO.pDE__functions,
-    domain=None,
-    range=Optional[Union[Union[str, FunctionName], list[Union[str, FunctionName]]]],
-)
-
-slots.coordinate__x = Slot(
-    uri=ATOM.x, name="coordinate__x", curie=ATOM.curie("x"), model_uri=TVBO.coordinate__x, domain=None, range=Optional[float]
-)
-
-slots.coordinate__y = Slot(
-    uri=ATOM.y, name="coordinate__y", curie=ATOM.curie("y"), model_uri=TVBO.coordinate__y, domain=None, range=Optional[float]
-)
-
-slots.coordinate__z = Slot(
-    uri=ATOM.z, name="coordinate__z", curie=ATOM.curie("z"), model_uri=TVBO.coordinate__z, domain=None, range=Optional[float]
-)
-
-slots.brainAtlas__terminology = Slot(
-    uri=ATOM.terminology,
-    name="brainAtlas__terminology",
-    curie=ATOM.curie("terminology"),
-    model_uri=TVBO.brainAtlas__terminology,
-    domain=None,
-    range=Optional[Union[dict, ParcellationTerminology]],
-)
-
-slots.commonCoordinateSpace__anatomicalAxesOrientation = Slot(
-    uri=ATOM.anatomicalAxesOrientation,
-    name="commonCoordinateSpace__anatomicalAxesOrientation",
-    curie=ATOM.curie("anatomicalAxesOrientation"),
-    model_uri=TVBO.commonCoordinateSpace__anatomicalAxesOrientation,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.commonCoordinateSpace__axesOrigin = Slot(
-    uri=ATOM.axesOrigin,
-    name="commonCoordinateSpace__axesOrigin",
-    curie=ATOM.curie("axesOrigin"),
-    model_uri=TVBO.commonCoordinateSpace__axesOrigin,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.commonCoordinateSpace__nativeUnit = Slot(
-    uri=ATOM.nativeUnit,
-    name="commonCoordinateSpace__nativeUnit",
-    curie=ATOM.curie("nativeUnit"),
-    model_uri=TVBO.commonCoordinateSpace__nativeUnit,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.commonCoordinateSpace__defaultImage = Slot(
-    uri=ATOM.defaultImage,
-    name="commonCoordinateSpace__defaultImage",
-    curie=ATOM.curie("defaultImage"),
-    model_uri=TVBO.commonCoordinateSpace__defaultImage,
-    domain=None,
-    range=Optional[Union[str, list[str]]],
-)
-
-slots.parcellationEntity__relatedUBERONTerm = Slot(
-    uri=ATOM.relatedUBERONTerm,
-    name="parcellationEntity__relatedUBERONTerm",
-    curie=ATOM.curie("relatedUBERONTerm"),
-    model_uri=TVBO.parcellationEntity__relatedUBERONTerm,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.parcellationEntity__originalLookupLabel = Slot(
-    uri=ATOM.originalLookupLabel,
-    name="parcellationEntity__originalLookupLabel",
-    curie=ATOM.curie("originalLookupLabel"),
-    model_uri=TVBO.parcellationEntity__originalLookupLabel,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.parcellationEntity__hemisphere = Slot(
-    uri=ATOM.hemisphere,
-    name="parcellationEntity__hemisphere",
-    curie=ATOM.curie("hemisphere"),
-    model_uri=TVBO.parcellationEntity__hemisphere,
-    domain=None,
-    range=Optional[Union[str, "Hemisphere"]],
-)
-
-slots.parcellationEntity__center = Slot(
-    uri=ATOM.center,
-    name="parcellationEntity__center",
-    curie=ATOM.curie("center"),
-    model_uri=TVBO.parcellationEntity__center,
-    domain=None,
-    range=Optional[Union[dict, Coordinate]],
-)
-
-slots.parcellationEntity__color = Slot(
-    uri=ATOM.color,
-    name="parcellationEntity__color",
-    curie=ATOM.curie("color"),
-    model_uri=TVBO.parcellationEntity__color,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.parcellationTerminology__entities = Slot(
-    uri=ATOM.entities,
-    name="parcellationTerminology__entities",
-    curie=ATOM.curie("entities"),
-    model_uri=TVBO.parcellationTerminology__entities,
-    domain=None,
-    range=Optional[
-        Union[dict[Union[str, ParcellationEntityName], Union[dict, ParcellationEntity]], list[Union[dict, ParcellationEntity]]]
-    ],
-)
-
-slots.subject__label = Slot(
-    uri=TVBO_STUDY.label,
-    name="subject__label",
-    curie=TVBO_STUDY.curie("label"),
-    model_uri=TVBO.subject__label,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.subject__group = Slot(
-    uri=TVBO_STUDY.group,
-    name="subject__group",
-    curie=TVBO_STUDY.curie("group"),
-    model_uri=TVBO.subject__group,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.subject__age = Slot(
-    uri=TVBO_STUDY.age,
-    name="subject__age",
-    curie=TVBO_STUDY.curie("age"),
-    model_uri=TVBO.subject__age,
-    domain=None,
-    range=Optional[float],
-)
-
-slots.subject__sex = Slot(
-    uri=TVBO_STUDY.sex,
-    name="subject__sex",
-    curie=TVBO_STUDY.curie("sex"),
-    model_uri=TVBO.subject__sex,
-    domain=None,
-    range=Optional[Union[str, "SexEnum"]],
-)
-
-slots.subject__sessions = Slot(
-    uri=TVBO_STUDY.sessions,
-    name="subject__sessions",
-    curie=TVBO_STUDY.curie("sessions"),
-    model_uri=TVBO.subject__sessions,
-    domain=None,
-    range=Optional[Union[dict[Union[str, SessionSessionId], Union[dict, Session]], list[Union[dict, Session]]]],
-)
-
-slots.subject__network = Slot(
-    uri=TVBO_STUDY.network,
-    name="subject__network",
-    curie=TVBO_STUDY.curie("network"),
-    model_uri=TVBO.subject__network,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.subject__metadata = Slot(
-    uri=TVBO_STUDY.metadata,
-    name="subject__metadata",
-    curie=TVBO_STUDY.curie("metadata"),
-    model_uri=TVBO.subject__metadata,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.session__label = Slot(
-    uri=TVBO_STUDY.label,
-    name="session__label",
-    curie=TVBO_STUDY.curie("label"),
-    model_uri=TVBO.session__label,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.session__network = Slot(
-    uri=TVBO_STUDY.network,
-    name="session__network",
-    curie=TVBO_STUDY.curie("network"),
-    model_uri=TVBO.session__network,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.session__empirical_data = Slot(
-    uri=TVBO_STUDY.empirical_data,
-    name="session__empirical_data",
-    curie=TVBO_STUDY.curie("empirical_data"),
-    model_uri=TVBO.session__empirical_data,
-    domain=None,
-    range=Optional[Union[str, list[str]]],
-)
-
-slots.session__condition = Slot(
-    uri=TVBO_STUDY.condition,
-    name="session__condition",
-    curie=TVBO_STUDY.curie("condition"),
-    model_uri=TVBO.session__condition,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.dataset__label = Slot(
-    uri=TVBO_STUDY.label,
-    name="dataset__label",
-    curie=TVBO_STUDY.curie("label"),
-    model_uri=TVBO.dataset__label,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.dataset__description = Slot(
-    uri=TVBO_STUDY.description,
-    name="dataset__description",
-    curie=TVBO_STUDY.curie("description"),
-    model_uri=TVBO.dataset__description,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.dataset__bids_root = Slot(
-    uri=TVBO_STUDY.bids_root,
-    name="dataset__bids_root",
-    curie=TVBO_STUDY.curie("bids_root"),
-    model_uri=TVBO.dataset__bids_root,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.dataset__subjects = Slot(
-    uri=TVBO_STUDY.subjects,
-    name="dataset__subjects",
-    curie=TVBO_STUDY.curie("subjects"),
-    model_uri=TVBO.dataset__subjects,
-    domain=None,
-    range=Optional[Union[dict[Union[str, SubjectSubjectId], Union[dict, Subject]], list[Union[dict, Subject]]]],
-)
-
-slots.dataset__conditions = Slot(
-    uri=TVBO_STUDY.conditions,
-    name="dataset__conditions",
-    curie=TVBO_STUDY.curie("conditions"),
-    model_uri=TVBO.dataset__conditions,
-    domain=None,
-    range=Optional[Union[str, list[str]]],
-)
-
-slots.dataset__reference = Slot(
-    uri=TVBO_STUDY.reference,
-    name="dataset__reference",
-    curie=TVBO_STUDY.curie("reference"),
-    model_uri=TVBO.dataset__reference,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.dBSDataset__clinical_scores = Slot(
-    uri=TVBO_DBS.clinical_scores,
-    name="dBSDataset__clinical_scores",
-    curie=TVBO_DBS.curie("clinical_scores"),
-    model_uri=TVBO.dBSDataset__clinical_scores,
-    domain=None,
-    range=Optional[Union[Union[dict, ClinicalScore], list[Union[dict, ClinicalScore]]]],
-)
-
-slots.dBSDataset__coordinate_space = Slot(
-    uri=TVBO_DBS.coordinate_space,
-    name="dBSDataset__coordinate_space",
-    curie=TVBO_DBS.curie("coordinate_space"),
-    model_uri=TVBO.dBSDataset__coordinate_space,
-    domain=None,
-    range=Optional[Union[str, CommonCoordinateSpaceName]],
-)
-
-slots.dBSSubject__diagnosis = Slot(
-    uri=TVBO_DBS.diagnosis,
-    name="dBSSubject__diagnosis",
-    curie=TVBO_DBS.curie("diagnosis"),
-    model_uri=TVBO.dBSSubject__diagnosis,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.dBSSubject__handedness = Slot(
-    uri=TVBO_DBS.handedness,
-    name="dBSSubject__handedness",
-    curie=TVBO_DBS.curie("handedness"),
-    model_uri=TVBO.dBSSubject__handedness,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.dBSSubject__protocols = Slot(
-    uri=TVBO_DBS.protocols,
-    name="dBSSubject__protocols",
-    curie=TVBO_DBS.curie("protocols"),
-    model_uri=TVBO.dBSSubject__protocols,
-    domain=None,
-    range=Optional[Union[Union[str, DBSProtocolName], list[Union[str, DBSProtocolName]]]],
-)
-
-slots.dBSSubject__coordinate_space = Slot(
-    uri=TVBO_DBS.coordinate_space,
-    name="dBSSubject__coordinate_space",
-    curie=TVBO_DBS.curie("coordinate_space"),
-    model_uri=TVBO.dBSSubject__coordinate_space,
-    domain=None,
-    range=Optional[Union[str, CommonCoordinateSpaceName]],
-)
-
-slots.electrode__electrode_id = Slot(
-    uri=TVBO_DBS.electrode_id,
-    name="electrode__electrode_id",
-    curie=TVBO_DBS.curie("electrode_id"),
-    model_uri=TVBO.electrode__electrode_id,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.electrode__manufacturer = Slot(
-    uri=TVBO_DBS.manufacturer,
-    name="electrode__manufacturer",
-    curie=TVBO_DBS.curie("manufacturer"),
-    model_uri=TVBO.electrode__manufacturer,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.electrode__model = Slot(
-    uri=TVBO_DBS.model,
-    name="electrode__model",
-    curie=TVBO_DBS.curie("model"),
-    model_uri=TVBO.electrode__model,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.electrode__hemisphere = Slot(
-    uri=TVBO_DBS.hemisphere,
-    name="electrode__hemisphere",
-    curie=TVBO_DBS.curie("hemisphere"),
-    model_uri=TVBO.electrode__hemisphere,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.electrode__contacts = Slot(
-    uri=TVBO_DBS.contacts,
-    name="electrode__contacts",
-    curie=TVBO_DBS.curie("contacts"),
-    model_uri=TVBO.electrode__contacts,
-    domain=None,
-    range=Optional[Union[Union[dict, Contact], list[Union[dict, Contact]]]],
-)
-
-slots.electrode__head = Slot(
-    uri=TVBO_DBS.head,
-    name="electrode__head",
-    curie=TVBO_DBS.curie("head"),
-    model_uri=TVBO.electrode__head,
-    domain=None,
-    range=Optional[Union[dict, Coordinate]],
-)
-
-slots.electrode__tail = Slot(
-    uri=TVBO_DBS.tail,
-    name="electrode__tail",
-    curie=TVBO_DBS.curie("tail"),
-    model_uri=TVBO.electrode__tail,
-    domain=None,
-    range=Optional[Union[dict, Coordinate]],
-)
-
-slots.electrode__trajectory = Slot(
-    uri=TVBO_DBS.trajectory,
-    name="electrode__trajectory",
-    curie=TVBO_DBS.curie("trajectory"),
-    model_uri=TVBO.electrode__trajectory,
-    domain=None,
-    range=Optional[Union[Union[dict, Coordinate], list[Union[dict, Coordinate]]]],
-)
-
-slots.electrode__target_structure = Slot(
-    uri=TVBO_DBS.target_structure,
-    name="electrode__target_structure",
-    curie=TVBO_DBS.curie("target_structure"),
-    model_uri=TVBO.electrode__target_structure,
-    domain=None,
-    range=Optional[Union[str, ParcellationEntityName]],
-)
-
-slots.electrode__coordinate_space = Slot(
-    uri=TVBO_DBS.coordinate_space,
-    name="electrode__coordinate_space",
-    curie=TVBO_DBS.curie("coordinate_space"),
-    model_uri=TVBO.electrode__coordinate_space,
-    domain=None,
-    range=Optional[Union[str, CommonCoordinateSpaceName]],
-)
-
-slots.electrode__recon_path = Slot(
-    uri=TVBO_DBS.recon_path,
-    name="electrode__recon_path",
-    curie=TVBO_DBS.curie("recon_path"),
-    model_uri=TVBO.electrode__recon_path,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.contact__contact_id = Slot(
-    uri=TVBO_DBS.contact_id,
-    name="contact__contact_id",
-    curie=TVBO_DBS.curie("contact_id"),
-    model_uri=TVBO.contact__contact_id,
-    domain=None,
-    range=Optional[int],
-)
-
-slots.contact__coordinate = Slot(
-    uri=TVBO_DBS.coordinate,
-    name="contact__coordinate",
-    curie=TVBO_DBS.curie("coordinate"),
-    model_uri=TVBO.contact__coordinate,
-    domain=None,
-    range=Optional[Union[dict, Coordinate]],
-)
-
-slots.contact__label = Slot(
-    uri=TVBO_DBS.label,
-    name="contact__label",
-    curie=TVBO_DBS.curie("label"),
-    model_uri=TVBO.contact__label,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.stimulationSetting__electrode_reference = Slot(
-    uri=TVBO_DBS.electrode_reference,
-    name="stimulationSetting__electrode_reference",
-    curie=TVBO_DBS.curie("electrode_reference"),
-    model_uri=TVBO.stimulationSetting__electrode_reference,
-    domain=None,
-    range=Optional[Union[dict, Electrode]],
-)
-
-slots.stimulationSetting__amplitude = Slot(
-    uri=TVBO_DBS.amplitude,
-    name="stimulationSetting__amplitude",
-    curie=TVBO_DBS.curie("amplitude"),
-    model_uri=TVBO.stimulationSetting__amplitude,
-    domain=None,
-    range=Optional[Union[str, ParameterName]],
-)
-
-slots.stimulationSetting__frequency = Slot(
-    uri=TVBO_DBS.frequency,
-    name="stimulationSetting__frequency",
-    curie=TVBO_DBS.curie("frequency"),
-    model_uri=TVBO.stimulationSetting__frequency,
-    domain=None,
-    range=Optional[Union[str, ParameterName]],
-)
-
-slots.stimulationSetting__pulse_width = Slot(
-    uri=TVBO_DBS.pulse_width,
-    name="stimulationSetting__pulse_width",
-    curie=TVBO_DBS.curie("pulse_width"),
-    model_uri=TVBO.stimulationSetting__pulse_width,
-    domain=None,
-    range=Optional[Union[str, ParameterName]],
-)
-
-slots.stimulationSetting__mode = Slot(
-    uri=TVBO_DBS.mode,
-    name="stimulationSetting__mode",
-    curie=TVBO_DBS.curie("mode"),
-    model_uri=TVBO.stimulationSetting__mode,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.stimulationSetting__active_contacts = Slot(
-    uri=TVBO_DBS.active_contacts,
-    name="stimulationSetting__active_contacts",
-    curie=TVBO_DBS.curie("active_contacts"),
-    model_uri=TVBO.stimulationSetting__active_contacts,
-    domain=None,
-    range=Optional[Union[int, list[int]]],
-)
-
-slots.stimulationSetting__efield = Slot(
-    uri=TVBO_DBS.efield,
-    name="stimulationSetting__efield",
-    curie=TVBO_DBS.curie("efield"),
-    model_uri=TVBO.stimulationSetting__efield,
-    domain=None,
-    range=Optional[Union[dict, EField]],
-)
-
-slots.dBSProtocol__electrodes = Slot(
-    uri=TVBO_DBS.electrodes,
-    name="dBSProtocol__electrodes",
-    curie=TVBO_DBS.curie("electrodes"),
-    model_uri=TVBO.dBSProtocol__electrodes,
-    domain=None,
-    range=Optional[Union[Union[dict, Electrode], list[Union[dict, Electrode]]]],
-)
-
-slots.dBSProtocol__settings = Slot(
-    uri=TVBO_DBS.settings,
-    name="dBSProtocol__settings",
-    curie=TVBO_DBS.curie("settings"),
-    model_uri=TVBO.dBSProtocol__settings,
-    domain=None,
-    range=Optional[Union[Union[dict, StimulationSetting], list[Union[dict, StimulationSetting]]]],
-)
-
-slots.dBSProtocol__timing_info = Slot(
-    uri=TVBO_DBS.timing_info,
-    name="dBSProtocol__timing_info",
-    curie=TVBO_DBS.curie("timing_info"),
-    model_uri=TVBO.dBSProtocol__timing_info,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.dBSProtocol__notes = Slot(
-    uri=TVBO_DBS.notes,
-    name="dBSProtocol__notes",
-    curie=TVBO_DBS.curie("notes"),
-    model_uri=TVBO.dBSProtocol__notes,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.dBSProtocol__clinical_improvement = Slot(
-    uri=TVBO_DBS.clinical_improvement,
-    name="dBSProtocol__clinical_improvement",
-    curie=TVBO_DBS.curie("clinical_improvement"),
-    model_uri=TVBO.dBSProtocol__clinical_improvement,
-    domain=None,
-    range=Optional[Union[Union[dict, ClinicalImprovement], list[Union[dict, ClinicalImprovement]]]],
-)
-
-slots.clinicalScale__name = Slot(
-    uri=TVBO_DBS.name,
-    name="clinicalScale__name",
-    curie=TVBO_DBS.curie("name"),
-    model_uri=TVBO.clinicalScale__name,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.clinicalScale__acronym = Slot(
-    uri=TVBO_DBS.acronym,
-    name="clinicalScale__acronym",
-    curie=TVBO_DBS.curie("acronym"),
-    model_uri=TVBO.clinicalScale__acronym,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.clinicalScale__version = Slot(
-    uri=TVBO_DBS.version,
-    name="clinicalScale__version",
-    curie=TVBO_DBS.curie("version"),
-    model_uri=TVBO.clinicalScale__version,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.clinicalScale__domain = Slot(
-    uri=TVBO_DBS.domain,
-    name="clinicalScale__domain",
-    curie=TVBO_DBS.curie("domain"),
-    model_uri=TVBO.clinicalScale__domain,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.clinicalScale__reference = Slot(
-    uri=TVBO_DBS.reference,
-    name="clinicalScale__reference",
-    curie=TVBO_DBS.curie("reference"),
-    model_uri=TVBO.clinicalScale__reference,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.clinicalScore__name = Slot(
-    uri=TVBO_DBS.name,
-    name="clinicalScore__name",
-    curie=TVBO_DBS.curie("name"),
-    model_uri=TVBO.clinicalScore__name,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.clinicalScore__acronym = Slot(
-    uri=TVBO_DBS.acronym,
-    name="clinicalScore__acronym",
-    curie=TVBO_DBS.curie("acronym"),
-    model_uri=TVBO.clinicalScore__acronym,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.clinicalScore__description = Slot(
-    uri=TVBO_DBS.description,
-    name="clinicalScore__description",
-    curie=TVBO_DBS.curie("description"),
-    model_uri=TVBO.clinicalScore__description,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.clinicalScore__domain = Slot(
-    uri=TVBO_DBS.domain,
-    name="clinicalScore__domain",
-    curie=TVBO_DBS.curie("domain"),
-    model_uri=TVBO.clinicalScore__domain,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.clinicalScore__reference = Slot(
-    uri=TVBO_DBS.reference,
-    name="clinicalScore__reference",
-    curie=TVBO_DBS.curie("reference"),
-    model_uri=TVBO.clinicalScore__reference,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.clinicalScore__scale = Slot(
-    uri=TVBO_DBS.scale,
-    name="clinicalScore__scale",
-    curie=TVBO_DBS.curie("scale"),
-    model_uri=TVBO.clinicalScore__scale,
-    domain=None,
-    range=Optional[Union[dict, ClinicalScale]],
-)
-
-slots.clinicalScore__parent_score = Slot(
-    uri=TVBO_DBS.parent_score,
-    name="clinicalScore__parent_score",
-    curie=TVBO_DBS.curie("parent_score"),
-    model_uri=TVBO.clinicalScore__parent_score,
-    domain=None,
-    range=Optional[Union[dict, ClinicalScore]],
-)
-
-slots.clinicalImprovement__score = Slot(
-    uri=TVBO_DBS.score,
-    name="clinicalImprovement__score",
-    curie=TVBO_DBS.curie("score"),
-    model_uri=TVBO.clinicalImprovement__score,
-    domain=None,
-    range=Optional[Union[dict, ClinicalScore]],
-)
-
-slots.clinicalImprovement__baseline_value = Slot(
-    uri=TVBO_DBS.baseline_value,
-    name="clinicalImprovement__baseline_value",
-    curie=TVBO_DBS.curie("baseline_value"),
-    model_uri=TVBO.clinicalImprovement__baseline_value,
-    domain=None,
-    range=Optional[float],
-)
-
-slots.clinicalImprovement__absolute_value = Slot(
-    uri=TVBO_DBS.absolute_value,
-    name="clinicalImprovement__absolute_value",
-    curie=TVBO_DBS.curie("absolute_value"),
-    model_uri=TVBO.clinicalImprovement__absolute_value,
-    domain=None,
-    range=Optional[float],
-)
-
-slots.clinicalImprovement__percent_change = Slot(
-    uri=TVBO_DBS.percent_change,
-    name="clinicalImprovement__percent_change",
-    curie=TVBO_DBS.curie("percent_change"),
-    model_uri=TVBO.clinicalImprovement__percent_change,
-    domain=None,
-    range=Optional[float],
-)
-
-slots.clinicalImprovement__time_post_surgery = Slot(
-    uri=TVBO_DBS.time_post_surgery,
-    name="clinicalImprovement__time_post_surgery",
-    curie=TVBO_DBS.curie("time_post_surgery"),
-    model_uri=TVBO.clinicalImprovement__time_post_surgery,
-    domain=None,
-    range=Optional[float],
-)
-
-slots.clinicalImprovement__evaluator = Slot(
-    uri=TVBO_DBS.evaluator,
-    name="clinicalImprovement__evaluator",
-    curie=TVBO_DBS.curie("evaluator"),
-    model_uri=TVBO.clinicalImprovement__evaluator,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.clinicalImprovement__timepoint = Slot(
-    uri=TVBO_DBS.timepoint,
-    name="clinicalImprovement__timepoint",
-    curie=TVBO_DBS.curie("timepoint"),
-    model_uri=TVBO.clinicalImprovement__timepoint,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.eField__volume_data = Slot(
-    uri=TVBO_DBS.volume_data,
-    name="eField__volume_data",
-    curie=TVBO_DBS.curie("volume_data"),
-    model_uri=TVBO.eField__volume_data,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.eField__coordinate_space = Slot(
-    uri=TVBO_DBS.coordinate_space,
-    name="eField__coordinate_space",
-    curie=TVBO_DBS.curie("coordinate_space"),
-    model_uri=TVBO.eField__coordinate_space,
-    domain=None,
-    range=Optional[Union[str, CommonCoordinateSpaceName]],
-)
-
-slots.eField__threshold_applied = Slot(
-    uri=TVBO_DBS.threshold_applied,
-    name="eField__threshold_applied",
-    curie=TVBO_DBS.curie("threshold_applied"),
-    model_uri=TVBO.eField__threshold_applied,
-    domain=None,
-    range=Optional[float],
-)
-
-slots.softwarePackage__name = Slot(
-    uri=SCHEMA.name,
-    name="softwarePackage__name",
-    curie=SCHEMA.curie("name"),
-    model_uri=TVBO.softwarePackage__name,
-    domain=None,
-    range=URIRef,
-)
-
-slots.softwarePackage__description = Slot(
-    uri=SCHEMA.description,
-    name="softwarePackage__description",
-    curie=SCHEMA.curie("description"),
-    model_uri=TVBO.softwarePackage__description,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.softwarePackage__homepage = Slot(
-    uri=SCHEMA.url,
-    name="softwarePackage__homepage",
-    curie=SCHEMA.curie("url"),
-    model_uri=TVBO.softwarePackage__homepage,
-    domain=None,
-    range=Optional[Union[str, URI]],
-)
-
-slots.softwarePackage__license = Slot(
-    uri=SCHEMA.license,
-    name="softwarePackage__license",
-    curie=SCHEMA.curie("license"),
-    model_uri=TVBO.softwarePackage__license,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.softwarePackage__repository = Slot(
-    uri=SCHEMA.codeRepository,
-    name="softwarePackage__repository",
-    curie=SCHEMA.curie("codeRepository"),
-    model_uri=TVBO.softwarePackage__repository,
-    domain=None,
-    range=Optional[Union[str, URI]],
-)
-
-slots.softwarePackage__doi = Slot(
-    uri=TVBO_SW.doi,
-    name="softwarePackage__doi",
-    curie=TVBO_SW.curie("doi"),
-    model_uri=TVBO.softwarePackage__doi,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.softwarePackage__ecosystem = Slot(
-    uri=TVBO_SW.ecosystem,
-    name="softwarePackage__ecosystem",
-    curie=TVBO_SW.curie("ecosystem"),
-    model_uri=TVBO.softwarePackage__ecosystem,
-    domain=None,
-    range=Optional[Union[Union[str, "EcosystemEnum"], list[Union[str, "EcosystemEnum"]]]],
-)
-
-slots.simulationTool__application_category = Slot(
-    uri=SCHEMA.applicationCategory,
-    name="simulationTool__application_category",
-    curie=SCHEMA.curie("applicationCategory"),
-    model_uri=TVBO.simulationTool__application_category,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.simulationTool__scale = Slot(
-    uri=TVBO_SW.scale,
-    name="simulationTool__scale",
-    curie=TVBO_SW.curie("scale"),
-    model_uri=TVBO.simulationTool__scale,
-    domain=None,
-    range=Optional[Union[Union[str, "SimulationScale"], list[Union[str, "SimulationScale"]]]],
-)
-
-slots.simulationTool__model_paradigm = Slot(
-    uri=TVBO_SW.model_paradigm,
-    name="simulationTool__model_paradigm",
-    curie=TVBO_SW.curie("model_paradigm"),
-    model_uri=TVBO.simulationTool__model_paradigm,
-    domain=None,
-    range=Optional[Union[Union[str, "ModelParadigm"], list[Union[str, "ModelParadigm"]]]],
-)
-
-slots.simulationTool__tool_role = Slot(
-    uri=TVBO_SW.tool_role,
-    name="simulationTool__tool_role",
-    curie=TVBO_SW.curie("tool_role"),
-    model_uri=TVBO.simulationTool__tool_role,
-    domain=None,
-    range=Optional[Union[Union[str, "ToolRole"], list[Union[str, "ToolRole"]]]],
-)
-
-slots.simulationTool__programming_language = Slot(
-    uri=SCHEMA.programmingLanguage,
-    name="simulationTool__programming_language",
-    curie=SCHEMA.curie("programmingLanguage"),
-    model_uri=TVBO.simulationTool__programming_language,
-    domain=None,
-    range=Optional[Union[Union[str, "ProgrammingLanguageEnum"], list[Union[str, "ProgrammingLanguageEnum"]]]],
-)
-
-slots.simulationTool__runtime_platform = Slot(
-    uri=SCHEMA.runtimePlatform,
-    name="simulationTool__runtime_platform",
-    curie=SCHEMA.curie("runtimePlatform"),
-    model_uri=TVBO.simulationTool__runtime_platform,
-    domain=None,
-    range=Optional[Union[str, list[str]]],
-)
-
-slots.simulationTool__operating_system = Slot(
-    uri=SCHEMA.operatingSystem,
-    name="simulationTool__operating_system",
-    curie=SCHEMA.curie("operatingSystem"),
-    model_uri=TVBO.simulationTool__operating_system,
-    domain=None,
-    range=Optional[Union[str, list[str]]],
-)
-
-slots.simulationTool__interoperates_with = Slot(
-    uri=TVBO_SW.interoperates_with,
-    name="simulationTool__interoperates_with",
-    curie=TVBO_SW.curie("interoperates_with"),
-    model_uri=TVBO.simulationTool__interoperates_with,
-    domain=None,
-    range=Optional[Union[Union[str, SimulationToolName], list[Union[str, SimulationToolName]]]],
-)
-
-slots.simulationTool__version = Slot(
-    uri=SCHEMA.softwareVersion,
-    name="simulationTool__version",
-    curie=SCHEMA.curie("softwareVersion"),
-    model_uri=TVBO.simulationTool__version,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.simulationTool__date_created = Slot(
-    uri=SCHEMA.dateCreated,
-    name="simulationTool__date_created",
-    curie=SCHEMA.curie("dateCreated"),
-    model_uri=TVBO.simulationTool__date_created,
-    domain=None,
-    range=Optional[Union[str, XSDDate]],
-)
-
-slots.simulationTool__date_modified = Slot(
-    uri=SCHEMA.dateModified,
-    name="simulationTool__date_modified",
-    curie=SCHEMA.curie("dateModified"),
-    model_uri=TVBO.simulationTool__date_modified,
-    domain=None,
-    range=Optional[Union[str, XSDDate]],
-)
-
-slots.simulationTool__development_status = Slot(
-    uri=TVBO_SW.development_status,
-    name="simulationTool__development_status",
-    curie=TVBO_SW.curie("development_status"),
-    model_uri=TVBO.simulationTool__development_status,
-    domain=None,
-    range=Optional[Union[str, "DevelopmentStatus"]],
-)
-
-slots.simulationTool__author = Slot(
-    uri=SCHEMA.author,
-    name="simulationTool__author",
-    curie=SCHEMA.curie("author"),
-    model_uri=TVBO.simulationTool__author,
-    domain=None,
-    range=Optional[Union[str, list[str]]],
-)
-
-slots.simulationTool__maintainer = Slot(
-    uri=SCHEMA.maintainer,
-    name="simulationTool__maintainer",
-    curie=SCHEMA.curie("maintainer"),
-    model_uri=TVBO.simulationTool__maintainer,
-    domain=None,
-    range=Optional[Union[str, list[str]]],
-)
-
-slots.simulationTool__funder = Slot(
-    uri=SCHEMA.funder,
-    name="simulationTool__funder",
-    curie=SCHEMA.curie("funder"),
-    model_uri=TVBO.simulationTool__funder,
-    domain=None,
-    range=Optional[Union[str, list[str]]],
-)
-
-slots.simulationTool__reference_publication = Slot(
-    uri=TVBO_SW.reference_publication,
-    name="simulationTool__reference_publication",
-    curie=TVBO_SW.curie("reference_publication"),
-    model_uri=TVBO.simulationTool__reference_publication,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.simulationTool__citation = Slot(
-    uri=SCHEMA.citation,
-    name="simulationTool__citation",
-    curie=SCHEMA.curie("citation"),
-    model_uri=TVBO.simulationTool__citation,
-    domain=None,
-    range=Optional[Union[str, list[str]]],
-)
-
-slots.simulationTool__keywords = Slot(
-    uri=SCHEMA.keywords,
-    name="simulationTool__keywords",
-    curie=SCHEMA.curie("keywords"),
-    model_uri=TVBO.simulationTool__keywords,
-    domain=None,
-    range=Optional[Union[str, list[str]]],
-)
-
-slots.simulationTool__same_as = Slot(
-    uri=SCHEMA.sameAs,
-    name="simulationTool__same_as",
-    curie=SCHEMA.curie("sameAs"),
-    model_uri=TVBO.simulationTool__same_as,
-    domain=None,
-    range=Optional[Union[Union[str, URI], list[Union[str, URI]]]],
-)
-
-slots.simulationTool__issue_tracker = Slot(
-    uri=TVBO_SW.issue_tracker,
-    name="simulationTool__issue_tracker",
-    curie=TVBO_SW.curie("issue_tracker"),
-    model_uri=TVBO.simulationTool__issue_tracker,
-    domain=None,
-    range=Optional[Union[str, URI]],
-)
-
-slots.simulationTool__is_accessible_for_free = Slot(
-    uri=SCHEMA.isAccessibleForFree,
-    name="simulationTool__is_accessible_for_free",
-    curie=SCHEMA.curie("isAccessibleForFree"),
-    model_uri=TVBO.simulationTool__is_accessible_for_free,
-    domain=None,
-    range=Optional[Union[bool, Bool]],
-)
-
-slots.softwareRequirement__name = Slot(
-    uri=TVBO_SW.name,
-    name="softwareRequirement__name",
-    curie=TVBO_SW.curie("name"),
-    model_uri=TVBO.softwareRequirement__name,
-    domain=None,
-    range=URIRef,
-)
-
-slots.softwareRequirement__description = Slot(
-    uri=TVBO_SW.description,
-    name="softwareRequirement__description",
-    curie=TVBO_SW.curie("description"),
-    model_uri=TVBO.softwareRequirement__description,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.softwareRequirement__dataLocation = Slot(
-    uri=TVBO_SW.dataLocation,
-    name="softwareRequirement__dataLocation",
-    curie=TVBO_SW.curie("dataLocation"),
-    model_uri=TVBO.softwareRequirement__dataLocation,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.softwareRequirement__package = Slot(
-    uri=TVBO_SW.package,
-    name="softwareRequirement__package",
-    curie=TVBO_SW.curie("package"),
-    model_uri=TVBO.softwareRequirement__package,
-    domain=None,
-    range=Optional[Union[str, SoftwarePackageName]],
-)
-
-slots.softwareRequirement__version_spec = Slot(
-    uri=TVBO_SW.version_spec,
-    name="softwareRequirement__version_spec",
-    curie=TVBO_SW.curie("version_spec"),
-    model_uri=TVBO.softwareRequirement__version_spec,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.softwareRequirement__role = Slot(
-    uri=TVBO_SW.role,
-    name="softwareRequirement__role",
-    curie=TVBO_SW.curie("role"),
-    model_uri=TVBO.softwareRequirement__role,
-    domain=None,
-    range=Optional[Union[str, "RequirementRole"]],
-)
-
-slots.softwareRequirement__optional = Slot(
-    uri=TVBO_SW.optional,
-    name="softwareRequirement__optional",
-    curie=TVBO_SW.curie("optional"),
-    model_uri=TVBO.softwareRequirement__optional,
-    domain=None,
-    range=Optional[Union[bool, Bool]],
-)
-
-slots.softwareRequirement__hash = Slot(
-    uri=TVBO_SW.hash,
-    name="softwareRequirement__hash",
-    curie=TVBO_SW.curie("hash"),
-    model_uri=TVBO.softwareRequirement__hash,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.softwareRequirement__source_url = Slot(
-    uri=TVBO_SW.source_url,
-    name="softwareRequirement__source_url",
-    curie=TVBO_SW.curie("source_url"),
-    model_uri=TVBO.softwareRequirement__source_url,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.softwareRequirement__url = Slot(
-    uri=TVBO_SW.url,
-    name="softwareRequirement__url",
-    curie=TVBO_SW.curie("url"),
-    model_uri=TVBO.softwareRequirement__url,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.softwareRequirement__license = Slot(
-    uri=TVBO_SW.license,
-    name="softwareRequirement__license",
-    curie=TVBO_SW.curie("license"),
-    model_uri=TVBO.softwareRequirement__license,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.softwareRequirement__modules = Slot(
-    uri=TVBO_SW.modules,
-    name="softwareRequirement__modules",
-    curie=TVBO_SW.curie("modules"),
-    model_uri=TVBO.softwareRequirement__modules,
-    domain=None,
-    range=Optional[Union[str, list[str]]],
-)
-
-slots.softwareRequirement__version = Slot(
-    uri=TVBO_SW.version,
-    name="softwareRequirement__version",
-    curie=TVBO_SW.curie("version"),
-    model_uri=TVBO.softwareRequirement__version,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.softwareEnvironment__label = Slot(
-    uri=TVBO_SW.label,
-    name="softwareEnvironment__label",
-    curie=TVBO_SW.curie("label"),
-    model_uri=TVBO.softwareEnvironment__label,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.softwareEnvironment__description = Slot(
-    uri=TVBO_SW.description,
-    name="softwareEnvironment__description",
-    curie=TVBO_SW.curie("description"),
-    model_uri=TVBO.softwareEnvironment__description,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.softwareEnvironment__dataLocation = Slot(
-    uri=TVBO_SW.dataLocation,
-    name="softwareEnvironment__dataLocation",
-    curie=TVBO_SW.curie("dataLocation"),
-    model_uri=TVBO.softwareEnvironment__dataLocation,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.softwareEnvironment__name = Slot(
-    uri=TVBO_SW.name,
-    name="softwareEnvironment__name",
-    curie=TVBO_SW.curie("name"),
-    model_uri=TVBO.softwareEnvironment__name,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.softwareEnvironment__version = Slot(
-    uri=TVBO_SW.version,
-    name="softwareEnvironment__version",
-    curie=TVBO_SW.curie("version"),
-    model_uri=TVBO.softwareEnvironment__version,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.softwareEnvironment__platform = Slot(
-    uri=TVBO_SW.platform,
-    name="softwareEnvironment__platform",
-    curie=TVBO_SW.curie("platform"),
-    model_uri=TVBO.softwareEnvironment__platform,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.softwareEnvironment__environment_type = Slot(
-    uri=TVBO_SW.environment_type,
-    name="softwareEnvironment__environment_type",
-    curie=TVBO_SW.curie("environment_type"),
-    model_uri=TVBO.softwareEnvironment__environment_type,
-    domain=None,
-    range=Optional[Union[str, "EnvironmentType"]],
-)
-
-slots.softwareEnvironment__container_image = Slot(
-    uri=TVBO_SW.container_image,
-    name="softwareEnvironment__container_image",
-    curie=TVBO_SW.curie("container_image"),
-    model_uri=TVBO.softwareEnvironment__container_image,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.softwareEnvironment__build_hash = Slot(
-    uri=TVBO_SW.build_hash,
-    name="softwareEnvironment__build_hash",
-    curie=TVBO_SW.curie("build_hash"),
-    model_uri=TVBO.softwareEnvironment__build_hash,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.softwareEnvironment__requirements = Slot(
-    uri=TVBO_SW.requirements,
-    name="softwareEnvironment__requirements",
-    curie=TVBO_SW.curie("requirements"),
-    model_uri=TVBO.softwareEnvironment__requirements,
-    domain=None,
-    range=Optional[
-        Union[
-            dict[Union[str, SoftwareRequirementName], Union[dict, SoftwareRequirement]], list[Union[dict, SoftwareRequirement]]
-        ]
-    ],
-)
-
-slots.system_type = Slot(
-    uri=TVBO.system_type,
-    name="system_type",
-    curie=TVBO.curie("system_type"),
-    model_uri=TVBO.system_type,
-    domain=None,
-    range=Optional[str],
-)
-
-slots.Node_record = Slot(
-    uri=TVBO.record,
-    name="Node_record",
-    curie=TVBO.curie("record"),
-    model_uri=TVBO.Node_record,
-    domain=Node,
-    range=Optional[Union[bool, Bool]],
-)
-
-slots.Dynamics_name = Slot(
-    uri=TVBO.name,
-    name="Dynamics_name",
-    curie=TVBO.curie("name"),
-    model_uri=TVBO.Dynamics_name,
-    domain=Dynamics,
-    range=Union[str, DynamicsName],
-)
-
-slots.Dynamics_system_type = Slot(
-    uri=TVBO.system_type,
-    name="Dynamics_system_type",
-    curie=TVBO.curie("system_type"),
-    model_uri=TVBO.Dynamics_system_type,
-    domain=Dynamics,
-    range=Optional[str],
-)
-
-slots.StateVariable_record = Slot(
-    uri=TVBO.record,
-    name="StateVariable_record",
-    curie=TVBO.curie("record"),
-    model_uri=TVBO.StateVariable_record,
-    domain=StateVariable,
-    range=Optional[Union[bool, Bool]],
-)
-
-slots.Distribution_name = Slot(
-    uri=TVBO.name,
-    name="Distribution_name",
-    curie=TVBO.curie("name"),
-    model_uri=TVBO.Distribution_name,
-    domain=Distribution,
-    range=Union[str, DistributionName],
-)
-
-slots.DerivedVariable_record = Slot(
-    uri=TVBO.record,
-    name="DerivedVariable_record",
-    curie=TVBO.curie("record"),
-    model_uri=TVBO.DerivedVariable_record,
-    domain=DerivedVariable,
-    range=Optional[Union[bool, Bool]],
-)
-
-slots.Coupling_name = Slot(
-    uri=TVBO.name,
-    name="Coupling_name",
-    curie=TVBO.curie("name"),
-    model_uri=TVBO.Coupling_name,
-    domain=Coupling,
-    range=Union[str, CouplingName],
-)
-
-slots.DBSDataset_subjects = Slot(
-    uri=TVBO.subjects,
-    name="DBSDataset_subjects",
-    curie=TVBO.curie("subjects"),
-    model_uri=TVBO.DBSDataset_subjects,
-    domain=DBSDataset,
-    range=Optional[Union[dict[Union[str, DBSSubjectSubjectId], Union[dict, "DBSSubject"]], list[Union[dict, "DBSSubject"]]]],
-)
+slots.time_scale = Slot(uri=TVBO.time_scale, name="time_scale", curie=TVBO.curie('time_scale'),
+                   model_uri=TVBO.time_scale, domain=None, range=Optional[Union[str, "UnitEnum"]])
+
+slots.environment = Slot(uri=TVBO.environment, name="environment", curie=TVBO.curie('environment'),
+                   model_uri=TVBO.environment, domain=None, range=Optional[Union[dict, SoftwareEnvironment]])
+
+slots.requirements = Slot(uri=TVBO.requirements, name="requirements", curie=TVBO.curie('requirements'),
+                   model_uri=TVBO.requirements, domain=None, range=Optional[Union[Union[str, SoftwareRequirementName], list[Union[str, SoftwareRequirementName]]]])
+
+slots.duration = Slot(uri=TVBO.duration, name="duration", curie=TVBO.curie('duration'),
+                   model_uri=TVBO.duration, domain=None, range=Optional[float])
+
+slots.model = Slot(uri=TVBO.model, name="model", curie=TVBO.curie('model'),
+                   model_uri=TVBO.model, domain=None, range=Optional[Union[str, DynamicsName]])
+
+slots.has_reference = Slot(uri=TVBO.has_reference, name="has_reference", curie=TVBO.curie('has_reference'),
+                   model_uri=TVBO.has_reference, domain=None, range=Optional[str])
+
+slots.references = Slot(uri=TVBO.references, name="references", curie=TVBO.curie('references'),
+                   model_uri=TVBO.references, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.label = Slot(uri=TVBO.label, name="label", curie=TVBO.curie('label'),
+                   model_uri=TVBO.label, domain=None, range=Optional[str])
+
+slots.acronym = Slot(uri=TVBO.acronym, name="acronym", curie=TVBO.curie('acronym'),
+                   model_uri=TVBO.acronym, domain=None, range=Optional[str])
+
+slots.symbol = Slot(uri=TVBO.symbol, name="symbol", curie=TVBO.curie('symbol'),
+                   model_uri=TVBO.symbol, domain=None, range=Optional[str])
+
+slots.domain = Slot(uri=TVBO.domain, name="domain", curie=TVBO.curie('domain'),
+                   model_uri=TVBO.domain, domain=None, range=Optional[Union[dict, Range]])
+
+slots.iri = Slot(uri=TVBO.iri, name="iri", curie=TVBO.curie('iri'),
+                   model_uri=TVBO.iri, domain=None, range=Optional[str])
+
+slots.value = Slot(uri=TVBO.value, name="value", curie=TVBO.curie('value'),
+                   model_uri=TVBO.value, domain=None, range=Optional[float])
+
+slots.file = Slot(uri=TVBO.file, name="file", curie=TVBO.curie('file'),
+                   model_uri=TVBO.file, domain=None, range=Optional[str])
+
+slots.reported_optimum = Slot(uri=TVBO.reported_optimum, name="reported_optimum", curie=TVBO.curie('reported_optimum'),
+                   model_uri=TVBO.reported_optimum, domain=None, range=Optional[float])
+
+slots.default = Slot(uri=TVBO.default, name="default", curie=TVBO.curie('default'),
+                   model_uri=TVBO.default, domain=None, range=Optional[str])
+
+slots.description = Slot(uri=TVBO.description, name="description", curie=TVBO.curie('description'),
+                   model_uri=TVBO.description, domain=None, range=Optional[str])
+
+slots.definition = Slot(uri=TVBO.definition, name="definition", curie=TVBO.curie('definition'),
+                   model_uri=TVBO.definition, domain=None, range=Optional[str])
+
+slots.parameters = Slot(uri=TVBO.parameters, name="parameters", curie=TVBO.curie('parameters'),
+                   model_uri=TVBO.parameters, domain=None, range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]])
+
+slots.equation = Slot(uri=TVBO.Equation, name="equation", curie=TVBO.curie('Equation'),
+                   model_uri=TVBO.equation, domain=None, range=Optional[Union[dict, Equation]])
+
+slots.unit = Slot(uri=TVBO.unit, name="unit", curie=TVBO.curie('unit'),
+                   model_uri=TVBO.unit, domain=None, range=Optional[Union[str, "UnitEnum"]])
+
+slots.derived_from = Slot(uri=TVBO.derived_from, name="derived_from", curie=TVBO.curie('derived_from'),
+                   model_uri=TVBO.derived_from, domain=None, range=Optional[str])
+
+slots.source = Slot(uri=TVBO.source, name="source", curie=TVBO.curie('source'),
+                   model_uri=TVBO.source, domain=None, range=Optional[str])
+
+slots.dataset_path = Slot(uri=TVBO.dataset_path, name="dataset_path", curie=TVBO.curie('dataset_path'),
+                   model_uri=TVBO.dataset_path, domain=None, range=Optional[str])
+
+slots.record = Slot(uri=TVBO.record, name="record", curie=TVBO.curie('record'),
+                   model_uri=TVBO.record, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.abbreviation = Slot(uri=ATOM.abbreviation, name="abbreviation", curie=ATOM.curie('abbreviation'),
+                   model_uri=TVBO.abbreviation, domain=None, range=Optional[str])
+
+slots.alternateName = Slot(uri=ATOM['atlas/hasName'], name="alternateName", curie=ATOM.curie('atlas/hasName'),
+                   model_uri=TVBO.alternateName, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.author = Slot(uri=ATOM.author, name="author", curie=ATOM.curie('author'),
+                   model_uri=TVBO.author, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.digitalIdentifier = Slot(uri=ATOM.digitalIdentifier, name="digitalIdentifier", curie=ATOM.curie('digitalIdentifier'),
+                   model_uri=TVBO.digitalIdentifier, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.hasParent = Slot(uri=ATOM['atlas/hasParent'], name="hasParent", curie=ATOM.curie('atlas/hasParent'),
+                   model_uri=TVBO.hasParent, domain=None, range=Optional[Union[Union[str, ParcellationEntityName], list[Union[str, ParcellationEntityName]]]])
+
+slots.isVersionOf = Slot(uri=ATOM.isVersionOf, name="isVersionOf", curie=ATOM.curie('isVersionOf'),
+                   model_uri=TVBO.isVersionOf, domain=None, range=Optional[str])
+
+slots.license = Slot(uri=ATOM.license, name="license", curie=ATOM.curie('license'),
+                   model_uri=TVBO.license, domain=None, range=Optional[str])
+
+slots.lookupLabel = Slot(uri=ATOM['atlas/lookupLabel'], name="lookupLabel", curie=ATOM.curie('atlas/lookupLabel'),
+                   model_uri=TVBO.lookupLabel, domain=None, range=Optional[int])
+
+slots.ontologyIdentifier = Slot(uri=ATOM['atlas/hasIlxId'], name="ontologyIdentifier", curie=ATOM.curie('atlas/hasIlxId'),
+                   model_uri=TVBO.ontologyIdentifier, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.versionIdentifier = Slot(uri=ATOM.versionIdentifier, name="versionIdentifier", curie=ATOM.curie('versionIdentifier'),
+                   model_uri=TVBO.versionIdentifier, domain=None, range=Optional[str])
+
+slots.dataLocation = Slot(uri=ATOM.dataLocation, name="dataLocation", curie=ATOM.curie('dataLocation'),
+                   model_uri=TVBO.dataLocation, domain=None, range=Optional[str])
+
+slots.coordinateSpace = Slot(uri=ATOM.coordinateSpace, name="coordinateSpace", curie=ATOM.curie('coordinateSpace'),
+                   model_uri=TVBO.coordinateSpace, domain=None, range=Optional[Union[str, CommonCoordinateSpaceName]])
+
+slots.subject_id = Slot(uri=TVBO_STUDY.subject_id, name="subject_id", curie=TVBO_STUDY.curie('subject_id'),
+                   model_uri=TVBO.subject_id, domain=None, range=URIRef)
+
+slots.session_id = Slot(uri=TVBO_STUDY.session_id, name="session_id", curie=TVBO_STUDY.curie('session_id'),
+                   model_uri=TVBO.session_id, domain=None, range=URIRef)
+
+slots.dataset_id = Slot(uri=TVBO_STUDY.dataset_id, name="dataset_id", curie=TVBO_STUDY.curie('dataset_id'),
+                   model_uri=TVBO.dataset_id, domain=None, range=URIRef)
+
+slots.id = Slot(uri=TVBO_DBS.id, name="id", curie=TVBO_DBS.curie('id'),
+                   model_uri=TVBO.id, domain=None, range=Optional[int])
+
+slots.range__lo = Slot(uri=TVBO.lo, name="range__lo", curie=TVBO.curie('lo'),
+                   model_uri=TVBO.range__lo, domain=None, range=Optional[str])
+
+slots.range__hi = Slot(uri=TVBO.hi, name="range__hi", curie=TVBO.curie('hi'),
+                   model_uri=TVBO.range__hi, domain=None, range=Optional[str])
+
+slots.range__step = Slot(uri=TVBO.step, name="range__step", curie=TVBO.curie('step'),
+                   model_uri=TVBO.range__step, domain=None, range=Optional[str])
+
+slots.range__n = Slot(uri=TVBO.n, name="range__n", curie=TVBO.curie('n'),
+                   model_uri=TVBO.range__n, domain=None, range=Optional[int])
+
+slots.range__log_scale = Slot(uri=TVBO.log_scale, name="range__log_scale", curie=TVBO.curie('log_scale'),
+                   model_uri=TVBO.range__log_scale, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.range__explored_values = Slot(uri=TVBO.explored_values, name="range__explored_values", curie=TVBO.curie('explored_values'),
+                   model_uri=TVBO.range__explored_values, domain=None, range=Optional[Union[float, list[float]]])
+
+slots.range__element = Slot(uri=TVBO.element, name="range__element", curie=TVBO.curie('element'),
+                   model_uri=TVBO.range__element, domain=None, range=Optional[int])
+
+slots.equation__lefthandside = Slot(uri=TVBO.lhs, name="equation__lefthandside", curie=TVBO.curie('lhs'),
+                   model_uri=TVBO.equation__lefthandside, domain=None, range=Optional[str])
+
+slots.equation__righthandside = Slot(uri=TVBO.rhs, name="equation__righthandside", curie=TVBO.curie('rhs'),
+                   model_uri=TVBO.equation__righthandside, domain=None, range=Optional[str])
+
+slots.equation__conditionals = Slot(uri=TVBO.conditionals, name="equation__conditionals", curie=TVBO.curie('conditionals'),
+                   model_uri=TVBO.equation__conditionals, domain=None, range=Optional[Union[Union[dict, ConditionalBlock], list[Union[dict, ConditionalBlock]]]])
+
+slots.equation__engine = Slot(uri=TVBO.engine, name="equation__engine", curie=TVBO.curie('engine'),
+                   model_uri=TVBO.equation__engine, domain=None, range=Optional[Union[dict, SoftwareRequirement]])
+
+slots.equation__pycode = Slot(uri=TVBO.pycode, name="equation__pycode", curie=TVBO.curie('pycode'),
+                   model_uri=TVBO.equation__pycode, domain=None, range=Optional[str])
+
+slots.equation__latex = Slot(uri=TVBO.latex, name="equation__latex", curie=TVBO.curie('latex'),
+                   model_uri=TVBO.equation__latex, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.conditionalBlock__condition = Slot(uri=TVBO.condition, name="conditionalBlock__condition", curie=TVBO.curie('condition'),
+                   model_uri=TVBO.conditionalBlock__condition, domain=None, range=Optional[str])
+
+slots.conditionalBlock__expression = Slot(uri=TVBO.expression, name="conditionalBlock__expression", curie=TVBO.curie('expression'),
+                   model_uri=TVBO.conditionalBlock__expression, domain=None, range=Optional[str])
+
+slots.stimulus__regions = Slot(uri=TVBO.regions, name="stimulus__regions", curie=TVBO.curie('regions'),
+                   model_uri=TVBO.stimulus__regions, domain=None, range=Optional[Union[int, list[int]]])
+
+slots.stimulus__weighting = Slot(uri=TVBO.weighting, name="stimulus__weighting", curie=TVBO.curie('weighting'),
+                   model_uri=TVBO.stimulus__weighting, domain=None, range=Optional[Union[float, list[float]]])
+
+slots.event__event_type = Slot(uri=TVBO.event_type, name="event__event_type", curie=TVBO.curie('event_type'),
+                   model_uri=TVBO.event__event_type, domain=None, range=Optional[Union[str, "EventType"]])
+
+slots.event__condition = Slot(uri=TVBO.condition, name="event__condition", curie=TVBO.curie('condition'),
+                   model_uri=TVBO.event__condition, domain=None, range=Optional[Union[dict, Equation]])
+
+slots.event__condition_states = Slot(uri=TVBO.condition_states, name="event__condition_states", curie=TVBO.curie('condition_states'),
+                   model_uri=TVBO.event__condition_states, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.event__condition_parameters = Slot(uri=TVBO.condition_parameters, name="event__condition_parameters", curie=TVBO.curie('condition_parameters'),
+                   model_uri=TVBO.event__condition_parameters, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.event__affect = Slot(uri=TVBO.affect, name="event__affect", curie=TVBO.curie('affect'),
+                   model_uri=TVBO.event__affect, domain=None, range=Optional[Union[dict, Equation]])
+
+slots.event__affect_states = Slot(uri=TVBO.affect_states, name="event__affect_states", curie=TVBO.curie('affect_states'),
+                   model_uri=TVBO.event__affect_states, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.event__affect_parameters = Slot(uri=TVBO.affect_parameters, name="event__affect_parameters", curie=TVBO.curie('affect_parameters'),
+                   model_uri=TVBO.event__affect_parameters, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.event__affect_negative = Slot(uri=TVBO.affect_negative, name="event__affect_negative", curie=TVBO.curie('affect_negative'),
+                   model_uri=TVBO.event__affect_negative, domain=None, range=Optional[Union[dict, Equation]])
+
+slots.event__trigger_times = Slot(uri=TVBO.trigger_times, name="event__trigger_times", curie=TVBO.curie('trigger_times'),
+                   model_uri=TVBO.event__trigger_times, domain=None, range=Optional[Union[float, list[float]]])
+
+slots.event__target_component = Slot(uri=TVBO.target_component, name="event__target_component", curie=TVBO.curie('target_component'),
+                   model_uri=TVBO.event__target_component, domain=None, range=Optional[str])
+
+slots.event__equation = Slot(uri=TVBO.equation, name="event__equation", curie=TVBO.curie('equation'),
+                   model_uri=TVBO.event__equation, domain=None, range=Optional[Union[dict, Equation]])
+
+slots.event__regions = Slot(uri=TVBO.regions, name="event__regions", curie=TVBO.curie('regions'),
+                   model_uri=TVBO.event__regions, domain=None, range=Optional[Union[int, list[int]]])
+
+slots.event__weighting = Slot(uri=TVBO.weighting, name="event__weighting", curie=TVBO.curie('weighting'),
+                   model_uri=TVBO.event__weighting, domain=None, range=Optional[Union[float, list[float]]])
+
+slots.event__duration = Slot(uri=TVBO.duration, name="event__duration", curie=TVBO.curie('duration'),
+                   model_uri=TVBO.event__duration, domain=None, range=Optional[float])
+
+slots.temporalApplicableEquation__time_dependent = Slot(uri=TVBO.time_dependent, name="temporalApplicableEquation__time_dependent", curie=TVBO.curie('time_dependent'),
+                   model_uri=TVBO.temporalApplicableEquation__time_dependent, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.parcellation__data_source = Slot(uri=TVBO.data_source, name="parcellation__data_source", curie=TVBO.curie('data_source'),
+                   model_uri=TVBO.parcellation__data_source, domain=None, range=Optional[str])
+
+slots.parcellation__atlas = Slot(uri=TVBO.atlas, name="parcellation__atlas", curie=TVBO.curie('atlas'),
+                   model_uri=TVBO.parcellation__atlas, domain=None, range=Union[dict, BrainAtlas])
+
+slots.tractogram__data_source = Slot(uri=TVBO.data_source, name="tractogram__data_source", curie=TVBO.curie('data_source'),
+                   model_uri=TVBO.tractogram__data_source, domain=None, range=Optional[str])
+
+slots.tractogram__number_of_subjects = Slot(uri=TVBO.number_of_subjects, name="tractogram__number_of_subjects", curie=TVBO.curie('number_of_subjects'),
+                   model_uri=TVBO.tractogram__number_of_subjects, domain=None, range=Optional[int])
+
+slots.tractogram__acquisition = Slot(uri=TVBO.acquisition, name="tractogram__acquisition", curie=TVBO.curie('acquisition'),
+                   model_uri=TVBO.tractogram__acquisition, domain=None, range=Optional[str])
+
+slots.tractogram__processing_pipeline = Slot(uri=TVBO.processing_pipeline, name="tractogram__processing_pipeline", curie=TVBO.curie('processing_pipeline'),
+                   model_uri=TVBO.tractogram__processing_pipeline, domain=None, range=Optional[str])
+
+slots.tractogram__reference = Slot(uri=TVBO.reference, name="tractogram__reference", curie=TVBO.curie('reference'),
+                   model_uri=TVBO.tractogram__reference, domain=None, range=Optional[str])
+
+slots.matrix__x = Slot(uri=TVBO.x, name="matrix__x", curie=TVBO.curie('x'),
+                   model_uri=TVBO.matrix__x, domain=None, range=Optional[Union[dict, BrainRegionSeries]])
+
+slots.matrix__y = Slot(uri=TVBO.y, name="matrix__y", curie=TVBO.curie('y'),
+                   model_uri=TVBO.matrix__y, domain=None, range=Optional[Union[dict, BrainRegionSeries]])
+
+slots.matrix__values = Slot(uri=TVBO.values, name="matrix__values", curie=TVBO.curie('values'),
+                   model_uri=TVBO.matrix__values, domain=None, range=Optional[Union[float, list[float]]])
+
+slots.matrix__format = Slot(uri=TVBO.format, name="matrix__format", curie=TVBO.curie('format'),
+                   model_uri=TVBO.matrix__format, domain=None, range=Optional[Union[str, "SparseFormat"]])
+
+slots.matrix__shape = Slot(uri=TVBO.shape, name="matrix__shape", curie=TVBO.curie('shape'),
+                   model_uri=TVBO.matrix__shape, domain=None, range=Optional[Union[int, list[int]]])
+
+slots.matrix__dtype = Slot(uri=TVBO.dtype, name="matrix__dtype", curie=TVBO.curie('dtype'),
+                   model_uri=TVBO.matrix__dtype, domain=None, range=Optional[str])
+
+slots.brainRegionSeries__values = Slot(uri=TVBO.values, name="brainRegionSeries__values", curie=TVBO.curie('values'),
+                   model_uri=TVBO.brainRegionSeries__values, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.provenance__date_created = Slot(uri=TVBO.date_created, name="provenance__date_created", curie=TVBO.curie('date_created'),
+                   model_uri=TVBO.provenance__date_created, domain=None, range=Optional[str])
+
+slots.provenance__license = Slot(uri=TVBO.license, name="provenance__license", curie=TVBO.curie('license'),
+                   model_uri=TVBO.provenance__license, domain=None, range=Optional[str])
+
+slots.provenance__generated_by = Slot(uri=TVBO.generated_by, name="provenance__generated_by", curie=TVBO.curie('generated_by'),
+                   model_uri=TVBO.provenance__generated_by, domain=None, range=Optional[str])
+
+slots.bidsEntities__template = Slot(uri=TVBO.template, name="bidsEntities__template", curie=TVBO.curie('template'),
+                   model_uri=TVBO.bidsEntities__template, domain=None, range=Optional[str])
+
+slots.bidsEntities__cohort = Slot(uri=TVBO.cohort, name="bidsEntities__cohort", curie=TVBO.curie('cohort'),
+                   model_uri=TVBO.bidsEntities__cohort, domain=None, range=Optional[str])
+
+slots.bidsEntities__reconstruction = Slot(uri=TVBO.reconstruction, name="bidsEntities__reconstruction", curie=TVBO.curie('reconstruction'),
+                   model_uri=TVBO.bidsEntities__reconstruction, domain=None, range=Optional[str])
+
+slots.bidsEntities__segmentation = Slot(uri=TVBO.segmentation, name="bidsEntities__segmentation", curie=TVBO.curie('segmentation'),
+                   model_uri=TVBO.bidsEntities__segmentation, domain=None, range=Optional[str])
+
+slots.bidsEntities__scale = Slot(uri=TVBO.scale, name="bidsEntities__scale", curie=TVBO.curie('scale'),
+                   model_uri=TVBO.bidsEntities__scale, domain=None, range=Optional[str])
+
+slots.bidsEntities__atlas = Slot(uri=TVBO.atlas, name="bidsEntities__atlas", curie=TVBO.curie('atlas'),
+                   model_uri=TVBO.bidsEntities__atlas, domain=None, range=Optional[str])
+
+slots.bidsEntities__acquisition = Slot(uri=TVBO.acquisition, name="bidsEntities__acquisition", curie=TVBO.curie('acquisition'),
+                   model_uri=TVBO.bidsEntities__acquisition, domain=None, range=Optional[str])
+
+slots.network__nodes = Slot(uri=TVBO.nodes, name="network__nodes", curie=TVBO.curie('nodes'),
+                   model_uri=TVBO.network__nodes, domain=None, range=Optional[Union[Union[dict, Node], list[Union[dict, Node]]]])
+
+slots.network__edges = Slot(uri=TVBO.edges, name="network__edges", curie=TVBO.curie('edges'),
+                   model_uri=TVBO.network__edges, domain=None, range=Optional[Union[Union[dict, Edge], list[Union[dict, Edge]]]])
+
+slots.network__coupling = Slot(uri=TVBO.coupling, name="network__coupling", curie=TVBO.curie('coupling'),
+                   model_uri=TVBO.network__coupling, domain=None, range=Optional[Union[dict[Union[str, CouplingName], Union[dict, Coupling]], list[Union[dict, Coupling]]]])
+
+slots.network__dynamics = Slot(uri=TVBO.dynamics, name="network__dynamics", curie=TVBO.curie('dynamics'),
+                   model_uri=TVBO.network__dynamics, domain=None, range=Optional[Union[dict[Union[str, DynamicsName], Union[dict, Dynamics]], list[Union[dict, Dynamics]]]])
+
+slots.network__number_of_nodes = Slot(uri=TVBO.number_of_nodes, name="network__number_of_nodes", curie=TVBO.curie('number_of_nodes'),
+                   model_uri=TVBO.network__number_of_nodes, domain=None, range=Optional[int])
+
+slots.network__coordinate_space = Slot(uri=TVBO.coordinate_space, name="network__coordinate_space", curie=TVBO.curie('coordinate_space'),
+                   model_uri=TVBO.network__coordinate_space, domain=None, range=Optional[Union[dict, CommonCoordinateSpace]])
+
+slots.network__parcellation = Slot(uri=TVBO.parcellation, name="network__parcellation", curie=TVBO.curie('parcellation'),
+                   model_uri=TVBO.network__parcellation, domain=None, range=Optional[Union[dict, Parcellation]])
+
+slots.network__tractogram = Slot(uri=TVBO.tractogram, name="network__tractogram", curie=TVBO.curie('tractogram'),
+                   model_uri=TVBO.network__tractogram, domain=None, range=Optional[Union[dict, Tractogram]])
+
+slots.network__transforms = Slot(uri=TVBO.transforms, name="network__transforms", curie=TVBO.curie('transforms'),
+                   model_uri=TVBO.network__transforms, domain=None, range=Optional[Union[dict[Union[str, FunctionName], Union[dict, Function]], list[Union[dict, Function]]]])
+
+slots.network__data_file = Slot(uri=TVBO.data_file, name="network__data_file", curie=TVBO.curie('data_file'),
+                   model_uri=TVBO.network__data_file, domain=None, range=Optional[str])
+
+slots.network__descriptor = Slot(uri=TVBO.descriptor, name="network__descriptor", curie=TVBO.curie('descriptor'),
+                   model_uri=TVBO.network__descriptor, domain=None, range=Optional[str])
+
+slots.network__bids_dir = Slot(uri=TVBO.bids_dir, name="network__bids_dir", curie=TVBO.curie('bids_dir'),
+                   model_uri=TVBO.network__bids_dir, domain=None, range=Optional[str])
+
+slots.network__bids = Slot(uri=TVBO.bids, name="network__bids", curie=TVBO.curie('bids'),
+                   model_uri=TVBO.network__bids, domain=None, range=Optional[Union[dict, BidsEntities]])
+
+slots.network__structural_measures = Slot(uri=TVBO.structural_measures, name="network__structural_measures", curie=TVBO.curie('structural_measures'),
+                   model_uri=TVBO.network__structural_measures, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.network__observational_measures = Slot(uri=TVBO.observational_measures, name="network__observational_measures", curie=TVBO.curie('observational_measures'),
+                   model_uri=TVBO.network__observational_measures, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.network__provenance = Slot(uri=TVBO.provenance, name="network__provenance", curie=TVBO.curie('provenance'),
+                   model_uri=TVBO.network__provenance, domain=None, range=Optional[Union[dict, Provenance]])
+
+slots.network__parent_network = Slot(uri=TVBO.parent_network, name="network__parent_network", curie=TVBO.curie('parent_network'),
+                   model_uri=TVBO.network__parent_network, domain=None, range=Optional[str])
+
+slots.network__node_mapping = Slot(uri=TVBO.node_mapping, name="network__node_mapping", curie=TVBO.curie('node_mapping'),
+                   model_uri=TVBO.network__node_mapping, domain=None, range=Optional[str])
+
+slots.network__distance_unit = Slot(uri=TVBO.distance_unit, name="network__distance_unit", curie=TVBO.curie('distance_unit'),
+                   model_uri=TVBO.network__distance_unit, domain=None, range=Optional[Union[str, "UnitEnum"]])
+
+slots.network__time_unit = Slot(uri=TVBO.time_unit, name="network__time_unit", curie=TVBO.curie('time_unit'),
+                   model_uri=TVBO.network__time_unit, domain=None, range=Optional[Union[str, "UnitEnum"]])
+
+slots.network__edge_matrix_files = Slot(uri=TVBO.edge_matrix_files, name="network__edge_matrix_files", curie=TVBO.curie('edge_matrix_files'),
+                   model_uri=TVBO.network__edge_matrix_files, domain=None, range=Optional[Union[Union[str, FileName], list[Union[str, FileName]]]])
+
+slots.network__graph_generator = Slot(uri=TVBO.graph_generator, name="network__graph_generator", curie=TVBO.curie('graph_generator'),
+                   model_uri=TVBO.network__graph_generator, domain=None, range=Optional[Union[dict, GraphGenerator]])
+
+slots.graphGenerator__type = Slot(uri=TVBO.type, name="graphGenerator__type", curie=TVBO.curie('type'),
+                   model_uri=TVBO.graphGenerator__type, domain=None, range=str)
+
+slots.graphGenerator__seed = Slot(uri=TVBO.seed, name="graphGenerator__seed", curie=TVBO.curie('seed'),
+                   model_uri=TVBO.graphGenerator__seed, domain=None, range=Optional[int])
+
+slots.graphGenerator__directed = Slot(uri=TVBO.directed, name="graphGenerator__directed", curie=TVBO.curie('directed'),
+                   model_uri=TVBO.graphGenerator__directed, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.graphGenerator__parameters = Slot(uri=TVBO.parameters, name="graphGenerator__parameters", curie=TVBO.curie('parameters'),
+                   model_uri=TVBO.graphGenerator__parameters, domain=None, range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]])
+
+slots.file__type = Slot(uri=TVBO.type, name="file__type", curie=TVBO.curie('type'),
+                   model_uri=TVBO.file__type, domain=None, range=Optional[str])
+
+slots.file__path = Slot(uri=TVBO.path, name="file__path", curie=TVBO.curie('path'),
+                   model_uri=TVBO.file__path, domain=None, range=Optional[str])
+
+slots.file__extension = Slot(uri=TVBO.extension, name="file__extension", curie=TVBO.curie('extension'),
+                   model_uri=TVBO.file__extension, domain=None, range=Optional[str])
+
+slots.node__id = Slot(uri=TVBO.id, name="node__id", curie=TVBO.curie('id'),
+                   model_uri=TVBO.node__id, domain=None, range=int)
+
+slots.node__dynamics = Slot(uri=TVBO.dynamics, name="node__dynamics", curie=TVBO.curie('dynamics'),
+                   model_uri=TVBO.node__dynamics, domain=None, range=Optional[Union[str, DynamicsName]])
+
+slots.node__position = Slot(uri=TVBO.position, name="node__position", curie=TVBO.curie('position'),
+                   model_uri=TVBO.node__position, domain=None, range=Optional[Union[dict, Coordinate]])
+
+slots.node__region = Slot(uri=TVBO.region, name="node__region", curie=TVBO.curie('region'),
+                   model_uri=TVBO.node__region, domain=None, range=Optional[str])
+
+slots.node__state = Slot(uri=TVBO.state, name="node__state", curie=TVBO.curie('state'),
+                   model_uri=TVBO.node__state, domain=None, range=Optional[Union[dict[Union[str, StateValueName], Union[dict, StateValue]], list[Union[dict, StateValue]]]])
+
+slots.node__events = Slot(uri=TVBO.events, name="node__events", curie=TVBO.curie('events'),
+                   model_uri=TVBO.node__events, domain=None, range=Optional[Union[dict[Union[str, EventName], Union[dict, Event]], list[Union[dict, Event]]]])
+
+slots.edge__source = Slot(uri=TVBO.source, name="edge__source", curie=TVBO.curie('source'),
+                   model_uri=TVBO.edge__source, domain=None, range=Optional[int])
+
+slots.edge__target = Slot(uri=TVBO.target, name="edge__target", curie=TVBO.curie('target'),
+                   model_uri=TVBO.edge__target, domain=None, range=Optional[int])
+
+slots.edge__unit = Slot(uri=TVBO.unit, name="edge__unit", curie=TVBO.curie('unit'),
+                   model_uri=TVBO.edge__unit, domain=None, range=Optional[str])
+
+slots.edge__format = Slot(uri=TVBO.format, name="edge__format", curie=TVBO.curie('format'),
+                   model_uri=TVBO.edge__format, domain=None, range=Optional[Union[str, "SparseFormat"]])
+
+slots.edge__weighted = Slot(uri=TVBO.weighted, name="edge__weighted", curie=TVBO.curie('weighted'),
+                   model_uri=TVBO.edge__weighted, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.edge__valid_diagonal = Slot(uri=TVBO.valid_diagonal, name="edge__valid_diagonal", curie=TVBO.curie('valid_diagonal'),
+                   model_uri=TVBO.edge__valid_diagonal, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.edge__non_negative = Slot(uri=TVBO.non_negative, name="edge__non_negative", curie=TVBO.curie('non_negative'),
+                   model_uri=TVBO.edge__non_negative, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.edge__source_var = Slot(uri=TVBO.source_var, name="edge__source_var", curie=TVBO.curie('source_var'),
+                   model_uri=TVBO.edge__source_var, domain=None, range=Optional[str])
+
+slots.edge__target_var = Slot(uri=TVBO.target_var, name="edge__target_var", curie=TVBO.curie('target_var'),
+                   model_uri=TVBO.edge__target_var, domain=None, range=Optional[str])
+
+slots.edge__coupling = Slot(uri=TVBO.coupling, name="edge__coupling", curie=TVBO.curie('coupling'),
+                   model_uri=TVBO.edge__coupling, domain=None, range=Optional[Union[str, CouplingName]])
+
+slots.edge__directed = Slot(uri=TVBO.directed, name="edge__directed", curie=TVBO.curie('directed'),
+                   model_uri=TVBO.edge__directed, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.edge__target_network = Slot(uri=TVBO.target_network, name="edge__target_network", curie=TVBO.curie('target_network'),
+                   model_uri=TVBO.edge__target_network, domain=None, range=Optional[str])
+
+slots.edge__dimension_labels = Slot(uri=TVBO.dimension_labels, name="edge__dimension_labels", curie=TVBO.curie('dimension_labels'),
+                   model_uri=TVBO.edge__dimension_labels, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.edge__dynamics = Slot(uri=TVBO.dynamics, name="edge__dynamics", curie=TVBO.curie('dynamics'),
+                   model_uri=TVBO.edge__dynamics, domain=None, range=Optional[Union[str, DynamicsName]])
+
+slots.edge__events = Slot(uri=TVBO.events, name="edge__events", curie=TVBO.curie('events'),
+                   model_uri=TVBO.edge__events, domain=None, range=Optional[Union[dict[Union[str, EventName], Union[dict, Event]], list[Union[dict, Event]]]])
+
+slots.observation__source = Slot(uri=TVBO.source, name="observation__source", curie=TVBO.curie('source'),
+                   model_uri=TVBO.observation__source, domain=None, range=Optional[Union[str, StateVariableName]])
+
+slots.observation__period = Slot(uri=TVBO.period, name="observation__period", curie=TVBO.curie('period'),
+                   model_uri=TVBO.observation__period, domain=None, range=Optional[float])
+
+slots.observation__downsample_period = Slot(uri=TVBO.downsample_period, name="observation__downsample_period", curie=TVBO.curie('downsample_period'),
+                   model_uri=TVBO.observation__downsample_period, domain=None, range=Optional[float])
+
+slots.observation__voi = Slot(uri=TVBO.voi, name="observation__voi", curie=TVBO.curie('voi'),
+                   model_uri=TVBO.observation__voi, domain=None, range=Optional[int])
+
+slots.observation__imaging_modality = Slot(uri=TVBO.imaging_modality, name="observation__imaging_modality", curie=TVBO.curie('imaging_modality'),
+                   model_uri=TVBO.observation__imaging_modality, domain=None, range=Optional[Union[str, "ImagingModality"]])
+
+slots.observation__warmup_source = Slot(uri=TVBO.warmup_source, name="observation__warmup_source", curie=TVBO.curie('warmup_source'),
+                   model_uri=TVBO.observation__warmup_source, domain=None, range=Optional[str])
+
+slots.observation__data_source = Slot(uri=TVBO.data_source, name="observation__data_source", curie=TVBO.curie('data_source'),
+                   model_uri=TVBO.observation__data_source, domain=None, range=Optional[Union[dict, DataSource]])
+
+slots.observation__skip_t = Slot(uri=TVBO.skip_t, name="observation__skip_t", curie=TVBO.curie('skip_t'),
+                   model_uri=TVBO.observation__skip_t, domain=None, range=Optional[int])
+
+slots.observation__tail_samples = Slot(uri=TVBO.tail_samples, name="observation__tail_samples", curie=TVBO.curie('tail_samples'),
+                   model_uri=TVBO.observation__tail_samples, domain=None, range=Optional[int])
+
+slots.observation__aggregation = Slot(uri=TVBO.aggregation, name="observation__aggregation", curie=TVBO.curie('aggregation'),
+                   model_uri=TVBO.observation__aggregation, domain=None, range=Optional[Union[str, "AggregationType"]])
+
+slots.observation__window_size = Slot(uri=TVBO.window_size, name="observation__window_size", curie=TVBO.curie('window_size'),
+                   model_uri=TVBO.observation__window_size, domain=None, range=Optional[int])
+
+slots.observation__pipeline = Slot(uri=TVBO.pipeline, name="observation__pipeline", curie=TVBO.curie('pipeline'),
+                   model_uri=TVBO.observation__pipeline, domain=None, range=Optional[Union[Union[dict, FunctionCall], list[Union[dict, FunctionCall]]]])
+
+slots.observation__class_reference = Slot(uri=TVBO.class_reference, name="observation__class_reference", curie=TVBO.curie('class_reference'),
+                   model_uri=TVBO.observation__class_reference, domain=None, range=Optional[Union[dict, ClassReference]])
+
+slots.derivedObservation__source_observations = Slot(uri=TVBO.source_observations, name="derivedObservation__source_observations", curie=TVBO.curie('source_observations'),
+                   model_uri=TVBO.derivedObservation__source_observations, domain=None, range=Union[Union[str, ObservationName], list[Union[str, ObservationName]]])
+
+slots.dynamics__derived_parameters = Slot(uri=TVBO.derived_parameters, name="dynamics__derived_parameters", curie=TVBO.curie('derived_parameters'),
+                   model_uri=TVBO.dynamics__derived_parameters, domain=None, range=Optional[Union[dict[Union[str, DerivedParameterName], Union[dict, DerivedParameter]], list[Union[dict, DerivedParameter]]]])
+
+slots.dynamics__derived_variables = Slot(uri=TVBO.derived_variables, name="dynamics__derived_variables", curie=TVBO.curie('derived_variables'),
+                   model_uri=TVBO.dynamics__derived_variables, domain=None, range=Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, DerivedVariable]], list[Union[dict, DerivedVariable]]]])
+
+slots.dynamics__coupling_terms = Slot(uri=TVBO.coupling_terms, name="dynamics__coupling_terms", curie=TVBO.curie('coupling_terms'),
+                   model_uri=TVBO.dynamics__coupling_terms, domain=None, range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]])
+
+slots.dynamics__coupling_inputs = Slot(uri=TVBO.coupling_inputs, name="dynamics__coupling_inputs", curie=TVBO.curie('coupling_inputs'),
+                   model_uri=TVBO.dynamics__coupling_inputs, domain=None, range=Optional[Union[dict[Union[str, CouplingInputName], Union[dict, CouplingInput]], list[Union[dict, CouplingInput]]]])
+
+slots.dynamics__state_variables = Slot(uri=TVBO.state_variables, name="dynamics__state_variables", curie=TVBO.curie('state_variables'),
+                   model_uri=TVBO.dynamics__state_variables, domain=None, range=Optional[Union[dict[Union[str, StateVariableName], Union[dict, StateVariable]], list[Union[dict, StateVariable]]]])
+
+slots.dynamics__modified = Slot(uri=TVBO.modified, name="dynamics__modified", curie=TVBO.curie('modified'),
+                   model_uri=TVBO.dynamics__modified, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.dynamics__output = Slot(uri=TVBO.output, name="dynamics__output", curie=TVBO.curie('output'),
+                   model_uri=TVBO.dynamics__output, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.dynamics__derived_from_model = Slot(uri=TVBO.derived_from_model, name="dynamics__derived_from_model", curie=TVBO.curie('derived_from_model'),
+                   model_uri=TVBO.dynamics__derived_from_model, domain=None, range=Optional[Union[str, DynamicsName]])
+
+slots.dynamics__number_of_modes = Slot(uri=TVBO.number_of_modes, name="dynamics__number_of_modes", curie=TVBO.curie('number_of_modes'),
+                   model_uri=TVBO.dynamics__number_of_modes, domain=None, range=Optional[int])
+
+slots.dynamics__local_coupling_term = Slot(uri=TVBO.local_coupling_term, name="dynamics__local_coupling_term", curie=TVBO.curie('local_coupling_term'),
+                   model_uri=TVBO.dynamics__local_coupling_term, domain=None, range=Optional[Union[str, ParameterName]])
+
+slots.dynamics__functions = Slot(uri=TVBO.functions, name="dynamics__functions", curie=TVBO.curie('functions'),
+                   model_uri=TVBO.dynamics__functions, domain=None, range=Optional[Union[dict[Union[str, FunctionName], Union[dict, Function]], list[Union[dict, Function]]]])
+
+slots.dynamics__stimulus = Slot(uri=TVBO.stimulus, name="dynamics__stimulus", curie=TVBO.curie('stimulus'),
+                   model_uri=TVBO.dynamics__stimulus, domain=None, range=Optional[Union[dict, Stimulus]])
+
+slots.dynamics__modes = Slot(uri=TVBO.modes, name="dynamics__modes", curie=TVBO.curie('modes'),
+                   model_uri=TVBO.dynamics__modes, domain=None, range=Optional[Union[dict[Union[str, DynamicsName], Union[dict, Dynamics]], list[Union[dict, Dynamics]]]])
+
+slots.dynamics__model_type = Slot(uri=TVBO.model_type, name="dynamics__model_type", curie=TVBO.curie('model_type'),
+                   model_uri=TVBO.dynamics__model_type, domain=None, range=Optional[Union[str, "ModelType"]])
+
+slots.dynamics__system_type = Slot(uri=TVBO.system_type, name="dynamics__system_type", curie=TVBO.curie('system_type'),
+                   model_uri=TVBO.dynamics__system_type, domain=None, range=Optional[Union[str, "SystemType"]])
+
+slots.dynamics__autonomous = Slot(uri=TVBO.autonomous, name="dynamics__autonomous", curie=TVBO.curie('autonomous'),
+                   model_uri=TVBO.dynamics__autonomous, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.dynamics__observed = Slot(uri=TVBO.observed, name="dynamics__observed", curie=TVBO.curie('observed'),
+                   model_uri=TVBO.dynamics__observed, domain=None, range=Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, DerivedVariable]], list[Union[dict, DerivedVariable]]]])
+
+slots.dynamics__events = Slot(uri=TVBO.events, name="dynamics__events", curie=TVBO.curie('events'),
+                   model_uri=TVBO.dynamics__events, domain=None, range=Optional[Union[dict[Union[str, EventName], Union[dict, Event]], list[Union[dict, Event]]]])
+
+slots.stateVariable__variable_of_interest = Slot(uri=TVBO.variable_of_interest, name="stateVariable__variable_of_interest", curie=TVBO.curie('variable_of_interest'),
+                   model_uri=TVBO.stateVariable__variable_of_interest, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.stateVariable__coupling_variable = Slot(uri=TVBO.coupling_variable, name="stateVariable__coupling_variable", curie=TVBO.curie('coupling_variable'),
+                   model_uri=TVBO.stateVariable__coupling_variable, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.stateVariable__equation_type = Slot(uri=TVBO.equation_type, name="stateVariable__equation_type", curie=TVBO.curie('equation_type'),
+                   model_uri=TVBO.stateVariable__equation_type, domain=None, range=Optional[str])
+
+slots.stateVariable__equation_order = Slot(uri=TVBO.equation_order, name="stateVariable__equation_order", curie=TVBO.curie('equation_order'),
+                   model_uri=TVBO.stateVariable__equation_order, domain=None, range=Optional[int])
+
+slots.stateVariable__noise = Slot(uri=TVBO.noise, name="stateVariable__noise", curie=TVBO.curie('noise'),
+                   model_uri=TVBO.stateVariable__noise, domain=None, range=Optional[Union[dict, Noise]])
+
+slots.stateVariable__stimulation_variable = Slot(uri=TVBO.stimulation_variable, name="stateVariable__stimulation_variable", curie=TVBO.curie('stimulation_variable'),
+                   model_uri=TVBO.stateVariable__stimulation_variable, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.stateVariable__boundaries = Slot(uri=TVBO.boundaries, name="stateVariable__boundaries", curie=TVBO.curie('boundaries'),
+                   model_uri=TVBO.stateVariable__boundaries, domain=None, range=Optional[Union[dict, Range]])
+
+slots.stateVariable__initial_value = Slot(uri=TVBO.initial_value, name="stateVariable__initial_value", curie=TVBO.curie('initial_value'),
+                   model_uri=TVBO.stateVariable__initial_value, domain=None, range=Optional[float])
+
+slots.stateVariable__derivative_initial_value = Slot(uri=TVBO.derivative_initial_value, name="stateVariable__derivative_initial_value", curie=TVBO.curie('derivative_initial_value'),
+                   model_uri=TVBO.stateVariable__derivative_initial_value, domain=None, range=Optional[float])
+
+slots.stateVariable__distribution = Slot(uri=TVBO.distribution, name="stateVariable__distribution", curie=TVBO.curie('distribution'),
+                   model_uri=TVBO.stateVariable__distribution, domain=None, range=Optional[Union[dict, Distribution]])
+
+slots.stateVariable__history = Slot(uri=TVBO.history, name="stateVariable__history", curie=TVBO.curie('history'),
+                   model_uri=TVBO.stateVariable__history, domain=None, range=Optional[Union[dict, TimeSeries]])
+
+slots.distribution__domain = Slot(uri=TVBO.domain, name="distribution__domain", curie=TVBO.curie('domain'),
+                   model_uri=TVBO.distribution__domain, domain=None, range=Optional[Union[dict, Range]])
+
+slots.distribution__function = Slot(uri=TVBO.function, name="distribution__function", curie=TVBO.curie('function'),
+                   model_uri=TVBO.distribution__function, domain=None, range=Optional[Union[dict, Function]])
+
+slots.distribution__seed = Slot(uri=TVBO.seed, name="distribution__seed", curie=TVBO.curie('seed'),
+                   model_uri=TVBO.distribution__seed, domain=None, range=Optional[int])
+
+slots.distribution__axis = Slot(uri=TVBO.axis, name="distribution__axis", curie=TVBO.curie('axis'),
+                   model_uri=TVBO.distribution__axis, domain=None, range=Optional[Union[str, "SamplingAxis"]])
+
+slots.distribution__correlation = Slot(uri=TVBO.correlation, name="distribution__correlation", curie=TVBO.curie('correlation'),
+                   model_uri=TVBO.distribution__correlation, domain=None, range=Optional[Union[dict, Matrix]])
+
+slots.parameter__comment = Slot(uri=TVBO.comment, name="parameter__comment", curie=TVBO.curie('comment'),
+                   model_uri=TVBO.parameter__comment, domain=None, range=Optional[str])
+
+slots.parameter__heterogeneous = Slot(uri=TVBO.heterogeneous, name="parameter__heterogeneous", curie=TVBO.curie('heterogeneous'),
+                   model_uri=TVBO.parameter__heterogeneous, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.parameter__distribution = Slot(uri=TVBO.distribution, name="parameter__distribution", curie=TVBO.curie('distribution'),
+                   model_uri=TVBO.parameter__distribution, domain=None, range=Optional[Union[dict, Distribution]])
+
+slots.parameter__free = Slot(uri=TVBO.free, name="parameter__free", curie=TVBO.curie('free'),
+                   model_uri=TVBO.parameter__free, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.parameter__shape = Slot(uri=TVBO.shape, name="parameter__shape", curie=TVBO.curie('shape'),
+                   model_uri=TVBO.parameter__shape, domain=None, range=Optional[str])
+
+slots.parameter__explored_values = Slot(uri=TVBO.explored_values, name="parameter__explored_values", curie=TVBO.curie('explored_values'),
+                   model_uri=TVBO.parameter__explored_values, domain=None, range=Optional[Union[float, list[float]]])
+
+slots.parameter__element_domains = Slot(uri=TVBO.element_domains, name="parameter__element_domains", curie=TVBO.curie('element_domains'),
+                   model_uri=TVBO.parameter__element_domains, domain=None, range=Optional[Union[Union[dict, Range], list[Union[dict, Range]]]])
+
+slots.couplingInput__source = Slot(uri=TVBO.source, name="couplingInput__source", curie=TVBO.curie('source'),
+                   model_uri=TVBO.couplingInput__source, domain=None, range=Optional[str])
+
+slots.couplingInput__dimension = Slot(uri=TVBO.dimension, name="couplingInput__dimension", curie=TVBO.curie('dimension'),
+                   model_uri=TVBO.couplingInput__dimension, domain=None, range=Optional[int])
+
+slots.couplingInput__keys = Slot(uri=TVBO.keys, name="couplingInput__keys", curie=TVBO.curie('keys'),
+                   model_uri=TVBO.couplingInput__keys, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.argument__value = Slot(uri=TVBO.value, name="argument__value", curie=TVBO.curie('value'),
+                   model_uri=TVBO.argument__value, domain=None, range=Optional[str])
+
+slots.argument__unit = Slot(uri=TVBO.unit, name="argument__unit", curie=TVBO.curie('unit'),
+                   model_uri=TVBO.argument__unit, domain=None, range=Optional[str])
+
+slots.function__input = Slot(uri=TVBO.input, name="function__input", curie=TVBO.curie('input'),
+                   model_uri=TVBO.function__input, domain=None, range=Optional[Union[str, FunctionName]])
+
+slots.function__output = Slot(uri=TVBO.output, name="function__output", curie=TVBO.curie('output'),
+                   model_uri=TVBO.function__output, domain=None, range=Optional[str])
+
+slots.function__iri = Slot(uri=TVBO.iri, name="function__iri", curie=TVBO.curie('iri'),
+                   model_uri=TVBO.function__iri, domain=None, range=Optional[str])
+
+slots.function__arguments = Slot(uri=TVBO.arguments, name="function__arguments", curie=TVBO.curie('arguments'),
+                   model_uri=TVBO.function__arguments, domain=None, range=Optional[Union[dict[Union[str, ArgumentName], Union[dict, Argument]], list[Union[dict, Argument]]]])
+
+slots.function__output_equation = Slot(uri=TVBO.output_equation, name="function__output_equation", curie=TVBO.curie('output_equation'),
+                   model_uri=TVBO.function__output_equation, domain=None, range=Optional[Union[dict, Equation]])
+
+slots.function__source_code = Slot(uri=TVBO.source_code, name="function__source_code", curie=TVBO.curie('source_code'),
+                   model_uri=TVBO.function__source_code, domain=None, range=Optional[str])
+
+slots.function__callable = Slot(uri=TVBO.callable, name="function__callable", curie=TVBO.curie('callable'),
+                   model_uri=TVBO.function__callable, domain=None, range=Optional[Union[dict, Callable]])
+
+slots.function__apply_on_dimension = Slot(uri=TVBO.apply_on_dimension, name="function__apply_on_dimension", curie=TVBO.curie('apply_on_dimension'),
+                   model_uri=TVBO.function__apply_on_dimension, domain=None, range=Optional[Union[str, "DimensionType"]])
+
+slots.function__aggregate = Slot(uri=TVBO.aggregate, name="function__aggregate", curie=TVBO.curie('aggregate'),
+                   model_uri=TVBO.function__aggregate, domain=None, range=Optional[Union[dict, Aggregation]])
+
+slots.function__time_range = Slot(uri=TVBO.time_range, name="function__time_range", curie=TVBO.curie('time_range'),
+                   model_uri=TVBO.function__time_range, domain=None, range=Optional[Union[dict, Range]])
+
+slots.aggregation__over = Slot(uri=TVBO.over, name="aggregation__over", curie=TVBO.curie('over'),
+                   model_uri=TVBO.aggregation__over, domain=None, range=Optional[Union[str, "DimensionType"]])
+
+slots.aggregation__type = Slot(uri=TVBO.type, name="aggregation__type", curie=TVBO.curie('type'),
+                   model_uri=TVBO.aggregation__type, domain=None, range=Optional[Union[str, "ReductionType"]])
+
+slots.lossFunction__aggregate = Slot(uri=TVBO.aggregate, name="lossFunction__aggregate", curie=TVBO.curie('aggregate'),
+                   model_uri=TVBO.lossFunction__aggregate, domain=None, range=Optional[Union[dict, Aggregation]])
+
+slots.functionCall__name = Slot(uri=TVBO.name, name="functionCall__name", curie=TVBO.curie('name'),
+                   model_uri=TVBO.functionCall__name, domain=None, range=Optional[str])
+
+slots.functionCall__function = Slot(uri=TVBO.function, name="functionCall__function", curie=TVBO.curie('function'),
+                   model_uri=TVBO.functionCall__function, domain=None, range=Optional[Union[str, FunctionName]])
+
+slots.functionCall__callable = Slot(uri=TVBO.callable, name="functionCall__callable", curie=TVBO.curie('callable'),
+                   model_uri=TVBO.functionCall__callable, domain=None, range=Optional[Union[dict, Callable]])
+
+slots.functionCall__class_call = Slot(uri=TVBO.class_call, name="functionCall__class_call", curie=TVBO.curie('class_call'),
+                   model_uri=TVBO.functionCall__class_call, domain=None, range=Optional[Union[dict, ClassReference]])
+
+slots.functionCall__input = Slot(uri=TVBO.input, name="functionCall__input", curie=TVBO.curie('input'),
+                   model_uri=TVBO.functionCall__input, domain=None, range=Optional[str])
+
+slots.functionCall__output = Slot(uri=TVBO.output, name="functionCall__output", curie=TVBO.curie('output'),
+                   model_uri=TVBO.functionCall__output, domain=None, range=Optional[str])
+
+slots.functionCall__apply_on_dimension = Slot(uri=TVBO.apply_on_dimension, name="functionCall__apply_on_dimension", curie=TVBO.curie('apply_on_dimension'),
+                   model_uri=TVBO.functionCall__apply_on_dimension, domain=None, range=Optional[Union[str, "DimensionType"]])
+
+slots.functionCall__aggregate = Slot(uri=TVBO.aggregate, name="functionCall__aggregate", curie=TVBO.curie('aggregate'),
+                   model_uri=TVBO.functionCall__aggregate, domain=None, range=Optional[Union[dict, Aggregation]])
+
+slots.functionCall__arguments = Slot(uri=TVBO.arguments, name="functionCall__arguments", curie=TVBO.curie('arguments'),
+                   model_uri=TVBO.functionCall__arguments, domain=None, range=Optional[Union[dict[Union[str, ArgumentName], Union[dict, Argument]], list[Union[dict, Argument]]]])
+
+slots.functionCall__time_range = Slot(uri=TVBO.time_range, name="functionCall__time_range", curie=TVBO.curie('time_range'),
+                   model_uri=TVBO.functionCall__time_range, domain=None, range=Optional[Union[dict, Range]])
+
+slots.functionCall__source_code = Slot(uri=TVBO.source_code, name="functionCall__source_code", curie=TVBO.curie('source_code'),
+                   model_uri=TVBO.functionCall__source_code, domain=None, range=Optional[str])
+
+slots.callable__module = Slot(uri=TVBO.module, name="callable__module", curie=TVBO.curie('module'),
+                   model_uri=TVBO.callable__module, domain=None, range=Optional[str])
+
+slots.callable__software = Slot(uri=TVBO.software, name="callable__software", curie=TVBO.curie('software'),
+                   model_uri=TVBO.callable__software, domain=None, range=Optional[Union[dict, SoftwareRequirement]])
+
+slots.classReference__constructor_args = Slot(uri=TVBO.constructor_args, name="classReference__constructor_args", curie=TVBO.curie('constructor_args'),
+                   model_uri=TVBO.classReference__constructor_args, domain=None, range=Optional[Union[dict[Union[str, ArgumentName], Union[dict, Argument]], list[Union[dict, Argument]]]])
+
+slots.classReference__call_args = Slot(uri=TVBO.call_args, name="classReference__call_args", curie=TVBO.curie('call_args'),
+                   model_uri=TVBO.classReference__call_args, domain=None, range=Optional[Union[dict[Union[str, ArgumentName], Union[dict, Argument]], list[Union[dict, Argument]]]])
+
+slots.classReference__warmup_source = Slot(uri=TVBO.warmup_source, name="classReference__warmup_source", curie=TVBO.curie('warmup_source'),
+                   model_uri=TVBO.classReference__warmup_source, domain=None, range=Optional[str])
+
+slots.case__condition = Slot(uri=TVBO.condition, name="case__condition", curie=TVBO.curie('condition'),
+                   model_uri=TVBO.case__condition, domain=None, range=Optional[str])
+
+slots.case__equation = Slot(uri=TVBO.equation, name="case__equation", curie=TVBO.curie('equation'),
+                   model_uri=TVBO.case__equation, domain=None, range=Optional[Union[dict, Equation]])
+
+slots.derivedVariable__conditional = Slot(uri=TVBO.conditional, name="derivedVariable__conditional", curie=TVBO.curie('conditional'),
+                   model_uri=TVBO.derivedVariable__conditional, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.derivedVariable__cases = Slot(uri=TVBO.cases, name="derivedVariable__cases", curie=TVBO.curie('cases'),
+                   model_uri=TVBO.derivedVariable__cases, domain=None, range=Optional[Union[Union[dict, Case], list[Union[dict, Case]]]])
+
+slots.noise__noise_type = Slot(uri=TVBO.noise_type, name="noise__noise_type", curie=TVBO.curie('noise_type'),
+                   model_uri=TVBO.noise__noise_type, domain=None, range=Optional[str])
+
+slots.noise__correlated = Slot(uri=TVBO.correlated, name="noise__correlated", curie=TVBO.curie('correlated'),
+                   model_uri=TVBO.noise__correlated, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.noise__gaussian = Slot(uri=TVBO.gaussian, name="noise__gaussian", curie=TVBO.curie('gaussian'),
+                   model_uri=TVBO.noise__gaussian, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.noise__additive = Slot(uri=TVBO.additive, name="noise__additive", curie=TVBO.curie('additive'),
+                   model_uri=TVBO.noise__additive, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.noise__seed = Slot(uri=TVBO.seed, name="noise__seed", curie=TVBO.curie('seed'),
+                   model_uri=TVBO.noise__seed, domain=None, range=Optional[int])
+
+slots.noise__random_state = Slot(uri=TVBO.random_state, name="noise__random_state", curie=TVBO.curie('random_state'),
+                   model_uri=TVBO.noise__random_state, domain=None, range=Optional[Union[dict, RandomStream]])
+
+slots.noise__intensity = Slot(uri=TVBO.intensity, name="noise__intensity", curie=TVBO.curie('intensity'),
+                   model_uri=TVBO.noise__intensity, domain=None, range=Optional[Union[dict, Parameter]])
+
+slots.noise__function = Slot(uri=TVBO.function, name="noise__function", curie=TVBO.curie('function'),
+                   model_uri=TVBO.noise__function, domain=None, range=Optional[Union[dict, Function]])
+
+slots.noise__pycode = Slot(uri=TVBO.pycode, name="noise__pycode", curie=TVBO.curie('pycode'),
+                   model_uri=TVBO.noise__pycode, domain=None, range=Optional[str])
+
+slots.noise__targets = Slot(uri=TVBO.targets, name="noise__targets", curie=TVBO.curie('targets'),
+                   model_uri=TVBO.noise__targets, domain=None, range=Optional[Union[dict[Union[str, StateVariableName], Union[dict, StateVariable]], list[Union[dict, StateVariable]]]])
+
+slots.dataSource__path = Slot(uri=TVBO.path, name="dataSource__path", curie=TVBO.curie('path'),
+                   model_uri=TVBO.dataSource__path, domain=None, range=Optional[str])
+
+slots.dataSource__loader = Slot(uri=TVBO.loader, name="dataSource__loader", curie=TVBO.curie('loader'),
+                   model_uri=TVBO.dataSource__loader, domain=None, range=Optional[Union[dict, Callable]])
+
+slots.dataSource__format = Slot(uri=TVBO.format, name="dataSource__format", curie=TVBO.curie('format'),
+                   model_uri=TVBO.dataSource__format, domain=None, range=Optional[str])
+
+slots.dataSource__key = Slot(uri=TVBO.key, name="dataSource__key", curie=TVBO.curie('key'),
+                   model_uri=TVBO.dataSource__key, domain=None, range=Optional[str])
+
+slots.dataSource__preprocessing = Slot(uri=TVBO.preprocessing, name="dataSource__preprocessing", curie=TVBO.curie('preprocessing'),
+                   model_uri=TVBO.dataSource__preprocessing, domain=None, range=Optional[Union[dict, Function]])
+
+slots.optimizationStage__free_parameters = Slot(uri=TVBO.free_parameters, name="optimizationStage__free_parameters", curie=TVBO.curie('free_parameters'),
+                   model_uri=TVBO.optimizationStage__free_parameters, domain=None, range=Optional[Union[Union[str, ParameterName], list[Union[str, ParameterName]]]])
+
+slots.optimizationStage__algorithm = Slot(uri=TVBO.algorithm, name="optimizationStage__algorithm", curie=TVBO.curie('algorithm'),
+                   model_uri=TVBO.optimizationStage__algorithm, domain=None, range=Optional[str])
+
+slots.optimizationStage__learning_rate = Slot(uri=TVBO.learning_rate, name="optimizationStage__learning_rate", curie=TVBO.curie('learning_rate'),
+                   model_uri=TVBO.optimizationStage__learning_rate, domain=None, range=Optional[float])
+
+slots.optimizationStage__max_iterations = Slot(uri=TVBO.max_iterations, name="optimizationStage__max_iterations", curie=TVBO.curie('max_iterations'),
+                   model_uri=TVBO.optimizationStage__max_iterations, domain=None, range=Optional[int])
+
+slots.optimizationStage__hyperparameters = Slot(uri=TVBO.hyperparameters, name="optimizationStage__hyperparameters", curie=TVBO.curie('hyperparameters'),
+                   model_uri=TVBO.optimizationStage__hyperparameters, domain=None, range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]])
+
+slots.optimizationStage__freeze_parameters = Slot(uri=TVBO.freeze_parameters, name="optimizationStage__freeze_parameters", curie=TVBO.curie('freeze_parameters'),
+                   model_uri=TVBO.optimizationStage__freeze_parameters, domain=None, range=Optional[Union[Union[str, ParameterName], list[Union[str, ParameterName]]]])
+
+slots.optimizationStage__warmup_from = Slot(uri=TVBO.warmup_from, name="optimizationStage__warmup_from", curie=TVBO.curie('warmup_from'),
+                   model_uri=TVBO.optimizationStage__warmup_from, domain=None, range=Optional[Union[str, OptimizationStageName]])
+
+slots.optimization__execution = Slot(uri=TVBO.execution, name="optimization__execution", curie=TVBO.curie('execution'),
+                   model_uri=TVBO.optimization__execution, domain=None, range=Optional[Union[dict, ExecutionConfig]])
+
+slots.optimization__integration = Slot(uri=TVBO.integration, name="optimization__integration", curie=TVBO.curie('integration'),
+                   model_uri=TVBO.optimization__integration, domain=None, range=Optional[Union[dict, Integrator]])
+
+slots.optimization__loss = Slot(uri=TVBO.loss, name="optimization__loss", curie=TVBO.curie('loss'),
+                   model_uri=TVBO.optimization__loss, domain=None, range=Optional[Union[dict, FunctionCall]])
+
+slots.optimization__stages = Slot(uri=TVBO.stages, name="optimization__stages", curie=TVBO.curie('stages'),
+                   model_uri=TVBO.optimization__stages, domain=None, range=Optional[Union[dict[Union[str, OptimizationStageName], Union[dict, OptimizationStage]], list[Union[dict, OptimizationStage]]]])
+
+slots.optimization__depends_on = Slot(uri=TVBO.depends_on, name="optimization__depends_on", curie=TVBO.curie('depends_on'),
+                   model_uri=TVBO.optimization__depends_on, domain=None, range=Optional[Union[str, AlgorithmName]])
+
+slots.exploration__execution = Slot(uri=TVBO.execution, name="exploration__execution", curie=TVBO.curie('execution'),
+                   model_uri=TVBO.exploration__execution, domain=None, range=Optional[Union[dict, ExecutionConfig]])
+
+slots.exploration__parameters = Slot(uri=TVBO.parameters, name="exploration__parameters", curie=TVBO.curie('parameters'),
+                   model_uri=TVBO.exploration__parameters, domain=None, range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]])
+
+slots.exploration__mode = Slot(uri=TVBO.mode, name="exploration__mode", curie=TVBO.curie('mode'),
+                   model_uri=TVBO.exploration__mode, domain=None, range=Optional[str])
+
+slots.exploration__observable = Slot(uri=TVBO.observable, name="exploration__observable", curie=TVBO.curie('observable'),
+                   model_uri=TVBO.exploration__observable, domain=None, range=Optional[Union[dict, FunctionCall]])
+
+slots.exploration__n_parallel = Slot(uri=TVBO.n_parallel, name="exploration__n_parallel", curie=TVBO.curie('n_parallel'),
+                   model_uri=TVBO.exploration__n_parallel, domain=None, range=Optional[int])
+
+slots.exploration__n_trials = Slot(uri=TVBO.n_trials, name="exploration__n_trials", curie=TVBO.curie('n_trials'),
+                   model_uri=TVBO.exploration__n_trials, domain=None, range=Optional[int])
+
+slots.exploration__average = Slot(uri=TVBO.average, name="exploration__average", curie=TVBO.curie('average'),
+                   model_uri=TVBO.exploration__average, domain=None, range=Optional[str])
+
+slots.updateRule__target_parameter = Slot(uri=TVBO.target_parameter, name="updateRule__target_parameter", curie=TVBO.curie('target_parameter'),
+                   model_uri=TVBO.updateRule__target_parameter, domain=None, range=Union[dict, Parameter])
+
+slots.updateRule__equation = Slot(uri=TVBO.equation, name="updateRule__equation", curie=TVBO.curie('equation'),
+                   model_uri=TVBO.updateRule__equation, domain=None, range=Union[dict, Equation])
+
+slots.updateRule__bounds = Slot(uri=TVBO.bounds, name="updateRule__bounds", curie=TVBO.curie('bounds'),
+                   model_uri=TVBO.updateRule__bounds, domain=None, range=Optional[Union[dict, Range]])
+
+slots.updateRule__warmup = Slot(uri=TVBO.warmup, name="updateRule__warmup", curie=TVBO.curie('warmup'),
+                   model_uri=TVBO.updateRule__warmup, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.updateRule__requires = Slot(uri=TVBO.requires, name="updateRule__requires", curie=TVBO.curie('requires'),
+                   model_uri=TVBO.updateRule__requires, domain=None, range=Optional[Union[Union[str, ObservationName], list[Union[str, ObservationName]]]])
+
+slots.algorithmInclude__algorithm = Slot(uri=TVBO.algorithm, name="algorithmInclude__algorithm", curie=TVBO.curie('algorithm'),
+                   model_uri=TVBO.algorithmInclude__algorithm, domain=None, range=Union[str, AlgorithmName])
+
+slots.algorithmInclude__arguments = Slot(uri=TVBO.arguments, name="algorithmInclude__arguments", curie=TVBO.curie('arguments'),
+                   model_uri=TVBO.algorithmInclude__arguments, domain=None, range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]])
+
+slots.tuningObjective__type = Slot(uri=TVBO.type, name="tuningObjective__type", curie=TVBO.curie('type'),
+                   model_uri=TVBO.tuningObjective__type, domain=None, range=Optional[str])
+
+slots.tuningObjective__target_variable = Slot(uri=TVBO.target_variable, name="tuningObjective__target_variable", curie=TVBO.curie('target_variable'),
+                   model_uri=TVBO.tuningObjective__target_variable, domain=None, range=Optional[Union[str, StateVariableName]])
+
+slots.tuningObjective__target_value = Slot(uri=TVBO.target_value, name="tuningObjective__target_value", curie=TVBO.curie('target_value'),
+                   model_uri=TVBO.tuningObjective__target_value, domain=None, range=Optional[float])
+
+slots.tuningObjective__target_data = Slot(uri=TVBO.target_data, name="tuningObjective__target_data", curie=TVBO.curie('target_data'),
+                   model_uri=TVBO.tuningObjective__target_data, domain=None, range=Optional[Union[str, ObservationName]])
+
+slots.tuningObjective__metric = Slot(uri=TVBO.metric, name="tuningObjective__metric", curie=TVBO.curie('metric'),
+                   model_uri=TVBO.tuningObjective__metric, domain=None, range=Optional[Union[dict, Equation]])
+
+slots.algorithm__execution = Slot(uri=TVBO.execution, name="algorithm__execution", curie=TVBO.curie('execution'),
+                   model_uri=TVBO.algorithm__execution, domain=None, range=Optional[Union[dict, ExecutionConfig]])
+
+slots.algorithm__type = Slot(uri=TVBO.type, name="algorithm__type", curie=TVBO.curie('type'),
+                   model_uri=TVBO.algorithm__type, domain=None, range=Optional[str])
+
+slots.algorithm__includes = Slot(uri=TVBO.includes, name="algorithm__includes", curie=TVBO.curie('includes'),
+                   model_uri=TVBO.algorithm__includes, domain=None, range=Optional[Union[Union[dict, AlgorithmInclude], list[Union[dict, AlgorithmInclude]]]])
+
+slots.algorithm__objective = Slot(uri=TVBO.objective, name="algorithm__objective", curie=TVBO.curie('objective'),
+                   model_uri=TVBO.algorithm__objective, domain=None, range=Optional[Union[dict, TuningObjective]])
+
+slots.algorithm__observations = Slot(uri=TVBO.observations, name="algorithm__observations", curie=TVBO.curie('observations'),
+                   model_uri=TVBO.algorithm__observations, domain=None, range=Optional[Union[Union[str, ObservationName], list[Union[str, ObservationName]]]])
+
+slots.algorithm__update_rules = Slot(uri=TVBO.update_rules, name="algorithm__update_rules", curie=TVBO.curie('update_rules'),
+                   model_uri=TVBO.algorithm__update_rules, domain=None, range=Optional[Union[dict[Union[str, UpdateRuleName], Union[dict, UpdateRule]], list[Union[dict, UpdateRule]]]])
+
+slots.algorithm__hyperparameters = Slot(uri=TVBO.hyperparameters, name="algorithm__hyperparameters", curie=TVBO.curie('hyperparameters'),
+                   model_uri=TVBO.algorithm__hyperparameters, domain=None, range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]])
+
+slots.algorithm__learning_rate = Slot(uri=TVBO.learning_rate, name="algorithm__learning_rate", curie=TVBO.curie('learning_rate'),
+                   model_uri=TVBO.algorithm__learning_rate, domain=None, range=Optional[float])
+
+slots.algorithm__learning_rate_warmup = Slot(uri=TVBO.learning_rate_warmup, name="algorithm__learning_rate_warmup", curie=TVBO.curie('learning_rate_warmup'),
+                   model_uri=TVBO.algorithm__learning_rate_warmup, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.algorithm__n_iterations = Slot(uri=TVBO.n_iterations, name="algorithm__n_iterations", curie=TVBO.curie('n_iterations'),
+                   model_uri=TVBO.algorithm__n_iterations, domain=None, range=Optional[int])
+
+slots.algorithm__learning_rate_schedule = Slot(uri=TVBO.learning_rate_schedule, name="algorithm__learning_rate_schedule", curie=TVBO.curie('learning_rate_schedule'),
+                   model_uri=TVBO.algorithm__learning_rate_schedule, domain=None, range=Optional[str])
+
+slots.algorithm__simulation_period = Slot(uri=TVBO.simulation_period, name="algorithm__simulation_period", curie=TVBO.curie('simulation_period'),
+                   model_uri=TVBO.algorithm__simulation_period, domain=None, range=Optional[float])
+
+slots.algorithm__apply_every = Slot(uri=TVBO.apply_every, name="algorithm__apply_every", curie=TVBO.curie('apply_every'),
+                   model_uri=TVBO.algorithm__apply_every, domain=None, range=Optional[int])
+
+slots.algorithm__functions = Slot(uri=TVBO.functions, name="algorithm__functions", curie=TVBO.curie('functions'),
+                   model_uri=TVBO.algorithm__functions, domain=None, range=Optional[Union[Union[dict, FunctionCall], list[Union[dict, FunctionCall]]]])
+
+slots.algorithm__depends_on = Slot(uri=TVBO.depends_on, name="algorithm__depends_on", curie=TVBO.curie('depends_on'),
+                   model_uri=TVBO.algorithm__depends_on, domain=None, range=Optional[Union[Union[str, AlgorithmName], list[Union[str, AlgorithmName]]]])
+
+slots.option__name = Slot(uri=TVBO.name, name="option__name", curie=TVBO.curie('name'),
+                   model_uri=TVBO.option__name, domain=None, range=URIRef)
+
+slots.option__value = Slot(uri=TVBO.value, name="option__value", curie=TVBO.curie('value'),
+                   model_uri=TVBO.option__value, domain=None, range=str)
+
+slots.discretization__method = Slot(uri=TVBO.method, name="discretization__method", curie=TVBO.curie('method'),
+                   model_uri=TVBO.discretization__method, domain=None, range=Optional[Union[str, "NumericalDiscretizationMethod"]])
+
+slots.discretization__ode_solver = Slot(uri=TVBO.ode_solver, name="discretization__ode_solver", curie=TVBO.curie('ode_solver'),
+                   model_uri=TVBO.discretization__ode_solver, domain=None, range=Optional[Union[dict, Solver]])
+
+slots.discretization__linear_solver = Slot(uri=TVBO.linear_solver, name="discretization__linear_solver", curie=TVBO.curie('linear_solver'),
+                   model_uri=TVBO.discretization__linear_solver, domain=None, range=Optional[Union[dict, Solver]])
+
+slots.discretization__mesh_intervals = Slot(uri=TVBO.mesh_intervals, name="discretization__mesh_intervals", curie=TVBO.curie('mesh_intervals'),
+                   model_uri=TVBO.discretization__mesh_intervals, domain=None, range=Optional[int])
+
+slots.discretization__degree = Slot(uri=TVBO.degree, name="discretization__degree", curie=TVBO.curie('degree'),
+                   model_uri=TVBO.discretization__degree, domain=None, range=Optional[int])
+
+slots.discretization__n_sections = Slot(uri=TVBO.n_sections, name="discretization__n_sections", curie=TVBO.curie('n_sections'),
+                   model_uri=TVBO.discretization__n_sections, domain=None, range=Optional[int])
+
+slots.discretization__options = Slot(uri=TVBO.options, name="discretization__options", curie=TVBO.curie('options'),
+                   model_uri=TVBO.discretization__options, domain=None, range=Optional[Union[dict[Union[str, OptionName], Union[dict, Option]], list[Union[dict, Option]]]])
+
+slots.initialState__method = Slot(uri=TVBO.method, name="initialState__method", curie=TVBO.curie('method'),
+                   model_uri=TVBO.initialState__method, domain=None, range=Optional[Union[str, "InitialStateMethod"]])
+
+slots.initialState__duration = Slot(uri=TVBO.duration, name="initialState__duration", curie=TVBO.curie('duration'),
+                   model_uri=TVBO.initialState__duration, domain=None, range=Optional[float])
+
+slots.initialState__abs_tol = Slot(uri=TVBO.abs_tol, name="initialState__abs_tol", curie=TVBO.curie('abs_tol'),
+                   model_uri=TVBO.initialState__abs_tol, domain=None, range=Optional[float])
+
+slots.initialState__rel_tol = Slot(uri=TVBO.rel_tol, name="initialState__rel_tol", curie=TVBO.curie('rel_tol'),
+                   model_uri=TVBO.initialState__rel_tol, domain=None, range=Optional[float])
+
+slots.initialState__solver = Slot(uri=TVBO.solver, name="initialState__solver", curie=TVBO.curie('solver'),
+                   model_uri=TVBO.initialState__solver, domain=None, range=Optional[Union[dict, Solver]])
+
+slots.initialState__source_branch = Slot(uri=TVBO.source_branch, name="initialState__source_branch", curie=TVBO.curie('source_branch'),
+                   model_uri=TVBO.initialState__source_branch, domain=None, range=Optional[str])
+
+slots.initialState__source_point = Slot(uri=TVBO.source_point, name="initialState__source_point", curie=TVBO.curie('source_point'),
+                   model_uri=TVBO.initialState__source_point, domain=None, range=Optional[str])
+
+slots.branchSwitch__source_point = Slot(uri=TVBO.source_point, name="branchSwitch__source_point", curie=TVBO.curie('source_point'),
+                   model_uri=TVBO.branchSwitch__source_point, domain=None, range=Optional[str])
+
+slots.branchSwitch__delta_p = Slot(uri=TVBO.delta_p, name="branchSwitch__delta_p", curie=TVBO.curie('delta_p'),
+                   model_uri=TVBO.branchSwitch__delta_p, domain=None, range=Optional[float])
+
+slots.branchSwitch__continuation = Slot(uri=TVBO.continuation, name="branchSwitch__continuation", curie=TVBO.curie('continuation'),
+                   model_uri=TVBO.branchSwitch__continuation, domain=None, range=Optional[Union[dict, Continuation]])
+
+slots.branchSwitch__discretization = Slot(uri=TVBO.discretization, name="branchSwitch__discretization", curie=TVBO.curie('discretization'),
+                   model_uri=TVBO.branchSwitch__discretization, domain=None, range=Optional[Union[dict, Discretization]])
+
+slots.branchSwitch__bothside = Slot(uri=TVBO.bothside, name="branchSwitch__bothside", curie=TVBO.curie('bothside'),
+                   model_uri=TVBO.branchSwitch__bothside, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.branchSwitch__options = Slot(uri=TVBO.options, name="branchSwitch__options", curie=TVBO.curie('options'),
+                   model_uri=TVBO.branchSwitch__options, domain=None, range=Optional[Union[dict[Union[str, OptionName], Union[dict, Option]], list[Union[dict, Option]]]])
+
+slots.continuation__dynamics = Slot(uri=TVBO.dynamics, name="continuation__dynamics", curie=TVBO.curie('dynamics'),
+                   model_uri=TVBO.continuation__dynamics, domain=None, range=Optional[Union[str, DynamicsName]])
+
+slots.continuation__free_parameters = Slot(uri=TVBO.free_parameters, name="continuation__free_parameters", curie=TVBO.curie('free_parameters'),
+                   model_uri=TVBO.continuation__free_parameters, domain=None, range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]])
+
+slots.continuation__ds = Slot(uri=TVBO.ds, name="continuation__ds", curie=TVBO.curie('ds'),
+                   model_uri=TVBO.continuation__ds, domain=None, range=Optional[float])
+
+slots.continuation__ds_min = Slot(uri=TVBO.ds_min, name="continuation__ds_min", curie=TVBO.curie('ds_min'),
+                   model_uri=TVBO.continuation__ds_min, domain=None, range=Optional[float])
+
+slots.continuation__ds_max = Slot(uri=TVBO.ds_max, name="continuation__ds_max", curie=TVBO.curie('ds_max'),
+                   model_uri=TVBO.continuation__ds_max, domain=None, range=Optional[float])
+
+slots.continuation__max_steps = Slot(uri=TVBO.max_steps, name="continuation__max_steps", curie=TVBO.curie('max_steps'),
+                   model_uri=TVBO.continuation__max_steps, domain=None, range=Optional[int])
+
+slots.continuation__newton_tol = Slot(uri=TVBO.newton_tol, name="continuation__newton_tol", curie=TVBO.curie('newton_tol'),
+                   model_uri=TVBO.continuation__newton_tol, domain=None, range=Optional[float])
+
+slots.continuation__newton_max_iterations = Slot(uri=TVBO.newton_max_iterations, name="continuation__newton_max_iterations", curie=TVBO.curie('newton_max_iterations'),
+                   model_uri=TVBO.continuation__newton_max_iterations, domain=None, range=Optional[int])
+
+slots.continuation__nev = Slot(uri=TVBO.nev, name="continuation__nev", curie=TVBO.curie('nev'),
+                   model_uri=TVBO.continuation__nev, domain=None, range=Optional[int])
+
+slots.continuation__tol_stability = Slot(uri=TVBO.tol_stability, name="continuation__tol_stability", curie=TVBO.curie('tol_stability'),
+                   model_uri=TVBO.continuation__tol_stability, domain=None, range=Optional[float])
+
+slots.continuation__detect_bifurcation = Slot(uri=TVBO.detect_bifurcation, name="continuation__detect_bifurcation", curie=TVBO.curie('detect_bifurcation'),
+                   model_uri=TVBO.continuation__detect_bifurcation, domain=None, range=Optional[int])
+
+slots.continuation__detect_fold = Slot(uri=TVBO.detect_fold, name="continuation__detect_fold", curie=TVBO.curie('detect_fold'),
+                   model_uri=TVBO.continuation__detect_fold, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.continuation__n_inversion = Slot(uri=TVBO.n_inversion, name="continuation__n_inversion", curie=TVBO.curie('n_inversion'),
+                   model_uri=TVBO.continuation__n_inversion, domain=None, range=Optional[int])
+
+slots.continuation__max_bisection_steps = Slot(uri=TVBO.max_bisection_steps, name="continuation__max_bisection_steps", curie=TVBO.curie('max_bisection_steps'),
+                   model_uri=TVBO.continuation__max_bisection_steps, domain=None, range=Optional[int])
+
+slots.continuation__algorithm = Slot(uri=TVBO.algorithm, name="continuation__algorithm", curie=TVBO.curie('algorithm'),
+                   model_uri=TVBO.continuation__algorithm, domain=None, range=Optional[Union[str, "ContinuationAlgorithm"]])
+
+slots.continuation__initial_state = Slot(uri=TVBO.initial_state, name="continuation__initial_state", curie=TVBO.curie('initial_state'),
+                   model_uri=TVBO.continuation__initial_state, domain=None, range=Optional[Union[dict, InitialState]])
+
+slots.continuation__branches = Slot(uri=TVBO.branches, name="continuation__branches", curie=TVBO.curie('branches'),
+                   model_uri=TVBO.continuation__branches, domain=None, range=Optional[Union[dict[Union[str, BranchSwitchName], Union[dict, BranchSwitch]], list[Union[dict, BranchSwitch]]]])
+
+slots.continuation__bothside = Slot(uri=TVBO.bothside, name="continuation__bothside", curie=TVBO.curie('bothside'),
+                   model_uri=TVBO.continuation__bothside, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.continuation__execution = Slot(uri=TVBO.execution, name="continuation__execution", curie=TVBO.curie('execution'),
+                   model_uri=TVBO.continuation__execution, domain=None, range=Optional[Union[dict, ExecutionConfig]])
+
+slots.continuation__software = Slot(uri=TVBO.software, name="continuation__software", curie=TVBO.curie('software'),
+                   model_uri=TVBO.continuation__software, domain=None, range=Optional[Union[dict, SoftwareRequirement]])
+
+slots.continuation__options = Slot(uri=TVBO.options, name="continuation__options", curie=TVBO.curie('options'),
+                   model_uri=TVBO.continuation__options, domain=None, range=Optional[Union[dict[Union[str, OptionName], Union[dict, Option]], list[Union[dict, Option]]]])
+
+slots.solver__method = Slot(uri=TVBO.method, name="solver__method", curie=TVBO.curie('method'),
+                   model_uri=TVBO.solver__method, domain=None, range=Optional[str])
+
+slots.solver__abs_tol = Slot(uri=TVBO.abs_tol, name="solver__abs_tol", curie=TVBO.curie('abs_tol'),
+                   model_uri=TVBO.solver__abs_tol, domain=None, range=Optional[float])
+
+slots.solver__rel_tol = Slot(uri=TVBO.rel_tol, name="solver__rel_tol", curie=TVBO.curie('rel_tol'),
+                   model_uri=TVBO.solver__rel_tol, domain=None, range=Optional[float])
+
+slots.integrator__method = Slot(uri=TVBO.method, name="integrator__method", curie=TVBO.curie('method'),
+                   model_uri=TVBO.integrator__method, domain=None, range=Optional[str])
+
+slots.integrator__step_size = Slot(uri=TVBO.step_size, name="integrator__step_size", curie=TVBO.curie('step_size'),
+                   model_uri=TVBO.integrator__step_size, domain=None, range=Optional[float])
+
+slots.integrator__steps = Slot(uri=TVBO.steps, name="integrator__steps", curie=TVBO.curie('steps'),
+                   model_uri=TVBO.integrator__steps, domain=None, range=Optional[int])
+
+slots.integrator__noise = Slot(uri=TVBO.noise, name="integrator__noise", curie=TVBO.curie('noise'),
+                   model_uri=TVBO.integrator__noise, domain=None, range=Optional[Union[dict, Noise]])
+
+slots.integrator__state_wise_sigma = Slot(uri=TVBO.state_wise_sigma, name="integrator__state_wise_sigma", curie=TVBO.curie('state_wise_sigma'),
+                   model_uri=TVBO.integrator__state_wise_sigma, domain=None, range=Optional[Union[float, list[float]]])
+
+slots.integrator__transient_time = Slot(uri=TVBO.transient_time, name="integrator__transient_time", curie=TVBO.curie('transient_time'),
+                   model_uri=TVBO.integrator__transient_time, domain=None, range=Optional[float])
+
+slots.integrator__scipy_ode_base = Slot(uri=TVBO.scipy_ode_base, name="integrator__scipy_ode_base", curie=TVBO.curie('scipy_ode_base'),
+                   model_uri=TVBO.integrator__scipy_ode_base, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.integrator__number_of_stages = Slot(uri=TVBO.number_of_stages, name="integrator__number_of_stages", curie=TVBO.curie('number_of_stages'),
+                   model_uri=TVBO.integrator__number_of_stages, domain=None, range=Optional[int])
+
+slots.integrator__intermediate_expressions = Slot(uri=TVBO.intermediate_expressions, name="integrator__intermediate_expressions", curie=TVBO.curie('intermediate_expressions'),
+                   model_uri=TVBO.integrator__intermediate_expressions, domain=None, range=Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, DerivedVariable]], list[Union[dict, DerivedVariable]]]])
+
+slots.integrator__update_expression = Slot(uri=TVBO.update_expression, name="integrator__update_expression", curie=TVBO.curie('update_expression'),
+                   model_uri=TVBO.integrator__update_expression, domain=None, range=Optional[Union[dict, DerivedVariable]])
+
+slots.integrator__delayed = Slot(uri=TVBO.delayed, name="integrator__delayed", curie=TVBO.curie('delayed'),
+                   model_uri=TVBO.integrator__delayed, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.coupling__coupling_function = Slot(uri=TVBO.coupling_function, name="coupling__coupling_function", curie=TVBO.curie('coupling_function'),
+                   model_uri=TVBO.coupling__coupling_function, domain=None, range=Optional[Union[dict, Equation]])
+
+slots.coupling__sparse = Slot(uri=TVBO.sparse, name="coupling__sparse", curie=TVBO.curie('sparse'),
+                   model_uri=TVBO.coupling__sparse, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.coupling__pre_expression = Slot(uri=TVBO.pre_expression, name="coupling__pre_expression", curie=TVBO.curie('pre_expression'),
+                   model_uri=TVBO.coupling__pre_expression, domain=None, range=Optional[Union[dict, Equation]])
+
+slots.coupling__post_expression = Slot(uri=TVBO.post_expression, name="coupling__post_expression", curie=TVBO.curie('post_expression'),
+                   model_uri=TVBO.coupling__post_expression, domain=None, range=Optional[Union[dict, Equation]])
+
+slots.coupling__incoming_states = Slot(uri=TVBO.incoming_states, name="coupling__incoming_states", curie=TVBO.curie('incoming_states'),
+                   model_uri=TVBO.coupling__incoming_states, domain=None, range=Optional[Union[Union[str, StateVariableName], list[Union[str, StateVariableName]]]])
+
+slots.coupling__local_states = Slot(uri=TVBO.local_states, name="coupling__local_states", curie=TVBO.curie('local_states'),
+                   model_uri=TVBO.coupling__local_states, domain=None, range=Optional[Union[Union[str, StateVariableName], list[Union[str, StateVariableName]]]])
+
+slots.coupling__delayed = Slot(uri=TVBO.delayed, name="coupling__delayed", curie=TVBO.curie('delayed'),
+                   model_uri=TVBO.coupling__delayed, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.coupling__symmetry = Slot(uri=TVBO.symmetry, name="coupling__symmetry", curie=TVBO.curie('symmetry'),
+                   model_uri=TVBO.coupling__symmetry, domain=None, range=Optional[str])
+
+slots.coupling__outsym = Slot(uri=TVBO.outsym, name="coupling__outsym", curie=TVBO.curie('outsym'),
+                   model_uri=TVBO.coupling__outsym, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.coupling__observed = Slot(uri=TVBO.observed, name="coupling__observed", curie=TVBO.curie('observed'),
+                   model_uri=TVBO.coupling__observed, domain=None, range=Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, DerivedVariable]], list[Union[dict, DerivedVariable]]]])
+
+slots.coupling__inner_coupling = Slot(uri=TVBO.inner_coupling, name="coupling__inner_coupling", curie=TVBO.curie('inner_coupling'),
+                   model_uri=TVBO.coupling__inner_coupling, domain=None, range=Optional[Union[dict, Coupling]])
+
+slots.coupling__region_mapping = Slot(uri=TVBO.region_mapping, name="coupling__region_mapping", curie=TVBO.curie('region_mapping'),
+                   model_uri=TVBO.coupling__region_mapping, domain=None, range=Optional[Union[dict, RegionMapping]])
+
+slots.coupling__regional_connectivity = Slot(uri=TVBO.regional_connectivity, name="coupling__regional_connectivity", curie=TVBO.curie('regional_connectivity'),
+                   model_uri=TVBO.coupling__regional_connectivity, domain=None, range=Optional[Union[dict, Network]])
+
+slots.coupling__aggregation = Slot(uri=TVBO.aggregation, name="coupling__aggregation", curie=TVBO.curie('aggregation'),
+                   model_uri=TVBO.coupling__aggregation, domain=None, range=Optional[str])
+
+slots.coupling__distribution = Slot(uri=TVBO.distribution, name="coupling__distribution", curie=TVBO.curie('distribution'),
+                   model_uri=TVBO.coupling__distribution, domain=None, range=Optional[str])
+
+slots.regionMapping__vertex_to_region = Slot(uri=TVBO.vertex_to_region, name="regionMapping__vertex_to_region", curie=TVBO.curie('vertex_to_region'),
+                   model_uri=TVBO.regionMapping__vertex_to_region, domain=None, range=Optional[Union[int, list[int]]])
+
+slots.regionMapping__n_vertices = Slot(uri=TVBO.n_vertices, name="regionMapping__n_vertices", curie=TVBO.curie('n_vertices'),
+                   model_uri=TVBO.regionMapping__n_vertices, domain=None, range=Optional[int])
+
+slots.regionMapping__n_regions = Slot(uri=TVBO.n_regions, name="regionMapping__n_regions", curie=TVBO.curie('n_regions'),
+                   model_uri=TVBO.regionMapping__n_regions, domain=None, range=Optional[int])
+
+slots.sample__groups = Slot(uri=TVBO.groups, name="sample__groups", curie=TVBO.curie('groups'),
+                   model_uri=TVBO.sample__groups, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.sample__size = Slot(uri=TVBO.size, name="sample__size", curie=TVBO.curie('size'),
+                   model_uri=TVBO.sample__size, domain=None, range=Optional[int])
+
+slots.executionConfig__n_workers = Slot(uri=TVBO.n_workers, name="executionConfig__n_workers", curie=TVBO.curie('n_workers'),
+                   model_uri=TVBO.executionConfig__n_workers, domain=None, range=Optional[int])
+
+slots.executionConfig__n_threads = Slot(uri=TVBO.n_threads, name="executionConfig__n_threads", curie=TVBO.curie('n_threads'),
+                   model_uri=TVBO.executionConfig__n_threads, domain=None, range=Optional[int])
+
+slots.executionConfig__precision = Slot(uri=TVBO.precision, name="executionConfig__precision", curie=TVBO.curie('precision'),
+                   model_uri=TVBO.executionConfig__precision, domain=None, range=Optional[str])
+
+slots.executionConfig__accelerator = Slot(uri=TVBO.accelerator, name="executionConfig__accelerator", curie=TVBO.curie('accelerator'),
+                   model_uri=TVBO.executionConfig__accelerator, domain=None, range=Optional[str])
+
+slots.executionConfig__batch_size = Slot(uri=TVBO.batch_size, name="executionConfig__batch_size", curie=TVBO.curie('batch_size'),
+                   model_uri=TVBO.executionConfig__batch_size, domain=None, range=Optional[int])
+
+slots.executionConfig__random_seed = Slot(uri=TVBO.random_seed, name="executionConfig__random_seed", curie=TVBO.curie('random_seed'),
+                   model_uri=TVBO.executionConfig__random_seed, domain=None, range=Optional[int])
+
+slots.executionConfig__find_fixpoint = Slot(uri=TVBO.find_fixpoint, name="executionConfig__find_fixpoint", curie=TVBO.curie('find_fixpoint'),
+                   model_uri=TVBO.executionConfig__find_fixpoint, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.simulationExperiment__id = Slot(uri=TVBO.id, name="simulationExperiment__id", curie=TVBO.curie('id'),
+                   model_uri=TVBO.simulationExperiment__id, domain=None, range=URIRef)
+
+slots.simulationExperiment__description = Slot(uri=TVBO.description, name="simulationExperiment__description", curie=TVBO.curie('description'),
+                   model_uri=TVBO.simulationExperiment__description, domain=None, range=Optional[str])
+
+slots.simulationExperiment__additional_equations = Slot(uri=TVBO.additional_equations, name="simulationExperiment__additional_equations", curie=TVBO.curie('additional_equations'),
+                   model_uri=TVBO.simulationExperiment__additional_equations, domain=None, range=Optional[Union[Union[dict, Equation], list[Union[dict, Equation]]]])
+
+slots.simulationExperiment__label = Slot(uri=TVBO.label, name="simulationExperiment__label", curie=TVBO.curie('label'),
+                   model_uri=TVBO.simulationExperiment__label, domain=None, range=Optional[str])
+
+slots.simulationExperiment__dynamics = Slot(uri=TVBO.dynamics, name="simulationExperiment__dynamics", curie=TVBO.curie('dynamics'),
+                   model_uri=TVBO.simulationExperiment__dynamics, domain=None, range=Optional[Union[dict, Dynamics]])
+
+slots.simulationExperiment__integration = Slot(uri=TVBO.integration, name="simulationExperiment__integration", curie=TVBO.curie('integration'),
+                   model_uri=TVBO.simulationExperiment__integration, domain=None, range=Optional[Union[dict, Integrator]])
+
+slots.simulationExperiment__connectivity = Slot(uri=TVBO.connectivity, name="simulationExperiment__connectivity", curie=TVBO.curie('connectivity'),
+                   model_uri=TVBO.simulationExperiment__connectivity, domain=None, range=Optional[Union[dict, Network]])
+
+slots.simulationExperiment__network = Slot(uri=TVBO.network, name="simulationExperiment__network", curie=TVBO.curie('network'),
+                   model_uri=TVBO.simulationExperiment__network, domain=None, range=Optional[Union[dict, Network]])
+
+slots.simulationExperiment__coupling = Slot(uri=TVBO.coupling, name="simulationExperiment__coupling", curie=TVBO.curie('coupling'),
+                   model_uri=TVBO.simulationExperiment__coupling, domain=None, range=Optional[Union[dict, Coupling]])
+
+slots.simulationExperiment__observations = Slot(uri=TVBO.observations, name="simulationExperiment__observations", curie=TVBO.curie('observations'),
+                   model_uri=TVBO.simulationExperiment__observations, domain=None, range=Optional[Union[dict[Union[str, ObservationName], Union[dict, Observation]], list[Union[dict, Observation]]]])
+
+slots.simulationExperiment__derived_observations = Slot(uri=TVBO.derived_observations, name="simulationExperiment__derived_observations", curie=TVBO.curie('derived_observations'),
+                   model_uri=TVBO.simulationExperiment__derived_observations, domain=None, range=Optional[Union[dict[Union[str, DerivedObservationName], Union[dict, DerivedObservation]], list[Union[dict, DerivedObservation]]]])
+
+slots.simulationExperiment__functions = Slot(uri=TVBO.functions, name="simulationExperiment__functions", curie=TVBO.curie('functions'),
+                   model_uri=TVBO.simulationExperiment__functions, domain=None, range=Optional[Union[dict[Union[str, FunctionName], Union[dict, Function]], list[Union[dict, Function]]]])
+
+slots.simulationExperiment__stimulation = Slot(uri=TVBO.stimulation, name="simulationExperiment__stimulation", curie=TVBO.curie('stimulation'),
+                   model_uri=TVBO.simulationExperiment__stimulation, domain=None, range=Optional[Union[dict, Stimulus]])
+
+slots.simulationExperiment__events = Slot(uri=TVBO.events, name="simulationExperiment__events", curie=TVBO.curie('events'),
+                   model_uri=TVBO.simulationExperiment__events, domain=None, range=Optional[Union[dict[Union[str, EventName], Union[dict, Event]], list[Union[dict, Event]]]])
+
+slots.simulationExperiment__field_dynamics = Slot(uri=TVBO.field_dynamics, name="simulationExperiment__field_dynamics", curie=TVBO.curie('field_dynamics'),
+                   model_uri=TVBO.simulationExperiment__field_dynamics, domain=None, range=Optional[Union[dict, PDE]])
+
+slots.simulationExperiment__optimizations = Slot(uri=TVBO.optimizations, name="simulationExperiment__optimizations", curie=TVBO.curie('optimizations'),
+                   model_uri=TVBO.simulationExperiment__optimizations, domain=None, range=Optional[Union[dict[Union[str, OptimizationName], Union[dict, Optimization]], list[Union[dict, Optimization]]]])
+
+slots.simulationExperiment__explorations = Slot(uri=TVBO.explorations, name="simulationExperiment__explorations", curie=TVBO.curie('explorations'),
+                   model_uri=TVBO.simulationExperiment__explorations, domain=None, range=Optional[Union[dict[Union[str, ExplorationName], Union[dict, Exploration]], list[Union[dict, Exploration]]]])
+
+slots.simulationExperiment__algorithms = Slot(uri=TVBO.algorithms, name="simulationExperiment__algorithms", curie=TVBO.curie('algorithms'),
+                   model_uri=TVBO.simulationExperiment__algorithms, domain=None, range=Optional[Union[dict[Union[str, AlgorithmName], Union[dict, Algorithm]], list[Union[dict, Algorithm]]]])
+
+slots.simulationExperiment__continuations = Slot(uri=TVBO.continuations, name="simulationExperiment__continuations", curie=TVBO.curie('continuations'),
+                   model_uri=TVBO.simulationExperiment__continuations, domain=None, range=Optional[Union[dict[Union[str, ContinuationName], Union[dict, Continuation]], list[Union[dict, Continuation]]]])
+
+slots.simulationExperiment__environment = Slot(uri=TVBO.environment, name="simulationExperiment__environment", curie=TVBO.curie('environment'),
+                   model_uri=TVBO.simulationExperiment__environment, domain=None, range=Optional[Union[dict, SoftwareEnvironment]])
+
+slots.simulationExperiment__execution = Slot(uri=TVBO.execution, name="simulationExperiment__execution", curie=TVBO.curie('execution'),
+                   model_uri=TVBO.simulationExperiment__execution, domain=None, range=Optional[Union[dict, ExecutionConfig]])
+
+slots.simulationExperiment__software = Slot(uri=TVBO.software, name="simulationExperiment__software", curie=TVBO.curie('software'),
+                   model_uri=TVBO.simulationExperiment__software, domain=None, range=Optional[Union[dict, SoftwareRequirement]])
+
+slots.simulationExperiment__references = Slot(uri=TVBO.references, name="simulationExperiment__references", curie=TVBO.curie('references'),
+                   model_uri=TVBO.simulationExperiment__references, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.simulationExperiment__dataset = Slot(uri=TVBO.dataset, name="simulationExperiment__dataset", curie=TVBO.curie('dataset'),
+                   model_uri=TVBO.simulationExperiment__dataset, domain=None, range=Optional[Union[dict, Dataset]])
+
+slots.simulationStudy__key = Slot(uri=TVBO.key, name="simulationStudy__key", curie=TVBO.curie('key'),
+                   model_uri=TVBO.simulationStudy__key, domain=None, range=Optional[str])
+
+slots.simulationStudy__title = Slot(uri=TVBO.title, name="simulationStudy__title", curie=TVBO.curie('title'),
+                   model_uri=TVBO.simulationStudy__title, domain=None, range=Optional[str])
+
+slots.simulationStudy__year = Slot(uri=TVBO.year, name="simulationStudy__year", curie=TVBO.curie('year'),
+                   model_uri=TVBO.simulationStudy__year, domain=None, range=Optional[int])
+
+slots.simulationStudy__doi = Slot(uri=TVBO.doi, name="simulationStudy__doi", curie=TVBO.curie('doi'),
+                   model_uri=TVBO.simulationStudy__doi, domain=None, range=Optional[str])
+
+slots.simulationStudy__sample = Slot(uri=TVBO.sample, name="simulationStudy__sample", curie=TVBO.curie('sample'),
+                   model_uri=TVBO.simulationStudy__sample, domain=None, range=Optional[Union[dict, Sample]])
+
+slots.simulationStudy__simulation_experiments = Slot(uri=TVBO.experiments, name="simulationStudy__simulation_experiments", curie=TVBO.curie('experiments'),
+                   model_uri=TVBO.simulationStudy__simulation_experiments, domain=None, range=Optional[Union[dict[Union[int, SimulationExperimentId], Union[dict, SimulationExperiment]], list[Union[dict, SimulationExperiment]]]])
+
+slots.timeSeries__data = Slot(uri=TVBO.data, name="timeSeries__data", curie=TVBO.curie('data'),
+                   model_uri=TVBO.timeSeries__data, domain=None, range=Optional[Union[dict, Matrix]])
+
+slots.timeSeries__time = Slot(uri=TVBO.time, name="timeSeries__time", curie=TVBO.curie('time'),
+                   model_uri=TVBO.timeSeries__time, domain=None, range=Optional[Union[dict, Matrix]])
+
+slots.timeSeries__sampling_rate = Slot(uri=TVBO.sampling_rate, name="timeSeries__sampling_rate", curie=TVBO.curie('sampling_rate'),
+                   model_uri=TVBO.timeSeries__sampling_rate, domain=None, range=Optional[float])
+
+slots.timeSeries__sampling_period = Slot(uri=TVBO.sampling_period, name="timeSeries__sampling_period", curie=TVBO.curie('sampling_period'),
+                   model_uri=TVBO.timeSeries__sampling_period, domain=None, range=Optional[float])
+
+slots.timeSeries__sampling_period_unit = Slot(uri=TVBO.sampling_period_unit, name="timeSeries__sampling_period_unit", curie=TVBO.curie('sampling_period_unit'),
+                   model_uri=TVBO.timeSeries__sampling_period_unit, domain=None, range=Optional[str])
+
+slots.timeSeries__unit = Slot(uri=TVBO.unit, name="timeSeries__unit", curie=TVBO.curie('unit'),
+                   model_uri=TVBO.timeSeries__unit, domain=None, range=Optional[str])
+
+slots.timeSeries__labels_ordering = Slot(uri=TVBO.labels_ordering, name="timeSeries__labels_ordering", curie=TVBO.curie('labels_ordering'),
+                   model_uri=TVBO.timeSeries__labels_ordering, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.timeSeries__labels_dimensions = Slot(uri=TVBO.labels_dimensions, name="timeSeries__labels_dimensions", curie=TVBO.curie('labels_dimensions'),
+                   model_uri=TVBO.timeSeries__labels_dimensions, domain=None, range=Optional[str])
+
+slots.timeSeries__source_experiment = Slot(uri=TVBO.source_experiment, name="timeSeries__source_experiment", curie=TVBO.curie('source_experiment'),
+                   model_uri=TVBO.timeSeries__source_experiment, domain=None, range=Optional[Union[int, SimulationExperimentId]])
+
+slots.timeSeries__generated_at = Slot(uri=TVBO.generated_at, name="timeSeries__generated_at", curie=TVBO.curie('generated_at'),
+                   model_uri=TVBO.timeSeries__generated_at, domain=None, range=Optional[Union[str, XSDDateTime]])
+
+slots.timeSeries__software_environment = Slot(uri=TVBO.software_environment, name="timeSeries__software_environment", curie=TVBO.curie('software_environment'),
+                   model_uri=TVBO.timeSeries__software_environment, domain=None, range=Optional[Union[dict, SoftwareEnvironment]])
+
+slots.timeSeries__task_name = Slot(uri=TVBO.task_name, name="timeSeries__task_name", curie=TVBO.curie('task_name'),
+                   model_uri=TVBO.timeSeries__task_name, domain=None, range=Optional[str])
+
+slots.timeSeries__subject_id = Slot(uri=TVBO.subject_id, name="timeSeries__subject_id", curie=TVBO.curie('subject_id'),
+                   model_uri=TVBO.timeSeries__subject_id, domain=None, range=Optional[str])
+
+slots.timeSeries__session_id = Slot(uri=TVBO.session_id, name="timeSeries__session_id", curie=TVBO.curie('session_id'),
+                   model_uri=TVBO.timeSeries__session_id, domain=None, range=Optional[str])
+
+slots.timeSeries__run_id = Slot(uri=TVBO.run_id, name="timeSeries__run_id", curie=TVBO.curie('run_id'),
+                   model_uri=TVBO.timeSeries__run_id, domain=None, range=Optional[int])
+
+slots.timeSeries__modality = Slot(uri=TVBO.modality, name="timeSeries__modality", curie=TVBO.curie('modality'),
+                   model_uri=TVBO.timeSeries__modality, domain=None, range=Optional[Union[str, "ImagingModality"]])
+
+slots.timeSeries__model_equation_ref = Slot(uri=TVBO.model_equation_ref, name="timeSeries__model_equation_ref", curie=TVBO.curie('model_equation_ref'),
+                   model_uri=TVBO.timeSeries__model_equation_ref, domain=None, range=Optional[str])
+
+slots.timeSeries__model_param_ref = Slot(uri=TVBO.model_param_ref, name="timeSeries__model_param_ref", curie=TVBO.curie('model_param_ref'),
+                   model_uri=TVBO.timeSeries__model_param_ref, domain=None, range=Optional[str])
+
+slots.timeSeries__connectivity_ref = Slot(uri=TVBO.connectivity_ref, name="timeSeries__connectivity_ref", curie=TVBO.curie('connectivity_ref'),
+                   model_uri=TVBO.timeSeries__connectivity_ref, domain=None, range=Optional[str])
+
+slots.nDArray__shape = Slot(uri=TVBO.shape, name="nDArray__shape", curie=TVBO.curie('shape'),
+                   model_uri=TVBO.nDArray__shape, domain=None, range=Optional[Union[int, list[int]]])
+
+slots.nDArray__dtype = Slot(uri=TVBO.dtype, name="nDArray__dtype", curie=TVBO.curie('dtype'),
+                   model_uri=TVBO.nDArray__dtype, domain=None, range=Optional[str])
+
+slots.nDArray__dataLocation = Slot(uri=TVBO.dataLocation, name="nDArray__dataLocation", curie=TVBO.curie('dataLocation'),
+                   model_uri=TVBO.nDArray__dataLocation, domain=None, range=Optional[str])
+
+slots.nDArray__unit = Slot(uri=TVBO.unit, name="nDArray__unit", curie=TVBO.curie('unit'),
+                   model_uri=TVBO.nDArray__unit, domain=None, range=Optional[str])
+
+slots.spatialDomain__coordinate_space = Slot(uri=TVBO.coordinate_space, name="spatialDomain__coordinate_space", curie=TVBO.curie('coordinate_space'),
+                   model_uri=TVBO.spatialDomain__coordinate_space, domain=None, range=Optional[Union[str, CommonCoordinateSpaceName]])
+
+slots.spatialDomain__region = Slot(uri=TVBO.region, name="spatialDomain__region", curie=TVBO.curie('region'),
+                   model_uri=TVBO.spatialDomain__region, domain=None, range=Optional[str])
+
+slots.spatialDomain__geometry = Slot(uri=TVBO.geometry, name="spatialDomain__geometry", curie=TVBO.curie('geometry'),
+                   model_uri=TVBO.spatialDomain__geometry, domain=None, range=Optional[str])
+
+slots.mesh__element_type = Slot(uri=TVBO.element_type, name="mesh__element_type", curie=TVBO.curie('element_type'),
+                   model_uri=TVBO.mesh__element_type, domain=None, range=Optional[Union[str, "ElementType"]])
+
+slots.mesh__coordinates = Slot(uri=TVBO.coordinates, name="mesh__coordinates", curie=TVBO.curie('coordinates'),
+                   model_uri=TVBO.mesh__coordinates, domain=None, range=Optional[Union[Union[dict, Coordinate], list[Union[dict, Coordinate]]]])
+
+slots.mesh__elements = Slot(uri=TVBO.elements, name="mesh__elements", curie=TVBO.curie('elements'),
+                   model_uri=TVBO.mesh__elements, domain=None, range=Optional[str])
+
+slots.mesh__coordinate_space = Slot(uri=TVBO.coordinate_space, name="mesh__coordinate_space", curie=TVBO.curie('coordinate_space'),
+                   model_uri=TVBO.mesh__coordinate_space, domain=None, range=Optional[Union[str, CommonCoordinateSpaceName]])
+
+slots.mesh__mesh_file = Slot(uri=TVBO.mesh_file, name="mesh__mesh_file", curie=TVBO.curie('mesh_file'),
+                   model_uri=TVBO.mesh__mesh_file, domain=None, range=Optional[str])
+
+slots.mesh__mesh_format = Slot(uri=TVBO.mesh_format, name="mesh__mesh_format", curie=TVBO.curie('mesh_format'),
+                   model_uri=TVBO.mesh__mesh_format, domain=None, range=Optional[str])
+
+slots.mesh__number_of_vertices = Slot(uri=TVBO.number_of_vertices, name="mesh__number_of_vertices", curie=TVBO.curie('number_of_vertices'),
+                   model_uri=TVBO.mesh__number_of_vertices, domain=None, range=Optional[int])
+
+slots.mesh__number_of_elements = Slot(uri=TVBO.number_of_elements, name="mesh__number_of_elements", curie=TVBO.curie('number_of_elements'),
+                   model_uri=TVBO.mesh__number_of_elements, domain=None, range=Optional[int])
+
+slots.spatialField__quantity_kind = Slot(uri=TVBO.quantity_kind, name="spatialField__quantity_kind", curie=TVBO.curie('quantity_kind'),
+                   model_uri=TVBO.spatialField__quantity_kind, domain=None, range=Optional[str])
+
+slots.spatialField__unit = Slot(uri=TVBO.unit, name="spatialField__unit", curie=TVBO.curie('unit'),
+                   model_uri=TVBO.spatialField__unit, domain=None, range=Optional[str])
+
+slots.spatialField__mesh = Slot(uri=TVBO.mesh, name="spatialField__mesh", curie=TVBO.curie('mesh'),
+                   model_uri=TVBO.spatialField__mesh, domain=None, range=Optional[Union[dict, Mesh]])
+
+slots.spatialField__values = Slot(uri=TVBO.values, name="spatialField__values", curie=TVBO.curie('values'),
+                   model_uri=TVBO.spatialField__values, domain=None, range=Optional[Union[dict, NDArray]])
+
+slots.spatialField__time_dependent = Slot(uri=TVBO.time_dependent, name="spatialField__time_dependent", curie=TVBO.curie('time_dependent'),
+                   model_uri=TVBO.spatialField__time_dependent, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.spatialField__initial_value = Slot(uri=TVBO.initial_value, name="spatialField__initial_value", curie=TVBO.curie('initial_value'),
+                   model_uri=TVBO.spatialField__initial_value, domain=None, range=Optional[float])
+
+slots.spatialField__initial_expression = Slot(uri=TVBO.initial_expression, name="spatialField__initial_expression", curie=TVBO.curie('initial_expression'),
+                   model_uri=TVBO.spatialField__initial_expression, domain=None, range=Optional[Union[dict, Equation]])
+
+slots.fieldStateVariable__mesh = Slot(uri=TVBO.mesh, name="fieldStateVariable__mesh", curie=TVBO.curie('mesh'),
+                   model_uri=TVBO.fieldStateVariable__mesh, domain=None, range=Optional[Union[dict, Mesh]])
+
+slots.fieldStateVariable__boundary_conditions = Slot(uri=TVBO.boundary_conditions, name="fieldStateVariable__boundary_conditions", curie=TVBO.curie('boundary_conditions'),
+                   model_uri=TVBO.fieldStateVariable__boundary_conditions, domain=None, range=Optional[Union[Union[dict, BoundaryCondition], list[Union[dict, BoundaryCondition]]]])
+
+slots.differentialOperator__operator_type = Slot(uri=TVBO.operator_type, name="differentialOperator__operator_type", curie=TVBO.curie('operator_type'),
+                   model_uri=TVBO.differentialOperator__operator_type, domain=None, range=Optional[Union[str, "OperatorType"]])
+
+slots.differentialOperator__coefficient = Slot(uri=TVBO.coefficient, name="differentialOperator__coefficient", curie=TVBO.curie('coefficient'),
+                   model_uri=TVBO.differentialOperator__coefficient, domain=None, range=Optional[Union[str, ParameterName]])
+
+slots.differentialOperator__tensor_coefficient = Slot(uri=TVBO.tensor_coefficient, name="differentialOperator__tensor_coefficient", curie=TVBO.curie('tensor_coefficient'),
+                   model_uri=TVBO.differentialOperator__tensor_coefficient, domain=None, range=Optional[Union[str, ParameterName]])
+
+slots.differentialOperator__expression = Slot(uri=TVBO.expression, name="differentialOperator__expression", curie=TVBO.curie('expression'),
+                   model_uri=TVBO.differentialOperator__expression, domain=None, range=Optional[Union[dict, Equation]])
+
+slots.boundaryCondition__bc_type = Slot(uri=TVBO.bc_type, name="boundaryCondition__bc_type", curie=TVBO.curie('bc_type'),
+                   model_uri=TVBO.boundaryCondition__bc_type, domain=None, range=Optional[Union[str, "BoundaryConditionType"]])
+
+slots.boundaryCondition__on_region = Slot(uri=TVBO.on_region, name="boundaryCondition__on_region", curie=TVBO.curie('on_region'),
+                   model_uri=TVBO.boundaryCondition__on_region, domain=None, range=Optional[str])
+
+slots.boundaryCondition__value = Slot(uri=TVBO.value, name="boundaryCondition__value", curie=TVBO.curie('value'),
+                   model_uri=TVBO.boundaryCondition__value, domain=None, range=Optional[Union[dict, Equation]])
+
+slots.boundaryCondition__time_dependent = Slot(uri=TVBO.time_dependent, name="boundaryCondition__time_dependent", curie=TVBO.curie('time_dependent'),
+                   model_uri=TVBO.boundaryCondition__time_dependent, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.pDESolver__discretization = Slot(uri=TVBO.discretization, name="pDESolver__discretization", curie=TVBO.curie('discretization'),
+                   model_uri=TVBO.pDESolver__discretization, domain=None, range=Optional[Union[str, "DiscretizationMethod"]])
+
+slots.pDESolver__time_integrator = Slot(uri=TVBO.time_integrator, name="pDESolver__time_integrator", curie=TVBO.curie('time_integrator'),
+                   model_uri=TVBO.pDESolver__time_integrator, domain=None, range=Optional[str])
+
+slots.pDESolver__dt = Slot(uri=TVBO.dt, name="pDESolver__dt", curie=TVBO.curie('dt'),
+                   model_uri=TVBO.pDESolver__dt, domain=None, range=Optional[float])
+
+slots.pDESolver__tolerances = Slot(uri=TVBO.tolerances, name="pDESolver__tolerances", curie=TVBO.curie('tolerances'),
+                   model_uri=TVBO.pDESolver__tolerances, domain=None, range=Optional[str])
+
+slots.pDESolver__preconditioner = Slot(uri=TVBO.preconditioner, name="pDESolver__preconditioner", curie=TVBO.curie('preconditioner'),
+                   model_uri=TVBO.pDESolver__preconditioner, domain=None, range=Optional[str])
+
+slots.pDE__domain = Slot(uri=TVBO.domain, name="pDE__domain", curie=TVBO.curie('domain'),
+                   model_uri=TVBO.pDE__domain, domain=None, range=Optional[Union[dict, SpatialDomain]])
+
+slots.pDE__mesh = Slot(uri=TVBO.mesh, name="pDE__mesh", curie=TVBO.curie('mesh'),
+                   model_uri=TVBO.pDE__mesh, domain=None, range=Optional[Union[dict, Mesh]])
+
+slots.pDE__state_variables = Slot(uri=TVBO.state_variables, name="pDE__state_variables", curie=TVBO.curie('state_variables'),
+                   model_uri=TVBO.pDE__state_variables, domain=None, range=Optional[Union[dict[Union[str, FieldStateVariableName], Union[dict, FieldStateVariable]], list[Union[dict, FieldStateVariable]]]])
+
+slots.pDE__field = Slot(uri=TVBO.field, name="pDE__field", curie=TVBO.curie('field'),
+                   model_uri=TVBO.pDE__field, domain=None, range=Optional[Union[dict, SpatialField]])
+
+slots.pDE__operators = Slot(uri=TVBO.operators, name="pDE__operators", curie=TVBO.curie('operators'),
+                   model_uri=TVBO.pDE__operators, domain=None, range=Optional[Union[Union[dict, DifferentialOperator], list[Union[dict, DifferentialOperator]]]])
+
+slots.pDE__sources = Slot(uri=TVBO.sources, name="pDE__sources", curie=TVBO.curie('sources'),
+                   model_uri=TVBO.pDE__sources, domain=None, range=Optional[Union[Union[dict, Equation], list[Union[dict, Equation]]]])
+
+slots.pDE__boundary_conditions = Slot(uri=TVBO.boundary_conditions, name="pDE__boundary_conditions", curie=TVBO.curie('boundary_conditions'),
+                   model_uri=TVBO.pDE__boundary_conditions, domain=None, range=Optional[Union[Union[dict, BoundaryCondition], list[Union[dict, BoundaryCondition]]]])
+
+slots.pDE__solver = Slot(uri=TVBO.solver, name="pDE__solver", curie=TVBO.curie('solver'),
+                   model_uri=TVBO.pDE__solver, domain=None, range=Optional[Union[dict, PDESolver]])
+
+slots.pDE__derived_parameters = Slot(uri=TVBO.derived_parameters, name="pDE__derived_parameters", curie=TVBO.curie('derived_parameters'),
+                   model_uri=TVBO.pDE__derived_parameters, domain=None, range=Optional[Union[Union[str, DerivedParameterName], list[Union[str, DerivedParameterName]]]])
+
+slots.pDE__derived_variables = Slot(uri=TVBO.derived_variables, name="pDE__derived_variables", curie=TVBO.curie('derived_variables'),
+                   model_uri=TVBO.pDE__derived_variables, domain=None, range=Optional[Union[Union[str, DerivedVariableName], list[Union[str, DerivedVariableName]]]])
+
+slots.pDE__functions = Slot(uri=TVBO.functions, name="pDE__functions", curie=TVBO.curie('functions'),
+                   model_uri=TVBO.pDE__functions, domain=None, range=Optional[Union[Union[str, FunctionName], list[Union[str, FunctionName]]]])
+
+slots.coordinate__x = Slot(uri=ATOM.x, name="coordinate__x", curie=ATOM.curie('x'),
+                   model_uri=TVBO.coordinate__x, domain=None, range=Optional[float])
+
+slots.coordinate__y = Slot(uri=ATOM.y, name="coordinate__y", curie=ATOM.curie('y'),
+                   model_uri=TVBO.coordinate__y, domain=None, range=Optional[float])
+
+slots.coordinate__z = Slot(uri=ATOM.z, name="coordinate__z", curie=ATOM.curie('z'),
+                   model_uri=TVBO.coordinate__z, domain=None, range=Optional[float])
+
+slots.brainAtlas__terminology = Slot(uri=ATOM.terminology, name="brainAtlas__terminology", curie=ATOM.curie('terminology'),
+                   model_uri=TVBO.brainAtlas__terminology, domain=None, range=Optional[Union[dict, ParcellationTerminology]])
+
+slots.commonCoordinateSpace__anatomicalAxesOrientation = Slot(uri=ATOM.anatomicalAxesOrientation, name="commonCoordinateSpace__anatomicalAxesOrientation", curie=ATOM.curie('anatomicalAxesOrientation'),
+                   model_uri=TVBO.commonCoordinateSpace__anatomicalAxesOrientation, domain=None, range=Optional[str])
+
+slots.commonCoordinateSpace__axesOrigin = Slot(uri=ATOM.axesOrigin, name="commonCoordinateSpace__axesOrigin", curie=ATOM.curie('axesOrigin'),
+                   model_uri=TVBO.commonCoordinateSpace__axesOrigin, domain=None, range=Optional[str])
+
+slots.commonCoordinateSpace__nativeUnit = Slot(uri=ATOM.nativeUnit, name="commonCoordinateSpace__nativeUnit", curie=ATOM.curie('nativeUnit'),
+                   model_uri=TVBO.commonCoordinateSpace__nativeUnit, domain=None, range=Optional[str])
+
+slots.commonCoordinateSpace__defaultImage = Slot(uri=ATOM.defaultImage, name="commonCoordinateSpace__defaultImage", curie=ATOM.curie('defaultImage'),
+                   model_uri=TVBO.commonCoordinateSpace__defaultImage, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.parcellationEntity__relatedUBERONTerm = Slot(uri=ATOM.relatedUBERONTerm, name="parcellationEntity__relatedUBERONTerm", curie=ATOM.curie('relatedUBERONTerm'),
+                   model_uri=TVBO.parcellationEntity__relatedUBERONTerm, domain=None, range=Optional[str])
+
+slots.parcellationEntity__originalLookupLabel = Slot(uri=ATOM.originalLookupLabel, name="parcellationEntity__originalLookupLabel", curie=ATOM.curie('originalLookupLabel'),
+                   model_uri=TVBO.parcellationEntity__originalLookupLabel, domain=None, range=Optional[int])
+
+slots.parcellationEntity__hemisphere = Slot(uri=ATOM.hemisphere, name="parcellationEntity__hemisphere", curie=ATOM.curie('hemisphere'),
+                   model_uri=TVBO.parcellationEntity__hemisphere, domain=None, range=Optional[Union[str, "Hemisphere"]])
+
+slots.parcellationEntity__center = Slot(uri=ATOM.center, name="parcellationEntity__center", curie=ATOM.curie('center'),
+                   model_uri=TVBO.parcellationEntity__center, domain=None, range=Optional[Union[dict, Coordinate]])
+
+slots.parcellationEntity__color = Slot(uri=ATOM.color, name="parcellationEntity__color", curie=ATOM.curie('color'),
+                   model_uri=TVBO.parcellationEntity__color, domain=None, range=Optional[str])
+
+slots.parcellationTerminology__entities = Slot(uri=ATOM.entities, name="parcellationTerminology__entities", curie=ATOM.curie('entities'),
+                   model_uri=TVBO.parcellationTerminology__entities, domain=None, range=Optional[Union[dict[Union[str, ParcellationEntityName], Union[dict, ParcellationEntity]], list[Union[dict, ParcellationEntity]]]])
+
+slots.subject__label = Slot(uri=TVBO_STUDY.label, name="subject__label", curie=TVBO_STUDY.curie('label'),
+                   model_uri=TVBO.subject__label, domain=None, range=Optional[str])
+
+slots.subject__group = Slot(uri=TVBO_STUDY.group, name="subject__group", curie=TVBO_STUDY.curie('group'),
+                   model_uri=TVBO.subject__group, domain=None, range=Optional[str])
+
+slots.subject__age = Slot(uri=TVBO_STUDY.age, name="subject__age", curie=TVBO_STUDY.curie('age'),
+                   model_uri=TVBO.subject__age, domain=None, range=Optional[float])
+
+slots.subject__sex = Slot(uri=TVBO_STUDY.sex, name="subject__sex", curie=TVBO_STUDY.curie('sex'),
+                   model_uri=TVBO.subject__sex, domain=None, range=Optional[Union[str, "SexEnum"]])
+
+slots.subject__sessions = Slot(uri=TVBO_STUDY.sessions, name="subject__sessions", curie=TVBO_STUDY.curie('sessions'),
+                   model_uri=TVBO.subject__sessions, domain=None, range=Optional[Union[dict[Union[str, SessionSessionId], Union[dict, Session]], list[Union[dict, Session]]]])
+
+slots.subject__network = Slot(uri=TVBO_STUDY.network, name="subject__network", curie=TVBO_STUDY.curie('network'),
+                   model_uri=TVBO.subject__network, domain=None, range=Optional[str])
+
+slots.subject__metadata = Slot(uri=TVBO_STUDY.metadata, name="subject__metadata", curie=TVBO_STUDY.curie('metadata'),
+                   model_uri=TVBO.subject__metadata, domain=None, range=Optional[str])
+
+slots.session__label = Slot(uri=TVBO_STUDY.label, name="session__label", curie=TVBO_STUDY.curie('label'),
+                   model_uri=TVBO.session__label, domain=None, range=Optional[str])
+
+slots.session__network = Slot(uri=TVBO_STUDY.network, name="session__network", curie=TVBO_STUDY.curie('network'),
+                   model_uri=TVBO.session__network, domain=None, range=Optional[str])
+
+slots.session__empirical_data = Slot(uri=TVBO_STUDY.empirical_data, name="session__empirical_data", curie=TVBO_STUDY.curie('empirical_data'),
+                   model_uri=TVBO.session__empirical_data, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.session__condition = Slot(uri=TVBO_STUDY.condition, name="session__condition", curie=TVBO_STUDY.curie('condition'),
+                   model_uri=TVBO.session__condition, domain=None, range=Optional[str])
+
+slots.dataset__label = Slot(uri=TVBO_STUDY.label, name="dataset__label", curie=TVBO_STUDY.curie('label'),
+                   model_uri=TVBO.dataset__label, domain=None, range=Optional[str])
+
+slots.dataset__description = Slot(uri=TVBO_STUDY.description, name="dataset__description", curie=TVBO_STUDY.curie('description'),
+                   model_uri=TVBO.dataset__description, domain=None, range=Optional[str])
+
+slots.dataset__bids_root = Slot(uri=TVBO_STUDY.bids_root, name="dataset__bids_root", curie=TVBO_STUDY.curie('bids_root'),
+                   model_uri=TVBO.dataset__bids_root, domain=None, range=Optional[str])
+
+slots.dataset__subjects = Slot(uri=TVBO_STUDY.subjects, name="dataset__subjects", curie=TVBO_STUDY.curie('subjects'),
+                   model_uri=TVBO.dataset__subjects, domain=None, range=Optional[Union[dict[Union[str, SubjectSubjectId], Union[dict, Subject]], list[Union[dict, Subject]]]])
+
+slots.dataset__conditions = Slot(uri=TVBO_STUDY.conditions, name="dataset__conditions", curie=TVBO_STUDY.curie('conditions'),
+                   model_uri=TVBO.dataset__conditions, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.dataset__reference = Slot(uri=TVBO_STUDY.reference, name="dataset__reference", curie=TVBO_STUDY.curie('reference'),
+                   model_uri=TVBO.dataset__reference, domain=None, range=Optional[str])
+
+slots.dBSDataset__clinical_scores = Slot(uri=TVBO_DBS.clinical_scores, name="dBSDataset__clinical_scores", curie=TVBO_DBS.curie('clinical_scores'),
+                   model_uri=TVBO.dBSDataset__clinical_scores, domain=None, range=Optional[Union[Union[dict, ClinicalScore], list[Union[dict, ClinicalScore]]]])
+
+slots.dBSDataset__coordinate_space = Slot(uri=TVBO_DBS.coordinate_space, name="dBSDataset__coordinate_space", curie=TVBO_DBS.curie('coordinate_space'),
+                   model_uri=TVBO.dBSDataset__coordinate_space, domain=None, range=Optional[Union[str, CommonCoordinateSpaceName]])
+
+slots.dBSSubject__diagnosis = Slot(uri=TVBO_DBS.diagnosis, name="dBSSubject__diagnosis", curie=TVBO_DBS.curie('diagnosis'),
+                   model_uri=TVBO.dBSSubject__diagnosis, domain=None, range=Optional[str])
+
+slots.dBSSubject__handedness = Slot(uri=TVBO_DBS.handedness, name="dBSSubject__handedness", curie=TVBO_DBS.curie('handedness'),
+                   model_uri=TVBO.dBSSubject__handedness, domain=None, range=Optional[str])
+
+slots.dBSSubject__protocols = Slot(uri=TVBO_DBS.protocols, name="dBSSubject__protocols", curie=TVBO_DBS.curie('protocols'),
+                   model_uri=TVBO.dBSSubject__protocols, domain=None, range=Optional[Union[Union[str, DBSProtocolName], list[Union[str, DBSProtocolName]]]])
+
+slots.dBSSubject__coordinate_space = Slot(uri=TVBO_DBS.coordinate_space, name="dBSSubject__coordinate_space", curie=TVBO_DBS.curie('coordinate_space'),
+                   model_uri=TVBO.dBSSubject__coordinate_space, domain=None, range=Optional[Union[str, CommonCoordinateSpaceName]])
+
+slots.electrode__electrode_id = Slot(uri=TVBO_DBS.electrode_id, name="electrode__electrode_id", curie=TVBO_DBS.curie('electrode_id'),
+                   model_uri=TVBO.electrode__electrode_id, domain=None, range=Optional[str])
+
+slots.electrode__manufacturer = Slot(uri=TVBO_DBS.manufacturer, name="electrode__manufacturer", curie=TVBO_DBS.curie('manufacturer'),
+                   model_uri=TVBO.electrode__manufacturer, domain=None, range=Optional[str])
+
+slots.electrode__model = Slot(uri=TVBO_DBS.model, name="electrode__model", curie=TVBO_DBS.curie('model'),
+                   model_uri=TVBO.electrode__model, domain=None, range=Optional[str])
+
+slots.electrode__hemisphere = Slot(uri=TVBO_DBS.hemisphere, name="electrode__hemisphere", curie=TVBO_DBS.curie('hemisphere'),
+                   model_uri=TVBO.electrode__hemisphere, domain=None, range=Optional[str])
+
+slots.electrode__contacts = Slot(uri=TVBO_DBS.contacts, name="electrode__contacts", curie=TVBO_DBS.curie('contacts'),
+                   model_uri=TVBO.electrode__contacts, domain=None, range=Optional[Union[Union[dict, Contact], list[Union[dict, Contact]]]])
+
+slots.electrode__head = Slot(uri=TVBO_DBS.head, name="electrode__head", curie=TVBO_DBS.curie('head'),
+                   model_uri=TVBO.electrode__head, domain=None, range=Optional[Union[dict, Coordinate]])
+
+slots.electrode__tail = Slot(uri=TVBO_DBS.tail, name="electrode__tail", curie=TVBO_DBS.curie('tail'),
+                   model_uri=TVBO.electrode__tail, domain=None, range=Optional[Union[dict, Coordinate]])
+
+slots.electrode__trajectory = Slot(uri=TVBO_DBS.trajectory, name="electrode__trajectory", curie=TVBO_DBS.curie('trajectory'),
+                   model_uri=TVBO.electrode__trajectory, domain=None, range=Optional[Union[Union[dict, Coordinate], list[Union[dict, Coordinate]]]])
+
+slots.electrode__target_structure = Slot(uri=TVBO_DBS.target_structure, name="electrode__target_structure", curie=TVBO_DBS.curie('target_structure'),
+                   model_uri=TVBO.electrode__target_structure, domain=None, range=Optional[Union[str, ParcellationEntityName]])
+
+slots.electrode__coordinate_space = Slot(uri=TVBO_DBS.coordinate_space, name="electrode__coordinate_space", curie=TVBO_DBS.curie('coordinate_space'),
+                   model_uri=TVBO.electrode__coordinate_space, domain=None, range=Optional[Union[str, CommonCoordinateSpaceName]])
+
+slots.electrode__recon_path = Slot(uri=TVBO_DBS.recon_path, name="electrode__recon_path", curie=TVBO_DBS.curie('recon_path'),
+                   model_uri=TVBO.electrode__recon_path, domain=None, range=Optional[str])
+
+slots.contact__contact_id = Slot(uri=TVBO_DBS.contact_id, name="contact__contact_id", curie=TVBO_DBS.curie('contact_id'),
+                   model_uri=TVBO.contact__contact_id, domain=None, range=Optional[int])
+
+slots.contact__coordinate = Slot(uri=TVBO_DBS.coordinate, name="contact__coordinate", curie=TVBO_DBS.curie('coordinate'),
+                   model_uri=TVBO.contact__coordinate, domain=None, range=Optional[Union[dict, Coordinate]])
+
+slots.contact__label = Slot(uri=TVBO_DBS.label, name="contact__label", curie=TVBO_DBS.curie('label'),
+                   model_uri=TVBO.contact__label, domain=None, range=Optional[str])
+
+slots.stimulationSetting__electrode_reference = Slot(uri=TVBO_DBS.electrode_reference, name="stimulationSetting__electrode_reference", curie=TVBO_DBS.curie('electrode_reference'),
+                   model_uri=TVBO.stimulationSetting__electrode_reference, domain=None, range=Optional[Union[dict, Electrode]])
+
+slots.stimulationSetting__amplitude = Slot(uri=TVBO_DBS.amplitude, name="stimulationSetting__amplitude", curie=TVBO_DBS.curie('amplitude'),
+                   model_uri=TVBO.stimulationSetting__amplitude, domain=None, range=Optional[Union[str, ParameterName]])
+
+slots.stimulationSetting__frequency = Slot(uri=TVBO_DBS.frequency, name="stimulationSetting__frequency", curie=TVBO_DBS.curie('frequency'),
+                   model_uri=TVBO.stimulationSetting__frequency, domain=None, range=Optional[Union[str, ParameterName]])
+
+slots.stimulationSetting__pulse_width = Slot(uri=TVBO_DBS.pulse_width, name="stimulationSetting__pulse_width", curie=TVBO_DBS.curie('pulse_width'),
+                   model_uri=TVBO.stimulationSetting__pulse_width, domain=None, range=Optional[Union[str, ParameterName]])
+
+slots.stimulationSetting__mode = Slot(uri=TVBO_DBS.mode, name="stimulationSetting__mode", curie=TVBO_DBS.curie('mode'),
+                   model_uri=TVBO.stimulationSetting__mode, domain=None, range=Optional[str])
+
+slots.stimulationSetting__active_contacts = Slot(uri=TVBO_DBS.active_contacts, name="stimulationSetting__active_contacts", curie=TVBO_DBS.curie('active_contacts'),
+                   model_uri=TVBO.stimulationSetting__active_contacts, domain=None, range=Optional[Union[int, list[int]]])
+
+slots.stimulationSetting__efield = Slot(uri=TVBO_DBS.efield, name="stimulationSetting__efield", curie=TVBO_DBS.curie('efield'),
+                   model_uri=TVBO.stimulationSetting__efield, domain=None, range=Optional[Union[dict, EField]])
+
+slots.dBSProtocol__electrodes = Slot(uri=TVBO_DBS.electrodes, name="dBSProtocol__electrodes", curie=TVBO_DBS.curie('electrodes'),
+                   model_uri=TVBO.dBSProtocol__electrodes, domain=None, range=Optional[Union[Union[dict, Electrode], list[Union[dict, Electrode]]]])
+
+slots.dBSProtocol__settings = Slot(uri=TVBO_DBS.settings, name="dBSProtocol__settings", curie=TVBO_DBS.curie('settings'),
+                   model_uri=TVBO.dBSProtocol__settings, domain=None, range=Optional[Union[Union[dict, StimulationSetting], list[Union[dict, StimulationSetting]]]])
+
+slots.dBSProtocol__timing_info = Slot(uri=TVBO_DBS.timing_info, name="dBSProtocol__timing_info", curie=TVBO_DBS.curie('timing_info'),
+                   model_uri=TVBO.dBSProtocol__timing_info, domain=None, range=Optional[str])
+
+slots.dBSProtocol__notes = Slot(uri=TVBO_DBS.notes, name="dBSProtocol__notes", curie=TVBO_DBS.curie('notes'),
+                   model_uri=TVBO.dBSProtocol__notes, domain=None, range=Optional[str])
+
+slots.dBSProtocol__clinical_improvement = Slot(uri=TVBO_DBS.clinical_improvement, name="dBSProtocol__clinical_improvement", curie=TVBO_DBS.curie('clinical_improvement'),
+                   model_uri=TVBO.dBSProtocol__clinical_improvement, domain=None, range=Optional[Union[Union[dict, ClinicalImprovement], list[Union[dict, ClinicalImprovement]]]])
+
+slots.clinicalScale__name = Slot(uri=TVBO_DBS.name, name="clinicalScale__name", curie=TVBO_DBS.curie('name'),
+                   model_uri=TVBO.clinicalScale__name, domain=None, range=Optional[str])
+
+slots.clinicalScale__acronym = Slot(uri=TVBO_DBS.acronym, name="clinicalScale__acronym", curie=TVBO_DBS.curie('acronym'),
+                   model_uri=TVBO.clinicalScale__acronym, domain=None, range=Optional[str])
+
+slots.clinicalScale__version = Slot(uri=TVBO_DBS.version, name="clinicalScale__version", curie=TVBO_DBS.curie('version'),
+                   model_uri=TVBO.clinicalScale__version, domain=None, range=Optional[str])
+
+slots.clinicalScale__domain = Slot(uri=TVBO_DBS.domain, name="clinicalScale__domain", curie=TVBO_DBS.curie('domain'),
+                   model_uri=TVBO.clinicalScale__domain, domain=None, range=Optional[str])
+
+slots.clinicalScale__reference = Slot(uri=TVBO_DBS.reference, name="clinicalScale__reference", curie=TVBO_DBS.curie('reference'),
+                   model_uri=TVBO.clinicalScale__reference, domain=None, range=Optional[str])
+
+slots.clinicalScore__name = Slot(uri=TVBO_DBS.name, name="clinicalScore__name", curie=TVBO_DBS.curie('name'),
+                   model_uri=TVBO.clinicalScore__name, domain=None, range=Optional[str])
+
+slots.clinicalScore__acronym = Slot(uri=TVBO_DBS.acronym, name="clinicalScore__acronym", curie=TVBO_DBS.curie('acronym'),
+                   model_uri=TVBO.clinicalScore__acronym, domain=None, range=Optional[str])
+
+slots.clinicalScore__description = Slot(uri=TVBO_DBS.description, name="clinicalScore__description", curie=TVBO_DBS.curie('description'),
+                   model_uri=TVBO.clinicalScore__description, domain=None, range=Optional[str])
+
+slots.clinicalScore__domain = Slot(uri=TVBO_DBS.domain, name="clinicalScore__domain", curie=TVBO_DBS.curie('domain'),
+                   model_uri=TVBO.clinicalScore__domain, domain=None, range=Optional[str])
+
+slots.clinicalScore__reference = Slot(uri=TVBO_DBS.reference, name="clinicalScore__reference", curie=TVBO_DBS.curie('reference'),
+                   model_uri=TVBO.clinicalScore__reference, domain=None, range=Optional[str])
+
+slots.clinicalScore__scale = Slot(uri=TVBO_DBS.scale, name="clinicalScore__scale", curie=TVBO_DBS.curie('scale'),
+                   model_uri=TVBO.clinicalScore__scale, domain=None, range=Optional[Union[dict, ClinicalScale]])
+
+slots.clinicalScore__parent_score = Slot(uri=TVBO_DBS.parent_score, name="clinicalScore__parent_score", curie=TVBO_DBS.curie('parent_score'),
+                   model_uri=TVBO.clinicalScore__parent_score, domain=None, range=Optional[Union[dict, ClinicalScore]])
+
+slots.clinicalImprovement__score = Slot(uri=TVBO_DBS.score, name="clinicalImprovement__score", curie=TVBO_DBS.curie('score'),
+                   model_uri=TVBO.clinicalImprovement__score, domain=None, range=Optional[Union[dict, ClinicalScore]])
+
+slots.clinicalImprovement__baseline_value = Slot(uri=TVBO_DBS.baseline_value, name="clinicalImprovement__baseline_value", curie=TVBO_DBS.curie('baseline_value'),
+                   model_uri=TVBO.clinicalImprovement__baseline_value, domain=None, range=Optional[float])
+
+slots.clinicalImprovement__absolute_value = Slot(uri=TVBO_DBS.absolute_value, name="clinicalImprovement__absolute_value", curie=TVBO_DBS.curie('absolute_value'),
+                   model_uri=TVBO.clinicalImprovement__absolute_value, domain=None, range=Optional[float])
+
+slots.clinicalImprovement__percent_change = Slot(uri=TVBO_DBS.percent_change, name="clinicalImprovement__percent_change", curie=TVBO_DBS.curie('percent_change'),
+                   model_uri=TVBO.clinicalImprovement__percent_change, domain=None, range=Optional[float])
+
+slots.clinicalImprovement__time_post_surgery = Slot(uri=TVBO_DBS.time_post_surgery, name="clinicalImprovement__time_post_surgery", curie=TVBO_DBS.curie('time_post_surgery'),
+                   model_uri=TVBO.clinicalImprovement__time_post_surgery, domain=None, range=Optional[float])
+
+slots.clinicalImprovement__evaluator = Slot(uri=TVBO_DBS.evaluator, name="clinicalImprovement__evaluator", curie=TVBO_DBS.curie('evaluator'),
+                   model_uri=TVBO.clinicalImprovement__evaluator, domain=None, range=Optional[str])
+
+slots.clinicalImprovement__timepoint = Slot(uri=TVBO_DBS.timepoint, name="clinicalImprovement__timepoint", curie=TVBO_DBS.curie('timepoint'),
+                   model_uri=TVBO.clinicalImprovement__timepoint, domain=None, range=Optional[str])
+
+slots.eField__volume_data = Slot(uri=TVBO_DBS.volume_data, name="eField__volume_data", curie=TVBO_DBS.curie('volume_data'),
+                   model_uri=TVBO.eField__volume_data, domain=None, range=Optional[str])
+
+slots.eField__coordinate_space = Slot(uri=TVBO_DBS.coordinate_space, name="eField__coordinate_space", curie=TVBO_DBS.curie('coordinate_space'),
+                   model_uri=TVBO.eField__coordinate_space, domain=None, range=Optional[Union[str, CommonCoordinateSpaceName]])
+
+slots.eField__threshold_applied = Slot(uri=TVBO_DBS.threshold_applied, name="eField__threshold_applied", curie=TVBO_DBS.curie('threshold_applied'),
+                   model_uri=TVBO.eField__threshold_applied, domain=None, range=Optional[float])
+
+slots.softwarePackage__name = Slot(uri=SCHEMA.name, name="softwarePackage__name", curie=SCHEMA.curie('name'),
+                   model_uri=TVBO.softwarePackage__name, domain=None, range=URIRef)
+
+slots.softwarePackage__description = Slot(uri=SCHEMA.description, name="softwarePackage__description", curie=SCHEMA.curie('description'),
+                   model_uri=TVBO.softwarePackage__description, domain=None, range=Optional[str])
+
+slots.softwarePackage__homepage = Slot(uri=SCHEMA.url, name="softwarePackage__homepage", curie=SCHEMA.curie('url'),
+                   model_uri=TVBO.softwarePackage__homepage, domain=None, range=Optional[Union[str, URI]])
+
+slots.softwarePackage__license = Slot(uri=SCHEMA.license, name="softwarePackage__license", curie=SCHEMA.curie('license'),
+                   model_uri=TVBO.softwarePackage__license, domain=None, range=Optional[str])
+
+slots.softwarePackage__repository = Slot(uri=SCHEMA.codeRepository, name="softwarePackage__repository", curie=SCHEMA.curie('codeRepository'),
+                   model_uri=TVBO.softwarePackage__repository, domain=None, range=Optional[Union[str, URI]])
+
+slots.softwarePackage__doi = Slot(uri=TVBO_SW.doi, name="softwarePackage__doi", curie=TVBO_SW.curie('doi'),
+                   model_uri=TVBO.softwarePackage__doi, domain=None, range=Optional[str])
+
+slots.softwarePackage__ecosystem = Slot(uri=TVBO_SW.ecosystem, name="softwarePackage__ecosystem", curie=TVBO_SW.curie('ecosystem'),
+                   model_uri=TVBO.softwarePackage__ecosystem, domain=None, range=Optional[Union[Union[str, "EcosystemEnum"], list[Union[str, "EcosystemEnum"]]]])
+
+slots.simulationTool__application_category = Slot(uri=SCHEMA.applicationCategory, name="simulationTool__application_category", curie=SCHEMA.curie('applicationCategory'),
+                   model_uri=TVBO.simulationTool__application_category, domain=None, range=Optional[str])
+
+slots.simulationTool__scale = Slot(uri=TVBO_SW.scale, name="simulationTool__scale", curie=TVBO_SW.curie('scale'),
+                   model_uri=TVBO.simulationTool__scale, domain=None, range=Optional[Union[Union[str, "SimulationScale"], list[Union[str, "SimulationScale"]]]])
+
+slots.simulationTool__model_paradigm = Slot(uri=TVBO_SW.model_paradigm, name="simulationTool__model_paradigm", curie=TVBO_SW.curie('model_paradigm'),
+                   model_uri=TVBO.simulationTool__model_paradigm, domain=None, range=Optional[Union[Union[str, "ModelParadigm"], list[Union[str, "ModelParadigm"]]]])
+
+slots.simulationTool__tool_role = Slot(uri=TVBO_SW.tool_role, name="simulationTool__tool_role", curie=TVBO_SW.curie('tool_role'),
+                   model_uri=TVBO.simulationTool__tool_role, domain=None, range=Optional[Union[Union[str, "ToolRole"], list[Union[str, "ToolRole"]]]])
+
+slots.simulationTool__programming_language = Slot(uri=SCHEMA.programmingLanguage, name="simulationTool__programming_language", curie=SCHEMA.curie('programmingLanguage'),
+                   model_uri=TVBO.simulationTool__programming_language, domain=None, range=Optional[Union[Union[str, "ProgrammingLanguageEnum"], list[Union[str, "ProgrammingLanguageEnum"]]]])
+
+slots.simulationTool__runtime_platform = Slot(uri=SCHEMA.runtimePlatform, name="simulationTool__runtime_platform", curie=SCHEMA.curie('runtimePlatform'),
+                   model_uri=TVBO.simulationTool__runtime_platform, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.simulationTool__operating_system = Slot(uri=SCHEMA.operatingSystem, name="simulationTool__operating_system", curie=SCHEMA.curie('operatingSystem'),
+                   model_uri=TVBO.simulationTool__operating_system, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.simulationTool__interoperates_with = Slot(uri=TVBO_SW.interoperates_with, name="simulationTool__interoperates_with", curie=TVBO_SW.curie('interoperates_with'),
+                   model_uri=TVBO.simulationTool__interoperates_with, domain=None, range=Optional[Union[Union[str, SimulationToolName], list[Union[str, SimulationToolName]]]])
+
+slots.simulationTool__version = Slot(uri=SCHEMA.softwareVersion, name="simulationTool__version", curie=SCHEMA.curie('softwareVersion'),
+                   model_uri=TVBO.simulationTool__version, domain=None, range=Optional[str])
+
+slots.simulationTool__date_created = Slot(uri=SCHEMA.dateCreated, name="simulationTool__date_created", curie=SCHEMA.curie('dateCreated'),
+                   model_uri=TVBO.simulationTool__date_created, domain=None, range=Optional[Union[str, XSDDate]])
+
+slots.simulationTool__date_modified = Slot(uri=SCHEMA.dateModified, name="simulationTool__date_modified", curie=SCHEMA.curie('dateModified'),
+                   model_uri=TVBO.simulationTool__date_modified, domain=None, range=Optional[Union[str, XSDDate]])
+
+slots.simulationTool__development_status = Slot(uri=TVBO_SW.development_status, name="simulationTool__development_status", curie=TVBO_SW.curie('development_status'),
+                   model_uri=TVBO.simulationTool__development_status, domain=None, range=Optional[Union[str, "DevelopmentStatus"]])
+
+slots.simulationTool__author = Slot(uri=SCHEMA.author, name="simulationTool__author", curie=SCHEMA.curie('author'),
+                   model_uri=TVBO.simulationTool__author, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.simulationTool__maintainer = Slot(uri=SCHEMA.maintainer, name="simulationTool__maintainer", curie=SCHEMA.curie('maintainer'),
+                   model_uri=TVBO.simulationTool__maintainer, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.simulationTool__funder = Slot(uri=SCHEMA.funder, name="simulationTool__funder", curie=SCHEMA.curie('funder'),
+                   model_uri=TVBO.simulationTool__funder, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.simulationTool__reference_publication = Slot(uri=TVBO_SW.reference_publication, name="simulationTool__reference_publication", curie=TVBO_SW.curie('reference_publication'),
+                   model_uri=TVBO.simulationTool__reference_publication, domain=None, range=Optional[str])
+
+slots.simulationTool__citation = Slot(uri=SCHEMA.citation, name="simulationTool__citation", curie=SCHEMA.curie('citation'),
+                   model_uri=TVBO.simulationTool__citation, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.simulationTool__keywords = Slot(uri=SCHEMA.keywords, name="simulationTool__keywords", curie=SCHEMA.curie('keywords'),
+                   model_uri=TVBO.simulationTool__keywords, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.simulationTool__same_as = Slot(uri=SCHEMA.sameAs, name="simulationTool__same_as", curie=SCHEMA.curie('sameAs'),
+                   model_uri=TVBO.simulationTool__same_as, domain=None, range=Optional[Union[Union[str, URI], list[Union[str, URI]]]])
+
+slots.simulationTool__issue_tracker = Slot(uri=TVBO_SW.issue_tracker, name="simulationTool__issue_tracker", curie=TVBO_SW.curie('issue_tracker'),
+                   model_uri=TVBO.simulationTool__issue_tracker, domain=None, range=Optional[Union[str, URI]])
+
+slots.simulationTool__is_accessible_for_free = Slot(uri=SCHEMA.isAccessibleForFree, name="simulationTool__is_accessible_for_free", curie=SCHEMA.curie('isAccessibleForFree'),
+                   model_uri=TVBO.simulationTool__is_accessible_for_free, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.softwareRequirement__name = Slot(uri=TVBO_SW.name, name="softwareRequirement__name", curie=TVBO_SW.curie('name'),
+                   model_uri=TVBO.softwareRequirement__name, domain=None, range=URIRef)
+
+slots.softwareRequirement__description = Slot(uri=TVBO_SW.description, name="softwareRequirement__description", curie=TVBO_SW.curie('description'),
+                   model_uri=TVBO.softwareRequirement__description, domain=None, range=Optional[str])
+
+slots.softwareRequirement__dataLocation = Slot(uri=TVBO_SW.dataLocation, name="softwareRequirement__dataLocation", curie=TVBO_SW.curie('dataLocation'),
+                   model_uri=TVBO.softwareRequirement__dataLocation, domain=None, range=Optional[str])
+
+slots.softwareRequirement__package = Slot(uri=TVBO_SW.package, name="softwareRequirement__package", curie=TVBO_SW.curie('package'),
+                   model_uri=TVBO.softwareRequirement__package, domain=None, range=Optional[Union[str, SoftwarePackageName]])
+
+slots.softwareRequirement__version_spec = Slot(uri=TVBO_SW.version_spec, name="softwareRequirement__version_spec", curie=TVBO_SW.curie('version_spec'),
+                   model_uri=TVBO.softwareRequirement__version_spec, domain=None, range=Optional[str])
+
+slots.softwareRequirement__role = Slot(uri=TVBO_SW.role, name="softwareRequirement__role", curie=TVBO_SW.curie('role'),
+                   model_uri=TVBO.softwareRequirement__role, domain=None, range=Optional[Union[str, "RequirementRole"]])
+
+slots.softwareRequirement__optional = Slot(uri=TVBO_SW.optional, name="softwareRequirement__optional", curie=TVBO_SW.curie('optional'),
+                   model_uri=TVBO.softwareRequirement__optional, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.softwareRequirement__hash = Slot(uri=TVBO_SW.hash, name="softwareRequirement__hash", curie=TVBO_SW.curie('hash'),
+                   model_uri=TVBO.softwareRequirement__hash, domain=None, range=Optional[str])
+
+slots.softwareRequirement__source_url = Slot(uri=TVBO_SW.source_url, name="softwareRequirement__source_url", curie=TVBO_SW.curie('source_url'),
+                   model_uri=TVBO.softwareRequirement__source_url, domain=None, range=Optional[str])
+
+slots.softwareRequirement__url = Slot(uri=TVBO_SW.url, name="softwareRequirement__url", curie=TVBO_SW.curie('url'),
+                   model_uri=TVBO.softwareRequirement__url, domain=None, range=Optional[str])
+
+slots.softwareRequirement__license = Slot(uri=TVBO_SW.license, name="softwareRequirement__license", curie=TVBO_SW.curie('license'),
+                   model_uri=TVBO.softwareRequirement__license, domain=None, range=Optional[str])
+
+slots.softwareRequirement__modules = Slot(uri=TVBO_SW.modules, name="softwareRequirement__modules", curie=TVBO_SW.curie('modules'),
+                   model_uri=TVBO.softwareRequirement__modules, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.softwareRequirement__version = Slot(uri=TVBO_SW.version, name="softwareRequirement__version", curie=TVBO_SW.curie('version'),
+                   model_uri=TVBO.softwareRequirement__version, domain=None, range=Optional[str])
+
+slots.softwareEnvironment__label = Slot(uri=TVBO_SW.label, name="softwareEnvironment__label", curie=TVBO_SW.curie('label'),
+                   model_uri=TVBO.softwareEnvironment__label, domain=None, range=Optional[str])
+
+slots.softwareEnvironment__description = Slot(uri=TVBO_SW.description, name="softwareEnvironment__description", curie=TVBO_SW.curie('description'),
+                   model_uri=TVBO.softwareEnvironment__description, domain=None, range=Optional[str])
+
+slots.softwareEnvironment__dataLocation = Slot(uri=TVBO_SW.dataLocation, name="softwareEnvironment__dataLocation", curie=TVBO_SW.curie('dataLocation'),
+                   model_uri=TVBO.softwareEnvironment__dataLocation, domain=None, range=Optional[str])
+
+slots.softwareEnvironment__name = Slot(uri=TVBO_SW.name, name="softwareEnvironment__name", curie=TVBO_SW.curie('name'),
+                   model_uri=TVBO.softwareEnvironment__name, domain=None, range=Optional[str])
+
+slots.softwareEnvironment__version = Slot(uri=TVBO_SW.version, name="softwareEnvironment__version", curie=TVBO_SW.curie('version'),
+                   model_uri=TVBO.softwareEnvironment__version, domain=None, range=Optional[str])
+
+slots.softwareEnvironment__platform = Slot(uri=TVBO_SW.platform, name="softwareEnvironment__platform", curie=TVBO_SW.curie('platform'),
+                   model_uri=TVBO.softwareEnvironment__platform, domain=None, range=Optional[str])
+
+slots.softwareEnvironment__environment_type = Slot(uri=TVBO_SW.environment_type, name="softwareEnvironment__environment_type", curie=TVBO_SW.curie('environment_type'),
+                   model_uri=TVBO.softwareEnvironment__environment_type, domain=None, range=Optional[Union[str, "EnvironmentType"]])
+
+slots.softwareEnvironment__container_image = Slot(uri=TVBO_SW.container_image, name="softwareEnvironment__container_image", curie=TVBO_SW.curie('container_image'),
+                   model_uri=TVBO.softwareEnvironment__container_image, domain=None, range=Optional[str])
+
+slots.softwareEnvironment__build_hash = Slot(uri=TVBO_SW.build_hash, name="softwareEnvironment__build_hash", curie=TVBO_SW.curie('build_hash'),
+                   model_uri=TVBO.softwareEnvironment__build_hash, domain=None, range=Optional[str])
+
+slots.softwareEnvironment__requirements = Slot(uri=TVBO_SW.requirements, name="softwareEnvironment__requirements", curie=TVBO_SW.curie('requirements'),
+                   model_uri=TVBO.softwareEnvironment__requirements, domain=None, range=Optional[Union[dict[Union[str, SoftwareRequirementName], Union[dict, SoftwareRequirement]], list[Union[dict, SoftwareRequirement]]]])
+
+slots.system_type = Slot(uri=TVBO.system_type, name="system_type", curie=TVBO.curie('system_type'),
+                   model_uri=TVBO.system_type, domain=None, range=Optional[str])
+
+slots.Node_record = Slot(uri=TVBO.record, name="Node_record", curie=TVBO.curie('record'),
+                   model_uri=TVBO.Node_record, domain=Node, range=Optional[Union[bool, Bool]])
+
+slots.Dynamics_name = Slot(uri=TVBO.name, name="Dynamics_name", curie=TVBO.curie('name'),
+                   model_uri=TVBO.Dynamics_name, domain=Dynamics, range=Union[str, DynamicsName])
+
+slots.Dynamics_system_type = Slot(uri=TVBO.system_type, name="Dynamics_system_type", curie=TVBO.curie('system_type'),
+                   model_uri=TVBO.Dynamics_system_type, domain=Dynamics, range=Optional[str])
+
+slots.StateVariable_record = Slot(uri=TVBO.record, name="StateVariable_record", curie=TVBO.curie('record'),
+                   model_uri=TVBO.StateVariable_record, domain=StateVariable, range=Optional[Union[bool, Bool]])
+
+slots.Distribution_name = Slot(uri=TVBO.name, name="Distribution_name", curie=TVBO.curie('name'),
+                   model_uri=TVBO.Distribution_name, domain=Distribution, range=Union[str, DistributionName])
+
+slots.DerivedVariable_record = Slot(uri=TVBO.record, name="DerivedVariable_record", curie=TVBO.curie('record'),
+                   model_uri=TVBO.DerivedVariable_record, domain=DerivedVariable, range=Optional[Union[bool, Bool]])
+
+slots.Coupling_name = Slot(uri=TVBO.name, name="Coupling_name", curie=TVBO.curie('name'),
+                   model_uri=TVBO.Coupling_name, domain=Coupling, range=Union[str, CouplingName])
+
+slots.DBSDataset_subjects = Slot(uri=TVBO.subjects, name="DBSDataset_subjects", curie=TVBO.curie('subjects'),
+                   model_uri=TVBO.DBSDataset_subjects, domain=DBSDataset, range=Optional[Union[dict[Union[str, DBSSubjectSubjectId], Union[dict, "DBSSubject"]], list[Union[dict, "DBSSubject"]]]])
+
