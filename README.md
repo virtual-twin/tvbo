@@ -3,6 +3,7 @@
 
 # The Virtual Brain Ontology
 [![Lint & Test](https://github.com/virtual-twin/tvbo/actions/workflows/ci.yml/badge.svg)](https://github.com/virtual-twin/tvbo/actions/workflows/ci.yml)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![PyPI version](https://img.shields.io/pypi/v/tvbo.svg)](https://pypi.org/project/tvbo/)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/tvbo)](https://pypi.org/project/tvbo/)
 [![License](https://img.shields.io/badge/License-EUPL--1.2-blue.svg)](LICENSE)

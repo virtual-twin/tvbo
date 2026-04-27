@@ -11,16 +11,11 @@ Create LEMS model from TVB-O
 """
 
 # %%
-import fileinput
 import numpy as np
 
 import lems.api as lems
-import sympy
 
-from tvbo.ontology import config
-from tvbo.ontology import owl as ontology
-from tvbo.ontology.owl import *
-from tvbo.classes import equation
+from tvbo.ontology.owl import *  # noqa: F403  # owlready2-style namespace import
 
 
 # WD = abspath(dirname(__file__))

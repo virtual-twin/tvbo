@@ -1,14 +1,12 @@
 import sympy.printing.julia as spj
 import sympy.printing.numpy as spn
 import sympy.printing.fortran as spf
-import sympy.printing.c as spc
 from sympy.printing.pycode import PythonCodePrinter as _PythonCodePrinter
-from sympy import IndexedBase, parse_expr, Symbol, S, Function, preorder_traversal
+from sympy import Symbol, S, Function, preorder_traversal
 from sympy import latex
 from sympy.printing import StrPrinter
 from tvbo.datamodel.schema import Equation
-from tvbo.classes.equation import _clash1, sympify as tvbo_sympify
-from tvbo.parse.expression import parse_eq, ARRAY_FUNCTIONS
+from tvbo.parse.expression import parse_eq
 
 
 # =============================================================================
@@ -98,7 +96,7 @@ def inline_functions(expr, func_defs):
         F = Function(func_name)
         # Find all applications of this function and replace them
         for sub_expr in list(preorder_traversal(result)):
-            if hasattr(sub_expr, 'func') and sub_expr.func == F:
+            if hasattr(sub_expr, "func") and sub_expr.func == F:
                 # Get the actual arguments
                 actual_args = sub_expr.args
                 # Create substitution dict: formal arg -> actual arg
@@ -199,17 +197,13 @@ class JaxPrinter(spn.JaxPrinter):
             elif isinstance(sub_expr, Indexed):
                 indices = sub_expr.indices
                 # Only count indices that are NOT reduced by a Sum
-                effective_indices = [idx for idx in indices if idx not in sum_reduced_indices]
+                [idx for idx in indices if idx not in sum_reduced_indices]
                 max_dims = max(max_dims, len(indices))
                 for pos, idx in enumerate(indices):
                     if idx not in index_positions:
                         index_positions[idx] = pos
 
-        return {
-            'positions': index_positions,
-            'max_dims': max_dims,
-            'reduced': sum_reduced_indices
-        }
+        return {"positions": index_positions, "max_dims": max_dims, "reduced": sum_reduced_indices}
 
     def _print_with_broadcasting(self, expr):
         """Print expression with automatic broadcasting inference.
@@ -236,7 +230,6 @@ class JaxPrinter(spn.JaxPrinter):
         - j is at axis 1, but rmse doesn't have it
         - So rmse needs [:, None] to broadcast correctly
         """
-        from sympy import Indexed
 
         base_name = str(expr.base)
         indices = expr.indices
@@ -245,8 +238,8 @@ class JaxPrinter(spn.JaxPrinter):
         if self._index_context is None:
             return base_name
 
-        max_dims = self._index_context['max_dims']
-        index_positions = self._index_context['positions']
+        max_dims = self._index_context["max_dims"]
+        index_positions = self._index_context["positions"]
 
         # If this indexed expr has the same dimensionality as max, no broadcasting needed
         if len(indices) >= max_dims:
@@ -264,9 +257,9 @@ class JaxPrinter(spn.JaxPrinter):
         slices = []
         for axis in range(max_dims):
             if axis in covered_axes:
-                slices.append(':')
+                slices.append(":")
             else:
-                slices.append('None')
+                slices.append("None")
 
         return f"{base_name}[{', '.join(slices)}]"
 
@@ -276,7 +269,7 @@ class JaxPrinter(spn.JaxPrinter):
     def _print_Function(self, expr):
         """Handle special array functions like concatenate."""
         func_name = expr.func.__name__
-        if func_name == 'concatenate':
+        if func_name == "concatenate":
             # concatenate(a, b, axis) -> jnp.concatenate([a, b], axis=axis)
             args = list(expr.args)
             if args and args[-1].is_integer:
@@ -285,7 +278,7 @@ class JaxPrinter(spn.JaxPrinter):
             else:
                 axis = 0
                 arrays = args
-            array_strs = ', '.join(self._print(a) for a in arrays)
+            array_strs = ", ".join(self._print(a) for a in arrays)
             return f"jnp.concatenate([{array_strs}], axis={axis})"
         # Fall back to parent implementation
         return super()._print_Function(expr)
@@ -309,7 +302,7 @@ class JaxPrinter(spn.JaxPrinter):
         The dummy index position determines the axis: for a[i,j], i=axis0, j=axis1.
         Summing over j means axis=1. The remaining index i yields the output shape.
         """
-        from sympy import Indexed, Symbol, preorder_traversal
+        from sympy import Indexed, preorder_traversal
 
         func = expr.function  # The expression being summed
         limits = expr.limits  # ((i, lower, upper), (j, lower, upper), ...)
@@ -360,8 +353,8 @@ class JaxPrinter(spn.JaxPrinter):
 
             # Check if we need to add broadcasting dimensions
             if self._index_context is not None:
-                ctx_max_dims = self._index_context['max_dims']
-                ctx_positions = self._index_context['positions']
+                ctx_max_dims = self._index_context["max_dims"]
+                ctx_positions = self._index_context["positions"]
 
                 # The Sum result has (max_indices - 1) dimensions
                 result_dims = max_indices - 1
@@ -378,9 +371,9 @@ class JaxPrinter(spn.JaxPrinter):
                     slices = []
                     for ax in range(ctx_max_dims):
                         if ax in covered_axes:
-                            slices.append(':')
+                            slices.append(":")
                         else:
-                            slices.append('None')
+                            slices.append("None")
 
                     sum_code = f"({sum_code})[{', '.join(slices)}]"
 
@@ -440,11 +433,9 @@ class MTKPrinter(JuliaPrinter):
 
     def _print_Mul(self, expr):
         from sympy import S, Mul, Pow, Rational
-        from sympy.core.operations import AssocOp
         from sympy.printing.precedence import precedence
 
-        if (expr.is_number and expr.is_imaginary
-                and expr.as_coeff_Mul()[0].is_integer):
+        if expr.is_number and expr.is_imaginary and expr.as_coeff_Mul()[0].is_integer:
             return "%sim" % self._print(-S.ImaginaryUnit * expr)
 
         prec = precedence(expr)
@@ -452,6 +443,7 @@ class MTKPrinter(JuliaPrinter):
         c, e = expr.as_coeff_Mul()
         if c < 0:
             from sympy.core.mul import _keep_coeff
+
             expr = _keep_coeff(-c, e)
             sign = "-"
         else:
@@ -461,14 +453,13 @@ class MTKPrinter(JuliaPrinter):
         b = []  # denominator
 
         pow_paren = []
-        if self.order not in ('old', 'none'):
+        if self.order not in ("old", "none"):
             args = expr.as_ordered_factors()
         else:
             args = Mul.make_args(expr)
 
         for item in args:
-            if (item.is_commutative and item.is_Pow and item.exp.is_Rational
-                    and item.exp.is_negative):
+            if item.is_commutative and item.is_Pow and item.exp.is_Rational and item.exp.is_negative:
                 if item.exp != -1:
                     b.append(Pow(item.base, -item.exp, evaluate=False))
                 else:
@@ -512,8 +503,7 @@ class MTKPrinter(JuliaPrinter):
             if equal_valued(expr.exp, -1):
                 return "1 / %s" % self.parenthesize(expr.base, PREC)
         # Always scalar: use ^ (never .^)
-        return '%s ^ %s' % (self.parenthesize(expr.base, PREC),
-                            self.parenthesize(expr.exp, PREC))
+        return "%s ^ %s" % (self.parenthesize(expr.base, PREC), self.parenthesize(expr.exp, PREC))
 
 
 class FortranPrinter(spf.FCodePrinter):
@@ -561,7 +551,7 @@ class LEMSPrinter(StrPrinter):
 
     def __init__(self, settings=None):
         settings = dict(settings or {})
-        params = settings.pop('parameters', [])
+        params = settings.pop("parameters", [])
         super().__init__(settings)
         self._model_params = set(params)
 
@@ -644,6 +634,7 @@ class LEMSPrinter(StrPrinter):
         # LEMS has no ternary; use H(cond)*val summation as fallback.
         # True branch last (otherwise case).
         from sympy import S as sympy_S
+
         terms = []
         for val, cond in expr.args:
             if cond == sympy_S.true:
@@ -661,10 +652,12 @@ class PythonCodePrinter(_PythonCodePrinter):
         super().__init__(settings=settings)
 
         # Add additional math functions not in the base printer
-        self.known_functions.update({
-            "ceil": "math.ceil",
-            "sign": "math.copysign(1, {0})",  # Python's math doesn't have sign directly
-        })
+        self.known_functions.update(
+            {
+                "ceil": "math.ceil",
+                "sign": "math.copysign(1, {0})",  # Python's math doesn't have sign directly
+            }
+        )
         # Add array function mappings
         self.known_functions.update(ARRAY_FUNCTION_MAPPINGS["python"])
 
@@ -702,7 +695,7 @@ def get_printer(format, parameters=None):
     elif format == "python":
         return PythonCodePrinter()
     elif format == "lems":
-        return LEMSPrinter(settings={'parameters': parameters or []})
+        return LEMSPrinter(settings={"parameters": parameters or []})
     elif format in ["sympy", "symbolic", "pyrates"]:
         return StrPrinter()
     else:
@@ -751,7 +744,7 @@ def render_expression(
                 printer.known_functions[name] = target
 
     # Use broadcasting-aware printing if requested and printer supports it
-    if infer_broadcasting and hasattr(printer, '_print_with_broadcasting'):
+    if infer_broadcasting and hasattr(printer, "_print_with_broadcasting"):
         return printer._print_with_broadcasting(expression)
 
     return printer.doprint(expression)

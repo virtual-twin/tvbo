@@ -1,0 +1,131 @@
+# Build and publish the TVB-O documentation on release.
+#
+# Renders the Quarto site inside the *exact* tvbo container that ships with
+# the release, so every backend (Julia, AUTO-07p, JAX, NeuroML, PyRates,
+# tvboptim, ...) is available with the locked dependency set, then publishes
+# with `quarto publish gh-pages` (Quarto's native, idempotent deploy path).
+#
+# Forces a cold build (no _freeze, no .quarto cache, no GH Actions cache) so
+# the published site is a faithful re-execution of every code cell at the
+# release version.
+
+name: Deploy Docs
+
+on:
+    release:
+        types: [published]
+    workflow_dispatch:
+        inputs:
+            tag:
+                description: "Container tag to render against (e.g. '1.2.3' or 'latest'). Defaults to release tag with leading 'v' stripped."
+                required: false
+                default: ""
+
+# Only ever one in-flight docs publish; never abort a publish mid-push.
+concurrency:
+    group: docs-publish
+    cancel-in-progress: false
+
+permissions:
+    contents: write       # quarto publish gh-pages pushes to the gh-pages branch
+    packages: read
+
+jobs:
+    publish:
+        name: Render & publish (cold build)
+        runs-on: ubuntu-latest
+        timeout-minutes: 180
+
+        steps:
+            # ── Resolve container tag ────────────────────────────────────
+            # Release tag is e.g. "v1.2.3"; docker/metadata-action publishes
+            # the image as "1.2.3" via type=semver,pattern={{version}}.
+            # For workflow_dispatch the user supplies the exact image tag.
+            - name: Resolve container tag
+              id: tag
+              env:
+                  INPUT_TAG: ${{ inputs.tag }}
+                  RELEASE_TAG: ${{ github.event.release.tag_name }}
+              run: |
+                  set -euo pipefail
+                  if [[ -n "${INPUT_TAG}" ]]; then
+                      TAG="${INPUT_TAG}"
+                  elif [[ -n "${RELEASE_TAG}" ]]; then
+                      # Strip a single leading 'v' (v1.2.3 -> 1.2.3) to match the
+                      # docker/metadata-action semver tag.
+                      TAG="${RELEASE_TAG#v}"
+                  else
+                      TAG="latest"
+                  fi
+                  echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+                  echo "Container tag: ${TAG}"
+
+            - uses: actions/checkout@v6
+              with:
+                  fetch-depth: 0  # full history; gh-pages publish needs the repo
+
+            - name: Configure git identity
+              run: |
+                  git config --global user.name  "github-actions[bot]"
+                  git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+            - name: Login to GHCR
+              uses: docker/login-action@v4
+              with:
+                  registry: ghcr.io
+                  username: ${{ github.actor }}
+                  password: ${{ secrets.GITHUB_TOKEN }}
+
+            # ── Cold render inside the release container ─────────────────
+            # We use `docker run` (not `jobs.<id>.container:`) so the resolved
+            # tag from step `tag` is honoured at runtime instead of needing to
+            # be known at workflow-parse time.
+            - name: Render docs inside tvbo container (cold)
+              env:
+                  TAG: ${{ steps.tag.outputs.tag }}
+                  PRIVATE_REPO_TOKEN: ${{ secrets.PRIVATE_REPO_TOKEN }}
+              run: |
+                  set -euo pipefail
+                  docker pull "ghcr.io/virtual-twin/tvbo:${TAG}"
+                  docker run --rm \
+                      -v "${PWD}:/work" \
+                      -w /work \
+                      -e PRIVATE_REPO_TOKEN \
+                      -e JAX_PLATFORMS=cpu \
+                      -e HOST_UID="$(id -u)" \
+                      -e HOST_GID="$(id -g)" \
+                      "ghcr.io/virtual-twin/tvbo:${TAG}" \
+                      bash -euxc '
+                          git config --global url."https://${PRIVATE_REPO_TOKEN}@github.com/".insteadOf "https://github.com/"
+                          git config --global --add safe.directory /work
+                          pip install -e . --no-deps
+                          if ! command -v quarto >/dev/null 2>&1; then
+                              apt-get update
+                              apt-get install -y --no-install-recommends curl jq wget libcairo2-dev
+                              QV=$(curl -s https://api.github.com/repos/quarto-dev/quarto-cli/releases/latest | grep -oP "\"tag_name\": \"v\K[^\"]+")
+                              ARCH=$(dpkg --print-architecture)
+                              wget -qO /tmp/quarto.deb "https://github.com/quarto-dev/quarto-cli/releases/download/v${QV}/quarto-${QV}-linux-${ARCH}.deb"
+                              dpkg -i /tmp/quarto.deb && rm /tmp/quarto.deb
+                          fi
+                          quarto --version
+                          cd docs
+                          # Cold build: drop every cache so all code cells re-execute.
+                          rm -rf _freeze .quarto _site .jupyter_cache
+                          quarto render --cache-refresh
+                          # Hand ownership back to the host runner user.
+                          chown -R "${HOST_UID}:${HOST_GID}" _site _freeze .quarto 2>/dev/null || true
+                      '
+
+            # ── Publish via Quarto's native gh-pages flow ────────────────
+            # `quarto publish gh-pages` manages the gh-pages branch (orphan,
+            # force-push, .nojekyll). `--no-render` reuses the cold-built _site
+            # we just produced inside the container.
+            - uses: quarto-dev/quarto-actions/setup@v2
+
+            - name: Publish to gh-pages
+              working-directory: docs
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  git config --global --add safe.directory "${GITHUB_WORKSPACE}"
+                  quarto publish gh-pages --no-prompt --no-browser --no-render

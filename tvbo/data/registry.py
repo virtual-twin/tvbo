@@ -5,11 +5,12 @@ Searches recursively within each category directory so that models in
 subfolders (e.g. database/models/julia/) are automatically discovered.
 See TVBO-Database-Access-Proposal.md §5 for design rationale.
 """
+
 import re
 from importlib.resources import files
 from pathlib import Path
 
-_NAME_RE = re.compile(r'^name:\s*(\S.*)')
+_NAME_RE = re.compile(r"^name:\s*(\S.*)")
 
 # --- Path resolution ---
 _pkg_db = Path(files("tvbo")) / "database"
@@ -21,16 +22,16 @@ else:
 
 # --- Category registry ---
 _CATEGORIES = {
-    "Dynamics":              "models",
-    "Coupling":              "coupling_functions",
-    "Integrator":            "integrators",
-    "Network":               "networks",
-    "SimulationExperiment":  "experiments",
-    "SimulationStudy":       "studies",
-    "Observation":           "observation_models",
-    "Function":              "observation_models",
-    "BrainAtlas":            "atlases",
-    "Continuation":          "continuations",
+    "Dynamics": "models",
+    "Coupling": "coupling_functions",
+    "Integrator": "integrators",
+    "Network": "networks",
+    "SimulationExperiment": "experiments",
+    "SimulationStudy": "studies",
+    "Observation": "observation_models",
+    "Function": "observation_models",
+    "BrainAtlas": "atlases",
+    "Continuation": "continuations",
 }
 
 
@@ -74,10 +75,7 @@ def resolve(cls_name: str, name: str) -> Path:
                 return p
 
     available = sorted(_build_name_index(db_dir).keys())
-    raise FileNotFoundError(
-        f"No database entry '{name}' for {cls_name}. "
-        f"Available: {available}"
-    )
+    raise FileNotFoundError(f"No database entry '{name}' for {cls_name}. Available: {available}")
 
 
 def _extract_name(path: Path) -> str:
@@ -134,7 +132,7 @@ def list_entries_with_metadata(cls_name: str) -> list[dict]:
     if not db_dir.exists():
         return []
 
-    _FIELD_RE = re.compile(r'^(model_type|description|system_type):\s*(.*)')
+    _FIELD_RE = re.compile(r"^(model_type|description|system_type):\s*(.*)")
     rows = []
     for p in sorted(db_dir.rglob("*.yaml")):
         if p.stem.startswith("_"):

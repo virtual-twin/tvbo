@@ -46,11 +46,13 @@ class SimulationStudies:
 
     def load_all(self):
         from tvbo.classes.study import SimulationStudy
+
         for key, path in self.files.items():
             self.__setattr__(key, SimulationStudy.from_file(path))
 
     def load(self, key):
         from tvbo.classes.study import SimulationStudy
+
         study = SimulationStudy.from_file(self.files[key])
         self.__setattr__(key, study)
         return study
@@ -58,15 +60,11 @@ class SimulationStudies:
 
 def load_study(citationkey: str):
     from tvbo.classes.study import SimulationStudy
-    return SimulationStudy.from_file(
-        getattr(study_metadata_files, citationkey)
-    )
+
+    return SimulationStudy.from_file(getattr(study_metadata_files, citationkey))
 
 
 def load_bibliography():
     if parse_file is None:
-        raise ImportError(
-            "pybtex is required for bibliography support. "
-            "Install it with: pip install tvbo[docs]"
-        )
+        raise ImportError("pybtex is required for bibliography support. Install it with: pip install tvbo[docs]")
     return parse_file(bib_file)

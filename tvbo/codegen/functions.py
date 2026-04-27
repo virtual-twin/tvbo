@@ -50,12 +50,12 @@ With aggregation (LossFunction):
     code = generate_loss_function(loss, inner_func_names=['correlation'])
 """
 
-from typing import Dict, List, Optional, Union, Callable
+from typing import Dict, List, Optional, Callable
 
 
 def generate_function(
     func,
-    format: str = 'jax',
+    format: str = "jax",
     user_functions: Optional[Dict[str, str]] = None,
     render_func: Optional[Callable] = None,
 ) -> str:
@@ -99,18 +99,23 @@ def generate_function(
     """
     # Lazy import to avoid circular dependency
     from tvbo.templates import lookup
+
     template = lookup.get_template("base/function-def.mako")
-    return template.get_def("function_def").render(
-        func=func,
-        format=format,
-        user_functions=user_functions,
-        render_func=render_func,
-    ).strip()
+    return (
+        template.get_def("function_def")
+        .render(
+            func=func,
+            format=format,
+            user_functions=user_functions,
+            render_func=render_func,
+        )
+        .strip()
+    )
 
 
 def generate_loss_function(
     func,
-    format: str = 'jax',
+    format: str = "jax",
     user_functions: Optional[Dict[str, str]] = None,
     inner_func_names: Optional[List[str]] = None,
 ) -> str:
@@ -154,18 +159,23 @@ def generate_loss_function(
     """
     # Lazy import to avoid circular dependency
     from tvbo.templates import lookup
+
     template = lookup.get_template("base/function-def.mako")
-    return template.get_def("function_def_with_aggregation").render(
-        func=func,
-        format=format,
-        user_functions=user_functions,
-        inner_func_names=inner_func_names,
-    ).strip()
+    return (
+        template.get_def("function_def_with_aggregation")
+        .render(
+            func=func,
+            format=format,
+            user_functions=user_functions,
+            inner_func_names=inner_func_names,
+        )
+        .strip()
+    )
 
 
 def generate_indexed_function(
     func,
-    format: str = 'jax',
+    format: str = "jax",
     user_functions: Optional[Dict[str, str]] = None,
 ) -> str:
     """Generate Python code for a function with indexed aggregation.
@@ -190,17 +200,22 @@ def generate_indexed_function(
     """
     # Lazy import to avoid circular dependency
     from tvbo.templates import lookup
+
     template = lookup.get_template("base/function-def.mako")
-    return template.get_def("indexed_function").render(
-        func=func,
-        format=format,
-        user_functions=user_functions,
-    ).strip()
+    return (
+        template.get_def("indexed_function")
+        .render(
+            func=func,
+            format=format,
+            user_functions=user_functions,
+        )
+        .strip()
+    )
 
 
 def generate_callable_function(
     func,
-    format: str = 'jax',
+    format: str = "jax",
     callable_ref: Optional[str] = None,
 ) -> str:
     """Generate Python code for a callable-based function with vmap.
@@ -223,17 +238,22 @@ def generate_callable_function(
     """
     # Lazy import to avoid circular dependency
     from tvbo.templates import lookup
+
     template = lookup.get_template("base/function-def.mako")
-    return template.get_def("callable_function").render(
-        func=func,
-        format=format,
-        callable_ref=callable_ref,
-    ).strip()
+    return (
+        template.get_def("callable_function")
+        .render(
+            func=func,
+            format=format,
+            callable_ref=callable_ref,
+        )
+        .strip()
+    )
 
 
 def generate_inline_function(
     func,
-    format: str = 'jax',
+    format: str = "jax",
     user_functions: Optional[Dict[str, str]] = None,
 ) -> str:
     """Generate a lambda expression for a function.
@@ -260,17 +280,22 @@ def generate_inline_function(
     """
     # Lazy import to avoid circular dependency
     from tvbo.templates import lookup
+
     template = lookup.get_template("base/function-def.mako")
-    return template.get_def("inline_function").render(
-        func=func,
-        format=format,
-        user_functions=user_functions,
-    ).strip()
+    return (
+        template.get_def("inline_function")
+        .render(
+            func=func,
+            format=format,
+            user_functions=user_functions,
+        )
+        .strip()
+    )
 
 
 def function_to_callable(
     func,
-    format: str = 'jax',
+    format: str = "jax",
     user_functions: Optional[Dict[str, str]] = None,
     namespace: Optional[Dict] = None,
 ) -> Callable:
@@ -309,14 +334,16 @@ def function_to_callable(
         namespace = dict(namespace)
 
     # Always add required imports for the format
-    if format == 'jax':
+    if format == "jax":
         import jax
         import jax.numpy as jnp
-        namespace.setdefault('jax', jax)
-        namespace.setdefault('jnp', jnp)
-    elif format == 'numpy':
+
+        namespace.setdefault("jax", jax)
+        namespace.setdefault("jnp", jnp)
+    elif format == "numpy":
         import numpy as np
-        namespace.setdefault('np', np)
+
+        namespace.setdefault("np", np)
 
     exec(code, namespace)
     return namespace[func.name]

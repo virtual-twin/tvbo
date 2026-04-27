@@ -5,7 +5,10 @@ from scipy.interpolate import interp1d
 try:
     from tqdm import tqdm
 except ImportError:
-    tqdm = lambda x, **kwargs: x  # No-op if tqdm not available
+
+    def tqdm(x, **kwargs):
+        return x  # No-op if tqdm not available
+
 
 from tvbo.classes.observation import expand_to_4d
 from tvbo.data.types import TimeSeries
@@ -37,7 +40,7 @@ def compute_delayed_input_signal(node, G, t, dt):
                 axis=0,
                 fill_value="extrapolate",
             )
-            delayed_state = xj = interp_func(delayed_time)
+            xj = interp_func(delayed_time)
             pre = G[neighbor][node]["prefun"](xj)
             input_signal += G[node][neighbor]["weight"] * pre
 
@@ -68,9 +71,7 @@ def update_node_state_with_delay(G, node, t, dt, input_signal):
 
     # Update state and history
     G.nodes[node]["state"] = new_state
-    G.nodes[node]["time-series"] = np.append(
-        G.nodes[node]["time-series"], new_state.reshape(1, -1), axis=0
-    )
+    G.nodes[node]["time-series"] = np.append(G.nodes[node]["time-series"], new_state.reshape(1, -1), axis=0)
     G.nodes[node]["history"] = np.roll(G.nodes[node]["history"], shift=-1, axis=0)
     G.nodes[node]["history"][-1] = new_state
 
@@ -100,11 +101,7 @@ def collect_time_series(G, time_points):
     ts = TimeSeries(
         time_points,
         time_series_4d,
-        labels_dimensions={
-            "State Variable": list(
-                G.nodes[node]["model"].state_variables.keys()
-            )
-        },
+        labels_dimensions={"State Variable": list(G.nodes[node]["model"].state_variables.keys())},
     )
 
     return ts

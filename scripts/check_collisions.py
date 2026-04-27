@@ -1,23 +1,30 @@
 #!/usr/bin/env python3
 """Check if colliding file pairs have identical data."""
+
 import h5py
 import numpy as np
 from tvbo import database_path
 
 pairs = [
-    ('space-FSLMNI152_atlas-Schaefer100017Networks_desc-MghUscHcp32',
-     'space-FSLMNI152_tpl-MghUscHcp32_atlas-Schaefer1000_desc-17Networks'),
-    ('space-MNI152Nlin2009c_atlas-DesikanKillianyranked_desc-MghUscHcp32',
-     'space-MNI152Nlin2009c_tpl-MghUscHcp32_atlas-DesikanKilliany_desc-ranked'),
-    ('space-MNI152Nlin2009c_atlas-Destrieuxranked_desc-MghUscHcp32',
-     'space-MNI152Nlin2009c_tpl-MghUscHcp32_atlas-Destrieux_desc-ranked'),
+    (
+        "space-FSLMNI152_atlas-Schaefer100017Networks_desc-MghUscHcp32",
+        "space-FSLMNI152_tpl-MghUscHcp32_atlas-Schaefer1000_desc-17Networks",
+    ),
+    (
+        "space-MNI152Nlin2009c_atlas-DesikanKillianyranked_desc-MghUscHcp32",
+        "space-MNI152Nlin2009c_tpl-MghUscHcp32_atlas-DesikanKilliany_desc-ranked",
+    ),
+    (
+        "space-MNI152Nlin2009c_atlas-Destrieuxranked_desc-MghUscHcp32",
+        "space-MNI152Nlin2009c_tpl-MghUscHcp32_atlas-Destrieux_desc-ranked",
+    ),
 ]
 
-NET_DIR = database_path / 'networks'
+NET_DIR = database_path / "networks"
 
 for a, b in pairs:
-    fa = str(NET_DIR / (a + '.h5'))
-    fb = str(NET_DIR / (b + '.h5'))
+    fa = str(NET_DIR / (a + ".h5"))
+    fb = str(NET_DIR / (b + ".h5"))
     with h5py.File(fa) as ha, h5py.File(fb) as hb:
         datasets_a = {}
         datasets_b = {}

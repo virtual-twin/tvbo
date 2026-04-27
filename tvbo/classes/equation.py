@@ -9,6 +9,7 @@
 """
 # Handling Equations and Expressions
 """
+
 import re
 from collections import deque
 
@@ -135,7 +136,7 @@ def convert_ifelse_to_np_where(code_str):
     Returns:
     str: Converted string using np.where, e.g., "np.where(z < 0, -0.1*z**7, 0)".
     """
-    if not "if" in code_str:
+    if "if" not in code_str:
         return code_str
     # Regular expression to capture the if-else structure
     pattern = r"\((.*) if (.*) else (.*)\)"
@@ -162,9 +163,7 @@ def convert_numpy_where_to_sympy(python_string):
     - A sympy Piecewise expression.
     """
     python_string = python_string.replace("numpy.", "").replace("np.", "")
-    condition_str, if_true_str, if_false_str = extract_parts_from_numpy_where(
-        python_string
-    )
+    condition_str, if_true_str, if_false_str = extract_parts_from_numpy_where(python_string)
     # Parse the strings into sympy expressions
     condition = parse_expr(condition_str, _clash1, evaluate=False)
     if_true = parse_expr(if_true_str, _clash1, evaluate=False)
@@ -182,16 +181,8 @@ def sympify_value(v, acronym="", evaluate=False):
 
     # Create a dictionary of symbols
     symbols_dict = {
-        (
-            str(s.label.first().replace(acronym, ""))
-            if s.label.first()
-            else s.name.replace(acronym, "")
-        ): Symbol(
-            str(
-                s.label.first().replace(acronym, "")
-                if s.label.first()
-                else s.name.replace(acronym, "")
-            ),
+        (str(s.label.first().replace(acronym, "")) if s.label.first() else s.name.replace(acronym, "")): Symbol(
+            str(s.label.first().replace(acronym, "") if s.label.first() else s.name.replace(acronym, "")),
         )
         for s in eq_parameters
     }
@@ -215,7 +206,7 @@ def sympify_value(v, acronym="", evaluate=False):
     if "where(" in v:
         return convert_numpy_where_to_sympy(v)
 
-    _clash1.update({"E": IndexedBase("E"), "F": IndexedBase("F")}) # TODO: Remove this hack
+    _clash1.update({"E": IndexedBase("E"), "F": IndexedBase("F")})  # TODO: Remove this hack
 
     try:
         eq = parse_expr(
@@ -226,9 +217,7 @@ def sympify_value(v, acronym="", evaluate=False):
     except Exception as e:
         print(f"Error parsing equation: {eq}")
         print(f"Error message: {e}")
-        raise ValueError(
-            f"Failed to parse equation: {eq}. Ensure the equation is in a valid format."
-        )
+        raise ValueError(f"Failed to parse equation: {eq}. Ensure the equation is in a valid format.")
 
     return eq
 
@@ -323,9 +312,7 @@ def build_dependency_graph(eq_dict):
     # DEPRECATED #TODO: remove
     """Builds a directed graph of dependencies from the eq_dict using SymPy."""
     graph = {}
-    symbol_dict = {
-        var: symbols(var) for var in eq_dict.keys()
-    }  # Create a dictionary of SymPy symbols
+    symbol_dict = {var: symbols(var) for var in eq_dict.keys()}  # Create a dictionary of SymPy symbols
 
     for var, expr in eq_dict.items():
         graph[var] = set()
@@ -356,9 +343,7 @@ def topological_sort(graph):
                 queue.append(v)
 
     if len(sorted_order) != len(graph):
-        raise ValueError(
-            "Circular dependency detected or unresolved dependencies remain"
-        )
+        raise ValueError("Circular dependency detected or unresolved dependencies remain")
 
     return sorted_order
 
@@ -409,7 +394,7 @@ def symbolic_differential_equations(NMM, zero_coupling=False, **kwargs):
     td_dict = dict()
     suffix = ontology.get_model_suffix(NMM)
     for k, v in ontology.get_model_derivatives(NMM).items():
-        if not "dot" in k:
+        if "dot" not in k:
             continue
         symeq = sympify_value(v, **kwargs)
         if zero_coupling:
@@ -465,9 +450,7 @@ def symbolic_topological_sort(equations):
 
 def symbolic_model_equations(NMM, zero_coupling=False, **kwargs):
     func_dict = symbolic_model_functions(NMM, zero_coupling=zero_coupling, **kwargs)
-    td_dict = symbolic_differential_equations(
-        NMM, zero_coupling=zero_coupling, **kwargs
-    )
+    td_dict = symbolic_differential_equations(NMM, zero_coupling=zero_coupling, **kwargs)
     cond_dict = symbolic_conditions(NMM, zero_coupling=zero_coupling, **kwargs)
     return {**func_dict, **td_dict, **cond_dict}
 
@@ -482,11 +465,7 @@ def sub_equation(eq, model):
         "short_range": "c_short",
     }
     for s in eq.free_symbols:
-        name = (
-            s.name + "_" + acr
-            if not s.name in ["local_coupling", "c_pop0", "c_pop1"]
-            else s.name
-        )
+        name = s.name + "_" + acr if s.name not in ["local_coupling", "c_pop0", "c_pop1"] else s.name
         # print(name)
         c_rhs = ontology.onto[name]
         if isinstance(c_rhs, type(None)):
@@ -562,11 +541,7 @@ def get_latex_equation(model, func_dict="all", mul_symbol="dot"):
         lhs = lhs.subs(sub)
 
         for s in v.free_symbols:
-            name = (
-                s.name + "_" + acr
-                if not s.name in ["local_coupling", "c_pop0", "c_pop1"]
-                else s.name
-            )
+            name = s.name + "_" + acr if s.name not in ["local_coupling", "c_pop0", "c_pop1"] else s.name
             # print(name)
             c_rhs = ontology.onto[name]
             if isinstance(c_rhs, type(None)):
@@ -626,9 +601,7 @@ def render_latex_equations(
         odes = newline.join(
             get_latex_equation(
                 model,
-                func_dict=symbolic_differential_equations(
-                    model, **{"evaluate": evaluate}
-                ),
+                func_dict=symbolic_differential_equations(model, **{"evaluate": evaluate}),
             )
         )
         if where == "":
@@ -658,7 +631,7 @@ def update_mathematical_relationships(model):
             continue
 
         # Check if v has free_symbols attribute (valid SymPy expression)
-        if not hasattr(v, 'free_symbols'):
+        if not hasattr(v, "free_symbols"):
             print(f'Skipping "{k}" in "{model}" - not a valid SymPy expression')
             continue
 
@@ -679,15 +652,11 @@ def update_class_relationships(s_cls, k_cls):
         ) and ontology.onto.is_parameter_in.some(k_cls) not in s_cls.is_a:
             s_cls.is_a.append(ontology.onto.is_parameter_in.some(k_cls))
 
-        if (
-            ontology.onto.StateVariable in s_cls.is_a
-            and ontology.onto.is_state_variable_of.some(k_cls) not in s_cls.is_a
-        ):
+        if ontology.onto.StateVariable in s_cls.is_a and ontology.onto.is_state_variable_of.some(k_cls) not in s_cls.is_a:
             s_cls.is_a.append(ontology.onto.is_state_variable_of.some(k_cls))
 
         if (
-            ontology.onto.TimeDerivative
-            in k_cls.is_a
+            ontology.onto.TimeDerivative in k_cls.is_a
             # and ontology.onto.has_derivative.some(k_cls) not in s_cls.is_a
         ):
             if s_cls in k_cls.is_a:
@@ -724,12 +693,8 @@ def get_symbolic_coupling(coupling_function) -> dict:
         coupling_function = ontology.get_coupling_function(coupling_function)
 
     # Get the pre and post functions from the ontology
-    fpost = ontology.intersection(
-        coupling_function.subclasses(), ontology.onto.Fpost.descendants()
-    )
-    fpre = ontology.intersection(
-        coupling_function.subclasses(), ontology.onto.Fpre.descendants()
-    )
+    fpost = ontology.intersection(coupling_function.subclasses(), ontology.onto.Fpost.descendants())
+    fpre = ontology.intersection(coupling_function.subclasses(), ontology.onto.Fpre.descendants())
     # Create symbolic expressions for the pre and post functions
     fpre = sympify_value(fpre[0]) if len(fpre) > 0 else sympify("x_j")
     fpost = sympify_value(fpost[0]) if len(fpost) > 0 else sympify("gx")
@@ -801,13 +766,9 @@ def topological_sort_equations(variable_dict, dependency_tree):
         cycles = find_cycle(dependency_tree, orientation="original")
         if cycles:
             cycle_str = " -> ".join(f"{edge[0]} -> {edge[1]}" for edge in cycles)
-            raise ValueError(
-                f"Found cycles: {cycle_str}. Dependency tree must be a Directed Acyclic Graph (DAG)."
-            )
+            raise ValueError(f"Found cycles: {cycle_str}. Dependency tree must be a Directed Acyclic Graph (DAG).")
         else:
-            raise ValueError(
-                "Dependency tree must be a Directed Acyclic Graph (DAG). Unable to identify cycles."
-            )
+            raise ValueError("Dependency tree must be a Directed Acyclic Graph (DAG). Unable to identify cycles.")
 
     # Perform topological sort and sort ties alphabetically
     sorted_variables = list(topological_sort(dependency_tree))
@@ -818,11 +779,7 @@ def topological_sort_equations(variable_dict, dependency_tree):
     # )
 
     # Create a sorted dictionary
-    sorted_equations = {
-        str(var): variable_dict[str(var)]
-        for var in sorted_variables
-        if str(var) in variable_dict
-    }
+    sorted_equations = {str(var): variable_dict[str(var)] for var in sorted_variables if str(var) in variable_dict}
 
     return sorted_equations
 
@@ -842,11 +799,7 @@ def conditionals2piecewise(metadata_equation):
         ]
         + [
             (
-                (
-                    parse_expr(metadata_equation.rhs, _clash1, evaluate=False)
-                    if metadata_equation.rhs
-                    else 0
-                ),
+                (parse_expr(metadata_equation.rhs, _clash1, evaluate=False) if metadata_equation.rhs else 0),
                 True,
             )
         ]
@@ -867,13 +820,9 @@ def piecewise2numpy(piecewise_expr, fully_qualified_modules=False) -> str:
         raise ValueError("Input must be a sympy Piecewise expression")
 
     where_expr = None
-    for expr, cond in reversed(
-        piecewise_expr.args
-    ):  # Start from the last argument to build the nested structure
+    for expr, cond in reversed(piecewise_expr.args):  # Start from the last argument to build the nested structure
         expr_code = pycode(expr, fully_qualified_modules=False)
-        cond_code = (
-            pycode(cond, fully_qualified_modules=False) if cond != True else "True"
-        )
+        cond_code = pycode(cond, fully_qualified_modules=False) if not cond else "True"
         if where_expr is None:
             where_expr = expr_code
         else:
@@ -912,7 +861,7 @@ def piecewise2julia(piecewise_expr) -> str:
             return "nothing"  # Julia's fallback for no conditions
 
         expr, cond = args[0]
-        if cond == True:  # Sympy uses True to indicate "otherwise"
+        if cond:  # Sympy uses True to indicate "otherwise"
             return f"{expr}"
         elif str(cond) == "modification":
             cond = f"{cond} > 0"

@@ -14,34 +14,25 @@ TVB-O wrapper for Coupling functions
 ```
 
 """
-import copy
-import os
-from os.path import join
 
-import networkx as nx
+import os
+
 import numpy as np
 import owlready2
-from mako.template import Template
-from sympy import pycode
 
 from tvbo import templates
 from tvbo.datamodel import schema as tvbo_datamodel
 from tvbo.codegen import templater
 from tvbo.codegen.code import parse_eq
-from tvbo.ontology import constants
 from tvbo.ontology import owl as ontology
 from tvbo.ontology import query
 from tvbo.classes import equation as equations
-from tvbo.classes import dynamics as localdynamics
 
 
 TEMPLATES = templates.root
 
 # Path to database coupling function YAML files
-_COUPLING_DB_DIR = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)),
-    '..', '..', 'database', 'coupling_functions'
-)
+_COUPLING_DB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "database", "coupling_functions")
 
 
 def _load_coupling_from_database(name, coupling):
@@ -65,37 +56,31 @@ def _load_coupling_from_database(name, coupling):
     """
     import yaml as _yaml
 
-    db_file = os.path.join(_COUPLING_DB_DIR, f'{name}.yaml')
+    db_file = os.path.join(_COUPLING_DB_DIR, f"{name}.yaml")
     if not os.path.exists(db_file):
         return False
 
     with open(db_file) as f:
         data = _yaml.safe_load(f)
 
-    if 'pre_expression' in data and not getattr(coupling, 'pre_expression', None):
-        pe = data['pre_expression']
-        coupling.pre_expression = tvbo_datamodel.Equation(
-            **(pe if isinstance(pe, dict) else {'rhs': pe})
-        )
-    if 'post_expression' in data and not getattr(coupling, 'post_expression', None):
-        pe = data['post_expression']
-        coupling.post_expression = tvbo_datamodel.Equation(
-            **(pe if isinstance(pe, dict) else {'rhs': pe})
-        )
-    if 'parameters' in data:
-        for pname, pval in data['parameters'].items():
+    if "pre_expression" in data and not getattr(coupling, "pre_expression", None):
+        pe = data["pre_expression"]
+        coupling.pre_expression = tvbo_datamodel.Equation(**(pe if isinstance(pe, dict) else {"rhs": pe}))
+    if "post_expression" in data and not getattr(coupling, "post_expression", None):
+        pe = data["post_expression"]
+        coupling.post_expression = tvbo_datamodel.Equation(**(pe if isinstance(pe, dict) else {"rhs": pe}))
+    if "parameters" in data:
+        for pname, pval in data["parameters"].items():
             if pname not in coupling.parameters:
                 if isinstance(pval, dict):
-                    if 'name' not in pval:
-                        pval['name'] = pname
+                    if "name" not in pval:
+                        pval["name"] = pname
                     coupling.parameters[pname] = tvbo_datamodel.Parameter(**pval)
                 else:
-                    coupling.parameters[pname] = tvbo_datamodel.Parameter(
-                        name=pname, value=pval
-                    )
-    if 'delayed' in data and data['delayed'] is not None:
-        if getattr(coupling, 'delayed', None) is None:
-            coupling.delayed = data['delayed']
+                    coupling.parameters[pname] = tvbo_datamodel.Parameter(name=pname, value=pval)
+    if "delayed" in data and data["delayed"] is not None:
+        if getattr(coupling, "delayed", None) is None:
+            coupling.delayed = data["delayed"]
 
     return True
 
@@ -111,13 +96,9 @@ def get_parameters(CF):
             param_props["domain"]["lo"],
             param_props["domain"]["hi"],
             param_props["domain"]["step"],
-        ) = (
-            ontology.get_range(p) if ontology.get_range(p) else ("-inf", "inf", "0.001")
-        )
+        ) = ontology.get_range(p) if ontology.get_range(p) else ("-inf", "inf", "0.001")
         param_props["value"] = (
-            float(p.defaultValue.first())
-            if len(p.defaultValue) > 0 and p.defaultValue.first() != "None"
-            else 0
+            float(p.defaultValue.first()) if len(p.defaultValue) > 0 and p.defaultValue.first() != "None" else 0
         )
         param_props["definition"] = p.definition.first()
         param_props["label"] = ontology.replace_suffix(p.label.first())
@@ -178,10 +159,10 @@ class Coupling(tvbo_datamodel.Coupling):
 
     def __init__(self, **kwargs):
         # Legacy: accept and ignore use_ontology kwarg
-        kwargs.pop('use_ontology', None)
+        kwargs.pop("use_ontology", None)
         super().__init__(**kwargs)
         # Auto-populate from ontology if iri is set and expressions are missing
-        if getattr(self, 'iri', None) and not getattr(self, 'pre_expression', None):
+        if getattr(self, "iri", None) and not getattr(self, "pre_expression", None):
             self._populate_from_ontology()
 
     def _populate_from_ontology(self, lookup_name=None):
@@ -196,9 +177,9 @@ class Coupling(tvbo_datamodel.Coupling):
         """
         if lookup_name:
             # Strip CURIE prefix if present
-            lookup = lookup_name.split(':', 1)[-1] if ':' in lookup_name else lookup_name
+            lookup = lookup_name.split(":", 1)[-1] if ":" in lookup_name else lookup_name
         else:
-            lookup = getattr(self, 'name', None)
+            lookup = getattr(self, "name", None)
 
         # Try database YAML first (fast, no ontology deps needed)
         if lookup and _load_coupling_from_database(lookup, self):
@@ -246,15 +227,15 @@ class Coupling(tvbo_datamodel.Coupling):
         expression references ``x_i``, we mirror ``incoming_states`` into
         ``local_states`` so the template can generate correct assignments.
         """
-        pre_rhs = str(self.pre_expression.rhs) if getattr(self, 'pre_expression', None) else ''
-        incoming = getattr(self, 'incoming_states', None) or []
-        local = getattr(self, 'local_states', None) or []
+        pre_rhs = str(self.pre_expression.rhs) if getattr(self, "pre_expression", None) else ""
+        incoming = getattr(self, "incoming_states", None) or []
+        local = getattr(self, "local_states", None) or []
 
-        if 'x_i' in pre_rhs and not local and incoming:
+        if "x_i" in pre_rhs and not local and incoming:
             # x_i refers to local copy of the same states as incoming
             self.local_states = list(incoming)
 
-        if 'x_j' in pre_rhs and not incoming and local:
+        if "x_j" in pre_rhs and not incoming and local:
             # x_j refers to remote copy of the same states as local
             self.incoming_states = list(local)
 
@@ -268,22 +249,18 @@ class Coupling(tvbo_datamodel.Coupling):
         """
         if isinstance(ontoclass, str):
             # Strip CURIE prefix if present
-            lookup = ontoclass.split(':', 1)[-1] if ':' in ontoclass else ontoclass
+            lookup = ontoclass.split(":", 1)[-1] if ":" in ontoclass else ontoclass
             # Try database YAML first (fast, no ontology deps needed)
             coup = cls(name=lookup)
             if _load_coupling_from_database(lookup, coup):
                 return coup
             # Fall back to ontology lookup
-            hits = query.label_search(
-                lookup, root_class="Coupling", exact_match=["label"]
-            )
+            hits = query.label_search(lookup, root_class="Coupling", exact_match=["label"])
             if not hits:
                 raise ValueError(f"Coupling '{lookup}' not found in database or ontology.")
             ontoclass = hits[0]
         if not isinstance(ontoclass, owlready2.entity.ThingClass):
-            raise ValueError(
-                "ontoclass must be a string or an ontology Coupling class."
-            )
+            raise ValueError("ontoclass must be a string or an ontology Coupling class.")
         metadata = tvbo_datamodel.Coupling(name=ontoclass.label.first())
         coupling_class2metadata(ontoclass, metadata, overwrite=True)
         return cls(**metadata._as_dict)
@@ -292,27 +269,28 @@ class Coupling(tvbo_datamodel.Coupling):
     def from_datamodel(cls, datamodel_instance):
         """Create a Coupling instance from an existing tvbo_datamodel.Coupling instance."""
         if not isinstance(datamodel_instance, tvbo_datamodel.Coupling):
-            raise ValueError(
-                "datamodel_instance must be a tvbo_datamodel.Coupling instance."
-            )
+            raise ValueError("datamodel_instance must be a tvbo_datamodel.Coupling instance.")
         return cls(metadata=datamodel_instance)
 
     @classmethod
     def from_file(cls, filepath: str) -> "Coupling":
         """Load a Coupling from a YAML file."""
         from linkml_runtime.loaders import yaml_loader
+
         return yaml_loader.load(str(filepath), target_class=cls)
 
     @classmethod
     def from_db(cls, name: str) -> "Coupling":
         """Load a Coupling by name from the tvbo database."""
         from tvbo.data.registry import resolve
+
         return cls.from_file(str(resolve("Coupling", name)))
 
     @classmethod
     def list_db(cls) -> list[str]:
         """List available coupling functions in the tvbo database."""
         from tvbo.data.registry import list_entries
+
         return list_entries("Coupling")
 
     # Back-compat: expose  pointing to self
@@ -342,22 +320,18 @@ class Coupling(tvbo_datamodel.Coupling):
 
     def render_code(self, format="tvb", model=None, alt_label=None, **kwargs):
         if format == "tvb":
-            rendered_code = templates.lookup.get_template(
-                "tvbo-tvb-coupling.py.mako"
-            ).render(coupling=self)
+            rendered_code = templates.lookup.get_template("tvbo-tvb-coupling.py.mako").render(coupling=self)
 
         elif format.lower() in ["autodiff", "jax"]:
             template = templates.lookup.get_template("tvbo-jax-coupling.py.mako")
             rendered_code = template.render(coupling=self, model=model, **kwargs)
 
         elif format.lower() in ("tvboptim", "tvb-optim"):
-            template = templates.lookup.get_template(
-                "tvbo-tvboptim-coupling.py.mako"
-            )
+            template = templates.lookup.get_template("tvbo-tvboptim-coupling.py.mako")
             rendered_code = template.render(coupling=self, **kwargs)
 
         elif format.lower() == "python":
-            from tvbo.codegen.code import NumPyPrinter, render_expression
+            from tvbo.codegen.code import render_expression
 
             render_expression(self.equation, format="python")
 
@@ -384,8 +358,7 @@ class Coupling(tvbo_datamodel.Coupling):
             from sympy import Symbol, lambdify
 
             return lambdify(
-                [Symbol("x"), Symbol("g"), Symbol("N"), Symbol("i")]
-                + [Symbol(p) for p in self.parameters],
+                [Symbol("x"), Symbol("g"), Symbol("N"), Symbol("i")] + [Symbol(p) for p in self.parameters],
                 self.equation,
             )
 
@@ -393,11 +366,7 @@ class Coupling(tvbo_datamodel.Coupling):
     @property
     def ontoclass(self):
         try:
-            hits = (
-                query.label_search(self.name, root_class="Coupling")
-                if getattr(self, "name", None)
-                else []
-            )
+            hits = query.label_search(self.name, root_class="Coupling") if getattr(self, "name", None) else []
             return hits[0] if hits else None
         except Exception:
             return None
@@ -460,9 +429,11 @@ class Coupling(tvbo_datamodel.Coupling):
         if delays:
             t = Symbol("t")
             tau = IndexedBase("tau")
+
             def _incoming(sn):
                 return state_bases[sn][j, t - tau[i, j]]
         else:
+
             def _incoming(sn):
                 return state_bases[sn][j]
 
@@ -498,7 +469,7 @@ class Coupling(tvbo_datamodel.Coupling):
         local_dict = {str(k): k for k in subs_map}
         local_dict["gx"] = gx
         local_dict["N"] = N
-        for pname in (self.parameters or {}):
+        for pname in self.parameters or {}:
             local_dict[str(pname)] = Symbol(str(pname))
 
         # Parse and substitute inside evaluate=False to prevent:
@@ -517,7 +488,6 @@ class Coupling(tvbo_datamodel.Coupling):
 
     def plot(self, weights=None, node_idx=0, xs=None, ax=None, **kwargs):
         import matplotlib.pyplot as plt
-        import numpy as np
         import sympy as sp
 
         if weights is None:
@@ -529,13 +499,7 @@ class Coupling(tvbo_datamodel.Coupling):
         g = sp.IndexedBase("g")
 
         all_param_names = list(self.parameters.keys())
-        used_param_names = sorted(
-            [
-                name
-                for name in all_param_names
-                if sp.Symbol(name) in self.equation.free_symbols
-            ]
-        )
+        used_param_names = sorted([name for name in all_param_names if sp.Symbol(name) in self.equation.free_symbols])
         param_syms = tuple(sp.symbols(used_param_names))
         f = sp.lambdify((x, g, i, N) + param_syms, self.equation, modules="numpy")
 
@@ -558,11 +522,7 @@ class Coupling(tvbo_datamodel.Coupling):
                         weights,
                         i_plot,
                         weights.shape[0],
-                        **{
-                            p: self.parameters[p].value
-                            for p in used_param_names
-                            if p in varnames
-                        },
+                        **{p: self.parameters[p].value for p in used_param_names if p in varnames},
                     )
                 )
 
@@ -585,4 +545,3 @@ def get_global_coupling_functions():
 
 
 available_coupling_functions = set(get_global_coupling_functions())
-

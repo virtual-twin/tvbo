@@ -1,7 +1,6 @@
 """Shared fixtures/utilities for simulation backend functional tests."""
 
 import importlib
-from pathlib import Path
 
 
 def _has(package: str) -> bool:
@@ -55,13 +54,9 @@ def _tvb_compatible(model_file):
     # Models with more *global* coupling inputs than coupling variables can't
     # run on TVB.  local_coupling / lc_* are separate dfun arguments.
     ci = meta.get("coupling_inputs", {})
-    n_global = sum(
-        1 for name in ci
-        if name != "local_coupling" and not name.startswith("lc_")
-    )
+    n_global = sum(1 for name in ci if name != "local_coupling" and not name.startswith("lc_"))
     n_coupling_vars = sum(
-        1 for sv in meta.get("state_variables", {}).values()
-        if isinstance(sv, dict) and sv.get("coupling_variable")
+        1 for sv in meta.get("state_variables", {}).values() if isinstance(sv, dict) and sv.get("coupling_variable")
     )
     if n_global > max(n_coupling_vars, 1):
         return False

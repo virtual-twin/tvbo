@@ -47,9 +47,7 @@ class Noise(tvbo_datamodel.Noise):
 
     @classmethod
     def tree_unflatten(cls, aux_data, children):
-        kwargs = (
-            aux_data[0] if (isinstance(aux_data, tuple) and len(aux_data) > 0) else {}
-        )
+        kwargs = aux_data[0] if (isinstance(aux_data, tuple) and len(aux_data) > 0) else {}
         if not isinstance(kwargs, dict):
             kwargs = {}
         obj = cls(**kwargs)
@@ -80,14 +78,10 @@ class Noise(tvbo_datamodel.Noise):
         p = self.parameters_dict
         if "nsig" in p and p["nsig"] is not None:
             v = p["nsig"]
-            return (
-                getattr(v, "value", None) if not isinstance(v, dict) else v.get("value")
-            )
+            return getattr(v, "value", None) if not isinstance(v, dict) else v.get("value")
         if "sigma" in p and p["sigma"] is not None:
             s = p["sigma"]
-            s_val = (
-                getattr(s, "value", None) if not isinstance(s, dict) else s.get("value")
-            )
+            s_val = getattr(s, "value", None) if not isinstance(s, dict) else s.get("value")
             if s_val is not None:
                 return 0.5 * (s_val**2)
         return None
@@ -97,14 +91,10 @@ class Noise(tvbo_datamodel.Noise):
         p = self.parameters_dict
         if "sigma" in p and p["sigma"] is not None:
             s = p["sigma"]
-            return (
-                getattr(s, "value", None) if not isinstance(s, dict) else s.get("value")
-            )
+            return getattr(s, "value", None) if not isinstance(s, dict) else s.get("value")
         if "nsig" in p and p["nsig"] is not None:
             n = p["nsig"]
-            n_val = (
-                getattr(n, "value", None) if not isinstance(n, dict) else n.get("value")
-            )
+            n_val = getattr(n, "value", None) if not isinstance(n, dict) else n.get("value")
             if n_val is not None:
                 return np.sqrt(2 * n_val)
         return None
@@ -148,18 +138,21 @@ class Integrator(tvbo_datamodel.Integrator):
     def from_file(cls, filepath: str) -> "Integrator":
         """Load an Integrator from a YAML file."""
         from linkml_runtime.loaders import yaml_loader
+
         return yaml_loader.load(str(filepath), target_class=cls)
 
     @classmethod
     def from_db(cls, name: str) -> "Integrator":
         """Load an Integrator by name from the tvbo database."""
         from tvbo.data.registry import resolve
+
         return cls.from_file(str(resolve("Integrator", name)))
 
     @classmethod
     def list_db(cls) -> list[str]:
         """List available integrators in the tvbo database."""
         from tvbo.data.registry import list_entries
+
         return list_entries("Integrator")
 
     # Back-compat: expose  pointing to self
@@ -173,11 +166,7 @@ class Integrator(tvbo_datamodel.Integrator):
         return (
             ontology.get_integrator(self.method)
             if isinstance(getattr(self, "method", None), str)
-            else (
-                self.method
-                if isinstance(self.method, owlready2.entity.ThingClass)
-                else None
-            )
+            else (self.method if isinstance(self.method, owlready2.entity.ThingClass) else None)
         )
 
     @property
@@ -229,8 +218,8 @@ class Integrator(tvbo_datamodel.Integrator):
             steps = info.get("intermediate_steps", [])
             if steps:
                 for i, eq in enumerate(steps):
-                    self.intermediate_expressions[f"X{i+1}"] = DerivedVariable(
-                        name=f"X{i+1}", equation=Equation(lhs=f"X{i+1}", rhs=eq)
+                    self.intermediate_expressions[f"X{i + 1}"] = DerivedVariable(
+                        name=f"X{i + 1}", equation=Equation(lhs=f"X{i + 1}", rhs=eq)
                     )
         # number_of_stages
         if getattr(self, "number_of_stages", None) in (None, 0) and "n_dx" in info:
@@ -240,15 +229,11 @@ class Integrator(tvbo_datamodel.Integrator):
 
         # update_expression
         if getattr(self, "update_expression", None) is None and "dX_expr" in info:
-            self.update_expression = DerivedVariable(
-                name="dX", equation=Equation(lhs="X_{t+1}", rhs=info["dX_expr"])
-            )
+            self.update_expression = DerivedVariable(name="dX", equation=Equation(lhs="X_{t+1}", rhs=info["dX_expr"]))
 
     def render_code(self, format="tvb", **kwargs):
         if format == "tvb":
-            self.template = templates.lookup.get_template(
-                "tvbo-tvb-integration.py.mako"
-            )
+            self.template = templates.lookup.get_template("tvbo-tvb-integration.py.mako")
             rendered_code = self.template.render(integrator=self)
         elif format.lower() in ["autodiff", "jax"]:
             self.template = templates.lookup.get_template("tvbo-jax-integrate.py.mako")

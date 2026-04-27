@@ -23,5 +23,3 @@ ROOT_DIR = abspath(join(dirname(realpath(__file__)), ".."))
 DATA_DIR = join(ROOT_DIR, "data")
 ONTO_DIR = join(DATA_DIR, "ontology", "tvb-o.owl")  # TODO: this is not used
 SC_DIR = join(DATA_DIR, "normative_connectomes")
-
-

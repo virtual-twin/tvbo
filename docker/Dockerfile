@@ -8,9 +8,11 @@ LABEL maintainer="Leon Martin <leon.martin@bih-charite.de>"
 # Bring in uv (single static binary, no Python bootstrap needed).
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 
-# System deps: compilers (f2py/PyRates Fortran), cairo (bsplot SVG), curl/wget (Quarto install)
+# System deps: compilers (f2py/PyRates Fortran), cairo (bsplot SVG), curl/wget (Quarto install),
+#              default-jre-headless (jNeuroML LEMS runner)
 RUN apt-get update && apt-get install -y --no-install-recommends \
         gcc g++ gfortran make git perl libcairo2-dev curl wget \
+        default-jre-headless \
     && rm -rf /var/lib/apt/lists/*
 
 # Build AUTO-07p
@@ -38,7 +40,7 @@ ENV UV_SYSTEM_PYTHON=1 \
 #    selected extras directly without invoking the build backend.
 COPY pyproject.toml /app/pyproject.toml
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv pip install -r pyproject.toml --extra julia --extra pyrates \
+    uv pip install -r pyproject.toml --extra julia --extra pyrates --extra neuroml --extra tvb \
         jupyterlab uvicorn fastapi tvboptim
 
 # 2. Pre-warm Julia. juliacall just needs juliapkg.json on sys.path.

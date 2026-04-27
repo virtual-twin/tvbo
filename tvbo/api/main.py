@@ -1,6 +1,6 @@
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
-from fastapi import Body, FastAPI, HTTPException, Path, Query
+from fastapi import Body, FastAPI, Path, Query
 from pydantic import BaseModel, Field
 
 from tvbo.api.ontology_api import OntologyAPI
@@ -8,11 +8,7 @@ from tvbo.api.network_api import router as network_router
 from tvbo.api.dynamics_api import router as dynamics_router
 from tvbo.api.experiment_api import router as experiment_router
 
-app = FastAPI(
-    title="TVBO API",
-    description="The Virtual Brain Ontology API for simulation experiments",
-    version="0.1.0"
-)
+app = FastAPI(title="TVBO API", description="The Virtual Brain Ontology API for simulation experiments", version="0.1.0")
 api = OntologyAPI()
 
 # Register sub-routers
@@ -25,8 +21,10 @@ app.include_router(experiment_router)
 # Request/Response Models (API-specific only)
 # ============================================
 
+
 class RunExperimentRequest(BaseModel):
     """Request payload for running a simulation."""
+
     experiment: dict = Field(..., description="Experiment configuration dictionary")
     duration: Optional[float] = Field(1000.0, description="Simulation duration in ms")
     step_size: Optional[float] = Field(0.1, description="Integration step size in ms")
@@ -35,6 +33,7 @@ class RunExperimentRequest(BaseModel):
 
 class RunExperimentResponse(BaseModel):
     """Response payload with simulation results."""
+
     success: bool
     data: Optional[List] = None  # [time, state_vars, regions, modes]
     time: Optional[List[float]] = None
@@ -56,6 +55,7 @@ class SimulationMetadata(BaseModel):
 # ============================================
 # API Endpoints
 # ============================================
+
 
 @app.get("/")
 def root():
@@ -102,6 +102,7 @@ def run_experiment(request: RunExperimentRequest = Body(...)):
     directly to SimulationExperiment for initialization.
     """
     import logging
+
     logger = logging.getLogger(__name__)
 
     try:
@@ -150,21 +151,25 @@ def run_experiment(request: RunExperimentRequest = Body(...)):
         logger.info(f"TimeSeries time shape: {ts.time.shape}")
 
         # Extract results
-        time_arr = ts.time.tolist() if hasattr(ts.time, 'tolist') else list(ts.time)
-        data_arr = ts.data.tolist() if hasattr(ts.data, 'tolist') else ts.data
+        time_arr = ts.time.tolist() if hasattr(ts.time, "tolist") else list(ts.time)
+        data_arr = ts.data.tolist() if hasattr(ts.data, "tolist") else ts.data
 
         logger.info(f"time_arr length: {len(time_arr)}")
         logger.info(f"data_arr type: {type(data_arr)}, length: {len(data_arr) if isinstance(data_arr, list) else 'N/A'}")
 
-        state_vars = list(experiment.dynamics.state_variables.keys()) if experiment.dynamics and experiment.dynamics.state_variables else ['V']
+        state_vars = (
+            list(experiment.dynamics.state_variables.keys())
+            if experiment.dynamics and experiment.dynamics.state_variables
+            else ["V"]
+        )
         logger.info(f"state_variables: {state_vars}")
 
         region_labels = []
-        if hasattr(experiment.network, 'region_labels') and experiment.network.region_labels is not None:
+        if hasattr(experiment.network, "region_labels") and experiment.network.region_labels is not None:
             region_labels = list(experiment.network.region_labels)
         else:
-            n_reg = getattr(experiment.network, 'number_of_nodes', None) or ts.data.shape[2]
-            region_labels = [f'Region_{i}' for i in range(n_reg)]
+            n_reg = getattr(experiment.network, "number_of_nodes", None) or ts.data.shape[2]
+            region_labels = [f"Region_{i}" for i in range(n_reg)]
         logger.info(f"region_labels: {region_labels}")
 
         return RunExperimentResponse(
@@ -179,6 +184,7 @@ def run_experiment(request: RunExperimentRequest = Body(...)):
 
     except Exception as e:
         import traceback
+
         error_msg = f"{str(e)}\n{traceback.format_exc()}"
         logger.error(f"EXPERIMENT RUN ERROR: {error_msg}")
         return RunExperimentResponse(

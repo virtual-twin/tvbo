@@ -12,10 +12,10 @@ except ImportError:
 def _require_librosa():
     if librosa is None:
         raise ImportError(
-            "Audio features require 'librosa'. Install with:\n"
-            "  pip install tvbo[audio]\n"
-            "Or: pip install librosa"
+            "Audio features require 'librosa'. Install with:\n  pip install tvbo[audio]\nOr: pip install librosa"
         )
+
+
 import owlready2 as owl
 from scipy.interpolate import UnivariateSpline
 from sympy import Symbol, lambdify, pycode, sympify
@@ -38,9 +38,7 @@ def class2metadata(ontoclass):
     if "where" in onto_eq:
         onto_eq = equations.convert_numpy_where_to_sympy(onto_eq)
 
-    metadata = tvbo_datamodel.Stimulus(
-        label=ontoclass.name, description=ontoclass.definition.first()
-    )
+    metadata = tvbo_datamodel.Stimulus(label=ontoclass.name, description=ontoclass.definition.first())
     metadata.equation = tvbo_datamodel.Equation(rhs=onto_eq)
     parameters = ontology.intersection(
         ontoclass.descendants(include_self=False),
@@ -60,9 +58,7 @@ def class2metadata(ontoclass):
     return metadata
 
 
-def load_acoustic_stimulus_from_audiofile(
-    file_path, sampling_rate=1000, duration="full"
-):
+def load_acoustic_stimulus_from_audiofile(file_path, sampling_rate=1000, duration="full"):
     _require_librosa()
     # Load the audio file
     audio, sr = librosa.load(file_path, sr=None)
@@ -73,23 +69,18 @@ def load_acoustic_stimulus_from_audiofile(
     # Normalize the signal to [-1, 1] range
     normalized_audio = resampled_audio / np.max(np.abs(resampled_audio))
 
-    audio = (
-        normalized_audio
-        if duration == "full"
-        else normalized_audio[: int(duration / 1000 * sampling_rate)]
-    )
+    audio = normalized_audio if duration == "full" else normalized_audio[: int(duration / 1000 * sampling_rate)]
 
     t = np.arange(len(audio)) / sampling_rate * 1000  # in ms
     audio_spline = UnivariateSpline(t, audio, s=0.01)
-    audio_fun = lambda x: (
-        audio_spline(x)
-        if np.isscalar(x) and t[0] <= x <= t[-1]
-        else (
-            np.where((x >= t[0]) & (x <= t[-1]), audio_spline(x), 0)
-            if not np.isscalar(x)
-            else 0
+
+    def audio_fun(x):
+        return (
+            audio_spline(x)
+            if np.isscalar(x) and t[0] <= x <= t[-1]
+            else (np.where((x >= t[0]) & (x <= t[-1]), audio_spline(x), 0) if not np.isscalar(x) else 0)
         )
-    )
+
     return audio_fun
 
 
@@ -157,14 +148,10 @@ class Stimulus(tvbo_datamodel.Stimulus):
 
     def render_code(self, format="tvb", **kwargs):
         if format == "tvb":
-            template = templates.lookup.get_template(
-                "tvbo-tvb-stimulus_equation.py.mako"
-            )
+            template = templates.lookup.get_template("tvbo-tvb-stimulus_equation.py.mako")
         elif format in ["python", "jax"]:
             template = templates.lookup.get_template("tvbo-python-stimulus.py.mako")
-        rendered_code = template.render(
-            stimulus=self, jax=format.lower() == "jax", **kwargs
-        )
+        rendered_code = template.render(stimulus=self, jax=format.lower() == "jax", **kwargs)
         return templater.format_code(rendered_code, format=format)
 
     def execute(
@@ -218,9 +205,7 @@ class Stimulus(tvbo_datamodel.Stimulus):
                 stim_func = namespace[self.label]
                 # stim_func = lambdify("t", eq, modules="numpy")
             elif self.dataLocation:
-                stim_func = load_acoustic_stimulus_from_audiofile(
-                    self.dataLocation, **kwargs
-                )
+                stim_func = load_acoustic_stimulus_from_audiofile(self.dataLocation, **kwargs)
             return stim_func
 
         elif format == "jax":
@@ -256,17 +241,11 @@ class Stimulus(tvbo_datamodel.Stimulus):
         if self.equation.pycode:
             self.python_expression = self.equation.pycode
         else:
-            self.python_expression = (
-                convert_ifelse_to_np_where(python_code)
-                if "if" in python_code
-                else python_code
-            )
+            self.python_expression = convert_ifelse_to_np_where(python_code) if "if" in python_code else python_code
 
         return eq, params
 
-    def plot(
-        self, duration=1000, dt=0.1, ax=None, plot_onset=True, cut_transient=0, **kwargs
-    ):
+    def plot(self, duration=1000, dt=0.1, ax=None, plot_onset=True, cut_transient=0, **kwargs):
         t_ms = np.linspace(cut_transient, duration, int(duration / dt) + 1)
 
         stim_func = self.execute(

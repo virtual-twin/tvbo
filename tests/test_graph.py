@@ -6,7 +6,6 @@
 # License: EUPL v2
 #
 import unittest
-from unittest.mock import MagicMock, patch
 
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -16,7 +15,6 @@ from tvbo.plot.ontology import (
     get_categories_from_graph,
     get_category_from_graph,
     get_default_params,
-    get_layout,
     reverse_edges,
     set_axis_limits,
 )
@@ -55,7 +53,7 @@ class TestGraphFunctions(unittest.TestCase):
         self.assertListEqual(get_categories_from_graph(G), ["alpha", "beta"])
 
     def test_set_axis_limits(self):
-        G = create_test_graph()
+        create_test_graph()
         pos = {"A": (0, 0), "B": (1, 1)}
         ax = plt.figure().add_subplot(111)
         set_axis_limits(pos, ax)

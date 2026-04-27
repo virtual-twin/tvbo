@@ -8,6 +8,7 @@
 """
 This module deals with loading elements from LEMS-generated files.
 """
+
 from lems import api as lems
 
 from tvbo.classes import equation as equations
@@ -18,7 +19,6 @@ def lems_model_info(model):
     model_definition = model.description
     derivatives = model.component_types["derivatives"]
     # TODO: dpms not used, remove?
-    dpms = derivatives.derived_parameters
     params = {
         k: dict(
             description=v.symbol,  # v.description,  # TODO: fix hack
@@ -62,12 +62,8 @@ def lems_model_info(model):
         k: {
             "parameters": cf.parameters,
             "constants": cf.constants,
-            "derived_parameters": {
-                dp_k: dp_v.value for dp_k, dp_v in cf.derived_parameters.items()
-            },
-            "cfuns": {
-                dv_k: dv_v.value for dv_k, dv_v in cf.dynamics.derived_variables.items()
-            },
+            "derived_parameters": {dp_k: dp_v.value for dp_k, dp_v in cf.derived_parameters.items()},
+            "cfuns": {dv_k: dv_v.value for dv_k, dv_v in cf.dynamics.derived_variables.items()},
         }
         for k, cf in model.component_types.items()
         if "coupling" in k.lower()
@@ -136,25 +132,19 @@ def import_lems_model(lems_file, model_name):
         }
         if sv_info["boundaries"]:
             properties["stateVariableBoundaries"] = [", ".join(sv_info["boundaries"])]
-        sv_class = create_onto_subclass(
-            sv_name + model_suffix, onto.StateVariable, properties, model_class
-        )
+        sv_class = create_onto_subclass(sv_name + model_suffix, onto.StateVariable, properties, model_class)
         model_class.has_state_variable.append(sv_class)
 
     # Adding parameters as subclasses of the model
     for param_name, param_info in data.get("parameters", {}).items():
         properties = {
             "label": [param_name + model_suffix],
-            "definition": [
-                param_info["description"] if param_info["description"] else ""
-            ],
+            "definition": [param_info["description"] if param_info["description"] else ""],
             "symbol": [param_info["symbol"] if param_info["symbol"] else param_name],
             "defaultValue": [param_info["value"]],
             "range": [", ".join(param_info["range"])],
         }
-        param_class = create_onto_subclass(
-            param_name + model_suffix, onto.Parameter, properties, model_class
-        )
+        param_class = create_onto_subclass(param_name + model_suffix, onto.Parameter, properties, model_class)
         model_class.has_parameter.append(param_class)
 
     # Adding non-integrated variables as subclasses of the model
@@ -207,9 +197,7 @@ def import_lems_model(lems_file, model_name):
                 "symbol": [value.name],
                 "defaultValue": [value.value] if value.value else "None",
             }
-            cparam_class = create_onto_subclass(
-                param_name, onto.Parameter, properties, cf_class
-            )
+            cparam_class = create_onto_subclass(param_name, onto.Parameter, properties, cf_class)
             cf_class.has_parameter.append(cparam_class)
 
         for param, value in cf["derived_parameters"].items():

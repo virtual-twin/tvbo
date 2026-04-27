@@ -1,4 +1,5 @@
 """Test importing a minimal Dynamics into the ontology via ontology.import_model."""
+
 from tvbo.datamodel import tvbo_datamodel as dm
 from tvbo.ontology import owl as ontology
 

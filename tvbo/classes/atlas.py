@@ -1,5 +1,4 @@
 import os
-from os.path import basename, dirname, join
 
 try:
     import nibabel as nib
@@ -7,7 +6,6 @@ except ImportError:
     nib = None  # nibabel is optional (neuroimaging data support)
 
 import numpy as np
-import pandas as pd
 from bids.layout import BIDSLayout
 from linkml_runtime.dumpers import yaml_dumper
 from linkml_runtime.loaders import yaml_loader
@@ -17,7 +15,10 @@ from scipy.ndimage import center_of_mass
 try:
     from tqdm import tqdm
 except ImportError:
-    tqdm = lambda x, **kwargs: x  # No-op if tqdm not available
+
+    def tqdm(x, **kwargs):
+        return x  # No-op if tqdm not available
+
 
 from tvbo.data.tvbo_data import ATLAS_DIR
 from tvbo.adapters import bids as bids_utils
@@ -71,9 +72,7 @@ class Atlas(tvbo_datamodel.BrainAtlas):
     def __init__(self, atlas=None, **kwargs):
         if isinstance(atlas, tvbo_datamodel.BrainAtlas):
             name = atlas.name.replace("-", "") if atlas.name else "wholebrain"
-            super().__init__(
-                name=name, **{k: v for k, v in atlas.__dict__.items() if k != "name"}
-            )
+            super().__init__(name=name, **{k: v for k, v in atlas.__dict__.items() if k != "name"})
         elif isinstance(atlas, str):
             super().__init__(name=atlas)
         else:
@@ -91,9 +90,7 @@ class Atlas(tvbo_datamodel.BrainAtlas):
         if self.name == "wholebrain":
             return None
         if self.name not in available_atlases:
-            raise ValueError(
-                f"Atlas {self.name} is not available in the dataset: {available_atlases}"
-            )
+            raise ValueError(f"Atlas {self.name} is not available in the dataset: {available_atlases}")
         imgs = atlas_data.get(
             atlas=self.name,
             suffix="dseg",
@@ -124,7 +121,7 @@ class Atlas(tvbo_datamodel.BrainAtlas):
         return self._find_volume_path()
 
     def _load_metadata(self):
-        if getattr(self, '_metadata_loaded', False):
+        if getattr(self, "_metadata_loaded", False):
             return
         metadata_files = atlas_data.get(
             atlas=self.name,
@@ -143,10 +140,7 @@ class Atlas(tvbo_datamodel.BrainAtlas):
 
             # Fill in centers from companion centers.txt if missing
             ents = getattr(self.terminology, "entities", None) or {}
-            has_any_center = any(
-                getattr(e, "center", None) is not None
-                for e in ents.values()
-            )
+            has_any_center = any(getattr(e, "center", None) is not None for e in ents.values())
             if not has_any_center:
                 centers_file = metadata_files[0].replace("_dseg.yaml", "_centers.txt")
                 if os.path.exists(centers_file):
@@ -155,12 +149,14 @@ class Atlas(tvbo_datamodel.BrainAtlas):
                     if len(centers) == len(ent_list):
                         for ent, xyz in zip(ent_list, centers):
                             ent.center = tvbo_datamodel.Coordinate(
-                                x=float(xyz[0]), y=float(xyz[1]), z=float(xyz[2]),
+                                x=float(xyz[0]),
+                                y=float(xyz[1]),
+                                z=float(xyz[2]),
                             )
         else:
             if getattr(self, "terminology", None) is None:
                 self.terminology = tvbo_datamodel.ParcellationTerminology(label="empty")
-        object.__setattr__(self, '_metadata_loaded', True)
+        object.__setattr__(self, "_metadata_loaded", True)
 
     @property
     def metadata_file(self):
@@ -182,8 +178,7 @@ class Atlas(tvbo_datamodel.BrainAtlas):
         self._load_metadata()
         ents = getattr(getattr(self, "terminology", None), "entities", None) or {}
         if ents:
-            pairs = [(e.name, e.lookupLabel) for e in ents.values()
-                     if e.name is not None and e.lookupLabel is not None]
+            pairs = [(e.name, e.lookupLabel) for e in ents.values() if e.name is not None and e.lookupLabel is not None]
             if pairs:
                 pairs.sort(key=lambda x: x[1])
                 return np.asarray([p[0] for p in pairs])
@@ -210,10 +205,8 @@ class Atlas(tvbo_datamodel.BrainAtlas):
         if not isinstance(self.terminology.entities, dict):
             self.terminology.entities = {}
         for idx in lookup_ids:
-            self.terminology.entities[str(int(idx))] = (
-                tvbo_datamodel.ParcellationEntity(
-                    name=str(int(idx)), lookupLabel=int(idx)
-                )
+            self.terminology.entities[str(int(idx))] = tvbo_datamodel.ParcellationEntity(
+                name=str(int(idx)), lookupLabel=int(idx)
             )
         return self.terminology
 
@@ -240,9 +233,7 @@ class Atlas(tvbo_datamodel.BrainAtlas):
             try:
                 from nilearn.plotting import find_parcellation_cut_coords
 
-                centers, lookup_labels = find_parcellation_cut_coords(
-                    self.volume, return_label_names=True
-                )
+                centers, lookup_labels = find_parcellation_cut_coords(self.volume, return_label_names=True)
             except ImportError:
                 centers = []
                 lookup_labels = []
@@ -255,7 +246,9 @@ class Atlas(tvbo_datamodel.BrainAtlas):
                 key = str(int(lookup_label))
                 if key in ents:
                     ents[key].center = tvbo_datamodel.Coordinate(
-                        x=float(center[0]), y=float(center[1]), z=float(center[2]),
+                        x=float(center[0]),
+                        y=float(center[1]),
+                        z=float(center[2]),
                     )
             centers_list = []
             for e in ents.values():
@@ -284,9 +277,7 @@ def create_atlas_metadata(fname_atlas, labels="freesurfer"):
         coordinateSpace=tvbo_datamodel.CommonCoordinateSpace(
             abbreviation=entities["space"],
         ),
-        terminology=tvbo_datamodel.ParcellationTerminology(
-            name=entities.get("desc", "original")
-        ),
+        terminology=tvbo_datamodel.ParcellationTerminology(name=entities.get("desc", "original")),
     )
     atlas_metadata.terminology.entities = []
 
@@ -313,9 +304,7 @@ def rank_atlas(fname_atlas, labels="freesurfer", desc="ranked", gm_only=True):
         coordinateSpace=tvbo_datamodel.CommonCoordinateSpace(
             abbreviation=entities["space"],
         ),
-        terminology=tvbo_datamodel.ParcellationTerminology(
-            name=entities.get("desc", "original")
-        ),
+        terminology=tvbo_datamodel.ParcellationTerminology(name=entities.get("desc", "original")),
     )
     atlas_metadata.terminology.entities = []
     atlas = nib.load(fname_atlas)
@@ -328,7 +317,7 @@ def rank_atlas(fname_atlas, labels="freesurfer", desc="ranked", gm_only=True):
             continue
         label = freesurfer.idx2label(idx) if labels == "freesurfer" else labels[idx]
         if labels == "freesurfer" and gm_only:
-            if not "ctx" in label and label not in aseg_gm_regions:
+            if "ctx" not in label and label not in aseg_gm_regions:
                 continue
 
         atlas_metadata.terminology.entities.append(

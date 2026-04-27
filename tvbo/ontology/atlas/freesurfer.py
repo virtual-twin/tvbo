@@ -6,7 +6,6 @@
 # Copyright (c) 2023 Charité Universitätsmedizin Berlin
 #
 
-import os
 from os.path import join
 from typing import Dict, List, Union, cast
 
@@ -80,24 +79,20 @@ def label2idx(label: Union[str, List[str]]) -> Union[int, List[int]]:
         int | list[int]: The corresponding index/indices.
     """
     if isinstance(label, list):
-        return [cast(int, fs_mapper(output="index")[l]) for l in label]
+        return [cast(int, fs_mapper(output="index")[lbl]) for lbl in label]
     else:
         return cast(int, fs_mapper(output="index")[label])
 
 
-fs_aparcaseg86_labels = np.genfromtxt(
-    join(constants.DATA_DIR, "freesurfer", "FS86_labels.txt"), dtype="str"
-)
+fs_aparcaseg86_labels = np.genfromtxt(join(constants.DATA_DIR, "freesurfer", "FS86_labels.txt"), dtype="str")
 
-fs_aparc_labels = np.genfromtxt(
-    join(constants.DATA_DIR, "freesurfer", "FS_aparc_labels.txt"), dtype="str"
-)
+fs_aparc_labels = np.genfromtxt(join(constants.DATA_DIR, "freesurfer", "FS_aparc_labels.txt"), dtype="str")
 
 
 def hcp2fs_labels(hcp_labels: List[str]) -> List[str]:
     fs_labels: List[str] = list()
-    for l in hcp_labels:
-        l = l.lower()
-        fs_labels.append(l.replace("l_", "ctx-lh-").replace("r_", "ctx-rh-"))
+    for lbl in hcp_labels:
+        lbl = lbl.lower()
+        fs_labels.append(lbl.replace("l_", "ctx-lh-").replace("r_", "ctx-rh-"))
 
     return fs_labels

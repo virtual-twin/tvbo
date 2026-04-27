@@ -9,10 +9,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import numpy as np
 
 if TYPE_CHECKING:
-    from tvbo.data.types import ExperimentResult, TimeSeries
+    from tvbo.data.types import ExperimentResult
     from tvbo.classes.experiment import SimulationExperiment
 
 
@@ -57,18 +56,16 @@ class DiffEqAdapter:
         model.update_metadata()
 
         ctx = {
-            'experiment': exp,
-            'model': model,
-            'duration': exp.integration.duration,
-            'dt': exp.integration.step_size,
-            'plot': False,
-            'fout': False,
+            "experiment": exp,
+            "model": model,
+            "duration": exp.integration.duration,
+            "dt": exp.integration.step_size,
+            "plot": False,
+            "fout": False,
         }
         ctx.update(kwargs)
 
-        template = templates.lookup.get_template(
-            "tvbo-julia-DifferentialEquations.jl.mako"
-        )
+        template = templates.lookup.get_template("tvbo-julia-DifferentialEquations.jl.mako")
         return template.render(**ctx)
 
     def run(self, **kwargs) -> "ExperimentResult":
@@ -109,6 +106,8 @@ class DiffEqAdapter:
 
         sim = SimulationResult(data=da)
         return ExperimentResult(
-            integration=sim, source=exp, name=getattr(exp, 'label', None),
+            integration=sim,
+            source=exp,
+            name=getattr(exp, "label", None),
             sol=sol,
         )

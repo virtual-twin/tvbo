@@ -29,9 +29,7 @@ FILE_RE = re.compile(
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Create BIDS-style Schaefer atlas files from original downloads."
-    )
+    parser = argparse.ArgumentParser(description="Create BIDS-style Schaefer atlas files from original downloads.")
     parser.add_argument(
         "--source-dir",
         type=Path,
@@ -82,14 +80,7 @@ def parse_args() -> argparse.Namespace:
 def target_name(scale: int, networks: int, resolution: str) -> str:
     """Build BIDS-style dseg filename for atlas directory."""
     res_val = "1" if resolution == "1mm" else "2"
-    return (
-        "space-FSLMNI152"
-        "_atlas-Schaefer2018"
-        f"_seg-{networks}Networks"
-        f"_scale-{scale}"
-        f"_res-{res_val}"
-        "_desc-original_dseg.nii.gz"
-    )
+    return f"space-FSLMNI152_atlas-Schaefer2018_seg-{networks}Networks_scale-{scale}_res-{res_val}_desc-original_dseg.nii.gz"
 
 
 def main() -> None:

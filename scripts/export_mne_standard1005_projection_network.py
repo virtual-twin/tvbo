@@ -13,6 +13,7 @@ Typical workflow
 2) Replot from saved files only (no forward recomputation):
    python scripts/export_mne_standard1005_projection_network.py --skip-export
 """
+
 from __future__ import annotations
 
 import argparse
@@ -28,11 +29,7 @@ from tvbo import Network, Observation, database_path
 from tvbo.datamodel import tvbo_datamodel
 
 
-DEFAULT_OUTPUT = (
-    database_path
-    / "networks"
-    / "sensors_eeg_standard1005_fsaverage_aparc_projection.yaml"
-)
+DEFAULT_OUTPUT = database_path / "networks" / "sensors_eeg_standard1005_fsaverage_aparc_projection.yaml"
 
 
 def _resolve_output_paths(
@@ -200,8 +197,7 @@ def _build_tvbo_sensor_network(
     )
     net.label = "EEG standard_1005 fsaverage projection"
     net.description = (
-        "MNE standard_1005 EEG sensors (MNI, mm) with fsaverage aparc "
-        "projection gain matrix (sensors x regions)."
+        "MNE standard_1005 EEG sensors (MNI, mm) with fsaverage aparc projection gain matrix (sensors x regions)."
     )
     net.descriptor = "sensors"
     net.distance_unit = "mm"
@@ -256,12 +252,8 @@ def _load_head_surface(fs_dir: Path):
     head_tris = np.asarray(head_surf["tris"], dtype=np.int32)
 
     head_gifti = nib.gifti.GiftiImage()
-    head_gifti.add_gifti_data_array(
-        nib.gifti.GiftiDataArray(head_verts, intent="NIFTI_INTENT_POINTSET")
-    )
-    head_gifti.add_gifti_data_array(
-        nib.gifti.GiftiDataArray(head_tris, intent="NIFTI_INTENT_TRIANGLE")
-    )
+    head_gifti.add_gifti_data_array(nib.gifti.GiftiDataArray(head_verts, intent="NIFTI_INTENT_POINTSET"))
+    head_gifti.add_gifti_data_array(nib.gifti.GiftiDataArray(head_tris, intent="NIFTI_INTENT_TRIANGLE"))
     return head_gifti
 
 
@@ -400,10 +392,7 @@ def plot_saved_projection_network(
 
 def _parse_args():
     parser = argparse.ArgumentParser(
-        description=(
-            "Export an MNE standard_1005 EEG projection network in tvbo format "
-            "and optionally plot it with bsplot."
-        )
+        description=("Export an MNE standard_1005 EEG projection network in tvbo format and optionally plot it with bsplot.")
     )
     parser.add_argument(
         "--output-yaml",
