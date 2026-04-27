@@ -2608,7 +2608,7 @@ class Range(ConfiguredBaseModel):
     """
     Specifies a range for array generation, parameter bounds, or grid exploration.
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Range', 'from_schema': 'https://w3id.org/tvbo'})
 
     lo: Optional[str] = Field(default="0", description="""Lower bound or starting value. Can be a number or argument name.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Range'], 'ifabsent': 'string(0)'} })
     hi: Optional[str] = Field(default=None, description="""Upper bound or stopping value. Can be a number or argument name.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Range']} })
@@ -2620,7 +2620,7 @@ class Range(ConfiguredBaseModel):
 
 
 class Equation(ConfiguredBaseModel):
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Equation', 'from_schema': 'https://w3id.org/tvbo'})
 
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Subject',
@@ -2748,14 +2748,14 @@ class ConditionalBlock(ConfiguredBaseModel):
     """
     A single condition and its corresponding equation segment.
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:ConditionalBlock', 'from_schema': 'https://w3id.org/tvbo'})
 
     condition: Optional[str] = Field(default=None, description="""The condition for this block (e.g., t > onset).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Session', 'ConditionalBlock', 'Event', 'Case']} })
     expression: Optional[str] = Field(default=None, description="""The equation to apply when the condition is met.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ConditionalBlock', 'DifferentialOperator']} })
 
 
 class Stimulus(ConfiguredBaseModel):
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Stimulus', 'from_schema': 'https://w3id.org/tvbo'})
 
     equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
                        'Event',
@@ -2900,7 +2900,7 @@ class Event(ConfiguredBaseModel):
     """
     A discrete or continuous event that modifies the system during simulation. Generalizes Stimulus: can represent external inputs (stimulus type), threshold-triggered state changes (continuous/discrete type), or time-scheduled interventions (preset_time type). Attaches to components (nodes/edges) or to the experiment level.
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Event', 'from_schema': 'https://w3id.org/tvbo'})
 
     name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
@@ -3075,7 +3075,8 @@ class Event(ConfiguredBaseModel):
 
 
 class TemporalApplicableEquation(Equation):
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:TemporalApplicableEquation',
+         'from_schema': 'https://w3id.org/tvbo'})
 
     parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
                        'Stimulus',
@@ -3395,7 +3396,7 @@ class Matrix(ConfiguredBaseModel):
     """
     Adjacency matrix of a network.
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Matrix', 'from_schema': 'https://w3id.org/tvbo'})
 
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Subject',
@@ -3510,7 +3511,7 @@ class BrainRegionSeries(ConfiguredBaseModel):
     """
     A series whose values represent latitude
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:BrainRegionSeries', 'from_schema': 'https://w3id.org/tvbo'})
 
     values: Optional[list[str]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Matrix', 'BrainRegionSeries', 'SpatialField']} })
 
@@ -3705,7 +3706,7 @@ class GraphGenerator(ConfiguredBaseModel):
     Backend-agnostic graph generator specification.  Captures the mathematical family (type) and its parameters so that each backend can emit the correct constructor call (Graphs.jl, NetworkX, etc.). The number of nodes is always taken from Network.number_of_nodes.
 
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:GraphGenerator', 'from_schema': 'https://w3id.org/tvbo'})
 
     name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
@@ -3821,7 +3822,7 @@ class GraphGenerator(ConfiguredBaseModel):
 
 
 class File(ConfiguredBaseModel):
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:File', 'from_schema': 'https://w3id.org/tvbo'})
 
     name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
@@ -4980,7 +4981,8 @@ class Distribution(ConfiguredBaseModel):
     """
     A probability distribution for sampling parameters or initial conditions. Standard distributions (Uniform, Gaussian) are specified by name and domain/parameters. Custom distributions use a Function for the PDF/sampling rule. Default name is Uniform when only domain is given.
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo',
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Distribution',
+         'from_schema': 'https://w3id.org/tvbo',
          'slot_usage': {'name': {'ifabsent': 'string(Uniform)', 'name': 'name'}}})
 
     name: str = Field(default="Uniform", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
@@ -5239,7 +5241,7 @@ class CouplingInput(ConfiguredBaseModel):
     """
     Specification of a coupling input channel for multi-coupling dynamics
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:CouplingInput', 'from_schema': 'https://w3id.org/tvbo'})
 
     name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
@@ -5612,7 +5614,7 @@ class Aggregation(ConfiguredBaseModel):
     """
     Specifies how to aggregate values across a dimension. Used for loss functions to define per-element loss with reduction.
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Aggregation', 'from_schema': 'https://w3id.org/tvbo'})
 
     over: Optional[DimensionType] = Field(default=None, description="""Dimension to aggregate over (e.g., node, time, state)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Aggregation']} })
     type: Optional[ReductionType] = Field(default=ReductionType.mean, description="""Aggregation operation (mean, sum, max, min, none)""", json_schema_extra = { "linkml_meta": {'domain_of': ['GraphGenerator',
@@ -5627,7 +5629,7 @@ class LossFunction(Function):
     """
     A loss function for optimization with optional aggregation. Extends Function with aggregation specification for per-element losses.
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:LossFunction', 'from_schema': 'https://w3id.org/tvbo'})
 
     aggregate: Optional[Aggregation] = Field(default=None, description="""How to aggregate the loss across dimensions. Example: aggregate.over=node, aggregate.type=mean computes loss per node, then averages.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'LossFunction', 'FunctionCall']} })
     name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
@@ -5796,7 +5798,7 @@ class FunctionCall(ConfiguredBaseModel):
     """
     Invocation of a function in a pipeline. Can reference a defined Function by name, OR inline a callable directly for external library functions, OR inline an equation, OR use class_call for class instantiation. Mirrors Function attributes so pipeline steps can be self-contained.
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:FunctionCall', 'from_schema': 'https://w3id.org/tvbo'})
 
     acronym: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
                        'ClinicalScore',
@@ -5956,7 +5958,7 @@ class FunctionCall(ConfiguredBaseModel):
 
 
 class Callable(ConfiguredBaseModel):
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Callable', 'from_schema': 'https://w3id.org/tvbo'})
 
     name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
@@ -6050,7 +6052,7 @@ class ClassReference(Callable):
     """
     Reference to a class that can be instantiated and called. Used for external library classes (e.g., tvboptim.Bold, custom monitors). The class is instantiated with constructor_args, then called with call_args. Generalizable pattern: works for tvboptim, TVB, or any Python class.
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:ClassReference', 'from_schema': 'https://w3id.org/tvbo'})
 
     constructor_args: Optional[list[Argument]] = Field(default=None, description="""Arguments passed to __init__ when instantiating the class. Example: period=1000.0, downsample_period=4.0 for Bold monitor.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ClassReference']} })
     call_args: Optional[list[Argument]] = Field(default=None, description="""Arguments passed when calling the instance (__call__). Usually the input data from simulation result. Example: result (simulation output array).""", json_schema_extra = { "linkml_meta": {'domain_of': ['ClassReference']} })
@@ -6144,7 +6146,7 @@ class ClassReference(Callable):
 
 
 class Case(ConfiguredBaseModel):
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Case', 'from_schema': 'https://w3id.org/tvbo'})
 
     condition: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Session', 'ConditionalBlock', 'Event', 'Case']} })
     equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
@@ -6671,7 +6673,7 @@ class DataSource(ConfiguredBaseModel):
     """
     Specification for loading external/empirical data.
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:DataSource', 'from_schema': 'https://w3id.org/tvbo'})
 
     name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
@@ -6810,7 +6812,7 @@ class OptimizationStage(ConfiguredBaseModel):
     """
     A single stage in a multi-stage optimization workflow. Stages run sequentially, with each stage potentially using different parameters, shapes, learning rates, and algorithms.
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:OptimizationStage', 'from_schema': 'https://w3id.org/tvbo'})
 
     name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
@@ -6952,7 +6954,7 @@ class Optimization(OptimizationStage):
     """
     Configuration for parameter optimization. Inherits single-stage fields from OptimizationStage. For multi-stage workflows, use 'stages' (ignores inherited single-stage fields). Loss equation references observations directly by name.
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Optimization', 'from_schema': 'https://w3id.org/tvbo'})
 
     execution: Optional[ExecutionConfig] = Field(default=None, description="""Per-optimization execution configuration (overrides experiment-level defaults). Useful for setting random_seed, precision, or hardware for optimization phase.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization',
                        'Exploration',
@@ -7103,7 +7105,7 @@ class Exploration(ConfiguredBaseModel):
     """
     Parameter space exploration (grid search, sweep).
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Exploration', 'from_schema': 'https://w3id.org/tvbo'})
 
     name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
@@ -7266,7 +7268,7 @@ class UpdateRule(ConfiguredBaseModel):
     """
     Defines how a parameter is updated based on observables. Represents iterative learning rules like FIC or EIB updates. Functions from experiment.functions are available in the equation.
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:UpdateRule', 'from_schema': 'https://w3id.org/tvbo'})
 
     name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
@@ -7375,7 +7377,7 @@ class AlgorithmInclude(ConfiguredBaseModel):
     """
     Reference to an included algorithm with optional argument overrides. Allows combining algorithms with different hyperparameter values.
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:AlgorithmInclude', 'from_schema': 'https://w3id.org/tvbo'})
 
     algorithm: str = Field(default=..., description="""Reference to the algorithm to include""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'AlgorithmInclude', 'Continuation']} })
     arguments: Optional[dict[str, Parameter]] = Field(default=None, description="""Override hyperparameter values for the included algorithm. Maps parameter names to new values.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall', 'AlgorithmInclude']} })
@@ -7385,7 +7387,7 @@ class TuningObjective(ConfiguredBaseModel):
     """
     Defines what the tuning algorithm optimizes for. Can be an activity target (FIC) or a connectivity target (EIB).
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:TuningObjective', 'from_schema': 'https://w3id.org/tvbo'})
 
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Subject',
@@ -7493,7 +7495,7 @@ class Algorithm(ConfiguredBaseModel):
     """
     A complete specification of an iterative parameter tuning algorithm. Combines update rules, objectives, observations, and hyperparameters.
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Algorithm', 'from_schema': 'https://w3id.org/tvbo'})
 
     name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
@@ -7608,7 +7610,7 @@ class Option(ConfiguredBaseModel):
     """
     A toolkit-specific key-value option (string name + string value). Used for backend settings that are not universal numeric parameters (e.g., solver name, tangent method, jacobian type).
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Option', 'from_schema': 'https://w3id.org/tvbo'})
 
     name: str = Field(default=..., description="""Option name (key).""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
@@ -7656,7 +7658,7 @@ class Discretization(ConfiguredBaseModel):
     """
     Discretization method for boundary value problems in continuation (periodic orbits, connecting orbits, quasi-periodic tori). Specifies the method; method-specific numerics go in parameters.
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Discretization', 'from_schema': 'https://w3id.org/tvbo'})
 
     parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
                        'Stimulus',
@@ -7690,7 +7692,7 @@ class InitialState(ConfiguredBaseModel):
     """
     How to obtain the starting equilibrium or periodic orbit for continuation. Most robust: time-integrate to steady state.
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:InitialState', 'from_schema': 'https://w3id.org/tvbo'})
 
     method: Optional[InitialStateMethod] = Field(default=InitialStateMethod.time_integration, description="""Strategy for finding the initial state.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization', 'InitialState', 'Solver', 'Integrator'],
          'ifabsent': 'string(time_integration)'} })
@@ -7707,7 +7709,7 @@ class BranchSwitch(ConfiguredBaseModel):
     """
     Specification for switching from a detected bifurcation point to a new branch (periodic orbits from Hopf, fold continuation, etc.). Each BranchSwitch says: \"from which special point on the parent branch, continue what kind of object, with what settings.\" Override parent solver settings via the inline continuation field — only explicitly set attributes take effect; everything else is inherited from the parent Continuation.
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:BranchSwitch', 'from_schema': 'https://w3id.org/tvbo'})
 
     name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
@@ -7823,7 +7825,7 @@ class Continuation(ConfiguredBaseModel):
     """
     Complete specification of a numerical continuation / bifurcation analysis. All universal solver settings live directly here. Toolkit-specific string options go in the options slot. When used inside a BranchSwitch, only explicitly set attributes override the parent's values.
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Continuation', 'from_schema': 'https://w3id.org/tvbo'})
 
     name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
@@ -7987,7 +7989,7 @@ class Solver(ConfiguredBaseModel):
     """
     Lightweight specification of a numerical ODE solver / integrator. Covers adaptive solvers (Vern9, Rodas5, Tsit5, etc.) used in shooting methods, initial-state integration, and other contexts where only the algorithm and tolerances matter.
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Solver', 'from_schema': 'https://w3id.org/tvbo'})
 
     method: Optional[str] = Field(default="Tsit5", description="""Solver algorithm name (e.g., Vern9, Rodas5, Tsit5, euler, heun, rk4).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization', 'InitialState', 'Solver', 'Integrator'],
          'ifabsent': 'string(Tsit5)'} })
@@ -7999,7 +8001,7 @@ class Integrator(Solver):
     """
     Fixed-step or adaptive ODE integrator with TVB-specific extensions (noise, transient time, etc.). Inherits abs_tol, rel_tol from Solver. Overrides method default to 'euler'.
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Integrator', 'from_schema': 'https://w3id.org/tvbo'})
 
     time_scale: Optional[UnitEnum] = Field(default=UnitEnum.ms, description="""Time unit for the integration / simulation. Determines the physical time meaning of one model time-step.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'Integrator'], 'ifabsent': 'ms'} })
     unit: Optional[UnitEnum] = Field(default=None, description="""Physical unit of measurement. Values are drawn from the QUDT ontology (http://qudt.org/vocab/unit/) with UO cross-references where available.""", json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
@@ -8274,7 +8276,7 @@ class RegionMapping(ConfiguredBaseModel):
     """
     Maps vertices to parent regions for hierarchical/aggregated coupling
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:RegionMapping', 'from_schema': 'https://w3id.org/tvbo'})
 
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Subject',
@@ -8383,7 +8385,7 @@ class RegionMapping(ConfiguredBaseModel):
 
 
 class Sample(ConfiguredBaseModel):
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Sample', 'from_schema': 'https://w3id.org/tvbo'})
 
     groups: Optional[list[str]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Sample']} })
     size: Optional[int] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Sample']} })
@@ -8393,7 +8395,7 @@ class ExecutionConfig(ConfiguredBaseModel):
     """
     Configuration for computational execution (parallelization, precision, hardware).
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:ExecutionConfig', 'from_schema': 'https://w3id.org/tvbo'})
 
     n_workers: Optional[int] = Field(default=1, description="""Number of parallel workers (maps to pmap devices in JAX, processes in multiprocessing)""", json_schema_extra = { "linkml_meta": {'domain_of': ['ExecutionConfig'], 'ifabsent': 'integer(1)'} })
     n_threads: Optional[int] = Field(default=-1, description="""Number of CPU threads per worker (-1 = auto-detect)""", json_schema_extra = { "linkml_meta": {'domain_of': ['ExecutionConfig'], 'ifabsent': 'integer(-1)'} })
@@ -8536,7 +8538,7 @@ class SimulationExperiment(ConfiguredBaseModel):
 
 
 class SimulationStudy(ConfiguredBaseModel):
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:SimulationStudy', 'from_schema': 'https://w3id.org/tvbo'})
 
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Subject',
@@ -8782,7 +8784,7 @@ class TimeSeries(ConfiguredBaseModel):
 
 
 class NDArray(ConfiguredBaseModel):
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:NDArray', 'from_schema': 'https://w3id.org/tvbo'})
 
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Subject',
@@ -8901,7 +8903,7 @@ class NDArray(ConfiguredBaseModel):
 
 
 class SpatialDomain(ConfiguredBaseModel):
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:SpatialDomain', 'from_schema': 'https://w3id.org/tvbo'})
 
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Subject',
@@ -9006,7 +9008,7 @@ class SpatialDomain(ConfiguredBaseModel):
 
 
 class Mesh(ConfiguredBaseModel):
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Mesh', 'from_schema': 'https://w3id.org/tvbo'})
 
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Subject',
@@ -9126,7 +9128,7 @@ class Mesh(ConfiguredBaseModel):
 
 
 class SpatialField(ConfiguredBaseModel):
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:SpatialField', 'from_schema': 'https://w3id.org/tvbo'})
 
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Subject',
@@ -9242,7 +9244,7 @@ class SpatialField(ConfiguredBaseModel):
 
 
 class FieldStateVariable(StateVariable):
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:FieldStateVariable', 'from_schema': 'https://w3id.org/tvbo'})
 
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Subject',
@@ -9427,7 +9429,8 @@ class FieldStateVariable(StateVariable):
 
 
 class DifferentialOperator(ConfiguredBaseModel):
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:DifferentialOperator',
+         'from_schema': 'https://w3id.org/tvbo'})
 
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Subject',
@@ -9497,7 +9500,7 @@ class DifferentialOperator(ConfiguredBaseModel):
 
 
 class BoundaryCondition(ConfiguredBaseModel):
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:BoundaryCondition', 'from_schema': 'https://w3id.org/tvbo'})
 
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Subject',
@@ -9604,7 +9607,7 @@ class BoundaryCondition(ConfiguredBaseModel):
 
 
 class PDESolver(ConfiguredBaseModel):
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:PDESolver', 'from_schema': 'https://w3id.org/tvbo'})
 
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Subject',
@@ -9710,7 +9713,7 @@ class PDE(ConfiguredBaseModel):
     """
     Partial differential equation problem definition.
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:PDE', 'from_schema': 'https://w3id.org/tvbo'})
 
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Subject',
