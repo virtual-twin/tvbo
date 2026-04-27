@@ -1,10 +1,7 @@
 name: Schaefer2018
 abbreviation: Schaefer2018
 versionIdentifier: '2018'
-coordinateSpace:
-  name: MNI152
-  abbreviation: FSLMNI152
-  nativeUnit: mm
+coordinateSpace: MNI152
 terminology:
   label: Schaefer2018_800Parcels_7Networks_order
   entities:

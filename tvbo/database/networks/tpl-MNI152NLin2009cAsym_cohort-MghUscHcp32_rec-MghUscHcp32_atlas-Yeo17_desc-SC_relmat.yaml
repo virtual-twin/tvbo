@@ -18,123 +18,123 @@ parameters:
 parcellation:
   atlas:
     name: Yeo17
-    coordinateSpace: {name: MNI152NLin2009cAsym}
+    coordinateSpace: MNI152NLin2009cAsym
 tractogram:
   name: MghUscHcp32
 nodes:
-- id: 1
-  label: '1'
-  position:
-    x: -28.1814
-    y: -82.261
-    z: -1.8011
-- id: 2
-  label: '2'
-  position:
-    x: -11.7843
-    y: -70.4562
-    z: 10.6088
-- id: 3
-  label: '3'
-  position:
-    x: -21.5086
-    y: -25.4171
-    z: 61.0289
-- id: 4
-  label: '4'
-  position:
-    x: -50.9723
-    y: -15.5061
-    z: 15.8259
-- id: 5
-  label: '5'
-  position:
-    x: -35.9277
-    y: -64.0721
-    z: 15.3916
-- id: 6
-  label: '6'
-  position:
-    x: -34.984
-    y: -41.0618
-    z: 52.9398
-- id: 7
-  label: '7'
-  position:
-    x: -42.4291
-    y: 1.4167
-    z: 1.6973
-- id: 8
-  label: '8'
-  position:
-    x: -31.6194
-    y: 43.2796
-    z: 27.2684
-- id: 9
-  label: '9'
-  position:
-    x: -36.0099
-    y: -4.2135
-    z: -33.6964
-- id: 10
-  label: '10'
-  position:
-    x: -13.5827
-    y: 39.0201
-    z: -17.8346
-- id: 11
-  label: '11'
-  position:
-    x: -6.5844
-    y: -61.7441
-    z: 44.312
-- id: 12
-  label: '12'
-  position:
-    x: -42.9896
-    y: 21.7503
-    z: 22.4576
-- id: 13
-  label: '13'
-  position:
-    x: -33.811
-    y: 53.9538
-    z: -2.4838
-- id: 14
-  label: '14'
-  position:
-    x: -56.7354
-    y: -30.9535
-    z: 4.3668
-- id: 15
-  label: '15'
-  position:
-    x: -25.948
-    y: -31.4755
-    z: -18.8827
-- id: 16
-  label: '16'
-  position:
-    x: -8.3339
-    y: 50.5137
-    z: 6.4307
-- id: 17
-  label: '17'
-  position:
-    x: -56.0317
-    y: -12.537
-    z: -18.7785
+  - id: 1
+    label: '1'
+    position:
+      x: -28.1814
+      y: -82.261
+      z: -1.8011
+  - id: 2
+    label: '2'
+    position:
+      x: -11.7843
+      y: -70.4562
+      z: 10.6088
+  - id: 3
+    label: '3'
+    position:
+      x: -21.5086
+      y: -25.4171
+      z: 61.0289
+  - id: 4
+    label: '4'
+    position:
+      x: -50.9723
+      y: -15.5061
+      z: 15.8259
+  - id: 5
+    label: '5'
+    position:
+      x: -35.9277
+      y: -64.0721
+      z: 15.3916
+  - id: 6
+    label: '6'
+    position:
+      x: -34.984
+      y: -41.0618
+      z: 52.9398
+  - id: 7
+    label: '7'
+    position:
+      x: -42.4291
+      y: 1.4167
+      z: 1.6973
+  - id: 8
+    label: '8'
+    position:
+      x: -31.6194
+      y: 43.2796
+      z: 27.2684
+  - id: 9
+    label: '9'
+    position:
+      x: -36.0099
+      y: -4.2135
+      z: -33.6964
+  - id: 10
+    label: '10'
+    position:
+      x: -13.5827
+      y: 39.0201
+      z: -17.8346
+  - id: 11
+    label: '11'
+    position:
+      x: -6.5844
+      y: -61.7441
+      z: 44.312
+  - id: 12
+    label: '12'
+    position:
+      x: -42.9896
+      y: 21.7503
+      z: 22.4576
+  - id: 13
+    label: '13'
+    position:
+      x: -33.811
+      y: 53.9538
+      z: -2.4838
+  - id: 14
+    label: '14'
+    position:
+      x: -56.7354
+      y: -30.9535
+      z: 4.3668
+  - id: 15
+    label: '15'
+    position:
+      x: -25.948
+      y: -31.4755
+      z: -18.8827
+  - id: 16
+    label: '16'
+    position:
+      x: -8.3339
+      y: 50.5137
+      z: 6.4307
+  - id: 17
+    label: '17'
+    position:
+      x: -56.0317
+      y: -12.537
+      z: -18.7785
 edges:
-- label: weight
-  format: dense
-  weighted: true
-  valid_diagonal: false
-  non_negative: true
-  directed: false
-- label: length
-  unit: mm
-  format: dense
-  weighted: true
-  valid_diagonal: false
-  non_negative: true
-  directed: false
+  - label: weight
+    format: dense
+    weighted: true
+    valid_diagonal: false
+    non_negative: true
+    directed: false
+  - label: length
+    unit: mm
+    format: dense
+    weighted: true
+    valid_diagonal: false
+    non_negative: true
+    directed: false
