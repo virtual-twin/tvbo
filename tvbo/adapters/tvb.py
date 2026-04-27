@@ -15,6 +15,7 @@ All TVB ↔ tvbo conversion logic lives here:
 - :func:`to_tvb` — Network → TVB Connectivity
 - :func:`to_tvb_monitor` — Observation → TVB Monitor
 """
+
 from __future__ import annotations
 
 import numpy as np
@@ -28,9 +29,9 @@ def _to_scalar(val):
     """Extract a Python scalar from a numpy array or other array-like."""
     if val is None:
         return None
-    if hasattr(val, 'item'):
+    if hasattr(val, "item"):
         return val.item() if val.ndim == 0 else val.flat[0]
-    if hasattr(val, '__len__') and len(val) > 0:
+    if hasattr(val, "__len__") and len(val) > 0:
         return float(val[0])
     return float(val)
 
@@ -43,39 +44,34 @@ def _extract_dynamics(sim) -> tvbo_datamodel.Dynamics:
     )
 
     # Parameters: prefer explicit TVB lists, fallback to summary_info
-    p_names = (
-        list(getattr(sim.model, "global_parameter_names", []) or [])
-        + list(getattr(sim.model, "spatial_parameter_names", []) or [])
+    p_names = list(getattr(sim.model, "global_parameter_names", []) or []) + list(
+        getattr(sim.model, "spatial_parameter_names", []) or []
     )
     if p_names:
         for p in p_names:
             val = getattr(sim.model, p, None)
             if val is not None:
                 val = val[0] if hasattr(val, "__len__") and len(val) > 0 else val
-            model_metadata.parameters[p] = tvbo_datamodel.Parameter(
-                name=p, value=val
-            )
+            model_metadata.parameters[p] = tvbo_datamodel.Parameter(name=p, value=val)
     else:
         # Fallback to summary_info for models without parameter name lists
-        for k, v in dict(
-            getattr(sim.model, "summary_info", lambda: {})()
-        ).items():
+        for k, v in dict(getattr(sim.model, "summary_info", lambda: {})()).items():
             if k in {
-                "Type", "title", "state_variable_range",
-                "state_variable_boundaries", "variables_of_interest", "gid",
+                "Type",
+                "title",
+                "state_variable_range",
+                "state_variable_boundaries",
+                "variables_of_interest",
+                "gid",
             }:
                 continue
             val = getattr(sim.model, k)
             val = val[0] if hasattr(val, "__len__") and len(val) > 0 else val
-            model_metadata.parameters[k] = tvbo_datamodel.Parameter(
-                name=k, value=val
-            )
+            model_metadata.parameters[k] = tvbo_datamodel.Parameter(name=k, value=val)
 
     # State variables
     for i, sv in enumerate(getattr(sim.model, "state_variables", []) or []):
-        lo, hi = getattr(sim.model, "state_variable_range", {}).get(
-            sv, (None, None)
-        )
+        lo, hi = getattr(sim.model, "state_variable_range", {}).get(sv, (None, None))
         boundaries = None
         sbb = getattr(sim.model, "state_variable_boundaries", None)
         if sbb and sv in sbb:
@@ -96,15 +92,9 @@ def _extract_dynamics(sim) -> tvbo_datamodel.Dynamics:
             name=sv,
             coupling_variable=bool(i in cvar),
             variable_of_interest=bool(sv in voi),
-            domain=(
-                tvbo_datamodel.Range(lo=float(lo), hi=float(hi))
-                if (lo is not None or hi is not None)
-                else None
-            ),
+            domain=(tvbo_datamodel.Range(lo=float(lo), hi=float(hi)) if (lo is not None or hi is not None) else None),
             boundaries=boundaries,
-            initial_value=(
-                float(ics[0, i, :, 0].mean()) if ics is not None else None
-            ),
+            initial_value=(float(ics[0, i, :, 0].mean()) if ics is not None else None),
         )
 
     return model_metadata
@@ -114,14 +104,10 @@ def _extract_coupling(sim) -> tvbo_datamodel.Coupling:
     """Extract Coupling metadata from a TVB simulator."""
     name = type(sim.coupling).__name__
     coupling = tvbo_datamodel.Coupling(name=name, iri=f"tvbo:{name}")
-    for k, v in dict(
-        getattr(sim.coupling, "summary_info", lambda: {})()
-    ).items():
+    for k, v in dict(getattr(sim.coupling, "summary_info", lambda: {})()).items():
         if k in {"Type", "title", "gid"}:
             continue
-        coupling.parameters[k] = tvbo_datamodel.Parameter(
-            name=k, value=_to_scalar(v)
-        )
+        coupling.parameters[k] = tvbo_datamodel.Parameter(name=k, value=_to_scalar(v))
     return coupling
 
 
@@ -145,34 +131,27 @@ def _extract_noise(sim, model_metadata) -> tvbo_datamodel.Noise | None:
         else:
             nsig_val = float(nsig)
         if nsig_val is not None:
-            params["nsig"] = tvbo_datamodel.Parameter(
-                name="nsig", value=nsig_val
-            )
+            params["nsig"] = tvbo_datamodel.Parameter(name="nsig", value=nsig_val)
 
         # Per-state-variable noise
         if nsig_arr and len(nsig_arr) > 1:
-            for i, sv_name in enumerate(
-                getattr(sim.model, "state_variables", [])
-            ):
+            for i, sv_name in enumerate(getattr(sim.model, "state_variables", [])):
                 if sv_name in model_metadata.state_variables:
                     sigma = float((2.0 * nsig_arr[i]) ** 0.5)
-                    model_metadata.state_variables[sv_name].noise = (
-                        tvbo_datamodel.Noise(
-                            parameters={
-                                "sigma": tvbo_datamodel.Parameter(
-                                    name="sigma", value=sigma,
-                                )
-                            }
-                        )
+                    model_metadata.state_variables[sv_name].noise = tvbo_datamodel.Noise(
+                        parameters={
+                            "sigma": tvbo_datamodel.Parameter(
+                                name="sigma",
+                                value=sigma,
+                            )
+                        }
                     )
 
     # ntau / tau
     for key in ("tau", "ntau"):
         tv = getattr(noise_obj, key, None)
         if tv is not None:
-            params[key] = tvbo_datamodel.Parameter(
-                name=key, value=_to_scalar(tv)
-            )
+            params[key] = tvbo_datamodel.Parameter(name=key, value=_to_scalar(tv))
 
     # noise seed
     nseed = getattr(noise_obj, "noise_seed", None)
@@ -180,14 +159,13 @@ def _extract_noise(sim, model_metadata) -> tvbo_datamodel.Noise | None:
         rs = getattr(noise_obj, "random_stream", None)
         nseed = getattr(rs, "seed", None) if rs is not None else None
     if nseed is not None:
-        params["noise_seed"] = tvbo_datamodel.Parameter(
-            name="noise_seed", value=int(nseed)
-        )
+        params["noise_seed"] = tvbo_datamodel.Parameter(name="noise_seed", value=int(nseed))
 
     # Additive vs multiplicative
     additive = False
     try:
         from tvb.simulator.noise import Additive as _Add
+
         additive = isinstance(noise_obj, _Add)
     except ImportError:
         info = dict(getattr(noise_obj, "summary_info", lambda: {})())
@@ -198,15 +176,9 @@ def _extract_noise(sim, model_metadata) -> tvbo_datamodel.Noise | None:
 
 def _extract_integration(sim, model_metadata) -> tvbo_datamodel.Integrator:
     """Extract Integrator metadata from a TVB simulator."""
-    integrator_info = dict(
-        getattr(sim.integrator, "summary_info", lambda: {})()
-    )
+    integrator_info = dict(getattr(sim.integrator, "summary_info", lambda: {})())
     integrator_type = integrator_info.get("Type", "")
-    method = (
-        integrator_type.replace("Stochastic", "")
-        .replace("Deterministic", "")
-        .strip()
-    )
+    method = integrator_type.replace("Stochastic", "").replace("Deterministic", "").strip()
 
     noise_meta = _extract_noise(sim, model_metadata)
 
@@ -219,9 +191,7 @@ def _extract_integration(sim, model_metadata) -> tvbo_datamodel.Integrator:
         if nsig is not None and hasattr(nsig, "__len__"):
             nsig_arr = [float(x) for x in list(nsig)]
             if nsig_arr:
-                integration.state_wise_sigma = [
-                    float((2.0 * x) ** 0.5) for x in nsig_arr
-                ]
+                integration.state_wise_sigma = [float((2.0 * x) ** 0.5) for x in nsig_arr]
 
     dt = getattr(sim.integrator, "dt", None)
     if dt is not None:
@@ -248,9 +218,7 @@ def _extract_stimulus(sim) -> tvbo_datamodel.Stimulus | None:
         ),
         parameters={
             k: tvbo_datamodel.Parameter(name=k, value=_to_scalar(v))
-            for k, v in (
-                getattr(temporal, "parameters", {}) or {}
-            ).items()
+            for k, v in (getattr(temporal, "parameters", {}) or {}).items()
         },
     )
 
@@ -325,7 +293,7 @@ def _extract_observations(sim) -> dict:
             obs_kwargs["imaging_modality"] = "SEEG"
 
         # VOI
-        if voi is not None and hasattr(voi, '__len__') and len(voi) > 0:
+        if voi is not None and hasattr(voi, "__len__") and len(voi) > 0:
             obs_kwargs["voi"] = int(voi[0])
 
         # --- Build class_reference for exact TVB class reconstruction ---
@@ -334,14 +302,20 @@ def _extract_observations(sim) -> dict:
         # BOLD HRF kernel as constructor arg
         if isinstance(mon, tvb_monitors.Bold):
             if hrf_class_name:
-                cr_args.append(tvbo_datamodel.Argument(
-                    name="hrf_kernel", value=hrf_class_name,
-                    description=f"tvb.datatypes.equations.{hrf_class_name}",
-                ))
+                cr_args.append(
+                    tvbo_datamodel.Argument(
+                        name="hrf_kernel",
+                        value=hrf_class_name,
+                        description=f"tvb.datatypes.equations.{hrf_class_name}",
+                    )
+                )
             hrf_length = _to_scalar(getattr(mon, "hrf_length", 20000.0))
-            cr_args.append(tvbo_datamodel.Argument(
-                name="hrf_length", value=hrf_length,
-            ))
+            cr_args.append(
+                tvbo_datamodel.Argument(
+                    name="hrf_length",
+                    value=hrf_length,
+                )
+            )
 
             # Store HRF parameters in pipeline
             hrf = mon.hrf_kernel
@@ -353,34 +327,27 @@ def _extract_observations(sim) -> dict:
                 acronym="HRF",
                 output="hrf_kernel",
                 equation=tvbo_datamodel.Equation(rhs=str(hrf.equation)),
-                arguments=[
-                    tvbo_datamodel.Argument(name=k, value=float(v))
-                    for k, v in hrf_params.items()
-                ],
-                time_range=tvbo_datamodel.Range(
-                    lo=0.0, hi=hrf_length_s, step=0.004
-                ),
+                arguments=[tvbo_datamodel.Argument(name=k, value=float(v)) for k, v in hrf_params.items()],
+                time_range=tvbo_datamodel.Range(lo=0.0, hi=hrf_length_s, step=0.004),
             )
             conv_step = tvbo_datamodel.FunctionCall(
                 name="fftconvolve",
                 input="temporal_average_interim",
                 output="convolved",
-                callable=tvbo_datamodel.Callable(
-                    name="fftconvolve", module="scipy.signal"
-                ),
+                callable=tvbo_datamodel.Callable(name="fftconvolve", module="scipy.signal"),
             )
             pipeline = [hrf_step, conv_step]
             if isinstance(hrf, tvb_equations.FirstOrderVolterra):
                 k_1 = float(hrf_params.get("k_1", 5.6))
                 V_0 = float(hrf_params.get("V_0", 0.02))
-                pipeline.append(tvbo_datamodel.FunctionCall(
-                    name="volterra_transform",
-                    input="convolved",
-                    output="Bold",
-                    equation=tvbo_datamodel.Equation(
-                        rhs=f"(X - 1.0) * {k_1} * {V_0}"
-                    ),
-                ))
+                pipeline.append(
+                    tvbo_datamodel.FunctionCall(
+                        name="volterra_transform",
+                        input="convolved",
+                        output="Bold",
+                        equation=tvbo_datamodel.Equation(rhs=f"(X - 1.0) * {k_1} * {V_0}"),
+                    )
+                )
             obs_kwargs["pipeline"] = pipeline
 
         # Projection monitor parameters (EEG, MEG, iEEG)
@@ -388,20 +355,22 @@ def _extract_observations(sim) -> dict:
             params = {}
             sigma = getattr(mon, "sigma", 1.0)
             if sigma is not None:
-                params["conductivity"] = tvbo_datamodel.Parameter(
-                    name="conductivity", value=float(sigma)
+                params["conductivity"] = tvbo_datamodel.Parameter(name="conductivity", value=float(sigma))
+                cr_args.append(
+                    tvbo_datamodel.Argument(
+                        name="sigma",
+                        value=float(sigma),
+                    )
                 )
-                cr_args.append(tvbo_datamodel.Argument(
-                    name="sigma", value=float(sigma),
-                ))
             ref = getattr(mon, "reference", None)
             if ref:
-                params["reference_electrode"] = tvbo_datamodel.Parameter(
-                    name="reference_electrode", value=str(ref)
+                params["reference_electrode"] = tvbo_datamodel.Parameter(name="reference_electrode", value=str(ref))
+                cr_args.append(
+                    tvbo_datamodel.Argument(
+                        name="reference",
+                        value=str(ref),
+                    )
                 )
-                cr_args.append(tvbo_datamodel.Argument(
-                    name="reference", value=str(ref),
-                ))
             if params:
                 obs_kwargs["parameters"] = params
             # Store sensor network reference
@@ -425,14 +394,13 @@ def _extract_observations(sim) -> dict:
         if isinstance(mon, tvb_monitors.iEEG):
             sigma = getattr(mon, "sigma", 1.0)
             if sigma is not None:
-                obs_kwargs["parameters"] = {
-                    "conductivity": tvbo_datamodel.Parameter(
-                        name="conductivity", value=float(sigma)
+                obs_kwargs["parameters"] = {"conductivity": tvbo_datamodel.Parameter(name="conductivity", value=float(sigma))}
+                cr_args.append(
+                    tvbo_datamodel.Argument(
+                        name="sigma",
+                        value=float(sigma),
                     )
-                }
-                cr_args.append(tvbo_datamodel.Argument(
-                    name="sigma", value=float(sigma),
-                ))
+                )
             sensors = getattr(mon, "sensors", None)
             if sensors is not None:
                 sensor_name = getattr(sensors, "title", "seeg_sensors")
@@ -471,7 +439,7 @@ def to_tvb_monitor(observation):
     from tvb.simulator import monitors as tvb_monitors
     from tvb.datatypes import equations as tvb_equations
 
-    cr = getattr(observation, 'class_reference', None)
+    cr = getattr(observation, "class_reference", None)
     name = str(observation.name)
     period = observation.period
 
@@ -523,7 +491,7 @@ def to_tvb_monitor(observation):
     # Process constructor_args from class_reference
     constructor_args = []
     if cr is not None:
-        constructor_args = getattr(cr, 'constructor_args', None) or []
+        constructor_args = getattr(cr, "constructor_args", None) or []
 
     for arg in constructor_args:
         arg_name = str(arg.name)
@@ -532,14 +500,14 @@ def to_tvb_monitor(observation):
             if hrf_cls:
                 hrf = hrf_cls()
                 # Populate HRF parameters from pipeline
-                for step in (observation.pipeline or []):
-                    step_name = str(getattr(step, 'name', ''))
-                    if step_name in ('hrf_kernel', 'hemodynamic_response'):
-                        eq = getattr(step, 'equation', None)
+                for step in observation.pipeline or []:
+                    step_name = str(getattr(step, "name", ""))
+                    if step_name in ("hrf_kernel", "hemodynamic_response"):
+                        eq = getattr(step, "equation", None)
                         if eq:
-                            eq_params = getattr(eq, 'parameters', None) or {}
-                            for pk, pv in (eq_params.items() if hasattr(eq_params, 'items') else []):
-                                val = getattr(pv, 'value', None)
+                            eq_params = getattr(eq, "parameters", None) or {}
+                            for pk, pv in eq_params.items() if hasattr(eq_params, "items") else []:
+                                val = getattr(pv, "value", None)
                                 if val is not None and str(pk) in hrf.parameters:
                                     hrf.parameters[str(pk)] = float(val)
                 kwargs["hrf_kernel"] = hrf
@@ -577,12 +545,12 @@ def _load_projection_monitor_sensors(observation, tvb_class_name, kwargs):
         "iEEG": tvb_projections.ProjectionSurfaceSEEG,
     }
 
-    ds = getattr(observation, 'data_source', None)
+    ds = getattr(observation, "data_source", None)
     if ds is None:
         return
 
     # Try to load sensor network from path
-    sensor_path = getattr(ds, 'path', None)
+    sensor_path = getattr(ds, "path", None)
     if not sensor_path:
         return
 
@@ -593,10 +561,7 @@ def _load_projection_monitor_sensors(observation, tvb_class_name, kwargs):
 
         # Resolve path relative to database/networks if not absolute
         if not os.path.isabs(sensor_path):
-            db_dir = os.path.join(
-                os.path.dirname(os.path.dirname(__file__)),
-                "database", "networks"
-            )
+            db_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "database", "networks")
             sensor_path = os.path.join(db_dir, sensor_path)
 
         net = Network.from_file(sensor_path)
@@ -605,10 +570,7 @@ def _load_projection_monitor_sensors(observation, tvb_class_name, kwargs):
             return
 
         # Build sensor locations from node positions
-        locations = np.array([
-            [n.position.x, n.position.y, n.position.z]
-            for n in net.nodes
-        ])
+        locations = np.array([[n.position.x, n.position.y, n.position.z] for n in net.nodes])
         labels = np.array([n.label for n in net.nodes])
 
         sensors = sensor_cls(locations=locations, labels=labels)
@@ -617,10 +579,10 @@ def _load_projection_monitor_sensors(observation, tvb_class_name, kwargs):
         if tvb_class_name == "MEG":
             orientations = []
             for n in net.nodes:
-                params = getattr(n, 'parameters', None) or {}
-                ox = float(getattr(params.get('orientation_x'), 'value', 0))
-                oy = float(getattr(params.get('orientation_y'), 'value', 0))
-                oz = float(getattr(params.get('orientation_z'), 'value', 0))
+                params = getattr(n, "parameters", None) or {}
+                ox = float(getattr(params.get("orientation_x"), "value", 0))
+                oy = float(getattr(params.get("orientation_y"), "value", 0))
+                oz = float(getattr(params.get("orientation_z"), "value", 0))
                 orientations.append([ox, oy, oz])
             sensors.orientations = np.array(orientations)
 
@@ -642,6 +604,7 @@ def _extract_environment() -> tvbo_datamodel.SoftwareEnvironment | None:
 
     try:
         import tvb as _tvb
+
         tvb_version = getattr(_tvb, "__version__", "unknown")
     except ImportError:
         tvb_version = "unknown"
@@ -688,7 +651,8 @@ def from_tvb_zip(zip_path):
     n = weights.shape[0]
     nodes = [
         tvbo_datamodel.Node(
-            id=i, label=labels[i],
+            id=i,
+            label=labels[i],
             position=tvbo_datamodel.Coordinate(
                 x=float(coords[i][0]),
                 y=float(coords[i][1]),
@@ -743,15 +707,18 @@ def from_tvb(connectivity):
         )
         if conn.cortical is not None and len(conn.cortical) == n:
             node.parameters["cortical"] = tvbo_datamodel.Parameter(
-                name="cortical", value=float(conn.cortical[i]),
+                name="cortical",
+                value=float(conn.cortical[i]),
             )
         if conn.areas is not None and len(conn.areas) == n:
             node.parameters["area"] = tvbo_datamodel.Parameter(
-                name="area", value=float(conn.areas[i]),
+                name="area",
+                value=float(conn.areas[i]),
             )
         if conn.hemispheres is not None and len(conn.hemispheres) == n:
             node.parameters["hemisphere"] = tvbo_datamodel.Parameter(
-                name="hemisphere", value=float(conn.hemispheres[i]),
+                name="hemisphere",
+                value=float(conn.hemispheres[i]),
             )
         nodes.append(node)
 
@@ -762,12 +729,15 @@ def from_tvb(connectivity):
     net.descriptor = "SC"
 
     if conn.orientations is not None and len(conn.orientations) == n:
-        object.__setattr__(net, '_orientations', np.asarray(conn.orientations))
+        object.__setattr__(net, "_orientations", np.asarray(conn.orientations))
 
     speed = np.asarray(conn.speed).ravel()
     cs_val = float(speed[0]) if len(speed) > 0 else 3.0
     net.parameters["conduction_speed"] = tvbo_datamodel.Parameter(
-        name="conduction_speed", label="v", value=cs_val, unit="mm_per_ms",
+        name="conduction_speed",
+        label="v",
+        value=cs_val,
+        unit="mm_per_ms",
     )
 
     return net
@@ -809,7 +779,8 @@ def from_tvb_surface(connectivity, surface, region_mapping):
 
     surface_nodes = [
         tvbo_datamodel.Node(
-            id=i, label=f"vertex_{i}",
+            id=i,
+            label=f"vertex_{i}",
             position=tvbo_datamodel.Coordinate(
                 x=float(vertices[i, 0]),
                 y=float(vertices[i, 1]),
@@ -820,7 +791,9 @@ def from_tvb_surface(connectivity, surface, region_mapping):
     ]
 
     surface_net = Network(
-        nodes=surface_nodes, edges=[], number_of_nodes=n_vertices,
+        nodes=surface_nodes,
+        edges=[],
+        number_of_nodes=n_vertices,
     )
     surface_net.label = f"Surface ({n_vertices} vertices, {n_elements} triangles)"
     surface_net.descriptor = "surface"
@@ -831,10 +804,10 @@ def from_tvb_surface(connectivity, surface, region_mapping):
         number_of_vertices=n_vertices,
         number_of_elements=n_elements,
     )
-    object.__setattr__(surface_net, '_mesh', mesh)
-    object.__setattr__(surface_net, '_mesh_vertices', vertices)
-    object.__setattr__(surface_net, '_mesh_elements', triangles)
-    object.__setattr__(surface_net, '_mesh_normals', normals)
+    object.__setattr__(surface_net, "_mesh", mesh)
+    object.__setattr__(surface_net, "_mesh_vertices", vertices)
+    object.__setattr__(surface_net, "_mesh_elements", triangles)
+    object.__setattr__(surface_net, "_mesh_normals", normals)
 
     surface_net.set_node_mapping(
         mapping,
@@ -862,15 +835,9 @@ def to_tvb(network):
 
     _weights = np.asarray(network.weights_matrix, dtype=float)
     _lengths = np.asarray(network.lengths_matrix, dtype=float)
-    _centres = np.asarray(
-        list(network.get_centers().values()), dtype=float
-    )
+    _centres = np.asarray(list(network.get_centers().values()), dtype=float)
     cs_param = getattr(network, "conduction_speed", None)
-    cs_value = (
-        cs_param.value
-        if cs_param and hasattr(cs_param, "value")
-        else 3.0
-    )
+    cs_value = cs_param.value if cs_param and hasattr(cs_param, "value") else 3.0
     _speed = np.asarray([cs_value], dtype=float)
     tvb_conn = Connectivity(
         weights=_weights,
@@ -884,6 +851,7 @@ def to_tvb(network):
 
 
 # ── Simulator-level conversion ────────────────────────────────────
+
 
 def from_tvb_simulator(
     sim: Any,

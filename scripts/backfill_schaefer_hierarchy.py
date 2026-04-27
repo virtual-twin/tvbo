@@ -41,7 +41,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--network-dir", type=Path, default=NETWORK_DIR)
     parser.add_argument("--atlas-dir", type=Path, default=ATLAS_DIR)
     parser.add_argument(
-        "--dry-run", action="store_true",
+        "--dry-run",
+        action="store_true",
         help="Report changes without writing files.",
     )
     return parser.parse_args()
@@ -49,12 +50,10 @@ def parse_args() -> argparse.Namespace:
 
 # ── Atlas helpers ─────────────────────────────────────────────────────
 
+
 def load_atlas_entities(atlas_dir: Path, seg: str, scale: str) -> list[dict] | None:
     """Load atlas entities sorted by lookupLabel, or None if not found."""
-    path = atlas_dir / (
-        f"tpl-FSLMNI152_atlas-Schaefer2018_seg-{seg}"
-        f"_scale-{scale}_res-1_desc-ordered_dseg.yaml"
-    )
+    path = atlas_dir / (f"tpl-FSLMNI152_atlas-Schaefer2018_seg-{seg}_scale-{scale}_res-1_desc-ordered_dseg.yaml")
     if not path.exists():
         return None
     with open(path) as f:
@@ -96,6 +95,7 @@ def parse_bids_entities(stem: str) -> dict[str, str]:
 
 # ── Per-file backfill ─────────────────────────────────────────────────
 
+
 def backfill_one(yaml_path: Path, atlas_dir: Path, dry_run: bool) -> dict[str, int]:
     """Backfill a single Schaefer network YAML.
 
@@ -109,7 +109,7 @@ def backfill_one(yaml_path: Path, atlas_dir: Path, dry_run: bool) -> dict[str, i
 
     bids = net.get("bids", {})
     seg = bids.get("segmentation")  # e.g. "7Networks" or "17Networks"
-    scale = bids.get("scale")       # e.g. "100"
+    scale = bids.get("scale")  # e.g. "100"
 
     if not seg or not scale:
         # Try to infer from filename
@@ -128,10 +128,7 @@ def backfill_one(yaml_path: Path, atlas_dir: Path, dry_run: bool) -> dict[str, i
 
     nodes = net.get("nodes", [])
     if len(nodes) != len(atlas_entities):
-        print(
-            f"  [warn] node count mismatch ({len(nodes)} vs "
-            f"{len(atlas_entities)}): {yaml_path.name}"
-        )
+        print(f"  [warn] node count mismatch ({len(nodes)} vs {len(atlas_entities)}): {yaml_path.name}")
         return stats
 
     # ── 1. Fix node labels and positions ──────────────────────────────

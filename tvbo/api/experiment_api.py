@@ -4,6 +4,7 @@ Endpoints:
   GET /api/v1/experiments              — list available experiments
   GET /api/v1/experiments/{id}/sidecar — LinkML-valid YAML or JSON
 """
+
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query
@@ -54,12 +55,14 @@ def list_experiments():
         if exp.dynamics:
             dynamics_name = getattr(exp.dynamics, "name", None)
 
-        result.append({
-            "id": exp_id,
-            "label": getattr(exp, "label", exp_id),
-            "description": getattr(exp, "description", None),
-            "dynamics": dynamics_name,
-        })
+        result.append(
+            {
+                "id": exp_id,
+                "label": getattr(exp, "label", exp_id),
+                "description": getattr(exp, "description", None),
+                "dynamics": dynamics_name,
+            }
+        )
     return result
 
 

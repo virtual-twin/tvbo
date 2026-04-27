@@ -14,7 +14,7 @@ from tvbo.datamodel.schema import Network  # noqa: E402
 # Defined here (not in the generated file) so it survives make gen-linkml.
 Network.number_of_regions = property(
     lambda self: self.number_of_nodes,
-    lambda self, v: setattr(self, 'number_of_nodes', v),
+    lambda self, v: setattr(self, "number_of_nodes", v),
 )
 
 from .schema import *  # noqa: E402, F401, F403
@@ -35,9 +35,14 @@ from tvbo.utils.units import normalize_unit as _normalize_unit  # noqa: E402
 
 # Register slash-notation aliases (mm/ms → mm_per_ms) so both work in YAML
 for _alias, _canon in {
-    "mm/ms": "mm_per_ms", "m/s": "m_per_s", "mV/ms": "mV_per_ms",
-    "mV/s": "mV_per_s", "Hz/nA": "Hz_per_nA", "S/m": "S_per_m",
-    "H/m": "H_per_m", "rad/ms": "rad_per_ms",
+    "mm/ms": "mm_per_ms",
+    "m/s": "m_per_s",
+    "mV/ms": "mV_per_ms",
+    "mV/s": "mV_per_s",
+    "Hz/nA": "Hz_per_nA",
+    "S/m": "S_per_m",
+    "H/m": "H_per_m",
+    "rad/ms": "rad_per_ms",
 }.items():
     setattr(_UnitEnum, _alias, getattr(_UnitEnum, _canon))
 del _alias, _canon
@@ -53,20 +58,20 @@ def _unit_text(obj):
     if isinstance(obj, _UnitEnum):
         return str(obj)
     # PermissibleValue or any object with .text
-    text = getattr(obj, 'text', None)
+    text = getattr(obj, "text", None)
     if text is not None:
         return text
     # JsonObj from as_dict() round-trip: obj._code.text
-    inner = getattr(obj, '_code', None)
+    inner = getattr(obj, "_code", None)
     if inner is not None:
-        text = getattr(inner, 'text', None)
+        text = getattr(inner, "text", None)
         if text is not None:
             return text
     # dict from as_dict(): {'_code': {'text': 'mm', ...}}
     if isinstance(obj, dict):
-        inner = obj.get('_code', obj)
+        inner = obj.get("_code", obj)
         if isinstance(inner, dict):
-            return inner.get('text', str(obj))
+            return inner.get("text", str(obj))
     return str(obj)
 
 
@@ -93,7 +98,7 @@ def _unit_meta_getattribute(cls, item):
     try:
         result = _meta_orig_getattribute(cls, item)
     except AttributeError:
-        if item.startswith('__') and item.endswith('__'):
+        if item.startswith("__") and item.endswith("__"):
             raise
         # Dotted names like "a.u." can't be Python attributes; construct instead
         canonical = _normalize_unit(item) or item
@@ -111,5 +116,6 @@ _UnitEnumMeta.__getattribute__ = _unit_meta_getattribute
 import sys
 from tvbo.datamodel import schema as tvbo_datamodel  # noqa: E402, F401
 from tvbo.datamodel import pydantic as tvbopydantic  # noqa: E402, F401
-sys.modules['tvbo.datamodel.tvbo_datamodel'] = tvbo_datamodel
-sys.modules['tvbo.datamodel.tvbopydantic'] = tvbopydantic
+
+sys.modules["tvbo.datamodel.tvbo_datamodel"] = tvbo_datamodel
+sys.modules["tvbo.datamodel.tvbopydantic"] = tvbopydantic

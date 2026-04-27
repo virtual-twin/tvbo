@@ -12,6 +12,7 @@ Templates
 
 Templates for generating code.
 """
+
 import subprocess
 from mako.lookup import TemplateLookup
 from os.path import join, abspath, dirname
@@ -36,6 +37,7 @@ lookup = TemplateLookup(
     ],
     module_directory=join(root, "modules"),
 )
+
 
 def run_julia(julia_code, verbose=0):
     """

@@ -44,17 +44,14 @@ def _sync_network_node_count(net):
     Network.__init__ never runs. This ensures node count is consistent.
     """
     # Migrate deprecated number_of_regions -> number_of_nodes
-    if getattr(net, 'number_of_regions', None) and not getattr(net, 'number_of_nodes', None):
+    if getattr(net, "number_of_regions", None) and not getattr(net, "number_of_nodes", None):
         net.number_of_nodes = net.number_of_regions
     if net.nodes:
         n = len(net.nodes)
         net.number_of_nodes = n
     elif (net.number_of_nodes or 0) > 1 and not net.nodes:
         # number_of_nodes set but no nodes list — create default nodes
-        net.nodes = [
-            tvbo_datamodel.Node(id=i, label=f"node_{i}")
-            for i in range(net.number_of_nodes)
-        ]
+        net.nodes = [tvbo_datamodel.Node(id=i, label=f"node_{i}") for i in range(net.number_of_nodes)]
 
 
 def _upgrade_network_couplings(network, coupling_types=None):
@@ -72,7 +69,7 @@ def _upgrade_network_couplings(network, coupling_types=None):
         ``"tvbo:KuramotoCoupling"``).
     """
     coupling_types = coupling_types or {}
-    coup_raw = getattr(network, 'coupling', None)
+    coup_raw = getattr(network, "coupling", None)
     if not coup_raw:
         return
 
@@ -147,6 +144,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         dyn_kw = kwargs.get("dynamics")
         if isinstance(dyn_kw, dict):
             from tvbo.classes.dynamics import _resolve_dynamics_aliases
+
             _resolve_dynamics_aliases(dyn_kw)
 
         # Also resolve aliases in network.dynamics entries
@@ -155,6 +153,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             net_dyn = net_kw.get("dynamics")
             if isinstance(net_dyn, dict):
                 from tvbo.classes.dynamics import _resolve_dynamics_aliases
+
                 for _dv in net_dyn.values():
                     if isinstance(_dv, dict):
                         _resolve_dynamics_aliases(_dv)
@@ -170,6 +169,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 # Copy dataclass fields directly — _as_dict over-serializes
                 # enums and nested objects causing lossy round-trips.
                 from dataclasses import fields as dc_fields
+
                 d = {}
                 for f in dc_fields(obj):
                     if f.name.startswith(("_", "class_")):
@@ -178,6 +178,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     # Convert enums/PermissibleValues to plain text so
                     # constructors can re-parse them via __post_init__.
                     from linkml_runtime.linkml_model.meta import PermissibleValue
+
                     if isinstance(val, PermissibleValue):
                         val = val.text
                     elif isinstance(val, EnumDefinitionImpl):
@@ -207,9 +208,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         if getattr(self, "coupling", None) and not isinstance(self.coupling, Coupling):
             self.coupling = _coerce(Coupling, self.coupling)
 
-        if getattr(self, "integration", None) and not isinstance(
-            self.integration, Integrator
-        ):
+        if getattr(self, "integration", None) and not isinstance(self.integration, Integrator):
             self.integration = _coerce(Integrator, self.integration)
 
         # Auto-upgrade continuations to runtime Continuation class
@@ -227,9 +226,11 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             # Network.__init__ doesn't run when class is patched, so sync here
             _sync_network_node_count(self.network)
             if not getattr(self.network, "conduction_speed", None):
-                self.network.parameters['conduction_speed'] = tvbo_datamodel.Parameter(
-                    name="conduction_speed", label="v",
-                    value=3.0, unit="mm_per_ms",
+                self.network.parameters["conduction_speed"] = tvbo_datamodel.Parameter(
+                    name="conduction_speed",
+                    label="v",
+                    value=3.0,
+                    unit="mm_per_ms",
                 )
 
         # Upgrade network.coupling entries to runtime Coupling + apply type fills
@@ -238,10 +239,10 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         # --- Coupling resolution: network.coupling is canonical ---
         # Keys may be function names or coupling_input names; backends
         # handle the mapping at the adapter boundary.
-        dyn_ci = getattr(getattr(self, 'dynamics', None), 'coupling_inputs', None)
+        dyn_ci = getattr(getattr(self, "dynamics", None), "coupling_inputs", None)
         has_coupling_inputs = bool(dyn_ci)
-        net_coup = getattr(self.network, 'coupling', None)
-        exp_coup = getattr(self, 'coupling', None)
+        net_coup = getattr(self.network, "coupling", None)
+        exp_coup = getattr(self, "coupling", None)
 
         if net_coup:
             # network.coupling supervenes: derive exp.coupling from first entry
@@ -253,7 +254,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             if not func:
                 func = Coupling(name="Linear", iri="tvbo:Linear")
                 self.coupling = func
-            coup_name = str(getattr(func, 'name', 'Linear'))
+            coup_name = str(getattr(func, "name", "Linear"))
             self.network.coupling[coup_name] = func
 
         # Auto-populate incoming_states on couplings from dynamics' coupling_variable flag.
@@ -263,26 +264,25 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         # IMPORTANT: If a coupling already declares local_states (e.g. FastLinearCoupling),
         # it intentionally only uses local states for vectorized matmul — do NOT force
         # incoming_states on it, as that would break the vectorized code path.
-        dyn = getattr(self, 'dynamics', None)
+        dyn = getattr(self, "dynamics", None)
         if dyn:
             cvars = [
                 str(sv.name)
-                for sv in (getattr(dyn, 'state_variables', None) or {}).values()
-                if getattr(sv, 'coupling_variable', False)
+                for sv in (getattr(dyn, "state_variables", None) or {}).values()
+                if getattr(sv, "coupling_variable", False)
             ]
             if cvars:
-                for coup in (getattr(self.network, 'coupling', None) or {}).values():
-                    if not getattr(coup, 'incoming_states', None) and not getattr(coup, 'local_states', None):
+                for coup in (getattr(self.network, "coupling", None) or {}).values():
+                    if not getattr(coup, "incoming_states", None) and not getattr(coup, "local_states", None):
                         coup.incoming_states = list(cvars)
 
         # Get source file path if loading from file (set by from_file classmethod)
-        self._source_file = getattr(self.__class__, '_pending_source_file', None)
+        self._source_file = getattr(self.__class__, "_pending_source_file", None)
 
         # Load network from BIDS if bids_dir is specified
         if hasattr(self.network, "bids_dir") and self.network.bids_dir:
             self._load_network_from_bids()
-        elif (hasattr(self.network, "data_file") and self.network.data_file
-              and not getattr(self.network, '_store', None)):
+        elif hasattr(self.network, "data_file") and self.network.data_file and not getattr(self.network, "_store", None):
             self._load_network_from_data_file()
 
         if not getattr(self, "integration", None):
@@ -300,15 +300,15 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         data_file = Path(self.network.data_file)
         if not data_file.is_absolute():
-            source_file = getattr(self, '_source_file', None)
+            source_file = getattr(self, "_source_file", None)
             if source_file:
                 data_file = (Path(source_file).parent / data_file).resolve()
             else:
                 data_file = (Path.cwd() / data_file).resolve()
 
         # Accept .h5/.zarr → find sidecar, or direct .yaml sidecar path
-        if data_file.suffix in ('.h5', '.zarr'):
-            sidecar = data_file.with_suffix('.yaml')
+        if data_file.suffix in (".h5", ".zarr"):
+            sidecar = data_file.with_suffix(".yaml")
         else:
             sidecar = data_file
 
@@ -327,7 +327,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         if inline_coupling:
             # Clear loaded network's coupling, then insert inline entries
             # using indexing on the existing LinkML container.
-            if hasattr(self.network.coupling, 'clear'):
+            if hasattr(self.network.coupling, "clear"):
                 self.network.coupling.clear()
             for k, v in inline_coupling.items():
                 self.network.coupling[k] = v
@@ -347,7 +347,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         bids_dir = Path(self.network.bids_dir)
         if not bids_dir.is_absolute():
             # Resolve relative to YAML source file location
-            source_file = getattr(self, '_source_file', None)
+            source_file = getattr(self, "_source_file", None)
             if source_file:
                 bids_dir = (Path(source_file).parent / bids_dir).resolve()
             else:
@@ -358,6 +358,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         structural = getattr(self.network, "structural_measures", None) or []
         if not structural:
             from tvbo.classes.network import _discover_bids_measures
+
             structural = _discover_bids_measures(bids_dir)
         observational = getattr(self.network, "observational_measures", None) or []
 
@@ -369,9 +370,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         )
 
     @classmethod
-    def from_datamodel(
-        cls, dm: tvbo_datamodel.SimulationExperiment
-    ) -> "SimulationExperiment":
+    def from_datamodel(cls, dm: tvbo_datamodel.SimulationExperiment) -> "SimulationExperiment":
         """Create from a datamodel instance by copying its already-normalized
         state.
 
@@ -389,8 +388,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         dyn = getattr(obj, "dynamics", None)
         if isinstance(dyn, dict) and dyn:
             for v in dyn.values():
-                if isinstance(v, tvbo_datamodel.Dynamics) \
-                        and not isinstance(v, Dynamics):
+                if isinstance(v, tvbo_datamodel.Dynamics) and not isinstance(v, Dynamics):
                     v.__class__ = Dynamics
                     v.enrich_from_ontology()
             first = next(iter(dyn.values()))
@@ -417,7 +415,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         if coup is not None and not isinstance(coup, Coupling):
             coup.__class__ = Coupling
             # Populate from ontology if iri is set and expressions are missing
-            if getattr(coup, 'iri', None) and not getattr(coup, 'pre_expression', None):
+            if getattr(coup, "iri", None) and not getattr(coup, "pre_expression", None):
                 coup._populate_from_ontology()
         if not getattr(obj, "coupling", None):
             obj.__dict__["coupling"] = Coupling(name="Linear")
@@ -428,9 +426,11 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             net.__class__ = Network
             _sync_network_node_count(net)
             if not getattr(net, "conduction_speed", None):
-                net.parameters['conduction_speed'] = tvbo_datamodel.Parameter(
-                    name="conduction_speed", label="v",
-                    value=3.0, unit="mm_per_ms",
+                net.parameters["conduction_speed"] = tvbo_datamodel.Parameter(
+                    name="conduction_speed",
+                    label="v",
+                    value=3.0,
+                    unit="mm_per_ms",
                 )
         if not getattr(obj, "network", None):
             obj.__dict__["network"] = Network()
@@ -601,7 +601,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
     @classmethod
     def list_platform_experiments(
-        cls, base_url: str = TVBO_PLATFORM_URL,
+        cls,
+        base_url: str = TVBO_PLATFORM_URL,
     ) -> list:
         """List available experiments on the tvbo platform.
 
@@ -626,12 +627,14 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def from_db(cls, name: str) -> "SimulationExperiment":
         """Load a SimulationExperiment by name from the tvbo database."""
         from tvbo.data.registry import resolve
+
         return cls.from_file(str(resolve("SimulationExperiment", name)))
 
     @classmethod
     def list_db(cls) -> list[str]:
         """List available experiments in the tvbo database."""
         from tvbo.data.registry import list_entries
+
         return list_entries("SimulationExperiment")
 
     @classmethod
@@ -698,7 +701,6 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         --------
         to_bids : Export experiment to BIDS format
         """
-        from pathlib import Path
 
         from tvbo.adapters.bids import (
             ingest_bids_session,
@@ -713,18 +715,10 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         network = None
         if bids_data["network"] is not None:
             net_data = bids_data["network"]
-            labels = (
-                list(net_data["region_labels"])
-                if net_data["region_labels"]
-                else None
-            )
+            labels = list(net_data["region_labels"]) if net_data["region_labels"] else None
             network = Network.from_matrix(
                 weights=np.asarray(net_data["weights"]),
-                lengths=(
-                    np.asarray(net_data["distances"])
-                    if net_data.get("distances") is not None
-                    else None
-                ),
+                lengths=(np.asarray(net_data["distances"]) if net_data.get("distances") is not None else None),
                 labels=labels,
             )
 
@@ -748,10 +742,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 dynamics = Dynamics.from_ontology(model_type)
                 # Apply stored parameters
                 for param_name, param_value in params.items():
-                    if (
-                        hasattr(dynamics, "parameters")
-                        and param_name in dynamics.parameters
-                    ):
+                    if hasattr(dynamics, "parameters") and param_name in dynamics.parameters:
                         dynamics.parameters[param_name].value = param_value
             except Exception:
                 # Fallback: create minimal Dynamics
@@ -777,9 +768,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
             # Check sidecars for provenance info
             for sidecar in ts_data.get("sidecars", []):
-                provenance = sidecar.get("Provenance") or sidecar.get(
-                    "SimulationProvenance"
-                )
+                provenance = sidecar.get("Provenance") or sidecar.get("SimulationProvenance")
                 if provenance:
                     if "StepSize" in provenance and provenance["StepSize"]:
                         integration.step_size = float(provenance["StepSize"])
@@ -855,21 +844,15 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
             # Compare shapes
             if ts_rerun.shape != timeseries.shape:
-                print(
-                    f"WARNING: Shape mismatch! Loaded: {timeseries.shape}, Rerun: {ts_rerun.shape}"
-                )
+                print(f"WARNING: Shape mismatch! Loaded: {timeseries.shape}, Rerun: {ts_rerun.shape}")
             else:
                 # Compare data
-                max_diff = np.max(
-                    np.abs(np.asarray(ts_rerun.data) - np.asarray(timeseries.data))
-                )
+                max_diff = np.max(np.abs(np.asarray(ts_rerun.data) - np.asarray(timeseries.data)))
                 if max_diff < 1e-6:
                     print(f"✓ Verification passed! Max difference: {max_diff:.2e}")
                 else:
                     print(f"⚠ Data differs. Max difference: {max_diff:.2e}")
-                    print(
-                        "  This may be expected if noise was used or parameters differ."
-                    )
+                    print("  This may be expected if noise was used or parameters differ.")
 
         return experiment, timeseries
 
@@ -974,6 +957,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         # Apply substitutions to all equation lists
         with sp.evaluate(False):
+
             def _apply_subs(eq):
                 """Apply node indexing + coupling substitution to an Eq."""
                 lhs = eq.lhs.subs(subs_index)
@@ -1128,7 +1112,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     dynamics_dict[dynamics.name] = dynamics
 
                 # Add any additional dynamics from network.dynamics
-                net_dynamics = getattr(network, 'dynamics', None)
+                net_dynamics = getattr(network, "dynamics", None)
                 if isinstance(net_dynamics, dict):
                     for name, dyn in net_dynamics.items():
                         if name not in dynamics_dict:
@@ -1197,13 +1181,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
             # Disable delays if lengths are None or all zeros
             params = conn.parameters or {}
-            cs_param = params['conduction_speed'] if 'conduction_speed' in params else None
+            cs_param = params["conduction_speed"] if "conduction_speed" in params else None
             cs_val = float(cs_param.value) if cs_param and cs_param.value else 1.0
-            if (
-                L is None
-                or np.allclose(L, 0)
-                or np.allclose(L.max() / cs_val, 0)
-            ):
+            if L is None or np.allclose(L, 0) or np.allclose(L.max() / cs_val, 0):
                 if getattr(self, "integration", None) is not None:
                     self.integration.delayed = False
                 if getattr(self, "coupling", None) is not None:
@@ -1237,11 +1217,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         self._expand_coupling_parameter_shapes(parameters)
 
         state = SimulationState(
-            initial_conditions=(
-                initial_conditions
-                if initial_conditions is not None
-                else self.collect_initial_conditions()
-            ),
+            initial_conditions=(initial_conditions if initial_conditions is not None else self.collect_initial_conditions()),
             network=self.network,
             dt=self.integration.step_size,
             nt=int(np.ceil(self.integration.duration / self.integration.step_size)),
@@ -1283,15 +1259,11 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             # Parse shape string and expand
             if shape_str == "(N, N)" or shape_str == "(N,N)":
                 # Expand scalar to NxN matrix
-                if np.isscalar(current_value) or (
-                    hasattr(current_value, "shape") and current_value.shape == ()
-                ):
+                if np.isscalar(current_value) or (hasattr(current_value, "shape") and current_value.shape == ()):
                     coupling_params[param_name] = np.full((N, N), float(current_value))
             elif shape_str == "(N,)" or shape_str == "(N)":
                 # Expand scalar to N-vector
-                if np.isscalar(current_value) or (
-                    hasattr(current_value, "shape") and current_value.shape == ()
-                ):
+                if np.isscalar(current_value) or (hasattr(current_value, "shape") and current_value.shape == ()):
                     coupling_params[param_name] = np.full((N,), float(current_value))
 
     def execute(self, format="tvb", **kwargs):
@@ -1299,9 +1271,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             code = self.render_code(format=format)
             namespace = templater.exec_globals
             exec(code, namespace)
-            sim = namespace["define_simulation"](
-                connectivity=self.network.execute("tvb"), **kwargs
-            )
+            sim = namespace["define_simulation"](connectivity=self.network.execute("tvb"), **kwargs)
             sim.initial_conditions = self.collect_initial_conditions().data
             sim.configure()
             return sim
@@ -1335,25 +1305,24 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             return namespace
 
         else:
-            raise ValueError(
-                f"Format {format} not supported. Valid formats: tvb, tvboptim, jax."
-            )
+            raise ValueError(f"Format {format} not supported. Valid formats: tvb, tvboptim, jax.")
 
     def run(self, format="tvboptim", initial_conditions=None, **kwargs):
         if "duration" in kwargs:
             self.integration.duration = kwargs.pop("duration")
 
         self.configure()
-        simulation_data = Bunch()
+        Bunch()
 
         if format.lower() == "tvb":
             _random_ic = kwargs.pop("random_initial_conditions", False)
             if _random_ic:
                 import warnings
+
                 warnings.warn(
-                    "random_initial_conditions=True is deprecated. "
-                    "Set distribution on state variables instead.",
-                    DeprecationWarning, stacklevel=2,
+                    "random_initial_conditions=True is deprecated. Set distribution on state variables instead.",
+                    DeprecationWarning,
+                    stacklevel=2,
                 )
             initial_conditions = self.collect_initial_conditions(random=_random_ic)
             simulator_ = self.execute()
@@ -1369,14 +1338,14 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             for m, (tv, xv) in zip(simulator_.monitors, simres):
                 m_name = m.title.split(" ")[0]
                 data_np = np.asarray(xv)
-                dims = ['time', 'variable', 'node', 'mode'][:data_np.ndim]
+                dims = ["time", "variable", "node", "mode"][: data_np.ndim]
                 coords = {
-                    'time': np.asarray(tv),
-                    'variable': sv_names,
-                    'node': region_labels,
+                    "time": np.asarray(tv),
+                    "variable": sv_names,
+                    "node": region_labels,
                 }
-                if 'mode' in dims:
-                    coords['mode'] = list(range(data_np.shape[3]))
+                if "mode" in dims:
+                    coords["mode"] = list(range(data_np.shape[3]))
                 da = xr.DataArray(data=data_np, dims=dims, coords=coords)
                 if m_name == "Raw":
                     sim_result = SimulationResult(data=da)
@@ -1387,20 +1356,22 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 # Fallback if no Raw monitor — use first
                 first_m, (tv, xv) = list(zip(simulator_.monitors, simres))[0]
                 data_np = np.asarray(xv)
-                dims = ['time', 'variable', 'node', 'mode'][:data_np.ndim]
+                dims = ["time", "variable", "node", "mode"][: data_np.ndim]
                 coords = {
-                    'time': np.asarray(tv),
-                    'variable': sv_names,
-                    'node': region_labels,
+                    "time": np.asarray(tv),
+                    "variable": sv_names,
+                    "node": region_labels,
                 }
-                if 'mode' in dims:
-                    coords['mode'] = list(range(data_np.shape[3]))
+                if "mode" in dims:
+                    coords["mode"] = list(range(data_np.shape[3]))
                 da = xr.DataArray(data=data_np, dims=dims, coords=coords)
                 sim_result = SimulationResult(data=da)
 
             sim_result.observations = observations
             return ExperimentResult(
-                integration=sim_result, source=self, name=self.label,
+                integration=sim_result,
+                source=self,
+                name=self.label,
             )
 
         elif format.lower() in ["tvboptim", "tvb-optim"]:
@@ -1430,7 +1401,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     **kwargs,
                 )
                 # Wait for JAX async dispatch to complete
-                jax.block_until_ready(results.result.data if hasattr(results, 'result') else results)
+                jax.block_until_ready(results.result.data if hasattr(results, "result") else results)
                 timings.total = time.perf_counter() - t0
 
                 # Add timings to results and wrap in ExperimentResult
@@ -1462,6 +1433,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         elif format.lower() == "cuda":
             from tvbo.codegen.cuda import run_cuda
+
             cuda_result = run_cuda(self, **kwargs)
             if isinstance(cuda_result, TimeSeries):
                 return ExperimentResult.from_timeseries(cuda_result, source=self, name=self.label)
@@ -1518,9 +1490,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 if meta and isinstance(meta, dict):
                     ndofs = int(meta.get("ndofs", arr.size))
                     if arr.size != ndofs:
-                        raise ValueError(
-                            f"initial_conditions length {arr.size} != ndofs {ndofs}"
-                        )
+                        raise ValueError(f"initial_conditions length {arr.size} != ndofs {ndofs}")
                 u0_override = arr
 
             # Always compute and return a full TimeSeries (save_timeseries=True)
@@ -1550,16 +1520,18 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             sv_name = str(meta.get("unknown", "u"))
             da = xr.DataArray(
                 data=data_np,
-                dims=['time', 'variable', 'node'],
+                dims=["time", "variable", "node"],
                 coords={
-                    'time': t,
-                    'variable': [sv_name],
-                    'node': [str(i) for i in range(n_region)],
+                    "time": t,
+                    "variable": [sv_name],
+                    "node": [str(i) for i in range(n_region)],
                 },
             )
             sim = SimulationResult(data=da)
             return ExperimentResult(
-                integration=sim, source=self, name=self.label,
+                integration=sim,
+                source=self,
+                name=self.label,
             )
 
         elif format.lower() == "pyrates":
@@ -1572,25 +1544,34 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             return self._run_modelingtoolkit(**kwargs)
 
         elif format.lower() in [
-            "bifurcationkit", "bifurcationkit.jl", "bifurcation",
+            "bifurcationkit",
+            "bifurcationkit.jl",
+            "bifurcation",
             "bifurcation-julia",
         ]:
             return self._run_bifurcation(**kwargs)
 
         elif format.lower() in [
-            "pyrates-bifurcation", "pyrates-bif", "pycobi",
-            "bifurcation-pyrates", "auto", "auto-07p",
+            "pyrates-bifurcation",
+            "pyrates-bif",
+            "pycobi",
+            "bifurcation-pyrates",
+            "auto",
+            "auto-07p",
         ]:
             return self._run_pyrates_bifurcation(**kwargs)
 
         elif format.lower() in [
-            "julia", "diffeq", "differentialequations",
+            "julia",
+            "diffeq",
+            "differentialequations",
             "differentialequations.jl",
         ]:
             return self._run_julia(**kwargs)
 
         elif format.lower() in ["neuroml", "nml", "lems"]:
             from tvbo.adapters.neuroml import NeuroMLAdapter
+
             return NeuroMLAdapter(self).run(**kwargs)
 
         else:
@@ -1660,8 +1641,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         adapter = BifurcationKitAdapter(self)
         bif_result = adapter.run(**kwargs)
         return ExperimentResult(
-            continuations={'default': bif_result},
-            source=self, name=self.label,
+            continuations={"default": bif_result},
+            source=self,
+            name=self.label,
         )
 
     def _run_pyrates_bifurcation(self, **kwargs) -> ExperimentResult:
@@ -1671,8 +1653,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         adapter = PyRatesBifurcationAdapter(self)
         bif_result = adapter.run(**kwargs)
         return ExperimentResult(
-            continuations={'default': bif_result},
-            source=self, name=self.label,
+            continuations={"default": bif_result},
+            source=self,
+            name=self.label,
         )
 
     def _run_julia(self, **kwargs) -> ExperimentResult:
@@ -1683,11 +1666,6 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         return adapter.run(**kwargs)
 
     def get_experiment_file_prefix(self):
-        atlas = (
-            f"_atlas-{self.network.parcellation.atlas.name}"
-            if self.network and self.network.parcellation
-            else ""
-        )
         desc = self.dynamics.label or self.dynamics.name or "simulation"
         return f"ses-{self.id}_desc-{desc}"
 
@@ -1711,25 +1689,23 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
     def collect_initial_conditions(self, random=False):
         history = []
-        n_modes = getattr(self.dynamics, 'number_of_modes', 1) or 1
-        n_nodes = getattr(self.network, 'number_of_nodes', None) or 1
+        n_modes = getattr(self.dynamics, "number_of_modes", 1) or 1
+        n_nodes = getattr(self.network, "number_of_nodes", None) or 1
 
         if random:
             import warnings
+
             warnings.warn(
                 "random=True is deprecated. Set distribution on state variables instead.",
-                DeprecationWarning, stacklevel=2,
+                DeprecationWarning,
+                stacklevel=2,
             )
 
         # Auto-detect distributions on state variables
-        has_distributions = any(
-            getattr(sv, 'distribution', None) for sv in self.dynamics.state_variables.values()
-        )
+        has_distributions = any(getattr(sv, "distribution", None) for sv in self.dynamics.state_variables.values())
 
         if random or has_distributions:
-            history.append(
-                self.dynamics.get_initial_values(N=n_nodes)
-            )
+            history.append(self.dynamics.get_initial_values(N=n_nodes))
         else:
             for sv in self.dynamics.state_variables.values():
                 history.append(np.repeat(sv.initial_value, n_nodes).astype(float))
@@ -1751,13 +1727,14 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             ``tvbo.adapters.neuroml`` instead.
         """
         import warnings
+
         warnings.warn(
-            "save_model_specification() is deprecated. "
-            "Use NeuroMLAdapter(experiment).export(dir) instead.",
+            "save_model_specification() is deprecated. Use NeuroMLAdapter(experiment).export(dir) instead.",
             DeprecationWarning,
             stacklevel=2,
         )
         from tvbo.adapters.neuroml import NeuroMLAdapter
+
         paths = NeuroMLAdapter(self).export(dir, validate=False)
         return paths["simulation"]
 
@@ -1777,6 +1754,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             and Coupling.
         """
         import warnings
+
         warnings.warn(
             "SimulationExperiment.to_lems() is deprecated. "
             "Use NeuroMLAdapter(experiment).render_code() from tvbo.adapters.neuroml instead.",
@@ -1794,9 +1772,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         local_ct = None
         if base_local_ct is not None:
-            local_ct = lems.ComponentType(
-                name="LocalDynamics", extends=base_local_ct.name
-            )
+            local_ct = lems.ComponentType(name="LocalDynamics", extends=base_local_ct.name)
             model.add(local_ct)
             if local_comp is not None:
                 local_comp.type = local_ct.name
@@ -1811,13 +1787,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             params = getattr(coupl_meta, "parameters", {}) or {}
             for pname, pobj in params.items():
                 pval = getattr(pobj, "value", 0)
-                coupling_ct.add(
-                    lems.Constant(name=str(pname), value=str(pval), dimension="none")
-                )
+                coupling_ct.add(lems.Constant(name=str(pname), value=str(pval), dimension="none"))
             pre_expr = getattr(getattr(coupl_meta, "pre_expression", None), "rhs", None)
-            post_expr = getattr(
-                getattr(coupl_meta, "post_expression", None), "rhs", None
-            )
+            post_expr = getattr(getattr(coupl_meta, "post_expression", None), "rhs", None)
         except Exception:
             params = {}
             pre_expr = f"{target_sv}_j"
@@ -1828,22 +1800,13 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         if isinstance(pre_expr, str):
             for m in _re.finditer(r"\b([A-Za-z_][A-Za-z0-9_]*)_j\b", pre_expr):
                 pname = m.group(1) + "_j"
-                if all(
-                    getattr(x, "name", None) != pname
-                    for x in list(coupling_ct.parameters) + list(coupling_ct.constants)
-                ):
+                if all(getattr(x, "name", None) != pname for x in list(coupling_ct.parameters) + list(coupling_ct.constants)):
                     coupling_ct.add(lems.Parameter(name=pname, dimension="none"))
         else:
             pre_expr = f"{target_sv}_j"
 
-        coupling_ct.dynamics.add(
-            lems.DerivedVariable(name="pre", value=str(pre_expr), dimension="none")
-        )
-        coupling_ct.dynamics.add(
-            lems.DerivedVariable(
-                name="gx", value="global_coupling * pre", dimension="none"
-            )
-        )
+        coupling_ct.dynamics.add(lems.DerivedVariable(name="pre", value=str(pre_expr), dimension="none"))
+        coupling_ct.dynamics.add(lems.DerivedVariable(name="gx", value="global_coupling * pre", dimension="none"))
         coupling_ct.dynamics.add(
             lems.DerivedVariable(
                 name="post",
@@ -1854,11 +1817,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         coupling_ct.add(lems.DerivedParameter(name="c_pop0", value="post"))
         model.add(coupling_ct)
 
-        comp_id = (
-            local_comp.id
-            if local_comp is not None
-            else (local_ct.name if local_ct is not None else None)
-        )
+        comp_id = local_comp.id if local_comp is not None else (local_ct.name if local_ct is not None else None)
         if local_ct is not None and comp_id is not None:
             if "out_path" not in local_ct.texts:
                 local_ct.add_text(Text("out_path"))
@@ -1903,9 +1862,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
     def render_code(self, format="tvb", **kwargs):
         if format == "tvb":
-            template = templates.lookup.get_template(
-                "tvbo-tvb-SimulationExperiment.py.mako"
-            )
+            template = templates.lookup.get_template("tvbo-tvb-SimulationExperiment.py.mako")
             rendered_code = format_code(template.render(experiment=self))
 
         elif format.lower() in ["autodiff", "jax"]:
@@ -1917,14 +1874,10 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         elif format in ["pde", "pde-fem", "pde-python"]:
             template = templates.lookup.get_template("tvbo-pde-fem.py.mako")
-            rendered_code = format_code(
-                template.render(experiment=self), use_black=True
-            )
+            rendered_code = format_code(template.render(experiment=self), use_black=True)
 
         elif format.lower() == "tvboptim":
-            template = templates.lookup.get_template(
-                "tvboptim/tvbo-tvboptim-experiment.py.mako"
-            )
+            template = templates.lookup.get_template("tvboptim/tvbo-tvboptim-experiment.py.mako")
             rendered_code = format_code(
                 template.render(experiment=self, **kwargs),
                 use_black=False,
@@ -1932,9 +1885,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         elif format.lower() in ["rateml", "rateml-python"]:
             # RateML-style TVB Python model with Numba gufunc
-            template = templates.lookup.get_template(
-                "rateml/tvbo-rateml-python.py.mako"
-            )
+            template = templates.lookup.get_template("rateml/tvbo-rateml-python.py.mako")
             rendered_code = format_code(
                 template.render(model=self.dynamics, experiment=self, **kwargs),
                 use_black=False,
@@ -1942,67 +1893,63 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         elif format.lower() in ["rateml-cuda", "cuda"]:
             # RateML-style CUDA kernel
-            template = templates.lookup.get_template(
-                "rateml/tvbo-rateml-cuda.c.mako"
-            )
-            rendered_code = template.render(
-                model=self.dynamics,
-                experiment=self,
-                coupling=self.coupling,
-                **kwargs
-            )
+            template = templates.lookup.get_template("rateml/tvbo-rateml-cuda.c.mako")
+            rendered_code = template.render(model=self.dynamics, experiment=self, coupling=self.coupling, **kwargs)
 
         elif format.lower() == "rateml-driver":
             # PyCUDA driver for RateML CUDA kernel
-            template = templates.lookup.get_template(
-                "rateml/tvbo-rateml-driver.py.mako"
-            )
+            template = templates.lookup.get_template("rateml/tvbo-rateml-driver.py.mako")
             rendered_code = format_code(
                 template.render(model=self.dynamics, experiment=self, **kwargs),
                 use_black=False,
             )
 
         elif format.lower() == "julia":
-            template = templates.lookup.get_template(
-                "tvbo-julia-DifferentialEquations.jl.mako"
-            )
-            rendered_code = template.render(
-                experiment=self, model=self.dynamics, **kwargs
-            )
+            template = templates.lookup.get_template("tvbo-julia-DifferentialEquations.jl.mako")
+            rendered_code = template.render(experiment=self, model=self.dynamics, **kwargs)
 
         elif format.lower() in ["networkdynamics", "nd", "networkdynamics.jl"]:
             from tvbo.adapters.base import BaseAdapter
+
             adapter = BaseAdapter(self)
             ctx = adapter.prepare_context()
             ctx.update(kwargs)
-            template = templates.lookup.get_template(
-                "tvbo-nd-experiment.jl.mako"
-            )
+            template = templates.lookup.get_template("tvbo-nd-experiment.jl.mako")
             rendered_code = template.render(**ctx)
 
         elif format.lower() in ["mtk", "modelingtoolkit", "modelingtoolkit.jl"]:
             from tvbo.adapters.modelingtoolkit import ModelingToolkitAdapter
+
             adapter = ModelingToolkitAdapter(self)
             rendered_code = adapter.render_code(**kwargs)
 
         elif format.lower() in [
-            "bifurcationkit", "bifurcationkit.jl", "bifurcation",
+            "bifurcationkit",
+            "bifurcationkit.jl",
+            "bifurcation",
             "bifurcation-julia",
         ]:
             from tvbo.adapters.bifurcationkit import BifurcationKitAdapter
+
             adapter = BifurcationKitAdapter(self)
             rendered_code = adapter.render_code(**kwargs)
 
         elif format.lower() in [
-            "pyrates-bifurcation", "pyrates-bif", "pycobi",
-            "bifurcation-pyrates", "auto", "auto-07p",
+            "pyrates-bifurcation",
+            "pyrates-bif",
+            "pycobi",
+            "bifurcation-pyrates",
+            "auto",
+            "auto-07p",
         ]:
             from tvbo.adapters.pyrates_bifurcation import PyRatesBifurcationAdapter
+
             adapter = PyRatesBifurcationAdapter(self)
             rendered_code = adapter.render_code(**kwargs)
 
         elif format.lower() in ["lems", "neuroml", "nml"]:
             from tvbo.adapters.neuroml import NeuroMLAdapter
+
             adapter = NeuroMLAdapter(self)
             kwargs.setdefault("use_standard_types", True)
             rendered_code = adapter.render_code(**kwargs)
@@ -2048,9 +1995,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         if fmt == "yaml":
             return self.to_yaml(filepath=kwargs.get("filepath"))
         if fmt == "pyrates-yaml":
-            return self.to_yaml(
-                filepath=kwargs.get("filepath"), format="pyrates"
-            )
+            return self.to_yaml(filepath=kwargs.get("filepath"), format="pyrates")
 
         # ── Report ───────────────────────────────────────────────────────
         if fmt in ("report", "markdown", "md", "pdf"):
@@ -2122,9 +2067,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 ".pdf": "pdf",
             }
             if ext not in ext_to_format:
-                raise ValueError(
-                    "outputfile extension must be one of: .md, .pdf"
-                )
+                raise ValueError("outputfile extension must be one of: .md, .pdf")
             normalized_format = ext_to_format[ext]
 
         if normalized_format is None:
@@ -2134,9 +2077,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             raise ValueError("format must be one of: markdown, pdf")
 
         md_template = templates.lookup.get_template(f"report/{template_name}.md.mako")
-        md_render = md_template.render(
-            experiment=self, derivative_notation=derivative_notation
-        )
+        md_render = md_template.render(experiment=self, derivative_notation=derivative_notation)
 
         render = md_render
 
@@ -2238,8 +2179,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         if timeseries is None:
             raise ValueError(
-                "No timeseries provided and run_simulation=False. "
-                "Provide a TimeSeries or set run_simulation=True."
+                "No timeseries provided and run_simulation=False. Provide a TimeSeries or set run_simulation=True."
             )
 
         # Delegate to TimeSeries.to_bids with experiment reference
@@ -2284,9 +2224,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         """
         from tvbo.adapters.openminds import experiment_to_openminds, save_openminds
 
-        result = experiment_to_openminds(
-            self, base_id=base_id, include_context=include_context
-        )
+        result = experiment_to_openminds(self, base_id=base_id, include_context=include_context)
 
         if filepath:
             save_openminds(self, filepath, base_id=base_id)

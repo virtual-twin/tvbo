@@ -13,18 +13,18 @@ import numpy as np
 
 # ── helpers ──────────────────────────────────────────────────────────
 
+
 def _prepare(data):
     """Average multi-node data along node dim → (time, variable)."""
-    import xarray as xr
 
-    time = data.coords['time'].values if 'time' in data.coords else np.arange(data.shape[0])
-    if 'variable' in data.coords:
-        var_names = list(np.atleast_1d(data.coords['variable'].values))
+    time = data.coords["time"].values if "time" in data.coords else np.arange(data.shape[0])
+    if "variable" in data.coords:
+        var_names = list(np.atleast_1d(data.coords["variable"].values))
     else:
         var_names = None
     arr = data
-    if 'node' in arr.dims:
-        arr = arr.mean(dim='node')
+    if "node" in arr.dims:
+        arr = arr.mean(dim="node")
     return time, var_names, arr
 
 
@@ -32,7 +32,7 @@ def _group_by_unit(var_names, units):
     """Group variable names by their unit string."""
     groups = {}
     for name in var_names:
-        u = str(units.get(name, '')) or ''
+        u = str(units.get(name, "")) or ""
         groups.setdefault(u, []).append(name)
     return groups
 
@@ -42,6 +42,7 @@ def _vals(arr, vname, n_time):
 
 
 # ── public ───────────────────────────────────────────────────────────
+
 
 def plot_timeseries(result, ax=None, **kwargs):
     """Default timeseries line plot with per-unit subplots.
@@ -60,7 +61,7 @@ def plot_timeseries(result, ax=None, **kwargs):
     matplotlib.figure.Figure or None
     """
     time, var_names, arr = _prepare(result.data)
-    units = getattr(result, '_units', {})
+    units = getattr(result, "_units", {})
 
     # Single or no variable
     if var_names is None or len(var_names) <= 1:
@@ -69,10 +70,10 @@ def plot_timeseries(result, ax=None, **kwargs):
             fig, ax = plt.subplots()
         label = var_names[0] if var_names else None
         ax.plot(time, np.asarray(arr).reshape(len(time), -1), label=label, **kwargs)
-        ax.set_xlabel('time [ms]')
+        ax.set_xlabel("time [ms]")
         if label:
-            u = str(units.get(label, ''))
-            ax.set_ylabel(f'{label} [{u}]' if u else label)
+            u = str(units.get(label, ""))
+            ax.set_ylabel(f"{label} [{u}]" if u else label)
         if created:
             plt.close()
             return fig
@@ -87,10 +88,10 @@ def plot_timeseries(result, ax=None, **kwargs):
             fig, ax = plt.subplots()
         for vname in var_names:
             ax.plot(time, _vals(arr, vname, len(time)), label=vname, **kwargs)
-        ax.set_xlabel('time [ms]')
+        ax.set_xlabel("time [ms]")
         unit_str = next(iter(unit_groups))
-        ax.set_ylabel(unit_str if unit_str else ', '.join(var_names))
-        ax.legend(fontsize='smaller')
+        ax.set_ylabel(unit_str if unit_str else ", ".join(var_names))
+        ax.legend(fontsize="smaller")
         if created:
             plt.close()
             return fig
@@ -103,16 +104,15 @@ def plot_timeseries(result, ax=None, **kwargs):
     for ax_i, (unit_str, vnames) in zip(axes, unit_groups.items()):
         for vname in vnames:
             ax_i.plot(time, _vals(arr, vname, len(time)), label=vname, **kwargs)
-        ax_i.set_ylabel(unit_str if unit_str else ', '.join(vnames))
-        ax_i.legend(fontsize='smaller')
-    axes[-1].set_xlabel('time [ms]')
+        ax_i.set_ylabel(unit_str if unit_str else ", ".join(vnames))
+        ax_i.legend(fontsize="smaller")
+    axes[-1].set_xlabel("time [ms]")
     fig.tight_layout()
     plt.close()
     return fig
 
 
-def plot_eeg(result, VOI=None, mode=0, spacing=None, normalize=False,
-             channel_labels=True, ax=None, linewidth=0.5, **kwargs):
+def plot_eeg(result, VOI=None, mode=0, spacing=None, normalize=False, channel_labels=True, ax=None, linewidth=0.5, **kwargs):
     """EEG-like stacked-channel plot.
 
     Parameters
@@ -133,20 +133,20 @@ def plot_eeg(result, VOI=None, mode=0, spacing=None, normalize=False,
     linewidth : float
     """
     data = result.data
-    var_names = list(np.atleast_1d(data.coords['variable'].values)) if 'variable' in data.coords else []
+    var_names = list(np.atleast_1d(data.coords["variable"].values)) if "variable" in data.coords else []
 
     if VOI is None:
-        VOI = 'V' if 'V' in var_names else (var_names[0] if var_names else None)
-    if VOI is not None and 'variable' in data.dims:
+        VOI = "V" if "V" in var_names else (var_names[0] if var_names else None)
+    if VOI is not None and "variable" in data.dims:
         data = data.sel(variable=VOI)
 
     # (time, node[, mode])
     arr = np.asarray(data)
     if arr.ndim >= 3:
-        arr = arr[..., mode]   # drop mode
+        arr = arr[..., mode]  # drop mode
     if arr.ndim == 1:
         arr = arr[:, np.newaxis]
-    t = data.coords['time'].values if 'time' in data.coords else np.arange(arr.shape[0])
+    t = data.coords["time"].values if "time" in data.coords else np.arange(arr.shape[0])
 
     if normalize:
         mu = arr.mean(axis=0, keepdims=True)
@@ -165,28 +165,28 @@ def plot_eeg(result, VOI=None, mode=0, spacing=None, normalize=False,
             base = 1.0
         spacing = 2.5 * base
 
-    node_labels = list(data.coords['node'].values) if 'node' in data.coords else [str(i) for i in range(n_regions)]
+    node_labels = list(data.coords["node"].values) if "node" in data.coords else [str(i) for i in range(n_regions)]
 
     created = ax is None
     if created:
         height = min(20.0, max(4.0, 0.22 * n_regions))
         fig, ax = plt.subplots(figsize=(10, height))
-        max_len = max((len(str(l)) for l in node_labels), default=1)
+        max_len = max((len(str(lbl)) for lbl in node_labels), default=1)
         fig.subplots_adjust(left=min(0.5, max(0.1, 0.006 * max_len)))
 
     offsets = np.arange(n_regions) * spacing
     for i in range(n_regions):
         ax.plot(t, arr[:, i] + offsets[i], linewidth=linewidth, **kwargs)
 
-    ax.set_xlabel('time [ms]')
+    ax.set_xlabel("time [ms]")
     if channel_labels:
         ax.set_yticks(offsets)
-        ax.set_yticklabels([str(l) for l in node_labels])
-        ax.tick_params(axis='y', labelsize=8)
+        ax.set_yticklabels([str(lbl) for lbl in node_labels])
+        ax.tick_params(axis="y", labelsize=8)
     else:
         ax.set_yticks([])
     ax.set_xlim(t[0], t[-1])
-    ax.set_title('EEG-like channels' + (f' — {VOI}' if VOI else ''))
+    ax.set_title("EEG-like channels" + (f" — {VOI}" if VOI else ""))
     ax.grid(False)
 
     if created:
@@ -195,8 +195,7 @@ def plot_eeg(result, VOI=None, mode=0, spacing=None, normalize=False,
     return None
 
 
-def plot_power_spectrum(result, VOI=None, ROI='mean', mode=0,
-                        bands=None, ax=None, label='simulation', **kwargs):
+def plot_power_spectrum(result, VOI=None, ROI="mean", mode=0, bands=None, ax=None, label="simulation", **kwargs):
     """FFT power spectrum with frequency-band annotations.
 
     Parameters
@@ -214,29 +213,29 @@ def plot_power_spectrum(result, VOI=None, ROI='mean', mode=0,
     from matplotlib import colormaps
 
     data = result.data
-    var_names = list(np.atleast_1d(data.coords['variable'].values)) if 'variable' in data.coords else []
+    var_names = list(np.atleast_1d(data.coords["variable"].values)) if "variable" in data.coords else []
 
-    if VOI is not None and 'variable' in data.dims:
+    if VOI is not None and "variable" in data.dims:
         data = data.sel(variable=VOI)
 
     arr = np.asarray(data)
-    time = data.coords['time'].values if 'time' in data.coords else np.arange(arr.shape[0])
+    time = data.coords["time"].values if "time" in data.coords else np.arange(arr.shape[0])
     dt = float(time[1] - time[0]) / 1000  # ms → s
 
     n_samples = arr.shape[0]
-    freq = fftfreq(n_samples, d=dt)[:n_samples // 2]
-    power = np.abs(fft(arr, axis=0)[:n_samples // 2]) ** 2
+    freq = fftfreq(n_samples, d=dt)[: n_samples // 2]
+    power = np.abs(fft(arr, axis=0)[: n_samples // 2]) ** 2
     power /= power.sum(axis=0, keepdims=True)
 
     # Reduce to (freq, variable) — drop mode first, then node
-    if 'mode' in data.dims and power.ndim > len(data.dims) - 1:
+    if "mode" in data.dims and power.ndim > len(data.dims) - 1:
         power = power[..., mode]
-    if 'node' in data.dims:
-        node_axis = list(data.dims).index('node')
-        if 'variable' in data.dims:
+    if "node" in data.dims:
+        node_axis = list(data.dims).index("node")
+        if "variable" in data.dims:
             node_axis -= 1  # variable was kept or already selected out
         if power.ndim > 2:
-            power = power.mean(axis=-1) if ROI == 'mean' else power[..., ROI]
+            power = power.mean(axis=-1) if ROI == "mean" else power[..., ROI]
 
     created = ax is None
     if created:
@@ -246,29 +245,31 @@ def plot_power_spectrum(result, VOI=None, ROI='mean', mode=0,
         ax.plot(freq, power, linewidth=1, label=VOI or label, **kwargs)
     else:
         for i in range(power.shape[1]):
-            lbl = var_names[i] if i < len(var_names) else f'var {i}'
+            lbl = var_names[i] if i < len(var_names) else f"var {i}"
             ax.plot(freq, power[:, i], linewidth=1, label=lbl, **kwargs)
     ax.legend()
     ax.set_xlim([1, 150])
-    ax.set_xscale('log')
-    ax.set_yscale('log')
-    ax.set_xlabel('Frequency (Hz)')
-    ax.set_ylabel('Normalized Power')
-    ax.set_title('Power Spectrum')
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlabel("Frequency (Hz)")
+    ax.set_ylabel("Normalized Power")
+    ax.set_title("Power Spectrum")
 
     if bands is None:
         bands = {
-            r'$\delta$': (1, 4), r'$\theta$': (4, 8), r'$\alpha$': (8, 12),
-            r'$\beta$': (12, 30), r'$\gamma$': (30, 100),
+            r"$\delta$": (1, 4),
+            r"$\theta$": (4, 8),
+            r"$\alpha$": (8, 12),
+            r"$\beta$": (12, 30),
+            r"$\gamma$": (30, 100),
         }
-    colors = colormaps['viridis'](np.linspace(0, 1, len(bands)))
+    colors = colormaps["viridis"](np.linspace(0, 1, len(bands)))
     ylim = ax.get_ylim()
     for i, (band, (lo, hi)) in enumerate(bands.items()):
         mid = 10 ** (np.log10(lo) + (np.log10(hi) - np.log10(lo)) / 2)
         ax.axvspan(lo, hi, color=colors[i], alpha=0.1)
-        ax.axvline(x=hi, color=colors[i], linestyle='--')
-        ax.text(mid, ylim[1] * 0.8, band, ha='center', va='top',
-                fontsize=12, fontweight='bold')
+        ax.axvline(x=hi, color=colors[i], linestyle="--")
+        ax.text(mid, ylim[1] * 0.8, band, ha="center", va="top", fontsize=12, fontweight="bold")
 
     if created:
         plt.close()

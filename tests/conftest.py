@@ -15,7 +15,9 @@ os.environ.setdefault("XLA_FLAGS", f"--xla_force_host_platform_device_count={n_d
 
 def pytest_addoption(parser):
     parser.addoption(
-        "--run-slow", action="store_true", default=False,
+        "--run-slow",
+        action="store_true",
+        default=False,
         help="Run slow tests (e.g. tvboptim interop docs)",
     )
 

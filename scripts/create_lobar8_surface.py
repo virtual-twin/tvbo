@@ -9,6 +9,7 @@ on fsaverage 164k to create clean vertex→lobe mappings. Produces two files:
 Medial wall vertices are assigned to the nearest cortical lobe.
 No volumetric nearest-neighbor sampling — purely surface-native labels.
 """
+
 from pathlib import Path
 
 import nibabel as nib
@@ -58,17 +59,28 @@ DK_REGION_TO_LOBE = {
 }
 
 LOBE_ORDER_8 = [
-    "LH_Frontal", "LH_Parietal", "LH_Temporal", "LH_Occipital",
-    "LH_Cingulate", "LH_Insular", "LH_Subcortical", "LH_Cerebellum",
-    "RH_Frontal", "RH_Parietal", "RH_Temporal", "RH_Occipital",
-    "RH_Cingulate", "RH_Insular", "RH_Subcortical", "RH_Cerebellum",
+    "LH_Frontal",
+    "LH_Parietal",
+    "LH_Temporal",
+    "LH_Occipital",
+    "LH_Cingulate",
+    "LH_Insular",
+    "LH_Subcortical",
+    "LH_Cerebellum",
+    "RH_Frontal",
+    "RH_Parietal",
+    "RH_Temporal",
+    "RH_Occipital",
+    "RH_Cingulate",
+    "RH_Insular",
+    "RH_Subcortical",
+    "RH_Cerebellum",
 ]
 
 
 def load_dk_labels(hemi: str) -> tuple[np.ndarray, dict[int, str]]:
     """Load Desikan2006 aparc label.gii from templateflow (curated, 164k)."""
-    fname = (f"tpl-fsaverage_hemi-{hemi}_den-164k_atlas-Desikan2006"
-             f"_seg-aparc_desc-curated_dseg.label.gii")
+    fname = f"tpl-fsaverage_hemi-{hemi}_den-164k_atlas-Desikan2006_seg-aparc_desc-curated_dseg.label.gii"
     path = Path(TF_HOME) / "tpl-fsaverage" / fname
     gii = nib.load(path)
     labels = gii.darrays[0].data
@@ -86,8 +98,7 @@ def load_fsaverage_pial(hemi: str) -> tuple[np.ndarray, np.ndarray]:
     return vertices, faces
 
 
-def dk_to_lobar8(labels: np.ndarray, key_to_name: dict[int, str],
-                 hemi_prefix: str, vertices: np.ndarray) -> np.ndarray:
+def dk_to_lobar8(labels: np.ndarray, key_to_name: dict[int, str], hemi_prefix: str, vertices: np.ndarray) -> np.ndarray:
     """Map DK vertex labels → Lobar8 indices, filling medial wall via KDTree."""
     label_to_idx = {}
     for key, name in key_to_name.items():
@@ -120,8 +131,7 @@ def compute_normals(vertices, faces):
     return (normals / norms).astype(np.float32)
 
 
-def build_hemi_surface(hemi_code: str, hemi_prefix: str,
-                       parent_network, db_dir: Path):
+def build_hemi_surface(hemi_code: str, hemi_prefix: str, parent_network, db_dir: Path):
     """Build and save a per-hemisphere surface network."""
     print(f"\n=== {hemi_prefix} hemisphere ===")
     vertices, faces = load_fsaverage_pial(hemi_code)

@@ -100,11 +100,7 @@ def ontoclass2dict(ontoclass):
             else (
                 ontoclass.description.first()
                 if ontoclass.description
-                else (
-                    ontoclass.definition.first().split(".")[0]
-                    if ontoclass.definition
-                    else None
-                )
+                else (ontoclass.definition.first().split(".")[0] if ontoclass.definition else None)
             )
         ),
         "collapsed": True,
@@ -157,7 +153,7 @@ class OntologyAPI:
         # for node_id, node in nodes.items():
         # self.expand_node_relationships(node_id, add_nodes=False)
 
-        graph = self.update_graph()
+        self.update_graph()
 
         # return graph
 
@@ -273,12 +269,7 @@ class OntologyAPI:
         return self.graph
 
     def add_children(self, node_id):
-        self.nodes.update(
-            {
-                s_id: ontoclass2dict(onto.world._get_by_storid(s_id))
-                for s_id in G.successors(node_id)
-            }
-        )
+        self.nodes.update({s_id: ontoclass2dict(onto.world._get_by_storid(s_id)) for s_id in G.successors(node_id)})
 
         for r in onto.world._get_by_storid(node_id).requires:
             self.nodes.update({r.storid: ontoclass2dict(r)})
@@ -355,9 +346,7 @@ class OntologyAPI:
         child_nodes = [self.nodes[s] for s in G.successors(node_id)]
         child_links = [
             {"source": src, "target": tgt, "type": type_val}
-            for src, tgt, type_val in {
-                (node_id, s, G[node_id][s][0]["type"]) for s in G.successors(node_id)
-            }
+            for src, tgt, type_val in {(node_id, s, G[node_id][s][0]["type"]) for s in G.successors(node_id)}
         ]
         return {"nodes": child_nodes, "links": child_links}
 
@@ -378,9 +367,7 @@ class OntologyAPI:
         parent_nodes = [self.nodes[s] for s in G.predecessors(node_id)]
         parent_links = [
             {"source": src, "target": tgt, "type": type_val}
-            for src, tgt, type_val in {
-                (s, node_id, G[s][node_id][0]["type"]) for s in G.predecessors(node_id)
-            }
+            for src, tgt, type_val in {(s, node_id, G[s][node_id][0]["type"]) for s in G.predecessors(node_id)}
         ]
 
         return {"nodes": parent_nodes, "links": parent_links}

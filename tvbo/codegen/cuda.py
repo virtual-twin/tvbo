@@ -11,6 +11,7 @@ Usage:
     exp = SimulationExperiment.from_file("experiment.yaml")
     result = exp.run('cuda')
 """
+
 from __future__ import annotations
 
 import numpy as np
@@ -35,16 +36,15 @@ def compile_cuda(experiment: SimulationExperiment) -> Tuple[Any, Any]:
         from pycuda.compiler import SourceModule
     except ImportError:
         raise ImportError(
-            "PyCUDA not installed. Install with: pip install pycuda\n"
-            "Note: Requires NVIDIA GPU and CUDA toolkit."
+            "PyCUDA not installed. Install with: pip install pycuda\nNote: Requires NVIDIA GPU and CUDA toolkit."
         )
 
-    cuda_source = experiment.render_code('cuda')
+    cuda_source = experiment.render_code("cuda")
     module = SourceModule(cuda_source)
 
     # Get kernel function from model name
     dynamics = experiment.network.dynamics
-    model_name = dynamics.name.replace(' ', '').replace('-', '')
+    model_name = dynamics.name.replace(" ", "").replace("-", "")
     kernel = module.get_function(model_name)
 
     return module, kernel
@@ -85,9 +85,9 @@ def run_cuda(
 
     # Get from experiment metadata
     if dt is None:
-        dt = getattr(experiment.integration, 'dt', 0.1)
+        dt = getattr(experiment.integration, "dt", 0.1)
     if n_steps is None:
-        duration = getattr(experiment.integration, 'duration', 1000.0)
+        duration = getattr(experiment.integration, "duration", 1000.0)
         n_steps = int(duration / dt)
 
     # Network data from experiment
@@ -108,17 +108,20 @@ def run_cuda(
 
     # Swept parameters
     if swept_params is None:
-        params_host = np.array([
-            [global_speed] * n_work_items,
-            [global_coupling] * n_work_items,
-        ], dtype=np.float32)
+        params_host = np.array(
+            [
+                [global_speed] * n_work_items,
+                [global_coupling] * n_work_items,
+            ],
+            dtype=np.float32,
+        )
     else:
         params_list = []
-        for name in ['global_speed', 'global_coupling']:
+        for name in ["global_speed", "global_coupling"]:
             if name in swept_params:
                 params_list.append(swept_params[name].astype(np.float32))
             else:
-                val = global_speed if name == 'global_speed' else global_coupling
+                val = global_speed if name == "global_speed" else global_coupling
                 params_list.append(np.full(n_work_items, val, dtype=np.float32))
         params_host = np.array(params_list, dtype=np.float32)
 
@@ -159,10 +162,10 @@ def run_cuda(
     tavg_host = np.transpose(tavg_host, (2, 0, 1))  # [n_work_items, n_states, n_node]
 
     return {
-        'tavg': tavg_host,
-        'n_node': n_node,
-        'n_steps': n_steps,
-        'dt': dt,
+        "tavg": tavg_host,
+        "n_node": n_node,
+        "n_steps": n_steps,
+        "dt": dt,
     }
 
 
@@ -176,6 +179,6 @@ def save_cuda(experiment: SimulationExperiment, path: str) -> str:
     Returns:
         Path to saved file
     """
-    cuda_source = experiment.render_code('cuda')
+    cuda_source = experiment.render_code("cuda")
     Path(path).write_text(cuda_source)
     return path

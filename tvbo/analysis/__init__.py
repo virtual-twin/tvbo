@@ -3,6 +3,7 @@
 Houses analysis result container classes (e.g., BifurcationResult) and related
 APIs that are logically distinct from plotting utilities or simulation drivers.
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
@@ -15,8 +16,11 @@ if TYPE_CHECKING:
 from .bifurcation import BifurcationResult, PyRatesBifurcationResult  # re-export
 
 __all__ = [
-    "BifurcationResult", "PyRatesBifurcationResult", "compare_timeseries",
-    "per_window_fc", "ttest_correlation_strength",
+    "BifurcationResult",
+    "PyRatesBifurcationResult",
+    "compare_timeseries",
+    "per_window_fc",
+    "ttest_correlation_strength",
 ]
 
 
@@ -57,6 +61,7 @@ def ttest_correlation_strength(cs):
         P-values of the t-test for each correlation coefficient.
     """
     from scipy import stats
+
     cs_z = np.arctanh(cs)
     for i in range(cs.shape[1]):
         cs_z[:, i, i] = 0.0

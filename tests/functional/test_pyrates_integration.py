@@ -19,7 +19,6 @@ from tvbo.codegen.pyrates import (
     to_pyrates_model_yaml,
     to_pyrates_network_yaml,
     to_pyrates_yaml_string,
-    from_pyrates_yaml,
 )
 
 
@@ -97,10 +96,16 @@ class TestNetworkExport:
         ]
         network.edges = [
             tvbo_datamodel.Edge(
-                source=0, target=1, parameters={"weight": tvbo_datamodel.Parameter(name="weight", value=0.5)}, coupling=Coupling(name="Linear")
+                source=0,
+                target=1,
+                parameters={"weight": tvbo_datamodel.Parameter(name="weight", value=0.5)},
+                coupling=Coupling(name="Linear"),
             ),
             tvbo_datamodel.Edge(
-                source=1, target=0, parameters={"weight": tvbo_datamodel.Parameter(name="weight", value=0.3)}, coupling=Coupling(name="Linear")
+                source=1,
+                target=0,
+                parameters={"weight": tvbo_datamodel.Parameter(name="weight", value=0.3)},
+                coupling=Coupling(name="Linear"),
             ),
         ]
 
@@ -116,13 +121,25 @@ class TestNetworkExport:
         network = Network(number_of_nodes=3)
         network.edges = [
             tvbo_datamodel.Edge(
-                source=0, target=1, parameters={"weight": tvbo_datamodel.Parameter(name="weight", value=0.5)}, coupling=Coupling(name="Linear"), directed=True
+                source=0,
+                target=1,
+                parameters={"weight": tvbo_datamodel.Parameter(name="weight", value=0.5)},
+                coupling=Coupling(name="Linear"),
+                directed=True,
             ),
             tvbo_datamodel.Edge(
-                source=1, target=2, parameters={"weight": tvbo_datamodel.Parameter(name="weight", value=0.8)}, coupling=Coupling(name="Linear"), directed=True
+                source=1,
+                target=2,
+                parameters={"weight": tvbo_datamodel.Parameter(name="weight", value=0.8)},
+                coupling=Coupling(name="Linear"),
+                directed=True,
             ),
             tvbo_datamodel.Edge(
-                source=2, target=0, parameters={"weight": tvbo_datamodel.Parameter(name="weight", value=0.2)}, coupling=Coupling(name="Linear"), directed=True
+                source=2,
+                target=0,
+                parameters={"weight": tvbo_datamodel.Parameter(name="weight", value=0.2)},
+                coupling=Coupling(name="Linear"),
+                directed=True,
             ),
         ]
 
@@ -143,7 +160,10 @@ class TestNetworkExport:
         network.label = "TestCircuit"
         network.edges = [
             tvbo_datamodel.Edge(
-                source=0, target=1, parameters={"weight": tvbo_datamodel.Parameter(name="weight", value=1.0)}, coupling=Coupling(name="Linear")
+                source=0,
+                target=1,
+                parameters={"weight": tvbo_datamodel.Parameter(name="weight", value=1.0)},
+                coupling=Coupling(name="Linear"),
             ),
         ]
 
@@ -297,14 +317,8 @@ class TestRoundTrip:
 
             # Verify values preserved
             assert loaded.parameters["mu"].value == vdp.parameters["mu"].value
-            assert (
-                loaded.state_variables["x"].initial_value
-                == vdp.state_variables["x"].initial_value
-            )
-            assert (
-                loaded.state_variables["z"].initial_value
-                == vdp.state_variables["z"].initial_value
-            )
+            assert loaded.state_variables["x"].initial_value == vdp.state_variables["x"].initial_value
+            assert loaded.state_variables["z"].initial_value == vdp.state_variables["z"].initial_value
         finally:
             os.unlink(temp_path)
 
@@ -316,9 +330,7 @@ class TestRoundTrip:
         model.add_parameter("omega", value=3.14)
         model.add_parameter("gamma", value=0.1)
         model.add_state_variable("x", equation="y", initial_value=2.0)
-        model.add_state_variable(
-            "y", equation="-omega**2 * x - gamma * y", initial_value=0.5
-        )
+        model.add_state_variable("y", equation="-omega**2 * x - gamma * y", initial_value=0.5)
 
         # Export to YAML
         yaml_output = model.to_yaml(format="pyrates")

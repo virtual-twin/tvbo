@@ -14,6 +14,7 @@ produces results numerically close to the original examples.
 Requires: h5py, numpy, pytest
 Optional: pyjulia (for live execution tests)
 """
+
 import os
 import numpy as np
 import pytest
@@ -23,17 +24,17 @@ import pytest
 # ---------------------------------------------------------------------------
 HERE = os.path.dirname(os.path.abspath(__file__))
 REF_DIR = os.path.join(HERE, "reference_data")
-EXAMPLES_DIR = os.path.join(
-    os.path.dirname(HERE), "docs", "Interoperability", "NetworkDynamics.jl", "yaml"
-)
+EXAMPLES_DIR = os.path.join(os.path.dirname(HERE), "docs", "Interoperability", "NetworkDynamics.jl", "yaml")
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _load_reference(name):
     """Load reference data from HDF5."""
     import h5py
+
     path = os.path.join(REF_DIR, f"{name}_reference.h5")
     if not os.path.exists(path):
         pytest.skip(f"Reference data not found: {path}")
@@ -52,14 +53,10 @@ def _load_reference(name):
         if "edge_weights" in f:
             data["edge_weights"] = f["edge_weights"][:]
         if "vertex_types" in f:
-            data["vertex_types"] = [s.decode() if isinstance(s, bytes) else s
-                                    for s in f["vertex_types"][:]]
+            data["vertex_types"] = [s.decode() if isinstance(s, bytes) else s for s in f["vertex_types"][:]]
         # Read attributes
         data["attrs"] = dict(f.attrs)
     return data
-
-
-
 
 
 # ===========================================================================
@@ -72,17 +69,24 @@ class TestCodeGeneration:
     def example(self, request):
         return request.param
 
-    @pytest.fixture(params=[
-        "diffusion", "kuramoto", "fitzhugh_nagumo",
-        "diffusion_2d", "heterogeneous_kuramoto",
-        "cascading_failure", "stress_on_truss",
-    ])
+    @pytest.fixture(
+        params=[
+            "diffusion",
+            "kuramoto",
+            "fitzhugh_nagumo",
+            "diffusion_2d",
+            "heterogeneous_kuramoto",
+            "cascading_failure",
+            "stress_on_truss",
+        ]
+    )
     def all_examples(self, request):
         return request.param
 
     def test_render_code_produces_julia(self, example):
         """render_code('networkdynamics') returns non-empty Julia code."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, f"{example}.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
@@ -94,6 +98,7 @@ class TestCodeGeneration:
     def test_code_has_vertex_model(self, example):
         """Generated code defines a VertexModel."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, f"{example}.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
@@ -102,6 +107,7 @@ class TestCodeGeneration:
     def test_code_has_edge_model(self, example):
         """Generated code defines an EdgeModel."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, f"{example}.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
@@ -110,6 +116,7 @@ class TestCodeGeneration:
     def test_code_has_ode_problem(self, example):
         """Generated code creates an ODEProblem."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, f"{example}.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
@@ -118,6 +125,7 @@ class TestCodeGeneration:
     def test_code_has_solve(self, example):
         """Generated code calls solve()."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, f"{example}.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
@@ -126,6 +134,7 @@ class TestCodeGeneration:
     def test_diffusion_uses_barabasi_albert(self):
         """Diffusion example uses Barabasi-Albert graph generator."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "diffusion.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
@@ -134,6 +143,7 @@ class TestCodeGeneration:
     def test_kuramoto_uses_watts_strogatz(self):
         """Kuramoto example uses Watts-Strogatz graph generator."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "kuramoto.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
@@ -142,6 +152,7 @@ class TestCodeGeneration:
     def test_fhn_uses_weighted_digraph(self):
         """FHN example uses SimpleWeightedDiGraph from connectivity file."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "fitzhugh_nagumo.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
@@ -150,6 +161,7 @@ class TestCodeGeneration:
     def test_fhn_uses_directed_coupling(self):
         """FHN example uses Directed edge coupling (not AntiSymmetric)."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "fitzhugh_nagumo.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
@@ -158,6 +170,7 @@ class TestCodeGeneration:
     def test_diffusion_uses_antisymmetric(self):
         """Diffusion example uses AntiSymmetric edge coupling."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "diffusion.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
@@ -168,6 +181,7 @@ class TestCodeGeneration:
     def test_diffusion_2d_multidim_coupling(self):
         """2D diffusion: vertex outputs 2 coupling variables via StateMask(1:2)."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "diffusion_2d.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
@@ -178,6 +192,7 @@ class TestCodeGeneration:
     def test_diffusion_2d_broadcast_esum(self):
         """2D diffusion: vertex uses broadcasting (dx .= esum) for multi-dim coupling."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "diffusion_2d.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
@@ -186,6 +201,7 @@ class TestCodeGeneration:
     def test_diffusion_2d_broadcasting_edge(self):
         """2D diffusion: edge uses broadcasting (e_dst .= v_src .- v_dst)."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "diffusion_2d.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
@@ -195,6 +211,7 @@ class TestCodeGeneration:
     def test_diffusion_2d_no_variable_shadowing(self):
         """2D diffusion: function arg doesn't shadow state var 'x'."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "diffusion_2d.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
@@ -204,6 +221,7 @@ class TestCodeGeneration:
     def test_diffusion_2d_uses_barabasi_albert_10(self):
         """2D diffusion: 10-node Barabási-Albert network."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "diffusion_2d.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         assert exp.network.number_of_nodes == 10
@@ -215,6 +233,7 @@ class TestCodeGeneration:
     def test_heterogeneous_kuramoto_vertex_types(self):
         """Heterogeneous Kuramoto: generates 3 vertex model types."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "heterogeneous_kuramoto.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
@@ -225,6 +244,7 @@ class TestCodeGeneration:
     def test_heterogeneous_kuramoto_vertex_array(self):
         """Heterogeneous Kuramoto: builds VertexModel[] array with per-node assignment."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "heterogeneous_kuramoto.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
@@ -235,6 +255,7 @@ class TestCodeGeneration:
     def test_heterogeneous_kuramoto_static_no_feedforward(self):
         """Static vertex uses NoFeedForward() and outputs :theta."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "heterogeneous_kuramoto.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
@@ -244,19 +265,21 @@ class TestCodeGeneration:
     def test_heterogeneous_kuramoto_inertia_2d(self):
         """Inertia vertex has 2 state vars but only 1 coupling output."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "heterogeneous_kuramoto.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
         # KuramotoInertia has sym = [:omega, :theta] (alphabetical) but g = StateMask(2:2)
         assert "sym = [:omega, :theta]" in code
         # Should be in the KuramotoInertia section
-        inertia_section = code.split("vertex_KuramotoInertia")[1]
+        code.split("vertex_KuramotoInertia")[1]
         # g=2:2 means only theta (at index 2) is output
         assert "StateMask(2:2)" in code
 
     def test_heterogeneous_kuramoto_per_node_params(self):
         """Per-node omega0 parameters are set via NWState."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "heterogeneous_kuramoto.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
@@ -269,6 +292,7 @@ class TestCodeGeneration:
     def test_heterogeneous_kuramoto_dealias(self):
         """Heterogeneous Network uses dealias=true."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "heterogeneous_kuramoto.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
@@ -279,6 +303,7 @@ class TestCodeGeneration:
     def test_cascading_failure_find_fixpoint(self):
         """Cascading failure uses find_fixpoint for initial conditions."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "cascading_failure.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
@@ -288,6 +313,7 @@ class TestCodeGeneration:
     def test_cascading_failure_callbacks(self):
         """Cascading failure has component-based callbacks."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "cascading_failure.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
@@ -299,6 +325,7 @@ class TestCodeGeneration:
     def test_cascading_failure_preset_time_callback(self):
         """Cascading failure has a preset time callback on edge 5."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "cascading_failure.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
@@ -308,6 +335,7 @@ class TestCodeGeneration:
     def test_cascading_failure_per_node_params(self):
         """Cascading failure sets per-node P_ref via set_default!."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "cascading_failure.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
@@ -317,6 +345,7 @@ class TestCodeGeneration:
     def test_cascading_failure_outsym(self):
         """Cascading failure edge outputs :P."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "cascading_failure.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
@@ -325,6 +354,7 @@ class TestCodeGeneration:
     def test_cascading_failure_dealias(self):
         """Cascading failure uses dealias=true for per-edge callbacks."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "cascading_failure.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
@@ -333,6 +363,7 @@ class TestCodeGeneration:
     def test_cascading_failure_ode_problem_nwstate(self):
         """Cascading failure uses ODEProblem(nw, u0, tspan) with NWState."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "cascading_failure.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
@@ -343,6 +374,7 @@ class TestCodeGeneration:
     def test_stress_on_truss_heterogeneous_vertices(self):
         """Stress on truss uses FreeVertex and FixedVertex."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "stress_on_truss.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
@@ -353,6 +385,7 @@ class TestCodeGeneration:
     def test_stress_on_truss_fixed_vertex_no_feedforward(self):
         """FixedVertex uses NoFeedForward and outputs :x, :y."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "stress_on_truss.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
@@ -361,6 +394,7 @@ class TestCodeGeneration:
     def test_stress_on_truss_2d_coupling(self):
         """Stress on truss has 2D coupling with outsym [:Fx, :Fy]."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "stress_on_truss.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
@@ -371,6 +405,7 @@ class TestCodeGeneration:
     def test_stress_on_truss_observed_function(self):
         """Stress on truss beam has an observed function for Fabs."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "stress_on_truss.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
@@ -380,6 +415,7 @@ class TestCodeGeneration:
     def test_stress_on_truss_per_edge_L(self):
         """Stress on truss sets per-edge L (rest length) values."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "stress_on_truss.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
@@ -398,6 +434,7 @@ class TestYAMLSpecs:
     def test_diffusion_yaml(self):
         """Diffusion YAML matches original: 20 nodes, BA(k=4), Tsit5, t=[0,2]."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "diffusion.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         assert exp.network.number_of_nodes == 20
@@ -406,6 +443,7 @@ class TestYAMLSpecs:
     def test_kuramoto_yaml(self):
         """Kuramoto YAML matches original: 8 nodes, WS(k=2,p=0), K=3, t=[0,10]."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "kuramoto.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         assert exp.network.number_of_nodes == 8
@@ -414,6 +452,7 @@ class TestYAMLSpecs:
     def test_fhn_yaml(self):
         """FHN YAML matches original: 90 nodes, a=0.5, eps=0.05, sigma=0.5, t=[0,200]."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "fitzhugh_nagumo.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         assert exp.network.number_of_nodes == 90
@@ -422,21 +461,21 @@ class TestYAMLSpecs:
     def test_fhn_equations_match_original(self):
         """FHN equations match original ND.jl code (not the description)."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "fitzhugh_nagumo.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         svs = exp.dynamics.state_variables
         # du/dt = u - u^3/3 - v + coupling  (NOT divided by epsilon)
         u_rhs = svs["u"].equation.rhs
-        assert "/ epsilon" not in u_rhs, \
-            f"u equation should NOT divide by epsilon: {u_rhs}"
+        assert "/ epsilon" not in u_rhs, f"u equation should NOT divide by epsilon: {u_rhs}"
         # dv/dt = (u - a) * epsilon  (matches code, not math description)
         v_rhs = svs["v"].equation.rhs
-        assert "a" in v_rhs and "epsilon" in v_rhs, \
-            f"v equation should contain a and epsilon: {v_rhs}"
+        assert "a" in v_rhs and "epsilon" in v_rhs, f"v equation should contain a and epsilon: {v_rhs}"
 
     def test_diffusion_2d_yaml(self):
         """2D Diffusion YAML: 10 nodes, BA(k=4), t=[0,3], 2 SVs, both coupling vars."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "diffusion_2d.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         assert exp.network.number_of_nodes == 10
@@ -450,6 +489,7 @@ class TestYAMLSpecs:
     def test_heterogeneous_kuramoto_yaml(self):
         """Heterogeneous Kuramoto YAML: 8 nodes, 3 vertex types, per-node assignment."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "heterogeneous_kuramoto.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         assert exp.network.number_of_nodes == 8
@@ -470,22 +510,24 @@ class TestYAMLSpecs:
     def test_cascading_failure_yaml(self):
         """Cascading failure YAML: 5 nodes, swing equation, events, find_fixpoint."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "cascading_failure.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         assert exp.network.number_of_nodes == 5
         assert exp.integration.duration == 6.0
         assert exp.dynamics.name == "SwingEquation"
         # Has events
-        events = getattr(exp, 'events', [])
+        events = getattr(exp, "events", [])
         assert len(events) >= 2
         # Has find_fixpoint execution config
-        exec_cfg = getattr(exp, 'execution', None)
+        exec_cfg = getattr(exp, "execution", None)
         assert exec_cfg is not None
-        assert getattr(exec_cfg, 'find_fixpoint', False) is True
+        assert getattr(exec_cfg, "find_fixpoint", False) is True
 
     def test_stress_on_truss_yaml(self):
         """Stress on truss YAML: 11 nodes, 2 vertex types, per-edge L."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "stress_on_truss.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         assert exp.network.number_of_nodes == 11
@@ -515,6 +557,7 @@ class TestNumericalComparison:
         """Skip entire class if juliacall is not available."""
         pytest.importorskip("juliacall", reason="juliacall not installed")
         from tvbo.run.julia import run_julia_code
+
         try:
             run_julia_code("1+1")
         except Exception:
@@ -524,126 +567,126 @@ class TestNumericalComparison:
     def julia_runner(self):
         """Provide Julia code execution capability."""
         from tvbo.run.julia import run_julia_code, extract_ode_solution
+
         return run_julia_code, extract_ode_solution
 
     def test_diffusion_numerical(self, julia_runner):
         """Diffusion: TVBO result matches original within tolerance."""
-        ref = _load_reference("diffusion")
+        _load_reference("diffusion")
         run_julia_code, extract_ode_solution = julia_runner
 
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "diffusion.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         ts = exp.run(format="networkdynamics")
 
         # Check shape: should have 20 nodes, 1 state variable
-        assert ts.data.sizes['node'] == 20, f"Expected 20 nodes, got {ts.data.sizes['node']}"
+        assert ts.data.sizes["node"] == 20, f"Expected 20 nodes, got {ts.data.sizes['node']}"
         # Check convergence: all nodes should converge to same value
-        final_states = ts.data.isel(time=-1).sel(variable='v')
-        assert np.std(final_states) < 0.1, \
-            f"Diffusion should converge: std={np.std(final_states):.4f}"
+        final_states = ts.data.isel(time=-1).sel(variable="v")
+        assert np.std(final_states) < 0.1, f"Diffusion should converge: std={np.std(final_states):.4f}"
 
     def test_kuramoto_numerical(self, julia_runner):
         """Kuramoto: TVBO result has correct shape and reasonable dynamics."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "kuramoto.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         ts = exp.run(format="networkdynamics")
 
         # Check shape: 8 nodes, 1 state variable (theta)
-        assert ts.data.sizes['node'] == 8, f"Expected 8 nodes, got {ts.data.sizes['node']}"
+        assert ts.data.sizes["node"] == 8, f"Expected 8 nodes, got {ts.data.sizes['node']}"
         # Phases should grow over time (oscillators)
-        node0_theta = ts.data.sel(variable='theta', node='0')
-        assert node0_theta.isel(time=-1).item() != node0_theta.isel(time=0).item(), \
-            "Phase should change over time"
+        node0_theta = ts.data.sel(variable="theta", node="0")
+        assert node0_theta.isel(time=-1).item() != node0_theta.isel(time=0).item(), "Phase should change over time"
 
     def test_fhn_numerical(self, julia_runner):
         """FHN: TVBO result has correct shape and shows synchronization."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "fitzhugh_nagumo.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         ts = exp.run(format="networkdynamics")
 
         # Check shape: 90 nodes, 2 state variables (u, v)
-        assert ts.data.sizes['node'] == 90, f"Expected 90 nodes, got {ts.data.sizes['node']}"
-        assert ts.data.sizes['variable'] == 2, f"Expected 2 state vars, got {ts.data.sizes['variable']}"
+        assert ts.data.sizes["node"] == 90, f"Expected 90 nodes, got {ts.data.sizes['node']}"
+        assert ts.data.sizes["variable"] == 2, f"Expected 2 state vars, got {ts.data.sizes['variable']}"
         # u variables should be bounded (no numerical explosion)
-        u_data = ts.data.sel(variable='u')
-        assert np.all(np.abs(u_data) < 50), \
-            f"u should be bounded: max={np.max(np.abs(u_data)):.1f}"
+        u_data = ts.data.sel(variable="u")
+        assert np.all(np.abs(u_data) < 50), f"u should be bounded: max={np.max(np.abs(u_data)):.1f}"
 
     def test_diffusion_2d_numerical(self, julia_runner):
         """2D diffusion: TVBO result has correct shape and converges."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "diffusion_2d.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         ts = exp.run(format="networkdynamics")
 
         # Check shape: 10 nodes, 2 state variables (x, phi)
-        assert ts.data.sizes['node'] == 10, f"Expected 10 nodes, got {ts.data.sizes['node']}"
-        assert ts.data.sizes['variable'] == 2, f"Expected 2 state vars, got {ts.data.sizes['variable']}"
+        assert ts.data.sizes["node"] == 10, f"Expected 10 nodes, got {ts.data.sizes['node']}"
+        assert ts.data.sizes["variable"] == 2, f"Expected 2 state vars, got {ts.data.sizes['variable']}"
         # Both x and phi should converge (diffusion)
-        for sv_name in ts.data.coords['variable'].values:
+        for sv_name in ts.data.coords["variable"].values:
             final = ts.data.isel(time=-1).sel(variable=sv_name)
-            assert np.std(final) < 0.15, \
-                f"SV {sv_name} should converge: std={np.std(final):.4f}"
+            assert np.std(final) < 0.15, f"SV {sv_name} should converge: std={np.std(final):.4f}"
 
     def test_heterogeneous_kuramoto_numerical(self, julia_runner):
         """Heterogeneous Kuramoto: correct shape with mixed vertex types."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "heterogeneous_kuramoto.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         ts = exp.run(format="networkdynamics")
 
         # Proper (time, variable, node) shape with named coordinates
-        assert 'variable' in ts.data.dims
-        assert 'node' in ts.data.dims
+        assert "variable" in ts.data.dims
+        assert "node" in ts.data.dims
         # Non-NaN states should be finite (NaN expected for static nodes
         # and variables not present on all node types)
         vals = ts.data.values
-        assert np.all(np.isfinite(vals[~np.isnan(vals)])), \
-            "Non-NaN states should be finite"
+        assert np.all(np.isfinite(vals[~np.isnan(vals)])), "Non-NaN states should be finite"
 
     def test_cascading_failure_numerical(self, julia_runner):
         """Cascading failure: identical to reference Julia implementation."""
         ref = _load_reference("cascading_failure")
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "cascading_failure.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         ts = exp.run(format="networkdynamics")
 
         # 5 nodes, 2 state variables (delta, omega)
-        assert ts.data.sizes['node'] == 5, f"Expected 5 nodes, got {ts.data.sizes['node']}"
-        assert ts.data.sizes['variable'] == 2, f"Expected 2 state vars, got {ts.data.sizes['variable']}"
+        assert ts.data.sizes["node"] == 5, f"Expected 5 nodes, got {ts.data.sizes['node']}"
+        assert ts.data.sizes["variable"] == 2, f"Expected 2 state vars, got {ts.data.sizes['variable']}"
         # States should be bounded (no numerical explosion from cascade)
         assert np.all(np.isfinite(ts.data)), "All states should be finite"
-        assert np.max(np.abs(ts.data)) < 100, \
-            f"States should be bounded: max={np.max(np.abs(ts.data)):.1f}"
+        assert np.max(np.abs(ts.data)) < 100, f"States should be bounded: max={np.max(np.abs(ts.data)):.1f}"
         # Numerical identity with reference
         tvbo_flat = np.zeros((len(ts.time), 10))
         for node in range(5):
-            tvbo_flat[:, node * 2] = ts.data.sel(variable='delta', node=str(node))
-            tvbo_flat[:, node * 2 + 1] = ts.data.sel(variable='omega', node=str(node))
+            tvbo_flat[:, node * 2] = ts.data.sel(variable="delta", node=str(node))
+            tvbo_flat[:, node * 2 + 1] = ts.data.sel(variable="omega", node=str(node))
         assert np.allclose(ts.time, ref["t"]), "Time vectors must match"
-        assert np.allclose(tvbo_flat, ref["u"], atol=1e-8), \
+        assert np.allclose(tvbo_flat, ref["u"], atol=1e-8), (
             f"States must match reference: max diff={np.max(np.abs(tvbo_flat - ref['u'])):.2e}"
+        )
 
     def test_stress_on_truss_numerical(self, julia_runner):
         """Stress on truss: heterogeneous vertices, beams, states bounded."""
         from tvbo import SimulationExperiment
+
         yaml_path = os.path.join(EXAMPLES_DIR, "stress_on_truss.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         ts = exp.run(format="networkdynamics")
 
         # Heterogeneous: 11 nodes (9 free + 2 static), 4 unique SVs
-        assert ts.data.sizes['variable'] == 4, \
-            f"Expected 4 unique state variables, got {ts.data.sizes['variable']}"
-        assert ts.data.sizes['node'] == 11, \
-            f"Expected 11 nodes, got {ts.data.sizes['node']}"
+        assert ts.data.sizes["variable"] == 4, f"Expected 4 unique state variables, got {ts.data.sizes['variable']}"
+        assert ts.data.sizes["node"] == 11, f"Expected 11 nodes, got {ts.data.sizes['node']}"
         # Non-NaN states should be finite (no structural collapse)
         vals = ts.data.values
-        assert np.all(np.isfinite(vals[~np.isnan(vals)])), \
-            "Non-NaN states should be finite"
+        assert np.all(np.isfinite(vals[~np.isnan(vals)])), "Non-NaN states should be finite"
 
 
 # ===========================================================================
@@ -663,8 +706,7 @@ class TestReferenceData:
         """Diffusion should converge toward uniform state."""
         ref = _load_reference("diffusion")
         final = ref["u"][-1, :]  # last timestep, all nodes
-        assert np.std(final) < 0.15, \
-            f"Diffusion should converge: std={np.std(final):.6f}"
+        assert np.std(final) < 0.15, f"Diffusion should converge: std={np.std(final):.6f}"
 
     def test_kuramoto_reference_shape(self):
         ref = _load_reference("kuramoto")
@@ -691,8 +733,7 @@ class TestReferenceData:
         """FHN states should be bounded (no numerical explosion)."""
         ref = _load_reference("fitzhugh_nagumo")
         assert np.all(np.isfinite(ref["u"])), "All states should be finite"
-        assert np.max(np.abs(ref["u"])) < 50, \
-            f"States should be bounded: max={np.max(np.abs(ref['u'])):.1f}"
+        assert np.max(np.abs(ref["u"])) < 50, f"States should be bounded: max={np.max(np.abs(ref['u'])):.1f}"
 
     def test_fhn_connectivity_matrix(self):
         """FHN connectivity matrix should be 90×90 with correct sparsity."""
@@ -720,10 +761,8 @@ class TestReferenceData:
         # x states (even indices), phi states (odd indices)
         x_final = final[0::2]
         phi_final = final[1::2]
-        assert np.std(x_final) < 0.5, \
-            f"x should converge: std={np.std(x_final):.4f}"
-        assert np.std(phi_final) < 0.5, \
-            f"phi should converge: std={np.std(phi_final):.4f}"
+        assert np.std(x_final) < 0.5, f"x should converge: std={np.std(x_final):.4f}"
+        assert np.std(phi_final) < 0.5, f"phi should converge: std={np.std(phi_final):.4f}"
 
     # -- Heterogeneous Kuramoto reference data --
 
@@ -755,14 +794,13 @@ class TestReferenceData:
         # Callback events may add extra interpolated points
         assert ref["t"].shape[0] >= 601
         assert ref["u"].shape[0] == ref["t"].shape[0]
-        assert ref["u"].shape[1] == 10   # 5 nodes × 2 SVs
+        assert ref["u"].shape[1] == 10  # 5 nodes × 2 SVs
 
     def test_cascading_failure_reference_bounded(self):
         """Cascading failure: states should be bounded (no numerical explosion)."""
         ref = _load_reference("cascading_failure")
         assert np.all(np.isfinite(ref["u"])), "All states should be finite"
-        assert np.max(np.abs(ref["u"])) < 100, \
-            f"States should be bounded: max={np.max(np.abs(ref['u'])):.1f}"
+        assert np.max(np.abs(ref["u"])) < 100, f"States should be bounded: max={np.max(np.abs(ref['u'])):.1f}"
 
     def test_cascading_failure_adjacency(self):
         """Cascading failure: 5×5 adjacency matrix with 7 edges."""
@@ -779,7 +817,7 @@ class TestReferenceData:
         ref = _load_reference("stress_on_truss")
         assert ref["t"].shape == (1201,)
         assert ref["u"].shape[0] == 1201  # timesteps
-        assert ref["u"].shape[1] == 36    # 9 free nodes × 4 SVs
+        assert ref["u"].shape[1] == 36  # 9 free nodes × 4 SVs
 
     def test_stress_on_truss_reference_bounded(self):
         """Stress on truss: states should be bounded (no numerical explosion)."""
@@ -801,24 +839,29 @@ class TestReferenceData:
 class TestDocURLs:
     """Verify that documentation URLs in YAML files are valid."""
 
-    @pytest.fixture(params=[
-        "diffusion", "kuramoto", "fitzhugh_nagumo",
-        "diffusion_2d", "heterogeneous_kuramoto",
-        "cascading_failure", "stress_on_truss",
-    ])
+    @pytest.fixture(
+        params=[
+            "diffusion",
+            "kuramoto",
+            "fitzhugh_nagumo",
+            "diffusion_2d",
+            "heterogeneous_kuramoto",
+            "cascading_failure",
+            "stress_on_truss",
+        ]
+    )
     def yaml_path(self, request):
         return os.path.join(EXAMPLES_DIR, f"{request.param}.yaml")
 
     def test_yaml_urls_use_generated_path(self, yaml_path):
         """All URLs should use /stable/generated/ path (not bare /stable/)."""
         import yaml
+
         with open(yaml_path) as f:
             spec = yaml.safe_load(f)
         refs = spec.get("references", [])
         for url in refs:
             if "NetworkDynamics.jl" in url:
-                assert "/generated/" in url, \
-                    f"URL should use /generated/ path: {url}"
+                assert "/generated/" in url, f"URL should use /generated/ path: {url}"
                 # Check it doesn't use old format
-                assert url.count("/stable/") == 1, \
-                    f"URL has duplicate /stable/: {url}"
+                assert url.count("/stable/") == 1, f"URL has duplicate /stable/: {url}"

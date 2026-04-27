@@ -6,6 +6,7 @@ single pair of read/write functions handles both backends.
 
 See §12.1 of the tvbo HDF5 format proposal v0.7.
 """
+
 import numpy as np
 from pathlib import Path
 from scipy.sparse import csr_matrix, coo_matrix
@@ -15,6 +16,7 @@ def _create_ds(grp, name, *, data, **kwargs):
     """Create a dataset compatible with both h5py and zarr v3."""
     try:
         import zarr
+
         if isinstance(grp, zarr.Group):
             return grp.create_array(name, data=data, **kwargs)
     except ImportError:
@@ -23,6 +25,7 @@ def _create_ds(grp, name, *, data, **kwargs):
 
 
 # ── Format selection ──────────────────────────────────────────────────
+
 
 def auto_format(matrix) -> str:
     """Select optimal storage format based on empirical analysis (§11).
@@ -45,6 +48,7 @@ def auto_format(matrix) -> str:
         "dense" or "csr"
     """
     from scipy import sparse
+
     if sparse.issparse(matrix):
         n = max(matrix.shape)
         fill = matrix.nnz / (matrix.shape[0] * matrix.shape[1]) if matrix.shape[0] > 0 else 0
@@ -59,8 +63,10 @@ def auto_format(matrix) -> str:
 
 # ── Write ─────────────────────────────────────────────────────────────
 
+
 def _write_dense(grp, matrix):
     from scipy import sparse
+
     if sparse.issparse(matrix):
         arr = matrix.toarray().astype("float32")
     else:
@@ -71,16 +77,16 @@ def _write_dense(grp, matrix):
 
 def _write_csr(grp, matrix):
     m = csr_matrix(matrix).astype("float32")
-    _create_ds(grp, "data",    data=m.data)
+    _create_ds(grp, "data", data=m.data)
     _create_ds(grp, "indices", data=m.indices.astype("int32"))
-    _create_ds(grp, "indptr",  data=m.indptr.astype("int32"))
+    _create_ds(grp, "indptr", data=m.indptr.astype("int32"))
 
 
 def _write_coo(grp, matrix):
     m = coo_matrix(matrix).astype("float32")
     _create_ds(grp, "data", data=m.data)
-    _create_ds(grp, "row",  data=m.row.astype("int32"))
-    _create_ds(grp, "col",  data=m.col.astype("int32"))
+    _create_ds(grp, "row", data=m.row.astype("int32"))
+    _create_ds(grp, "col", data=m.col.astype("int32"))
 
 
 _WRITERS = {"dense": _write_dense, "csr": _write_csr, "coo": _write_coo}
@@ -105,6 +111,7 @@ def write_matrix(grp, matrix, fmt: str = "dense"):
 
 # ── Read ──────────────────────────────────────────────────────────────
 
+
 def read_matrix(grp) -> np.ndarray:
     """Read a matrix from an HDF5/Zarr group, returning dense numpy array.
 
@@ -124,20 +131,16 @@ def read_matrix(grp) -> np.ndarray:
         return np.asarray(grp["data"])
     elif fmt == "csr":
         return csr_matrix(
-            (np.asarray(grp["data"]), np.asarray(grp["indices"]),
-             np.asarray(grp["indptr"])), shape=shape
+            (np.asarray(grp["data"]), np.asarray(grp["indices"]), np.asarray(grp["indptr"])), shape=shape
         ).toarray()
     elif fmt == "coo":
-        return coo_matrix(
-            (np.asarray(grp["data"]),
-             (np.asarray(grp["row"]), np.asarray(grp["col"]))),
-            shape=shape
-        ).toarray()
+        return coo_matrix((np.asarray(grp["data"]), (np.asarray(grp["row"]), np.asarray(grp["col"]))), shape=shape).toarray()
     else:
         raise ValueError(f"Unknown matrix format: {fmt}")
 
 
 # ── Lazy array store ──────────────────────────────────────────────────
+
 
 class LazyArrayStore:
     """Lazy-loading wrapper for companion binary files (HDF5/Zarr/CSV).
@@ -163,10 +166,7 @@ class LazyArrayStore:
 
     def _template_edges(self) -> list:
         """Template edges = entries without source/target (matrix measures)."""
-        return [
-            e for e in (self._meta.get("edges", []) or [])
-            if e.get("source") is None
-        ]
+        return [e for e in (self._meta.get("edges", []) or []) if e.get("source") is None]
 
     @staticmethod
     def _edge_name(e: dict) -> str:
@@ -185,14 +185,14 @@ class LazyArrayStore:
 
         elif self._ext in (".h5", ".hdf5"):
             import h5py
+
             with h5py.File(self._path, "r") as f:
-                self._cache, self._params_cache = _read_edges_from_store(
-                    f, edges)
+                self._cache, self._params_cache = _read_edges_from_store(f, edges)
 
         elif self._ext == ".zarr" or self._path.is_dir():
             import zarr
-            self._cache, self._params_cache = _read_edges_from_store(
-                zarr.open(str(self._path), "r"), edges)
+
+            self._cache, self._params_cache = _read_edges_from_store(zarr.open(str(self._path), "r"), edges)
 
         self._loaded = True
 
@@ -220,12 +220,14 @@ class LazyArrayStore:
         """Read an arbitrary dataset by path (e.g. ``"nodes/parent_index"``)."""
         if self._ext in (".h5", ".hdf5"):
             import h5py
+
             with h5py.File(self._path, "r") as f:
                 if key in f:
                     return f[key][()]
                 raise KeyError(key)
         elif self._ext == ".zarr" or self._path.is_dir():
             import zarr
+
             z = zarr.open(str(self._path), "r")
             return np.asarray(z[key])
         raise KeyError(key)

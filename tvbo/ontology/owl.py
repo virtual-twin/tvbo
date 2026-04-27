@@ -39,7 +39,7 @@ import re
 import tempfile
 from os.path import abspath, dirname, isfile, join, realpath
 from textwrap import wrap
-from typing import List, Dict, Tuple, Optional, Union, Any
+from typing import List, Dict, Tuple, Optional, Union
 
 import numpy as np
 import owlready2
@@ -62,6 +62,7 @@ def _require_fuzzy():
             "  pip install tvbo[knowledge]\n"
             "Or: pip install fuzzywuzzy python-Levenshtein"
         )
+
 
 from tvbo.ontology import query as _query_mod
 from tvbo.datamodel import schema as tvbo_datamodel
@@ -140,9 +141,7 @@ xml = xml.replace(
     "",
 )
 
-with tempfile.NamedTemporaryFile(
-    suffix=".owl", delete=False, mode="w", encoding="utf-8"
-) as tmp:
+with tempfile.NamedTemporaryFile(suffix=".owl", delete=False, mode="w", encoding="utf-8") as tmp:
     tmp.write(xml)
     tmp_path = tmp.name
 
@@ -558,9 +557,7 @@ def get_models(model_type="NMM", from_df=False) -> Dict[str, owlready2.ThingClas
     return {m: k for m, k in models.items() if m in functional_models}
 
 
-def get_model(
-    label: str = "JansenRit", model_type="NMM", verbose=False
-) -> owlready2.ThingClass:
+def get_model(label: str = "JansenRit", model_type="NMM", verbose=False) -> owlready2.ThingClass:
     """
     Retrieves a specific TVB-O model using its label.
 
@@ -586,9 +583,7 @@ def get_model(
         NMM = synonyms[label]
     else:
         if verbose:
-            print(
-                f"Model {label} not found in {model_type} models.\n Valid models are {sorted(models.keys())}"
-            )
+            print(f"Model {label} not found in {model_type} models.\n Valid models are {sorted(models.keys())}")
         return onto.NeuralMassModel()  # return empty NMM class
     default_world.full_text_search_properties.append(NMM)
     return NMM
@@ -614,9 +609,7 @@ def get_coupling_functions() -> Dict[str, owlready2.ThingClass]:
     return {CF.label.first(): CF for CF in onto.Coupling.subclasses()}
 
 
-def get_coupling_function(
-    label="Linear", verbose=True
-) -> Optional[owlready2.ThingClass]:
+def get_coupling_function(label="Linear", verbose=True) -> Optional[owlready2.ThingClass]:
     coupling_functions = get_coupling_functions()
     synonyms = dict()
     for k, cf in coupling_functions.items():
@@ -627,9 +620,7 @@ def get_coupling_function(
         CF = synonyms[label]
     else:
         if verbose:
-            print(
-                f"Coupling function {label} not found.\nValid coupling functions are: {coupling_functions.keys()}"
-            )
+            print(f"Coupling function {label} not found.\nValid coupling functions are: {coupling_functions.keys()}")
         return None
     default_world.full_text_search_properties.append(CF)
     return CF
@@ -775,9 +766,7 @@ def select_variables(variables, property) -> List[owlready2.ThingClass]:
     return selection
 
 
-def get_model_parameters(
-    NMM, return_as_dict=True
-) -> Union[Dict[str, owlready2.ThingClass], List[owlready2.ThingClass]]:
+def get_model_parameters(NMM, return_as_dict=True) -> Union[Dict[str, owlready2.ThingClass], List[owlready2.ThingClass]]:
     """
     Retrieves the parameters for a given TVB model.
 
@@ -789,7 +778,7 @@ def get_model_parameters(
     """
     if isinstance(NMM, str):
         NMM = get_model(NMM)
-    suffix = get_model_suffix(NMM)
+    get_model_suffix(NMM)
     if hasattr(NMM, "descendants"):
         parameters = sorted(
             [p for p in NMM.descendants() if onto.Parameter in p.is_a],
@@ -804,9 +793,7 @@ def get_model_parameters(
     if return_as_dict:
         parameters = get_sorted_dict(parameters)
 
-    return {
-        replace_suffix(p).replace(f"_{NMM.name}", ""): p for k, p in parameters.items()
-    }
+    return {replace_suffix(p).replace(f"_{NMM.name}", ""): p for k, p in parameters.items()}
 
 
 # TODO: add at least only_global in docstring
@@ -838,9 +825,7 @@ def get_model_coupling_terms(
     return {k.replace(suffix, ""): p for k, p in parameters.items()}
 
 
-def get_model_constants(
-    NMM, return_as_dict=True
-) -> Union[Dict[str, owlready2.ThingClass], List[owlready2.ThingClass]]:
+def get_model_constants(NMM, return_as_dict=True) -> Union[Dict[str, owlready2.ThingClass], List[owlready2.ThingClass]]:
     if isinstance(NMM, str):
         NMM = get_model(NMM)
 
@@ -935,9 +920,7 @@ def get_model_arguments(NMM) -> Dict[str, owlready2.ThingClass]:
     return arguments
 
 
-def get_model_derivatives(
-    NMM, return_as_dict=True
-) -> Union[Dict[str, owlready2.ThingClass], List[owlready2.ThingClass]]:
+def get_model_derivatives(NMM, return_as_dict=True) -> Union[Dict[str, owlready2.ThingClass], List[owlready2.ThingClass]]:
     """
     Retrieves the derivatives for a given TVB model.
 
@@ -962,9 +945,7 @@ def get_model_derivatives(
     return time_derivatives
 
 
-def get_model_statevariables(
-    NMM, return_as_dict=True
-) -> Union[Dict[str, owlready2.ThingClass], List[owlready2.ThingClass]]:
+def get_model_statevariables(NMM, return_as_dict=True) -> Union[Dict[str, owlready2.ThingClass], List[owlready2.ThingClass]]:
     """
     Retrieves the state variables for a given TVB model.
 
@@ -988,9 +969,7 @@ def get_model_statevariables(
     return {replace_suffix(k): p for k, p in SV.items()}
 
 
-def get_model_cvars(
-    NMM, return_as_dict=True
-) -> Union[Dict[str, owlready2.ThingClass], List[owlready2.ThingClass]]:
+def get_model_cvars(NMM, return_as_dict=True) -> Union[Dict[str, owlready2.ThingClass], List[owlready2.ThingClass]]:
     """
     Retrieves the cvars (coupling variables) for a given TVB model.
 
@@ -1016,9 +995,7 @@ def get_model_cvars(
     return {replace_suffix(k): p for k, p in cvars.items()}
 
 
-def get_default_values(
-    NMM, tvb_name=False, class_as_key=False
-) -> Dict[str, Union[float, bool, int]]:
+def get_default_values(NMM, tvb_name=False, class_as_key=False) -> Dict[str, Union[float, bool, int]]:
     """
     Retrieves the default values for a given TVB model's parameters.
 
@@ -1032,7 +1009,7 @@ def get_default_values(
     if isinstance(NMM, str):
         NMM = get_model(NMM)
     # TODO: suff not used, remove?
-    suff = get_model_suffix(NMM)
+    get_model_suffix(NMM)
     values = dict()
     parameters = get_model_parameters(NMM)
     parameters.update(get_model_constants(NMM))
@@ -1079,17 +1056,12 @@ def add_spaces_around_math_chars(s) -> str:
 
 
 def get_model_vois(model) -> Tuple[str]:
-    math_chars = ["+", "-", "*", "/", "=", "^"]
 
     if isinstance(model, str):
         model = get_model(model)
     suffix = get_model_suffix(model)
 
-    relations = {
-        m.label.first().replace(suffix, "")
-        for m in model.has_default_voi
-        if m.name != "Thing"
-    }
+    relations = {m.label.first().replace(suffix, "") for m in model.has_default_voi if m.name != "Thing"}
     extra_vois = model.VOIs.first()
     if extra_vois:
         relations.update(extra_vois.split(","))
@@ -1104,9 +1076,7 @@ def get_model_vois(model) -> Tuple[str]:
     vois = single_vois + op_vois
     if len(vois) == 0:
         vois = list(get_model_statevariables(model).keys())
-    return tuple(
-        sorted(set([v.replace('"', "").replace("'", "").strip() for v in vois]))
-    )
+    return tuple(sorted(set([v.replace('"', "").replace("'", "").strip() for v in vois])))
 
 
 # TODO: integrate biological surrogates in TVB-O
@@ -1127,9 +1097,7 @@ def get_definition(tvbo_class) -> str:
     return "\n".join(wrap(tvbo_class.definition[0], width=100))
 
 
-def get_parameters_by_catalogue(
-    NMM: owlready2.ThingClass, param_key: str
-) -> pd.DataFrame:
+def get_parameters_by_catalogue(NMM: owlready2.ThingClass, param_key: str) -> pd.DataFrame:
     """
     Retrieves parameters for a given TVB model, based on a specified parameter catalogue.
 
@@ -1168,13 +1136,13 @@ def get_parameters_by_catalogue(
 def get_object_properties(ontology_class, include_restriction=True):
     object_properties = []
     for p, o in _query_mod.get_class_relationships(ontology_class):
-        if type(o) == owlready2.class_construct.Restriction:
+        if isinstance(o, owlready2.class_construct.Restriction):
             if include_restriction:
-                if not {o.property.name: o.value} in object_properties:
+                if {o.property.name: o.value} not in object_properties:
                     object_properties.append({o.property.name: o.value})
 
-        elif type(o) == owlready2.ThingClass:
-            if not {"is_a": o} in object_properties:
+        elif isinstance(o, owlready2.ThingClass):
+            if {"is_a": o} not in object_properties:
                 object_properties.append({"is_a": o})
 
     return object_properties
@@ -1196,7 +1164,7 @@ def get_class_properties(cls):
             if annot_prop.python_name in ["value", "defaultValue"]:
                 try:
                     val = eval(val)
-                except:
+                except Exception:
                     pass
             prop["annotation_properties"][annot_prop.python_name] = val
 
@@ -1256,12 +1224,7 @@ def compare_models(model1, model2, by="ParameterCatalogue") -> pd.DataFrame:
             for k2, v2 in model2_vars.items():
                 inters = intersection(v1, v2)
 
-                inters = [
-                    i
-                    for i in inters
-                    if i
-                    in onto.ModelParametersCatalogue.descendants(include_self=False)
-                ]
+                inters = [i for i in inters if i in onto.ModelParametersCatalogue.descendants(include_self=False)]
                 if onto.StateVariable in inters:
                     inters.remove(onto.StateVariable)
 
@@ -1269,15 +1232,9 @@ def compare_models(model1, model2, by="ParameterCatalogue") -> pd.DataFrame:
                     inters.remove(onto.TransferSigmoidFunctionProperties)
 
                 if len(inters) > 0:
-                    df_comp.at[i, model1.label.first()] = k1.label.first().replace(
-                        model1_suffix, ""
-                    )
-                    df_comp.at[i, model2.label.first()] = k2.label.first().replace(
-                        model2_suffix, ""
-                    )
-                    df_comp.at[i, "Parameter Catalogue"] = ", ".join(
-                        [i.label.first() for i in inters]
-                    )
+                    df_comp.at[i, model1.label.first()] = k1.label.first().replace(model1_suffix, "")
+                    df_comp.at[i, model2.label.first()] = k2.label.first().replace(model2_suffix, "")
+                    df_comp.at[i, "Parameter Catalogue"] = ", ".join([i.label.first() for i in inters])
                     i += 1
         # df_comp.sort_values(by=["Parameter Catalogue", model1.label.first()])
         df_comp = df_comp.groupby("Parameter Catalogue", as_index=False).agg(
@@ -1305,13 +1262,7 @@ def get_range(variable, return_array=False) -> Union[Tuple, np.ndarray]:
 
     if isinstance(variable, str):
         vrange = variable
-        return tuple(
-            val.strip()
-            for val in vrange.replace("lo=", "")
-            .replace("hi=", "")
-            .replace("step=", "")
-            .split(",")
-        )
+        return tuple(val.strip() for val in vrange.replace("lo=", "").replace("hi=", "").replace("step=", "").split(","))
     else:
         vrange = variable.range.first()
 
@@ -1330,35 +1281,23 @@ def get_range(variable, return_array=False) -> Union[Tuple, np.ndarray]:
         else:
             lo = (
                 variable.defaultValue.first()
-                if not isinstance(variable.defaultValue.first(), type(None))
-                and variable.defaultValue.first() != "None"
+                if not isinstance(variable.defaultValue.first(), type(None)) and variable.defaultValue.first() != "None"
                 else 1e-100
             )
             hi = (
                 variable.defaultValue.first()
-                if not isinstance(variable.defaultValue.first(), type(None))
-                and variable.defaultValue.first() != "None"
+                if not isinstance(variable.defaultValue.first(), type(None)) and variable.defaultValue.first() != "None"
                 else 1e100
             )
             return lo, hi, 0.0001
-    vrange = (
-        vrange.replace("lo=", "").replace("hi=", "").replace("step=", "").split(",")
-    )
+    vrange = vrange.replace("lo=", "").replace("hi=", "").replace("step=", "").split(",")
 
     vrange = [r.strip() for r in vrange]
     if vrange == ["None"] or vrange == [""]:
         return None
 
-    vrange[0] = (
-        float(vrange[0].replace("=", "").replace("lo", "").strip())
-        if vrange[0] != "None"
-        else -1e100
-    )
-    vrange[1] = (
-        float(vrange[1].replace("=", "").replace("hi", "").strip())
-        if vrange[1] != "None"
-        else 1e100
-    )
+    vrange[0] = float(vrange[0].replace("=", "").replace("lo", "").strip()) if vrange[0] != "None" else -1e100
+    vrange[1] = float(vrange[1].replace("=", "").replace("hi", "").strip()) if vrange[1] != "None" else 1e100
     step = vrange[2].replace("=", "").replace("step", "").strip()
     step = float(step) if step != "None" else 1
     if return_array:
@@ -1396,9 +1335,7 @@ def find_best_fuzzy_match(target, cls_list) -> owlready2.ThingClass:
 
 
 # TODO: update docstrig with the new params
-def find_variables(
-    var, model, type="all", include_synonyms=False, find_best_match=True
-) -> Optional[owlready2.ThingClass]:
+def find_variables(var, model, type="all", include_synonyms=False, find_best_match=True) -> Optional[owlready2.ThingClass]:
     """
     Finds a variable in a TVB model.
     Parameters:
@@ -1455,9 +1392,7 @@ def create_acronym(text) -> str:
 
     # Keep adding letters until the acronym is unique
     while acronym in existing_acronyms:
-        acronym = "".join(
-            word[: index + 1] if len(word) > index else word for word in words
-        )
+        acronym = "".join(word[: index + 1] if len(word) > index else word for word in words)
         index += 1
 
     return acronym.upper()
@@ -1485,9 +1420,7 @@ def extract_most_common(searches) -> Optional[owlready2.ThingClass]:
     return most_common_item
 
 
-def search_all(
-    search_term, from_class=None, case_sensitive=False
-) -> Optional[owlready2.ThingClass]:
+def search_all(search_term, from_class=None, case_sensitive=False) -> Optional[owlready2.ThingClass]:
     if from_class is None:
         tree = list(onto.classes())
     else:
@@ -1509,7 +1442,10 @@ def search_all(
 
 
 ####################
-def import_model(model_metadata: Union[str, dict, 'tvbo_datamodel.Dynamics', 'tvbo_datamodel.SimulationExperiment'], model_name: Optional[str] = None) -> owlready2.ThingClass:
+def import_model(
+    model_metadata: Union[str, dict, "tvbo_datamodel.Dynamics", "tvbo_datamodel.SimulationExperiment"],
+    model_name: Optional[str] = None,
+) -> owlready2.ThingClass:
     """Import a model from metadata into the ontology.
 
     Creates ontology subclasses for state variables, parameters,
@@ -1527,6 +1463,7 @@ def import_model(model_metadata: Union[str, dict, 'tvbo_datamodel.Dynamics', 'tv
     model_data = None
     if isinstance(model_metadata, str) and isfile(model_metadata):
         from linkml_runtime.loaders import yaml_loader
+
         experiment_metadata = yaml_loader.load(model_metadata, tvbo_datamodel.SimulationExperiment)
         model_data = experiment_metadata.model
     elif isinstance(model_metadata, tvbo_datamodel.Dynamics):
@@ -1587,18 +1524,12 @@ def import_model(model_metadata: Union[str, dict, 'tvbo_datamodel.Dynamics', 'tv
         properties = {
             "label": sv.name + model_suffix,
             "symbol": str(sv.name),
-            "stateVariableRange": (
-                f"lo={sv.domain.lo}, hi={sv.domain.hi}" if sv.domain else ""
-            ),
+            "stateVariableRange": (f"lo={sv.domain.lo}, hi={sv.domain.hi}" if sv.domain else ""),
         }
         if sv.boundaries:
-            properties["stateVariableBoundaries"] = (
-                f"lo={sv.boundaries.lo}, hi={sv.boundaries.hi}"
-            )
+            properties["stateVariableBoundaries"] = f"lo={sv.boundaries.lo}, hi={sv.boundaries.hi}"
 
-        sv_class = _create_subclass(
-            sv.name + model_suffix, onto.StateVariable, properties, model_class
-        )
+        sv_class = _create_subclass(sv.name + model_suffix, onto.StateVariable, properties, model_class)
         if sv.coupling_variable:
             model_class.has_cvar.append(sv_class)
 
@@ -1624,18 +1555,10 @@ def import_model(model_metadata: Union[str, dict, 'tvbo_datamodel.Dynamics', 'tv
             "label": k + model_suffix,
             "symbol": getattr(p, "symbol", str(k)),
             "definition": str(p.description),
-            "defaultValue": (
-                float(p.value) if not isinstance(p.value, list) else p.default
-            ),
-            "range": (
-                f"lo={p.domain.lo}, hi={p.domain.hi}, step={p.domain.step}"
-                if p.domain
-                else ""
-            ),
+            "defaultValue": (float(p.value) if not isinstance(p.value, list) else p.default),
+            "range": (f"lo={p.domain.lo}, hi={p.domain.hi}, step={p.domain.step}" if p.domain else ""),
         }
-        p_class = _create_subclass(
-            k + model_suffix, onto.Parameter, properties, model_class
-        )
+        p_class = _create_subclass(k + model_suffix, onto.Parameter, properties, model_class)
         model_class.has_parameter.append(p_class)
 
     # Derived parameters
@@ -1646,9 +1569,7 @@ def import_model(model_metadata: Union[str, dict, 'tvbo_datamodel.Dynamics', 'tv
             "value": str(dp.equation.rhs),
             "symbol": str(dp.equation.lhs if dp.equation.lhs else dp.name),
         }
-        _create_subclass(
-            dp.name + model_suffix, onto.Function, properties, model_class
-        )
+        _create_subclass(dp.name + model_suffix, onto.Function, properties, model_class)
 
     # Derived variables
     for dv in model_data.derived_variables.values():
@@ -1658,9 +1579,7 @@ def import_model(model_metadata: Union[str, dict, 'tvbo_datamodel.Dynamics', 'tv
             "value": str(dv.equation.rhs),
             "symbol": str(dv.equation.lhs if dv.equation.lhs else dv.name),
         }
-        _create_subclass(
-            dv.name + model_suffix, onto.Function, properties, model_class
-        )
+        _create_subclass(dv.name + model_suffix, onto.Function, properties, model_class)
 
     # Outputs
     output_items = []
@@ -1673,20 +1592,23 @@ def import_model(model_metadata: Union[str, dict, 'tvbo_datamodel.Dynamics', 'tv
         if ot is None:
             continue
         if not isinstance(ot_name, str):
-            ot_name = str(ot.name) if hasattr(ot, 'name') and ot.name else "output"
-        if hasattr(ot, 'equation') and ot.equation and ot.equation.rhs:
+            ot_name = str(ot.name) if hasattr(ot, "name") and ot.name else "output"
+        if hasattr(ot, "equation") and ot.equation and ot.equation.rhs:
             eq_rhs = str(ot.equation.rhs)
             eq_lhs = str(ot.equation.lhs) if ot.equation.lhs else ot_name
         else:
             eq_rhs = ot_name
             eq_lhs = ot_name
         _create_subclass(
-            ot_name + model_suffix, onto.Function, properties={
+            ot_name + model_suffix,
+            onto.Function,
+            properties={
                 "label": ot_name + model_suffix,
                 "equation": eq_rhs,
                 "value": eq_rhs,
                 "symbol": eq_lhs,
-            }, parent_class=model_class
+            },
+            parent_class=model_class,
         )
 
     # Coupling terms

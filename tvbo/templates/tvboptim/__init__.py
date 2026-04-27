@@ -72,18 +72,17 @@ which provides:
 - Grid exploration and parallel execution
 """
 
-
 # Template names for programmatic access
 TEMPLATES = {
-    'dfun': 'tvboptim/tvbo-tvboptim-dfun.py.mako',
-    'cfun': 'tvboptim/tvbo-tvboptim-cfun.py.mako',
-    'solver': 'tvboptim/tvbo-tvboptim-solver.py.mako',
-    'noise': 'tvboptim/tvbo-tvboptim-noise.py.mako',
-    'observation': 'tvboptim/tvbo-tvboptim-observation.py.mako',
-    'optim': 'tvboptim/tvbo-tvboptim-optim.py.mako',
-    'exploration': 'tvboptim/tvbo-tvboptim-exploration.py.mako',
-    'sim': 'tvboptim/tvbo-tvboptim-sim.py.mako',
-    'experiment': 'tvboptim/tvbo-tvboptim-experiment.py.mako',
+    "dfun": "tvboptim/tvbo-tvboptim-dfun.py.mako",
+    "cfun": "tvboptim/tvbo-tvboptim-cfun.py.mako",
+    "solver": "tvboptim/tvbo-tvboptim-solver.py.mako",
+    "noise": "tvboptim/tvbo-tvboptim-noise.py.mako",
+    "observation": "tvboptim/tvbo-tvboptim-observation.py.mako",
+    "optim": "tvboptim/tvbo-tvboptim-optim.py.mako",
+    "exploration": "tvboptim/tvbo-tvboptim-exploration.py.mako",
+    "sim": "tvboptim/tvbo-tvboptim-sim.py.mako",
+    "experiment": "tvboptim/tvbo-tvboptim-experiment.py.mako",
 }
 
 __all__ = [

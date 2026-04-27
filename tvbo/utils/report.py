@@ -29,7 +29,6 @@ import pandas as pd
 from tvbo.data import db
 
 
-
 def parameter_report(param_setting, decimals=3, format="latex", **kwargs):
     """
     Generate a report of parameter settings.
@@ -56,15 +55,9 @@ def parameter_report(param_setting, decimals=3, format="latex", **kwargs):
         If the provided format is not recognized.
     """
 
-    short_caption = "Parameter values for the {} model*.".format(
-        param_setting.model.label.first().replace("_", "-")
-    )
+    short_caption = "Parameter values for the {} model*.".format(param_setting.model.label.first().replace("_", "-"))
 
-    long_caption = (
-        short_caption
-        + " "
-        + "UID is the unique identifier of the parameter in the ontology."
-    )
+    long_caption = short_caption + " " + "UID is the unique identifier of the parameter in the ontology."
 
     report_table = pd.DataFrame()
     report_table.index.name = "Parameter"
@@ -90,9 +83,7 @@ def parameter_report(param_setting, decimals=3, format="latex", **kwargs):
                 hrules=True,
                 # float_format="%.2f",
                 caption=(long_caption, short_caption),
-                label="tab_{}_setting".format(
-                    param_setting.model.label.first(), **kwargs
-                ),
+                label="tab_{}_setting".format(param_setting.model.label.first(), **kwargs),
             )
             .replace("\\$", "$")
         )
@@ -106,9 +97,7 @@ def parameter_report(param_setting, decimals=3, format="latex", **kwargs):
         )
         return latex
     elif format.lower() == "markdown":
-        md = report_table.style.format(
-            decimal=".", thousands=",", precision=decimals
-        ).to_markdown()
+        md = report_table.style.format(decimal=".", thousands=",", precision=decimals).to_markdown()
         return md
     else:
         raise ValueError("Unknown format: {}".format(format))
@@ -209,9 +198,7 @@ def get_citation(citation_key) -> str:
             author_str = f"{authors[0].last_names[0]}, {authors[0].first_names[0][0]}. & {authors[1].last_names[0]}, {authors[1].first_names[0][0]}."
         elif len(authors) > 2:
             author_str = (
-                ", ".join(
-                    [f"{a.last_names[0]}, {a.first_names[0][0]}." for a in authors[:-1]]
-                )
+                ", ".join([f"{a.last_names[0]}, {a.first_names[0][0]}." for a in authors[:-1]])
                 + f", & {authors[-1].last_names[0]}, {authors[-1].first_names[0][0]}."
             )
 
@@ -245,6 +232,7 @@ def get_citation(citation_key) -> str:
 
 def to_pdf(render, outputfile):
     import pypandoc
+
     pypandoc.convert_text(
         render,
         "pdf",
