@@ -20,7 +20,10 @@ permissions:
 # Shared environment variables for all jobs
 env:
     JAX_PLATFORMS: cpu
-    UV_SYSTEM_PYTHON: "1"
+    # uv: bytecode-compile installed wheels for faster cold starts
+    UV_COMPILE_BYTECODE: "1"
+    # uv: copy from the cache instead of hardlinking (CI runner safe)
+    UV_LINK_MODE: copy
 
 jobs:
     # ─── Always: lint ──────────────────────────────────────────
@@ -33,6 +36,10 @@ jobs:
               with:
                   python-version: "3.12"
                   enable-cache: true
+                  activate-environment: true
+                  cache-dependency-glob: |
+                      pyproject.toml
+                      .github/workflows/ci.yml
             - run: uv pip install flake8
             - name: Syntax errors (blocking)
               run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
@@ -55,6 +62,10 @@ jobs:
               with:
                   python-version: ${{ matrix.python-version }}
                   enable-cache: true
+                  activate-environment: true
+                  cache-dependency-glob: |
+                      pyproject.toml
+                      .github/workflows/ci.yml
             - run: uv pip install -e . pytest pytest-xdist pytest-timeout
             - name: Core tests
               run: |
@@ -111,6 +122,10 @@ jobs:
               with:
                   python-version: "3.12"
                   enable-cache: true
+                  activate-environment: true
+                  cache-dependency-glob: |
+                      pyproject.toml
+                      .github/workflows/ci.yml
             - name: Configure git for private repos
               run: git config --global url."https://${{ secrets.PRIVATE_REPO_TOKEN }}@github.com/".insteadOf "https://github.com/"
             - name: Install with all extras
