@@ -1,5 +1,6 @@
 name: DesikanKilliany
 coordinateSpace:
+  name: MNI152NLin2009c
   abbreviation: MNI152NLin2009c
 terminology:
   entities:
