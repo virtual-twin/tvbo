@@ -23,14 +23,26 @@ env:
   PIP_NO_WARN_SCRIPT_LOCATION: "1"
 
 jobs:
-  # ─── Build & push Docker image ──────────────────────────────
+  # ─── Build & push Docker image (native per-arch, then merge) ────────────
+  # We build amd64 and arm64 on NATIVE runners in parallel instead of
+  # cross-compiling under QEMU. Each arch caches independently. A final
+  # job stitches the two arch-tagged images into the final multi-arch tag.
   build:
-    runs-on: ubuntu-latest
+    name: Build (${{ matrix.platform.tag }})
+    runs-on: ${{ matrix.platform.runner }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - { runner: ubuntu-latest,    arch: amd64, tag: linux-amd64 }
+          - { runner: ubuntu-24.04-arm, arch: arm64, tag: linux-arm64 }
+    outputs:
+      digest-amd64: ${{ steps.export.outputs.digest-amd64 }}
+      digest-arm64: ${{ steps.export.outputs.digest-arm64 }}
 
     steps:
       - uses: actions/checkout@v6
-
-      - uses: docker/setup-qemu-action@v4
 
       - uses: docker/setup-buildx-action@v4
 
@@ -51,6 +63,10 @@ jobs:
           images: |
             leonmartin2/tvbo
             ghcr.io/${{ github.repository }}
+          # Per-arch tag suffix so we can push both arches without colliding,
+          # then merge into the canonical tags in the manifest job.
+          flavor: |
+            suffix=-${{ matrix.platform.arch }},onlatest=true
           tags: |
             type=ref,event=branch
             type=semver,pattern={{version}}
@@ -58,23 +74,69 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
 
       - uses: docker/build-push-action@v7
+        id: build
         with:
           context: .
           file: docker/Dockerfile
           push: true
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/${{ matrix.platform.arch }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           provenance: false
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=${{ matrix.platform.arch }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.platform.arch }}
+
+      - name: Export digest
+        id: export
+        run: |
+          echo "digest-${{ matrix.platform.arch }}=${{ steps.build.outputs.digest }}" >> "$GITHUB_OUTPUT"
+
+  # ─── Stitch per-arch images into multi-arch manifests ───────────────────
+  manifest:
+    name: Multi-arch manifest
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/metadata-action@v6
+        id: meta
+        with:
+          images: |
+            leonmartin2/tvbo
+            ghcr.io/${{ github.repository }}
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=sha,prefix=
+            type=raw,value=latest,enable={{is_default_branch}}
+      - name: Create and push multi-arch manifest
+        run: |
+          set -euo pipefail
+          while IFS= read -r tag; do
+            [ -z "$tag" ] && continue
+            echo "Creating manifest for $tag"
+            docker buildx imagetools create -t "$tag" \
+              "${tag}-amd64" \
+              "${tag}-arm64"
+          done <<< "${{ steps.meta.outputs.tags }}"
 
   # ─── Container tests (after build) ──────────────────────────
   # Sharded for parallelism + per-test timeout so hangs surface as
   # tracebacks instead of silent runner kills.
   test-container:
     name: Container (${{ matrix.shard }})
-    needs: build
+    needs: manifest
     runs-on: ubuntu-latest
     timeout-minutes: 60
     container:
@@ -140,7 +202,7 @@ jobs:
   # ─── Doc tests (after build) ─────────────────────────────────
   test-docs:
     name: Doc tests
-    needs: build
+    needs: manifest
     runs-on: ubuntu-latest
     timeout-minutes: 60
     container:
