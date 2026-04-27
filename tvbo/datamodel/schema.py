@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-04-27T15:22:47
+# Generation date: 2026-04-27T15:25:38
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
