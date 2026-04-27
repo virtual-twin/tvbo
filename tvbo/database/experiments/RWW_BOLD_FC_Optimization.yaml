@@ -326,8 +326,8 @@ optimizations:
         label: "Global Parameter Optimization"
         description: "Optimize global w and G (same value for all regions)"
         free_parameters:
-          - ReducedWongWang.w
-          - FastLinearCoupling.G
+          - parameter: ReducedWongWang.w
+          - parameter: FastLinearCoupling.G
         algorithm: adam
         learning_rate: 0.01
         max_iterations: 300
@@ -341,11 +341,12 @@ optimizations:
         description: "Optimize heterogeneous w and I_o per region"
         warmup_from: global_optimization
         free_parameters:
-          - ReducedWongWang.w
-          - ReducedWongWang.I_o
-        heterogeneous_parameters:
-          - ReducedWongWang.w
-          - ReducedWongWang.I_o
+          - parameter: ReducedWongWang.w
+            heterogeneous: true
+            shape: "(n_nodes,)"
+          - parameter: ReducedWongWang.I_o
+            heterogeneous: true
+            shape: "(n_nodes,)"
         algorithm: adam
         learning_rate: 0.004
         max_iterations: 200
