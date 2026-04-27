@@ -4,7 +4,7 @@
 #
 # id: https://w3id.org/tvbo
 # description: Metadata schema for simulation studies using The Virtual Brain neuroinformatics platform or other dynamic network models of large-scale brain activity.
-# license: https://creativecommons.org/publicdomain/zero/1.0/
+# license: https://spdx.org/licenses/EUPL-1.2
 
 import dataclasses
 import re
@@ -56,11 +56,11 @@ from rdflib import (
     URIRef
 )
 
-from linkml_runtime.linkml_model.types import Boolean, Date, Datetime, Float, Integer, String, Uri
-from linkml_runtime.utils.metamodelcore import Bool, URI, XSDDate, XSDDateTime
+from linkml_runtime.linkml_model.types import Boolean, Date, Datetime, Float, Integer, String, Uri, Uriorcurie
+from linkml_runtime.utils.metamodelcore import Bool, URI, URIorCURIE, XSDDate, XSDDateTime
 
 metamodel_version = "1.7.0"
-version = None
+version = "0.4.0"
 
 # Namespaces
 UO = CurieNamespace('UO', 'http://purl.obolibrary.org/obo/UO_')
@@ -255,6 +255,8 @@ class SimulationToolName(SoftwarePackageName):
 class SoftwareRequirementName(extended_str):
     pass
 
+
+ScalarValue = Any
 
 @dataclass(repr=False)
 class Range(YAMLRoot):
@@ -1343,8 +1345,8 @@ class Dynamics(YAMLRoot):
         if self.label is not None and not isinstance(self.label, str):
             self.label = str(self.label)
 
-        if self.iri is not None and not isinstance(self.iri, str):
-            self.iri = str(self.iri)
+        if self.iri is not None and not isinstance(self.iri, URIorCURIE):
+            self.iri = URIorCURIE(self.iri)
 
         self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
 
@@ -1703,7 +1705,7 @@ class Argument(YAMLRoot):
 
     name: Union[str, ArgumentName] = None
     description: Optional[str] = None
-    value: Optional[str] = None
+    value: Optional[Union[dict, ScalarValue]] = None
     unit: Optional[str] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -1714,9 +1716,6 @@ class Argument(YAMLRoot):
 
         if self.description is not None and not isinstance(self.description, str):
             self.description = str(self.description)
-
-        if self.value is not None and not isinstance(self.value, str):
-            self.value = str(self.value)
 
         if self.unit is not None and not isinstance(self.unit, str):
             self.unit = str(self.unit)
@@ -1740,6 +1739,7 @@ class Function(YAMLRoot):
     name: Union[str, FunctionName] = None
     acronym: Optional[str] = None
     label: Optional[str] = None
+    iri: Optional[Union[str, URIorCURIE]] = None
     equation: Optional[Union[dict, Equation]] = None
     definition: Optional[str] = None
     description: Optional[str] = None
@@ -1767,6 +1767,9 @@ class Function(YAMLRoot):
         if self.label is not None and not isinstance(self.label, str):
             self.label = str(self.label)
 
+        if self.iri is not None and not isinstance(self.iri, URIorCURIE):
+            self.iri = URIorCURIE(self.iri)
+
         if self.equation is not None and not isinstance(self.equation, Equation):
             self.equation = Equation(**as_dict(self.equation))
 
@@ -1785,9 +1788,6 @@ class Function(YAMLRoot):
 
         if self.output is not None and not isinstance(self.output, str):
             self.output = str(self.output)
-
-        if self.iri is not None and not isinstance(self.iri, str):
-            self.iri = str(self.iri)
 
         self._normalize_inlined_as_list(slot_name="arguments", slot_type=Argument, key_name="name", keyed=True)
 
@@ -3082,8 +3082,8 @@ class Coupling(YAMLRoot):
         if self.label is not None and not isinstance(self.label, str):
             self.label = str(self.label)
 
-        if self.iri is not None and not isinstance(self.iri, str):
-            self.iri = str(self.iri)
+        if self.iri is not None and not isinstance(self.iri, URIorCURIE):
+            self.iri = URIorCURIE(self.iri)
 
         self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
 
@@ -4293,6 +4293,7 @@ class Dataset(YAMLRoot):
     class_model_uri: ClassVar[URIRef] = TVBO.Dataset
 
     dataset_id: Union[str, DatasetDatasetId] = None
+    subjects: Optional[Union[dict[Union[str, SubjectSubjectId], Union[dict, Subject]], list[Union[dict, Subject]]]] = empty_dict()
     label: Optional[str] = None
     description: Optional[str] = None
     bids_root: Optional[str] = None
@@ -4306,6 +4307,8 @@ class Dataset(YAMLRoot):
         if not isinstance(self.dataset_id, DatasetDatasetId):
             self.dataset_id = DatasetDatasetId(self.dataset_id)
 
+        self._normalize_inlined_as_dict(slot_name="subjects", slot_type=Subject, key_name="subject_id", keyed=True)
+
         if self.label is not None and not isinstance(self.label, str):
             self.label = str(self.label)
 
@@ -4314,8 +4317,6 @@ class Dataset(YAMLRoot):
 
         if self.bids_root is not None and not isinstance(self.bids_root, str):
             self.bids_root = str(self.bids_root)
-
-        self._normalize_inlined_as_dict(slot_name="subjects", slot_type=Subject, key_name="subject_id", keyed=True)
 
         if not isinstance(self.conditions, list):
             self.conditions = [self.conditions] if self.conditions is not None else []

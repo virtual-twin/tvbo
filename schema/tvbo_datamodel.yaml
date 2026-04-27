@@ -1,8 +1,10 @@
 ---
 id: https://w3id.org/tvbo
 name: tvb-datamodel
+version: 0.4.0
 description: Metadata schema for simulation studies using The Virtual Brain neuroinformatics platform or other dynamic network models of large-scale brain activity.
 title: The Virtual Brain Data Model
+license: https://spdx.org/licenses/EUPL-1.2
 prefixes:
     tvbo: http://www.thevirtualbrain.org/tvb-o/
     linkml: https://w3id.org/linkml/
@@ -14,8 +16,13 @@ prefixes:
     nidm: http://purl.org/nidash/nidm#
     biotools: https://bio.tools/ontology/
     wd: http://www.wikidata.org/entity/
+    dcterms: http://purl.org/dc/terms/
+    schema: http://schema.org/
+    skos: http://www.w3.org/2004/02/skos/core#
+    bibo: http://purl.org/ontology/bibo/
 imports:
     - linkml:types
+    - units
     - SANDS
     - tvbo_study
     - tvb_dbs
@@ -26,6 +33,7 @@ default_range: string
 
 slots:
     name:
+        slot_uri: schema:name
         range: string
         key: true
     time_scale:
@@ -45,31 +53,44 @@ slots:
     model:
         range: Dynamics
     has_reference:
+        slot_uri: dcterms:references
         range: string
     references:
+        slot_uri: dcterms:references
         multivalued: true
         range: string
     label:
+        slot_uri: rdfs:label
         range: string
     acronym:
+        slot_uri: skos:notation
         range: string
     symbol:
         range: string
     domain:
         range: Range
     iri:
-        range: string
+        slot_uri: dcterms:identifier
+        range: uriorcurie
+        description: >-
+            Stable IRI (or compact URI) identifying this entity in an
+            external ontology or knowledge base. Complements the `name`
+            key with an ontology-grounded identifier.
     value:
+        slot_uri: schema:value
         range: float
     file:
         range: string
     reported_optimum:
         range: float
     default:
+        slot_uri: schema:defaultValue
         range: string
     description:
+        slot_uri: dcterms:description
         range: string
     definition:
+        slot_uri: skos:definition
         range: string
     parameters:
         range: Parameter
@@ -80,13 +101,16 @@ slots:
         range: Equation
         inlined: true
     unit:
+        slot_uri: qudt:unit
         range: UnitEnum
         description: >-
             Physical unit of measurement. Values are drawn from the QUDT
             ontology (http://qudt.org/vocab/unit/) with UO cross-references
             where available.
     derived_from:
+        slot_uri: prov:wasDerivedFrom
     source:
+        slot_uri: dcterms:source
         range: string
     dataset_path:
         range: string
@@ -103,258 +127,6 @@ slots:
             Set false to suppress recording.
 
 enums:
-    UnitEnum:
-        description: >-
-            Physical units of measurement for model parameters, state variables,
-            and integration settings. Uses conventional abbreviations as values,
-            mapped to the QUDT ontology (http://qudt.org/vocab/unit/) with UO
-            cross-references where available.
-        permissible_values:
-            # ── Time ──
-            s:
-                meaning: qudt:SEC
-                exact_mappings:
-                    - UO:0000010
-                description: "Second"
-            ms:
-                meaning: qudt:MilliSEC
-                exact_mappings:
-                    - UO:0000028
-                description: "Millisecond"
-            us:
-                meaning: qudt:MicroSEC
-                exact_mappings:
-                    - UO:0000029
-                description: "Microsecond"
-            # ── Rates / inverse time ──
-            per_s:
-                meaning: qudt:PER-SEC
-                description: "Per second (s⁻¹)"
-            per_ms:
-                meaning: qudt:PER-MilliSEC
-                description: "Per millisecond (ms⁻¹)"
-            Hz:
-                meaning: qudt:HZ
-                exact_mappings:
-                    - UO:0000106
-                description: "Hertz (s⁻¹)"
-            kHz:
-                meaning: qudt:KiloHZ
-                description: "Kilohertz"
-            # ── Voltage ──
-            V:
-                meaning: qudt:V
-                exact_mappings:
-                    - UO:0000218
-                description: "Volt"
-            mV:
-                meaning: qudt:MilliV
-                exact_mappings:
-                    - UO:0000247
-                description: "Millivolt"
-            per_mV:
-                meaning: qudt:PER-MilliV
-                description: "Reciprocal millivolt (mV⁻¹)"
-            mV_per_ms:
-                meaning: qudt:MilliV-PER-MilliSEC
-                description: "Millivolt per millisecond"
-            mV_per_s:
-                meaning: qudt:MilliV-PER-SEC
-                description: "Millivolt per second"
-            # ── Current ──
-            A:
-                meaning: qudt:A
-                exact_mappings:
-                    - UO:0000011
-                description: "Ampere"
-            nA:
-                meaning: qudt:NanoA
-                description: "Nanoampere"
-            pA:
-                meaning: qudt:PicoA
-                exact_mappings:
-                    - UO:0010054
-                description: "Picoampere"
-            uA_per_cm2:
-                description: "Microampere per square centimetre (current density)"
-            # ── Capacitance ──
-            pF:
-                meaning: qudt:PicoFARAD
-                description: "Picofarad"
-            nF:
-                meaning: qudt:NanoFARAD
-                description: "Nanofarad"
-            uF_per_cm2:
-                description: "Microfarad per square centimetre (specific capacitance)"
-            # ── Conductance ──
-            nS:
-                meaning: qudt:NanoS
-                description: "Nanosiemens"
-            uS:
-                meaning: qudt:MicroS
-                description: "Microsiemens"
-            pS:
-                meaning: qudt:PicoS
-                description: "Picosiemens"
-            S_per_cm2:
-                description: "Siemens per square centimetre (conductance density)"
-            mS_per_cm2:
-                description: "Millisiemens per square centimetre (conductance density)"
-            S_per_m2:
-                description: "Siemens per square metre (conductance density, SI)"
-            nS_per_mV:
-                description: "Nanosiemens per millivolt"
-            # ── Charge (inverse) ──
-            per_nC:
-                meaning: qudt:PER-NanoC
-                description: "Reciprocal nanocoulomb (nC⁻¹)"
-            per_pC:
-                meaning: qudt:PER-PicoC
-                description: "Reciprocal picocoulomb (pC⁻¹)"
-            # ── Concentration ──
-            mol_per_m3:
-                meaning: qudt:MOL-PER-M3
-                description: "Mole per cubic metre (mol/m³)"
-            mol_per_cm3:
-                description: "Mole per cubic centimetre (mol/cm³)"
-            mmol_per_m3:
-                meaning: qudt:MilliMOL-PER-M3
-                description: "Millimole per cubic metre (mmol/m³ ≈ mM)"
-                aliases:
-                    - mM
-            mol_per_m_per_A_per_s:
-                description: "Mole per metre per ampere per second (concentration-current coupling)"
-            # ── Volume ──
-            um3:
-                meaning: qudt:MicroM3
-                description: "Cubic micrometre (µm³)"
-            # ── Length / distance ──
-            m:
-                meaning: qudt:M
-                exact_mappings:
-                    - UO:0000008
-                description: "Metre"
-            mm:
-                meaning: qudt:MilliM
-                exact_mappings:
-                    - UO:0000016
-                description: "Millimetre"
-            cm:
-                meaning: qudt:CentiM
-                exact_mappings:
-                    - UO:0000015
-                description: "Centimetre"
-            # ── Velocity ──
-            m_per_s:
-                meaning: qudt:M-PER-SEC
-                description: "Metre per second"
-            mm_per_ms:
-                meaning: qudt:MilliM-PER-MilliSEC
-                description: "Millimetre per millisecond (= m/s)"
-            # ── Gain / compound ──
-            Hz_per_nA:
-                description: "Hertz per nanoampere (neural gain)"
-            # ── Conductivity / permeability ──
-            S_per_m:
-                meaning: qudt:S-PER-M
-                description: "Siemens per metre (conductivity)"
-            H_per_m:
-                meaning: qudt:H-PER-M
-                description: "Henry per metre (permeability)"
-            # ── Resistance ──
-            ohm:
-                meaning: qudt:OHM
-                description: "Ohm (Ω)"
-            Mohm:
-                description: "Megaohm (MΩ)"
-            # ── Resistivity ──
-            kohm_cm:
-                description: "Kilo-ohm centimetre (axial resistivity)"
-            # ── Temperature ──
-            degC:
-                meaning: qudt:DEG_C
-                description: "Degree Celsius"
-            # ── Angular rate ──
-            rad_per_ms:
-                description: "Radian per millisecond"
-            # ── Dimensionless ──
-            dimensionless:
-                meaning: qudt:UNITLESS
-                exact_mappings:
-                    - UO:0000186
-                description: "Dimensionless (unitless)"
-            percent:
-                meaning: qudt:PERCENT
-                description: "Percent (%)"
-            arbitrary_unit:
-                description: "Arbitrary units (a.u.)"
-            # ── Mass ──
-            kg:
-                meaning: qudt:KiloGM
-                exact_mappings:
-                    - UO:0000009
-                description: "Kilogram"
-            kg_per_s:
-                description: "Kilogram per second"
-            # ── Acceleration ──
-            m_per_s2:
-                meaning: qudt:M-PER-SEC2
-                description: "Metre per second squared (acceleration)"
-            # ── Force / stiffness ──
-            N_per_m:
-                meaning: qudt:N-PER-M
-                description: "Newton per metre (spring constant)"
-            # ── Angle ──
-            rad:
-                meaning: qudt:RAD
-                exact_mappings:
-                    - UO:0000123
-                description: "Radian"
-            rad_per_s:
-                meaning: qudt:RAD-PER-SEC
-                description: "Radian per second (angular velocity)"
-            # ── Time squared ──
-            s2:
-                meaning: qudt:SEC2
-                description: "Second squared (inertia constant)"
-            # ── Per-unit (power systems) ──
-            per_unit:
-                description: "Per-unit (dimensionless power-systems convention)"
-
-    PhysicalDimension:
-        description: >-
-            Physical dimension categories for LEMS and dimensional analysis.
-            Each dimension decomposes into SI base dimensions (M, L, T, I, K, N).
-        permissible_values:
-            none:
-                description: "Dimensionless"
-            time:
-                description: "Time [T]"
-            per_time:
-                description: "Inverse time [T⁻¹]"
-            voltage:
-                description: "Voltage [M L² T⁻³ I⁻¹]"
-            current:
-                description: "Electric current [I]"
-            capacitance:
-                description: "Capacitance [M⁻¹ L⁻² T⁴ I²]"
-            conductance:
-                description: "Conductance [M⁻¹ L⁻² T³ I²]"
-            resistance:
-                description: "Resistance [M L² T⁻³ I⁻²]"
-            charge:
-                description: "Electric charge [T I]"
-            concentration:
-                description: "Concentration [L⁻³ N]"
-            substance:
-                description: "Amount of substance [N]"
-            length:
-                description: "Length [L]"
-            volume:
-                description: "Volume [L³]"
-            temperature:
-                description: "Temperature [K]"
-
     ImagingModality:
         permissible_values:
             BOLD:
@@ -568,20 +340,33 @@ enums:
                 description: "Coordinate list (data, row, col)"
 
 classes:
+    ScalarValue:
+        class_uri: linkml:Any
+        description: >-
+            A scalar value: float, integer, string, or boolean.
+            Used for slots that accept literals of any primitive type, such as
+            argument values which may be numbers, strings, references, or booleans.
+
     Range:
         class_uri: tvbo:Range
         description: "Specifies a range for array generation, parameter bounds, or grid exploration."
         attributes:
             lo:
-                range: string
                 description: "Lower bound or starting value. Can be a number or argument name."
                 ifabsent: string(0)
+                any_of:
+                    - range: float
+                    - range: string
             hi:
-                range: string
                 description: "Upper bound or stopping value. Can be a number or argument name."
+                any_of:
+                    - range: float
+                    - range: string
             step:
-                range: string
                 description: "Step size. Can be: number, argument name, or expression."
+                any_of:
+                    - range: float
+                    - range: string
             n:
                 range: integer
                 description: "Number of points (alternative to step for grid exploration)."
@@ -799,6 +584,7 @@ classes:
                 description: "Processing pipeline used to generate the tractography"
             reference:
                 range: string
+                slot_uri: dcterms:references
                 description: "Publication or DOI reference for this tractography dataset"
 
     Matrix:
@@ -1091,6 +877,7 @@ classes:
             id:
                 range: integer
                 required: true
+                slot_uri: dcterms:identifier
                 description: "Unique node identifier"
             dynamics:
                 range: Dynamics
@@ -1536,6 +1323,7 @@ classes:
         attributes:
             comment:
                 range: string
+                slot_uri: rdfs:comment
             heterogeneous:
                 range: boolean
             distribution:
@@ -1593,13 +1381,10 @@ classes:
             value:
                 description: >-
                     Argument value. Can be:
-                    - Literal: 1.0, "string", etc.
+                    - Literal: 1.0, "string", boolean, etc.
                     - Input reference: "input.frequencies" (from source_observation outputs)
                     - Cross-observation: "target_frequencies.peak_freqs" (from another observation)
-                any_of:
-                    - range: float
-                    - range: integer
-                    - range: string
+                range: ScalarValue
             unit:
                 range: string
 
@@ -1613,6 +1398,7 @@ classes:
             - name
             - acronym
             - label
+            - iri
             - equation
             - definition
             - description
@@ -1630,8 +1416,6 @@ classes:
                 description: "Name for this function's output (referenced by subsequent functions)"
                 range: string
             # Transformation definition (equation OR callable)
-            iri:
-                range: string
             arguments:
                 description: "Parameters/arguments for the function"
                 multivalued: true
@@ -2771,13 +2555,16 @@ classes:
             id:
                 identifier: true
                 range: integer
+                slot_uri: dcterms:identifier
             description:
                 range: string
+                slot_uri: dcterms:description
             additional_equations:
                 multivalued: true
                 range: Equation
             label:
                 range: string
+                slot_uri: rdfs:label
             dynamics:
                 range: Dynamics
                 inlined: true
@@ -2868,6 +2655,7 @@ classes:
             references:
                 multivalued: true
                 range: string
+                slot_uri: dcterms:references
             dataset:
                 range: Dataset
                 inlined: true
@@ -2889,10 +2677,13 @@ classes:
                 range: string
             title:
                 range: string
+                slot_uri: dcterms:title
             year:
                 range: integer
+                slot_uri: dcterms:issued
             doi:
                 range: string
+                slot_uri: bibo:doi
             sample:
                 range: Sample
             simulation_experiments:
@@ -2927,6 +2718,7 @@ classes:
                 description: "Unit of the sampling period (e.g., 'ms', 's')."
             unit:
                 range: string
+                slot_uri: qudt:unit
                 description: "Physical unit of the time series values."
             labels_ordering:
                 range: string
@@ -2951,12 +2743,15 @@ classes:
                 description: "BIDS task name for the simulation (e.g., 'rest', 'simulation')."
             subject_id:
                 range: string
+                slot_uri: dcterms:identifier
                 description: "BIDS subject identifier."
             session_id:
                 range: string
+                slot_uri: dcterms:identifier
                 description: "BIDS session identifier."
             run_id:
                 range: integer
+                slot_uri: dcterms:identifier
                 description: "BIDS run number."
             modality:
                 range: ImagingModality
