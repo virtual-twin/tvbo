@@ -32,9 +32,7 @@ parameters:
 nodes:
 - id: 0
   label: Node_A
-  dynamics:
-    name: Generic2dOscillator
-    dataLocation: database/models/Generic2dOscillator.yaml
+  dynamics: Generic2dOscillator
   position:
     x: -10.0
     y: 0.0
@@ -47,9 +45,7 @@ nodes:
       value: 0.0
 - id: 1
   label: Node_B
-  dynamics:
-    name: Generic2dOscillator
-    dataLocation: database/models/Generic2dOscillator.yaml
+  dynamics: Generic2dOscillator
   position:
     x: 0.0
     y: 10.0
@@ -62,9 +58,7 @@ nodes:
       value: 0.0
 - id: 2
   label: Node_C
-  dynamics:
-    name: Generic2dOscillator
-    dataLocation: database/models/Generic2dOscillator.yaml
+  dynamics: Generic2dOscillator
   position:
     x: 10.0
     y: 0.0

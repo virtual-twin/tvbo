@@ -75,7 +75,11 @@ slots:
             key with an ontology-grounded identifier.
     value:
         slot_uri: schema:value
-        range: float
+        range: ScalarValue
+        description: >-
+            Numeric, string, or boolean value. ScalarValue accepts any literal
+            primitive type, allowing parameters to carry control flags
+            (e.g., booleans) or symbolic placeholders alongside numeric defaults.
     file:
         range: string
     reported_optimum:
