@@ -341,12 +341,11 @@ optimizations:
         description: "Optimize heterogeneous w and I_o per region"
         warmup_from: global_optimization
         free_parameters:
-          - name: ReducedWongWang.w
-            heterogeneous: true
-            description: "Region-specific excitatory recurrence"
-          - name: ReducedWongWang.I_o
-            heterogeneous: true
-            description: "Region-specific external input"
+          - ReducedWongWang.w
+          - ReducedWongWang.I_o
+        heterogeneous_parameters:
+          - ReducedWongWang.w
+          - ReducedWongWang.I_o
         algorithm: adam
         learning_rate: 0.004
         max_iterations: 200

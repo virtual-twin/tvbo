@@ -404,7 +404,7 @@ class PyRatesAdapter(BaseAdapter):
         param_map: dict = {}
         axes: list = []
 
-        for param in expl.parameters.values():
+        for param in expl.parameters:
             name = param.name
             domain = getattr(param, "domain", None)
 
