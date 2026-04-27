@@ -17,6 +17,9 @@ prefixes:
     nidm: http://purl.org/nidash/nidm#
     biotools: https://bio.tools/ontology/
     wd: http://www.wikidata.org/entity/
+    dcterms: http://purl.org/dc/terms/
+    rdfs: http://www.w3.org/2000/01/rdf-schema#
+    bibo: http://purl.org/ontology/bibo/
 
 default_prefix: tvbo_sw
 
@@ -248,14 +251,14 @@ classes:
                 slot_uri: schema:name
             description:
                 range: string
-                slot_uri: schema:description
+                slot_uri: dcterms:description
             homepage:
                 range: uri
                 slot_uri: schema:url
                 description: "Project homepage URL."
             license:
                 range: string
-                slot_uri: schema:license
+                slot_uri: dcterms:license
                 description: "SPDX license identifier (e.g., MIT, GPL-3.0-only)."
             repository:
                 range: uri
@@ -263,6 +266,7 @@ classes:
                 description: "Source code repository URL."
             doi:
                 range: string
+                slot_uri: bibo:doi
                 description: "Digital Object Identifier for the software or its reference publication."
             ecosystem:
                 range: EcosystemEnum
@@ -336,7 +340,7 @@ classes:
             author:
                 range: string
                 multivalued: true
-                slot_uri: schema:author
+                slot_uri: dcterms:creator
                 description: "Original author(s) or creating organization(s)."
             maintainer:
                 range: string
@@ -351,6 +355,7 @@ classes:
             # ── Scholarly citation ──
             reference_publication:
                 range: string
+                slot_uri: dcterms:references
                 description: "DOI of the primary reference publication for this tool."
             citation:
                 range: string
@@ -387,6 +392,7 @@ classes:
                 key: true
             description:
                 range: string
+                slot_uri: dcterms:description
             dataLocation:
                 range: string
             package:
@@ -412,6 +418,7 @@ classes:
                 description: "(Deprecated) Use source_url."
             license:
                 range: string
+                slot_uri: dcterms:license
             modules:
                 multivalued: true
                 range: string
@@ -431,8 +438,10 @@ classes:
         attributes:
             label:
                 range: string
+                slot_uri: rdfs:label
             description:
                 range: string
+                slot_uri: dcterms:description
             dataLocation:
                 range: string
             name:

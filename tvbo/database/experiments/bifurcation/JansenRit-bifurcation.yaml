@@ -19,8 +19,8 @@ continuations:
     free_parameters:
       - name: p
         domain:
-          lo: "0"
-          hi: "0.5"
+          lo: 0
+          hi: 0.5
 
     ds: 0.001
     ds_min: 1.0e-6
@@ -59,12 +59,12 @@ continuations:
     free_parameters:
       - name: p
         domain:
-          lo: "0"
-          hi: "0.5"
+          lo: 0
+          hi: 0.5
       - name: C
         domain:
-          lo: "10"
-          hi: "500"
+          lo: 10
+          hi: 500
 
     ds: 0.01
     max_steps: 500
@@ -81,12 +81,12 @@ continuations:
     free_parameters:
       - name: p
         domain:
-          lo: "0"
-          hi: "0.5"
+          lo: 0
+          hi: 0.5
       - name: C
         domain:
-          lo: "10"
-          hi: "500"
+          lo: 10
+          hi: 500
 
     ds: 0.01
     max_steps: 500

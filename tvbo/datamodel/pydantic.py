@@ -75,7 +75,7 @@ else:
 
 
 metamodel_version = "1.7.0"
-version = "None"
+version = "0.4.0"
 
 
 class ConfiguredBaseModel(BaseModel):
@@ -747,6 +747,312 @@ class PhysicalDimension(str, Enum):
     temperature = "temperature"
     """
     Temperature [K]
+    """
+
+
+class SpecimenEnum(str, Enum):
+    """
+    A set of permissible types for specimens used in brain atlas creation.
+    """
+    Subject = "Subject"
+    SubjectGroup = "SubjectGroup"
+    TissueSample = "TissueSample"
+    TissueSampleCollection = "TissueSampleCollection"
+
+
+class Hemisphere(str, Enum):
+    left = "left"
+    right = "right"
+    both = "both"
+
+
+class SexEnum(str, Enum):
+    male = "male"
+    """
+    Male
+    """
+    female = "female"
+    """
+    Female
+    """
+    other = "other"
+    """
+    Other or not reported
+    """
+
+
+class SimulationScale(str, Enum):
+    """
+    Spatial / organizational scale at which a tool operates. Multi-valued: a tool can span multiple scales. Mapped to SIO and Wikidata where possible.
+    """
+    channel = "channel"
+    """
+    Ion channel / sub-cellular molecular dynamics.
+    """
+    neuron = "neuron"
+    """
+    Single neuron (compartmental or point).
+    """
+    neural_network = "neural_network"
+    """
+    Microcircuit / local network of neurons.
+    """
+    neural_mass = "neural_mass"
+    """
+    Population-level neural mass or mean-field model.
+    """
+    network_system = "network_system"
+    """
+    Whole-brain or large-scale network of regions.
+    """
+
+
+class ToolRole(str, Enum):
+    """
+    Primary function of the tool in a simulation workflow.
+    """
+    simulator = "simulator"
+    """
+    Core numerical simulator.
+    """
+    framework = "framework"
+    """
+    Multi-paradigm simulation framework.
+    """
+    backend_runtime = "backend_runtime"
+    """
+    Optimized execution backend for another simulator.
+    """
+    optimization_framework = "optimization_framework"
+    """
+    Parameter optimization / fitting tool.
+    """
+    specification_language = "specification_language"
+    """
+    Model description language or data standard.
+    """
+    workflow_framework = "workflow_framework"
+    """
+    Orchestration, model-building, or pipeline tool.
+    """
+    analysis_tool = "analysis_tool"
+    """
+    Post-processing, signal analysis, or statistics.
+    """
+    visualization_tool = "visualization_tool"
+    """
+    Visualization or graphical user interface.
+    """
+    model_repository = "model_repository"
+    """
+    Database or repository of published models.
+    """
+    continuation_tool = "continuation_tool"
+    """
+    Numerical continuation / bifurcation analysis.
+    """
+
+
+class ModelParadigm(str, Enum):
+    """
+    Computational paradigm or modeling approach supported by the tool.
+    """
+    neural_mass = "neural_mass"
+    """
+    Phenomenological population-rate / neural-mass models.
+    """
+    mean_field = "mean_field"
+    """
+    Mean-field reductions of spiking networks.
+    """
+    spiking = "spiking"
+    """
+    Spiking neuron models (LIF, AdEx, Izhikevich, etc.).
+    """
+    conductance_based = "conductance_based"
+    """
+    Conductance-based / Hodgkin-Huxley-type models.
+    """
+    compartmental = "compartmental"
+    """
+    Multi-compartment morphologically detailed models.
+    """
+    rate_based = "rate_based"
+    """
+    Firing-rate models.
+    """
+    phase_oscillator = "phase_oscillator"
+    """
+    Phase-reduced or Kuramoto-type oscillator models.
+    """
+    reaction_diffusion = "reaction_diffusion"
+    """
+    Stochastic or deterministic reaction-diffusion.
+    """
+    plasticity = "plasticity"
+    """
+    Synaptic plasticity (STDP, homeostatic, etc.).
+    """
+    generic = "generic"
+    """
+    General-purpose, not specific to neuroscience.
+    """
+    multiscale = "multiscale"
+    """
+    Bridging multiple spatial/temporal scales.
+    """
+    dynamic_mean_field = "dynamic_mean_field"
+    """
+    Dynamic mean-field approximation (e.g., Deco et al.).
+    """
+    data_standard = "data_standard"
+    """
+    Data format or exchange standard.
+    """
+    model_description = "model_description"
+    """
+    Declarative model specification language.
+    """
+    bifurcation_analysis = "bifurcation_analysis"
+    """
+    Dynamical systems bifurcation / continuation analysis.
+    """
+
+
+class DevelopmentStatus(str, Enum):
+    """
+    Development status of the software. Based on repostatus.org categories.
+    """
+    active = "active"
+    """
+    Actively developed with regular releases.
+    """
+    inactive = "inactive"
+    """
+    No longer actively developed; may still work.
+    """
+    concept = "concept"
+    """
+    Minimal or no implementation; ideas / prototypes.
+    """
+    wip = "wip"
+    """
+    Work in progress; not yet feature-complete.
+    """
+    suspended = "suspended"
+    """
+    Development paused; may resume in future.
+    """
+    unsupported = "unsupported"
+    """
+    Released but no longer supported.
+    """
+    moved = "moved"
+    """
+    Project has been moved to a different location.
+    """
+
+
+class EcosystemEnum(str, Enum):
+    """
+    Package ecosystem or registry the software is distributed through.
+    """
+    pypi = "pypi"
+    """
+    Python Package Index.
+    """
+    conda_forge = "conda_forge"
+    """
+    Conda-Forge community channel.
+    """
+    cran = "cran"
+    """
+    Comprehensive R Archive Network.
+    """
+    julia_registry = "julia_registry"
+    """
+    Julia General package registry.
+    """
+    npm = "npm"
+    """
+    Node Package Manager registry.
+    """
+    bioconda = "bioconda"
+    """
+    Bioinformatics Conda channel.
+    """
+    github = "github"
+    """
+    Distributed via GitHub releases.
+    """
+    maven = "maven"
+    """
+    Maven Central Repository (Java).
+    """
+
+
+class ProgrammingLanguageEnum(str, Enum):
+    """
+    Programming languages relevant to computational neuroscience tools. Mapped to Wikidata identifiers.
+    """
+    Python = "Python"
+    C = "C"
+    CPLUS_SIGNPLUS_SIGN = "C++"
+    Java = "Java"
+    Julia = "Julia"
+    MATLAB = "MATLAB"
+    R = "R"
+    Fortran = "Fortran"
+    Haskell = "Haskell"
+    Rust = "Rust"
+    JavaScript = "JavaScript"
+    XML = "XML"
+    HOC = "HOC"
+    """
+    NEURON's high-level interpreted language.
+    """
+    CNUMBER_SIGN = "C#"
+
+
+class RequirementRole(str, Enum):
+    engine = "engine"
+    """
+    Primary simulation/processing engine.
+    """
+    runtime = "runtime"
+    """
+    General runtime dependency.
+    """
+    analysis = "analysis"
+    """
+    Post-processing / analysis tool.
+    """
+    dev = "dev"
+    """
+    Development / build dependency.
+    """
+    optional = "optional"
+    """
+    Optional or extra feature dependency.
+    """
+
+
+class EnvironmentType(str, Enum):
+    conda = "conda"
+    """
+    Conda environment.
+    """
+    venv = "venv"
+    """
+    Python virtual environment.
+    """
+    docker = "docker"
+    """
+    Docker container.
+    """
+    singularity = "singularity"
+    """
+    Singularity/Apptainer container.
     """
 
 
