@@ -50,6 +50,12 @@ slots:
     description: >-
       Unique identifier for the dataset.
 
+  subjects:
+    multivalued: true
+    range: Subject
+    inlined: true
+    description: "Subjects in a dataset."
+
 classes:
 
   Subject:
@@ -130,6 +136,7 @@ classes:
       backed by a BIDS directory layout.
     slots:
       - dataset_id
+      - subjects
     attributes:
       label:
         range: string
@@ -143,11 +150,6 @@ classes:
         description: >-
           Path to BIDS dataset root directory. When set, subject networks
           and empirical data paths are resolved relative to this root.
-      subjects:
-        multivalued: true
-        range: Subject
-        inlined: true
-        description: "Subjects in this dataset."
       conditions:
         multivalued: true
         range: string
