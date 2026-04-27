@@ -187,8 +187,8 @@ jobs:
       - uses: actions/checkout@v6
       - name: Configure git for private repos
         run: git config --global url."https://${{ secrets.PRIVATE_REPO_TOKEN }}@github.com/".insteadOf "https://github.com/"
-      - name: Install dev code + test deps
-        run: pip install -e ".[all]" pytest-xdist pytest-timeout
+      - name: Link checkout as editable (deps already in image)
+        run: uv pip install -e . --no-deps && uv pip install pytest-xdist pytest-timeout
       - name: Generate Julia reference data
         if: matrix.needs_julia_refdata
         run: python -c "from juliacall import Main; Main.seval('include(\"tests/reference_data/generate_nd_references.jl\")')"
@@ -229,8 +229,8 @@ jobs:
           fi
       - name: Configure git for private repos
         run: git config --global url."https://${{ secrets.PRIVATE_REPO_TOKEN }}@github.com/".insteadOf "https://github.com/"
-      - name: Install dev code + test deps
-        run: pip install -e ".[all]" pytest-xdist pytest-timeout
+      - name: Link checkout as editable (deps already in image)
+        run: uv pip install -e . --no-deps && uv pip install pytest-xdist pytest-timeout
       - name: Run doc tests
         run: |
           pytest tests/test_docs.py -x -v --tb=long -m docs --run-slow \
@@ -245,15 +245,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
+      - uses: astral-sh/setup-uv@v6
         with:
           python-version: "3.12"
-          cache: "pip"
+          enable-cache: true
+          activate-environment: true
       - name: Configure git for private repos
         run: git config --global url."https://${{ secrets.PRIVATE_REPO_TOKEN }}@github.com/".insteadOf "https://github.com/"
 
       - name: Install build tools
-        run: pip install build twine check-wheel-contents
+        run: uv pip install build twine check-wheel-contents
 
       - name: Build sdist and wheel
         run: python -m build
@@ -278,7 +279,7 @@ jobs:
 
       - name: Verify package installs cleanly from wheel
         run: |
-          pip install dist/*.whl
+          uv pip install dist/*.whl
           python -c "from tvbo import Dynamics, SimulationExperiment; print('Import OK')"
 
       - name: Upload release-ready artifacts
