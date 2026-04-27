@@ -10,7 +10,9 @@ description: >
   Export the Jansen-Rit model from the TVBO database as LEMS XML.
   6 state variables with derived variables.
 
-model: JansenRit
+dynamics:
+  name: JansenRit
+  iri: tvbo:JansenRit
 
 network:
   number_of_nodes: 1
