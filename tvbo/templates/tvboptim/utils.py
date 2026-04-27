@@ -692,17 +692,15 @@ def parse_exploration(expl: Any, all_couplings: Dict, get_pipeline_output_key_fn
         "axes": [],
     }
 
-    # Parse parameters
-    params = getattr(expl, "parameters", {})
-    if hasattr(params, "values"):
-        params = params.values()
+    # Parse exploration axes (schema: `space` is a list of ExplorationAxis)
+    axes_list = getattr(expl, "space", None) or []
 
-    for param in params:
-        domain = getattr(param, "domain", None)
+    for axis in axes_list:
+        domain = getattr(axis, "domain", None)
         if not domain:
             continue
 
-        pname = str(getattr(param, "name", ""))
+        pname = str(getattr(axis, "parameter", ""))
         source_key = None
         is_coupling_param = False
 

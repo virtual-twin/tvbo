@@ -36,18 +36,20 @@ for expl in exploration_list:
         'n_parallel': getattr(expl, 'n_parallel', 8),
         'axes': [],
     }
-    params = getattr(expl, 'parameters', None)
-    if params:
-        param_iter = params.values() if hasattr(params, 'values') else params
-        for param in param_iter:
-            domain = getattr(param, 'domain', None)
-            if domain:
-                exp_info['axes'].append({
-                    'name': getattr(param, 'name', str(param)),
-                    'lo': float(domain.lo) if domain.lo is not None else 0.0,
-                    'hi': float(domain.hi) if domain.hi is not None else 1.0,
-                    'n': int(domain.n) if hasattr(domain, 'n') and domain.n else 32,
-                })
+    axes_list = getattr(expl, 'space', None) or []
+    for axis in axes_list:
+        domain = getattr(axis, 'domain', None)
+        if domain:
+            pname = str(getattr(axis, 'parameter', ''))
+            # Strip dotted prefix (Class.param) → bare param name
+            if '.' in pname:
+                pname = pname.rsplit('.', 1)[1]
+            exp_info['axes'].append({
+                'name': pname,
+                'lo': float(domain.lo) if domain.lo is not None else 0.0,
+                'hi': float(domain.hi) if domain.hi is not None else 1.0,
+                'n': int(domain.n) if hasattr(domain, 'n') and domain.n else 32,
+            })
     observable = getattr(expl, 'observable', None)
     if observable:
         exp_info['observable'] = getattr(observable, 'name', str(observable))

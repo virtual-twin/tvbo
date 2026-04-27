@@ -963,8 +963,8 @@ explorations:
       Sweep E/I ratio from 0.01 to 100 (50 log-spaced values) to study
       effect on functional connectivity and decision-making performance.
       Uses simplified 2-node network.
-    parameters:
-      - name: EI_ratio
+    space:
+      - parameter: ReducedWongWangEI.EI_ratio
         domain:
           lo: 0.01
           hi: 100.0
@@ -980,8 +980,8 @@ explorations:
     description: >
       Sweep stimulus contrast from 0.8% to 6.4% to study decision-making
       accuracy and response times.
-    parameters:
-      - name: contrast
+    space:
+      - parameter: MurrayWangDM.contrast
         domain:
           lo: 0.8
           hi: 6.4
