@@ -1,10 +1,10 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-04-27T14:09:22
+# Generation date: 2026-04-27T15:00:35
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
 # description: Metadata schema for simulation studies using The Virtual Brain neuroinformatics platform or other dynamic network models of large-scale brain activity.
-# license: https://creativecommons.org/publicdomain/zero/1.0/
+# license: https://spdx.org/licenses/EUPL-1.2
 
 import dataclasses
 import re
@@ -60,7 +60,7 @@ from linkml_runtime.linkml_model.types import Boolean, Date, Datetime, Float, In
 from linkml_runtime.utils.metamodelcore import Bool, URI, URIorCURIE, XSDDate, XSDDateTime
 
 metamodel_version = "1.7.0"
-version = None
+version = "0.4.0"
 
 # Namespaces
 UO = CurieNamespace('UO', 'http://purl.obolibrary.org/obo/UO_')
@@ -258,6 +258,8 @@ class SimulationToolName(SoftwarePackageName):
 class SoftwareRequirementName(extended_str):
     pass
 
+
+ScalarValue = Any
 
 @dataclass(repr=False)
 class Range(YAMLRoot):
@@ -1706,7 +1708,7 @@ class Argument(YAMLRoot):
 
     name: Union[str, ArgumentName] = None
     description: Optional[str] = None
-    value: Optional[str] = None
+    value: Optional[Union[dict, ScalarValue]] = None
     unit: Optional[str] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -1717,9 +1719,6 @@ class Argument(YAMLRoot):
 
         if self.description is not None and not isinstance(self.description, str):
             self.description = str(self.description)
-
-        if self.value is not None and not isinstance(self.value, str):
-            self.value = str(self.value)
 
         if self.unit is not None and not isinstance(self.unit, str):
             self.unit = str(self.unit)
@@ -6676,7 +6675,7 @@ slots.couplingInput__keys = Slot(uri=TVBO.keys, name="couplingInput__keys", curi
                    model_uri=TVBO.couplingInput__keys, domain=None, range=Optional[Union[str, list[str]]])
 
 slots.argument__value = Slot(uri=TVBO.value, name="argument__value", curie=TVBO.curie('value'),
-                   model_uri=TVBO.argument__value, domain=None, range=Optional[str])
+                   model_uri=TVBO.argument__value, domain=None, range=Optional[Union[dict, ScalarValue]])
 
 slots.argument__unit = Slot(uri=TVBO.unit, name="argument__unit", curie=TVBO.curie('unit'),
                    model_uri=TVBO.argument__unit, domain=None, range=Optional[str])
