@@ -38,7 +38,7 @@ ENV UV_SYSTEM_PYTHON=1 \
 #    selected extras directly without invoking the build backend.
 COPY pyproject.toml /app/pyproject.toml
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv pip install -r pyproject.toml --extra julia --extra pyrates \
+    uv pip install -r pyproject.toml --extra julia --extra pyrates --extra neuroml \
         jupyterlab uvicorn fastapi tvboptim
 
 # 2. Pre-warm Julia. juliacall just needs juliapkg.json on sys.path.
