@@ -75,7 +75,7 @@ else:
 
 
 metamodel_version = "1.7.0"
-version = "None"
+version = "0.4.0"
 
 
 class ConfiguredBaseModel(BaseModel):
@@ -129,6 +129,7 @@ linkml_meta = LinkMLMeta({'default_prefix': 'tvbo',
                  'tvbo_study',
                  'tvb_dbs',
                  'software'],
+     'license': 'https://spdx.org/licenses/EUPL-1.2',
      'name': 'tvb-datamodel',
      'prefixes': {'UO': {'prefix_prefix': 'UO',
                          'prefix_reference': 'http://purl.obolibrary.org/obo/UO_'},
@@ -5538,11 +5539,7 @@ class Argument(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE'],
          'slot_uri': 'dcterms:description'} })
-    value: Optional[Union[bool, float, int, str]] = Field(default=None, description="""Argument value. Can be: - Literal: 1.0, \"string\", boolean, etc. - Input reference: \"input.frequencies\" (from source_observation outputs) - Cross-observation: \"target_frequencies.peak_freqs\" (from another observation)""", json_schema_extra = { "linkml_meta": {'any_of': [{'range': 'float'},
-                    {'range': 'integer'},
-                    {'range': 'string'},
-                    {'range': 'boolean'}],
-         'domain_of': ['StateValue',
+    value: Optional[Any] = Field(default=None, description="""Argument value. Can be: - Literal: 1.0, \"string\", boolean, etc. - Input reference: \"input.frequencies\" (from source_observation outputs) - Cross-observation: \"target_frequencies.peak_freqs\" (from another observation)""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateValue',
                        'Parameter',
                        'Argument',
                        'Option',
