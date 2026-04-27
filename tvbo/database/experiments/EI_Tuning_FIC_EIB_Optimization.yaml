@@ -696,7 +696,7 @@ algorithms:
           in each iteration. Matches Schirner et al. 2023 implementation.
       execution:
           random_seed: 0  # Reset seed at algorithm start (matches original)
-      depends_on: fic
+      depends_on: [fic]
       objective:
           type: fc_matching
           target_variable: fc_inloop

@@ -917,7 +917,7 @@ algorithms:
           with a Hebbian-like rule: increase wLRE (decrease wFFI) where FC is
           too low, decrease wLRE (increase wFFI) where FC is too high.
       type: eib
-      depends_on: fic
+      depends_on: [fic]
       objective:
           type: fc_matching
           target_data: fc_target
