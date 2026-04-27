@@ -66,6 +66,30 @@ jobs:
             - name: Mypy — type check (non-blocking)
               run: mypy tvbo || true
 
+    # ─── Always: schema validation gate ───────────────────────
+    # Validates every YAML in tvbo/database/ against the LinkML schema.
+    # Fast (~20s) and depends only on linkml + pyyaml, so runs on every PR
+    # without the full install matrix. Catches schema/database drift early.
+    schema-validate:
+        name: Schema validation
+        needs: lint
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        steps:
+            - uses: actions/checkout@v6
+            - uses: astral-sh/setup-uv@v8.1.0
+              with:
+                  python-version: "3.12"
+                  enable-cache: true
+                  activate-environment: true
+                  cache-dependency-glob: |
+                      pyproject.toml
+                      .github/workflows/ci.yml
+            - name: Install validation deps
+              run: uv pip install linkml pyyaml pytest pytest-xdist
+            - name: Validate every database YAML against the LinkML schema
+              run: pytest -v --tb=short tests/test_database_validation.py
+
     # ─── Always: compatibility across Python versions ──────────
     compat:
         name: Python ${{ matrix.python-version }}
