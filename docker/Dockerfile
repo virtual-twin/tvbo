@@ -12,7 +12,7 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 #              default-jre-headless (jNeuroML LEMS runner)
 RUN apt-get update && apt-get install -y --no-install-recommends \
         gcc g++ gfortran make git perl libcairo2-dev curl wget \
-        default-jre-headless \
+        default-jre-headless ninja-build \
     && rm -rf /var/lib/apt/lists/* \
     # NEURON PyPI wheels are built on RHEL and hardcode the GCC toolset path.
     # Create symlinks so nrnmech_makefile finds its compiler on Debian.
