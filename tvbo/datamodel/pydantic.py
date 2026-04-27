@@ -1162,6 +1162,7 @@ class BrainAtlas(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
+                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -1218,6 +1219,7 @@ class CommonCoordinateSpace(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
+                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -1291,6 +1293,7 @@ class ParcellationEntity(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
+                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -1912,6 +1915,7 @@ class DBSProtocol(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
+                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -1966,6 +1970,7 @@ class ClinicalScale(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
+                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -2028,6 +2033,7 @@ class ClinicalScore(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
+                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -2164,6 +2170,7 @@ class SoftwarePackage(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
+                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -2295,6 +2302,7 @@ class SimulationTool(SoftwarePackage):
                        'CouplingInput',
                        'Argument',
                        'Function',
+                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -2399,6 +2407,7 @@ class SoftwareRequirement(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
+                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -2524,6 +2533,7 @@ class SoftwareEnvironment(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
+                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -2649,7 +2659,7 @@ class SoftwareEnvironment(ConfiguredBaseModel):
     environment_type: Optional[EnvironmentType] = Field(default=None, description="""Category: conda, venv, docker, etc.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareEnvironment']} })
     container_image: Optional[str] = Field(default=None, description="""Container image reference (e.g., ghcr.io/org/img:tag@sha256:...).""", json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareEnvironment']} })
     build_hash: Optional[str] = Field(default=None, description="""Deterministic hash of the resolved dependency set.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareEnvironment']} })
-    requirements: Optional[dict[str, SoftwareRequirement]] = Field(default=None, description="""Constituent software requirements.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareEnvironment', 'Function', 'PDESolver']} })
+    requirements: Optional[list[SoftwareRequirement]] = Field(default=None, description="""Constituent software requirements.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareEnvironment', 'Function', 'PDESolver']} })
 
 
 class Range(ConfiguredBaseModel):
@@ -2978,6 +2988,7 @@ class Event(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
+                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -3341,6 +3352,7 @@ class Tractogram(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
+                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -3801,6 +3813,7 @@ class GraphGenerator(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
+                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -3918,6 +3931,7 @@ class File(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
+                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -4151,6 +4165,7 @@ class StateValue(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
+                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -4351,6 +4366,7 @@ class Observation(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
+                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -4541,6 +4557,7 @@ class DerivedObservation(Observation):
                        'CouplingInput',
                        'Argument',
                        'Function',
+                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -4734,6 +4751,7 @@ class Dynamics(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
+                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -4923,6 +4941,7 @@ class StateVariable(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
+                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -5115,6 +5134,7 @@ class Distribution(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
+                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -5184,6 +5204,7 @@ class Parameter(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
+                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -5378,6 +5399,7 @@ class CouplingInput(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
+                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -5474,6 +5496,7 @@ class Argument(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
+                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -5583,6 +5606,7 @@ class Function(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
+                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -5773,6 +5797,7 @@ class LossFunction(Function):
                        'CouplingInput',
                        'Argument',
                        'Function',
+                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -5924,6 +5949,42 @@ class FunctionCall(ConfiguredBaseModel):
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:FunctionCall', 'from_schema': 'https://w3id.org/tvbo'})
 
+    name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+                       'CommonCoordinateSpace',
+                       'ParcellationEntity',
+                       'DBSProtocol',
+                       'ClinicalScale',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
+                       'Event',
+                       'Tractogram',
+                       'GraphGenerator',
+                       'File',
+                       'StateValue',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Distribution',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'FunctionCall',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Exploration',
+                       'UpdateRule',
+                       'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
+                       'Coupling'],
+         'slot_uri': 'schema:name'} })
     acronym: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
                        'ClinicalScore',
                        'Observation',
@@ -6074,6 +6135,7 @@ class Callable(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
+                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -6172,6 +6234,7 @@ class ClassReference(Callable):
                        'CouplingInput',
                        'Argument',
                        'Function',
+                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -6283,6 +6346,7 @@ class DerivedParameter(Parameter):
                        'CouplingInput',
                        'Argument',
                        'Function',
+                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -6476,6 +6540,7 @@ class DerivedVariable(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
+                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -6802,6 +6867,7 @@ class DataSource(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
+                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -6943,6 +7009,7 @@ class OptimizationStage(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
+                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -7049,7 +7116,7 @@ class OptimizationStage(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE'],
          'slot_uri': 'dcterms:description'} })
-    free_parameters: Optional[list[str]] = Field(default=None, description="""Parameters to optimize in this stage. Use 'shape' attribute to specify scalar vs regional. Example: {name: w, shape: \"(n_nodes,)\"} for heterogeneous.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Continuation']} })
+    free_parameters: Optional[list[Parameter]] = Field(default=None, description="""Parameters to optimize in this stage. Use 'shape' attribute to specify scalar vs regional. Example: {name: w, shape: \"(n_nodes,)\"} for heterogeneous.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Continuation']} })
     algorithm: Optional[str] = Field(default="adam", description="""Optimizer for this stage: 'adam', 'adamw', 'sgd', etc.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'AlgorithmInclude', 'Continuation'],
          'ifabsent': 'string(adam)'} })
     learning_rate: Optional[float] = Field(default=0.001, json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Algorithm'], 'ifabsent': 'float(0.001)'} })
@@ -7096,6 +7163,7 @@ class Optimization(OptimizationStage):
                        'CouplingInput',
                        'Argument',
                        'Function',
+                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -7202,7 +7270,7 @@ class Optimization(OptimizationStage):
                        'PDESolver',
                        'PDE'],
          'slot_uri': 'dcterms:description'} })
-    free_parameters: Optional[list[str]] = Field(default=None, description="""Parameters to optimize in this stage. Use 'shape' attribute to specify scalar vs regional. Example: {name: w, shape: \"(n_nodes,)\"} for heterogeneous.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Continuation']} })
+    free_parameters: Optional[list[Parameter]] = Field(default=None, description="""Parameters to optimize in this stage. Use 'shape' attribute to specify scalar vs regional. Example: {name: w, shape: \"(n_nodes,)\"} for heterogeneous.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Continuation']} })
     algorithm: Optional[str] = Field(default="adam", description="""Optimizer for this stage: 'adam', 'adamw', 'sgd', etc.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'AlgorithmInclude', 'Continuation'],
          'ifabsent': 'string(adam)'} })
     learning_rate: Optional[float] = Field(default=0.001, json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Algorithm'], 'ifabsent': 'float(0.001)'} })
@@ -7240,6 +7308,7 @@ class Exploration(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
+                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -7405,6 +7474,7 @@ class UpdateRule(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
+                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -7635,6 +7705,7 @@ class Algorithm(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
+                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -7755,6 +7826,7 @@ class Option(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
+                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -7854,6 +7926,7 @@ class BranchSwitch(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
+                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -7971,6 +8044,7 @@ class Continuation(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
+                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -8098,7 +8172,7 @@ class Continuation(ConfiguredBaseModel):
     algorithm: Optional[ContinuationAlgorithm] = Field(default=ContinuationAlgorithm.PALC, description="""Predictor-corrector algorithm.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'AlgorithmInclude', 'Continuation'],
          'ifabsent': 'string(PALC)'} })
     initial_state: Optional[InitialState] = Field(default=None, description="""How to obtain the initial equilibrium. Default: time integration to steady state.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation']} })
-    branches: Optional[list[BranchSwitch]] = Field(default=None, description="""Child branches to continue from detected bifurcation points (PO from Hopf, fold continuation, etc.).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation']} })
+    branches: Optional[dict[str, BranchSwitch]] = Field(default=None, description="""Child branches to continue from detected bifurcation points (PO from Hopf, fold continuation, etc.).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation']} })
     bothside: Optional[bool] = Field(default=None, description="""Continue in both directions from the starting point.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BranchSwitch', 'Continuation']} })
     execution: Optional[ExecutionConfig] = Field(default=None, description="""Per-analysis execution configuration.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization',
                        'Exploration',
@@ -8255,6 +8329,7 @@ class Coupling(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
+                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -8657,10 +8732,10 @@ class SimulationExperiment(ConfiguredBaseModel):
     stimulation: Optional[Stimulus] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     events: Optional[dict[str, Event]] = Field(default=None, description="""Events that apply at the experiment level. For component-level events, attach them to individual nodes or edges instead.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'Edge', 'Dynamics', 'SimulationExperiment']} })
     field_dynamics: Optional[PDE] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
-    optimizations: Optional[list[Optimization]] = Field(default=None, description="""Parameter optimization configurations""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
-    explorations: Optional[list[Exploration]] = Field(default=None, description="""Parameter exploration/grid search specifications""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
-    algorithms: Optional[list[Algorithm]] = Field(default=None, description="""Iterative parameter tuning algorithms (FIC, EIB, etc.)""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
-    continuations: Optional[list[Continuation]] = Field(default=None, description="""Numerical continuation and bifurcation analysis specifications. Each entry defines a continuation experiment (equilibrium branch, codim-2 curve, periodic orbit family, etc.).""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
+    optimizations: Optional[dict[str, Optimization]] = Field(default=None, description="""Parameter optimization configurations""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
+    explorations: Optional[dict[str, Exploration]] = Field(default=None, description="""Parameter exploration/grid search specifications""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
+    algorithms: Optional[dict[str, Algorithm]] = Field(default=None, description="""Iterative parameter tuning algorithms (FIC, EIB, etc.)""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
+    continuations: Optional[dict[str, Continuation]] = Field(default=None, description="""Numerical continuation and bifurcation analysis specifications. Each entry defines a continuation experiment (equilibrium branch, codim-2 curve, periodic orbit family, etc.).            # Either reference a full reusable environment (preferred) or, for""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     environment: Optional[SoftwareEnvironment] = Field(default=None, description="""Execution environment (collection of requirements).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'SimulationExperiment', 'PDESolver']} })
     execution: Optional[ExecutionConfig] = Field(default=None, description="""Computational execution configuration (parallelization, devices).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization',
                        'Exploration',
@@ -9516,6 +9591,7 @@ class FieldStateVariable(StateVariable):
                        'CouplingInput',
                        'Argument',
                        'Function',
+                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
