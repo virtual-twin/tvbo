@@ -136,7 +136,7 @@ branches:
       # ── Branch-specific toolkit parameters ─────────────────────────────
       # Numeric parameters specific to this branch.
     parameters:
-      - name: max_norm_bound
+      max_norm_bound:
         value: 1.0e+4        # cbMaxNorm callback: discard if ||x|| > this
 
       # ── Branch-specific toolkit options ────────────────────────────────
