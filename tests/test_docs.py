@@ -53,7 +53,11 @@ for path in qmd_files:
 
 
 @pytest.mark.docs
-@pytest.mark.parametrize("qmd_path,doc_name", test_params, ids=lambda x: x if isinstance(x, str) else Path(x).stem)
+@pytest.mark.parametrize(
+    "qmd_path,doc_name",
+    test_params,
+    ids=lambda x: x if isinstance(x, str) else Path(x).stem,
+)
 def test_doc_executes(qmd_path, doc_name):
     """Test that a documentation notebook executes without errors."""
     qmd_path = Path(qmd_path)
@@ -63,7 +67,10 @@ def test_doc_executes(qmd_path, doc_name):
     ipynb_path = qmd_path.with_suffix(".ipynb")
     try:
         result = subprocess.run(
-            ["quarto", "convert", str(qmd_path), "--output", str(ipynb_path)], capture_output=True, text=True, cwd=str(doc_dir)
+            ["quarto", "convert", str(qmd_path), "--output", str(ipynb_path)],
+            capture_output=True,
+            text=True,
+            cwd=str(doc_dir),
         )
         assert result.returncode == 0, f"quarto convert failed: {result.stderr}"
         assert ipynb_path.exists(), f"Notebook not created: {ipynb_path}"
@@ -83,8 +90,15 @@ def test_doc_executes(qmd_path, doc_name):
             "source": [
                 "import sys, os\n",
                 f"sys.path.insert(0, {str(doc_dir)!r})\n",
-                "sys.path.insert(0, '')  # ensure CWD is always on sys.path for f2py artifacts\n",
                 f"os.chdir({str(doc_dir)!r})\n",
+                "import pyrates.backend.fortran.fortran_backend as _fb\n",
+                "_orig_generate = _fb.FortranBackend.generate_func\n",
+                "def _patched_generate(self, *args, **kwargs):\n",
+                "    _cwd = os.getcwd()\n",
+                "    if _cwd not in sys.path:\n",
+                "        sys.path.insert(0, _cwd)\n",
+                "    return _orig_generate(self, *args, **kwargs)\n",
+                "_fb.FortranBackend.generate_func = _patched_generate\n",
             ],
         }
         nb["cells"].insert(0, setup_cell)
@@ -106,8 +120,14 @@ def test_doc_executes(qmd_path, doc_name):
         # Check for execution errors
         if result.returncode != 0:
             # Try to extract meaningful error message
-            error_msg = result.stderr.strip().split("\n")[-1] if result.stderr else "Unknown error"
-            pytest.fail(f"Notebook execution failed: {error_msg}\n\nFull stderr:\n{result.stderr}")
+            error_msg = (
+                result.stderr.strip().split("\n")[-1]
+                if result.stderr
+                else "Unknown error"
+            )
+            pytest.fail(
+                f"Notebook execution failed: {error_msg}\n\nFull stderr:\n{result.stderr}"
+            )
     finally:
         # Clean up generated notebook
         if ipynb_path.exists():
