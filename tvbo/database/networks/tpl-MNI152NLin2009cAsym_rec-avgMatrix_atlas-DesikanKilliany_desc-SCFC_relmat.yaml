@@ -17,7 +17,7 @@ parameters:
 parcellation:
   atlas:
     name: DesikanKilliany
-    coordinateSpace: MNI152NLin2009cAsym
+    coordinateSpace: {name: MNI152NLin2009cAsym}
 nodes:
 - id: 0
   label: L.BSTS

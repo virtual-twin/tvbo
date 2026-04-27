@@ -19,7 +19,7 @@ parameters:
 parcellation:
   atlas:
     name: HCPMMP1
-    coordinateSpace: MNI152NLin2009cAsym
+    coordinateSpace: {name: MNI152NLin2009cAsym}
 tractogram:
   name: PPMI85
 nodes:

@@ -49,7 +49,7 @@ parameters:
 parcellation:
   atlas:
     name: Schaefer2018
-    coordinateSpace: FSLMNI152
+    coordinateSpace: {name: FSLMNI152}
 tractogram:
   name: Hansen2022
   label: MRtrix3-MSMT-CSD-SIFT2 group-consensus SC
