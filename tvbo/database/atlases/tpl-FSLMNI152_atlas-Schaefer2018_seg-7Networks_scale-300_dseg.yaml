@@ -1,7 +1,7 @@
 name: Schaefer2018
 abbreviation: Schaefer2018
 versionIdentifier: '2018'
-coordinateSpace: MNI152
+coordinateSpace: MNI152NLin6Asym
 terminology:
   label: Schaefer2018_300Parcels_7Networks_order
   entities:
