@@ -64,7 +64,6 @@ if TYPE_CHECKING:
 import nibabel as nib
 import numpy as np
 import yaml
-from scipy.ndimage import map_coordinates
 
 # ── Region → Lobe mapping ─────────────────────────────────────────
 
@@ -121,30 +120,30 @@ DK_REGION_TO_LOBE = {
 # subcortical structures (labels < 100).
 SUBCORTICAL_LABEL_TO_GROUP = {
     # Left subcortical
-    10: ("LH", "Subcortical"),   # Left-Thalamus
-    11: ("LH", "Subcortical"),   # Left-Caudate
-    12: ("LH", "Subcortical"),   # Left-Putamen
-    13: ("LH", "Subcortical"),   # Left-Pallidum
-    17: ("LH", "Subcortical"),   # Left-Hippocampus
-    18: ("LH", "Subcortical"),   # Left-Amygdala
-    26: ("LH", "Subcortical"),   # Left-Accumbens
-    28: ("LH", "Subcortical"),   # Left-VentralDC
+    10: ("LH", "Subcortical"),  # Left-Thalamus
+    11: ("LH", "Subcortical"),  # Left-Caudate
+    12: ("LH", "Subcortical"),  # Left-Putamen
+    13: ("LH", "Subcortical"),  # Left-Pallidum
+    17: ("LH", "Subcortical"),  # Left-Hippocampus
+    18: ("LH", "Subcortical"),  # Left-Amygdala
+    26: ("LH", "Subcortical"),  # Left-Accumbens
+    28: ("LH", "Subcortical"),  # Left-VentralDC
     # Right subcortical
-    49: ("RH", "Subcortical"),   # Right-Thalamus
-    50: ("RH", "Subcortical"),   # Right-Caudate
-    51: ("RH", "Subcortical"),   # Right-Putamen
-    52: ("RH", "Subcortical"),   # Right-Pallidum
-    53: ("RH", "Subcortical"),   # Right-Hippocampus
-    54: ("RH", "Subcortical"),   # Right-Amygdala
-    58: ("RH", "Subcortical"),   # Right-Accumbens
-    60: ("RH", "Subcortical"),   # Right-VentralDC
+    49: ("RH", "Subcortical"),  # Right-Thalamus
+    50: ("RH", "Subcortical"),  # Right-Caudate
+    51: ("RH", "Subcortical"),  # Right-Putamen
+    52: ("RH", "Subcortical"),  # Right-Pallidum
+    53: ("RH", "Subcortical"),  # Right-Hippocampus
+    54: ("RH", "Subcortical"),  # Right-Amygdala
+    58: ("RH", "Subcortical"),  # Right-Accumbens
+    60: ("RH", "Subcortical"),  # Right-VentralDC
     # Cerebellum
-    7:  ("LH", "Cerebellum"),    # Left-Cerebellum-WM
-    8:  ("LH", "Cerebellum"),    # Left-Cerebellum-Cortex
-    46: ("RH", "Cerebellum"),    # Right-Cerebellum-WM
-    47: ("RH", "Cerebellum"),    # Right-Cerebellum-Cortex
+    7: ("LH", "Cerebellum"),  # Left-Cerebellum-WM
+    8: ("LH", "Cerebellum"),  # Left-Cerebellum-Cortex
+    46: ("RH", "Cerebellum"),  # Right-Cerebellum-WM
+    47: ("RH", "Cerebellum"),  # Right-Cerebellum-Cortex
     # Brain-Stem (midline, no hemisphere)
-    16: (None, "BrainStem"),     # Brain-Stem
+    16: (None, "BrainStem"),  # Brain-Stem
 }
 
 # Ordered lobe labels for the output network.
@@ -172,7 +171,7 @@ LOBE_ORDER = [
 
 # Lobar8: 8 lobes per hemisphere (no BrainStem)
 # Only includes regions with both SC and FC data.
-LOBE_ORDER_8 = [l for l in LOBE_ORDER if l != "BrainStem"]
+LOBE_ORDER_8 = [lbl for lbl in LOBE_ORDER if lbl != "BrainStem"]
 
 
 # ── DK abbreviation → lobe mapping for FC aggregation ────────────────
@@ -182,28 +181,52 @@ LOBE_ORDER_8 = [l for l in LOBE_ORDER if l != "BrainStem"]
 DK_ABBREV_TO_LOBE = {
     # Cortical — uses same grouping as DK_REGION_TO_LOBE above
     # Frontal
-    "CMFG": "Frontal", "LOFG": "Frontal", "MOFG": "Frontal",
-    "PaCG": "Frontal", "POP": "Frontal", "POR": "Frontal",
-    "PTR": "Frontal", "PrCG": "Frontal", "RMFG": "Frontal",
-    "SFG": "Frontal", "FP": "Frontal",
+    "CMFG": "Frontal",
+    "LOFG": "Frontal",
+    "MOFG": "Frontal",
+    "PaCG": "Frontal",
+    "POP": "Frontal",
+    "POR": "Frontal",
+    "PTR": "Frontal",
+    "PrCG": "Frontal",
+    "RMFG": "Frontal",
+    "SFG": "Frontal",
+    "FP": "Frontal",
     # Parietal
-    "IPG": "Parietal", "PoCG": "Parietal", "PCU": "Parietal",
-    "SPG": "Parietal", "SMG": "Parietal",
+    "IPG": "Parietal",
+    "PoCG": "Parietal",
+    "PCU": "Parietal",
+    "SPG": "Parietal",
+    "SMG": "Parietal",
     # Temporal
-    "BSTS": "Temporal", "EC": "Temporal", "FG": "Temporal",
-    "ITG": "Temporal", "MTG": "Temporal", "PHIG": "Temporal",
-    "STG": "Temporal", "TTG": "Temporal", "TP": "Temporal",
+    "BSTS": "Temporal",
+    "EC": "Temporal",
+    "FG": "Temporal",
+    "ITG": "Temporal",
+    "MTG": "Temporal",
+    "PHIG": "Temporal",
+    "STG": "Temporal",
+    "TTG": "Temporal",
+    "TP": "Temporal",
     # Occipital
-    "CU": "Occipital", "LOG": "Occipital", "LG": "Occipital",
+    "CU": "Occipital",
+    "LOG": "Occipital",
+    "LG": "Occipital",
     "PCAL": "Occipital",
     # Cingulate
-    "CACG": "Cingulate", "ICG": "Cingulate", "PCG": "Cingulate",
+    "CACG": "Cingulate",
+    "ICG": "Cingulate",
+    "PCG": "Cingulate",
     "RACG": "Cingulate",
     # Insular
     "IN": "Insular",
     # Subcortical
-    "TH": "Subcortical", "CA": "Subcortical", "PU": "Subcortical",
-    "PA": "Subcortical", "HI": "Subcortical", "AM": "Subcortical",
+    "TH": "Subcortical",
+    "CA": "Subcortical",
+    "PU": "Subcortical",
+    "PA": "Subcortical",
+    "HI": "Subcortical",
+    "AM": "Subcortical",
     "AC": "Subcortical",
     # Cerebellum
     "CER": "Cerebellum",
@@ -234,10 +257,7 @@ def compute_lobar_avgmatrix(dk_network_dir: Path) -> dict[str, np.ndarray]:
     """
     import h5py
 
-    dk_yaml = dk_network_dir / (
-        "tpl-MNI152NLin2009cAsym_rec-avgMatrix_atlas-DesikanKilliany"
-        "_desc-SCFC_relmat.yaml"
-    )
+    dk_yaml = dk_network_dir / ("tpl-MNI152NLin2009cAsym_rec-avgMatrix_atlas-DesikanKilliany_desc-SCFC_relmat.yaml")
     dk_h5 = dk_yaml.with_suffix(".h5")
 
     # Load DK labels
@@ -297,11 +317,9 @@ def compute_lobar_avgmatrix(dk_network_dir: Path) -> dict[str, np.ndarray]:
     lobar_l[w_mask] = lobar_wl[w_mask] / (lobar_w[w_mask] * counts[w_mask])
 
     n_mapped = np.count_nonzero(dk_to_lobe >= 0)
-    print(f"[avg ] Aggregated DK avgMatrix ({n_dk} regions, {n_mapped} mapped) "
-          f"→ {n_lobes}×{n_lobes} lobar SC+FC")
+    print(f"[avg ] Aggregated DK avgMatrix ({n_dk} regions, {n_mapped} mapped) → {n_lobes}×{n_lobes} lobar SC+FC")
     print(f"[avg ] weight range: [{lobar_w.min():.4f}, {lobar_w.max():.4f}]")
-    print(f"[avg ] length range: [{lobar_l[lobar_l > 0].min():.1f}, "
-          f"{lobar_l.max():.1f}] mm")
+    print(f"[avg ] length range: [{lobar_l[lobar_l > 0].min():.1f}, {lobar_l.max():.1f}] mm")
     print(f"[avg ] FC range: [{lobar_fc.min():.4f}, {lobar_fc.max():.4f}]")
 
     return {
@@ -312,6 +330,7 @@ def compute_lobar_avgmatrix(dk_network_dir: Path) -> dict[str, np.ndarray]:
 
 
 # ── Build lobar atlas NIfTI ─────────────────────────────────────────
+
 
 def build_lobar_atlas(output_path: Path) -> tuple[Path, dict]:
     """Create a lobar atlas NIfTI from the DKT31 segmentation.
@@ -337,15 +356,19 @@ def build_lobar_atlas(output_path: Path) -> tuple[Path, dict]:
     if not dkt_path.exists():
         # Try downloading via the API as last resort
         import templateflow.api as tflow
+
         result = tflow.get(
-            "MNI152NLin2009cAsym", res="02", desc="DKT31",
-            suffix="dseg", extension=".nii.gz",
+            "MNI152NLin2009cAsym",
+            res="02",
+            desc="DKT31",
+            suffix="dseg",
+            extension=".nii.gz",
         )
         dkt_path = result[0] if isinstance(result, list) and result else result
     if not dkt_path or not Path(dkt_path).exists():
         raise FileNotFoundError(
             "DKT31 atlas not found in TemplateFlow cache. Run:\n"
-            "  python -c \"import templateflow.api as tflow; "
+            '  python -c "import templateflow.api as tflow; '
             "tflow.get('MNI152NLin2009cAsym', res='02', desc='DKT31', "
             "suffix='dseg', extension='.nii.gz')\""
         )
@@ -398,25 +421,47 @@ def build_lobar_atlas(output_path: Path) -> tuple[Path, dict]:
     lobar_img = nib.Nifti1Image(lobar.astype(np.int32), affine, img.header)
     nib.save(lobar_img, output_path)
     print(f"[atlas] Lobar atlas saved: {output_path}")
-    print(f"[atlas] {len(LOBE_ORDER)} lobes, "
-          f"{np.count_nonzero(lobar)} labeled voxels")
+    print(f"[atlas] {len(LOBE_ORDER)} lobes, {np.count_nonzero(lobar)} labeled voxels")
 
     return output_path, lobe_centroids
 
 
 # FreeSurfer DKT31 region name → FS lookup table indices
 _DK_FS_INDEX = {
-    "bankssts": 1, "caudalanteriorcingulate": 2, "caudalmiddlefrontal": 3,
-    "cuneus": 5, "entorhinal": 6, "fusiform": 7, "inferiorparietal": 8,
-    "inferiortemporal": 9, "isthmuscingulate": 10, "lateraloccipital": 11,
-    "lateralorbitofrontal": 12, "lingual": 13, "medialorbitofrontal": 14,
-    "middletemporal": 15, "parahippocampal": 16, "paracentral": 17,
-    "parsopercularis": 18, "parsorbitalis": 19, "parstriangularis": 20,
-    "pericalcarine": 21, "postcentral": 22, "posteriorcingulate": 23,
-    "precentral": 24, "precuneus": 25, "rostralanteriorcingulate": 26,
-    "rostralmiddlefrontal": 27, "superiorfrontal": 28, "superiorparietal": 29,
-    "superiortemporal": 30, "supramarginal": 31, "frontalpole": 32,
-    "temporalpole": 33, "transversetemporal": 34, "insula": 35,
+    "bankssts": 1,
+    "caudalanteriorcingulate": 2,
+    "caudalmiddlefrontal": 3,
+    "cuneus": 5,
+    "entorhinal": 6,
+    "fusiform": 7,
+    "inferiorparietal": 8,
+    "inferiortemporal": 9,
+    "isthmuscingulate": 10,
+    "lateraloccipital": 11,
+    "lateralorbitofrontal": 12,
+    "lingual": 13,
+    "medialorbitofrontal": 14,
+    "middletemporal": 15,
+    "parahippocampal": 16,
+    "paracentral": 17,
+    "parsopercularis": 18,
+    "parsorbitalis": 19,
+    "parstriangularis": 20,
+    "pericalcarine": 21,
+    "postcentral": 22,
+    "posteriorcingulate": 23,
+    "precentral": 24,
+    "precuneus": 25,
+    "rostralanteriorcingulate": 26,
+    "rostralmiddlefrontal": 27,
+    "superiorfrontal": 28,
+    "superiorparietal": 29,
+    "superiortemporal": 30,
+    "supramarginal": 31,
+    "frontalpole": 32,
+    "temporalpole": 33,
+    "transversetemporal": 34,
+    "insula": 35,
 }
 
 
@@ -427,6 +472,7 @@ def _dk_region_name_to_fs_indices(region_name: str) -> list[int]:
 
 
 # ── Run tck2connectome ──────────────────────────────────────────────
+
 
 def run_tck2connectome(
     tractogram: Path,
@@ -443,7 +489,8 @@ def run_tck2connectome(
             str(tractogram),
             str(atlas),
             str(weights_csv),
-            "-out_assignments", str(assignments_csv),
+            "-out_assignments",
+            str(assignments_csv),
             "-symmetric",
             "-zero_diagonal",
             "-force",
@@ -458,7 +505,8 @@ def run_tck2connectome(
             str(atlas),
             str(lengths_csv),
             "-scale_length",
-            "-stat_edge", "mean",
+            "-stat_edge",
+            "mean",
             "-symmetric",
             "-zero_diagonal",
             "-force",
@@ -468,6 +516,7 @@ def run_tck2connectome(
 
 
 # ── Build network ──────────────────────────────────────────────────
+
 
 def build_network(
     weights: np.ndarray,
@@ -585,9 +634,7 @@ def build_lobar8_network(
     for node in net8.nodes:
         c = centroids.get(node.label)
         if c:
-            node.position = {"x": float(round(c[0], 4)),
-                             "y": float(round(c[1], 4)),
-                             "z": float(round(c[2], 4))}
+            node.position = {"x": float(round(c[0], 4)), "y": float(round(c[1], 4)), "z": float(round(c[2], 4))}
 
     # Metadata
     net8.label = "Lobar8 (avgMatrix)"
@@ -625,6 +672,7 @@ def build_lobar8_network(
 
 
 # ── Build surface network ─────────────────────────────────────────
+
 
 def load_fslr32k_mesh() -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Load fsLR 32k midthickness + inflated surfaces from TemplateFlow.
@@ -723,8 +771,7 @@ def compute_surface_centroids(
     volume_centroids : dict
         Lobe label → (x, y, z) from volumetric atlas (fallback).
     """
-    cortical_lobes = {"Frontal", "Parietal", "Temporal", "Occipital",
-                      "Cingulate", "Insular"}
+    cortical_lobes = {"Frontal", "Parietal", "Temporal", "Occipital", "Cingulate", "Insular"}
 
     centroids = {}
     for idx, lobe_label in enumerate(LOBE_ORDER):
@@ -790,8 +837,7 @@ def build_surface_network(
 
     print(f"[surf] fsLR 32k: {n_vertices} vertices, {n_elements} triangles")
     n_mapped = np.count_nonzero(region_mapping >= 0)
-    print(f"[surf] {n_mapped}/{n_vertices} vertices mapped to lobes "
-          f"({n_mapped / n_vertices * 100:.1f}%)")
+    print(f"[surf] {n_mapped}/{n_vertices} vertices mapped to lobes ({n_mapped / n_vertices * 100:.1f}%)")
 
     # Compute vertex normals from triangles
     v0 = vertices[triangles[:, 0]]
@@ -833,10 +879,10 @@ def build_surface_network(
         number_of_vertices=n_vertices,
         number_of_elements=n_elements,
     )
-    object.__setattr__(surface_net, '_mesh', mesh)
-    object.__setattr__(surface_net, '_mesh_vertices', vertices)
-    object.__setattr__(surface_net, '_mesh_elements', triangles)
-    object.__setattr__(surface_net, '_mesh_normals', normals)
+    object.__setattr__(surface_net, "_mesh", mesh)
+    object.__setattr__(surface_net, "_mesh_vertices", vertices)
+    object.__setattr__(surface_net, "_mesh_elements", triangles)
+    object.__setattr__(surface_net, "_mesh_normals", normals)
 
     # Link vertices → lobes via parent network
     surface_net.set_node_mapping(
@@ -850,10 +896,9 @@ def build_surface_network(
 
 # ── CLI ──────────────────────────────────────────────────────────
 
+
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Create a lobar SC network from a dTOR tractogram."
-    )
+    parser = argparse.ArgumentParser(description="Create a lobar SC network from a dTOR tractogram.")
     parser.add_argument(
         "--tractogram",
         type=Path,
@@ -876,19 +921,18 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=None,
         help="Persistent directory for intermediate files (atlas, CSVs). "
-             "If provided and CSVs exist, tck2connectome is skipped.",
+        "If provided and CSVs exist, tck2connectome is skipped.",
     )
     return parser.parse_args()
 
 
 def main() -> None:
     import shutil
+
     args = parse_args()
 
     if shutil.which("tck2connectome") is None:
-        raise RuntimeError(
-            "tck2connectome not found in PATH. Install MRtrix3."
-        )
+        raise RuntimeError("tck2connectome not found in PATH. Install MRtrix3.")
 
     if not args.tractogram.exists():
         raise FileNotFoundError(f"Tractogram not found: {args.tractogram}")
@@ -905,6 +949,7 @@ def main() -> None:
         use_temp = True
 
     import contextlib
+
     ctx = tempfile.TemporaryDirectory(prefix="tvbo_lobar_") if use_temp else contextlib.nullcontext()
 
     with ctx as tmp:
@@ -922,7 +967,9 @@ def main() -> None:
         vertices, triangles, hemi_index, _infl = load_fslr32k_mesh()
         region_mapping = map_vertices_to_lobes(vertices, hemi_index, atlas_nii)
         centroids = compute_surface_centroids(
-            vertices, region_mapping, volume_centroids,
+            vertices,
+            region_mapping,
+            volume_centroids,
         )
         n_surf_mapped = np.count_nonzero(region_mapping >= 0)
         print(f"[cent] Surface centroids from {n_surf_mapped} cortical vertices")
@@ -935,7 +982,7 @@ def main() -> None:
         if weights_csv.exists() and lengths_csv.exists():
             print(f"[skip] Using cached CSVs from {workdir}")
         else:
-            print(f"[run ] tck2connectome (weights + lengths) ...")
+            print("[run ] tck2connectome (weights + lengths) ...")
             run_tck2connectome(
                 tractogram=args.tractogram,
                 atlas=atlas_nii,
@@ -956,18 +1003,12 @@ def main() -> None:
         weights = raw_weights[:n_lobes, :n_lobes]
         lengths = raw_lengths[:n_lobes, :n_lobes]
 
-        print(f"[data] weights: shape={weights.shape}, "
-              f"nnz={np.count_nonzero(weights)}, "
-              f"sum={weights.sum():.0f}")
-        print(f"[data] lengths: shape={lengths.shape}, "
-              f"mean={lengths[lengths > 0].mean():.1f} mm")
+        print(f"[data] weights: shape={weights.shape}, nnz={np.count_nonzero(weights)}, sum={weights.sum():.0f}")
+        print(f"[data] lengths: shape={lengths.shape}, mean={lengths[lengths > 0].mean():.1f} mm")
 
         # Step 2b: Aggregate DK avgMatrix SC+FC to lobar level
         dk_network_dir = args.output_dir
-        dk_h5 = dk_network_dir / (
-            "tpl-MNI152NLin2009cAsym_rec-avgMatrix_atlas-DesikanKilliany"
-            "_desc-SCFC_relmat.h5"
-        )
+        dk_h5 = dk_network_dir / ("tpl-MNI152NLin2009cAsym_rec-avgMatrix_atlas-DesikanKilliany_desc-SCFC_relmat.h5")
         lobar_avgmatrix = None
         if dk_h5.exists():
             lobar_avgmatrix = compute_lobar_avgmatrix(dk_network_dir)
@@ -992,13 +1033,12 @@ def main() -> None:
 
         # Step 5: Build surface network (reuse mesh + mapping from step 1b)
         surface_net = build_surface_network(
-            atlas_nii, network,
+            atlas_nii,
+            network,
             _precomputed=(vertices, triangles, hemi_index, region_mapping),
         )
 
-        surf_name = network.bids_filename.replace(
-            f"_desc-{network.descriptor}_", "_desc-surf_"
-        )
+        surf_name = network.bids_filename.replace(f"_desc-{network.descriptor}_", "_desc-surf_")
         surf_sidecar = (args.output_dir / surf_name).with_suffix(".yaml")
 
         if surf_sidecar.exists() and not args.overwrite:
@@ -1029,7 +1069,8 @@ def main() -> None:
             rm8[rm8 == LOBE_ORDER.index("BrainStem")] = -1
 
             surf8 = build_surface_network(
-                atlas_nii, net8,
+                atlas_nii,
+                net8,
                 _precomputed=(vertices, triangles, hemi_index, rm8),
             )
             # Override BIDS to match Lobar8
@@ -1046,9 +1087,7 @@ def main() -> None:
             }
             surf8.label = f"Lobar8 surface (fsLR 32k, {len(vertices)} vertices)"
 
-            surf8_name = net8.bids_filename.replace(
-                f"_desc-{net8.descriptor}_", "_desc-surf_"
-            )
+            surf8_name = net8.bids_filename.replace(f"_desc-{net8.descriptor}_", "_desc-surf_")
             surf8_sidecar = (args.output_dir / surf8_name).with_suffix(".yaml")
 
             if surf8_sidecar.exists() and not args.overwrite:

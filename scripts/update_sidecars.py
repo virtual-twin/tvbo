@@ -8,6 +8,7 @@ Changes per file:
 4. Remove redundant `number_of_regions:` (same as number_of_nodes)
 5. Normalize parcellation.atlas.coordinateSpace to consistent naming
 """
+
 import re
 import sys
 from pathlib import Path

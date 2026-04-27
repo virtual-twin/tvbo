@@ -15,9 +15,10 @@ Three rendering backends:
 3. **brain**   — 3-D brain surface with sphere nodes + tube edges
                   via ``bsplot.graph.plot_network_on_surface``
 """
+
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
@@ -48,9 +49,7 @@ def _node_in_strengths(G, log: bool = True) -> np.ndarray:
     """Return per-node incoming strength vector (ordered by ``G.nodes()``)."""
     s = np.zeros(G.number_of_nodes())
     for i, node_id in enumerate(G.nodes()):
-        s[i] = sum(
-            abs(d.get("weight", 1.0)) for _, _, d in G.in_edges(node_id, data=True)
-        )
+        s[i] = sum(abs(d.get("weight", 1.0)) for _, _, d in G.in_edges(node_id, data=True))
     if log:
         s = np.log1p(s)
     return s
@@ -61,11 +60,7 @@ def _threshold_graph(G, W_flat, percentile: float):
     if percentile <= 0:
         return
     cutoff = np.percentile(W_flat, percentile)
-    to_remove = [
-        (u, v, k)
-        for u, v, k, d in G.edges(keys=True, data=True)
-        if abs(d.get("weight", 1.0)) < cutoff
-    ]
+    to_remove = [(u, v, k) for u, v, k, d in G.edges(keys=True, data=True) if abs(d.get("weight", 1.0)) < cutoff]
     G.remove_edges_from(to_remove)
 
 
@@ -118,11 +113,7 @@ def _resolve_positions(G, pos, network=None, plot_brain=None):
 def _edge_data(G, attr: str = "weight"):
     """Return ``(edges_list, attr_vals)`` aligned arrays."""
     edges_list = list(G.edges(keys=True, data=True))
-    vals = (
-        np.array([d.get(attr, 0.0) for _, _, _, d in edges_list], dtype=float)
-        if edges_list
-        else np.array([])
-    )
+    vals = np.array([d.get(attr, 0.0) for _, _, _, d in edges_list], dtype=float) if edges_list else np.array([])
     return edges_list, vals
 
 
@@ -271,9 +262,7 @@ def plot_graph_networkx(
                     elbl[(u, v, k)] = f"{float(val):.2f}"
                 except (TypeError, ValueError):
                     elbl[(u, v, k)] = str(val)
-            nx.draw_networkx_edge_labels(
-                G, pos, edge_labels=elbl, ax=ax, font_size=fontsize
-            )
+            nx.draw_networkx_edge_labels(G, pos, edge_labels=elbl, ax=ax, font_size=fontsize)
 
     if fig is not None:
         ax.axis("off")
@@ -511,17 +500,10 @@ def plot_graph_brain(
     W = weight_matrix if weight_matrix is not None else network.weights_matrix
 
     # Filter out nodes with no valid coordinates (0,0,0)
-    valid_idx = [
-        i
-        for i, coord in centers.items()
-        if not (coord[0] == 0 and coord[1] == 0 and coord[2] == 0)
-    ]
+    valid_idx = [i for i, coord in centers.items() if not (coord[0] == 0 and coord[1] == 0 and coord[2] == 0)]
 
     if not valid_idx:
-        raise ValueError(
-            "No nodes with valid coordinates found. "
-            "Ensure the atlas metadata contains center coordinates."
-        )
+        raise ValueError("No nodes with valid coordinates found. Ensure the atlas metadata contains center coordinates.")
 
     # Extract sub-matrix for valid nodes
     idx = np.array(valid_idx)
@@ -543,9 +525,7 @@ def plot_graph_brain(
 
     # Annotate node strength
     for node in G.nodes():
-        G.nodes[node]["strength"] = sum(
-            d["weight"] for _, _, d in G.edges(node, data=True)
-        )
+        G.nodes[node]["strength"] = sum(d["weight"] for _, _, d in G.edges(node, data=True))
 
     # Plot
     if ax is None:

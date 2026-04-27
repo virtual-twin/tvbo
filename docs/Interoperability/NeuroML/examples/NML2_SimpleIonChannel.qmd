@@ -11,10 +11,12 @@ Minimal examples of `<ionChannelHH>` with `<gateHHrates>`:
 - Reverse rate: same types with different parameters
 
 ```{python}
-from pathlib import Path
 
-nml_file = Path.home() / "work_data/toolboxes/NeuroML2/examples/NML2_SimpleIonChannel.nml"
-text = nml_file.read_text()
+import urllib.request
+
+url = "https://raw.githubusercontent.com/NeuroML/NeuroML2/master/examples/NML2_SimpleIonChannel.nml"
+with urllib.request.urlopen(url) as resp:
+    text = resp.read().decode()
 
 # Show channel definitions
 for line in text.split('\n'):

@@ -15,11 +15,11 @@ Usage in templates:
     %>
     ${cuda_code(sv.equation.rhs)}
 """
+
 import re
 from typing import Optional, Dict, Any
 
 import sympy.printing.c as spc
-from sympy import Symbol, Function, Pow, Float
 from sympy.printing.pycode import PythonCodePrinter
 from tvbo.classes.equation import sympify as tvbo_sympify
 
@@ -27,6 +27,7 @@ from tvbo.classes.equation import sympify as tvbo_sympify
 # =============================================================================
 # CUDA Code Printer
 # =============================================================================
+
 
 class CUDACodePrinter(spc.C99CodePrinter):
     """CUDA code printer extending SymPy's C99 printer.
@@ -41,24 +42,24 @@ class CUDACodePrinter(spc.C99CodePrinter):
 
     _default_settings = {
         **spc.C99CodePrinter._default_settings,
-        'precision': None,  # Use powf, expf, etc.
+        "precision": None,  # Use powf, expf, etc.
     }
 
     # CUDA single-precision math functions
     _cuda_functions = {
-        'exp': 'expf',
-        'log': 'logf',
-        'sin': 'sinf',
-        'cos': 'cosf',
-        'tan': 'tanf',
-        'asin': 'asinf',
-        'acos': 'acosf',
-        'atan': 'atanf',
-        'sqrt': 'sqrtf',
-        'abs': 'fabsf',
-        'tanh': 'tanhf',
-        'sinh': 'sinhf',
-        'cosh': 'coshf',
+        "exp": "expf",
+        "log": "logf",
+        "sin": "sinf",
+        "cos": "cosf",
+        "tan": "tanf",
+        "asin": "asinf",
+        "acos": "acosf",
+        "atan": "atanf",
+        "sqrt": "sqrtf",
+        "abs": "fabsf",
+        "tanh": "tanhf",
+        "sinh": "sinhf",
+        "cosh": "coshf",
     }
 
     def __init__(self, settings=None):
@@ -83,9 +84,9 @@ class CUDACodePrinter(spc.C99CodePrinter):
     def _print_Float(self, expr):
         """Ensure floats have 'f' suffix for CUDA."""
         val = super()._print_Float(expr)
-        if 'e' in val.lower() or '.' in val:
-            if not val.endswith('f'):
-                val = val + 'f'
+        if "e" in val.lower() or "." in val:
+            if not val.endswith("f"):
+                val = val + "f"
         return val
 
     def _print_Integer(self, expr):
@@ -96,10 +97,10 @@ class CUDACodePrinter(spc.C99CodePrinter):
         """Handle special symbols."""
         name = super()._print_Symbol(expr)
         # Replace pi/inf with CUDA macros
-        if name.lower() == 'pi':
-            return 'PI'
-        if name.lower() == 'inf':
-            return 'INF'
+        if name.lower() == "pi":
+            return "PI"
+        if name.lower() == "inf":
+            return "INF"
         return name
 
     def _print_Piecewise(self, expr):
@@ -124,6 +125,7 @@ class CUDACodePrinter(spc.C99CodePrinter):
 # =============================================================================
 # Numba Code Printer (for TVB Python models)
 # =============================================================================
+
 
 class NumbaPrinter(PythonCodePrinter):
     """Python printer compatible with Numba's nopython mode.
@@ -172,7 +174,7 @@ def cuda_code(expr: Any, local_dict: Optional[Dict[str, Any]] = None) -> str:
         return ""
 
     # Handle Equation objects
-    if hasattr(expr, 'rhs'):
+    if hasattr(expr, "rhs"):
         expr = expr.rhs
 
     # Parse string expressions
@@ -200,7 +202,7 @@ def python_code(expr: Any, local_dict: Optional[Dict[str, Any]] = None) -> str:
         return ""
 
     # Handle Equation objects
-    if hasattr(expr, 'rhs'):
+    if hasattr(expr, "rhs"):
         expr = expr.rhs
 
     # Parse string expressions
@@ -219,17 +221,17 @@ def _string_to_cuda(expr_str: str) -> str:
 
     # Power syntax: ** -> powf
     # Match x**y patterns
-    power_pattern = r'(\w+|\([^)]+\))\s*\*\*\s*(\w+|\([^)]+\))'
+    power_pattern = r"(\w+|\([^)]+\))\s*\*\*\s*(\w+|\([^)]+\))"
     while re.search(power_pattern, result):
-        result = re.sub(power_pattern, r'powf(\1, \2)', result)
+        result = re.sub(power_pattern, r"powf(\1, \2)", result)
 
     # pi -> PI, inf -> INF
-    result = re.sub(r'\bpi\b', 'PI', result)
-    result = re.sub(r'\binf\b', 'INF', result)
+    result = re.sub(r"\bpi\b", "PI", result)
+    result = re.sub(r"\binf\b", "INF", result)
 
     # Common functions to float versions
-    for fn in ['exp', 'log', 'sin', 'cos', 'tan', 'sqrt', 'tanh']:
-        result = re.sub(rf'\b{fn}\s*\(', f'{fn}f(', result)
+    for fn in ["exp", "log", "sin", "cos", "tan", "sqrt", "tanh"]:
+        result = re.sub(rf"\b{fn}\s*\(", f"{fn}f(", result)
 
     return result
 
@@ -238,35 +240,33 @@ def _string_to_cuda(expr_str: str) -> str:
 # Template Helpers (direct attribute access, minimal processing)
 # =============================================================================
 
+
 def has_boundaries(model) -> bool:
     """Check if any state variable has boundaries defined."""
-    if not hasattr(model, 'state_variables') or not model.state_variables:
+    if not hasattr(model, "state_variables") or not model.state_variables:
         return False
-    return any(
-        getattr(sv, 'boundaries', None) is not None
-        for sv in model.state_variables.values()
-    )
+    return any(getattr(sv, "boundaries", None) is not None for sv in model.state_variables.values())
 
 
 def get_initial_value(sv) -> float:
     """Get initial value for state variable, with sensible default."""
-    if hasattr(sv, 'initial_value') and sv.initial_value is not None:
+    if hasattr(sv, "initial_value") and sv.initial_value is not None:
         return float(sv.initial_value)
-    if hasattr(sv, 'domain') and sv.domain:
-        lo = getattr(sv.domain, 'lo', 0.0) or 0.0
-        hi = getattr(sv.domain, 'hi', 1.0) or 1.0
+    if hasattr(sv, "domain") and sv.domain:
+        lo = getattr(sv.domain, "lo", 0.0) or 0.0
+        hi = getattr(sv.domain, "hi", 1.0) or 1.0
         return (lo + hi) / 2
     return 0.0
 
 
 def get_domain_str(obj) -> str:
     """Get domain as 'lo, hi' string for state variable initialization."""
-    domain = getattr(obj, 'domain', None)
+    domain = getattr(obj, "domain", None)
     if domain:
-        lo = getattr(domain, 'lo', 0.0) or 0.0
-        hi = getattr(domain, 'hi', 1.0) or 1.0
+        lo = getattr(domain, "lo", 0.0) or 0.0
+        hi = getattr(domain, "hi", 1.0) or 1.0
         return f"{lo}, {hi}"
-    if hasattr(obj, 'initial_value') and obj.initial_value is not None:
+    if hasattr(obj, "initial_value") and obj.initial_value is not None:
         v = float(obj.initial_value)
         return f"{v}, {v}"
     return "0.0, 1.0"
@@ -274,10 +274,10 @@ def get_domain_str(obj) -> str:
 
 def get_boundary_str(sv) -> str:
     """Get boundaries as 'lo, hi' string for state variable clipping."""
-    boundaries = getattr(sv, 'boundaries', None)
+    boundaries = getattr(sv, "boundaries", None)
     if boundaries:
-        lo = getattr(boundaries, 'lo', None)
-        hi = getattr(boundaries, 'hi', None)
+        lo = getattr(boundaries, "lo", None)
+        hi = getattr(boundaries, "hi", None)
         if lo is not None and hi is not None:
             return f"{lo}, {hi}"
     return ""
@@ -285,13 +285,10 @@ def get_boundary_str(sv) -> str:
 
 def get_range_str(param) -> str:
     """Get parameter range as 'lo=x, hi=y, step=z' string for NArray domain."""
-    domain = getattr(param, 'domain', None)
+    domain = getattr(param, "domain", None)
     if domain:
-        lo = getattr(domain, 'lo', 0.0) or 0.0
-        hi = getattr(domain, 'hi', 1.0) or 1.0
-        step = getattr(domain, 'step', 0.01) or 0.01
+        lo = getattr(domain, "lo", 0.0) or 0.0
+        hi = getattr(domain, "hi", 1.0) or 1.0
+        step = getattr(domain, "step", 0.01) or 0.01
         return f"lo={lo}, hi={hi}, step={step}"
     return ""
-
-
-

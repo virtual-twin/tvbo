@@ -14,8 +14,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
-from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional, Union
 
@@ -79,12 +77,8 @@ class DatasetDescription(BEP034BaseModel):
     Name: str = Field(..., description="Name of the dataset")
     BIDSVersion: str = Field(default="1.9.0", description="BIDS specification version")
     DatasetType: str = Field(default="derivative", description="Dataset type")
-    GeneratedBy: list[dict] = Field(
-        default_factory=list, description="Tools that generated this dataset"
-    )
-    BEP034Version: str = Field(
-        default="1.0.0", description="BEP034 specification version"
-    )
+    GeneratedBy: list[dict] = Field(default_factory=list, description="Tools that generated this dataset")
+    BEP034Version: str = Field(default="1.0.0", description="BEP034 specification version")
 
 
 class GeneratedBy(BEP034BaseModel):
@@ -103,9 +97,7 @@ class SimulationProvenance(BEP034BaseModel):
     Integrator: Optional[str] = Field(default=None, description="Integration method")
     Duration: Optional[float] = Field(default=None, description="Simulation duration")
     StepSize: Optional[float] = Field(default=None, description="Integration step size")
-    GeneratedAt: Optional[str] = Field(
-        default=None, description="Timestamp of generation"
-    )
+    GeneratedAt: Optional[str] = Field(default=None, description="Timestamp of generation")
     Software: Optional[str] = Field(default="tvbo", description="Software used")
 
 
@@ -115,16 +107,10 @@ class NetworkSidecar(BEP034BaseModel):
     Description: str = Field(..., description="Description of the network data")
     NumberOfNodes: int = Field(..., description="Number of nodes in the network")
     Units: Optional[str] = Field(default="a.u.", description="Units of measurement")
-    NodeLabels: Optional[list[str]] = Field(
-        default=None, description="Labels for each node"
-    )
+    NodeLabels: Optional[list[str]] = Field(default=None, description="Labels for each node")
     Source: Optional[str] = Field(default="tvbo simulation", description="Data source")
-    GeneratedAt: Optional[str] = Field(
-        default=None, description="Timestamp of generation"
-    )
-    Atlas: Optional[str] = Field(
-        default=None, description="Atlas used for parcellation"
-    )
+    GeneratedAt: Optional[str] = Field(default=None, description="Timestamp of generation")
+    Atlas: Optional[str] = Field(default=None, description="Atlas used for parcellation")
     CoordinateSpace: Optional[str] = Field(default=None, description="Coordinate space")
 
 
@@ -132,26 +118,16 @@ class TimeSeriesSidecar(BEP034BaseModel):
     """Sidecar metadata for time series files (ts/)."""
 
     Description: str = Field(..., description="Description of the time series")
-    StateVariable: Optional[str] = Field(
-        default=None, description="State variable name"
-    )
-    SamplingFrequency: Optional[float] = Field(
-        default=None, description="Sampling frequency in Hz"
-    )
+    StateVariable: Optional[str] = Field(default=None, description="State variable name")
+    SamplingFrequency: Optional[float] = Field(default=None, description="Sampling frequency in Hz")
     SamplingPeriod: Optional[float] = Field(default=None, description="Sampling period")
-    SamplingPeriodUnits: Optional[str] = Field(
-        default="ms", description="Units for sampling period"
-    )
-    StartTime: Optional[float] = Field(
-        default=0.0, description="Start time of recording"
-    )
+    SamplingPeriodUnits: Optional[str] = Field(default="ms", description="Units for sampling period")
+    StartTime: Optional[float] = Field(default=0.0, description="Start time of recording")
     NumberOfTimepoints: int = Field(..., description="Number of time points")
     NumberOfNodes: int = Field(..., description="Number of nodes/regions")
     Columns: Optional[list[str]] = Field(default=None, description="Column names")
     Units: Optional[str] = Field(default="a.u.", description="Units of measurement")
-    GeneratedAt: Optional[str] = Field(
-        default=None, description="Timestamp of generation"
-    )
+    GeneratedAt: Optional[str] = Field(default=None, description="Timestamp of generation")
     Provenance: Union[SimulationProvenance, None] = None
 
 
@@ -161,18 +137,10 @@ class EquationSidecar(BEP034BaseModel):
     Description: str = Field(..., description="Description of the model equations")
     ModelType: str = Field(..., description="Type of neural mass model")
     Format: str = Field(default="tvbo", description="Format of equation specification")
-    GeneratedAt: Optional[str] = Field(
-        default=None, description="Timestamp of generation"
-    )
-    Parameters: Optional[dict[str, Any]] = Field(
-        default=None, description="Model parameters"
-    )
-    StateVariables: Optional[list[str]] = Field(
-        default=None, description="State variable names"
-    )
-    References: Optional[list[str]] = Field(
-        default=None, description="References for the model"
-    )
+    GeneratedAt: Optional[str] = Field(default=None, description="Timestamp of generation")
+    Parameters: Optional[dict[str, Any]] = Field(default=None, description="Model parameters")
+    StateVariables: Optional[list[str]] = Field(default=None, description="State variable names")
+    References: Optional[list[str]] = Field(default=None, description="References for the model")
 
 
 class CoordinateSidecar(BEP034BaseModel):
@@ -180,16 +148,10 @@ class CoordinateSidecar(BEP034BaseModel):
 
     Description: str = Field(..., description="Description of the coordinate data")
     NumberOfNodes: int = Field(..., description="Number of nodes/points")
-    CoordinateSystem: Optional[str] = Field(
-        default="MNI152NLin6Asym", description="Coordinate system"
-    )
+    CoordinateSystem: Optional[str] = Field(default="MNI152NLin6Asym", description="Coordinate system")
     Units: Optional[str] = Field(default="mm", description="Units of measurement")
-    Columns: Optional[list[str]] = Field(
-        default=["x", "y", "z"], description="Column names"
-    )
-    NodeLabels: Optional[list[str]] = Field(
-        default=None, description="Labels for each node"
-    )
+    Columns: Optional[list[str]] = Field(default=["x", "y", "z"], description="Column names")
+    NodeLabels: Optional[list[str]] = Field(default=None, description="Labels for each node")
 
 
 class TimeSeriesHDF5Sidecar(BEP034BaseModel):
@@ -203,27 +165,15 @@ class TimeSeriesHDF5Sidecar(BEP034BaseModel):
         default=None,
         description="Labels for each dimension (e.g., {'State Variable': ['V', 'W'], 'Space': ['R1', 'R2']})",
     )
-    SamplingFrequency: Optional[float] = Field(
-        default=None, description="Sampling frequency in Hz"
-    )
+    SamplingFrequency: Optional[float] = Field(default=None, description="Sampling frequency in Hz")
     SamplingPeriod: Optional[float] = Field(default=None, description="Sampling period")
-    SamplingPeriodUnits: Optional[str] = Field(
-        default="ms", description="Units for sampling period"
-    )
-    StartTime: Optional[float] = Field(
-        default=0.0, description="Start time of recording"
-    )
+    SamplingPeriodUnits: Optional[str] = Field(default="ms", description="Units for sampling period")
+    StartTime: Optional[float] = Field(default=0.0, description="Start time of recording")
     Units: Optional[str] = Field(default="a.u.", description="Units of measurement")
-    GeneratedAt: Optional[str] = Field(
-        default=None, description="Timestamp of generation"
-    )
+    GeneratedAt: Optional[str] = Field(default=None, description="Timestamp of generation")
     Provenance: Union[SimulationProvenance, None] = None
-    StateVariables: Optional[list[str]] = Field(
-        default=None, description="State variable names"
-    )
-    Datasets: Optional[dict[str, str]] = Field(
-        default=None, description="HDF5 dataset paths and descriptions"
-    )
+    StateVariables: Optional[list[str]] = Field(default=None, description="State variable names")
+    Datasets: Optional[dict[str, str]] = Field(default=None, description="HDF5 dataset paths and descriptions")
 
 
 # =============================================================================
@@ -291,11 +241,7 @@ class BEP034PathBuilder:
         if entities.get("desc"):
             fname_parts.append(f"desc-{entities['desc']}")
         if entities.get("run"):
-            fname_parts.append(
-                f"run-{entities['run']:02d}"
-                if isinstance(entities["run"], int)
-                else f"run-{entities['run']}"
-            )
+            fname_parts.append(f"run-{entities['run']:02d}" if isinstance(entities["run"], int) else f"run-{entities['run']}")
 
         # Specific entity types
         if entities.get("net"):
@@ -304,9 +250,7 @@ class BEP034PathBuilder:
             fname_parts.append(f"ts-{entities['ts']}")
         if entities.get("eq"):
             # eq- goes at start for equation files
-            fname_parts = [f"eq-{entities['eq']}"] + [
-                p for p in fname_parts if not p.startswith("sub-")
-            ]
+            fname_parts = [f"eq-{entities['eq']}"] + [p for p in fname_parts if not p.startswith("sub-")]
         if entities.get("coord"):
             fname_parts.append(f"coord-{entities['coord']}")
         if entities.get("map"):
@@ -614,9 +558,7 @@ def create_cifti_ptseries(
         # (time, regions) -> single state variable
         n_timepoints, n_data_regions = data.shape
         if n_data_regions != n_regions:
-            raise ValueError(
-                f"Data has {n_data_regions} regions but {n_regions} labels provided"
-            )
+            raise ValueError(f"Data has {n_data_regions} regions but {n_regions} labels provided")
         # Reshape to (1, time, regions) for consistency, then transpose later
         data_for_cifti = data  # (time, regions)
 
@@ -624,14 +566,9 @@ def create_cifti_ptseries(
         # (time, state_variables, regions)
         n_timepoints, n_states, n_data_regions = data.shape
         if n_data_regions != n_regions:
-            raise ValueError(
-                f"Data has {n_data_regions} regions but {n_regions} labels provided"
-            )
+            raise ValueError(f"Data has {n_data_regions} regions but {n_regions} labels provided")
         if state_variable_labels and len(state_variable_labels) != n_states:
-            raise ValueError(
-                f"Data has {n_states} state variables but "
-                f"{len(state_variable_labels)} labels provided"
-            )
+            raise ValueError(f"Data has {n_states} state variables but {len(state_variable_labels)} labels provided")
         # Will handle multi-state later
         data_for_cifti = data
     else:
@@ -693,7 +630,7 @@ def create_cifti_ptseries(
         if state_variable_labels is None:
             state_variable_labels = [f"sv{i}" for i in range(n_states)]
 
-        scalar_axis = cifti2.ScalarAxis(name=state_variable_labels)
+        cifti2.ScalarAxis(name=state_variable_labels)
 
         # Reshape data: (time, states, regions) -> (time, regions) per state
         # For ptseries with multiple maps, use (n_maps, parcels) where n_maps = time * states
@@ -807,9 +744,7 @@ def create_multi_state_cifti(
     n_timepoints, n_states, n_regions = data.shape
 
     if len(state_variable_labels) != n_states:
-        raise ValueError(
-            f"Data has {n_states} states but {len(state_variable_labels)} labels"
-        )
+        raise ValueError(f"Data has {n_states} states but {len(state_variable_labels)} labels")
 
     images = {}
     for sv_idx, sv_label in enumerate(state_variable_labels):
@@ -880,9 +815,7 @@ def write_hdf5_timeseries(
         Path to the created file
     """
     if not H5PY_AVAILABLE:
-        raise ImportError(
-            "h5py is required for HDF5 export. Install with: pip install h5py"
-        )
+        raise ImportError("h5py is required for HDF5 export. Install with: pip install h5py")
 
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -1038,9 +971,7 @@ def detect_timeseries_format(ts_dir: Path) -> str:
     if h5_files:
         return "h5"
 
-    cifti_files = list(ts_dir.glob("*.ptseries.nii")) + list(
-        ts_dir.glob("*.ptseries.nii.gz")
-    )
+    cifti_files = list(ts_dir.glob("*.ptseries.nii")) + list(ts_dir.glob("*.ptseries.nii.gz"))
     if cifti_files:
         return "cifti"
 
@@ -1175,9 +1106,7 @@ def read_bids_timeseries(
 
     elif format == "cifti":
         # CIFTI format - one file per state variable
-        cifti_files = sorted(ts_dir.glob("*.ptseries.nii")) + sorted(
-            ts_dir.glob("*.ptseries.nii.gz")
-        )
+        cifti_files = sorted(ts_dir.glob("*.ptseries.nii")) + sorted(ts_dir.glob("*.ptseries.nii.gz"))
         if not cifti_files:
             raise FileNotFoundError(f"No CIFTI files found in {ts_dir}")
 
@@ -1194,9 +1123,7 @@ def read_bids_timeseries(
             state_vars.append(sv_name)
 
             # Read CIFTI data
-            data, region_labels, sample_period, sample_period_unit = (
-                read_cifti_ptseries(cifti_path)
-            )
+            data, region_labels, sample_period, sample_period_unit = read_cifti_ptseries(cifti_path)
             all_data.append(data)
 
             # Store region labels from first file
@@ -1206,11 +1133,7 @@ def read_bids_timeseries(
                 result["sample_period_unit"] = sample_period_unit
 
             # Read sidecar
-            json_path = Path(
-                str(cifti_path)
-                .replace(".ptseries.nii.gz", ".json")
-                .replace(".ptseries.nii", ".json")
-            )
+            json_path = Path(str(cifti_path).replace(".ptseries.nii.gz", ".json").replace(".ptseries.nii", ".json"))
             if json_path.exists():
                 result["sidecars"].append(read_bids_sidecar(json_path))
 
@@ -1223,9 +1146,7 @@ def read_bids_timeseries(
 
     elif format == "tsv":
         # TSV format - one file per state variable
-        tsv_files = sorted(
-            [f for f in ts_dir.glob("*.tsv") if not f.name.startswith("participants")]
-        )
+        tsv_files = sorted([f for f in ts_dir.glob("*.tsv") if not f.name.startswith("participants")])
         if not tsv_files:
             raise FileNotFoundError(f"No TSV files found in {ts_dir}")
 
@@ -1263,9 +1184,7 @@ def read_bids_timeseries(
                 result["sidecars"].append(sidecar)
                 if result["sample_period"] is None and "SamplingPeriod" in sidecar:
                     result["sample_period"] = sidecar["SamplingPeriod"]
-                    result["sample_period_unit"] = sidecar.get(
-                        "SamplingPeriodUnits", "ms"
-                    )
+                    result["sample_period_unit"] = sidecar.get("SamplingPeriodUnits", "ms")
 
         # Stack: (time, regions) -> (time, n_states, regions, 1)
         if all_data:
@@ -1526,6 +1445,7 @@ def ingest_bids_session(
 # ---------------------------------------------------------------------------
 # Utility helpers (merged from tvbo.data.bids_utils)
 # ---------------------------------------------------------------------------
+
 
 def get_unique_entity_values(bids_layout, key) -> set:
     """

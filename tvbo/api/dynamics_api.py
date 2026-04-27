@@ -4,6 +4,7 @@ Endpoints:
   GET /api/v1/dynamics              — list available models (filterable)
   GET /api/v1/dynamics/{id}/sidecar — LinkML-valid YAML or JSON
 """
+
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query
@@ -61,17 +62,19 @@ def list_dynamics(
         n_sv = len(d.state_variables) if d.state_variables else 0
         n_params = len(d.parameters) if d.parameters else 0
 
-        result.append({
-            "id": model_name,
-            "name": model_name,
-            "label": getattr(d, "label", model_name),
-            "system_type": str(st) if st else None,
-            "autonomous": getattr(d, "autonomous", None),
-            "number_of_modes": getattr(d, "number_of_modes", 1),
-            "n_state_variables": n_sv,
-            "n_parameters": n_params,
-            "description": getattr(d, "description", None),
-        })
+        result.append(
+            {
+                "id": model_name,
+                "name": model_name,
+                "label": getattr(d, "label", model_name),
+                "system_type": str(st) if st else None,
+                "autonomous": getattr(d, "autonomous", None),
+                "number_of_modes": getattr(d, "number_of_modes", 1),
+                "n_state_variables": n_sv,
+                "n_parameters": n_params,
+                "description": getattr(d, "description", None),
+            }
+        )
     return result
 
 

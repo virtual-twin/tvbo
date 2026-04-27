@@ -116,10 +116,10 @@ def solution_to_dataarray(
     data = u.T.reshape(len(t), n_nodes, n_sv).transpose(0, 2, 1)
     return xr.DataArray(
         data=data,
-        dims=['time', 'variable', 'node'],
+        dims=["time", "variable", "node"],
         coords={
-            'time': np.asarray(t),
-            'variable': list(sv_names),
-            'node': [str(i) for i in range(n_nodes)],
+            "time": np.asarray(t),
+            "variable": list(sv_names),
+            "node": [str(i) for i in range(n_nodes)],
         },
     )

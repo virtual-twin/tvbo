@@ -22,7 +22,7 @@ Usage:
     python scripts/rename_networks.py --dry-run   # Preview only
     python scripts/rename_networks.py              # Execute renames
 """
-import os
+
 import re
 import sys
 import yaml
@@ -55,10 +55,7 @@ def parse_old_name(stem):
 
     # Handle the weird tpl-tractogram files first
     # e.g., space-MNI152Nlin2009c_tpl-MghUscHcp32_atlas-DesikanKilliany_desc-ranked
-    m = re.match(
-        r"space-(?P<space>[^_]+)_tpl-(?P<tpl>[^_]+)_atlas-(?P<atlas>[^_]+)_desc-(?P<desc>.+)",
-        stem
-    )
+    m = re.match(r"space-(?P<space>[^_]+)_tpl-(?P<tpl>[^_]+)_atlas-(?P<atlas>[^_]+)_desc-(?P<desc>.+)", stem)
     if m:
         entities["space"] = m.group("space")
         entities["tractogram"] = m.group("tpl")
@@ -67,10 +64,7 @@ def parse_old_name(stem):
         return entities
 
     # Standard: space-X_atlas-Y_desc-Z
-    m = re.match(
-        r"space-(?P<space>[^_]+)_atlas-(?P<atlas>[^_]+)_desc-(?P<desc>.+)",
-        stem
-    )
+    m = re.match(r"space-(?P<space>[^_]+)_atlas-(?P<atlas>[^_]+)_desc-(?P<desc>.+)", stem)
     if m:
         entities["space"] = m.group("space")
         entities["atlas_raw"] = m.group("atlas")
@@ -167,6 +161,7 @@ def build_rename_map():
 
     # Detect collisions — keep the standard-pattern file, delete tpl-* duplicates
     from collections import Counter
+
     target_counts = Counter(renames.values())
     duplicates = set()
     for target, count in target_counts.items():

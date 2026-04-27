@@ -132,7 +132,7 @@ path = "tvbo/__init__.py"
 
 [tool.hatch.envs.dev]
 dependencies = [
-    "flake8",
+    "ruff",
     "pytest",
     "pytest-cov",
     "pytest-xdist",
@@ -141,6 +141,53 @@ dependencies = [
     "nbformat>=5.10.0",
     "nbclient>=0.10.0",
 ]
+
+[tool.ruff]
+line-length = 127
+extend-exclude = [
+    ".venv",
+    "venv",
+    "build",
+    "dist",
+    "docs/.quarto",
+    "docs/_site",
+    "docs/**/.vdoc.*.py",
+    "tvbo/datamodel/**",
+]
+
+[tool.ruff.lint]
+# Pyflakes (F), pycodestyle errors (E) + warnings (W).
+# C90 (mccabe complexity) is advisory and tracked separately; not gated.
+select = ["E", "F", "W"]
+# Auto-generated code: don't lint generated LinkML models.
+exclude = ["tvbo/datamodel/**"]
+# Idiomatic patterns that we accept across the codebase.
+ignore = [
+    "E501", # line-too-long: many docstrings narrate; black/format handles code.
+    "E402", # module-import-not-at-top: needed by ontology bootstrap & similar.
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Star imports are the documented owlready2 usage pattern.
+"tvbo/ontology/owl.py" = ["F403", "F405"]
+# Package re-exports via `from . import x` are intentional.
+"**/__init__.py" = ["F401", "F405"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.format]
+# Black-compatible defaults.
+quote-style = "double"
+indent-style = "space"
+
+[tool.mypy]
+python_version = "3.12"
+# Non-blocking mode: report issues but don't fail builds yet.
+ignore_missing_imports = true
+follow_imports = "silent"
+exclude = ["tvbo/datamodel/", "tests/", ".venv/", "build/", "dist/", "docs/"]
+files = ["tvbo"]
 
 [tool.pytest.ini_options]
 addopts = "-n 1 --dist=loadscope"

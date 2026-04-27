@@ -45,15 +45,9 @@ from pathlib import Path
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
 
-HANSEN_DIR = Path(
-    "/Users/leonmartin_bih/work_data/toolboxes/hansen_receptors/data/schaefer"
-)
-ATLAS_DIR = Path(
-    "/Users/leonmartin_bih/tools/tvbo/tvbo/data/tvbo_data/atlas"
-)
-OUT_DIR = Path(
-    "/Users/leonmartin_bih/tools/tvbo/tvbo/database/networks"
-)
+HANSEN_DIR = Path("/Users/leonmartin_bih/work_data/toolboxes/hansen_receptors/data/schaefer")
+ATLAS_DIR = Path("/Users/leonmartin_bih/tools/tvbo/tvbo/data/tvbo_data/atlas")
+OUT_DIR = Path("/Users/leonmartin_bih/tools/tvbo/tvbo/database/networks")
 
 # ── Provenance strings (verbatim, schema-compliant) ────────────────────────────
 
@@ -105,21 +99,16 @@ FC_DESCRIPTION = (
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
+
 def load_atlas_entities(seg="7Networks", scale=100):
     """Return (labels, centers_xyz) from the tvbo data atlas YAML."""
-    atlas_file = (
-        ATLAS_DIR
-        / f"tpl-FSLMNI152_atlas-Schaefer2018_seg-{seg}_scale-{scale}"
-          f"_res-1_desc-ordered_dseg.yaml"
-    )
+    atlas_file = ATLAS_DIR / f"tpl-FSLMNI152_atlas-Schaefer2018_seg-{seg}_scale-{scale}_res-1_desc-ordered_dseg.yaml"
     with open(atlas_file) as f:
         d = yaml.safe_load(f)
     entities = d["terminology"]["entities"]
     labels = list(entities.keys())
     centers = np.array(
-        [[entities[k]["center"]["x"],
-          entities[k]["center"]["y"],
-          entities[k]["center"]["z"]] for k in labels],
+        [[entities[k]["center"]["x"], entities[k]["center"]["y"], entities[k]["center"]["z"]] for k in labels],
         dtype=np.float32,
     )
     return labels, centers
@@ -156,6 +145,7 @@ def build_parent_index(labels):
 
 # ── Main builder ──────────────────────────────────────────────────────────────
 
+
 def create_network(seg="7Networks", scale=100):
     """Build and write the SC+FC multi-graph network."""
 
@@ -170,19 +160,13 @@ def create_network(seg="7Networks", scale=100):
 
     # Sanity-check first parcel: Hansen vs atlas center should agree sub-mm
     delta = abs(hansen_coords[0] - atlas_centers[0]).max()
-    assert delta < 2.0, (
-        f"Coordinate mismatch for parcel 0: Hansen {hansen_coords[0]} "
-        f"vs atlas {atlas_centers[0]}"
-    )
+    assert delta < 2.0, f"Coordinate mismatch for parcel 0: Hansen {hansen_coords[0]} vs atlas {atlas_centers[0]}"
 
     # --- load matrices (only scale-100 available for Hansen2022) ---
-    assert scale == 100, (
-        "Hansen2022 provides SC/FC only for scale-100; "
-        f"scale-{scale} requested."
-    )
-    sc_wt  = np.load(HANSEN_DIR / "sc_weighted.npy").astype(np.float32)
+    assert scale == 100, f"Hansen2022 provides SC/FC only for scale-100; scale-{scale} requested."
+    sc_wt = np.load(HANSEN_DIR / "sc_weighted.npy").astype(np.float32)
     sc_bin = np.load(HANSEN_DIR / "sc_binary.npy").astype(np.int32)
-    fc_wt  = np.load(HANSEN_DIR / "fc_weighted.npy").astype(np.float32)
+    fc_wt = np.load(HANSEN_DIR / "fc_weighted.npy").astype(np.float32)
 
     # Enforce symmetry (FC has floating-point asymmetry ~1e-15)
     fc_wt = ((fc_wt + fc_wt.T) / 2.0).astype(np.float32)
@@ -191,11 +175,8 @@ def create_network(seg="7Networks", scale=100):
     parent_index, net_labels = build_parent_index(labels)
 
     # --- BIDS filename base ---
-    stem = (
-        f"tpl-FSLMNI152_cohort-HCPYA_rec-Hansen2022"
-        f"_atlas-Schaefer2018_seg-{seg}_scale-{scale}_desc-SCFC_relmat"
-    )
-    h5_name   = stem + ".h5"
+    stem = f"tpl-FSLMNI152_cohort-HCPYA_rec-Hansen2022_atlas-Schaefer2018_seg-{seg}_scale-{scale}_desc-SCFC_relmat"
+    h5_name = stem + ".h5"
     yaml_name = stem + ".yaml"
 
     # ── Write HDF5 ─────────────────────────────────────────────────────────
@@ -224,9 +205,7 @@ def create_network(seg="7Networks", scale=100):
         ng.create_dataset("coordinates", data=hansen_coords, compression="gzip")
         ng.create_dataset("parent_index", data=parent_index, compression="gzip")
         str_dt = h5py.special_dtype(vlen=str)
-        ng.create_dataset(
-            "functional_network_labels", data=net_labels, dtype=str_dt
-        )
+        ng.create_dataset("functional_network_labels", data=net_labels, dtype=str_dt)
 
     print(f"  HDF5: {h5_path}")
 
@@ -316,10 +295,7 @@ def create_network(seg="7Networks", scale=100):
         },
         "provenance": {
             "date_created": str(date.today()),
-            "derived_from": (
-                "https://github.com/netneurolab/hansen_receptors"
-                "/tree/main/data/schaefer"
-            ),
+            "derived_from": ("https://github.com/netneurolab/hansen_receptors/tree/main/data/schaefer"),
             "generated_by": "tvbo scripts/create_hansen2022_schaefer_networks.py",
             "references": [HANSEN_REF, SCHAEFER_REF, HCP_REF],
         },
@@ -328,8 +304,7 @@ def create_network(seg="7Networks", scale=100):
 
     yaml_path = OUT_DIR / yaml_name
     with open(yaml_path, "w") as f:
-        yaml.dump(meta, f, default_flow_style=False, allow_unicode=True,
-                  sort_keys=False)
+        yaml.dump(meta, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
 
     print(f"  YAML: {yaml_path}")
     return stem

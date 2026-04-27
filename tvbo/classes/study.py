@@ -6,7 +6,6 @@ from tvbo.utils import report
 
 
 class SimulationStudy(tvbo_datamodel.SimulationStudy):
-
     def __repr__(self) -> str:
         key = self.key or "?"
         title = self.title or "Untitled Study"
@@ -36,12 +35,14 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
     def from_db(cls, name: str) -> "SimulationStudy":
         """Load a SimulationStudy by name from the tvbo database."""
         from tvbo.data.registry import resolve
+
         return cls.from_file(str(resolve("SimulationStudy", name)))
 
     @classmethod
     def list_db(cls) -> list[str]:
         """List available studies in the tvbo database."""
         from tvbo.data.registry import list_entries
+
         return list_entries("SimulationStudy")
 
     def cite(self):
@@ -54,10 +55,7 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
             if getattr(exp_dm, "id", None) == experiment_id:
                 return experiment.SimulationExperiment.from_datamodel(exp_dm)
         available = [getattr(e, "id", None) for e in exps]
-        raise KeyError(
-            f"Experiment {experiment_id!r} not found. "
-            f"Available: {available}"
-        )
+        raise KeyError(f"Experiment {experiment_id!r} not found. Available: {available}")
 
     # ---- OpenMINDS JSON-LD conversion ----
     def to_openminds(
@@ -91,11 +89,7 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
         """
         from tvbo.adapters.openminds import study_to_openminds, save_openminds
 
-        result = study_to_openminds(
-            self,
-            base_id=base_id,
-            include_context=include_context
-        )
+        result = study_to_openminds(self, base_id=base_id, include_context=include_context)
 
         if filepath:
             save_openminds(self, filepath, base_id=base_id)

@@ -1,5 +1,4 @@
 from copy import deepcopy
-from io import BytesIO
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -40,23 +39,23 @@ def _to_dataarray(raw_data, raw_time=None, state_names=None):
     if isinstance(raw_data, xr.DataArray):
         return raw_data
     data_np = np.asarray(raw_data)
-    all_dims = ['time', 'variable', 'node', 'mode']
-    dims = all_dims[:data_np.ndim]
+    all_dims = ["time", "variable", "node", "mode"]
+    dims = all_dims[: data_np.ndim]
     # node and mode dims only exist when they actually carry information (size > 1).
     # Trailing singleton dims are meaningless — drop them so selection always
     # yields a predictable shape without any downstream squeeze() calls.
-    while len(dims) > 2 and dims[-1] in ('node', 'mode') and data_np.shape[len(dims) - 1] == 1:
+    while len(dims) > 2 and dims[-1] in ("node", "mode") and data_np.shape[len(dims) - 1] == 1:
         data_np = data_np[..., 0]
         dims = dims[:-1]
     coords = {}
     if raw_time is not None:
-        coords['time'] = np.asarray(raw_time)
+        coords["time"] = np.asarray(raw_time)
     if state_names:
-        var_axis = dims.index('variable') if 'variable' in dims else None
+        var_axis = dims.index("variable") if "variable" in dims else None
         if var_axis is not None and len(state_names) == data_np.shape[var_axis]:
-            coords['variable'] = list(state_names)
-    if 'mode' in dims:
-        coords['mode'] = list(range(data_np.shape[dims.index('mode')]))
+            coords["variable"] = list(state_names)
+    if "mode" in dims:
+        coords["mode"] = list(range(data_np.shape[dims.index("mode")]))
     return xr.DataArray(data=data_np, dims=dims, coords=coords)
 
 
@@ -86,8 +85,7 @@ class SimulationResult:
         Warm-up simulation result that preceded this one.
     """
 
-    def __init__(self, data=None, observations=None, transient=None, *,
-                 result=None, state_names=None, units=None, **kwargs):
+    def __init__(self, data=None, observations=None, transient=None, *, result=None, state_names=None, units=None, **kwargs):
         self._extras = {}
         self._timeseries = None
         self._units = units or {}  # {variable_name: unit_string}
@@ -106,8 +104,8 @@ class SimulationResult:
         self.transient = transient
         self._extras.update(kwargs)
         # Store state_names separately for cases with no data yet
-        if state_names and not (data is not None and 'variable' in getattr(data, 'coords', {})):
-            self._extras['state_names'] = state_names
+        if state_names and not (data is not None and "variable" in getattr(data, "coords", {})):
+            self._extras["state_names"] = state_names
 
     @property
     def units(self):
@@ -131,17 +129,17 @@ class SimulationResult:
     @property
     def time(self):
         """Time values as numpy array (backward compatible)."""
-        if self.data is not None and 'time' in self.data.coords:
-            return self.data.coords['time'].values
+        if self.data is not None and "time" in self.data.coords:
+            return self.data.coords["time"].values
         return None
 
     @property
     def state_names(self):
         """State variable names from data coordinates."""
-        if self.data is not None and 'variable' in self.data.coords:
-            v = self.data.coords['variable'].values
+        if self.data is not None and "variable" in self.data.coords:
+            v = self.data.coords["variable"].values
             return list(np.atleast_1d(v))
-        return self._extras.get('state_names', [])
+        return self._extras.get("state_names", [])
 
     @property
     def dims(self):
@@ -181,8 +179,8 @@ class SimulationResult:
         names = self.state_names
         if names:
             labels_dimensions["State Variable"] = names
-        if self.data is not None and 'node' in self.data.coords:
-            labels_dimensions["Region"] = list(self.data.coords['node'].values)
+        if self.data is not None and "node" in self.data.coords:
+            labels_dimensions["Region"] = list(self.data.coords["node"].values)
 
         time = np.asarray(self.time) if self.time is not None else np.arange(raw.shape[0])
         dt = float(time[1] - time[0]) if len(time) > 1 else 1.0
@@ -194,7 +192,7 @@ class SimulationResult:
             labels_dimensions=labels_dimensions,
         )
         # Propagate extras that animate/plot helpers may need (e.g. graph from NetworkDynamics)
-        for key in ('graph', 'edge_data', 'vertex_data', 'node_positions'):
+        for key in ("graph", "edge_data", "vertex_data", "node_positions"):
             val = self._extras.get(key)
             if val is not None:
                 setattr(self._timeseries, key, val)
@@ -217,19 +215,24 @@ class SimulationResult:
             return self.data.plot(**kwargs)
         if type in {"phase", "state-space", "trajectory"}:
             from tvbo.plot.phase import plot_phase
+
             return plot_phase(self, ax=ax, **kwargs)
         if type == "vector_field":
             from tvbo.plot.phase import plot_vector_field
+
             return plot_vector_field(self, ax=ax, **kwargs)
         if type == "eeg":
             from tvbo.plot.timeseries import plot_eeg
+
             return plot_eeg(self, ax=ax, **kwargs)
         if type == "power_spectrum":
             from tvbo.plot.timeseries import plot_power_spectrum
+
             return plot_power_spectrum(self, ax=ax, **kwargs)
 
         # Default: timeseries
         from tvbo.plot.timeseries import plot_timeseries
+
         return plot_timeseries(self, ax=ax, **kwargs)
 
     def animate(self, type=None, **kwargs):
@@ -265,7 +268,7 @@ class SimulationResult:
         if type in _COMPOSITE_TYPES:
             return animate_multi(self, _COMPOSITE_TYPES[type], **kwargs)
 
-        _known_types = {'network', 'phase', 'timeseries', None}
+        _known_types = {"network", "phase", "timeseries", None}
         result = self
         if type not in _known_types and type not in _PANEL_REGISTRY:
             # Treat as variable name selection
@@ -275,29 +278,32 @@ class SimulationResult:
             type = result._resolve_animate_type()
         if type == "phase":
             from tvbo.plot.animate import animate_phase
+
             return animate_phase(result, **kwargs)
         if type == "timeseries":
             from tvbo.plot.animate import animate_timeseries
+
             return animate_timeseries(result, **kwargs)
         from tvbo.plot.animate import animate_network
+
         return animate_network(result, **kwargs)
 
     def _resolve_animate_type(self):
         """Pick the best animation type based on available metadata."""
-        if self._extras.get('graph'):
-            return 'network'
+        if self._extras.get("graph"):
+            return "network"
         exp_result = self._source
         if exp_result is not None:
-            experiment = getattr(exp_result, 'source', None)
-            if experiment is not None and getattr(experiment, 'network', None) is not None:
-                return 'network'
-        has_nodes = (self.data is not None and 'node' in getattr(self.data, 'coords', {}))
+            experiment = getattr(exp_result, "source", None)
+            if experiment is not None and getattr(experiment, "network", None) is not None:
+                return "network"
+        has_nodes = self.data is not None and "node" in getattr(self.data, "coords", {})
         if has_nodes:
-            return 'network'
-        return 'timeseries'
+            return "network"
+        return "timeseries"
 
     def __getattr__(self, name):
-        if name.startswith('_'):
+        if name.startswith("_"):
             raise AttributeError(name)
         # Check extras first
         if name in self._extras:
@@ -367,9 +373,7 @@ class AlgorithmResult:
 
         # Wrap simulations in SimulationResult for consistent access
         if pre_tuning is not None and not isinstance(pre_tuning, SimulationResult):
-            self.pre_tuning = SimulationResult(
-                result=pre_tuning, state_names=state_names
-            )
+            self.pre_tuning = SimulationResult(result=pre_tuning, state_names=state_names)
         else:
             self.pre_tuning = pre_tuning
 
@@ -395,15 +399,13 @@ class AlgorithmResult:
         if self.history:
             for key, vals in self.history.items():
                 if hasattr(vals, "__len__") and len(vals) > 0:
-                    conv[f"{key}_final"] = (
-                        vals[-1] if hasattr(vals, "__getitem__") else vals
-                    )
+                    conv[f"{key}_final"] = vals[-1] if hasattr(vals, "__getitem__") else vals
                     if len(vals) > 1:
                         conv[f"{key}_delta"] = vals[-1] - vals[0]
         return conv
 
     def __getattr__(self, name):
-        if name.startswith('_'):
+        if name.startswith("_"):
             raise AttributeError(name)
         try:
             return self._extras[name]
@@ -418,9 +420,7 @@ class AlgorithmResult:
             return default
 
     def __repr__(self):
-        n_iter = self.n_iterations or (
-            len(next(iter(self.history.values()))) if self.history else 0
-        )
+        n_iter = self.n_iterations or (len(next(iter(self.history.values()))) if self.history else 0)
         return f"AlgorithmResult(name='{self.name}', n_iterations={n_iter})"
 
 
@@ -506,16 +506,14 @@ class OptimizationResult:
                 if hasattr(traj, "tolist"):
                     self.state_trajectory = traj.tolist()
                 else:
-                    self.state_trajectory = (
-                        list(traj) if hasattr(traj, "__iter__") else traj
-                    )
+                    self.state_trajectory = list(traj) if hasattr(traj, "__iter__") else traj
             else:
                 self.state_trajectory = params_data
         else:
             self.state_trajectory = None
 
     def __getattr__(self, name):
-        if name.startswith('_'):
+        if name.startswith("_"):
             raise AttributeError(name)
         try:
             return self._extras[name]
@@ -523,12 +521,8 @@ class OptimizationResult:
             raise AttributeError(f"OptimizationResult has no attribute '{name}'")
 
     def __repr__(self):
-        loss_str = (
-            f", final_loss={self.final_loss:.4f}" if self.final_loss is not None else ""
-        )
-        return (
-            f"OptimizationResult(name='{self.name}', n_steps={self.n_steps}{loss_str})"
-        )
+        loss_str = f", final_loss={self.final_loss:.4f}" if self.final_loss is not None else ""
+        return f"OptimizationResult(name='{self.name}', n_steps={self.n_steps}{loss_str})"
 
     # ------------------------------------------------------------------
     # Plotting
@@ -551,6 +545,7 @@ class OptimizationResult:
             Forwarded to matplotlib plot calls.
         """
         from tvbo.plot.utils import use_tvbo_style
+
         use_tvbo_style()
 
         if type == "loss":
@@ -615,9 +610,7 @@ class OptimizationResult:
         if isinstance(state, dict):
             items = state.items()
         elif hasattr(state, "__dict__") and not isinstance(state, np.ndarray):
-            items = (
-                (k, v) for k, v in vars(state).items() if not k.startswith("_")
-            )
+            items = ((k, v) for k, v in vars(state).items() if not k.startswith("_"))
         if items is not None:
             for k, v in items:
                 name = f"{prefix}.{k}" if prefix else k
@@ -627,11 +620,7 @@ class OptimizationResult:
         else:
             # Leaf node
             try:
-                val = (
-                    state.__jax_array__()
-                    if hasattr(state, "__jax_array__")
-                    else state
-                )
+                val = state.__jax_array__() if hasattr(state, "__jax_array__") else state
                 arr = np.asarray(val)
                 if arr.dtype.kind in ("f", "i", "u"):
                     flat[prefix] = arr
@@ -664,7 +653,11 @@ class OptimizationResult:
             raise ValueError("No parameter trajectories available")
         n = len(trajectories)
         fig, axes = plt.subplots(
-            n, 1, figsize=figsize or (8, 2.5 * n), sharex=True, squeeze=False,
+            n,
+            1,
+            figsize=figsize or (8, 2.5 * n),
+            sharex=True,
+            squeeze=False,
         )
         axes = axes[:, 0]
         for ax, (name, values) in zip(axes, trajectories.items()):
@@ -700,7 +693,10 @@ class OptimizationResult:
         if n_panels == 0:
             raise ValueError("No parameters to plot")
         fig, axes = plt.subplots(
-            1, n_panels, figsize=figsize or (4 * n_panels, 4), squeeze=False,
+            1,
+            n_panels,
+            figsize=figsize or (4 * n_panels, 4),
+            squeeze=False,
         )
         axes = axes[0]
         idx = 0
@@ -730,8 +726,11 @@ class OptimizationResult:
         if n_panels == 0:
             raise ValueError("No optimization data to plot")
         fig, axes = plt.subplots(
-            n_panels, 1, figsize=figsize or (8, 2.5 * n_panels),
-            sharex=True, squeeze=False,
+            n_panels,
+            1,
+            figsize=figsize or (8, 2.5 * n_panels),
+            sharex=True,
+            squeeze=False,
         )
         axes = axes[:, 0]
         idx = 0
@@ -747,7 +746,10 @@ class OptimizationResult:
             else:
                 for j in range(values.shape[1]):
                     axes[idx].plot(
-                        steps, values[:, j], alpha=0.4, linewidth=0.8,
+                        steps,
+                        values[:, j],
+                        alpha=0.4,
+                        linewidth=0.8,
                     )
             axes[idx].set_ylabel(name)
             idx += 1
@@ -824,9 +826,7 @@ class ExplorationResult(Bunch):
 
         # Compute expected grid shape from axes
         self._grid_shape = tuple(
-            ax.get("n", getattr(ax, "n", None))
-            for ax in self.axes
-            if (isinstance(ax, dict) and "n" in ax) or hasattr(ax, "n")
+            ax.get("n", getattr(ax, "n", None)) for ax in self.axes if (isinstance(ax, dict) and "n" in ax) or hasattr(ax, "n")
         )
 
         # Detect whether results are time series or scalar per grid point
@@ -885,9 +885,7 @@ class ExplorationResult(Bunch):
         if self._grid_shape and len(self._grid_shape) > 0:
             expected_size = int(jnp.prod(jnp.array(self._grid_shape)))
             if flat.size == expected_size:
-                self.optimal.index = tuple(
-                    int(i) for i in jnp.unravel_index(flat_idx, self._grid_shape)
-                )
+                self.optimal.index = tuple(int(i) for i in jnp.unravel_index(flat_idx, self._grid_shape))
             else:
                 self.optimal.index = (flat_idx,)
         else:
@@ -896,11 +894,7 @@ class ExplorationResult(Bunch):
         # Extract parameter values at optimal point
         self.optimal.parameters = Bunch()
         for i, ax in enumerate(self.axes):
-            ax_name = (
-                ax.get("name", getattr(ax, "name", None))
-                if isinstance(ax, dict)
-                else getattr(ax, "name", None)
-            )
+            ax_name = ax.get("name", getattr(ax, "name", None)) if isinstance(ax, dict) else getattr(ax, "name", None)
             ax_values = (
                 ax.get("explored_values", getattr(ax, "explored_values", None))
                 if isinstance(ax, dict)
@@ -982,11 +976,7 @@ class ExplorationResult(Bunch):
 
         if len(self._grid_shape) == 1:
             ax_info = self.axes[0]
-            values = (
-                np.asarray(ax_info["explored_values"])
-                if "explored_values" in ax_info
-                else np.arange(self._grid_shape[0])
-            )
+            values = np.asarray(ax_info["explored_values"]) if "explored_values" in ax_info else np.arange(self._grid_shape[0])
             fig, ax = plt.subplots(figsize=figsize or (8, 4))
             ax.plot(values, np.asarray(grid), "o-", **kwargs)
             ax.set_xlabel(getattr(ax_info, "name", "param"))
@@ -1017,11 +1007,7 @@ class ExplorationResult(Bunch):
         indices = [slice(None)] * len(self.axes)
         for param_name, param_value in fixed_params.items():
             for i, ax in enumerate(self.axes):
-                ax_name = (
-                    ax.get("name", getattr(ax, "name", None))
-                    if isinstance(ax, dict)
-                    else getattr(ax, "name", None)
-                )
+                ax_name = ax.get("name", getattr(ax, "name", None)) if isinstance(ax, dict) else getattr(ax, "name", None)
                 ax_values = (
                     ax.get("explored_values", getattr(ax, "explored_values", None))
                     if isinstance(ax, dict)
@@ -1038,11 +1024,7 @@ class ExplorationResult(Bunch):
         if self.is_timeseries:
             ts_shape = tuple(self.results.shape) if self.results is not None else ()
             return f"ExplorationResult(name='{self.name}', grid={shape_str}, timeseries={ts_shape})"
-        opt_str = (
-            f", optimal={self.optimal.value:.4f}"
-            if hasattr(self.optimal, "value")
-            else ""
-        )
+        opt_str = f", optimal={self.optimal.value:.4f}" if hasattr(self.optimal, "value") else ""
         return f"ExplorationResult(name='{self.name}', shape={shape_str}{opt_str})"
 
 
@@ -1093,40 +1075,52 @@ class ExperimentResult:
 
     _output_sections = {"integration", "algorithms", "optimizations", "explorations", "continuations"}
 
-    def __init__(self, integration=None, explorations=None, algorithms=None,
-                 optimizations=None, continuations=None, data_sources=None,
-                 name=None, source=None, **kwargs):
+    def __init__(
+        self,
+        integration=None,
+        explorations=None,
+        algorithms=None,
+        optimizations=None,
+        continuations=None,
+        data_sources=None,
+        name=None,
+        source=None,
+        **kwargs,
+    ):
         self._extras = {}
 
         # ── Backward compat: ExperimentResult(results_bunch, experiment_name=...) ──
-        experiment_name = kwargs.pop('experiment_name', None)
-        if (integration is not None
-                and not isinstance(integration, SimulationResult)
-                and hasattr(integration, 'keys')):
+        experiment_name = kwargs.pop("experiment_name", None)
+        if integration is not None and not isinstance(integration, SimulationResult) and hasattr(integration, "keys"):
             results = integration
-            integration = results.get('integration')
-            algorithms = results.get('algorithms', algorithms)
-            optimizations = results.get('optimizations', optimizations)
-            explorations = results.get('explorations', explorations)
-            continuations = results.get('continuations', continuations)
+            integration = results.get("integration")
+            algorithms = results.get("algorithms", algorithms)
+            optimizations = results.get("optimizations", optimizations)
+            explorations = results.get("explorations", explorations)
+            continuations = results.get("continuations", continuations)
             # Preserve extra keys (state, model_fn, timings, etc.)
             for k, v in results.items():
-                if k not in ('integration', 'algorithms', 'optimizations',
-                             'explorations', 'continuations', 'data_sources'):
+                if k not in ("integration", "algorithms", "optimizations", "explorations", "continuations", "data_sources"):
                     self._extras[k] = v
 
         # Also handle keyword: ExperimentResult(results=bunch, ...)
-        results_kw = kwargs.pop('results', None)
+        results_kw = kwargs.pop("results", None)
         if results_kw is not None and integration is None:
-            if hasattr(results_kw, 'keys'):
-                integration = results_kw.get('integration')
-                algorithms = algorithms or results_kw.get('algorithms')
-                optimizations = optimizations or results_kw.get('optimizations')
-                explorations = explorations or results_kw.get('explorations')
-                continuations = continuations or results_kw.get('continuations')
+            if hasattr(results_kw, "keys"):
+                integration = results_kw.get("integration")
+                algorithms = algorithms or results_kw.get("algorithms")
+                optimizations = optimizations or results_kw.get("optimizations")
+                explorations = explorations or results_kw.get("explorations")
+                continuations = continuations or results_kw.get("continuations")
                 for k, v in results_kw.items():
-                    if k not in ('integration', 'algorithms', 'optimizations',
-                                 'explorations', 'continuations', 'data_sources'):
+                    if k not in (
+                        "integration",
+                        "algorithms",
+                        "optimizations",
+                        "explorations",
+                        "continuations",
+                        "data_sources",
+                    ):
                         self._extras[k] = v
 
         self.integration = integration
@@ -1145,31 +1139,31 @@ class ExperimentResult:
 
         # Inject variable units from source dynamics into integration result
         if source is not None and integration is not None and not integration._units:
-            dynamics = getattr(source, 'dynamics', None)
+            dynamics = getattr(source, "dynamics", None)
             if dynamics is not None:
                 units = {}
-                for n, sv in getattr(dynamics, 'state_variables', {}).items():
-                    u = getattr(sv, 'unit', None)
+                for n, sv in getattr(dynamics, "state_variables", {}).items():
+                    u = getattr(sv, "unit", None)
                     if u is not None:
                         units[str(n)] = str(u)
-                for n, dv in getattr(dynamics, 'derived_variables', {}).items():
-                    u = getattr(dv, 'unit', None)
+                for n, dv in getattr(dynamics, "derived_variables", {}).items():
+                    u = getattr(dv, "unit", None)
                     if u is not None:
                         units[str(n)] = str(u)
                 integration._units = units
 
     def __getattr__(self, name):
-        if name.startswith('_'):
+        if name.startswith("_"):
             raise AttributeError(name)
         # Check extras first
         if name in self._extras:
             return self._extras[name]
         # Delegate to integration for backward compat (result.data, result.time, etc.)
-        integration = self.__dict__.get('integration')
+        integration = self.__dict__.get("integration")
         if integration is not None and hasattr(integration, name):
             return getattr(integration, name)
         # Delegate to single continuation (bifurcation results)
-        continuations = self.__dict__.get('continuations', {})
+        continuations = self.__dict__.get("continuations", {})
         if continuations and len(continuations) == 1:
             cont = next(iter(continuations.values()))
             if hasattr(cont, name):
@@ -1188,11 +1182,11 @@ class ExperimentResult:
             return self.integration.plot(**kwargs)
         if self.continuations:
             cont = next(iter(self.continuations.values()))
-            if hasattr(cont, 'plot'):
+            if hasattr(cont, "plot"):
                 return cont.plot(**kwargs)
         if self.explorations:
             expl = next(iter(self.explorations.values()))
-            if hasattr(expl, 'plot'):
+            if hasattr(expl, "plot"):
                 return expl.plot(**kwargs)
         raise AttributeError("No plottable sub-result found")
 
@@ -1202,15 +1196,15 @@ class ExperimentResult:
 
         sections = []
         if self.integration is not None:
-            sections.append(('integration', self.integration))
+            sections.append(("integration", self.integration))
         if self.algorithms:
-            sections.append(('algorithms', self.algorithms))
+            sections.append(("algorithms", self.algorithms))
         if self.optimizations:
-            sections.append(('optimizations', self.optimizations))
+            sections.append(("optimizations", self.optimizations))
         if self.explorations:
-            sections.append(('explorations', self.explorations))
+            sections.append(("explorations", self.explorations))
         if self.continuations:
-            sections.append(('continuations', self.continuations))
+            sections.append(("continuations", self.continuations))
 
         for i, (section, val) in enumerate(sections):
             is_last_section = i == len(sections) - 1
@@ -1240,11 +1234,7 @@ class ExperimentResult:
         details = []
 
         if isinstance(val, SimulationResult):
-            shape = (
-                tuple(val.data.shape)
-                if val.data is not None
-                else None
-            )
+            shape = tuple(val.data.shape) if val.data is not None else None
             if shape:
                 details.append(f"{prefix}data: {shape}")
             if val.observations:
@@ -1254,9 +1244,7 @@ class ExperimentResult:
         elif isinstance(val, AlgorithmResult):
             details.append(f"{prefix}n_iterations: {val.n_iterations}")
             if val.history:
-                hist_keys = [
-                    k for k in val.history.keys() if not str(k).startswith("_")
-                ]
+                hist_keys = [k for k in val.history.keys() if not str(k).startswith("_")]
                 details.append(f"{prefix}history: {hist_keys}")
 
         elif isinstance(val, OptimizationResult):
@@ -1264,9 +1252,7 @@ class ExperimentResult:
             if val.final_loss is not None:
                 details.append(f"{prefix}final_loss: {val.final_loss:.4f}")
             if val.history:
-                hist_keys = [
-                    k for k in val.history.keys() if not str(k).startswith("_")
-                ]
+                hist_keys = [k for k in val.history.keys() if not str(k).startswith("_")]
                 details.append(f"{prefix}history: {hist_keys}")
             if val.simulation and val.simulation.observations:
                 obs_keys = list(val.simulation.observations.keys())
@@ -1274,14 +1260,7 @@ class ExperimentResult:
 
         elif isinstance(val, ExplorationResult):
             if val.axes:
-                axis_names = [
-                    (
-                        ax.get("name", ax.name)
-                        if hasattr(ax, "get")
-                        else getattr(ax, "name", "?")
-                    )
-                    for ax in val.axes
-                ]
+                axis_names = [(ax.get("name", ax.name) if hasattr(ax, "get") else getattr(ax, "name", "?")) for ax in val.axes]
                 details.append(f"{prefix}axes: {axis_names}")
             if val.shape:
                 details.append(f"{prefix}shape: {val.shape}")
@@ -1371,26 +1350,23 @@ class ExperimentResult:
 
             # Sidecar
             sidecar = self._build_sidecar(self.integration)
-            (ts_dir / f"{ts_prefix}_State.json").write_text(
-                json.dumps(sidecar, indent=2, default=str)
-            )
+            (ts_dir / f"{ts_prefix}_State.json").write_text(json.dumps(sidecar, indent=2, default=str))
 
             # Observations
             for obs_name, obs in self.integration.observations.items():
                 obs_path = ts_dir / f"{prefix}_ts-{obs_name}"
                 if isinstance(obs, xr.DataArray):
                     self._write_data(obs, obs_path)
-                elif hasattr(obs, 'data'):
+                elif hasattr(obs, "data"):
                     obs_da = _to_dataarray(
                         np.asarray(obs.data),
-                        np.asarray(obs.time) if hasattr(obs, 'time') else None,
+                        np.asarray(obs.time) if hasattr(obs, "time") else None,
                     )
                     if obs_da is not None:
                         self._write_data(obs_da, obs_path)
 
             # Transient
-            if (self.integration.transient is not None
-                    and self.integration.transient.data is not None):
+            if self.integration.transient is not None and self.integration.transient.data is not None:
                 self._write_data(
                     self.integration.transient.data,
                     ts_dir / f"{prefix}_ts-transient_State",
@@ -1428,6 +1404,7 @@ class ExperimentResult:
         The file extension is set automatically (.nc).
         """
         from pathlib import Path
+
         path_stem = Path(path_stem)
         ds = da.to_dataset(name="data")
         nc_path = path_stem.with_suffix(".nc")
@@ -1437,10 +1414,7 @@ class ExperimentResult:
                 return nc_path
             except ImportError:
                 continue
-        raise ImportError(
-            "netCDF export requires scipy or h5netcdf. "
-            "Install with: pip install h5netcdf"
-        )
+        raise ImportError("netCDF export requires scipy or h5netcdf. Install with: pip install h5netcdf")
 
     @staticmethod
     def _build_sidecar(sim_result):
@@ -1449,14 +1423,10 @@ class ExperimentResult:
         if sim_result.data is not None:
             sidecar["Shape"] = list(sim_result.data.shape)
             sidecar["Dimensions"] = list(sim_result.data.dims)
-            if 'variable' in sim_result.data.coords:
-                sidecar["StateVariables"] = list(
-                    sim_result.data.coords['variable'].values
-                )
-            if 'node' in sim_result.data.coords:
-                sidecar["Regions"] = list(
-                    sim_result.data.coords['node'].values
-                )
+            if "variable" in sim_result.data.coords:
+                sidecar["StateVariables"] = list(sim_result.data.coords["variable"].values)
+            if "node" in sim_result.data.coords:
+                sidecar["Regions"] = list(sim_result.data.coords["node"].values)
             if sim_result.time is not None and len(sim_result.time) > 1:
                 dt = float(sim_result.time[1] - sim_result.time[0])
                 sidecar["SamplingPeriod"] = dt
@@ -1495,24 +1465,24 @@ class ExperimentResult:
         state_names = ld.get("State Variable", [])
         region_labels = ld.get("Region", [])
 
-        dims = ['time', 'variable', 'node', 'mode'][:data_np.ndim]
+        dims = ["time", "variable", "node", "mode"][: data_np.ndim]
         coords = {}
         if ts.time is not None:
-            coords['time'] = np.asarray(ts.time)
+            coords["time"] = np.asarray(ts.time)
         if state_names:
-            coords['variable'] = list(state_names)
+            coords["variable"] = list(state_names)
         if region_labels and data_np.ndim >= 3:
-            coords['node'] = [str(r) for r in region_labels]
-        if 'mode' in dims:
-            coords['mode'] = list(range(data_np.shape[3]))
+            coords["node"] = [str(r) for r in region_labels]
+        if "mode" in dims:
+            coords["mode"] = list(range(data_np.shape[3]))
 
         da = xr.DataArray(data=data_np, dims=dims, coords=coords)
 
         # Collect observations from derivatives (TVB-style) or extras
         observations = {}
-        if hasattr(ts, 'derivatives') and ts.derivatives:
+        if hasattr(ts, "derivatives") and ts.derivatives:
             for d_ts in ts.derivatives:
-                obs_name = getattr(d_ts, 'title', None) or f"obs_{len(observations)}"
+                obs_name = getattr(d_ts, "title", None) or f"obs_{len(observations)}"
                 observations[obs_name] = d_ts
 
         sim_result = SimulationResult(data=da, observations=observations)
@@ -1520,9 +1490,9 @@ class ExperimentResult:
 
         # Continuations (bifurcation results) go in a separate section
         continuations = {}
-        if hasattr(ts, 'sol') and extras.get('_is_bifurcation', False):
-            extras.pop('_is_bifurcation')
-            continuations['default'] = ts.sol
+        if hasattr(ts, "sol") and extras.get("_is_bifurcation", False):
+            extras.pop("_is_bifurcation")
+            continuations["default"] = ts.sol
 
         return cls(
             integration=sim_result,
@@ -1568,7 +1538,7 @@ class ExperimentResult:
 
         for monitor, (tv, xv) in zip(simulator.monitors, result):
             mon_labels = deepcopy(base_labels)
-            if hasattr(monitor, 'sensors') and monitor.sensors is not None:
+            if hasattr(monitor, "sensors") and monitor.sensors is not None:
                 mon_labels["Region"] = list(monitor.sensors.labels)
 
             mon_name = type(monitor).__name__
@@ -1591,14 +1561,14 @@ class ExperimentResult:
         # Build xr.DataArray from primary monitor
         # TVB shape: (time, state_variables, nodes, modes) — keep mode dim
         data_np = np.asarray(primary_xv)
-        dims = ['time', 'variable', 'node', 'mode'][:data_np.ndim]
+        dims = ["time", "variable", "node", "mode"][: data_np.ndim]
         coords = {
-            'time': np.asarray(primary_tv),
-            'variable': voi,
-            'node': region_labels,
+            "time": np.asarray(primary_tv),
+            "variable": voi,
+            "node": region_labels,
         }
-        if 'mode' in dims:
-            coords['mode'] = list(range(data_np.shape[3]))
+        if "mode" in dims:
+            coords["mode"] = list(range(data_np.shape[3]))
         da = xr.DataArray(data=data_np, dims=dims, coords=coords)
 
         sim_result = SimulationResult(
@@ -1771,9 +1741,7 @@ class TimeSeries:
 
     def _get_index_of_state_variable(self, sv_label):
         if sv_label not in self.variables_labels:
-            raise IndexError(
-                f"{sv_label} is not a state variable. Available state variables: {self.variables_labels}"
-            )
+            raise IndexError(f"{sv_label} is not a state variable. Available state variables: {self.variables_labels}")
 
         sv_index = np.where(self.variables_labels == sv_label)[0][0]
         return sv_index
@@ -1791,12 +1759,7 @@ class TimeSeries:
         subspace_labels_dimensions[self.labels_ordering[1]] = sv_labels
         if sv_data.ndim == 3:
             sv_data = np.expand_dims(sv_data, 1)
-        return self.duplicate(
-            data=sv_data, labels_dimensions=subspace_labels_dimensions
-        )
-
-    def get_state_variable(self, sv_label):
-        return self.get_state(sv_label)
+        return self.duplicate(data=sv_data, labels_dimensions=subspace_labels_dimensions)
 
     def _get_indices_for_labels(self, list_of_labels):
         list_of_indices_for_labels = []
@@ -1815,14 +1778,10 @@ class TimeSeries:
         self._check_space_indices(list_of_index)
         subspace_data = self.data[:, :, list_of_index, :]
         subspace_labels_dimensions = deepcopy(self.labels_dimensions)
-        subspace_labels_dimensions[self.labels_ordering[2]] = self.space_labels[
-            list_of_index
-        ].tolist()
+        subspace_labels_dimensions[self.labels_ordering[2]] = self.space_labels[list_of_index].tolist()
         if subspace_data.ndim == 3:
             subspace_data = np.expand_dims(subspace_data, 2)
-        return self.duplicate(
-            data=subspace_data, labels_dimensions=subspace_labels_dimensions, **kwargs
-        )
+        return self.duplicate(data=subspace_data, labels_dimensions=subspace_labels_dimensions, **kwargs)
 
     def get_subspace_by_labels(self, list_of_labels):
         list_of_indices_for_labels = self._get_indices_for_labels(list_of_labels)
@@ -1873,19 +1832,13 @@ class TimeSeries:
         # Select appropriate conversion dict
         if dimension == "time":
             conversions = time_conversions
-            data_to_convert = self.time
         elif dimension == "state":
             conversions = voltage_conversions
-            data_to_convert = self.data
         else:
-            raise NotImplementedError(
-                f"Unit conversion not implemented for dimension '{dimension}'"
-            )
+            raise NotImplementedError(f"Unit conversion not implemented for dimension '{dimension}'")
 
         if current_unit not in conversions or target_unit not in conversions:
-            raise ValueError(
-                f"Unsupported unit conversion: {current_unit} -> {target_unit}"
-            )
+            raise ValueError(f"Unsupported unit conversion: {current_unit} -> {target_unit}")
 
         # Convert to base unit then to target unit
         scale_factor = conversions[current_unit] / conversions[target_unit]
@@ -1897,9 +1850,7 @@ class TimeSeries:
         if dimension == "time":
             return self.duplicate(
                 time=self.time * scale_factor,
-                sample_period=(
-                    self.sample_period * scale_factor if self.sample_period else None
-                ),
+                sample_period=(self.sample_period * scale_factor if self.sample_period else None),
                 units=new_units,
             )
         elif dimension == "state":
@@ -1934,13 +1885,10 @@ class TimeSeries:
             network=self.network,
             title=self.title,
             sample_period=new_sample_period,
-            labels_dimensions=kwargs.get(
-                "labels_dimensions", self.labels_dimensions.copy()
-            ),
+            labels_dimensions=kwargs.get("labels_dimensions", self.labels_dimensions.copy()),
             units=kwargs.get("units", self.units.copy() if self.units else None),
         )
         return new
-
 
     # ── Domain-specific methods (analysis, visualization) ─────────────
 
@@ -1961,9 +1909,7 @@ class TimeSeries:
         subspace_labels_dimensions[self.labels_ordering[1]] = [sv_label]
         if sv_data.ndim == 3:
             sv_data = np.expand_dims(sv_data, 1)
-        return self.duplicate(
-            data=sv_data, labels_dimensions=subspace_labels_dimensions
-        )
+        return self.duplicate(data=sv_data, labels_dimensions=subspace_labels_dimensions)
 
     def plot(self, ax=None, axis_labels=False, legend=True, title=None, **kwargs):
         plot_type = kwargs.pop("type", "timeseries")
@@ -1985,9 +1931,7 @@ class TimeSeries:
         }:
             region = kwargs.pop("region", 0)
             mode = kwargs.pop("mode", 0)
-            sv_labels = kwargs.pop("state_variables", None) or kwargs.pop(
-                "state_variables_labels", None
-            )
+            sv_labels = kwargs.pop("state_variables", None) or kwargs.pop("state_variables_labels", None)
 
             n_svar = self.data.shape[1] if len(self.data.shape) > 1 else 1
             if sv_labels:
@@ -1997,17 +1941,13 @@ class TimeSeries:
             else:
                 indices = list(range(min(2, n_svar)))
                 sv_labels = (
-                    self.labels_dimensions.get("State Variable", None)
-                    if isinstance(self.labels_dimensions, dict)
-                    else None
+                    self.labels_dimensions.get("State Variable", None) if isinstance(self.labels_dimensions, dict) else None
                 )
                 if sv_labels:
                     sv_labels = [sv_labels[i] for i in indices]
 
             if len(indices) < 2:
-                raise ValueError(
-                    "State-space plot requires at least two state variables"
-                )
+                raise ValueError("State-space plot requires at least two state variables")
 
             data = self.data
             if data.ndim == 4:
@@ -2045,11 +1985,7 @@ class TimeSeries:
             labels = kwargs.pop("labels")
         else:
             labels = [
-                (
-                    self.labels_dimensions["State Variable"][i]
-                    if "State Variable" in self.labels_dimensions
-                    else None
-                )
+                (self.labels_dimensions["State Variable"][i] if "State Variable" in self.labels_dimensions else None)
                 for i in range(n_svar)
             ]
         label = kwargs.pop("label", None)
@@ -2064,11 +2000,8 @@ class TimeSeries:
         ax.set_xlabel(f"time [{self.units['time']}]")
 
         if n_svar == 1 and self.labels_dimensions:
-
             ylabel = (
-                self.labels_dimensions.get("State Variable", ["X"])[0]
-                if isinstance(self.labels_dimensions, dict)
-                else "X"
+                self.labels_dimensions.get("State Variable", ["X"])[0] if isinstance(self.labels_dimensions, dict) else "X"
             )
             ax.set_ylabel(ylabel)
             legend = False
@@ -2080,9 +2013,7 @@ class TimeSeries:
         if legend and any(labels):
             ax.legend(loc="upper right", fontsize="smaller")
             handles, labels = ax.get_legend_handles_labels()
-            unique = list(
-                dict(zip(labels, handles)).items()
-            )  # Keep only the last occurrence of each label
+            unique = list(dict(zip(labels, handles)).items())  # Keep only the last occurrence of each label
             ax.legend(
                 [handle for _, handle in unique],
                 [label for label, _ in unique],
@@ -2128,14 +2059,10 @@ class TimeSeries:
             The animation object (render with ``HTML(ani.to_jshtml())``
             in Jupyter, or ``ani.save(...)``).
         """
-        from matplotlib.animation import FuncAnimation
 
         graph = getattr(self, "graph", None)
         if graph is None:
-            raise ValueError(
-                "No graph data attached.  Run with format='networkdynamics' "
-                "to get graph positions."
-            )
+            raise ValueError("No graph data attached.  Run with format='networkdynamics' to get graph positions.")
         pos = graph["positions"]
         adj = graph["adjacency"]
 
@@ -2318,11 +2245,11 @@ class TimeSeries:
         n_regions = X.shape[1]
         labels_array = self.space_labels
         labels_list = (
-            [str(l) for l in labels_array]
+            [str(lbl) for lbl in labels_array]
             if labels_array is not None and len(labels_array) == n_regions
             else [str(i) for i in range(n_regions)]
         )
-        max_label_len = max((len(l) for l in labels_list), default=1)
+        max_label_len = max((len(lbl) for lbl in labels_list), default=1)
 
         # Prepare axes with adaptive figure size and left margin when creating a new figure
         created_fig = False
@@ -2409,9 +2336,7 @@ class TimeSeries:
         if data.ndim != 1:
             raise ValueError("Data must be one-dimensional to calculate frequency.")
         if not hasattr(self, "time"):
-            raise AttributeError(
-                "Time information is missing in the TimeSeries object."
-            )
+            raise AttributeError("Time information is missing in the TimeSeries object.")
 
         sampling_interval = ts.sample_period_ms / 1000
         fft_result = np.fft.fft(data)
@@ -2451,9 +2376,7 @@ class TimeSeries:
         elif len(self.labels_dimensions["State Variable"]) > 1 and VOI:
             ts = self.get_state_variable(VOI)
         else:
-            raise ValueError(
-                f"select variable of interest (VOI) from {self.labels_dimensions['State Variable']}"
-            )
+            raise ValueError(f"select variable of interest (VOI) from {self.labels_dimensions['State Variable']}")
 
         # Get data and compute FFT
         data = ts.data
@@ -2480,9 +2403,7 @@ class TimeSeries:
         dt = np.diff(self.time)
         mean_dt = np.mean(dt)
         if self.sample_period != mean_dt:
-            print(
-                "Warning: Sample period does not match mean dt. Setting sample period to mean dt."
-            )
+            print("Warning: Sample period does not match mean dt. Setting sample period to mean dt.")
             self.sample_period = mean_dt
 
     def plot_power_spectrum(
@@ -2513,7 +2434,6 @@ class TimeSeries:
         - Matplotlib figure if ax is None, otherwise None.
         """
         from scipy.fft import fft, fftfreq
-        from matplotlib import colormaps
 
         # Extract data
         data = self.data if VOI is None else self.get_state_variable(VOI).data
@@ -2607,9 +2527,7 @@ class TimeSeries:
         subspace_labels_dimensions = deepcopy(self.labels_dimensions)
         subspace_labels_dimensions[self.labels_ordering[2]] = [region_label]
 
-        return self.duplicate(
-            data=roi_data, labels_dimensions=subspace_labels_dimensions
-        )
+        return self.duplicate(data=roi_data, labels_dimensions=subspace_labels_dimensions)
 
     def to_bids(
         self,
@@ -2718,7 +2636,6 @@ class TimeSeries:
             TimeSeriesHDF5Sidecar,
             TimeSeriesSidecar,
             compute_id,
-            create_multi_state_cifti,
             to_float,
             write_cifti_ptseries,
             write_hdf5_timeseries,
@@ -2756,7 +2673,7 @@ class TimeSeries:
         # Use experiment's network if TimeSeries doesn't have one attached
         network = self.network
         if network is None and experiment is not None:
-            network = getattr(experiment, 'network', None)
+            network = getattr(experiment, "network", None)
         if include_connectivity and network is not None:
             # --- Weights matrix ---
             weights_sidecar = NetworkSidecar(
@@ -2792,7 +2709,7 @@ class TimeSeries:
             created_files["net"].append(weights_rel_path)
 
             # --- Distances (tract lengths) matrix ---
-            lengths = network.lengths if hasattr(network, 'lengths') else getattr(network, 'tract_lengths', None)
+            lengths = network.lengths if hasattr(network, "lengths") else getattr(network, "tract_lengths", None)
             if lengths is None:
                 lengths = np.zeros_like(network.weights)
             distances_sidecar = NetworkSidecar(
@@ -2874,25 +2791,12 @@ class TimeSeries:
         provenance = None
         if experiment is not None:
             provenance = SimulationProvenance(
-                Model=(
-                    str(experiment.dynamics)
-                    if hasattr(experiment, "dynamics")
-                    else None
-                ),
-                Integrator=(
-                    str(experiment.integration)
-                    if hasattr(experiment, "integration")
-                    else None
-                ),
-                Duration=(
-                    to_float(experiment.duration)
-                    if hasattr(experiment, "duration")
-                    else None
-                ),
+                Model=(str(experiment.dynamics) if hasattr(experiment, "dynamics") else None),
+                Integrator=(str(experiment.integration) if hasattr(experiment, "integration") else None),
+                Duration=(to_float(experiment.duration) if hasattr(experiment, "duration") else None),
                 StepSize=(
                     to_float(experiment.integration.step_size)
-                    if hasattr(experiment, "integration")
-                    and hasattr(experiment.integration, "step_size")
+                    if hasattr(experiment, "integration") and hasattr(experiment.integration, "step_size")
                     else None
                 ),
                 GeneratedAt=datetime.now().isoformat(),
@@ -2907,19 +2811,13 @@ class TimeSeries:
             # HDF5 format: Preserve full dimensionality, don't split by state
             # =====================================================================
             if not H5PY_AVAILABLE:
-                raise ImportError(
-                    "h5py is required for HDF5 export. Install with: pip install h5py"
-                )
+                raise ImportError("h5py is required for HDF5 export. Install with: pip install h5py")
 
             # Create HDF5 sidecar with full dimension info
             # Filter out None values from labels_dimensions (e.g., Time may be None)
-            dim_labels = (
-                {k: v for k, v in self.labels_dimensions.items() if v is not None}
-                if self.labels_dimensions
-                else None
-            )
+            dim_labels = {k: v for k, v in self.labels_dimensions.items() if v is not None} if self.labels_dimensions else None
             h5_sidecar = TimeSeriesHDF5Sidecar(
-                Description=f"Simulated time series - all state variables",
+                Description="Simulated time series - all state variables",
                 Format="HDF5",
                 Shape=list(self.data.shape),
                 Dimensions=list(self.labels_ordering),
@@ -2931,11 +2829,7 @@ class TimeSeries:
                 Units="a.u.",
                 GeneratedAt=datetime.now().isoformat(),
                 Provenance=provenance,
-                StateVariables=(
-                    list(self.variables_labels)
-                    if len(self.variables_labels) > 0
-                    else None
-                ),
+                StateVariables=(list(self.variables_labels) if len(self.variables_labels) > 0 else None),
                 Datasets={
                     "/data": f"Time series data with shape {self.data.shape}",
                     "/time": "Time array",
@@ -2944,9 +2838,7 @@ class TimeSeries:
             )
 
             # Build path - use first state variable for ts entity, or 'all' for multi-state
-            ts_entity = (
-                self.variables_labels[0] if len(self.variables_labels) == 1 else "all"
-            )
+            ts_entity = self.variables_labels[0] if len(self.variables_labels) == 1 else "all"
             ts_rel_path = path_builder.build_ts_path(
                 subject=subject,
                 ts_label=ts_entity,
@@ -2962,20 +2854,14 @@ class TimeSeries:
             # Additional metadata for HDF5
             metadata = {
                 "source": "tvbo simulation",
-                "model": (
-                    str(experiment.dynamics)
-                    if experiment and hasattr(experiment, "dynamics")
-                    else None
-                ),
+                "model": (str(experiment.dynamics) if experiment and hasattr(experiment, "dynamics") else None),
             }
 
             write_hdf5_timeseries(
                 data=np.asarray(self.data),
                 time=np.asarray(self.time),
                 path=ts_h5_path,
-                labels_dimensions=(
-                    dict(self.labels_dimensions) if self.labels_dimensions else None
-                ),
+                labels_dimensions=(dict(self.labels_dimensions) if self.labels_dimensions else None),
                 labels_ordering=self.labels_ordering,
                 sample_period=sample_period_val,
                 sample_period_unit=self.sample_period_unit,
@@ -3000,9 +2886,7 @@ class TimeSeries:
                     StartTime=to_float(self.time[0]) if len(self.time) > 0 else 0.0,
                     NumberOfTimepoints=int(self.data.shape[0]),
                     NumberOfNodes=int(self.data.shape[2]) if self.data.ndim > 2 else 1,
-                    Columns=(
-                        region_labels if not use_cifti else None
-                    ),  # Columns for TSV only
+                    Columns=(region_labels if not use_cifti else None),  # Columns for TSV only
                     Units="a.u.",
                     GeneratedAt=datetime.now().isoformat(),
                     Provenance=provenance,
@@ -3266,7 +3150,6 @@ class TimeSeries:
 #         return ani
 
 
-
 @register_pytree_node_class
 class SimulationState:
     def __init__(
@@ -3366,9 +3249,7 @@ class SimulationState:
         if getattr(self.noise, "sigma_vec", None) is None:
             import jax.numpy as jnp
 
-            self.noise.sigma_vec = jnp.zeros(
-                (self.n_state_variables,), dtype=jnp.asarray(self.dt).dtype
-            )
+            self.noise.sigma_vec = jnp.zeros((self.n_state_variables,), dtype=jnp.asarray(self.dt).dtype)
         return self.noise
 
     def get_state_variable_index(self, name_or_index) -> int:
@@ -3391,9 +3272,7 @@ class SimulationState:
             # Allow list to set all values directly
             arr = jnp.asarray(value, dtype=sv.dtype)
             if arr.shape[0] != sv.shape[0]:
-                raise ValueError(
-                    "Length of sigma list must match number of state variables"
-                )
+                raise ValueError("Length of sigma list must match number of state variables")
             sv = arr
         else:
             sv = sv.at[idx].set(jnp.asarray(value, dtype=sv.dtype))
@@ -3406,7 +3285,6 @@ class SimulationState:
 
         noise = self._ensure_noise_holder()
         sv = jnp.zeros((self.n_state_variables,), dtype=jnp.asarray(self.dt).dtype)
-        names = self.state_variable_names
         for k, v in (mapping or {}).items():
             idx = self.get_state_variable_index(k)
             sv = sv.at[idx].set(jnp.asarray(v, dtype=sv.dtype))
@@ -3423,11 +3301,7 @@ class SimulationState:
             n = self._state._ensure_noise_holder()
             import numpy as _np
 
-            sv = (
-                _np.asarray(n.sigma_vec)
-                if getattr(n, "sigma_vec", None) is not None
-                else None
-            )
+            sv = _np.asarray(n.sigma_vec) if getattr(n, "sigma_vec", None) is not None else None
             if sv is None:
                 return 0.0
             return float(sv[self._index])

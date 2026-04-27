@@ -44,9 +44,7 @@ COHORT_MAP = {
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Generate Schaefer multi-scale SC files from tractograms."
-    )
+    parser = argparse.ArgumentParser(description="Generate Schaefer multi-scale SC files from tractograms.")
     parser.add_argument(
         "--atlas-dir",
         type=Path,
@@ -98,9 +96,7 @@ def parse_tractogram_specs(specs: list[str]) -> list[tuple[str, Path]]:
     parsed: list[tuple[str, Path]] = []
     for spec in specs:
         if "=" not in spec:
-            raise ValueError(
-                f"Invalid --tractogram value '{spec}'. Expected NAME=/path/file.tck"
-            )
+            raise ValueError(f"Invalid --tractogram value '{spec}'. Expected NAME=/path/file.tck")
         name, path_str = spec.split("=", 1)
         name = name.strip()
         path = Path(path_str).expanduser().resolve()
@@ -114,32 +110,17 @@ def parse_tractogram_specs(specs: list[str]) -> list[tuple[str, Path]]:
 
 def atlas_path(atlas_dir: Path, scale: int, networks: int, resolution: int) -> Path:
     fname = (
-        "space-FSLMNI152"
-        "_atlas-Schaefer2018"
-        f"_seg-{networks}Networks"
-        f"_scale-{scale}"
-        f"_res-{resolution}"
-        "_desc-original_dseg.nii.gz"
+        f"space-FSLMNI152_atlas-Schaefer2018_seg-{networks}Networks_scale-{scale}_res-{resolution}_desc-original_dseg.nii.gz"
     )
     path = atlas_dir / fname
     if not path.exists():
-        raise FileNotFoundError(
-            f"Atlas file not found: {path}. "
-            f"Run scripts/prepare_schaefer_atlases.py first."
-        )
+        raise FileNotFoundError(f"Atlas file not found: {path}. Run scripts/prepare_schaefer_atlases.py first.")
     return path
 
 
 def load_atlas_entities(atlas_dir: Path, scale: int, networks: int, resolution: int) -> list[dict]:
     """Load Schaefer SANDS atlas entities sorted by lookupLabel (1-based)."""
-    fname = (
-        f"tpl-FSLMNI152"
-        f"_atlas-Schaefer2018"
-        f"_seg-{networks}Networks"
-        f"_scale-{scale}"
-        f"_res-{resolution}"
-        f"_desc-ordered_dseg.yaml"
-    )
+    fname = f"tpl-FSLMNI152_atlas-Schaefer2018_seg-{networks}Networks_scale-{scale}_res-{resolution}_desc-ordered_dseg.yaml"
     path = atlas_dir / fname
     if not path.exists():
         return []
@@ -263,10 +244,7 @@ def main() -> None:
     args = parse_args()
 
     if shutil.which("tck2connectome") is None:
-        raise RuntimeError(
-            "tck2connectome was not found in PATH. Install MRtrix3 and ensure "
-            "tck2connectome is available."
-        )
+        raise RuntimeError("tck2connectome was not found in PATH. Install MRtrix3 and ensure tck2connectome is available.")
 
     tractograms = parse_tractogram_specs(args.tractogram)
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -284,10 +262,7 @@ def main() -> None:
                 lengths_csv = tmpdir / "lengths.csv"
                 assignments_csv = tmpdir / "assignments.csv"
 
-                print(
-                    f"[run ] tractogram={tract_name} scale={scale} "
-                    f"nets={args.networks}"
-                )
+                print(f"[run ] tractogram={tract_name} scale={scale} nets={args.networks}")
                 run_tck2connectome(
                     tractogram_path=tract_path,
                     atlas_file=atlas_file,
@@ -314,11 +289,7 @@ def main() -> None:
                 sidecar_path = out_path.with_suffix(".yaml")
                 companion_path = sidecar_path.with_suffix(".h5")
 
-                if (
-                    sidecar_path.exists()
-                    and companion_path.exists()
-                    and not args.overwrite
-                ):
+                if sidecar_path.exists() and companion_path.exists() and not args.overwrite:
                     skipped += 1
                     print(f"[skip] {sidecar_path.name}")
                     continue

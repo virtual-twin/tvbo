@@ -79,7 +79,9 @@ class TestNeuroMLExperiments:
     """Test LEMS rendering for NeuroML canonical example experiments."""
 
     @pytest.mark.parametrize(
-        "exp_file", NEUROML_EXPERIMENT_FILES, ids=NEUROML_EXPERIMENT_IDS,
+        "exp_file",
+        NEUROML_EXPERIMENT_FILES,
+        ids=NEUROML_EXPERIMENT_IDS,
     )
     def test_experiment_from_yaml_renders(self, exp_file):
         """NeuroML experiment YAML files load and render as LEMS."""
@@ -94,7 +96,9 @@ class TestNeuroMLExperiments:
         assert "<Simulation" in xml
 
     @pytest.mark.parametrize(
-        "exp_file", NEUROML_EXPERIMENT_FILES, ids=NEUROML_EXPERIMENT_IDS,
+        "exp_file",
+        NEUROML_EXPERIMENT_FILES,
+        ids=NEUROML_EXPERIMENT_IDS,
     )
     def test_experiment_has_correct_structure(self, exp_file):
         """Experiment YAML produces XML with expected structural elements."""
@@ -104,7 +108,7 @@ class TestNeuroMLExperiments:
         # Model name appears as ComponentType or Component
         assert dyn.name in xml
         # Every state variable appears in the XML
-        for sv_name in (dyn.state_variables or {}):
+        for sv_name in dyn.state_variables or {}:
             assert sv_name in xml
 
 
@@ -230,43 +234,43 @@ class TestNeuroMLRun:
 
     def test_run_jneuroml(self):
         """Run FitzHughNagumo via jNeuroML reference engine."""
-        result = _run_neuroml_backend('jneuroml')
+        result = _run_neuroml_backend("jneuroml")
         assert result is not None
         assert result.integration is not None
-        assert result.integration.data.sizes['time'] > 0
-        assert 'V' in result.integration.data.coords['variable'].values
+        assert result.integration.data.sizes["time"] > 0
+        assert "V" in result.integration.data.coords["variable"].values
 
     @pytest.mark.skipif(not _HAVE_NEURON, reason="NEURON not installed")
     def test_run_neuron(self):
         """Run FitzHughNagumo via NEURON (jNeuroML export)."""
-        result = _run_neuroml_backend('neuron')
+        result = _run_neuroml_backend("neuron")
         assert result is not None
         assert result.integration is not None
-        assert result.integration.data.sizes['time'] > 0
+        assert result.integration.data.sizes["time"] > 0
 
     @pytest.mark.skipif(not _HAVE_BRIAN2, reason="Brian2 not installed")
     def test_run_brian2(self):
         """Run FitzHughNagumo via Brian2 (jNeuroML export)."""
-        result = _run_neuroml_backend('brian2')
+        result = _run_neuroml_backend("brian2")
         assert result is not None
         assert result.integration is not None
-        assert result.integration.data.sizes['time'] > 0
+        assert result.integration.data.sizes["time"] > 0
 
     @pytest.mark.skipif(not _HAVE_NETPYNE, reason="NetPyNE not installed")
     def test_run_netpyne(self):
         """Run FitzHughNagumo via NetPyNE (jNeuroML export)."""
-        result = _run_neuroml_backend('netpyne')
+        result = _run_neuroml_backend("netpyne")
         assert result is not None
         assert result.integration is not None
-        assert result.integration.data.sizes['time'] > 0
+        assert result.integration.data.sizes["time"] > 0
 
     @pytest.mark.skipif(not _HAVE_EDEN, reason="EDEN not installed")
     def test_run_eden(self):
         """Run FitzHughNagumo via EDEN simulator."""
-        result = _run_neuroml_backend('eden')
+        result = _run_neuroml_backend("eden")
         assert result is not None
         assert result.integration is not None
-        assert result.integration.data.sizes['time'] > 0
+        assert result.integration.data.sizes["time"] > 0
 
     def test_run_invalid_backend(self):
         """ValueError for unsupported backend name."""
@@ -275,7 +279,7 @@ class TestNeuroMLRun:
         exp = SimulationExperiment.from_file(_RUN_EXPERIMENT)
         adapter = NeuroMLAdapter(exp)
         with pytest.raises(ValueError, match="Unknown NeuroML backend"):
-            adapter.run(backend='nonexistent')
+            adapter.run(backend="nonexistent")
 
     def test_run_via_experiment(self):
         """SimulationExperiment.run('neuroml') routes to adapter.run()."""

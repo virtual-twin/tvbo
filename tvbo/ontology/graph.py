@@ -20,10 +20,11 @@ as graphs, and various utilities for manipulating and visualizing these graphs.
 - [`get_node_colors`](#get_node_colors): Retrieve the colors associated with nodes in a graph.
 
 """
+
 # TODO: review the commented code in this file
 import re
 from itertools import count
-from typing import Dict, Any, List, Union
+from typing import Dict, Any, List
 
 import networkx as nx
 import numpy as np
@@ -116,21 +117,14 @@ def onto2graph(
             # Annotation properties
             for k, v in props["annotation_properties"].items():
                 if isinstance(v, str):
-                    v = " ".join(
-                        [
-                            s if not s.isupper() else s
-                            for s in re.split(r"[ -]", v.strip())
-                        ]
-                    )
+                    v = " ".join([s if not s.isupper() else s for s in re.split(r"[ -]", v.strip())])
                 nx_graph.nodes[node_id][k] = v
 
         # Class hierarchy
         for o in c.is_a:
             if isinstance(o, owl.class_construct.Restriction) or o.name == "Thing":
                 continue
-            parent_id = (
-                o.storid if storid else (o if not object2string else o.label.first())
-            )
+            parent_id = o.storid if storid else (o if not object2string else o.label.first())
             if not edge_exists(nx_graph, node_id, parent_id, edge_type="is_a"):
                 nx_graph.add_edge(node_id, parent_id, type="is_a")
 
@@ -140,62 +134,31 @@ def onto2graph(
                 p, o = next(iter(prop.items()))
                 if p in ["has_data_type", "has_dependency"] or o.name == "Thing":
                     continue
-                object_id = (
-                    o.storid
-                    if storid
-                    else (o if not object2string else o.label.first())
-                )
+                object_id = o.storid if storid else (o if not object2string else o.label.first())
                 property_id = (
                     p.storid
                     if storid and not isinstance(p, str)
-                    else (
-                        p
-                        if not object2string
-                        else (
-                            onto.search_one(iri=f"*{p}").label.first()
-                            if p != "is_a"
-                            else "is_a"
-                        )
-                    )
+                    else (p if not object2string else (onto.search_one(iri=f"*{p}").label.first() if p != "is_a" else "is_a"))
                 )
                 if not edge_exists(nx_graph, node_id, object_id, edge_type=p):
                     nx_graph.add_edge(node_id, object_id, type=property_id)
 
     # Add individuals as nodes
     for i in ontology.onto.individuals():
-        individual_id = (
-            i.storid
-            if storid
-            else (i if not object2string else (i.label.first() or str(i)))
-        )
+        individual_id = i.storid if storid else (i if not object2string else (i.label.first() or str(i)))
         nx_graph.add_node(individual_id, node_type="individual")
 
         # Connect individual to its class
         for c in i.is_instance_of:
             if isinstance(c, owl.class_construct.Restriction):
+                class_id = c.value.storid if storid else (c.value if not object2string else c.value.label.first())
 
-                class_id = (
-                    c.value.storid
-                    if storid
-                    else (c.value if not object2string else c.value.label.first())
-                )
-
-                property_id = (
-                    c.property if not object2string else c.property.label.first()
-                )
-                if not edge_exists(
-                    nx_graph, individual_id, class_id, edge_type=property_id
-                ):
+                property_id = c.property if not object2string else c.property.label.first()
+                if not edge_exists(nx_graph, individual_id, class_id, edge_type=property_id):
                     nx_graph.add_edge(individual_id, class_id, type=property_id)
             else:
-                class_id = (
-                    c.storid
-                    if storid
-                    else (c if not object2string else (c.label.first() or str(c)))
-                )
-                if not edge_exists(
-                    nx_graph, individual_id, class_id, edge_type="is_instance_of"
-                ):
+                class_id = c.storid if storid else (c if not object2string else (c.label.first() or str(c)))
+                if not edge_exists(nx_graph, individual_id, class_id, edge_type="is_instance_of"):
                     nx_graph.add_edge(
                         individual_id,
                         class_id,
@@ -263,12 +226,7 @@ def owl2nx_digraph(onto="default", add_object_properties: bool = True, object2st
             # Annotation properties
             for k, v in props["annotation_properties"].items():
                 if isinstance(v, str):
-                    v = " ".join(
-                        [
-                            s if not s.isupper() else s
-                            for s in re.split(r"[ -]", v.strip())
-                        ]
-                    )
+                    v = " ".join([s if not s.isupper() else s for s in re.split(r"[ -]", v.strip())])
                 nx_graph.nodes[label][k] = v
 
         # Class hierarchy
@@ -368,9 +326,7 @@ def nx2mermaid(G: nx.Graph, id_as_label: bool = False) -> str:
     mm_graph = """
     flowchart TD
     {}
-    """.format(
-        mm
-    )
+    """.format(mm)
     return mm_graph
 
 
@@ -432,7 +388,6 @@ def subset2graph(
             if isinstance(n, owl.entity.ThingClass):
                 continue
             for prop in n.get_properties():
-
                 if prop.name in individual_relationships:
                     for ref in prop[n]:
                         edges_to_add.append((ref, n, "has_reference"))
@@ -522,7 +477,9 @@ def model2graph(model) -> nx.MultiDiGraph:
     return G
 
 
-def adjust_positions(pos: Dict[Any, np.ndarray], threshold_percent: int = 10, direction: str = "xy", mode: str = "outward") -> Dict[Any, np.ndarray]:
+def adjust_positions(
+    pos: Dict[Any, np.ndarray], threshold_percent: int = 10, direction: str = "xy", mode: str = "outward"
+) -> Dict[Any, np.ndarray]:
     pos_array = np.array(list(pos.values()))
 
     x_span = np.max(pos_array[:, 0]) - np.min(pos_array[:, 0])
@@ -561,10 +518,6 @@ def adjust_positions(pos: Dict[Any, np.ndarray], threshold_percent: int = 10, di
 
 def labels_as_symbols(G: nx.Graph) -> Dict[Any, str]:
     return {
-        node: (
-            f"${latex(symbols(node.symbol.first()))}$"
-            if hasattr(node, "symbol") and node.symbol.first()
-            else node
-        )
+        node: (f"${latex(symbols(node.symbol.first()))}$" if hasattr(node, "symbol") and node.symbol.first() else node)
         for node in G.nodes()
     }

@@ -7,6 +7,7 @@ render correctly in standard markdown previewers.
 Usage:
     python scripts/extract_images.py path/to/file.md
 """
+
 import argparse
 import base64
 import os

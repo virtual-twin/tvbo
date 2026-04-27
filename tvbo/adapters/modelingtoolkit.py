@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING
 from tvbo.adapters.base import BaseAdapter
 
 if TYPE_CHECKING:
-    from tvbo.data.types import ExperimentResult, TimeSeries
+    from tvbo.data.types import ExperimentResult
 
 # Julia packages required by the MTK backend
 MTK_PACKAGES = [
@@ -80,9 +80,7 @@ class ModelingToolkitAdapter(BaseAdapter):
 
         ctx = self.prepare_context()
         ctx.update(kwargs)
-        template = templates.lookup.get_template(
-            "tvbo-mtk-experiment.jl.mako"
-        )
+        template = templates.lookup.get_template("tvbo-mtk-experiment.jl.mako")
         return template.render(**ctx)
 
     def run(self, **kwargs) -> "ExperimentResult":
@@ -113,10 +111,11 @@ class ModelingToolkitAdapter(BaseAdapter):
         code = _strip_plot_lines(code)
 
         # 3. Change Julia working directory to YAML source dir
-        source = getattr(exp, '_source_file', None)
+        source = getattr(exp, "_source_file", None)
         original_cwd = os.getcwd()
         if source:
             from pathlib import Path
+
             src_dir = str(Path(source).parent)
             run_julia_code(f'cd("{src_dir}")')
 
@@ -128,9 +127,9 @@ class ModelingToolkitAdapter(BaseAdapter):
 
         # 6. Reshape to TVBO convention
         ctx = self.prepare_context()
-        sv_names = ctx['sv_names']
-        n_sv = ctx['n_sv']
-        n_nodes = ctx['n_nodes']
+        sv_names = ctx["sv_names"]
+        n_sv = ctx["n_sv"]
+        n_nodes = ctx["n_nodes"]
 
         # Pure MTK: single model, n_nodes=1 typically
         # u shape from MTK: (n_unknowns, n_t)
@@ -140,10 +139,7 @@ class ModelingToolkitAdapter(BaseAdapter):
         if n_unknowns != n_sv * n_nodes:
             try:
                 unknowns = run_julia_code("string.(unknowns(sys))")
-                state_labels = [
-                    _mtk_to_python_name(str(s).replace("(t)", ""))
-                    for s in list(unknowns)
-                ]
+                state_labels = [_mtk_to_python_name(str(s).replace("(t)", "")) for s in list(unknowns)]
             except Exception:
                 state_labels = [f"x_{i}" for i in range(n_unknowns)]
             # Flat unknowns — treat as n_unknowns variables, 1 node
@@ -156,7 +152,9 @@ class ModelingToolkitAdapter(BaseAdapter):
 
         sim = SimulationResult(data=da)
         return ExperimentResult(
-            integration=sim, source=exp, name=getattr(exp, 'label', None),
+            integration=sim,
+            source=exp,
+            name=getattr(exp, "label", None),
             sol=sol,
         )
 
@@ -223,10 +221,7 @@ class ModelingToolkitAdapter(BaseAdapter):
                 model=dyn,
             )
 
-        raise ValueError(
-            f"Unknown returns={returns!r}. "
-            "Use 'sympy', 'dynamics', 'experiment', or 'auto'."
-        )
+        raise ValueError(f"Unknown returns={returns!r}. Use 'sympy', 'dynamics', 'experiment', or 'auto'.")
 
     # ── Internal helpers for lower() ──────────────────────────────────
 
@@ -243,7 +238,7 @@ class ModelingToolkitAdapter(BaseAdapter):
         lines = []
         for line in code.splitlines():
             lines.append(line)
-            if 'mtkcompile' in line:
+            if "mtkcompile" in line:
                 break
         run_julia_code("\n".join(lines))
 
@@ -255,22 +250,18 @@ class ModelingToolkitAdapter(BaseAdapter):
         # 3. Parse each equation RHS back to SymPy
         equations = {}
         for i in range(1, n_eqs + 1):
-            lhs_str = str(run_julia_code(
-                f"string(equations(sys)[{i}].lhs)"
-            ))
-            rhs_str = str(run_julia_code(
-                f"string(equations(sys)[{i}].rhs)"
-            ))
+            lhs_str = str(run_julia_code(f"string(equations(sys)[{i}].lhs)"))
+            rhs_str = str(run_julia_code(f"string(equations(sys)[{i}].rhs)"))
             var_name, eq = _parse_mtk_equation(
-                lhs_str, rhs_str, unknown_strs, param_names,
+                lhs_str,
+                rhs_str,
+                unknown_strs,
+                param_names,
             )
             equations[var_name] = eq
 
         # Variable names cleaned for Python
-        unknowns = [
-            _mtk_to_python_name(s.replace("(t)", ""))
-            for s in unknown_strs
-        ]
+        unknowns = [_mtk_to_python_name(s.replace("(t)", "")) for s in unknown_strs]
 
         return {
             "equations": equations,
@@ -289,9 +280,7 @@ class ModelingToolkitAdapter(BaseAdapter):
         original = self.experiment.dynamics
         dyn = deepcopy(original)
         dyn.name = f"{original.name}_FirstOrder"
-        dyn.description = (
-            f"First-order equivalent of {original.name} (lowered via MTK)."
-        )
+        dyn.description = f"First-order equivalent of {original.name} (lowered via MTK)."
 
         # Update existing state variables with lowered equations
         for name, eq in lowered["equations"].items():
@@ -354,7 +343,7 @@ def _parse_mtk_equation(lhs_str, rhs_str, unknown_strs, param_names):
     from sympy import Derivative, Eq, Symbol, parse_expr
 
     # Extract variable name from LHS: "Differential(t, 1)(x(t))" -> "x"
-    m = re.search(r'\)\((\w+)\(t\)\)', lhs_str)
+    m = re.search(r"\)\((\w+)\(t\)\)", lhs_str)
     var_name_jl = m.group(1) if m else lhs_str
     var_name = _mtk_to_python_name(var_name_jl)
 

@@ -20,24 +20,51 @@ permissions:
 # Shared environment variables for all jobs
 env:
     JAX_PLATFORMS: cpu
-    UV_SYSTEM_PYTHON: "1"
+    # uv: bytecode-compile installed wheels for faster cold starts
+    UV_COMPILE_BYTECODE: "1"
+    # uv: copy from the cache instead of hardlinking (CI runner safe)
+    UV_LINK_MODE: copy
 
 jobs:
-    # ─── Always: lint ──────────────────────────────────────────
+    # ─── Always: lint, format & type-check ────────────────────
     lint:
         name: Lint
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v6
-            - uses: astral-sh/setup-uv@v6
+
+            # ruff: blocking syntax-error subset (same gate as before).
+            - name: Ruff — syntax errors (blocking)
+              uses: astral-sh/ruff-action@v4.0.0
+              with:
+                  args: "check --select=E9,F63,F7,F82 --output-format=github ."
+
+            # ruff: full lint summary, non-blocking until codebase is clean.
+            - name: Ruff — full lint (non-blocking)
+              uses: astral-sh/ruff-action@v4.0.0
+              with:
+                  args: "check --statistics --exit-zero --output-format=github ."
+
+            # ruff format: report files needing reformatting, non-blocking.
+            - name: Ruff format — check (non-blocking)
+              uses: astral-sh/ruff-action@v4.0.0
+              with:
+                  args: "format --check --diff ."
+              continue-on-error: true
+
+            # mypy: type-check the source tree, non-blocking.
+            - uses: astral-sh/setup-uv@v8.1.0
               with:
                   python-version: "3.12"
                   enable-cache: true
-            - run: uv pip install flake8
-            - name: Syntax errors (blocking)
-              run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-            - name: Style warnings (non-blocking)
-              run: flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+                  activate-environment: true
+                  cache-dependency-glob: |
+                      pyproject.toml
+                      .github/workflows/ci.yml
+            - name: Install mypy
+              run: uv pip install mypy
+            - name: Mypy — type check (non-blocking)
+              run: mypy tvbo || true
 
     # ─── Always: compatibility across Python versions ──────────
     compat:
@@ -51,11 +78,26 @@ jobs:
                 python-version: ["3.10", "3.11", "3.12", "3.13"]
         steps:
             - uses: actions/checkout@v6
-            - uses: astral-sh/setup-uv@v6
+            - uses: astral-sh/setup-uv@v8.1.0
               with:
                   python-version: ${{ matrix.python-version }}
                   enable-cache: true
-            - run: uv pip install -e . pytest pytest-xdist pytest-timeout
+                  activate-environment: true
+                  cache-dependency-glob: |
+                      pyproject.toml
+                      .github/workflows/ci.yml
+            - name: Cache .venv
+              id: venv-cache
+              uses: actions/cache@v5
+              with:
+                  path: .venv
+                  key: venv-compat-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml', '.github/workflows/ci.yml') }}
+            - name: Install (cache miss)
+              if: steps.venv-cache.outputs.cache-hit != 'true'
+              run: uv pip install -e . pytest pytest-xdist pytest-timeout
+            - name: Refresh editable link (cache hit)
+              if: steps.venv-cache.outputs.cache-hit == 'true'
+              run: uv pip install -e . --no-deps
             - name: Core tests
               run: |
                   pytest -v --tb=short -n auto --dist=loadscope \
@@ -107,14 +149,28 @@ jobs:
                           tests/test_full_workflow_comparison.py
         steps:
             - uses: actions/checkout@v6
-            - uses: astral-sh/setup-uv@v6
+            - uses: astral-sh/setup-uv@v8.1.0
               with:
                   python-version: "3.12"
                   enable-cache: true
+                  activate-environment: true
+                  cache-dependency-glob: |
+                      pyproject.toml
+                      .github/workflows/ci.yml
             - name: Configure git for private repos
               run: git config --global url."https://${{ secrets.PRIVATE_REPO_TOKEN }}@github.com/".insteadOf "https://github.com/"
-            - name: Install with all extras
+            - name: Cache .venv
+              id: venv-cache
+              uses: actions/cache@v5
+              with:
+                  path: .venv
+                  key: venv-native-${{ matrix.shard }}-3.12-${{ hashFiles('pyproject.toml', '.github/workflows/ci.yml') }}
+            - name: Install with all extras (cache miss)
+              if: steps.venv-cache.outputs.cache-hit != 'true'
               run: uv pip install -e ".[all]" pytest pytest-xdist pytest-timeout
+            - name: Refresh editable link (cache hit)
+              if: steps.venv-cache.outputs.cache-hit == 'true'
+              run: uv pip install -e . --no-deps
             - name: Run shard "${{ matrix.shard }}"
               run: |
                   pytest -x -v --tb=short \
