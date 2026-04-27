@@ -912,13 +912,8 @@ expl_label = _p(expl, 'label', expl_name)
 expl_desc = _p(expl, 'description', '')
 expl_mode = _p(expl, 'mode', 'product')
 expl_n_par = _p(expl, 'n_parallel', 1)
-expl_params = _p(expl, 'parameters', {})
-if isinstance(expl_params, dict):
-    ep_items = list(expl_params.items())
-elif hasattr(expl_params, 'items'):
-    ep_items = list(expl_params.items())
-else:
-    ep_items = [(_p(p, 'name', '?'), p) for p in (list(expl_params) if expl_params else [])]
+expl_axes = _p(expl, 'space', None) or []
+ep_items = [(str(_p(a, 'parameter', '?')).split('.', 1)[-1], a) for a in (list(expl_axes) if expl_axes else [])]
 observable = _p(expl, 'observable', None)
 %>\
 
