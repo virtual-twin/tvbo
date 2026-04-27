@@ -117,6 +117,20 @@ def test_doc_executes(qmd_path, doc_name):
             ],
         }
         nb["cells"].insert(0, setup_cell)
+        diagnostic_cell = {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {"tags": ["setup"]},
+            "outputs": [],
+            "source": [
+                "import glob, sys, os\n",
+                "print('CWD:', os.getcwd())\n",
+                "print('sys.path:', sys.path)\n",
+                "print('.so files found:', glob.glob('**/*.so', recursive=True))\n",
+                "print('.so in /tmp:', glob.glob('/tmp/**/*.so', recursive=True))\n",
+            ],
+        }
+        nb["cells"].insert(1, diagnostic_cell)
         with open(ipynb_path, "w", encoding="utf-8") as f:
             json.dump(nb, f)
 
