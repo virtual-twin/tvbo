@@ -69,7 +69,11 @@ slots:
         range: Range
     iri:
         slot_uri: dcterms:identifier
-        range: string
+        range: uriorcurie
+        description: >-
+            Stable IRI (or compact URI) identifying this entity in an
+            external ontology or knowledge base. Complements the `name`
+            key with an ontology-grounded identifier.
     value:
         slot_uri: schema:value
         range: float
@@ -1382,6 +1386,7 @@ classes:
             - name
             - acronym
             - label
+            - iri
             - equation
             - definition
             - description
@@ -1399,9 +1404,6 @@ classes:
                 description: "Name for this function's output (referenced by subsequent functions)"
                 range: string
             # Transformation definition (equation OR callable)
-            iri:
-                range: string
-                slot_uri: dcterms:identifier
             arguments:
                 description: "Parameters/arguments for the function"
                 multivalued: true

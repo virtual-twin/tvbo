@@ -4796,7 +4796,7 @@ class Dynamics(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE'],
          'slot_uri': 'rdfs:label'} })
-    iri: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function', 'Coupling'],
+    iri: Optional[str] = Field(default=None, description="""Stable IRI (or compact URI) identifying this entity in an external ontology or knowledge base. Complements the `name` key with an ontology-grounded identifier.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function', 'Coupling'],
          'slot_uri': 'dcterms:identifier'} })
     parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
                        'Stimulus',
@@ -5646,6 +5646,8 @@ class Function(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE'],
          'slot_uri': 'rdfs:label'} })
+    iri: Optional[str] = Field(default=None, description="""Stable IRI (or compact URI) identifying this entity in an external ontology or knowledge base. Complements the `name` key with an ontology-grounded identifier.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function', 'Coupling'],
+         'slot_uri': 'dcterms:identifier'} })
     equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
                        'Event',
                        'Observation',
@@ -5719,8 +5721,6 @@ class Function(ConfiguredBaseModel):
     requirements: Optional[list[str]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareEnvironment', 'Function', 'PDESolver']} })
     input: Optional[str] = Field(default=None, description="""Simple input reference: name of previous function's output in pipeline. For multi-argument functions, use arguments with value references instead.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall']} })
     output: Optional[str] = Field(default=None, description="""Name for this function's output (referenced by subsequent functions)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function', 'FunctionCall']} })
-    iri: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function', 'Coupling'],
-         'slot_uri': 'dcterms:identifier'} })
     arguments: Optional[list[Argument]] = Field(default=None, description="""Parameters/arguments for the function""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall', 'AlgorithmInclude']} })
     output_equation: Optional[Equation] = Field(default=None, description="""Output transformation equation (if equation-based)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function']} })
     source_code: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall']} })
@@ -5837,6 +5837,8 @@ class LossFunction(Function):
                        'PDESolver',
                        'PDE'],
          'slot_uri': 'rdfs:label'} })
+    iri: Optional[str] = Field(default=None, description="""Stable IRI (or compact URI) identifying this entity in an external ontology or knowledge base. Complements the `name` key with an ontology-grounded identifier.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function', 'Coupling'],
+         'slot_uri': 'dcterms:identifier'} })
     equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
                        'Event',
                        'Observation',
@@ -5910,8 +5912,6 @@ class LossFunction(Function):
     requirements: Optional[list[str]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareEnvironment', 'Function', 'PDESolver']} })
     input: Optional[str] = Field(default=None, description="""Simple input reference: name of previous function's output in pipeline. For multi-argument functions, use arguments with value references instead.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall']} })
     output: Optional[str] = Field(default=None, description="""Name for this function's output (referenced by subsequent functions)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function', 'FunctionCall']} })
-    iri: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function', 'Coupling'],
-         'slot_uri': 'dcterms:identifier'} })
     arguments: Optional[list[Argument]] = Field(default=None, description="""Parameters/arguments for the function""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall', 'AlgorithmInclude']} })
     output_equation: Optional[Equation] = Field(default=None, description="""Output transformation equation (if equation-based)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function']} })
     source_code: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall']} })
@@ -8357,7 +8357,7 @@ class Coupling(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE'],
          'slot_uri': 'rdfs:label'} })
-    iri: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function', 'Coupling'],
+    iri: Optional[str] = Field(default=None, description="""Stable IRI (or compact URI) identifying this entity in an external ontology or knowledge base. Complements the `name` key with an ontology-grounded identifier.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function', 'Coupling'],
          'slot_uri': 'dcterms:identifier'} })
     parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
                        'Stimulus',
