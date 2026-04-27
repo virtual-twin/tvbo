@@ -18,7 +18,7 @@ parameters:
 parcellation:
   atlas:
     name: DesikanKilliany
-    coordinateSpace: MNI152NLin2009cAsym
+    coordinateSpace: {name: MNI152NLin2009cAsym}
 tractogram:
   name: MghUscHcp32
 nodes:

@@ -20,7 +20,7 @@ parameters:
 parcellation:
   atlas:
     name: Schaefer2018
-    coordinateSpace: FSLMNI152
+    coordinateSpace: {name: FSLMNI152}
 tractogram:
   name: dTOR
 nodes:
