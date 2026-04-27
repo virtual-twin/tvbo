@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-04-27T17:09:31
+# Generation date: 2026-04-27T17:26:24
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -176,6 +176,10 @@ class OptimizationName(OptimizationStageName):
 
 
 class ExplorationName(extended_str):
+    pass
+
+
+class ExplorationAxisName(extended_str):
     pass
 
 
@@ -2398,6 +2402,7 @@ class Exploration(YAMLRoot):
     label: Optional[str] = None
     description: Optional[str] = None
     execution: Optional[Union[dict, "ExecutionConfig"]] = None
+    space: Optional[Union[dict[Union[str, ExplorationAxisName], Union[dict, "ExplorationAxis"]], list[Union[dict, "ExplorationAxis"]]]] = empty_dict()
     parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
     mode: Optional[str] = "product"
     observable: Optional[Union[dict, FunctionCall]] = None
@@ -2420,6 +2425,8 @@ class Exploration(YAMLRoot):
         if self.execution is not None and not isinstance(self.execution, ExecutionConfig):
             self.execution = ExecutionConfig(**as_dict(self.execution))
 
+        self._normalize_inlined_as_list(slot_name="space", slot_type=ExplorationAxis, key_name="name", keyed=True)
+
         self._normalize_inlined_as_list(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
 
         if self.mode is not None and not isinstance(self.mode, str):
@@ -2436,6 +2443,63 @@ class Exploration(YAMLRoot):
 
         if self.average is not None and not isinstance(self.average, str):
             self.average = str(self.average)
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
+class ExplorationAxis(YAMLRoot):
+    """
+    One axis of a parameter exploration grid. Points to an existing Parameter (by dotted reference, e.g.
+    "ReducedWongWang.w" or "FastLinearCoupling.G") and supplies the sweep specification (domain, explored_values, or
+    per-element overrides). No new Parameter is created.
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO["ExplorationAxis"]
+    class_class_curie: ClassVar[str] = "tvbo:ExplorationAxis"
+    class_name: ClassVar[str] = "ExplorationAxis"
+    class_model_uri: ClassVar[URIRef] = TVBO.ExplorationAxis
+
+    name: Union[str, ExplorationAxisName] = None
+    parameter: Union[str, ParameterName] = None
+    label: Optional[str] = None
+    description: Optional[str] = None
+    domain: Optional[Union[dict, Range]] = None
+    explored_values: Optional[Union[float, list[float]]] = empty_list()
+    element_domains: Optional[Union[Union[dict, Range], list[Union[dict, Range]]]] = empty_list()
+    unit: Optional[str] = None
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self._is_empty(self.name):
+            self.MissingRequiredField("name")
+        if not isinstance(self.name, ExplorationAxisName):
+            self.name = ExplorationAxisName(self.name)
+
+        if self._is_empty(self.parameter):
+            self.MissingRequiredField("parameter")
+        if not isinstance(self.parameter, ParameterName):
+            self.parameter = ParameterName(self.parameter)
+
+        if self.label is not None and not isinstance(self.label, str):
+            self.label = str(self.label)
+
+        if self.description is not None and not isinstance(self.description, str):
+            self.description = str(self.description)
+
+        if self.domain is not None and not isinstance(self.domain, Range):
+            self.domain = Range(**as_dict(self.domain))
+
+        if not isinstance(self.explored_values, list):
+            self.explored_values = [self.explored_values] if self.explored_values is not None else []
+        self.explored_values = [v if isinstance(v, float) else float(v) for v in self.explored_values]
+
+        if not isinstance(self.element_domains, list):
+            self.element_domains = [self.element_domains] if self.element_domains is not None else []
+        self.element_domains = [v if isinstance(v, Range) else Range(**as_dict(v)) for v in self.element_domains]
+
+        if self.unit is not None and not isinstance(self.unit, str):
+            self.unit = str(self.unit)
 
         super().__post_init__(**kwargs)
 
@@ -6898,6 +6962,9 @@ slots.optimization__depends_on = Slot(uri=TVBO.depends_on, name="optimization__d
 slots.exploration__execution = Slot(uri=TVBO.execution, name="exploration__execution", curie=TVBO.curie('execution'),
                    model_uri=TVBO.exploration__execution, domain=None, range=Optional[Union[dict, ExecutionConfig]])
 
+slots.exploration__space = Slot(uri=TVBO.space, name="exploration__space", curie=TVBO.curie('space'),
+                   model_uri=TVBO.exploration__space, domain=None, range=Optional[Union[dict[Union[str, ExplorationAxisName], Union[dict, ExplorationAxis]], list[Union[dict, ExplorationAxis]]]])
+
 slots.exploration__parameters = Slot(uri=TVBO.parameters, name="exploration__parameters", curie=TVBO.curie('parameters'),
                    model_uri=TVBO.exploration__parameters, domain=None, range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]])
 
@@ -6915,6 +6982,21 @@ slots.exploration__n_trials = Slot(uri=TVBO.n_trials, name="exploration__n_trial
 
 slots.exploration__average = Slot(uri=TVBO.average, name="exploration__average", curie=TVBO.curie('average'),
                    model_uri=TVBO.exploration__average, domain=None, range=Optional[str])
+
+slots.explorationAxis__parameter = Slot(uri=TVBO.parameter, name="explorationAxis__parameter", curie=TVBO.curie('parameter'),
+                   model_uri=TVBO.explorationAxis__parameter, domain=None, range=Union[str, ParameterName])
+
+slots.explorationAxis__domain = Slot(uri=TVBO.domain, name="explorationAxis__domain", curie=TVBO.curie('domain'),
+                   model_uri=TVBO.explorationAxis__domain, domain=None, range=Optional[Union[dict, Range]])
+
+slots.explorationAxis__explored_values = Slot(uri=TVBO.explored_values, name="explorationAxis__explored_values", curie=TVBO.curie('explored_values'),
+                   model_uri=TVBO.explorationAxis__explored_values, domain=None, range=Optional[Union[float, list[float]]])
+
+slots.explorationAxis__element_domains = Slot(uri=TVBO.element_domains, name="explorationAxis__element_domains", curie=TVBO.curie('element_domains'),
+                   model_uri=TVBO.explorationAxis__element_domains, domain=None, range=Optional[Union[Union[dict, Range], list[Union[dict, Range]]]])
+
+slots.explorationAxis__unit = Slot(uri=TVBO.unit, name="explorationAxis__unit", curie=TVBO.curie('unit'),
+                   model_uri=TVBO.explorationAxis__unit, domain=None, range=Optional[str])
 
 slots.updateRule__target_parameter = Slot(uri=TVBO.target_parameter, name="updateRule__target_parameter", curie=TVBO.curie('target_parameter'),
                    model_uri=TVBO.updateRule__target_parameter, domain=None, range=Union[dict, Parameter])
