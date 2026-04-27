@@ -2223,6 +2223,7 @@ classes:
                 multivalued: true
                 range: Parameter
                 inlined: true
+                inlined_as_list: true
                 description: >-
                     Parameters to vary. First parameter is primary (codim-1);
                     second enables codim-2 continuation. Each Parameter has
@@ -2297,6 +2298,7 @@ classes:
                 multivalued: true
                 range: BranchSwitch
                 inlined: true
+                inlined_as_list: true
                 description: >-
                     Child branches to continue from detected bifurcation
                     points (PO from Hopf, fold continuation, etc.).
@@ -2639,21 +2641,25 @@ classes:
                 multivalued: true
                 range: Optimization
                 inlined: true
+                inlined_as_list: true
                 description: "Parameter optimization configurations"
             explorations:
                 multivalued: true
                 range: Exploration
                 inlined: true
+                inlined_as_list: true
                 description: "Parameter exploration/grid search specifications"
             algorithms:
                 multivalued: true
                 range: Algorithm
                 inlined: true
+                inlined_as_list: true
                 description: "Iterative parameter tuning algorithms (FIC, EIB, etc.)"
             continuations:
                 multivalued: true
                 range: Continuation
                 inlined: true
+                inlined_as_list: true
                 description: >-
                     Numerical continuation and bifurcation analysis specifications.
                     Each entry defines a continuation experiment (equilibrium branch,
