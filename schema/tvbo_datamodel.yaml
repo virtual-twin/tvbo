@@ -14,6 +14,10 @@ prefixes:
     nidm: http://purl.org/nidash/nidm#
     biotools: https://bio.tools/ontology/
     wd: http://www.wikidata.org/entity/
+    dcterms: http://purl.org/dc/terms/
+    schema: http://schema.org/
+    skos: http://www.w3.org/2004/02/skos/core#
+    bibo: http://purl.org/ontology/bibo/
 imports:
     - linkml:types
     - SANDS
@@ -26,6 +30,7 @@ default_range: string
 
 slots:
     name:
+        slot_uri: schema:name
         range: string
         key: true
     time_scale:
@@ -45,31 +50,40 @@ slots:
     model:
         range: Dynamics
     has_reference:
+        slot_uri: dcterms:references
         range: string
     references:
+        slot_uri: dcterms:references
         multivalued: true
         range: string
     label:
+        slot_uri: rdfs:label
         range: string
     acronym:
+        slot_uri: skos:notation
         range: string
     symbol:
         range: string
     domain:
         range: Range
     iri:
+        slot_uri: dcterms:identifier
         range: string
     value:
+        slot_uri: schema:value
         range: float
     file:
         range: string
     reported_optimum:
         range: float
     default:
+        slot_uri: schema:defaultValue
         range: string
     description:
+        slot_uri: dcterms:description
         range: string
     definition:
+        slot_uri: skos:definition
         range: string
     parameters:
         range: Parameter
@@ -80,13 +94,16 @@ slots:
         range: Equation
         inlined: true
     unit:
+        slot_uri: qudt:unit
         range: UnitEnum
         description: >-
             Physical unit of measurement. Values are drawn from the QUDT
             ontology (http://qudt.org/vocab/unit/) with UO cross-references
             where available.
     derived_from:
+        slot_uri: prov:wasDerivedFrom
     source:
+        slot_uri: dcterms:source
         range: string
     dataset_path:
         range: string
@@ -793,6 +810,7 @@ classes:
                 description: "Processing pipeline used to generate the tractography"
             reference:
                 range: string
+                slot_uri: dcterms:references
                 description: "Publication or DOI reference for this tractography dataset"
 
     Matrix:
@@ -1081,6 +1099,7 @@ classes:
             id:
                 range: integer
                 required: true
+                slot_uri: dcterms:identifier
                 description: "Unique node identifier"
             dynamics:
                 range: Dynamics
@@ -1525,6 +1544,7 @@ classes:
         attributes:
             comment:
                 range: string
+                slot_uri: rdfs:comment
             heterogeneous:
                 range: boolean
             distribution:
@@ -1620,6 +1640,7 @@ classes:
             # Transformation definition (equation OR callable)
             iri:
                 range: string
+                slot_uri: dcterms:identifier
             arguments:
                 description: "Parameters/arguments for the function"
                 multivalued: true
@@ -2735,13 +2756,16 @@ classes:
             id:
                 identifier: true
                 range: integer
+                slot_uri: dcterms:identifier
             description:
                 range: string
+                slot_uri: dcterms:description
             additional_equations:
                 multivalued: true
                 range: Equation
             label:
                 range: string
+                slot_uri: rdfs:label
             dynamics:
                 range: Dynamics
                 inlined: true
@@ -2832,6 +2856,7 @@ classes:
             references:
                 multivalued: true
                 range: string
+                slot_uri: dcterms:references
             dataset:
                 range: Dataset
                 inlined: true
@@ -2852,10 +2877,13 @@ classes:
                 range: string
             title:
                 range: string
+                slot_uri: dcterms:title
             year:
                 range: integer
+                slot_uri: dcterms:issued
             doi:
                 range: string
+                slot_uri: bibo:doi
             sample:
                 range: Sample
             simulation_experiments:
@@ -2890,6 +2918,7 @@ classes:
                 description: "Unit of the sampling period (e.g., 'ms', 's')."
             unit:
                 range: string
+                slot_uri: qudt:unit
                 description: "Physical unit of the time series values."
             labels_ordering:
                 range: string
@@ -2914,12 +2943,15 @@ classes:
                 description: "BIDS task name for the simulation (e.g., 'rest', 'simulation')."
             subject_id:
                 range: string
+                slot_uri: dcterms:identifier
                 description: "BIDS subject identifier."
             session_id:
                 range: string
+                slot_uri: dcterms:identifier
                 description: "BIDS session identifier."
             run_id:
                 range: integer
+                slot_uri: dcterms:identifier
                 description: "BIDS run number."
             modality:
                 range: ImagingModality
