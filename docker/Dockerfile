@@ -8,9 +8,11 @@ LABEL maintainer="Leon Martin <leon.martin@bih-charite.de>"
 # Bring in uv (single static binary, no Python bootstrap needed).
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 
-# System deps: compilers (f2py/PyRates Fortran), cairo (bsplot SVG), curl/wget (Quarto install)
+# System deps: compilers (f2py/PyRates Fortran), cairo (bsplot SVG), curl/wget (Quarto install),
+#              default-jre-headless (jNeuroML LEMS runner)
 RUN apt-get update && apt-get install -y --no-install-recommends \
         gcc g++ gfortran make git perl libcairo2-dev curl wget \
+        default-jre-headless \
     && rm -rf /var/lib/apt/lists/*
 
 # Build AUTO-07p
