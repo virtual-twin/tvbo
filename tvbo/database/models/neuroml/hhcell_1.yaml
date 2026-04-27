@@ -125,7 +125,7 @@ state_variables:
       rhs: alpha_n * (1 - n) - beta_n * n
     initial_value: 0.32
 coupling_inputs:
-- I_syn
+  I_syn:
 events:
   spike:
     condition:

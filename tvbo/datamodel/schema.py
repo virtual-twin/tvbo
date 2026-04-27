@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-04-27T15:37:41
+# Generation date: 2026-04-27T15:53:28
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -3054,8 +3054,8 @@ class Coupling(YAMLRoot):
     sparse: Optional[Union[bool, Bool]] = False
     pre_expression: Optional[Union[dict, Equation]] = None
     post_expression: Optional[Union[dict, Equation]] = None
-    incoming_states: Optional[Union[Union[str, StateVariableName], list[Union[str, StateVariableName]]]] = empty_list()
-    local_states: Optional[Union[Union[str, StateVariableName], list[Union[str, StateVariableName]]]] = empty_list()
+    incoming_states: Optional[Union[str, list[str]]] = empty_list()
+    local_states: Optional[Union[str, list[str]]] = empty_list()
     delayed: Optional[Union[bool, Bool]] = True
     symmetry: Optional[str] = "directed"
     outsym: Optional[Union[str, list[str]]] = empty_list()
@@ -3097,11 +3097,11 @@ class Coupling(YAMLRoot):
 
         if not isinstance(self.incoming_states, list):
             self.incoming_states = [self.incoming_states] if self.incoming_states is not None else []
-        self.incoming_states = [v if isinstance(v, StateVariableName) else StateVariableName(v) for v in self.incoming_states]
+        self.incoming_states = [v if isinstance(v, str) else str(v) for v in self.incoming_states]
 
         if not isinstance(self.local_states, list):
             self.local_states = [self.local_states] if self.local_states is not None else []
-        self.local_states = [v if isinstance(v, StateVariableName) else StateVariableName(v) for v in self.local_states]
+        self.local_states = [v if isinstance(v, str) else str(v) for v in self.local_states]
 
         if self.delayed is not None and not isinstance(self.delayed, Bool):
             self.delayed = Bool(self.delayed)
@@ -7134,10 +7134,10 @@ slots.coupling__post_expression = Slot(uri=TVBO.post_expression, name="coupling_
                    model_uri=TVBO.coupling__post_expression, domain=None, range=Optional[Union[dict, Equation]])
 
 slots.coupling__incoming_states = Slot(uri=TVBO.incoming_states, name="coupling__incoming_states", curie=TVBO.curie('incoming_states'),
-                   model_uri=TVBO.coupling__incoming_states, domain=None, range=Optional[Union[Union[str, StateVariableName], list[Union[str, StateVariableName]]]])
+                   model_uri=TVBO.coupling__incoming_states, domain=None, range=Optional[Union[str, list[str]]])
 
 slots.coupling__local_states = Slot(uri=TVBO.local_states, name="coupling__local_states", curie=TVBO.curie('local_states'),
-                   model_uri=TVBO.coupling__local_states, domain=None, range=Optional[Union[Union[str, StateVariableName], list[Union[str, StateVariableName]]]])
+                   model_uri=TVBO.coupling__local_states, domain=None, range=Optional[Union[str, list[str]]])
 
 slots.coupling__delayed = Slot(uri=TVBO.delayed, name="coupling__delayed", curie=TVBO.curie('delayed'),
                    model_uri=TVBO.coupling__delayed, domain=None, range=Optional[Union[bool, Bool]])

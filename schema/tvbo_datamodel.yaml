@@ -2416,13 +2416,27 @@ classes:
                 description: "Post-processing expression applied after coupling"
                 inlined: true
             incoming_states:
-                range: StateVariable
+                range: string
                 multivalued: true
-                description: "References to state variables from connected nodes (source)"
+                annotations:
+                    references: tvbo:StateVariable.name
+                description: >-
+                    Names of state variables from connected (source) nodes.
+                    Each entry must equal a StateVariable.name on the experiment's
+                    Dynamics; auto-populated from state_variables with
+                    coupling_variable=true when omitted. Used by name in
+                    pre_expression. Cannot use range: StateVariable directly
+                    because StateVariable.name is a key (scoped under Dynamics),
+                    not a globally unique identifier.
             local_states:
-                range: StateVariable
+                range: string
                 multivalued: true
-                description: "References to state variables from local node (target)"
+                annotations:
+                    references: tvbo:StateVariable.name
+                description: >-
+                    Names of state variables from the local (target) node.
+                    Each entry must equal a StateVariable.name on the experiment's
+                    Dynamics. Used by name in pre_expression.
             delayed:
                 range: boolean
                 ifabsent: true
