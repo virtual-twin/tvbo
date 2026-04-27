@@ -1887,6 +1887,10 @@ classes:
             - name
             - label
             - description
+        slot_usage:
+            name:
+                required: false
+                description: "Optional axis label (defaults to the dotted parameter reference)."
         attributes:
             parameter:
                 range: Parameter
