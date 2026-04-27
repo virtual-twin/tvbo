@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-04-27T13:34:09
+# Generation date: 2026-04-27T13:38:35
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -56,8 +56,8 @@ from rdflib import (
     URIRef
 )
 
-from linkml_runtime.linkml_model.types import Boolean, Date, Datetime, Float, Integer, String, Uri
-from linkml_runtime.utils.metamodelcore import Bool, URI, XSDDate, XSDDateTime
+from linkml_runtime.linkml_model.types import Boolean, Date, Datetime, Float, Integer, String, Uri, Uriorcurie
+from linkml_runtime.utils.metamodelcore import Bool, URI, URIorCURIE, XSDDate, XSDDateTime
 
 metamodel_version = "1.7.0"
 version = None
@@ -1310,7 +1310,7 @@ class Dynamics(YAMLRoot):
     name: Union[str, DynamicsName] = "Generic2dOscillator"
     has_reference: Optional[str] = None
     label: Optional[str] = None
-    iri: Optional[str] = None
+    iri: Optional[Union[str, URIorCURIE]] = None
     parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
     description: Optional[str] = None
     source: Optional[str] = None
@@ -1346,8 +1346,8 @@ class Dynamics(YAMLRoot):
         if self.label is not None and not isinstance(self.label, str):
             self.label = str(self.label)
 
-        if self.iri is not None and not isinstance(self.iri, str):
-            self.iri = str(self.iri)
+        if self.iri is not None and not isinstance(self.iri, URIorCURIE):
+            self.iri = URIorCURIE(self.iri)
 
         self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
 
@@ -1743,13 +1743,13 @@ class Function(YAMLRoot):
     name: Union[str, FunctionName] = None
     acronym: Optional[str] = None
     label: Optional[str] = None
+    iri: Optional[Union[str, URIorCURIE]] = None
     equation: Optional[Union[dict, Equation]] = None
     definition: Optional[str] = None
     description: Optional[str] = None
     requirements: Optional[Union[Union[str, SoftwareRequirementName], list[Union[str, SoftwareRequirementName]]]] = empty_list()
     input: Optional[Union[str, FunctionName]] = None
     output: Optional[str] = None
-    iri: Optional[str] = None
     arguments: Optional[Union[dict[Union[str, ArgumentName], Union[dict, Argument]], list[Union[dict, Argument]]]] = empty_dict()
     output_equation: Optional[Union[dict, Equation]] = None
     source_code: Optional[str] = None
@@ -1770,6 +1770,9 @@ class Function(YAMLRoot):
         if self.label is not None and not isinstance(self.label, str):
             self.label = str(self.label)
 
+        if self.iri is not None and not isinstance(self.iri, URIorCURIE):
+            self.iri = URIorCURIE(self.iri)
+
         if self.equation is not None and not isinstance(self.equation, Equation):
             self.equation = Equation(**as_dict(self.equation))
 
@@ -1788,9 +1791,6 @@ class Function(YAMLRoot):
 
         if self.output is not None and not isinstance(self.output, str):
             self.output = str(self.output)
-
-        if self.iri is not None and not isinstance(self.iri, str):
-            self.iri = str(self.iri)
 
         self._normalize_inlined_as_list(slot_name="arguments", slot_type=Argument, key_name="name", keyed=True)
 
@@ -3057,7 +3057,7 @@ class Coupling(YAMLRoot):
 
     name: Union[str, CouplingName] = "Linear"
     label: Optional[str] = None
-    iri: Optional[str] = None
+    iri: Optional[Union[str, URIorCURIE]] = None
     parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
     description: Optional[str] = None
     coupling_function: Optional[Union[dict, Equation]] = None
@@ -3085,8 +3085,8 @@ class Coupling(YAMLRoot):
         if self.label is not None and not isinstance(self.label, str):
             self.label = str(self.label)
 
-        if self.iri is not None and not isinstance(self.iri, str):
-            self.iri = str(self.iri)
+        if self.iri is not None and not isinstance(self.iri, URIorCURIE):
+            self.iri = URIorCURIE(self.iri)
 
         self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
 
@@ -6091,7 +6091,7 @@ slots.domain = Slot(uri=TVBO.domain, name="domain", curie=TVBO.curie('domain'),
                    model_uri=TVBO.domain, domain=None, range=Optional[Union[dict, Range]])
 
 slots.iri = Slot(uri=DCTERMS.identifier, name="iri", curie=DCTERMS.curie('identifier'),
-                   model_uri=TVBO.iri, domain=None, range=Optional[str])
+                   model_uri=TVBO.iri, domain=None, range=Optional[Union[str, URIorCURIE]])
 
 slots.value = Slot(uri=SCHEMA.value, name="value", curie=SCHEMA.curie('value'),
                    model_uri=TVBO.value, domain=None, range=Optional[float])
@@ -6686,9 +6686,6 @@ slots.function__input = Slot(uri=TVBO.input, name="function__input", curie=TVBO.
 
 slots.function__output = Slot(uri=TVBO.output, name="function__output", curie=TVBO.curie('output'),
                    model_uri=TVBO.function__output, domain=None, range=Optional[str])
-
-slots.function__iri = Slot(uri=DCTERMS.identifier, name="function__iri", curie=DCTERMS.curie('identifier'),
-                   model_uri=TVBO.function__iri, domain=None, range=Optional[str])
 
 slots.function__arguments = Slot(uri=TVBO.arguments, name="function__arguments", curie=TVBO.curie('arguments'),
                    model_uri=TVBO.function__arguments, domain=None, range=Optional[Union[dict[Union[str, ArgumentName], Union[dict, Argument]], list[Union[dict, Argument]]]])
