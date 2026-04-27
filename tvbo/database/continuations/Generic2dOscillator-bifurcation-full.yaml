@@ -142,7 +142,7 @@ branches:
       # ── Branch-specific toolkit options ────────────────────────────────
       # String options specific to this branch.
     options:
-      - name: linear_solver
+      linear_solver:
         value: COPBLS         # Linear solver for PO: COPBLS | DefaultLS
 
 # ── Software requirement ─────────────────────────────────────────────────────
