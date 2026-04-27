@@ -46,8 +46,11 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# NeuroML/LEMS support
+# NeuroML/LEMS support (pyNeuroML + LEMS engine)
 neuroml = ["PyLEMS>=0.6.7", "pyNeuroML>=0.7.0"]
+
+# NEURON simulator (required for multi-compartment NeuroML export backend)
+neuron = ["neuron"]
 
 # Data formats (tractograms, HDF5)
 data = ["dipy>=1.10.0"]
@@ -93,7 +96,7 @@ tvb = ["tvb-library", "tvb-framework", "tvb-data"]
 tvboptim = ["tvboptim"]
 
 # Full install (all features)
-all = ["tvbo[neuroml,data,knowledge,audio,api,tvb,tvboptim,docs,pyrates,julia]"]
+all = ["tvbo[neuroml,neuron,data,knowledge,audio,api,tvb,tvboptim,docs,pyrates,julia]"]
 
 [project.urls]
 homepage = "https://virtual-twin.github.io/tvbo/"
