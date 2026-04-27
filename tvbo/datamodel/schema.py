@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-04-27T15:02:30
+# Generation date: 2026-04-27T15:07:47
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -65,7 +65,9 @@ version = "0.4.0"
 # Namespaces
 UO = CurieNamespace('UO', 'http://purl.obolibrary.org/obo/UO_')
 ATOM = CurieNamespace('atom', 'http://uri.interlex.org/tgbugs/uris/readable/')
+BIBO = CurieNamespace('bibo', 'http://purl.org/ontology/bibo/')
 BIOTOOLS = CurieNamespace('biotools', 'https://bio.tools/ontology/')
+DCTERMS = CurieNamespace('dcterms', 'http://purl.org/dc/terms/')
 LINKML = CurieNamespace('linkml', 'https://w3id.org/linkml/')
 NIDM = CurieNamespace('nidm', 'http://purl.org/nidash/nidm#')
 PROV = CurieNamespace('prov', 'http://www.w3.org/ns/prov#')
@@ -73,6 +75,7 @@ QUDT = CurieNamespace('qudt', 'http://qudt.org/vocab/unit/')
 RDFS = CurieNamespace('rdfs', 'http://www.w3.org/2000/01/rdf-schema#')
 SCHEMA = CurieNamespace('schema', 'http://schema.org/')
 SIO = CurieNamespace('sio', 'http://semanticscience.org/resource/')
+SKOS = CurieNamespace('skos', 'http://www.w3.org/2004/02/skos/core#')
 TVBO = CurieNamespace('tvbo', 'http://www.thevirtualbrain.org/tvb-o/')
 TVBO_DBS = CurieNamespace('tvbo_dbs', 'http://www.thevirtualbrain.org/tvb-o/dbs/')
 TVBO_STUDY = CurieNamespace('tvbo_study', 'http://www.thevirtualbrain.org/tvb-o/study/')
@@ -1309,7 +1312,7 @@ class Dynamics(YAMLRoot):
     name: Union[str, DynamicsName] = "Generic2dOscillator"
     has_reference: Optional[str] = None
     label: Optional[str] = None
-    iri: Optional[str] = None
+    iri: Optional[Union[str, URIorCURIE]] = None
     parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
     description: Optional[str] = None
     source: Optional[str] = None
@@ -1746,7 +1749,6 @@ class Function(YAMLRoot):
     requirements: Optional[Union[Union[str, SoftwareRequirementName], list[Union[str, SoftwareRequirementName]]]] = empty_list()
     input: Optional[Union[str, FunctionName]] = None
     output: Optional[str] = None
-    iri: Optional[str] = None
     arguments: Optional[Union[dict[Union[str, ArgumentName], Union[dict, Argument]], list[Union[dict, Argument]]]] = empty_dict()
     output_equation: Optional[Union[dict, Equation]] = None
     source_code: Optional[str] = None
@@ -3054,7 +3056,7 @@ class Coupling(YAMLRoot):
 
     name: Union[str, CouplingName] = "Linear"
     label: Optional[str] = None
-    iri: Optional[str] = None
+    iri: Optional[Union[str, URIorCURIE]] = None
     parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
     description: Optional[str] = None
     coupling_function: Optional[Union[dict, Equation]] = None
@@ -4297,7 +4299,6 @@ class Dataset(YAMLRoot):
     label: Optional[str] = None
     description: Optional[str] = None
     bids_root: Optional[str] = None
-    subjects: Optional[Union[dict[Union[str, SubjectSubjectId], Union[dict, Subject]], list[Union[dict, Subject]]]] = empty_dict()
     conditions: Optional[Union[str, list[str]]] = empty_list()
     reference: Optional[str] = None
 
@@ -5049,284 +5050,6 @@ class SoftwareEnvironment(YAMLRoot):
 
 
 # Enumerations
-class UnitEnum(EnumDefinitionImpl):
-    """
-    Physical units of measurement for model parameters, state variables, and integration settings. Uses conventional
-    abbreviations as values, mapped to the QUDT ontology (http://qudt.org/vocab/unit/) with UO cross-references where
-    available.
-    """
-    s = PermissibleValue(
-        text="s",
-        description="Second",
-        meaning=QUDT["SEC"])
-    ms = PermissibleValue(
-        text="ms",
-        description="Millisecond",
-        meaning=QUDT["MilliSEC"])
-    us = PermissibleValue(
-        text="us",
-        description="Microsecond",
-        meaning=QUDT["MicroSEC"])
-    per_s = PermissibleValue(
-        text="per_s",
-        description="Per second (s⁻¹)",
-        meaning=QUDT["PER-SEC"])
-    per_ms = PermissibleValue(
-        text="per_ms",
-        description="Per millisecond (ms⁻¹)",
-        meaning=QUDT["PER-MilliSEC"])
-    Hz = PermissibleValue(
-        text="Hz",
-        description="Hertz (s⁻¹)",
-        meaning=QUDT["HZ"])
-    kHz = PermissibleValue(
-        text="kHz",
-        description="Kilohertz",
-        meaning=QUDT["KiloHZ"])
-    V = PermissibleValue(
-        text="V",
-        description="Volt",
-        meaning=QUDT["V"])
-    mV = PermissibleValue(
-        text="mV",
-        description="Millivolt",
-        meaning=QUDT["MilliV"])
-    per_mV = PermissibleValue(
-        text="per_mV",
-        description="Reciprocal millivolt (mV⁻¹)",
-        meaning=QUDT["PER-MilliV"])
-    mV_per_ms = PermissibleValue(
-        text="mV_per_ms",
-        description="Millivolt per millisecond",
-        meaning=QUDT["MilliV-PER-MilliSEC"])
-    mV_per_s = PermissibleValue(
-        text="mV_per_s",
-        description="Millivolt per second",
-        meaning=QUDT["MilliV-PER-SEC"])
-    A = PermissibleValue(
-        text="A",
-        description="Ampere",
-        meaning=QUDT["A"])
-    nA = PermissibleValue(
-        text="nA",
-        description="Nanoampere",
-        meaning=QUDT["NanoA"])
-    pA = PermissibleValue(
-        text="pA",
-        description="Picoampere",
-        meaning=QUDT["PicoA"])
-    uA_per_cm2 = PermissibleValue(
-        text="uA_per_cm2",
-        description="Microampere per square centimetre (current density)")
-    pF = PermissibleValue(
-        text="pF",
-        description="Picofarad",
-        meaning=QUDT["PicoFARAD"])
-    nF = PermissibleValue(
-        text="nF",
-        description="Nanofarad",
-        meaning=QUDT["NanoFARAD"])
-    uF_per_cm2 = PermissibleValue(
-        text="uF_per_cm2",
-        description="Microfarad per square centimetre (specific capacitance)")
-    nS = PermissibleValue(
-        text="nS",
-        description="Nanosiemens",
-        meaning=QUDT["NanoS"])
-    uS = PermissibleValue(
-        text="uS",
-        description="Microsiemens",
-        meaning=QUDT["MicroS"])
-    pS = PermissibleValue(
-        text="pS",
-        description="Picosiemens",
-        meaning=QUDT["PicoS"])
-    S_per_cm2 = PermissibleValue(
-        text="S_per_cm2",
-        description="Siemens per square centimetre (conductance density)")
-    mS_per_cm2 = PermissibleValue(
-        text="mS_per_cm2",
-        description="Millisiemens per square centimetre (conductance density)")
-    S_per_m2 = PermissibleValue(
-        text="S_per_m2",
-        description="Siemens per square metre (conductance density, SI)")
-    nS_per_mV = PermissibleValue(
-        text="nS_per_mV",
-        description="Nanosiemens per millivolt")
-    per_nC = PermissibleValue(
-        text="per_nC",
-        description="Reciprocal nanocoulomb (nC⁻¹)",
-        meaning=QUDT["PER-NanoC"])
-    per_pC = PermissibleValue(
-        text="per_pC",
-        description="Reciprocal picocoulomb (pC⁻¹)",
-        meaning=QUDT["PER-PicoC"])
-    mol_per_m3 = PermissibleValue(
-        text="mol_per_m3",
-        description="Mole per cubic metre (mol/m³)",
-        meaning=QUDT["MOL-PER-M3"])
-    mol_per_cm3 = PermissibleValue(
-        text="mol_per_cm3",
-        description="Mole per cubic centimetre (mol/cm³)")
-    mmol_per_m3 = PermissibleValue(
-        text="mmol_per_m3",
-        description="Millimole per cubic metre (mmol/m³ ≈ mM)",
-        meaning=QUDT["MilliMOL-PER-M3"])
-    mol_per_m_per_A_per_s = PermissibleValue(
-        text="mol_per_m_per_A_per_s",
-        description="Mole per metre per ampere per second (concentration-current coupling)")
-    um3 = PermissibleValue(
-        text="um3",
-        description="Cubic micrometre (µm³)",
-        meaning=QUDT["MicroM3"])
-    m = PermissibleValue(
-        text="m",
-        description="Metre",
-        meaning=QUDT["M"])
-    mm = PermissibleValue(
-        text="mm",
-        description="Millimetre",
-        meaning=QUDT["MilliM"])
-    cm = PermissibleValue(
-        text="cm",
-        description="Centimetre",
-        meaning=QUDT["CentiM"])
-    m_per_s = PermissibleValue(
-        text="m_per_s",
-        description="Metre per second",
-        meaning=QUDT["M-PER-SEC"])
-    mm_per_ms = PermissibleValue(
-        text="mm_per_ms",
-        description="Millimetre per millisecond (= m/s)",
-        meaning=QUDT["MilliM-PER-MilliSEC"])
-    Hz_per_nA = PermissibleValue(
-        text="Hz_per_nA",
-        description="Hertz per nanoampere (neural gain)")
-    S_per_m = PermissibleValue(
-        text="S_per_m",
-        description="Siemens per metre (conductivity)",
-        meaning=QUDT["S-PER-M"])
-    H_per_m = PermissibleValue(
-        text="H_per_m",
-        description="Henry per metre (permeability)",
-        meaning=QUDT["H-PER-M"])
-    ohm = PermissibleValue(
-        text="ohm",
-        description="Ohm (Ω)",
-        meaning=QUDT["OHM"])
-    Mohm = PermissibleValue(
-        text="Mohm",
-        description="Megaohm (MΩ)")
-    kohm_cm = PermissibleValue(
-        text="kohm_cm",
-        description="Kilo-ohm centimetre (axial resistivity)")
-    degC = PermissibleValue(
-        text="degC",
-        description="Degree Celsius",
-        meaning=QUDT["DEG_C"])
-    rad_per_ms = PermissibleValue(
-        text="rad_per_ms",
-        description="Radian per millisecond")
-    dimensionless = PermissibleValue(
-        text="dimensionless",
-        description="Dimensionless (unitless)",
-        meaning=QUDT["UNITLESS"])
-    percent = PermissibleValue(
-        text="percent",
-        description="Percent (%)",
-        meaning=QUDT["PERCENT"])
-    arbitrary_unit = PermissibleValue(
-        text="arbitrary_unit",
-        description="Arbitrary units (a.u.)")
-    kg = PermissibleValue(
-        text="kg",
-        description="Kilogram",
-        meaning=QUDT["KiloGM"])
-    kg_per_s = PermissibleValue(
-        text="kg_per_s",
-        description="Kilogram per second")
-    m_per_s2 = PermissibleValue(
-        text="m_per_s2",
-        description="Metre per second squared (acceleration)",
-        meaning=QUDT["M-PER-SEC2"])
-    N_per_m = PermissibleValue(
-        text="N_per_m",
-        description="Newton per metre (spring constant)",
-        meaning=QUDT["N-PER-M"])
-    rad = PermissibleValue(
-        text="rad",
-        description="Radian",
-        meaning=QUDT["RAD"])
-    rad_per_s = PermissibleValue(
-        text="rad_per_s",
-        description="Radian per second (angular velocity)",
-        meaning=QUDT["RAD-PER-SEC"])
-    s2 = PermissibleValue(
-        text="s2",
-        description="Second squared (inertia constant)",
-        meaning=QUDT["SEC2"])
-    per_unit = PermissibleValue(
-        text="per_unit",
-        description="Per-unit (dimensionless power-systems convention)")
-
-    _defn = EnumDefinition(
-        name="UnitEnum",
-        description="""Physical units of measurement for model parameters, state variables, and integration settings. Uses conventional abbreviations as values, mapped to the QUDT ontology (http://qudt.org/vocab/unit/) with UO cross-references where available.""",
-    )
-
-class PhysicalDimension(EnumDefinitionImpl):
-    """
-    Physical dimension categories for LEMS and dimensional analysis. Each dimension decomposes into SI base dimensions
-    (M, L, T, I, K, N).
-    """
-    none = PermissibleValue(
-        text="none",
-        description="Dimensionless")
-    time = PermissibleValue(
-        text="time",
-        description="Time [T]")
-    per_time = PermissibleValue(
-        text="per_time",
-        description="Inverse time [T⁻¹]")
-    voltage = PermissibleValue(
-        text="voltage",
-        description="Voltage [M L² T⁻³ I⁻¹]")
-    current = PermissibleValue(
-        text="current",
-        description="Electric current [I]")
-    capacitance = PermissibleValue(
-        text="capacitance",
-        description="Capacitance [M⁻¹ L⁻² T⁴ I²]")
-    conductance = PermissibleValue(
-        text="conductance",
-        description="Conductance [M⁻¹ L⁻² T³ I²]")
-    resistance = PermissibleValue(
-        text="resistance",
-        description="Resistance [M L² T⁻³ I⁻²]")
-    charge = PermissibleValue(
-        text="charge",
-        description="Electric charge [T I]")
-    concentration = PermissibleValue(
-        text="concentration",
-        description="Concentration [L⁻³ N]")
-    substance = PermissibleValue(
-        text="substance",
-        description="Amount of substance [N]")
-    length = PermissibleValue(
-        text="length",
-        description="Length [L]")
-    volume = PermissibleValue(
-        text="volume",
-        description="Volume [L³]")
-    temperature = PermissibleValue(
-        text="temperature",
-        description="Temperature [K]")
-
-    _defn = EnumDefinition(
-        name="PhysicalDimension",
-        description="""Physical dimension categories for LEMS and dimensional analysis. Each dimension decomposes into SI base dimensions (M, L, T, I, K, N).""",
-    )
-
 class ImagingModality(EnumDefinitionImpl):
 
     BOLD = PermissibleValue(
@@ -5693,6 +5416,284 @@ class SparseFormat(EnumDefinitionImpl):
         name="SparseFormat",
     )
 
+class UnitEnum(EnumDefinitionImpl):
+    """
+    Physical units of measurement for model parameters, state variables, and integration settings. Uses conventional
+    abbreviations as values, mapped to the QUDT ontology (http://qudt.org/vocab/unit/) with UO cross-references where
+    available.
+    """
+    s = PermissibleValue(
+        text="s",
+        description="Second",
+        meaning=QUDT["SEC"])
+    ms = PermissibleValue(
+        text="ms",
+        description="Millisecond",
+        meaning=QUDT["MilliSEC"])
+    us = PermissibleValue(
+        text="us",
+        description="Microsecond",
+        meaning=QUDT["MicroSEC"])
+    per_s = PermissibleValue(
+        text="per_s",
+        description="Per second (s⁻¹)",
+        meaning=QUDT["PER-SEC"])
+    per_ms = PermissibleValue(
+        text="per_ms",
+        description="Per millisecond (ms⁻¹)",
+        meaning=QUDT["PER-MilliSEC"])
+    Hz = PermissibleValue(
+        text="Hz",
+        description="Hertz (s⁻¹)",
+        meaning=QUDT["HZ"])
+    kHz = PermissibleValue(
+        text="kHz",
+        description="Kilohertz",
+        meaning=QUDT["KiloHZ"])
+    V = PermissibleValue(
+        text="V",
+        description="Volt",
+        meaning=QUDT["V"])
+    mV = PermissibleValue(
+        text="mV",
+        description="Millivolt",
+        meaning=QUDT["MilliV"])
+    per_mV = PermissibleValue(
+        text="per_mV",
+        description="Reciprocal millivolt (mV⁻¹)",
+        meaning=QUDT["PER-MilliV"])
+    mV_per_ms = PermissibleValue(
+        text="mV_per_ms",
+        description="Millivolt per millisecond",
+        meaning=QUDT["MilliV-PER-MilliSEC"])
+    mV_per_s = PermissibleValue(
+        text="mV_per_s",
+        description="Millivolt per second",
+        meaning=QUDT["MilliV-PER-SEC"])
+    A = PermissibleValue(
+        text="A",
+        description="Ampere",
+        meaning=QUDT["A"])
+    nA = PermissibleValue(
+        text="nA",
+        description="Nanoampere",
+        meaning=QUDT["NanoA"])
+    pA = PermissibleValue(
+        text="pA",
+        description="Picoampere",
+        meaning=QUDT["PicoA"])
+    uA_per_cm2 = PermissibleValue(
+        text="uA_per_cm2",
+        description="Microampere per square centimetre (current density)")
+    pF = PermissibleValue(
+        text="pF",
+        description="Picofarad",
+        meaning=QUDT["PicoFARAD"])
+    nF = PermissibleValue(
+        text="nF",
+        description="Nanofarad",
+        meaning=QUDT["NanoFARAD"])
+    uF_per_cm2 = PermissibleValue(
+        text="uF_per_cm2",
+        description="Microfarad per square centimetre (specific capacitance)")
+    nS = PermissibleValue(
+        text="nS",
+        description="Nanosiemens",
+        meaning=QUDT["NanoS"])
+    uS = PermissibleValue(
+        text="uS",
+        description="Microsiemens",
+        meaning=QUDT["MicroS"])
+    pS = PermissibleValue(
+        text="pS",
+        description="Picosiemens",
+        meaning=QUDT["PicoS"])
+    S_per_cm2 = PermissibleValue(
+        text="S_per_cm2",
+        description="Siemens per square centimetre (conductance density)")
+    mS_per_cm2 = PermissibleValue(
+        text="mS_per_cm2",
+        description="Millisiemens per square centimetre (conductance density)")
+    S_per_m2 = PermissibleValue(
+        text="S_per_m2",
+        description="Siemens per square metre (conductance density, SI)")
+    nS_per_mV = PermissibleValue(
+        text="nS_per_mV",
+        description="Nanosiemens per millivolt")
+    per_nC = PermissibleValue(
+        text="per_nC",
+        description="Reciprocal nanocoulomb (nC⁻¹)",
+        meaning=QUDT["PER-NanoC"])
+    per_pC = PermissibleValue(
+        text="per_pC",
+        description="Reciprocal picocoulomb (pC⁻¹)",
+        meaning=QUDT["PER-PicoC"])
+    mol_per_m3 = PermissibleValue(
+        text="mol_per_m3",
+        description="Mole per cubic metre (mol/m³)",
+        meaning=QUDT["MOL-PER-M3"])
+    mol_per_cm3 = PermissibleValue(
+        text="mol_per_cm3",
+        description="Mole per cubic centimetre (mol/cm³)")
+    mmol_per_m3 = PermissibleValue(
+        text="mmol_per_m3",
+        description="Millimole per cubic metre (mmol/m³ ≈ mM)",
+        meaning=QUDT["MilliMOL-PER-M3"])
+    mol_per_m_per_A_per_s = PermissibleValue(
+        text="mol_per_m_per_A_per_s",
+        description="Mole per metre per ampere per second (concentration-current coupling)")
+    um3 = PermissibleValue(
+        text="um3",
+        description="Cubic micrometre (µm³)",
+        meaning=QUDT["MicroM3"])
+    m = PermissibleValue(
+        text="m",
+        description="Metre",
+        meaning=QUDT["M"])
+    mm = PermissibleValue(
+        text="mm",
+        description="Millimetre",
+        meaning=QUDT["MilliM"])
+    cm = PermissibleValue(
+        text="cm",
+        description="Centimetre",
+        meaning=QUDT["CentiM"])
+    m_per_s = PermissibleValue(
+        text="m_per_s",
+        description="Metre per second",
+        meaning=QUDT["M-PER-SEC"])
+    mm_per_ms = PermissibleValue(
+        text="mm_per_ms",
+        description="Millimetre per millisecond (= m/s)",
+        meaning=QUDT["MilliM-PER-MilliSEC"])
+    Hz_per_nA = PermissibleValue(
+        text="Hz_per_nA",
+        description="Hertz per nanoampere (neural gain)")
+    S_per_m = PermissibleValue(
+        text="S_per_m",
+        description="Siemens per metre (conductivity)",
+        meaning=QUDT["S-PER-M"])
+    H_per_m = PermissibleValue(
+        text="H_per_m",
+        description="Henry per metre (permeability)",
+        meaning=QUDT["H-PER-M"])
+    ohm = PermissibleValue(
+        text="ohm",
+        description="Ohm (Ω)",
+        meaning=QUDT["OHM"])
+    Mohm = PermissibleValue(
+        text="Mohm",
+        description="Megaohm (MΩ)")
+    kohm_cm = PermissibleValue(
+        text="kohm_cm",
+        description="Kilo-ohm centimetre (axial resistivity)")
+    degC = PermissibleValue(
+        text="degC",
+        description="Degree Celsius",
+        meaning=QUDT["DEG_C"])
+    rad_per_ms = PermissibleValue(
+        text="rad_per_ms",
+        description="Radian per millisecond")
+    dimensionless = PermissibleValue(
+        text="dimensionless",
+        description="Dimensionless (unitless)",
+        meaning=QUDT["UNITLESS"])
+    percent = PermissibleValue(
+        text="percent",
+        description="Percent (%)",
+        meaning=QUDT["PERCENT"])
+    arbitrary_unit = PermissibleValue(
+        text="arbitrary_unit",
+        description="Arbitrary units (a.u.)")
+    kg = PermissibleValue(
+        text="kg",
+        description="Kilogram",
+        meaning=QUDT["KiloGM"])
+    kg_per_s = PermissibleValue(
+        text="kg_per_s",
+        description="Kilogram per second")
+    m_per_s2 = PermissibleValue(
+        text="m_per_s2",
+        description="Metre per second squared (acceleration)",
+        meaning=QUDT["M-PER-SEC2"])
+    N_per_m = PermissibleValue(
+        text="N_per_m",
+        description="Newton per metre (spring constant)",
+        meaning=QUDT["N-PER-M"])
+    rad = PermissibleValue(
+        text="rad",
+        description="Radian",
+        meaning=QUDT["RAD"])
+    rad_per_s = PermissibleValue(
+        text="rad_per_s",
+        description="Radian per second (angular velocity)",
+        meaning=QUDT["RAD-PER-SEC"])
+    s2 = PermissibleValue(
+        text="s2",
+        description="Second squared (inertia constant)",
+        meaning=QUDT["SEC2"])
+    per_unit = PermissibleValue(
+        text="per_unit",
+        description="Per-unit (dimensionless power-systems convention)")
+
+    _defn = EnumDefinition(
+        name="UnitEnum",
+        description="""Physical units of measurement for model parameters, state variables, and integration settings. Uses conventional abbreviations as values, mapped to the QUDT ontology (http://qudt.org/vocab/unit/) with UO cross-references where available.""",
+    )
+
+class PhysicalDimension(EnumDefinitionImpl):
+    """
+    Physical dimension categories for LEMS and dimensional analysis. Each dimension decomposes into SI base dimensions
+    (M, L, T, I, K, N).
+    """
+    none = PermissibleValue(
+        text="none",
+        description="Dimensionless")
+    time = PermissibleValue(
+        text="time",
+        description="Time [T]")
+    per_time = PermissibleValue(
+        text="per_time",
+        description="Inverse time [T⁻¹]")
+    voltage = PermissibleValue(
+        text="voltage",
+        description="Voltage [M L² T⁻³ I⁻¹]")
+    current = PermissibleValue(
+        text="current",
+        description="Electric current [I]")
+    capacitance = PermissibleValue(
+        text="capacitance",
+        description="Capacitance [M⁻¹ L⁻² T⁴ I²]")
+    conductance = PermissibleValue(
+        text="conductance",
+        description="Conductance [M⁻¹ L⁻² T³ I²]")
+    resistance = PermissibleValue(
+        text="resistance",
+        description="Resistance [M L² T⁻³ I⁻²]")
+    charge = PermissibleValue(
+        text="charge",
+        description="Electric charge [T I]")
+    concentration = PermissibleValue(
+        text="concentration",
+        description="Concentration [L⁻³ N]")
+    substance = PermissibleValue(
+        text="substance",
+        description="Amount of substance [N]")
+    length = PermissibleValue(
+        text="length",
+        description="Length [L]")
+    volume = PermissibleValue(
+        text="volume",
+        description="Volume [L³]")
+    temperature = PermissibleValue(
+        text="temperature",
+        description="Temperature [K]")
+
+    _defn = EnumDefinition(
+        name="PhysicalDimension",
+        description="""Physical dimension categories for LEMS and dimensional analysis. Each dimension decomposes into SI base dimensions (M, L, T, I, K, N).""",
+    )
+
 class SpecimenEnum(EnumDefinitionImpl):
     """
     A set of permissible types for specimens used in brain atlas creation.
@@ -6052,7 +6053,7 @@ class EnvironmentType(EnumDefinitionImpl):
 class slots:
     pass
 
-slots.name = Slot(uri=TVBO.name, name="name", curie=TVBO.curie('name'),
+slots.name = Slot(uri=SCHEMA.name, name="name", curie=SCHEMA.curie('name'),
                    model_uri=TVBO.name, domain=None, range=URIRef)
 
 slots.time_scale = Slot(uri=TVBO.time_scale, name="time_scale", curie=TVBO.curie('time_scale'),
@@ -6070,16 +6071,16 @@ slots.duration = Slot(uri=TVBO.duration, name="duration", curie=TVBO.curie('dura
 slots.model = Slot(uri=TVBO.model, name="model", curie=TVBO.curie('model'),
                    model_uri=TVBO.model, domain=None, range=Optional[Union[str, DynamicsName]])
 
-slots.has_reference = Slot(uri=TVBO.has_reference, name="has_reference", curie=TVBO.curie('has_reference'),
+slots.has_reference = Slot(uri=DCTERMS.references, name="has_reference", curie=DCTERMS.curie('references'),
                    model_uri=TVBO.has_reference, domain=None, range=Optional[str])
 
-slots.references = Slot(uri=TVBO.references, name="references", curie=TVBO.curie('references'),
+slots.references = Slot(uri=DCTERMS.references, name="references", curie=DCTERMS.curie('references'),
                    model_uri=TVBO.references, domain=None, range=Optional[Union[str, list[str]]])
 
-slots.label = Slot(uri=TVBO.label, name="label", curie=TVBO.curie('label'),
+slots.label = Slot(uri=RDFS.label, name="label", curie=RDFS.curie('label'),
                    model_uri=TVBO.label, domain=None, range=Optional[str])
 
-slots.acronym = Slot(uri=TVBO.acronym, name="acronym", curie=TVBO.curie('acronym'),
+slots.acronym = Slot(uri=SKOS.notation, name="acronym", curie=SKOS.curie('notation'),
                    model_uri=TVBO.acronym, domain=None, range=Optional[str])
 
 slots.symbol = Slot(uri=TVBO.symbol, name="symbol", curie=TVBO.curie('symbol'),
@@ -6088,10 +6089,10 @@ slots.symbol = Slot(uri=TVBO.symbol, name="symbol", curie=TVBO.curie('symbol'),
 slots.domain = Slot(uri=TVBO.domain, name="domain", curie=TVBO.curie('domain'),
                    model_uri=TVBO.domain, domain=None, range=Optional[Union[dict, Range]])
 
-slots.iri = Slot(uri=TVBO.iri, name="iri", curie=TVBO.curie('iri'),
-                   model_uri=TVBO.iri, domain=None, range=Optional[str])
+slots.iri = Slot(uri=DCTERMS.identifier, name="iri", curie=DCTERMS.curie('identifier'),
+                   model_uri=TVBO.iri, domain=None, range=Optional[Union[str, URIorCURIE]])
 
-slots.value = Slot(uri=TVBO.value, name="value", curie=TVBO.curie('value'),
+slots.value = Slot(uri=SCHEMA.value, name="value", curie=SCHEMA.curie('value'),
                    model_uri=TVBO.value, domain=None, range=Optional[float])
 
 slots.file = Slot(uri=TVBO.file, name="file", curie=TVBO.curie('file'),
@@ -6100,13 +6101,13 @@ slots.file = Slot(uri=TVBO.file, name="file", curie=TVBO.curie('file'),
 slots.reported_optimum = Slot(uri=TVBO.reported_optimum, name="reported_optimum", curie=TVBO.curie('reported_optimum'),
                    model_uri=TVBO.reported_optimum, domain=None, range=Optional[float])
 
-slots.default = Slot(uri=TVBO.default, name="default", curie=TVBO.curie('default'),
+slots.default = Slot(uri=SCHEMA.defaultValue, name="default", curie=SCHEMA.curie('defaultValue'),
                    model_uri=TVBO.default, domain=None, range=Optional[str])
 
-slots.description = Slot(uri=TVBO.description, name="description", curie=TVBO.curie('description'),
+slots.description = Slot(uri=DCTERMS.description, name="description", curie=DCTERMS.curie('description'),
                    model_uri=TVBO.description, domain=None, range=Optional[str])
 
-slots.definition = Slot(uri=TVBO.definition, name="definition", curie=TVBO.curie('definition'),
+slots.definition = Slot(uri=SKOS.definition, name="definition", curie=SKOS.curie('definition'),
                    model_uri=TVBO.definition, domain=None, range=Optional[str])
 
 slots.parameters = Slot(uri=TVBO.parameters, name="parameters", curie=TVBO.curie('parameters'),
@@ -6115,13 +6116,13 @@ slots.parameters = Slot(uri=TVBO.parameters, name="parameters", curie=TVBO.curie
 slots.equation = Slot(uri=TVBO.Equation, name="equation", curie=TVBO.curie('Equation'),
                    model_uri=TVBO.equation, domain=None, range=Optional[Union[dict, Equation]])
 
-slots.unit = Slot(uri=TVBO.unit, name="unit", curie=TVBO.curie('unit'),
+slots.unit = Slot(uri=QUDT.unit, name="unit", curie=QUDT.curie('unit'),
                    model_uri=TVBO.unit, domain=None, range=Optional[Union[str, "UnitEnum"]])
 
-slots.derived_from = Slot(uri=TVBO.derived_from, name="derived_from", curie=TVBO.curie('derived_from'),
+slots.derived_from = Slot(uri=PROV.wasDerivedFrom, name="derived_from", curie=PROV.curie('wasDerivedFrom'),
                    model_uri=TVBO.derived_from, domain=None, range=Optional[str])
 
-slots.source = Slot(uri=TVBO.source, name="source", curie=TVBO.curie('source'),
+slots.source = Slot(uri=DCTERMS.source, name="source", curie=DCTERMS.curie('source'),
                    model_uri=TVBO.source, domain=None, range=Optional[str])
 
 slots.dataset_path = Slot(uri=TVBO.dataset_path, name="dataset_path", curie=TVBO.curie('dataset_path'),
@@ -6130,25 +6131,25 @@ slots.dataset_path = Slot(uri=TVBO.dataset_path, name="dataset_path", curie=TVBO
 slots.record = Slot(uri=TVBO.record, name="record", curie=TVBO.curie('record'),
                    model_uri=TVBO.record, domain=None, range=Optional[Union[bool, Bool]])
 
-slots.abbreviation = Slot(uri=ATOM.abbreviation, name="abbreviation", curie=ATOM.curie('abbreviation'),
+slots.abbreviation = Slot(uri=SKOS.notation, name="abbreviation", curie=SKOS.curie('notation'),
                    model_uri=TVBO.abbreviation, domain=None, range=Optional[str])
 
 slots.alternateName = Slot(uri=ATOM['atlas/hasName'], name="alternateName", curie=ATOM.curie('atlas/hasName'),
                    model_uri=TVBO.alternateName, domain=None, range=Optional[Union[str, list[str]]])
 
-slots.author = Slot(uri=ATOM.author, name="author", curie=ATOM.curie('author'),
+slots.author = Slot(uri=DCTERMS.creator, name="author", curie=DCTERMS.curie('creator'),
                    model_uri=TVBO.author, domain=None, range=Optional[Union[str, list[str]]])
 
-slots.digitalIdentifier = Slot(uri=ATOM.digitalIdentifier, name="digitalIdentifier", curie=ATOM.curie('digitalIdentifier'),
+slots.digitalIdentifier = Slot(uri=DCTERMS.identifier, name="digitalIdentifier", curie=DCTERMS.curie('identifier'),
                    model_uri=TVBO.digitalIdentifier, domain=None, range=Optional[Union[str, list[str]]])
 
 slots.hasParent = Slot(uri=ATOM['atlas/hasParent'], name="hasParent", curie=ATOM.curie('atlas/hasParent'),
                    model_uri=TVBO.hasParent, domain=None, range=Optional[Union[Union[str, ParcellationEntityName], list[Union[str, ParcellationEntityName]]]])
 
-slots.isVersionOf = Slot(uri=ATOM.isVersionOf, name="isVersionOf", curie=ATOM.curie('isVersionOf'),
+slots.isVersionOf = Slot(uri=DCTERMS.isVersionOf, name="isVersionOf", curie=DCTERMS.curie('isVersionOf'),
                    model_uri=TVBO.isVersionOf, domain=None, range=Optional[str])
 
-slots.license = Slot(uri=ATOM.license, name="license", curie=ATOM.curie('license'),
+slots.license = Slot(uri=DCTERMS.license, name="license", curie=DCTERMS.curie('license'),
                    model_uri=TVBO.license, domain=None, range=Optional[str])
 
 slots.lookupLabel = Slot(uri=ATOM['atlas/lookupLabel'], name="lookupLabel", curie=ATOM.curie('atlas/lookupLabel'),
@@ -6157,7 +6158,7 @@ slots.lookupLabel = Slot(uri=ATOM['atlas/lookupLabel'], name="lookupLabel", curi
 slots.ontologyIdentifier = Slot(uri=ATOM['atlas/hasIlxId'], name="ontologyIdentifier", curie=ATOM.curie('atlas/hasIlxId'),
                    model_uri=TVBO.ontologyIdentifier, domain=None, range=Optional[Union[str, list[str]]])
 
-slots.versionIdentifier = Slot(uri=ATOM.versionIdentifier, name="versionIdentifier", curie=ATOM.curie('versionIdentifier'),
+slots.versionIdentifier = Slot(uri=DCTERMS.hasVersion, name="versionIdentifier", curie=DCTERMS.curie('hasVersion'),
                    model_uri=TVBO.versionIdentifier, domain=None, range=Optional[str])
 
 slots.dataLocation = Slot(uri=ATOM.dataLocation, name="dataLocation", curie=ATOM.curie('dataLocation'),
@@ -6166,16 +6167,19 @@ slots.dataLocation = Slot(uri=ATOM.dataLocation, name="dataLocation", curie=ATOM
 slots.coordinateSpace = Slot(uri=ATOM.coordinateSpace, name="coordinateSpace", curie=ATOM.curie('coordinateSpace'),
                    model_uri=TVBO.coordinateSpace, domain=None, range=Optional[Union[str, CommonCoordinateSpaceName]])
 
-slots.subject_id = Slot(uri=TVBO_STUDY.subject_id, name="subject_id", curie=TVBO_STUDY.curie('subject_id'),
+slots.subject_id = Slot(uri=DCTERMS.identifier, name="subject_id", curie=DCTERMS.curie('identifier'),
                    model_uri=TVBO.subject_id, domain=None, range=URIRef)
 
-slots.session_id = Slot(uri=TVBO_STUDY.session_id, name="session_id", curie=TVBO_STUDY.curie('session_id'),
+slots.session_id = Slot(uri=DCTERMS.identifier, name="session_id", curie=DCTERMS.curie('identifier'),
                    model_uri=TVBO.session_id, domain=None, range=URIRef)
 
-slots.dataset_id = Slot(uri=TVBO_STUDY.dataset_id, name="dataset_id", curie=TVBO_STUDY.curie('dataset_id'),
+slots.dataset_id = Slot(uri=DCTERMS.identifier, name="dataset_id", curie=DCTERMS.curie('identifier'),
                    model_uri=TVBO.dataset_id, domain=None, range=URIRef)
 
-slots.id = Slot(uri=TVBO_DBS.id, name="id", curie=TVBO_DBS.curie('id'),
+slots.subjects = Slot(uri=TVBO_STUDY.subjects, name="subjects", curie=TVBO_STUDY.curie('subjects'),
+                   model_uri=TVBO.subjects, domain=None, range=Optional[Union[dict[Union[str, SubjectSubjectId], Union[dict, Subject]], list[Union[dict, Subject]]]])
+
+slots.id = Slot(uri=DCTERMS.identifier, name="id", curie=DCTERMS.curie('identifier'),
                    model_uri=TVBO.id, domain=None, range=Optional[int])
 
 slots.range__lo = Slot(uri=TVBO.lo, name="range__lo", curie=TVBO.curie('lo'),
@@ -6292,7 +6296,7 @@ slots.tractogram__acquisition = Slot(uri=TVBO.acquisition, name="tractogram__acq
 slots.tractogram__processing_pipeline = Slot(uri=TVBO.processing_pipeline, name="tractogram__processing_pipeline", curie=TVBO.curie('processing_pipeline'),
                    model_uri=TVBO.tractogram__processing_pipeline, domain=None, range=Optional[str])
 
-slots.tractogram__reference = Slot(uri=TVBO.reference, name="tractogram__reference", curie=TVBO.curie('reference'),
+slots.tractogram__reference = Slot(uri=DCTERMS.references, name="tractogram__reference", curie=DCTERMS.curie('references'),
                    model_uri=TVBO.tractogram__reference, domain=None, range=Optional[str])
 
 slots.matrix__x = Slot(uri=TVBO.x, name="matrix__x", curie=TVBO.curie('x'),
@@ -6433,7 +6437,7 @@ slots.file__path = Slot(uri=TVBO.path, name="file__path", curie=TVBO.curie('path
 slots.file__extension = Slot(uri=TVBO.extension, name="file__extension", curie=TVBO.curie('extension'),
                    model_uri=TVBO.file__extension, domain=None, range=Optional[str])
 
-slots.node__id = Slot(uri=TVBO.id, name="node__id", curie=TVBO.curie('id'),
+slots.node__id = Slot(uri=DCTERMS.identifier, name="node__id", curie=DCTERMS.curie('identifier'),
                    model_uri=TVBO.node__id, domain=None, range=int)
 
 slots.node__dynamics = Slot(uri=TVBO.dynamics, name="node__dynamics", curie=TVBO.curie('dynamics'),
@@ -6640,7 +6644,7 @@ slots.distribution__axis = Slot(uri=TVBO.axis, name="distribution__axis", curie=
 slots.distribution__correlation = Slot(uri=TVBO.correlation, name="distribution__correlation", curie=TVBO.curie('correlation'),
                    model_uri=TVBO.distribution__correlation, domain=None, range=Optional[Union[dict, Matrix]])
 
-slots.parameter__comment = Slot(uri=TVBO.comment, name="parameter__comment", curie=TVBO.curie('comment'),
+slots.parameter__comment = Slot(uri=RDFS.comment, name="parameter__comment", curie=RDFS.curie('comment'),
                    model_uri=TVBO.parameter__comment, domain=None, range=Optional[str])
 
 slots.parameter__heterogeneous = Slot(uri=TVBO.heterogeneous, name="parameter__heterogeneous", curie=TVBO.curie('heterogeneous'),
@@ -6671,7 +6675,7 @@ slots.couplingInput__keys = Slot(uri=TVBO.keys, name="couplingInput__keys", curi
                    model_uri=TVBO.couplingInput__keys, domain=None, range=Optional[Union[str, list[str]]])
 
 slots.argument__value = Slot(uri=TVBO.value, name="argument__value", curie=TVBO.curie('value'),
-                   model_uri=TVBO.argument__value, domain=None, range=Optional[str])
+                   model_uri=TVBO.argument__value, domain=None, range=Optional[Union[dict, ScalarValue]])
 
 slots.argument__unit = Slot(uri=TVBO.unit, name="argument__unit", curie=TVBO.curie('unit'),
                    model_uri=TVBO.argument__unit, domain=None, range=Optional[str])
@@ -6681,9 +6685,6 @@ slots.function__input = Slot(uri=TVBO.input, name="function__input", curie=TVBO.
 
 slots.function__output = Slot(uri=TVBO.output, name="function__output", curie=TVBO.curie('output'),
                    model_uri=TVBO.function__output, domain=None, range=Optional[str])
-
-slots.function__iri = Slot(uri=TVBO.iri, name="function__iri", curie=TVBO.curie('iri'),
-                   model_uri=TVBO.function__iri, domain=None, range=Optional[str])
 
 slots.function__arguments = Slot(uri=TVBO.arguments, name="function__arguments", curie=TVBO.curie('arguments'),
                    model_uri=TVBO.function__arguments, domain=None, range=Optional[Union[dict[Union[str, ArgumentName], Union[dict, Argument]], list[Union[dict, Argument]]]])
@@ -7210,16 +7211,16 @@ slots.executionConfig__random_seed = Slot(uri=TVBO.random_seed, name="executionC
 slots.executionConfig__find_fixpoint = Slot(uri=TVBO.find_fixpoint, name="executionConfig__find_fixpoint", curie=TVBO.curie('find_fixpoint'),
                    model_uri=TVBO.executionConfig__find_fixpoint, domain=None, range=Optional[Union[bool, Bool]])
 
-slots.simulationExperiment__id = Slot(uri=TVBO.id, name="simulationExperiment__id", curie=TVBO.curie('id'),
+slots.simulationExperiment__id = Slot(uri=DCTERMS.identifier, name="simulationExperiment__id", curie=DCTERMS.curie('identifier'),
                    model_uri=TVBO.simulationExperiment__id, domain=None, range=URIRef)
 
-slots.simulationExperiment__description = Slot(uri=TVBO.description, name="simulationExperiment__description", curie=TVBO.curie('description'),
+slots.simulationExperiment__description = Slot(uri=DCTERMS.description, name="simulationExperiment__description", curie=DCTERMS.curie('description'),
                    model_uri=TVBO.simulationExperiment__description, domain=None, range=Optional[str])
 
 slots.simulationExperiment__additional_equations = Slot(uri=TVBO.additional_equations, name="simulationExperiment__additional_equations", curie=TVBO.curie('additional_equations'),
                    model_uri=TVBO.simulationExperiment__additional_equations, domain=None, range=Optional[Union[Union[dict, Equation], list[Union[dict, Equation]]]])
 
-slots.simulationExperiment__label = Slot(uri=TVBO.label, name="simulationExperiment__label", curie=TVBO.curie('label'),
+slots.simulationExperiment__label = Slot(uri=RDFS.label, name="simulationExperiment__label", curie=RDFS.curie('label'),
                    model_uri=TVBO.simulationExperiment__label, domain=None, range=Optional[str])
 
 slots.simulationExperiment__dynamics = Slot(uri=TVBO.dynamics, name="simulationExperiment__dynamics", curie=TVBO.curie('dynamics'),
@@ -7276,7 +7277,7 @@ slots.simulationExperiment__execution = Slot(uri=TVBO.execution, name="simulatio
 slots.simulationExperiment__software = Slot(uri=TVBO.software, name="simulationExperiment__software", curie=TVBO.curie('software'),
                    model_uri=TVBO.simulationExperiment__software, domain=None, range=Optional[Union[dict, SoftwareRequirement]])
 
-slots.simulationExperiment__references = Slot(uri=TVBO.references, name="simulationExperiment__references", curie=TVBO.curie('references'),
+slots.simulationExperiment__references = Slot(uri=DCTERMS.references, name="simulationExperiment__references", curie=DCTERMS.curie('references'),
                    model_uri=TVBO.simulationExperiment__references, domain=None, range=Optional[Union[str, list[str]]])
 
 slots.simulationExperiment__dataset = Slot(uri=TVBO.dataset, name="simulationExperiment__dataset", curie=TVBO.curie('dataset'),
@@ -7285,13 +7286,13 @@ slots.simulationExperiment__dataset = Slot(uri=TVBO.dataset, name="simulationExp
 slots.simulationStudy__key = Slot(uri=TVBO.key, name="simulationStudy__key", curie=TVBO.curie('key'),
                    model_uri=TVBO.simulationStudy__key, domain=None, range=Optional[str])
 
-slots.simulationStudy__title = Slot(uri=TVBO.title, name="simulationStudy__title", curie=TVBO.curie('title'),
+slots.simulationStudy__title = Slot(uri=DCTERMS.title, name="simulationStudy__title", curie=DCTERMS.curie('title'),
                    model_uri=TVBO.simulationStudy__title, domain=None, range=Optional[str])
 
-slots.simulationStudy__year = Slot(uri=TVBO.year, name="simulationStudy__year", curie=TVBO.curie('year'),
+slots.simulationStudy__year = Slot(uri=DCTERMS.issued, name="simulationStudy__year", curie=DCTERMS.curie('issued'),
                    model_uri=TVBO.simulationStudy__year, domain=None, range=Optional[int])
 
-slots.simulationStudy__doi = Slot(uri=TVBO.doi, name="simulationStudy__doi", curie=TVBO.curie('doi'),
+slots.simulationStudy__doi = Slot(uri=BIBO.doi, name="simulationStudy__doi", curie=BIBO.curie('doi'),
                    model_uri=TVBO.simulationStudy__doi, domain=None, range=Optional[str])
 
 slots.simulationStudy__sample = Slot(uri=TVBO.sample, name="simulationStudy__sample", curie=TVBO.curie('sample'),
@@ -7315,7 +7316,7 @@ slots.timeSeries__sampling_period = Slot(uri=TVBO.sampling_period, name="timeSer
 slots.timeSeries__sampling_period_unit = Slot(uri=TVBO.sampling_period_unit, name="timeSeries__sampling_period_unit", curie=TVBO.curie('sampling_period_unit'),
                    model_uri=TVBO.timeSeries__sampling_period_unit, domain=None, range=Optional[str])
 
-slots.timeSeries__unit = Slot(uri=TVBO.unit, name="timeSeries__unit", curie=TVBO.curie('unit'),
+slots.timeSeries__unit = Slot(uri=QUDT.unit, name="timeSeries__unit", curie=QUDT.curie('unit'),
                    model_uri=TVBO.timeSeries__unit, domain=None, range=Optional[str])
 
 slots.timeSeries__labels_ordering = Slot(uri=TVBO.labels_ordering, name="timeSeries__labels_ordering", curie=TVBO.curie('labels_ordering'),
@@ -7336,13 +7337,13 @@ slots.timeSeries__software_environment = Slot(uri=TVBO.software_environment, nam
 slots.timeSeries__task_name = Slot(uri=TVBO.task_name, name="timeSeries__task_name", curie=TVBO.curie('task_name'),
                    model_uri=TVBO.timeSeries__task_name, domain=None, range=Optional[str])
 
-slots.timeSeries__subject_id = Slot(uri=TVBO.subject_id, name="timeSeries__subject_id", curie=TVBO.curie('subject_id'),
+slots.timeSeries__subject_id = Slot(uri=DCTERMS.identifier, name="timeSeries__subject_id", curie=DCTERMS.curie('identifier'),
                    model_uri=TVBO.timeSeries__subject_id, domain=None, range=Optional[str])
 
-slots.timeSeries__session_id = Slot(uri=TVBO.session_id, name="timeSeries__session_id", curie=TVBO.curie('session_id'),
+slots.timeSeries__session_id = Slot(uri=DCTERMS.identifier, name="timeSeries__session_id", curie=DCTERMS.curie('identifier'),
                    model_uri=TVBO.timeSeries__session_id, domain=None, range=Optional[str])
 
-slots.timeSeries__run_id = Slot(uri=TVBO.run_id, name="timeSeries__run_id", curie=TVBO.curie('run_id'),
+slots.timeSeries__run_id = Slot(uri=DCTERMS.identifier, name="timeSeries__run_id", curie=DCTERMS.curie('identifier'),
                    model_uri=TVBO.timeSeries__run_id, domain=None, range=Optional[int])
 
 slots.timeSeries__modality = Slot(uri=TVBO.modality, name="timeSeries__modality", curie=TVBO.curie('modality'),
@@ -7543,7 +7544,7 @@ slots.parcellationEntity__color = Slot(uri=ATOM.color, name="parcellationEntity_
 slots.parcellationTerminology__entities = Slot(uri=ATOM.entities, name="parcellationTerminology__entities", curie=ATOM.curie('entities'),
                    model_uri=TVBO.parcellationTerminology__entities, domain=None, range=Optional[Union[dict[Union[str, ParcellationEntityName], Union[dict, ParcellationEntity]], list[Union[dict, ParcellationEntity]]]])
 
-slots.subject__label = Slot(uri=TVBO_STUDY.label, name="subject__label", curie=TVBO_STUDY.curie('label'),
+slots.subject__label = Slot(uri=RDFS.label, name="subject__label", curie=RDFS.curie('label'),
                    model_uri=TVBO.subject__label, domain=None, range=Optional[str])
 
 slots.subject__group = Slot(uri=TVBO_STUDY.group, name="subject__group", curie=TVBO_STUDY.curie('group'),
@@ -7564,7 +7565,7 @@ slots.subject__network = Slot(uri=TVBO_STUDY.network, name="subject__network", c
 slots.subject__metadata = Slot(uri=TVBO_STUDY.metadata, name="subject__metadata", curie=TVBO_STUDY.curie('metadata'),
                    model_uri=TVBO.subject__metadata, domain=None, range=Optional[str])
 
-slots.session__label = Slot(uri=TVBO_STUDY.label, name="session__label", curie=TVBO_STUDY.curie('label'),
+slots.session__label = Slot(uri=RDFS.label, name="session__label", curie=RDFS.curie('label'),
                    model_uri=TVBO.session__label, domain=None, range=Optional[str])
 
 slots.session__network = Slot(uri=TVBO_STUDY.network, name="session__network", curie=TVBO_STUDY.curie('network'),
@@ -7576,22 +7577,19 @@ slots.session__empirical_data = Slot(uri=TVBO_STUDY.empirical_data, name="sessio
 slots.session__condition = Slot(uri=TVBO_STUDY.condition, name="session__condition", curie=TVBO_STUDY.curie('condition'),
                    model_uri=TVBO.session__condition, domain=None, range=Optional[str])
 
-slots.dataset__label = Slot(uri=TVBO_STUDY.label, name="dataset__label", curie=TVBO_STUDY.curie('label'),
+slots.dataset__label = Slot(uri=RDFS.label, name="dataset__label", curie=RDFS.curie('label'),
                    model_uri=TVBO.dataset__label, domain=None, range=Optional[str])
 
-slots.dataset__description = Slot(uri=TVBO_STUDY.description, name="dataset__description", curie=TVBO_STUDY.curie('description'),
+slots.dataset__description = Slot(uri=DCTERMS.description, name="dataset__description", curie=DCTERMS.curie('description'),
                    model_uri=TVBO.dataset__description, domain=None, range=Optional[str])
 
 slots.dataset__bids_root = Slot(uri=TVBO_STUDY.bids_root, name="dataset__bids_root", curie=TVBO_STUDY.curie('bids_root'),
                    model_uri=TVBO.dataset__bids_root, domain=None, range=Optional[str])
 
-slots.dataset__subjects = Slot(uri=TVBO_STUDY.subjects, name="dataset__subjects", curie=TVBO_STUDY.curie('subjects'),
-                   model_uri=TVBO.dataset__subjects, domain=None, range=Optional[Union[dict[Union[str, SubjectSubjectId], Union[dict, Subject]], list[Union[dict, Subject]]]])
-
 slots.dataset__conditions = Slot(uri=TVBO_STUDY.conditions, name="dataset__conditions", curie=TVBO_STUDY.curie('conditions'),
                    model_uri=TVBO.dataset__conditions, domain=None, range=Optional[Union[str, list[str]]])
 
-slots.dataset__reference = Slot(uri=TVBO_STUDY.reference, name="dataset__reference", curie=TVBO_STUDY.curie('reference'),
+slots.dataset__reference = Slot(uri=DCTERMS.references, name="dataset__reference", curie=DCTERMS.curie('references'),
                    model_uri=TVBO.dataset__reference, domain=None, range=Optional[str])
 
 slots.dBSDataset__clinical_scores = Slot(uri=TVBO_DBS.clinical_scores, name="dBSDataset__clinical_scores", curie=TVBO_DBS.curie('clinical_scores'),
@@ -7612,7 +7610,7 @@ slots.dBSSubject__protocols = Slot(uri=TVBO_DBS.protocols, name="dBSSubject__pro
 slots.dBSSubject__coordinate_space = Slot(uri=TVBO_DBS.coordinate_space, name="dBSSubject__coordinate_space", curie=TVBO_DBS.curie('coordinate_space'),
                    model_uri=TVBO.dBSSubject__coordinate_space, domain=None, range=Optional[Union[str, CommonCoordinateSpaceName]])
 
-slots.electrode__electrode_id = Slot(uri=TVBO_DBS.electrode_id, name="electrode__electrode_id", curie=TVBO_DBS.curie('electrode_id'),
+slots.electrode__electrode_id = Slot(uri=DCTERMS.identifier, name="electrode__electrode_id", curie=DCTERMS.curie('identifier'),
                    model_uri=TVBO.electrode__electrode_id, domain=None, range=Optional[str])
 
 slots.electrode__manufacturer = Slot(uri=TVBO_DBS.manufacturer, name="electrode__manufacturer", curie=TVBO_DBS.curie('manufacturer'),
@@ -7645,13 +7643,13 @@ slots.electrode__coordinate_space = Slot(uri=TVBO_DBS.coordinate_space, name="el
 slots.electrode__recon_path = Slot(uri=TVBO_DBS.recon_path, name="electrode__recon_path", curie=TVBO_DBS.curie('recon_path'),
                    model_uri=TVBO.electrode__recon_path, domain=None, range=Optional[str])
 
-slots.contact__contact_id = Slot(uri=TVBO_DBS.contact_id, name="contact__contact_id", curie=TVBO_DBS.curie('contact_id'),
+slots.contact__contact_id = Slot(uri=DCTERMS.identifier, name="contact__contact_id", curie=DCTERMS.curie('identifier'),
                    model_uri=TVBO.contact__contact_id, domain=None, range=Optional[int])
 
 slots.contact__coordinate = Slot(uri=TVBO_DBS.coordinate, name="contact__coordinate", curie=TVBO_DBS.curie('coordinate'),
                    model_uri=TVBO.contact__coordinate, domain=None, range=Optional[Union[dict, Coordinate]])
 
-slots.contact__label = Slot(uri=TVBO_DBS.label, name="contact__label", curie=TVBO_DBS.curie('label'),
+slots.contact__label = Slot(uri=RDFS.label, name="contact__label", curie=RDFS.curie('label'),
                    model_uri=TVBO.contact__label, domain=None, range=Optional[str])
 
 slots.stimulationSetting__electrode_reference = Slot(uri=TVBO_DBS.electrode_reference, name="stimulationSetting__electrode_reference", curie=TVBO_DBS.curie('electrode_reference'),
@@ -7690,34 +7688,34 @@ slots.dBSProtocol__notes = Slot(uri=TVBO_DBS.notes, name="dBSProtocol__notes", c
 slots.dBSProtocol__clinical_improvement = Slot(uri=TVBO_DBS.clinical_improvement, name="dBSProtocol__clinical_improvement", curie=TVBO_DBS.curie('clinical_improvement'),
                    model_uri=TVBO.dBSProtocol__clinical_improvement, domain=None, range=Optional[Union[Union[dict, ClinicalImprovement], list[Union[dict, ClinicalImprovement]]]])
 
-slots.clinicalScale__name = Slot(uri=TVBO_DBS.name, name="clinicalScale__name", curie=TVBO_DBS.curie('name'),
+slots.clinicalScale__name = Slot(uri=SCHEMA.name, name="clinicalScale__name", curie=SCHEMA.curie('name'),
                    model_uri=TVBO.clinicalScale__name, domain=None, range=Optional[str])
 
-slots.clinicalScale__acronym = Slot(uri=TVBO_DBS.acronym, name="clinicalScale__acronym", curie=TVBO_DBS.curie('acronym'),
+slots.clinicalScale__acronym = Slot(uri=SKOS.notation, name="clinicalScale__acronym", curie=SKOS.curie('notation'),
                    model_uri=TVBO.clinicalScale__acronym, domain=None, range=Optional[str])
 
-slots.clinicalScale__version = Slot(uri=TVBO_DBS.version, name="clinicalScale__version", curie=TVBO_DBS.curie('version'),
+slots.clinicalScale__version = Slot(uri=SCHEMA.softwareVersion, name="clinicalScale__version", curie=SCHEMA.curie('softwareVersion'),
                    model_uri=TVBO.clinicalScale__version, domain=None, range=Optional[str])
 
 slots.clinicalScale__domain = Slot(uri=TVBO_DBS.domain, name="clinicalScale__domain", curie=TVBO_DBS.curie('domain'),
                    model_uri=TVBO.clinicalScale__domain, domain=None, range=Optional[str])
 
-slots.clinicalScale__reference = Slot(uri=TVBO_DBS.reference, name="clinicalScale__reference", curie=TVBO_DBS.curie('reference'),
+slots.clinicalScale__reference = Slot(uri=DCTERMS.references, name="clinicalScale__reference", curie=DCTERMS.curie('references'),
                    model_uri=TVBO.clinicalScale__reference, domain=None, range=Optional[str])
 
-slots.clinicalScore__name = Slot(uri=TVBO_DBS.name, name="clinicalScore__name", curie=TVBO_DBS.curie('name'),
+slots.clinicalScore__name = Slot(uri=SCHEMA.name, name="clinicalScore__name", curie=SCHEMA.curie('name'),
                    model_uri=TVBO.clinicalScore__name, domain=None, range=Optional[str])
 
-slots.clinicalScore__acronym = Slot(uri=TVBO_DBS.acronym, name="clinicalScore__acronym", curie=TVBO_DBS.curie('acronym'),
+slots.clinicalScore__acronym = Slot(uri=SKOS.notation, name="clinicalScore__acronym", curie=SKOS.curie('notation'),
                    model_uri=TVBO.clinicalScore__acronym, domain=None, range=Optional[str])
 
-slots.clinicalScore__description = Slot(uri=TVBO_DBS.description, name="clinicalScore__description", curie=TVBO_DBS.curie('description'),
+slots.clinicalScore__description = Slot(uri=DCTERMS.description, name="clinicalScore__description", curie=DCTERMS.curie('description'),
                    model_uri=TVBO.clinicalScore__description, domain=None, range=Optional[str])
 
 slots.clinicalScore__domain = Slot(uri=TVBO_DBS.domain, name="clinicalScore__domain", curie=TVBO_DBS.curie('domain'),
                    model_uri=TVBO.clinicalScore__domain, domain=None, range=Optional[str])
 
-slots.clinicalScore__reference = Slot(uri=TVBO_DBS.reference, name="clinicalScore__reference", curie=TVBO_DBS.curie('reference'),
+slots.clinicalScore__reference = Slot(uri=DCTERMS.references, name="clinicalScore__reference", curie=DCTERMS.curie('references'),
                    model_uri=TVBO.clinicalScore__reference, domain=None, range=Optional[str])
 
 slots.clinicalScore__scale = Slot(uri=TVBO_DBS.scale, name="clinicalScore__scale", curie=TVBO_DBS.curie('scale'),
@@ -7759,19 +7757,19 @@ slots.eField__threshold_applied = Slot(uri=TVBO_DBS.threshold_applied, name="eFi
 slots.softwarePackage__name = Slot(uri=SCHEMA.name, name="softwarePackage__name", curie=SCHEMA.curie('name'),
                    model_uri=TVBO.softwarePackage__name, domain=None, range=URIRef)
 
-slots.softwarePackage__description = Slot(uri=SCHEMA.description, name="softwarePackage__description", curie=SCHEMA.curie('description'),
+slots.softwarePackage__description = Slot(uri=DCTERMS.description, name="softwarePackage__description", curie=DCTERMS.curie('description'),
                    model_uri=TVBO.softwarePackage__description, domain=None, range=Optional[str])
 
 slots.softwarePackage__homepage = Slot(uri=SCHEMA.url, name="softwarePackage__homepage", curie=SCHEMA.curie('url'),
                    model_uri=TVBO.softwarePackage__homepage, domain=None, range=Optional[Union[str, URI]])
 
-slots.softwarePackage__license = Slot(uri=SCHEMA.license, name="softwarePackage__license", curie=SCHEMA.curie('license'),
+slots.softwarePackage__license = Slot(uri=DCTERMS.license, name="softwarePackage__license", curie=DCTERMS.curie('license'),
                    model_uri=TVBO.softwarePackage__license, domain=None, range=Optional[str])
 
 slots.softwarePackage__repository = Slot(uri=SCHEMA.codeRepository, name="softwarePackage__repository", curie=SCHEMA.curie('codeRepository'),
                    model_uri=TVBO.softwarePackage__repository, domain=None, range=Optional[Union[str, URI]])
 
-slots.softwarePackage__doi = Slot(uri=TVBO_SW.doi, name="softwarePackage__doi", curie=TVBO_SW.curie('doi'),
+slots.softwarePackage__doi = Slot(uri=BIBO.doi, name="softwarePackage__doi", curie=BIBO.curie('doi'),
                    model_uri=TVBO.softwarePackage__doi, domain=None, range=Optional[str])
 
 slots.softwarePackage__ecosystem = Slot(uri=TVBO_SW.ecosystem, name="softwarePackage__ecosystem", curie=TVBO_SW.curie('ecosystem'),
@@ -7813,7 +7811,7 @@ slots.simulationTool__date_modified = Slot(uri=SCHEMA.dateModified, name="simula
 slots.simulationTool__development_status = Slot(uri=TVBO_SW.development_status, name="simulationTool__development_status", curie=TVBO_SW.curie('development_status'),
                    model_uri=TVBO.simulationTool__development_status, domain=None, range=Optional[Union[str, "DevelopmentStatus"]])
 
-slots.simulationTool__author = Slot(uri=SCHEMA.author, name="simulationTool__author", curie=SCHEMA.curie('author'),
+slots.simulationTool__author = Slot(uri=DCTERMS.creator, name="simulationTool__author", curie=DCTERMS.curie('creator'),
                    model_uri=TVBO.simulationTool__author, domain=None, range=Optional[Union[str, list[str]]])
 
 slots.simulationTool__maintainer = Slot(uri=SCHEMA.maintainer, name="simulationTool__maintainer", curie=SCHEMA.curie('maintainer'),
@@ -7822,7 +7820,7 @@ slots.simulationTool__maintainer = Slot(uri=SCHEMA.maintainer, name="simulationT
 slots.simulationTool__funder = Slot(uri=SCHEMA.funder, name="simulationTool__funder", curie=SCHEMA.curie('funder'),
                    model_uri=TVBO.simulationTool__funder, domain=None, range=Optional[Union[str, list[str]]])
 
-slots.simulationTool__reference_publication = Slot(uri=TVBO_SW.reference_publication, name="simulationTool__reference_publication", curie=TVBO_SW.curie('reference_publication'),
+slots.simulationTool__reference_publication = Slot(uri=DCTERMS.references, name="simulationTool__reference_publication", curie=DCTERMS.curie('references'),
                    model_uri=TVBO.simulationTool__reference_publication, domain=None, range=Optional[str])
 
 slots.simulationTool__citation = Slot(uri=SCHEMA.citation, name="simulationTool__citation", curie=SCHEMA.curie('citation'),
@@ -7843,7 +7841,7 @@ slots.simulationTool__is_accessible_for_free = Slot(uri=SCHEMA.isAccessibleForFr
 slots.softwareRequirement__name = Slot(uri=TVBO_SW.name, name="softwareRequirement__name", curie=TVBO_SW.curie('name'),
                    model_uri=TVBO.softwareRequirement__name, domain=None, range=URIRef)
 
-slots.softwareRequirement__description = Slot(uri=TVBO_SW.description, name="softwareRequirement__description", curie=TVBO_SW.curie('description'),
+slots.softwareRequirement__description = Slot(uri=DCTERMS.description, name="softwareRequirement__description", curie=DCTERMS.curie('description'),
                    model_uri=TVBO.softwareRequirement__description, domain=None, range=Optional[str])
 
 slots.softwareRequirement__dataLocation = Slot(uri=TVBO_SW.dataLocation, name="softwareRequirement__dataLocation", curie=TVBO_SW.curie('dataLocation'),
@@ -7870,7 +7868,7 @@ slots.softwareRequirement__source_url = Slot(uri=TVBO_SW.source_url, name="softw
 slots.softwareRequirement__url = Slot(uri=TVBO_SW.url, name="softwareRequirement__url", curie=TVBO_SW.curie('url'),
                    model_uri=TVBO.softwareRequirement__url, domain=None, range=Optional[str])
 
-slots.softwareRequirement__license = Slot(uri=TVBO_SW.license, name="softwareRequirement__license", curie=TVBO_SW.curie('license'),
+slots.softwareRequirement__license = Slot(uri=DCTERMS.license, name="softwareRequirement__license", curie=DCTERMS.curie('license'),
                    model_uri=TVBO.softwareRequirement__license, domain=None, range=Optional[str])
 
 slots.softwareRequirement__modules = Slot(uri=TVBO_SW.modules, name="softwareRequirement__modules", curie=TVBO_SW.curie('modules'),
@@ -7879,10 +7877,10 @@ slots.softwareRequirement__modules = Slot(uri=TVBO_SW.modules, name="softwareReq
 slots.softwareRequirement__version = Slot(uri=TVBO_SW.version, name="softwareRequirement__version", curie=TVBO_SW.curie('version'),
                    model_uri=TVBO.softwareRequirement__version, domain=None, range=Optional[str])
 
-slots.softwareEnvironment__label = Slot(uri=TVBO_SW.label, name="softwareEnvironment__label", curie=TVBO_SW.curie('label'),
+slots.softwareEnvironment__label = Slot(uri=RDFS.label, name="softwareEnvironment__label", curie=RDFS.curie('label'),
                    model_uri=TVBO.softwareEnvironment__label, domain=None, range=Optional[str])
 
-slots.softwareEnvironment__description = Slot(uri=TVBO_SW.description, name="softwareEnvironment__description", curie=TVBO_SW.curie('description'),
+slots.softwareEnvironment__description = Slot(uri=DCTERMS.description, name="softwareEnvironment__description", curie=DCTERMS.curie('description'),
                    model_uri=TVBO.softwareEnvironment__description, domain=None, range=Optional[str])
 
 slots.softwareEnvironment__dataLocation = Slot(uri=TVBO_SW.dataLocation, name="softwareEnvironment__dataLocation", curie=TVBO_SW.curie('dataLocation'),
@@ -7915,7 +7913,7 @@ slots.system_type = Slot(uri=TVBO.system_type, name="system_type", curie=TVBO.cu
 slots.Node_record = Slot(uri=TVBO.record, name="Node_record", curie=TVBO.curie('record'),
                    model_uri=TVBO.Node_record, domain=Node, range=Optional[Union[bool, Bool]])
 
-slots.Dynamics_name = Slot(uri=TVBO.name, name="Dynamics_name", curie=TVBO.curie('name'),
+slots.Dynamics_name = Slot(uri=SCHEMA.name, name="Dynamics_name", curie=SCHEMA.curie('name'),
                    model_uri=TVBO.Dynamics_name, domain=Dynamics, range=Union[str, DynamicsName])
 
 slots.Dynamics_system_type = Slot(uri=TVBO.system_type, name="Dynamics_system_type", curie=TVBO.curie('system_type'),
@@ -7924,15 +7922,15 @@ slots.Dynamics_system_type = Slot(uri=TVBO.system_type, name="Dynamics_system_ty
 slots.StateVariable_record = Slot(uri=TVBO.record, name="StateVariable_record", curie=TVBO.curie('record'),
                    model_uri=TVBO.StateVariable_record, domain=StateVariable, range=Optional[Union[bool, Bool]])
 
-slots.Distribution_name = Slot(uri=TVBO.name, name="Distribution_name", curie=TVBO.curie('name'),
+slots.Distribution_name = Slot(uri=SCHEMA.name, name="Distribution_name", curie=SCHEMA.curie('name'),
                    model_uri=TVBO.Distribution_name, domain=Distribution, range=Union[str, DistributionName])
 
 slots.DerivedVariable_record = Slot(uri=TVBO.record, name="DerivedVariable_record", curie=TVBO.curie('record'),
                    model_uri=TVBO.DerivedVariable_record, domain=DerivedVariable, range=Optional[Union[bool, Bool]])
 
-slots.Coupling_name = Slot(uri=TVBO.name, name="Coupling_name", curie=TVBO.curie('name'),
+slots.Coupling_name = Slot(uri=SCHEMA.name, name="Coupling_name", curie=SCHEMA.curie('name'),
                    model_uri=TVBO.Coupling_name, domain=Coupling, range=Union[str, CouplingName])
 
-slots.DBSDataset_subjects = Slot(uri=TVBO.subjects, name="DBSDataset_subjects", curie=TVBO.curie('subjects'),
+slots.DBSDataset_subjects = Slot(uri=TVBO_STUDY.subjects, name="DBSDataset_subjects", curie=TVBO_STUDY.curie('subjects'),
                    model_uri=TVBO.DBSDataset_subjects, domain=DBSDataset, range=Optional[Union[dict[Union[str, DBSSubjectSubjectId], Union[dict, "DBSSubject"]], list[Union[dict, "DBSSubject"]]]])
 
