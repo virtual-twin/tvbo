@@ -31,6 +31,21 @@ def test_experiment_runs(experiment_name):
                     if param.domain is not None and getattr(param.domain, "n", None):
                         param.domain.n = 2
 
+    # Shrink algorithm and optimization iteration counts so CI stays fast.
+    if exp.algorithms:
+        for alg in exp.algorithms.values():
+            if getattr(alg, "n_iterations", None):
+                alg.n_iterations = 2
+    if exp.optimizations:
+        for opt in exp.optimizations.values():
+            if getattr(opt, "max_iterations", None):
+                opt.max_iterations = 2
+            stages = getattr(opt, "stages", None) or []
+            stages_iter = stages.values() if hasattr(stages, "values") else stages
+            for stage in stages_iter:
+                if getattr(stage, "max_iterations", None):
+                    stage.max_iterations = 2
+
     results = exp.run(mode="all", n_iterations=2, max_steps=2, format="tvboptim")
 
     assert results is not None
