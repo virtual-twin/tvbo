@@ -1,5 +1,6 @@
 name: Destrieux
 coordinateSpace:
+  name: MNI152Nlin2009c
   abbreviation: MNI152Nlin2009c
 terminology:
   entities:
