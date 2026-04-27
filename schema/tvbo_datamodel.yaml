@@ -1062,8 +1062,9 @@ classes:
 
             # Processing pipeline (sequence of Functions with input -> output flow)
             pipeline:
-                description: "Ordered sequence of Functions. Each Function transforms input -> output."
+                description: "Ordered sequence of Functions. Each step has a unique `name` (used to key step outputs) and transforms input -> output. List form preserves execution order."
                 multivalued: true
+                inlined: true
                 inlined_as_list: true
                 range: FunctionCall
 
@@ -1485,8 +1486,9 @@ classes:
             OR inline a callable directly for external library functions,
             OR inline an equation, OR use class_call for class instantiation.
             Mirrors Function attributes so pipeline steps can be self-contained.
-            Anonymous: identity is positional within its containing list and via its `output` name.
+            The `name` is the unique step key within its containing pipeline (used for keyed access to step outputs).
         slots:
+            - name
             - acronym
             - label
             - equation
@@ -2009,6 +2011,7 @@ classes:
             functions:
                 multivalued: true
                 range: FunctionCall
+                inlined: true
                 inlined_as_list: true
                 description: >-
                     Function calls for tracking progress, computing metrics, etc.
