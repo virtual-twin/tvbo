@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-04-27T17:51:21
+# Generation date: 2026-04-27T17:55:55
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -1758,7 +1758,7 @@ class Function(YAMLRoot):
     requirements: Optional[Union[Union[str, SoftwareRequirementName], list[Union[str, SoftwareRequirementName]]]] = empty_list()
     input: Optional[Union[str, FunctionName]] = None
     output: Optional[str] = None
-    arguments: Optional[Union[str, list[str]]] = empty_list()
+    arguments: Optional[Union[dict[Union[str, ArgumentName], Union[dict, Argument]], list[Union[dict, Argument]]]] = empty_dict()
     output_equation: Optional[Union[dict, Equation]] = None
     source_code: Optional[str] = None
     callable: Optional[Union[dict, "Callable"]] = None
@@ -1800,9 +1800,7 @@ class Function(YAMLRoot):
         if self.output is not None and not isinstance(self.output, str):
             self.output = str(self.output)
 
-        if not isinstance(self.arguments, list):
-            self.arguments = [self.arguments] if self.arguments is not None else []
-        self.arguments = [v if isinstance(v, str) else str(v) for v in self.arguments]
+        self._normalize_inlined_as_list(slot_name="arguments", slot_type=Argument, key_name="name", keyed=True)
 
         if self.output_equation is not None and not isinstance(self.output_equation, Equation):
             self.output_equation = Equation(**as_dict(self.output_equation))
@@ -6821,7 +6819,7 @@ slots.function__output = Slot(uri=TVBO.output, name="function__output", curie=TV
                    model_uri=TVBO.function__output, domain=None, range=Optional[str])
 
 slots.function__arguments = Slot(uri=TVBO.arguments, name="function__arguments", curie=TVBO.curie('arguments'),
-                   model_uri=TVBO.function__arguments, domain=None, range=Optional[Union[str, list[str]]])
+                   model_uri=TVBO.function__arguments, domain=None, range=Optional[Union[dict[Union[str, ArgumentName], Union[dict, Argument]], list[Union[dict, Argument]]]])
 
 slots.function__output_equation = Slot(uri=TVBO.output_equation, name="function__output_equation", curie=TVBO.curie('output_equation'),
                    model_uri=TVBO.function__output_equation, domain=None, range=Optional[Union[dict, Equation]])
