@@ -1235,6 +1235,8 @@ class CommonCoordinateSpace(ConfiguredBaseModel):
          'slot_uri': 'schema:name'} })
     abbreviation: Optional[str] = Field(default=None, description="""Slot for the abbreviation of a resource.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas', 'CommonCoordinateSpace', 'ParcellationEntity'],
          'slot_uri': 'skos:notation'} })
+    alternateName: Optional[list[str]] = Field(default=None, description="""Enter any alternate names, including abbreviations, for this entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace', 'ParcellationEntity'],
+         'slot_uri': 'atom:atlas/hasName'} })
     unit: Optional[UnitEnum] = Field(default=None, description="""Physical unit of measurement. Values are drawn from the QUDT ontology (http://qudt.org/vocab/unit/) with UO cross-references where available.""", json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
                        'Edge',
                        'StateVariable',
@@ -1268,7 +1270,8 @@ class ParcellationEntity(ConfiguredBaseModel):
 
     abbreviation: Optional[str] = Field(default=None, description="""Slot for the abbreviation of a resource.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas', 'CommonCoordinateSpace', 'ParcellationEntity'],
          'slot_uri': 'skos:notation'} })
-    alternateName: Optional[list[str]] = Field(default=None, description="""Enter any alternate names, including abbreviations, for this entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationEntity'], 'slot_uri': 'atom:atlas/hasName'} })
+    alternateName: Optional[list[str]] = Field(default=None, description="""Enter any alternate names, including abbreviations, for this entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace', 'ParcellationEntity'],
+         'slot_uri': 'atom:atlas/hasName'} })
     lookupLabel: Optional[int] = Field(default=None, description="""Enter the label used for looking up this entity in the parcellation terminology.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationEntity'], 'slot_uri': 'atom:atlas/lookupLabel'} })
     hasParent: Optional[list[str]] = Field(default=None, description="""Add all anatomical parent structures for this entity as defined within the corresponding brain atlas.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationEntity'], 'slot_uri': 'atom:atlas/hasParent'} })
     name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
