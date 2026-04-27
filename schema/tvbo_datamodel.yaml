@@ -1878,13 +1878,8 @@ classes:
             (domain, explored_values, or per-element overrides).
             No new Parameter is created.
         slots:
-            - name
             - label
             - description
-        slot_usage:
-            name:
-                required: false
-                description: "Optional axis label (defaults to the dotted parameter reference)."
         attributes:
             parameter:
                 range: Parameter
@@ -1926,13 +1921,8 @@ classes:
             metadata (heterogeneous, shape, bounds, initial value).
             No new Parameter is created here.
         slots:
-            - name
             - label
             - description
-        slot_usage:
-            name:
-                required: false
-                description: "Optional label (defaults to the dotted parameter reference)."
         attributes:
             parameter:
                 range: Parameter
