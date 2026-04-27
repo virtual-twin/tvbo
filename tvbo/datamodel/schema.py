@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-04-27T16:31:56
+# Generation date: 2026-04-27T16:36:03
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -144,10 +144,6 @@ class FunctionName(extended_str):
 
 
 class LossFunctionName(FunctionName):
-    pass
-
-
-class FunctionCallName(extended_str):
     pass
 
 
@@ -1211,7 +1207,7 @@ class Observation(YAMLRoot):
     tail_samples: Optional[int] = None
     aggregation: Optional[Union[str, "AggregationType"]] = None
     window_size: Optional[int] = None
-    pipeline: Optional[Union[dict[Union[str, FunctionCallName], Union[dict, "FunctionCall"]], list[Union[dict, "FunctionCall"]]]] = empty_dict()
+    pipeline: Optional[Union[Union[dict, "FunctionCall"], list[Union[dict, "FunctionCall"]]]] = empty_list()
     class_reference: Optional[Union[dict, "ClassReference"]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -1273,7 +1269,9 @@ class Observation(YAMLRoot):
         if self.window_size is not None and not isinstance(self.window_size, int):
             self.window_size = int(self.window_size)
 
-        self._normalize_inlined_as_list(slot_name="pipeline", slot_type=FunctionCall, key_name="name", keyed=True)
+        if not isinstance(self.pipeline, list):
+            self.pipeline = [self.pipeline] if self.pipeline is not None else []
+        self.pipeline = [v if isinstance(v, FunctionCall) else FunctionCall(**as_dict(v)) for v in self.pipeline]
 
         if self.class_reference is not None and not isinstance(self.class_reference, ClassReference):
             self.class_reference = ClassReference(**as_dict(self.class_reference))
@@ -1890,7 +1888,8 @@ class FunctionCall(YAMLRoot):
     """
     Invocation of a function in a pipeline. Can reference a defined Function by name, OR inline a callable directly
     for external library functions, OR inline an equation, OR use class_call for class instantiation. Mirrors Function
-    attributes so pipeline steps can be self-contained.
+    attributes so pipeline steps can be self-contained. Anonymous: identity is positional within its containing list
+    and via its `output` name.
     """
     _inherited_slots: ClassVar[list[str]] = []
 
@@ -1899,7 +1898,6 @@ class FunctionCall(YAMLRoot):
     class_name: ClassVar[str] = "FunctionCall"
     class_model_uri: ClassVar[URIRef] = TVBO.FunctionCall
 
-    name: Union[str, FunctionCallName] = None
     acronym: Optional[str] = None
     label: Optional[str] = None
     equation: Optional[Union[dict, Equation]] = None
@@ -1916,11 +1914,6 @@ class FunctionCall(YAMLRoot):
     source_code: Optional[str] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
-        if self._is_empty(self.name):
-            self.MissingRequiredField("name")
-        if not isinstance(self.name, FunctionCallName):
-            self.name = FunctionCallName(self.name)
-
         if self.acronym is not None and not isinstance(self.acronym, str):
             self.acronym = str(self.acronym)
 
@@ -2594,7 +2587,7 @@ class Algorithm(YAMLRoot):
     learning_rate_schedule: Optional[str] = None
     simulation_period: Optional[float] = None
     apply_every: Optional[int] = 1
-    functions: Optional[Union[dict[Union[str, FunctionCallName], Union[dict, FunctionCall]], list[Union[dict, FunctionCall]]]] = empty_dict()
+    functions: Optional[Union[Union[dict, FunctionCall], list[Union[dict, FunctionCall]]]] = empty_list()
     depends_on: Optional[Union[Union[str, AlgorithmName], list[Union[str, AlgorithmName]]]] = empty_list()
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -2645,7 +2638,9 @@ class Algorithm(YAMLRoot):
         if self.apply_every is not None and not isinstance(self.apply_every, int):
             self.apply_every = int(self.apply_every)
 
-        self._normalize_inlined_as_list(slot_name="functions", slot_type=FunctionCall, key_name="name", keyed=True)
+        if not isinstance(self.functions, list):
+            self.functions = [self.functions] if self.functions is not None else []
+        self.functions = [v if isinstance(v, FunctionCall) else FunctionCall(**as_dict(v)) for v in self.functions]
 
         if not isinstance(self.depends_on, list):
             self.depends_on = [self.depends_on] if self.depends_on is not None else []
@@ -6563,7 +6558,7 @@ slots.observation__window_size = Slot(uri=TVBO.window_size, name="observation__w
                    model_uri=TVBO.observation__window_size, domain=None, range=Optional[int])
 
 slots.observation__pipeline = Slot(uri=TVBO.pipeline, name="observation__pipeline", curie=TVBO.curie('pipeline'),
-                   model_uri=TVBO.observation__pipeline, domain=None, range=Optional[Union[dict[Union[str, FunctionCallName], Union[dict, FunctionCall]], list[Union[dict, FunctionCall]]]])
+                   model_uri=TVBO.observation__pipeline, domain=None, range=Optional[Union[Union[dict, FunctionCall], list[Union[dict, FunctionCall]]]])
 
 slots.observation__class_reference = Slot(uri=TVBO.class_reference, name="observation__class_reference", curie=TVBO.curie('class_reference'),
                    model_uri=TVBO.observation__class_reference, domain=None, range=Optional[Union[dict, ClassReference]])
@@ -6980,7 +6975,7 @@ slots.algorithm__apply_every = Slot(uri=TVBO.apply_every, name="algorithm__apply
                    model_uri=TVBO.algorithm__apply_every, domain=None, range=Optional[int])
 
 slots.algorithm__functions = Slot(uri=TVBO.functions, name="algorithm__functions", curie=TVBO.curie('functions'),
-                   model_uri=TVBO.algorithm__functions, domain=None, range=Optional[Union[dict[Union[str, FunctionCallName], Union[dict, FunctionCall]], list[Union[dict, FunctionCall]]]])
+                   model_uri=TVBO.algorithm__functions, domain=None, range=Optional[Union[Union[dict, FunctionCall], list[Union[dict, FunctionCall]]]])
 
 slots.algorithm__depends_on = Slot(uri=TVBO.depends_on, name="algorithm__depends_on", curie=TVBO.curie('depends_on'),
                    model_uri=TVBO.algorithm__depends_on, domain=None, range=Optional[Union[Union[str, AlgorithmName], list[Union[str, AlgorithmName]]]])
