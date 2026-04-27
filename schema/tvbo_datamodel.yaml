@@ -1717,22 +1717,16 @@ classes:
         attributes:
             free_parameters:
                 multivalued: true
-                range: Parameter
-                inlined: false
+                range: FreeParameter
+                inlined: true
+                inlined_as_list: true
                 description: >-
-                    Parameters to optimize in this stage. Bare-string references
-                    to existing parameters using dotted scope, e.g.
-                    "ReducedWongWang.w" or "FastLinearCoupling.G". Resolved
-                    against the experiment's dynamics and coupling parameters
-                    at runtime; no new Parameter is created here.
-            heterogeneous_parameters:
-                multivalued: true
-                range: Parameter
-                inlined: false
-                description: >-
-                    Subset of free_parameters that should be optimized
-                    heterogeneously (per-node) in this stage. Bare-string
-                    references using the same dotted scope as free_parameters.
+                    Parameters to optimize in this stage. Each entry is a
+                    FreeParameter that references an existing Parameter by
+                    dotted scope (e.g. "ReducedWongWang.w" or
+                    "FastLinearCoupling.G") and supplies optimization-specific
+                    metadata (heterogeneous, shape, bounds). No new Parameter
+                    is created here.
             algorithm:
                 range: string
                 ifabsent: string(adam)
@@ -1922,6 +1916,52 @@ classes:
             unit:
                 range: string
                 description: "Optional axis unit (defaults to the referenced Parameter's unit)."
+
+    FreeParameter:
+        class_uri: tvbo:FreeParameter
+        description: >-
+            One degree of freedom in an OptimizationStage. References an
+            existing Parameter by dotted scope (e.g. "ReducedWongWang.w"
+            or "FastLinearCoupling.G") and supplies optimization-specific
+            metadata (heterogeneous, shape, bounds, initial value).
+            No new Parameter is created here.
+        slots:
+            - name
+            - label
+            - description
+        slot_usage:
+            name:
+                required: false
+                description: "Optional label (defaults to the dotted parameter reference)."
+        attributes:
+            parameter:
+                range: Parameter
+                inlined: false
+                required: true
+                description: >-
+                    Dotted reference to the Parameter to optimize.
+                    Format: "<scope>.<param_name>" where <scope> is either a
+                    Dynamics class name or a coupling key.
+            heterogeneous:
+                range: boolean
+                ifabsent: boolean(false)
+                description: >-
+                    If true, the parameter is optimized per-element
+                    (broadcast to `shape`). If false, a single scalar is
+                    optimized and broadcast at runtime.
+            shape:
+                range: string
+                description: >-
+                    Optimization shape as a Python-tuple-style string
+                    (e.g. "(n_nodes,)" or "(n_nodes, n_nodes)").
+                    Required when heterogeneous is true.
+            initial_value:
+                range: ScalarValue
+                description: "Optional initial value for the optimizer (overrides the referenced Parameter's value)."
+            domain:
+                range: Range
+                inlined: true
+                description: "Optional bounds (lo, hi) for constrained optimization."
 
     # =============================================================================
     # Iterative Tuning Algorithms (FIC, EIB, etc.)
