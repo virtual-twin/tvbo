@@ -1831,12 +1831,25 @@ classes:
                 description: >-
                     Per-exploration execution configuration (overrides experiment-level defaults).
                     Useful for setting random_seed, n_workers for parallel grid search.
+            space:
+                multivalued: true
+                range: ExplorationAxis
+                inlined: true
+                inlined_as_list: true
+                description: >-
+                    Ordered list of exploration axes spanning the search space.
+                    Each axis references an existing Parameter (by dotted name,
+                    e.g. "ReducedWongWang.w" or "FastLinearCoupling.G") and
+                    supplies the Range to sweep. No new Parameter is created here.
             parameters:
                 multivalued: true
                 range: Parameter
                 inlined: true
                 inlined_as_list: true
-                description: "Parameters with domain ranges to explore (uses domain.lo, domain.hi, domain.n)"
+                description: >-
+                    Hyper-parameters of the exploration itself (e.g. tolerances,
+                    sampler settings, grid-refinement controls). Distinct from
+                    `space`, which defines what is being swept.
             mode:
                 range: string
                 ifabsent: string(product)
@@ -1861,6 +1874,50 @@ classes:
                 description: >-
                     Averaging mode across trials. 'trials' = average over n_trials
                     independent runs (evoked potential paradigm). None = return all trials.
+
+    ExplorationAxis:
+        class_uri: tvbo:ExplorationAxis
+        description: >-
+            One axis of a parameter exploration grid. Points to an existing
+            Parameter (by dotted reference, e.g. "ReducedWongWang.w" or
+            "FastLinearCoupling.G") and supplies the sweep specification
+            (domain, explored_values, or per-element overrides).
+            No new Parameter is created.
+        slots:
+            - name
+            - label
+            - description
+        attributes:
+            parameter:
+                range: Parameter
+                inlined: false
+                required: true
+                description: >-
+                    Dotted reference to the Parameter being swept.
+                    Format: "<scope>.<param_name>" where <scope> is either a
+                    Dynamics class name (e.g. "ReducedWongWang") or a coupling
+                    key (e.g. "FastLinearCoupling"). Resolved against the
+                    enclosing experiment at runtime.
+            domain:
+                range: Range
+                inlined: true
+                description: "Sweep range for this axis (lo, hi, n, step, log_scale)."
+            explored_values:
+                multivalued: true
+                range: float
+                array: {}
+                description: "Explicit list of values to sweep (overrides domain)."
+            element_domains:
+                multivalued: true
+                range: Range
+                inlined_as_list: true
+                description: >-
+                    Per-element sweep overrides for heterogeneous parameters
+                    (e.g. shape "(n_nodes,)"). When set, element_domains[i]
+                    replaces the shared domain for element i.
+            unit:
+                range: string
+                description: "Optional axis unit (defaults to the referenced Parameter's unit)."
 
     # =============================================================================
     # Iterative Tuning Algorithms (FIC, EIB, etc.)

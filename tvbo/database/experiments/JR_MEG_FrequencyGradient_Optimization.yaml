@@ -433,14 +433,14 @@ explorations:
       the parameter landscape before optimization.
 
       # Parameters with grid specifications (use domain with n for grid points)
-    parameters:
-      - name: a
+    space:
+      - parameter: JansenRit.a
         domain:
           lo: 0.001
           hi: 0.2
           n: 32
           log_scale: false
-      - name: b
+      - parameter: JansenRit.b
         domain:
           lo: 0.001
           hi: 0.2

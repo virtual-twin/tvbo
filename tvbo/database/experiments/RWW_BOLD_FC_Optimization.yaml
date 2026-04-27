@@ -364,13 +364,13 @@ explorations:
       Grid search over excitatory recurrence (w) and global coupling (G)
       to understand the FC fitting landscape before optimization.
 
-    parameters:
-      - name: ReducedWongWang.w
+    space:
+      - parameter: ReducedWongWang.w
         domain:
           lo: 0.001
           hi: 0.7
           n: 32
-      - name: FastLinearCoupling.G
+      - parameter: FastLinearCoupling.G
         domain:
           lo: 0.001
           hi: 0.7

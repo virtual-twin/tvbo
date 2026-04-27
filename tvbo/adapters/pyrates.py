@@ -404,12 +404,14 @@ class PyRatesAdapter(BaseAdapter):
         param_map: dict = {}
         axes: list = []
 
-        for param in expl.parameters:
-            name = param.name
-            domain = getattr(param, "domain", None)
+        for axis in expl.space:
+            ref = str(axis.parameter)
+            # Dotted ref "Class.param" → use bare param name as grid key
+            name = ref.split(".", 1)[1] if "." in ref else ref
+            domain = getattr(axis, "domain", None)
 
             # Get sweep values
-            explored = getattr(param, "explored_values", None)
+            explored = getattr(axis, "explored_values", None)
             if explored:
                 values = np.array([float(v) for v in explored])
             elif domain:

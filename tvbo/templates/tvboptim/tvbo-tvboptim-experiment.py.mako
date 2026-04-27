@@ -467,8 +467,8 @@ for expl in exploration_list:
         'average': str(expl.average) if expl.average else None,
         'axes': [],
     }
-    # Schema: parameters is multivalued dict (optional for trial-only explorations)
-    params = expl.parameters or {}
+    # Schema: space is a list of ExplorationAxis (optional for trial-only explorations)
+    axes_list = expl.space or []
     def _resolve_n(domain):
         """Compute n from domain: prefer n, else compute from step, else default 50."""
         if domain.n:
@@ -476,13 +476,13 @@ for expl in exploration_list:
         if domain.step and domain.lo is not None and domain.hi is not None:
             return int(round((float(domain.hi) - float(domain.lo)) / float(domain.step))) + 1
         return 50
-    for param in params.values():
-        domain = param.domain
-        explored_values = param.explored_values
-        _el_domains = getattr(param, 'element_domains', None) or []
+    for axis in axes_list:
+        domain = axis.domain
+        explored_values = axis.explored_values
+        _el_domains = getattr(axis, 'element_domains', None) or []
         _has_el_ev = any(getattr(ed, 'explored_values', None) for ed in _el_domains)
-        assert domain or explored_values or _has_el_ev, f"exploration parameter requires domain, explored_values, or element_domains with explored_values for {param.name}"
-        pname = str(param.name)
+        assert domain or explored_values or _has_el_ev, f"exploration axis requires domain, explored_values, or element_domains with explored_values for {axis.parameter}"
+        pname = str(axis.parameter)
         # Check for dotted notation: ClassName.param_name
         # If prefix matches a coupling key → coupling param, else dynamics param
         source_key = None
@@ -498,7 +498,7 @@ for expl in exploration_list:
                            and 'n_nodes' in dyn_param_shapes[pname])
         if is_hetero_param:
             _n = n_nodes
-            _el_domains = getattr(param, 'element_domains', None) or []
+            _el_domains = getattr(axis, 'element_domains', None) or []
             # Build element→domain lookup: keyed by Range.element if set, else positional
             _el_dom_map = {}
             for _edi, _ed in enumerate(_el_domains):
@@ -527,8 +527,8 @@ for expl in exploration_list:
                 else:
                     # Use per-element domain if available (by element key), else shared domain
                     _dom = _el_dom_map.get(_ei, domain)
-                    assert _dom.lo is not None, f"domain.lo required for {param.name}[{_ei}]"
-                    assert _dom.hi is not None, f"domain.hi required for {param.name}[{_ei}]"
+                    assert _dom.lo is not None, f"domain.lo required for {axis.parameter}[{_ei}]"
+                    assert _dom.hi is not None, f"domain.hi required for {axis.parameter}[{_ei}]"
                     n = _resolve_n(_dom)
                     ax_entry['lo'] = float(_dom.lo)
                     ax_entry['hi'] = float(_dom.hi)
@@ -547,8 +547,8 @@ for expl in exploration_list:
                     'element_idx': None,
                 })
             else:
-                assert domain.lo is not None, f"domain.lo required for {param.name}"
-                assert domain.hi is not None, f"domain.hi required for {param.name}"
+                assert domain.lo is not None, f"domain.lo required for {axis.parameter}"
+                assert domain.hi is not None, f"domain.hi required for {axis.parameter}"
                 n = _resolve_n(domain)
                 exp_info['axes'].append({
                     'name': pname,
