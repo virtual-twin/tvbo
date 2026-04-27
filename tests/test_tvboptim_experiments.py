@@ -27,7 +27,7 @@ def test_experiment_runs(experiment_name):
     if exp.explorations:
         for expl in exp.explorations.values():
             if expl.parameters:
-                for param in expl.parameters.values():
+                for param in expl.parameters:
                     if param.domain is not None and getattr(param.domain, "n", None):
                         param.domain.n = 2
 

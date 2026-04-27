@@ -4136,7 +4136,7 @@ class Node(ConfiguredBaseModel):
                        'SimulationExperiment']} })
     position: Optional[Coordinate] = Field(default=None, description="""Spatial coordinates (x, y, z) of the node""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node']} })
     region: Optional[str] = Field(default=None, description="""Brain region or anatomical label""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'SpatialDomain']} })
-    state: Optional[dict[str, Union[float, StateValue]]] = Field(default=None, description="""Per-node initial state variable values, keyed by state variable name.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node']} })
+    state: Optional[dict[str, StateValue]] = Field(default=None, description="""Per-node initial state variable values, keyed by state variable name.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node']} })
     events: Optional[dict[str, Event]] = Field(default=None, description="""Events attached to this node (e.g., threshold-based state changes).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'Edge', 'Dynamics', 'SimulationExperiment']} })
 
 
@@ -4182,7 +4182,7 @@ class StateValue(ConfiguredBaseModel):
                        'Continuation',
                        'Coupling'],
          'slot_uri': 'schema:name'} })
-    value: Optional[float] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StateValue',
+    value: Optional[Any] = Field(default=None, description="""Numeric, string, or boolean value. ScalarValue accepts any literal primitive type, allowing parameters to carry control flags (e.g., booleans) or symbolic placeholders alongside numeric defaults.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateValue',
                        'Parameter',
                        'Argument',
                        'Option',
@@ -5274,7 +5274,7 @@ class Parameter(ConfiguredBaseModel):
                        'Function',
                        'DifferentialOperator'],
          'slot_uri': 'skos:definition'} })
-    value: Optional[float] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StateValue',
+    value: Optional[Any] = Field(default=None, description="""Numeric, string, or boolean value. ScalarValue accepts any literal primitive type, allowing parameters to carry control flags (e.g., booleans) or symbolic placeholders alongside numeric defaults.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateValue',
                        'Parameter',
                        'Argument',
                        'Option',
@@ -6492,7 +6492,7 @@ class DerivedParameter(Parameter):
                        'Function',
                        'DifferentialOperator'],
          'slot_uri': 'skos:definition'} })
-    value: Optional[float] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StateValue',
+    value: Optional[Any] = Field(default=None, description="""Numeric, string, or boolean value. ScalarValue accepts any literal primitive type, allowing parameters to carry control flags (e.g., booleans) or symbolic placeholders alongside numeric defaults.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateValue',
                        'Parameter',
                        'Argument',
                        'Option',
@@ -7119,7 +7119,8 @@ class OptimizationStage(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE'],
          'slot_uri': 'dcterms:description'} })
-    free_parameters: Optional[list[Parameter]] = Field(default=None, description="""Parameters to optimize in this stage. Use 'shape' attribute to specify scalar vs regional. Example: {name: w, shape: \"(n_nodes,)\"} for heterogeneous.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Continuation']} })
+    free_parameters: Optional[list[str]] = Field(default=None, description="""Parameters to optimize in this stage. Bare-string references to existing parameters using dotted scope, e.g. \"ReducedWongWang.w\" or \"FastLinearCoupling.G\". Resolved against the experiment's dynamics and coupling parameters at runtime; no new Parameter is created here.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Continuation']} })
+    heterogeneous_parameters: Optional[list[str]] = Field(default=None, description="""Subset of free_parameters that should be optimized heterogeneously (per-node) in this stage. Bare-string references using the same dotted scope as free_parameters.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage']} })
     algorithm: Optional[str] = Field(default="adam", description="""Optimizer for this stage: 'adam', 'adamw', 'sgd', etc.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'AlgorithmInclude', 'Continuation'],
          'ifabsent': 'string(adam)'} })
     learning_rate: Optional[float] = Field(default=0.001, json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Algorithm'], 'ifabsent': 'float(0.001)'} })
@@ -7273,7 +7274,8 @@ class Optimization(OptimizationStage):
                        'PDESolver',
                        'PDE'],
          'slot_uri': 'dcterms:description'} })
-    free_parameters: Optional[list[Parameter]] = Field(default=None, description="""Parameters to optimize in this stage. Use 'shape' attribute to specify scalar vs regional. Example: {name: w, shape: \"(n_nodes,)\"} for heterogeneous.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Continuation']} })
+    free_parameters: Optional[list[str]] = Field(default=None, description="""Parameters to optimize in this stage. Bare-string references to existing parameters using dotted scope, e.g. \"ReducedWongWang.w\" or \"FastLinearCoupling.G\". Resolved against the experiment's dynamics and coupling parameters at runtime; no new Parameter is created here.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Continuation']} })
+    heterogeneous_parameters: Optional[list[str]] = Field(default=None, description="""Subset of free_parameters that should be optimized heterogeneously (per-node) in this stage. Bare-string references using the same dotted scope as free_parameters.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage']} })
     algorithm: Optional[str] = Field(default="adam", description="""Optimizer for this stage: 'adam', 'adamw', 'sgd', etc.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'AlgorithmInclude', 'Continuation'],
          'ifabsent': 'string(adam)'} })
     learning_rate: Optional[float] = Field(default=0.001, json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Algorithm'], 'ifabsent': 'float(0.001)'} })

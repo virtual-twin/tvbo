@@ -1718,12 +1718,21 @@ classes:
             free_parameters:
                 multivalued: true
                 range: Parameter
-                inlined: true
-                inlined_as_list: true
+                inlined: false
                 description: >-
-                    Parameters to optimize in this stage.
-                    Use 'shape' attribute to specify scalar vs regional.
-                    Example: {name: w, shape: "(n_nodes,)"} for heterogeneous.
+                    Parameters to optimize in this stage. Bare-string references
+                    to existing parameters using dotted scope, e.g.
+                    "ReducedWongWang.w" or "FastLinearCoupling.G". Resolved
+                    against the experiment's dynamics and coupling parameters
+                    at runtime; no new Parameter is created here.
+            heterogeneous_parameters:
+                multivalued: true
+                range: Parameter
+                inlined: false
+                description: >-
+                    Subset of free_parameters that should be optimized
+                    heterogeneously (per-node) in this stage. Bare-string
+                    references using the same dotted scope as free_parameters.
             algorithm:
                 range: string
                 ifabsent: string(adam)

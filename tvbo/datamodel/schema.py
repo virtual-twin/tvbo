@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-04-27T16:59:28
+# Generation date: 2026-04-27T17:09:31
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -1060,16 +1060,13 @@ class StateValue(YAMLRoot):
     class_model_uri: ClassVar[URIRef] = TVBO.StateValue
 
     name: Union[str, StateValueName] = None
-    value: Optional[float] = None
+    value: Optional[Union[dict, ScalarValue]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
             self.MissingRequiredField("name")
         if not isinstance(self.name, StateValueName):
             self.name = StateValueName(self.name)
-
-        if self.value is not None and not isinstance(self.value, float):
-            self.value = float(self.value)
 
         super().__post_init__(**kwargs)
 
@@ -1587,7 +1584,7 @@ class Parameter(YAMLRoot):
     label: Optional[str] = None
     symbol: Optional[str] = None
     definition: Optional[str] = None
-    value: Optional[float] = None
+    value: Optional[Union[dict, ScalarValue]] = None
     default: Optional[str] = None
     domain: Optional[Union[dict, Range]] = None
     reported_optimum: Optional[float] = None
@@ -1617,9 +1614,6 @@ class Parameter(YAMLRoot):
 
         if self.definition is not None and not isinstance(self.definition, str):
             self.definition = str(self.definition)
-
-        if self.value is not None and not isinstance(self.value, float):
-            self.value = float(self.value)
 
         if self.default is not None and not isinstance(self.default, str):
             self.default = str(self.default)
@@ -2294,7 +2288,8 @@ class OptimizationStage(YAMLRoot):
     name: Union[str, OptimizationStageName] = None
     label: Optional[str] = None
     description: Optional[str] = None
-    free_parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
+    free_parameters: Optional[Union[Union[str, ParameterName], list[Union[str, ParameterName]]]] = empty_list()
+    heterogeneous_parameters: Optional[Union[Union[str, ParameterName], list[Union[str, ParameterName]]]] = empty_list()
     algorithm: Optional[str] = "adam"
     learning_rate: Optional[float] = 0.001
     max_iterations: Optional[int] = 100
@@ -2314,7 +2309,13 @@ class OptimizationStage(YAMLRoot):
         if self.description is not None and not isinstance(self.description, str):
             self.description = str(self.description)
 
-        self._normalize_inlined_as_list(slot_name="free_parameters", slot_type=Parameter, key_name="name", keyed=True)
+        if not isinstance(self.free_parameters, list):
+            self.free_parameters = [self.free_parameters] if self.free_parameters is not None else []
+        self.free_parameters = [v if isinstance(v, ParameterName) else ParameterName(v) for v in self.free_parameters]
+
+        if not isinstance(self.heterogeneous_parameters, list):
+            self.heterogeneous_parameters = [self.heterogeneous_parameters] if self.heterogeneous_parameters is not None else []
+        self.heterogeneous_parameters = [v if isinstance(v, ParameterName) else ParameterName(v) for v in self.heterogeneous_parameters]
 
         if self.algorithm is not None and not isinstance(self.algorithm, str):
             self.algorithm = str(self.algorithm)
@@ -6112,7 +6113,7 @@ slots.iri = Slot(uri=DCTERMS.identifier, name="iri", curie=DCTERMS.curie('identi
                    model_uri=TVBO.iri, domain=None, range=Optional[Union[str, URIorCURIE]])
 
 slots.value = Slot(uri=SCHEMA.value, name="value", curie=SCHEMA.curie('value'),
-                   model_uri=TVBO.value, domain=None, range=Optional[float])
+                   model_uri=TVBO.value, domain=None, range=Optional[Union[dict, ScalarValue]])
 
 slots.file = Slot(uri=TVBO.file, name="file", curie=TVBO.curie('file'),
                    model_uri=TVBO.file, domain=None, range=Optional[str])
@@ -6856,7 +6857,10 @@ slots.dataSource__preprocessing = Slot(uri=TVBO.preprocessing, name="dataSource_
                    model_uri=TVBO.dataSource__preprocessing, domain=None, range=Optional[Union[dict, Function]])
 
 slots.optimizationStage__free_parameters = Slot(uri=TVBO.free_parameters, name="optimizationStage__free_parameters", curie=TVBO.curie('free_parameters'),
-                   model_uri=TVBO.optimizationStage__free_parameters, domain=None, range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]])
+                   model_uri=TVBO.optimizationStage__free_parameters, domain=None, range=Optional[Union[Union[str, ParameterName], list[Union[str, ParameterName]]]])
+
+slots.optimizationStage__heterogeneous_parameters = Slot(uri=TVBO.heterogeneous_parameters, name="optimizationStage__heterogeneous_parameters", curie=TVBO.curie('heterogeneous_parameters'),
+                   model_uri=TVBO.optimizationStage__heterogeneous_parameters, domain=None, range=Optional[Union[Union[str, ParameterName], list[Union[str, ParameterName]]]])
 
 slots.optimizationStage__algorithm = Slot(uri=TVBO.algorithm, name="optimizationStage__algorithm", curie=TVBO.curie('algorithm'),
                    model_uri=TVBO.optimizationStage__algorithm, domain=None, range=Optional[str])
