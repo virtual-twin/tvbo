@@ -63,6 +63,7 @@ classes:
     slots:
       - name
       - abbreviation
+      - alternateName
       - unit
       - license
     class_uri: atom:atlas/Transformation

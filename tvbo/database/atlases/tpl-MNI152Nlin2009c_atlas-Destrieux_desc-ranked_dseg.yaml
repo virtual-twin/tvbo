@@ -1,5 +1,5 @@
 name: Destrieux
-coordinateSpace: MNI152Nlin2009c
+coordinateSpace: MNI152NLin2009c
 terminology:
   entities:
     - name: left-cerebellum-cortex
