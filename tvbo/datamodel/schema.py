@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-04-27T13:24:43
+# Generation date: 2026-04-27T13:34:09
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -4296,10 +4296,10 @@ class Dataset(YAMLRoot):
     class_model_uri: ClassVar[URIRef] = TVBO.Dataset
 
     dataset_id: Union[str, DatasetDatasetId] = None
+    subjects: Optional[Union[dict[Union[str, SubjectSubjectId], Union[dict, Subject]], list[Union[dict, Subject]]]] = empty_dict()
     label: Optional[str] = None
     description: Optional[str] = None
     bids_root: Optional[str] = None
-    subjects: Optional[Union[dict[Union[str, SubjectSubjectId], Union[dict, Subject]], list[Union[dict, Subject]]]] = empty_dict()
     conditions: Optional[Union[str, list[str]]] = empty_list()
     reference: Optional[str] = None
 
@@ -4309,6 +4309,8 @@ class Dataset(YAMLRoot):
         if not isinstance(self.dataset_id, DatasetDatasetId):
             self.dataset_id = DatasetDatasetId(self.dataset_id)
 
+        self._normalize_inlined_as_dict(slot_name="subjects", slot_type=Subject, key_name="subject_id", keyed=True)
+
         if self.label is not None and not isinstance(self.label, str):
             self.label = str(self.label)
 
@@ -4317,8 +4319,6 @@ class Dataset(YAMLRoot):
 
         if self.bids_root is not None and not isinstance(self.bids_root, str):
             self.bids_root = str(self.bids_root)
-
-        self._normalize_inlined_as_dict(slot_name="subjects", slot_type=Subject, key_name="subject_id", keyed=True)
 
         if not isinstance(self.conditions, list):
             self.conditions = [self.conditions] if self.conditions is not None else []
@@ -5051,284 +5051,6 @@ class SoftwareEnvironment(YAMLRoot):
 
 
 # Enumerations
-class UnitEnum(EnumDefinitionImpl):
-    """
-    Physical units of measurement for model parameters, state variables, and integration settings. Uses conventional
-    abbreviations as values, mapped to the QUDT ontology (http://qudt.org/vocab/unit/) with UO cross-references where
-    available.
-    """
-    s = PermissibleValue(
-        text="s",
-        description="Second",
-        meaning=QUDT["SEC"])
-    ms = PermissibleValue(
-        text="ms",
-        description="Millisecond",
-        meaning=QUDT["MilliSEC"])
-    us = PermissibleValue(
-        text="us",
-        description="Microsecond",
-        meaning=QUDT["MicroSEC"])
-    per_s = PermissibleValue(
-        text="per_s",
-        description="Per second (s⁻¹)",
-        meaning=QUDT["PER-SEC"])
-    per_ms = PermissibleValue(
-        text="per_ms",
-        description="Per millisecond (ms⁻¹)",
-        meaning=QUDT["PER-MilliSEC"])
-    Hz = PermissibleValue(
-        text="Hz",
-        description="Hertz (s⁻¹)",
-        meaning=QUDT["HZ"])
-    kHz = PermissibleValue(
-        text="kHz",
-        description="Kilohertz",
-        meaning=QUDT["KiloHZ"])
-    V = PermissibleValue(
-        text="V",
-        description="Volt",
-        meaning=QUDT["V"])
-    mV = PermissibleValue(
-        text="mV",
-        description="Millivolt",
-        meaning=QUDT["MilliV"])
-    per_mV = PermissibleValue(
-        text="per_mV",
-        description="Reciprocal millivolt (mV⁻¹)",
-        meaning=QUDT["PER-MilliV"])
-    mV_per_ms = PermissibleValue(
-        text="mV_per_ms",
-        description="Millivolt per millisecond",
-        meaning=QUDT["MilliV-PER-MilliSEC"])
-    mV_per_s = PermissibleValue(
-        text="mV_per_s",
-        description="Millivolt per second",
-        meaning=QUDT["MilliV-PER-SEC"])
-    A = PermissibleValue(
-        text="A",
-        description="Ampere",
-        meaning=QUDT["A"])
-    nA = PermissibleValue(
-        text="nA",
-        description="Nanoampere",
-        meaning=QUDT["NanoA"])
-    pA = PermissibleValue(
-        text="pA",
-        description="Picoampere",
-        meaning=QUDT["PicoA"])
-    uA_per_cm2 = PermissibleValue(
-        text="uA_per_cm2",
-        description="Microampere per square centimetre (current density)")
-    pF = PermissibleValue(
-        text="pF",
-        description="Picofarad",
-        meaning=QUDT["PicoFARAD"])
-    nF = PermissibleValue(
-        text="nF",
-        description="Nanofarad",
-        meaning=QUDT["NanoFARAD"])
-    uF_per_cm2 = PermissibleValue(
-        text="uF_per_cm2",
-        description="Microfarad per square centimetre (specific capacitance)")
-    nS = PermissibleValue(
-        text="nS",
-        description="Nanosiemens",
-        meaning=QUDT["NanoS"])
-    uS = PermissibleValue(
-        text="uS",
-        description="Microsiemens",
-        meaning=QUDT["MicroS"])
-    pS = PermissibleValue(
-        text="pS",
-        description="Picosiemens",
-        meaning=QUDT["PicoS"])
-    S_per_cm2 = PermissibleValue(
-        text="S_per_cm2",
-        description="Siemens per square centimetre (conductance density)")
-    mS_per_cm2 = PermissibleValue(
-        text="mS_per_cm2",
-        description="Millisiemens per square centimetre (conductance density)")
-    S_per_m2 = PermissibleValue(
-        text="S_per_m2",
-        description="Siemens per square metre (conductance density, SI)")
-    nS_per_mV = PermissibleValue(
-        text="nS_per_mV",
-        description="Nanosiemens per millivolt")
-    per_nC = PermissibleValue(
-        text="per_nC",
-        description="Reciprocal nanocoulomb (nC⁻¹)",
-        meaning=QUDT["PER-NanoC"])
-    per_pC = PermissibleValue(
-        text="per_pC",
-        description="Reciprocal picocoulomb (pC⁻¹)",
-        meaning=QUDT["PER-PicoC"])
-    mol_per_m3 = PermissibleValue(
-        text="mol_per_m3",
-        description="Mole per cubic metre (mol/m³)",
-        meaning=QUDT["MOL-PER-M3"])
-    mol_per_cm3 = PermissibleValue(
-        text="mol_per_cm3",
-        description="Mole per cubic centimetre (mol/cm³)")
-    mmol_per_m3 = PermissibleValue(
-        text="mmol_per_m3",
-        description="Millimole per cubic metre (mmol/m³ ≈ mM)",
-        meaning=QUDT["MilliMOL-PER-M3"])
-    mol_per_m_per_A_per_s = PermissibleValue(
-        text="mol_per_m_per_A_per_s",
-        description="Mole per metre per ampere per second (concentration-current coupling)")
-    um3 = PermissibleValue(
-        text="um3",
-        description="Cubic micrometre (µm³)",
-        meaning=QUDT["MicroM3"])
-    m = PermissibleValue(
-        text="m",
-        description="Metre",
-        meaning=QUDT["M"])
-    mm = PermissibleValue(
-        text="mm",
-        description="Millimetre",
-        meaning=QUDT["MilliM"])
-    cm = PermissibleValue(
-        text="cm",
-        description="Centimetre",
-        meaning=QUDT["CentiM"])
-    m_per_s = PermissibleValue(
-        text="m_per_s",
-        description="Metre per second",
-        meaning=QUDT["M-PER-SEC"])
-    mm_per_ms = PermissibleValue(
-        text="mm_per_ms",
-        description="Millimetre per millisecond (= m/s)",
-        meaning=QUDT["MilliM-PER-MilliSEC"])
-    Hz_per_nA = PermissibleValue(
-        text="Hz_per_nA",
-        description="Hertz per nanoampere (neural gain)")
-    S_per_m = PermissibleValue(
-        text="S_per_m",
-        description="Siemens per metre (conductivity)",
-        meaning=QUDT["S-PER-M"])
-    H_per_m = PermissibleValue(
-        text="H_per_m",
-        description="Henry per metre (permeability)",
-        meaning=QUDT["H-PER-M"])
-    ohm = PermissibleValue(
-        text="ohm",
-        description="Ohm (Ω)",
-        meaning=QUDT["OHM"])
-    Mohm = PermissibleValue(
-        text="Mohm",
-        description="Megaohm (MΩ)")
-    kohm_cm = PermissibleValue(
-        text="kohm_cm",
-        description="Kilo-ohm centimetre (axial resistivity)")
-    degC = PermissibleValue(
-        text="degC",
-        description="Degree Celsius",
-        meaning=QUDT["DEG_C"])
-    rad_per_ms = PermissibleValue(
-        text="rad_per_ms",
-        description="Radian per millisecond")
-    dimensionless = PermissibleValue(
-        text="dimensionless",
-        description="Dimensionless (unitless)",
-        meaning=QUDT["UNITLESS"])
-    percent = PermissibleValue(
-        text="percent",
-        description="Percent (%)",
-        meaning=QUDT["PERCENT"])
-    arbitrary_unit = PermissibleValue(
-        text="arbitrary_unit",
-        description="Arbitrary units (a.u.)")
-    kg = PermissibleValue(
-        text="kg",
-        description="Kilogram",
-        meaning=QUDT["KiloGM"])
-    kg_per_s = PermissibleValue(
-        text="kg_per_s",
-        description="Kilogram per second")
-    m_per_s2 = PermissibleValue(
-        text="m_per_s2",
-        description="Metre per second squared (acceleration)",
-        meaning=QUDT["M-PER-SEC2"])
-    N_per_m = PermissibleValue(
-        text="N_per_m",
-        description="Newton per metre (spring constant)",
-        meaning=QUDT["N-PER-M"])
-    rad = PermissibleValue(
-        text="rad",
-        description="Radian",
-        meaning=QUDT["RAD"])
-    rad_per_s = PermissibleValue(
-        text="rad_per_s",
-        description="Radian per second (angular velocity)",
-        meaning=QUDT["RAD-PER-SEC"])
-    s2 = PermissibleValue(
-        text="s2",
-        description="Second squared (inertia constant)",
-        meaning=QUDT["SEC2"])
-    per_unit = PermissibleValue(
-        text="per_unit",
-        description="Per-unit (dimensionless power-systems convention)")
-
-    _defn = EnumDefinition(
-        name="UnitEnum",
-        description="""Physical units of measurement for model parameters, state variables, and integration settings. Uses conventional abbreviations as values, mapped to the QUDT ontology (http://qudt.org/vocab/unit/) with UO cross-references where available.""",
-    )
-
-class PhysicalDimension(EnumDefinitionImpl):
-    """
-    Physical dimension categories for LEMS and dimensional analysis. Each dimension decomposes into SI base dimensions
-    (M, L, T, I, K, N).
-    """
-    none = PermissibleValue(
-        text="none",
-        description="Dimensionless")
-    time = PermissibleValue(
-        text="time",
-        description="Time [T]")
-    per_time = PermissibleValue(
-        text="per_time",
-        description="Inverse time [T⁻¹]")
-    voltage = PermissibleValue(
-        text="voltage",
-        description="Voltage [M L² T⁻³ I⁻¹]")
-    current = PermissibleValue(
-        text="current",
-        description="Electric current [I]")
-    capacitance = PermissibleValue(
-        text="capacitance",
-        description="Capacitance [M⁻¹ L⁻² T⁴ I²]")
-    conductance = PermissibleValue(
-        text="conductance",
-        description="Conductance [M⁻¹ L⁻² T³ I²]")
-    resistance = PermissibleValue(
-        text="resistance",
-        description="Resistance [M L² T⁻³ I⁻²]")
-    charge = PermissibleValue(
-        text="charge",
-        description="Electric charge [T I]")
-    concentration = PermissibleValue(
-        text="concentration",
-        description="Concentration [L⁻³ N]")
-    substance = PermissibleValue(
-        text="substance",
-        description="Amount of substance [N]")
-    length = PermissibleValue(
-        text="length",
-        description="Length [L]")
-    volume = PermissibleValue(
-        text="volume",
-        description="Volume [L³]")
-    temperature = PermissibleValue(
-        text="temperature",
-        description="Temperature [K]")
-
-    _defn = EnumDefinition(
-        name="PhysicalDimension",
-        description="""Physical dimension categories for LEMS and dimensional analysis. Each dimension decomposes into SI base dimensions (M, L, T, I, K, N).""",
-    )
-
 class ImagingModality(EnumDefinitionImpl):
 
     BOLD = PermissibleValue(
@@ -5693,6 +5415,284 @@ class SparseFormat(EnumDefinitionImpl):
 
     _defn = EnumDefinition(
         name="SparseFormat",
+    )
+
+class UnitEnum(EnumDefinitionImpl):
+    """
+    Physical units of measurement for model parameters, state variables, and integration settings. Uses conventional
+    abbreviations as values, mapped to the QUDT ontology (http://qudt.org/vocab/unit/) with UO cross-references where
+    available.
+    """
+    s = PermissibleValue(
+        text="s",
+        description="Second",
+        meaning=QUDT["SEC"])
+    ms = PermissibleValue(
+        text="ms",
+        description="Millisecond",
+        meaning=QUDT["MilliSEC"])
+    us = PermissibleValue(
+        text="us",
+        description="Microsecond",
+        meaning=QUDT["MicroSEC"])
+    per_s = PermissibleValue(
+        text="per_s",
+        description="Per second (s⁻¹)",
+        meaning=QUDT["PER-SEC"])
+    per_ms = PermissibleValue(
+        text="per_ms",
+        description="Per millisecond (ms⁻¹)",
+        meaning=QUDT["PER-MilliSEC"])
+    Hz = PermissibleValue(
+        text="Hz",
+        description="Hertz (s⁻¹)",
+        meaning=QUDT["HZ"])
+    kHz = PermissibleValue(
+        text="kHz",
+        description="Kilohertz",
+        meaning=QUDT["KiloHZ"])
+    V = PermissibleValue(
+        text="V",
+        description="Volt",
+        meaning=QUDT["V"])
+    mV = PermissibleValue(
+        text="mV",
+        description="Millivolt",
+        meaning=QUDT["MilliV"])
+    per_mV = PermissibleValue(
+        text="per_mV",
+        description="Reciprocal millivolt (mV⁻¹)",
+        meaning=QUDT["PER-MilliV"])
+    mV_per_ms = PermissibleValue(
+        text="mV_per_ms",
+        description="Millivolt per millisecond",
+        meaning=QUDT["MilliV-PER-MilliSEC"])
+    mV_per_s = PermissibleValue(
+        text="mV_per_s",
+        description="Millivolt per second",
+        meaning=QUDT["MilliV-PER-SEC"])
+    A = PermissibleValue(
+        text="A",
+        description="Ampere",
+        meaning=QUDT["A"])
+    nA = PermissibleValue(
+        text="nA",
+        description="Nanoampere",
+        meaning=QUDT["NanoA"])
+    pA = PermissibleValue(
+        text="pA",
+        description="Picoampere",
+        meaning=QUDT["PicoA"])
+    uA_per_cm2 = PermissibleValue(
+        text="uA_per_cm2",
+        description="Microampere per square centimetre (current density)")
+    pF = PermissibleValue(
+        text="pF",
+        description="Picofarad",
+        meaning=QUDT["PicoFARAD"])
+    nF = PermissibleValue(
+        text="nF",
+        description="Nanofarad",
+        meaning=QUDT["NanoFARAD"])
+    uF_per_cm2 = PermissibleValue(
+        text="uF_per_cm2",
+        description="Microfarad per square centimetre (specific capacitance)")
+    nS = PermissibleValue(
+        text="nS",
+        description="Nanosiemens",
+        meaning=QUDT["NanoS"])
+    uS = PermissibleValue(
+        text="uS",
+        description="Microsiemens",
+        meaning=QUDT["MicroS"])
+    pS = PermissibleValue(
+        text="pS",
+        description="Picosiemens",
+        meaning=QUDT["PicoS"])
+    S_per_cm2 = PermissibleValue(
+        text="S_per_cm2",
+        description="Siemens per square centimetre (conductance density)")
+    mS_per_cm2 = PermissibleValue(
+        text="mS_per_cm2",
+        description="Millisiemens per square centimetre (conductance density)")
+    S_per_m2 = PermissibleValue(
+        text="S_per_m2",
+        description="Siemens per square metre (conductance density, SI)")
+    nS_per_mV = PermissibleValue(
+        text="nS_per_mV",
+        description="Nanosiemens per millivolt")
+    per_nC = PermissibleValue(
+        text="per_nC",
+        description="Reciprocal nanocoulomb (nC⁻¹)",
+        meaning=QUDT["PER-NanoC"])
+    per_pC = PermissibleValue(
+        text="per_pC",
+        description="Reciprocal picocoulomb (pC⁻¹)",
+        meaning=QUDT["PER-PicoC"])
+    mol_per_m3 = PermissibleValue(
+        text="mol_per_m3",
+        description="Mole per cubic metre (mol/m³)",
+        meaning=QUDT["MOL-PER-M3"])
+    mol_per_cm3 = PermissibleValue(
+        text="mol_per_cm3",
+        description="Mole per cubic centimetre (mol/cm³)")
+    mmol_per_m3 = PermissibleValue(
+        text="mmol_per_m3",
+        description="Millimole per cubic metre (mmol/m³ ≈ mM)",
+        meaning=QUDT["MilliMOL-PER-M3"])
+    mol_per_m_per_A_per_s = PermissibleValue(
+        text="mol_per_m_per_A_per_s",
+        description="Mole per metre per ampere per second (concentration-current coupling)")
+    um3 = PermissibleValue(
+        text="um3",
+        description="Cubic micrometre (µm³)",
+        meaning=QUDT["MicroM3"])
+    m = PermissibleValue(
+        text="m",
+        description="Metre",
+        meaning=QUDT["M"])
+    mm = PermissibleValue(
+        text="mm",
+        description="Millimetre",
+        meaning=QUDT["MilliM"])
+    cm = PermissibleValue(
+        text="cm",
+        description="Centimetre",
+        meaning=QUDT["CentiM"])
+    m_per_s = PermissibleValue(
+        text="m_per_s",
+        description="Metre per second",
+        meaning=QUDT["M-PER-SEC"])
+    mm_per_ms = PermissibleValue(
+        text="mm_per_ms",
+        description="Millimetre per millisecond (= m/s)",
+        meaning=QUDT["MilliM-PER-MilliSEC"])
+    Hz_per_nA = PermissibleValue(
+        text="Hz_per_nA",
+        description="Hertz per nanoampere (neural gain)")
+    S_per_m = PermissibleValue(
+        text="S_per_m",
+        description="Siemens per metre (conductivity)",
+        meaning=QUDT["S-PER-M"])
+    H_per_m = PermissibleValue(
+        text="H_per_m",
+        description="Henry per metre (permeability)",
+        meaning=QUDT["H-PER-M"])
+    ohm = PermissibleValue(
+        text="ohm",
+        description="Ohm (Ω)",
+        meaning=QUDT["OHM"])
+    Mohm = PermissibleValue(
+        text="Mohm",
+        description="Megaohm (MΩ)")
+    kohm_cm = PermissibleValue(
+        text="kohm_cm",
+        description="Kilo-ohm centimetre (axial resistivity)")
+    degC = PermissibleValue(
+        text="degC",
+        description="Degree Celsius",
+        meaning=QUDT["DEG_C"])
+    rad_per_ms = PermissibleValue(
+        text="rad_per_ms",
+        description="Radian per millisecond")
+    dimensionless = PermissibleValue(
+        text="dimensionless",
+        description="Dimensionless (unitless)",
+        meaning=QUDT["UNITLESS"])
+    percent = PermissibleValue(
+        text="percent",
+        description="Percent (%)",
+        meaning=QUDT["PERCENT"])
+    arbitrary_unit = PermissibleValue(
+        text="arbitrary_unit",
+        description="Arbitrary units (a.u.)")
+    kg = PermissibleValue(
+        text="kg",
+        description="Kilogram",
+        meaning=QUDT["KiloGM"])
+    kg_per_s = PermissibleValue(
+        text="kg_per_s",
+        description="Kilogram per second")
+    m_per_s2 = PermissibleValue(
+        text="m_per_s2",
+        description="Metre per second squared (acceleration)",
+        meaning=QUDT["M-PER-SEC2"])
+    N_per_m = PermissibleValue(
+        text="N_per_m",
+        description="Newton per metre (spring constant)",
+        meaning=QUDT["N-PER-M"])
+    rad = PermissibleValue(
+        text="rad",
+        description="Radian",
+        meaning=QUDT["RAD"])
+    rad_per_s = PermissibleValue(
+        text="rad_per_s",
+        description="Radian per second (angular velocity)",
+        meaning=QUDT["RAD-PER-SEC"])
+    s2 = PermissibleValue(
+        text="s2",
+        description="Second squared (inertia constant)",
+        meaning=QUDT["SEC2"])
+    per_unit = PermissibleValue(
+        text="per_unit",
+        description="Per-unit (dimensionless power-systems convention)")
+
+    _defn = EnumDefinition(
+        name="UnitEnum",
+        description="""Physical units of measurement for model parameters, state variables, and integration settings. Uses conventional abbreviations as values, mapped to the QUDT ontology (http://qudt.org/vocab/unit/) with UO cross-references where available.""",
+    )
+
+class PhysicalDimension(EnumDefinitionImpl):
+    """
+    Physical dimension categories for LEMS and dimensional analysis. Each dimension decomposes into SI base dimensions
+    (M, L, T, I, K, N).
+    """
+    none = PermissibleValue(
+        text="none",
+        description="Dimensionless")
+    time = PermissibleValue(
+        text="time",
+        description="Time [T]")
+    per_time = PermissibleValue(
+        text="per_time",
+        description="Inverse time [T⁻¹]")
+    voltage = PermissibleValue(
+        text="voltage",
+        description="Voltage [M L² T⁻³ I⁻¹]")
+    current = PermissibleValue(
+        text="current",
+        description="Electric current [I]")
+    capacitance = PermissibleValue(
+        text="capacitance",
+        description="Capacitance [M⁻¹ L⁻² T⁴ I²]")
+    conductance = PermissibleValue(
+        text="conductance",
+        description="Conductance [M⁻¹ L⁻² T³ I²]")
+    resistance = PermissibleValue(
+        text="resistance",
+        description="Resistance [M L² T⁻³ I⁻²]")
+    charge = PermissibleValue(
+        text="charge",
+        description="Electric charge [T I]")
+    concentration = PermissibleValue(
+        text="concentration",
+        description="Concentration [L⁻³ N]")
+    substance = PermissibleValue(
+        text="substance",
+        description="Amount of substance [N]")
+    length = PermissibleValue(
+        text="length",
+        description="Length [L]")
+    volume = PermissibleValue(
+        text="volume",
+        description="Volume [L³]")
+    temperature = PermissibleValue(
+        text="temperature",
+        description="Temperature [K]")
+
+    _defn = EnumDefinition(
+        name="PhysicalDimension",
+        description="""Physical dimension categories for LEMS and dimensional analysis. Each dimension decomposes into SI base dimensions (M, L, T, I, K, N).""",
     )
 
 class SpecimenEnum(EnumDefinitionImpl):
@@ -6176,6 +6176,9 @@ slots.session_id = Slot(uri=DCTERMS.identifier, name="session_id", curie=DCTERMS
 
 slots.dataset_id = Slot(uri=DCTERMS.identifier, name="dataset_id", curie=DCTERMS.curie('identifier'),
                    model_uri=TVBO.dataset_id, domain=None, range=URIRef)
+
+slots.subjects = Slot(uri=TVBO_STUDY.subjects, name="subjects", curie=TVBO_STUDY.curie('subjects'),
+                   model_uri=TVBO.subjects, domain=None, range=Optional[Union[dict[Union[str, SubjectSubjectId], Union[dict, Subject]], list[Union[dict, Subject]]]])
 
 slots.id = Slot(uri=DCTERMS.identifier, name="id", curie=DCTERMS.curie('identifier'),
                    model_uri=TVBO.id, domain=None, range=Optional[int])
@@ -7587,9 +7590,6 @@ slots.dataset__description = Slot(uri=DCTERMS.description, name="dataset__descri
 slots.dataset__bids_root = Slot(uri=TVBO_STUDY.bids_root, name="dataset__bids_root", curie=TVBO_STUDY.curie('bids_root'),
                    model_uri=TVBO.dataset__bids_root, domain=None, range=Optional[str])
 
-slots.dataset__subjects = Slot(uri=TVBO_STUDY.subjects, name="dataset__subjects", curie=TVBO_STUDY.curie('subjects'),
-                   model_uri=TVBO.dataset__subjects, domain=None, range=Optional[Union[dict[Union[str, SubjectSubjectId], Union[dict, Subject]], list[Union[dict, Subject]]]])
-
 slots.dataset__conditions = Slot(uri=TVBO_STUDY.conditions, name="dataset__conditions", curie=TVBO_STUDY.curie('conditions'),
                    model_uri=TVBO.dataset__conditions, domain=None, range=Optional[Union[str, list[str]]])
 
@@ -7935,6 +7935,6 @@ slots.DerivedVariable_record = Slot(uri=TVBO.record, name="DerivedVariable_recor
 slots.Coupling_name = Slot(uri=SCHEMA.name, name="Coupling_name", curie=SCHEMA.curie('name'),
                    model_uri=TVBO.Coupling_name, domain=Coupling, range=Union[str, CouplingName])
 
-slots.DBSDataset_subjects = Slot(uri=TVBO.subjects, name="DBSDataset_subjects", curie=TVBO.curie('subjects'),
+slots.DBSDataset_subjects = Slot(uri=TVBO_STUDY.subjects, name="DBSDataset_subjects", curie=TVBO_STUDY.curie('subjects'),
                    model_uri=TVBO.DBSDataset_subjects, domain=DBSDataset, range=Optional[Union[dict[Union[str, DBSSubjectSubjectId], Union[dict, "DBSSubject"]], list[Union[dict, "DBSSubject"]]]])
 

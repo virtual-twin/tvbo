@@ -123,7 +123,12 @@ linkml_meta = LinkMLMeta({'default_prefix': 'tvbo',
                     'Brain neuroinformatics platform or other dynamic network '
                     'models of large-scale brain activity.',
      'id': 'https://w3id.org/tvbo',
-     'imports': ['linkml:types', 'SANDS', 'tvbo_study', 'tvb_dbs', 'software'],
+     'imports': ['linkml:types',
+                 'units',
+                 'SANDS',
+                 'tvbo_study',
+                 'tvb_dbs',
+                 'software'],
      'name': 'tvb-datamodel',
      'prefixes': {'UO': {'prefix_prefix': 'UO',
                          'prefix_reference': 'http://purl.obolibrary.org/obo/UO_'},
@@ -155,6 +160,302 @@ linkml_meta = LinkMLMeta({'default_prefix': 'tvbo',
                          'prefix_reference': 'http://www.wikidata.org/entity/'}},
      'source_file': 'schema/tvbo_datamodel.yaml',
      'title': 'The Virtual Brain Data Model'} )
+
+class UnitEnum(str, Enum):
+    """
+    Physical units of measurement for model parameters, state variables, and integration settings. Uses conventional abbreviations as values, mapped to the QUDT ontology (http://qudt.org/vocab/unit/) with UO cross-references where available.
+    """
+    s = "s"
+    """
+    Second
+    """
+    ms = "ms"
+    """
+    Millisecond
+    """
+    us = "us"
+    """
+    Microsecond
+    """
+    per_s = "per_s"
+    """
+    Per second (s⁻¹)
+    """
+    per_ms = "per_ms"
+    """
+    Per millisecond (ms⁻¹)
+    """
+    Hz = "Hz"
+    """
+    Hertz (s⁻¹)
+    """
+    kHz = "kHz"
+    """
+    Kilohertz
+    """
+    V = "V"
+    """
+    Volt
+    """
+    mV = "mV"
+    """
+    Millivolt
+    """
+    per_mV = "per_mV"
+    """
+    Reciprocal millivolt (mV⁻¹)
+    """
+    mV_per_ms = "mV_per_ms"
+    """
+    Millivolt per millisecond
+    """
+    mV_per_s = "mV_per_s"
+    """
+    Millivolt per second
+    """
+    A = "A"
+    """
+    Ampere
+    """
+    nA = "nA"
+    """
+    Nanoampere
+    """
+    pA = "pA"
+    """
+    Picoampere
+    """
+    uA_per_cm2 = "uA_per_cm2"
+    """
+    Microampere per square centimetre (current density)
+    """
+    pF = "pF"
+    """
+    Picofarad
+    """
+    nF = "nF"
+    """
+    Nanofarad
+    """
+    uF_per_cm2 = "uF_per_cm2"
+    """
+    Microfarad per square centimetre (specific capacitance)
+    """
+    nS = "nS"
+    """
+    Nanosiemens
+    """
+    uS = "uS"
+    """
+    Microsiemens
+    """
+    pS = "pS"
+    """
+    Picosiemens
+    """
+    S_per_cm2 = "S_per_cm2"
+    """
+    Siemens per square centimetre (conductance density)
+    """
+    mS_per_cm2 = "mS_per_cm2"
+    """
+    Millisiemens per square centimetre (conductance density)
+    """
+    S_per_m2 = "S_per_m2"
+    """
+    Siemens per square metre (conductance density, SI)
+    """
+    nS_per_mV = "nS_per_mV"
+    """
+    Nanosiemens per millivolt
+    """
+    per_nC = "per_nC"
+    """
+    Reciprocal nanocoulomb (nC⁻¹)
+    """
+    per_pC = "per_pC"
+    """
+    Reciprocal picocoulomb (pC⁻¹)
+    """
+    mol_per_m3 = "mol_per_m3"
+    """
+    Mole per cubic metre (mol/m³)
+    """
+    mol_per_cm3 = "mol_per_cm3"
+    """
+    Mole per cubic centimetre (mol/cm³)
+    """
+    mmol_per_m3 = "mmol_per_m3"
+    """
+    Millimole per cubic metre (mmol/m³ ≈ mM)
+    """
+    mol_per_m_per_A_per_s = "mol_per_m_per_A_per_s"
+    """
+    Mole per metre per ampere per second (concentration-current coupling)
+    """
+    um3 = "um3"
+    """
+    Cubic micrometre (µm³)
+    """
+    m = "m"
+    """
+    Metre
+    """
+    mm = "mm"
+    """
+    Millimetre
+    """
+    cm = "cm"
+    """
+    Centimetre
+    """
+    m_per_s = "m_per_s"
+    """
+    Metre per second
+    """
+    mm_per_ms = "mm_per_ms"
+    """
+    Millimetre per millisecond (= m/s)
+    """
+    Hz_per_nA = "Hz_per_nA"
+    """
+    Hertz per nanoampere (neural gain)
+    """
+    S_per_m = "S_per_m"
+    """
+    Siemens per metre (conductivity)
+    """
+    H_per_m = "H_per_m"
+    """
+    Henry per metre (permeability)
+    """
+    ohm = "ohm"
+    """
+    Ohm (Ω)
+    """
+    Mohm = "Mohm"
+    """
+    Megaohm (MΩ)
+    """
+    kohm_cm = "kohm_cm"
+    """
+    Kilo-ohm centimetre (axial resistivity)
+    """
+    degC = "degC"
+    """
+    Degree Celsius
+    """
+    rad_per_ms = "rad_per_ms"
+    """
+    Radian per millisecond
+    """
+    dimensionless = "dimensionless"
+    """
+    Dimensionless (unitless)
+    """
+    percent = "percent"
+    """
+    Percent (%)
+    """
+    arbitrary_unit = "arbitrary_unit"
+    """
+    Arbitrary units (a.u.)
+    """
+    kg = "kg"
+    """
+    Kilogram
+    """
+    kg_per_s = "kg_per_s"
+    """
+    Kilogram per second
+    """
+    m_per_s2 = "m_per_s2"
+    """
+    Metre per second squared (acceleration)
+    """
+    N_per_m = "N_per_m"
+    """
+    Newton per metre (spring constant)
+    """
+    rad = "rad"
+    """
+    Radian
+    """
+    rad_per_s = "rad_per_s"
+    """
+    Radian per second (angular velocity)
+    """
+    s2 = "s2"
+    """
+    Second squared (inertia constant)
+    """
+    per_unit = "per_unit"
+    """
+    Per-unit (dimensionless power-systems convention)
+    """
+
+
+class PhysicalDimension(str, Enum):
+    """
+    Physical dimension categories for LEMS and dimensional analysis. Each dimension decomposes into SI base dimensions (M, L, T, I, K, N).
+    """
+    none = "none"
+    """
+    Dimensionless
+    """
+    time = "time"
+    """
+    Time [T]
+    """
+    per_time = "per_time"
+    """
+    Inverse time [T⁻¹]
+    """
+    voltage = "voltage"
+    """
+    Voltage [M L² T⁻³ I⁻¹]
+    """
+    current = "current"
+    """
+    Electric current [I]
+    """
+    capacitance = "capacitance"
+    """
+    Capacitance [M⁻¹ L⁻² T⁴ I²]
+    """
+    conductance = "conductance"
+    """
+    Conductance [M⁻¹ L⁻² T³ I²]
+    """
+    resistance = "resistance"
+    """
+    Resistance [M L² T⁻³ I⁻²]
+    """
+    charge = "charge"
+    """
+    Electric charge [T I]
+    """
+    concentration = "concentration"
+    """
+    Concentration [L⁻³ N]
+    """
+    substance = "substance"
+    """
+    Amount of substance [N]
+    """
+    length = "length"
+    """
+    Length [L]
+    """
+    volume = "volume"
+    """
+    Volume [L³]
+    """
+    temperature = "temperature"
+    """
+    Temperature [K]
+    """
+
 
 class SpecimenEnum(str, Enum):
     """
@@ -459,302 +760,6 @@ class EnvironmentType(str, Enum):
     singularity = "singularity"
     """
     Singularity/Apptainer container.
-    """
-
-
-class UnitEnum(str, Enum):
-    """
-    Physical units of measurement for model parameters, state variables, and integration settings. Uses conventional abbreviations as values, mapped to the QUDT ontology (http://qudt.org/vocab/unit/) with UO cross-references where available.
-    """
-    s = "s"
-    """
-    Second
-    """
-    ms = "ms"
-    """
-    Millisecond
-    """
-    us = "us"
-    """
-    Microsecond
-    """
-    per_s = "per_s"
-    """
-    Per second (s⁻¹)
-    """
-    per_ms = "per_ms"
-    """
-    Per millisecond (ms⁻¹)
-    """
-    Hz = "Hz"
-    """
-    Hertz (s⁻¹)
-    """
-    kHz = "kHz"
-    """
-    Kilohertz
-    """
-    V = "V"
-    """
-    Volt
-    """
-    mV = "mV"
-    """
-    Millivolt
-    """
-    per_mV = "per_mV"
-    """
-    Reciprocal millivolt (mV⁻¹)
-    """
-    mV_per_ms = "mV_per_ms"
-    """
-    Millivolt per millisecond
-    """
-    mV_per_s = "mV_per_s"
-    """
-    Millivolt per second
-    """
-    A = "A"
-    """
-    Ampere
-    """
-    nA = "nA"
-    """
-    Nanoampere
-    """
-    pA = "pA"
-    """
-    Picoampere
-    """
-    uA_per_cm2 = "uA_per_cm2"
-    """
-    Microampere per square centimetre (current density)
-    """
-    pF = "pF"
-    """
-    Picofarad
-    """
-    nF = "nF"
-    """
-    Nanofarad
-    """
-    uF_per_cm2 = "uF_per_cm2"
-    """
-    Microfarad per square centimetre (specific capacitance)
-    """
-    nS = "nS"
-    """
-    Nanosiemens
-    """
-    uS = "uS"
-    """
-    Microsiemens
-    """
-    pS = "pS"
-    """
-    Picosiemens
-    """
-    S_per_cm2 = "S_per_cm2"
-    """
-    Siemens per square centimetre (conductance density)
-    """
-    mS_per_cm2 = "mS_per_cm2"
-    """
-    Millisiemens per square centimetre (conductance density)
-    """
-    S_per_m2 = "S_per_m2"
-    """
-    Siemens per square metre (conductance density, SI)
-    """
-    nS_per_mV = "nS_per_mV"
-    """
-    Nanosiemens per millivolt
-    """
-    per_nC = "per_nC"
-    """
-    Reciprocal nanocoulomb (nC⁻¹)
-    """
-    per_pC = "per_pC"
-    """
-    Reciprocal picocoulomb (pC⁻¹)
-    """
-    mol_per_m3 = "mol_per_m3"
-    """
-    Mole per cubic metre (mol/m³)
-    """
-    mol_per_cm3 = "mol_per_cm3"
-    """
-    Mole per cubic centimetre (mol/cm³)
-    """
-    mmol_per_m3 = "mmol_per_m3"
-    """
-    Millimole per cubic metre (mmol/m³ ≈ mM)
-    """
-    mol_per_m_per_A_per_s = "mol_per_m_per_A_per_s"
-    """
-    Mole per metre per ampere per second (concentration-current coupling)
-    """
-    um3 = "um3"
-    """
-    Cubic micrometre (µm³)
-    """
-    m = "m"
-    """
-    Metre
-    """
-    mm = "mm"
-    """
-    Millimetre
-    """
-    cm = "cm"
-    """
-    Centimetre
-    """
-    m_per_s = "m_per_s"
-    """
-    Metre per second
-    """
-    mm_per_ms = "mm_per_ms"
-    """
-    Millimetre per millisecond (= m/s)
-    """
-    Hz_per_nA = "Hz_per_nA"
-    """
-    Hertz per nanoampere (neural gain)
-    """
-    S_per_m = "S_per_m"
-    """
-    Siemens per metre (conductivity)
-    """
-    H_per_m = "H_per_m"
-    """
-    Henry per metre (permeability)
-    """
-    ohm = "ohm"
-    """
-    Ohm (Ω)
-    """
-    Mohm = "Mohm"
-    """
-    Megaohm (MΩ)
-    """
-    kohm_cm = "kohm_cm"
-    """
-    Kilo-ohm centimetre (axial resistivity)
-    """
-    degC = "degC"
-    """
-    Degree Celsius
-    """
-    rad_per_ms = "rad_per_ms"
-    """
-    Radian per millisecond
-    """
-    dimensionless = "dimensionless"
-    """
-    Dimensionless (unitless)
-    """
-    percent = "percent"
-    """
-    Percent (%)
-    """
-    arbitrary_unit = "arbitrary_unit"
-    """
-    Arbitrary units (a.u.)
-    """
-    kg = "kg"
-    """
-    Kilogram
-    """
-    kg_per_s = "kg_per_s"
-    """
-    Kilogram per second
-    """
-    m_per_s2 = "m_per_s2"
-    """
-    Metre per second squared (acceleration)
-    """
-    N_per_m = "N_per_m"
-    """
-    Newton per metre (spring constant)
-    """
-    rad = "rad"
-    """
-    Radian
-    """
-    rad_per_s = "rad_per_s"
-    """
-    Radian per second (angular velocity)
-    """
-    s2 = "s2"
-    """
-    Second squared (inertia constant)
-    """
-    per_unit = "per_unit"
-    """
-    Per-unit (dimensionless power-systems convention)
-    """
-
-
-class PhysicalDimension(str, Enum):
-    """
-    Physical dimension categories for LEMS and dimensional analysis. Each dimension decomposes into SI base dimensions (M, L, T, I, K, N).
-    """
-    none = "none"
-    """
-    Dimensionless
-    """
-    time = "time"
-    """
-    Time [T]
-    """
-    per_time = "per_time"
-    """
-    Inverse time [T⁻¹]
-    """
-    voltage = "voltage"
-    """
-    Voltage [M L² T⁻³ I⁻¹]
-    """
-    current = "current"
-    """
-    Electric current [I]
-    """
-    capacitance = "capacitance"
-    """
-    Capacitance [M⁻¹ L⁻² T⁴ I²]
-    """
-    conductance = "conductance"
-    """
-    Conductance [M⁻¹ L⁻² T³ I²]
-    """
-    resistance = "resistance"
-    """
-    Resistance [M L² T⁻³ I⁻²]
-    """
-    charge = "charge"
-    """
-    Electric charge [T I]
-    """
-    concentration = "concentration"
-    """
-    Concentration [L⁻³ N]
-    """
-    substance = "substance"
-    """
-    Amount of substance [N]
-    """
-    length = "length"
-    """
-    Length [L]
-    """
-    volume = "volume"
-    """
-    Volume [L³]
-    """
-    temperature = "temperature"
-    """
-    Temperature [K]
     """
 
 
@@ -1500,6 +1505,7 @@ class Dataset(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'http://www.thevirtualbrain.org/tvbo/study'})
 
     dataset_id: str = Field(default=..., description="""Unique identifier for the dataset.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset'], 'slot_uri': 'dcterms:identifier'} })
+    subjects: Optional[dict[str, Subject]] = Field(default=None, description="""Subjects in a dataset.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset']} })
     label: Optional[str] = Field(default=None, description="""Human-readable dataset name.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Subject',
                        'Session',
@@ -1594,7 +1600,6 @@ class Dataset(ConfiguredBaseModel):
                        'PDE'],
          'slot_uri': 'dcterms:description'} })
     bids_root: Optional[str] = Field(default=None, description="""Path to BIDS dataset root directory. When set, subject networks and empirical data paths are resolved relative to this root.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset']} })
-    subjects: Optional[dict[str, Subject]] = Field(default=None, description="""Subjects in this dataset.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset']} })
     conditions: Optional[list[str]] = Field(default=None, description="""Global condition labels applied across all subjects (e.g., ['rest', 'task-nback', 'task-motor']).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset']} })
     reference: Optional[str] = Field(default=None, description="""DOI or citation for this dataset.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset', 'ClinicalScale', 'ClinicalScore', 'Tractogram'],
          'slot_uri': 'dcterms:references'} })
@@ -1616,6 +1621,7 @@ class DBSDataset(Dataset):
                        'SpatialDomain',
                        'Mesh']} })
     dataset_id: str = Field(default=..., description="""Unique identifier for the dataset.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset'], 'slot_uri': 'dcterms:identifier'} })
+    subjects: Optional[dict[str, DBSSubject]] = Field(default=None, description="""Subjects in a dataset.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset']} })
     label: Optional[str] = Field(default=None, description="""Human-readable dataset name.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Subject',
                        'Session',
@@ -1710,7 +1716,6 @@ class DBSDataset(Dataset):
                        'PDE'],
          'slot_uri': 'dcterms:description'} })
     bids_root: Optional[str] = Field(default=None, description="""Path to BIDS dataset root directory. When set, subject networks and empirical data paths are resolved relative to this root.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset']} })
-    subjects: Optional[dict[str, DBSSubject]] = Field(default=None, description="""Subjects in this dataset.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset']} })
     conditions: Optional[list[str]] = Field(default=None, description="""Global condition labels applied across all subjects (e.g., ['rest', 'task-nback', 'task-motor']).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset']} })
     reference: Optional[str] = Field(default=None, description="""DOI or citation for this dataset.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset', 'ClinicalScale', 'ClinicalScore', 'Tractogram'],
          'slot_uri': 'dcterms:references'} })
