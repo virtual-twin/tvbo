@@ -62,7 +62,7 @@ functions:
   Sigm:
     definition: "JR sigmoid transformation"
     arguments:
-      - v
+      - name: v
     equation:
       rhs: 2*e0 / (1 + exp(r*(v0 - v)))
 coupling_inputs:

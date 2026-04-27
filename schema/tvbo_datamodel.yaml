@@ -1426,10 +1426,13 @@ classes:
             # Transformation definition (equation OR callable)
             arguments:
                 description: >-
-                    Names of the variables consumed by the function (referenced
-                    in the equation). Bare-string list, e.g. arguments: [v].
+                    Variables consumed by the function (referenced in the
+                    equation). Each argument has a name and optional metadata
+                    (description, default value, unit).
                 multivalued: true
-                range: string
+                range: Argument
+                inlined: true
+                inlined_as_list: true
             output_equation:
                 description: "Output transformation equation (if equation-based)"
                 range: Equation
