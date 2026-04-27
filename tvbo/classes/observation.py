@@ -1,6 +1,5 @@
 import importlib
 import inspect
-import platform
 from types import FunctionType
 
 import matplotlib.pyplot as plt
@@ -23,7 +22,7 @@ from tvbo.data.types import TimeSeries
 from tvbo.datamodel import schema as tvbo_datamodel
 from tvbo.codegen.code import render_expression
 from tvbo.ontology import owl as ontology
-from tvbo.plot.ontology import draw_custom_arrows, draw_custom_edges, draw_custom_nodes
+from tvbo.plot.ontology import draw_custom_nodes
 
 
 def expand_to_4d(array):
@@ -43,16 +42,11 @@ def functioninstance2metadata(function_instance, **kwargs):
     # Python callable path
     if isinstance(function_instance, FunctionType) or callable(function_instance):
         signature = inspect.signature(function_instance)
-        arguments = {
-            name: {"name": name}
-            for name, param in signature.parameters.items()
-            if param.default == inspect._empty
-        }
+        arguments = {name: {"name": name} for name, param in signature.parameters.items() if param.default == inspect._empty}
         parameters = {
             name: {"name": name, "value": param.default}
             for name, param in signature.parameters.items()
-            if param.default != inspect._empty
-            and isinstance(param.default, (int, float))
+            if param.default != inspect._empty and isinstance(param.default, (int, float))
         }
 
         # Base kwargs shared for callables
@@ -71,7 +65,7 @@ def functioninstance2metadata(function_instance, **kwargs):
                 source_code = None
         else:
             source_code = None
-        merged["source_code"] = (source_code.strip() if isinstance(source_code, str) else None)
+        merged["source_code"] = source_code.strip() if isinstance(source_code, str) else None
 
         # Callable path metadata (module + qualname)
         qualname = getattr(function_instance, "__qualname__", getattr(function_instance, "__name__", None))
@@ -90,7 +84,7 @@ def functioninstance2metadata(function_instance, **kwargs):
             if base_module not in ("__main__", "builtins"):
                 version = getattr(importlib.import_module(base_module), "__version__", None)
                 prefix = base_module + "."
-                submodule = module.__name__[len(prefix):] if module.__name__.startswith(prefix) else ""
+                submodule = module.__name__[len(prefix) :] if module.__name__.startswith(prefix) else ""
 
                 requirements = dict(kwargs.get("requirements", {}))
                 requirements.update(
@@ -136,10 +130,7 @@ def instance2metadata(instance, **kwargs):
         **kwargs,  # TODO: remember dict unpacking prioritizes keys from unpacked dict over keys defined later in the same dict!
         "transformation": {
             "name": instance.name,
-            "arguments": {
-                arg.name: {"name": arg.name, "unit": arg.unit.first()}
-                for arg in instance.has_argument
-            },
+            "arguments": {arg.name: {"name": arg.name, "unit": arg.unit.first()} for arg in instance.has_argument},
             "equation": {"rhs": instance.equation.first()},
         },
         "parameters": {
@@ -206,12 +197,14 @@ class Function(tvbo_datamodel.Function):
     def from_db(cls, name: str) -> "Function":
         """Load a Function by name from the tvbo database."""
         from tvbo.data.registry import resolve
+
         return cls.from_file(str(resolve("Function", name)))
 
     @classmethod
     def list_db(cls) -> list[str]:
         """List available observation models in the tvbo database."""
         from tvbo.data.registry import list_entries
+
         return list_entries("Function")
 
     # ---- Properties for runtime-only attributes ----
@@ -296,11 +289,7 @@ class Function(tvbo_datamodel.Function):
         if hasattr(ontology.onto, self.name):
             return getattr(ontology.onto, self.name)
         # Try with acronym if available
-        if (
-            hasattr(self, "acronym")
-            and self.acronym
-            and hasattr(ontology.onto, self.acronym)
-        ):
+        if hasattr(self, "acronym") and self.acronym and hasattr(ontology.onto, self.acronym):
             return getattr(ontology.onto, self.acronym)
         return None
 
@@ -310,10 +299,7 @@ class Function(tvbo_datamodel.Function):
         return self
 
     def get_parameters(self, key_as_symbol=False):
-        parameters = {
-            Symbol(k) if key_as_symbol else k: v.value
-            for k, v in self.equation.parameters.items()
-        }
+        parameters = {Symbol(k) if key_as_symbol else k: v.value for k, v in self.equation.parameters.items()}
         return parameters
 
     def get_equation(self):
@@ -321,19 +307,15 @@ class Function(tvbo_datamodel.Function):
         clash = {str(p): p for p in parameters.keys()}
         clash.update({str(a): IndexedBase(a) for a in self.arguments})
         expression = parse_expr(self.equation.rhs, clash)
-        function = sympy.Function(self.acronym or self.name)(
-            *(Symbol(a) for a in self.arguments)
-        )
+        function = sympy.Function(self.acronym or self.name)(*(Symbol(a) for a in self.arguments))
         return Eq(function, expression)
 
     def get_symbolic_function(self):
         equation = self.get_equation()
-        parameters = self.get_parameters()
+        self.get_parameters()
         return Lambda(equation.lhs.args, equation)
 
-    def execute(
-        self, format="python", fill_in_parameters=True, parameters={}, **kwargs
-    ):
+    def execute(self, format="python", fill_in_parameters=True, parameters={}, **kwargs):
         if self.function:
             return self.function
 
@@ -350,14 +332,12 @@ class Function(tvbo_datamodel.Function):
         for p in parameters2pop:
             parameters.pop(p)
         parameters.update(self.get_parameters())
-        default_values = {str(k): v for k, v in parameters.items()}
+        {str(k): v for k, v in parameters.items()}
         eq = equation.rhs
         if fill_in_parameters:
             eq = eq.subs(parameters)
         eq = eq.subs("e", "E")
-        arguments = equation.lhs.args + tuple(
-            [k for k in parameters.keys() if Symbol(k) in eq.free_symbols]
-        )
+        arguments = equation.lhs.args + tuple([k for k in parameters.keys() if Symbol(k) in eq.free_symbols])
         function = lambdify(arguments, eq, modules=modules)
 
         if format == "jax" and kwargs.get("jit", False):
@@ -365,9 +345,7 @@ class Function(tvbo_datamodel.Function):
 
             function = jax.jit(
                 function,
-                static_argnames=[
-                    str(arg) for arg in arguments if str(arg) == "stepsize"
-                ],
+                static_argnames=[str(arg) for arg in arguments if str(arg) == "stepsize"],
             )
         return function
 
@@ -388,9 +366,7 @@ class Function(tvbo_datamodel.Function):
             plt.plot(function(**{**kwargs, **self.get_parameters()}), **plotting_kwargs)
         pass
 
-    def plot_metadata_graph(
-        self, ax=None, node_kwargs={}, edge_kwargs={}, edge_labels=True
-    ):
+    def plot_metadata_graph(self, ax=None, node_kwargs={}, edge_kwargs={}, edge_labels=True):
         if ax is None:
             fig, ax = plt.subplots()
             return_fig = True
@@ -401,9 +377,7 @@ class Function(tvbo_datamodel.Function):
         G.add_node(func_name, label=f"{func_name}")
         if self.equation and self.equation.rhs:
             expression = parse_expr(self.equation.rhs, _clash1)
-            rounded_expression = expression.xreplace(
-                {n: Float(round(float(n), 4)) for n in expression.atoms(Float)}
-            )
+            rounded_expression = expression.xreplace({n: Float(round(float(n), 4)) for n in expression.atoms(Float)})
             expression = rounded_expression.subs(0.3333, Rational(1, 3))
 
             G.add_node(
@@ -460,7 +434,6 @@ class Function(tvbo_datamodel.Function):
 
 
 class ObservationModel:
-
     # TODO: Checkout dask for parallel execution
 
     def __init__(self, data=None):
@@ -548,14 +521,10 @@ class ObservationModel:
         # TODO: Finish implementation
         pass
 
-    def plot_graph(
-        self, ax=None, plot_edge_labels=True, node_kwargs={}, edge_kwargs={}
-    ):
+    def plot_graph(self, ax=None, plot_edge_labels=True, node_kwargs={}, edge_kwargs={}):
         try:
-            pos = nx.nx_pydot.graphviz_layout(
-                self.graph, prog="dot"
-            )  # Layout for graph visualization
-        except:
+            pos = nx.nx_pydot.graphviz_layout(self.graph, prog="dot")  # Layout for graph visualization
+        except Exception:
             pos = nx.spring_layout(self.graph)  # Layout for graph visualization
 
         edge_labels = {}
@@ -585,9 +554,7 @@ class ObservationModel:
                 font_size=edge_font_size,
                 ax=ax,
             )
-        draw_custom_nodes(
-            self.graph, pos, ax=ax, facecolor="white", edgecolor="grey", **node_kwargs
-        )
+        draw_custom_nodes(self.graph, pos, ax=ax, facecolor="white", edgecolor="grey", **node_kwargs)
         ax.axis("off")
         if return_fig:
             plt.title("Observation Model Graph (with inputs and outputs)")
@@ -659,9 +626,7 @@ class ObservationModel:
                 continue
 
             time = (
-                self._run_node_function(
-                    node_label, ensure_4d=ensure_4d, time_mapping=apply_on_time
-                )
+                self._run_node_function(node_label, ensure_4d=ensure_4d, time_mapping=apply_on_time)
                 if apply_on_time
                 else self.current_time
             )
@@ -687,9 +652,7 @@ class ObservationModel:
             self.graph.nodes["Output"]["time"] = self.current_time
 
         input_shape = self.graph.nodes["Input"]["data"].shape
-        output_data = self.graph.nodes["Output"]["data"][
-            tuple(slice(0, dim) for dim in input_shape)
-        ]
+        output_data = self.graph.nodes["Output"]["data"][tuple(slice(0, dim) for dim in input_shape)]
         ts = self.orig_timeseries.copy()
         ts.data = output_data
         ts.time = self.current_time
@@ -699,11 +662,7 @@ class ObservationModel:
         data = self.graph.nodes[node].get("data", None)
         time = self.graph.nodes[node].get(
             "time",
-            (
-                np.arange(data.shape[0])
-                if self.graph.nodes[node].get("function_type", None) != "derivative"
-                else np.array([0])
-            ),
+            (np.arange(data.shape[0]) if self.graph.nodes[node].get("function_type", None) != "derivative" else np.array([0])),
         )
         return TimeSeries(time, data)
 
@@ -760,18 +719,21 @@ class Observation(tvbo_datamodel.Observation):
     def from_file(cls, path: str) -> "Observation":
         """Load an Observation from a YAML file."""
         from linkml_runtime.loaders import yaml_loader
+
         return yaml_loader.load(str(path), target_class=cls)
 
     @classmethod
     def from_db(cls, name: str) -> "Observation":
         """Load an Observation by name from the tvbo database."""
         from tvbo.data.registry import resolve
+
         return cls.from_file(str(resolve("Observation", name)))
 
     @classmethod
     def list_db(cls) -> list[str]:
         """List available observation models in the tvbo database."""
         from tvbo.data.registry import list_entries
+
         return list_entries("Observation")
 
     def render_code(self, format="tvb"):

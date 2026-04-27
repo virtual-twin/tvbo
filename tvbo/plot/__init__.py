@@ -17,4 +17,5 @@ from tvbo import plot
 plot.ontology.plot_model('JansenRit')
 ```
 """
+
 from . import network, ontology, functions, timeseries, phase, animate

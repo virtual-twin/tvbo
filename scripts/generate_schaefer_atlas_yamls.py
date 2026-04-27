@@ -49,7 +49,9 @@ def extract_functional_network(region_name: str) -> str:
 
 
 def compute_network_centroids(
-    entities: list[dict], net_labels: list[str], net_assignments: list[str],
+    entities: list[dict],
+    net_labels: list[str],
+    net_assignments: list[str],
 ) -> dict[str, dict[str, float]]:
     """Compute mean centroid per functional network from parcel centers."""
     sums = {n: np.zeros(3) for n in net_labels}
@@ -77,9 +79,7 @@ def build_atlas_yaml(source_path: Path) -> dict:
         src = yaml.safe_load(f)
 
     src_entities = src.get("terminology", {}).get("entities", {})
-    sorted_entities = sorted(
-        src_entities.values(), key=lambda e: int(e["lookupLabel"])
-    )
+    sorted_entities = sorted(src_entities.values(), key=lambda e: int(e["lookupLabel"]))
 
     # Determine functional network assignments
     net_assignments = [extract_functional_network(e["name"]) for e in sorted_entities]
@@ -135,11 +135,14 @@ def build_atlas_yaml(source_path: Path) -> dict:
         "name": src.get("name", "Schaefer2018"),
         "abbreviation": src.get("abbreviation", "Schaefer2018"),
         "versionIdentifier": src.get("versionIdentifier", "2018"),
-        "coordinateSpace": src.get("coordinateSpace", {
-            "name": "MNI152",
-            "abbreviation": "FSLMNI152",
-            "nativeUnit": "mm",
-        }),
+        "coordinateSpace": src.get(
+            "coordinateSpace",
+            {
+                "name": "MNI152",
+                "abbreviation": "FSLMNI152",
+                "nativeUnit": "mm",
+            },
+        ),
         "terminology": {
             "label": src.get("terminology", {}).get("label", ""),
             "entities": all_entities,
@@ -182,9 +185,7 @@ def main() -> None:
     args.target_dir.mkdir(parents=True, exist_ok=True)
 
     # 1. Generate atlas YAMLs
-    source_files = sorted(args.source_dir.glob(
-        "tpl-FSLMNI152_atlas-Schaefer2018_seg-*_scale-*_res-*_desc-ordered_dseg.yaml"
-    ))
+    source_files = sorted(args.source_dir.glob("tpl-FSLMNI152_atlas-Schaefer2018_seg-*_scale-*_res-*_desc-ordered_dseg.yaml"))
     if not source_files:
         print("No source atlas files found in %s" % args.source_dir)
         return

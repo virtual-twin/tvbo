@@ -150,10 +150,7 @@ def get_edge_color_mapping(G, colormap="viridis", color_by="type"):
         A dictionary mapping edge attributes to colors.
     """
     # Extract all edge attributes for the specified attribute
-    edge_attributes = [
-        data[color_by] if color_by in data.keys() else "n.a."
-        for u, v, data in G.edges(data=True)
-    ]
+    edge_attributes = [data[color_by] if color_by in data.keys() else "n.a." for u, v, data in G.edges(data=True)]
     unique_edge_attributes = list(set(edge_attributes))
 
     # Ensure "n.a." is first in the list
@@ -167,8 +164,7 @@ def get_edge_color_mapping(G, colormap="viridis", color_by="type"):
 
     # Map edge attributes to colors
     edge_colors = {
-        attr: cmap(norm(i)) if attr != "n.a." else (0.6, 0.6, 0.6, 1)
-        for i, attr in enumerate(unique_edge_attributes)
+        attr: cmap(norm(i)) if attr != "n.a." else (0.6, 0.6, 0.6, 1) for i, attr in enumerate(unique_edge_attributes)
     }
 
     return edge_colors
@@ -372,9 +368,7 @@ def create_adj_matrix(G):
             # Loop through the edges between node and neighbor
             for edge_index, attrs in edge_attrs.items():
                 # Append edge type and direction to the adjacency matrix
-                adj_matrix[(node, neighbor)].append(
-                    {"type": attrs["type"], "direction": f"{node} -> {neighbor}"}
-                )
+                adj_matrix[(node, neighbor)].append({"type": attrs["type"], "direction": f"{node} -> {neighbor}"})
     return adj_matrix
 
 
@@ -382,11 +376,7 @@ def get_unique_node_pairs(G):
     unique_pairs = set()  # Use a set to store unique node pairs
     for n1, n2 in G.edges():
         # Sort using the 'name' attribute of the nodes (assuming each node has a 'name' attribute)
-        pair = tuple(
-            sorted(
-                [n1, n2], key=lambda node: node if isinstance(node, str) else node.name
-            )
-        )
+        pair = tuple(sorted([n1, n2], key=lambda node: node if isinstance(node, str) else node.name))
         unique_pairs.add(pair)  # Add the sorted pair to the set
     return unique_pairs
 
@@ -411,16 +401,9 @@ def draw_custom_edges(
     #     kwargs["mutation_scale"] = 10.0
 
     if edge_colors in colormaps.keys():
-        cmap = (
-            edge_colors
-            if isinstance(edge_colors, str) and edge_colors in colormaps.keys()
-            else "viridis"
-        )
+        cmap = edge_colors if isinstance(edge_colors, str) and edge_colors in colormaps.keys() else "viridis"
         colmap = get_edge_color_mapping(G, colormap=cmap, color_by=color_by)
-        edge_colors = [
-            colmap[data[color_by] if color_by in data else "n.a."]
-            for (u, v, data) in G.edges(data=True)
-        ]
+        edge_colors = [colmap[data[color_by] if color_by in data else "n.a."] for (u, v, data) in G.edges(data=True)]
     elif isinstance(edge_colors, str):
         edge_colors = np.repeat(edge_colors, len(G.edges()))
 
@@ -473,6 +456,7 @@ def count_directed_edges(G) -> Dict[Tuple[Any, Any], int]:
     for u, v, _ in G.edges(data=True):
         counts[(u, v)] += 1
     return counts
+
 
 def n1n2_edgecounts(G, n1, n2, edge_counts: Optional[Dict[Tuple[Any, Any], int]] = None) -> int:
     """
@@ -554,18 +538,11 @@ def draw_custom_arrows(
     Notes:
         This function uses `FancyArrowPatch` from `matplotlib.patches` to draw arrows.
     """
-    edge_counts = count_directed_edges(G)
+    count_directed_edges(G)
     if color_by:
-        cmap = (
-            edge_colors
-            if isinstance(edge_colors, str) and edge_colors in colormaps.keys()
-            else "viridis"
-        )
+        cmap = edge_colors if isinstance(edge_colors, str) and edge_colors in colormaps.keys() else "viridis"
         colmap = get_edge_color_mapping(G, colormap=cmap, color_by=color_by)
-        edge_colors = [
-            colmap[data[color_by] if color_by in data else "n.a."]
-            for (u, v, data) in G.edges(data=True)
-        ]
+        edge_colors = [colmap[data[color_by] if color_by in data else "n.a."] for (u, v, data) in G.edges(data=True)]
 
     if isinstance(edge_colors, str):
         edge_colors = np.repeat(edge_colors, len(G.edges()))
@@ -586,6 +563,7 @@ def draw_custom_arrows(
         ax = plt.gca()
 
     from collections import defaultdict
+
     # Group edges by unordered node pair
     edge_groups = defaultdict(list)
     for i, (u, v, data) in enumerate(G.edges(data=True)):
@@ -598,7 +576,7 @@ def draw_custom_arrows(
         num_edges = len(edges)
         rad_vals = np.linspace(-0.3, 0.3, num_edges) if both_directions or num_edges > 1 else [0]
 
-        for (r, (n1, n2, i, d)) in zip(rad_vals, edges):
+        for r, (n1, n2, i, d) in zip(rad_vals, edges):
             if (n1, n2) in G.edges():
                 r = abs(r)
             else:
@@ -609,9 +587,7 @@ def draw_custom_arrows(
             local_kwargs = kwargs.copy()
             local_kwargs["connectionstyle"] = f"arc3,rad={r}"
 
-            arrow = FancyArrowPatch(
-                point1, point2, color=edge_colors[i], lw=edge_width, **local_kwargs
-            )
+            arrow = FancyArrowPatch(point1, point2, color=edge_colors[i], lw=edge_width, **local_kwargs)
             ax.add_patch(arrow)
 
             if edge_labels:
@@ -630,7 +606,10 @@ def draw_custom_arrows(
 
                 attempts = 0
                 max_attempts = 20
-                while any(abs(x - ux) < min_x_dist and abs(y - uy) < min_y_dist for ux, uy in used_annotation_coords) and attempts < max_attempts:
+                while (
+                    any(abs(x - ux) < min_x_dist and abs(y - uy) < min_y_dist for ux, uy in used_annotation_coords)
+                    and attempts < max_attempts
+                ):
                     y += min_y_dist
                     attempts += 1
 
@@ -745,16 +724,11 @@ def draw_custom_nodes(
         node_colors = [node_colors for node in G.nodes()]
     elif isinstance(node_colors, dict):
         node_colors = [
-            (
-                mcolors.to_rgba(node_colors[node])
-                if isinstance(node_colors[node], str)
-                else node_colors[node]
-            )
+            (mcolors.to_rgba(node_colors[node]) if isinstance(node_colors[node], str) else node_colors[node])
             for node in G.nodes()
         ]
 
     # TODO: buffer_factor not used, remove?
-    buffer_factor = 1.1  # 10% buffer
     texts = {}  # To store the text objects
     bbox_pad = 0.3  # Padding for the bounding box
     for i, (node, position) in enumerate(pos.items()):
@@ -778,9 +752,7 @@ def draw_custom_nodes(
     ax.figure.canvas.draw()
     # Force rendering to ensure bounding boxes are accurate
     bbox_positions = {
-        node: txt.get_window_extent(
-            renderer=ax.figure.canvas.get_renderer()
-        ).transformed(ax.transData.inverted())
+        node: txt.get_window_extent(renderer=ax.figure.canvas.get_renderer()).transformed(ax.transData.inverted())
         for node, txt in texts.items()
     }
 
@@ -996,9 +968,7 @@ def plot_ontology_graph(
 
     if len(edge_types) <= len(edge_colors_list):
         edge_color_dict = dict(zip(edge_types, edge_colors_list))
-        edge_colors = [
-            edge_color_dict[data["type"]] for _, _, data in G.edges(data=True)
-        ]
+        edge_colors = [edge_color_dict[data["type"]] for _, _, data in G.edges(data=True)]
 
     # else:
     #     edge_legend = False
@@ -1048,16 +1018,12 @@ def plot_ontology_graph(
     else:
         # Set node size based on degree
         color_dict.update({"unknown": np.array([0.3, 0.3, 0.3])})
-        node_size = {
-            k: v * node_size_factor for k, v in dict(G.degree()).items()
-        }  # multiply by a factor for visualization
+        node_size = {k: v * node_size_factor for k, v in dict(G.degree()).items()}  # multiply by a factor for visualization
         label_shift = 0.02 + (0.0002 * node_size_factor)
 
         node_degree = list(dict(G.degree).values())
         node_degree = np.log1p(node_degree)
-        node_degree = (np.array(node_degree) - np.min(node_degree)) / (
-            np.max(node_degree) - np.min(node_degree)
-        )
+        node_degree = (np.array(node_degree) - np.min(node_degree)) / (np.max(node_degree) - np.min(node_degree))
 
         node_degree = {n: d for n, d in zip(dict(G.degree).keys(), node_degree)}
 
@@ -1083,11 +1049,7 @@ def plot_ontology_graph(
             )
 
             draw_labels = True
-            if (
-                "Cakan" not in node
-                and G.degree()[node] > 50
-                or node == "Generic2DOscillator"
-            ):
+            if "Cakan" not in node and G.degree()[node] > 50 or node == "Generic2DOscillator":
                 if draw_labels:
                     labelx = x - label_shift
                     labely = y + label_shift
@@ -1153,17 +1115,11 @@ def plot_ontology_graph(
         plt.colorbar(ax=ax, label="Degree", shrink=0.3, location="left", pad=-0.05)
     if legend:
         # Create legend
-        legend_handles = [
-            mpatches.Patch(color=color_dict[cat], label=cat)
-            for cat in sorted(categories)
-        ]
+        legend_handles = [mpatches.Patch(color=color_dict[cat], label=cat) for cat in sorted(categories)]
         if edge_legend:
             # Create a second legend for edge types
             legend_handles_edges = [
-                mlines.Line2D(
-                    [], [], color=edge_color_dict[etype], lw=edge_width, label=etype
-                )
-                for etype in edge_types
+                mlines.Line2D([], [], color=edge_color_dict[etype], lw=edge_width, label=etype) for etype in edge_types
             ]
 
         # Assuming legend_handles contains handles for nodes
@@ -1186,16 +1142,12 @@ def plot_ontology_graph(
                 all_labels.append(handle.get_label())
 
         # Now, use plt.legend() once to create the unified legend
-        leg = plt.legend(
-            all_handles, all_labels, loc="best", handlelength=1, handletextpad=0.5
-        )
+        leg = plt.legend(all_handles, all_labels, loc="best", handlelength=1, handletextpad=0.5)
 
         # Hide the patches that we added just for the subtitles
         for text in leg.get_texts():
             if text.get_text() == "Node Types" or text.get_text() == "Edge Types":
-                text.set_weight(
-                    "bold"
-                )  # You can set the subtitles to bold for better distinction
+                text.set_weight("bold")  # You can set the subtitles to bold for better distinction
 
     # plt.close()
     if return_fig:
@@ -1228,9 +1180,7 @@ def hierarchy_pos(
     """
     vert_scatter /= 10
     if not nx.is_directed_acyclic_graph(G):
-        raise TypeError(
-            "cannot use hierarchy_pos on a graph that is not a directed acyclic graph (DAG)"
-        )
+        raise TypeError("cannot use hierarchy_pos on a graph that is not a directed acyclic graph (DAG)")
 
     def _hierarchy_pos(
         G,
@@ -1265,11 +1215,7 @@ def hierarchy_pos(
                     width=dx,
                     vert_gap=vert_gap,
                     hor_gap=hor_gap,
-                    vert_loc=(
-                        vert_loc - vert_gap + scatter
-                        if direction == "down"
-                        else vert_loc + vert_gap + scatter
-                    ),
+                    vert_loc=(vert_loc - vert_gap + scatter if direction == "down" else vert_loc + vert_gap + scatter),
                     xcenter=nextx,
                     pos=pos,
                     parent=root,
@@ -1307,9 +1253,7 @@ def plot_tvbo_graph(g, ax=None, **kwargs):
     relabel_graph(g, params["relabel"])
     set_plt_params()
 
-    labels = get_labels(
-        g, params["label_as_symbol"]
-    )  # TODO: labels not used, remove or use?
+    get_labels(g, params["label_as_symbol"])  # TODO: labels not used, remove or use?
     node_color, cmap = get_node_color_and_cmap(g, params)
     pos = get_layout(g, params["layout"])
     node_size = get_node_size(g, params)
@@ -1364,9 +1308,7 @@ def relabel_graph(g, relabel):
     None
     """
     if isinstance(relabel, dict):
-        g = nx.relabel_nodes(
-            g, relabel
-        )  # TODO: g is not returned, so this method will not actually modify any graph;
+        g = nx.relabel_nodes(g, relabel)  # TODO: g is not returned, so this method will not actually modify any graph;
         # TODO: either return g or modify it in place ("nx.relabel_nodes(g, relabel, copy=False)")
 
 
@@ -1490,9 +1432,7 @@ def get_node_size(g, params=None):
     elif params["node_size_by"] == "factor":
         node_size = params["node_size_factor"]
     else:
-        raise ValueError(
-            "Invalid 'node_size_by' parameter. Supported values are: 'degree', 'text', 'factor'"
-        )
+        raise ValueError("Invalid 'node_size_by' parameter. Supported values are: 'degree', 'text', 'factor'")
 
     return node_size
 
@@ -1535,9 +1475,7 @@ def draw_nodes(g, pos, node_color, cmap, node_size, ax, params):
     groups = set(nx.get_node_attributes(g, "type").values())
     mapping = dict(zip(sorted(groups), count()))
     nodes = g.nodes()
-    color_mapping = [
-        mapping[g.nodes[n]["type"]] for n in nodes
-    ]  # TODO: color_mapping not used, remove?
+    [mapping[g.nodes[n]["type"]] for n in nodes]  # TODO: color_mapping not used, remove?
 
     handles = list()
     colors = list()
@@ -1578,13 +1516,8 @@ def draw_edges(g, pos, ax, params):
         edge_types = list(set(nx.get_edge_attributes(g, "type").values()))
         edge_colors = plt.cm.viridis(np.linspace(0, 1, len(edge_types)))
 
-        type_cmapping = dict()  # TODO: type_cmapping not used, remove?
         for i, edge_type in enumerate(edge_types):
-            edges_of_type = [
-                (u, v)
-                for (u, v, data) in g.edges(data=True)
-                if data["type"] == edge_type
-            ]
+            edges_of_type = [(u, v) for (u, v, data) in g.edges(data=True) if data["type"] == edge_type]
             nx.draw_networkx_edges(
                 g,
                 pos,
@@ -1598,10 +1531,7 @@ def draw_edges(g, pos, ax, params):
         # Create a legend for edge types and their colors
         edge_type_labels = {edge_type: f"{edge_type}" for edge_type in edge_types}
         ax.legend(
-            handles=[
-                plt.Line2D([], [], linestyle="-", color=color, lw=params["edge_width"])
-                for color in edge_colors
-            ],
+            handles=[plt.Line2D([], [], linestyle="-", color=color, lw=params["edge_width"]) for color in edge_colors],
             labels=edge_type_labels.values(),
             title="Edge Types",
             loc="upper left",
@@ -1654,7 +1584,7 @@ def draw_legend(g, ax, params):
     groups = set(nx.get_node_attributes(g, "type").values())
     mapping = dict(zip(sorted(groups), count()))
     nodes = g.nodes()
-    color_mapping = [mapping[g.nodes[n]["type"]] for n in nodes]
+    [mapping[g.nodes[n]["type"]] for n in nodes]
 
     handles = list()
     colors = list()
@@ -1694,9 +1624,7 @@ def plot_model(
     **kwargs,
 ):
     edge_width = font_size / 20
-    edge_kwargs.update(
-        {"shrinkA": 15 * (font_size / 20), "shrinkB": 15 * (font_size / 20)}
-    )
+    edge_kwargs.update({"shrinkA": 15 * (font_size / 20), "shrinkB": 15 * (font_size / 20)})
     if isinstance(model, str):
         model = ontology.get_model(model)
 
@@ -1706,9 +1634,7 @@ def plot_model(
     G = graph.model2graph(model)
     # Collect the edges to be removed
     edges_to_remove = [
-        (u, v, key)
-        for u, v, key, attrs in G.edges(keys=True, data=True)
-        if not attrs.get("type", "").startswith("is")
+        (u, v, key) for u, v, key, attrs in G.edges(keys=True, data=True) if not attrs.get("type", "").startswith("is")
     ]
 
     # Remove the collected edges
@@ -1737,24 +1663,17 @@ def plot_model(
         ax.set_ylim(min(y_values) - 0.15, max(y_values) + 0.1)
 
     # Node colors
-    cat_dict, categories = get_node_color_mapping(
-        G, node_colors, return_categories=True
-    )
+    cat_dict, categories = get_node_color_mapping(G, node_colors, return_categories=True)
     cat_keys = sorted(cat_dict.keys())
 
-    labels = {
-        n: latex(equations.sub_equation(symbols(ontology.replace_suffix(n)), model))
-        for n in G.nodes()
-    }
+    labels = {n: latex(equations.sub_equation(symbols(ontology.replace_suffix(n)), model)) for n in G.nodes()}
     if add_equations_to_labels:
         eqs = equations.symbolic_model_equations(model)
         # print(eqs)
         for n in labels.keys():
             nlab = n.label.first().replace(ontology.get_model_suffix(model), "")
             if nlab in eqs.keys():
-                labels[n] = (
-                    labels[n] + " = " + latex(equations.sub_equation(eqs[nlab], model))
-                )
+                labels[n] = labels[n] + " = " + latex(equations.sub_equation(eqs[nlab], model))
     if add_parameter_values:
         param_vals = ontology.get_default_values(model)
         for n in labels.keys():
@@ -1768,7 +1687,7 @@ def plot_model(
         G,
         pos,
         ax=ax,
-        labels={n: f"${l}$" for n, l in labels.items()},
+        labels={n: f"${lbl}$" for n, lbl in labels.items()},
         node_colors=[cat_dict[categories[n]] for n in G.nodes],
         **node_kwargs,
         font_size=font_size,
@@ -1792,17 +1711,11 @@ def plot_model(
         **edge_kwargs,
     )
 
-    cat_labels = [
-        cat.label.first() if not isinstance(cat, str) else cat for cat in cat_keys
-    ]
-    legend_handles = [
-        mpatches.Patch(color=cat_dict[cat], label=label)
-        for cat, label in zip(cat_keys, cat_labels)
-    ]
+    cat_labels = [cat.label.first() if not isinstance(cat, str) else cat for cat in cat_keys]
+    legend_handles = [mpatches.Patch(color=cat_dict[cat], label=label) for cat, label in zip(cat_keys, cat_labels)]
     # Create a second legend for edge types
     legend_handles_edges = [
-        mlines.Line2D([], [], color=edge_color_dict[etype], lw=edge_width, label=etype)
-        for etype in edge_types
+        mlines.Line2D([], [], color=edge_color_dict[etype], lw=edge_width, label=etype) for etype in edge_types
     ]
 
     # Assuming legend_handles contains handles for nodes
@@ -1841,12 +1754,10 @@ def plot_model(
         # Hide the patches that we added just for the subtitles
         for text in leg.get_texts():
             if text.get_text() == "Node Types" or text.get_text() == "Edge Types":
-                text.set_weight(
-                    "bold"
-                )  # You can set the subtitles to bold for better distinction
+                text.set_weight("bold")  # You can set the subtitles to bold for better distinction
 
     if return_fig:
-        ax.axis('off')
+        ax.axis("off")
         plt.tight_layout()
         plt.close()
         return fig
@@ -1896,11 +1807,7 @@ def plot_hierarchy(cls, hierarchy_type="ancestors", ax=None, **kwargs):
         pos,
         with_labels=True,
         labels={
-            node: (
-                f"${latex(symbols(node.symbol.first()))}$"
-                if hasattr(node, "symbol") and node.symbol.first()
-                else node
-            )
+            node: (f"${latex(symbols(node.symbol.first()))}$" if hasattr(node, "symbol") and node.symbol.first() else node)
             for node in G.nodes()
         },
         node_size=2000,
@@ -1992,11 +1899,9 @@ def create_colormap_legend(
     inflate *= 1 + edge_cols / 8
 
     if edge_colmap:
-        edge_patches = [
-            Patch(color=value, label=key) for key, value in edge_colmap.items()
-        ]
+        edge_patches = [Patch(color=value, label=key) for key, value in edge_colmap.items()]
         # TODO: edge_legend not used
-        edge_legend = add_legend(
+        add_legend(
             ax,
             edge_patches,
             "Edge Type",
@@ -2005,9 +1910,7 @@ def create_colormap_legend(
         )
 
     if node_colmap:
-        node_patches = [
-            Patch(color=value, label=key) for key, value in node_colmap.items()
-        ]
+        node_patches = [Patch(color=value, label=key) for key, value in node_colmap.items()]
         add_legend(
             ax,
             node_patches,
@@ -2022,9 +1925,7 @@ def create_colormap_legend(
         return fig, ax
 
 
-def get_node_color_mapping(
-    G, node_colors="math_type", colors="tvb", return_categories=False
-):
+def get_node_color_mapping(G, node_colors="math_type", colors="tvb", return_categories=False):
     """
     Generate a color mapping for nodes in graph G based on their specified attribute.
 
@@ -2061,11 +1962,7 @@ def get_node_color_mapping(
                         else (
                             "Constant"
                             if ontology.onto.Constant in n.is_a
-                            else (
-                                "TimeDerivative"
-                                if ontology.onto.TimeDerivative in n.is_a
-                                else "other"
-                            )
+                            else ("TimeDerivative" if ontology.onto.TimeDerivative in n.is_a else "other")
                         )
                     )
                 )
@@ -2077,18 +1974,11 @@ def get_node_color_mapping(
             n: (
                 "LocalDynamics"
                 if ontology.onto.LocalNeuralDynamics in n.ancestors()
-                and not (
-                    ontology.onto.GlobalConnectivity in n.ancestors()
-                    or ontology.onto.LocalConnectivity in n.ancestors()
-                )
+                and not (ontology.onto.GlobalConnectivity in n.ancestors() or ontology.onto.LocalConnectivity in n.ancestors())
                 else (
                     "GlobalCoupling"
                     if ontology.onto.GlobalConnectivity in n.ancestors()
-                    else (
-                        "LocalCoupling"
-                        if ontology.onto.LocalConnectivity in n.ancestors()
-                        else "other"
-                    )
+                    else ("LocalCoupling" if ontology.onto.LocalConnectivity in n.ancestors() else "other")
                 )
             )
             for n in G.nodes
@@ -2100,13 +1990,12 @@ def get_node_color_mapping(
                 if (
                     n.definition.first()
                     and "excit" in n.definition.first().lower()
-                    and not "inhib" in n.definition.first().lower()
+                    and "inhib" not in n.definition.first().lower()
                 )
                 or len(
                     ontology.intersection(
                         n.is_a,
-                        list(ontology.onto.Excitation.subclasses())
-                        + [ontology.onto.Excitation],
+                        list(ontology.onto.Excitation.subclasses()) + [ontology.onto.Excitation],
                     )
                 )
                 > 0
@@ -2115,13 +2004,12 @@ def get_node_color_mapping(
                     if (
                         n.definition.first()
                         and "inhib" in n.definition.first().lower()
-                        and not "excit" in n.definition.first().lower()
+                        and "excit" not in n.definition.first().lower()
                     )
                     or len(
                         ontology.intersection(
                             n.is_a,
-                            list(ontology.onto.Inhibition.subclasses())
-                            + [ontology.onto.Inhibition],
+                            list(ontology.onto.Inhibition.subclasses()) + [ontology.onto.Inhibition],
                         )
                     )
                     > 0
@@ -2136,10 +2024,7 @@ def get_node_color_mapping(
         categories = {
             n: (
                 node_colors
-                if (
-                    n.definition.first()
-                    and node_colors.lower() in n.definition.first().lower()
-                )
+                if (n.definition.first() and node_colors.lower() in n.definition.first().lower())
                 or node_colors.lower() in n.label.first().lower()
                 else "other"
             )

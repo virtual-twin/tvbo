@@ -30,22 +30,22 @@ from tvbo.classes import equation as equations  # for VOI parsing consistency
 # ── Publication-quality color palette (tvbo viridis cycle) ──────────
 # Semantic mapping for bifurcation diagram elements
 _C = {
-    'stable': '#000000',         # black — stable equilibrium
-    'unstable': '#888888',       # medium grey — unstable equilibrium
-    'hopf': '#440154',           # dark violet — Hopf bifurcation points
-    'fold': '#414487',           # indigo — fold/saddle-node points
-    'po_surface': '#22a884',     # teal-green — periodic orbit surface
-    'po_line': '#2a788e',        # darker teal — orbit wireframes
-    'c2_hopf': '#440154',        # violet — Hopf continuation curve
-    'c2_fold': '#414487',        # indigo — fold continuation curve
-    'bt': '#2a788e',             # teal — Bogdanov-Takens
-    'gh': '#7ad151',             # lime — Generalized Hopf
-    'cusp': '#fde725',           # yellow — Cusp
-    'zh': '#22a884',             # teal-green — Zero-Hopf
-    'bp': '#414487',             # indigo — branch point
-    'ns': '#fde725',             # yellow — Neimark-Sacker
-    'pd': '#22a884',             # teal-green — period doubling
-    'po_env': '#22a884',         # teal-green — PO envelope fill
+    "stable": "#000000",  # black — stable equilibrium
+    "unstable": "#888888",  # medium grey — unstable equilibrium
+    "hopf": "#440154",  # dark violet — Hopf bifurcation points
+    "fold": "#414487",  # indigo — fold/saddle-node points
+    "po_surface": "#22a884",  # teal-green — periodic orbit surface
+    "po_line": "#2a788e",  # darker teal — orbit wireframes
+    "c2_hopf": "#440154",  # violet — Hopf continuation curve
+    "c2_fold": "#414487",  # indigo — fold continuation curve
+    "bt": "#2a788e",  # teal — Bogdanov-Takens
+    "gh": "#7ad151",  # lime — Generalized Hopf
+    "cusp": "#fde725",  # yellow — Cusp
+    "zh": "#22a884",  # teal-green — Zero-Hopf
+    "bp": "#414487",  # indigo — branch point
+    "ns": "#fde725",  # yellow — Neimark-Sacker
+    "pd": "#22a884",  # teal-green — period doubling
+    "po_env": "#22a884",  # teal-green — PO envelope fill
 }
 
 
@@ -53,7 +53,8 @@ def _apply_style():
     """Activate tvbo publication style if bsplot is available."""
     try:
         from bsplot import style
-        style.use('tvbo')
+
+        style.use("tvbo")
     except ImportError:
         pass
 
@@ -62,9 +63,10 @@ def _format_fig(fig):
     """Apply bsplot figure formatting if available."""
     try:
         from bsplot import style
+
         # Only format 2D axes (format_fig doesn't handle Axes3D)
         for ax in fig.axes:
-            if not hasattr(ax, 'set_zlabel'):
+            if not hasattr(ax, "set_zlabel"):
                 style.format_ax(ax, add_panel_numbers=False)
     except (ImportError, Exception):
         pass
@@ -76,9 +78,9 @@ def _format_3d_axes(ax):
     ax.xaxis.pane.fill = True
     ax.yaxis.pane.fill = True
     ax.zaxis.pane.fill = True
-    ax.xaxis.pane.set_edgecolor('none')
-    ax.yaxis.pane.set_edgecolor('none')
-    ax.zaxis.pane.set_edgecolor('none')
+    ax.xaxis.pane.set_edgecolor("none")
+    ax.yaxis.pane.set_edgecolor("none")
+    ax.zaxis.pane.set_edgecolor("none")
     pane_color = (0.97, 0.97, 0.97, 0.4)
     ax.xaxis.pane.set_facecolor(pane_color)
     ax.yaxis.pane.set_facecolor(pane_color)
@@ -88,11 +90,10 @@ def _format_3d_axes(ax):
     # Thin axis lines
     for axis in [ax.xaxis, ax.yaxis, ax.zaxis]:
         axis.line.set_linewidth(0.6)
-        axis.line.set_color('#333333')
+        axis.line.set_color("#333333")
 
     # Tick styling
-    ax.tick_params(axis='both', which='major', labelsize=7,
-                   length=3, width=0.6, pad=2, colors='#333333')
+    ax.tick_params(axis="both", which="major", labelsize=7, length=3, width=0.6, pad=2, colors="#333333")
 
     # Label styling
     for setter in [ax.set_xlabel, ax.set_ylabel, ax.set_zlabel]:
@@ -105,6 +106,7 @@ def continuation_kind(obj):
     Works with juliacall (PythonCall.jl) by inspecting the type string.
     """
     from juliacall import Main
+
     # Store the object in Julia's Main and inspect its type
     Main._bif_kind_obj = obj
     type_str = str(Main.seval("string(typeof(_bif_kind_obj))"))
@@ -142,7 +144,7 @@ def _extract_equilibrium_df(br):
     data = {}
     for col in col_names:
         try:
-            vals = Main.seval(f"collect(getproperty(_br_extract.branch, Symbol(\"{col}\")))")
+            vals = Main.seval(f'collect(getproperty(_br_extract.branch, Symbol("{col}")))')
             arr = np.array(vals)
             if arr.dtype == object:
                 # Vector-valued column (e.g. legacy 'x' without record_from_solution)
@@ -166,17 +168,17 @@ def _extract_special_points(br):
 
     points = []
     for i in range(1, n_sp + 1):
-        sp = Main.seval(f"_br_sp.specialpoint[{i}]")
+        Main.seval(f"_br_sp.specialpoint[{i}]")
         point = {
-            'type': str(Main.seval(f"string(_br_sp.specialpoint[{i}].type)")),
-            'step': int(Main.seval(f"_br_sp.specialpoint[{i}].step")),
-            'param': float(Main.seval(f"_br_sp.specialpoint[{i}].param")),
-            'idx': int(Main.seval(f"_br_sp.specialpoint[{i}].idx")),
+            "type": str(Main.seval(f"string(_br_sp.specialpoint[{i}].type)")),
+            "step": int(Main.seval(f"_br_sp.specialpoint[{i}].step")),
+            "param": float(Main.seval(f"_br_sp.specialpoint[{i}].param")),
+            "idx": int(Main.seval(f"_br_sp.specialpoint[{i}].idx")),
         }
         try:
-            point['norm'] = float(Main.seval(f"_br_sp.specialpoint[{i}].norm"))
+            point["norm"] = float(Main.seval(f"_br_sp.specialpoint[{i}].norm"))
         except Exception:
-            point['norm'] = np.nan
+            point["norm"] = np.nan
         points.append(point)
 
     return points
@@ -213,11 +215,11 @@ def compute_voi(df, VOI, prefix="", state_var_index=None):
     variables = list(exp.free_symbols)
 
     # Legacy: single variable in a vector 'x' column
-    if len(variables) == 1 and 'x' in df.columns and state_var_index is not None:
+    if len(variables) == 1 and "x" in df.columns and state_var_index is not None:
         var_name = str(variables[0])
         if var_name in state_var_index:
             idx = state_var_index[var_name]
-            return df['x'].apply(lambda x_val: x_val[idx] if hasattr(x_val, '__getitem__') else x_val)
+            return df["x"].apply(lambda x_val: x_val[idx] if hasattr(x_val, "__getitem__") else x_val)
 
     # Symbolic expression evaluation
     exp = exp.subs({v: symbols(f"{prefix}{v}") for v in variables})
@@ -232,14 +234,14 @@ class BifurcationResult:
 
         # Extract state variable names and create index mapping
         self.state_var_index = {}
-        if hasattr(self, 'ICS') and hasattr(self, 'model'):
+        if hasattr(self, "ICS") and hasattr(self, "model"):
             # Get state variables from model if available
-            if hasattr(self.model, 'state_variables'):
+            if hasattr(self.model, "state_variables"):
                 self.state_var_index = {name: idx for idx, name in enumerate(self.model.state_variables.keys())}
 
         # Allow explicit state_var_index to be passed
-        if 'state_var_index' in kwargs:
-            self.state_var_index = kwargs['state_var_index']
+        if "state_var_index" in kwargs:
+            self.state_var_index = kwargs["state_var_index"]
 
         sp_list = None  # list of dicts from _extract_special_points
 
@@ -260,11 +262,11 @@ class BifurcationResult:
             sp_list = _extract_special_points(br)
 
         # Fallback: ensure df always exists
-        if not hasattr(self, 'df'):
+        if not hasattr(self, "df"):
             self.df = pd.DataFrame()
 
         # Initialize codim-2 curves list (populated by adapters after init)
-        if not hasattr(self, 'codim2_curves'):
+        if not hasattr(self, "codim2_curves"):
             self.codim2_curves = []
 
         # Annotate special points (fold, hopf, bp, endpoint, etc.)
@@ -314,36 +316,50 @@ class BifurcationResult:
 
     def plot_special_points(self, VOI, ax=None, **kwargs):
         _sp_colors = {
-            'fold': _C['fold'], 'hopf': _C['hopf'], 'bp': _C['bp'],
-            'nd': '#888888', 'none': '#888888',
-            'ns': _C['ns'], 'pd': _C['pd'],
-            'bt': _C['bt'], 'cusp': _C['cusp'],
-            'gh': _C['gh'], 'zh': _C['zh'], 'hh': _C['gh'],
+            "fold": _C["fold"],
+            "hopf": _C["hopf"],
+            "bp": _C["bp"],
+            "nd": "#888888",
+            "none": "#888888",
+            "ns": _C["ns"],
+            "pd": _C["pd"],
+            "bt": _C["bt"],
+            "cusp": _C["cusp"],
+            "gh": _C["gh"],
+            "zh": _C["zh"],
+            "hh": _C["gh"],
         }
         _sp_markers = {
-            'fold': 's', 'hopf': 'o', 'bp': 'D', 'nd': 'v',
-            'ns': '^', 'pd': 'p', 'bt': 's', 'cusp': 'D',
-            'gh': '^', 'zh': 'v', 'hh': 'p',
+            "fold": "s",
+            "hopf": "o",
+            "bp": "D",
+            "nd": "v",
+            "ns": "^",
+            "pd": "p",
+            "bt": "s",
+            "cusp": "D",
+            "gh": "^",
+            "zh": "v",
+            "hh": "p",
         }
 
         for i, r in self.df[self.df["specialpoint"].notna()].iterrows():
-            sp = str(r.specialpoint).lower().split(',')[0].strip()
-            if sp in ('endpoint', 'none', 'nan', ''):
+            sp = str(r.specialpoint).lower().split(",")[0].strip()
+            if sp in ("endpoint", "none", "nan", ""):
                 continue
             current_labels = ax.get_legend_handles_labels()[1]
-            color = _sp_colors.get(sp, '#333333')
-            marker = _sp_markers.get(sp, 'o')
+            color = _sp_colors.get(sp, "#333333")
+            marker = _sp_markers.get(sp, "o")
             ax.scatter(
                 r.param,
-                compute_voi(
-                    self.df, VOI,
-                    state_var_index=self.state_var_index
-                ).loc[i],
-                zorder=5, s=40, marker=marker,
-                facecolors=color, edgecolors='white',
+                compute_voi(self.df, VOI, state_var_index=self.state_var_index).loc[i],
+                zorder=5,
+                s=40,
+                marker=marker,
+                facecolors=color,
+                edgecolors="white",
                 linewidths=0.8,
-                label=(sp.upper()
-                       if sp.upper() not in current_labels else None),
+                label=(sp.upper() if sp.upper() not in current_labels else None),
             )
 
     def plot_branch(self, ax, ICS=None, VOI=None, **kwargs):
@@ -351,12 +367,28 @@ class BifurcationResult:
         if self.df.empty:
             return
         lw = kwargs.pop("linewidth", kwargs.pop("lw", None))
-        _plot_ignore = {"periodic_orbits", "verbose", "max_steps", "ds",
-                        "dsmin", "dsmax", "p_min", "p_max", "quiet",
-                        "detect_bifurcation", "nev", "n_inversion",
-                        "max_bisection_steps", "tol_stability", "bothside",
-                        "bifurcation_points", "n_runs", "model",
-                        "state_var_index", "ICS"}
+        _plot_ignore = {
+            "periodic_orbits",
+            "verbose",
+            "max_steps",
+            "ds",
+            "dsmin",
+            "dsmax",
+            "p_min",
+            "p_max",
+            "quiet",
+            "detect_bifurcation",
+            "nev",
+            "n_inversion",
+            "max_bisection_steps",
+            "tol_stability",
+            "bothside",
+            "bifurcation_points",
+            "n_runs",
+            "model",
+            "state_var_index",
+            "ICS",
+        }
         plot_kwargs = {k: v for k, v in kwargs.items() if k not in _plot_ignore}
         if "stable" not in self.df.columns:
             self.df["stable"] = True
@@ -368,12 +400,10 @@ class BifurcationResult:
             current_labels = ax.get_legend_handles_labels()[1]
             ax.plot(
                 segment_data["param"],
-                compute_voi(segment_data, VOI,
-                            state_var_index=self.state_var_index),
+                compute_voi(segment_data, VOI, state_var_index=self.state_var_index),
                 "-" if is_stable else "--",
-                color=(_C['stable'] if is_stable else _C['unstable']),
-                linewidth=lw if lw is not None else (1.5 if is_stable
-                                                     else 1.0),
+                color=(_C["stable"] if is_stable else _C["unstable"]),
+                linewidth=lw if lw is not None else (1.5 if is_stable else 1.0),
                 zorder=2 if is_stable else 1,
                 label=label if label not in current_labels else None,
                 **plot_kwargs,
@@ -392,9 +422,20 @@ class BifurcationResult:
         if self.state_var_index:
             return next(iter(self.state_var_index))
         # Fallback: first non-metadata column
-        meta = {"param", "itnewton", "itlinear", "ds", "n_unstable",
-                "n_imag", "stable", "step", "specialpoint", "sp_norm",
-                "sp_idx", "segment"}
+        meta = {
+            "param",
+            "itnewton",
+            "itlinear",
+            "ds",
+            "n_unstable",
+            "n_imag",
+            "stable",
+            "step",
+            "specialpoint",
+            "sp_norm",
+            "sp_idx",
+            "segment",
+        }
         for c in self.df.columns:
             if c not in meta:
                 return c
@@ -424,8 +465,7 @@ class BifurcationResult:
         try:
             from juliacall import Main as jl
 
-            sv_names = (list(self.state_var_index.keys())
-                        if self.state_var_index else ['V', 'W'])
+            sv_names = list(self.state_var_index.keys()) if self.state_var_index else ["V", "W"]
 
             # Store br in Julia scope
             jl._tvbo_po_br = self.br
@@ -437,9 +477,7 @@ class BifurcationResult:
 
             # Compute sample indices
             n_samples = min(n_samples, n_sol)
-            indices = np.unique(
-                np.round(np.linspace(1, n_sol, n_samples)).astype(int)
-            )
+            indices = np.unique(np.round(np.linspace(1, n_sol, n_samples)).astype(int))
 
             result = []
             for idx in indices:
@@ -452,15 +490,11 @@ class BifurcationResult:
                     )
                     """)
                     d = {
-                        'param': float(jl.seval("Float64(_tvbo_s.p)")),
-                        't': np.array(jl.seval(
-                            "collect(Float64, _tvbo_xtt.t)"
-                        )),
+                        "param": float(jl.seval("Float64(_tvbo_s.p)")),
+                        "t": np.array(jl.seval("collect(Float64, _tvbo_xtt.t)")),
                     }
                     for i, sv in enumerate(sv_names):
-                        d[sv] = np.array(jl.seval(
-                            f"collect(Float64, _tvbo_xtt[{i + 1},:])"
-                        ))
+                        d[sv] = np.array(jl.seval(f"collect(Float64, _tvbo_xtt[{i + 1},:])"))
                     result.append(d)
                 except Exception:
                     continue  # skip this orbit on failure
@@ -481,7 +515,7 @@ class BifurcationResult:
         self.plot_special_points(VOI=VOI, ax=ax, **kwargs)
 
         # Periodic orbit envelopes as filled region
-        po_list = getattr(self, 'periodic_orbits', None)
+        po_list = getattr(self, "periodic_orbits", None)
         if isinstance(po_list, list) and po_list:
             for po_br in po_list:
                 if po_br.df.empty:
@@ -489,33 +523,33 @@ class BifurcationResult:
                 max_col = f"max_{VOI}"
                 min_col = f"min_{VOI}"
                 if max_col in po_br.df.columns:
-                    params = po_br.df['param'].values
+                    params = po_br.df["param"].values
                     v_max = po_br.df[max_col].values
                     v_min = po_br.df[min_col].values
                     clabels = ax.get_legend_handles_labels()[1]
                     ax.fill_between(
-                        params, v_min, v_max,
-                        color=_C['po_env'], alpha=0.15,
-                        label=('PO envelope' if 'PO envelope'
-                               not in clabels else None),
+                        params,
+                        v_min,
+                        v_max,
+                        color=_C["po_env"],
+                        alpha=0.15,
+                        label=("PO envelope" if "PO envelope" not in clabels else None),
                         zorder=0,
                     )
-                    ax.plot(params, v_max, '-', color=_C['po_line'],
-                            linewidth=0.8, alpha=0.6)
-                    ax.plot(params, v_min, '-', color=_C['po_line'],
-                            linewidth=0.8, alpha=0.6)
+                    ax.plot(params, v_max, "-", color=_C["po_line"], linewidth=0.8, alpha=0.6)
+                    ax.plot(params, v_min, "-", color=_C["po_line"], linewidth=0.8, alpha=0.6)
                     po_br.plot_special_points(VOI=max_col, ax=ax, **kwargs)
                 elif VOI in po_br.df.columns:
                     po_br.plot_branch(ax, ICS=ICS, VOI=VOI, **kwargs)
                     po_br.plot_special_points(VOI=VOI, ax=ax, **kwargs)
 
-        ics_label = ICS if ICS else getattr(self, 'ICS', 'param')
+        ics_label = ICS if ICS else getattr(self, "ICS", "param")
         ax.set_xlabel(ics_label)
         ax.set_ylabel(VOI)
-        ax.legend(framealpha=0.9, edgecolor='none', fontsize=7)
+        ax.legend(framealpha=0.9, edgecolor="none", fontsize=7)
         _format_fig(fig)
         if save:
-            fig.savefig(save, dpi=500, bbox_inches='tight')
+            fig.savefig(save, dpi=500, bbox_inches="tight")
         return ax
 
     def plot_codim2(self, ax=None, ICS=None, ICS2=None, save=None, **kwargs):
@@ -525,7 +559,7 @@ class BifurcationResult:
             x = primary free parameter (codim-1, e.g. I)  = param2 in c2 data
             y = secondary parameter (codim-2, e.g. b)     = param in c2 data
         """
-        c2_list = getattr(self, 'codim2_curves', None)
+        c2_list = getattr(self, "codim2_curves", None)
         if not c2_list:
             return ax
 
@@ -535,31 +569,39 @@ class BifurcationResult:
         else:
             fig = ax.get_figure()
 
-        ics_label = ICS if ICS else getattr(self, 'ICS', 'param')
+        ics_label = ICS if ICS else getattr(self, "ICS", "param")
 
         _c2_colors = {
-            'fold': _C['c2_fold'], 'hopf': _C['c2_hopf'],
-            'bp': _C['bp'],
+            "fold": _C["c2_fold"],
+            "hopf": _C["c2_hopf"],
+            "bp": _C["bp"],
         }
         _c2_sp_colors = {
-            'bt': _C['bt'], 'cusp': _C['cusp'], 'gh': _C['gh'],
-            'zh': _C['zh'], 'hh': _C['gh'],
+            "bt": _C["bt"],
+            "cusp": _C["cusp"],
+            "gh": _C["gh"],
+            "zh": _C["zh"],
+            "hh": _C["gh"],
         }
         _c2_sp_markers = {
-            'bt': 's', 'cusp': 'D', 'gh': '^', 'zh': 'v', 'hh': 'p',
+            "bt": "s",
+            "cusp": "D",
+            "gh": "^",
+            "zh": "v",
+            "hh": "p",
         }
 
         for c2 in c2_list:
             if c2.df.empty:
                 continue
 
-            src_type = getattr(c2, '_source_type', 'fold')
-            color = _c2_colors.get(src_type, '#555555')
+            src_type = getattr(c2, "_source_type", "fold")
+            color = _c2_colors.get(src_type, "#555555")
             label = f"{src_type.capitalize()} curve"
 
-            param2_col = 'param2'
+            param2_col = "param2"
             if param2_col not in c2.df.columns:
-                fp2 = getattr(c2, '_fp2_name', None)
+                fp2 = getattr(c2, "_fp2_name", None)
                 if fp2 and fp2 in c2.df.columns:
                     param2_col = fp2
                 else:
@@ -567,46 +609,51 @@ class BifurcationResult:
 
             current_labels = ax.get_legend_handles_labels()[1]
             ax.plot(
-                c2.df[param2_col], c2.df['param'],
-                '-', color=color, linewidth=1.5,
+                c2.df[param2_col],
+                c2.df["param"],
+                "-",
+                color=color,
+                linewidth=1.5,
                 label=label if label not in current_labels else None,
             )
 
-            if 'specialpoint' in c2.df.columns:
-                for i, r in c2.df[c2.df['specialpoint'].notna()].iterrows():
+            if "specialpoint" in c2.df.columns:
+                for i, r in c2.df[c2.df["specialpoint"].notna()].iterrows():
                     sp_raw = str(r.specialpoint).lower()
-                    for sp in sp_raw.split(','):
+                    for sp in sp_raw.split(","):
                         sp = sp.strip()
-                        if sp in ('endpoint', 'none', 'nan', ''):
+                        if sp in ("endpoint", "none", "nan", ""):
                             continue
-                        sp_color = _c2_sp_colors.get(sp, '#333333')
-                        sp_marker = _c2_sp_markers.get(sp, 'o')
+                        sp_color = _c2_sp_colors.get(sp, "#333333")
+                        sp_marker = _c2_sp_markers.get(sp, "o")
                         sp_label = sp.upper()
                         current_labels = ax.get_legend_handles_labels()[1]
                         ax.scatter(
-                            r[param2_col], r['param'],
-                            s=45, zorder=5, marker=sp_marker,
-                            facecolors=sp_color, edgecolors='white',
+                            r[param2_col],
+                            r["param"],
+                            s=45,
+                            zorder=5,
+                            marker=sp_marker,
+                            facecolors=sp_color,
+                            edgecolors="white",
                             linewidths=0.8,
-                            label=(sp_label if sp_label not in
-                                   current_labels else None),
+                            label=(sp_label if sp_label not in current_labels else None),
                         )
 
         c2_ics = None
         if c2_list:
-            c2_ics = getattr(c2_list[0], '_ics_name', None)
-        ics2_label = ICS2 or c2_ics or 'param2'
+            c2_ics = getattr(c2_list[0], "_ics_name", None)
+        ics2_label = ICS2 or c2_ics or "param2"
 
         ax.set_xlabel(ics_label)
         ax.set_ylabel(ics2_label)
-        ax.legend(framealpha=0.9, edgecolor='none', fontsize=7)
+        ax.legend(framealpha=0.9, edgecolor="none", fontsize=7)
         _format_fig(fig)
         if save:
-            fig.savefig(save, dpi=500, bbox_inches='tight')
+            fig.savefig(save, dpi=500, bbox_inches="tight")
         return ax
 
-    def plot_3d(self, ax=None, ICS=None, ICS2=None, VOI=None, save=None,
-                n_orbit_samples=40, **kwargs):
+    def plot_3d(self, ax=None, ICS=None, ICS2=None, VOI=None, save=None, n_orbit_samples=40, **kwargs):
         """Plot 3D bifurcation diagram with periodic orbit surfaces.
 
         Shows:
@@ -624,21 +671,20 @@ class BifurcationResult:
 
         _apply_style()
         VOI = self._resolve_voi(VOI)
-        ics_label = ICS if ICS else getattr(self, 'ICS', 'param')
+        ics_label = ICS if ICS else getattr(self, "ICS", "param")
 
-        sv_names = (list(self.state_var_index.keys())
-                    if self.state_var_index else [])
+        sv_names = list(self.state_var_index.keys()) if self.state_var_index else []
         sv2 = None
         for sv in sv_names:
             if sv != VOI:
                 sv2 = sv
                 break
 
-        c2_list = getattr(self, 'codim2_curves', None) or []
+        c2_list = getattr(self, "codim2_curves", None) or []
 
         if ax is None:
             fig = plt.figure(figsize=(7.2, 5.5))
-            ax = fig.add_subplot(111, projection='3d')
+            ax = fig.add_subplot(111, projection="3d")
         else:
             fig = ax.get_figure()
 
@@ -647,49 +693,46 @@ class BifurcationResult:
         # Resolve codim-2 parameter names
         c2_ics = None
         if c2_list:
-            c2_ics = getattr(c2_list[0], '_ics_name', None)
+            c2_ics = getattr(c2_list[0], "_ics_name", None)
 
         # Default value of codim-2 parameter (backbone position)
         c2_default = None
-        if c2_ics and hasattr(self, 'model') and self.model:
-            params = getattr(self.model, 'parameters', {})
+        if c2_ics and hasattr(self, "model") and self.model:
+            params = getattr(self.model, "parameters", {})
             if c2_ics in params:
                 p = params[c2_ics]
-                c2_default = float(getattr(p, 'value', None) or 0)
+                c2_default = float(getattr(p, "value", None) or 0)
         if c2_default is None:
             all_y = []
             for c2 in c2_list:
-                if 'param' in c2.df.columns:
-                    all_y.extend(c2.df['param'].values)
+                if "param" in c2.df.columns:
+                    all_y.extend(c2.df["param"].values)
             c2_default = np.median(all_y) if all_y else 0
 
         # ── 1. Codim-1 backbone ──
-        if not self.df.empty and 'param' in self.df.columns:
-            voi_eq = compute_voi(
-                self.df, VOI, state_var_index=self.state_var_index
-            )
-            if 'stable' not in self.df.columns:
-                self.df['stable'] = True
-            if 'segment' not in self.df.columns:
-                self.df['segment'] = (
-                    self.df.stable != self.df.stable.shift()
-                ).cumsum()
+        if not self.df.empty and "param" in self.df.columns:
+            voi_eq = compute_voi(self.df, VOI, state_var_index=self.state_var_index)
+            if "stable" not in self.df.columns:
+                self.df["stable"] = True
+            if "segment" not in self.df.columns:
+                self.df["segment"] = (self.df.stable != self.df.stable.shift()).cumsum()
 
-            for _, seg in self.df.groupby('segment'):
+            for _, seg in self.df.groupby("segment"):
                 is_stable = seg.iloc[0].stable
-                seg_voi = compute_voi(
-                    seg, VOI, state_var_index=self.state_var_index
-                )
+                seg_voi = compute_voi(seg, VOI, state_var_index=self.state_var_index)
                 y_bb = np.full(len(seg), c2_default)
-                style = '-' if is_stable else '--'
+                style = "-" if is_stable else "--"
                 lw = 1.5 if is_stable else 0.9
-                lbl = 'Stable eq.' if is_stable else 'Unstable eq.'
+                lbl = "Stable eq." if is_stable else "Unstable eq."
                 clabels = ax.get_legend_handles_labels()[1]
                 ax.plot(
-                    seg['param'].values, y_bb, seg_voi.values,
-                    style, color=(_C['stable'] if is_stable
-                                  else _C['unstable']),
-                    linewidth=lw, alpha=0.9,
+                    seg["param"].values,
+                    y_bb,
+                    seg_voi.values,
+                    style,
+                    color=(_C["stable"] if is_stable else _C["unstable"]),
+                    linewidth=lw,
+                    alpha=0.9,
                     label=lbl if lbl not in clabels else None,
                     zorder=5,
                 )
@@ -698,16 +741,20 @@ class BifurcationResult:
             for hi in self.hopf_indices:
                 clabels = ax.get_legend_handles_labels()[1]
                 ax.scatter(
-                    [self.df.at[hi, 'param']], [c2_default],
+                    [self.df.at[hi, "param"]],
+                    [c2_default],
                     [voi_eq.iloc[hi]],
-                    s=40, marker='o', zorder=10,
-                    facecolors=_C['hopf'], edgecolors='white',
+                    s=40,
+                    marker="o",
+                    zorder=10,
+                    facecolors=_C["hopf"],
+                    edgecolors="white",
                     linewidths=0.8,
-                    label='Hopf' if 'Hopf' not in clabels else None,
+                    label="Hopf" if "Hopf" not in clabels else None,
                 )
 
         # ── 2. Periodic orbit surfaces ──
-        po_list = getattr(self, 'periodic_orbits', None) or []
+        po_list = getattr(self, "periodic_orbits", None) or []
         has_orbits = False
 
         for po_br in po_list:
@@ -722,24 +769,26 @@ class BifurcationResult:
                     for col in [max_col, min_col]:
                         clabels = ax.get_legend_handles_labels()[1]
                         ax.plot(
-                            po_br.df['param'].values, y_po,
+                            po_br.df["param"].values,
+                            y_po,
                             po_br.df[col].values,
-                            '-', color=_C['po_line'], linewidth=0.9,
+                            "-",
+                            color=_C["po_line"],
+                            linewidth=0.9,
                             alpha=0.6,
-                            label=('PO envelope' if 'PO envelope'
-                                   not in clabels else None),
+                            label=("PO envelope" if "PO envelope" not in clabels else None),
                         )
                 continue
 
             has_orbits = True
             n_theta = 80
             n_orb = len(orbits)
-            I_vals = np.array([o['param'] for o in orbits])
+            I_vals = np.array([o["param"] for o in orbits])
             V_mesh = np.zeros((n_orb, n_theta))
             W_mesh = np.zeros((n_orb, n_theta))
 
             for j, orb in enumerate(orbits):
-                t = orb['t']
+                t = orb["t"]
                 t_norm = (t - t[0]) / (t[-1] - t[0])
                 t_uni = np.linspace(0, 1, n_theta, endpoint=False)
                 V_mesh[j, :] = np.interp(t_uni, t_norm, orb[VOI])
@@ -750,8 +799,8 @@ class BifurcationResult:
             if c2_list:
                 y_vals = []
                 for c2 in c2_list:
-                    if 'param' in c2.df.columns:
-                        y_vals.extend(c2.df['param'].values)
+                    if "param" in c2.df.columns:
+                        y_vals.extend(c2.df["param"].values)
                 if y_vals:
                     y_range = max(y_vals) - min(y_vals)
             if y_range == 0:
@@ -759,8 +808,7 @@ class BifurcationResult:
 
             W_range = W_mesh.max() - W_mesh.min()
             if W_range > 0:
-                W_scaled = ((W_mesh - W_mesh.mean()) / W_range
-                            * y_range * 0.15)
+                W_scaled = (W_mesh - W_mesh.mean()) / W_range * y_range * 0.15
             else:
                 W_scaled = np.zeros_like(W_mesh)
 
@@ -769,8 +817,14 @@ class BifurcationResult:
             Z = V_mesh
 
             ax.plot_surface(
-                X, Y, Z, alpha=0.2, color=_C['po_surface'],
-                edgecolor='none', shade=True, zorder=3,
+                X,
+                Y,
+                Z,
+                alpha=0.2,
+                color=_C["po_surface"],
+                edgecolor="none",
+                shade=True,
+                zorder=3,
             )
 
             # Wireframe orbit loops (every ~5th)
@@ -781,11 +835,14 @@ class BifurcationResult:
                 zz = np.append(Z[j, :], Z[j, 0])
                 clabels = ax.get_legend_handles_labels()[1]
                 ax.plot(
-                    xx, yy, zz,
-                    color=_C['po_line'], linewidth=0.5, alpha=0.4,
+                    xx,
+                    yy,
+                    zz,
+                    color=_C["po_line"],
+                    linewidth=0.5,
+                    alpha=0.4,
                     zorder=4,
-                    label=('Periodic orbit' if 'Periodic orbit'
-                           not in clabels else None),
+                    label=("Periodic orbit" if "Periodic orbit" not in clabels else None),
                 )
 
         # Envelope fallback
@@ -800,89 +857,97 @@ class BifurcationResult:
                     for col in [max_col, min_col]:
                         clabels = ax.get_legend_handles_labels()[1]
                         ax.plot(
-                            po_br.df['param'].values, y_po,
+                            po_br.df["param"].values,
+                            y_po,
                             po_br.df[col].values,
-                            '-', color=_C['po_line'], linewidth=0.9,
+                            "-",
+                            color=_C["po_line"],
+                            linewidth=0.9,
                             alpha=0.6,
-                            label=('PO envelope' if 'PO envelope'
-                                   not in clabels else None),
+                            label=("PO envelope" if "PO envelope" not in clabels else None),
                         )
 
         # ── 3. Codim-2 curves ──
         _c2_colors = {
-            'fold': _C['c2_fold'], 'hopf': _C['c2_hopf'],
-            'bp': _C['bp'],
+            "fold": _C["c2_fold"],
+            "hopf": _C["c2_hopf"],
+            "bp": _C["bp"],
         }
 
         for c2 in c2_list:
             if c2.df.empty:
                 continue
-            src_type = getattr(c2, '_source_type', 'fold')
-            color = _c2_colors.get(src_type, '#555555')
+            src_type = getattr(c2, "_source_type", "fold")
+            color = _c2_colors.get(src_type, "#555555")
 
-            param2_col = 'param2'
+            param2_col = "param2"
             if param2_col not in c2.df.columns:
-                fp2 = getattr(c2, '_fp2_name', None)
+                fp2 = getattr(c2, "_fp2_name", None)
                 if fp2 and fp2 in c2.df.columns:
                     param2_col = fp2
                 else:
                     continue
 
-            voi_vals = (compute_voi(c2.df, VOI,
-                                    state_var_index=self.state_var_index)
-                        if VOI in c2.df.columns else c2.df.get(VOI))
+            voi_vals = (
+                compute_voi(c2.df, VOI, state_var_index=self.state_var_index) if VOI in c2.df.columns else c2.df.get(VOI)
+            )
             if voi_vals is None:
                 voi_vals = np.full(len(c2.df), 0)
 
             label = f"{src_type.capitalize()} curve"
             clabels = ax.get_legend_handles_labels()[1]
             ax.plot(
-                c2.df[param2_col], c2.df['param'], voi_vals,
-                '-', color=color, linewidth=1.8,
+                c2.df[param2_col],
+                c2.df["param"],
+                voi_vals,
+                "-",
+                color=color,
+                linewidth=1.8,
                 label=label if label not in clabels else None,
                 zorder=8,
             )
 
             # Special points
             _sp_map = {
-                'bt': ('s', _C['bt'], 'BT'),
-                'gh': ('^', _C['gh'], 'GH'),
-                'cusp': ('D', _C['cusp'], 'Cusp'),
-                'zh': ('v', _C['zh'], 'ZH'),
-                'hh': ('p', _C['gh'], 'HH'),
+                "bt": ("s", _C["bt"], "BT"),
+                "gh": ("^", _C["gh"], "GH"),
+                "cusp": ("D", _C["cusp"], "Cusp"),
+                "zh": ("v", _C["zh"], "ZH"),
+                "hh": ("p", _C["gh"], "HH"),
             }
-            if 'specialpoint' in c2.df.columns:
-                for i, r in c2.df[
-                    c2.df['specialpoint'].notna()
-                ].iterrows():
+            if "specialpoint" in c2.df.columns:
+                for i, r in c2.df[c2.df["specialpoint"].notna()].iterrows():
                     sp_raw = str(r.specialpoint).lower()
-                    for sp in sp_raw.split(','):
+                    for sp in sp_raw.split(","):
                         sp = sp.strip()
-                        if sp in ('endpoint', 'none', 'nan', ''):
+                        if sp in ("endpoint", "none", "nan", ""):
                             continue
                         if sp not in _sp_map:
                             continue
-                        z = (voi_vals.loc[i] if hasattr(voi_vals, 'loc')
-                             else voi_vals[i])
+                        z = voi_vals.loc[i] if hasattr(voi_vals, "loc") else voi_vals[i]
                         mk, clr, lbl = _sp_map[sp]
                         clabels = ax.get_legend_handles_labels()[1]
                         ax.scatter(
-                            [r[param2_col]], [r['param']], [z],
-                            s=45, zorder=12, marker=mk,
-                            facecolors=clr, edgecolors='white',
+                            [r[param2_col]],
+                            [r["param"]],
+                            [z],
+                            s=45,
+                            zorder=12,
+                            marker=mk,
+                            facecolors=clr,
+                            edgecolors="white",
                             linewidths=0.8,
                             label=lbl if lbl not in clabels else None,
                         )
 
-        ics2_label = ICS2 or c2_ics or 'param2'
+        ics2_label = ICS2 or c2_ics or "param2"
         ax.set_xlabel(ics_label, fontsize=8, labelpad=6)
         ax.set_ylabel(ics2_label, fontsize=8, labelpad=6)
         ax.set_zlabel(VOI, fontsize=8, labelpad=6)
         ax.view_init(elev=25, azim=-55)
-        ax.legend(framealpha=0, edgecolor='none', fontsize=7,
-                  loc='upper left', borderpad=0.5)
+        ax.legend(framealpha=0, edgecolor="none", fontsize=7, loc="upper left", borderpad=0.5)
         if save:
-            fig.savefig(save, dpi=500, bbox_inches='tight')
+            fig.savefig(save, dpi=500, bbox_inches="tight")
         return ax
 
 
@@ -915,14 +980,10 @@ class PyRatesBifurcationResult(BifurcationResult):
 
         self.state_var_index = {}
         if state_var_names:
-            self.state_var_index = {
-                name: idx for idx, name in enumerate(state_var_names)
-            }
+            self.state_var_index = {name: idx for idx, name in enumerate(state_var_names)}
 
         # Extract continuation data from PyCoBi's summary DataFrame
-        self.df = self._extract_pycobi_df(
-            ode, cont_name, state_var_names, icp
-        )
+        self.df = self._extract_pycobi_df(ode, cont_name, state_var_names, icp)
 
         # Build hopf/bp index lists
         self.hopf_indices = []
@@ -931,9 +992,7 @@ class PyRatesBifurcationResult(BifurcationResult):
         self.bp_steps = []
         if "specialpoint" in self.df.columns:
             sp_series = self.df["specialpoint"].astype(str)
-            hopf_mask = sp_series.str.contains(
-                "hopf|HB", case=False, na=False
-            )
+            hopf_mask = sp_series.str.contains("hopf|HB", case=False, na=False)
             bp_mask = sp_series.str.contains("bp|BP", case=False, na=False)
             self.hopf_indices = self.df.index[hopf_mask].tolist()
             self.bp_indices = self.df.index[bp_mask].tolist()
@@ -960,24 +1019,29 @@ class PyRatesBifurcationResult(BifurcationResult):
         if codim2_results:
             for c2_res in codim2_results:
                 # Extract the 2nd parameter column into df['param2']
-                icp2 = getattr(c2_res, '_icp2', None)
+                icp2 = getattr(c2_res, "_icp2", None)
                 if icp2 is not None and not c2_res.df.empty:
                     c2_res.df = self._add_param2_column(
-                        ode, c2_res.df, getattr(c2_res, '_cont_name', None) or cont_name,
-                        state_var_names, icp2,
+                        ode,
+                        c2_res.df,
+                        getattr(c2_res, "_cont_name", None) or cont_name,
+                        state_var_names,
+                        icp2,
                     )
                 self.codim2_curves.append(c2_res)
 
             # Store _ICS2 for labeling
             if codim2_results:
-                self._ICS2 = getattr(
-                    codim2_results[0], '_fp2_name', 'param2'
-                )
+                self._ICS2 = getattr(codim2_results[0], "_fp2_name", "param2")
 
     # Standard columns expected by plot_branch / plot_special_points
     _STANDARD_COLS = [
-        "param", "stable", "step", "specialpoint",
-        "n_unstable", "n_imag",
+        "param",
+        "stable",
+        "step",
+        "specialpoint",
+        "n_unstable",
+        "n_imag",
     ]
 
     @staticmethod
@@ -996,10 +1060,10 @@ class PyRatesBifurcationResult(BifurcationResult):
                 p2_vals = [float(v) for v in branch_data[par2_col]]
                 # Align with df length
                 if len(p2_vals) >= len(df):
-                    df['param2'] = p2_vals[:len(df)]
+                    df["param2"] = p2_vals[: len(df)]
                 else:
                     # Interpolate or pad
-                    df['param2'] = np.interp(
+                    df["param2"] = np.interp(
                         np.linspace(0, 1, len(df)),
                         np.linspace(0, 1, len(p2_vals)),
                         p2_vals,
@@ -1010,17 +1074,12 @@ class PyRatesBifurcationResult(BifurcationResult):
                 summary = ode.get_summary(cont_name)
                 if summary is not None and len(summary) > 0:
                     cols = summary.columns
-                    translated = ode._var_map_inv.get(
-                        par2_col, ode._var_map_inv.get(icp2, None)
-                    )
+                    translated = ode._var_map_inv.get(par2_col, ode._var_map_inv.get(icp2, None))
                     for cand in [translated, par2_col]:
-                        if cand and (cand, '') in cols:
-                            p2_vals = [
-                                float(summary.iloc[i][(cand, '')])
-                                for i in range(len(summary))
-                            ]
+                        if cand and (cand, "") in cols:
+                            p2_vals = [float(summary.iloc[i][(cand, "")]) for i in range(len(summary))]
                             if len(p2_vals) >= len(df):
-                                df['param2'] = p2_vals[:len(df)]
+                                df["param2"] = p2_vals[: len(df)]
                             break
             except Exception:
                 pass
@@ -1040,14 +1099,19 @@ class PyRatesBifurcationResult(BifurcationResult):
         """
         # True bifurcation types only (no UZ, EP, RG, MX)
         auto_to_bif = {
-            "LP": "fold", "HB": "hopf", "BP": "bp",
-            "PD": "pd", "TR": "ns", "BT": "bt",
-            "CP": "cusp", "GH": "gh", "ZH": "zh",
+            "LP": "fold",
+            "HB": "hopf",
+            "BP": "bp",
+            "PD": "pd",
+            "TR": "ns",
+            "BT": "bt",
+            "CP": "cusp",
+            "GH": "gh",
+            "ZH": "zh",
         }
 
         def _empty_df():
-            cols = list(state_var_names or []) + \
-                PyRatesBifurcationResult._STANDARD_COLS
+            cols = list(state_var_names or []) + PyRatesBifurcationResult._STANDARD_COLS
             return pd.DataFrame(columns=cols)
 
         def _parse_stability(sv):
@@ -1088,11 +1152,7 @@ class PyRatesBifurcationResult(BifurcationResult):
             sv0 = state_var_names[0]
             auto0 = "U(1)"
             s_cols = summary.columns
-            is_po = (
-                (sv0, 0) in s_cols and (sv0, 1) in s_cols
-            ) or (
-                (auto0, 0) in s_cols and (auto0, 1) in s_cols
-            )
+            is_po = ((sv0, 0) in s_cols and (sv0, 1) in s_cols) or ((auto0, 0) in s_cols and (auto0, 1) in s_cols)
 
         par_col = f"PAR({icp})"
 
@@ -1109,8 +1169,8 @@ class PyRatesBifurcationResult(BifurcationResult):
             full tuple key.
             """
             # Check tuple forms first (safe for both Index and MultiIndex)
-            if (name, '') in cols:
-                return (name, '')
+            if (name, "") in cols:
+                return (name, "")
             if (name, 0) in cols:
                 return (name, 0)
             # Plain string — only valid for a flat Index
@@ -1128,9 +1188,7 @@ class PyRatesBifurcationResult(BifurcationResult):
 
             # Resolve parameter column (translated or raw)
             s_par_col = None
-            translated = ode._var_map_inv.get(
-                par_col, ode._var_map_inv.get(icp, None)
-            )
+            translated = ode._var_map_inv.get(par_col, ode._var_map_inv.get(icp, None))
             for cand in [translated, par_col]:
                 if cand:
                     resolved = _col(cand, cols)
@@ -1147,16 +1205,13 @@ class PyRatesBifurcationResult(BifurcationResult):
                     for cand in [sv_name, auto_name]:
                         if (cand, 0) in cols:
                             val_col = (cand, 0)
-                            max_col = (cand, 1) if (cand, 1) in cols \
-                                else None
+                            max_col = (cand, 1) if (cand, 1) in cols else None
                             break
                         if cand in cols:
                             val_col = cand
                             break
                     if val_col is not None:
-                        sv_col_map[sv_name] = {
-                            "val": val_col, "max": max_col
-                        }
+                        sv_col_map[sv_name] = {"val": val_col, "max": max_col}
 
             stab_col = _col("stability", cols)
             bif_col = _col("bifurcation", cols)
@@ -1172,7 +1227,7 @@ class PyRatesBifurcationResult(BifurcationResult):
                         row[sv_name] = float(np.max(mx))
                         row[f"max_{sv_name}"] = float(np.max(mx))
                         row[f"min_{sv_name}"] = float(np.min(v))
-                    elif hasattr(v, '__len__') and not isinstance(v, str):
+                    elif hasattr(v, "__len__") and not isinstance(v, str):
                         row[sv_name] = float(np.max(v))
                         row[f"max_{sv_name}"] = float(np.max(v))
                         row[f"min_{sv_name}"] = float(np.min(v))
@@ -1210,9 +1265,7 @@ class PyRatesBifurcationResult(BifurcationResult):
                 for i, sv_name in enumerate(state_var_names):
                     auto_col = f"U({i + 1})"
                     if auto_col in branch_data:
-                        row[sv_name] = float(
-                            branch_data[auto_col][step]
-                        )
+                        row[sv_name] = float(branch_data[auto_col][step])
             if par_col in branch_data:
                 row["param"] = float(branch_data[par_col][step])
             else:
@@ -1233,9 +1286,7 @@ class PyRatesBifurcationResult(BifurcationResult):
         if summary is not None and len(summary) > 0:
             cols = summary.columns
             s_par_col = None
-            translated = ode._var_map_inv.get(
-                par_col, ode._var_map_inv.get(icp, None)
-            )
+            translated = ode._var_map_inv.get(par_col, ode._var_map_inv.get(icp, None))
             for cand in [translated, par_col]:
                 if cand:
                     resolved = _col(cand, cols)
@@ -1250,9 +1301,7 @@ class PyRatesBifurcationResult(BifurcationResult):
             for row_idx in range(len(summary)):
                 rd = summary.iloc[row_idx]
                 p_val = float(rd[s_par_col]) if s_par_col else np.nan
-                stab = _parse_stability(
-                    rd[stab_col]
-                ) if stab_col is not None else True
+                stab = _parse_stability(rd[stab_col]) if stab_col is not None else True
                 bif_type = None
                 if bif_col is not None:
                     bv = str(rd[bif_col]).strip()
@@ -1263,9 +1312,7 @@ class PyRatesBifurcationResult(BifurcationResult):
                 lp = np.array([s[0] for s in stab_data])
                 ls = np.array([s[1] for s in stab_data])
                 bp = df["param"].values
-                nearest = np.abs(bp[:, None] - lp[None, :]).argmin(
-                    axis=1
-                )
+                nearest = np.abs(bp[:, None] - lp[None, :]).argmin(axis=1)
                 df["stable"] = ls[nearest]
                 for _, (pv, __, bt) in enumerate(stab_data):
                     if bt is None:

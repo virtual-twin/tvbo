@@ -2,6 +2,7 @@
 
 Focused on round-trip correctness: write → read → compare.
 """
+
 import numpy as np
 import pytest
 import tempfile
@@ -10,20 +11,24 @@ from pathlib import Path
 
 # ── matrix_io tests ──────────────────────────────────────────────────
 
+
 class TestAutoFormat:
     def test_small_dense(self):
         from tvbo.data.matrix_io import auto_format
+
         m = np.random.rand(87, 87)
         assert auto_format(m) == "dense"
 
     def test_large_sparse(self):
         from tvbo.data.matrix_io import auto_format
+
         m = np.zeros((600, 600))
         m[0, 1] = 1.0  # fill < 30%
         assert auto_format(m) == "csr"
 
     def test_large_dense(self):
         from tvbo.data.matrix_io import auto_format
+
         m = np.random.rand(600, 600)
         assert auto_format(m) == "dense"  # fill ~100% > 30%
 
@@ -32,6 +37,7 @@ class TestMatrixRoundTrip:
     @pytest.fixture
     def h5_file(self):
         import h5py
+
         with tempfile.NamedTemporaryFile(suffix=".h5") as f:
             with h5py.File(f.name, "w") as hf:
                 yield hf, f.name
@@ -39,6 +45,7 @@ class TestMatrixRoundTrip:
     def test_dense_roundtrip(self, h5_file):
         import h5py
         from tvbo.data.matrix_io import write_matrix, read_matrix
+
         hf, path = h5_file
         m = np.random.rand(10, 10).astype("float32")
         grp = hf.create_group("test")
@@ -52,6 +59,7 @@ class TestMatrixRoundTrip:
     def test_csr_roundtrip(self, h5_file):
         import h5py
         from tvbo.data.matrix_io import write_matrix, read_matrix
+
         hf, path = h5_file
         m = np.eye(20, dtype="float32") * 5.0
         grp = hf.create_group("test")
@@ -65,6 +73,7 @@ class TestMatrixRoundTrip:
     def test_coo_roundtrip(self, h5_file):
         import h5py
         from tvbo.data.matrix_io import write_matrix, read_matrix
+
         hf, path = h5_file
         m = np.zeros((15, 15), dtype="float32")
         m[3, 7] = 1.0
@@ -79,6 +88,7 @@ class TestMatrixRoundTrip:
 
 
 # ── network_io tests ─────────────────────────────────────────────────
+
 
 class TestNetworkIO:
     def test_load_new_format_roundtrip(self):
@@ -120,7 +130,7 @@ class TestNetworkIO:
     def test_save_load_roundtrip_csv(self):
         """Save a Network as YAML+CSV, reload, and compare."""
         from tvbo import Network
-        from tvbo.data.network_io import save_network, load_network
+        from tvbo.data.network_io import save_network
 
         weights = np.random.rand(4, 4).astype("float32")
         lengths = np.random.rand(4, 4).astype("float32") * 50
@@ -136,9 +146,11 @@ class TestNetworkIO:
 
 # ── converters tests ──────────────────────────────────────────────────
 
+
 class TestRelmatEntities:
     def test_entities_from_dict(self):
         from tvbo.data.converters import relmat_entities
+
         meta = {
             "parcellation": {"atlas": {"name": "DesikanKilliany"}},
             "tractogram": "dTOR",
@@ -152,6 +164,7 @@ class TestRelmatEntities:
     def test_entities_from_network(self):
         from tvbo import Network
         from tvbo.data.converters import relmat_entities
+
         net = Network.from_matrix(
             np.eye(3, dtype="float32"),
             np.ones((3, 3), dtype="float32"),
@@ -164,15 +177,18 @@ class TestRelmatEntities:
 class TestFromTvbZip:
     def test_from_tvb_zip_missing_file(self):
         from tvbo.data.converters import from_tvb_zip
+
         with pytest.raises(Exception):
             from_tvb_zip("/nonexistent/path.zip")
 
 
 # ── LazyArrayStore tests ─────────────────────────────────────────────
 
+
 class TestLazyArrayStore:
     def test_lazy_no_load_on_init(self):
         from tvbo.data.matrix_io import LazyArrayStore
+
         # Should not crash even with nonexistent path — no I/O on init
         store = LazyArrayStore(Path("/fake/path.h5"), {"edges": []})
         assert not store._loaded
@@ -201,10 +217,11 @@ class TestLazyArrayStore:
 
 # ── Zarr roundtrip tests ─────────────────────────────────────────────
 
+
 class TestZarrRoundTrip:
     def test_save_load_roundtrip_zarr(self):
         """Save a Network as YAML+Zarr, reload, and compare arrays."""
-        zarr = pytest.importorskip("zarr")
+        pytest.importorskip("zarr")
         from tvbo import Network
         from tvbo.data.network_io import save_network, load_network
 
@@ -241,6 +258,7 @@ class TestZarrRoundTrip:
 
 # ── Edge parameters roundtrip tests ──────────────────────────────────
 
+
 class TestEdgeParametersRoundTrip:
     def test_edge_params_h5_roundtrip(self):
         """Edge parameters survive HDF5 write → read."""
@@ -271,7 +289,6 @@ class TestEdgeParametersRoundTrip:
     def test_edge_params_network_roundtrip(self):
         """Edge params persist through Network save/load cycle."""
         from tvbo import Network
-        from tvbo.datamodel import tvbo_datamodel
         from tvbo.data.network_io import save_network, load_network
 
         weights = np.random.rand(3, 3).astype("float32")
@@ -279,7 +296,7 @@ class TestEdgeParametersRoundTrip:
         net = Network.from_matrix(weights, lengths)
         # Replace arrays with named edge + edge params
         net.set_matrix("streamlineCount", weights)
-        object.__setattr__(net, '_edge_params', {"streamlineCount": {"tractLength": lengths}})
+        object.__setattr__(net, "_edge_params", {"streamlineCount": {"tractLength": lengths}})
 
         with tempfile.TemporaryDirectory() as tmpdir:
             out = Path(tmpdir) / "test_ep.yaml"
@@ -291,11 +308,13 @@ class TestEdgeParametersRoundTrip:
             assert "tractLength" in store.edge_params.get("streamlineCount", {})
             np.testing.assert_allclose(
                 store.edge_params["streamlineCount"]["tractLength"],
-                lengths, atol=1e-6,
+                lengths,
+                atol=1e-6,
             )
 
 
 # ── Hierarchical network tests ───────────────────────────────────────
+
 
 class TestHierarchicalNetwork:
     def test_node_mapping_roundtrip(self):
@@ -318,11 +337,13 @@ class TestHierarchicalNetwork:
             assert store is not None
             parent_idx = store.read_dataset("nodes/parent_index")
             np.testing.assert_array_equal(
-                parent_idx, [0, 0, 1, 1, 2, 2],
+                parent_idx,
+                [0, 0, 1, 1, 2, 2],
             )
 
 
 # ── Node coordinates tests ───────────────────────────────────────────
+
 
 class TestNodeCoordinates:
     def test_coordinates_written_to_h5(self):
@@ -333,9 +354,15 @@ class TestNodeCoordinates:
         from tvbo.data.network_io import save_network
 
         nodes = [
-            tvbo_datamodel.Node(id=i, label=f"n{i}", position=tvbo_datamodel.Coordinate(
-                x=float(i), y=float(i * 2), z=float(i * 3),
-            ))
+            tvbo_datamodel.Node(
+                id=i,
+                label=f"n{i}",
+                position=tvbo_datamodel.Coordinate(
+                    x=float(i),
+                    y=float(i * 2),
+                    z=float(i * 3),
+                ),
+            )
             for i in range(4)
         ]
         net = Network.from_matrix(np.eye(4, dtype="float32"))
@@ -354,6 +381,7 @@ class TestNodeCoordinates:
 
 # ── BEP017 export tests ──────────────────────────────────────────────
 
+
 class TestBEP017Export:
     def test_to_bep017_creates_files(self):
         """BEP017 export writes TSV + JSON for each template edge."""
@@ -365,13 +393,15 @@ class TestBEP017Export:
         net = Network.from_matrix(weights)
         net.descriptor = "SC"
         # Add template edge metadata
-        net.edges = [tvbo_datamodel.Edge(
-            label="streamlineCount",
-            weighted=True,
-            non_negative=True,
-            valid_diagonal=False,
-        )]
-        object.__setattr__(net, '_arrays', {"streamlineCount": weights})
+        net.edges = [
+            tvbo_datamodel.Edge(
+                label="streamlineCount",
+                weighted=True,
+                non_negative=True,
+                valid_diagonal=False,
+            )
+        ]
+        object.__setattr__(net, "_arrays", {"streamlineCount": weights})
         net._store = None
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -381,10 +411,11 @@ class TestBEP017Export:
             tsv_files = list(out.glob("*.tsv"))
             json_files = list(out.glob("*.json"))
             assert len(tsv_files) >= 1, f"Expected TSV files, got: {list(out.iterdir())}"
-            assert len(json_files) >= 1, f"Expected JSON sidecars"
+            assert len(json_files) >= 1, "Expected JSON sidecars"
 
             # Verify JSON sidecar content
             import json
+
             sidecar = json.loads(json_files[0].read_text())
             assert "RelationshipMeasure" in sidecar
             assert sidecar["Weighted"] is True
@@ -398,7 +429,7 @@ class TestBEP017Export:
         nodes = [tvbo_datamodel.Node(id=i, label=f"region_{i}") for i in range(3)]
         net = Network(nodes=nodes, edges=[], number_of_nodes=3)
         net.edges = [tvbo_datamodel.Edge(label="weight")]
-        object.__setattr__(net, '_arrays', {"weight": np.eye(3, dtype="float32")})
+        object.__setattr__(net, "_arrays", {"weight": np.eye(3, dtype="float32")})
         net._store = None
         net.descriptor = "SC"
 
@@ -411,6 +442,7 @@ class TestBEP017Export:
 
 
 # ── TVB ZIP full roundtrip test ───────────────────────────────────────
+
 
 class TestFromTvbZipRoundTrip:
     def test_tvb_zip_roundtrip(self):
@@ -427,14 +459,9 @@ class TestFromTvbZipRoundTrip:
         with tempfile.TemporaryDirectory() as tmpdir:
             zip_path = Path(tmpdir) / "connectivity.zip"
             with zipfile.ZipFile(zip_path, "w") as zf:
-                zf.writestr("weights.txt", "\n".join(
-                    " ".join(f"{x:.8g}" for x in row) for row in weights))
-                zf.writestr("tract_lengths.txt", "\n".join(
-                    " ".join(f"{x:.8g}" for x in row) for row in lengths))
-                centres_lines = [
-                    f"{labels[i]} {coords[i,0]:.8g} {coords[i,1]:.8g} {coords[i,2]:.8g}"
-                    for i in range(n)
-                ]
+                zf.writestr("weights.txt", "\n".join(" ".join(f"{x:.8g}" for x in row) for row in weights))
+                zf.writestr("tract_lengths.txt", "\n".join(" ".join(f"{x:.8g}" for x in row) for row in lengths))
+                centres_lines = [f"{labels[i]} {coords[i, 0]:.8g} {coords[i, 1]:.8g} {coords[i, 2]:.8g}" for i in range(n)]
                 zf.writestr("centres.txt", "\n".join(centres_lines))
 
             net = from_tvb_zip(zip_path)

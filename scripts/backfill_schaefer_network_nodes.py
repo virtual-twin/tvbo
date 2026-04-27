@@ -37,9 +37,7 @@ def parse_entities(atlas_yaml: Path) -> list[dict]:
 
 
 def atlas_yaml_path(atlas_dir: Path, seg: str, scale: str) -> Path:
-    return atlas_dir / (
-        f"tpl-FSLMNI152_atlas-Schaefer2018_seg-{seg}_scale-{scale}_res-1_desc-ordered_dseg.yaml"
-    )
+    return atlas_dir / (f"tpl-FSLMNI152_atlas-Schaefer2018_seg-{seg}_scale-{scale}_res-1_desc-ordered_dseg.yaml")
 
 
 def update_network_yaml(network_yaml: Path, atlas_dir: Path, overwrite: bool) -> bool:
@@ -59,10 +57,7 @@ def update_network_yaml(network_yaml: Path, atlas_dir: Path, overwrite: bool) ->
     entities = parse_entities(atlas_yaml)
     nodes = net.get("nodes", [])
     if len(nodes) != len(entities):
-        raise ValueError(
-            f"Node/entity size mismatch for {network_yaml.name}: "
-            f"{len(nodes)} nodes vs {len(entities)} entities"
-        )
+        raise ValueError(f"Node/entity size mismatch for {network_yaml.name}: {len(nodes)} nodes vs {len(entities)} entities")
 
     changed = False
     for node, entity in zip(nodes, entities):

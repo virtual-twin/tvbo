@@ -12,6 +12,7 @@ source of truth.
 Usage:
     python generate_openminds.py [--input PATH] [--output PATH]
 """
+
 from __future__ import annotations
 
 import argparse
@@ -33,10 +34,8 @@ from tvbo.export.openminds import (
     EXTERNAL_TYPE_MAPPINGS,
     LINKML_TO_JSON_TYPE,
     OPENMINDS_CATEGORIES,
-    OPENMINDS_CONTEXT,
     OPENMINDS_EXTENDS,
     SKIP_CLASSES,
-    TVBO_TO_OPENMINDS_TYPE,
 )
 
 
@@ -129,7 +128,7 @@ def build_instruction(slot_name: str, slot_def: dict[str, Any]) -> str:
 
     # Generate generic instruction from slot name
     readable_name = slot_name.replace("_", " ")
-    range_type = slot_def.get("range", "value")
+    slot_def.get("range", "value")
 
     if slot_def.get("multivalued"):
         return f"Add all {readable_name}."
@@ -276,7 +275,7 @@ def generate_openminds_schemas(
 
 def update_readme(output_dir: Path, generated_files: list[str]) -> None:
     """Update README with list of generated schemas."""
-    readme_path = output_dir.parent / "README.md"
+    output_dir.parent / "README.md"
 
     # Count schemas by category
     categories = {

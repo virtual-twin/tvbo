@@ -12,6 +12,7 @@ and openMINDS-compatible JSON-LD format.
 This module is the **single source of truth** for all openMINDS type mappings.
 Both runtime conversion and schema generation import from here.
 """
+
 from __future__ import annotations
 
 import json
@@ -283,14 +284,11 @@ def _from_openminds_value(value: Any, target_type: type | None = None) -> Any:
     # Dicts (potential objects)
     if isinstance(value, dict):
         # Remove JSON-LD metadata
-        cleaned = {
-            k: v for k, v in value.items()
-            if not k.startswith("@") or k == "@id"
-        }
+        cleaned = {k: v for k, v in value.items() if not k.startswith("@") or k == "@id"}
 
         # If it has @type, try to instantiate the appropriate class
         if "@type" in value:
-            om_type = value["@type"]
+            value["@type"]
             # For now, just return the cleaned dict
             # Subclasses can handle specific type instantiation
             return {k: _from_openminds_value(v) for k, v in cleaned.items()}
@@ -303,6 +301,7 @@ def _from_openminds_value(value: Any, target_type: type | None = None) -> Any:
 # =============================================================================
 # SimulationExperiment Conversion
 # =============================================================================
+
 
 def experiment_to_openminds(
     experiment: "SimulationExperiment",
@@ -387,6 +386,7 @@ def experiment_from_openminds(
 # SimulationStudy Conversion
 # =============================================================================
 
+
 def study_to_openminds(
     study: "SimulationStudy",
     base_id: str | None = None,
@@ -426,11 +426,9 @@ def study_to_openminds(
     experiments = getattr(study, "simulation_experiments", None) or []
     if experiments:
         result["simulation_experiments"] = [
-            experiment_to_openminds(
-                exp,
-                base_id=result.get("@id"),
-                include_context=False
-            ) if hasattr(exp, "_as_dict") else _to_openminds_value(exp)
+            experiment_to_openminds(exp, base_id=result.get("@id"), include_context=False)
+            if hasattr(exp, "_as_dict")
+            else _to_openminds_value(exp)
             for exp in experiments
         ]
 
@@ -481,6 +479,7 @@ def study_from_openminds(
 # =============================================================================
 # File I/O Utilities
 # =============================================================================
+
 
 def save_openminds(
     obj: Any,

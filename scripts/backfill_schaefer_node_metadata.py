@@ -29,14 +29,7 @@ ATLAS_DIR = ROOT / "tvbo" / "data" / "tvbo_data" / "atlas"
 
 def load_atlas_entities(seg: str, scale: str, resolution: str = "1") -> list[dict] | None:
     """Return atlas entities sorted by lookupLabel, or None if atlas YAML not found."""
-    fname = (
-        f"tpl-FSLMNI152"
-        f"_atlas-Schaefer2018"
-        f"_seg-{seg}"
-        f"_scale-{scale}"
-        f"_res-{resolution}"
-        f"_desc-ordered_dseg.yaml"
-    )
+    fname = f"tpl-FSLMNI152_atlas-Schaefer2018_seg-{seg}_scale-{scale}_res-{resolution}_desc-ordered_dseg.yaml"
     path = ATLAS_DIR / fname
     if not path.exists():
         return None
@@ -61,7 +54,7 @@ def backfill(path: Path, dry_run: bool) -> bool:
 
     # Determine seg/scale from filename entities
     entities = parse_filename_entities(path.stem)
-    seg = entities.get("seg")      # e.g. "17Networks"
+    seg = entities.get("seg")  # e.g. "17Networks"
     scale = entities.get("scale")  # e.g. "100"
 
     if not seg or not scale:
@@ -79,10 +72,7 @@ def backfill(path: Path, dry_run: bool) -> bool:
         return False
 
     if len(nodes) != len(atlas_entities):
-        print(
-            f"  [warn] {path.name}: node count mismatch "
-            f"(network={len(nodes)}, atlas={len(atlas_entities)}) — skipping"
-        )
+        print(f"  [warn] {path.name}: node count mismatch (network={len(nodes)}, atlas={len(atlas_entities)}) — skipping")
         return False
 
     changed = False

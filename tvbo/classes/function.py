@@ -36,7 +36,7 @@ From datamodel object:
 """
 
 import os
-from typing import Callable, Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional
 
 from linkml_runtime.loaders import yaml_loader
 

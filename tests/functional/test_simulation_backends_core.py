@@ -77,14 +77,10 @@ class TestJAXBackendDetailed:
         if hasattr(result, "labels_dimensions") and result.labels_dimensions:
             output_labels = result.labels_dimensions.get("State Variable", [])
             if model.output:
-                assert output_labels == list(model.output), (
-                    f"Labels {output_labels} don't match output spec {model.output}"
-                )
+                assert output_labels == list(model.output), f"Labels {output_labels} don't match output spec {model.output}"
             else:
                 expected = list(model.state_variables.keys())
-                assert output_labels == expected, (
-                    f"Labels {output_labels} don't match state variables {expected}"
-                )
+                assert output_labels == expected, f"Labels {output_labels} don't match state variables {expected}"
 
 
 @pytest.mark.backend_jax

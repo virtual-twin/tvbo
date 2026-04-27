@@ -30,16 +30,11 @@ DEFAULT_SCALES = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
 
 
 def build_filename(scale: int, networks: int, resolution: str) -> str:
-    return (
-        f"Schaefer2018_{scale}Parcels_{networks}Networks_"
-        f"order_FSLMNI152_{resolution}.nii.gz"
-    )
+    return f"Schaefer2018_{scale}Parcels_{networks}Networks_order_FSLMNI152_{resolution}.nii.gz"
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Download original Schaefer2018 atlas files from CBIG."
-    )
+    parser = argparse.ArgumentParser(description="Download original Schaefer2018 atlas files from CBIG.")
     parser.add_argument(
         "--scales",
         type=int,

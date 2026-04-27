@@ -21,9 +21,7 @@ class GraphRunner:
         self.graph = connectome.create_graph()
 
     def add_local_model(self, model):
-        if isinstance(model, localdynamics.Model) or isinstance(
-            model, localdynamics.Dynamics
-        ):
+        if isinstance(model, localdynamics.Model) or isinstance(model, localdynamics.Dynamics):
             for node in self.graph.nodes:
                 self.graph.nodes[node]["model"] = model
 
@@ -80,31 +78,27 @@ class GraphRunner:
         """
         if format.lower() == "pyrates":
             from tvbo.codegen.pyrates import network_to_pyrates_yaml_string
+
             return network_to_pyrates_yaml_string(self, filepath)
         else:
             from tvbo.utils import to_yaml as _to_yaml
+
             return _to_yaml(self, filepath)
 
     def add_stimulus(self, node, stimulus, stvar=None, as_derived_variable=False):
         if as_derived_variable:
-            self.graph.nodes[node]["model"].add_stimulus(
-                stimulus, as_derived_variable=True
-            )
+            self.graph.nodes[node]["model"].add_stimulus(stimulus, as_derived_variable=True)
         else:
             self.graph.nodes[node]["stimulus"] = stimulus
             if stvar is not None:
                 if not isinstance(stvar, list):
                     stvar = [stvar]
                 for var in stvar:
-                    self.graph.nodes[node]["model"].state_variables[
-                        var
-                    ].stimulation_variable = True
+                    self.graph.nodes[node]["model"].state_variables[var].stimulation_variable = True
 
     def setup_dfuns(self):
         for node in self.graph.nodes:
-            self.graph.nodes[node]["dfun"] = self.graph.nodes[node]["model"].execute(
-                "python-network"
-            )
+            self.graph.nodes[node]["dfun"] = self.graph.nodes[node]["model"].execute("python-network")
 
     def setup_cfuns(self):
         from sympy import Symbol, lambdify
@@ -139,19 +133,13 @@ class GraphRunner:
     def setup_initial_conditions(self):
         for node in self.graph.nodes:
             self.graph.nodes[node]["state"] = np.array(
-                [
-                    sv.initial_value
-                    for sv in self.graph.nodes[node]["model"].state_variables.values()
-                ]
+                [sv.initial_value for sv in self.graph.nodes[node]["model"].state_variables.values()]
             )
             # self.graph.nodes[node]["state"] = np.random.uniform(-1, 1, size=2)
 
     def setup_stimulation(self, sampling_rate=500, duration=2000):
         for node in self.graph.nodes:
-            if (
-                "stimulus" in self.graph.nodes[node].keys()
-                and self.graph.nodes[node]["stimulus"] is not None
-            ):
+            if "stimulus" in self.graph.nodes[node].keys() and self.graph.nodes[node]["stimulus"] is not None:
                 stimulus = self.graph.nodes[node]["stimulus"]
                 self.graph.nodes[node]["stimfun"] = stimulus.execute(
                     format="python",
@@ -166,9 +154,7 @@ class GraphRunner:
         self.setup_cfuns()
 
         compgraph.initialize_graph_states_with_history(self.graph, delay_buffer=1000)
-        time_points = compgraph.simulate_graph_dynamics_with_delay(
-            self.graph, T=duration, dt=dt
-        )
+        time_points = compgraph.simulate_graph_dynamics_with_delay(self.graph, T=duration, dt=dt)
 
         ts = compgraph.collect_time_series(self.graph, time_points)
 

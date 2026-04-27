@@ -13,6 +13,7 @@ from tvbo.datamodel.schema import Equation
 # Custom SymPy Classes for Mathematical Aggregation
 # =============================================================================
 
+
 class Mean(Function):
     """Mean over indexed expression: Mean(f(x[i]), (i, 0, N-1)).
 
@@ -23,6 +24,7 @@ class Mean(Function):
         Mean(1 - correlation(x[i], y[i]), (i, 0, N-1))
         -> jnp.mean(jax.vmap(lambda x, y: 1 - correlation(x, y))(x, y))
     """
+
     @classmethod
     def eval(cls, *args):
         # Don't auto-evaluate; let the printer handle code generation
@@ -117,11 +119,11 @@ def parse_eq(
 
     # Add SymPy's Sum, Product, IndexedBase for proper mathematical notation
     # These allow parsing expressions like Sum(x[i], (i, 0, n-1))
-    local_dict.setdefault('Sum', Sum)
-    local_dict.setdefault('Product', Product)
-    local_dict.setdefault('IndexedBase', IndexedBase)
-    local_dict.setdefault('Mean', Mean)  # Custom Mean function for indexed averaging
-    local_dict.setdefault('sqrt', sqrt)
+    local_dict.setdefault("Sum", Sum)
+    local_dict.setdefault("Product", Product)
+    local_dict.setdefault("IndexedBase", IndexedBase)
+    local_dict.setdefault("Mean", Mean)  # Custom Mean function for indexed averaging
+    local_dict.setdefault("sqrt", sqrt)
 
     # Merge array functions (user-provided local_dict takes precedence)
     for name, fn in ARRAY_FUNCTIONS.items():
@@ -187,7 +189,7 @@ def parse_eq(
     # This allows natural mathematical notation: Sum(x[i]*y[i], (i, 0, n-1))
     # NOTE: This MUST override any Symbol definitions (including from parameters)
     # because x[i] syntax requires IndexedBase, not Symbol
-    indexed_pattern = re.compile(r'\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\[')
+    indexed_pattern = re.compile(r"\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\[")
     for match in indexed_pattern.finditer(expression):
         var_name = match.group(1)
         # Override even if already defined - indexed access requires IndexedBase
@@ -195,7 +197,7 @@ def parse_eq(
 
     # Auto-detect index variables from Sum/Product limits: Sum(..., (i, a, b))
     # Pattern matches the first element in limit tuples like (i, 0, n-1)
-    limit_pattern = re.compile(r'\(\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*,\s*[^,]+\s*,\s*[^)]+\)')
+    limit_pattern = re.compile(r"\(\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*,\s*[^,]+\s*,\s*[^)]+\)")
     for match in limit_pattern.finditer(expression):
         idx_name = match.group(1)
         # Create as Symbol if not already defined

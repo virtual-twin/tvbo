@@ -125,16 +125,14 @@ def _add_k_legend(ax, er, values, fmt=".0f", **kwargs):
     else:
         lines = [f"{ln} = {v:{fmt}}" for ln, v in zip(latex_names, vals)]
 
-    text = "\n".join(f"${l}$" for l in lines)
+    text = "\n".join(f"${ln}$" for ln in lines)
     kw = dict(
         transform=ax.transAxes,
         fontsize=FS_ANNOT,
         fontweight="bold",
         ha="right",
         va="bottom",
-        bbox=dict(
-            boxstyle="round,pad=0.3", facecolor="white", edgecolor="0.7", alpha=0.9
-        ),
+        bbox=dict(boxstyle="round,pad=0.3", facecolor="white", edgecolor="0.7", alpha=0.9),
     )
     kw.update(kwargs)
     ax.text(0.98, 0.04, text, **kw)
@@ -266,9 +264,7 @@ def plot_fig3(res, axes=None):
         # Caller provided a sequence of axes
         ax_arr = list(axes)
         if len(ax_arr) != n:
-            raise ValueError(
-                f"Expected {n} axes for {n} sweep values, got {len(ax_arr)}"
-            )
+            raise ValueError(f"Expected {n} axes for {n} sweep values, got {len(ax_arr)}")
         fig = None
     else:
         # Single axis — overlay all traces
@@ -301,11 +297,7 @@ def plot_fig3(res, axes=None):
         ax = axes
         for i in range(n):
             data = np.asarray(er.results[i]).squeeze()
-            label = (
-                f"${_axis_latex(ax_name)}={float(ax_values[i]):.4g}$"
-                if ax_values is not None
-                else f"#{i}"
-            )
+            label = f"${_axis_latex(ax_name)}={float(ax_values[i]):.4g}$" if ax_values is not None else f"#{i}"
             if data.ndim > 1:
                 for node_idx in range(data.shape[-1]):
                     ax.plot(time, data[:, node_idx], alpha=0.7, label=label)
@@ -488,12 +480,10 @@ def plot_fig4(res):
 
     # Layout: nC rows of explorations (nV cols) + 5 legend/timeseries rows
     expl_rows = [[f"ex{row}{vi}" for vi in range(nV)] for row in range(nC)]
-    ts_rows = [[f"leg{i+1}", f"ts{i}", f"ts{i}"] for i in range(5)]
+    ts_rows = [[f"leg{i + 1}", f"ts{i}", f"ts{i}"] for i in range(5)]
     layout = expl_rows + ts_rows
 
-    fig, axd = plt.subplot_mosaic(
-        layout, figsize=_figsize(4), height_ratios=[1] * nC + [1] * 5
-    )
+    fig, axd = plt.subplot_mosaic(layout, figsize=_figsize(4), height_ratios=[1] * nC + [1] * 5)
 
     # Exploration heatmaps
     for vi in range(nV):
@@ -515,9 +505,7 @@ def plot_fig4(res):
             for bp, bl in zip(b_vis, b_ticks):
                 ax.plot([bp, bp], [-0.12, 0], clip_on=False)
                 if row == nC - 1:
-                    ax.text(
-                        bp, -0.35, f"{bl:g}", ha="center", va="top", fontsize=FS_TICK/2
-                    )
+                    ax.text(bp, -0.35, f"{bl:g}", ha="center", va="top", fontsize=FS_TICK / 2)
 
             for ap, al in zip(a_vis, a_ticks):
                 ax.plot(
@@ -532,7 +520,7 @@ def plot_fig4(res):
                         f"{al:g}",
                         ha="right",
                         va="center",
-                        fontsize=FS_TICK/2,
+                        fontsize=FS_TICK / 2,
                     )
 
             ax.set_xlim(X.min() - 0.5, X.max() + 0.15)
@@ -552,9 +540,7 @@ def plot_fig4(res):
                     fontsize=FS_LABEL,
                 )
             if row == 0:
-                ax.set_title(
-                    f"{axis_names[3]} = {v0_vals[vi]}", fontsize=FS_TITLE, pad=2
-                )
+                ax.set_title(f"{axis_names[3]} = {v0_vals[vi]}", fontsize=FS_TITLE, pad=2)
 
     # Display order: light→dark (top→bottom), matching the original paper.
     # regime 4 = Hyperactive noise (lightest) … regime 0 = Hypoactive noise (darkest)
@@ -562,7 +548,7 @@ def plot_fig4(res):
 
     # Legend
     for i, rid in enumerate(display_order):
-        ax_leg = axd[f"leg{i+1}"]
+        ax_leg = axd[f"leg{i + 1}"]
         ax_leg.axis("off")
         ax_leg.add_patch(
             plt.Rectangle(
@@ -578,7 +564,7 @@ def plot_fig4(res):
             0.5,
             regime_labels[rid],
             va="center",
-            fontsize=FS_ANNOT/1.5,
+            fontsize=FS_ANNOT / 1.5,
             transform=ax_leg.transAxes,
         )
 
@@ -783,7 +769,7 @@ def plot_fig6(res, experiment):
     def _idx(vals, target):
         return int(np.argmin(np.abs(vals - target)))
 
-    n0g, n1g = len(ax0_vals), len(ax1_vals)
+    _n0g, _n1g = len(ax0_vals), len(ax1_vals)
     col1_pts = [
         (_idx(ax0_vals, 100), _idx(ax1_vals, 50)),
         (_idx(ax0_vals, 500), _idx(ax1_vals, 150)),
@@ -801,9 +787,9 @@ def plot_fig6(res, experiment):
         ["heat", "heat"],
     ]
     for i in range(len(col1_pts)):
-        layout.append([f"c1_{i+1}", f"c1_{i+1}"])
-    for l in "abc"[: len(col2_pts)]:
-        layout.append([f"c2_{l}", f"c2_{l}"])
+        layout.append([f"c1_{i + 1}", f"c1_{i + 1}"])
+    for lbl in "abc"[: len(col2_pts)]:
+        layout.append([f"c2_{lbl}", f"c2_{lbl}"])
 
     n_ts = len(col1_pts) + len(col2_pts)
     fig, axd = plt.subplot_mosaic(
@@ -815,12 +801,10 @@ def plot_fig6(res, experiment):
 
     # Contour plot with warped (equally-spaced) axes matching original paper ticks
     ax = axd["heat"]
-    std_combined = (std_node0 + std_node1) / 2
+    (std_node0 + std_node1) / 2
 
     # Non-linear tick values from the original paper
-    x_ticks = np.array(
-        [0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1500], dtype=float
-    )
+    x_ticks = np.array([0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1500], dtype=float)
     y_ticks = np.array([0, 50, 100, 500, 1000, 2000, 4000, 8000], dtype=float)
 
     # Map data values to equally-spaced visual positions
@@ -857,6 +841,7 @@ def plot_fig6(res, experiment):
     # Without resampling, contours are jagged in the low-K1 region where
     # only a few data points span multiple visual tick intervals.
     from scipy.interpolate import RegularGridInterpolator
+
     n_vis = 200  # uniform visual grid resolution
     xv_uniform = np.linspace(x_vis[0], x_vis[-1], n_vis)
     yv_uniform = np.linspace(y_vis[0], y_vis[-1], n_vis)
@@ -865,8 +850,11 @@ def plot_fig6(res, experiment):
     def _resample_regime(regimes_raw):
         """Interpolate regime field from data grid to uniform visual grid."""
         interp = RegularGridInterpolator(
-            (ax0w, ax1w), regimes_raw.astype(float),
-            method="nearest", bounds_error=False, fill_value=None,
+            (ax0w, ax1w),
+            regimes_raw.astype(float),
+            method="nearest",
+            bounds_error=False,
+            fill_value=None,
         )
         resampled = interp(np.stack([Xv.ravel(), Yv.ravel()], axis=-1))
         return resampled.reshape(n_vis, n_vis)
@@ -950,7 +938,7 @@ def plot_fig6(res, experiment):
     # Column 1 timeseries
     for ri, (i, j) in enumerate(col1_pts):
         k0, k1 = float(ax0_vals[i]), float(ax1_vals[j])
-        ax_ts = axd[f"c1_{ri+1}"]
+        ax_ts = axd[f"c1_{ri + 1}"]
         ax_ts.plot(t, grid[i, j, :, 0])
         ax_ts.tick_params(labelsize=FS_TICK)
         ax_ts.set_ylabel("mV", fontsize=FS_TICK)
@@ -964,7 +952,7 @@ def plot_fig6(res, experiment):
         ax_ts.text(
             0.02,
             0.92,
-            f"{ri+1}  {pt_label}",
+            f"{ri + 1}  {pt_label}",
             transform=ax_ts.transAxes,
             fontsize=FS_TICK,
             va="top",
@@ -1063,14 +1051,12 @@ def plot_fig8(res, experiment):
 
         # K label under bottom panel of each pair
         ax0_latex = _axis_latex(_get_axis_name(er.axes[0]))
-        axes[row_base + n_nodes - 1, col].set_xlabel(
-            f"${ax0_latex} = {int(K_vals[panel_idx])}$", fontsize=FS_LABEL
-        )
+        axes[row_base + n_nodes - 1, col].set_xlabel(f"${ax0_latex} = {int(K_vals[panel_idx])}$", fontsize=FS_LABEL)
 
     for r in range(n_rows):
         axes[r, 0].set_ylabel("mV")
 
-    n_trials_str = f" ({meta['n_trials']} trials)" if meta["n_trials"] > 1 else ""
+    f" ({meta['n_trials']} trials)" if meta["n_trials"] > 1 else ""
     # fig.suptitle(f"Fig. 8 — VEP: symmetric K{n_trials_str}", fontsize=FS_SUPTITLE, y=0.98)
     fig.tight_layout(rect=[0, 0, 1, 0.96])
     plt.close()
@@ -1103,8 +1089,8 @@ def plot_fig9(res, experiment):
     # Axis values (per-element K)
     ax0_vals = _get_axis_values(er, 0)
     ax1_vals = _get_axis_values(er, 1)
-    ax0_latex = _axis_latex(_get_axis_name(er.axes[0]))
-    ax1_latex = _axis_latex(_get_axis_name(er.axes[1]))
+    _axis_latex(_get_axis_name(er.axes[0]))
+    _axis_latex(_get_axis_name(er.axes[1]))
 
     t0_stim = _get_stim_onset(experiment)
     meta = _get_exploration_meta(experiment, "VEP_asymmetric_K_fig9")
@@ -1136,7 +1122,7 @@ def plot_fig9(res, experiment):
 
             ax.set_yticks([0, 5, 10, 15, 20, 25, 30])
 
-    n_trials = meta["n_trials"]
+    meta["n_trials"]
     # fig.suptitle(
     #     f"Fig. 9 — Average VEP ({n_trials} trials), "
     #     f"${ax0_latex} \\neq {ax1_latex}$",
@@ -1165,7 +1151,7 @@ def plot_fig10(res, experiment):
     """
     er = res.exploration.VEP_single_trials_fig10
     data = np.array(er.results)  # (n_configs, n_trials, n_time, n_nodes)
-    meta = _get_exploration_meta(experiment, "VEP_single_trials_fig10")
+    _get_exploration_meta(experiment, "VEP_single_trials_fig10")
 
     dt = er.dt
     # First config
@@ -1179,9 +1165,7 @@ def plot_fig10(res, experiment):
 
     t0_stim = _get_stim_onset(experiment)
 
-    fig, axes = plt.subplots(
-        n_nodes, 1, figsize=_figsize(10), sharex=True, gridspec_kw={"hspace": 0.3}
-    )
+    fig, axes = plt.subplots(n_nodes, 1, figsize=_figsize(10), sharex=True, gridspec_kw={"hspace": 0.3})
     if not hasattr(axes, "__len__"):
         axes = [axes]
 
@@ -1236,9 +1220,7 @@ def plot_fig11(res, experiment):
     meta = _get_exploration_meta(experiment, "VEP_delayed_fig11")
 
     n_rows = n_configs * n_nodes
-    fig, axes = plt.subplots(
-        n_rows, 1, figsize=_figsize(11), sharex=True, gridspec_kw={"hspace": 0.4}
-    )
+    fig, axes = plt.subplots(n_rows, 1, figsize=_figsize(11), sharex=True, gridspec_kw={"hspace": 0.4})
 
     # Build row indices: (config_idx, node_idx)
     row_indices = []
@@ -1266,7 +1248,7 @@ def plot_fig11(res, experiment):
             _annotate_neg_peaks(ax, t_s, trace, t0_stim)
 
     axes[-1].set_xlabel("s")
-    n_trials = meta["n_trials"]
+    meta["n_trials"]
     # fig.suptitle(
     #     f"Fig. 11 — Average VEP ({n_trials} trials), " "different columns with delay",
     #     fontweight="bold",
