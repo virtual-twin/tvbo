@@ -10,10 +10,12 @@ postsynaptic current is a continuous function of presynaptic voltage, without
 discrete spike events.  Uses FitzHugh-Nagumo cells.
 
 ```{python}
-from pathlib import Path
 
-nml_file = Path.home() / "work_data/toolboxes/NeuroML2/examples/NML2_AnalogSynapses.nml"
-text = nml_file.read_text()
+import urllib.request
+
+url = "https://raw.githubusercontent.com/NeuroML/NeuroML2/master/examples/NML2_AnalogSynapses.nml"
+with urllib.request.urlopen(url) as resp:
+    text = resp.read().decode()
 
 for line in text.split('\n'):
     stripped = line.strip()

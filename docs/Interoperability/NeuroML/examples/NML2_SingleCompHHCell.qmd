@@ -13,10 +13,12 @@ This is the canonical example for compatibility with multi-simulator export
 (NEURON, Brian2, NEST) via pyNeuroML.
 
 ```{python}
-from pathlib import Path
 
-nml_file = Path.home() / "work_data/toolboxes/NeuroML2/examples/NML2_SingleCompHHCell.nml"
-text = nml_file.read_text()
+import urllib.request
+
+url = "https://raw.githubusercontent.com/NeuroML/NeuroML2/master/examples/NML2_SingleCompHHCell.nml"
+with urllib.request.urlopen(url) as resp:
+    text = resp.read().decode()
 
 # Show key structure
 in_cell = False

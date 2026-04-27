@@ -12,10 +12,11 @@ Demonstrates NeuroML morphology specification:
 - Parent-child relationships for branching
 
 ```{python}
-from pathlib import Path
+import urllib.request
 
-nml_file = Path.home() / "work_data/toolboxes/NeuroML2/examples/NML2_SimpleMorphology.nml"
-text = nml_file.read_text()
+url = "https://raw.githubusercontent.com/NeuroML/NeuroML2/master/examples/NML2_SimpleMorphology.nml"
+with urllib.request.urlopen(url) as resp:
+    text = resp.read().decode()
 
 # Show morphology elements
 for line in text.split('\n'):
