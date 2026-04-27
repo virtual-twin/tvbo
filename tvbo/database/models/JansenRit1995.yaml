@@ -126,7 +126,7 @@ functions:
     name: Sigm
     definition: "Sigmoid potential-to-firing-rate transformation (Eq. 3)"
     arguments:
-      - name: v
+      - v
     equation:
       rhs: 2*e0 / (1 + exp(r*(v0 - v)))
 
