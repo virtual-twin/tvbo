@@ -121,12 +121,12 @@ branches:
     discretization:
       method: collocation
       parameters:
-        - name: mesh_intervals
+        mesh_intervals:
           value: 20                 # Number of mesh intervals
-        - name: degree
+        degree:
           value: 4                  # Polynomial degree per interval
-        - name: mesh_adaptation
-          value: false               # Adaptive mesh refinement
+        mesh_adaptation:
+          value: false              # Adaptive mesh refinement
       options:
         - name: jacobian
           value: DenseAnalyticalInplace         # Jacobian type for collocation:
