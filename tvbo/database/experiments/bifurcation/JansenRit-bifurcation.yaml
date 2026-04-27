@@ -37,7 +37,7 @@ continuations:
     bothside: true
 
     branches:
-      - name: po_alpha_rhythm
+      po_alpha_rhythm:
         description: "Alpha-rhythm periodic orbit branch from Hopf point"
         source_point: "hopf:all"
         discretization:
