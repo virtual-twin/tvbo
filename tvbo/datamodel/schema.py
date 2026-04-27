@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-04-27T16:50:29
+# Generation date: 2026-04-27T16:59:28
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -4059,6 +4059,7 @@ class CommonCoordinateSpace(YAMLRoot):
 
     name: Union[str, CommonCoordinateSpaceName] = None
     abbreviation: Optional[str] = None
+    alternateName: Optional[Union[str, list[str]]] = empty_list()
     unit: Optional[Union[str, "UnitEnum"]] = None
     license: Optional[str] = None
     anatomicalAxesOrientation: Optional[str] = None
@@ -4074,6 +4075,10 @@ class CommonCoordinateSpace(YAMLRoot):
 
         if self.abbreviation is not None and not isinstance(self.abbreviation, str):
             self.abbreviation = str(self.abbreviation)
+
+        if not isinstance(self.alternateName, list):
+            self.alternateName = [self.alternateName] if self.alternateName is not None else []
+        self.alternateName = [v if isinstance(v, str) else str(v) for v in self.alternateName]
 
         if self.unit is not None and not isinstance(self.unit, UnitEnum):
             self.unit = UnitEnum(self.unit)

@@ -287,7 +287,8 @@ terminology:
         z: -17.0
       color: '#781283'
       hemisphere: left
-      hasParent: LH_VisCent
+      hasParent:
+        - LH_VisCent
     17Networks_LH_VisCent_ExStr_2:
       name: 17Networks_LH_VisCent_ExStr_2
       lookupLabel: 2
@@ -298,7 +299,8 @@ terminology:
         z: -10.0
       color: '#781284'
       hemisphere: left
-      hasParent: LH_VisCent
+      hasParent:
+        - LH_VisCent
     17Networks_LH_VisCent_ExStr_3:
       name: 17Networks_LH_VisCent_ExStr_3
       lookupLabel: 3
@@ -309,7 +311,8 @@ terminology:
         z: -16.0
       color: '#781285'
       hemisphere: left
-      hasParent: LH_VisCent
+      hasParent:
+        - LH_VisCent
     17Networks_LH_VisCent_ExStr_4:
       name: 17Networks_LH_VisCent_ExStr_4
       lookupLabel: 4
@@ -320,7 +323,8 @@ terminology:
         z: -15.0
       color: '#781286'
       hemisphere: left
-      hasParent: LH_VisCent
+      hasParent:
+        - LH_VisCent
     17Networks_LH_VisCent_ExStr_5:
       name: 17Networks_LH_VisCent_ExStr_5
       lookupLabel: 5
@@ -331,7 +335,8 @@ terminology:
         z: -12.0
       color: '#781288'
       hemisphere: left
-      hasParent: LH_VisCent
+      hasParent:
+        - LH_VisCent
     17Networks_LH_VisCent_ExStr_6:
       name: 17Networks_LH_VisCent_ExStr_6
       lookupLabel: 6
@@ -342,7 +347,8 @@ terminology:
         z: -3.0
       color: '#781289'
       hemisphere: left
-      hasParent: LH_VisCent
+      hasParent:
+        - LH_VisCent
     17Networks_LH_VisCent_Striate_1:
       name: 17Networks_LH_VisCent_Striate_1
       lookupLabel: 7
@@ -353,7 +359,8 @@ terminology:
         z: -7.0
       color: '#78128a'
       hemisphere: left
-      hasParent: LH_VisCent
+      hasParent:
+        - LH_VisCent
     17Networks_LH_VisCent_ExStr_7:
       name: 17Networks_LH_VisCent_ExStr_7
       lookupLabel: 8
@@ -364,7 +371,8 @@ terminology:
         z: 6.0
       color: '#78128b'
       hemisphere: left
-      hasParent: LH_VisCent
+      hasParent:
+        - LH_VisCent
     17Networks_LH_VisCent_ExStr_8:
       name: 17Networks_LH_VisCent_ExStr_8
       lookupLabel: 9
@@ -375,7 +383,8 @@ terminology:
         z: 6.0
       color: '#78128c'
       hemisphere: left
-      hasParent: LH_VisCent
+      hasParent:
+        - LH_VisCent
     17Networks_LH_VisCent_ExStr_9:
       name: 17Networks_LH_VisCent_ExStr_9
       lookupLabel: 10
@@ -386,7 +395,8 @@ terminology:
         z: 14.0
       color: '#78128d'
       hemisphere: left
-      hasParent: LH_VisCent
+      hasParent:
+        - LH_VisCent
     17Networks_LH_VisCent_ExStr_10:
       name: 17Networks_LH_VisCent_ExStr_10
       lookupLabel: 11
@@ -397,7 +407,8 @@ terminology:
         z: 17.0
       color: '#78128e'
       hemisphere: left
-      hasParent: LH_VisCent
+      hasParent:
+        - LH_VisCent
     17Networks_LH_VisCent_ExStr_11:
       name: 17Networks_LH_VisCent_ExStr_11
       lookupLabel: 12
@@ -408,7 +419,8 @@ terminology:
         z: 21.0
       color: '#781387'
       hemisphere: left
-      hasParent: LH_VisCent
+      hasParent:
+        - LH_VisCent
     17Networks_LH_VisPeri_ExStrInf_1:
       name: 17Networks_LH_VisPeri_ExStrInf_1
       lookupLabel: 13
@@ -419,7 +431,8 @@ terminology:
         z: -8.0
       color: '#ff0101'
       hemisphere: left
-      hasParent: LH_VisPeri
+      hasParent:
+        - LH_VisPeri
     17Networks_LH_VisPeri_ExStrInf_2:
       name: 17Networks_LH_VisPeri_ExStrInf_2
       lookupLabel: 14
@@ -430,7 +443,8 @@ terminology:
         z: -5.0
       color: '#ff0102'
       hemisphere: left
-      hasParent: LH_VisPeri
+      hasParent:
+        - LH_VisPeri
     17Networks_LH_VisPeri_ExStrInf_3:
       name: 17Networks_LH_VisPeri_ExStrInf_3
       lookupLabel: 15
@@ -441,7 +455,8 @@ terminology:
         z: -6.0
       color: '#ff0103'
       hemisphere: left
-      hasParent: LH_VisPeri
+      hasParent:
+        - LH_VisPeri
     17Networks_LH_VisPeri_ExStrInf_4:
       name: 17Networks_LH_VisPeri_ExStrInf_4
       lookupLabel: 16
@@ -452,7 +467,8 @@ terminology:
         z: -5.0
       color: '#ff0104'
       hemisphere: left
-      hasParent: LH_VisPeri
+      hasParent:
+        - LH_VisPeri
     17Networks_LH_VisPeri_ExStrInf_5:
       name: 17Networks_LH_VisPeri_ExStrInf_5
       lookupLabel: 17
@@ -463,7 +479,8 @@ terminology:
         z: 1.0
       color: '#ff0105'
       hemisphere: left
-      hasParent: LH_VisPeri
+      hasParent:
+        - LH_VisPeri
     17Networks_LH_VisPeri_StriCal_1:
       name: 17Networks_LH_VisPeri_StriCal_1
       lookupLabel: 18
@@ -474,7 +491,8 @@ terminology:
         z: 2.0
       color: '#ff0106'
       hemisphere: left
-      hasParent: LH_VisPeri
+      hasParent:
+        - LH_VisPeri
     17Networks_LH_VisPeri_StriCal_2:
       name: 17Networks_LH_VisPeri_StriCal_2
       lookupLabel: 19
@@ -485,7 +503,8 @@ terminology:
         z: 9.0
       color: '#ff0107'
       hemisphere: left
-      hasParent: LH_VisPeri
+      hasParent:
+        - LH_VisPeri
     17Networks_LH_VisPeri_ExStrSup_1:
       name: 17Networks_LH_VisPeri_ExStrSup_1
       lookupLabel: 20
@@ -496,7 +515,8 @@ terminology:
         z: 7.0
       color: '#ff0200'
       hemisphere: left
-      hasParent: LH_VisPeri
+      hasParent:
+        - LH_VisPeri
     17Networks_LH_VisPeri_ExStrSup_2:
       name: 17Networks_LH_VisPeri_ExStrSup_2
       lookupLabel: 21
@@ -507,7 +527,8 @@ terminology:
         z: 24.0
       color: '#ff0201'
       hemisphere: left
-      hasParent: LH_VisPeri
+      hasParent:
+        - LH_VisPeri
     17Networks_LH_VisPeri_ExStrSup_3:
       name: 17Networks_LH_VisPeri_ExStrSup_3
       lookupLabel: 22
@@ -518,7 +539,8 @@ terminology:
         z: 20.0
       color: '#ff0202'
       hemisphere: left
-      hasParent: LH_VisPeri
+      hasParent:
+        - LH_VisPeri
     17Networks_LH_VisPeri_ExStrSup_4:
       name: 17Networks_LH_VisPeri_ExStrSup_4
       lookupLabel: 23
@@ -529,7 +551,8 @@ terminology:
         z: 33.0
       color: '#ff0203'
       hemisphere: left
-      hasParent: LH_VisPeri
+      hasParent:
+        - LH_VisPeri
     17Networks_LH_VisPeri_ExStrSup_5:
       name: 17Networks_LH_VisPeri_ExStrSup_5
       lookupLabel: 24
@@ -540,7 +563,8 @@ terminology:
         z: 36.0
       color: '#ff0204'
       hemisphere: left
-      hasParent: LH_VisPeri
+      hasParent:
+        - LH_VisPeri
     17Networks_LH_SomMotA_1:
       name: 17Networks_LH_SomMotA_1
       lookupLabel: 25
@@ -551,7 +575,8 @@ terminology:
         z: 47.0
       color: '#4681b4'
       hemisphere: left
-      hasParent: LH_SomMotA
+      hasParent:
+        - LH_SomMotA
     17Networks_LH_SomMotA_2:
       name: 17Networks_LH_SomMotA_2
       lookupLabel: 26
@@ -562,7 +587,8 @@ terminology:
         z: 47.0
       color: '#4682ad'
       hemisphere: left
-      hasParent: LH_SomMotA
+      hasParent:
+        - LH_SomMotA
     17Networks_LH_SomMotA_3:
       name: 17Networks_LH_SomMotA_3
       lookupLabel: 27
@@ -573,7 +599,8 @@ terminology:
         z: 54.0
       color: '#4682ae'
       hemisphere: left
-      hasParent: LH_SomMotA
+      hasParent:
+        - LH_SomMotA
     17Networks_LH_SomMotA_4:
       name: 17Networks_LH_SomMotA_4
       lookupLabel: 28
@@ -584,7 +611,8 @@ terminology:
         z: 58.0
       color: '#4682af'
       hemisphere: left
-      hasParent: LH_SomMotA
+      hasParent:
+        - LH_SomMotA
     17Networks_LH_SomMotA_5:
       name: 17Networks_LH_SomMotA_5
       lookupLabel: 29
@@ -595,7 +623,8 @@ terminology:
         z: 53.0
       color: '#4682b0'
       hemisphere: left
-      hasParent: LH_SomMotA
+      hasParent:
+        - LH_SomMotA
     17Networks_LH_SomMotA_6:
       name: 17Networks_LH_SomMotA_6
       lookupLabel: 30
@@ -606,7 +635,8 @@ terminology:
         z: 54.0
       color: '#4682b1'
       hemisphere: left
-      hasParent: LH_SomMotA
+      hasParent:
+        - LH_SomMotA
     17Networks_LH_SomMotA_7:
       name: 17Networks_LH_SomMotA_7
       lookupLabel: 31
@@ -617,7 +647,8 @@ terminology:
         z: 56.0
       color: '#4682b2'
       hemisphere: left
-      hasParent: LH_SomMotA
+      hasParent:
+        - LH_SomMotA
     17Networks_LH_SomMotA_8:
       name: 17Networks_LH_SomMotA_8
       lookupLabel: 32
@@ -628,7 +659,8 @@ terminology:
         z: 59.0
       color: '#4682b3'
       hemisphere: left
-      hasParent: LH_SomMotA
+      hasParent:
+        - LH_SomMotA
     17Networks_LH_SomMotA_9:
       name: 17Networks_LH_SomMotA_9
       lookupLabel: 33
@@ -639,7 +671,8 @@ terminology:
         z: 65.0
       color: '#4682b5'
       hemisphere: left
-      hasParent: LH_SomMotA
+      hasParent:
+        - LH_SomMotA
     17Networks_LH_SomMotA_10:
       name: 17Networks_LH_SomMotA_10
       lookupLabel: 34
@@ -650,7 +683,8 @@ terminology:
         z: 63.0
       color: '#4682b6'
       hemisphere: left
-      hasParent: LH_SomMotA
+      hasParent:
+        - LH_SomMotA
     17Networks_LH_SomMotA_11:
       name: 17Networks_LH_SomMotA_11
       lookupLabel: 35
@@ -661,7 +695,8 @@ terminology:
         z: 65.0
       color: '#4682b7'
       hemisphere: left
-      hasParent: LH_SomMotA
+      hasParent:
+        - LH_SomMotA
     17Networks_LH_SomMotA_12:
       name: 17Networks_LH_SomMotA_12
       lookupLabel: 36
@@ -672,7 +707,8 @@ terminology:
         z: 65.0
       color: '#4682b8'
       hemisphere: left
-      hasParent: LH_SomMotA
+      hasParent:
+        - LH_SomMotA
     17Networks_LH_SomMotA_13:
       name: 17Networks_LH_SomMotA_13
       lookupLabel: 37
@@ -683,7 +719,8 @@ terminology:
         z: 67.0
       color: '#4682b9'
       hemisphere: left
-      hasParent: LH_SomMotA
+      hasParent:
+        - LH_SomMotA
     17Networks_LH_SomMotA_14:
       name: 17Networks_LH_SomMotA_14
       lookupLabel: 38
@@ -694,7 +731,8 @@ terminology:
         z: 70.0
       color: '#4682ba'
       hemisphere: left
-      hasParent: LH_SomMotA
+      hasParent:
+        - LH_SomMotA
     17Networks_LH_SomMotA_15:
       name: 17Networks_LH_SomMotA_15
       lookupLabel: 39
@@ -705,7 +743,8 @@ terminology:
         z: 69.0
       color: '#4682bb'
       hemisphere: left
-      hasParent: LH_SomMotA
+      hasParent:
+        - LH_SomMotA
     17Networks_LH_SomMotA_16:
       name: 17Networks_LH_SomMotA_16
       lookupLabel: 40
@@ -716,7 +755,8 @@ terminology:
         z: 73.0
       color: '#4683b4'
       hemisphere: left
-      hasParent: LH_SomMotA
+      hasParent:
+        - LH_SomMotA
     17Networks_LH_SomMotA_17:
       name: 17Networks_LH_SomMotA_17
       lookupLabel: 41
@@ -727,7 +767,8 @@ terminology:
         z: 69.0
       color: '#4683b5'
       hemisphere: left
-      hasParent: LH_SomMotA
+      hasParent:
+        - LH_SomMotA
     17Networks_LH_SomMotA_18:
       name: 17Networks_LH_SomMotA_18
       lookupLabel: 42
@@ -738,7 +779,8 @@ terminology:
         z: 72.0
       color: '#4683b6'
       hemisphere: left
-      hasParent: LH_SomMotA
+      hasParent:
+        - LH_SomMotA
     17Networks_LH_SomMotA_19:
       name: 17Networks_LH_SomMotA_19
       lookupLabel: 43
@@ -749,7 +791,8 @@ terminology:
         z: 73.0
       color: '#4683b7'
       hemisphere: left
-      hasParent: LH_SomMotA
+      hasParent:
+        - LH_SomMotA
     17Networks_LH_SomMotB_Aud_1:
       name: 17Networks_LH_SomMotB_Aud_1
       lookupLabel: 44
@@ -760,7 +803,8 @@ terminology:
         z: 0.0
       color: '#2bcc9e'
       hemisphere: left
-      hasParent: LH_SomMotB
+      hasParent:
+        - LH_SomMotB
     17Networks_LH_SomMotB_Aud_2:
       name: 17Networks_LH_SomMotB_Aud_2
       lookupLabel: 45
@@ -771,7 +815,8 @@ terminology:
         z: 8.0
       color: '#2bcc9f'
       hemisphere: left
-      hasParent: LH_SomMotB
+      hasParent:
+        - LH_SomMotB
     17Networks_LH_SomMotB_Ins_1:
       name: 17Networks_LH_SomMotB_Ins_1
       lookupLabel: 46
@@ -782,7 +827,8 @@ terminology:
         z: 10.0
       color: '#2bcca0'
       hemisphere: left
-      hasParent: LH_SomMotB
+      hasParent:
+        - LH_SomMotB
     17Networks_LH_SomMotB_S2_1:
       name: 17Networks_LH_SomMotB_S2_1
       lookupLabel: 47
@@ -793,7 +839,8 @@ terminology:
         z: 13.0
       color: '#2bcca1'
       hemisphere: left
-      hasParent: LH_SomMotB
+      hasParent:
+        - LH_SomMotB
     17Networks_LH_SomMotB_S2_2:
       name: 17Networks_LH_SomMotB_S2_2
       lookupLabel: 48
@@ -804,7 +851,8 @@ terminology:
         z: 19.0
       color: '#2bcca2'
       hemisphere: left
-      hasParent: LH_SomMotB
+      hasParent:
+        - LH_SomMotB
     17Networks_LH_SomMotB_Aud_3:
       name: 17Networks_LH_SomMotB_Aud_3
       lookupLabel: 49
@@ -815,7 +863,8 @@ terminology:
         z: 16.0
       color: '#2bcca3'
       hemisphere: left
-      hasParent: LH_SomMotB
+      hasParent:
+        - LH_SomMotB
     17Networks_LH_SomMotB_Aud_4:
       name: 17Networks_LH_SomMotB_Aud_4
       lookupLabel: 50
@@ -826,7 +875,8 @@ terminology:
         z: 14.0
       color: '#2bcca5'
       hemisphere: left
-      hasParent: LH_SomMotB
+      hasParent:
+        - LH_SomMotB
     17Networks_LH_SomMotB_S2_3:
       name: 17Networks_LH_SomMotB_S2_3
       lookupLabel: 51
@@ -837,7 +887,8 @@ terminology:
         z: 14.0
       color: '#2bcca6'
       hemisphere: left
-      hasParent: LH_SomMotB
+      hasParent:
+        - LH_SomMotB
     17Networks_LH_SomMotB_S2_4:
       name: 17Networks_LH_SomMotB_S2_4
       lookupLabel: 52
@@ -848,7 +899,8 @@ terminology:
         z: 11.0
       color: '#2bcca7'
       hemisphere: left
-      hasParent: LH_SomMotB
+      hasParent:
+        - LH_SomMotB
     17Networks_LH_SomMotB_S2_5:
       name: 17Networks_LH_SomMotB_S2_5
       lookupLabel: 53
@@ -859,7 +911,8 @@ terminology:
         z: 18.0
       color: '#2bcca8'
       hemisphere: left
-      hasParent: LH_SomMotB
+      hasParent:
+        - LH_SomMotB
     17Networks_LH_SomMotB_S2_6:
       name: 17Networks_LH_SomMotB_S2_6
       lookupLabel: 54
@@ -870,7 +923,8 @@ terminology:
         z: 19.0
       color: '#2bcca9'
       hemisphere: left
-      hasParent: LH_SomMotB
+      hasParent:
+        - LH_SomMotB
     17Networks_LH_SomMotB_Cent_1:
       name: 17Networks_LH_SomMotB_Cent_1
       lookupLabel: 55
@@ -881,7 +935,8 @@ terminology:
         z: 23.0
       color: '#2bccaa'
       hemisphere: left
-      hasParent: LH_SomMotB
+      hasParent:
+        - LH_SomMotB
     17Networks_LH_SomMotB_Cent_2:
       name: 17Networks_LH_SomMotB_Cent_2
       lookupLabel: 56
@@ -892,7 +947,8 @@ terminology:
         z: 31.0
       color: '#2bccab'
       hemisphere: left
-      hasParent: LH_SomMotB
+      hasParent:
+        - LH_SomMotB
     17Networks_LH_SomMotB_Cent_3:
       name: 17Networks_LH_SomMotB_Cent_3
       lookupLabel: 57
@@ -903,7 +959,8 @@ terminology:
         z: 30.0
       color: '#2bcda4'
       hemisphere: left
-      hasParent: LH_SomMotB
+      hasParent:
+        - LH_SomMotB
     17Networks_LH_SomMotB_Cent_4:
       name: 17Networks_LH_SomMotB_Cent_4
       lookupLabel: 58
@@ -914,7 +971,8 @@ terminology:
         z: 43.0
       color: '#2bcda5'
       hemisphere: left
-      hasParent: LH_SomMotB
+      hasParent:
+        - LH_SomMotB
     17Networks_LH_SomMotB_Cent_5:
       name: 17Networks_LH_SomMotB_Cent_5
       lookupLabel: 59
@@ -925,7 +983,8 @@ terminology:
         z: 40.0
       color: '#2bcda6'
       hemisphere: left
-      hasParent: LH_SomMotB
+      hasParent:
+        - LH_SomMotB
     17Networks_LH_DorsAttnA_TempOcc_1:
       name: 17Networks_LH_DorsAttnA_TempOcc_1
       lookupLabel: 60
@@ -936,7 +995,8 @@ terminology:
         z: -21.0
       color: '#4a9b3d'
       hemisphere: left
-      hasParent: LH_DorsAttnA
+      hasParent:
+        - LH_DorsAttnA
     17Networks_LH_DorsAttnA_TempOcc_2:
       name: 17Networks_LH_DorsAttnA_TempOcc_2
       lookupLabel: 61
@@ -947,7 +1007,8 @@ terminology:
         z: -21.0
       color: '#4a9b3e'
       hemisphere: left
-      hasParent: LH_DorsAttnA
+      hasParent:
+        - LH_DorsAttnA
     17Networks_LH_DorsAttnA_TempOcc_3:
       name: 17Networks_LH_DorsAttnA_TempOcc_3
       lookupLabel: 62
@@ -958,7 +1019,8 @@ terminology:
         z: -15.0
       color: '#4a9b3f'
       hemisphere: left
-      hasParent: LH_DorsAttnA
+      hasParent:
+        - LH_DorsAttnA
     17Networks_LH_DorsAttnA_TempOcc_4:
       name: 17Networks_LH_DorsAttnA_TempOcc_4
       lookupLabel: 63
@@ -969,7 +1031,8 @@ terminology:
         z: -8.0
       color: '#4a9b40'
       hemisphere: left
-      hasParent: LH_DorsAttnA
+      hasParent:
+        - LH_DorsAttnA
     17Networks_LH_DorsAttnA_ParOcc_1:
       name: 17Networks_LH_DorsAttnA_ParOcc_1
       lookupLabel: 64
@@ -980,7 +1043,8 @@ terminology:
         z: 15.0
       color: '#4a9b41'
       hemisphere: left
-      hasParent: LH_DorsAttnA
+      hasParent:
+        - LH_DorsAttnA
     17Networks_LH_DorsAttnA_ParOcc_2:
       name: 17Networks_LH_DorsAttnA_ParOcc_2
       lookupLabel: 65
@@ -991,7 +1055,8 @@ terminology:
         z: 27.0
       color: '#4a9c3a'
       hemisphere: left
-      hasParent: LH_DorsAttnA
+      hasParent:
+        - LH_DorsAttnA
     17Networks_LH_DorsAttnA_SPL_1:
       name: 17Networks_LH_DorsAttnA_SPL_1
       lookupLabel: 66
@@ -1002,7 +1067,8 @@ terminology:
         z: 31.0
       color: '#4a9c3b'
       hemisphere: left
-      hasParent: LH_DorsAttnA
+      hasParent:
+        - LH_DorsAttnA
     17Networks_LH_DorsAttnA_SPL_2:
       name: 17Networks_LH_DorsAttnA_SPL_2
       lookupLabel: 67
@@ -1013,7 +1079,8 @@ terminology:
         z: 45.0
       color: '#4a9c3d'
       hemisphere: left
-      hasParent: LH_DorsAttnA
+      hasParent:
+        - LH_DorsAttnA
     17Networks_LH_DorsAttnA_SPL_3:
       name: 17Networks_LH_DorsAttnA_SPL_3
       lookupLabel: 68
@@ -1024,7 +1091,8 @@ terminology:
         z: 46.0
       color: '#4a9c3e'
       hemisphere: left
-      hasParent: LH_DorsAttnA
+      hasParent:
+        - LH_DorsAttnA
     17Networks_LH_DorsAttnA_SPL_4:
       name: 17Networks_LH_DorsAttnA_SPL_4
       lookupLabel: 69
@@ -1035,7 +1103,8 @@ terminology:
         z: 50.0
       color: '#4a9c3f'
       hemisphere: left
-      hasParent: LH_DorsAttnA
+      hasParent:
+        - LH_DorsAttnA
     17Networks_LH_DorsAttnA_SPL_5:
       name: 17Networks_LH_DorsAttnA_SPL_5
       lookupLabel: 70
@@ -1046,7 +1115,8 @@ terminology:
         z: 56.0
       color: '#4a9c40'
       hemisphere: left
-      hasParent: LH_DorsAttnA
+      hasParent:
+        - LH_DorsAttnA
     17Networks_LH_DorsAttnA_SPL_6:
       name: 17Networks_LH_DorsAttnA_SPL_6
       lookupLabel: 71
@@ -1057,7 +1127,8 @@ terminology:
         z: 57.0
       color: '#4a9c41'
       hemisphere: left
-      hasParent: LH_DorsAttnA
+      hasParent:
+        - LH_DorsAttnA
     17Networks_LH_DorsAttnA_SPL_7:
       name: 17Networks_LH_DorsAttnA_SPL_7
       lookupLabel: 72
@@ -1068,7 +1139,8 @@ terminology:
         z: 62.0
       color: '#4a9c42'
       hemisphere: left
-      hasParent: LH_DorsAttnA
+      hasParent:
+        - LH_DorsAttnA
     17Networks_LH_DorsAttnB_PostC_1:
       name: 17Networks_LH_DorsAttnB_PostC_1
       lookupLabel: 73
@@ -1079,7 +1151,8 @@ terminology:
         z: 33.0
       color: '#00760c'
       hemisphere: left
-      hasParent: LH_DorsAttnB
+      hasParent:
+        - LH_DorsAttnB
     17Networks_LH_DorsAttnB_PostC_2:
       name: 17Networks_LH_DorsAttnB_PostC_2
       lookupLabel: 74
@@ -1090,7 +1163,8 @@ terminology:
         z: 41.0
       color: '#00760d'
       hemisphere: left
-      hasParent: LH_DorsAttnB
+      hasParent:
+        - LH_DorsAttnB
     17Networks_LH_DorsAttnB_PostC_3:
       name: 17Networks_LH_DorsAttnB_PostC_3
       lookupLabel: 75
@@ -1101,7 +1175,8 @@ terminology:
         z: 45.0
       color: '#00760e'
       hemisphere: left
-      hasParent: LH_DorsAttnB
+      hasParent:
+        - LH_DorsAttnB
     17Networks_LH_DorsAttnB_PostC_4:
       name: 17Networks_LH_DorsAttnB_PostC_4
       lookupLabel: 76
@@ -1112,7 +1187,8 @@ terminology:
         z: 44.0
       color: '#007610'
       hemisphere: left
-      hasParent: LH_DorsAttnB
+      hasParent:
+        - LH_DorsAttnB
     17Networks_LH_DorsAttnB_PostC_5:
       name: 17Networks_LH_DorsAttnB_PostC_5
       lookupLabel: 77
@@ -1123,7 +1199,8 @@ terminology:
         z: 49.0
       color: '#007611'
       hemisphere: left
-      hasParent: LH_DorsAttnB
+      hasParent:
+        - LH_DorsAttnB
     17Networks_LH_DorsAttnB_PostC_6:
       name: 17Networks_LH_DorsAttnB_PostC_6
       lookupLabel: 78
@@ -1134,7 +1211,8 @@ terminology:
         z: 63.0
       color: '#007612'
       hemisphere: left
-      hasParent: LH_DorsAttnB
+      hasParent:
+        - LH_DorsAttnB
     17Networks_LH_DorsAttnB_PostC_7:
       name: 17Networks_LH_DorsAttnB_PostC_7
       lookupLabel: 79
@@ -1145,7 +1223,8 @@ terminology:
         z: 63.0
       color: '#007613'
       hemisphere: left
-      hasParent: LH_DorsAttnB
+      hasParent:
+        - LH_DorsAttnB
     17Networks_LH_DorsAttnB_PostC_8:
       name: 17Networks_LH_DorsAttnB_PostC_8
       lookupLabel: 80
@@ -1156,7 +1235,8 @@ terminology:
         z: 66.0
       color: '#007614'
       hemisphere: left
-      hasParent: LH_DorsAttnB
+      hasParent:
+        - LH_DorsAttnB
     17Networks_LH_DorsAttnB_PostC_9:
       name: 17Networks_LH_DorsAttnB_PostC_9
       lookupLabel: 81
@@ -1167,7 +1247,8 @@ terminology:
         z: 72.0
       color: '#007615'
       hemisphere: left
-      hasParent: LH_DorsAttnB
+      hasParent:
+        - LH_DorsAttnB
     17Networks_LH_DorsAttnB_FEF_1:
       name: 17Networks_LH_DorsAttnB_FEF_1
       lookupLabel: 82
@@ -1178,7 +1259,8 @@ terminology:
         z: 51.0
       color: '#00770f'
       hemisphere: left
-      hasParent: LH_DorsAttnB
+      hasParent:
+        - LH_DorsAttnB
     17Networks_LH_DorsAttnB_FEF_2:
       name: 17Networks_LH_DorsAttnB_FEF_2
       lookupLabel: 83
@@ -1189,7 +1271,8 @@ terminology:
         z: 55.0
       color: '#007710'
       hemisphere: left
-      hasParent: LH_DorsAttnB
+      hasParent:
+        - LH_DorsAttnB
     17Networks_LH_DorsAttnB_FEF_3:
       name: 17Networks_LH_DorsAttnB_FEF_3
       lookupLabel: 84
@@ -1200,7 +1283,8 @@ terminology:
         z: 52.0
       color: '#007711'
       hemisphere: left
-      hasParent: LH_DorsAttnB
+      hasParent:
+        - LH_DorsAttnB
     17Networks_LH_DorsAttnB_PrCv_1:
       name: 17Networks_LH_DorsAttnB_PrCv_1
       lookupLabel: 85
@@ -1211,7 +1295,8 @@ terminology:
         z: 38.0
       color: '#007712'
       hemisphere: left
-      hasParent: LH_DorsAttnB
+      hasParent:
+        - LH_DorsAttnB
     17Networks_LH_SalVentAttnA_ParOper_1:
       name: 17Networks_LH_SalVentAttnA_ParOper_1
       lookupLabel: 86
@@ -1222,7 +1307,8 @@ terminology:
         z: 22.0
       color: '#c43afb'
       hemisphere: left
-      hasParent: LH_SalVentAttnA
+      hasParent:
+        - LH_SalVentAttnA
     17Networks_LH_SalVentAttnA_ParOper_2:
       name: 17Networks_LH_SalVentAttnA_ParOper_2
       lookupLabel: 87
@@ -1233,7 +1319,8 @@ terminology:
         z: 27.0
       color: '#c43afc'
       hemisphere: left
-      hasParent: LH_SalVentAttnA
+      hasParent:
+        - LH_SalVentAttnA
     17Networks_LH_SalVentAttnA_ParOper_3:
       name: 17Networks_LH_SalVentAttnA_ParOper_3
       lookupLabel: 88
@@ -1244,7 +1331,8 @@ terminology:
         z: 33.0
       color: '#c43afd'
       hemisphere: left
-      hasParent: LH_SalVentAttnA
+      hasParent:
+        - LH_SalVentAttnA
     17Networks_LH_SalVentAttnA_Ins_1:
       name: 17Networks_LH_SalVentAttnA_Ins_1
       lookupLabel: 89
@@ -1255,7 +1343,8 @@ terminology:
         z: -4.0
       color: '#c43bf9'
       hemisphere: left
-      hasParent: LH_SalVentAttnA
+      hasParent:
+        - LH_SalVentAttnA
     17Networks_LH_SalVentAttnA_Ins_2:
       name: 17Networks_LH_SalVentAttnA_Ins_2
       lookupLabel: 90
@@ -1266,7 +1355,8 @@ terminology:
         z: -2.0
       color: '#c43bfb'
       hemisphere: left
-      hasParent: LH_SalVentAttnA
+      hasParent:
+        - LH_SalVentAttnA
     17Networks_LH_SalVentAttnA_Ins_3:
       name: 17Networks_LH_SalVentAttnA_Ins_3
       lookupLabel: 91
@@ -1277,7 +1367,8 @@ terminology:
         z: 8.0
       color: '#c43bfc'
       hemisphere: left
-      hasParent: LH_SalVentAttnA
+      hasParent:
+        - LH_SalVentAttnA
     17Networks_LH_SalVentAttnA_Ins_4:
       name: 17Networks_LH_SalVentAttnA_Ins_4
       lookupLabel: 92
@@ -1288,7 +1379,8 @@ terminology:
         z: 11.0
       color: '#c43bfd'
       hemisphere: left
-      hasParent: LH_SalVentAttnA
+      hasParent:
+        - LH_SalVentAttnA
     17Networks_LH_SalVentAttnA_FrOper_1:
       name: 17Networks_LH_SalVentAttnA_FrOper_1
       lookupLabel: 93
@@ -1299,7 +1391,8 @@ terminology:
         z: 5.0
       color: '#c43bfe'
       hemisphere: left
-      hasParent: LH_SalVentAttnA
+      hasParent:
+        - LH_SalVentAttnA
     17Networks_LH_SalVentAttnA_FrOper_2:
       name: 17Networks_LH_SalVentAttnA_FrOper_2
       lookupLabel: 94
@@ -1310,7 +1403,8 @@ terminology:
         z: 13.0
       color: '#c43bff'
       hemisphere: left
-      hasParent: LH_SalVentAttnA
+      hasParent:
+        - LH_SalVentAttnA
     17Networks_LH_SalVentAttnA_ParMed_1:
       name: 17Networks_LH_SalVentAttnA_ParMed_1
       lookupLabel: 95
@@ -1321,7 +1415,8 @@ terminology:
         z: 41.0
       color: '#c134f9'
       hemisphere: left
-      hasParent: LH_SalVentAttnA
+      hasParent:
+        - LH_SalVentAttnA
     17Networks_LH_SalVentAttnA_ParMed_2:
       name: 17Networks_LH_SalVentAttnA_ParMed_2
       lookupLabel: 96
@@ -1332,7 +1427,8 @@ terminology:
         z: 47.0
       color: '#c134fa'
       hemisphere: left
-      hasParent: LH_SalVentAttnA
+      hasParent:
+        - LH_SalVentAttnA
     17Networks_LH_SalVentAttnA_ParMed_3:
       name: 17Networks_LH_SalVentAttnA_ParMed_3
       lookupLabel: 97
@@ -1343,7 +1439,8 @@ terminology:
         z: 57.0
       color: '#c134fb'
       hemisphere: left
-      hasParent: LH_SalVentAttnA
+      hasParent:
+        - LH_SalVentAttnA
     17Networks_LH_SalVentAttnA_FrMed_1:
       name: 17Networks_LH_SalVentAttnA_FrMed_1
       lookupLabel: 98
@@ -1354,7 +1451,8 @@ terminology:
         z: 41.0
       color: '#c53afb'
       hemisphere: left
-      hasParent: LH_SalVentAttnA
+      hasParent:
+        - LH_SalVentAttnA
     17Networks_LH_SalVentAttnA_FrMed_2:
       name: 17Networks_LH_SalVentAttnA_FrMed_2
       lookupLabel: 99
@@ -1365,7 +1463,8 @@ terminology:
         z: 48.0
       color: '#c53afc'
       hemisphere: left
-      hasParent: LH_SalVentAttnA
+      hasParent:
+        - LH_SalVentAttnA
     17Networks_LH_SalVentAttnA_FrMed_3:
       name: 17Networks_LH_SalVentAttnA_FrMed_3
       lookupLabel: 100
@@ -1376,7 +1475,8 @@ terminology:
         z: 71.0
       color: '#c53afd'
       hemisphere: left
-      hasParent: LH_SalVentAttnA
+      hasParent:
+        - LH_SalVentAttnA
     17Networks_LH_SalVentAttnB_PFCl_1:
       name: 17Networks_LH_SalVentAttnB_PFCl_1
       lookupLabel: 101
@@ -1387,7 +1487,8 @@ terminology:
         z: 11.0
       color: '#ff99d6'
       hemisphere: left
-      hasParent: LH_SalVentAttnB
+      hasParent:
+        - LH_SalVentAttnB
     17Networks_LH_SalVentAttnB_PFCl_2:
       name: 17Networks_LH_SalVentAttnB_PFCl_2
       lookupLabel: 102
@@ -1398,7 +1499,8 @@ terminology:
         z: 30.0
       color: '#ff99d7'
       hemisphere: left
-      hasParent: LH_SalVentAttnB
+      hasParent:
+        - LH_SalVentAttnB
     17Networks_LH_SalVentAttnB_PFCl_3:
       name: 17Networks_LH_SalVentAttnB_PFCl_3
       lookupLabel: 103
@@ -1409,7 +1511,8 @@ terminology:
         z: 38.0
       color: '#ff99d8'
       hemisphere: left
-      hasParent: LH_SalVentAttnB
+      hasParent:
+        - LH_SalVentAttnB
     17Networks_LH_SalVentAttnB_Ins_1:
       name: 17Networks_LH_SalVentAttnB_Ins_1
       lookupLabel: 104
@@ -1420,7 +1523,8 @@ terminology:
         z: -8.0
       color: '#ff99d9'
       hemisphere: left
-      hasParent: LH_SalVentAttnB
+      hasParent:
+        - LH_SalVentAttnB
     17Networks_LH_SalVentAttnB_Ins_2:
       name: 17Networks_LH_SalVentAttnB_Ins_2
       lookupLabel: 105
@@ -1431,7 +1535,8 @@ terminology:
         z: -1.0
       color: '#ff99da'
       hemisphere: left
-      hasParent: LH_SalVentAttnB
+      hasParent:
+        - LH_SalVentAttnB
     17Networks_LH_SalVentAttnB_Ins_3:
       name: 17Networks_LH_SalVentAttnB_Ins_3
       lookupLabel: 106
@@ -1442,7 +1547,8 @@ terminology:
         z: 2.0
       color: '#ff99db'
       hemisphere: left
-      hasParent: LH_SalVentAttnB
+      hasParent:
+        - LH_SalVentAttnB
     17Networks_LH_SalVentAttnB_OFC_1:
       name: 17Networks_LH_SalVentAttnB_OFC_1
       lookupLabel: 107
@@ -1453,7 +1559,8 @@ terminology:
         z: -14.0
       color: '#ff98d5'
       hemisphere: left
-      hasParent: LH_SalVentAttnB
+      hasParent:
+        - LH_SalVentAttnB
     17Networks_LH_SalVentAttnB_PFCmp_1:
       name: 17Networks_LH_SalVentAttnB_PFCmp_1
       lookupLabel: 108
@@ -1464,7 +1571,8 @@ terminology:
         z: 31.0
       color: '#ff97d6'
       hemisphere: left
-      hasParent: LH_SalVentAttnB
+      hasParent:
+        - LH_SalVentAttnB
     17Networks_LH_LimbicB_OFC_1:
       name: 17Networks_LH_LimbicB_OFC_1
       lookupLabel: 109
@@ -1475,7 +1583,8 @@ terminology:
         z: -21.0
       color: '#7a8731'
       hemisphere: left
-      hasParent: LH_LimbicB
+      hasParent:
+        - LH_LimbicB
     17Networks_LH_LimbicB_OFC_2:
       name: 17Networks_LH_LimbicB_OFC_2
       lookupLabel: 110
@@ -1486,7 +1595,8 @@ terminology:
         z: -20.0
       color: '#7a8733'
       hemisphere: left
-      hasParent: LH_LimbicB
+      hasParent:
+        - LH_LimbicB
     17Networks_LH_LimbicB_OFC_3:
       name: 17Networks_LH_LimbicB_OFC_3
       lookupLabel: 111
@@ -1497,7 +1607,8 @@ terminology:
         z: -21.0
       color: '#7a8734'
       hemisphere: left
-      hasParent: LH_LimbicB
+      hasParent:
+        - LH_LimbicB
     17Networks_LH_LimbicB_OFC_4:
       name: 17Networks_LH_LimbicB_OFC_4
       lookupLabel: 112
@@ -1508,7 +1619,8 @@ terminology:
         z: -19.0
       color: '#7a8735'
       hemisphere: left
-      hasParent: LH_LimbicB
+      hasParent:
+        - LH_LimbicB
     17Networks_LH_LimbicB_OFC_5:
       name: 17Networks_LH_LimbicB_OFC_5
       lookupLabel: 113
@@ -1519,7 +1631,8 @@ terminology:
         z: -8.0
       color: '#7a8736'
       hemisphere: left
-      hasParent: LH_LimbicB
+      hasParent:
+        - LH_LimbicB
     17Networks_LH_LimbicA_TempPole_1:
       name: 17Networks_LH_LimbicA_TempPole_1
       lookupLabel: 114
@@ -1530,7 +1643,8 @@ terminology:
         z: -42.0
       color: '#dcf8a2'
       hemisphere: left
-      hasParent: LH_LimbicA
+      hasParent:
+        - LH_LimbicA
     17Networks_LH_LimbicA_TempPole_2:
       name: 17Networks_LH_LimbicA_TempPole_2
       lookupLabel: 115
@@ -1541,7 +1655,8 @@ terminology:
         z: -39.0
       color: '#dcf8a3'
       hemisphere: left
-      hasParent: LH_LimbicA
+      hasParent:
+        - LH_LimbicA
     17Networks_LH_LimbicA_TempPole_3:
       name: 17Networks_LH_LimbicA_TempPole_3
       lookupLabel: 116
@@ -1552,7 +1667,8 @@ terminology:
         z: -33.0
       color: '#dcf8a5'
       hemisphere: left
-      hasParent: LH_LimbicA
+      hasParent:
+        - LH_LimbicA
     17Networks_LH_LimbicA_TempPole_4:
       name: 17Networks_LH_LimbicA_TempPole_4
       lookupLabel: 117
@@ -1563,7 +1679,8 @@ terminology:
         z: -31.0
       color: '#dcf8a6'
       hemisphere: left
-      hasParent: LH_LimbicA
+      hasParent:
+        - LH_LimbicA
     17Networks_LH_LimbicA_TempPole_5:
       name: 17Networks_LH_LimbicA_TempPole_5
       lookupLabel: 118
@@ -1574,7 +1691,8 @@ terminology:
         z: -27.0
       color: '#dcf8a7'
       hemisphere: left
-      hasParent: LH_LimbicA
+      hasParent:
+        - LH_LimbicA
     17Networks_LH_LimbicA_TempPole_6:
       name: 17Networks_LH_LimbicA_TempPole_6
       lookupLabel: 119
@@ -1585,7 +1703,8 @@ terminology:
         z: -29.0
       color: '#dcf8a8'
       hemisphere: left
-      hasParent: LH_LimbicA
+      hasParent:
+        - LH_LimbicA
     17Networks_LH_LimbicA_TempPole_7:
       name: 17Networks_LH_LimbicA_TempPole_7
       lookupLabel: 120
@@ -1596,7 +1715,8 @@ terminology:
         z: -17.0
       color: '#dcf8a9'
       hemisphere: left
-      hasParent: LH_LimbicA
+      hasParent:
+        - LH_LimbicA
     17Networks_LH_ContA_Temp_1:
       name: 17Networks_LH_ContA_Temp_1
       lookupLabel: 121
@@ -1607,7 +1727,8 @@ terminology:
         z: -1.0
       color: '#e69423'
       hemisphere: left
-      hasParent: LH_ContA
+      hasParent:
+        - LH_ContA
     17Networks_LH_ContA_IPS_1:
       name: 17Networks_LH_ContA_IPS_1
       lookupLabel: 122
@@ -1618,7 +1739,8 @@ terminology:
         z: 42.0
       color: '#e69422'
       hemisphere: left
-      hasParent: LH_ContA
+      hasParent:
+        - LH_ContA
     17Networks_LH_ContA_IPS_2:
       name: 17Networks_LH_ContA_IPS_2
       lookupLabel: 123
@@ -1629,7 +1751,8 @@ terminology:
         z: 45.0
       color: '#e69424'
       hemisphere: left
-      hasParent: LH_ContA
+      hasParent:
+        - LH_ContA
     17Networks_LH_ContA_IPS_3:
       name: 17Networks_LH_ContA_IPS_3
       lookupLabel: 124
@@ -1640,7 +1763,8 @@ terminology:
         z: 48.0
       color: '#e69425'
       hemisphere: left
-      hasParent: LH_ContA
+      hasParent:
+        - LH_ContA
     17Networks_LH_ContA_IPS_4:
       name: 17Networks_LH_ContA_IPS_4
       lookupLabel: 125
@@ -1651,7 +1775,8 @@ terminology:
         z: 47.0
       color: '#e69426'
       hemisphere: left
-      hasParent: LH_ContA
+      hasParent:
+        - LH_ContA
     17Networks_LH_ContA_IPS_5:
       name: 17Networks_LH_ContA_IPS_5
       lookupLabel: 126
@@ -1662,7 +1787,8 @@ terminology:
         z: 41.0
       color: '#e69427'
       hemisphere: left
-      hasParent: LH_ContA
+      hasParent:
+        - LH_ContA
     17Networks_LH_ContA_PFCd_1:
       name: 17Networks_LH_ContA_PFCd_1
       lookupLabel: 127
@@ -1673,7 +1799,8 @@ terminology:
         z: 65.0
       color: '#e69523'
       hemisphere: left
-      hasParent: LH_ContA
+      hasParent:
+        - LH_ContA
     17Networks_LH_ContA_PFClv_1:
       name: 17Networks_LH_ContA_PFClv_1
       lookupLabel: 128
@@ -1684,7 +1811,8 @@ terminology:
         z: 10.0
       color: '#e69522'
       hemisphere: left
-      hasParent: LH_ContA
+      hasParent:
+        - LH_ContA
     17Networks_LH_ContA_PFClv_2:
       name: 17Networks_LH_ContA_PFClv_2
       lookupLabel: 129
@@ -1695,7 +1823,8 @@ terminology:
         z: 22.0
       color: '#e69524'
       hemisphere: left
-      hasParent: LH_ContA
+      hasParent:
+        - LH_ContA
     17Networks_LH_ContA_PFCl_1:
       name: 17Networks_LH_ContA_PFCl_1
       lookupLabel: 130
@@ -1706,7 +1835,8 @@ terminology:
         z: 26.0
       color: '#e69525'
       hemisphere: left
-      hasParent: LH_ContA
+      hasParent:
+        - LH_ContA
     17Networks_LH_ContA_PFCl_2:
       name: 17Networks_LH_ContA_PFCl_2
       lookupLabel: 131
@@ -1717,7 +1847,8 @@ terminology:
         z: 27.0
       color: '#e69526'
       hemisphere: left
-      hasParent: LH_ContA
+      hasParent:
+        - LH_ContA
     17Networks_LH_ContA_PFCl_3:
       name: 17Networks_LH_ContA_PFCl_3
       lookupLabel: 132
@@ -1728,7 +1859,8 @@ terminology:
         z: 34.0
       color: '#e69527'
       hemisphere: left
-      hasParent: LH_ContA
+      hasParent:
+        - LH_ContA
     17Networks_LH_ContA_Cingm_1:
       name: 17Networks_LH_ContA_Cingm_1
       lookupLabel: 133
@@ -1739,7 +1871,8 @@ terminology:
         z: 29.0
       color: '#e79424'
       hemisphere: left
-      hasParent: LH_ContA
+      hasParent:
+        - LH_ContA
     17Networks_LH_ContB_Temp_1:
       name: 17Networks_LH_ContB_Temp_1
       lookupLabel: 134
@@ -1750,7 +1883,8 @@ terminology:
         z: -18.0
       color: '#87324b'
       hemisphere: left
-      hasParent: LH_ContB
+      hasParent:
+        - LH_ContB
     17Networks_LH_ContB_Temp_2:
       name: 17Networks_LH_ContB_Temp_2
       lookupLabel: 135
@@ -1761,7 +1895,8 @@ terminology:
         z: -10.0
       color: '#87324c'
       hemisphere: left
-      hasParent: LH_ContB
+      hasParent:
+        - LH_ContB
     17Networks_LH_ContB_IPL_1:
       name: 17Networks_LH_ContB_IPL_1
       lookupLabel: 136
@@ -1772,7 +1907,8 @@ terminology:
         z: 47.0
       color: '#87324d'
       hemisphere: left
-      hasParent: LH_ContB
+      hasParent:
+        - LH_ContB
     17Networks_LH_ContB_IPL_2:
       name: 17Networks_LH_ContB_IPL_2
       lookupLabel: 137
@@ -1783,7 +1919,8 @@ terminology:
         z: 45.0
       color: '#87324e'
       hemisphere: left
-      hasParent: LH_ContB
+      hasParent:
+        - LH_ContB
     17Networks_LH_ContB_IPL_3:
       name: 17Networks_LH_ContB_IPL_3
       lookupLabel: 138
@@ -1794,7 +1931,8 @@ terminology:
         z: 49.0
       color: '#87324f'
       hemisphere: left
-      hasParent: LH_ContB
+      hasParent:
+        - LH_ContB
     17Networks_LH_ContB_PFCd_1:
       name: 17Networks_LH_ContB_PFCd_1
       lookupLabel: 139
@@ -1805,7 +1943,8 @@ terminology:
         z: 57.0
       color: '#87334b'
       hemisphere: left
-      hasParent: LH_ContB
+      hasParent:
+        - LH_ContB
     17Networks_LH_ContB_PFClv_1:
       name: 17Networks_LH_ContB_PFClv_1
       lookupLabel: 140
@@ -1816,7 +1955,8 @@ terminology:
         z: -6.0
       color: '#88324b'
       hemisphere: left
-      hasParent: LH_ContB
+      hasParent:
+        - LH_ContB
     17Networks_LH_ContB_PFClv_2:
       name: 17Networks_LH_ContB_PFClv_2
       lookupLabel: 141
@@ -1827,7 +1967,8 @@ terminology:
         z: -1.0
       color: '#88324c'
       hemisphere: left
-      hasParent: LH_ContB
+      hasParent:
+        - LH_ContB
     17Networks_LH_ContB_PFClv_3:
       name: 17Networks_LH_ContB_PFClv_3
       lookupLabel: 142
@@ -1838,7 +1979,8 @@ terminology:
         z: 13.0
       color: '#88324d'
       hemisphere: left
-      hasParent: LH_ContB
+      hasParent:
+        - LH_ContB
     17Networks_LH_ContB_PFCmp_1:
       name: 17Networks_LH_ContB_PFCmp_1
       lookupLabel: 143
@@ -1849,7 +1991,8 @@ terminology:
         z: 47.0
       color: '#88324e'
       hemisphere: left
-      hasParent: LH_ContB
+      hasParent:
+        - LH_ContB
     17Networks_LH_ContC_pCun_1:
       name: 17Networks_LH_ContC_pCun_1
       lookupLabel: 144
@@ -1860,7 +2003,8 @@ terminology:
         z: 32.0
       color: '#778cb1'
       hemisphere: left
-      hasParent: LH_ContC
+      hasParent:
+        - LH_ContC
     17Networks_LH_ContC_pCun_2:
       name: 17Networks_LH_ContC_pCun_2
       lookupLabel: 145
@@ -1871,7 +2015,8 @@ terminology:
         z: 45.0
       color: '#778cb2'
       hemisphere: left
-      hasParent: LH_ContC
+      hasParent:
+        - LH_ContC
     17Networks_LH_ContC_pCun_3:
       name: 17Networks_LH_ContC_pCun_3
       lookupLabel: 146
@@ -1882,7 +2027,8 @@ terminology:
         z: 52.0
       color: '#778cb3'
       hemisphere: left
-      hasParent: LH_ContC
+      hasParent:
+        - LH_ContC
     17Networks_LH_ContC_Cingp_1:
       name: 17Networks_LH_ContC_Cingp_1
       lookupLabel: 147
@@ -1893,7 +2039,8 @@ terminology:
         z: 24.0
       color: '#778cb4'
       hemisphere: left
-      hasParent: LH_ContC
+      hasParent:
+        - LH_ContC
     17Networks_LH_ContC_Cingp_2:
       name: 17Networks_LH_ContC_Cingp_2
       lookupLabel: 148
@@ -1904,7 +2051,8 @@ terminology:
         z: 29.0
       color: '#778cb5'
       hemisphere: left
-      hasParent: LH_ContC
+      hasParent:
+        - LH_ContC
     17Networks_LH_DefaultA_IPL_1:
       name: 17Networks_LH_DefaultA_IPL_1
       lookupLabel: 149
@@ -1915,7 +2063,8 @@ terminology:
         z: 31.0
       color: '#ffff01'
       hemisphere: left
-      hasParent: LH_DefaultA
+      hasParent:
+        - LH_DefaultA
     17Networks_LH_DefaultA_IPL_2:
       name: 17Networks_LH_DefaultA_IPL_2
       lookupLabel: 150
@@ -1926,7 +2075,8 @@ terminology:
         z: 43.0
       color: '#ffff02'
       hemisphere: left
-      hasParent: LH_DefaultA
+      hasParent:
+        - LH_DefaultA
     17Networks_LH_DefaultA_PFCd_1:
       name: 17Networks_LH_DefaultA_PFCd_1
       lookupLabel: 151
@@ -1937,7 +2087,8 @@ terminology:
         z: 43.0
       color: '#ffff03'
       hemisphere: left
-      hasParent: LH_DefaultA
+      hasParent:
+        - LH_DefaultA
     17Networks_LH_DefaultA_PFCd_2:
       name: 17Networks_LH_DefaultA_PFCd_2
       lookupLabel: 152
@@ -1948,7 +2099,8 @@ terminology:
         z: 48.0
       color: '#ffff04'
       hemisphere: left
-      hasParent: LH_DefaultA
+      hasParent:
+        - LH_DefaultA
     17Networks_LH_DefaultA_PFCd_3:
       name: 17Networks_LH_DefaultA_PFCd_3
       lookupLabel: 153
@@ -1959,7 +2111,8 @@ terminology:
         z: 52.0
       color: '#ffff05'
       hemisphere: left
-      hasParent: LH_DefaultA
+      hasParent:
+        - LH_DefaultA
     17Networks_LH_DefaultA_pCunPCC_1:
       name: 17Networks_LH_DefaultA_pCunPCC_1
       lookupLabel: 154
@@ -1970,7 +2123,8 @@ terminology:
         z: 20.0
       color: '#fffe01'
       hemisphere: left
-      hasParent: LH_DefaultA
+      hasParent:
+        - LH_DefaultA
     17Networks_LH_DefaultA_pCunPCC_2:
       name: 17Networks_LH_DefaultA_pCunPCC_2
       lookupLabel: 155
@@ -1981,7 +2135,8 @@ terminology:
         z: 30.0
       color: '#fffe02'
       hemisphere: left
-      hasParent: LH_DefaultA
+      hasParent:
+        - LH_DefaultA
     17Networks_LH_DefaultA_pCunPCC_3:
       name: 17Networks_LH_DefaultA_pCunPCC_3
       lookupLabel: 156
@@ -1992,7 +2147,8 @@ terminology:
         z: 32.0
       color: '#fffe03'
       hemisphere: left
-      hasParent: LH_DefaultA
+      hasParent:
+        - LH_DefaultA
     17Networks_LH_DefaultA_pCunPCC_4:
       name: 17Networks_LH_DefaultA_pCunPCC_4
       lookupLabel: 157
@@ -2003,7 +2159,8 @@ terminology:
         z: 38.0
       color: '#fffe04'
       hemisphere: left
-      hasParent: LH_DefaultA
+      hasParent:
+        - LH_DefaultA
     17Networks_LH_DefaultA_pCunPCC_5:
       name: 17Networks_LH_DefaultA_pCunPCC_5
       lookupLabel: 158
@@ -2014,7 +2171,8 @@ terminology:
         z: 37.0
       color: '#fffe05'
       hemisphere: left
-      hasParent: LH_DefaultA
+      hasParent:
+        - LH_DefaultA
     17Networks_LH_DefaultA_pCunPCC_6:
       name: 17Networks_LH_DefaultA_pCunPCC_6
       lookupLabel: 159
@@ -2025,7 +2183,8 @@ terminology:
         z: 41.0
       color: '#fffe06'
       hemisphere: left
-      hasParent: LH_DefaultA
+      hasParent:
+        - LH_DefaultA
     17Networks_LH_DefaultA_pCunPCC_7:
       name: 17Networks_LH_DefaultA_pCunPCC_7
       lookupLabel: 160
@@ -2036,7 +2195,8 @@ terminology:
         z: 43.0
       color: '#fffe07'
       hemisphere: left
-      hasParent: LH_DefaultA
+      hasParent:
+        - LH_DefaultA
     17Networks_LH_DefaultA_PFCm_1:
       name: 17Networks_LH_DefaultA_PFCm_1
       lookupLabel: 161
@@ -2047,7 +2207,8 @@ terminology:
         z: -10.0
       color: '#feff01'
       hemisphere: left
-      hasParent: LH_DefaultA
+      hasParent:
+        - LH_DefaultA
     17Networks_LH_DefaultA_PFCm_2:
       name: 17Networks_LH_DefaultA_PFCm_2
       lookupLabel: 162
@@ -2058,7 +2219,8 @@ terminology:
         z: -9.0
       color: '#feff02'
       hemisphere: left
-      hasParent: LH_DefaultA
+      hasParent:
+        - LH_DefaultA
     17Networks_LH_DefaultA_PFCm_3:
       name: 17Networks_LH_DefaultA_PFCm_3
       lookupLabel: 163
@@ -2069,7 +2231,8 @@ terminology:
         z: 7.0
       color: '#feff03'
       hemisphere: left
-      hasParent: LH_DefaultA
+      hasParent:
+        - LH_DefaultA
     17Networks_LH_DefaultA_PFCm_4:
       name: 17Networks_LH_DefaultA_PFCm_4
       lookupLabel: 164
@@ -2080,7 +2243,8 @@ terminology:
         z: 6.0
       color: '#feff04'
       hemisphere: left
-      hasParent: LH_DefaultA
+      hasParent:
+        - LH_DefaultA
     17Networks_LH_DefaultA_PFCm_5:
       name: 17Networks_LH_DefaultA_PFCm_5
       lookupLabel: 165
@@ -2091,7 +2255,8 @@ terminology:
         z: 8.0
       color: '#feff05'
       hemisphere: left
-      hasParent: LH_DefaultA
+      hasParent:
+        - LH_DefaultA
     17Networks_LH_DefaultA_PFCm_6:
       name: 17Networks_LH_DefaultA_PFCm_6
       lookupLabel: 166
@@ -2102,7 +2267,8 @@ terminology:
         z: 21.0
       color: '#feff06'
       hemisphere: left
-      hasParent: LH_DefaultA
+      hasParent:
+        - LH_DefaultA
     17Networks_LH_DefaultB_Temp_1:
       name: 17Networks_LH_DefaultB_Temp_1
       lookupLabel: 167
@@ -2113,7 +2279,8 @@ terminology:
         z: -34.0
       color: '#cd3e4d'
       hemisphere: left
-      hasParent: LH_DefaultB
+      hasParent:
+        - LH_DefaultB
     17Networks_LH_DefaultB_Temp_2:
       name: 17Networks_LH_DefaultB_Temp_2
       lookupLabel: 168
@@ -2124,7 +2291,8 @@ terminology:
         z: -30.0
       color: '#cd3e4f'
       hemisphere: left
-      hasParent: LH_DefaultB
+      hasParent:
+        - LH_DefaultB
     17Networks_LH_DefaultB_Temp_3:
       name: 17Networks_LH_DefaultB_Temp_3
       lookupLabel: 169
@@ -2135,7 +2303,8 @@ terminology:
         z: -21.0
       color: '#cd3e50'
       hemisphere: left
-      hasParent: LH_DefaultB
+      hasParent:
+        - LH_DefaultB
     17Networks_LH_DefaultB_Temp_4:
       name: 17Networks_LH_DefaultB_Temp_4
       lookupLabel: 170
@@ -2146,7 +2315,8 @@ terminology:
         z: -14.0
       color: '#cd3e51'
       hemisphere: left
-      hasParent: LH_DefaultB
+      hasParent:
+        - LH_DefaultB
     17Networks_LH_DefaultB_Temp_5:
       name: 17Networks_LH_DefaultB_Temp_5
       lookupLabel: 171
@@ -2157,7 +2327,8 @@ terminology:
         z: -3.0
       color: '#cd3e52'
       hemisphere: left
-      hasParent: LH_DefaultB
+      hasParent:
+        - LH_DefaultB
     17Networks_LH_DefaultB_Temp_6:
       name: 17Networks_LH_DefaultB_Temp_6
       lookupLabel: 172
@@ -2168,7 +2339,8 @@ terminology:
         z: -6.0
       color: '#cd3e53'
       hemisphere: left
-      hasParent: LH_DefaultB
+      hasParent:
+        - LH_DefaultB
     17Networks_LH_DefaultB_IPL_1:
       name: 17Networks_LH_DefaultB_IPL_1
       lookupLabel: 173
@@ -2179,7 +2351,8 @@ terminology:
         z: 21.0
       color: '#cd3e54'
       hemisphere: left
-      hasParent: LH_DefaultB
+      hasParent:
+        - LH_DefaultB
     17Networks_LH_DefaultB_IPL_2:
       name: 17Networks_LH_DefaultB_IPL_2
       lookupLabel: 174
@@ -2190,7 +2363,8 @@ terminology:
         z: 30.0
       color: '#cd3e55'
       hemisphere: left
-      hasParent: LH_DefaultB
+      hasParent:
+        - LH_DefaultB
     17Networks_LH_DefaultB_PFCd_1:
       name: 17Networks_LH_DefaultB_PFCd_1
       lookupLabel: 175
@@ -2201,7 +2375,8 @@ terminology:
         z: 28.0
       color: '#cd3f4d'
       hemisphere: left
-      hasParent: LH_DefaultB
+      hasParent:
+        - LH_DefaultB
     17Networks_LH_DefaultB_PFCd_2:
       name: 17Networks_LH_DefaultB_PFCd_2
       lookupLabel: 176
@@ -2212,7 +2387,8 @@ terminology:
         z: 31.0
       color: '#cd3f4f'
       hemisphere: left
-      hasParent: LH_DefaultB
+      hasParent:
+        - LH_DefaultB
     17Networks_LH_DefaultB_PFCd_3:
       name: 17Networks_LH_DefaultB_PFCd_3
       lookupLabel: 177
@@ -2223,7 +2399,8 @@ terminology:
         z: 31.0
       color: '#cd3f50'
       hemisphere: left
-      hasParent: LH_DefaultB
+      hasParent:
+        - LH_DefaultB
     17Networks_LH_DefaultB_PFCd_4:
       name: 17Networks_LH_DefaultB_PFCd_4
       lookupLabel: 178
@@ -2234,7 +2411,8 @@ terminology:
         z: 51.0
       color: '#cd3f51'
       hemisphere: left
-      hasParent: LH_DefaultB
+      hasParent:
+        - LH_DefaultB
     17Networks_LH_DefaultB_PFCd_5:
       name: 17Networks_LH_DefaultB_PFCd_5
       lookupLabel: 179
@@ -2245,7 +2423,8 @@ terminology:
         z: 61.0
       color: '#cd3f52'
       hemisphere: left
-      hasParent: LH_DefaultB
+      hasParent:
+        - LH_DefaultB
     17Networks_LH_DefaultB_PFCd_6:
       name: 17Networks_LH_DefaultB_PFCd_6
       lookupLabel: 180
@@ -2256,7 +2435,8 @@ terminology:
         z: 65.0
       color: '#cd3f53'
       hemisphere: left
-      hasParent: LH_DefaultB
+      hasParent:
+        - LH_DefaultB
     17Networks_LH_DefaultB_PFCl_1:
       name: 17Networks_LH_DefaultB_PFCl_1
       lookupLabel: 181
@@ -2267,7 +2447,8 @@ terminology:
         z: 48.0
       color: '#cd3f54'
       hemisphere: left
-      hasParent: LH_DefaultB
+      hasParent:
+        - LH_DefaultB
     17Networks_LH_DefaultB_PFCl_2:
       name: 17Networks_LH_DefaultB_PFCl_2
       lookupLabel: 182
@@ -2278,7 +2459,8 @@ terminology:
         z: 48.0
       color: '#cd3f55'
       hemisphere: left
-      hasParent: LH_DefaultB
+      hasParent:
+        - LH_DefaultB
     17Networks_LH_DefaultB_PFCv_1:
       name: 17Networks_LH_DefaultB_PFCv_1
       lookupLabel: 183
@@ -2289,7 +2471,8 @@ terminology:
         z: -16.0
       color: '#ce3e4d'
       hemisphere: left
-      hasParent: LH_DefaultB
+      hasParent:
+        - LH_DefaultB
     17Networks_LH_DefaultB_PFCv_2:
       name: 17Networks_LH_DefaultB_PFCv_2
       lookupLabel: 184
@@ -2300,7 +2483,8 @@ terminology:
         z: -13.0
       color: '#ce3e4f'
       hemisphere: left
-      hasParent: LH_DefaultB
+      hasParent:
+        - LH_DefaultB
     17Networks_LH_DefaultB_PFCv_3:
       name: 17Networks_LH_DefaultB_PFCv_3
       lookupLabel: 185
@@ -2311,7 +2495,8 @@ terminology:
         z: -10.0
       color: '#ce3e50'
       hemisphere: left
-      hasParent: LH_DefaultB
+      hasParent:
+        - LH_DefaultB
     17Networks_LH_DefaultB_PFCv_4:
       name: 17Networks_LH_DefaultB_PFCv_4
       lookupLabel: 186
@@ -2322,7 +2507,8 @@ terminology:
         z: 0.0
       color: '#ce3e51'
       hemisphere: left
-      hasParent: LH_DefaultB
+      hasParent:
+        - LH_DefaultB
     17Networks_LH_DefaultB_PFCv_5:
       name: 17Networks_LH_DefaultB_PFCv_5
       lookupLabel: 187
@@ -2333,7 +2519,8 @@ terminology:
         z: 11.0
       color: '#ce3e52'
       hemisphere: left
-      hasParent: LH_DefaultB
+      hasParent:
+        - LH_DefaultB
     17Networks_LH_DefaultC_IPL_1:
       name: 17Networks_LH_DefaultC_IPL_1
       lookupLabel: 188
@@ -2344,7 +2531,8 @@ terminology:
         z: 30.0
       color: '#000083'
       hemisphere: left
-      hasParent: LH_DefaultC
+      hasParent:
+        - LH_DefaultC
     17Networks_LH_DefaultC_Rsp_1:
       name: 17Networks_LH_DefaultC_Rsp_1
       lookupLabel: 189
@@ -2355,7 +2543,8 @@ terminology:
         z: 4.0
       color: '#000084'
       hemisphere: left
-      hasParent: LH_DefaultC
+      hasParent:
+        - LH_DefaultC
     17Networks_LH_DefaultC_Rsp_2:
       name: 17Networks_LH_DefaultC_Rsp_2
       lookupLabel: 190
@@ -2366,7 +2555,8 @@ terminology:
         z: 9.0
       color: '#000085'
       hemisphere: left
-      hasParent: LH_DefaultC
+      hasParent:
+        - LH_DefaultC
     17Networks_LH_DefaultC_Rsp_3:
       name: 17Networks_LH_DefaultC_Rsp_3
       lookupLabel: 191
@@ -2377,7 +2567,8 @@ terminology:
         z: 19.0
       color: '#000086'
       hemisphere: left
-      hasParent: LH_DefaultC
+      hasParent:
+        - LH_DefaultC
     17Networks_LH_DefaultC_PHC_1:
       name: 17Networks_LH_DefaultC_PHC_1
       lookupLabel: 192
@@ -2388,7 +2579,8 @@ terminology:
         z: -26.0
       color: '#000183'
       hemisphere: left
-      hasParent: LH_DefaultC
+      hasParent:
+        - LH_DefaultC
     17Networks_LH_DefaultC_PHC_2:
       name: 17Networks_LH_DefaultC_PHC_2
       lookupLabel: 193
@@ -2399,7 +2591,8 @@ terminology:
         z: -18.0
       color: '#000184'
       hemisphere: left
-      hasParent: LH_DefaultC
+      hasParent:
+        - LH_DefaultC
     17Networks_LH_DefaultC_PHC_3:
       name: 17Networks_LH_DefaultC_PHC_3
       lookupLabel: 194
@@ -2410,7 +2603,8 @@ terminology:
         z: -12.0
       color: '#000185'
       hemisphere: left
-      hasParent: LH_DefaultC
+      hasParent:
+        - LH_DefaultC
     17Networks_LH_TempPar_1:
       name: 17Networks_LH_TempPar_1
       lookupLabel: 195
@@ -2421,7 +2615,8 @@ terminology:
         z: -11.0
       color: '#0c30fe'
       hemisphere: left
-      hasParent: LH_TempPar
+      hasParent:
+        - LH_TempPar
     17Networks_LH_TempPar_2:
       name: 17Networks_LH_TempPar_2
       lookupLabel: 196
@@ -2432,7 +2627,8 @@ terminology:
         z: -3.0
       color: '#0929f9'
       hemisphere: left
-      hasParent: LH_TempPar
+      hasParent:
+        - LH_TempPar
     17Networks_LH_TempPar_3:
       name: 17Networks_LH_TempPar_3
       lookupLabel: 197
@@ -2443,7 +2639,8 @@ terminology:
         z: 5.0
       color: '#0929fa'
       hemisphere: left
-      hasParent: LH_TempPar
+      hasParent:
+        - LH_TempPar
     17Networks_LH_TempPar_4:
       name: 17Networks_LH_TempPar_4
       lookupLabel: 198
@@ -2454,7 +2651,8 @@ terminology:
         z: 5.0
       color: '#0929fb'
       hemisphere: left
-      hasParent: LH_TempPar
+      hasParent:
+        - LH_TempPar
     17Networks_LH_TempPar_5:
       name: 17Networks_LH_TempPar_5
       lookupLabel: 199
@@ -2465,7 +2663,8 @@ terminology:
         z: 10.0
       color: '#0929fc'
       hemisphere: left
-      hasParent: LH_TempPar
+      hasParent:
+        - LH_TempPar
     17Networks_LH_TempPar_6:
       name: 17Networks_LH_TempPar_6
       lookupLabel: 200
@@ -2476,7 +2675,8 @@ terminology:
         z: 16.0
       color: '#0929fd'
       hemisphere: left
-      hasParent: LH_TempPar
+      hasParent:
+        - LH_TempPar
     17Networks_RH_VisCent_ExStr_1:
       name: 17Networks_RH_VisCent_ExStr_1
       lookupLabel: 201
@@ -2487,7 +2687,8 @@ terminology:
         z: -17.0
       color: '#7c1383'
       hemisphere: right
-      hasParent: RH_VisCent
+      hasParent:
+        - RH_VisCent
     17Networks_RH_VisCent_ExStr_2:
       name: 17Networks_RH_VisCent_ExStr_2
       lookupLabel: 202
@@ -2498,7 +2699,8 @@ terminology:
         z: -16.0
       color: '#7c1384'
       hemisphere: right
-      hasParent: RH_VisCent
+      hasParent:
+        - RH_VisCent
     17Networks_RH_VisCent_ExStr_3:
       name: 17Networks_RH_VisCent_ExStr_3
       lookupLabel: 203
@@ -2509,7 +2711,8 @@ terminology:
         z: -11.0
       color: '#7c1385'
       hemisphere: right
-      hasParent: RH_VisCent
+      hasParent:
+        - RH_VisCent
     17Networks_RH_VisCent_ExStr_4:
       name: 17Networks_RH_VisCent_ExStr_4
       lookupLabel: 204
@@ -2520,7 +2723,8 @@ terminology:
         z: -13.0
       color: '#7c1386'
       hemisphere: right
-      hasParent: RH_VisCent
+      hasParent:
+        - RH_VisCent
     17Networks_RH_VisCent_ExStr_5:
       name: 17Networks_RH_VisCent_ExStr_5
       lookupLabel: 205
@@ -2531,7 +2735,8 @@ terminology:
         z: -12.0
       color: '#7c1388'
       hemisphere: right
-      hasParent: RH_VisCent
+      hasParent:
+        - RH_VisCent
     17Networks_RH_VisCent_ExStr_6:
       name: 17Networks_RH_VisCent_ExStr_6
       lookupLabel: 206
@@ -2542,7 +2747,8 @@ terminology:
         z: -10.0
       color: '#7c1389'
       hemisphere: right
-      hasParent: RH_VisCent
+      hasParent:
+        - RH_VisCent
     17Networks_RH_VisCent_Striate_1:
       name: 17Networks_RH_VisCent_Striate_1
       lookupLabel: 207
@@ -2553,7 +2759,8 @@ terminology:
         z: -2.0
       color: '#7c138a'
       hemisphere: right
-      hasParent: RH_VisCent
+      hasParent:
+        - RH_VisCent
     17Networks_RH_VisCent_ExStr_7:
       name: 17Networks_RH_VisCent_ExStr_7
       lookupLabel: 208
@@ -2564,7 +2771,8 @@ terminology:
         z: 2.0
       color: '#7c138b'
       hemisphere: right
-      hasParent: RH_VisCent
+      hasParent:
+        - RH_VisCent
     17Networks_RH_VisCent_ExStr_8:
       name: 17Networks_RH_VisCent_ExStr_8
       lookupLabel: 209
@@ -2575,7 +2783,8 @@ terminology:
         z: 7.0
       color: '#7c138c'
       hemisphere: right
-      hasParent: RH_VisCent
+      hasParent:
+        - RH_VisCent
     17Networks_RH_VisCent_ExStr_9:
       name: 17Networks_RH_VisCent_ExStr_9
       lookupLabel: 210
@@ -2586,7 +2795,8 @@ terminology:
         z: 10.0
       color: '#7c138d'
       hemisphere: right
-      hasParent: RH_VisCent
+      hasParent:
+        - RH_VisCent
     17Networks_RH_VisCent_ExStr_10:
       name: 17Networks_RH_VisCent_ExStr_10
       lookupLabel: 211
@@ -2597,7 +2807,8 @@ terminology:
         z: 19.0
       color: '#7c138e'
       hemisphere: right
-      hasParent: RH_VisCent
+      hasParent:
+        - RH_VisCent
     17Networks_RH_VisCent_ExStr_11:
       name: 17Networks_RH_VisCent_ExStr_11
       lookupLabel: 212
@@ -2608,7 +2819,8 @@ terminology:
         z: 21.0
       color: '#7c1487'
       hemisphere: right
-      hasParent: RH_VisCent
+      hasParent:
+        - RH_VisCent
     17Networks_RH_VisPeri_ExStrInf_1:
       name: 17Networks_RH_VisPeri_ExStrInf_1
       lookupLabel: 213
@@ -2619,7 +2831,8 @@ terminology:
         z: -9.0
       color: '#fa0000'
       hemisphere: right
-      hasParent: RH_VisPeri
+      hasParent:
+        - RH_VisPeri
     17Networks_RH_VisPeri_ExStrInf_2:
       name: 17Networks_RH_VisPeri_ExStrInf_2
       lookupLabel: 214
@@ -2630,7 +2843,8 @@ terminology:
         z: -12.0
       color: '#fa0002'
       hemisphere: right
-      hasParent: RH_VisPeri
+      hasParent:
+        - RH_VisPeri
     17Networks_RH_VisPeri_ExStrInf_3:
       name: 17Networks_RH_VisPeri_ExStrInf_3
       lookupLabel: 215
@@ -2641,7 +2855,8 @@ terminology:
         z: -5.0
       color: '#fa0003'
       hemisphere: right
-      hasParent: RH_VisPeri
+      hasParent:
+        - RH_VisPeri
     17Networks_RH_VisPeri_ExStrInf_4:
       name: 17Networks_RH_VisPeri_ExStrInf_4
       lookupLabel: 216
@@ -2652,7 +2867,8 @@ terminology:
         z: -3.0
       color: '#fa0004'
       hemisphere: right
-      hasParent: RH_VisPeri
+      hasParent:
+        - RH_VisPeri
     17Networks_RH_VisPeri_ExStrInf_5:
       name: 17Networks_RH_VisPeri_ExStrInf_5
       lookupLabel: 217
@@ -2663,7 +2879,8 @@ terminology:
         z: -3.0
       color: '#fa0005'
       hemisphere: right
-      hasParent: RH_VisPeri
+      hasParent:
+        - RH_VisPeri
     17Networks_RH_VisPeri_StriCal_1:
       name: 17Networks_RH_VisPeri_StriCal_1
       lookupLabel: 218
@@ -2674,7 +2891,8 @@ terminology:
         z: 9.0
       color: '#fa0006'
       hemisphere: right
-      hasParent: RH_VisPeri
+      hasParent:
+        - RH_VisPeri
     17Networks_RH_VisPeri_StriCal_2:
       name: 17Networks_RH_VisPeri_StriCal_2
       lookupLabel: 219
@@ -2685,7 +2903,8 @@ terminology:
         z: 6.0
       color: '#fa0007'
       hemisphere: right
-      hasParent: RH_VisPeri
+      hasParent:
+        - RH_VisPeri
     17Networks_RH_VisPeri_ExStrSup_1:
       name: 17Networks_RH_VisPeri_ExStrSup_1
       lookupLabel: 220
@@ -2696,7 +2915,8 @@ terminology:
         z: 19.0
       color: '#fa0008'
       hemisphere: right
-      hasParent: RH_VisPeri
+      hasParent:
+        - RH_VisPeri
     17Networks_RH_VisPeri_ExStrSup_2:
       name: 17Networks_RH_VisPeri_ExStrSup_2
       lookupLabel: 221
@@ -2707,7 +2927,8 @@ terminology:
         z: 24.0
       color: '#fa0101'
       hemisphere: right
-      hasParent: RH_VisPeri
+      hasParent:
+        - RH_VisPeri
     17Networks_RH_VisPeri_ExStrSup_3:
       name: 17Networks_RH_VisPeri_ExStrSup_3
       lookupLabel: 222
@@ -2718,7 +2939,8 @@ terminology:
         z: 34.0
       color: '#fa0102'
       hemisphere: right
-      hasParent: RH_VisPeri
+      hasParent:
+        - RH_VisPeri
     17Networks_RH_VisPeri_ExStrSup_4:
       name: 17Networks_RH_VisPeri_ExStrSup_4
       lookupLabel: 223
@@ -2729,7 +2951,8 @@ terminology:
         z: 36.0
       color: '#fa0103'
       hemisphere: right
-      hasParent: RH_VisPeri
+      hasParent:
+        - RH_VisPeri
     17Networks_RH_SomMotA_1:
       name: 17Networks_RH_SomMotA_1
       lookupLabel: 224
@@ -2740,7 +2963,8 @@ terminology:
         z: 40.0
       color: '#4a82b5'
       hemisphere: right
-      hasParent: RH_SomMotA
+      hasParent:
+        - RH_SomMotA
     17Networks_RH_SomMotA_2:
       name: 17Networks_RH_SomMotA_2
       lookupLabel: 225
@@ -2751,7 +2975,8 @@ terminology:
         z: 49.0
       color: '#4a83ae'
       hemisphere: right
-      hasParent: RH_SomMotA
+      hasParent:
+        - RH_SomMotA
     17Networks_RH_SomMotA_3:
       name: 17Networks_RH_SomMotA_3
       lookupLabel: 226
@@ -2762,7 +2987,8 @@ terminology:
         z: 49.0
       color: '#4a83af'
       hemisphere: right
-      hasParent: RH_SomMotA
+      hasParent:
+        - RH_SomMotA
     17Networks_RH_SomMotA_4:
       name: 17Networks_RH_SomMotA_4
       lookupLabel: 227
@@ -2773,7 +2999,8 @@ terminology:
         z: 56.0
       color: '#4a83b0'
       hemisphere: right
-      hasParent: RH_SomMotA
+      hasParent:
+        - RH_SomMotA
     17Networks_RH_SomMotA_5:
       name: 17Networks_RH_SomMotA_5
       lookupLabel: 228
@@ -2784,7 +3011,8 @@ terminology:
         z: 51.0
       color: '#4a83b1'
       hemisphere: right
-      hasParent: RH_SomMotA
+      hasParent:
+        - RH_SomMotA
     17Networks_RH_SomMotA_6:
       name: 17Networks_RH_SomMotA_6
       lookupLabel: 229
@@ -2795,7 +3023,8 @@ terminology:
         z: 54.0
       color: '#4a83b2'
       hemisphere: right
-      hasParent: RH_SomMotA
+      hasParent:
+        - RH_SomMotA
     17Networks_RH_SomMotA_7:
       name: 17Networks_RH_SomMotA_7
       lookupLabel: 230
@@ -2806,7 +3035,8 @@ terminology:
         z: 64.0
       color: '#4a83b3'
       hemisphere: right
-      hasParent: RH_SomMotA
+      hasParent:
+        - RH_SomMotA
     17Networks_RH_SomMotA_8:
       name: 17Networks_RH_SomMotA_8
       lookupLabel: 231
@@ -2817,7 +3047,8 @@ terminology:
         z: 63.0
       color: '#4a83b4'
       hemisphere: right
-      hasParent: RH_SomMotA
+      hasParent:
+        - RH_SomMotA
     17Networks_RH_SomMotA_9:
       name: 17Networks_RH_SomMotA_9
       lookupLabel: 232
@@ -2828,7 +3059,8 @@ terminology:
         z: 64.0
       color: '#4a83b6'
       hemisphere: right
-      hasParent: RH_SomMotA
+      hasParent:
+        - RH_SomMotA
     17Networks_RH_SomMotA_10:
       name: 17Networks_RH_SomMotA_10
       lookupLabel: 233
@@ -2839,7 +3071,8 @@ terminology:
         z: 61.0
       color: '#4a83b7'
       hemisphere: right
-      hasParent: RH_SomMotA
+      hasParent:
+        - RH_SomMotA
     17Networks_RH_SomMotA_11:
       name: 17Networks_RH_SomMotA_11
       lookupLabel: 234
@@ -2850,7 +3083,8 @@ terminology:
         z: 58.0
       color: '#4a83b8'
       hemisphere: right
-      hasParent: RH_SomMotA
+      hasParent:
+        - RH_SomMotA
     17Networks_RH_SomMotA_12:
       name: 17Networks_RH_SomMotA_12
       lookupLabel: 235
@@ -2861,7 +3095,8 @@ terminology:
         z: 65.0
       color: '#4a83b9'
       hemisphere: right
-      hasParent: RH_SomMotA
+      hasParent:
+        - RH_SomMotA
     17Networks_RH_SomMotA_13:
       name: 17Networks_RH_SomMotA_13
       lookupLabel: 236
@@ -2872,7 +3107,8 @@ terminology:
         z: 68.0
       color: '#4a83ba'
       hemisphere: right
-      hasParent: RH_SomMotA
+      hasParent:
+        - RH_SomMotA
     17Networks_RH_SomMotA_14:
       name: 17Networks_RH_SomMotA_14
       lookupLabel: 237
@@ -2883,7 +3119,8 @@ terminology:
         z: 67.0
       color: '#4a83bb'
       hemisphere: right
-      hasParent: RH_SomMotA
+      hasParent:
+        - RH_SomMotA
     17Networks_RH_SomMotA_15:
       name: 17Networks_RH_SomMotA_15
       lookupLabel: 238
@@ -2894,7 +3131,8 @@ terminology:
         z: 68.0
       color: '#4a83bc'
       hemisphere: right
-      hasParent: RH_SomMotA
+      hasParent:
+        - RH_SomMotA
     17Networks_RH_SomMotA_16:
       name: 17Networks_RH_SomMotA_16
       lookupLabel: 239
@@ -2905,7 +3143,8 @@ terminology:
         z: 71.0
       color: '#4a84b5'
       hemisphere: right
-      hasParent: RH_SomMotA
+      hasParent:
+        - RH_SomMotA
     17Networks_RH_SomMotA_17:
       name: 17Networks_RH_SomMotA_17
       lookupLabel: 240
@@ -2916,7 +3155,8 @@ terminology:
         z: 69.0
       color: '#4a84b6'
       hemisphere: right
-      hasParent: RH_SomMotA
+      hasParent:
+        - RH_SomMotA
     17Networks_RH_SomMotA_18:
       name: 17Networks_RH_SomMotA_18
       lookupLabel: 241
@@ -2927,7 +3167,8 @@ terminology:
         z: 72.0
       color: '#4a84b7'
       hemisphere: right
-      hasParent: RH_SomMotA
+      hasParent:
+        - RH_SomMotA
     17Networks_RH_SomMotA_19:
       name: 17Networks_RH_SomMotA_19
       lookupLabel: 242
@@ -2938,7 +3179,8 @@ terminology:
         z: 73.0
       color: '#4a84b8'
       hemisphere: right
-      hasParent: RH_SomMotA
+      hasParent:
+        - RH_SomMotA
     17Networks_RH_SomMotA_20:
       name: 17Networks_RH_SomMotA_20
       lookupLabel: 243
@@ -2949,7 +3191,8 @@ terminology:
         z: 76.0
       color: '#4a84b9'
       hemisphere: right
-      hasParent: RH_SomMotA
+      hasParent:
+        - RH_SomMotA
     17Networks_RH_SomMotB_Aud_1:
       name: 17Networks_RH_SomMotB_Aud_1
       lookupLabel: 244
@@ -2960,7 +3203,8 @@ terminology:
         z: -6.0
       color: '#2fcd9e'
       hemisphere: right
-      hasParent: RH_SomMotB
+      hasParent:
+        - RH_SomMotB
     17Networks_RH_SomMotB_Aud_2:
       name: 17Networks_RH_SomMotB_Aud_2
       lookupLabel: 245
@@ -2971,7 +3215,8 @@ terminology:
         z: 6.0
       color: '#2fcd9f'
       hemisphere: right
-      hasParent: RH_SomMotB
+      hasParent:
+        - RH_SomMotB
     17Networks_RH_SomMotB_Ins_1:
       name: 17Networks_RH_SomMotB_Ins_1
       lookupLabel: 246
@@ -2982,7 +3227,8 @@ terminology:
         z: 5.0
       color: '#2fcda0'
       hemisphere: right
-      hasParent: RH_SomMotB
+      hasParent:
+        - RH_SomMotB
     17Networks_RH_SomMotB_S2_1:
       name: 17Networks_RH_SomMotB_S2_1
       lookupLabel: 247
@@ -2993,7 +3239,8 @@ terminology:
         z: 14.0
       color: '#2fcda1'
       hemisphere: right
-      hasParent: RH_SomMotB
+      hasParent:
+        - RH_SomMotB
     17Networks_RH_SomMotB_S2_2:
       name: 17Networks_RH_SomMotB_S2_2
       lookupLabel: 248
@@ -3004,7 +3251,8 @@ terminology:
         z: 14.0
       color: '#2fcda2'
       hemisphere: right
-      hasParent: RH_SomMotB
+      hasParent:
+        - RH_SomMotB
     17Networks_RH_SomMotB_Aud_3:
       name: 17Networks_RH_SomMotB_Aud_3
       lookupLabel: 249
@@ -3015,7 +3263,8 @@ terminology:
         z: 11.0
       color: '#2fcda3'
       hemisphere: right
-      hasParent: RH_SomMotB
+      hasParent:
+        - RH_SomMotB
     17Networks_RH_SomMotB_S2_3:
       name: 17Networks_RH_SomMotB_S2_3
       lookupLabel: 250
@@ -3026,7 +3275,8 @@ terminology:
         z: 18.0
       color: '#2fcda5'
       hemisphere: right
-      hasParent: RH_SomMotB
+      hasParent:
+        - RH_SomMotB
     17Networks_RH_SomMotB_S2_4:
       name: 17Networks_RH_SomMotB_S2_4
       lookupLabel: 251
@@ -3037,7 +3287,8 @@ terminology:
         z: 18.0
       color: '#2fcda6'
       hemisphere: right
-      hasParent: RH_SomMotB
+      hasParent:
+        - RH_SomMotB
     17Networks_RH_SomMotB_S2_5:
       name: 17Networks_RH_SomMotB_S2_5
       lookupLabel: 252
@@ -3048,7 +3299,8 @@ terminology:
         z: 13.0
       color: '#2fcda7'
       hemisphere: right
-      hasParent: RH_SomMotB
+      hasParent:
+        - RH_SomMotB
     17Networks_RH_SomMotB_S2_6:
       name: 17Networks_RH_SomMotB_S2_6
       lookupLabel: 253
@@ -3059,7 +3311,8 @@ terminology:
         z: 10.0
       color: '#2fcda8'
       hemisphere: right
-      hasParent: RH_SomMotB
+      hasParent:
+        - RH_SomMotB
     17Networks_RH_SomMotB_S2_7:
       name: 17Networks_RH_SomMotB_S2_7
       lookupLabel: 254
@@ -3070,7 +3323,8 @@ terminology:
         z: 19.0
       color: '#2fcda9'
       hemisphere: right
-      hasParent: RH_SomMotB
+      hasParent:
+        - RH_SomMotB
     17Networks_RH_SomMotB_S2_8:
       name: 17Networks_RH_SomMotB_S2_8
       lookupLabel: 255
@@ -3081,7 +3335,8 @@ terminology:
         z: 15.0
       color: '#2fcdaa'
       hemisphere: right
-      hasParent: RH_SomMotB
+      hasParent:
+        - RH_SomMotB
     17Networks_RH_SomMotB_Cent_1:
       name: 17Networks_RH_SomMotB_Cent_1
       lookupLabel: 256
@@ -3092,7 +3347,8 @@ terminology:
         z: 30.0
       color: '#2fcdab'
       hemisphere: right
-      hasParent: RH_SomMotB
+      hasParent:
+        - RH_SomMotB
     17Networks_RH_SomMotB_Cent_2:
       name: 17Networks_RH_SomMotB_Cent_2
       lookupLabel: 257
@@ -3103,7 +3359,8 @@ terminology:
         z: 27.0
       color: '#2fcea4'
       hemisphere: right
-      hasParent: RH_SomMotB
+      hasParent:
+        - RH_SomMotB
     17Networks_RH_SomMotB_Cent_3:
       name: 17Networks_RH_SomMotB_Cent_3
       lookupLabel: 258
@@ -3114,7 +3371,8 @@ terminology:
         z: 37.0
       color: '#2fcea5'
       hemisphere: right
-      hasParent: RH_SomMotB
+      hasParent:
+        - RH_SomMotB
     17Networks_RH_DorsAttnA_TempOcc_1:
       name: 17Networks_RH_DorsAttnA_TempOcc_1
       lookupLabel: 259
@@ -3125,7 +3383,8 @@ terminology:
         z: -23.0
       color: '#4e9c3c'
       hemisphere: right
-      hasParent: RH_DorsAttnA
+      hasParent:
+        - RH_DorsAttnA
     17Networks_RH_DorsAttnA_TempOcc_2:
       name: 17Networks_RH_DorsAttnA_TempOcc_2
       lookupLabel: 260
@@ -3136,7 +3395,8 @@ terminology:
         z: -18.0
       color: '#4e9c3e'
       hemisphere: right
-      hasParent: RH_DorsAttnA
+      hasParent:
+        - RH_DorsAttnA
     17Networks_RH_DorsAttnA_TempOcc_3:
       name: 17Networks_RH_DorsAttnA_TempOcc_3
       lookupLabel: 261
@@ -3147,7 +3407,8 @@ terminology:
         z: -9.0
       color: '#4e9c3f'
       hemisphere: right
-      hasParent: RH_DorsAttnA
+      hasParent:
+        - RH_DorsAttnA
     17Networks_RH_DorsAttnA_ParOcc_1:
       name: 17Networks_RH_DorsAttnA_ParOcc_1
       lookupLabel: 262
@@ -3158,7 +3419,8 @@ terminology:
         z: 4.0
       color: '#4e9c40'
       hemisphere: right
-      hasParent: RH_DorsAttnA
+      hasParent:
+        - RH_DorsAttnA
     17Networks_RH_DorsAttnA_ParOcc_2:
       name: 17Networks_RH_DorsAttnA_ParOcc_2
       lookupLabel: 263
@@ -3169,7 +3431,8 @@ terminology:
         z: 12.0
       color: '#4e9c41'
       hemisphere: right
-      hasParent: RH_DorsAttnA
+      hasParent:
+        - RH_DorsAttnA
     17Networks_RH_DorsAttnA_ParOcc_3:
       name: 17Networks_RH_DorsAttnA_ParOcc_3
       lookupLabel: 264
@@ -3180,7 +3443,8 @@ terminology:
         z: 24.0
       color: '#4f9b3a'
       hemisphere: right
-      hasParent: RH_DorsAttnA
+      hasParent:
+        - RH_DorsAttnA
     17Networks_RH_DorsAttnA_SPL_1:
       name: 17Networks_RH_DorsAttnA_SPL_1
       lookupLabel: 265
@@ -3191,7 +3455,8 @@ terminology:
         z: 37.0
       color: '#4f9b3b'
       hemisphere: right
-      hasParent: RH_DorsAttnA
+      hasParent:
+        - RH_DorsAttnA
     17Networks_RH_DorsAttnA_SPL_2:
       name: 17Networks_RH_DorsAttnA_SPL_2
       lookupLabel: 266
@@ -3202,7 +3467,8 @@ terminology:
         z: 35.0
       color: '#4f9b3c'
       hemisphere: right
-      hasParent: RH_DorsAttnA
+      hasParent:
+        - RH_DorsAttnA
     17Networks_RH_DorsAttnA_SPL_3:
       name: 17Networks_RH_DorsAttnA_SPL_3
       lookupLabel: 267
@@ -3213,7 +3479,8 @@ terminology:
         z: 50.0
       color: '#4f9b3e'
       hemisphere: right
-      hasParent: RH_DorsAttnA
+      hasParent:
+        - RH_DorsAttnA
     17Networks_RH_DorsAttnA_SPL_4:
       name: 17Networks_RH_DorsAttnA_SPL_4
       lookupLabel: 268
@@ -3224,7 +3491,8 @@ terminology:
         z: 53.0
       color: '#4f9b3f'
       hemisphere: right
-      hasParent: RH_DorsAttnA
+      hasParent:
+        - RH_DorsAttnA
     17Networks_RH_DorsAttnA_SPL_5:
       name: 17Networks_RH_DorsAttnA_SPL_5
       lookupLabel: 269
@@ -3235,7 +3503,8 @@ terminology:
         z: 53.0
       color: '#4f9b40'
       hemisphere: right
-      hasParent: RH_DorsAttnA
+      hasParent:
+        - RH_DorsAttnA
     17Networks_RH_DorsAttnA_SPL_6:
       name: 17Networks_RH_DorsAttnA_SPL_6
       lookupLabel: 270
@@ -3246,7 +3515,8 @@ terminology:
         z: 54.0
       color: '#4f9b41'
       hemisphere: right
-      hasParent: RH_DorsAttnA
+      hasParent:
+        - RH_DorsAttnA
     17Networks_RH_DorsAttnA_SPL_7:
       name: 17Networks_RH_DorsAttnA_SPL_7
       lookupLabel: 271
@@ -3257,7 +3527,8 @@ terminology:
         z: 61.0
       color: '#4f9b42'
       hemisphere: right
-      hasParent: RH_DorsAttnA
+      hasParent:
+        - RH_DorsAttnA
     17Networks_RH_DorsAttnA_SPL_8:
       name: 17Networks_RH_DorsAttnA_SPL_8
       lookupLabel: 272
@@ -3268,7 +3539,8 @@ terminology:
         z: 65.0
       color: '#4f9b43'
       hemisphere: right
-      hasParent: RH_DorsAttnA
+      hasParent:
+        - RH_DorsAttnA
     17Networks_RH_DorsAttnB_TempOcc_1:
       name: 17Networks_RH_DorsAttnB_TempOcc_1
       lookupLabel: 273
@@ -3279,7 +3551,8 @@ terminology:
         z: -2.0
       color: '#05760f'
       hemisphere: right
-      hasParent: RH_DorsAttnB
+      hasParent:
+        - RH_DorsAttnB
     17Networks_RH_DorsAttnB_PostC_1:
       name: 17Networks_RH_DorsAttnB_PostC_1
       lookupLabel: 274
@@ -3290,7 +3563,8 @@ terminology:
         z: 30.0
       color: '#05760d'
       hemisphere: right
-      hasParent: RH_DorsAttnB
+      hasParent:
+        - RH_DorsAttnB
     17Networks_RH_DorsAttnB_PostC_2:
       name: 17Networks_RH_DorsAttnB_PostC_2
       lookupLabel: 275
@@ -3301,7 +3575,8 @@ terminology:
         z: 44.0
       color: '#05760e'
       hemisphere: right
-      hasParent: RH_DorsAttnB
+      hasParent:
+        - RH_DorsAttnB
     17Networks_RH_DorsAttnB_PostC_3:
       name: 17Networks_RH_DorsAttnB_PostC_3
       lookupLabel: 276
@@ -3312,7 +3587,8 @@ terminology:
         z: 50.0
       color: '#057610'
       hemisphere: right
-      hasParent: RH_DorsAttnB
+      hasParent:
+        - RH_DorsAttnB
     17Networks_RH_DorsAttnB_PostC_4:
       name: 17Networks_RH_DorsAttnB_PostC_4
       lookupLabel: 277
@@ -3323,7 +3599,8 @@ terminology:
         z: 42.0
       color: '#057611'
       hemisphere: right
-      hasParent: RH_DorsAttnB
+      hasParent:
+        - RH_DorsAttnB
     17Networks_RH_DorsAttnB_PostC_5:
       name: 17Networks_RH_DorsAttnB_PostC_5
       lookupLabel: 278
@@ -3334,7 +3611,8 @@ terminology:
         z: 51.0
       color: '#057612'
       hemisphere: right
-      hasParent: RH_DorsAttnB
+      hasParent:
+        - RH_DorsAttnB
     17Networks_RH_DorsAttnB_PostC_6:
       name: 17Networks_RH_DorsAttnB_PostC_6
       lookupLabel: 279
@@ -3345,7 +3623,8 @@ terminology:
         z: 59.0
       color: '#057613'
       hemisphere: right
-      hasParent: RH_DorsAttnB
+      hasParent:
+        - RH_DorsAttnB
     17Networks_RH_DorsAttnB_PostC_7:
       name: 17Networks_RH_DorsAttnB_PostC_7
       lookupLabel: 280
@@ -3356,7 +3635,8 @@ terminology:
         z: 68.0
       color: '#057614'
       hemisphere: right
-      hasParent: RH_DorsAttnB
+      hasParent:
+        - RH_DorsAttnB
     17Networks_RH_DorsAttnB_PostC_8:
       name: 17Networks_RH_DorsAttnB_PostC_8
       lookupLabel: 281
@@ -3367,7 +3647,8 @@ terminology:
         z: 74.0
       color: '#057615'
       hemisphere: right
-      hasParent: RH_DorsAttnB
+      hasParent:
+        - RH_DorsAttnB
     17Networks_RH_DorsAttnB_FEF_1:
       name: 17Networks_RH_DorsAttnB_FEF_1
       lookupLabel: 282
@@ -3378,7 +3659,8 @@ terminology:
         z: 53.0
       color: '#05770f'
       hemisphere: right
-      hasParent: RH_DorsAttnB
+      hasParent:
+        - RH_DorsAttnB
     17Networks_RH_DorsAttnB_FEF_2:
       name: 17Networks_RH_DorsAttnB_FEF_2
       lookupLabel: 283
@@ -3389,7 +3671,8 @@ terminology:
         z: 52.0
       color: '#057710'
       hemisphere: right
-      hasParent: RH_DorsAttnB
+      hasParent:
+        - RH_DorsAttnB
     17Networks_RH_DorsAttnB_FEF_3:
       name: 17Networks_RH_DorsAttnB_FEF_3
       lookupLabel: 284
@@ -3400,7 +3683,8 @@ terminology:
         z: 64.0
       color: '#057711'
       hemisphere: right
-      hasParent: RH_DorsAttnB
+      hasParent:
+        - RH_DorsAttnB
     17Networks_RH_SalVentAttnA_ParOper_1:
       name: 17Networks_RH_SalVentAttnA_ParOper_1
       lookupLabel: 285
@@ -3411,7 +3695,8 @@ terminology:
         z: 24.0
       color: '#c83afa'
       hemisphere: right
-      hasParent: RH_SalVentAttnA
+      hasParent:
+        - RH_SalVentAttnA
     17Networks_RH_SalVentAttnA_ParOper_2:
       name: 17Networks_RH_SalVentAttnA_ParOper_2
       lookupLabel: 286
@@ -3422,7 +3707,8 @@ terminology:
         z: 22.0
       color: '#c83afb'
       hemisphere: right
-      hasParent: RH_SalVentAttnA
+      hasParent:
+        - RH_SalVentAttnA
     17Networks_RH_SalVentAttnA_ParOper_3:
       name: 17Networks_RH_SalVentAttnA_ParOper_3
       lookupLabel: 287
@@ -3433,7 +3719,8 @@ terminology:
         z: 38.0
       color: '#c83afc'
       hemisphere: right
-      hasParent: RH_SalVentAttnA
+      hasParent:
+        - RH_SalVentAttnA
     17Networks_RH_SalVentAttnA_PrC_1:
       name: 17Networks_RH_SalVentAttnA_PrC_1
       lookupLabel: 288
@@ -3444,7 +3731,8 @@ terminology:
         z: 41.0
       color: '#c839fb'
       hemisphere: right
-      hasParent: RH_SalVentAttnA
+      hasParent:
+        - RH_SalVentAttnA
     17Networks_RH_SalVentAttnA_Ins_1:
       name: 17Networks_RH_SalVentAttnA_Ins_1
       lookupLabel: 289
@@ -3455,7 +3743,8 @@ terminology:
         z: -15.0
       color: '#c73af8'
       hemisphere: right
-      hasParent: RH_SalVentAttnA
+      hasParent:
+        - RH_SalVentAttnA
     17Networks_RH_SalVentAttnA_Ins_2:
       name: 17Networks_RH_SalVentAttnA_Ins_2
       lookupLabel: 290
@@ -3466,7 +3755,8 @@ terminology:
         z: -3.0
       color: '#c73af9'
       hemisphere: right
-      hasParent: RH_SalVentAttnA
+      hasParent:
+        - RH_SalVentAttnA
     17Networks_RH_SalVentAttnA_Ins_3:
       name: 17Networks_RH_SalVentAttnA_Ins_3
       lookupLabel: 291
@@ -3477,7 +3767,8 @@ terminology:
         z: -4.0
       color: '#c73afb'
       hemisphere: right
-      hasParent: RH_SalVentAttnA
+      hasParent:
+        - RH_SalVentAttnA
     17Networks_RH_SalVentAttnA_Ins_4:
       name: 17Networks_RH_SalVentAttnA_Ins_4
       lookupLabel: 292
@@ -3488,7 +3779,8 @@ terminology:
         z: 6.0
       color: '#c73afc'
       hemisphere: right
-      hasParent: RH_SalVentAttnA
+      hasParent:
+        - RH_SalVentAttnA
     17Networks_RH_SalVentAttnA_FrOper_1:
       name: 17Networks_RH_SalVentAttnA_FrOper_1
       lookupLabel: 293
@@ -3499,7 +3791,8 @@ terminology:
         z: 11.0
       color: '#c73afd'
       hemisphere: right
-      hasParent: RH_SalVentAttnA
+      hasParent:
+        - RH_SalVentAttnA
     17Networks_RH_SalVentAttnA_FrOper_2:
       name: 17Networks_RH_SalVentAttnA_FrOper_2
       lookupLabel: 294
@@ -3510,7 +3803,8 @@ terminology:
         z: 3.0
       color: '#c73afe'
       hemisphere: right
-      hasParent: RH_SalVentAttnA
+      hasParent:
+        - RH_SalVentAttnA
     17Networks_RH_SalVentAttnA_FrOper_3:
       name: 17Networks_RH_SalVentAttnA_FrOper_3
       lookupLabel: 295
@@ -3521,7 +3815,8 @@ terminology:
         z: 12.0
       color: '#c73aff'
       hemisphere: right
-      hasParent: RH_SalVentAttnA
+      hasParent:
+        - RH_SalVentAttnA
     17Networks_RH_SalVentAttnA_FrMed_1:
       name: 17Networks_RH_SalVentAttnA_FrMed_1
       lookupLabel: 296
@@ -3532,7 +3827,8 @@ terminology:
         z: 43.0
       color: '#c73af7'
       hemisphere: right
-      hasParent: RH_SalVentAttnA
+      hasParent:
+        - RH_SalVentAttnA
     17Networks_RH_SalVentAttnA_ParMed_1:
       name: 17Networks_RH_SalVentAttnA_ParMed_1
       lookupLabel: 297
@@ -3543,7 +3839,8 @@ terminology:
         z: 41.0
       color: '#c73afa'
       hemisphere: right
-      hasParent: RH_SalVentAttnA
+      hasParent:
+        - RH_SalVentAttnA
     17Networks_RH_SalVentAttnA_ParMed_2:
       name: 17Networks_RH_SalVentAttnA_ParMed_2
       lookupLabel: 298
@@ -3554,7 +3851,8 @@ terminology:
         z: 43.0
       color: '#c433f9'
       hemisphere: right
-      hasParent: RH_SalVentAttnA
+      hasParent:
+        - RH_SalVentAttnA
     17Networks_RH_SalVentAttnA_FrMed_2:
       name: 17Networks_RH_SalVentAttnA_FrMed_2
       lookupLabel: 299
@@ -3565,7 +3863,8 @@ terminology:
         z: 58.0
       color: '#c434f2'
       hemisphere: right
-      hasParent: RH_SalVentAttnA
+      hasParent:
+        - RH_SalVentAttnA
     17Networks_RH_SalVentAttnA_ParMed_3:
       name: 17Networks_RH_SalVentAttnA_ParMed_3
       lookupLabel: 300
@@ -3576,7 +3875,8 @@ terminology:
         z: 53.0
       color: '#c434f3'
       hemisphere: right
-      hasParent: RH_SalVentAttnA
+      hasParent:
+        - RH_SalVentAttnA
     17Networks_RH_SalVentAttnA_ParMed_4:
       name: 17Networks_RH_SalVentAttnA_ParMed_4
       lookupLabel: 301
@@ -3587,7 +3887,8 @@ terminology:
         z: 50.0
       color: '#c434f4'
       hemisphere: right
-      hasParent: RH_SalVentAttnA
+      hasParent:
+        - RH_SalVentAttnA
     17Networks_RH_SalVentAttnA_FrMed_3:
       name: 17Networks_RH_SalVentAttnA_FrMed_3
       lookupLabel: 302
@@ -3598,7 +3899,8 @@ terminology:
         z: 67.0
       color: '#c434f5'
       hemisphere: right
-      hasParent: RH_SalVentAttnA
+      hasParent:
+        - RH_SalVentAttnA
     17Networks_RH_SalVentAttnA_FrMed_4:
       name: 17Networks_RH_SalVentAttnA_FrMed_4
       lookupLabel: 303
@@ -3609,7 +3911,8 @@ terminology:
         z: 69.0
       color: '#c434f6'
       hemisphere: right
-      hasParent: RH_SalVentAttnA
+      hasParent:
+        - RH_SalVentAttnA
     17Networks_RH_SalVentAttnB_IPL_1:
       name: 17Networks_RH_SalVentAttnB_IPL_1
       lookupLabel: 304
@@ -3620,7 +3923,8 @@ terminology:
         z: 37.0
       color: '#fa98d6'
       hemisphere: right
-      hasParent: RH_SalVentAttnB
+      hasParent:
+        - RH_SalVentAttnB
     17Networks_RH_SalVentAttnB_PFClv_1:
       name: 17Networks_RH_SalVentAttnB_PFClv_1
       lookupLabel: 305
@@ -3631,7 +3935,8 @@ terminology:
         z: 5.0
       color: '#fa97d6'
       hemisphere: right
-      hasParent: RH_SalVentAttnB
+      hasParent:
+        - RH_SalVentAttnB
     17Networks_RH_SalVentAttnB_PFCl_1:
       name: 17Networks_RH_SalVentAttnB_PFCl_1
       lookupLabel: 306
@@ -3642,7 +3947,8 @@ terminology:
         z: 14.0
       color: '#fa97d7'
       hemisphere: right
-      hasParent: RH_SalVentAttnB
+      hasParent:
+        - RH_SalVentAttnB
     17Networks_RH_SalVentAttnB_PFCl_2:
       name: 17Networks_RH_SalVentAttnB_PFCl_2
       lookupLabel: 307
@@ -3653,7 +3959,8 @@ terminology:
         z: 25.0
       color: '#fa97d8'
       hemisphere: right
-      hasParent: RH_SalVentAttnB
+      hasParent:
+        - RH_SalVentAttnB
     17Networks_RH_SalVentAttnB_PFCl_3:
       name: 17Networks_RH_SalVentAttnB_PFCl_3
       lookupLabel: 308
@@ -3664,7 +3971,8 @@ terminology:
         z: 28.0
       color: '#fa97d9'
       hemisphere: right
-      hasParent: RH_SalVentAttnB
+      hasParent:
+        - RH_SalVentAttnB
     17Networks_RH_SalVentAttnB_Ins_1:
       name: 17Networks_RH_SalVentAttnB_Ins_1
       lookupLabel: 309
@@ -3675,7 +3983,8 @@ terminology:
         z: -8.0
       color: '#fa98d7'
       hemisphere: right
-      hasParent: RH_SalVentAttnB
+      hasParent:
+        - RH_SalVentAttnB
     17Networks_RH_SalVentAttnB_Ins_2:
       name: 17Networks_RH_SalVentAttnB_Ins_2
       lookupLabel: 310
@@ -3686,7 +3995,8 @@ terminology:
         z: 5.0
       color: '#fa98d8'
       hemisphere: right
-      hasParent: RH_SalVentAttnB
+      hasParent:
+        - RH_SalVentAttnB
     17Networks_RH_SalVentAttnB_PFCmp_1:
       name: 17Networks_RH_SalVentAttnB_PFCmp_1
       lookupLabel: 311
@@ -3697,7 +4007,8 @@ terminology:
         z: 25.0
       color: '#fa99d6'
       hemisphere: right
-      hasParent: RH_SalVentAttnB
+      hasParent:
+        - RH_SalVentAttnB
     17Networks_RH_SalVentAttnB_PFCmp_2:
       name: 17Networks_RH_SalVentAttnB_PFCmp_2
       lookupLabel: 312
@@ -3708,7 +4019,8 @@ terminology:
         z: 35.0
       color: '#fa99d7'
       hemisphere: right
-      hasParent: RH_SalVentAttnB
+      hasParent:
+        - RH_SalVentAttnB
     17Networks_RH_LimbicB_OFC_1:
       name: 17Networks_RH_LimbicB_OFC_1
       lookupLabel: 313
@@ -3719,7 +4031,8 @@ terminology:
         z: -21.0
       color: '#7e8732'
       hemisphere: right
-      hasParent: RH_LimbicB
+      hasParent:
+        - RH_LimbicB
     17Networks_RH_LimbicB_OFC_2:
       name: 17Networks_RH_LimbicB_OFC_2
       lookupLabel: 314
@@ -3730,7 +4043,8 @@ terminology:
         z: -21.0
       color: '#7e8734'
       hemisphere: right
-      hasParent: RH_LimbicB
+      hasParent:
+        - RH_LimbicB
     17Networks_RH_LimbicB_OFC_3:
       name: 17Networks_RH_LimbicB_OFC_3
       lookupLabel: 315
@@ -3741,7 +4055,8 @@ terminology:
         z: -23.0
       color: '#7e8735'
       hemisphere: right
-      hasParent: RH_LimbicB
+      hasParent:
+        - RH_LimbicB
     17Networks_RH_LimbicB_OFC_4:
       name: 17Networks_RH_LimbicB_OFC_4
       lookupLabel: 316
@@ -3752,7 +4067,8 @@ terminology:
         z: -18.0
       color: '#7e8736'
       hemisphere: right
-      hasParent: RH_LimbicB
+      hasParent:
+        - RH_LimbicB
     17Networks_RH_LimbicB_OFC_5:
       name: 17Networks_RH_LimbicB_OFC_5
       lookupLabel: 317
@@ -3763,7 +4079,8 @@ terminology:
         z: -21.0
       color: '#7e8737'
       hemisphere: right
-      hasParent: RH_LimbicB
+      hasParent:
+        - RH_LimbicB
     17Networks_RH_LimbicB_OFC_6:
       name: 17Networks_RH_LimbicB_OFC_6
       lookupLabel: 318
@@ -3774,7 +4091,8 @@ terminology:
         z: -14.0
       color: '#7e8738'
       hemisphere: right
-      hasParent: RH_LimbicB
+      hasParent:
+        - RH_LimbicB
     17Networks_RH_LimbicA_TempPole_1:
       name: 17Networks_RH_LimbicA_TempPole_1
       lookupLabel: 319
@@ -3785,7 +4103,8 @@ terminology:
         z: -40.0
       color: '#e0f8a4'
       hemisphere: right
-      hasParent: RH_LimbicA
+      hasParent:
+        - RH_LimbicA
     17Networks_RH_LimbicA_TempPole_2:
       name: 17Networks_RH_LimbicA_TempPole_2
       lookupLabel: 320
@@ -3796,7 +4115,8 @@ terminology:
         z: -39.0
       color: '#e0f8a6'
       hemisphere: right
-      hasParent: RH_LimbicA
+      hasParent:
+        - RH_LimbicA
     17Networks_RH_LimbicA_TempPole_3:
       name: 17Networks_RH_LimbicA_TempPole_3
       lookupLabel: 321
@@ -3807,7 +4127,8 @@ terminology:
         z: -38.0
       color: '#e0f8a7'
       hemisphere: right
-      hasParent: RH_LimbicA
+      hasParent:
+        - RH_LimbicA
     17Networks_RH_LimbicA_TempPole_4:
       name: 17Networks_RH_LimbicA_TempPole_4
       lookupLabel: 322
@@ -3818,7 +4139,8 @@ terminology:
         z: -31.0
       color: '#e0f8a8'
       hemisphere: right
-      hasParent: RH_LimbicA
+      hasParent:
+        - RH_LimbicA
     17Networks_RH_LimbicA_TempPole_5:
       name: 17Networks_RH_LimbicA_TempPole_5
       lookupLabel: 323
@@ -3829,7 +4151,8 @@ terminology:
         z: -30.0
       color: '#e0f8a9'
       hemisphere: right
-      hasParent: RH_LimbicA
+      hasParent:
+        - RH_LimbicA
     17Networks_RH_LimbicA_TempPole_6:
       name: 17Networks_RH_LimbicA_TempPole_6
       lookupLabel: 324
@@ -3840,7 +4163,8 @@ terminology:
         z: -26.0
       color: '#e0f8aa'
       hemisphere: right
-      hasParent: RH_LimbicA
+      hasParent:
+        - RH_LimbicA
     17Networks_RH_ContA_IPS_1:
       name: 17Networks_RH_ContA_IPS_1
       lookupLabel: 325
@@ -3851,7 +4175,8 @@ terminology:
         z: 47.0
       color: '#ea9323'
       hemisphere: right
-      hasParent: RH_ContA
+      hasParent:
+        - RH_ContA
     17Networks_RH_ContA_IPS_2:
       name: 17Networks_RH_ContA_IPS_2
       lookupLabel: 326
@@ -3862,7 +4187,8 @@ terminology:
         z: 51.0
       color: '#ea9324'
       hemisphere: right
-      hasParent: RH_ContA
+      hasParent:
+        - RH_ContA
     17Networks_RH_ContA_IPS_3:
       name: 17Networks_RH_ContA_IPS_3
       lookupLabel: 327
@@ -3873,7 +4199,8 @@ terminology:
         z: 46.0
       color: '#ea9325'
       hemisphere: right
-      hasParent: RH_ContA
+      hasParent:
+        - RH_ContA
     17Networks_RH_ContA_IPS_4:
       name: 17Networks_RH_ContA_IPS_4
       lookupLabel: 328
@@ -3884,7 +4211,8 @@ terminology:
         z: 45.0
       color: '#ea9326'
       hemisphere: right
-      hasParent: RH_ContA
+      hasParent:
+        - RH_ContA
     17Networks_RH_ContA_PFCd_1:
       name: 17Networks_RH_ContA_PFCd_1
       lookupLabel: 329
@@ -3895,7 +4223,8 @@ terminology:
         z: 58.0
       color: '#ea9322'
       hemisphere: right
-      hasParent: RH_ContA
+      hasParent:
+        - RH_ContA
     17Networks_RH_ContA_PFCl_1:
       name: 17Networks_RH_ContA_PFCl_1
       lookupLabel: 330
@@ -3906,7 +4235,8 @@ terminology:
         z: 18.0
       color: '#e99421'
       hemisphere: right
-      hasParent: RH_ContA
+      hasParent:
+        - RH_ContA
     17Networks_RH_ContA_PFCl_2:
       name: 17Networks_RH_ContA_PFCl_2
       lookupLabel: 331
@@ -3917,7 +4247,8 @@ terminology:
         z: 23.0
       color: '#e99423'
       hemisphere: right
-      hasParent: RH_ContA
+      hasParent:
+        - RH_ContA
     17Networks_RH_ContA_PFCl_3:
       name: 17Networks_RH_ContA_PFCl_3
       lookupLabel: 332
@@ -3928,7 +4259,8 @@ terminology:
         z: 28.0
       color: '#e99424'
       hemisphere: right
-      hasParent: RH_ContA
+      hasParent:
+        - RH_ContA
     17Networks_RH_ContA_PFCl_4:
       name: 17Networks_RH_ContA_PFCl_4
       lookupLabel: 333
@@ -3939,7 +4271,8 @@ terminology:
         z: 25.0
       color: '#e99425'
       hemisphere: right
-      hasParent: RH_ContA
+      hasParent:
+        - RH_ContA
     17Networks_RH_ContA_PFCl_5:
       name: 17Networks_RH_ContA_PFCl_5
       lookupLabel: 334
@@ -3950,7 +4283,8 @@ terminology:
         z: 34.0
       color: '#e99426'
       hemisphere: right
-      hasParent: RH_ContA
+      hasParent:
+        - RH_ContA
     17Networks_RH_ContA_Cingm_1:
       name: 17Networks_RH_ContA_Cingm_1
       lookupLabel: 335
@@ -3961,7 +4295,8 @@ terminology:
         z: 30.0
       color: '#e99422'
       hemisphere: right
-      hasParent: RH_ContA
+      hasParent:
+        - RH_ContA
     17Networks_RH_ContB_Temp_1:
       name: 17Networks_RH_ContB_Temp_1
       lookupLabel: 336
@@ -3972,7 +4307,8 @@ terminology:
         z: -20.0
       color: '#8c334c'
       hemisphere: right
-      hasParent: RH_ContB
+      hasParent:
+        - RH_ContB
     17Networks_RH_ContB_Temp_2:
       name: 17Networks_RH_ContB_Temp_2
       lookupLabel: 337
@@ -3983,7 +4319,8 @@ terminology:
         z: -11.0
       color: '#8c334d'
       hemisphere: right
-      hasParent: RH_ContB
+      hasParent:
+        - RH_ContB
     17Networks_RH_ContB_IPL_1:
       name: 17Networks_RH_ContB_IPL_1
       lookupLabel: 338
@@ -3994,7 +4331,8 @@ terminology:
         z: 33.0
       color: '#8b324a'
       hemisphere: right
-      hasParent: RH_ContB
+      hasParent:
+        - RH_ContB
     17Networks_RH_ContB_IPL_2:
       name: 17Networks_RH_ContB_IPL_2
       lookupLabel: 339
@@ -4005,7 +4343,8 @@ terminology:
         z: 44.0
       color: '#8b324b'
       hemisphere: right
-      hasParent: RH_ContB
+      hasParent:
+        - RH_ContB
     17Networks_RH_ContB_IPL_3:
       name: 17Networks_RH_ContB_IPL_3
       lookupLabel: 340
@@ -4016,7 +4355,8 @@ terminology:
         z: 48.0
       color: '#8b324c'
       hemisphere: right
-      hasParent: RH_ContB
+      hasParent:
+        - RH_ContB
     17Networks_RH_ContB_IPL_4:
       name: 17Networks_RH_ContB_IPL_4
       lookupLabel: 341
@@ -4027,7 +4367,8 @@ terminology:
         z: 48.0
       color: '#8b324d'
       hemisphere: right
-      hasParent: RH_ContB
+      hasParent:
+        - RH_ContB
     17Networks_RH_ContB_PFCld_1:
       name: 17Networks_RH_ContB_PFCld_1
       lookupLabel: 342
@@ -4038,7 +4379,8 @@ terminology:
         z: 38.0
       color: '#8b314b'
       hemisphere: right
-      hasParent: RH_ContB
+      hasParent:
+        - RH_ContB
     17Networks_RH_ContB_PFCld_2:
       name: 17Networks_RH_ContB_PFCld_2
       lookupLabel: 343
@@ -4049,7 +4391,8 @@ terminology:
         z: 44.0
       color: '#8b314c'
       hemisphere: right
-      hasParent: RH_ContB
+      hasParent:
+        - RH_ContB
     17Networks_RH_ContB_PFCld_3:
       name: 17Networks_RH_ContB_PFCld_3
       lookupLabel: 344
@@ -4060,7 +4403,8 @@ terminology:
         z: 51.0
       color: '#8b314d'
       hemisphere: right
-      hasParent: RH_ContB
+      hasParent:
+        - RH_ContB
     17Networks_RH_ContB_PFCld_4:
       name: 17Networks_RH_ContB_PFCld_4
       lookupLabel: 345
@@ -4071,7 +4415,8 @@ terminology:
         z: 56.0
       color: '#8b314e'
       hemisphere: right
-      hasParent: RH_ContB
+      hasParent:
+        - RH_ContB
     17Networks_RH_ContB_PFClv_1:
       name: 17Networks_RH_ContB_PFClv_1
       lookupLabel: 346
@@ -4082,7 +4427,8 @@ terminology:
         z: -13.0
       color: '#8b314a'
       hemisphere: right
-      hasParent: RH_ContB
+      hasParent:
+        - RH_ContB
     17Networks_RH_ContB_PFClv_2:
       name: 17Networks_RH_ContB_PFClv_2
       lookupLabel: 347
@@ -4093,7 +4439,8 @@ terminology:
         z: -14.0
       color: '#8b314f'
       hemisphere: right
-      hasParent: RH_ContB
+      hasParent:
+        - RH_ContB
     17Networks_RH_ContB_PFClv_3:
       name: 17Networks_RH_ContB_PFClv_3
       lookupLabel: 348
@@ -4104,7 +4451,8 @@ terminology:
         z: -6.0
       color: '#8b3150'
       hemisphere: right
-      hasParent: RH_ContB
+      hasParent:
+        - RH_ContB
     17Networks_RH_ContB_PFClv_4:
       name: 17Networks_RH_ContB_PFClv_4
       lookupLabel: 349
@@ -4115,7 +4463,8 @@ terminology:
         z: 3.0
       color: '#8b3249'
       hemisphere: right
-      hasParent: RH_ContB
+      hasParent:
+        - RH_ContB
     17Networks_RH_ContB_PFCmp_1:
       name: 17Networks_RH_ContB_PFCmp_1
       lookupLabel: 350
@@ -4126,7 +4475,8 @@ terminology:
         z: 48.0
       color: '#8a324b'
       hemisphere: right
-      hasParent: RH_ContB
+      hasParent:
+        - RH_ContB
     17Networks_RH_ContC_pCun_1:
       name: 17Networks_RH_ContC_pCun_1
       lookupLabel: 351
@@ -4137,7 +4487,8 @@ terminology:
         z: 28.0
       color: '#7b8daf'
       hemisphere: right
-      hasParent: RH_ContC
+      hasParent:
+        - RH_ContC
     17Networks_RH_ContC_pCun_2:
       name: 17Networks_RH_ContC_pCun_2
       lookupLabel: 352
@@ -4148,7 +4499,8 @@ terminology:
         z: 39.0
       color: '#7b8db1'
       hemisphere: right
-      hasParent: RH_ContC
+      hasParent:
+        - RH_ContC
     17Networks_RH_ContC_pCun_3:
       name: 17Networks_RH_ContC_pCun_3
       lookupLabel: 353
@@ -4159,7 +4511,8 @@ terminology:
         z: 44.0
       color: '#7b8db2'
       hemisphere: right
-      hasParent: RH_ContC
+      hasParent:
+        - RH_ContC
     17Networks_RH_ContC_pCun_4:
       name: 17Networks_RH_ContC_pCun_4
       lookupLabel: 354
@@ -4170,7 +4523,8 @@ terminology:
         z: 45.0
       color: '#7b8db3'
       hemisphere: right
-      hasParent: RH_ContC
+      hasParent:
+        - RH_ContC
     17Networks_RH_ContC_pCun_5:
       name: 17Networks_RH_ContC_pCun_5
       lookupLabel: 355
@@ -4181,7 +4535,8 @@ terminology:
         z: 53.0
       color: '#7b8db4'
       hemisphere: right
-      hasParent: RH_ContC
+      hasParent:
+        - RH_ContC
     17Networks_RH_ContC_Cingp_1:
       name: 17Networks_RH_ContC_Cingp_1
       lookupLabel: 356
@@ -4192,7 +4547,8 @@ terminology:
         z: 20.0
       color: '#7b8db5'
       hemisphere: right
-      hasParent: RH_ContC
+      hasParent:
+        - RH_ContC
     17Networks_RH_ContC_Cingp_2:
       name: 17Networks_RH_ContC_Cingp_2
       lookupLabel: 357
@@ -4203,7 +4559,8 @@ terminology:
         z: 28.0
       color: '#7b8db6'
       hemisphere: right
-      hasParent: RH_ContC
+      hasParent:
+        - RH_ContC
     17Networks_RH_DefaultA_Temp_1:
       name: 17Networks_RH_DefaultA_Temp_1
       lookupLabel: 358
@@ -4214,7 +4571,8 @@ terminology:
         z: -23.0
       color: '#faff02'
       hemisphere: right
-      hasParent: RH_DefaultA
+      hasParent:
+        - RH_DefaultA
     17Networks_RH_DefaultA_IPL_1:
       name: 17Networks_RH_DefaultA_IPL_1
       lookupLabel: 359
@@ -4225,7 +4583,8 @@ terminology:
         z: 26.0
       color: '#fbfe02'
       hemisphere: right
-      hasParent: RH_DefaultA
+      hasParent:
+        - RH_DefaultA
     17Networks_RH_DefaultA_IPL_2:
       name: 17Networks_RH_DefaultA_IPL_2
       lookupLabel: 360
@@ -4236,7 +4595,8 @@ terminology:
         z: 42.0
       color: '#fbfe03'
       hemisphere: right
-      hasParent: RH_DefaultA
+      hasParent:
+        - RH_DefaultA
     17Networks_RH_DefaultA_PFCd_1:
       name: 17Networks_RH_DefaultA_PFCd_1
       lookupLabel: 361
@@ -4247,7 +4607,8 @@ terminology:
         z: 39.0
       color: '#fbff03'
       hemisphere: right
-      hasParent: RH_DefaultA
+      hasParent:
+        - RH_DefaultA
     17Networks_RH_DefaultA_PFCd_2:
       name: 17Networks_RH_DefaultA_PFCd_2
       lookupLabel: 362
@@ -4258,7 +4619,8 @@ terminology:
         z: 51.0
       color: '#fbff04'
       hemisphere: right
-      hasParent: RH_DefaultA
+      hasParent:
+        - RH_DefaultA
     17Networks_RH_DefaultA_pCunPCC_1:
       name: 17Networks_RH_DefaultA_pCunPCC_1
       lookupLabel: 363
@@ -4269,7 +4631,8 @@ terminology:
         z: 23.0
       color: '#fbfd01'
       hemisphere: right
-      hasParent: RH_DefaultA
+      hasParent:
+        - RH_DefaultA
     17Networks_RH_DefaultA_pCunPCC_2:
       name: 17Networks_RH_DefaultA_pCunPCC_2
       lookupLabel: 364
@@ -4280,7 +4643,8 @@ terminology:
         z: 31.0
       color: '#fbfd02'
       hemisphere: right
-      hasParent: RH_DefaultA
+      hasParent:
+        - RH_DefaultA
     17Networks_RH_DefaultA_pCunPCC_3:
       name: 17Networks_RH_DefaultA_pCunPCC_3
       lookupLabel: 365
@@ -4291,7 +4655,8 @@ terminology:
         z: 35.0
       color: '#fbfd03'
       hemisphere: right
-      hasParent: RH_DefaultA
+      hasParent:
+        - RH_DefaultA
     17Networks_RH_DefaultA_pCunPCC_4:
       name: 17Networks_RH_DefaultA_pCunPCC_4
       lookupLabel: 366
@@ -4302,7 +4667,8 @@ terminology:
         z: 37.0
       color: '#fbfd04'
       hemisphere: right
-      hasParent: RH_DefaultA
+      hasParent:
+        - RH_DefaultA
     17Networks_RH_DefaultA_pCunPCC_5:
       name: 17Networks_RH_DefaultA_pCunPCC_5
       lookupLabel: 367
@@ -4313,7 +4679,8 @@ terminology:
         z: 35.0
       color: '#fbfd05'
       hemisphere: right
-      hasParent: RH_DefaultA
+      hasParent:
+        - RH_DefaultA
     17Networks_RH_DefaultA_PFCm_1:
       name: 17Networks_RH_DefaultA_PFCm_1
       lookupLabel: 368
@@ -4324,7 +4691,8 @@ terminology:
         z: -11.0
       color: '#f9ff01'
       hemisphere: right
-      hasParent: RH_DefaultA
+      hasParent:
+        - RH_DefaultA
     17Networks_RH_DefaultA_PFCm_2:
       name: 17Networks_RH_DefaultA_PFCm_2
       lookupLabel: 369
@@ -4335,7 +4703,8 @@ terminology:
         z: 1.0
       color: '#f9ff02'
       hemisphere: right
-      hasParent: RH_DefaultA
+      hasParent:
+        - RH_DefaultA
     17Networks_RH_DefaultA_PFCm_3:
       name: 17Networks_RH_DefaultA_PFCm_3
       lookupLabel: 370
@@ -4346,7 +4715,8 @@ terminology:
         z: 4.0
       color: '#f9ff03'
       hemisphere: right
-      hasParent: RH_DefaultA
+      hasParent:
+        - RH_DefaultA
     17Networks_RH_DefaultA_PFCm_4:
       name: 17Networks_RH_DefaultA_PFCm_4
       lookupLabel: 371
@@ -4357,7 +4727,8 @@ terminology:
         z: 13.0
       color: '#f9ff04'
       hemisphere: right
-      hasParent: RH_DefaultA
+      hasParent:
+        - RH_DefaultA
     17Networks_RH_DefaultA_PFCm_5:
       name: 17Networks_RH_DefaultA_PFCm_5
       lookupLabel: 372
@@ -4368,7 +4739,8 @@ terminology:
         z: 16.0
       color: '#f9ff05'
       hemisphere: right
-      hasParent: RH_DefaultA
+      hasParent:
+        - RH_DefaultA
     17Networks_RH_DefaultA_PFCm_6:
       name: 17Networks_RH_DefaultA_PFCm_6
       lookupLabel: 373
@@ -4379,7 +4751,8 @@ terminology:
         z: 18.0
       color: '#f9ff06'
       hemisphere: right
-      hasParent: RH_DefaultA
+      hasParent:
+        - RH_DefaultA
     17Networks_RH_DefaultB_Temp_1:
       name: 17Networks_RH_DefaultB_Temp_1
       lookupLabel: 374
@@ -4390,7 +4763,8 @@ terminology:
         z: -7.0
       color: '#d23e50'
       hemisphere: right
-      hasParent: RH_DefaultB
+      hasParent:
+        - RH_DefaultB
     17Networks_RH_DefaultB_Temp_2:
       name: 17Networks_RH_DefaultB_Temp_2
       lookupLabel: 375
@@ -4401,7 +4775,8 @@ terminology:
         z: 0.0
       color: '#d23e51'
       hemisphere: right
-      hasParent: RH_DefaultB
+      hasParent:
+        - RH_DefaultB
     17Networks_RH_DefaultB_AntTemp_1:
       name: 17Networks_RH_DefaultB_AntTemp_1
       lookupLabel: 376
@@ -4412,7 +4787,8 @@ terminology:
         z: -33.0
       color: '#d23f4f'
       hemisphere: right
-      hasParent: RH_DefaultB
+      hasParent:
+        - RH_DefaultB
     17Networks_RH_DefaultB_PFCd_1:
       name: 17Networks_RH_DefaultB_PFCd_1
       lookupLabel: 377
@@ -4423,7 +4799,8 @@ terminology:
         z: 29.0
       color: '#d23f4e'
       hemisphere: right
-      hasParent: RH_DefaultB
+      hasParent:
+        - RH_DefaultB
     17Networks_RH_DefaultB_PFCd_2:
       name: 17Networks_RH_DefaultB_PFCd_2
       lookupLabel: 378
@@ -4434,7 +4811,8 @@ terminology:
         z: 36.0
       color: '#d23f50'
       hemisphere: right
-      hasParent: RH_DefaultB
+      hasParent:
+        - RH_DefaultB
     17Networks_RH_DefaultB_PFCd_3:
       name: 17Networks_RH_DefaultB_PFCd_3
       lookupLabel: 379
@@ -4445,7 +4823,8 @@ terminology:
         z: 40.0
       color: '#d23f51'
       hemisphere: right
-      hasParent: RH_DefaultB
+      hasParent:
+        - RH_DefaultB
     17Networks_RH_DefaultB_PFCd_4:
       name: 17Networks_RH_DefaultB_PFCd_4
       lookupLabel: 380
@@ -4456,7 +4835,8 @@ terminology:
         z: 52.0
       color: '#d23f52'
       hemisphere: right
-      hasParent: RH_DefaultB
+      hasParent:
+        - RH_DefaultB
     17Networks_RH_DefaultB_PFCd_5:
       name: 17Networks_RH_DefaultB_PFCd_5
       lookupLabel: 381
@@ -4467,7 +4847,8 @@ terminology:
         z: 63.0
       color: '#d23f53'
       hemisphere: right
-      hasParent: RH_DefaultB
+      hasParent:
+        - RH_DefaultB
     17Networks_RH_DefaultB_PFCv_1:
       name: 17Networks_RH_DefaultB_PFCv_1
       lookupLabel: 382
@@ -4478,7 +4859,8 @@ terminology:
         z: -18.0
       color: '#d13e4e'
       hemisphere: right
-      hasParent: RH_DefaultB
+      hasParent:
+        - RH_DefaultB
     17Networks_RH_DefaultB_PFCv_2:
       name: 17Networks_RH_DefaultB_PFCv_2
       lookupLabel: 383
@@ -4489,7 +4871,8 @@ terminology:
         z: -8.0
       color: '#d13e4f'
       hemisphere: right
-      hasParent: RH_DefaultB
+      hasParent:
+        - RH_DefaultB
     17Networks_RH_DefaultB_PFCv_3:
       name: 17Networks_RH_DefaultB_PFCv_3
       lookupLabel: 384
@@ -4500,7 +4883,8 @@ terminology:
         z: 6.0
       color: '#d13e50'
       hemisphere: right
-      hasParent: RH_DefaultB
+      hasParent:
+        - RH_DefaultB
     17Networks_RH_DefaultC_IPL_1:
       name: 17Networks_RH_DefaultC_IPL_1
       lookupLabel: 385
@@ -4511,7 +4895,8 @@ terminology:
         z: 22.0
       color: '#040184'
       hemisphere: right
-      hasParent: RH_DefaultC
+      hasParent:
+        - RH_DefaultC
     17Networks_RH_DefaultC_IPL_2:
       name: 17Networks_RH_DefaultC_IPL_2
       lookupLabel: 386
@@ -4522,7 +4907,8 @@ terminology:
         z: 31.0
       color: '#040185'
       hemisphere: right
-      hasParent: RH_DefaultC
+      hasParent:
+        - RH_DefaultC
     17Networks_RH_DefaultC_Rsp_1:
       name: 17Networks_RH_DefaultC_Rsp_1
       lookupLabel: 387
@@ -4533,7 +4919,8 @@ terminology:
         z: 4.0
       color: '#050083'
       hemisphere: right
-      hasParent: RH_DefaultC
+      hasParent:
+        - RH_DefaultC
     17Networks_RH_DefaultC_Rsp_2:
       name: 17Networks_RH_DefaultC_Rsp_2
       lookupLabel: 388
@@ -4544,7 +4931,8 @@ terminology:
         z: 15.0
       color: '#050084'
       hemisphere: right
-      hasParent: RH_DefaultC
+      hasParent:
+        - RH_DefaultC
     17Networks_RH_DefaultC_PHC_1:
       name: 17Networks_RH_DefaultC_PHC_1
       lookupLabel: 389
@@ -4555,7 +4943,8 @@ terminology:
         z: -27.0
       color: '#050085'
       hemisphere: right
-      hasParent: RH_DefaultC
+      hasParent:
+        - RH_DefaultC
     17Networks_RH_DefaultC_PHC_2:
       name: 17Networks_RH_DefaultC_PHC_2
       lookupLabel: 390
@@ -4566,7 +4955,8 @@ terminology:
         z: -18.0
       color: '#050086'
       hemisphere: right
-      hasParent: RH_DefaultC
+      hasParent:
+        - RH_DefaultC
     17Networks_RH_TempPar_1:
       name: 17Networks_RH_TempPar_1
       lookupLabel: 391
@@ -4577,7 +4967,8 @@ terminology:
         z: -20.0
       color: '#1030fb'
       hemisphere: right
-      hasParent: RH_TempPar
+      hasParent:
+        - RH_TempPar
     17Networks_RH_TempPar_2:
       name: 17Networks_RH_TempPar_2
       lookupLabel: 392
@@ -4588,7 +4979,8 @@ terminology:
         z: -14.0
       color: '#1030fc'
       hemisphere: right
-      hasParent: RH_TempPar
+      hasParent:
+        - RH_TempPar
     17Networks_RH_TempPar_3:
       name: 17Networks_RH_TempPar_3
       lookupLabel: 393
@@ -4599,7 +4991,8 @@ terminology:
         z: -8.0
       color: '#1030fd'
       hemisphere: right
-      hasParent: RH_TempPar
+      hasParent:
+        - RH_TempPar
     17Networks_RH_TempPar_4:
       name: 17Networks_RH_TempPar_4
       lookupLabel: 394
@@ -4610,7 +5003,8 @@ terminology:
         z: 0.0
       color: '#1030ff'
       hemisphere: right
-      hasParent: RH_TempPar
+      hasParent:
+        - RH_TempPar
     17Networks_RH_TempPar_5:
       name: 17Networks_RH_TempPar_5
       lookupLabel: 395
@@ -4621,7 +5015,8 @@ terminology:
         z: 2.0
       color: '#0d29fa'
       hemisphere: right
-      hasParent: RH_TempPar
+      hasParent:
+        - RH_TempPar
     17Networks_RH_TempPar_6:
       name: 17Networks_RH_TempPar_6
       lookupLabel: 396
@@ -4632,7 +5027,8 @@ terminology:
         z: 7.0
       color: '#0d29fb'
       hemisphere: right
-      hasParent: RH_TempPar
+      hasParent:
+        - RH_TempPar
     17Networks_RH_TempPar_7:
       name: 17Networks_RH_TempPar_7
       lookupLabel: 397
@@ -4643,7 +5039,8 @@ terminology:
         z: 13.0
       color: '#0d29fc'
       hemisphere: right
-      hasParent: RH_TempPar
+      hasParent:
+        - RH_TempPar
     17Networks_RH_TempPar_8:
       name: 17Networks_RH_TempPar_8
       lookupLabel: 398
@@ -4654,7 +5051,8 @@ terminology:
         z: 11.0
       color: '#0d29fd'
       hemisphere: right
-      hasParent: RH_TempPar
+      hasParent:
+        - RH_TempPar
     17Networks_RH_TempPar_9:
       name: 17Networks_RH_TempPar_9
       lookupLabel: 399
@@ -4665,7 +5063,8 @@ terminology:
         z: 19.0
       color: '#0d29fe'
       hemisphere: right
-      hasParent: RH_TempPar
+      hasParent:
+        - RH_TempPar
     17Networks_RH_TempPar_10:
       name: 17Networks_RH_TempPar_10
       lookupLabel: 400
@@ -4676,6 +5075,7 @@ terminology:
         z: 22.0
       color: '#0d2af7'
       hemisphere: right
-      hasParent: RH_TempPar
+      hasParent:
+        - RH_TempPar
   versionIdentifier: '2018'
   dataLocation: schaefer2018_original_mni/Schaefer2018_400Parcels_17Networks_order_FSLMNI152_1mm.nii.gz
