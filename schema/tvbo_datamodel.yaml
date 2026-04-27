@@ -22,6 +22,7 @@ prefixes:
     bibo: http://purl.org/ontology/bibo/
 imports:
     - linkml:types
+    - common
     - units
     - SANDS
     - tvbo_study
@@ -32,10 +33,6 @@ default_prefix: tvbo
 default_range: string
 
 slots:
-    name:
-        slot_uri: schema:name
-        range: string
-        key: true
     time_scale:
         range: UnitEnum
         ifabsent: "ms"
@@ -1489,14 +1486,12 @@ classes:
             OR inline an equation, OR use class_call for class instantiation.
             Mirrors Function attributes so pipeline steps can be self-contained.
         slots:
+            - name
             - acronym
             - label
             - equation
             - description
         attributes:
-            name:
-                range: string
-                description: "Optional name for this pipeline step"
             function:
                 description: "Reference to a defined Function (by name)"
                 range: Function
@@ -1713,7 +1708,8 @@ classes:
             free_parameters:
                 multivalued: true
                 range: Parameter
-                inlined: false
+                inlined: true
+                inlined_as_list: true
                 description: >-
                     Parameters to optimize in this stage.
                     Use 'shape' attribute to specify scalar vs regional.
@@ -1820,6 +1816,7 @@ classes:
                 multivalued: true
                 range: Parameter
                 inlined: true
+                inlined_as_list: true
                 description: "Parameters with domain ranges to explore (uses domain.lo, domain.hi, domain.n)"
             mode:
                 range: string
@@ -1901,6 +1898,7 @@ classes:
                 multivalued: true
                 range: Parameter
                 inlined: true
+                inlined_as_list: true
                 description: >-
                     Override hyperparameter values for the included algorithm.
                     Maps parameter names to new values.
@@ -1955,6 +1953,7 @@ classes:
                 multivalued: true
                 range: AlgorithmInclude
                 inlined: true
+                inlined_as_list: true
                 description: >-
                     Include update rules from other algorithms with optional argument overrides.
                     Unlike depends_on (sequential), includes means combined execution.
@@ -1974,6 +1973,7 @@ classes:
                 multivalued: true
                 range: UpdateRule
                 inlined: true
+                inlined_as_list: true
                 required: false
                 description: >-
                     How parameters are updated each iteration.
@@ -1982,6 +1982,7 @@ classes:
                 multivalued: true
                 range: Parameter
                 inlined: true
+                inlined_as_list: true
                 description: Additional algorithm-specific parameters
             learning_rate:
                 range: float
@@ -2032,12 +2033,13 @@ classes:
             A toolkit-specific key-value option (string name + string value).
             Used for backend settings that are not universal numeric parameters
             (e.g., solver name, tangent method, jacobian type).
-        attributes:
+        slots:
+            - name
+        slot_usage:
             name:
-                range: string
                 required: true
-                identifier: true
                 description: "Option name (key)."
+        attributes:
             value:
                 range: string
                 required: true
@@ -2093,6 +2095,7 @@ classes:
                 multivalued: true
                 range: Option
                 inlined: true
+                inlined_as_list: true
                 description: "Toolkit-specific string options (jacobian type, etc.)."
 
     InitialState:
@@ -2323,10 +2326,10 @@ classes:
                 multivalued: true
                 range: Option
                 inlined: true
+                inlined_as_list: true
                 description: >-
                     Toolkit-specific string options (tangent method,
                     solver name, etc.).
-
     Solver:
         class_uri: tvbo:Solver
         description: >-
@@ -2431,27 +2434,20 @@ classes:
                 description: "Post-processing expression applied after coupling"
                 inlined: true
             incoming_states:
-                range: string
+                range: StateVariable
+                inlined: false
                 multivalued: true
-                annotations:
-                    references: tvbo:StateVariable.name
                 description: >-
-                    Names of state variables from connected (source) nodes.
-                    Each entry must equal a StateVariable.name on the experiment's
-                    Dynamics; auto-populated from state_variables with
-                    coupling_variable=true when omitted. Used by name in
-                    pre_expression. Cannot use range: StateVariable directly
-                    because StateVariable.name is a key (scoped under Dynamics),
-                    not a globally unique identifier.
+                    References to state variables from connected (source) nodes.
+                    Auto-populated from state_variables with coupling_variable=true
+                    when omitted. Used by name in pre_expression.
             local_states:
-                range: string
+                range: StateVariable
+                inlined: false
                 multivalued: true
-                annotations:
-                    references: tvbo:StateVariable.name
                 description: >-
-                    Names of state variables from the local (target) node.
-                    Each entry must equal a StateVariable.name on the experiment's
-                    Dynamics. Used by name in pre_expression.
+                    References to state variables from the local (target) node.
+                    Used by name in pre_expression.
             delayed:
                 range: boolean
                 ifabsent: true

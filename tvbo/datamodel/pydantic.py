@@ -124,6 +124,7 @@ linkml_meta = LinkMLMeta({'default_prefix': 'tvbo',
                     'models of large-scale brain activity.',
      'id': 'https://w3id.org/tvbo',
      'imports': ['linkml:types',
+                 'common',
                  'units',
                  'SANDS',
                  'tvbo_study',
@@ -1139,7 +1140,7 @@ class BrainAtlas(ConfiguredBaseModel):
          'from_schema': 'https://openminds.ebrains.eu/sands/BrainAtlas'})
 
     coordinateSpace: Optional[str] = Field(default=None, description="""Add the common coordinate space used for this brain atlas version.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coordinate', 'BrainAtlas']} })
-    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
@@ -1161,7 +1162,6 @@ class BrainAtlas(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
-                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -1196,7 +1196,7 @@ class CommonCoordinateSpace(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'atom:atlas/Transformation',
          'from_schema': 'https://openminds.ebrains.eu/sands/BrainAtlas'})
 
-    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
@@ -1218,7 +1218,6 @@ class CommonCoordinateSpace(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
-                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -1270,7 +1269,7 @@ class ParcellationEntity(ConfiguredBaseModel):
     alternateName: Optional[list[str]] = Field(default=None, description="""Enter any alternate names, including abbreviations, for this entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationEntity'], 'slot_uri': 'atom:atlas/hasName'} })
     lookupLabel: Optional[int] = Field(default=None, description="""Enter the label used for looking up this entity in the parcellation terminology.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationEntity'], 'slot_uri': 'atom:atlas/lookupLabel'} })
     hasParent: Optional[list[str]] = Field(default=None, description="""Add all anatomical parent structures for this entity as defined within the corresponding brain atlas.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationEntity'], 'slot_uri': 'atom:atlas/hasParent'} })
-    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
@@ -1292,7 +1291,6 @@ class ParcellationEntity(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
-                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -1892,7 +1890,7 @@ class DBSProtocol(ConfiguredBaseModel):
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'http://www.thevirtualbrain.org/tvbo/dbs'})
 
-    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
@@ -1914,7 +1912,6 @@ class DBSProtocol(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
-                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -1969,7 +1966,6 @@ class ClinicalScale(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
-                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -2032,7 +2028,6 @@ class ClinicalScore(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
-                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -2147,7 +2142,7 @@ class SoftwarePackage(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'schema:SoftwareApplication',
          'from_schema': 'https://w3id.org/tvbo/software'})
 
-    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
@@ -2169,7 +2164,6 @@ class SoftwarePackage(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
-                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -2279,7 +2273,7 @@ class SimulationTool(SoftwarePackage):
     is_accessible_for_free: Optional[bool] = Field(default=True, description="""Whether the tool is free/open-source.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationTool'],
          'ifabsent': 'True',
          'slot_uri': 'schema:isAccessibleForFree'} })
-    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
@@ -2301,7 +2295,6 @@ class SimulationTool(SoftwarePackage):
                        'CouplingInput',
                        'Argument',
                        'Function',
-                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -2384,7 +2377,7 @@ class SoftwareRequirement(ConfiguredBaseModel):
                       "Use 'version_spec' instead of 'version' for semantic clarity."],
          'from_schema': 'https://w3id.org/tvbo/software'})
 
-    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
@@ -2406,7 +2399,6 @@ class SoftwareRequirement(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
-                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -2418,7 +2410,8 @@ class SoftwareRequirement(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling']} })
+                       'Coupling'],
+         'slot_uri': 'schema:name'} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
                        'ClinicalScore',
                        'SoftwarePackage',
@@ -2509,6 +2502,41 @@ class SoftwareEnvironment(ConfiguredBaseModel):
                       'environment.'],
          'from_schema': 'https://w3id.org/tvbo/software'})
 
+    name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+                       'CommonCoordinateSpace',
+                       'ParcellationEntity',
+                       'DBSProtocol',
+                       'ClinicalScale',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
+                       'Event',
+                       'Tractogram',
+                       'GraphGenerator',
+                       'File',
+                       'StateValue',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Distribution',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Exploration',
+                       'UpdateRule',
+                       'Algorithm',
+                       'Option',
+                       'BranchSwitch',
+                       'Continuation',
+                       'Coupling'],
+         'slot_uri': 'schema:name'} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Subject',
                        'Session',
@@ -2613,41 +2641,6 @@ class SoftwareEnvironment(ConfiguredBaseModel):
                        'TimeSeries',
                        'NDArray',
                        'Mesh']} })
-    name: Optional[str] = Field(default=None, description="""Human-readable environment label.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
-                       'CommonCoordinateSpace',
-                       'ParcellationEntity',
-                       'DBSProtocol',
-                       'ClinicalScale',
-                       'ClinicalScore',
-                       'SoftwarePackage',
-                       'SoftwareRequirement',
-                       'SoftwareEnvironment',
-                       'Event',
-                       'Tractogram',
-                       'GraphGenerator',
-                       'File',
-                       'StateValue',
-                       'Observation',
-                       'Dynamics',
-                       'StateVariable',
-                       'Distribution',
-                       'Parameter',
-                       'CouplingInput',
-                       'Argument',
-                       'Function',
-                       'FunctionCall',
-                       'Callable',
-                       'DerivedParameter',
-                       'DerivedVariable',
-                       'DataSource',
-                       'OptimizationStage',
-                       'Exploration',
-                       'UpdateRule',
-                       'Algorithm',
-                       'Option',
-                       'BranchSwitch',
-                       'Continuation',
-                       'Coupling']} })
     version: Optional[str] = Field(default=None, description="""Environment definition version (not a package version).""", json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
                        'SimulationTool',
                        'SoftwareRequirement',
@@ -2963,7 +2956,7 @@ class Event(ConfiguredBaseModel):
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Event', 'from_schema': 'https://w3id.org/tvbo'})
 
-    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
@@ -2985,7 +2978,6 @@ class Event(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
-                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -3327,7 +3319,7 @@ class Tractogram(ConfiguredBaseModel):
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Tractogram', 'from_schema': 'https://w3id.org/tvbo'})
 
-    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
@@ -3349,7 +3341,6 @@ class Tractogram(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
-                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -3788,7 +3779,7 @@ class GraphGenerator(ConfiguredBaseModel):
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:GraphGenerator', 'from_schema': 'https://w3id.org/tvbo'})
 
-    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
@@ -3810,7 +3801,6 @@ class GraphGenerator(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
-                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -3906,7 +3896,7 @@ class GraphGenerator(ConfiguredBaseModel):
 class File(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:File', 'from_schema': 'https://w3id.org/tvbo'})
 
-    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
@@ -3928,7 +3918,6 @@ class File(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
-                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -4140,7 +4129,7 @@ class StateValue(ConfiguredBaseModel):
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:StateValue', 'from_schema': 'https://w3id.org/tvbo'})
 
-    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
@@ -4162,7 +4151,6 @@ class StateValue(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
-                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -4341,7 +4329,7 @@ class Observation(ConfiguredBaseModel):
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Observation', 'from_schema': 'https://w3id.org/tvbo'})
 
-    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
@@ -4363,7 +4351,6 @@ class Observation(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
-                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -4508,7 +4495,7 @@ class Observation(ConfiguredBaseModel):
                        'Integrator',
                        'Coupling',
                        'PDE']} })
-    environment: Optional[SoftwareEnvironment] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'SimulationExperiment', 'PDESolver']} })
+    environment: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'SimulationExperiment', 'PDESolver']} })
     time_scale: Optional[UnitEnum] = Field(default=UnitEnum.ms, description="""Time unit for the integration / simulation. Determines the physical time meaning of one model time-step.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'Integrator'], 'ifabsent': 'ms'} })
     source: Optional[str] = Field(default=None, description="""State variable to observe (e.g., S_e for excitatory activity). For observations derived from other observations, use DerivedObservation.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge', 'Observation', 'Dynamics', 'CouplingInput']} })
     period: Optional[float] = Field(default=None, description="""Sampling period for monitors (ms). For BOLD: TR in ms.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
@@ -4532,7 +4519,7 @@ class DerivedObservation(Observation):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:DerivedObservation', 'from_schema': 'https://w3id.org/tvbo'})
 
     source_observations: list[str] = Field(default=..., description="""One or more observations to derive from. For transformations (e.g., fc from bold), use single source. For comparisons (e.g., fc_corr from fc and fc_target), use multiple sources. Order may matter for asymmetric operations.""", min_length=1, json_schema_extra = { "linkml_meta": {'domain_of': ['DerivedObservation']} })
-    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
@@ -4554,7 +4541,6 @@ class DerivedObservation(Observation):
                        'CouplingInput',
                        'Argument',
                        'Function',
-                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -4699,7 +4685,7 @@ class DerivedObservation(Observation):
                        'Integrator',
                        'Coupling',
                        'PDE']} })
-    environment: Optional[SoftwareEnvironment] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'SimulationExperiment', 'PDESolver']} })
+    environment: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'SimulationExperiment', 'PDESolver']} })
     time_scale: Optional[UnitEnum] = Field(default=UnitEnum.ms, description="""Time unit for the integration / simulation. Determines the physical time meaning of one model time-step.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'Integrator'], 'ifabsent': 'ms'} })
     source: Optional[str] = Field(default=None, description="""State variable to observe (e.g., S_e for excitatory activity). For observations derived from other observations, use DerivedObservation.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge', 'Observation', 'Dynamics', 'CouplingInput']} })
     period: Optional[float] = Field(default=None, description="""Sampling period for monitors (ms). For BOLD: TR in ms.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
@@ -4726,7 +4712,7 @@ class Dynamics(ConfiguredBaseModel):
                                         'name': 'system_type'}}})
 
     has_reference: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics'], 'slot_uri': 'dcterms:references'} })
-    name: str = Field(default="Generic2dOscillator", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: str = Field(default="Generic2dOscillator", description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
@@ -4748,7 +4734,6 @@ class Dynamics(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
-                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -4916,7 +4901,7 @@ class StateVariable(ConfiguredBaseModel):
          'from_schema': 'https://w3id.org/tvbo',
          'slot_usage': {'record': {'ifabsent': 'True', 'name': 'record'}}})
 
-    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
@@ -4938,7 +4923,6 @@ class StateVariable(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
-                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -5109,7 +5093,7 @@ class Distribution(ConfiguredBaseModel):
          'from_schema': 'https://w3id.org/tvbo',
          'slot_usage': {'name': {'ifabsent': 'string(Uniform)', 'name': 'name'}}})
 
-    name: str = Field(default="Uniform", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: str = Field(default="Uniform", description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
@@ -5131,7 +5115,6 @@ class Distribution(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
-                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -5179,7 +5162,7 @@ class Distribution(ConfiguredBaseModel):
 class Parameter(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Parameter', 'from_schema': 'https://w3id.org/tvbo'})
 
-    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
@@ -5201,7 +5184,6 @@ class Parameter(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
-                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -5374,7 +5356,7 @@ class CouplingInput(ConfiguredBaseModel):
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:CouplingInput', 'from_schema': 'https://w3id.org/tvbo'})
 
-    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
@@ -5396,7 +5378,6 @@ class CouplingInput(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
-                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -5471,7 +5452,7 @@ class Argument(ConfiguredBaseModel):
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Argument', 'from_schema': 'https://w3id.org/tvbo'})
 
-    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
@@ -5493,7 +5474,6 @@ class Argument(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
-                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -5581,7 +5561,7 @@ class Function(ConfiguredBaseModel):
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Function', 'from_schema': 'https://w3id.org/tvbo'})
 
-    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
@@ -5603,7 +5583,6 @@ class Function(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
-                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -5772,7 +5751,7 @@ class LossFunction(Function):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:LossFunction', 'from_schema': 'https://w3id.org/tvbo'})
 
     aggregate: Optional[Aggregation] = Field(default=None, description="""How to aggregate the loss across dimensions. Example: aggregate.over=node, aggregate.type=mean computes loss per node, then averages.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'LossFunction', 'FunctionCall']} })
-    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
@@ -5794,7 +5773,6 @@ class LossFunction(Function):
                        'CouplingInput',
                        'Argument',
                        'Function',
-                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -6059,41 +6037,6 @@ class FunctionCall(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE'],
          'slot_uri': 'dcterms:description'} })
-    name: Optional[str] = Field(default=None, description="""Optional name for this pipeline step""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
-                       'CommonCoordinateSpace',
-                       'ParcellationEntity',
-                       'DBSProtocol',
-                       'ClinicalScale',
-                       'ClinicalScore',
-                       'SoftwarePackage',
-                       'SoftwareRequirement',
-                       'SoftwareEnvironment',
-                       'Event',
-                       'Tractogram',
-                       'GraphGenerator',
-                       'File',
-                       'StateValue',
-                       'Observation',
-                       'Dynamics',
-                       'StateVariable',
-                       'Distribution',
-                       'Parameter',
-                       'CouplingInput',
-                       'Argument',
-                       'Function',
-                       'FunctionCall',
-                       'Callable',
-                       'DerivedParameter',
-                       'DerivedVariable',
-                       'DataSource',
-                       'OptimizationStage',
-                       'Exploration',
-                       'UpdateRule',
-                       'Algorithm',
-                       'Option',
-                       'BranchSwitch',
-                       'Continuation',
-                       'Coupling']} })
     function: Optional[str] = Field(default=None, description="""Reference to a defined Function (by name)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Distribution', 'FunctionCall', 'Noise']} })
     callable: Optional[Callable] = Field(default=None, description="""Direct callable specification (alternative to function reference)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall']} })
     class_call: Optional[ClassReference] = Field(default=None, description="""Class instantiation and call (alternative to callable/function). Use for external library classes that need __init__ then __call__. Example: Bold monitor from tvboptim.""", json_schema_extra = { "linkml_meta": {'domain_of': ['FunctionCall']} })
@@ -6109,7 +6052,7 @@ class FunctionCall(ConfiguredBaseModel):
 class Callable(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Callable', 'from_schema': 'https://w3id.org/tvbo'})
 
-    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
@@ -6131,7 +6074,6 @@ class Callable(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
-                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -6208,7 +6150,7 @@ class ClassReference(Callable):
     constructor_args: Optional[list[Argument]] = Field(default=None, description="""Arguments passed to __init__ when instantiating the class. Example: period=1000.0, downsample_period=4.0 for Bold monitor.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ClassReference']} })
     call_args: Optional[list[Argument]] = Field(default=None, description="""Arguments passed when calling the instance (__call__). Usually the input data from simulation result. Example: result (simulation output array).""", json_schema_extra = { "linkml_meta": {'domain_of': ['ClassReference']} })
     warmup_source: Optional[str] = Field(default=None, description="""Reference to transient simulation result for history initialization. Some monitors (e.g., Bold) require history from warmup simulation. Value should reference a simulation result name (e.g., 'result_init').""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'ClassReference']} })
-    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
@@ -6230,7 +6172,6 @@ class ClassReference(Callable):
                        'CouplingInput',
                        'Argument',
                        'Function',
-                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -6320,7 +6261,7 @@ class Case(ConfiguredBaseModel):
 class DerivedParameter(Parameter):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:DerivedParameter', 'from_schema': 'https://w3id.org/tvbo'})
 
-    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
@@ -6342,7 +6283,6 @@ class DerivedParameter(Parameter):
                        'CouplingInput',
                        'Argument',
                        'Function',
-                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -6514,7 +6454,7 @@ class DerivedVariable(ConfiguredBaseModel):
          'from_schema': 'https://w3id.org/tvbo',
          'slot_usage': {'record': {'ifabsent': 'False', 'name': 'record'}}})
 
-    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
@@ -6536,7 +6476,6 @@ class DerivedVariable(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
-                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -6841,7 +6780,7 @@ class DataSource(ConfiguredBaseModel):
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:DataSource', 'from_schema': 'https://w3id.org/tvbo'})
 
-    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
@@ -6863,7 +6802,6 @@ class DataSource(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
-                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -6983,7 +6921,7 @@ class OptimizationStage(ConfiguredBaseModel):
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:OptimizationStage', 'from_schema': 'https://w3id.org/tvbo'})
 
-    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
@@ -7005,7 +6943,6 @@ class OptimizationStage(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
-                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -7137,7 +7074,7 @@ class Optimization(OptimizationStage):
     loss: Optional[FunctionCall] = Field(default=None, description="""Loss function call. Uses FunctionCall to either: 1. Reference existing function: function: rmse 2. Inline callable: callable: {module: ..., name: ...} Arguments specify inputs (simulated_fc, empirical_fc, etc.)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization']} })
     stages: Optional[list[OptimizationStage]] = Field(default=None, description="""Ordered list of optimization stages. Stages run sequentially. Stage n+1 starts from optimized values of stage n. When defined, inherited single-stage fields are ignored.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization']} })
     depends_on: Optional[str] = Field(default=None, description="""Algorithm to use as starting point for optimization. If specified, optimization starts from algorithm's result state. If not specified, optimization starts from initial simulation state.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization', 'Algorithm']} })
-    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
@@ -7159,7 +7096,6 @@ class Optimization(OptimizationStage):
                        'CouplingInput',
                        'Argument',
                        'Function',
-                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -7282,7 +7218,7 @@ class Exploration(ConfiguredBaseModel):
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Exploration', 'from_schema': 'https://w3id.org/tvbo'})
 
-    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
@@ -7304,7 +7240,6 @@ class Exploration(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
-                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -7416,7 +7351,7 @@ class Exploration(ConfiguredBaseModel):
                        'Algorithm',
                        'Continuation',
                        'SimulationExperiment']} })
-    parameters: Optional[dict[str, Parameter]] = Field(default=None, description="""Parameters with domain ranges to explore (uses domain.lo, domain.hi, domain.n)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
+    parameters: Optional[list[Parameter]] = Field(default=None, description="""Parameters with domain ranges to explore (uses domain.lo, domain.hi, domain.n)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
                        'Stimulus',
                        'Event',
                        'TemporalApplicableEquation',
@@ -7448,7 +7383,7 @@ class UpdateRule(ConfiguredBaseModel):
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:UpdateRule', 'from_schema': 'https://w3id.org/tvbo'})
 
-    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
@@ -7470,7 +7405,6 @@ class UpdateRule(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
-                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -7560,7 +7494,7 @@ class AlgorithmInclude(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:AlgorithmInclude', 'from_schema': 'https://w3id.org/tvbo'})
 
     algorithm: str = Field(default=..., description="""Reference to the algorithm to include""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'AlgorithmInclude', 'Continuation']} })
-    arguments: Optional[dict[str, Parameter]] = Field(default=None, description="""Override hyperparameter values for the included algorithm. Maps parameter names to new values.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall', 'AlgorithmInclude']} })
+    arguments: Optional[list[Parameter]] = Field(default=None, description="""Override hyperparameter values for the included algorithm. Maps parameter names to new values.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall', 'AlgorithmInclude']} })
 
 
 class TuningObjective(ConfiguredBaseModel):
@@ -7679,7 +7613,7 @@ class Algorithm(ConfiguredBaseModel):
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Algorithm', 'from_schema': 'https://w3id.org/tvbo'})
 
-    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
@@ -7701,7 +7635,6 @@ class Algorithm(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
-                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -7778,8 +7711,8 @@ class Algorithm(ConfiguredBaseModel):
     includes: Optional[list[AlgorithmInclude]] = Field(default=None, description="""Include update rules from other algorithms with optional argument overrides. Unlike depends_on (sequential), includes means combined execution. Example: includes: [{algorithm: fic, arguments: [{name: eta, value: 0.1}]}]""", json_schema_extra = { "linkml_meta": {'domain_of': ['Algorithm']} })
     objective: Optional[TuningObjective] = Field(default=None, description="""What the algorithm optimizes for""", json_schema_extra = { "linkml_meta": {'domain_of': ['Algorithm']} })
     observations: Optional[list[str]] = Field(default=None, description="""References to observations defined in the observations section. Includes both simulated observations and external data (via data_source).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Algorithm', 'SimulationExperiment']} })
-    update_rules: Optional[dict[str, UpdateRule]] = Field(default=None, description="""How parameters are updated each iteration. When using 'includes', update_rules are inherited from included algorithms.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Algorithm']} })
-    hyperparameters: Optional[dict[str, Parameter]] = Field(default=None, description="""Additional algorithm-specific parameters""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Algorithm']} })
+    update_rules: Optional[list[UpdateRule]] = Field(default=None, description="""How parameters are updated each iteration. When using 'includes', update_rules are inherited from included algorithms.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Algorithm']} })
+    hyperparameters: Optional[list[Parameter]] = Field(default=None, description="""Additional algorithm-specific parameters""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Algorithm']} })
     learning_rate: Optional[float] = Field(default=None, description="""Learning rate (eta) for the tuning algorithm""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Algorithm']} })
     learning_rate_warmup: Optional[bool] = Field(default=False, description="""Linear warmup of learning rate from 0 to learning_rate over n_iterations. eta_effective = eta * (i+1) / n_iterations""", json_schema_extra = { "linkml_meta": {'domain_of': ['Algorithm'], 'ifabsent': 'boolean(false)'} })
     n_iterations: Optional[int] = Field(default=None, description="""Number of iterations to run""", json_schema_extra = { "linkml_meta": {'domain_of': ['Algorithm']} })
@@ -7794,7 +7727,11 @@ class Option(ConfiguredBaseModel):
     """
     A toolkit-specific key-value option (string name + string value). Used for backend settings that are not universal numeric parameters (e.g., solver name, tangent method, jacobian type).
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Option', 'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Option',
+         'from_schema': 'https://w3id.org/tvbo',
+         'slot_usage': {'name': {'description': 'Option name (key).',
+                                 'name': 'name',
+                                 'required': True}}})
 
     name: str = Field(default=..., description="""Option name (key).""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
@@ -7818,7 +7755,6 @@ class Option(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
-                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -7830,7 +7766,8 @@ class Option(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling']} })
+                       'Coupling'],
+         'slot_uri': 'schema:name'} })
     value: str = Field(default=..., description="""Option value.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateValue',
                        'Parameter',
                        'Argument',
@@ -7869,7 +7806,7 @@ class Discretization(ConfiguredBaseModel):
     mesh_intervals: Optional[int] = Field(default=50, description="""Number of mesh intervals (time slices) for collocation or trapezoid methods. Collocation: N in PeriodicOrbitOCollProblem(N, m). Trapezoid: M in PeriodicOrbitTrapProblem(M=...).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization'], 'ifabsent': 'int(50)'} })
     degree: Optional[int] = Field(default=4, description="""Polynomial degree per mesh interval for collocation. The m in PeriodicOrbitOCollProblem(N, m).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization'], 'ifabsent': 'int(4)'} })
     n_sections: Optional[int] = Field(default=3, description="""Number of shooting sections for shooting or Poincaré methods.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization'], 'ifabsent': 'int(3)'} })
-    options: Optional[dict[str, Union[str, Option]]] = Field(default=None, description="""Toolkit-specific string options (jacobian type, etc.).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization', 'BranchSwitch', 'Continuation']} })
+    options: Optional[list[Option]] = Field(default=None, description="""Toolkit-specific string options (jacobian type, etc.).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization', 'BranchSwitch', 'Continuation']} })
 
 
 class InitialState(ConfiguredBaseModel):
@@ -7895,7 +7832,7 @@ class BranchSwitch(ConfiguredBaseModel):
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:BranchSwitch', 'from_schema': 'https://w3id.org/tvbo'})
 
-    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
@@ -7917,7 +7854,6 @@ class BranchSwitch(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
-                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -8013,7 +7949,7 @@ class Continuation(ConfiguredBaseModel):
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Continuation', 'from_schema': 'https://w3id.org/tvbo'})
 
-    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
@@ -8035,7 +7971,6 @@ class Continuation(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
-                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -8147,7 +8082,7 @@ class Continuation(ConfiguredBaseModel):
                        'Edge',
                        'Continuation',
                        'SimulationExperiment']} })
-    free_parameters: Optional[dict[str, Parameter]] = Field(default=None, description="""Parameters to vary. First parameter is primary (codim-1); second enables codim-2 continuation. Each Parameter has name + domain (Range with lo/hi bounds).""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Continuation']} })
+    free_parameters: Optional[list[Parameter]] = Field(default=None, description="""Parameters to vary. First parameter is primary (codim-1); second enables codim-2 continuation. Each Parameter has name + domain (Range with lo/hi bounds).""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Continuation']} })
     ds: Optional[float] = Field(default=None, description="""Initial arc-length step size.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation']} })
     ds_min: Optional[float] = Field(default=None, description="""Minimum adaptive step size.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation']} })
     ds_max: Optional[float] = Field(default=None, description="""Maximum adaptive step size.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation']} })
@@ -8163,7 +8098,7 @@ class Continuation(ConfiguredBaseModel):
     algorithm: Optional[ContinuationAlgorithm] = Field(default=ContinuationAlgorithm.PALC, description="""Predictor-corrector algorithm.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'AlgorithmInclude', 'Continuation'],
          'ifabsent': 'string(PALC)'} })
     initial_state: Optional[InitialState] = Field(default=None, description="""How to obtain the initial equilibrium. Default: time integration to steady state.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation']} })
-    branches: Optional[dict[str, BranchSwitch]] = Field(default=None, description="""Child branches to continue from detected bifurcation points (PO from Hopf, fold continuation, etc.).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation']} })
+    branches: Optional[list[BranchSwitch]] = Field(default=None, description="""Child branches to continue from detected bifurcation points (PO from Hopf, fold continuation, etc.).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Continuation']} })
     bothside: Optional[bool] = Field(default=None, description="""Continue in both directions from the starting point.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BranchSwitch', 'Continuation']} })
     execution: Optional[ExecutionConfig] = Field(default=None, description="""Per-analysis execution configuration.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization',
                        'Exploration',
@@ -8171,7 +8106,7 @@ class Continuation(ConfiguredBaseModel):
                        'Continuation',
                        'SimulationExperiment']} })
     software: Optional[SoftwareRequirement] = Field(default=None, description="""Backend engine (BifurcationKit, AUTO-07p, MatCont, etc.).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Callable', 'Continuation', 'SimulationExperiment']} })
-    options: Optional[dict[str, Union[str, Option]]] = Field(default=None, description="""Toolkit-specific string options (tangent method, solver name, etc.).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization', 'BranchSwitch', 'Continuation']} })
+    options: Optional[list[Option]] = Field(default=None, description="""Toolkit-specific string options (tangent method, solver name, etc.).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Discretization', 'BranchSwitch', 'Continuation']} })
 
 
 class Solver(ConfiguredBaseModel):
@@ -8298,7 +8233,7 @@ class Coupling(ConfiguredBaseModel):
          'from_schema': 'https://w3id.org/tvbo',
          'slot_usage': {'name': {'ifabsent': 'Linear', 'name': 'name'}}})
 
-    name: str = Field(default="Linear", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: str = Field(default="Linear", description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
@@ -8320,7 +8255,6 @@ class Coupling(ConfiguredBaseModel):
                        'CouplingInput',
                        'Argument',
                        'Function',
-                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -8452,12 +8386,8 @@ class Coupling(ConfiguredBaseModel):
     sparse: Optional[bool] = Field(default=False, description="""Whether the coupling uses sparse representations""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coupling'], 'ifabsent': 'False'} })
     pre_expression: Optional[Equation] = Field(default=None, description="""Pre-processing expression applied before coupling""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coupling']} })
     post_expression: Optional[Equation] = Field(default=None, description="""Post-processing expression applied after coupling""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coupling']} })
-    incoming_states: Optional[list[str]] = Field(default=None, description="""Names of state variables from connected (source) nodes. Each entry must equal a StateVariable.name on the experiment's Dynamics; auto-populated from state_variables with coupling_variable=true when omitted. Used by name in pre_expression. Cannot use range: StateVariable directly because StateVariable.name is a key (scoped under Dynamics), not a globally unique identifier.""", json_schema_extra = { "linkml_meta": {'annotations': {'references': {'tag': 'references',
-                                        'value': 'tvbo:StateVariable.name'}},
-         'domain_of': ['Coupling']} })
-    local_states: Optional[list[str]] = Field(default=None, description="""Names of state variables from the local (target) node. Each entry must equal a StateVariable.name on the experiment's Dynamics. Used by name in pre_expression.""", json_schema_extra = { "linkml_meta": {'annotations': {'references': {'tag': 'references',
-                                        'value': 'tvbo:StateVariable.name'}},
-         'domain_of': ['Coupling']} })
+    incoming_states: Optional[list[str]] = Field(default=None, description="""References to state variables from connected (source) nodes. Auto-populated from state_variables with coupling_variable=true when omitted. Used by name in pre_expression.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coupling']} })
+    local_states: Optional[list[str]] = Field(default=None, description="""References to state variables from the local (target) node. Used by name in pre_expression.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coupling']} })
     delayed: Optional[bool] = Field(default=True, description="""Whether coupling includes transmission delays""", json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator', 'Coupling'], 'ifabsent': 'True'} })
     symmetry: Optional[str] = Field(default="directed", description="""Edge symmetry type for NetworkDynamics.jl EdgeModel: 'directed' (default), 'antisymmetric', or 'symmetric'. AntiSymmetric edges flip sign for the reverse direction.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coupling'], 'ifabsent': 'string(directed)'} })
     outsym: Optional[list[str]] = Field(default=None, description="""Output symbol names for the edge model. E.g. ['P'] for a scalar power flow, ['Fx', 'Fy'] for 2D forces. Maps directly to outsym in ND.jl EdgeModel. If not specified, derived from coupling variables of the connected vertex dynamics.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coupling']} })
@@ -8727,10 +8657,10 @@ class SimulationExperiment(ConfiguredBaseModel):
     stimulation: Optional[Stimulus] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     events: Optional[dict[str, Event]] = Field(default=None, description="""Events that apply at the experiment level. For component-level events, attach them to individual nodes or edges instead.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'Edge', 'Dynamics', 'SimulationExperiment']} })
     field_dynamics: Optional[PDE] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
-    optimizations: Optional[dict[str, Optimization]] = Field(default=None, description="""Parameter optimization configurations""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
-    explorations: Optional[dict[str, Exploration]] = Field(default=None, description="""Parameter exploration/grid search specifications""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
-    algorithms: Optional[dict[str, Algorithm]] = Field(default=None, description="""Iterative parameter tuning algorithms (FIC, EIB, etc.)""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
-    continuations: Optional[dict[str, Continuation]] = Field(default=None, description="""Numerical continuation and bifurcation analysis specifications. Each entry defines a continuation experiment (equilibrium branch, codim-2 curve, periodic orbit family, etc.).""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
+    optimizations: Optional[list[Optimization]] = Field(default=None, description="""Parameter optimization configurations""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
+    explorations: Optional[list[Exploration]] = Field(default=None, description="""Parameter exploration/grid search specifications""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
+    algorithms: Optional[list[Algorithm]] = Field(default=None, description="""Iterative parameter tuning algorithms (FIC, EIB, etc.)""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
+    continuations: Optional[list[Continuation]] = Field(default=None, description="""Numerical continuation and bifurcation analysis specifications. Each entry defines a continuation experiment (equilibrium branch, codim-2 curve, periodic orbit family, etc.).""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     environment: Optional[SoftwareEnvironment] = Field(default=None, description="""Execution environment (collection of requirements).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'SimulationExperiment', 'PDESolver']} })
     execution: Optional[ExecutionConfig] = Field(default=None, description="""Computational execution configuration (parallelization, devices).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization',
                        'Exploration',
@@ -8985,7 +8915,7 @@ class TimeSeries(ConfiguredBaseModel):
     labels_dimensions: Optional[str] = Field(default=None, description="""Mapping of dimension names to their labels (JSON-encoded dict).""", json_schema_extra = { "linkml_meta": {'domain_of': ['TimeSeries']} })
     source_experiment: Optional[int] = Field(default=None, description="""Reference to the SimulationExperiment that generated this TimeSeries.""", json_schema_extra = { "linkml_meta": {'domain_of': ['TimeSeries']} })
     generated_at: Optional[datetime ] = Field(default=None, description="""Timestamp when this TimeSeries was generated.""", json_schema_extra = { "linkml_meta": {'domain_of': ['TimeSeries']} })
-    software_environment: Optional[SoftwareEnvironment] = Field(default=None, description="""Software environment used to generate this data.""", json_schema_extra = { "linkml_meta": {'domain_of': ['TimeSeries']} })
+    software_environment: Optional[str] = Field(default=None, description="""Software environment used to generate this data.""", json_schema_extra = { "linkml_meta": {'domain_of': ['TimeSeries']} })
     task_name: Optional[str] = Field(default=None, description="""BIDS task name for the simulation (e.g., 'rest', 'simulation').""", json_schema_extra = { "linkml_meta": {'domain_of': ['TimeSeries']} })
     subject_id: Optional[str] = Field(default=None, description="""BIDS subject identifier.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Subject', 'TimeSeries'], 'slot_uri': 'dcterms:identifier'} })
     session_id: Optional[str] = Field(default=None, description="""BIDS session identifier.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Session', 'TimeSeries'], 'slot_uri': 'dcterms:identifier'} })
@@ -9564,7 +9494,7 @@ class FieldStateVariable(StateVariable):
          'slot_uri': 'dcterms:description'} })
     mesh: Optional[Mesh] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SpatialField', 'FieldStateVariable', 'PDE']} })
     boundary_conditions: Optional[list[BoundaryCondition]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['FieldStateVariable', 'PDE']} })
-    name: str = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
@@ -9586,7 +9516,6 @@ class FieldStateVariable(StateVariable):
                        'CouplingInput',
                        'Argument',
                        'Function',
-                       'FunctionCall',
                        'Callable',
                        'DerivedParameter',
                        'DerivedVariable',
@@ -9935,7 +9864,7 @@ class PDESolver(ConfiguredBaseModel):
                        'PDE'],
          'slot_uri': 'dcterms:description'} })
     requirements: Optional[list[str]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareEnvironment', 'Function', 'PDESolver']} })
-    environment: Optional[SoftwareEnvironment] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'SimulationExperiment', 'PDESolver']} })
+    environment: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'SimulationExperiment', 'PDESolver']} })
     discretization: Optional[DiscretizationMethod] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['BranchSwitch', 'PDESolver']} })
     time_integrator: Optional[str] = Field(default=None, description="""e.g., implicit Euler, Crank-Nicolson.""", json_schema_extra = { "linkml_meta": {'domain_of': ['PDESolver']} })
     dt: Optional[float] = Field(default=None, description="""Time step (s).""", json_schema_extra = { "linkml_meta": {'domain_of': ['PDESolver']} })

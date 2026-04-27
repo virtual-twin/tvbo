@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-04-27T15:58:04
+# Generation date: 2026-04-27T16:25:55
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -256,6 +256,10 @@ class SimulationToolName(SoftwarePackageName):
 
 
 class SoftwareRequirementName(extended_str):
+    pass
+
+
+class SoftwareEnvironmentName(extended_str):
     pass
 
 
@@ -1190,7 +1194,7 @@ class Observation(YAMLRoot):
     description: Optional[str] = None
     equation: Optional[Union[dict, Equation]] = None
     parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
-    environment: Optional[Union[dict, "SoftwareEnvironment"]] = None
+    environment: Optional[Union[str, SoftwareEnvironmentName]] = None
     time_scale: Optional[Union[str, "UnitEnum"]] = 'ms'
     source: Optional[Union[str, StateVariableName]] = None
     period: Optional[float] = None
@@ -1226,8 +1230,8 @@ class Observation(YAMLRoot):
 
         self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
 
-        if self.environment is not None and not isinstance(self.environment, SoftwareEnvironment):
-            self.environment = SoftwareEnvironment(**as_dict(self.environment))
+        if self.environment is not None and not isinstance(self.environment, SoftwareEnvironmentName):
+            self.environment = SoftwareEnvironmentName(self.environment)
 
         if self.time_scale is not None and not isinstance(self.time_scale, UnitEnum):
             self.time_scale = getattr(UnitEnum, self.time_scale)
@@ -1897,7 +1901,6 @@ class FunctionCall(YAMLRoot):
     label: Optional[str] = None
     equation: Optional[Union[dict, Equation]] = None
     description: Optional[str] = None
-    name: Optional[str] = None
     function: Optional[Union[str, FunctionName]] = None
     callable: Optional[Union[dict, "Callable"]] = None
     class_call: Optional[Union[dict, "ClassReference"]] = None
@@ -1921,9 +1924,6 @@ class FunctionCall(YAMLRoot):
 
         if self.description is not None and not isinstance(self.description, str):
             self.description = str(self.description)
-
-        if self.name is not None and not isinstance(self.name, str):
-            self.name = str(self.name)
 
         if self.function is not None and not isinstance(self.function, FunctionName):
             self.function = FunctionName(self.function)
@@ -2415,7 +2415,7 @@ class Exploration(YAMLRoot):
         if self.execution is not None and not isinstance(self.execution, ExecutionConfig):
             self.execution = ExecutionConfig(**as_dict(self.execution))
 
-        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
+        self._normalize_inlined_as_list(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
 
         if self.mode is not None and not isinstance(self.mode, str):
             self.mode = str(self.mode)
@@ -2510,7 +2510,7 @@ class AlgorithmInclude(YAMLRoot):
         if not isinstance(self.algorithm, AlgorithmName):
             self.algorithm = AlgorithmName(self.algorithm)
 
-        self._normalize_inlined_as_dict(slot_name="arguments", slot_type=Parameter, key_name="name", keyed=True)
+        self._normalize_inlined_as_list(slot_name="arguments", slot_type=Parameter, key_name="name", keyed=True)
 
         super().__post_init__(**kwargs)
 
@@ -2617,9 +2617,9 @@ class Algorithm(YAMLRoot):
             self.observations = [self.observations] if self.observations is not None else []
         self.observations = [v if isinstance(v, ObservationName) else ObservationName(v) for v in self.observations]
 
-        self._normalize_inlined_as_dict(slot_name="update_rules", slot_type=UpdateRule, key_name="name", keyed=True)
+        self._normalize_inlined_as_list(slot_name="update_rules", slot_type=UpdateRule, key_name="name", keyed=True)
 
-        self._normalize_inlined_as_dict(slot_name="hyperparameters", slot_type=Parameter, key_name="name", keyed=True)
+        self._normalize_inlined_as_list(slot_name="hyperparameters", slot_type=Parameter, key_name="name", keyed=True)
 
         if self.learning_rate is not None and not isinstance(self.learning_rate, float):
             self.learning_rate = float(self.learning_rate)
@@ -2723,7 +2723,7 @@ class Discretization(YAMLRoot):
         if self.n_sections is not None and not isinstance(self.n_sections, int):
             self.n_sections = int(self.n_sections)
 
-        self._normalize_inlined_as_dict(slot_name="options", slot_type=Option, key_name="name", keyed=True)
+        self._normalize_inlined_as_list(slot_name="options", slot_type=Option, key_name="name", keyed=True)
 
         super().__post_init__(**kwargs)
 
@@ -2884,7 +2884,7 @@ class Continuation(YAMLRoot):
         if self.dynamics is not None and not isinstance(self.dynamics, DynamicsName):
             self.dynamics = DynamicsName(self.dynamics)
 
-        self._normalize_inlined_as_dict(slot_name="free_parameters", slot_type=Parameter, key_name="name", keyed=True)
+        self._normalize_inlined_as_list(slot_name="free_parameters", slot_type=Parameter, key_name="name", keyed=True)
 
         if self.ds is not None and not isinstance(self.ds, float):
             self.ds = float(self.ds)
@@ -2928,7 +2928,7 @@ class Continuation(YAMLRoot):
         if self.initial_state is not None and not isinstance(self.initial_state, InitialState):
             self.initial_state = InitialState(**as_dict(self.initial_state))
 
-        self._normalize_inlined_as_dict(slot_name="branches", slot_type=BranchSwitch, key_name="name", keyed=True)
+        self._normalize_inlined_as_list(slot_name="branches", slot_type=BranchSwitch, key_name="name", keyed=True)
 
         if self.bothside is not None and not isinstance(self.bothside, Bool):
             self.bothside = Bool(self.bothside)
@@ -2939,7 +2939,7 @@ class Continuation(YAMLRoot):
         if self.software is not None and not isinstance(self.software, SoftwareRequirement):
             self.software = SoftwareRequirement(**as_dict(self.software))
 
-        self._normalize_inlined_as_dict(slot_name="options", slot_type=Option, key_name="name", keyed=True)
+        self._normalize_inlined_as_list(slot_name="options", slot_type=Option, key_name="name", keyed=True)
 
         super().__post_init__(**kwargs)
 
@@ -3074,8 +3074,8 @@ class Coupling(YAMLRoot):
     sparse: Optional[Union[bool, Bool]] = False
     pre_expression: Optional[Union[dict, Equation]] = None
     post_expression: Optional[Union[dict, Equation]] = None
-    incoming_states: Optional[Union[str, list[str]]] = empty_list()
-    local_states: Optional[Union[str, list[str]]] = empty_list()
+    incoming_states: Optional[Union[Union[str, StateVariableName], list[Union[str, StateVariableName]]]] = empty_list()
+    local_states: Optional[Union[Union[str, StateVariableName], list[Union[str, StateVariableName]]]] = empty_list()
     delayed: Optional[Union[bool, Bool]] = True
     symmetry: Optional[str] = "directed"
     outsym: Optional[Union[str, list[str]]] = empty_list()
@@ -3117,11 +3117,11 @@ class Coupling(YAMLRoot):
 
         if not isinstance(self.incoming_states, list):
             self.incoming_states = [self.incoming_states] if self.incoming_states is not None else []
-        self.incoming_states = [v if isinstance(v, str) else str(v) for v in self.incoming_states]
+        self.incoming_states = [v if isinstance(v, StateVariableName) else StateVariableName(v) for v in self.incoming_states]
 
         if not isinstance(self.local_states, list):
             self.local_states = [self.local_states] if self.local_states is not None else []
-        self.local_states = [v if isinstance(v, str) else str(v) for v in self.local_states]
+        self.local_states = [v if isinstance(v, StateVariableName) else StateVariableName(v) for v in self.local_states]
 
         if self.delayed is not None and not isinstance(self.delayed, Bool):
             self.delayed = Bool(self.delayed)
@@ -3346,13 +3346,13 @@ class SimulationExperiment(YAMLRoot):
         if self.field_dynamics is not None and not isinstance(self.field_dynamics, PDE):
             self.field_dynamics = PDE(**as_dict(self.field_dynamics))
 
-        self._normalize_inlined_as_dict(slot_name="optimizations", slot_type=Optimization, key_name="name", keyed=True)
+        self._normalize_inlined_as_list(slot_name="optimizations", slot_type=Optimization, key_name="name", keyed=True)
 
-        self._normalize_inlined_as_dict(slot_name="explorations", slot_type=Exploration, key_name="name", keyed=True)
+        self._normalize_inlined_as_list(slot_name="explorations", slot_type=Exploration, key_name="name", keyed=True)
 
-        self._normalize_inlined_as_dict(slot_name="algorithms", slot_type=Algorithm, key_name="name", keyed=True)
+        self._normalize_inlined_as_list(slot_name="algorithms", slot_type=Algorithm, key_name="name", keyed=True)
 
-        self._normalize_inlined_as_dict(slot_name="continuations", slot_type=Continuation, key_name="name", keyed=True)
+        self._normalize_inlined_as_list(slot_name="continuations", slot_type=Continuation, key_name="name", keyed=True)
 
         if self.environment is not None and not isinstance(self.environment, SoftwareEnvironment):
             self.environment = SoftwareEnvironment(**as_dict(self.environment))
@@ -3452,7 +3452,7 @@ class TimeSeries(YAMLRoot):
     labels_dimensions: Optional[str] = None
     source_experiment: Optional[Union[int, SimulationExperimentId]] = None
     generated_at: Optional[Union[str, XSDDateTime]] = None
-    software_environment: Optional[Union[dict, "SoftwareEnvironment"]] = None
+    software_environment: Optional[Union[str, SoftwareEnvironmentName]] = None
     task_name: Optional[str] = None
     subject_id: Optional[str] = None
     session_id: Optional[str] = None
@@ -3503,8 +3503,8 @@ class TimeSeries(YAMLRoot):
         if self.generated_at is not None and not isinstance(self.generated_at, XSDDateTime):
             self.generated_at = XSDDateTime(self.generated_at)
 
-        if self.software_environment is not None and not isinstance(self.software_environment, SoftwareEnvironment):
-            self.software_environment = SoftwareEnvironment(**as_dict(self.software_environment))
+        if self.software_environment is not None and not isinstance(self.software_environment, SoftwareEnvironmentName):
+            self.software_environment = SoftwareEnvironmentName(self.software_environment)
 
         if self.task_name is not None and not isinstance(self.task_name, str):
             self.task_name = str(self.task_name)
@@ -3844,7 +3844,7 @@ class PDESolver(YAMLRoot):
     label: Optional[str] = None
     description: Optional[str] = None
     requirements: Optional[Union[Union[str, SoftwareRequirementName], list[Union[str, SoftwareRequirementName]]]] = empty_list()
-    environment: Optional[Union[dict, "SoftwareEnvironment"]] = None
+    environment: Optional[Union[str, SoftwareEnvironmentName]] = None
     discretization: Optional[Union[str, "DiscretizationMethod"]] = None
     time_integrator: Optional[str] = None
     dt: Optional[float] = None
@@ -3862,8 +3862,8 @@ class PDESolver(YAMLRoot):
             self.requirements = [self.requirements] if self.requirements is not None else []
         self.requirements = [v if isinstance(v, SoftwareRequirementName) else SoftwareRequirementName(v) for v in self.requirements]
 
-        if self.environment is not None and not isinstance(self.environment, SoftwareEnvironment):
-            self.environment = SoftwareEnvironment(**as_dict(self.environment))
+        if self.environment is not None and not isinstance(self.environment, SoftwareEnvironmentName):
+            self.environment = SoftwareEnvironmentName(self.environment)
 
         if self.discretization is not None and not isinstance(self.discretization, DiscretizationMethod):
             self.discretization = DiscretizationMethod(self.discretization)
@@ -5016,10 +5016,10 @@ class SoftwareEnvironment(YAMLRoot):
     class_name: ClassVar[str] = "SoftwareEnvironment"
     class_model_uri: ClassVar[URIRef] = TVBO.SoftwareEnvironment
 
+    name: Union[str, SoftwareEnvironmentName] = None
     label: Optional[str] = None
     description: Optional[str] = None
     dataLocation: Optional[str] = None
-    name: Optional[str] = None
     version: Optional[str] = None
     platform: Optional[str] = None
     environment_type: Optional[Union[str, "EnvironmentType"]] = None
@@ -5028,6 +5028,11 @@ class SoftwareEnvironment(YAMLRoot):
     requirements: Optional[Union[dict[Union[str, SoftwareRequirementName], Union[dict, SoftwareRequirement]], list[Union[dict, SoftwareRequirement]]]] = empty_dict()
 
     def __post_init__(self, *_: str, **kwargs: Any):
+        if self._is_empty(self.name):
+            self.MissingRequiredField("name")
+        if not isinstance(self.name, SoftwareEnvironmentName):
+            self.name = SoftwareEnvironmentName(self.name)
+
         if self.label is not None and not isinstance(self.label, str):
             self.label = str(self.label)
 
@@ -5036,9 +5041,6 @@ class SoftwareEnvironment(YAMLRoot):
 
         if self.dataLocation is not None and not isinstance(self.dataLocation, str):
             self.dataLocation = str(self.dataLocation)
-
-        if self.name is not None and not isinstance(self.name, str):
-            self.name = str(self.name)
 
         if self.version is not None and not isinstance(self.version, str):
             self.version = str(self.version)
@@ -6064,14 +6066,11 @@ class EnvironmentType(EnumDefinitionImpl):
 class slots:
     pass
 
-slots.name = Slot(uri=SCHEMA.name, name="name", curie=SCHEMA.curie('name'),
-                   model_uri=TVBO.name, domain=None, range=URIRef)
-
 slots.time_scale = Slot(uri=TVBO.time_scale, name="time_scale", curie=TVBO.curie('time_scale'),
                    model_uri=TVBO.time_scale, domain=None, range=Optional[Union[str, "UnitEnum"]])
 
 slots.environment = Slot(uri=TVBO.environment, name="environment", curie=TVBO.curie('environment'),
-                   model_uri=TVBO.environment, domain=None, range=Optional[Union[dict, SoftwareEnvironment]])
+                   model_uri=TVBO.environment, domain=None, range=Optional[Union[str, SoftwareEnvironmentName]])
 
 slots.requirements = Slot(uri=TVBO.requirements, name="requirements", curie=TVBO.curie('requirements'),
                    model_uri=TVBO.requirements, domain=None, range=Optional[Union[Union[str, SoftwareRequirementName], list[Union[str, SoftwareRequirementName]]]])
@@ -6141,6 +6140,9 @@ slots.dataset_path = Slot(uri=TVBO.dataset_path, name="dataset_path", curie=TVBO
 
 slots.record = Slot(uri=TVBO.record, name="record", curie=TVBO.curie('record'),
                    model_uri=TVBO.record, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.name = Slot(uri=SCHEMA.name, name="name", curie=SCHEMA.curie('name'),
+                   model_uri=TVBO.name, domain=None, range=URIRef)
 
 slots.abbreviation = Slot(uri=SKOS.notation, name="abbreviation", curie=SKOS.curie('notation'),
                    model_uri=TVBO.abbreviation, domain=None, range=Optional[str])
@@ -6739,9 +6741,6 @@ slots.aggregation__type = Slot(uri=TVBO.type, name="aggregation__type", curie=TV
 slots.lossFunction__aggregate = Slot(uri=TVBO.aggregate, name="lossFunction__aggregate", curie=TVBO.curie('aggregate'),
                    model_uri=TVBO.lossFunction__aggregate, domain=None, range=Optional[Union[dict, Aggregation]])
 
-slots.functionCall__name = Slot(uri=TVBO.name, name="functionCall__name", curie=TVBO.curie('name'),
-                   model_uri=TVBO.functionCall__name, domain=None, range=Optional[str])
-
 slots.functionCall__function = Slot(uri=TVBO.function, name="functionCall__function", curie=TVBO.curie('function'),
                    model_uri=TVBO.functionCall__function, domain=None, range=Optional[Union[str, FunctionName]])
 
@@ -6982,9 +6981,6 @@ slots.algorithm__functions = Slot(uri=TVBO.functions, name="algorithm__functions
 slots.algorithm__depends_on = Slot(uri=TVBO.depends_on, name="algorithm__depends_on", curie=TVBO.curie('depends_on'),
                    model_uri=TVBO.algorithm__depends_on, domain=None, range=Optional[Union[Union[str, AlgorithmName], list[Union[str, AlgorithmName]]]])
 
-slots.option__name = Slot(uri=TVBO.name, name="option__name", curie=TVBO.curie('name'),
-                   model_uri=TVBO.option__name, domain=None, range=URIRef)
-
 slots.option__value = Slot(uri=TVBO.value, name="option__value", curie=TVBO.curie('value'),
                    model_uri=TVBO.option__value, domain=None, range=str)
 
@@ -7166,10 +7162,10 @@ slots.coupling__post_expression = Slot(uri=TVBO.post_expression, name="coupling_
                    model_uri=TVBO.coupling__post_expression, domain=None, range=Optional[Union[dict, Equation]])
 
 slots.coupling__incoming_states = Slot(uri=TVBO.incoming_states, name="coupling__incoming_states", curie=TVBO.curie('incoming_states'),
-                   model_uri=TVBO.coupling__incoming_states, domain=None, range=Optional[Union[str, list[str]]])
+                   model_uri=TVBO.coupling__incoming_states, domain=None, range=Optional[Union[Union[str, StateVariableName], list[Union[str, StateVariableName]]]])
 
 slots.coupling__local_states = Slot(uri=TVBO.local_states, name="coupling__local_states", curie=TVBO.curie('local_states'),
-                   model_uri=TVBO.coupling__local_states, domain=None, range=Optional[Union[str, list[str]]])
+                   model_uri=TVBO.coupling__local_states, domain=None, range=Optional[Union[Union[str, StateVariableName], list[Union[str, StateVariableName]]]])
 
 slots.coupling__delayed = Slot(uri=TVBO.delayed, name="coupling__delayed", curie=TVBO.curie('delayed'),
                    model_uri=TVBO.coupling__delayed, domain=None, range=Optional[Union[bool, Bool]])
@@ -7355,7 +7351,7 @@ slots.timeSeries__generated_at = Slot(uri=TVBO.generated_at, name="timeSeries__g
                    model_uri=TVBO.timeSeries__generated_at, domain=None, range=Optional[Union[str, XSDDateTime]])
 
 slots.timeSeries__software_environment = Slot(uri=TVBO.software_environment, name="timeSeries__software_environment", curie=TVBO.curie('software_environment'),
-                   model_uri=TVBO.timeSeries__software_environment, domain=None, range=Optional[Union[dict, SoftwareEnvironment]])
+                   model_uri=TVBO.timeSeries__software_environment, domain=None, range=Optional[Union[str, SoftwareEnvironmentName]])
 
 slots.timeSeries__task_name = Slot(uri=TVBO.task_name, name="timeSeries__task_name", curie=TVBO.curie('task_name'),
                    model_uri=TVBO.timeSeries__task_name, domain=None, range=Optional[str])
@@ -7777,9 +7773,6 @@ slots.eField__coordinate_space = Slot(uri=TVBO_DBS.coordinate_space, name="eFiel
 slots.eField__threshold_applied = Slot(uri=TVBO_DBS.threshold_applied, name="eField__threshold_applied", curie=TVBO_DBS.curie('threshold_applied'),
                    model_uri=TVBO.eField__threshold_applied, domain=None, range=Optional[float])
 
-slots.softwarePackage__name = Slot(uri=SCHEMA.name, name="softwarePackage__name", curie=SCHEMA.curie('name'),
-                   model_uri=TVBO.softwarePackage__name, domain=None, range=URIRef)
-
 slots.softwarePackage__description = Slot(uri=DCTERMS.description, name="softwarePackage__description", curie=DCTERMS.curie('description'),
                    model_uri=TVBO.softwarePackage__description, domain=None, range=Optional[str])
 
@@ -7861,9 +7854,6 @@ slots.simulationTool__issue_tracker = Slot(uri=TVBO_SW.issue_tracker, name="simu
 slots.simulationTool__is_accessible_for_free = Slot(uri=SCHEMA.isAccessibleForFree, name="simulationTool__is_accessible_for_free", curie=SCHEMA.curie('isAccessibleForFree'),
                    model_uri=TVBO.simulationTool__is_accessible_for_free, domain=None, range=Optional[Union[bool, Bool]])
 
-slots.softwareRequirement__name = Slot(uri=TVBO_SW.name, name="softwareRequirement__name", curie=TVBO_SW.curie('name'),
-                   model_uri=TVBO.softwareRequirement__name, domain=None, range=URIRef)
-
 slots.softwareRequirement__description = Slot(uri=DCTERMS.description, name="softwareRequirement__description", curie=DCTERMS.curie('description'),
                    model_uri=TVBO.softwareRequirement__description, domain=None, range=Optional[str])
 
@@ -7909,9 +7899,6 @@ slots.softwareEnvironment__description = Slot(uri=DCTERMS.description, name="sof
 slots.softwareEnvironment__dataLocation = Slot(uri=TVBO_SW.dataLocation, name="softwareEnvironment__dataLocation", curie=TVBO_SW.curie('dataLocation'),
                    model_uri=TVBO.softwareEnvironment__dataLocation, domain=None, range=Optional[str])
 
-slots.softwareEnvironment__name = Slot(uri=TVBO_SW.name, name="softwareEnvironment__name", curie=TVBO_SW.curie('name'),
-                   model_uri=TVBO.softwareEnvironment__name, domain=None, range=Optional[str])
-
 slots.softwareEnvironment__version = Slot(uri=TVBO_SW.version, name="softwareEnvironment__version", curie=TVBO_SW.curie('version'),
                    model_uri=TVBO.softwareEnvironment__version, domain=None, range=Optional[str])
 
@@ -7950,6 +7937,9 @@ slots.Distribution_name = Slot(uri=SCHEMA.name, name="Distribution_name", curie=
 
 slots.DerivedVariable_record = Slot(uri=TVBO.record, name="DerivedVariable_record", curie=TVBO.curie('record'),
                    model_uri=TVBO.DerivedVariable_record, domain=DerivedVariable, range=Optional[Union[bool, Bool]])
+
+slots.Option_name = Slot(uri=SCHEMA.name, name="Option_name", curie=SCHEMA.curie('name'),
+                   model_uri=TVBO.Option_name, domain=Option, range=Union[str, OptionName])
 
 slots.Coupling_name = Slot(uri=SCHEMA.name, name="Coupling_name", curie=SCHEMA.curie('name'),
                    model_uri=TVBO.Coupling_name, domain=Coupling, range=Union[str, CouplingName])
