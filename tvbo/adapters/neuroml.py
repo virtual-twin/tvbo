@@ -3087,8 +3087,10 @@ def build_lems_context(experiment):
             # Use real LEMS dimensions so jNeuroML outputs SI.
             ct_time_scale = str(getattr(getattr(ct_dyn, "time_scale", None), "value", time_scale) or time_scale)
             ct_needs_sec = ct_time_scale != "s"
+
             def ct_lems_dim(u):
                 return unit_to_lems_dimension(u)
+
             def ct_lems_sym_fn(u):
                 return unit_to_lems_symbol(u)
 
@@ -3147,8 +3149,10 @@ def build_lems_context(experiment):
 
                 # Use real LEMS dimensions so jNeuroML outputs SI.
                 syn_needs_sec = True  # synapse CTs always need SEC
+
                 def syn_lems_dim(u):
                     return unit_to_lems_dimension(u)
+
                 def syn_lems_sym_fn(u):
                     return unit_to_lems_symbol(u)
 

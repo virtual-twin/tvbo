@@ -73,12 +73,14 @@ def load_acoustic_stimulus_from_audiofile(file_path, sampling_rate=1000, duratio
 
     t = np.arange(len(audio)) / sampling_rate * 1000  # in ms
     audio_spline = UnivariateSpline(t, audio, s=0.01)
+
     def audio_fun(x):
         return (
             audio_spline(x)
             if np.isscalar(x) and t[0] <= x <= t[-1]
             else (np.where((x >= t[0]) & (x <= t[-1]), audio_spline(x), 0) if not np.isscalar(x) else 0)
         )
+
     return audio_fun
 
 

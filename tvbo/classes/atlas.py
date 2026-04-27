@@ -15,8 +15,10 @@ from scipy.ndimage import center_of_mass
 try:
     from tqdm import tqdm
 except ImportError:
+
     def tqdm(x, **kwargs):
         return x  # No-op if tqdm not available
+
 
 from tvbo.data.tvbo_data import ATLAS_DIR
 from tvbo.adapters import bids as bids_utils
