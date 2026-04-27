@@ -20,26 +20,37 @@ RUN QUARTO_VERSION=$(curl -s https://api.github.com/repos/quarto-dev/quarto-cli/
     && wget -qO quarto.deb "https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/quarto-${QUARTO_VERSION}-linux-${ARCH}.deb" \
     && dpkg -i quarto.deb && rm quarto.deb
 
-# Install tvbo from source so tvbo/juliapkg.json is available for juliacall.
-# juliacall reads juliapkg.json to know which Julia packages to resolve.
-COPY . /app
+# ─── Layered install for maximum cache reuse ──────────────────────────────
+# The slow steps (pip install of all deps + Julia precompile) only depend on
+# pyproject.toml and tvbo/juliapkg.json. By copying those FIRST, source-only
+# changes (Python edits, docs, tests) skip rebuilding these layers entirely.
+
 WORKDIR /app
-RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir jupyterlab uvicorn fastapi ".[julia,pyrates]" tvboptim
+RUN pip install --no-cache-dir --upgrade pip
 
-# Julia depot in a fixed, world-readable location so packages pre-compiled
-# here are found regardless of runtime HOME or user.
-ENV JULIA_DEPOT_PATH="/opt/julia-depot"
+# 1. Stub package skeleton: enough for hatchling to read __version__ and for
+#    juliacall to find tvbo/juliapkg.json on sys.path.
+COPY pyproject.toml /app/pyproject.toml
+COPY tvbo/juliapkg.json /app/tvbo/juliapkg.json
+RUN echo '__version__ = "0.0.0"' > /app/tvbo/__init__.py \
+    && touch /app/README.md
 
-# Pre-warm juliacall: importing Main triggers juliapkg to download a compatible
-# Julia binary and resolve all packages declared in tvbo/juliapkg.json.
+# 2. Install all deps (heavy layer, cached on pyproject.toml hash).
+RUN pip install --no-cache-dir jupyterlab uvicorn fastapi ".[julia,pyrates]" tvboptim
+
+# 3. Pre-warm Julia. Cached on tvbo/juliapkg.json hash, NOT on Python source.
+ENV JULIA_DEPOT_PATH="/opt/julia-depot" \
+    JULIA_NUM_PRECOMPILE_TASKS="auto"
 RUN mkdir -p /opt/julia-depot \
     && python3 -c "from juliacall import Main" \
     && chmod -R a+rw /opt/julia-depot
 
+# 4. Now copy the real source and reinstall tvbo only (no deps → instant).
+COPY . /app
+RUN pip install --no-cache-dir --no-deps --force-reinstall .
+
 ENV AUTO_DIR=/auto-07p
 EXPOSE 8000 8888
 
-# entrypoint.sh was already copied with COPY . /app above
 RUN cp docker/entrypoint.sh /entrypoint.sh && chmod +x /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
