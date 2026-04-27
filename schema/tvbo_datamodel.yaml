@@ -586,6 +586,7 @@ enums:
 
 classes:
     Range:
+        class_uri: tvbo:Range
         description: "Specifies a range for array generation, parameter bounds, or grid exploration."
         attributes:
             lo:
@@ -622,6 +623,7 @@ classes:
                     element_domains to avoid ambiguous positional indexing.
 
     Equation:
+        class_uri: tvbo:Equation
         slots:
             - label
             - definition
@@ -652,6 +654,7 @@ classes:
                 ifabsent: false
 
     ConditionalBlock:
+        class_uri: tvbo:ConditionalBlock
         description: A single condition and its corresponding equation segment.
         attributes:
             condition:
@@ -662,6 +665,7 @@ classes:
                 range: string
 
     Stimulus:
+        class_uri: tvbo:Stimulus
         slots:
             - equation
             - parameters
@@ -680,6 +684,7 @@ classes:
                 array: {}
 
     Event:
+        class_uri: tvbo:Event
         description: >-
             A discrete or continuous event that modifies the system during simulation.
             Generalizes Stimulus: can represent external inputs (stimulus type),
@@ -768,6 +773,7 @@ classes:
                 description: "Duration of stimulus-type events."
 
     TemporalApplicableEquation:
+        class_uri: tvbo:TemporalApplicableEquation
         is_a: Equation
         slots:
             - parameters
@@ -814,6 +820,7 @@ classes:
                 description: "Publication or DOI reference for this tractography dataset"
 
     Matrix:
+        class_uri: tvbo:Matrix
         # implements:
         #   - linkml:TwoDimensionalArray
         #   - linkml:RowOrderedArray
@@ -849,6 +856,7 @@ classes:
             - dataLocation
 
     BrainRegionSeries:
+        class_uri: tvbo:BrainRegionSeries
         description: A series whose values represent latitude
         # implements:
         #   - linkml:OneDimensionalSeries
@@ -1041,6 +1049,7 @@ classes:
                     automatic code generation across backends.
 
     GraphGenerator:
+        class_uri: tvbo:GraphGenerator
         description: >
             Backend-agnostic graph generator specification.  Captures the
             mathematical family (type) and its parameters so that each backend
@@ -1073,6 +1082,7 @@ classes:
                     matched by the backend mapping to construct the call.
 
     File:
+        class_uri: tvbo:File
         slots:
             - name
             - description
@@ -1495,6 +1505,7 @@ classes:
                 inlined: true
 
     Distribution:
+        class_uri: tvbo:Distribution
         description: >-
             A probability distribution for sampling parameters or initial conditions.
             Standard distributions (Uniform, Gaussian) are specified by name and domain/parameters.
@@ -1571,6 +1582,7 @@ classes:
                     share the same domain.
 
     CouplingInput:
+        class_uri: tvbo:CouplingInput
         description: "Specification of a coupling input channel for multi-coupling dynamics"
         slots:
             - name
@@ -1673,6 +1685,7 @@ classes:
                 inlined: true
 
     Aggregation:
+        class_uri: tvbo:Aggregation
         description: >-
             Specifies how to aggregate values across a dimension.
             Used for loss functions to define per-element loss with reduction.
@@ -1686,6 +1699,7 @@ classes:
                 ifabsent: string(mean)
 
     LossFunction:
+        class_uri: tvbo:LossFunction
         is_a: Function
         description: >-
             A loss function for optimization with optional aggregation.
@@ -1699,6 +1713,7 @@ classes:
                 range: Aggregation
                 inlined: true
     FunctionCall:
+        class_uri: tvbo:FunctionCall
         description: >-
             Invocation of a function in a pipeline. Can reference a defined Function by name,
             OR inline a callable directly for external library functions,
@@ -1756,6 +1771,7 @@ classes:
                 range: string
 
     Callable:
+        class_uri: tvbo:Callable
         slots:
             - name
             - description
@@ -1767,6 +1783,7 @@ classes:
                 inlined: true
 
     ClassReference:
+        class_uri: tvbo:ClassReference
         description: >-
             Reference to a class that can be instantiated and called.
             Used for external library classes (e.g., tvboptim.Bold, custom monitors).
@@ -1797,6 +1814,7 @@ classes:
                 range: string
 
     Case:
+        class_uri: tvbo:Case
         attributes:
             condition:
                 range: string
@@ -1887,6 +1905,7 @@ classes:
             - dataLocation
 
     DataSource:
+        class_uri: tvbo:DataSource
         description: "Specification for loading external/empirical data."
         slots:
             - name
@@ -1912,6 +1931,7 @@ classes:
                 description: "Optional preprocessing to apply after loading"
 
     OptimizationStage:
+        class_uri: tvbo:OptimizationStage
         description: >-
             A single stage in a multi-stage optimization workflow.
             Stages run sequentially, with each stage potentially using
@@ -1956,6 +1976,7 @@ classes:
                 description: "Previous stage to initialize from. Final values from that stage become initial values for this stage."
 
     Optimization:
+        class_uri: tvbo:Optimization
         is_a: OptimizationStage
         description: >-
             Configuration for parameter optimization.
@@ -2013,6 +2034,7 @@ classes:
     # =============================================================================
 
     Exploration:
+        class_uri: tvbo:Exploration
         description: "Parameter space exploration (grid search, sweep)."
         slots:
             - name
@@ -2060,6 +2082,7 @@ classes:
     # =============================================================================
 
     UpdateRule:
+        class_uri: tvbo:UpdateRule
         description: >-
             Defines how a parameter is updated based on observables.
             Represents iterative learning rules like FIC or EIB updates.
@@ -2095,6 +2118,7 @@ classes:
                 description: Observables required by this update rule
 
     AlgorithmInclude:
+        class_uri: tvbo:AlgorithmInclude
         description: >-
             Reference to an included algorithm with optional argument overrides.
             Allows combining algorithms with different hyperparameter values.
@@ -2113,6 +2137,7 @@ classes:
                     Maps parameter names to new values.
 
     TuningObjective:
+        class_uri: tvbo:TuningObjective
         description: >-
             Defines what the tuning algorithm optimizes for.
             Can be an activity target (FIC) or a connectivity target (EIB).
@@ -2140,6 +2165,7 @@ classes:
                 description: "Metric equation for matching (e.g., correlation, rmse)"
 
     Algorithm:
+        class_uri: tvbo:Algorithm
         description: >-
             A complete specification of an iterative parameter tuning algorithm.
             Combines update rules, objectives, observations, and hyperparameters.
@@ -2232,6 +2258,7 @@ classes:
     # =============================================================================
 
     Option:
+        class_uri: tvbo:Option
         description: >-
             A toolkit-specific key-value option (string name + string value).
             Used for backend settings that are not universal numeric parameters
@@ -2248,6 +2275,7 @@ classes:
                 description: "Option value."
 
     Discretization:
+        class_uri: tvbo:Discretization
         description: >-
             Discretization method for boundary value problems in continuation
             (periodic orbits, connecting orbits, quasi-periodic tori).
@@ -2299,6 +2327,7 @@ classes:
                 description: "Toolkit-specific string options (jacobian type, etc.)."
 
     InitialState:
+        class_uri: tvbo:InitialState
         description: >-
             How to obtain the starting equilibrium or periodic orbit for
             continuation. Most robust: time-integrate to steady state.
@@ -2336,6 +2365,7 @@ classes:
                     'fold:2', a step number, etc.
 
     BranchSwitch:
+        class_uri: tvbo:BranchSwitch
         description: >-
             Specification for switching from a detected bifurcation point
             to a new branch (periodic orbits from Hopf, fold continuation,
@@ -2399,6 +2429,7 @@ classes:
                     (linear solver, etc.).
 
     Continuation:
+        class_uri: tvbo:Continuation
         description: >-
             Complete specification of a numerical continuation / bifurcation
             analysis. All universal solver settings live directly here.
@@ -2526,6 +2557,7 @@ classes:
                     solver name, etc.).
 
     Solver:
+        class_uri: tvbo:Solver
         description: >-
             Lightweight specification of a numerical ODE solver / integrator.
             Covers adaptive solvers (Vern9, Rodas5, Tsit5, etc.) used in
@@ -2548,6 +2580,7 @@ classes:
                 description: "Relative tolerance for adaptive solvers."
 
     Integrator:
+        class_uri: tvbo:Integrator
         is_a: Solver
         description: >-
             Fixed-step or adaptive ODE integrator with TVB-specific extensions
@@ -2688,6 +2721,7 @@ classes:
                 description: "For hierarchical coupling: distribution method ('broadcast', 'weighted') or custom Function"
 
     RegionMapping:
+        class_uri: tvbo:RegionMapping
         description: "Maps vertices to parent regions for hierarchical/aggregated coupling"
         slots:
             - label
@@ -2706,6 +2740,7 @@ classes:
                 description: "Total number of regions"
 
     Sample:
+        class_uri: tvbo:Sample
         attributes:
             groups:
                 multivalued: true
@@ -2714,6 +2749,7 @@ classes:
                 range: integer
 
     ExecutionConfig:
+        class_uri: tvbo:ExecutionConfig
         description: "Configuration for computational execution (parallelization, precision, hardware)."
         attributes:
             n_workers:
@@ -2866,6 +2902,7 @@ classes:
                     per-subject parallel jobs.
 
     SimulationStudy:
+        class_uri: tvbo:SimulationStudy
         # tree_root: true
         slots:
             - label
@@ -2971,6 +3008,7 @@ classes:
 
     # nD array for field and image data
     NDArray:
+        class_uri: tvbo:NDArray
         attributes:
             shape:
                 multivalued: true
@@ -2987,6 +3025,7 @@ classes:
 
     # Spatial domain and mesh
     SpatialDomain:
+        class_uri: tvbo:SpatialDomain
         attributes:
             coordinate_space:
                 range: CommonCoordinateSpace
@@ -3001,6 +3040,7 @@ classes:
             - description
 
     Mesh:
+        class_uri: tvbo:Mesh
         attributes:
             element_type:
                 range: ElementType
@@ -3032,6 +3072,7 @@ classes:
 
     # Spatial field
     SpatialField:
+        class_uri: tvbo:SpatialField
         attributes:
             quantity_kind:
                 description: "Scalar, vector, or tensor."
@@ -3058,6 +3099,7 @@ classes:
 
     # Field-like state variable for PDEs (aligns with Dynamics.StateVariable)
     FieldStateVariable:
+        class_uri: tvbo:FieldStateVariable
         is_a: StateVariable
         attributes:
             mesh:
@@ -3070,6 +3112,7 @@ classes:
             - description
 
     DifferentialOperator:
+        class_uri: tvbo:DifferentialOperator
         attributes:
             operator_type:
                 range: OperatorType
@@ -3087,6 +3130,7 @@ classes:
             - equation
 
     BoundaryCondition:
+        class_uri: tvbo:BoundaryCondition
         attributes:
             bc_type:
                 range: BoundaryConditionType
@@ -3104,6 +3148,7 @@ classes:
             - description
 
     PDESolver:
+        class_uri: tvbo:PDESolver
         attributes:
             discretization:
                 range: DiscretizationMethod
@@ -3125,6 +3170,7 @@ classes:
             - environment
 
     PDE:
+        class_uri: tvbo:PDE
         description: "Partial differential equation problem definition."
         attributes:
             domain:
