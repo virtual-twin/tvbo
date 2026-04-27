@@ -290,14 +290,16 @@ for opt in optim_list:
     for stage in stages:
         for fp in (stage.free_parameters or []):
             if isinstance(fp, str):
-                # Simple string reference: global parameter
-                optim_param_info[fp] = {'heterogeneous': False}
+                ref = fp
+                is_hetero = False
             else:
-                # Parameter object
-                pname = str(fp.name)
-                # Heterogeneous if explicitly set or shape contains n_nodes
-                is_hetero = fp.heterogeneous or (fp.shape and 'n_nodes' in str(fp.shape))
-                optim_param_info[pname] = {'heterogeneous': bool(is_hetero)}
+                # FreeParameter wrapper: .parameter is dotted ref
+                ref = str(getattr(fp, 'parameter', '') or getattr(fp, 'name', ''))
+                is_hetero = bool(getattr(fp, 'heterogeneous', False)) or (
+                    getattr(fp, 'shape', None) and 'n_nodes' in str(fp.shape)
+                )
+            pname = ref.rsplit('.', 1)[-1] if '.' in ref else ref
+            optim_param_info[pname] = {'heterogeneous': bool(is_hetero)}
 
 # Collect param objects with heterogeneous info
 # Separate dynamics vs coupling parameters

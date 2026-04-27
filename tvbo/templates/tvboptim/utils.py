@@ -539,7 +539,38 @@ def parse_free_param(fp: Any, coupling_keys: Set[str], model: Any = None, all_co
     source_key = None
     is_coupling = False
 
-    if isinstance(fp, str):
+    # FreeParameter wrapper object: has .parameter (dotted ref), .heterogeneous, .shape, .domain
+    if hasattr(fp, "parameter") and getattr(fp, "parameter", None):
+        ref = str(fp.parameter)
+        if "." in ref:
+            prefix, param_name = ref.rsplit(".", 1)
+            is_coupling = prefix in coupling_keys
+            source_key = prefix
+        else:
+            param_name = ref
+        result = {
+            "name": param_name,
+            "heterogeneous": bool(getattr(fp, "heterogeneous", False)),
+            "shape": str(fp.shape) if getattr(fp, "shape", None) else None,
+            "coupling_key": source_key if is_coupling else None,
+            "dynamics_key": source_key if not is_coupling and source_key else None,
+        }
+        domain = getattr(fp, "domain", None)
+        if domain:
+            lo = getattr(domain, "lo", None)
+            hi = getattr(domain, "hi", None)
+            if lo is not None:
+                try:
+                    result["lower_bound"] = float(lo)
+                except (TypeError, ValueError):
+                    pass
+            if hi is not None:
+                try:
+                    result["upper_bound"] = float(hi)
+                except (TypeError, ValueError):
+                    pass
+
+    elif isinstance(fp, str):
         stripped = fp.strip()
 
         # Check for stringified dict

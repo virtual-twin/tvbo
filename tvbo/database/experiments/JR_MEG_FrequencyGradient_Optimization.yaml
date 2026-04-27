@@ -396,9 +396,9 @@ optimizations:
 
       # Free parameters to optimize (references to dynamics.parameters by name)
     free_parameters:
-      - name: a
+      - parameter: JansenRit.a
         heterogeneous: true
-      - name: b
+      - parameter: JansenRit.b
         heterogeneous: true
 
       # Loss function: references spectral_loss from functions

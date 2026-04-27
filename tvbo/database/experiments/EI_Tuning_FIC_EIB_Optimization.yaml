@@ -356,7 +356,7 @@ functions:
       Correlation between two FC matrices (flattened).
       Measures similarity between predicted and target functional connectivity.
     equation:
-      rhs: Sum((A[i,j] - mean(A))*(B[i,j] - mean(B)), (i, 0, N_nodes-1), (j, 0, N_nodes-1)) / (sqrt(Sum((A[i,j] - mean(A))**2, (i, 0, N_nodes-1), (j, 0, N_nodes-1))) * sqrt(Sum((B[i,j] - mean(B))**2, 
+      rhs: Sum((A[i,j] - mean(A))*(B[i,j] - mean(B)), (i, 0, N_nodes-1), (j, 0, N_nodes-1)) / (sqrt(Sum((A[i,j] - mean(A))**2, (i, 0, N_nodes-1), (j, 0, N_nodes-1))) * sqrt(Sum((B[i,j] - mean(B))**2,
         (i, 0, N_nodes-1), (j, 0, N_nodes-1))))
       description: "ρ(A, B) = correlation between flattened matrices"
     arguments:
@@ -786,15 +786,15 @@ optimizations:
           description: "Target excitatory activity for FIC"
 
     free_parameters:
-      - name: J_i
-        heterogeneous: true
-        shape: "(n_nodes,)"
-      - name: wLRE
-        heterogeneous: true
-        shape: "(n_nodes, n_nodes)"
-      - name: wFFI
-        heterogeneous: true
-        shape: "(n_nodes, n_nodes)"
+          - parameter: ReducedWongWangEIB.J_i
+            heterogeneous: true
+            shape: "(n_nodes,)"
+          - parameter: ReducedWongWangEIB.wLRE
+            heterogeneous: true
+            shape: "(n_nodes, n_nodes)"
+          - parameter: ReducedWongWangEIB.wFFI
+            heterogeneous: true
+            shape: "(n_nodes, n_nodes)"
 
     algorithm: adamaxw
     learning_rate: 0.033

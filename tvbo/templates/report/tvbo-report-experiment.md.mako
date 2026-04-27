@@ -788,6 +788,7 @@ free_params = _p(opt, 'free_parameters', [])
 if isinstance(free_params, str):
     free_params = [free_params]
 free_params = list(free_params) if free_params else []
+free_params = [str(_p(fp, 'parameter', None) or _p(fp, 'name', None) or fp) for fp in free_params]
 algorithm = _p(opt, 'algorithm', None)
 opt_lr = _p(opt, 'learning_rate', None)
 max_iter = _p(opt, 'max_iterations', None)
@@ -849,6 +850,7 @@ s_free = _p(stage, 'free_parameters', [])
 if isinstance(s_free, str):
     s_free = [s_free]
 s_free = list(s_free) if s_free else []
+s_free = [str(_p(fp, 'parameter', None) or _p(fp, 'name', None) or fp) for fp in s_free]
 s_freeze = _p(stage, 'freeze_parameters', [])
 s_freeze = list(s_freeze) if s_freeze else []
 s_algo = _p(stage, 'algorithm', 'adam')
