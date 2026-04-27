@@ -29,15 +29,6 @@ imports:
 default_prefix: tvbo
 default_range: string
 
-types:
-    ScalarValue:
-        description: Any scalar value - float, integer, string, or boolean.
-        union_of:
-            - float
-            - integer
-            - string
-            - boolean
-
 slots:
     name:
         slot_uri: schema:name
@@ -347,6 +338,13 @@ enums:
                 description: "Coordinate list (data, row, col)"
 
 classes:
+    ScalarValue:
+        class_uri: linkml:Any
+        description: >-
+            A scalar value: float, integer, string, or boolean.
+            Used for slots that accept literals of any primitive type, such as
+            argument values which may be numbers, strings, references, or booleans.
+
     Range:
         class_uri: tvbo:Range
         description: "Specifies a range for array generation, parameter bounds, or grid exploration."
