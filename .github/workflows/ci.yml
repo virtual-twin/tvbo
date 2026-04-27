@@ -66,7 +66,18 @@ jobs:
                   cache-dependency-glob: |
                       pyproject.toml
                       .github/workflows/ci.yml
-            - run: uv pip install -e . pytest pytest-xdist pytest-timeout
+            - name: Cache .venv
+              id: venv-cache
+              uses: actions/cache@v4
+              with:
+                  path: .venv
+                  key: venv-compat-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml', '.github/workflows/ci.yml') }}
+            - name: Install (cache miss)
+              if: steps.venv-cache.outputs.cache-hit != 'true'
+              run: uv pip install -e . pytest pytest-xdist pytest-timeout
+            - name: Refresh editable link (cache hit)
+              if: steps.venv-cache.outputs.cache-hit == 'true'
+              run: uv pip install -e . --no-deps
             - name: Core tests
               run: |
                   pytest -v --tb=short -n auto --dist=loadscope \
@@ -128,8 +139,18 @@ jobs:
                       .github/workflows/ci.yml
             - name: Configure git for private repos
               run: git config --global url."https://${{ secrets.PRIVATE_REPO_TOKEN }}@github.com/".insteadOf "https://github.com/"
-            - name: Install with all extras
+            - name: Cache .venv
+              id: venv-cache
+              uses: actions/cache@v4
+              with:
+                  path: .venv
+                  key: venv-native-${{ matrix.shard }}-3.12-${{ hashFiles('pyproject.toml', '.github/workflows/ci.yml') }}
+            - name: Install with all extras (cache miss)
+              if: steps.venv-cache.outputs.cache-hit != 'true'
               run: uv pip install -e ".[all]" pytest pytest-xdist pytest-timeout
+            - name: Refresh editable link (cache hit)
+              if: steps.venv-cache.outputs.cache-hit == 'true'
+              run: uv pip install -e . --no-deps
             - name: Run shard "${{ matrix.shard }}"
               run: |
                   pytest -x -v --tb=short \
