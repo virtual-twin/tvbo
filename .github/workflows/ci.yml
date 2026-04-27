@@ -26,12 +26,33 @@ env:
     UV_LINK_MODE: copy
 
 jobs:
-    # ─── Always: lint ──────────────────────────────────────────
+    # ─── Always: lint, format & type-check ────────────────────
     lint:
         name: Lint
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v6
+
+            # ruff: blocking syntax-error subset (same gate as before).
+            - name: Ruff — syntax errors (blocking)
+              uses: astral-sh/ruff-action@v3
+              with:
+                  args: "check --select=E9,F63,F7,F82 --output-format=github ."
+
+            # ruff: full lint summary, non-blocking until codebase is clean.
+            - name: Ruff — full lint (non-blocking)
+              uses: astral-sh/ruff-action@v3
+              with:
+                  args: "check --statistics --exit-zero --output-format=github ."
+
+            # ruff format: report files needing reformatting, non-blocking.
+            - name: Ruff format — check (non-blocking)
+              uses: astral-sh/ruff-action@v3
+              with:
+                  args: "format --check --diff ."
+              continue-on-error: true
+
+            # mypy: type-check the source tree, non-blocking.
             - uses: astral-sh/setup-uv@v6
               with:
                   python-version: "3.12"
@@ -40,11 +61,10 @@ jobs:
                   cache-dependency-glob: |
                       pyproject.toml
                       .github/workflows/ci.yml
-            - run: uv pip install flake8
-            - name: Syntax errors (blocking)
-              run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude=.venv,build,dist,.git,__pycache__
-            - name: Style warnings (non-blocking)
-              run: flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --exclude=.venv,build,dist,.git,__pycache__
+            - name: Install mypy
+              run: uv pip install mypy
+            - name: Mypy — type check (non-blocking)
+              run: mypy tvbo || true
 
     # ─── Always: compatibility across Python versions ──────────
     compat:

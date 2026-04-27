@@ -132,7 +132,7 @@ path = "tvbo/__init__.py"
 
 [tool.hatch.envs.dev]
 dependencies = [
-    "flake8",
+    "ruff",
     "pytest",
     "pytest-cov",
     "pytest-xdist",
@@ -141,6 +141,40 @@ dependencies = [
     "nbformat>=5.10.0",
     "nbclient>=0.10.0",
 ]
+
+[tool.ruff]
+line-length = 127
+extend-exclude = [
+    ".venv",
+    "venv",
+    "build",
+    "dist",
+    "docs/.quarto",
+    "docs/_site",
+    "docs/**/.vdoc.*.py",
+]
+
+[tool.ruff.lint]
+# Pyflakes (F), pycodestyle errors (E) + warnings (W), mccabe complexity (C90).
+select = ["E", "F", "W", "C90"]
+# Auto-generated code: don't lint generated LinkML models.
+exclude = ["tvbo/datamodel/**"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.format]
+# Black-compatible defaults.
+quote-style = "double"
+indent-style = "space"
+
+[tool.mypy]
+python_version = "3.12"
+# Non-blocking mode: report issues but don't fail builds yet.
+ignore_missing_imports = true
+follow_imports = "silent"
+exclude = ["tvbo/datamodel/", "tests/", ".venv/", "build/", "dist/", "docs/"]
+files = ["tvbo"]
 
 [tool.pytest.ini_options]
 addopts = "-n 1 --dist=loadscope"
