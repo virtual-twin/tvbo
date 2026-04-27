@@ -22,6 +22,15 @@ EXPERIMENTS = [
 def test_experiment_runs(experiment_name):
     """Test that experiment runs with minimal iterations."""
     exp = SimulationExperiment.from_file(str(EXPERIMENTS_DIR / f"{experiment_name}.yaml"))
+
+    # Shrink any exploration grids so CI stays fast.
+    if exp.explorations:
+        for expl in exp.explorations.values():
+            if expl.parameters:
+                for param in expl.parameters.values():
+                    if param.domain is not None and getattr(param.domain, "n", None):
+                        param.domain.n = 2
+
     results = exp.run(mode="all", n_iterations=2, max_steps=2, format="tvboptim")
 
     assert results is not None
