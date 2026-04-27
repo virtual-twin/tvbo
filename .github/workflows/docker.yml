@@ -70,41 +70,79 @@ jobs:
           cache-to: type=gha,mode=max
 
   # ─── Container tests (after build) ──────────────────────────
+  # Sharded for parallelism + per-test timeout so hangs surface as
+  # tracebacks instead of silent runner kills.
   test-container:
-    name: Container tests
+    name: Container (${{ matrix.shard }})
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     container:
       image: ghcr.io/virtual-twin/tvbo:${{ github.ref_name == 'main' && 'latest' || 'dev' }}
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - shard: core
+            paths: >-
+              tests/test_model_loading.py
+              tests/test_graph.py
+              tests/test_package_structure.py
+              tests/test_network_io.py
+              tests/functional/test_dynamics_basic.py
+              tests/functional/test_metadata_import.py
+              tests/functional/test_simulation_experiment_basic.py
+              tests/functional/test_timeseries_utils.py
+              tests/functional/test_simulation_backends_core.py
+            needs_julia_refdata: false
+          - shard: tvboptim
+            paths: >-
+              tests/test_tvboptim_experiments.py
+              tests/functional/test_simulation_backends_tvboptim.py
+            needs_julia_refdata: false
+          - shard: tvb
+            paths: >-
+              tests/test_tvb_comparison.py
+              tests/test_tvb_interop.py
+              tests/functional/test_simulation_backends_tvb.py
+            needs_julia_refdata: false
+          - shard: pyrates-neuroml
+            paths: >-
+              tests/functional/test_pyrates_integration.py
+              tests/functional/test_simulation_backends_pyrates.py
+              tests/functional/test_simulation_backends_neuroml.py
+              tests/test_full_workflow_comparison.py
+            needs_julia_refdata: false
+          - shard: julia
+            paths: >-
+              tests/functional/test_simulation_backends_julia.py
+              tests/test_networkdynamics_comparison.py
+            needs_julia_refdata: true
     steps:
       - uses: actions/checkout@v6
       - name: Configure git for private repos
         run: git config --global url."https://${{ secrets.PRIVATE_REPO_TOKEN }}@github.com/".insteadOf "https://github.com/"
       - name: Install dev code + test deps
-        run: pip install -e ".[all]" pytest-xdist
-      - name: Generate reference data
+        run: pip install -e ".[all]" pytest-xdist pytest-timeout
+      - name: Generate Julia reference data
+        if: matrix.needs_julia_refdata
         run: python -c "from juliacall import Main; Main.seval('include(\"tests/reference_data/generate_nd_references.jl\")')"
-      - name: Run Python tests (no Julia, no docs)
+      - name: Run shard "${{ matrix.shard }}"
         run: |
-          pytest -x -q --ignore=tests/test_docs.py \
-            --ignore=tests/functional/test_simulation_backends_julia.py \
-            --ignore=tests/test_networkdynamics_comparison.py \
-            --override-ini="addopts="
-      - name: Run Julia tests
-        run: |
-          pytest -x -q \
-            tests/functional/test_simulation_backends_julia.py \
-            tests/test_networkdynamics_comparison.py \
-            --override-ini="addopts="
+          pytest -x -v --tb=short \
+            --timeout=600 --timeout-method=thread \
+            --override-ini="addopts=" \
+            ${{ matrix.paths }}
 
   # ─── Doc tests (after build) ─────────────────────────────────
   test-docs:
     name: Doc tests
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     container:
       image: ghcr.io/virtual-twin/tvbo:${{ github.ref_name == 'main' && 'latest' || 'dev' }}
       credentials:
@@ -130,9 +168,12 @@ jobs:
       - name: Configure git for private repos
         run: git config --global url."https://${{ secrets.PRIVATE_REPO_TOKEN }}@github.com/".insteadOf "https://github.com/"
       - name: Install dev code + test deps
-        run: pip install -e ".[all]" pytest-xdist
+        run: pip install -e ".[all]" pytest-xdist pytest-timeout
       - name: Run doc tests
-        run: pytest tests/test_docs.py -x -v --tb=long -m docs --run-slow --override-ini="addopts="
+        run: |
+          pytest tests/test_docs.py -x -v --tb=long -m docs --run-slow \
+            --timeout=900 --timeout-method=thread \
+            --override-ini="addopts="
 
   # ─── Release-ready check (main only) ────────────────────────
   release-ready:

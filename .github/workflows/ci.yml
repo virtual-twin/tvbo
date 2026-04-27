@@ -45,6 +45,7 @@ jobs:
         name: Python ${{ matrix.python-version }}
         needs: lint
         runs-on: ubuntu-latest
+        timeout-minutes: 20
         strategy:
             fail-fast: false
             matrix:
@@ -55,18 +56,56 @@ jobs:
               with:
                   python-version: ${{ matrix.python-version }}
                   cache: "pip"
-            - run: pip install -e . pytest pytest-xdist
+            - run: pip install -e . pytest pytest-xdist pytest-timeout
             - name: Core tests
-              run: pytest -q -n auto --dist=loadscope tests/test_model_loading.py tests/test_graph.py tests/functional/test_dynamics_basic.py
+              run: |
+                  pytest -v --tb=short -n auto --dist=loadscope \
+                      --timeout=600 --timeout-method=thread \
+                      tests/test_model_loading.py tests/test_graph.py \
+                      tests/functional/test_dynamics_basic.py
 
     # ─── All PRs + push to main: native tests (no container) ──
+    # Sharded into parallel jobs so one slow/heavy backend doesn't OOM or
+    # exceed the runner watchdog. Each shard has its own timeout, and
+    # pytest-timeout surfaces hangs as tracebacks instead of silent kills.
     test-native:
-        name: Native tests
+        name: Native (${{ matrix.shard }})
         needs: lint
         if: >-
             github.event_name == 'pull_request'
             || (github.event_name == 'push' && github.ref == 'refs/heads/main')
         runs-on: ubuntu-latest
+        timeout-minutes: 45
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    - shard: core
+                      paths: >-
+                          tests/test_model_loading.py
+                          tests/test_graph.py
+                          tests/test_package_structure.py
+                          tests/test_network_io.py
+                          tests/functional/test_dynamics_basic.py
+                          tests/functional/test_metadata_import.py
+                          tests/functional/test_simulation_experiment_basic.py
+                          tests/functional/test_timeseries_utils.py
+                          tests/functional/test_simulation_backends_core.py
+                    - shard: tvboptim
+                      paths: >-
+                          tests/test_tvboptim_experiments.py
+                          tests/functional/test_simulation_backends_tvboptim.py
+                    - shard: tvb
+                      paths: >-
+                          tests/test_tvb_comparison.py
+                          tests/test_tvb_interop.py
+                          tests/functional/test_simulation_backends_tvb.py
+                    - shard: pyrates-neuroml
+                      paths: >-
+                          tests/functional/test_pyrates_integration.py
+                          tests/functional/test_simulation_backends_pyrates.py
+                          tests/functional/test_simulation_backends_neuroml.py
+                          tests/test_full_workflow_comparison.py
         steps:
             - uses: actions/checkout@v6
             - uses: actions/setup-python@v6
@@ -76,6 +115,10 @@ jobs:
             - name: Configure git for private repos
               run: git config --global url."https://${{ secrets.PRIVATE_REPO_TOKEN }}@github.com/".insteadOf "https://github.com/"
             - name: Install with all extras
-              run: pip install -e ".[all]" pytest pytest-xdist
-            - name: Run tests (no doc tests)
-              run: pytest -x -q --ignore=tests/test_docs.py --override-ini="addopts="
+              run: pip install -e ".[all]" pytest pytest-xdist pytest-timeout
+            - name: Run shard "${{ matrix.shard }}"
+              run: |
+                  pytest -x -v --tb=short \
+                      --timeout=600 --timeout-method=thread \
+                      --override-ini="addopts=" \
+                      ${{ matrix.paths }}
