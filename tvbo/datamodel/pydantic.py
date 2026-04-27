@@ -1372,6 +1372,7 @@ class ParcellationTerminology(ConfiguredBaseModel):
                        'SoftwareEnvironment',
                        'Stimulus',
                        'Matrix',
+                       'Dynamics',
                        'RandomStream',
                        'RegionMapping',
                        'TimeSeries',
@@ -2473,6 +2474,7 @@ class SoftwareRequirement(ConfiguredBaseModel):
                        'SoftwareEnvironment',
                        'Stimulus',
                        'Matrix',
+                       'Dynamics',
                        'RandomStream',
                        'RegionMapping',
                        'TimeSeries',
@@ -2605,6 +2607,7 @@ class SoftwareEnvironment(ConfiguredBaseModel):
                        'SoftwareEnvironment',
                        'Stimulus',
                        'Matrix',
+                       'Dynamics',
                        'RandomStream',
                        'RegionMapping',
                        'TimeSeries',
@@ -2899,6 +2902,7 @@ class Stimulus(ConfiguredBaseModel):
                        'SoftwareEnvironment',
                        'Stimulus',
                        'Matrix',
+                       'Dynamics',
                        'RandomStream',
                        'RegionMapping',
                        'TimeSeries',
@@ -3564,6 +3568,7 @@ class Matrix(ConfiguredBaseModel):
                        'SoftwareEnvironment',
                        'Stimulus',
                        'Matrix',
+                       'Dynamics',
                        'RandomStream',
                        'RegionMapping',
                        'TimeSeries',
@@ -3617,6 +3622,7 @@ class BidsEntities(ConfiguredBaseModel):
     scale: Optional[str] = Field(default=None, description="""BIDS scale- entity (BEP017, e.g., 1000)""", json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScore', 'SimulationTool', 'BidsEntities']} })
     atlas: Optional[str] = Field(default=None, description="""BIDS atlas- entity (e.g., Schaefer2018, HCPMMP1)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation', 'BidsEntities']} })
     acquisition: Optional[str] = Field(default=None, description="""BIDS acq- entity (e.g., EEGstandard1005, MEGBrainstorm)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Tractogram', 'BidsEntities']} })
+    hemi: Optional[str] = Field(default=None, description="""BIDS hemi- entity (L or R) for hemisphere-specific surface/volume data""", json_schema_extra = { "linkml_meta": {'domain_of': ['BidsEntities']} })
 
 
 class Network(ConfiguredBaseModel):
@@ -4297,6 +4303,9 @@ class Edge(ConfiguredBaseModel):
                        'PDE']} })
     source: Optional[int] = Field(default=None, description="""Source node ID (set for explicit edges, absent for template edges)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge', 'Observation', 'Dynamics', 'CouplingInput']} })
     target: Optional[int] = Field(default=None, description="""Target node ID (set for explicit edges, absent for template edges)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
+    weight: Optional[float] = Field(default=None, description="""Connection weight (explicit edges)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
+    delay: Optional[float] = Field(default=None, description="""Conduction delay (explicit edges, ms)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
+    distance: Optional[float] = Field(default=None, description="""Edge length / tract distance (explicit edges, mm)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
     unit: Optional[str] = Field(default=None, description="""Unit for matrix values (template edges only)""", json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
                        'Edge',
                        'StateVariable',
@@ -4871,6 +4880,17 @@ class Dynamics(ConfiguredBaseModel):
          'slot_uri': 'dcterms:source'} })
     references: Optional[list[str]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Provenance', 'Dynamics', 'SimulationExperiment'],
          'slot_uri': 'dcterms:references'} })
+    dataLocation: Optional[str] = Field(default=None, description="""Add the location of the data file containing the parcellation terminology.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
+                       'Stimulus',
+                       'Matrix',
+                       'Dynamics',
+                       'RandomStream',
+                       'RegionMapping',
+                       'TimeSeries',
+                       'NDArray',
+                       'Mesh']} })
     derived_parameters: Optional[dict[str, DerivedParameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'PDE']} })
     derived_variables: Optional[dict[str, DerivedVariable]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'PDE']} })
     coupling_terms: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics']} })
@@ -6807,6 +6827,7 @@ class RandomStream(ConfiguredBaseModel):
                        'SoftwareEnvironment',
                        'Stimulus',
                        'Matrix',
+                       'Dynamics',
                        'RandomStream',
                        'RegionMapping',
                        'TimeSeries',
@@ -8554,6 +8575,7 @@ class RegionMapping(ConfiguredBaseModel):
                        'SoftwareEnvironment',
                        'Stimulus',
                        'Matrix',
+                       'Dynamics',
                        'RandomStream',
                        'RegionMapping',
                        'TimeSeries',
@@ -8936,6 +8958,7 @@ class TimeSeries(ConfiguredBaseModel):
                        'SoftwareEnvironment',
                        'Stimulus',
                        'Matrix',
+                       'Dynamics',
                        'RandomStream',
                        'RegionMapping',
                        'TimeSeries',
@@ -9076,6 +9099,7 @@ class NDArray(ConfiguredBaseModel):
                        'SoftwareEnvironment',
                        'Stimulus',
                        'Matrix',
+                       'Dynamics',
                        'RandomStream',
                        'RegionMapping',
                        'TimeSeries',
@@ -9302,6 +9326,7 @@ class Mesh(ConfiguredBaseModel):
                        'SoftwareEnvironment',
                        'Stimulus',
                        'Matrix',
+                       'Dynamics',
                        'RandomStream',
                        'RegionMapping',
                        'TimeSeries',

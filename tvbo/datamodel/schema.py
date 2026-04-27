@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-04-27T15:53:28
+# Generation date: 2026-04-27T15:58:04
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -758,6 +758,7 @@ class BidsEntities(YAMLRoot):
     scale: Optional[str] = None
     atlas: Optional[str] = None
     acquisition: Optional[str] = None
+    hemi: Optional[str] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self.template is not None and not isinstance(self.template, str):
@@ -780,6 +781,9 @@ class BidsEntities(YAMLRoot):
 
         if self.acquisition is not None and not isinstance(self.acquisition, str):
             self.acquisition = str(self.acquisition)
+
+        if self.hemi is not None and not isinstance(self.hemi, str):
+            self.hemi = str(self.hemi)
 
         super().__post_init__(**kwargs)
 
@@ -1084,6 +1088,9 @@ class Edge(YAMLRoot):
     parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
     source: Optional[int] = None
     target: Optional[int] = None
+    weight: Optional[float] = None
+    delay: Optional[float] = None
+    distance: Optional[float] = None
     unit: Optional[str] = None
     format: Optional[Union[str, "SparseFormat"]] = None
     weighted: Optional[Union[bool, Bool]] = True
@@ -1112,6 +1119,15 @@ class Edge(YAMLRoot):
 
         if self.target is not None and not isinstance(self.target, int):
             self.target = int(self.target)
+
+        if self.weight is not None and not isinstance(self.weight, float):
+            self.weight = float(self.weight)
+
+        if self.delay is not None and not isinstance(self.delay, float):
+            self.delay = float(self.delay)
+
+        if self.distance is not None and not isinstance(self.distance, float):
+            self.distance = float(self.distance)
 
         if self.unit is not None and not isinstance(self.unit, str):
             self.unit = str(self.unit)
@@ -1308,6 +1324,7 @@ class Dynamics(YAMLRoot):
     description: Optional[str] = None
     source: Optional[str] = None
     references: Optional[Union[str, list[str]]] = empty_list()
+    dataLocation: Optional[str] = None
     derived_parameters: Optional[Union[dict[Union[str, DerivedParameterName], Union[dict, "DerivedParameter"]], list[Union[dict, "DerivedParameter"]]]] = empty_dict()
     derived_variables: Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, "DerivedVariable"]], list[Union[dict, "DerivedVariable"]]]] = empty_dict()
     coupling_terms: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
@@ -1353,6 +1370,9 @@ class Dynamics(YAMLRoot):
         if not isinstance(self.references, list):
             self.references = [self.references] if self.references is not None else []
         self.references = [v if isinstance(v, str) else str(v) for v in self.references]
+
+        if self.dataLocation is not None and not isinstance(self.dataLocation, str):
+            self.dataLocation = str(self.dataLocation)
 
         self._normalize_inlined_as_dict(slot_name="derived_parameters", slot_type=DerivedParameter, key_name="name", keyed=True)
 
@@ -6341,6 +6361,9 @@ slots.bidsEntities__atlas = Slot(uri=TVBO.atlas, name="bidsEntities__atlas", cur
 slots.bidsEntities__acquisition = Slot(uri=TVBO.acquisition, name="bidsEntities__acquisition", curie=TVBO.curie('acquisition'),
                    model_uri=TVBO.bidsEntities__acquisition, domain=None, range=Optional[str])
 
+slots.bidsEntities__hemi = Slot(uri=TVBO.hemi, name="bidsEntities__hemi", curie=TVBO.curie('hemi'),
+                   model_uri=TVBO.bidsEntities__hemi, domain=None, range=Optional[str])
+
 slots.network__nodes = Slot(uri=TVBO.nodes, name="network__nodes", curie=TVBO.curie('nodes'),
                    model_uri=TVBO.network__nodes, domain=None, range=Optional[Union[Union[dict, Node], list[Union[dict, Node]]]])
 
@@ -6451,6 +6474,15 @@ slots.edge__source = Slot(uri=TVBO.source, name="edge__source", curie=TVBO.curie
 
 slots.edge__target = Slot(uri=TVBO.target, name="edge__target", curie=TVBO.curie('target'),
                    model_uri=TVBO.edge__target, domain=None, range=Optional[int])
+
+slots.edge__weight = Slot(uri=TVBO.weight, name="edge__weight", curie=TVBO.curie('weight'),
+                   model_uri=TVBO.edge__weight, domain=None, range=Optional[float])
+
+slots.edge__delay = Slot(uri=TVBO.delay, name="edge__delay", curie=TVBO.curie('delay'),
+                   model_uri=TVBO.edge__delay, domain=None, range=Optional[float])
+
+slots.edge__distance = Slot(uri=TVBO.distance, name="edge__distance", curie=TVBO.curie('distance'),
+                   model_uri=TVBO.edge__distance, domain=None, range=Optional[float])
 
 slots.edge__unit = Slot(uri=TVBO.unit, name="edge__unit", curie=TVBO.curie('unit'),
                    model_uri=TVBO.edge__unit, domain=None, range=Optional[str])

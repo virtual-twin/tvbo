@@ -674,6 +674,9 @@ classes:
             acquisition:
                 range: string
                 description: "BIDS acq- entity (e.g., EEGstandard1005, MEGBrainstorm)"
+            hemi:
+                range: string
+                description: "BIDS hemi- entity (L or R) for hemisphere-specific surface/volume data"
 
     Network:
         class_uri: tvbo:Network
@@ -918,6 +921,15 @@ classes:
                 range: integer
                 required: false
                 description: "Target node ID (set for explicit edges, absent for template edges)"
+            weight:
+                range: float
+                description: "Connection weight (explicit edges)"
+            delay:
+                range: float
+                description: "Conduction delay (explicit edges, ms)"
+            distance:
+                range: float
+                description: "Edge length / tract distance (explicit edges, mm)"
             unit:
                 range: string
                 description: "Unit for matrix values (template edges only)"
@@ -1110,6 +1122,7 @@ classes:
             - description
             - source
             - references
+            - dataLocation
         slot_usage:
             name:
                 ifabsent: "Generic2dOscillator"
