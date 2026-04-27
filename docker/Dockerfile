@@ -13,7 +13,12 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 RUN apt-get update && apt-get install -y --no-install-recommends \
         gcc g++ gfortran make git perl libcairo2-dev curl wget \
         default-jre-headless \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    # NEURON PyPI wheels are built on RHEL and hardcode the GCC toolset path.
+    # Create symlinks so nrnmech_makefile finds its compiler on Debian.
+    && mkdir -p /opt/rh/gcc-toolset-10/root/usr/bin \
+    && ln -s /usr/bin/gcc /opt/rh/gcc-toolset-10/root/usr/bin/gcc \
+    && ln -s /usr/bin/g++ /opt/rh/gcc-toolset-10/root/usr/bin/g++
 
 # Build AUTO-07p
 RUN git clone --depth 1 https://github.com/auto-07p/auto-07p /auto-07p \
