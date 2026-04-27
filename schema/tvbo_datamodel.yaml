@@ -69,10 +69,16 @@ slots:
     iri:
         slot_uri: dcterms:identifier
         range: uriorcurie
+        recommended: true
         description: >-
             Stable IRI (or compact URI) identifying this entity in an
             external ontology or knowledge base. Complements the `name`
-            key with an ontology-grounded identifier.
+            key with an ontology-grounded identifier. Required on the
+            13 subclassed core classes (Dynamics, Coupling, Integrator,
+            Network, Noise, Function, LossFunction, Stimulus,
+            Continuation, BrainAtlas, SimulationExperiment,
+            SimulationStudy, Observation) for cross-surface identity
+            (LinkML ↔ OWL ↔ API ↔ Odoo).
     value:
         slot_uri: schema:value
         range: ScalarValue
