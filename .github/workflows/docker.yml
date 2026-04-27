@@ -200,8 +200,9 @@ jobs:
             ${{ matrix.paths }}
 
   # ─── Doc tests (after build) ─────────────────────────────────
+  # ─── Doc tests — one shard per backend, all run in parallel ────────────
   test-docs:
-    name: Doc tests
+    name: Docs (${{ matrix.shard }})
     needs: manifest
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -210,6 +211,42 @@ jobs:
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # NeuroML/LEMS examples (40 docs, jNeuroML + NEURON backend)
+          - shard: neuroml
+            doc_pattern: "Interoperability/NeuroML"
+            extra_args: ""
+          # Julia backends: BifurcationKit, ModelingToolkit, NetworkDynamics
+          - shard: julia
+            doc_pattern: "Interoperability/BifurcationKit.jl Interoperability/ModelingToolkit.jl Interoperability/NetworkDynamics.jl"
+            extra_args: ""
+          # PyRates dynamical systems
+          - shard: pyrates
+            doc_pattern: "Interoperability/Pyrates"
+            extra_args: ""
+          # TVB interoperability
+          - shard: tvb
+            doc_pattern: "Interoperability/TVB"
+            extra_args: ""
+          # tvboptim — heavy JAX optimization docs; platform allocator avoids
+          # BFC pre-allocation OOM on 7 GB runners
+          - shard: tvboptim
+            doc_pattern: "Interoperability/tvboptim"
+            extra_args: "--run-slow"
+          # Replication studies
+          - shard: replication
+            doc_pattern: "Replication"
+            extra_args: ""
+          # Core: index, Usage, Specification, api, examples, OpenMINDS, BIDS
+          - shard: core
+            doc_pattern: "index.qmd Usage Specification api examples Interoperability/OpenMINDS Interoperability/BIDS"
+            extra_args: ""
+    env:
+      JAX_PLATFORMS: cpu
+      XLA_PYTHON_CLIENT_ALLOCATOR: platform
     steps:
       - uses: actions/checkout@v6
       - name: Ensure Quarto is available
@@ -231,9 +268,11 @@ jobs:
         run: git config --global url."https://${{ secrets.PRIVATE_REPO_TOKEN }}@github.com/".insteadOf "https://github.com/"
       - name: Link checkout as editable (deps already in image)
         run: pip install -e . --no-deps && pip install pytest-xdist pytest-timeout
-      - name: Run doc tests
+      - name: Run doc tests (${{ matrix.shard }})
         run: |
-          pytest tests/test_docs.py -x -v --tb=long -m docs --run-slow \
+          pytest tests/test_docs.py -v --tb=long -m docs \
+            -k "${{ matrix.doc_pattern }}" \
+            ${{ matrix.extra_args }} \
             --timeout=900 --timeout-method=thread \
             --override-ini="addopts="
 
