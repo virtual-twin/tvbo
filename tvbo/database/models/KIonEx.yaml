@@ -11,6 +11,8 @@ parameters:
       hi: 1.5
       step: 0.1
     description: membrane capacitance
+    grounding:
+      - GO:0042391
   Delta:
     name: Delta
     definition: HWHM heterogeneous noise
@@ -29,6 +31,8 @@ parameters:
       hi: 0.0
       step: 0.5
     description: Reversal Potential
+    grounding:
+      - GO:0019228
   J:
     name: J
     definition: Mean Synaptic weight
@@ -38,6 +42,8 @@ parameters:
       hi: 40.0
       step: 0.01
     description: Mean Synaptic weight
+    grounding:
+      - GO:0099536
   K_bath:
     name: K_bath
     definition: Potassium concentration in bath
@@ -47,6 +53,8 @@ parameters:
       hi: 40.0
       step: 0.25
     description: Potassium concentration in bath
+    grounding:
+      - GO:0055075
   R_minus:
     name: R_minus
     definition: curvature left parabola
@@ -356,20 +364,10 @@ parameters:
       step: 0.0
     description: extracellular volume
     unit: um3
-description: "It describes the mean-field activity of a population of Hodgkin-Huxley-type\
-  \ neurons (Depannemaker et al 2022) linking the slow fluctuations of intra- and\
-  \ extra-cellular potassium ion concentrations to the mean membrane potential, and\
-  \ the synaptic input to the population firing rate. \nThe model is derived as the\
-  \ mathematical limit of an infinite number of all-to-all coupled neurons, resulting\
-  \ in 5 state variables:\n    :math:`x` represents a phenomenological variable connected\
-  \ to the firing rate, \n    :math:`V` represent the average membrane potential,\n\
-  \    :math:`n` represents the gating variable for potassium K, \n    :math:`\\Delta\
-  \ K_{int}` represent the intracellular potassium concentration,\n    :math:`K_g`\
-  \ represents the extracellular potassium buffering by the external bath\n    \"\"\
-  \""
+description: "It describes the mean-field activity of a population of Hodgkin-Huxley-type neurons (Depannemaker et al 2022) linking the slow fluctuations of intra- and extra-cellular potassium ion concentrations to the mean membrane potential, and the synaptic input to the population firing rate. \nThe model is derived as the mathematical limit of an infinite number of all-to-all coupled neurons, resulting in 5 state variables:\n    :math:`x` represents a phenomenological variable connected to the firing rate, \n    :math:`V` represent the average membrane potential,\n    :math:`n` represents the gating variable for potassium K, \n    :math:`\\Delta K_{int}` represent the intracellular potassium concentration,\n    :math:`K_g` represents the extracellular potassium buffering by the external bath\n    \"\"\""
 references:
-- Rabuffo2024
-- Depannemaecker2023
+  - Rabuffo2024
+  - Depannemaecker2023
 derived_variables:
   DNa_i:
     name: DNa_i
@@ -453,21 +451,20 @@ derived_variables:
     symbol: xcond
     equation:
       lhs: xcond
-      rhs: Piecewise((Delta - J*r*x + 2*R_minus*x*(V - c_minus), V <= Vstar), (Delta
-        - J*r*x + 2*R_plus*x*(V - c_plus), True))
+      rhs: Piecewise((Delta - J*r*x + 2*R_minus*x*(V - c_minus), V <= Vstar), (Delta - J*r*x + 2*R_plus*x*(V - c_plus), True))
       latex: false
     conditional: true
     cases:
-    - condition: V <= Vstar
-      equation:
-        lhs: xcond
-        rhs: Delta - J*r*x + 2*R_minus*x*(V - c_minus)
-        latex: false
-    - condition: 'True'
-      equation:
-        lhs: xcond
-        rhs: Delta - J*r*x + 2*R_plus*x*(V - c_plus)
-        latex: false
+      - condition: V <= Vstar
+        equation:
+          lhs: xcond
+          rhs: Delta - J*r*x + 2*R_minus*x*(V - c_minus)
+          latex: false
+      - condition: 'True'
+        equation:
+          lhs: xcond
+          rhs: Delta - J*r*x + 2*R_plus*x*(V - c_plus)
+          latex: false
   K_o:
     name: K_o
     equation:
@@ -515,21 +512,20 @@ derived_variables:
     symbol: Vcond
     equation:
       lhs: Vcond
-      rhs: Piecewise((R_minus*c_pop0*(-V + E)/pi - R_minus*x**2 + V_temp + eta, V
-        <= Vstar), (R_minus*c_pop0*(-V + E)/pi - R_plus*x**2 + V_temp + eta, True))
+      rhs: Piecewise((R_minus*c_pop0*(-V + E)/pi - R_minus*x**2 + V_temp + eta, V <= Vstar), (R_minus*c_pop0*(-V + E)/pi - R_plus*x**2 + V_temp + eta, True))
       latex: false
     conditional: true
     cases:
-    - condition: V <= Vstar
-      equation:
-        lhs: Vcond
-        rhs: R_minus*c_pop0*(-V + E)/pi - R_minus*x**2 + V_temp + eta
-        latex: false
-    - condition: 'True'
-      equation:
-        lhs: Vcond
-        rhs: R_minus*c_pop0*(-V + E)/pi - R_plus*x**2 + V_temp + eta
-        latex: false
+      - condition: V <= Vstar
+        equation:
+          lhs: Vcond
+          rhs: R_minus*c_pop0*(-V + E)/pi - R_minus*x**2 + V_temp + eta
+          latex: false
+      - condition: 'True'
+        equation:
+          lhs: Vcond
+          rhs: R_minus*c_pop0*(-V + E)/pi - R_plus*x**2 + V_temp + eta
+          latex: false
 coupling_inputs:
   c_pop0:
     name: c_pop0
