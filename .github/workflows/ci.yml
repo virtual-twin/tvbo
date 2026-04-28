@@ -126,6 +126,79 @@ jobs:
                       ontology/tvb-o.shacl.ttl
                   retention-days: 30
 
+    # ─── Always: ontology reasoner (ELK + HermiT via ROBOT) ────
+    # Runs OWL reasoning on the generated tvb-o-struct.owl to detect
+    # unsatisfiable classes, inconsistent ontologies, and inverse /
+    # functional / cardinality regressions. Uses ROBOT (the OBO standard
+    # CLI) with ELK (fast OWL-EL profile) by default and HermiT for full
+    # OWL-DL coverage. Non-blocking initially (continue-on-error) because
+    # the freshly-generated ontology has known cleanup pending in §2.4.
+    # Closes §2.6 first checkbox once flipped to required.
+    reasoner:
+        name: Ontology reasoner (ELK + HermiT)
+        needs: schema-artifacts
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        continue-on-error: true
+        steps:
+            - uses: actions/checkout@v6
+            - uses: astral-sh/setup-uv@v8.1.0
+              with:
+                  python-version: "3.12"
+                  enable-cache: true
+                  activate-environment: true
+                  cache-dependency-glob: |
+                      pyproject.toml
+                      .github/workflows/ci.yml
+            - name: Install LinkML
+              run: uv pip install linkml
+            - name: Generate OWL
+              run: make gen-owl
+            - name: Set up Java (for ROBOT)
+              uses: actions/setup-java@v4
+              with:
+                  distribution: temurin
+                  java-version: "17"
+            - name: Install ROBOT
+              run: |
+                  mkdir -p $HOME/.local/bin
+                  curl -L -o $HOME/.local/bin/robot.jar \
+                      https://github.com/ontodev/robot/releases/download/v1.9.6/robot.jar
+                  curl -L -o $HOME/.local/bin/robot \
+                      https://raw.githubusercontent.com/ontodev/robot/v1.9.6/bin/robot
+                  chmod +x $HOME/.local/bin/robot
+                  echo "$HOME/.local/bin" >> $GITHUB_PATH
+            - name: Reason with ELK (OWL-EL profile, fast)
+              run: |
+                  robot reason \
+                      --reasoner ELK \
+                      --input ontology/tvb-o-struct.owl \
+                      --output ontology/tvb-o-reasoned-elk.owl
+            - name: Reason with HermiT (OWL-DL, full coverage)
+              run: |
+                  robot reason \
+                      --reasoner HermiT \
+                      --input ontology/tvb-o-struct.owl \
+                      --output ontology/tvb-o-reasoned-hermit.owl
+            - name: Report unsatisfiable classes
+              run: |
+                  robot report \
+                      --input ontology/tvb-o-struct.owl \
+                      --output ontology/tvb-o-report.tsv \
+                      --fail-on ERROR \
+                      --print 20 || true
+            - name: Upload reasoner artifacts
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: tvbo-reasoner-artifacts
+                  path: |
+                      ontology/tvb-o-reasoned-elk.owl
+                      ontology/tvb-o-reasoned-hermit.owl
+                      ontology/tvb-o-report.tsv
+                  retention-days: 30
+                  if-no-files-found: warn
+
     # ─── Always: compatibility across Python versions ──────────
     compat:
         name: Python ${{ matrix.python-version }}
