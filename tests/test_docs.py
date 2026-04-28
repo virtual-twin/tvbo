@@ -93,6 +93,10 @@ def test_doc_executes(qmd_path, doc_name):
         # Execute the notebook
         env = os.environ.copy()
         env["MPLBACKEND"] = "Agg"  # Non-interactive matplotlib backend
+        # Keep JAX memory usage bounded in CI notebooks (notably tvboptim docs).
+        env.setdefault("JAX_PLATFORMS", "cpu")
+        env.setdefault("XLA_PYTHON_CLIENT_ALLOCATOR", "platform")
+        env.setdefault("XLA_PYTHON_CLIENT_PREALLOCATE", "false")
 
         result = subprocess.run(
             ["jupyter", "execute", str(ipynb_path)],

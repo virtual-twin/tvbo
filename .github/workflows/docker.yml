@@ -217,36 +217,43 @@ jobs:
         include:
           # NeuroML/LEMS examples (40 docs, jNeuroML + NEURON backend)
           - shard: neuroml
-            doc_pattern: "Interoperability/NeuroML"
+            doc_pattern: "NeuroML"
             extra_args: ""
           # Julia backends: BifurcationKit, ModelingToolkit, NetworkDynamics
           - shard: julia
-            doc_pattern: "Interoperability/BifurcationKit.jl Interoperability/ModelingToolkit.jl Interoperability/NetworkDynamics.jl"
+            doc_pattern: "BifurcationKit or ModelingToolkit or NetworkDynamics"
             extra_args: ""
           # PyRates dynamical systems
           - shard: pyrates
-            doc_pattern: "Interoperability/Pyrates"
+            doc_pattern: "Pyrates"
             extra_args: ""
           # TVB interoperability
           - shard: tvb
             doc_pattern: "Interoperability/TVB"
             extra_args: ""
-          # tvboptim — heavy JAX optimization docs; platform allocator avoids
-          # BFC pre-allocation OOM on 7 GB runners
-          - shard: tvboptim
-            doc_pattern: "Interoperability/tvboptim"
+          # tvboptim — heavy JAX optimization docs (one per shard to isolate OOM)
+          - shard: tvboptim-ei
+            doc_pattern: "EI_Tuning_tvboptim"
+            extra_args: "--run-slow"
+          - shard: tvboptim-rww
+            doc_pattern: "RWW_tvboptim"
+            extra_args: "--run-slow"
+          - shard: tvboptim-jr
+            doc_pattern: "JR_tvboptim"
             extra_args: "--run-slow"
           # Replication studies
           - shard: replication
             doc_pattern: "Replication"
             extra_args: ""
-          # Core: index, Usage, Specification, api, examples, OpenMINDS, BIDS
-          - shard: core
-            doc_pattern: "index.qmd Usage Specification api examples Interoperability/OpenMINDS Interoperability/BIDS"
-            extra_args: ""
+          # Core: Usage, Specification, api, examples (non-NeuroML), OpenMINDS, BIDS, root index
+          # Negative catch-all: everything not covered by the specialised shards above.
+        #   - shard: core
+        #     doc_pattern: "not NeuroML and not BifurcationKit and not ModelingToolkit and not NetworkDynamics and not Pyrates and not TVB and not tvboptim and not Replication"
+        #     extra_args: ""
     env:
       JAX_PLATFORMS: cpu
       XLA_PYTHON_CLIENT_ALLOCATOR: platform
+      XLA_PYTHON_CLIENT_PREALLOCATE: "false"
     steps:
       - uses: actions/checkout@v6
       - name: Ensure Quarto is available
