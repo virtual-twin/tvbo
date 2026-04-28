@@ -5133,6 +5133,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
+<td><a href="../../datamodel/classes/Event.html">Event</a></td>
+<td>A discrete or continuous event that modifies the system during simulation</td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/Case.html">Case</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="odd">
 <td><a href="../../datamodel/classes/Session.html">Session</a></td>
 <td>A data collection session for a subject</td>
 <td>no</td>
@@ -5140,16 +5150,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tr class="even">
 <td><a href="../../datamodel/classes/ConditionalBlock.html">ConditionalBlock</a></td>
 <td>A single condition and its corresponding equation segment</td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/Case.html">Case</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/Event.html">Event</a></td>
-<td>A discrete or continuous event that modifies the system during simulation</td>
 <td>no</td>
 </tr>
 </tbody>
@@ -5306,7 +5306,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

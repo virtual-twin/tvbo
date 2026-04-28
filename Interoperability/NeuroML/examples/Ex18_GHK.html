@@ -5171,7 +5171,7 @@ window.Quarto = {
 </section>
 <section id="define-hhghk-cell-in-tvbo" class="level2">
 <h2 class="anchored" data-anchor-id="define-hhghk-cell-in-tvbo">1. Define HH+GHK Cell in TVBO</h2>
-<div id="8c216089" class="cell" data-execution_count="1">
+<div id="13f22b3b" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> SimulationExperiment</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>exp <span class="op">=</span> SimulationExperiment.from_string(<span class="st">"""</span></span>
@@ -5371,11 +5371,12 @@ Components: ['IClamp', 'ca_chan', 'k_chan', 'leak', 'na_chan', 'simple_decay']</
 </section>
 <section id="render-lems-xml" class="level2">
 <h2 class="anchored" data-anchor-id="render-lems-xml">2. Render LEMS XML</h2>
-<div id="46f2f896" class="cell" data-execution_count="2">
+<div id="96c633ae" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>xml <span class="op">=</span> exp.render(<span class="st">"lems"</span>, use_standard_types<span class="op">=</span><span class="va">True</span>)</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(xml[:<span class="dv">3000</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>&lt;Lems&gt;
+<pre><code>
+&lt;Lems&gt;
   &lt;Target component="sim_NeuroML_Ex18__HH_with_GHK"/&gt;
 
   &lt;Include file="Cells.xml"/&gt;
@@ -5433,20 +5434,18 @@ Components: ['IClamp', 'ca_chan', 'k_chan', 'leak', 'na_chan', 'simple_decay']</
             &lt;membraneProperties&gt;
                 &lt;channelDensityGHK permeability="2.5e-07 m_per_s" id="ca_chan_all" ionChannel="ca_chan" ion="ca"/&gt;
                 &lt;channelDensity condDensity="0.036 S_per_cm2" id="k_chan_all" ionChannel="k_chan" erev="-77 mV" ion="k"/&gt;
-                &lt;channelDensity condDensity="0.0003 S_per_cm2" id="leak_all" ionChannel="leak" erev="-53.1 mV"</code></pre>
+                &lt;channelDensity condDensity="0.0003 S_per_cm2" id="leak_all" ionChannel="leak" erev="-53.1 mV</code></pre>
 </div>
 </div>
 </section>
 <section id="run-reference" class="level2">
 <h2 class="anchored" data-anchor-id="run-reference">3. Run Reference</h2>
-<div id="80e03f83" class="cell" data-execution_count="3">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys, os</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>sys.path.insert(<span class="dv">0</span>, os.path.dirname(os.path.abspath(<span class="st">"."</span>)))</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> _nml_helpers <span class="im">import</span> run_lems_example</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>ref_outputs <span class="op">=</span> run_lems_example(<span class="st">"LEMS_NML2_Ex18_GHK.xml"</span>)</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> name, arr <span class="kw">in</span> ref_outputs.items():</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  </span><span class="sc">{</span>name<span class="sc">}</span><span class="ss">: shape=</span><span class="sc">{</span>arr<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="3587b49f" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo.adapters.neuroml <span class="im">import</span> run_lems_example</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>ref_outputs <span class="op">=</span> run_lems_example(<span class="st">"LEMS_NML2_Ex18_GHK.xml"</span>)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> name, arr <span class="kw">in</span> ref_outputs.items():</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  </span><span class="sc">{</span>name<span class="sc">}</span><span class="ss">: shape=</span><span class="sc">{</span>arr<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>  ex18.dat: shape=(50001, 4)</code></pre>
 </div>
@@ -5454,7 +5453,7 @@ Components: ['IClamp', 'ca_chan', 'k_chan', 'leak', 'na_chan', 'simple_decay']</
 </section>
 <section id="run-tvbo" class="level2">
 <h2 class="anchored" data-anchor-id="run-tvbo">4. Run TVBO</h2>
-<div id="751c9613" class="cell" data-execution_count="4">
+<div id="1cb43406" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> exp.run(<span class="st">"neuroml"</span>)</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>da <span class="op">=</span> result.integration.data</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"TVBO: </span><span class="sc">{</span>da<span class="sc">.</span>dims<span class="sc">}</span><span class="ss">, shape=</span><span class="sc">{</span>da<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -5465,8 +5464,8 @@ Components: ['IClamp', 'ca_chan', 'k_chan', 'leak', 'na_chan', 'simple_decay']</
 </section>
 <section id="compare-plot" class="level2">
 <h2 class="anchored" data-anchor-id="compare-plot">5. Compare &amp; Plot</h2>
-<div id="46e8c722" class="cell" data-execution_count="5">
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> _nml_helpers <span class="im">import</span> plot_lems_comparison</span>
+<div id="7aca7d42" class="cell" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo.adapters.neuroml <span class="im">import</span> plot_lems_comparison</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>plot_lems_comparison(<span class="st">"LEMS_NML2_Ex18_GHK.xml"</span>, ref_outputs, result.integration.data, title_prefix<span class="op">=</span><span class="st">"Ex18"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
@@ -5567,7 +5566,7 @@ Components: ['IClamp', 'ca_chan', 'k_chan', 'leak', 'na_chan', 'simple_decay']</
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

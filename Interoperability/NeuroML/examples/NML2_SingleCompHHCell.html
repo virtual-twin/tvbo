@@ -5134,21 +5134,22 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="nml2_singlecomphhcell.nml">NML2_SingleCompHHCell.nml</h2>
 <p>The recommended way to define a HH cell in NeuroML2: using the <code>&lt;cell&gt;</code> element with explicit morphology (segment), membrane properties (channel densities), and intracellular properties.</p>
 <p>This is the canonical example for compatibility with multi-simulator export (NEURON, Brian2, NEST) via pyNeuroML.</p>
-<div id="f696d116" class="cell" data-execution_count="2">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
+<div id="d8ece7fd" class="cell" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> urllib.request</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>nml_file <span class="op">=</span> Path.home() <span class="op">/</span> <span class="st">"work_data/toolboxes/NeuroML2/examples/NML2_SingleCompHHCell.nml"</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>text <span class="op">=</span> nml_file.read_text()</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Show key structure</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>in_cell <span class="op">=</span> <span class="va">False</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> line <span class="kw">in</span> text.split(<span class="st">'</span><span class="ch">\n</span><span class="st">'</span>):</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    stripped <span class="op">=</span> line.strip()</span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="st">'&lt;cell '</span> <span class="kw">in</span> stripped <span class="kw">or</span> <span class="st">'&lt;morphology'</span> <span class="kw">in</span> stripped <span class="kw">or</span> <span class="op">\</span></span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>       <span class="st">'&lt;biophysicalProperties'</span> <span class="kw">in</span> stripped <span class="kw">or</span> <span class="st">'&lt;channelDensity'</span> <span class="kw">in</span> stripped <span class="kw">or</span> <span class="op">\</span></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>       <span class="st">'&lt;specificCapacitance'</span> <span class="kw">in</span> stripped <span class="kw">or</span> <span class="st">'&lt;initMembPotential'</span> <span class="kw">in</span> stripped <span class="kw">or</span> <span class="op">\</span></span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>       <span class="st">'&lt;/cell&gt;'</span> <span class="kw">in</span> stripped:</span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(stripped[:<span class="dv">120</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>url <span class="op">=</span> <span class="st">"https://raw.githubusercontent.com/NeuroML/NeuroML2/master/examples/NML2_SingleCompHHCell.nml"</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> urllib.request.urlopen(url) <span class="im">as</span> resp:</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    text <span class="op">=</span> resp.read().decode()</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Show key structure</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>in_cell <span class="op">=</span> <span class="va">False</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> line <span class="kw">in</span> text.split(<span class="st">'</span><span class="ch">\n</span><span class="st">'</span>):</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    stripped <span class="op">=</span> line.strip()</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="st">'&lt;cell '</span> <span class="kw">in</span> stripped <span class="kw">or</span> <span class="st">'&lt;morphology'</span> <span class="kw">in</span> stripped <span class="kw">or</span> <span class="op">\</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>       <span class="st">'&lt;biophysicalProperties'</span> <span class="kw">in</span> stripped <span class="kw">or</span> <span class="st">'&lt;channelDensity'</span> <span class="kw">in</span> stripped <span class="kw">or</span> <span class="op">\</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>       <span class="st">'&lt;specificCapacitance'</span> <span class="kw">in</span> stripped <span class="kw">or</span> <span class="st">'&lt;initMembPotential'</span> <span class="kw">in</span> stripped <span class="kw">or</span> <span class="op">\</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>       <span class="st">'&lt;/cell&gt;'</span> <span class="kw">in</span> stripped:</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(stripped[:<span class="dv">120</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>&lt;cell id="hhcell"&gt;
 &lt;morphology id="morph1"&gt;
@@ -5192,7 +5193,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 </tbody>
 </table>
-<div id="9cce6a97" class="cell" data-execution_count="3">
+<div id="3294865b" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> SimulationExperiment</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>exp <span class="op">=</span> SimulationExperiment.from_string(<span class="st">"""</span></span>
@@ -5255,27 +5256,29 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   &lt;!-- Tell jLEMS/jNeuroML which component is the simulation entry point. --&gt;
   &lt;Target component="sim_NML2_SingleCompHHCell"/&gt;
 
+  &lt;Include file="Cells.xml"/&gt;
+  &lt;Include file="Networks.xml"/&gt;
+  &lt;Include file="Simulation.xml"/&gt;
+
   &lt;!-- ════════════════════════════════════════════════════════════════
-       Dimensions &amp; Units (inline — no external includes needed)
+       Dynamics ComponentType &amp; Component instances
        ════════════════════════════════════════════════════════════════ --&gt;
 
-  &lt;!-- Dimensions --&gt;
-  &lt;Dimension name="none"/&gt;
-  &lt;Dimension name="time" t="1"/&gt;
-  &lt;Dimension name="voltage" m="1" l="2" t="-3" i="-1"/&gt;
-  &lt;Dimension name="per_time" t="-1"/&gt;
-  &lt;Dimension name="conductance" m="-1" l="-2" t="3" i="2"/&gt;
-  &lt;Dimension name="capacitance" m="-1" l="-2" t="4" i="2"/&gt;
-  &lt;Dimension name="current" i="1"/&gt;
-  &lt;Dimension name="resistance" m="1" l="2" t="-3" i="-2"/&gt;
-  &lt;Dimension name="concentration" l="-3" n="1"/&gt;
-  &lt;Dimen</code></pre>
+  &lt;!-- ════════════════════════════════════════════════════════════════
+       ComponentType: HodgkinHuxley
+       Generated from TVBO Dynamics: HodgkinHuxley
+       ════════════════════════════════════════════════════════════════ --&gt;
+  &lt;ComponentType name="HodgkinHuxley"&gt;
+
+    &lt;!-- Parameters --&gt;
+    &lt;Parameter name="C" dimension="none"/&gt;
+    &lt;Parameter name=</code></pre>
 </div>
 </div>
 </section>
 <section id="run-tvbo" class="level2">
 <h2 class="anchored" data-anchor-id="run-tvbo">Run TVBO</h2>
-<div id="a2694de3" class="cell" data-execution_count="4">
+<div id="9a70243d" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -5377,7 +5380,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

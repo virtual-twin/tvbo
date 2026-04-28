@@ -5124,7 +5124,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul class="collapse">
   <li><a href="#setup" id="toc-setup" class="nav-link" data-scroll-target="#setup">Setup</a></li>
   <li><a href="#running-tests" id="toc-running-tests" class="nav-link" data-scroll-target="#running-tests">Running Tests</a></li>
-  <li><a href="#linting" id="toc-linting" class="nav-link" data-scroll-target="#linting">Linting</a></li>
+  <li><a href="#linting-formatting" id="toc-linting-formatting" class="nav-link" data-scroll-target="#linting-formatting">Linting &amp; Formatting</a></li>
   <li><a href="#building-docs-locally" id="toc-building-docs-locally" class="nav-link" data-scroll-target="#building-docs-locally">Building Docs Locally</a></li>
   <li><a href="#building-the-package" id="toc-building-the-package" class="nav-link" data-scroll-target="#building-the-package">Building the Package</a></li>
   </ul></li>
@@ -5245,8 +5245,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 │                  CI Pipeline                     │
 │                                                  │
 │  ┌──────┐                                        │
-│  │ Lint │ flake8 syntax check (blocking)         │
-│  └──┬───┘                                        │
+│  │ Lint │ ruff syntax check (blocking)           │
+│  └──┬───┘ ruff lint/format + mypy (non-blocking) │
 │     │                                            │
 │     ├──────────────┐                             │
 │     ▼              ▼                             │
@@ -5282,7 +5282,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td><strong>Lint</strong></td>
-<td><code>flake8</code> syntax errors (<code>E9,F63,F7,F82</code>) + style warnings (non-blocking)</td>
+<td><code>ruff</code> syntax errors (<code>E9,F63,F7,F82</code>, blocking) + full lint + <code>ruff format --check</code> + <code>mypy</code> (non-blocking)</td>
 <td>✅ Yes (syntax errors)</td>
 </tr>
 <tr class="even">
@@ -5551,13 +5551,24 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Functional tests only</span></span>
 <span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="ex">pytest</span> tests/functional/ <span class="at">-v</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
-<section id="linting" class="level3">
-<h3 class="anchored" data-anchor-id="linting">Linting</h3>
-<div class="sourceCode" id="cb6"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Blocking errors (must pass before merge)</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="ex">flake8</span> . <span class="at">--count</span> <span class="at">--select</span><span class="op">=</span>E9,F63,F7,F82 <span class="at">--show-source</span> <span class="at">--statistics</span></span>
+<section id="linting-formatting" class="level3">
+<h3 class="anchored" data-anchor-id="linting-formatting">Linting &amp; Formatting</h3>
+<p>We use <a href="https://docs.astral.sh/ruff/"><code>ruff</code></a> for linting + formatting and <a href="https://mypy.readthedocs.io/"><code>mypy</code></a> for type checks. Install via <code>uv pip install ruff mypy</code> or use the <code>dev</code> env.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Blocking errors (must pass before merge): same gate as CI</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ruff</span> check <span class="at">--select</span><span class="op">=</span>E9,F63,F7,F82 .</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Full style check (non-blocking)</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="ex">flake8</span> . <span class="at">--count</span> <span class="at">--exit-zero</span> <span class="at">--max-complexity</span><span class="op">=</span>10 <span class="at">--max-line-length</span><span class="op">=</span>127 <span class="at">--statistics</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Full lint summary (non-blocking)</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="ex">ruff</span> check <span class="at">--statistics</span> .</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Auto-fix what can be fixed</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="ex">ruff</span> check <span class="at">--fix</span> .</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Format check / apply</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="ex">ruff</span> format <span class="at">--check</span> .   <span class="co"># report only</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="ex">ruff</span> format .           <span class="co"># apply</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Type check (non-blocking, ratcheting toward zero)</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a><span class="ex">mypy</span> tvbo</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="building-docs-locally" class="level3">
 <h3 class="anchored" data-anchor-id="building-docs-locally">Building Docs Locally</h3>
@@ -5593,7 +5604,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Before opening a PR:</p>
 <ul class="task-list">
 <li><label><input type="checkbox"><code>pip install -e .</code> succeeds</label></li>
-<li><label><input type="checkbox"><code>flake8 . --select=E9,F63,F7,F82</code> returns 0</label></li>
+<li><label><input type="checkbox"><code>ruff check --select=E9,F63,F7,F82 .</code> returns 0</label></li>
 <li><label><input type="checkbox"><code>pytest -q --ignore=tests/test_docs.py</code> passes</label></li>
 <li><label><input type="checkbox"><code>python -c "from tvbo import Dynamics, SimulationExperiment"</code> works</label></li>
 <li><label><input type="checkbox">If schema changed: <code>make gen-linkml</code> and commit generated files</label></li>
@@ -5676,7 +5687,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

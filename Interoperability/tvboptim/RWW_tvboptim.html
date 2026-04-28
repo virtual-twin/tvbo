@@ -5123,7 +5123,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <p>Complete BOLD functional connectivity simulation &amp; optimization: simulation, exploration, global and regional parameter fitting.</p>
-<div id="6aff173c" class="cell" data-execution_count="2">
+<div id="bf1b2509" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>os.environ[<span class="st">"XLA_FLAGS"</span>] <span class="op">=</span> <span class="st">"--xla_force_host_platform_device_count=8"</span></span>
@@ -5154,60 +5154,60 @@ STEP 4: Running optimization...
 
 &gt;&gt;&gt; Stage 1/2: global_optimization
     Free parameters: w, G
-Step 0: 0.302751
-Step 10: 0.303606
-Step 20: 0.302603
-Step 30: 0.302806
-Step 40: 0.302789
-Step 50: 0.302766
-Step 60: 0.302858
-Step 70: 0.302855
-Step 80: 0.302765
-Step 90: 0.302764
-Step 100: 0.302763
-Step 110: 0.302764
-Step 120: 0.302763
-Step 130: 0.302763
-Step 140: 0.302763
-Step 150: 0.302763
-Step 160: 0.302763
-Step 170: 0.302763
-Step 180: 0.302763
-Step 190: 0.302763
-Step 200: 0.302763
-Step 210: 0.302763
-Step 220: 0.302763
-Step 230: 0.302763
-Step 240: 0.302763
-Step 250: 0.302763
-Step 260: 0.302762
-Step 270: 0.302762
-Step 280: 0.302762
-Step 290: 0.302762
+Step 0: 0.291980
+Step 10: 0.284520
+Step 20: 0.253220
+Step 30: 0.255371
+Step 40: 0.258495
+Step 50: 0.245485
+Step 60: 0.245296
+Step 70: 0.244503
+Step 80: 0.244440
+Step 90: 0.244268
+Step 100: 0.244095
+Step 110: 0.243939
+Step 120: 0.243780
+Step 130: 0.243613
+Step 140: 0.243439
+Step 150: 0.243259
+Step 160: 0.243074
+Step 170: 0.242883
+Step 180: 0.242688
+Step 190: 0.242490
+Step 200: 0.242288
+Step 210: 0.242084
+Step 220: 0.241878
+Step 230: 0.241671
+Step 240: 0.241463
+Step 250: 0.241254
+Step 260: 0.241045
+Step 270: 0.240837
+Step 280: 0.240630
+Step 290: 0.240423
 
 &gt;&gt;&gt; Stage 2/2: regional_optimization
     Free parameters: w, I_o
     Warmup from: global_optimization
-Step 0: 0.302762
-Step 10: 0.301708
-Step 20: 0.301515
-Step 30: 0.301723
-Step 40: 0.301271
-Step 50: 0.301227
-Step 60: 0.301600
-Step 70: 0.301700
-Step 80: 0.301625
-Step 90: 0.301654
-Step 100: 0.301575
-Step 110: 0.301628
-Step 120: 0.301571
-Step 130: 0.301582
-Step 140: 0.301613
-Step 150: 0.301735
-Step 160: 0.301702
-Step 170: 0.301656
-Step 180: 0.301660
-Step 190: 0.301574
+Step 0: 0.240218
+Step 10: 0.203313
+Step 20: 0.186208
+Step 30: 0.175369
+Step 40: 0.168980
+Step 50: 0.168278
+Step 60: 0.170847
+Step 70: 0.167873
+Step 80: 0.168056
+Step 90: 0.161376
+Step 100: 0.161258
+Step 110: 0.160244
+Step 120: 0.157835
+Step 130: 0.158426
+Step 140: 0.161885
+Step 150: 0.162296
+Step 160: 0.158612
+Step 170: 0.154907
+Step 180: 0.154863
+Step 190: 0.153361
 
 ============================================================
   Multi-stage optimization complete
@@ -5220,7 +5220,7 @@ Experiment complete.
 </div>
 <section id="results" class="level2">
 <h2 class="anchored" data-anchor-id="results">Results</h2>
-<div id="cell-fig-rww-results" class="cell" data-execution_count="3">
+<div id="cell-fig-rww-results" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># | fig-cap: "**RWW BOLD FC Optimization.** (A) Neural activity. (B) BOLD signal. (C) Parameter landscape with trajectory. (D-F) FC matrices: target, global, regional. (G-H) FC scatter plots. (I-J) Fitted regional parameters."</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> bsplot</span>
@@ -5499,7 +5499,7 @@ Figure&nbsp;1
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

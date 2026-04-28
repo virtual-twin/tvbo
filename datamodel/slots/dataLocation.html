@@ -5137,28 +5137,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td><a href="../../datamodel/classes/Stimulus.html">Stimulus</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/NDArray.html">NDArray</a></td>
-<td></td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/ParcellationTerminology.html">ParcellationTerminology</a></td>
-<td>A schema for representing a parcellation terminology, which consists of parce…</td>
-<td>no</td>
-</tr>
-<tr class="even">
 <td><a href="../../datamodel/classes/RegionMapping.html">RegionMapping</a></td>
 <td>Maps vertices to parent regions for hierarchical/aggregated coupling</td>
 <td>no</td>
 </tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/SoftwareEnvironment.html">SoftwareEnvironment</a></td>
+<td>A reproducible software environment aggregating one or more SoftwareRequireme…</td>
+<td>no</td>
+</tr>
 <tr class="odd">
-<td><a href="../../datamodel/classes/Matrix.html">Matrix</a></td>
-<td>Adjacency matrix of a network</td>
+<td><a href="../../datamodel/classes/TimeSeries.html">TimeSeries</a></td>
+<td>Time series data from simulations or measurements</td>
 <td>no</td>
 </tr>
 <tr class="even">
@@ -5167,23 +5157,33 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>no</td>
 </tr>
 <tr class="odd">
-<td><a href="../../datamodel/classes/SoftwareEnvironment.html">SoftwareEnvironment</a></td>
-<td>A reproducible software environment aggregating one or more SoftwareRequireme…</td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/TimeSeries.html">TimeSeries</a></td>
-<td>Time series data from simulations or measurements</td>
-<td>no</td>
-</tr>
-<tr class="odd">
 <td><a href="../../datamodel/classes/RandomStream.html">RandomStream</a></td>
 <td></td>
 <td>no</td>
 </tr>
 <tr class="even">
+<td><a href="../../datamodel/classes/ParcellationTerminology.html">ParcellationTerminology</a></td>
+<td>A schema for representing a parcellation terminology, which consists of parce…</td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/NDArray.html">NDArray</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/Stimulus.html">Stimulus</a></td>
+<td></td>
+<td>no</td>
+</tr>
+<tr class="odd">
 <td><a href="../../datamodel/classes/Mesh.html">Mesh</a></td>
 <td></td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/Matrix.html">Matrix</a></td>
+<td>Adjacency matrix of a network</td>
 <td>no</td>
 </tr>
 </tbody>
@@ -5354,7 +5354,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

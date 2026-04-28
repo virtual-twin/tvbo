@@ -5190,7 +5190,7 @@ window.Quarto = {
 <section id="approach-1-iri-reference" class="level2">
 <h2 class="anchored" data-anchor-id="approach-1-iri-reference">Approach 1: IRI reference</h2>
 <p>Point to the built-in type. No equations needed — TVBO delegates to <code>Cells.xml</code>.</p>
-<div id="76feb2c8" class="cell" data-execution_count="1">
+<div id="be67ed60" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> SimulationExperiment</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>exp_iri <span class="op">=</span> SimulationExperiment.from_string(<span class="st">"""</span></span>
@@ -5227,7 +5227,7 @@ IRI           : neuroml:fitzHughNagumo1969Cell</code></pre>
 <section id="rendered-lems-iri-path" class="level3">
 <h3 class="anchored" data-anchor-id="rendered-lems-iri-path">Rendered LEMS (IRI path)</h3>
 <p>The LEMS file contains <strong>no custom ComponentType</strong> — it references the <code>fitzHughNagumo1969Cell</code> type that is already defined inside <code>Cells.xml</code>:</p>
-<div id="8e9026aa" class="cell" data-execution_count="2">
+<div id="719fd2c1" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>xml_iri <span class="op">=</span> exp_iri.render(<span class="st">"lems"</span>)</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Show only the lines that reveal the component instantiation</span></span>
@@ -5247,7 +5247,7 @@ IRI           : neuroml:fitzHughNagumo1969Cell</code></pre>
   &lt;Include file="Networks.xml"/&gt;
   &lt;Include file="Inputs.xml"/&gt;
   &lt;Include file="Simulation.xml"/&gt;
-  &lt;fitzHughNagumo1969Cell id="FitzHughNagumo1969_IRI" a="0.7" b="0.08" I="1.0" phi="0.08" V0="0.0" W0="0.0"/&gt;
+  &lt;fitzHughNagumo1969Cell id="FitzHughNagumo1969_IRI" a="0.7"  b="0.08"  I="1.0"  phi="0.08"  V0="0.0"  W0="0.0"/&gt;
   &lt;network id="net1"&gt;
     &lt;population id="FitzHughNagumo1969_IRIPop" component="FitzHughNagumo1969_IRI" size="1"/&gt;</code></pre>
 </div>
@@ -5259,7 +5259,7 @@ IRI           : neuroml:fitzHughNagumo1969Cell</code></pre>
 <section id="approach-2-inline-yaml-equations-written-explicitly" class="level2">
 <h2 class="anchored" data-anchor-id="approach-2-inline-yaml-equations-written-explicitly">Approach 2: Inline YAML (equations written explicitly)</h2>
 <p>Omit the <code>iri</code>. TVBO generates a full <code>&lt;ComponentType&gt;</code> with your equations.</p>
-<div id="06189a0d" class="cell" data-execution_count="3">
+<div id="146698b3" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>exp_yaml <span class="op">=</span> SimulationExperiment.from_string(<span class="st">"""</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="st">label: "FHN1969 — Inline YAML"</span></span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="st">dynamics:</span></span>
@@ -5295,7 +5295,7 @@ IRI           : None</code></pre>
 <section id="rendered-lems-inline-path" class="level3">
 <h3 class="anchored" data-anchor-id="rendered-lems-inline-path">Rendered LEMS (inline path)</h3>
 <p>The LEMS file now <strong>defines</strong> the ComponentType, including the <code>&lt;TimeDerivative&gt;</code> elements generated from the YAML equations:</p>
-<div id="5b9dfaab" class="cell" data-execution_count="4">
+<div id="fdc52216" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>xml_yaml <span class="op">=</span> exp_yaml.render(<span class="st">"lems"</span>)</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Show the ComponentType block</span></span>
@@ -5367,7 +5367,7 @@ IRI           : None</code></pre>
 </section>
 <section id="what-the-two-lems-files-differ-in" class="level2">
 <h2 class="anchored" data-anchor-id="what-the-two-lems-files-differ-in">What the two LEMS files differ in</h2>
-<div id="1ed3b49c" class="cell" data-execution_count="5">
+<div id="f363791b" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Count meaningful differences: ComponentType definitions</span></span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>iri_has_ct  <span class="op">=</span> <span class="st">'&lt;ComponentType'</span> <span class="kw">in</span> xml_iri</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>yaml_has_ct <span class="op">=</span> <span class="st">'&lt;ComponentType'</span> <span class="kw">in</span> xml_yaml</span>
@@ -5402,10 +5402,10 @@ YAML Component element: &lt;Component id="FitzHughNagumo1969_YAML_inst" type="Fi
 <section id="numerical-comparison" class="level2">
 <h2 class="anchored" data-anchor-id="numerical-comparison">Numerical comparison</h2>
 <p>Run both experiments with jNeuroML and confirm the traces are identical.</p>
-<div id="c8fad29c" class="cell" data-execution_count="6">
+<div id="a0a8414a" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys, os</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>sys.path.insert(<span class="dv">0</span>, os.path.join(os.path.abspath(<span class="st">"."</span>), <span class="st">"examples"</span>))</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> _nml_helpers <span class="im">import</span> run_lems_example</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo.adapters.neuroml <span class="im">import</span> run_lems_example</span>
 <span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Run the database version which uses the IRI — it matches the canonical</span></span>
@@ -5455,7 +5455,7 @@ YAML Component element: &lt;Component id="FitzHughNagumo1969_YAML_inst" type="Fi
 YAML output shape : (20001, 3)</code></pre>
 </div>
 </div>
-<div id="009addb4" class="cell" data-execution_count="7">
+<div id="71e70353" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>max_diff <span class="op">=</span> np.<span class="bu">max</span>(np.<span class="bu">abs</span>(arr_iri <span class="op">-</span> arr_yaml))</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Maximum absolute difference across all columns : </span><span class="sc">{</span>max_diff<span class="sc">:.2e}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
@@ -5467,7 +5467,7 @@ YAML output shape : (20001, 3)</code></pre>
 </section>
 <section id="overlay-plot" class="level2">
 <h2 class="anchored" data-anchor-id="overlay-plot">Overlay plot</h2>
-<div id="27f4a0d1" class="cell" data-execution_count="8">
+<div id="473488f2" class="cell" data-execution_count="8">
 <div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>time   <span class="op">=</span> arr_iri[:, <span class="dv">0</span>]</span>
@@ -5619,7 +5619,7 @@ YAML output shape : (20001, 3)</code></pre>
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

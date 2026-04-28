@@ -5132,6 +5132,12 @@ window.Quarto = {
   <li><a href="#run-reference" id="toc-run-reference" class="nav-link" data-scroll-target="#run-reference">3. Run Reference</a></li>
   <li><a href="#run-tvbo-version" id="toc-run-tvbo-version" class="nav-link" data-scroll-target="#run-tvbo-version">4. Run TVBO Version</a></li>
   <li><a href="#compare-plot" id="toc-compare-plot" class="nav-link" data-scroll-target="#compare-plot">5. Compare &amp; Plot</a></li>
+  <li><a href="#native-custom-yaml-no-iri-dependencies" id="toc-native-custom-yaml-no-iri-dependencies" class="nav-link" data-scroll-target="#native-custom-yaml-no-iri-dependencies">Native Custom YAML (No IRI Dependencies)</a>
+  <ul class="collapse">
+  <li><a href="#define-custom-version" id="toc-define-custom-version" class="nav-link" data-scroll-target="#define-custom-version">6. Define Custom Version</a></li>
+  <li><a href="#run-custom-version" id="toc-run-custom-version" class="nav-link" data-scroll-target="#run-custom-version">7. Run Custom Version</a></li>
+  <li><a href="#compare-custom-vs-reference" id="toc-compare-custom-vs-reference" class="nav-link" data-scroll-target="#compare-custom-vs-reference">8. Compare Custom vs Reference</a></li>
+  </ul></li>
   </ul>
 <div class="toc-actions"><ul><li><a href="https://github.com/TVB-Ontology/tvbo-python/edit/main/Interoperability/NeuroML/examples/Ex1_HH.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/TVB-Ontology/tvbo-python/new/choose" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
     </div>
@@ -5172,7 +5178,7 @@ window.Quarto = {
 </section>
 <section id="define-in-tvbo" class="level2">
 <h2 class="anchored" data-anchor-id="define-in-tvbo">1. Define in TVBO</h2>
-<div id="953e5d39" class="cell" data-execution_count="1">
+<div id="2aa66f3d" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> SimulationExperiment</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># HH parameters matching NeuroML2 Ex1 (hhpointcell)</span></span>
@@ -5307,7 +5313,7 @@ Standard NeuroML Types
 </section>
 <section id="render-lems-xml" class="level2">
 <h2 class="anchored" data-anchor-id="render-lems-xml">2. Render LEMS XML</h2>
-<div id="08dbdd86" class="cell" data-execution_count="2">
+<div id="f4f56ebb" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>xml <span class="op">=</span> exp.render(<span class="st">"lems"</span>)</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Show key elements of the generated XML</span></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> line <span class="kw">in</span> xml.split(<span class="st">'</span><span class="ch">\n</span><span class="st">'</span>):</span>
@@ -5342,14 +5348,12 @@ Standard NeuroML Types
 </section>
 <section id="run-reference" class="level2">
 <h2 class="anchored" data-anchor-id="run-reference">3. Run Reference</h2>
-<div id="797c187d" class="cell" data-execution_count="3">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys, os</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>sys.path.insert(<span class="dv">0</span>, os.path.dirname(os.path.abspath(<span class="st">"."</span>)))</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> _nml_helpers <span class="im">import</span> run_lems_example</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>ref_outputs <span class="op">=</span> run_lems_example(<span class="st">"LEMS_NML2_Ex1_HH.xml"</span>)</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> name, arr <span class="kw">in</span> ref_outputs.items():</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  </span><span class="sc">{</span>name<span class="sc">}</span><span class="ss">: shape=</span><span class="sc">{</span>arr<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">, t=[</span><span class="sc">{</span>arr[<span class="dv">0</span>,<span class="dv">0</span>]<span class="sc">:.4f}</span><span class="ss">, </span><span class="sc">{</span>arr[<span class="op">-</span><span class="dv">1</span>,<span class="dv">0</span>]<span class="sc">:.4f}</span><span class="ss">]"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="2b01a040" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo.adapters.neuroml <span class="im">import</span> run_lems_example</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>ref_outputs <span class="op">=</span> run_lems_example(<span class="st">"LEMS_NML2_Ex1_HH.xml"</span>)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> name, arr <span class="kw">in</span> ref_outputs.items():</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  </span><span class="sc">{</span>name<span class="sc">}</span><span class="ss">: shape=</span><span class="sc">{</span>arr<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">, t=[</span><span class="sc">{</span>arr[<span class="dv">0</span>,<span class="dv">0</span>]<span class="sc">:.4f}</span><span class="ss">, </span><span class="sc">{</span>arr[<span class="op">-</span><span class="dv">1</span>,<span class="dv">0</span>]<span class="sc">:.4f}</span><span class="ss">]"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>  hh_v.dat: shape=(15001, 2), t=[0.0000, 0.1500]</code></pre>
 </div>
@@ -5357,7 +5361,7 @@ Standard NeuroML Types
 </section>
 <section id="run-tvbo-version" class="level2">
 <h2 class="anchored" data-anchor-id="run-tvbo-version">4. Run TVBO Version</h2>
-<div id="4537b647" class="cell" data-execution_count="4">
+<div id="b4ffa9f3" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> exp.run(<span class="st">"neuroml"</span>)</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>da <span class="op">=</span> result.integration.data</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"TVBO: </span><span class="sc">{</span>da<span class="sc">.</span>dims<span class="sc">}</span><span class="ss">, shape=</span><span class="sc">{</span>da<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -5368,8 +5372,8 @@ Standard NeuroML Types
 </section>
 <section id="compare-plot" class="level2">
 <h2 class="anchored" data-anchor-id="compare-plot">5. Compare &amp; Plot</h2>
-<div id="c3b2cf09" class="cell" data-execution_count="5">
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> _nml_helpers <span class="im">import</span> plot_lems_comparison</span>
+<div id="a7d589a3" class="cell" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo.adapters.neuroml <span class="im">import</span> plot_lems_comparison</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>plot_lems_comparison(<span class="st">"LEMS_NML2_Ex1_HH.xml"</span>, ref_outputs, result.integration.data, title_prefix<span class="op">=</span><span class="st">"Ex1"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
@@ -5386,8 +5390,305 @@ Standard NeuroML Types
 </div>
 </div>
 </div>
+<hr>
+</section>
+<section id="native-custom-yaml-no-iri-dependencies" class="level2">
+<h2 class="anchored" data-anchor-id="native-custom-yaml-no-iri-dependencies">Native Custom YAML (No IRI Dependencies)</h2>
+<p>The same Hodgkin-Huxley model, defined with <strong>full equations</strong> — no reference to standard NeuroML component types. Uses <code>iri: extends:base*</code> to declare LEMS base type compatibility while providing all dynamics explicitly. This makes the YAML interoperable with any backend, not just NeuroML.</p>
+<section id="define-custom-version" class="level3">
+<h3 class="anchored" data-anchor-id="define-custom-version">6. Define Custom Version</h3>
+<div id="1dcd5bc8" class="cell" data-execution_count="6">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>exp_custom <span class="op">=</span> SimulationExperiment.from_string(<span class="st">"""</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="st">label: "Ex1 HH Custom"</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="st">dynamics:</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="st">  name: HodgkinHuxleyCustom</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="st">  label: customPointCellCondBased</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="st">  iri: "extends:baseCellMembPot"</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="st">  description: &gt;</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="st">    Hodgkin-Huxley with fully explicit equations.</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="st">    All component types defined from scratch — no standard NeuroML types used.</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="st">  parameters:</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a><span class="st">    C:              { value: 10, unit: pF }</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="st">    v0:             { value: -65, unit: mV }</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a><span class="st">    thresh:         { value: 20, unit: mV }</span></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a><span class="st">    pulse_delay:    { value: 50, unit: ms }</span></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a><span class="st">    pulse_duration: { value: 50, unit: ms }</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a><span class="st">    I_amp:          { value: 0.08, unit: nA }</span></span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a><span class="st">  state_variables:</span></span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a><span class="st">    v:</span></span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a><span class="st">      equation: { rhs: "(iChannels + iSyn) / C" }</span></span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a><span class="st">      initial_value: -65.0</span></span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a><span class="st">      unit: mV</span></span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a><span class="st">      variable_of_interest: true</span></span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a><span class="st">  derived_variables:</span></span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a><span class="st">    iChannels:</span></span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a><span class="st">      equation: { rhs: "0" }</span></span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a><span class="st">      label: "select:populations[*]/i reduce:add"</span></span>
+<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a><span class="st">      unit: nA</span></span>
+<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a><span class="st">    iSyn:</span></span>
+<span id="cb10-29"><a href="#cb10-29" aria-hidden="true" tabindex="-1"></a><span class="st">      equation: { rhs: "0" }</span></span>
+<span id="cb10-30"><a href="#cb10-30" aria-hidden="true" tabindex="-1"></a><span class="st">      label: "select:synapses[*]/i reduce:add required:false"</span></span>
+<span id="cb10-31"><a href="#cb10-31" aria-hidden="true" tabindex="-1"></a><span class="st">      unit: nA</span></span>
+<span id="cb10-32"><a href="#cb10-32" aria-hidden="true" tabindex="-1"></a><span class="st">  events:</span></span>
+<span id="cb10-33"><a href="#cb10-33" aria-hidden="true" tabindex="-1"></a><span class="st">    spike:</span></span>
+<span id="cb10-34"><a href="#cb10-34" aria-hidden="true" tabindex="-1"></a><span class="st">      condition: { rhs: "v &gt; thresh" }</span></span>
+<span id="cb10-35"><a href="#cb10-35" aria-hidden="true" tabindex="-1"></a><span class="st">  components:</span></span>
+<span id="cb10-36"><a href="#cb10-36" aria-hidden="true" tabindex="-1"></a><span class="st">    passive:</span></span>
+<span id="cb10-37"><a href="#cb10-37" aria-hidden="true" tabindex="-1"></a><span class="st">      name: passive</span></span>
+<span id="cb10-38"><a href="#cb10-38" aria-hidden="true" tabindex="-1"></a><span class="st">      label: customIonChannelHH</span></span>
+<span id="cb10-39"><a href="#cb10-39" aria-hidden="true" tabindex="-1"></a><span class="st">      iri: "extends:baseIonChannel"</span></span>
+<span id="cb10-40"><a href="#cb10-40" aria-hidden="true" tabindex="-1"></a><span class="st">      parameters:</span></span>
+<span id="cb10-41"><a href="#cb10-41" aria-hidden="true" tabindex="-1"></a><span class="st">        conductance: { value: 10, unit: pS }</span></span>
+<span id="cb10-42"><a href="#cb10-42" aria-hidden="true" tabindex="-1"></a><span class="st">        number:      { value: 300 }</span></span>
+<span id="cb10-43"><a href="#cb10-43" aria-hidden="true" tabindex="-1"></a><span class="st">        erev:        { value: -54.3, unit: mV }</span></span>
+<span id="cb10-44"><a href="#cb10-44" aria-hidden="true" tabindex="-1"></a><span class="st">      derived_variables:</span></span>
+<span id="cb10-45"><a href="#cb10-45" aria-hidden="true" tabindex="-1"></a><span class="st">        fopen:</span></span>
+<span id="cb10-46"><a href="#cb10-46" aria-hidden="true" tabindex="-1"></a><span class="st">          equation: { rhs: "1" }</span></span>
+<span id="cb10-47"><a href="#cb10-47" aria-hidden="true" tabindex="-1"></a><span class="st">        g:</span></span>
+<span id="cb10-48"><a href="#cb10-48" aria-hidden="true" tabindex="-1"></a><span class="st">          equation: { rhs: "conductance * fopen" }</span></span>
+<span id="cb10-49"><a href="#cb10-49" aria-hidden="true" tabindex="-1"></a><span class="st">          unit: nS</span></span>
+<span id="cb10-50"><a href="#cb10-50" aria-hidden="true" tabindex="-1"></a><span class="st">    na:</span></span>
+<span id="cb10-51"><a href="#cb10-51" aria-hidden="true" tabindex="-1"></a><span class="st">      name: na</span></span>
+<span id="cb10-52"><a href="#cb10-52" aria-hidden="true" tabindex="-1"></a><span class="st">      label: customIonChannelHH</span></span>
+<span id="cb10-53"><a href="#cb10-53" aria-hidden="true" tabindex="-1"></a><span class="st">      iri: "extends:baseIonChannel"</span></span>
+<span id="cb10-54"><a href="#cb10-54" aria-hidden="true" tabindex="-1"></a><span class="st">      parameters:</span></span>
+<span id="cb10-55"><a href="#cb10-55" aria-hidden="true" tabindex="-1"></a><span class="st">        conductance: { value: 10, unit: pS }</span></span>
+<span id="cb10-56"><a href="#cb10-56" aria-hidden="true" tabindex="-1"></a><span class="st">        number:      { value: 120000 }</span></span>
+<span id="cb10-57"><a href="#cb10-57" aria-hidden="true" tabindex="-1"></a><span class="st">        erev:        { value: 50, unit: mV }</span></span>
+<span id="cb10-58"><a href="#cb10-58" aria-hidden="true" tabindex="-1"></a><span class="st">      derived_variables:</span></span>
+<span id="cb10-59"><a href="#cb10-59" aria-hidden="true" tabindex="-1"></a><span class="st">        fopen:</span></span>
+<span id="cb10-60"><a href="#cb10-60" aria-hidden="true" tabindex="-1"></a><span class="st">          equation: { rhs: "1" }</span></span>
+<span id="cb10-61"><a href="#cb10-61" aria-hidden="true" tabindex="-1"></a><span class="st">          label: "select:gates[*]/fcond reduce:multiply"</span></span>
+<span id="cb10-62"><a href="#cb10-62" aria-hidden="true" tabindex="-1"></a><span class="st">        g:</span></span>
+<span id="cb10-63"><a href="#cb10-63" aria-hidden="true" tabindex="-1"></a><span class="st">          equation: { rhs: "conductance * fopen" }</span></span>
+<span id="cb10-64"><a href="#cb10-64" aria-hidden="true" tabindex="-1"></a><span class="st">          unit: nS</span></span>
+<span id="cb10-65"><a href="#cb10-65" aria-hidden="true" tabindex="-1"></a><span class="st">      components:</span></span>
+<span id="cb10-66"><a href="#cb10-66" aria-hidden="true" tabindex="-1"></a><span class="st">        m:</span></span>
+<span id="cb10-67"><a href="#cb10-67" aria-hidden="true" tabindex="-1"></a><span class="st">          name: m</span></span>
+<span id="cb10-68"><a href="#cb10-68" aria-hidden="true" tabindex="-1"></a><span class="st">          label: customGateHHrates</span></span>
+<span id="cb10-69"><a href="#cb10-69" aria-hidden="true" tabindex="-1"></a><span class="st">          iri: "extends:baseGate"</span></span>
+<span id="cb10-70"><a href="#cb10-70" aria-hidden="true" tabindex="-1"></a><span class="st">          parameters:</span></span>
+<span id="cb10-71"><a href="#cb10-71" aria-hidden="true" tabindex="-1"></a><span class="st">            instances: { value: 3 }</span></span>
+<span id="cb10-72"><a href="#cb10-72" aria-hidden="true" tabindex="-1"></a><span class="st">          state_variables:</span></span>
+<span id="cb10-73"><a href="#cb10-73" aria-hidden="true" tabindex="-1"></a><span class="st">            q:</span></span>
+<span id="cb10-74"><a href="#cb10-74" aria-hidden="true" tabindex="-1"></a><span class="st">              equation: { rhs: "(inf - q) / tau" }</span></span>
+<span id="cb10-75"><a href="#cb10-75" aria-hidden="true" tabindex="-1"></a><span class="st">              initial_value: 0.05</span></span>
+<span id="cb10-76"><a href="#cb10-76" aria-hidden="true" tabindex="-1"></a><span class="st">          derived_variables:</span></span>
+<span id="cb10-77"><a href="#cb10-77" aria-hidden="true" tabindex="-1"></a><span class="st">            alpha:</span></span>
+<span id="cb10-78"><a href="#cb10-78" aria-hidden="true" tabindex="-1"></a><span class="st">              equation: { rhs: "0" }</span></span>
+<span id="cb10-79"><a href="#cb10-79" aria-hidden="true" tabindex="-1"></a><span class="st">              label: "select:forwardRate/r"</span></span>
+<span id="cb10-80"><a href="#cb10-80" aria-hidden="true" tabindex="-1"></a><span class="st">              unit: per_ms</span></span>
+<span id="cb10-81"><a href="#cb10-81" aria-hidden="true" tabindex="-1"></a><span class="st">            beta:</span></span>
+<span id="cb10-82"><a href="#cb10-82" aria-hidden="true" tabindex="-1"></a><span class="st">              equation: { rhs: "0" }</span></span>
+<span id="cb10-83"><a href="#cb10-83" aria-hidden="true" tabindex="-1"></a><span class="st">              label: "select:reverseRate/r"</span></span>
+<span id="cb10-84"><a href="#cb10-84" aria-hidden="true" tabindex="-1"></a><span class="st">              unit: per_ms</span></span>
+<span id="cb10-85"><a href="#cb10-85" aria-hidden="true" tabindex="-1"></a><span class="st">            inf:</span></span>
+<span id="cb10-86"><a href="#cb10-86" aria-hidden="true" tabindex="-1"></a><span class="st">              equation: { rhs: "alpha / (alpha + beta)" }</span></span>
+<span id="cb10-87"><a href="#cb10-87" aria-hidden="true" tabindex="-1"></a><span class="st">            tau:</span></span>
+<span id="cb10-88"><a href="#cb10-88" aria-hidden="true" tabindex="-1"></a><span class="st">              equation: { rhs: "1 / (alpha + beta)" }</span></span>
+<span id="cb10-89"><a href="#cb10-89" aria-hidden="true" tabindex="-1"></a><span class="st">              unit: ms</span></span>
+<span id="cb10-90"><a href="#cb10-90" aria-hidden="true" tabindex="-1"></a><span class="st">            fcond:</span></span>
+<span id="cb10-91"><a href="#cb10-91" aria-hidden="true" tabindex="-1"></a><span class="st">              equation: { rhs: "q ** instances" }</span></span>
+<span id="cb10-92"><a href="#cb10-92" aria-hidden="true" tabindex="-1"></a><span class="st">          components:</span></span>
+<span id="cb10-93"><a href="#cb10-93" aria-hidden="true" tabindex="-1"></a><span class="st">            forwardRate:</span></span>
+<span id="cb10-94"><a href="#cb10-94" aria-hidden="true" tabindex="-1"></a><span class="st">              name: forwardRate</span></span>
+<span id="cb10-95"><a href="#cb10-95" aria-hidden="true" tabindex="-1"></a><span class="st">              label: customHHExpLinearRate</span></span>
+<span id="cb10-96"><a href="#cb10-96" aria-hidden="true" tabindex="-1"></a><span class="st">              iri: "extends:baseVoltageDepRate"</span></span>
+<span id="cb10-97"><a href="#cb10-97" aria-hidden="true" tabindex="-1"></a><span class="st">              parameters:</span></span>
+<span id="cb10-98"><a href="#cb10-98" aria-hidden="true" tabindex="-1"></a><span class="st">                rate:     { value: 1, unit: per_ms }</span></span>
+<span id="cb10-99"><a href="#cb10-99" aria-hidden="true" tabindex="-1"></a><span class="st">                midpoint: { value: -40, unit: mV }</span></span>
+<span id="cb10-100"><a href="#cb10-100" aria-hidden="true" tabindex="-1"></a><span class="st">                scale:    { value: 10, unit: mV }</span></span>
+<span id="cb10-101"><a href="#cb10-101" aria-hidden="true" tabindex="-1"></a><span class="st">              derived_variables:</span></span>
+<span id="cb10-102"><a href="#cb10-102" aria-hidden="true" tabindex="-1"></a><span class="st">                x:</span></span>
+<span id="cb10-103"><a href="#cb10-103" aria-hidden="true" tabindex="-1"></a><span class="st">                  equation: { rhs: "(v - midpoint) / scale" }</span></span>
+<span id="cb10-104"><a href="#cb10-104" aria-hidden="true" tabindex="-1"></a><span class="st">                r:</span></span>
+<span id="cb10-105"><a href="#cb10-105" aria-hidden="true" tabindex="-1"></a><span class="st">                  conditional: true</span></span>
+<span id="cb10-106"><a href="#cb10-106" aria-hidden="true" tabindex="-1"></a><span class="st">                  cases:</span></span>
+<span id="cb10-107"><a href="#cb10-107" aria-hidden="true" tabindex="-1"></a><span class="st">                    - condition: "x != 0"</span></span>
+<span id="cb10-108"><a href="#cb10-108" aria-hidden="true" tabindex="-1"></a><span class="st">                      equation: { rhs: "rate * x / (1 - exp(-x))" }</span></span>
+<span id="cb10-109"><a href="#cb10-109" aria-hidden="true" tabindex="-1"></a><span class="st">                    - condition: "True"</span></span>
+<span id="cb10-110"><a href="#cb10-110" aria-hidden="true" tabindex="-1"></a><span class="st">                      equation: { rhs: "rate" }</span></span>
+<span id="cb10-111"><a href="#cb10-111" aria-hidden="true" tabindex="-1"></a><span class="st">            reverseRate:</span></span>
+<span id="cb10-112"><a href="#cb10-112" aria-hidden="true" tabindex="-1"></a><span class="st">              name: reverseRate</span></span>
+<span id="cb10-113"><a href="#cb10-113" aria-hidden="true" tabindex="-1"></a><span class="st">              label: customHHExpRate</span></span>
+<span id="cb10-114"><a href="#cb10-114" aria-hidden="true" tabindex="-1"></a><span class="st">              iri: "extends:baseVoltageDepRate"</span></span>
+<span id="cb10-115"><a href="#cb10-115" aria-hidden="true" tabindex="-1"></a><span class="st">              parameters:</span></span>
+<span id="cb10-116"><a href="#cb10-116" aria-hidden="true" tabindex="-1"></a><span class="st">                rate:     { value: 4, unit: per_ms }</span></span>
+<span id="cb10-117"><a href="#cb10-117" aria-hidden="true" tabindex="-1"></a><span class="st">                midpoint: { value: -65, unit: mV }</span></span>
+<span id="cb10-118"><a href="#cb10-118" aria-hidden="true" tabindex="-1"></a><span class="st">                scale:    { value: -18, unit: mV }</span></span>
+<span id="cb10-119"><a href="#cb10-119" aria-hidden="true" tabindex="-1"></a><span class="st">              derived_variables:</span></span>
+<span id="cb10-120"><a href="#cb10-120" aria-hidden="true" tabindex="-1"></a><span class="st">                r:</span></span>
+<span id="cb10-121"><a href="#cb10-121" aria-hidden="true" tabindex="-1"></a><span class="st">                  equation: { rhs: "rate * exp((v - midpoint) / scale)" }</span></span>
+<span id="cb10-122"><a href="#cb10-122" aria-hidden="true" tabindex="-1"></a><span class="st">                  unit: per_ms</span></span>
+<span id="cb10-123"><a href="#cb10-123" aria-hidden="true" tabindex="-1"></a><span class="st">        h:</span></span>
+<span id="cb10-124"><a href="#cb10-124" aria-hidden="true" tabindex="-1"></a><span class="st">          name: h</span></span>
+<span id="cb10-125"><a href="#cb10-125" aria-hidden="true" tabindex="-1"></a><span class="st">          label: customGateHHrates</span></span>
+<span id="cb10-126"><a href="#cb10-126" aria-hidden="true" tabindex="-1"></a><span class="st">          iri: "extends:baseGate"</span></span>
+<span id="cb10-127"><a href="#cb10-127" aria-hidden="true" tabindex="-1"></a><span class="st">          parameters:</span></span>
+<span id="cb10-128"><a href="#cb10-128" aria-hidden="true" tabindex="-1"></a><span class="st">            instances: { value: 1 }</span></span>
+<span id="cb10-129"><a href="#cb10-129" aria-hidden="true" tabindex="-1"></a><span class="st">          state_variables:</span></span>
+<span id="cb10-130"><a href="#cb10-130" aria-hidden="true" tabindex="-1"></a><span class="st">            q:</span></span>
+<span id="cb10-131"><a href="#cb10-131" aria-hidden="true" tabindex="-1"></a><span class="st">              equation: { rhs: "(inf - q) / tau" }</span></span>
+<span id="cb10-132"><a href="#cb10-132" aria-hidden="true" tabindex="-1"></a><span class="st">              initial_value: 0.60</span></span>
+<span id="cb10-133"><a href="#cb10-133" aria-hidden="true" tabindex="-1"></a><span class="st">          derived_variables:</span></span>
+<span id="cb10-134"><a href="#cb10-134" aria-hidden="true" tabindex="-1"></a><span class="st">            alpha:</span></span>
+<span id="cb10-135"><a href="#cb10-135" aria-hidden="true" tabindex="-1"></a><span class="st">              equation: { rhs: "0" }</span></span>
+<span id="cb10-136"><a href="#cb10-136" aria-hidden="true" tabindex="-1"></a><span class="st">              label: "select:forwardRate/r"</span></span>
+<span id="cb10-137"><a href="#cb10-137" aria-hidden="true" tabindex="-1"></a><span class="st">              unit: per_ms</span></span>
+<span id="cb10-138"><a href="#cb10-138" aria-hidden="true" tabindex="-1"></a><span class="st">            beta:</span></span>
+<span id="cb10-139"><a href="#cb10-139" aria-hidden="true" tabindex="-1"></a><span class="st">              equation: { rhs: "0" }</span></span>
+<span id="cb10-140"><a href="#cb10-140" aria-hidden="true" tabindex="-1"></a><span class="st">              label: "select:reverseRate/r"</span></span>
+<span id="cb10-141"><a href="#cb10-141" aria-hidden="true" tabindex="-1"></a><span class="st">              unit: per_ms</span></span>
+<span id="cb10-142"><a href="#cb10-142" aria-hidden="true" tabindex="-1"></a><span class="st">            inf:</span></span>
+<span id="cb10-143"><a href="#cb10-143" aria-hidden="true" tabindex="-1"></a><span class="st">              equation: { rhs: "alpha / (alpha + beta)" }</span></span>
+<span id="cb10-144"><a href="#cb10-144" aria-hidden="true" tabindex="-1"></a><span class="st">            tau:</span></span>
+<span id="cb10-145"><a href="#cb10-145" aria-hidden="true" tabindex="-1"></a><span class="st">              equation: { rhs: "1 / (alpha + beta)" }</span></span>
+<span id="cb10-146"><a href="#cb10-146" aria-hidden="true" tabindex="-1"></a><span class="st">              unit: ms</span></span>
+<span id="cb10-147"><a href="#cb10-147" aria-hidden="true" tabindex="-1"></a><span class="st">            fcond:</span></span>
+<span id="cb10-148"><a href="#cb10-148" aria-hidden="true" tabindex="-1"></a><span class="st">              equation: { rhs: "q ** instances" }</span></span>
+<span id="cb10-149"><a href="#cb10-149" aria-hidden="true" tabindex="-1"></a><span class="st">          components:</span></span>
+<span id="cb10-150"><a href="#cb10-150" aria-hidden="true" tabindex="-1"></a><span class="st">            forwardRate:</span></span>
+<span id="cb10-151"><a href="#cb10-151" aria-hidden="true" tabindex="-1"></a><span class="st">              name: forwardRate</span></span>
+<span id="cb10-152"><a href="#cb10-152" aria-hidden="true" tabindex="-1"></a><span class="st">              label: customHHExpRate</span></span>
+<span id="cb10-153"><a href="#cb10-153" aria-hidden="true" tabindex="-1"></a><span class="st">              iri: "extends:baseVoltageDepRate"</span></span>
+<span id="cb10-154"><a href="#cb10-154" aria-hidden="true" tabindex="-1"></a><span class="st">              parameters:</span></span>
+<span id="cb10-155"><a href="#cb10-155" aria-hidden="true" tabindex="-1"></a><span class="st">                rate:     { value: 0.07, unit: per_ms }</span></span>
+<span id="cb10-156"><a href="#cb10-156" aria-hidden="true" tabindex="-1"></a><span class="st">                midpoint: { value: -65, unit: mV }</span></span>
+<span id="cb10-157"><a href="#cb10-157" aria-hidden="true" tabindex="-1"></a><span class="st">                scale:    { value: -20, unit: mV }</span></span>
+<span id="cb10-158"><a href="#cb10-158" aria-hidden="true" tabindex="-1"></a><span class="st">              derived_variables:</span></span>
+<span id="cb10-159"><a href="#cb10-159" aria-hidden="true" tabindex="-1"></a><span class="st">                r:</span></span>
+<span id="cb10-160"><a href="#cb10-160" aria-hidden="true" tabindex="-1"></a><span class="st">                  equation: { rhs: "rate * exp((v - midpoint) / scale)" }</span></span>
+<span id="cb10-161"><a href="#cb10-161" aria-hidden="true" tabindex="-1"></a><span class="st">                  unit: per_ms</span></span>
+<span id="cb10-162"><a href="#cb10-162" aria-hidden="true" tabindex="-1"></a><span class="st">            reverseRate:</span></span>
+<span id="cb10-163"><a href="#cb10-163" aria-hidden="true" tabindex="-1"></a><span class="st">              name: reverseRate</span></span>
+<span id="cb10-164"><a href="#cb10-164" aria-hidden="true" tabindex="-1"></a><span class="st">              label: customHHSigmoidRate</span></span>
+<span id="cb10-165"><a href="#cb10-165" aria-hidden="true" tabindex="-1"></a><span class="st">              iri: "extends:baseVoltageDepRate"</span></span>
+<span id="cb10-166"><a href="#cb10-166" aria-hidden="true" tabindex="-1"></a><span class="st">              parameters:</span></span>
+<span id="cb10-167"><a href="#cb10-167" aria-hidden="true" tabindex="-1"></a><span class="st">                rate:     { value: 1, unit: per_ms }</span></span>
+<span id="cb10-168"><a href="#cb10-168" aria-hidden="true" tabindex="-1"></a><span class="st">                midpoint: { value: -35, unit: mV }</span></span>
+<span id="cb10-169"><a href="#cb10-169" aria-hidden="true" tabindex="-1"></a><span class="st">                scale:    { value: 10, unit: mV }</span></span>
+<span id="cb10-170"><a href="#cb10-170" aria-hidden="true" tabindex="-1"></a><span class="st">              derived_variables:</span></span>
+<span id="cb10-171"><a href="#cb10-171" aria-hidden="true" tabindex="-1"></a><span class="st">                r:</span></span>
+<span id="cb10-172"><a href="#cb10-172" aria-hidden="true" tabindex="-1"></a><span class="st">                  equation: { rhs: "rate / (1 + exp(-(v - midpoint) / scale))" }</span></span>
+<span id="cb10-173"><a href="#cb10-173" aria-hidden="true" tabindex="-1"></a><span class="st">                  unit: per_ms</span></span>
+<span id="cb10-174"><a href="#cb10-174" aria-hidden="true" tabindex="-1"></a><span class="st">    k:</span></span>
+<span id="cb10-175"><a href="#cb10-175" aria-hidden="true" tabindex="-1"></a><span class="st">      name: k</span></span>
+<span id="cb10-176"><a href="#cb10-176" aria-hidden="true" tabindex="-1"></a><span class="st">      label: customIonChannelHH</span></span>
+<span id="cb10-177"><a href="#cb10-177" aria-hidden="true" tabindex="-1"></a><span class="st">      iri: "extends:baseIonChannel"</span></span>
+<span id="cb10-178"><a href="#cb10-178" aria-hidden="true" tabindex="-1"></a><span class="st">      parameters:</span></span>
+<span id="cb10-179"><a href="#cb10-179" aria-hidden="true" tabindex="-1"></a><span class="st">        conductance: { value: 10, unit: pS }</span></span>
+<span id="cb10-180"><a href="#cb10-180" aria-hidden="true" tabindex="-1"></a><span class="st">        number:      { value: 36000 }</span></span>
+<span id="cb10-181"><a href="#cb10-181" aria-hidden="true" tabindex="-1"></a><span class="st">        erev:        { value: -77, unit: mV }</span></span>
+<span id="cb10-182"><a href="#cb10-182" aria-hidden="true" tabindex="-1"></a><span class="st">      derived_variables:</span></span>
+<span id="cb10-183"><a href="#cb10-183" aria-hidden="true" tabindex="-1"></a><span class="st">        fopen:</span></span>
+<span id="cb10-184"><a href="#cb10-184" aria-hidden="true" tabindex="-1"></a><span class="st">          equation: { rhs: "1" }</span></span>
+<span id="cb10-185"><a href="#cb10-185" aria-hidden="true" tabindex="-1"></a><span class="st">          label: "select:gates[*]/fcond reduce:multiply"</span></span>
+<span id="cb10-186"><a href="#cb10-186" aria-hidden="true" tabindex="-1"></a><span class="st">        g:</span></span>
+<span id="cb10-187"><a href="#cb10-187" aria-hidden="true" tabindex="-1"></a><span class="st">          equation: { rhs: "conductance * fopen" }</span></span>
+<span id="cb10-188"><a href="#cb10-188" aria-hidden="true" tabindex="-1"></a><span class="st">          unit: nS</span></span>
+<span id="cb10-189"><a href="#cb10-189" aria-hidden="true" tabindex="-1"></a><span class="st">      components:</span></span>
+<span id="cb10-190"><a href="#cb10-190" aria-hidden="true" tabindex="-1"></a><span class="st">        n:</span></span>
+<span id="cb10-191"><a href="#cb10-191" aria-hidden="true" tabindex="-1"></a><span class="st">          name: n</span></span>
+<span id="cb10-192"><a href="#cb10-192" aria-hidden="true" tabindex="-1"></a><span class="st">          label: customGateHHrates</span></span>
+<span id="cb10-193"><a href="#cb10-193" aria-hidden="true" tabindex="-1"></a><span class="st">          iri: "extends:baseGate"</span></span>
+<span id="cb10-194"><a href="#cb10-194" aria-hidden="true" tabindex="-1"></a><span class="st">          parameters:</span></span>
+<span id="cb10-195"><a href="#cb10-195" aria-hidden="true" tabindex="-1"></a><span class="st">            instances: { value: 4 }</span></span>
+<span id="cb10-196"><a href="#cb10-196" aria-hidden="true" tabindex="-1"></a><span class="st">          state_variables:</span></span>
+<span id="cb10-197"><a href="#cb10-197" aria-hidden="true" tabindex="-1"></a><span class="st">            q:</span></span>
+<span id="cb10-198"><a href="#cb10-198" aria-hidden="true" tabindex="-1"></a><span class="st">              equation: { rhs: "(inf - q) / tau" }</span></span>
+<span id="cb10-199"><a href="#cb10-199" aria-hidden="true" tabindex="-1"></a><span class="st">              initial_value: 0.32</span></span>
+<span id="cb10-200"><a href="#cb10-200" aria-hidden="true" tabindex="-1"></a><span class="st">          derived_variables:</span></span>
+<span id="cb10-201"><a href="#cb10-201" aria-hidden="true" tabindex="-1"></a><span class="st">            alpha:</span></span>
+<span id="cb10-202"><a href="#cb10-202" aria-hidden="true" tabindex="-1"></a><span class="st">              equation: { rhs: "0" }</span></span>
+<span id="cb10-203"><a href="#cb10-203" aria-hidden="true" tabindex="-1"></a><span class="st">              label: "select:forwardRate/r"</span></span>
+<span id="cb10-204"><a href="#cb10-204" aria-hidden="true" tabindex="-1"></a><span class="st">              unit: per_ms</span></span>
+<span id="cb10-205"><a href="#cb10-205" aria-hidden="true" tabindex="-1"></a><span class="st">            beta:</span></span>
+<span id="cb10-206"><a href="#cb10-206" aria-hidden="true" tabindex="-1"></a><span class="st">              equation: { rhs: "0" }</span></span>
+<span id="cb10-207"><a href="#cb10-207" aria-hidden="true" tabindex="-1"></a><span class="st">              label: "select:reverseRate/r"</span></span>
+<span id="cb10-208"><a href="#cb10-208" aria-hidden="true" tabindex="-1"></a><span class="st">              unit: per_ms</span></span>
+<span id="cb10-209"><a href="#cb10-209" aria-hidden="true" tabindex="-1"></a><span class="st">            inf:</span></span>
+<span id="cb10-210"><a href="#cb10-210" aria-hidden="true" tabindex="-1"></a><span class="st">              equation: { rhs: "alpha / (alpha + beta)" }</span></span>
+<span id="cb10-211"><a href="#cb10-211" aria-hidden="true" tabindex="-1"></a><span class="st">            tau:</span></span>
+<span id="cb10-212"><a href="#cb10-212" aria-hidden="true" tabindex="-1"></a><span class="st">              equation: { rhs: "1 / (alpha + beta)" }</span></span>
+<span id="cb10-213"><a href="#cb10-213" aria-hidden="true" tabindex="-1"></a><span class="st">              unit: ms</span></span>
+<span id="cb10-214"><a href="#cb10-214" aria-hidden="true" tabindex="-1"></a><span class="st">            fcond:</span></span>
+<span id="cb10-215"><a href="#cb10-215" aria-hidden="true" tabindex="-1"></a><span class="st">              equation: { rhs: "q ** instances" }</span></span>
+<span id="cb10-216"><a href="#cb10-216" aria-hidden="true" tabindex="-1"></a><span class="st">          components:</span></span>
+<span id="cb10-217"><a href="#cb10-217" aria-hidden="true" tabindex="-1"></a><span class="st">            forwardRate:</span></span>
+<span id="cb10-218"><a href="#cb10-218" aria-hidden="true" tabindex="-1"></a><span class="st">              name: forwardRate</span></span>
+<span id="cb10-219"><a href="#cb10-219" aria-hidden="true" tabindex="-1"></a><span class="st">              label: customHHExpLinearRate</span></span>
+<span id="cb10-220"><a href="#cb10-220" aria-hidden="true" tabindex="-1"></a><span class="st">              iri: "extends:baseVoltageDepRate"</span></span>
+<span id="cb10-221"><a href="#cb10-221" aria-hidden="true" tabindex="-1"></a><span class="st">              parameters:</span></span>
+<span id="cb10-222"><a href="#cb10-222" aria-hidden="true" tabindex="-1"></a><span class="st">                rate:     { value: 0.1, unit: per_ms }</span></span>
+<span id="cb10-223"><a href="#cb10-223" aria-hidden="true" tabindex="-1"></a><span class="st">                midpoint: { value: -55, unit: mV }</span></span>
+<span id="cb10-224"><a href="#cb10-224" aria-hidden="true" tabindex="-1"></a><span class="st">                scale:    { value: 10, unit: mV }</span></span>
+<span id="cb10-225"><a href="#cb10-225" aria-hidden="true" tabindex="-1"></a><span class="st">              derived_variables:</span></span>
+<span id="cb10-226"><a href="#cb10-226" aria-hidden="true" tabindex="-1"></a><span class="st">                x:</span></span>
+<span id="cb10-227"><a href="#cb10-227" aria-hidden="true" tabindex="-1"></a><span class="st">                  equation: { rhs: "(v - midpoint) / scale" }</span></span>
+<span id="cb10-228"><a href="#cb10-228" aria-hidden="true" tabindex="-1"></a><span class="st">                r:</span></span>
+<span id="cb10-229"><a href="#cb10-229" aria-hidden="true" tabindex="-1"></a><span class="st">                  conditional: true</span></span>
+<span id="cb10-230"><a href="#cb10-230" aria-hidden="true" tabindex="-1"></a><span class="st">                  cases:</span></span>
+<span id="cb10-231"><a href="#cb10-231" aria-hidden="true" tabindex="-1"></a><span class="st">                    - condition: "x != 0"</span></span>
+<span id="cb10-232"><a href="#cb10-232" aria-hidden="true" tabindex="-1"></a><span class="st">                      equation: { rhs: "rate * x / (1 - exp(-x))" }</span></span>
+<span id="cb10-233"><a href="#cb10-233" aria-hidden="true" tabindex="-1"></a><span class="st">                    - condition: "True"</span></span>
+<span id="cb10-234"><a href="#cb10-234" aria-hidden="true" tabindex="-1"></a><span class="st">                      equation: { rhs: "rate" }</span></span>
+<span id="cb10-235"><a href="#cb10-235" aria-hidden="true" tabindex="-1"></a><span class="st">            reverseRate:</span></span>
+<span id="cb10-236"><a href="#cb10-236" aria-hidden="true" tabindex="-1"></a><span class="st">              name: reverseRate</span></span>
+<span id="cb10-237"><a href="#cb10-237" aria-hidden="true" tabindex="-1"></a><span class="st">              label: customHHExpRate</span></span>
+<span id="cb10-238"><a href="#cb10-238" aria-hidden="true" tabindex="-1"></a><span class="st">              iri: "extends:baseVoltageDepRate"</span></span>
+<span id="cb10-239"><a href="#cb10-239" aria-hidden="true" tabindex="-1"></a><span class="st">              parameters:</span></span>
+<span id="cb10-240"><a href="#cb10-240" aria-hidden="true" tabindex="-1"></a><span class="st">                rate:     { value: 0.125, unit: per_ms }</span></span>
+<span id="cb10-241"><a href="#cb10-241" aria-hidden="true" tabindex="-1"></a><span class="st">                midpoint: { value: -65, unit: mV }</span></span>
+<span id="cb10-242"><a href="#cb10-242" aria-hidden="true" tabindex="-1"></a><span class="st">                scale:    { value: -80, unit: mV }</span></span>
+<span id="cb10-243"><a href="#cb10-243" aria-hidden="true" tabindex="-1"></a><span class="st">              derived_variables:</span></span>
+<span id="cb10-244"><a href="#cb10-244" aria-hidden="true" tabindex="-1"></a><span class="st">                r:</span></span>
+<span id="cb10-245"><a href="#cb10-245" aria-hidden="true" tabindex="-1"></a><span class="st">                  equation: { rhs: "rate * exp((v - midpoint) / scale)" }</span></span>
+<span id="cb10-246"><a href="#cb10-246" aria-hidden="true" tabindex="-1"></a><span class="st">                  unit: per_ms</span></span>
+<span id="cb10-247"><a href="#cb10-247" aria-hidden="true" tabindex="-1"></a><span class="st">integration:</span></span>
+<span id="cb10-248"><a href="#cb10-248" aria-hidden="true" tabindex="-1"></a><span class="st">  step_size: 0.01</span></span>
+<span id="cb10-249"><a href="#cb10-249" aria-hidden="true" tabindex="-1"></a><span class="st">  duration: 150.0</span></span>
+<span id="cb10-250"><a href="#cb10-250" aria-hidden="true" tabindex="-1"></a><span class="st">  time_scale: ms</span></span>
+<span id="cb10-251"><a href="#cb10-251" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span>)</span>
+<span id="cb10-252"><a href="#cb10-252" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Model: </span><span class="sc">{</span>exp_custom<span class="sc">.</span>dynamics<span class="sc">.</span>name<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb10-253"><a href="#cb10-253" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"IRI: </span><span class="sc">{</span>exp_custom<span class="sc">.</span>dynamics<span class="sc">.</span>iri<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb10-254"><a href="#cb10-254" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Components: </span><span class="sc">{</span><span class="bu">list</span>(exp_custom.dynamics.components.keys())<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Model: HodgkinHuxleyCustom
+IRI: extends:baseCellMembPot
+Components: ['k', 'na', 'passive']</code></pre>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Full Custom — No NeuroML Dependencies
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>This version uses <code>iri: extends:baseCellMembPot</code> instead of <code>iri: neuroml:pointCellCondBased</code>. Every equation — rate functions, gating kinetics, channel conductance — is defined explicitly in the YAML. The adapter generates custom LEMS <code>ComponentType</code> definitions that extend base infrastructure types, achieving exact numerical identity with the standard version.</p>
+</div>
+</div>
+</section>
+<section id="run-custom-version" class="level3">
+<h3 class="anchored" data-anchor-id="run-custom-version">7. Run Custom Version</h3>
+<div id="d1951d16" class="cell" data-execution_count="7">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>result_custom <span class="op">=</span> exp_custom.run(<span class="st">"neuroml"</span>)</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>da_custom <span class="op">=</span> result_custom.integration.data</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Custom: </span><span class="sc">{</span>da_custom<span class="sc">.</span>dims<span class="sc">}</span><span class="ss">, shape=</span><span class="sc">{</span>da_custom<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Custom: ('time', 'variable'), shape=(15001, 1)</code></pre>
+</div>
+</div>
+</section>
+<section id="compare-custom-vs-reference" class="level3">
+<h3 class="anchored" data-anchor-id="compare-custom-vs-reference">8. Compare Custom vs Reference</h3>
+<p>plot_lems_comparison(“LEMS_NML2_Ex1_HH.xml”, ref_outputs, result_custom.integration.data, title_prefix=“Ex1 Custom”)</p>
 
 
+</section>
 </section>
 
 </main> <!-- /main -->
@@ -5463,7 +5764,7 @@ Standard NeuroML Types
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

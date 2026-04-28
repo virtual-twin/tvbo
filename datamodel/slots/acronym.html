@@ -5136,13 +5136,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td><a href="../../datamodel/classes/Observation.html">Observation</a></td>
-<td>Unified class for all observation/measurement specifications</td>
+<td><a href="../../datamodel/classes/ClinicalScore.html">ClinicalScore</a></td>
+<td>Metadata about a clinical score or scale</td>
 <td>no</td>
 </tr>
 <tr class="even">
-<td><a href="../../datamodel/classes/Function.html">Function</a></td>
-<td>A function with explicit input -&gt; transformation -&gt; output flow</td>
+<td><a href="../../datamodel/classes/ClinicalScale.html">ClinicalScale</a></td>
+<td>A clinical assessment inventory or structured scale composed of multiple scor…</td>
 <td>no</td>
 </tr>
 <tr class="odd">
@@ -5151,23 +5151,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>no</td>
 </tr>
 <tr class="even">
-<td><a href="../../datamodel/classes/LossFunction.html">LossFunction</a></td>
-<td>A loss function for optimization with optional aggregation</td>
-<td>no</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/classes/ClinicalScale.html">ClinicalScale</a></td>
-<td>A clinical assessment inventory or structured scale composed of multiple scor…</td>
-<td>no</td>
-</tr>
-<tr class="even">
 <td><a href="../../datamodel/classes/DerivedObservation.html">DerivedObservation</a></td>
 <td>Observation derived from one or more other observations</td>
 <td>no</td>
 </tr>
 <tr class="odd">
-<td><a href="../../datamodel/classes/ClinicalScore.html">ClinicalScore</a></td>
-<td>Metadata about a clinical score or scale</td>
+<td><a href="../../datamodel/classes/Observation.html">Observation</a></td>
+<td>Unified class for all observation/measurement specifications</td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/LossFunction.html">LossFunction</a></td>
+<td>A loss function for optimization with optional aggregation</td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/Function.html">Function</a></td>
+<td>A function with explicit input -&gt; transformation -&gt; output flow</td>
 <td>no</td>
 </tr>
 </tbody>
@@ -5333,7 +5333,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

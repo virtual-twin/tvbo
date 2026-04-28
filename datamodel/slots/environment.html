@@ -5136,23 +5136,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td><a href="../../datamodel/classes/DerivedObservation.html">DerivedObservation</a></td>
-<td>Observation derived from one or more other observations</td>
+<td><a href="../../datamodel/classes/SimulationExperiment.html">SimulationExperiment</a></td>
+<td></td>
 <td>no</td>
 </tr>
 <tr class="even">
-<td><a href="../../datamodel/classes/Observation.html">Observation</a></td>
-<td>Unified class for all observation/measurement specifications</td>
-<td>no</td>
-</tr>
-<tr class="odd">
 <td><a href="../../datamodel/classes/PDESolver.html">PDESolver</a></td>
 <td></td>
 <td>no</td>
 </tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/Observation.html">Observation</a></td>
+<td>Unified class for all observation/measurement specifications</td>
+<td>no</td>
+</tr>
 <tr class="even">
-<td><a href="../../datamodel/classes/SimulationExperiment.html">SimulationExperiment</a></td>
-<td></td>
+<td><a href="../../datamodel/classes/DerivedObservation.html">DerivedObservation</a></td>
+<td>Observation derived from one or more other observations</td>
 <td>no</td>
 </tr>
 </tbody>
@@ -5316,7 +5316,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

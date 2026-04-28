@@ -5137,13 +5137,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td><a href="../../datamodel/classes/Node.html">Node</a></td>
-<td>A node in a network with its own dynamics and properties</td>
+<td><a href="../../datamodel/classes/SimulationExperiment.html">SimulationExperiment</a></td>
+<td></td>
 <td>no</td>
 </tr>
 <tr class="even">
-<td><a href="../../datamodel/classes/SimulationExperiment.html">SimulationExperiment</a></td>
-<td></td>
+<td><a href="../../datamodel/classes/Node.html">Node</a></td>
+<td>A node in a network with its own dynamics and properties</td>
 <td>no</td>
 </tr>
 </tbody>
@@ -5306,7 +5306,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

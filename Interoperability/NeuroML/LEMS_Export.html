@@ -5097,7 +5097,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
    
   <ul>
   <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
-  <li><a href="#fitzhugh-nagumo-basic-export" id="toc-fitzhugh-nagumo-basic-export" class="nav-link" data-scroll-target="#fitzhugh-nagumo-basic-export">1. FitzHugh-Nagumo — Basic Export</a></li>
+  <li><a href="#generic-2d-oscillator-basic-export" id="toc-generic-2d-oscillator-basic-export" class="nav-link" data-scroll-target="#generic-2d-oscillator-basic-export">1. Generic 2D Oscillator — Basic Export</a></li>
   <li><a href="#integrate-and-fire-spikereset-events" id="toc-integrate-and-fire-spikereset-events" class="nav-link" data-scroll-target="#integrate-and-fire-spikereset-events">2. Integrate-and-Fire — Spike/Reset Events</a></li>
   <li><a href="#conditional-derived-variables" id="toc-conditional-derived-variables" class="nav-link" data-scroll-target="#conditional-derived-variables">3. Conditional Derived Variables</a></li>
   <li><a href="#coupling" id="toc-coupling" class="nav-link" data-scroll-target="#coupling">4. Coupling</a></li>
@@ -5138,20 +5138,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
 <p>This tutorial walks through the complete LEMS export workflow for three representative model types:</p>
 <ol type="1">
-<li>A mean-field neural mass model (FitzHugh-Nagumo)</li>
+<li>A mean-field neural mass model (Generic2dOscillator)</li>
 <li>A spiking integrate-and-fire model with spike/reset events</li>
 <li>A full simulation experiment with network, coupling, and output</li>
 </ol>
 <hr>
 </section>
-<section id="fitzhugh-nagumo-basic-export" class="level2">
-<h2 class="anchored" data-anchor-id="fitzhugh-nagumo-basic-export">1. FitzHugh-Nagumo — Basic Export</h2>
-<p>FitzHugh-Nagumo is already in the TVBO database as a <code>Dynamics</code> that maps cleanly to a LEMS <code>ComponentType</code>:</p>
-<div id="fcdab092" class="cell" data-execution_count="1">
+<section id="generic-2d-oscillator-basic-export" class="level2">
+<h2 class="anchored" data-anchor-id="generic-2d-oscillator-basic-export">1. Generic 2D Oscillator — Basic Export</h2>
+<p><code>Generic2dOscillator</code> is in the TVBO database as a <code>Dynamics</code> that maps cleanly to a LEMS <code>ComponentType</code> and executes with the default jNeuroML backend:</p>
+<div id="418424f5" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> Dynamics</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo.adapters.neuroml <span class="im">import</span> NeuroMLAdapter</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>fhn <span class="op">=</span> Dynamics.from_db(<span class="st">"JansenRit"</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>fhn <span class="op">=</span> Dynamics.from_db(<span class="st">"Generic2dOscillator"</span>)</span>
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>adapter <span class="op">=</span> NeuroMLAdapter(fhn)</span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>xml <span class="op">=</span> adapter.render_code()</span>
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(xml)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -5160,7 +5160,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 &lt;Lems&gt;
 
   &lt;!-- Tell jLEMS/jNeuroML which component is the simulation entry point. --&gt;
-  &lt;Target component="sim_JansenRit"/&gt;
+  &lt;Target component="sim_Generic2dOscillator"/&gt;
 
   &lt;Include file="Cells.xml"/&gt;
   &lt;Include file="Networks.xml"/&gt;
@@ -5171,87 +5171,62 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
        ════════════════════════════════════════════════════════════════ --&gt;
 
   &lt;!-- ════════════════════════════════════════════════════════════════
-       ComponentType: JansenRit
-       Generated from TVBO Dynamics: JansenRit
+       ComponentType: Generic2dOscillator
+       Generated from TVBO Dynamics: Generic2dOscillator
        ════════════════════════════════════════════════════════════════ --&gt;
-  &lt;ComponentType name="JansenRit"&gt;
+  &lt;ComponentType name="Generic2dOscillator"&gt;
 
     &lt;!-- Parameters --&gt;
-    &lt;Parameter name="A" dimension="none"/&gt;
-    &lt;Parameter name="B" dimension="none"/&gt;
-    &lt;Parameter name="J" dimension="none"/&gt;
-    &lt;Parameter name="a_1" dimension="none"/&gt;
-    &lt;Parameter name="a_2" dimension="none"/&gt;
-    &lt;Parameter name="a_3" dimension="none"/&gt;
-    &lt;Parameter name="a_4" dimension="none"/&gt;
+    &lt;Parameter name="I" dimension="none"/&gt;
     &lt;Parameter name="a" dimension="none"/&gt;
+    &lt;Parameter name="alpha" dimension="none"/&gt;
     &lt;Parameter name="b" dimension="none"/&gt;
-    &lt;Parameter name="mu" dimension="none"/&gt;
-    &lt;Parameter name="nu_max" dimension="none"/&gt;
-    &lt;Parameter name="r" dimension="none"/&gt;
-    &lt;Parameter name="v0" dimension="none"/&gt;
+    &lt;Parameter name="beta" dimension="none"/&gt;
+    &lt;Parameter name="c" dimension="none"/&gt;
+    &lt;Parameter name="d" dimension="none"/&gt;
+    &lt;Parameter name="e" dimension="none"/&gt;
+    &lt;Parameter name="f" dimension="none"/&gt;
+    &lt;Parameter name="g" dimension="none"/&gt;
+    &lt;Parameter name="gamma" dimension="none"/&gt;
+    &lt;Parameter name="tau" dimension="none"/&gt;
     &lt;!-- Coupling inputs --&gt;
-    &lt;Parameter name="c_pop0" dimension="none"/&gt;
+    &lt;Parameter name="c_glob" dimension="none"/&gt;
     &lt;Parameter name="local_coupling" dimension="none"/&gt;
     &lt;!-- Initial condition parameters --&gt;
-    &lt;Parameter name="y0_0" dimension="none"/&gt;
-    &lt;Parameter name="y1_0" dimension="none"/&gt;
-    &lt;Parameter name="y2_0" dimension="none"/&gt;
-    &lt;Parameter name="y3_0" dimension="none"/&gt;
-    &lt;Parameter name="y4_0" dimension="none"/&gt;
-    &lt;Parameter name="y5_0" dimension="none"/&gt;
+    &lt;Parameter name="V_0" dimension="none"/&gt;
+    &lt;Parameter name="W_0" dimension="none"/&gt;
 
-    &lt;!-- Time constant for derivatives.
-         All parameters use dimension="none" to avoid jLEMS dimensional
-         analysis failures (neural-mass models mix units freely).
-         / SEC is always applied so the TimeDerivative has per_time
-         dimension.  When the model already has time units in parameters,
-         SEC = 1s (numerically 1.0 — identity); otherwise SEC = 1&lt;time_scale&gt;
-         provides the actual numeric conversion.
-         needs_sec=True  time_scale=ms --&gt;
+    &lt;!-- Time conversion for derivatives.
+         When all parameters and state variables carry proper LEMS dimensions,
+         LEMS handles unit conversion natively (e.g. tau="30 ms" → 0.03 s).
+         No SEC constant is needed and TimeDerivatives use the RHS directly.
+         When dimensions are "none" (dimensionless models), / SEC converts
+         from model time to SI seconds.
+         all_dimensioned=False  needs_sec=True  time_scale=ms --&gt;
     &lt;Constant name="SEC" dimension="time" value="1ms"/&gt;
 
     &lt;!-- Exposures (one per state variable) --&gt;
-    &lt;Exposure name="y0" dimension="none"/&gt;
-    &lt;Exposure name="y1" dimension="none"/&gt;
-    &lt;Exposure name="y2" dimension="none"/&gt;
-    &lt;Exposure name="y3" dimension="none"/&gt;
-    &lt;Exposure name="y4" dimension="none"/&gt;
-    &lt;Exposure name="y5" dimension="none"/&gt;
+    &lt;Exposure name="V" dimension="none"/&gt;
+    &lt;Exposure name="W" dimension="none"/&gt;
 
     &lt;Dynamics&gt;
 
       &lt;!-- State variables --&gt;
-      &lt;StateVariable name="y0" dimension="none" exposure="y0"/&gt;
-      &lt;StateVariable name="y1" dimension="none" exposure="y1"/&gt;
-      &lt;StateVariable name="y2" dimension="none" exposure="y2"/&gt;
-      &lt;StateVariable name="y3" dimension="none" exposure="y3"/&gt;
-      &lt;StateVariable name="y4" dimension="none" exposure="y4"/&gt;
-      &lt;StateVariable name="y5" dimension="none" exposure="y5"/&gt;
+      &lt;StateVariable name="V" dimension="none" exposure="V"/&gt;
+      &lt;StateVariable name="W" dimension="none" exposure="W"/&gt;
 
       &lt;!-- Derived variables (simple and conditional/piecewise) --&gt;
-      &lt;DerivedVariable name="sigma_y0_1" dimension="none" value="2.0*nu_max/(1.0 + exp(r*(v0 - J*a_1*y0)))"/&gt;
-      &lt;DerivedVariable name="sigma_y0_3" dimension="none" value="2.0*nu_max/(1.0 + exp(r*(v0 - J*a_3*y0)))"/&gt;
-      &lt;DerivedVariable name="sigma_y1_y2" dimension="none" value="2.0*nu_max/(1.0 + exp(r*(v0 + y2 - y1)))"/&gt;
 
       &lt;!-- ── Flat dynamics (no spike events) ── --&gt;
 
       &lt;!-- Time derivatives --&gt;
-      &lt;TimeDerivative variable="y0" value="(y3) / SEC"/&gt;
-      &lt;TimeDerivative variable="y1" value="(y4) / SEC"/&gt;
-      &lt;TimeDerivative variable="y2" value="(y5) / SEC"/&gt;
-      &lt;TimeDerivative variable="y3" value="(-y0*a^2 - 2.0*a*y3 + A*a*sigma_y1_y2) / SEC"/&gt;
-      &lt;TimeDerivative variable="y4" value="(-y1*a^2 - 2.0*a*y4 + A*a*(c_pop0 + mu + local_coupling*(y1 - y2) + J*a_2*sigma_y0_1)) / SEC"/&gt;
-      &lt;TimeDerivative variable="y5" value="(-y2*b^2 - 2.0*b*y5 + B*J*a_4*b*sigma_y0_3) / SEC"/&gt;
+      &lt;TimeDerivative variable="V" value="(d*tau*(I*gamma + V*g + V*local_coupling + W*alpha + c_glob*gamma + e*V^2 - f*V^3)) / SEC"/&gt;
+      &lt;TimeDerivative variable="W" value="(d*(a + V*b + c*V^2 - W*beta)/tau) / SEC"/&gt;
 
       &lt;!-- Initial conditions --&gt;
       &lt;OnStart&gt;
-        &lt;StateAssignment variable="y0" value="y0_0"/&gt;
-        &lt;StateAssignment variable="y1" value="y1_0"/&gt;
-        &lt;StateAssignment variable="y2" value="y2_0"/&gt;
-        &lt;StateAssignment variable="y3" value="y3_0"/&gt;
-        &lt;StateAssignment variable="y4" value="y4_0"/&gt;
-        &lt;StateAssignment variable="y5" value="y5_0"/&gt;
+        &lt;StateAssignment variable="V" value="V_0"/&gt;
+        &lt;StateAssignment variable="W" value="W_0"/&gt;
       &lt;/OnStart&gt;
 
       &lt;!-- Events (non-spike) --&gt;
@@ -5264,7 +5239,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   &lt;!-- ════════════════════════════════════════════════════════════════
        Component instances (default parameter values)
        ════════════════════════════════════════════════════════════════ --&gt;
-  &lt;Component id="JansenRit_inst" type="JansenRit" A="3.25" B="22.0" J="135.0" a_1="1.0" a_2="0.8" a_3="0.25" a_4="0.25" a="0.1" b="0.05" mu="0.22" nu_max="0.0025" r="0.56" v0="5.52" c_pop0="0" local_coupling="0" y0_0="0.1" y1_0="0.1" y2_0="0.1" y3_0="0.1" y4_0="0.1" y5_0="0.1"/&gt;
+  &lt;Component id="Generic2dOscillator_inst" type="Generic2dOscillator" I="0.0" a="-2.0" alpha="1.0" b="-10.0" beta="1.0" c="0.0" d="0.02" e="3.0" f="1.0" g="0.0" gamma="1.0" tau="1.0" c_glob="0" local_coupling="0" V_0="0.1" W_0="0.1"/&gt;
 
 
 
@@ -5272,21 +5247,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
        pop[idx]/variable form, which works across jNeuroML, NEURON, Brian2,
        NetPyNE and EDEN backends. --&gt;
   &lt;network id="net"&gt;
-    &lt;population id="pop" component="JansenRit_inst" size="1"/&gt;
+    &lt;population id="pop" component="Generic2dOscillator_inst" size="1"/&gt;
   &lt;/network&gt;
 
   &lt;!-- ════════════════════════════════════════════════════════════════
        Simulation — target the network (all-backend compatible)
        ════════════════════════════════════════════════════════════════ --&gt;
-  &lt;Simulation id="sim_JansenRit" length="1000.0ms" step="0.01220703125ms" target="net"&gt;
+  &lt;Simulation id="sim_Generic2dOscillator" length="1000.0ms" step="0.01220703125ms" target="net"&gt;
 
-    &lt;OutputFile id="of1" fileName="results/JansenRit.dat"&gt;
-      &lt;OutputColumn id="y0" quantity="pop[0]/y0"/&gt;
-      &lt;OutputColumn id="y1" quantity="pop[0]/y1"/&gt;
-      &lt;OutputColumn id="y2" quantity="pop[0]/y2"/&gt;
-      &lt;OutputColumn id="y3" quantity="pop[0]/y3"/&gt;
-      &lt;OutputColumn id="y4" quantity="pop[0]/y4"/&gt;
-      &lt;OutputColumn id="y5" quantity="pop[0]/y5"/&gt;
+    &lt;OutputFile id="of1" fileName="results/Generic2dOscillator.dat"&gt;
+      &lt;OutputColumn id="V" quantity="pop[0]/V"/&gt;
+      &lt;OutputColumn id="W" quantity="pop[0]/W"/&gt;
     &lt;/OutputFile&gt;
 
   &lt;/Simulation&gt;
@@ -5297,11 +5268,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>The rendered XML includes:</p>
 <ul>
-<li><code>&lt;ComponentType name="FitzHughNagumo"&gt;</code> with all model parameters as <code>&lt;Parameter&gt;</code></li>
+<li><code>&lt;ComponentType name="Generic2dOscillator"&gt;</code> with all model parameters as <code>&lt;Parameter&gt;</code></li>
 <li><code>&lt;StateVariable name="V" ...&gt;</code> and <code>&lt;StateVariable name="W" ...&gt;</code> with <code>&lt;Exposure&gt;</code></li>
-<li><code>&lt;TimeDerivative variable="V" value="(V - V^3/3 - W + I) / SEC"/&gt;</code> — note the <code>/ SEC</code> to account for the TVBO convention of millisecond-based integration with a <code>1s</code> constant</li>
+<li><code>&lt;TimeDerivative variable="V" value="..."/&gt;</code> — note the <code>/ SEC</code> when needed to account for the TVBO convention of millisecond-based integration with a <code>1s</code> constant</li>
 <li><code>&lt;OnStart&gt;</code> with <code>&lt;StateAssignment&gt;</code> from initial conditions</li>
-<li>A <code>&lt;Component id="FitzHughNagumo" ...&gt;</code> instance with default parameter values</li>
+<li>A <code>&lt;Component id="Generic2dOscillator" ...&gt;</code> instance with default parameter values</li>
 <li>A <code>&lt;Simulation&gt;</code> block with output files per state variable</li>
 </ul>
 <hr>
@@ -5380,14 +5351,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="full-experiment-export" class="level2">
 <h2 class="anchored" data-anchor-id="full-experiment-export">5. Full Experiment Export</h2>
-<div id="469d6251" class="cell" data-execution_count="2">
+<div id="f0776a0c" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> SimulationExperiment</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo.adapters.neuroml <span class="im">import</span> NeuroMLAdapter</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>exp <span class="op">=</span> SimulationExperiment.from_string(<span class="st">"""</span></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="st">label: JansenRit LEMS Export</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="st">label: Generic2dOscillator LEMS Export</span></span>
 <span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="st">dynamics:</span></span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="st">  name: JansenRit</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="st">  name: Generic2dOscillator</span></span>
 <span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span>)</span>
 <span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>adapter <span class="op">=</span> NeuroMLAdapter(exp)</span>
 <span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a></span>
@@ -5413,7 +5384,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="split-file-export" class="level2">
 <h2 class="anchored" data-anchor-id="split-file-export">6. Split-File Export</h2>
 <p>By NeuroML convention, a fully portable model is distributed as three separate LEMS files that references each other via <code>&lt;Include&gt;</code>. The TVBO adapter generates all three with a single call:</p>
-<div id="611ccbce" class="cell" data-execution_count="3">
+<div id="b947f1bf" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>paths <span class="op">=</span> adapter.export(<span class="st">"./output"</span>, split<span class="op">=</span><span class="va">True</span>, validate<span class="op">=</span><span class="va">False</span>)</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(paths)</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="co"># {</span></span>
@@ -5422,7 +5393,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="co">#   'simulation': './output/ses-..._simulation.xml',</span></span>
 <span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="co"># }</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>{'dynamics': 'output/ses-2_desc-None_dynamics.xml', 'network': 'output/ses-2_desc-None_network.xml', 'simulation': 'output/ses-2_desc-None_simulation.xml'}</code></pre>
+<pre><code>{'dynamics': 'output/ses-2_desc-Generic2dOscillator_dynamics.xml', 'network': 'output/ses-2_desc-Generic2dOscillator_network.xml', 'simulation': 'output/ses-2_desc-Generic2dOscillator_simulation.xml'}</code></pre>
 </div>
 </div>
 <p>The chain works as follows:</p>
@@ -5458,7 +5429,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 <p>You can render each piece independently:</p>
-<div id="24e44fef" class="cell" data-execution_count="4">
+<div id="ee545365" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Just the ComponentType definitions</span></span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>xml_dyn <span class="op">=</span> adapter.render_dynamics()</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -5473,7 +5444,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="unified-render-api" class="level2">
 <h2 class="anchored" data-anchor-id="unified-render-api">7. Unified <code>render()</code> API</h2>
 <p><code>SimulationExperiment.render()</code> is the unified entry point for all serialisation formats — both executable code and metadata.</p>
-<div id="dd18a2eb" class="cell" data-execution_count="5">
+<div id="40c01385" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># exp and adapter are already defined in section 5 above</span></span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Render as LEMS XML (same as NeuroMLAdapter(exp).render_code())</span></span>
@@ -5491,164 +5462,117 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="running-via-downstream-simulators" class="level2">
 <h2 class="anchored" data-anchor-id="running-via-downstream-simulators">8. Running via Downstream Simulators</h2>
 <p>Once a valid LEMS file is produced, simulate it with any pyNeuroML-supported backend:</p>
-<div id="01cc54bf" class="cell" data-execution_count="6">
+<div id="9f332ffe" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Via the adapter (default: jNeuroML reference engine)</span></span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>adapter.run()</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Via SimulationExperiment.run()</span></span>
 <span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>exp.run(<span class="st">"neuroml"</span>)</span>
 <span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Use a specific downstream simulator</span></span>
-<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>adapter.run(backend<span class="op">=</span><span class="st">"neuron"</span>)    <span class="co"># NEURON</span></span>
-<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>adapter.run(backend<span class="op">=</span><span class="st">"brian2"</span>)    <span class="co"># Brian2</span></span>
-<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>adapter.run(backend<span class="op">=</span><span class="st">"netpyne"</span>)   <span class="co"># NetPyNE</span></span>
-<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>adapter.run(backend<span class="op">=</span><span class="st">"eden"</span>)      <span class="co"># EDEN</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Running simulation for 1. s (dt = 12.207031 us, #steps = 81921, code generation target = auto)
-Running a NetPyNE based simulation for 1000.0ms (dt: 0.012207031ms) at 6.3 degC
-
-Start time:  2026-04-15 22:26:29.760848</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-
-Creating network of 1 cell populations on 1 hosts...:   0%|          |
-Creating network of 1 cell populations on 1 hosts...: 100%|##########|</code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  Number of cells on node 0: 1 
-  Done; cell creation time = 0.03 s.
-Making connections...
-  Number of connections on node 0: 0 
-  Done; cell connection time = 0.00 s.
-  Number of stims on node 0: 0 
-  Done; cell stims creation time = 0.00 s.
-Recording 6 traces of 6 types on node 0
-
-Running simulation using NEURON for 1000.0 ms...
-  Done; run time = 0.05 s; real-time ratio: 18.19.
-
-Gathering data...
-  Done; gather time = 0.01 s.
-
-Analyzing...
-  Cells: 1
-  Connections: 0 (0.00 per cell)
-  Spikes: 0 (0.00 Hz)
-  Simulated time: 1.0 s; 1 workers
-  Run time: 0.05 s
-Warning: data won't be saved. No output format specified (consider sim.cfg.savePickle, sim.cfg.saveJson etc.)
-  Done; plotting time = 0.00 s
-
-Total time = 0.09 s
-Finished NetPyNE simulation in 0.091627 seconds (0.001527 mins)...
-Saving traces to file: results/JansenRit.dat (ref: of1)</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code></code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Finished saving results in 0.310871 seconds</code></pre>
-</div>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Optional downstream simulators (uncomment when installed)</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a><span class="co"># adapter.run(backend="neuron")    # NEURON</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a><span class="co"># adapter.run(backend="brian2")    # Brian2</span></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a><span class="co"># adapter.run(backend="netpyne")   # NetPyNE</span></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a><span class="co"># adapter.run(backend="eden")      # EDEN</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display cell-output-markdown" data-execution_count="6">
-<pre><code>JansenRit LEMS Export
+<pre><code>Generic2dOscillator LEMS Export
 └── integration
-        data: (81921, 6)</code></pre>
+        data: (81921, 2)</code></pre>
 </div>
 </div>
 <p>Supported backends: <code>jneuroml</code> (default), <code>neuron</code>, <code>brian2</code>, <code>netpyne</code>, <code>eden</code>.</p>
 <p>Or from the command line:</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="ex">jnml</span> ses-..._simulation.xml</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="ex">jnml</span> ses-..._simulation.xml</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Results are written to <code>results/&lt;model&gt;_&lt;sv&gt;.dat</code> (one file per state variable per run), matching the <code>&lt;OutputFile&gt;</code> definitions in the <code>&lt;Simulation&gt;</code> block.</p>
 <hr>
 </section>
 <section id="user-defined-functions" class="level2">
 <h2 class="anchored" data-anchor-id="user-defined-functions">9. User-Defined Functions</h2>
 <p>LEMS has no mechanism for user-defined functions. Models that define helper functions in YAML (e.g.&nbsp;a sigmoid <code>Sigm(x)</code>) have those calls automatically <strong>inlined</strong> by the adapter before rendering:</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode yaml code-with-copy"><code class="sourceCode yaml"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># In TVBO YAML — user function</span></span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="fu">functions</span><span class="kw">:</span></span>
-<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">Sigm</span><span class="kw">:</span></span>
-<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">arguments</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="at">x</span><span class="kw">]</span></span>
-<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">equation</span><span class="kw">:</span></span>
-<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">rhs</span><span class="kw">:</span><span class="at"> </span><span class="st">"2*e0 / (1 + exp(r*(v0 - x)))"</span></span>
-<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a><span class="fu">state_variables</span><span class="kw">:</span></span>
-<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">y0</span><span class="kw">:</span></span>
-<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">equation</span><span class="kw">:</span></span>
-<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">rhs</span><span class="kw">:</span><span class="at"> </span><span class="st">"A*a * Sigm(y1 - y2) - 2*a*y3 - a**2*y0"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode yaml code-with-copy"><code class="sourceCode yaml"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># In TVBO YAML — user function</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="fu">functions</span><span class="kw">:</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">Sigm</span><span class="kw">:</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">arguments</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="at">x</span><span class="kw">]</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">equation</span><span class="kw">:</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">rhs</span><span class="kw">:</span><span class="at"> </span><span class="st">"2*e0 / (1 + exp(r*(v0 - x)))"</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a><span class="fu">state_variables</span><span class="kw">:</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">y0</span><span class="kw">:</span></span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">equation</span><span class="kw">:</span></span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">rhs</span><span class="kw">:</span><span class="at"> </span><span class="st">"A*a * Sigm(y1 - y2) - 2*a*y3 - a**2*y0"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>The adapter substitutes <code>Sigm(y1 - y2)</code> with its body, producing valid LEMS:</p>
-<div class="sourceCode" id="cb23"><pre class="sourceCode xml code-with-copy"><code class="sourceCode xml"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>&lt;<span class="kw">TimeDerivative</span><span class="ot"> variable=</span><span class="st">"y0"</span></span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="ot">  value=</span><span class="st">"(A*a * (2*e0/(1 + exp(r*(v0 - (y1 - y2))))) - 2*a*y3 - a^2*y0) / SEC"</span>/&gt;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode xml code-with-copy"><code class="sourceCode xml"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>&lt;<span class="kw">TimeDerivative</span><span class="ot"> variable=</span><span class="st">"y0"</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="ot">  value=</span><span class="st">"(A*a * (2*e0/(1 + exp(r*(v0 - (y1 - y2))))) - 2*a*y3 - a^2*y0) / SEC"</span>/&gt;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>This inlining is done symbolically via SymPy’s <code>replace()</code> + <code>xreplace()</code>, so nested or composed function calls work correctly.</p>
 <hr>
 </section>
 <section id="understanding-the-lems-structure" class="level2">
 <h2 class="anchored" data-anchor-id="understanding-the-lems-structure">10. Understanding the LEMS Structure</h2>
 <p>A complete TVBO → LEMS export produces this XML skeleton:</p>
-<div class="sourceCode" id="cb24"><pre class="sourceCode xml code-with-copy"><code class="sourceCode xml"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>&lt;<span class="kw">Lems</span>&gt;</span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  <span class="co">&lt;!-- Standard NeuroML dimensions (voltage, time, current, ...) --&gt;</span></span>
-<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>  &lt;<span class="kw">Dimension</span><span class="ot"> name=</span><span class="st">"voltage"</span><span class="ot"> m=</span><span class="st">"1"</span><span class="ot"> l=</span><span class="st">"2"</span><span class="ot"> t=</span><span class="st">"-3"</span><span class="ot"> i=</span><span class="st">"-1"</span>/&gt;</span>
-<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>  ...</span>
-<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>  <span class="co">&lt;!-- Units (mV, ms, nA, ...) --&gt;</span></span>
-<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>  &lt;<span class="kw">Unit</span><span class="ot"> name=</span><span class="st">"milliVolt"</span><span class="ot"> symbol=</span><span class="st">"mV"</span><span class="ot"> dimension=</span><span class="st">"voltage"</span><span class="ot"> power=</span><span class="st">"-3"</span>/&gt;</span>
-<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>  ...</span>
-<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>  <span class="co">&lt;!-- The dynamics model as a ComponentType --&gt;</span></span>
-<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>  &lt;<span class="kw">ComponentType</span><span class="ot"> name=</span><span class="st">"MyModel"</span>&gt;</span>
-<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>    &lt;<span class="kw">Parameter</span><span class="ot"> name=</span><span class="st">"param1"</span><span class="ot"> dimension=</span><span class="st">"none"</span>/&gt;</span>
-<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>    ...</span>
-<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a>    &lt;<span class="kw">Constant</span><span class="ot"> name=</span><span class="st">"SEC"</span><span class="ot"> dimension=</span><span class="st">"time"</span><span class="ot"> value=</span><span class="st">"1s"</span>/&gt;</span>
-<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a>    &lt;<span class="kw">Exposure</span><span class="ot"> name=</span><span class="st">"V"</span><span class="ot"> dimension=</span><span class="st">"voltage"</span>/&gt;</span>
-<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a>    &lt;<span class="kw">Dynamics</span>&gt;</span>
-<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a>      &lt;<span class="kw">StateVariable</span><span class="ot"> name=</span><span class="st">"V"</span><span class="ot"> dimension=</span><span class="st">"voltage"</span><span class="ot"> exposure=</span><span class="st">"V"</span>/&gt;</span>
-<span id="cb24-19"><a href="#cb24-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-20"><a href="#cb24-20" aria-hidden="true" tabindex="-1"></a>      <span class="co">&lt;!-- Simple derived variable --&gt;</span></span>
-<span id="cb24-21"><a href="#cb24-21" aria-hidden="true" tabindex="-1"></a>      &lt;<span class="kw">DerivedVariable</span><span class="ot"> name=</span><span class="st">"f_V"</span><span class="ot"> dimension=</span><span class="st">"none"</span><span class="ot"> value=</span><span class="st">"1/(1 + exp(-V))"</span>/&gt;</span>
-<span id="cb24-22"><a href="#cb24-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-23"><a href="#cb24-23" aria-hidden="true" tabindex="-1"></a>      <span class="co">&lt;!-- Piecewise derived variable --&gt;</span></span>
-<span id="cb24-24"><a href="#cb24-24" aria-hidden="true" tabindex="-1"></a>      &lt;<span class="kw">ConditionalDerivedVariable</span><span class="ot"> name=</span><span class="st">"alpha_n"</span><span class="ot"> dimension=</span><span class="st">"per_time"</span>&gt;</span>
-<span id="cb24-25"><a href="#cb24-25" aria-hidden="true" tabindex="-1"></a>        &lt;<span class="kw">Case</span><span class="ot"> condition=</span><span class="st">"V .eq. -55"</span><span class="ot"> value=</span><span class="st">"0.1"</span>/&gt;</span>
-<span id="cb24-26"><a href="#cb24-26" aria-hidden="true" tabindex="-1"></a>        &lt;<span class="kw">Case</span><span class="ot"> value=</span><span class="st">"0.01*(V + 55)/(1 - exp(-(V+55)/10))"</span>/&gt;</span>
-<span id="cb24-27"><a href="#cb24-27" aria-hidden="true" tabindex="-1"></a>      &lt;/<span class="kw">ConditionalDerivedVariable</span>&gt;</span>
-<span id="cb24-28"><a href="#cb24-28" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-29"><a href="#cb24-29" aria-hidden="true" tabindex="-1"></a>      <span class="co">&lt;!-- Time derivative (scaled to ms time base) --&gt;</span></span>
-<span id="cb24-30"><a href="#cb24-30" aria-hidden="true" tabindex="-1"></a>      &lt;<span class="kw">TimeDerivative</span><span class="ot"> variable=</span><span class="st">"V"</span><span class="ot"> value=</span><span class="st">"(dV_rhs) / SEC"</span>/&gt;</span>
-<span id="cb24-31"><a href="#cb24-31" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-32"><a href="#cb24-32" aria-hidden="true" tabindex="-1"></a>      <span class="co">&lt;!-- Initial conditions --&gt;</span></span>
-<span id="cb24-33"><a href="#cb24-33" aria-hidden="true" tabindex="-1"></a>      &lt;<span class="kw">OnStart</span>&gt;</span>
-<span id="cb24-34"><a href="#cb24-34" aria-hidden="true" tabindex="-1"></a>        &lt;<span class="kw">StateAssignment</span><span class="ot"> variable=</span><span class="st">"V"</span><span class="ot"> value=</span><span class="st">"V_0"</span>/&gt;</span>
-<span id="cb24-35"><a href="#cb24-35" aria-hidden="true" tabindex="-1"></a>      &lt;/<span class="kw">OnStart</span>&gt;</span>
-<span id="cb24-36"><a href="#cb24-36" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-37"><a href="#cb24-37" aria-hidden="true" tabindex="-1"></a>      <span class="co">&lt;!-- Spike/reset events --&gt;</span></span>
-<span id="cb24-38"><a href="#cb24-38" aria-hidden="true" tabindex="-1"></a>      &lt;<span class="kw">OnCondition</span><span class="ot"> test=</span><span class="st">"V .geq. V_th"</span>&gt;</span>
-<span id="cb24-39"><a href="#cb24-39" aria-hidden="true" tabindex="-1"></a>        &lt;<span class="kw">StateAssignment</span><span class="ot"> variable=</span><span class="st">"V"</span><span class="ot"> value=</span><span class="st">"V_reset"</span>/&gt;</span>
-<span id="cb24-40"><a href="#cb24-40" aria-hidden="true" tabindex="-1"></a>      &lt;/<span class="kw">OnCondition</span>&gt;</span>
-<span id="cb24-41"><a href="#cb24-41" aria-hidden="true" tabindex="-1"></a>    &lt;/<span class="kw">Dynamics</span>&gt;</span>
-<span id="cb24-42"><a href="#cb24-42" aria-hidden="true" tabindex="-1"></a>  &lt;/<span class="kw">ComponentType</span>&gt;</span>
-<span id="cb24-43"><a href="#cb24-43" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-44"><a href="#cb24-44" aria-hidden="true" tabindex="-1"></a>  <span class="co">&lt;!-- Coupling function as a separate ComponentType --&gt;</span></span>
-<span id="cb24-45"><a href="#cb24-45" aria-hidden="true" tabindex="-1"></a>  &lt;<span class="kw">ComponentType</span><span class="ot"> name=</span><span class="st">"Coupling"</span>&gt;</span>
-<span id="cb24-46"><a href="#cb24-46" aria-hidden="true" tabindex="-1"></a>    ...</span>
-<span id="cb24-47"><a href="#cb24-47" aria-hidden="true" tabindex="-1"></a>  &lt;/<span class="kw">ComponentType</span>&gt;</span>
-<span id="cb24-48"><a href="#cb24-48" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-49"><a href="#cb24-49" aria-hidden="true" tabindex="-1"></a>  <span class="co">&lt;!-- Component instance with default parameter values --&gt;</span></span>
-<span id="cb24-50"><a href="#cb24-50" aria-hidden="true" tabindex="-1"></a>  &lt;<span class="kw">Component</span><span class="ot"> id=</span><span class="st">"MyModel"</span><span class="ot"> type=</span><span class="st">"MyModel"</span><span class="ot"> param1=</span><span class="st">"1.0"</span><span class="ot"> V_0=</span><span class="st">"-65.0"</span>/&gt;</span>
-<span id="cb24-51"><a href="#cb24-51" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-52"><a href="#cb24-52" aria-hidden="true" tabindex="-1"></a>  <span class="co">&lt;!-- Network: population of N nodes --&gt;</span></span>
-<span id="cb24-53"><a href="#cb24-53" aria-hidden="true" tabindex="-1"></a>  &lt;<span class="kw">Component</span><span class="ot"> id=</span><span class="st">"net"</span><span class="ot"> type=</span><span class="st">"network"</span>&gt;</span>
-<span id="cb24-54"><a href="#cb24-54" aria-hidden="true" tabindex="-1"></a>    &lt;<span class="kw">Component</span><span class="ot"> id=</span><span class="st">"pop0"</span><span class="ot"> type=</span><span class="st">"population"</span><span class="ot"> component=</span><span class="st">"MyModel"</span><span class="ot"> size=</span><span class="st">"80"</span>/&gt;</span>
-<span id="cb24-55"><a href="#cb24-55" aria-hidden="true" tabindex="-1"></a>  &lt;/<span class="kw">Component</span>&gt;</span>
-<span id="cb24-56"><a href="#cb24-56" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-57"><a href="#cb24-57" aria-hidden="true" tabindex="-1"></a>  <span class="co">&lt;!-- Simulation: length, step, output files --&gt;</span></span>
-<span id="cb24-58"><a href="#cb24-58" aria-hidden="true" tabindex="-1"></a>  &lt;<span class="kw">Simulation</span><span class="ot"> id=</span><span class="st">"sim1"</span><span class="ot"> length=</span><span class="st">"1000ms"</span><span class="ot"> step=</span><span class="st">"0.1ms"</span><span class="ot"> target=</span><span class="st">"net"</span>&gt;</span>
-<span id="cb24-59"><a href="#cb24-59" aria-hidden="true" tabindex="-1"></a>    &lt;<span class="kw">OutputFile</span><span class="ot"> id=</span><span class="st">"of_V"</span><span class="ot"> fileName=</span><span class="st">"results/MyModel_V.dat"</span>&gt;</span>
-<span id="cb24-60"><a href="#cb24-60" aria-hidden="true" tabindex="-1"></a>      &lt;<span class="kw">OutputColumn</span><span class="ot"> id=</span><span class="st">"V_0"</span><span class="ot"> quantity=</span><span class="st">"pop0[0]/V"</span>/&gt;</span>
-<span id="cb24-61"><a href="#cb24-61" aria-hidden="true" tabindex="-1"></a>      ...</span>
-<span id="cb24-62"><a href="#cb24-62" aria-hidden="true" tabindex="-1"></a>    &lt;/<span class="kw">OutputFile</span>&gt;</span>
-<span id="cb24-63"><a href="#cb24-63" aria-hidden="true" tabindex="-1"></a>  &lt;/<span class="kw">Simulation</span>&gt;</span>
-<span id="cb24-64"><a href="#cb24-64" aria-hidden="true" tabindex="-1"></a>&lt;/<span class="kw">Lems</span>&gt;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode xml code-with-copy"><code class="sourceCode xml"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>&lt;<span class="kw">Lems</span>&gt;</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  <span class="co">&lt;!-- Standard NeuroML dimensions (voltage, time, current, ...) --&gt;</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  &lt;<span class="kw">Dimension</span><span class="ot"> name=</span><span class="st">"voltage"</span><span class="ot"> m=</span><span class="st">"1"</span><span class="ot"> l=</span><span class="st">"2"</span><span class="ot"> t=</span><span class="st">"-3"</span><span class="ot"> i=</span><span class="st">"-1"</span>/&gt;</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>  ...</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>  <span class="co">&lt;!-- Units (mV, ms, nA, ...) --&gt;</span></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>  &lt;<span class="kw">Unit</span><span class="ot"> name=</span><span class="st">"milliVolt"</span><span class="ot"> symbol=</span><span class="st">"mV"</span><span class="ot"> dimension=</span><span class="st">"voltage"</span><span class="ot"> power=</span><span class="st">"-3"</span>/&gt;</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>  ...</span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>  <span class="co">&lt;!-- The dynamics model as a ComponentType --&gt;</span></span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>  &lt;<span class="kw">ComponentType</span><span class="ot"> name=</span><span class="st">"MyModel"</span>&gt;</span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>    &lt;<span class="kw">Parameter</span><span class="ot"> name=</span><span class="st">"param1"</span><span class="ot"> dimension=</span><span class="st">"none"</span>/&gt;</span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>    ...</span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>    &lt;<span class="kw">Constant</span><span class="ot"> name=</span><span class="st">"SEC"</span><span class="ot"> dimension=</span><span class="st">"time"</span><span class="ot"> value=</span><span class="st">"1s"</span>/&gt;</span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a>    &lt;<span class="kw">Exposure</span><span class="ot"> name=</span><span class="st">"V"</span><span class="ot"> dimension=</span><span class="st">"voltage"</span>/&gt;</span>
+<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a>    &lt;<span class="kw">Dynamics</span>&gt;</span>
+<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a>      &lt;<span class="kw">StateVariable</span><span class="ot"> name=</span><span class="st">"V"</span><span class="ot"> dimension=</span><span class="st">"voltage"</span><span class="ot"> exposure=</span><span class="st">"V"</span>/&gt;</span>
+<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-20"><a href="#cb19-20" aria-hidden="true" tabindex="-1"></a>      <span class="co">&lt;!-- Simple derived variable --&gt;</span></span>
+<span id="cb19-21"><a href="#cb19-21" aria-hidden="true" tabindex="-1"></a>      &lt;<span class="kw">DerivedVariable</span><span class="ot"> name=</span><span class="st">"f_V"</span><span class="ot"> dimension=</span><span class="st">"none"</span><span class="ot"> value=</span><span class="st">"1/(1 + exp(-V))"</span>/&gt;</span>
+<span id="cb19-22"><a href="#cb19-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-23"><a href="#cb19-23" aria-hidden="true" tabindex="-1"></a>      <span class="co">&lt;!-- Piecewise derived variable --&gt;</span></span>
+<span id="cb19-24"><a href="#cb19-24" aria-hidden="true" tabindex="-1"></a>      &lt;<span class="kw">ConditionalDerivedVariable</span><span class="ot"> name=</span><span class="st">"alpha_n"</span><span class="ot"> dimension=</span><span class="st">"per_time"</span>&gt;</span>
+<span id="cb19-25"><a href="#cb19-25" aria-hidden="true" tabindex="-1"></a>        &lt;<span class="kw">Case</span><span class="ot"> condition=</span><span class="st">"V .eq. -55"</span><span class="ot"> value=</span><span class="st">"0.1"</span>/&gt;</span>
+<span id="cb19-26"><a href="#cb19-26" aria-hidden="true" tabindex="-1"></a>        &lt;<span class="kw">Case</span><span class="ot"> value=</span><span class="st">"0.01*(V + 55)/(1 - exp(-(V+55)/10))"</span>/&gt;</span>
+<span id="cb19-27"><a href="#cb19-27" aria-hidden="true" tabindex="-1"></a>      &lt;/<span class="kw">ConditionalDerivedVariable</span>&gt;</span>
+<span id="cb19-28"><a href="#cb19-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-29"><a href="#cb19-29" aria-hidden="true" tabindex="-1"></a>      <span class="co">&lt;!-- Time derivative (scaled to ms time base) --&gt;</span></span>
+<span id="cb19-30"><a href="#cb19-30" aria-hidden="true" tabindex="-1"></a>      &lt;<span class="kw">TimeDerivative</span><span class="ot"> variable=</span><span class="st">"V"</span><span class="ot"> value=</span><span class="st">"(dV_rhs) / SEC"</span>/&gt;</span>
+<span id="cb19-31"><a href="#cb19-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-32"><a href="#cb19-32" aria-hidden="true" tabindex="-1"></a>      <span class="co">&lt;!-- Initial conditions --&gt;</span></span>
+<span id="cb19-33"><a href="#cb19-33" aria-hidden="true" tabindex="-1"></a>      &lt;<span class="kw">OnStart</span>&gt;</span>
+<span id="cb19-34"><a href="#cb19-34" aria-hidden="true" tabindex="-1"></a>        &lt;<span class="kw">StateAssignment</span><span class="ot"> variable=</span><span class="st">"V"</span><span class="ot"> value=</span><span class="st">"V_0"</span>/&gt;</span>
+<span id="cb19-35"><a href="#cb19-35" aria-hidden="true" tabindex="-1"></a>      &lt;/<span class="kw">OnStart</span>&gt;</span>
+<span id="cb19-36"><a href="#cb19-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-37"><a href="#cb19-37" aria-hidden="true" tabindex="-1"></a>      <span class="co">&lt;!-- Spike/reset events --&gt;</span></span>
+<span id="cb19-38"><a href="#cb19-38" aria-hidden="true" tabindex="-1"></a>      &lt;<span class="kw">OnCondition</span><span class="ot"> test=</span><span class="st">"V .geq. V_th"</span>&gt;</span>
+<span id="cb19-39"><a href="#cb19-39" aria-hidden="true" tabindex="-1"></a>        &lt;<span class="kw">StateAssignment</span><span class="ot"> variable=</span><span class="st">"V"</span><span class="ot"> value=</span><span class="st">"V_reset"</span>/&gt;</span>
+<span id="cb19-40"><a href="#cb19-40" aria-hidden="true" tabindex="-1"></a>      &lt;/<span class="kw">OnCondition</span>&gt;</span>
+<span id="cb19-41"><a href="#cb19-41" aria-hidden="true" tabindex="-1"></a>    &lt;/<span class="kw">Dynamics</span>&gt;</span>
+<span id="cb19-42"><a href="#cb19-42" aria-hidden="true" tabindex="-1"></a>  &lt;/<span class="kw">ComponentType</span>&gt;</span>
+<span id="cb19-43"><a href="#cb19-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-44"><a href="#cb19-44" aria-hidden="true" tabindex="-1"></a>  <span class="co">&lt;!-- Coupling function as a separate ComponentType --&gt;</span></span>
+<span id="cb19-45"><a href="#cb19-45" aria-hidden="true" tabindex="-1"></a>  &lt;<span class="kw">ComponentType</span><span class="ot"> name=</span><span class="st">"Coupling"</span>&gt;</span>
+<span id="cb19-46"><a href="#cb19-46" aria-hidden="true" tabindex="-1"></a>    ...</span>
+<span id="cb19-47"><a href="#cb19-47" aria-hidden="true" tabindex="-1"></a>  &lt;/<span class="kw">ComponentType</span>&gt;</span>
+<span id="cb19-48"><a href="#cb19-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-49"><a href="#cb19-49" aria-hidden="true" tabindex="-1"></a>  <span class="co">&lt;!-- Component instance with default parameter values --&gt;</span></span>
+<span id="cb19-50"><a href="#cb19-50" aria-hidden="true" tabindex="-1"></a>  &lt;<span class="kw">Component</span><span class="ot"> id=</span><span class="st">"MyModel"</span><span class="ot"> type=</span><span class="st">"MyModel"</span><span class="ot"> param1=</span><span class="st">"1.0"</span><span class="ot"> V_0=</span><span class="st">"-65.0"</span>/&gt;</span>
+<span id="cb19-51"><a href="#cb19-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-52"><a href="#cb19-52" aria-hidden="true" tabindex="-1"></a>  <span class="co">&lt;!-- Network: population of N nodes --&gt;</span></span>
+<span id="cb19-53"><a href="#cb19-53" aria-hidden="true" tabindex="-1"></a>  &lt;<span class="kw">Component</span><span class="ot"> id=</span><span class="st">"net"</span><span class="ot"> type=</span><span class="st">"network"</span>&gt;</span>
+<span id="cb19-54"><a href="#cb19-54" aria-hidden="true" tabindex="-1"></a>    &lt;<span class="kw">Component</span><span class="ot"> id=</span><span class="st">"pop0"</span><span class="ot"> type=</span><span class="st">"population"</span><span class="ot"> component=</span><span class="st">"MyModel"</span><span class="ot"> size=</span><span class="st">"80"</span>/&gt;</span>
+<span id="cb19-55"><a href="#cb19-55" aria-hidden="true" tabindex="-1"></a>  &lt;/<span class="kw">Component</span>&gt;</span>
+<span id="cb19-56"><a href="#cb19-56" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-57"><a href="#cb19-57" aria-hidden="true" tabindex="-1"></a>  <span class="co">&lt;!-- Simulation: length, step, output files --&gt;</span></span>
+<span id="cb19-58"><a href="#cb19-58" aria-hidden="true" tabindex="-1"></a>  &lt;<span class="kw">Simulation</span><span class="ot"> id=</span><span class="st">"sim1"</span><span class="ot"> length=</span><span class="st">"1000ms"</span><span class="ot"> step=</span><span class="st">"0.1ms"</span><span class="ot"> target=</span><span class="st">"net"</span>&gt;</span>
+<span id="cb19-59"><a href="#cb19-59" aria-hidden="true" tabindex="-1"></a>    &lt;<span class="kw">OutputFile</span><span class="ot"> id=</span><span class="st">"of_V"</span><span class="ot"> fileName=</span><span class="st">"results/MyModel_V.dat"</span>&gt;</span>
+<span id="cb19-60"><a href="#cb19-60" aria-hidden="true" tabindex="-1"></a>      &lt;<span class="kw">OutputColumn</span><span class="ot"> id=</span><span class="st">"V_0"</span><span class="ot"> quantity=</span><span class="st">"pop0[0]/V"</span>/&gt;</span>
+<span id="cb19-61"><a href="#cb19-61" aria-hidden="true" tabindex="-1"></a>      ...</span>
+<span id="cb19-62"><a href="#cb19-62" aria-hidden="true" tabindex="-1"></a>    &lt;/<span class="kw">OutputFile</span>&gt;</span>
+<span id="cb19-63"><a href="#cb19-63" aria-hidden="true" tabindex="-1"></a>  &lt;/<span class="kw">Simulation</span>&gt;</span>
+<span id="cb19-64"><a href="#cb19-64" aria-hidden="true" tabindex="-1"></a>&lt;/<span class="kw">Lems</span>&gt;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <hr>
 </section>
 <section id="troubleshooting" class="level2">
@@ -5748,7 +5672,7 @@ If a parameter has <code>unit: "mA/cm2"</code> that isn’t in the lookup table,
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

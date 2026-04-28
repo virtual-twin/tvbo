@@ -5133,16 +5133,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td><a href="../../datamodel/classes/Session.html">Session</a></td>
-<td>A data collection session for a subject</td>
-<td>no</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/classes/Subject.html">Subject</a></td>
-<td>A participant in a study</td>
-<td>no</td>
-</tr>
-<tr class="odd">
 <td><a href="../../datamodel/classes/DBSSubject.html">DBSSubject</a></td>
 <td>Human or animal subject receiving DBS</td>
 <td>no</td>
@@ -5150,6 +5140,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tr class="even">
 <td><a href="../../datamodel/classes/SimulationExperiment.html">SimulationExperiment</a></td>
 <td></td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td><a href="../../datamodel/classes/Subject.html">Subject</a></td>
+<td>A participant in a study</td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td><a href="../../datamodel/classes/Session.html">Session</a></td>
+<td>A data collection session for a subject</td>
 <td>no</td>
 </tr>
 </tbody>
@@ -5305,7 +5305,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }
