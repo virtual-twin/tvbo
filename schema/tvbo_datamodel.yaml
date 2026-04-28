@@ -20,6 +20,12 @@ prefixes:
     schema: http://schema.org/
     skos: http://www.w3.org/2004/02/skos/core#
     bibo: http://purl.org/ontology/bibo/
+    oboInOwl: http://www.geneontology.org/formats/oboInOwl#
+    GO: http://purl.obolibrary.org/obo/GO_
+    CL: http://purl.obolibrary.org/obo/CL_
+    UBERON: http://purl.obolibrary.org/obo/UBERON_
+    CHEBI: http://purl.obolibrary.org/obo/CHEBI_
+    MESH: http://purl.bioontology.org/ontology/MESH/
 imports:
     - linkml:types
     - common
@@ -75,6 +81,19 @@ slots:
             from an external source; not required when the entity is
             fully self-contained (equations, parameters, etc. defined
             in the file itself).
+    grounding:
+        slot_uri: oboInOwl:hasDbXref
+        range: uriorcurie
+        multivalued: true
+        description: >-
+            External ontology IRIs (typically GO, ChEBI, UBERON, CL, MeSH)
+            that this entity is a surrogate / abstraction / model of. Replaces
+            the legacy OWL pattern `tvbo:surrogate_of` by carrying the link
+            inline with the YAML data instance. Multiple IRIs allowed: a
+            single parameter may abstract several biological processes
+            (e.g. a synaptic conductance grounding both
+            GO:0060079 (excitatory PSP) and GO:0007268 (chemical synaptic
+            transmission)).
     value:
         slot_uri: schema:value
         range: ScalarValue
@@ -1224,6 +1243,7 @@ classes:
             - equation
             - unit
             - record
+            - grounding
         slot_usage:
             record:
                 ifabsent: true
@@ -1330,6 +1350,7 @@ classes:
             - equation
             - unit
             - dataset_path
+            - grounding
         attributes:
             comment:
                 range: string

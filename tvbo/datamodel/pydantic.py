@@ -141,7 +141,17 @@ linkml_meta = LinkMLMeta({'default_prefix': 'tvbo',
                  'software'],
      'license': 'https://spdx.org/licenses/EUPL-1.2',
      'name': 'tvb-datamodel',
-     'prefixes': {'UO': {'prefix_prefix': 'UO',
+     'prefixes': {'CHEBI': {'prefix_prefix': 'CHEBI',
+                            'prefix_reference': 'http://purl.obolibrary.org/obo/CHEBI_'},
+                  'CL': {'prefix_prefix': 'CL',
+                         'prefix_reference': 'http://purl.obolibrary.org/obo/CL_'},
+                  'GO': {'prefix_prefix': 'GO',
+                         'prefix_reference': 'http://purl.obolibrary.org/obo/GO_'},
+                  'MESH': {'prefix_prefix': 'MESH',
+                           'prefix_reference': 'http://purl.bioontology.org/ontology/MESH/'},
+                  'UBERON': {'prefix_prefix': 'UBERON',
+                             'prefix_reference': 'http://purl.obolibrary.org/obo/UBERON_'},
+                  'UO': {'prefix_prefix': 'UO',
                          'prefix_reference': 'http://purl.obolibrary.org/obo/UO_'},
                   'bibo': {'prefix_prefix': 'bibo',
                            'prefix_reference': 'http://purl.org/ontology/bibo/'},
@@ -153,6 +163,8 @@ linkml_meta = LinkMLMeta({'default_prefix': 'tvbo',
                              'prefix_reference': 'https://w3id.org/linkml/'},
                   'nidm': {'prefix_prefix': 'nidm',
                            'prefix_reference': 'http://purl.org/nidash/nidm#'},
+                  'oboInOwl': {'prefix_prefix': 'oboInOwl',
+                               'prefix_reference': 'http://www.geneontology.org/formats/oboInOwl#'},
                   'prov': {'prefix_prefix': 'prov',
                            'prefix_reference': 'http://www.w3.org/ns/prov#'},
                   'qudt': {'prefix_prefix': 'qudt',
@@ -5200,6 +5212,7 @@ class StateVariable(ConfiguredBaseModel):
                        'SpatialField'],
          'slot_uri': 'qudt:unit'} })
     record: Optional[bool] = Field(default=True, description="""Whether to include this element in simulation output files. Applicable to state variables (default true), derived variables (default false), and network nodes (default true). Set false to suppress recording.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'StateVariable', 'DerivedVariable'], 'ifabsent': 'True'} })
+    grounding: Optional[list[str]] = Field(default=None, description="""External ontology IRIs (typically GO, ChEBI, UBERON, CL, MeSH) that this entity is a surrogate / abstraction / model of. Replaces the legacy OWL pattern `tvbo:surrogate_of` by carrying the link inline with the YAML data instance. Multiple IRIs allowed: a single parameter may abstract several biological processes (e.g. a synaptic conductance grounding both GO:0060079 (excitatory PSP) and GO:0007268 (chemical synaptic transmission)).""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable', 'Parameter'], 'slot_uri': 'oboInOwl:hasDbXref'} })
     variable_of_interest: Optional[bool] = Field(default=True, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable'], 'ifabsent': 'True'} })
     coupling_variable: Optional[bool] = Field(default=False, description="""Whether this state variable is transmitted to connected nodes through the coupling function. In TVB terms, this determines the cvar indices (state variables extracted from history and fed into the coupling function). The coupling function may override this via its incoming_states attribute.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable'], 'ifabsent': 'False'} })
     equation_type: Optional[str] = Field(default="differential", description="""Type of equation: 'differential' (default) means dx/dt = rhs, 'algebraic' means 0 = rhs or x ~ rhs (DAE constraint). Algebraic equations are used by ModelingToolkit.jl backend.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable'], 'ifabsent': 'string(differential)'} })
@@ -5481,6 +5494,7 @@ class Parameter(ConfiguredBaseModel):
                        'SpatialField'],
          'slot_uri': 'qudt:unit'} })
     dataset_path: Optional[str] = Field(default=None, description="""Dataset path for array-valued parameters. When set, the parameter value is stored in the binary companion file (HDF5 or Zarr) at this path. The value slot is omitted.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
+    grounding: Optional[list[str]] = Field(default=None, description="""External ontology IRIs (typically GO, ChEBI, UBERON, CL, MeSH) that this entity is a surrogate / abstraction / model of. Replaces the legacy OWL pattern `tvbo:surrogate_of` by carrying the link inline with the YAML data instance. Multiple IRIs allowed: a single parameter may abstract several biological processes (e.g. a synaptic conductance grounding both GO:0060079 (excitatory PSP) and GO:0007268 (chemical synaptic transmission)).""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable', 'Parameter'], 'slot_uri': 'oboInOwl:hasDbXref'} })
     comment: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter'], 'slot_uri': 'rdfs:comment'} })
     heterogeneous: Optional[bool] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter', 'FreeParameter']} })
     distribution: Optional[Distribution] = Field(default=None, description="""Distribution for heterogeneous per-node parameter sampling. Implies heterogeneous=true.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable', 'Parameter', 'Coupling']} })
@@ -6651,6 +6665,7 @@ class DerivedParameter(Parameter):
                        'PDE']} })
     reported_optimum: Optional[float] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
     dataset_path: Optional[str] = Field(default=None, description="""Dataset path for array-valued parameters. When set, the parameter value is stored in the binary companion file (HDF5 or Zarr) at this path. The value slot is omitted.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
+    grounding: Optional[list[str]] = Field(default=None, description="""External ontology IRIs (typically GO, ChEBI, UBERON, CL, MeSH) that this entity is a surrogate / abstraction / model of. Replaces the legacy OWL pattern `tvbo:surrogate_of` by carrying the link inline with the YAML data instance. Multiple IRIs allowed: a single parameter may abstract several biological processes (e.g. a synaptic conductance grounding both GO:0060079 (excitatory PSP) and GO:0007268 (chemical synaptic transmission)).""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable', 'Parameter'], 'slot_uri': 'oboInOwl:hasDbXref'} })
     comment: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter'], 'slot_uri': 'rdfs:comment'} })
     heterogeneous: Optional[bool] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter', 'FreeParameter']} })
     distribution: Optional[Distribution] = Field(default=None, description="""Distribution for heterogeneous per-node parameter sampling. Implies heterogeneous=true.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable', 'Parameter', 'Coupling']} })
@@ -10130,6 +10145,7 @@ class FieldStateVariable(StateVariable):
                        'SpatialField'],
          'slot_uri': 'qudt:unit'} })
     record: Optional[bool] = Field(default=True, description="""Whether to include this element in simulation output files. Applicable to state variables (default true), derived variables (default false), and network nodes (default true). Set false to suppress recording.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'StateVariable', 'DerivedVariable'], 'ifabsent': 'True'} })
+    grounding: Optional[list[str]] = Field(default=None, description="""External ontology IRIs (typically GO, ChEBI, UBERON, CL, MeSH) that this entity is a surrogate / abstraction / model of. Replaces the legacy OWL pattern `tvbo:surrogate_of` by carrying the link inline with the YAML data instance. Multiple IRIs allowed: a single parameter may abstract several biological processes (e.g. a synaptic conductance grounding both GO:0060079 (excitatory PSP) and GO:0007268 (chemical synaptic transmission)).""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable', 'Parameter'], 'slot_uri': 'oboInOwl:hasDbXref'} })
     variable_of_interest: Optional[bool] = Field(default=True, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable'], 'ifabsent': 'True'} })
     coupling_variable: Optional[bool] = Field(default=False, description="""Whether this state variable is transmitted to connected nodes through the coupling function. In TVB terms, this determines the cvar indices (state variables extracted from history and fed into the coupling function). The coupling function may override this via its incoming_states attribute.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable'], 'ifabsent': 'False'} })
     equation_type: Optional[str] = Field(default="differential", description="""Type of equation: 'differential' (default) means dx/dt = rhs, 'algebraic' means 0 = rhs or x ~ rhs (DAE constraint). Algebraic equations are used by ModelingToolkit.jl backend.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable'], 'ifabsent': 'string(differential)'} })
