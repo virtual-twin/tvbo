@@ -1,0 +1,11 @@
+name: Lorenz1963
+citekey: Lorenz1963
+type: article
+title: Deterministic Nonperiodic Flow
+authors:
+- Lorenz, Edward N.
+year: '1963'
+journal: Journal of the Atmospheric Sciences
+volume: '20'
+pages: 130--141
+doi: 10.1175/1520-0469(1963)020<0130:DNF>2.0.CO;2
