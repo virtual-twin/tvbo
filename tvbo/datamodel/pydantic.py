@@ -4909,8 +4909,7 @@ class Dynamics(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE'],
          'slot_uri': 'rdfs:label'} })
-    iri: Optional[str] = Field(default=None, description="""Stable IRI (or compact URI) identifying this entity in an external ontology or knowledge base. Complements the `name` key with an ontology-grounded identifier. Required on the 13 subclassed core classes (Dynamics, Coupling, Integrator, Network, Noise, Function, LossFunction, Stimulus, Continuation, BrainAtlas, SimulationExperiment, SimulationStudy, Observation) for cross-surface identity (LinkML ↔ OWL ↔ API ↔ Odoo).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function', 'Coupling'],
-         'recommended': True,
+    iri: Optional[str] = Field(default=None, description="""Optional stable IRI (or compact URI) for this entity in an external ontology or knowledge base. Used to load metadata from an external source; not required when the entity is fully self-contained (equations, parameters, etc. defined in the file itself).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function', 'Coupling'],
          'slot_uri': 'dcterms:identifier'} })
     parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
                        'Stimulus',
@@ -5796,8 +5795,7 @@ class Function(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE'],
          'slot_uri': 'rdfs:label'} })
-    iri: Optional[str] = Field(default=None, description="""Stable IRI (or compact URI) identifying this entity in an external ontology or knowledge base. Complements the `name` key with an ontology-grounded identifier. Required on the 13 subclassed core classes (Dynamics, Coupling, Integrator, Network, Noise, Function, LossFunction, Stimulus, Continuation, BrainAtlas, SimulationExperiment, SimulationStudy, Observation) for cross-surface identity (LinkML ↔ OWL ↔ API ↔ Odoo).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function', 'Coupling'],
-         'recommended': True,
+    iri: Optional[str] = Field(default=None, description="""Optional stable IRI (or compact URI) for this entity in an external ontology or knowledge base. Used to load metadata from an external source; not required when the entity is fully self-contained (equations, parameters, etc. defined in the file itself).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function', 'Coupling'],
          'slot_uri': 'dcterms:identifier'} })
     equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
                        'Event',
@@ -5992,8 +5990,7 @@ class LossFunction(Function):
                        'PDESolver',
                        'PDE'],
          'slot_uri': 'rdfs:label'} })
-    iri: Optional[str] = Field(default=None, description="""Stable IRI (or compact URI) identifying this entity in an external ontology or knowledge base. Complements the `name` key with an ontology-grounded identifier. Required on the 13 subclassed core classes (Dynamics, Coupling, Integrator, Network, Noise, Function, LossFunction, Stimulus, Continuation, BrainAtlas, SimulationExperiment, SimulationStudy, Observation) for cross-surface identity (LinkML ↔ OWL ↔ API ↔ Odoo).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function', 'Coupling'],
-         'recommended': True,
+    iri: Optional[str] = Field(default=None, description="""Optional stable IRI (or compact URI) for this entity in an external ontology or knowledge base. Used to load metadata from an external source; not required when the entity is fully self-contained (equations, parameters, etc. defined in the file itself).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function', 'Coupling'],
          'slot_uri': 'dcterms:identifier'} })
     equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
                        'Event',
@@ -8827,8 +8824,7 @@ class Coupling(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE'],
          'slot_uri': 'rdfs:label'} })
-    iri: Optional[str] = Field(default=None, description="""Stable IRI (or compact URI) identifying this entity in an external ontology or knowledge base. Complements the `name` key with an ontology-grounded identifier. Required on the 13 subclassed core classes (Dynamics, Coupling, Integrator, Network, Noise, Function, LossFunction, Stimulus, Continuation, BrainAtlas, SimulationExperiment, SimulationStudy, Observation) for cross-surface identity (LinkML ↔ OWL ↔ API ↔ Odoo).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function', 'Coupling'],
-         'recommended': True,
+    iri: Optional[str] = Field(default=None, description="""Optional stable IRI (or compact URI) for this entity in an external ontology or knowledge base. Used to load metadata from an external source; not required when the entity is fully self-contained (equations, parameters, etc. defined in the file itself).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function', 'Coupling'],
          'slot_uri': 'dcterms:identifier'} })
     parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
                        'Stimulus',
