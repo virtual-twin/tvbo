@@ -52,6 +52,7 @@ coupled QIF neurons (Theta-neurons).
 Note: the original equations describe the dynamics of the Kuramoto parameter
 $Z$. Using the conformal transformation $Z=(1-W^\\star)/(1+W^\\star)$ and $W= \\pi r + i V$, we express the system dynamics in terms of two state variables $r$ and $V$ representing the average firing rate and the average membrane potential of our QIF neurons. The conductance variable and its derivative are $g$ and $q$.
 """ ;
+    dcterms:references <http://www.thevirtualbrain.org/tvb-o/studies/Byrne2020> ;
     tvbo:hasParameter <http://www.thevirtualbrain.org/tvb-o/CoombesByrne/parameters/Delta>,
         <http://www.thevirtualbrain.org/tvb-o/CoombesByrne/parameters/alpha>,
         <http://www.thevirtualbrain.org/tvb-o/CoombesByrne/parameters/eta>,
@@ -66,6 +67,7 @@ $Z$. Using the conformal transformation $Z=(1-W^\\star)/(1+W^\\star)$ and $W= \\
 tvbo:CoombesByrne2D a tvbo:Dynamics,
         owl:NamedIndividual ;
     rdfs:label "CoombesByrne2D" ;
+    dcterms:references <http://www.thevirtualbrain.org/tvb-o/studies/Byrne2020> ;
     tvbo:hasParameter <http://www.thevirtualbrain.org/tvb-o/CoombesByrne2D/parameters/Delta>,
         <http://www.thevirtualbrain.org/tvb-o/CoombesByrne2D/parameters/eta>,
         <http://www.thevirtualbrain.org/tvb-o/CoombesByrne2D/parameters/k>,
@@ -77,6 +79,7 @@ tvbo:CoombesByrne2D a tvbo:Dynamics,
 tvbo:DumontGutkin a tvbo:Dynamics,
         owl:NamedIndividual ;
     rdfs:label "DumontGutkin" ;
+    dcterms:references <http://www.thevirtualbrain.org/tvb-o/studies/Dumont2019> ;
     tvbo:hasParameter <http://www.thevirtualbrain.org/tvb-o/DumontGutkin/parameters/Delta_e>,
         <http://www.thevirtualbrain.org/tvb-o/DumontGutkin/parameters/Delta_i>,
         <http://www.thevirtualbrain.org/tvb-o/DumontGutkin/parameters/Gamma>,
@@ -110,6 +113,8 @@ Note:
 ------
 - Equations and default parameters are taken from (Proix et al.,2014),
 - The slow permittivity state-variable (z_E2D) can be modified to account for the time difference between the interictal (between seizures) and ictal (during seizure) states (see Proix et al., 2014).""" ;
+    dcterms:references <http://www.thevirtualbrain.org/tvb-o/studies/Proix2014>,
+        <http://www.thevirtualbrain.org/tvb-o/studies/Proix2017> ;
     tvbo:hasDerivedVariable <http://www.thevirtualbrain.org/tvb-o/Epileptor2D/derived_variables/h>,
         <http://www.thevirtualbrain.org/tvb-o/Epileptor2D/derived_variables/x1cond>,
         <http://www.thevirtualbrain.org/tvb-o/Epileptor2D/derived_variables/zcond> ;
@@ -156,6 +161,8 @@ Note:
 - Equations and default parameters are taken from (Jirsa et al.,2014 & El Houssaini et al., 2015),
 - The integral coupling function g(x1) can be rewritten as an ordinary differential equation, which is technically introduced, here, as a sixth state-variable (see Jirsa et al.,2014),
 - The slow permittivity state-variable (z_E5D) can be modified to account for the time difference between the interictal (between seizures) and ictal (during seizure) states (see Proix et al., 2014).""" ;
+    dcterms:references <http://www.thevirtualbrain.org/tvb-o/studies/Jirsa2014>,
+        <http://www.thevirtualbrain.org/tvb-o/studies/Proix2014> ;
     tvbo:hasDerivedVariable <http://www.thevirtualbrain.org/tvb-o/Epileptor5D/derived_variables/h>,
         <http://www.thevirtualbrain.org/tvb-o/Epileptor5D/derived_variables/x1cond>,
         <http://www.thevirtualbrain.org/tvb-o/Epileptor5D/derived_variables/y2cond>,
@@ -192,6 +199,8 @@ tvbo:EpileptorRestingState a tvbo:Dynamics,
     dcterms:description """Epileptor Resting-State (ERS) is an extension of the phenomenological neural mass model of Epileptor5D, tuned to express regionally specific physiological oscillations in addition to the epileptiform discharges (Courtiol et al., 2020). This extension was made using the Generic 2-dimensional Oscillator model (parametrized close to a supercritical Hopf Bifurcation) (Sanz-Leon et al., 2013, 2015) to reproduce the spontaneous local field potential-like signal.
         
 This model, its motivation and derivation can be found in the published article (Courtiol et al., 2020).""" ;
+    dcterms:references <http://www.thevirtualbrain.org/tvb-o/studies/Courtiol2020>,
+        <http://www.thevirtualbrain.org/tvb-o/studies/Jirsa2014> ;
     tvbo:hasDerivedVariable <http://www.thevirtualbrain.org/tvb-o/EpileptorRestingState/derived_variables/lc_1>,
         <http://www.thevirtualbrain.org/tvb-o/EpileptorRestingState/derived_variables/output>,
         <http://www.thevirtualbrain.org/tvb-o/EpileptorRestingState/derived_variables/x1cond>,
@@ -255,6 +264,7 @@ tvbo:GastSchmidtKnosche_SD a tvbo:Dynamics,
             \\dot{B} &= 1/\\tau_A (-2 B - A + \\alpha  r) \\\\
 
     .. [Gastetal_2020] Gast, R., Schmidt, H., & Knösche, T. R. (2020). A mean-field description of bursting dynamics in spiking neural networks with short-term adaptation. *Neural Computation*, 32(9), 1615-1634.""" ;
+    dcterms:references <http://www.thevirtualbrain.org/tvb-o/studies/Gast2020> ;
     tvbo:hasParameter <http://www.thevirtualbrain.org/tvb-o/GastSchmidtKnosche_SD/parameters/Delta>,
         <http://www.thevirtualbrain.org/tvb-o/GastSchmidtKnosche_SD/parameters/I>,
         <http://www.thevirtualbrain.org/tvb-o/GastSchmidtKnosche_SD/parameters/J>,
@@ -273,6 +283,7 @@ tvbo:GastSchmidtKnosche_SD a tvbo:Dynamics,
 tvbo:GastSchmidtKnosche_SF a tvbo:Dynamics,
         owl:NamedIndividual ;
     rdfs:label "GastSchmidtKnosche_SF" ;
+    dcterms:references <http://www.thevirtualbrain.org/tvb-o/studies/Gast2020> ;
     tvbo:hasParameter <http://www.thevirtualbrain.org/tvb-o/GastSchmidtKnosche_SF/parameters/Delta>,
         <http://www.thevirtualbrain.org/tvb-o/GastSchmidtKnosche_SF/parameters/I>,
         <http://www.thevirtualbrain.org/tvb-o/GastSchmidtKnosche_SF/parameters/J>,
@@ -292,6 +303,8 @@ tvbo:Generic2dOscillator a tvbo:Dynamics,
         owl:NamedIndividual ;
     rdfs:label "Generic2dOscillator" ;
     dcterms:description "The Generic 2-Dimensional Oscillator (G2D) is a phenomenological, coupled, nonlinear two-dimensional (i.e., two state-variables ('V', 'W')) oscillatory, neural mass model. The G2D is a generalization of the well-known FitzHugh-Nagumo model (FitzHugh, 1961; Nagumo et. al, 1962), adapted here for reproducing a wilder class of dynamical configurations of physiological phenomena as observed in neuronal population using phase-portrait method." ;
+    dcterms:references <http://www.thevirtualbrain.org/tvb-o/studies/FitzHugh1961>,
+        <http://www.thevirtualbrain.org/tvb-o/studies/Nagumo1962> ;
     tvbo:hasParameter <http://www.thevirtualbrain.org/tvb-o/Generic2dOscillator/parameters/I>,
         <http://www.thevirtualbrain.org/tvb-o/Generic2dOscillator/parameters/a>,
         <http://www.thevirtualbrain.org/tvb-o/Generic2dOscillator/parameters/alpha>,
@@ -312,6 +325,7 @@ tvbo:GenericLinear a tvbo:Dynamics,
         owl:NamedIndividual ;
     rdfs:label "GenericLinear" ;
     dcterms:description "The Generic Linear (GL) is a phenomenological, linear one-dimensional  (i.e., one state-variable ('x')) neural mass model (Galán, 2008)." ;
+    dcterms:references <http://www.thevirtualbrain.org/tvb-o/studies/Galan2008> ;
     tvbo:hasParameter <http://www.thevirtualbrain.org/tvb-o/GenericLinear/parameters/gamma> ;
     tvbo:hasStateVariable <http://www.thevirtualbrain.org/tvb-o/GenericLinear/state_variables/x> ;
     tvbo:model_type "generic" .
@@ -326,6 +340,8 @@ Various extensions of the initial model have been proposed, among which a noisel
 
 Note:
 - This model uses the modifications implemented by Golos et al. (2015).""" ;
+    dcterms:references <http://www.thevirtualbrain.org/tvb-o/studies/Hopfield1982>,
+        <http://www.thevirtualbrain.org/tvb-o/studies/Hopfield1984> ;
     tvbo:hasParameter <http://www.thevirtualbrain.org/tvb-o/Hopfield/parameters/tauT>,
         <http://www.thevirtualbrain.org/tvb-o/Hopfield/parameters/taux> ;
     tvbo:hasStateVariable <http://www.thevirtualbrain.org/tvb-o/Hopfield/state_variables/theta>,
@@ -336,6 +352,8 @@ tvbo:JansenRit a tvbo:Dynamics,
         owl:NamedIndividual ;
     rdfs:label "JansenRit" ;
     dcterms:description "The Jansen-Rit is a neurophysiologically-inspired neural mass model of a cortical column (or area), developed to simulate the electrical brain activity, i.e., the electroencephalogram (EEG), and evoked-potentials (EPs; Jansen et al., 1993; Jansen & Rit, 1995). It is a 6-dimensional, non-linear, model describing the local average states of three interconnected neural populations: pyramidal cells (PCs), excitatory and inhibitory interneurons (EINs and IINs), interacting through positive and negative feedback loops. The main output of the model is the average membrane potential of the pyramidal cell population, as the sum of the potential of these cells is thought to be the source of the potential recorded in the EEG." ;
+    dcterms:references <http://www.thevirtualbrain.org/tvb-o/studies/Jansen1993>,
+        <http://www.thevirtualbrain.org/tvb-o/studies/Jansen1995> ;
     tvbo:hasDerivedVariable <http://www.thevirtualbrain.org/tvb-o/JansenRit/derived_variables/sigma_y0_1>,
         <http://www.thevirtualbrain.org/tvb-o/JansenRit/derived_variables/sigma_y0_3>,
         <http://www.thevirtualbrain.org/tvb-o/JansenRit/derived_variables/sigma_y1_y2> ;
@@ -393,6 +411,7 @@ The model is derived as the mathematical limit of an infinite number of all-to-a
     :math:`\\Delta K_{int}` represent the intracellular potassium concentration,
     :math:`K_g` represents the extracellular potassium buffering by the external bath
     \"\"\"""" ;
+    dcterms:references <http://www.thevirtualbrain.org/tvb-o/studies/Depannemaecker2023> ;
     tvbo:hasDerivedVariable <http://www.thevirtualbrain.org/tvb-o/KIonEx/derived_variables/DK_o>,
         <http://www.thevirtualbrain.org/tvb-o/KIonEx/derived_variables/DNa_i>,
         <http://www.thevirtualbrain.org/tvb-o/KIonEx/derived_variables/DNa_o>,
@@ -461,6 +480,9 @@ tvbo:Kuramoto a tvbo:Dynamics,
         owl:NamedIndividual ;
     rdfs:label "Kuramoto" ;
     dcterms:description "The Kuramoto model is a model of synchronization phenomena derived by Yoshiki Kuramoto in 1975 which has since been applied to diverse domains including the study of neuronal oscillations and synchronization." ;
+    dcterms:references <http://www.thevirtualbrain.org/tvb-o/studies/Cabral2011>,
+        <http://www.thevirtualbrain.org/tvb-o/studies/Kuramoto1975>,
+        <http://www.thevirtualbrain.org/tvb-o/studies/Strogatz2000> ;
     tvbo:hasDerivedVariable <http://www.thevirtualbrain.org/tvb-o/Kuramoto/derived_variables/I>,
         <http://www.thevirtualbrain.org/tvb-o/Kuramoto/derived_variables/lc_0> ;
     tvbo:hasParameter <http://www.thevirtualbrain.org/tvb-o/Kuramoto/parameters/omega> ;
@@ -561,6 +583,7 @@ tvbo:ModelJansen1995 a tvbo:Dynamics,
 tvbo:MontbrioPazoRoxin a tvbo:Dynamics,
         owl:NamedIndividual ;
     rdfs:label "MontbrioPazoRoxin" ;
+    dcterms:references <http://www.thevirtualbrain.org/tvb-o/studies/Montbrio2015> ;
     tvbo:hasParameter <http://www.thevirtualbrain.org/tvb-o/MontbrioPazoRoxin/parameters/Delta>,
         <http://www.thevirtualbrain.org/tvb-o/MontbrioPazoRoxin/parameters/I>,
         <http://www.thevirtualbrain.org/tvb-o/MontbrioPazoRoxin/parameters/J>,
@@ -578,6 +601,8 @@ tvbo:ReducedWongWang a tvbo:Dynamics,
     dcterms:description """Reduced WongWang (RWW) is a biologically-inspired one-dimensional (i.e., only one state-variable 'S') neural mass model that approximates the realistic temporal dynamics of a detailed spiking and conductance-based synaptic large-scale network (Deco et al., 2013).
 
 RWW is the dynamical mean-field (DMF) reduction of the Reduced WongWang Exc-Inh model, that consists in disentangling the contribution of the two neuronal populations (excitatory and inhibitory) in order to study the time evolution of just one pool of neurons for each network node (Wong & Wang, 2006). It results that the dynamics of each network node described the temporal evolution of the opening probability of the NMDA channels.""" ;
+    dcterms:references <http://www.thevirtualbrain.org/tvb-o/studies/Deco2013>,
+        <http://www.thevirtualbrain.org/tvb-o/studies/Wong2006> ;
     tvbo:hasDerivedVariable <http://www.thevirtualbrain.org/tvb-o/ReducedWongWang/derived_variables/H>,
         <http://www.thevirtualbrain.org/tvb-o/ReducedWongWang/derived_variables/x> ;
     tvbo:hasParameter <http://www.thevirtualbrain.org/tvb-o/ReducedWongWang/parameters/I_o>,
@@ -595,6 +620,7 @@ tvbo:ReducedWongWangExcInh a tvbo:Dynamics,
         owl:NamedIndividual ;
     rdfs:label "ReducedWongWangExcInh" ;
     dcterms:description "Reduced WongWang Exc-Inh (RWW_EI) is a biologically-inspired two-dimensional (i.e., two state-variables ('S_E','S_I')) neural mass model describing the dynamics of a cortical area consisting of local networks of excitatory (AMPA) and inhibitory (GABA-A) populations of spiking neurons interconnected via NMDA synapses. These neurons are organized into an inhibitory population accounting for 20% of the neurons and an excitatory population accounting for 80% of the neurons." ;
+    dcterms:references <http://www.thevirtualbrain.org/tvb-o/studies/Deco2014> ;
     tvbo:hasDerivedVariable <http://www.thevirtualbrain.org/tvb-o/ReducedWongWangExcInh/derived_variables/H_e>,
         <http://www.thevirtualbrain.org/tvb-o/ReducedWongWangExcInh/derived_variables/H_i>,
         <http://www.thevirtualbrain.org/tvb-o/ReducedWongWangExcInh/derived_variables/J_N_S_e>,
@@ -630,6 +656,8 @@ tvbo:ReducedWongWangTvboptim a tvbo:Dynamics,
     dcterms:description """The Reduced Wong-Wang (RWW) model is a biophysically-based neural mass model that describes the dynamics of NMDA-mediated synaptic gating (Deco et al., 2013). It captures the slow dynamics relevant for resting-state fMRI and has been widely used for modeling whole-brain functional connectivity.
 RWW is the dynamical mean-field (DMF) reduction of the Wong & Wang (2006) spiking model. Each network node is described by a single state variable S representing the average NMDA synaptic gating (fraction of open channels).
 The total synaptic input x combines local excitatory recurrence (w), external input (I_o), and long-range network coupling (instant and delayed) scaled by the synaptic coupling strength J_N. The sigmoid transfer function H(x) maps the total input current to the average population firing rate. In a network setting, the global coupling strength G (a coupling parameter) scales the structural connectivity weights that modulate inter-regional communication.""" ;
+    dcterms:references <http://www.thevirtualbrain.org/tvb-o/studies/Deco2013>,
+        <http://www.thevirtualbrain.org/tvb-o/studies/Wong2006> ;
     tvbo:hasDerivedVariable <http://www.thevirtualbrain.org/tvb-o/ReducedWongWangTvboptim/derived_variables/H_x>,
         <http://www.thevirtualbrain.org/tvb-o/ReducedWongWangTvboptim/derived_variables/x> ;
     tvbo:hasParameter <http://www.thevirtualbrain.org/tvb-o/ReducedWongWangTvboptim/parameters/I_o>,
@@ -715,6 +743,7 @@ tvbo:SupHopf a tvbo:Dynamics,
     dcterms:description """Supercritical Hopf (SUPH) is an oscillatory/excitable neural mass model that describe the normal form of a supercritical Hopf bifurcation in Cartesian coordinates (Kuznetsov, 2013; Deco et al., 2017). 
 
 This normal form has a supercritical bifurcation at 'a=0' with 'a' the bifurcation parameter in the model. So for 'a < 0', the local dynamics has a stable fixed point and the system corresponds to a damped oscillatory state, whereas for 'a > 0', the local dynamics enters in a stable limit cycle and the system switches to an oscillatory state.""" ;
+    dcterms:references <http://www.thevirtualbrain.org/tvb-o/studies/Deco2017> ;
     tvbo:hasDerivedVariable <http://www.thevirtualbrain.org/tvb-o/SupHopf/derived_variables/lc_0> ;
     tvbo:hasParameter <http://www.thevirtualbrain.org/tvb-o/SupHopf/parameters/a>,
         <http://www.thevirtualbrain.org/tvb-o/SupHopf/parameters/omega> ;
@@ -756,6 +785,8 @@ Note:
 - Equations and parameter names are taken from (Wilson and Cowan, 1972 and Sanz-Leon et al., 2015)
 - Default parameters are taken from Fig. 4 p.10 (Wilson and Cowan, 1972)
 - The model in Sanz-Leon et., 2015 includes more parameters than the original model, which can be traced in the description of the parameters.""" ;
+    dcterms:references <http://www.thevirtualbrain.org/tvb-o/studies/Wilson1972>,
+        <http://www.thevirtualbrain.org/tvb-o/studies/Wilson1973> ;
     tvbo:hasDerivedVariable <http://www.thevirtualbrain.org/tvb-o/WilsonCowan/derived_variables/lc_0>,
         <http://www.thevirtualbrain.org/tvb-o/WilsonCowan/derived_variables/lc_1>,
         <http://www.thevirtualbrain.org/tvb-o/WilsonCowan/derived_variables/s_e>,
@@ -792,6 +823,8 @@ Note:
 tvbo:ZerlautAdaptationFirstOrder a tvbo:Dynamics,
         owl:NamedIndividual ;
     rdfs:label "ZerlautAdaptationFirstOrder" ;
+    dcterms:references <http://www.thevirtualbrain.org/tvb-o/studies/Volo2019>,
+        <http://www.thevirtualbrain.org/tvb-o/studies/Zerlaut2018> ;
     tvbo:hasDerivedVariable <http://www.thevirtualbrain.org/tvb-o/ZerlautAdaptationFirstOrder/derived_variables/Fe_ext>,
         <http://www.thevirtualbrain.org/tvb-o/ZerlautAdaptationFirstOrder/derived_variables/Fi_ext>,
         <http://www.thevirtualbrain.org/tvb-o/ZerlautAdaptationFirstOrder/derived_variables/S_e>,
@@ -896,6 +929,7 @@ tvbo:ZerlautAdaptationFirstOrder a tvbo:Dynamics,
 tvbo:ZetterbergJansen a tvbo:Dynamics,
         owl:NamedIndividual ;
     rdfs:label "ZetterbergJansen" ;
+    dcterms:references <http://www.thevirtualbrain.org/tvb-o/studies/Zetterberg1978> ;
     tvbo:hasDerivedVariable <http://www.thevirtualbrain.org/tvb-o/ZetterbergJansen/derived_variables/coupled_input>,
         <http://www.thevirtualbrain.org/tvb-o/ZetterbergJansen/derived_variables/sigma_v1>,
         <http://www.thevirtualbrain.org/tvb-o/ZetterbergJansen/derived_variables/sigma_v23>,
@@ -2172,6 +2206,987 @@ Key innovation: The ratio of long-range excitation (LRE) to feedforward inhibiti
     dcterms:license "GPL-3.0-only" ;
     schema1:codeRepository "https://github.com/SpiNNakerManchester/sPyNNaker" ;
     schema1:url "https://spinnakermanchester.github.io" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Abbott2005> a schema1:Book,
+        owl:NamedIndividual ;
+    rdfs:label "Abbott2005" ;
+    dcterms:issued "2005" ;
+    dcterms:title "Theoretical Neuroscience: Computational and Mathematical Modeling of Neural Systems" ;
+    schema1:author "Abbott, L. F.",
+        "Dayan, Peter" ;
+    schema1:publisher "MIT Press" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Arnold1968> a schema1:Book,
+        owl:NamedIndividual ;
+    rdfs:label "Arnold1968" ;
+    dcterms:issued "1968" ;
+    dcterms:title "Ergodic Problems of Classical Mechanics" ;
+    schema1:author "Arnol'd, V. I.",
+        "Avez, A." ;
+    schema1:publisher "W. A. Benjamin" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Arnold1968a> a schema1:Book,
+        owl:NamedIndividual ;
+    rdfs:label "Arnold1968a" ;
+    dcterms:issued "1968" ;
+    dcterms:title "Ergodic Problems of Classical Mechanics" ;
+    schema1:author "Arnol'd, V. I.",
+        "Avez, A." ;
+    schema1:publisher "W. A. Benjamin" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Bandyopadhyay2021> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Bandyopadhyay2021" ;
+    dcterms:issued "2021" ;
+    dcterms:title "K Ion Exchange model reference" ;
+    schema1:author "Bandyopadhyay, S.",
+        "others" ;
+    schema1:isPartOf "Preprint" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Baran1998> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Baran1998" ;
+    dcterms:issued "1998" ;
+    dcterms:title "Chaotic Dynamics in a Quartic Nuclear Collective Hamiltonian" ;
+    schema1:author "Baran, V.",
+        "Raduta, A. A." ;
+    schema1:isPartOf "International Journal of Modern Physics E" ;
+    schema1:pagination "527--551" ;
+    schema1:volumeNumber "7" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Bo-Cheng2008> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Bo-Cheng2008" ;
+    dcterms:issued "2008" ;
+    dcterms:title "A hyperchaotic attractor coined from chaotic L\"u system" ;
+    schema1:author "Bo-Cheng, B.",
+        "Zhong, L." ;
+    schema1:isPartOf "Chinese Physics Letters" ;
+    schema1:issueNumber "7" ;
+    schema1:pagination "2396" ;
+    schema1:volumeNumber "25" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/BoCheng2008> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "BoCheng2008" ;
+    dcterms:issued "2008" ;
+    dcterms:title "A hyperchaotic attractor coined from chaotic L\"u system" ;
+    schema1:author "Bo-Cheng, B.",
+        "Zhong, L." ;
+    schema1:identifier "10.1088/0256-307x/25/7/018" ;
+    schema1:isPartOf "Chinese Physics Letters" ;
+    schema1:issueNumber "7" ;
+    schema1:pagination "2396" ;
+    schema1:volumeNumber "25" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Cai2007> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Cai2007" ;
+    dcterms:issued "2007" ;
+    dcterms:title "A new finance chaotic attractor" ;
+    schema1:author "Cai, G.",
+        "Huang, J." ;
+    schema1:isPartOf "International Journal of Nonlinear Science" ;
+    schema1:issueNumber "3" ;
+    schema1:pagination "213--220" ;
+    schema1:volumeNumber "3" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Cakan> a schema1:CreativeWork,
+        owl:NamedIndividual ;
+    rdfs:label "Cakan" ;
+    dcterms:title "Reference for network mean-field neural mass model" ;
+    schema1:author "Cakan, C.",
+        "Obermayer, K." .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Cao2013> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Cao2013" ;
+    dcterms:issued "2013" ;
+    dcterms:title "Bursting types and stable domains of Rulkov neuron network with mean field coupling" ;
+    schema1:author "Cao, H.",
+        "Wu, Y." ;
+    schema1:isPartOf "International Journal of Bifurcation and Chaos" ;
+    schema1:pagination "1330041" ;
+    schema1:volumeNumber "23" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Chen2006> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Chen2006" ;
+    dcterms:issued "2006" ;
+    dcterms:title "Generating hyperchaotic L\"u attractor via state feedback control" ;
+    schema1:author "Chen, A.",
+        "L\"u, J.",
+        "Lu, J.",
+        "Yu, S." ;
+    schema1:isPartOf "Physica A: Statistical Mechanics and its Applications" ;
+    schema1:pagination "103--110" ;
+    schema1:volumeNumber "364" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Chirikov1969> a schema1:Report,
+        owl:NamedIndividual ;
+    rdfs:label "Chirikov1969" ;
+    dcterms:issued "1969" ;
+    dcterms:title "Research concerning the theory of nonlinear resonance" ;
+    schema1:author "Chirikov, Boris V." ;
+    schema1:issueNumber "Preprint 267" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Chua1992> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Chua1992" ;
+    dcterms:issued "1992" ;
+    dcterms:title "The Genesis of Chua's Circuit" ;
+    schema1:author "Chua, Leon O." ;
+    schema1:isPartOf "Archiv f\"ur Elektronik und \"Ubertragungstechnik" ;
+    schema1:pagination "250--257" ;
+    schema1:volumeNumber "46" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Chua2007> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Chua2007" ;
+    dcterms:issued "2007" ;
+    dcterms:title "Chua circuit" ;
+    schema1:author "Chua, Leon O." ;
+    schema1:isPartOf "Scholarpedia" ;
+    schema1:issueNumber "10" ;
+    schema1:pagination "1488" ;
+    schema1:url "http://www.scholarpedia.org/article/Chua_circuit" ;
+    schema1:volumeNumber "2" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Datseris2019> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Datseris2019" ;
+    dcterms:issued "2019" ;
+    dcterms:title "Abrupt Phase-Space Contraction in a Magnetotransport System" ;
+    schema1:author "Datseris, George",
+        "et al." ;
+    schema1:identifier "10.1088/1367-2630/ab19cc" ;
+    schema1:isPartOf "New Journal of Physics" ;
+    schema1:issueNumber "5" ;
+    schema1:pagination "053036" ;
+    schema1:volumeNumber "21" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Duffing1918> a schema1:Book,
+        owl:NamedIndividual ;
+    rdfs:label "Duffing1918" ;
+    dcterms:issued "1918" ;
+    dcterms:title "Erzwungene Schwingungen bei ver\"anderlicher Eigenfrequenz und ihre technische Bedeutung" ;
+    schema1:author "Duffing, Georg" ;
+    schema1:publisher "Vieweg+Teubner" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Eisenberg1975> a schema1:Book,
+        owl:NamedIndividual ;
+    rdfs:label "Eisenberg1975" ;
+    dcterms:issued "1975" ;
+    dcterms:title "Nuclear Theory: Nuclear Models Collective and Single-Particle Phenomena" ;
+    schema1:author "Eisenberg, Judah M.",
+        "Greiner, Walter" ;
+    schema1:publisher "North-Holland" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Ermentrout2010> a schema1:Book,
+        owl:NamedIndividual ;
+    rdfs:label "Ermentrout2010" ;
+    dcterms:issued "2010" ;
+    dcterms:title "Mathematical Foundations of Neuroscience" ;
+    schema1:author "Ermentrout, G. Bard",
+        "Terman, David H." ;
+    schema1:publisher "Springer" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Feigenbaum1978> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Feigenbaum1978" ;
+    dcterms:issued "1978" ;
+    dcterms:title "Quantitative Universality for a Class of Nonlinear Transformations" ;
+    schema1:author "Feigenbaum, Mitchell J." ;
+    schema1:identifier "10.1007/bf01020332" ;
+    schema1:isPartOf "Journal of Statistical Physics" ;
+    schema1:pagination "25--52" ;
+    schema1:volumeNumber "19" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/FitzHughNagumo> a schema1:CreativeWork,
+        owl:NamedIndividual ;
+    rdfs:label "FitzHughNagumo" ;
+    dcterms:title "FitzHugh--Nagumo model" ;
+    schema1:identifier "10.4249/scholarpedia.1349" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Freire2008> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Freire2008" ;
+    dcterms:issued "2008" ;
+    dcterms:title "Multistability, phase diagrams, and intransitivity in the Lorenz-84 low-order atmospheric circulation model" ;
+    schema1:author "Freire, Jos\\'e G.",
+        "others" ;
+    schema1:isPartOf "Chaos" ;
+    schema1:pagination "033121" ;
+    schema1:volumeNumber "18" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Gissinger2012> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Gissinger2012" ;
+    dcterms:issued "2012" ;
+    dcterms:title "A New Deterministic Model of Chaotic Reversals" ;
+    schema1:author "Gissinger, Christophe" ;
+    schema1:identifier "10.1140/epjb/e2012-30024-x" ;
+    schema1:isPartOf "The European Physical Journal B" ;
+    schema1:issueNumber "4" ;
+    schema1:pagination "137" ;
+    schema1:volumeNumber "85" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Grebogi1983> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Grebogi1983" ;
+    dcterms:issued "1983" ;
+    dcterms:title "Final state sensitivity: An obstruction to predictability" ;
+    schema1:author "Grebogi, Celso",
+        "McDonald, S. W.",
+        "Ott, Edward",
+        "Yorke, James A." ;
+    schema1:isPartOf "Physics Letters A" ;
+    schema1:issueNumber "9" ;
+    schema1:pagination "373--375" ;
+    schema1:volumeNumber "99" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Greene1979> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Greene1979" ;
+    dcterms:issued "1979" ;
+    dcterms:title "A Method for Determining a Stochastic Transition" ;
+    schema1:author "Greene, J. M." ;
+    schema1:identifier "10.1201/9781003069515-23" ;
+    schema1:isPartOf "Journal of Mathematical Physics" ;
+    schema1:pagination "1183--1201" ;
+    schema1:volumeNumber "20" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Guckenheimer1983> a schema1:Book,
+        owl:NamedIndividual ;
+    rdfs:label "Guckenheimer1983" ;
+    dcterms:issued "1983" ;
+    dcterms:title "Nonlinear Oscillations, Dynamical Systems, and Bifurcations of Vector Fields" ;
+    schema1:author "Guckenheimer, John",
+        "Holmes, Philip" ;
+    schema1:identifier "10.1007/978-1-4612-1140-2" ;
+    schema1:publisher "Springer" ;
+    schema1:volumeNumber "42" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/GuckenheimerHolmes1983> a schema1:Book,
+        owl:NamedIndividual ;
+    rdfs:label "GuckenheimerHolmes1983" ;
+    dcterms:issued "1983" ;
+    dcterms:title "Nonlinear Oscillations, Dynamical Systems, and Bifurcations of Vector Fields" ;
+    schema1:author "Guckenheimer, John",
+        "Holmes, Philip" ;
+    schema1:publisher "Springer" ;
+    schema1:volumeNumber "42" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/GuckenheimerHolmes1983Alias> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "GuckenheimerHolmes1983Alias" ;
+    dcterms:title "Alias for GuckenheimerHolmes1983" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Halvorsen2000> a schema1:CreativeWork,
+        owl:NamedIndividual ;
+    rdfs:label "Halvorsen2000" ;
+    dcterms:issued "2000" ;
+    dcterms:title "An algebraically simple chaotic system" ;
+    schema1:author "Halvorsen, E." .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Henon1964> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Henon1964" ;
+    dcterms:issued "1964" ;
+    dcterms:title "The Applicability of the Third Integral of Motion: Some Numerical Experiments" ;
+    schema1:author "Heiles, Carl",
+        "Henon, Michel" ;
+    schema1:identifier "10.1086/109234" ;
+    schema1:isPartOf "The Astronomical Journal" ;
+    schema1:pagination "73--79" ;
+    schema1:volumeNumber "69" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Henon1976> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Henon1976" ;
+    dcterms:issued "1976" ;
+    dcterms:title "A Two-Dimensional Mapping with a Strange Attractor" ;
+    schema1:author "H\\'enon, Michel" ;
+    schema1:identifier "10.1007/978-0-387-21830-4_8" ;
+    schema1:isPartOf "Communications in Mathematical Physics" ;
+    schema1:pagination "69--77" ;
+    schema1:volumeNumber "50" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/HenonHeiles1964> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "HenonHeiles1964" ;
+    dcterms:issued "1964" ;
+    dcterms:title "The Applicability of the Third Integral of Motion: Some Numerical Experiments" ;
+    schema1:author "H\\'enon, Michel",
+        "Heiles, Carl" ;
+    schema1:identifier "10.1086/109234" ;
+    schema1:isPartOf "The Astronomical Journal" ;
+    schema1:pagination "73--79" ;
+    schema1:volumeNumber "69" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Hindmarsh1984> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Hindmarsh1984" ;
+    dcterms:issued "1984" ;
+    dcterms:title "A model of neuronal bursting using three coupled first order differential equations" ;
+    schema1:author "Hindmarsh, J. L.",
+        "Rose, R. M." ;
+    schema1:isPartOf "Proceedings of the Royal Society of London. Series B, Biological Sciences" ;
+    schema1:pagination "87--102" ;
+    schema1:volumeNumber "221" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/HindmarshRose1984> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "HindmarshRose1984" ;
+    dcterms:issued "1984" ;
+    dcterms:title "A model of neuronal bursting using three coupled first order differential equations" ;
+    schema1:author "Hindmarsh, J. L.",
+        "Rose, R. M." ;
+    schema1:isPartOf "Proceedings of the Royal Society of London. Series B, Biological Sciences" ;
+    schema1:pagination "87--102" ;
+    schema1:volumeNumber "221" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Hodgkin1952> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Hodgkin1952" ;
+    dcterms:issued "1952" ;
+    dcterms:title "A Quantitative Description of Membrane Current and Its Application to Conduction and Excitation in Nerve" ;
+    schema1:author "Hodgkin, A. L.",
+        "Huxley, A. F." ;
+    schema1:identifier "10.1113/jphysiol.1952.sp004764" ;
+    schema1:isPartOf "The Journal of Physiology" ;
+    schema1:issueNumber "4" ;
+    schema1:pagination "500--544" ;
+    schema1:volumeNumber "117" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/HodgkinHuxley1952> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "HodgkinHuxley1952" ;
+    dcterms:issued "1952" ;
+    dcterms:title "A Quantitative Description of Membrane Current and Its Application to Conduction and Excitation in Nerve" ;
+    schema1:author "Hodgkin, A. L.",
+        "Huxley, A. F." ;
+    schema1:identifier "10.1113/jphysiol.1952.sp004764" ;
+    schema1:isPartOf "The Journal of Physiology" ;
+    schema1:issueNumber "4" ;
+    schema1:pagination "500--544" ;
+    schema1:volumeNumber "117" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Hoover1995> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Hoover1995" ;
+    dcterms:issued "1995" ;
+    dcterms:title "Remark on ``Some Simple Chaotic Flows''" ;
+    schema1:author "Hoover, William G." ;
+    schema1:identifier "10.1103/PhysRevE.51.759" ;
+    schema1:isPartOf "Physical Review E" ;
+    schema1:pagination "759--760" ;
+    schema1:volumeNumber "51" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Hoppensteadt2006> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Hoppensteadt2006" ;
+    dcterms:issued "2006" ;
+    dcterms:title "Predator-prey model" ;
+    schema1:author "Hoppensteadt, Frank" ;
+    schema1:isPartOf "Scholarpedia" ;
+    schema1:issueNumber "10" ;
+    schema1:pagination "1563" ;
+    schema1:volumeNumber "1" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Huisman2001> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Huisman2001" ;
+    dcterms:issued "2001" ;
+    dcterms:title "Fundamental Unpredictability in Multispecies Competition" ;
+    schema1:author "Huisman, Johan",
+        "Weissing, Franz J." ;
+    schema1:isPartOf "The American Naturalist" ;
+    schema1:issueNumber "5" ;
+    schema1:volumeNumber "157" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Hussain2015> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Hussain2015" ;
+    dcterms:issued "2015" ;
+    dcterms:title "Construction of dynamical non-linear components based on Lorenz system and symmetric group of permutations" ;
+    schema1:author "Gondal, M. A.",
+        "Hussain, A.",
+        "Hussain, I." ;
+    schema1:isPartOf "3D Research" ;
+    schema1:pagination "1--6" ;
+    schema1:volumeNumber "6" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/IzhikevichBook> a schema1:Book,
+        owl:NamedIndividual ;
+    rdfs:label "IzhikevichBook" ;
+    dcterms:issued "2007" ;
+    dcterms:title "Dynamical Systems in Neuroscience: The Geometry of Excitability and Bursting" ;
+    schema1:author "Izhikevich, Eugene M." ;
+    schema1:publisher "MIT Press" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Kanamaru2007> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Kanamaru2007" ;
+    dcterms:issued "2007" ;
+    dcterms:title "Van der Pol Oscillator" ;
+    schema1:author "Kanamaru, Takashi" ;
+    schema1:isPartOf "Scholarpedia" ;
+    schema1:issueNumber "1" ;
+    schema1:pagination "2202" ;
+    schema1:volumeNumber "2" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/KantzGrassberger1988> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "KantzGrassberger1988" ;
+    dcterms:issued "1988" ;
+    dcterms:title "On a Robust Method to Detect Intermittency" ;
+    schema1:author "Grassberger, Peter",
+        "Kantz, Holger" ;
+    schema1:isPartOf "Journal of Physics A: Mathematical and General" ;
+    schema1:pagination "127--133" ;
+    schema1:volumeNumber "21" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Landau1944> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Landau1944" ;
+    dcterms:issued "1944" ;
+    dcterms:title "On the problem of turbulence" ;
+    schema1:author "Landau, L. D." ;
+    schema1:isPartOf "Doklady Akademii Nauk SSSR" ;
+    schema1:issueNumber "8" ;
+    schema1:pagination "339--349" ;
+    schema1:volumeNumber "44" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Letellier2007> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Letellier2007" ;
+    dcterms:issued "2007" ;
+    dcterms:title "Hyperchaos" ;
+    schema1:author "Letellier, Christophe",
+        "R\"ossler, Otto E." ;
+    schema1:isPartOf "Scholarpedia" ;
+    schema1:issueNumber "8" ;
+    schema1:pagination "1936" ;
+    schema1:volumeNumber "2" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Li2015> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Li2015" ;
+    dcterms:issued "2015" ;
+    dcterms:title "A novel four-wing strange attractor born in bistability" ;
+    schema1:author "Li, Chunbiao",
+        "et al." ;
+    schema1:isPartOf "IEICE Electronics Express" ;
+    schema1:issueNumber "4" ;
+    schema1:volumeNumber "12" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Lorenz1963> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Lorenz1963" ;
+    dcterms:issued "1963" ;
+    dcterms:title "Deterministic Nonperiodic Flow" ;
+    schema1:author "Lorenz, Edward N." ;
+    schema1:identifier "10.1175/1520-0469(1963)020<0130:DNF>2.0.CO;2" ;
+    schema1:isPartOf "Journal of the Atmospheric Sciences" ;
+    schema1:pagination "130--141" ;
+    schema1:volumeNumber "20" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Lorenz1996> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Lorenz1996" ;
+    dcterms:issued "1996" ;
+    dcterms:title "Predictability: A Problem Partly Solved" ;
+    schema1:author "Lorenz, Edward N." ;
+    schema1:identifier "10.1017/cbo9780511617652.004" ;
+    schema1:isPartOf "Proc. Seminar on Predictability" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Manneville1980> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Manneville1980" ;
+    dcterms:issued "1980" ;
+    dcterms:title "Intermittency, self-similarity and 1/f spectrum in dissipative dynamical systems" ;
+    schema1:author "Manneville, Paul" ;
+    schema1:isPartOf "Journal de Physique" ;
+    schema1:issueNumber "11" ;
+    schema1:pagination "1235--1243" ;
+    schema1:volumeNumber "41" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/MannevillePomeau1980> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "MannevillePomeau1980" ;
+    dcterms:issued "1980" ;
+    dcterms:title "Intermittency and the Lorenz Model" ;
+    schema1:author "Manneville, P.",
+        "Pomeau, Y." ;
+    schema1:isPartOf "Communications in Mathematical Physics" ;
+    schema1:volumeNumber "74" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/May1976> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "May1976" ;
+    dcterms:issued "1976" ;
+    dcterms:title "Simple mathematical models with very complicated dynamics" ;
+    schema1:author "May, Robert M." ;
+    schema1:identifier "10.1201/9780203734636-5" ;
+    schema1:isPartOf "Nature" ;
+    schema1:pagination "459--467" ;
+    schema1:volumeNumber "261" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Meyer2019> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Meyer2019" ;
+    dcterms:issued "2019" ;
+    dcterms:title "Long-range correlations in intermittent maps" ;
+    schema1:author "Meyer, R.",
+        "et al." ;
+    schema1:isPartOf "New Journal of Physics" ;
+    schema1:volumeNumber "20" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Micluta-Campeanu2018> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Micluta-Campeanu2018" ;
+    dcterms:issued "2018" ;
+    dcterms:title "Chaoticity Evolution in a Quartic Collective Hamiltonian" ;
+    schema1:author "Baran, V.",
+        "Micluta-Campeanu, S.",
+        "Nicolin, A. I.",
+        "Raportaru, M. C." ;
+    schema1:isPartOf "Romanian Reports in Physics" ;
+    schema1:pagination "105" ;
+    schema1:volumeNumber "70" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/MiclutaCampeanu2018> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "MiclutaCampeanu2018" ;
+    dcterms:issued "2018" ;
+    dcterms:title "Chaoticity Evolution in a Quartic Collective Hamiltonian" ;
+    schema1:author "Micluta-Campeanu, S.",
+        "Raduta, A.",
+        "others" ;
+    schema1:isPartOf "Romanian Journal of Physics" ;
+    schema1:pagination "105" ;
+    schema1:volumeNumber "70" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Mirshra2018> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Mirshra2018" ;
+    dcterms:issued "2018" ;
+    dcterms:title "Dragon-king-like extreme events in coupled bursting neurons" ;
+    schema1:author "Dana, S. K.",
+        "Kapitaniak, T.",
+        "Mishra, A.",
+        "Pal, P.",
+        "Saha, S.",
+        "Vigneshwaran, M." ;
+    schema1:identifier "10.1103/PhysRevE.97.062311" ;
+    schema1:isPartOf "Physical Review E" ;
+    schema1:issueNumber "6" ;
+    schema1:pagination "062311" ;
+    schema1:volumeNumber "97" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Mishra2018> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Mishra2018" ;
+    dcterms:issued "2018" ;
+    dcterms:title "Dragon-king-like extreme events in coupled bursting neurons" ;
+    schema1:author "Dana, S. K.",
+        "Kapitaniak, T.",
+        "Mishra, A.",
+        "Pal, P.",
+        "Saha, S.",
+        "Vigneshwaran, M." ;
+    schema1:identifier "10.1103/PhysRevE.97.062311" ;
+    schema1:isPartOf "Physical Review E" ;
+    schema1:issueNumber "6" ;
+    schema1:pagination "062311" ;
+    schema1:volumeNumber "97" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Mishra2018a> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Mishra2018a" ;
+    dcterms:issued "2018" ;
+    dcterms:title "Dragon-king-like extreme events in coupled bursting neurons" ;
+    schema1:author "Dana, S. K.",
+        "Kapitaniak, T.",
+        "Mishra, A.",
+        "Pal, P.",
+        "Saha, S.",
+        "Vigneshwaran, M." ;
+    schema1:identifier "10.1103/PhysRevE.97.062311" ;
+    schema1:isPartOf "Physical Review E" ;
+    schema1:issueNumber "6" ;
+    schema1:pagination "062311" ;
+    schema1:volumeNumber "97" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/MorrisLecar1981> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "MorrisLecar1981" ;
+    dcterms:issued "1981" ;
+    dcterms:title "Voltage oscillations in the barnacle giant muscle fiber" ;
+    schema1:author "Lecar, H.",
+        "Morris, C." ;
+    schema1:isPartOf "Biophysical Journal" ;
+    schema1:url "https://www.cell.com/biophysj/pdf/S0006-3495(81)84782-0.pdf" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Ott2002> a schema1:Book,
+        owl:NamedIndividual ;
+    rdfs:label "Ott2002" ;
+    dcterms:issued "2010" ;
+    dcterms:title "Chaos in Dynamical Systems" ;
+    schema1:author "Ott, Edward" ;
+    schema1:publisher "Cambridge University Press" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Ott2010> a schema1:Book,
+        owl:NamedIndividual ;
+    rdfs:label "Ott2010" ;
+    dcterms:issued "2010" ;
+    dcterms:title "Chaos in Dynamical Systems" ;
+    schema1:author "Ott, Edward" ;
+    schema1:publisher "Cambridge University Press" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/OttRiddled2014> a schema1:CreativeWork,
+        owl:NamedIndividual ;
+    rdfs:label "OttRiddled2014" ;
+    dcterms:title "The transition to chaotic attractors with riddled basins" ;
+    schema1:author "Alexander, J. C.",
+        "Kan, I.",
+        "Ott, Edward",
+        "Sommerer, J. C.",
+        "Yorke, James A." ;
+    schema1:url "http://yorke.umd.edu/Yorke_papers_most_cited_and_post2000/1994_04_Ott_Alexander_Kan_Sommerer_PhysicaD_riddled%20basins.pdf" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Pang2011> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Pang2011" ;
+    dcterms:issued "2011" ;
+    dcterms:title "A new hyperchaotic system from the L\"u system and its control" ;
+    schema1:author "Liu, Y.",
+        "Pang, S." ;
+    schema1:isPartOf "Journal of Computational and Applied Mathematics" ;
+    schema1:issueNumber "8" ;
+    schema1:pagination "2775--2789" ;
+    schema1:volumeNumber "235" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Qi2008> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Qi2008" ;
+    dcterms:issued "2008" ;
+    dcterms:title "On a new hyperchaotic system" ;
+    schema1:author "Chen, G.",
+        "Qi, G.",
+        "van Wyk, B. J.",
+        "van Wyk, M. A." ;
+    schema1:isPartOf "Physics Letters A" ;
+    schema1:issueNumber "2" ;
+    schema1:pagination "124--136" ;
+    schema1:volumeNumber "372" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/R_ossler1976> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "R_ossler1976" ;
+    dcterms:issued "1976" ;
+    dcterms:title "An Equation for Continuous Chaos" ;
+    schema1:author "R\"ossler, Otto E." ;
+    schema1:identifier "10.1016/0375-9601(76)90101-8" ;
+    schema1:isPartOf "Physics Letters A" ;
+    schema1:issueNumber "5" ;
+    schema1:pagination "397--398" ;
+    schema1:volumeNumber "57" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Rikitake1958> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Rikitake1958" ;
+    dcterms:issued "1958" ;
+    dcterms:title "Oscillations of a System of Disks" ;
+    schema1:author "Rikitake, Tsuneji" ;
+    schema1:identifier "10.1017/S0305004100033283" ;
+    schema1:isPartOf "Proceedings of the Cambridge Philosophical Society" ;
+    schema1:pagination "89--105" ;
+    schema1:volumeNumber "54" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Roessler1976> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Roessler1976" ;
+    dcterms:issued "1976" ;
+    dcterms:title "An Equation for Continuous Chaos" ;
+    schema1:author "Roessler, Otto E." ;
+    schema1:identifier "10.1016/0375-9601(76)90101-8" ;
+    schema1:isPartOf "Physics Letters A" ;
+    schema1:issueNumber "5" ;
+    schema1:pagination "397--398" ;
+    schema1:volumeNumber "57" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Roessler1979> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Roessler1979" ;
+    dcterms:issued "1979" ;
+    dcterms:title "An equation for hyperchaos" ;
+    schema1:author "R\"ossler, Otto E." ;
+    schema1:isPartOf "Physics Letters A" ;
+    schema1:issueNumber "2--3" ;
+    schema1:pagination "155--157" ;
+    schema1:volumeNumber "71" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Roessler1979Alias> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Roessler1979Alias" ;
+    dcterms:title "Alias for Rossler1979" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Rossler1976> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Rossler1976" ;
+    dcterms:issued "1976" ;
+    dcterms:title "An Equation for Continuous Chaos" ;
+    schema1:author "R\"ossler, Otto E." ;
+    schema1:identifier "10.1016/0375-9601(76)90101-8" ;
+    schema1:isPartOf "Physics Letters A" ;
+    schema1:issueNumber "5" ;
+    schema1:pagination "397--398" ;
+    schema1:volumeNumber "57" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Rossler1979> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Rossler1979" ;
+    dcterms:issued "1979" ;
+    dcterms:title "An equation for hyperchaos" ;
+    schema1:author "R\"ossler, O. E." ;
+    schema1:isPartOf "Physics Letters A" ;
+    schema1:issueNumber "2--3" ;
+    schema1:pagination "155--157" ;
+    schema1:volumeNumber "71" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Ruelle1980> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Ruelle1980" ;
+    dcterms:issued "1980" ;
+    dcterms:title "Strange Attractors" ;
+    schema1:author "Ruelle, David" ;
+    schema1:identifier "10.1007/BF03024089" ;
+    schema1:isPartOf "The Mathematical Intelligencer" ;
+    schema1:issueNumber "3" ;
+    schema1:pagination "126--137" ;
+    schema1:volumeNumber "2" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Rulkov2001> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Rulkov2001" ;
+    dcterms:issued "2001" ;
+    dcterms:title "Regularization of Synchronized Chaotic Bursts" ;
+    schema1:author "Abarbanel, Henry D. I.",
+        "Rulkov, Nikolai F.",
+        "Sushchik, M. M.",
+        "Tsimring, L. S." ;
+    schema1:isPartOf "Physical Review Letters" ;
+    schema1:pagination "183" ;
+    schema1:volumeNumber "86" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Rulkov2002> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Rulkov2002" ;
+    dcterms:issued "2002" ;
+    dcterms:title "Modeling of spiking-bursting neural behavior using two-dimensional map" ;
+    schema1:author "Rulkov, Nikolai F." ;
+    schema1:isPartOf "Physical Review E" ;
+    schema1:pagination "041922" ;
+    schema1:volumeNumber "65" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Skiadas2008> a schema1:Book,
+        owl:NamedIndividual ;
+    rdfs:label "Skiadas2008" ;
+    dcterms:issued "2008" ;
+    dcterms:title "Chaotic Modelling and Simulation: Analysis of Chaotic Models, Attractors and Forms" ;
+    schema1:author "Skiadas, Christos H." ;
+    schema1:publisher "CRC Press" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Sprott2010> a schema1:Book,
+        owl:NamedIndividual ;
+    rdfs:label "Sprott2010" ;
+    dcterms:issued "2010" ;
+    dcterms:title "Elegant Chaos: Algebraically Simple Chaotic Flows" ;
+    schema1:author "Sprott, J. C." ;
+    schema1:identifier "10.1142/7434" ;
+    schema1:publisher "World Scientific" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Sprott2014> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Sprott2014" ;
+    dcterms:issued "2014" ;
+    dcterms:title "Simplest Chaotic Flows with Involutional Symmetries" ;
+    schema1:author "Sprott, J. C." ;
+    schema1:isPartOf "International Journal of Bifurcation and Chaos" ;
+    schema1:pagination "1450009" ;
+    schema1:volumeNumber "24" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Sprott2014b> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Sprott2014b" ;
+    dcterms:issued "2014" ;
+    dcterms:title "Physics Letters A" ;
+    schema1:author "Sprott, J. C." ;
+    schema1:isPartOf "Physics Letters A" ;
+    schema1:volumeNumber "378" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Sprott2020> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Sprott2020" ;
+    dcterms:issued "2020" ;
+    dcterms:title "Do We Need More Chaos Examples?" ;
+    schema1:author "Sprott, J. C." ;
+    schema1:isPartOf "Chaos Theory and Applications" ;
+    schema1:issueNumber "2" ;
+    schema1:pagination "1--3" ;
+    schema1:volumeNumber "2" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/SprottXiong2015> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "SprottXiong2015" ;
+    dcterms:issued "2015" ;
+    dcterms:title "Classifying and quantifying basins of attraction" ;
+    schema1:author "Sprott, J. C.",
+        "Xiong, A." ;
+    schema1:isPartOf "Chaos: An Interdisciplinary Journal of Nonlinear Science" ;
+    schema1:issueNumber "8" ;
+    schema1:pagination "083101" ;
+    schema1:volumeNumber "25" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Stankevich2012> a schema1:CreativeWork,
+        owl:NamedIndividual ;
+    rdfs:label "Stankevich2012" ;
+    dcterms:issued "2012" ;
+    dcterms:title "Hyperchaotic dynamics in a R\"ossler-like system" ;
+    schema1:author "Stankevich, N. V." .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Stommel1961> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Stommel1961" ;
+    dcterms:issued "1961" ;
+    dcterms:title "Thermohaline convection with two stable regimes of flow" ;
+    schema1:author "Stommel, Henry" ;
+    schema1:isPartOf "Tellus" ;
+    schema1:issueNumber "2" ;
+    schema1:volumeNumber "13" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Strogatz2015> a schema1:Book,
+        owl:NamedIndividual ;
+    rdfs:label "Strogatz2015" ;
+    dcterms:issued "2015" ;
+    dcterms:title "Nonlinear Dynamics and Chaos: With Applications to Physics, Biology, Chemistry, and Engineering" ;
+    schema1:author "Strogatz, Steven H." ;
+    schema1:publisher "Westview Press" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Thomas1999> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Thomas1999" ;
+    dcterms:issued "1999" ;
+    dcterms:title "Deterministic chaos seen in terms of feedback circuits: Analysis, synthesis, \\& biological applications" ;
+    schema1:author "Thomas, Ren\\'e" ;
+    schema1:isPartOf "International Journal of Bifurcation and Chaos" ;
+    schema1:issueNumber "10" ;
+    schema1:pagination "1889--1905" ;
+    schema1:volumeNumber "9" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Tufillaro1984> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Tufillaro1984" ;
+    dcterms:issued "1984" ;
+    dcterms:title "Swinging Atwood's Machine" ;
+    schema1:author "Abbott, Tyler A.",
+        "Griffiths, David J.",
+        "Tufillaro, Nicholas B." ;
+    schema1:isPartOf "American Journal of Physics" ;
+    schema1:issueNumber "10" ;
+    schema1:pagination "895--903" ;
+    schema1:volumeNumber "52" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Tufillaro1992> a schema1:Book,
+        owl:NamedIndividual ;
+    rdfs:label "Tufillaro1992" ;
+    dcterms:issued "1992" ;
+    dcterms:title "An Experimental Approach to Nonlinear Dynamics and Chaos" ;
+    schema1:author "Abbott, Tyler",
+        "Reilly, James",
+        "Tufillaro, Nicholas B." ;
+    schema1:identifier "10.1119/1.17380" ;
+    schema1:publisher "Addison-Wesley" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Ueda1961> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Ueda1961" ;
+    dcterms:issued "1961" ;
+    dcterms:title "Randomly Transitional Phenomena in the System Governed by Duffing's Equation" ;
+    schema1:author "Ueda, Yoshisuke" ;
+    schema1:isPartOf "Journal of Statistical Physics" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Ulam1960s> a schema1:CreativeWork,
+        owl:NamedIndividual ;
+    rdfs:label "Ulam1960s" ;
+    dcterms:issued "1960" ;
+    dcterms:title "Ulam coupled map on a ring" ;
+    schema1:author "Ulam, Stanislaw" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Volo2019a> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Volo2019a" ;
+    dcterms:title "Alias for di Volo et al. 2019" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Wang2008> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Wang2008" ;
+    dcterms:issued "2008" ;
+    dcterms:title "A hyperchaos generated from Lorenz system" ;
+    schema1:author "Wang, M.",
+        "Wang, X." ;
+    schema1:isPartOf "Physica A: Statistical Mechanics and its Applications" ;
+    schema1:issueNumber "14" ;
+    schema1:pagination "3751--3758" ;
+    schema1:volumeNumber "387" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Wang2009> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Wang2009" ;
+    dcterms:issued "2009" ;
+    dcterms:title "A 3-D four-wing attractor and its analysis" ;
+    schema1:author "Qi, G.",
+        "Sun, Y.",
+        "Wang, Z.",
+        "van Wyk, B. J.",
+        "van Wyk, M. A." ;
+    schema1:isPartOf "Brazilian Journal of Physics" ;
+    schema1:pagination "547--553" ;
+    schema1:volumeNumber "39" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Weisstein> a schema1:CreativeWork,
+        owl:NamedIndividual ;
+    rdfs:label "Weisstein" ;
+    dcterms:title "Lotka-Volterra Equations" ;
+    schema1:author "Weisstein, Eric W." ;
+    schema1:url "https://mathworld.wolfram.com/Lotka-VolterraEquations.html" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Zaslavskii1978> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Zaslavskii1978" ;
+    dcterms:issued "1978" ;
+    dcterms:title "The simplest case of a strange attractor" ;
+    schema1:author "Chernikov, A. A.",
+        "Sagdeev, R. Z.",
+        "Usikov, D. A.",
+        "Zaslavskii, G. M." ;
+    schema1:isPartOf "Physics Letters A" ;
+    schema1:issueNumber "3" ;
+    schema1:pagination "145--147" ;
+    schema1:volumeNumber "69" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/vanderpol1926> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "vanderpol1926" ;
+    dcterms:issued "1926" ;
+    dcterms:title "On relaxation-oscillations" ;
+    schema1:author "van der Pol, B." ;
+    schema1:isPartOf "The London, Edinburgh, and Dublin Philosophical Magazine and Journal of Science" ;
+    schema1:issueNumber "11" ;
+    schema1:pagination "978--992" ;
+    schema1:volumeNumber "2" .
 
 <https://w3id.org/tvbo/data> a owl:Ontology ;
     dcterms:description "Generated A-box: one owl:NamedIndividual per YAML database entry. Companion to ontology/tvb-o-struct.owl (T-box) and ontology/tvb-o-axioms.ttl (axioms). Replaces the legacy tvbo/data/ontology/tvb-o.owl A-box." ;
@@ -7579,4 +8594,273 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         owl:NamedIndividual ;
     rdfs:label "spatial_mask" ;
     dcterms:description "Vector of length N_nodes mapping each node to a region index (0-indexed). Inferred from network topology if not provided." .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Cabral2011> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Cabral2011" ;
+    dcterms:issued "2011" ;
+    dcterms:title "Role of local network oscillations in resting-state functional connectivity" ;
+    schema1:author "Cabral, Joana",
+        "others" ;
+    schema1:isPartOf "NeuroImage" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Courtiol2020> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Courtiol2020" ;
+    dcterms:issued "2020" ;
+    dcterms:title "The brain resting state: dynamics and models" ;
+    schema1:author "Courtiol, Julie",
+        "others" ;
+    schema1:isPartOf "Journal of Neuroscience Methods" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Deco2014> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Deco2014" ;
+    dcterms:issued "2014" ;
+    dcterms:title "How local excitation--inhibition ratio impacts the whole brain dynamics" ;
+    schema1:author "Deco, Gustavo",
+        "others" ;
+    schema1:isPartOf "Journal of Neuroscience" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Deco2017> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Deco2017" ;
+    dcterms:issued "2017" ;
+    dcterms:title "The dynamics of resting fluctuations in the brain: metastability and its dynamical cortical core" ;
+    schema1:author "Deco, Gustavo",
+        "Kringelbach, Morten L.",
+        "others" ;
+    schema1:isPartOf "Scientific Reports" ;
+    schema1:pagination "3095" ;
+    schema1:volumeNumber "7" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Depannemaecker2023> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Depannemaecker2023" ;
+    dcterms:issued "2023" ;
+    dcterms:title "K Ion Exchange model extensions" ;
+    schema1:author "Depannemaecker, Damien",
+        "others" ;
+    schema1:isPartOf "Preprint" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Dumont2019> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Dumont2019" ;
+    dcterms:issued "2019" ;
+    dcterms:title "A reduced model of coupled neural masses with complex dynamics" ;
+    schema1:author "Dumont, Gr\\'egoire",
+        "Gutkin, Boris" ;
+    schema1:isPartOf "eNeuro" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/FitzHugh1961> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "FitzHugh1961" ;
+    dcterms:issued "1961" ;
+    dcterms:title "Impulses and physiological states in theoretical models of nerve membrane" ;
+    schema1:author "FitzHugh, Richard" ;
+    schema1:isPartOf "Biophysical Journal" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Galan2008> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Galan2008" ;
+    dcterms:issued "2008" ;
+    dcterms:title "Optimal time scale for spike-time reliability: theory, simulations, and experiments" ;
+    schema1:author "Ermentrout, G. Bard",
+        "Gal\\'an, R. F.",
+        "Urban, N. N." ;
+    schema1:isPartOf "Journal of Neurophysiology" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Hopfield1982> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Hopfield1982" ;
+    dcterms:issued "1982" ;
+    dcterms:title "Neural networks and physical systems with emergent collective computational abilities" ;
+    schema1:author "Hopfield, John J." ;
+    schema1:isPartOf "Proceedings of the National Academy of Sciences" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Hopfield1984> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Hopfield1984" ;
+    dcterms:issued "1984" ;
+    dcterms:title "Neurons with graded response have collective computational properties like those of two-state neurons" ;
+    schema1:author "Hopfield, John J." ;
+    schema1:isPartOf "Proceedings of the National Academy of Sciences" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Jansen1993> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Jansen1993" ;
+    dcterms:issued "1993" ;
+    dcterms:title "Electroencephalogram and visual evoked potential generation in a mathematical model of coupled cortical columns" ;
+    schema1:author "Jansen, Ben H.",
+        "Rit, Vincent G." ;
+    schema1:isPartOf "Biological Cybernetics" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Jansen1995> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Jansen1995" ;
+    dcterms:issued "1995" ;
+    dcterms:title "Parameter exploration of a realistic neural mass model of visual cortex" ;
+    schema1:author "Jansen, Ben H.",
+        "Rit, Vincent G." ;
+    schema1:isPartOf "Biological Cybernetics" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Kuramoto1975> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Kuramoto1975" ;
+    dcterms:issued "1975" ;
+    dcterms:title "Self-entrainment of a Population of Coupled Nonlinear Oscillators" ;
+    schema1:author "Kuramoto, Yoshiki" ;
+    schema1:isPartOf "International Symposium on Mathematical Problems in Theoretical Physics" ;
+    schema1:volumeNumber "39" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Montbrio2015> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Montbrio2015" ;
+    dcterms:issued "2015" ;
+    dcterms:title "Macroscopic description for networks of spiking neurons" ;
+    schema1:author "Montbri\\'o, Ernest",
+        "Paz\\'o, Diego",
+        "Roxin, Alex" ;
+    schema1:isPartOf "Physical Review X" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Nagumo1962> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Nagumo1962" ;
+    dcterms:issued "1962" ;
+    dcterms:title "An active pulse transmission line simulating nerve axon" ;
+    schema1:author "Arimoto, S.",
+        "Nagumo, J.",
+        "Yoshizawa, S." ;
+    schema1:isPartOf "Proceedings of the IRE" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Proix2017> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Proix2017" ;
+    dcterms:issued "2017" ;
+    dcterms:title "Individual structural connectivity defines propagation networks in partial epilepsy" ;
+    schema1:author "Proix, Timoth\\'ee",
+        "others" ;
+    schema1:isPartOf "Brain" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Strogatz2000> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Strogatz2000" ;
+    dcterms:issued "2000" ;
+    dcterms:title "From Kuramoto to Crawford: exploring the onset of synchronization in populations of coupled oscillators" ;
+    schema1:author "Strogatz, Steven H." ;
+    schema1:isPartOf "Physica D" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Volo2019> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Volo2019" ;
+    dcterms:issued "2019" ;
+    dcterms:title "Biophysical ingredients for a robust model of cortical dynamics" ;
+    schema1:author "di Volo, Matteo",
+        "others" ;
+    schema1:isPartOf "PLOS Computational Biology" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Wilson1972> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Wilson1972" ;
+    dcterms:issued "1972" ;
+    dcterms:title "Excitatory and inhibitory interactions in localized populations of model neurons" ;
+    schema1:author "Cowan, Jack D.",
+        "Wilson, Hugh R." ;
+    schema1:isPartOf "Biophysical Journal" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Wilson1973> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Wilson1973" ;
+    dcterms:issued "1973" ;
+    dcterms:title "A mathematical theory of the functional dynamics of cortical and thalamic nervous tissue" ;
+    schema1:author "Cowan, Jack D.",
+        "Wilson, Hugh R." ;
+    schema1:isPartOf "Biological Cybernetics" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Zerlaut2018> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Zerlaut2018" ;
+    dcterms:issued "2018" ;
+    dcterms:title "A mean-field model of conductance-based networks of adaptive exponential integrate-and-fire neurons" ;
+    schema1:author "Destexhe, Alain",
+        "Zerlaut, Yann" ;
+    schema1:isPartOf "Neural Computation" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Zetterberg1978> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Zetterberg1978" ;
+    dcterms:issued "1978" ;
+    dcterms:title "A model for the interrelationship between EEG and evoked potentials" ;
+    schema1:author "Jansen, B. H.",
+        "Zetterberg, L. H." ;
+    schema1:isPartOf "Biological Cybernetics" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Byrne2020> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Byrne2020" ;
+    dcterms:issued "2020" ;
+    dcterms:title "Next generation neural mass models" ;
+    schema1:author "Byrne, A.",
+        "Coombes, S." ;
+    schema1:isPartOf "Journal of Mathematical Neuroscience" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Deco2013> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Deco2013" ;
+    dcterms:issued "2013" ;
+    dcterms:title "Resting-State Functional Connectivity Emerges from Structurally and Dynamically Shaped Slow Linear Fluctuations" ;
+    schema1:author "Corbetta, M.",
+        "Deco, G.",
+        "Hagmann, P.",
+        "Mantini, D.",
+        "Ponce-Alvarez, A.",
+        "Romani, G. L." ;
+    schema1:identifier "10.1523/jneurosci.1091-13.2013" ;
+    schema1:isPartOf "Journal of Neuroscience" ;
+    schema1:issueNumber "27" ;
+    schema1:pagination "11239--11252" ;
+    schema1:publisher "Society for Neuroscience" ;
+    schema1:volumeNumber "33" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Gast2020> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Gast2020" ;
+    dcterms:issued "2020" ;
+    dcterms:title "A mean-field description of bursting dynamics in neural populations" ;
+    schema1:author "Gast, Richard",
+        "Kn\\\"osche, T. R.",
+        "Schmidt, Helmut" ;
+    schema1:isPartOf "PLOS Computational Biology" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Jirsa2014> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Jirsa2014" ;
+    dcterms:issued "2014" ;
+    dcterms:title "On the nature of seizure dynamics" ;
+    schema1:author "Jirsa, Viktor",
+        "others" ;
+    schema1:isPartOf "Brain" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Proix2014> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Proix2014" ;
+    dcterms:issued "2014" ;
+    dcterms:title "A neural mass model of seizure initiation and propagation" ;
+    schema1:author "Proix, Timoth\\'ee",
+        "others" ;
+    schema1:isPartOf "Brain" .
+
+<http://www.thevirtualbrain.org/tvb-o/studies/Wong2006> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Wong2006" ;
+    dcterms:issued "2006" ;
+    dcterms:title "A Recurrent Network Mechanism of Time Integration in Perceptual Decisions" ;
+    schema1:author "Wang, Xiao-Jing",
+        "Wong, Kong-Fatt" ;
+    schema1:identifier "10.1523/jneurosci.3733-05.2006" ;
+    schema1:isPartOf "The Journal of Neuroscience" ;
+    schema1:issueNumber "4" ;
+    schema1:pagination "1314--1328" ;
+    schema1:publisher "Society for Neuroscience" ;
+    schema1:volumeNumber "26" .
 
