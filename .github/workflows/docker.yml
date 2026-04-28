@@ -219,32 +219,40 @@ jobs:
           - shard: neuroml
             doc_pattern: "NeuroML"
             extra_args: ""
+            xla_device_count: "2"
           # Julia backends: BifurcationKit, ModelingToolkit, NetworkDynamics
           - shard: julia
             doc_pattern: "BifurcationKit or ModelingToolkit or NetworkDynamics"
             extra_args: ""
+            xla_device_count: "2"
           # PyRates dynamical systems
           - shard: pyrates
             doc_pattern: "Pyrates"
             extra_args: ""
+            xla_device_count: "2"
           # TVB interoperability
           - shard: tvb
             doc_pattern: "Interoperability/TVB"
             extra_args: ""
+            xla_device_count: "2"
           # tvboptim — heavy JAX optimization docs (one per shard to isolate OOM)
           - shard: tvboptim-ei
             doc_pattern: "EI_Tuning_tvboptim"
             extra_args: "--run-slow"
+            xla_device_count: "1"
           - shard: tvboptim-rww
             doc_pattern: "RWW_tvboptim"
             extra_args: "--run-slow"
+            xla_device_count: "2"
           - shard: tvboptim-jr
             doc_pattern: "JR_tvboptim"
             extra_args: "--run-slow"
+            xla_device_count: "2"
           # Replication studies
           - shard: replication
             doc_pattern: "Replication"
             extra_args: ""
+            xla_device_count: "2"
           # Core: Usage, Specification, api, examples (non-NeuroML), OpenMINDS, BIDS, root index
           # Negative catch-all: everything not covered by the specialised shards above.
         #   - shard: core
@@ -254,6 +262,7 @@ jobs:
       JAX_PLATFORMS: cpu
       XLA_PYTHON_CLIENT_ALLOCATOR: platform
       XLA_PYTHON_CLIENT_PREALLOCATE: "false"
+      TVBO_XLA_DEVICE_COUNT: ${{ matrix.xla_device_count }}
     steps:
       - uses: actions/checkout@v6
       - name: Ensure Quarto is available
