@@ -235,17 +235,10 @@ jobs:
             doc_pattern: "Interoperability/TVB"
             extra_args: ""
             xla_device_count: "8"
-          # tvboptim — heavy JAX optimization docs (one per shard to isolate OOM)
-          - shard: tvboptim-ei
-            doc_pattern: "EI_Tuning_tvboptim"
-            extra_args: "--run-slow"
-            xla_device_count: "1"
+          # tvboptim docs in CI: keep only stable RWW path.
+          # EI/JR are too heavy for current CI limits and run in manual workflows.
           - shard: tvboptim-rww
             doc_pattern: "RWW_tvboptim"
-            extra_args: "--run-slow"
-            xla_device_count: "8"
-          - shard: tvboptim-jr
-            doc_pattern: "JR_tvboptim"
             extra_args: "--run-slow"
             xla_device_count: "8"
           # Replication studies
