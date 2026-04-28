@@ -294,10 +294,10 @@ from bsplot.data.surface import get_surface_geometry
 
 # Load fsaverage parcellation annotations
 labels_lh, _, names_lh = read_annot(
-    "/Applications/freesurfer/7.4.1/subjects/fsaverage/label/lh.aparc.annot"
+    "data/lh.aparc.annot"
 )
 labels_rh, _, names_rh = read_annot(
-    "/Applications/freesurfer/7.4.1/subjects/fsaverage/label/rh.aparc.annot"
+    "data/rh.aparc.annot"
 )
 
 # TVB abbreviated labels → FreeSurfer aparc names
