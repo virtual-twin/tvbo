@@ -253,6 +253,7 @@ jobs:
     env:
       JAX_PLATFORMS: cpu
       XLA_PYTHON_CLIENT_ALLOCATOR: platform
+      XLA_PYTHON_CLIENT_PREALLOCATE: "false"
     steps:
       - uses: actions/checkout@v6
       - name: Ensure Quarto is available
