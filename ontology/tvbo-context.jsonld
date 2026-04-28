@@ -59,13 +59,18 @@
     "exhibitsRegime":          { "@id": "tvbo:exhibitsRegime",       "@type": "@id", "@container": "@set" },
     "exhibitsBifurcation":     { "@id": "tvbo:exhibitsBifurcation",  "@type": "@id", "@container": "@set" },
     "hasAttractor":            { "@id": "tvbo:hasAttractor",         "@type": "@id", "@container": "@set" },
-    "isStochasticity":         { "@id": "tvbo:isStochasticity",      "@type": "@id" },
+    "hasStochasticityCharacter": { "@id": "tvbo:hasStochasticityCharacter", "@type": "@id" },
     "phaseSpaceDimension":     { "@id": "tvbo:phaseSpaceDimension",  "@type": "xsd:positiveInteger" },
     "hasTimescaleSeparation":  { "@id": "tvbo:hasTimescaleSeparation","@type": "xsd:boolean" },
+    "hasConservedQuantity":    { "@id": "tvbo:hasConservedQuantity", "@type": "xsd:boolean" },
+
+    "bifurcationType":         { "@id": "tvbo:bifurcationType",      "@type": "@id" },
+    "bifurcationParameter":    { "@id": "tvbo:bifurcationParameter", "@type": "@id" },
+    "criticalValue":           { "@id": "tvbo:criticalValue",        "@type": "xsd:double" },
 
     "supportsTask":            { "@id": "tvbo:supportsTask",         "@type": "@id", "@container": "@set" },
     "providesCapability":      { "@id": "tvbo:providesCapability",   "@type": "@id", "@container": "@set" },
-    "requiresCapability":      { "@id": "tvbo:requiresCapability",   "@type": "@id", "@container": "@set" },
+    "hasModelFeature":         { "@id": "tvbo:hasModelFeature",      "@type": "@id", "@container": "@set" },
     "executableOn":            { "@id": "tvbo:executableOn",         "@type": "@id", "@container": "@set" }
   }
 }
