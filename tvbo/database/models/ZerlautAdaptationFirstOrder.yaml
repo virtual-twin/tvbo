@@ -451,7 +451,7 @@ parameters:
 description: ''
 references:
   - Zerlaut2018
-  - diVolo2019
+  - Volo2019
 derived_variables:
   lc_E:
     name: lc_E
