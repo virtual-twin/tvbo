@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-04-28T13:27:59
+# Generation date: 2026-04-28T13:47:12
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -2114,6 +2114,7 @@ class DerivedVariable(YAMLRoot):
     equation: Optional[Union[dict, Equation]] = None
     unit: Optional[Union[str, "UnitEnum"]] = None
     record: Optional[Union[bool, Bool]] = False
+    grounding: Optional[Union[Union[str, URIorCURIE], list[Union[str, URIorCURIE]]]] = empty_list()
     conditional: Optional[Union[bool, Bool]] = False
     cases: Optional[Union[Union[dict, Case], list[Union[dict, Case]]]] = empty_list()
 
@@ -2140,6 +2141,10 @@ class DerivedVariable(YAMLRoot):
 
         if self.record is not None and not isinstance(self.record, Bool):
             self.record = Bool(self.record)
+
+        if not isinstance(self.grounding, list):
+            self.grounding = [self.grounding] if self.grounding is not None else []
+        self.grounding = [v if isinstance(v, URIorCURIE) else URIorCURIE(v) for v in self.grounding]
 
         if self.conditional is not None and not isinstance(self.conditional, Bool):
             self.conditional = Bool(self.conditional)
