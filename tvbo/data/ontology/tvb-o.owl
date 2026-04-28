@@ -226,22 +226,6 @@
     
 
 
-    <!-- http://www.thevirtualbrain.org/tvb-o/dtype -->
-
-    <owl:AnnotationProperty rdf:about="http://www.thevirtualbrain.org/tvb-o/dtype">
-        <rdfs:label>dtype</rdfs:label>
-    </owl:AnnotationProperty>
-    
-
-
-    <!-- http://www.thevirtualbrain.org/tvb-o/dynamicalConfiguration -->
-
-    <owl:AnnotationProperty rdf:about="http://www.thevirtualbrain.org/tvb-o/dynamicalConfiguration">
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">dynamicalConfiguration</rdfs:label>
-    </owl:AnnotationProperty>
-    
-
-
     <!-- http://www.thevirtualbrain.org/tvb-o/dynamicsExploration -->
 
     <owl:AnnotationProperty rdf:about="http://www.thevirtualbrain.org/tvb-o/dynamicsExploration">
@@ -393,14 +377,6 @@
     
 
 
-    <!-- http://www.thevirtualbrain.org/tvb-o/scipy_ode_base -->
-
-    <owl:AnnotationProperty rdf:about="http://www.thevirtualbrain.org/tvb-o/scipy_ode_base">
-        <rdfs:label>scipy_ode_base</rdfs:label>
-    </owl:AnnotationProperty>
-    
-
-
     <!-- http://www.thevirtualbrain.org/tvb-o/shortName -->
 
     <owl:AnnotationProperty rdf:about="http://www.thevirtualbrain.org/tvb-o/shortName">
@@ -436,14 +412,6 @@
     
 
 
-    <!-- http://www.thevirtualbrain.org/tvb-o/static -->
-
-    <owl:AnnotationProperty rdf:about="http://www.thevirtualbrain.org/tvb-o/static">
-        <rdfs:label>static</rdfs:label>
-    </owl:AnnotationProperty>
-    
-
-
     <!-- http://www.thevirtualbrain.org/tvb-o/subcategory -->
 
     <owl:AnnotationProperty rdf:about="http://www.thevirtualbrain.org/tvb-o/subcategory">
@@ -458,14 +426,6 @@
         <tvbSourceVariable rdf:datatype="http://www.w3.org/2001/XMLSchema#string">label</tvbSourceVariable>
         <rdfs:label>symbol</rdfs:label>
         <skos:definition rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Mathematical notation</skos:definition>
-    </owl:AnnotationProperty>
-    
-
-
-    <!-- http://www.thevirtualbrain.org/tvb-o/sympy -->
-
-    <owl:AnnotationProperty rdf:about="http://www.thevirtualbrain.org/tvb-o/sympy">
-        <rdfs:label>sympy</rdfs:label>
     </owl:AnnotationProperty>
     
 
@@ -503,14 +463,6 @@
     <owl:AnnotationProperty rdf:about="http://www.thevirtualbrain.org/tvb-o/unit">
         <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">unit</rdfs:label>
         <skos:definition>describes the unit of the parameter, if defined</skos:definition>
-    </owl:AnnotationProperty>
-    
-
-
-    <!-- http://www.thevirtualbrain.org/tvb-o/vallue -->
-
-    <owl:AnnotationProperty rdf:about="http://www.thevirtualbrain.org/tvb-o/vallue">
-        <rdfs:label>vallue</rdfs:label>
     </owl:AnnotationProperty>
     
 
