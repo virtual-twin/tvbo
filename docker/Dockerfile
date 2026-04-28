@@ -43,9 +43,15 @@ ENV UV_SYSTEM_PYTHON=1 \
 # 1. Install external deps only (no project build). Cached on pyproject.toml.
 #    `uv pip install -r pyproject.toml` reads [project.dependencies] +
 #    selected extras directly without invoking the build backend.
+#    NOTE: linkml/linkml-runtime are pinned to v1.11.0-rc1 from GitHub (the
+#    pip-compat layer of uv does not honor [tool.uv.sources]). Required for
+#    SimpleDict-shorthand fixes; remove once 1.11.0 is on PyPI.
 COPY pyproject.toml /app/pyproject.toml
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv pip install -r pyproject.toml --extra julia --extra pyrates --extra neuroml --extra neuron --extra tvb \
+    uv pip install \
+        "linkml @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml" \
+        "linkml-runtime @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml_runtime" \
+    && uv pip install -r pyproject.toml --extra julia --extra pyrates --extra neuroml --extra neuron --extra tvb \
         jupyterlab uvicorn fastapi tvboptim
 
 # 2. Pre-warm Julia. juliacall just needs juliapkg.json on sys.path.

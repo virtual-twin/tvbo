@@ -30,7 +30,12 @@ jobs:
               .github/workflows/publish-pypi.yml
 
       - name: Install project (minimal) + test deps
-        run: uv pip install . pytest pytest-cov pytest-xdist
+        # linkml/linkml-runtime pinned to v1.11.0-rc1 until 1.11 is on PyPI.
+        run: |
+            uv pip install \
+                "linkml @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml" \
+                "linkml-runtime @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml_runtime"
+            uv pip install . pytest pytest-cov pytest-xdist
 
       - name: Core tests (minimal install)
         run: pytest -q --override-ini="addopts=" tests/test_model_loading.py tests/test_graph.py tests/functional/test_dynamics_basic.py

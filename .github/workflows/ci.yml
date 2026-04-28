@@ -86,7 +86,13 @@ jobs:
                       pyproject.toml
                       .github/workflows/ci.yml
             - name: Install validation deps
-              run: uv pip install linkml pyyaml pytest pytest-xdist
+              # linkml/linkml-runtime pinned to v1.11.0-rc1 until 1.11 is on PyPI;
+              # required for SimpleDict-shorthand fixes in jsonschema generator.
+              run: |
+                  uv pip install \
+                      "linkml @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml" \
+                      "linkml-runtime @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml_runtime" \
+                      pyyaml pytest pytest-xdist
             - name: Validate every database YAML against the LinkML schema
               run: pytest -v --tb=short tests/test_database_validation.py
 
@@ -112,7 +118,11 @@ jobs:
                       pyproject.toml
                       .github/workflows/ci.yml
             - name: Install LinkML
-              run: uv pip install linkml
+              # Pinned to v1.11.0-rc1 (see pyproject.toml [tool.uv.sources]).
+              run: |
+                  uv pip install \
+                      "linkml @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml" \
+                      "linkml-runtime @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml_runtime"
             - name: Generate OWL
               run: make gen-owl
             - name: Generate SHACL
@@ -151,7 +161,11 @@ jobs:
                       pyproject.toml
                       .github/workflows/ci.yml
             - name: Install LinkML
-              run: uv pip install linkml
+              # Pinned to v1.11.0-rc1 (see pyproject.toml [tool.uv.sources]).
+              run: |
+                  uv pip install \
+                      "linkml @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml" \
+                      "linkml-runtime @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml_runtime"
             - name: Generate OWL
               run: make gen-owl
             - name: Set up Java (for ROBOT)
@@ -227,7 +241,12 @@ jobs:
                   key: venv-compat-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml', '.github/workflows/ci.yml') }}
             - name: Install (cache miss)
               if: steps.venv-cache.outputs.cache-hit != 'true'
-              run: uv pip install -e . pytest pytest-xdist pytest-timeout
+              # linkml/linkml-runtime pinned to v1.11.0-rc1; remove once on PyPI.
+              run: |
+                  uv pip install \
+                      "linkml @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml" \
+                      "linkml-runtime @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml_runtime"
+                  uv pip install -e . pytest pytest-xdist pytest-timeout
             - name: Refresh editable link (cache hit)
               if: steps.venv-cache.outputs.cache-hit == 'true'
               run: uv pip install -e . --no-deps
@@ -300,7 +319,12 @@ jobs:
                   key: venv-native-${{ matrix.shard }}-3.12-${{ hashFiles('pyproject.toml', '.github/workflows/ci.yml') }}
             - name: Install with all extras (cache miss)
               if: steps.venv-cache.outputs.cache-hit != 'true'
-              run: uv pip install -e ".[all]" pytest pytest-xdist pytest-timeout
+              # linkml/linkml-runtime pinned to v1.11.0-rc1; remove once on PyPI.
+              run: |
+                  uv pip install \
+                      "linkml @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml" \
+                      "linkml-runtime @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml_runtime"
+                  uv pip install -e ".[all]" pytest pytest-xdist pytest-timeout
             - name: Refresh editable link (cache hit)
               if: steps.venv-cache.outputs.cache-hit == 'true'
               run: uv pip install -e . --no-deps
