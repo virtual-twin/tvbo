@@ -1651,6 +1651,7 @@ classes:
             - equation
             - unit
             - record
+            - grounding
         slot_usage:
             record:
                 ifabsent: false
