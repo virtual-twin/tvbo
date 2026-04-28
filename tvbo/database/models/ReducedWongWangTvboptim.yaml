@@ -135,7 +135,7 @@ functions:
       Sigmoid transfer function mapping total synaptic input current to the
       average population firing rate (Deco et al., 2013).
     arguments:
-      - x
+      - name: x
     equation:
       rhs: (a*x - b)/(1 - exp(-d*(a*x - b)))
 output:

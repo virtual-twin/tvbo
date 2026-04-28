@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-04-28T14:01:40
+# Generation date: 2026-04-28T14:52:48
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -117,10 +117,6 @@ class ObservationName(extended_str):
     pass
 
 
-class DerivedObservationName(ObservationName):
-    pass
-
-
 class DynamicsName(extended_str):
     pass
 
@@ -149,19 +145,7 @@ class FunctionName(extended_str):
     pass
 
 
-class LossFunctionName(FunctionName):
-    pass
-
-
 class CallableName(extended_str):
-    pass
-
-
-class ClassReferenceName(CallableName):
-    pass
-
-
-class DerivedParameterName(ParameterName):
     pass
 
 
@@ -174,10 +158,6 @@ class DataSourceName(extended_str):
 
 
 class OptimizationStageName(extended_str):
-    pass
-
-
-class OptimizationName(OptimizationStageName):
     pass
 
 
@@ -209,14 +189,6 @@ class CouplingName(extended_str):
     pass
 
 
-class SimulationExperimentId(extended_int):
-    pass
-
-
-class FieldStateVariableName(StateVariableName):
-    pass
-
-
 class BrainAtlasName(extended_str):
     pass
 
@@ -241,14 +213,6 @@ class DatasetDatasetId(extended_str):
     pass
 
 
-class DBSDatasetDatasetId(DatasetDatasetId):
-    pass
-
-
-class DBSSubjectSubjectId(SubjectSubjectId):
-    pass
-
-
 class DBSProtocolName(extended_str):
     pass
 
@@ -257,15 +221,51 @@ class SoftwarePackageName(extended_str):
     pass
 
 
-class SimulationToolName(SoftwarePackageName):
-    pass
-
-
 class SoftwareRequirementName(extended_str):
     pass
 
 
 class SoftwareEnvironmentName(extended_str):
+    pass
+
+
+class SimulationExperimentId(extended_int):
+    pass
+
+
+class DerivedObservationName(ObservationName):
+    pass
+
+
+class FieldStateVariableName(StateVariableName):
+    pass
+
+
+class DerivedParameterName(ParameterName):
+    pass
+
+
+class LossFunctionName(FunctionName):
+    pass
+
+
+class ClassReferenceName(CallableName):
+    pass
+
+
+class OptimizationName(OptimizationStageName):
+    pass
+
+
+class DBSSubjectSubjectId(SubjectSubjectId):
+    pass
+
+
+class DBSDatasetDatasetId(DatasetDatasetId):
+    pass
+
+
+class SimulationToolName(SoftwarePackageName):
     pass
 
 
@@ -482,7 +482,7 @@ class Event(YAMLRoot):
         self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
 
         if self.event_type is not None and not isinstance(self.event_type, EventType):
-            self.event_type = getattr(EventType, self.event_type)
+            self.event_type = EventType(self.event_type)
 
         if self.condition is not None and not isinstance(self.condition, Equation):
             self.condition = Equation(**as_dict(self.condition))
@@ -900,10 +900,10 @@ class Network(YAMLRoot):
             self.node_mapping = str(self.node_mapping)
 
         if self.distance_unit is not None and not isinstance(self.distance_unit, UnitEnum):
-            self.distance_unit = getattr(UnitEnum, self.distance_unit)
+            self.distance_unit = UnitEnum(self.distance_unit)
 
         if self.time_unit is not None and not isinstance(self.time_unit, UnitEnum):
-            self.time_unit = getattr(UnitEnum, self.time_unit)
+            self.time_unit = UnitEnum(self.time_unit)
 
         if not isinstance(self.edge_matrix_files, list):
             self.edge_matrix_files = [self.edge_matrix_files] if self.edge_matrix_files is not None else []
@@ -1237,7 +1237,7 @@ class Observation(YAMLRoot):
             self.environment = SoftwareEnvironmentName(self.environment)
 
         if self.time_scale is not None and not isinstance(self.time_scale, UnitEnum):
-            self.time_scale = getattr(UnitEnum, self.time_scale)
+            self.time_scale = UnitEnum(self.time_scale)
 
         if self.source is not None and not isinstance(self.source, StateVariableName):
             self.source = StateVariableName(self.source)
@@ -1574,7 +1574,7 @@ class Distribution(YAMLRoot):
             self.seed = int(self.seed)
 
         if self.axis is not None and not isinstance(self.axis, SamplingAxis):
-            self.axis = getattr(SamplingAxis, self.axis)
+            self.axis = SamplingAxis(self.axis)
 
         if self.correlation is not None and not isinstance(self.correlation, Matrix):
             self.correlation = Matrix(**as_dict(self.correlation))
@@ -1860,7 +1860,7 @@ class Aggregation(YAMLRoot):
             self.over = DimensionType(self.over)
 
         if self.type is not None and not isinstance(self.type, ReductionType):
-            self.type = getattr(ReductionType, self.type)
+            self.type = ReductionType(self.type)
 
         super().__post_init__(**kwargs)
 
@@ -2829,7 +2829,7 @@ class Discretization(YAMLRoot):
         self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
 
         if self.method is not None and not isinstance(self.method, NumericalDiscretizationMethod):
-            self.method = getattr(NumericalDiscretizationMethod, self.method)
+            self.method = NumericalDiscretizationMethod(self.method)
 
         if self.ode_solver is not None and not isinstance(self.ode_solver, Solver):
             self.ode_solver = Solver(**as_dict(self.ode_solver))
@@ -2874,7 +2874,7 @@ class InitialState(YAMLRoot):
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self.method is not None and not isinstance(self.method, InitialStateMethod):
-            self.method = getattr(InitialStateMethod, self.method)
+            self.method = InitialStateMethod(self.method)
 
         if self.duration is not None and not isinstance(self.duration, float):
             self.duration = float(self.duration)
@@ -3046,7 +3046,7 @@ class Continuation(YAMLRoot):
             self.max_bisection_steps = int(self.max_bisection_steps)
 
         if self.algorithm is not None and not isinstance(self.algorithm, ContinuationAlgorithm):
-            self.algorithm = getattr(ContinuationAlgorithm, self.algorithm)
+            self.algorithm = ContinuationAlgorithm(self.algorithm)
 
         if self.initial_state is not None and not isinstance(self.initial_state, InitialState):
             self.initial_state = InitialState(**as_dict(self.initial_state))
@@ -3130,7 +3130,7 @@ class Integrator(Solver):
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self.time_scale is not None and not isinstance(self.time_scale, UnitEnum):
-            self.time_scale = getattr(UnitEnum, self.time_scale)
+            self.time_scale = UnitEnum(self.time_scale)
 
         if self.unit is not None and not isinstance(self.unit, UnitEnum):
             self.unit = UnitEnum(self.unit)
@@ -5104,7 +5104,7 @@ class SoftwareRequirement(YAMLRoot):
             self.version_spec = str(self.version_spec)
 
         if self.role is not None and not isinstance(self.role, RequirementRole):
-            self.role = getattr(RequirementRole, self.role)
+            self.role = RequirementRole(self.role)
 
         if self.optional is not None and not isinstance(self.optional, Bool):
             self.optional = Bool(self.optional)
