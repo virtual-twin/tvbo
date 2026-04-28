@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-04-28T10:41:48
+# Generation date: 2026-04-28T13:27:59
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -63,6 +63,11 @@ metamodel_version = "1.7.0"
 version = "0.4.0"
 
 # Namespaces
+CHEBI = CurieNamespace('CHEBI', 'http://purl.obolibrary.org/obo/CHEBI_')
+CL = CurieNamespace('CL', 'http://purl.obolibrary.org/obo/CL_')
+GO = CurieNamespace('GO', 'http://purl.obolibrary.org/obo/GO_')
+MESH = CurieNamespace('MESH', 'http://purl.bioontology.org/ontology/MESH/')
+UBERON = CurieNamespace('UBERON', 'http://purl.obolibrary.org/obo/UBERON_')
 UO = CurieNamespace('UO', 'http://purl.obolibrary.org/obo/UO_')
 ATOM = CurieNamespace('atom', 'http://uri.interlex.org/tgbugs/uris/readable/')
 BIBO = CurieNamespace('bibo', 'http://purl.org/ontology/bibo/')
@@ -70,6 +75,7 @@ BIOTOOLS = CurieNamespace('biotools', 'https://bio.tools/ontology/')
 DCTERMS = CurieNamespace('dcterms', 'http://purl.org/dc/terms/')
 LINKML = CurieNamespace('linkml', 'https://w3id.org/linkml/')
 NIDM = CurieNamespace('nidm', 'http://purl.org/nidash/nidm#')
+OBOINOWL = CurieNamespace('oboInOwl', 'http://www.geneontology.org/formats/oboInOwl#')
 PROV = CurieNamespace('prov', 'http://www.w3.org/ns/prov#')
 QUDT = CurieNamespace('qudt', 'http://qudt.org/vocab/unit/')
 RDFS = CurieNamespace('rdfs', 'http://www.w3.org/2000/01/rdf-schema#')
@@ -1445,6 +1451,7 @@ class StateVariable(YAMLRoot):
     equation: Optional[Union[dict, Equation]] = None
     unit: Optional[Union[str, "UnitEnum"]] = None
     record: Optional[Union[bool, Bool]] = True
+    grounding: Optional[Union[Union[str, URIorCURIE], list[Union[str, URIorCURIE]]]] = empty_list()
     variable_of_interest: Optional[Union[bool, Bool]] = True
     coupling_variable: Optional[Union[bool, Bool]] = False
     equation_type: Optional[str] = "differential"
@@ -1486,6 +1493,10 @@ class StateVariable(YAMLRoot):
 
         if self.record is not None and not isinstance(self.record, Bool):
             self.record = Bool(self.record)
+
+        if not isinstance(self.grounding, list):
+            self.grounding = [self.grounding] if self.grounding is not None else []
+        self.grounding = [v if isinstance(v, URIorCURIE) else URIorCURIE(v) for v in self.grounding]
 
         if self.variable_of_interest is not None and not isinstance(self.variable_of_interest, Bool):
             self.variable_of_interest = Bool(self.variable_of_interest)
@@ -1592,6 +1603,7 @@ class Parameter(YAMLRoot):
     equation: Optional[Union[dict, Equation]] = None
     unit: Optional[Union[str, "UnitEnum"]] = None
     dataset_path: Optional[str] = None
+    grounding: Optional[Union[Union[str, URIorCURIE], list[Union[str, URIorCURIE]]]] = empty_list()
     comment: Optional[str] = None
     heterogeneous: Optional[Union[bool, Bool]] = None
     distribution: Optional[Union[dict, Distribution]] = None
@@ -1635,6 +1647,10 @@ class Parameter(YAMLRoot):
 
         if self.dataset_path is not None and not isinstance(self.dataset_path, str):
             self.dataset_path = str(self.dataset_path)
+
+        if not isinstance(self.grounding, list):
+            self.grounding = [self.grounding] if self.grounding is not None else []
+        self.grounding = [v if isinstance(v, URIorCURIE) else URIorCURIE(v) for v in self.grounding]
 
         if self.comment is not None and not isinstance(self.comment, str):
             self.comment = str(self.comment)
@@ -6208,6 +6224,9 @@ slots.domain = Slot(uri=TVBO.domain, name="domain", curie=TVBO.curie('domain'),
 
 slots.iri = Slot(uri=DCTERMS.identifier, name="iri", curie=DCTERMS.curie('identifier'),
                    model_uri=TVBO.iri, domain=None, range=Optional[Union[str, URIorCURIE]])
+
+slots.grounding = Slot(uri=OBOINOWL.hasDbXref, name="grounding", curie=OBOINOWL.curie('hasDbXref'),
+                   model_uri=TVBO.grounding, domain=None, range=Optional[Union[Union[str, URIorCURIE], list[Union[str, URIorCURIE]]]])
 
 slots.value = Slot(uri=SCHEMA.value, name="value", curie=SCHEMA.curie('value'),
                    model_uri=TVBO.value, domain=None, range=Optional[Union[dict, ScalarValue]])
