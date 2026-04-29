@@ -428,3 +428,44 @@ class OntologyAPI:
             id=1,
             **md,
         )
+
+    def get_export_formats(self) -> list:
+        """Return supported export format descriptors for UI dropdowns."""
+        from tvbo import export as _export
+        return _export.list_format_dicts()
+
+    def export_experiment(
+        self,
+        format: str,
+        directory: str,
+        metadata_only: bool = True,
+        **kwargs,
+    ) -> dict:
+        """Render the configured experiment and save into *directory*.
+
+        Thin wrapper around :meth:`SimulationExperiment.save`. Returns a
+        ``{"format", "files"}`` dict describing what was written. Format
+        resolution (canonical key + aliases + extension) lives in
+        :mod:`tvbo.export.registry`.
+        """
+        from pathlib import Path
+        from tvbo import export as _export
+
+        fmt = _export.resolve(format)
+        out_dir = Path(directory)
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+        saved_path = self.experiment.save(
+            out_dir, format=fmt.key, metadata_only=metadata_only, **kwargs
+        )
+        files = [saved_path]
+
+        # Network HDF5 sidecar (if save() wrote one)
+        if not metadata_only:
+            stem = Path(saved_path).stem
+            for ext in (".yaml", ".h5"):
+                candidate = out_dir / f"{stem}_network{ext}"
+                if candidate.exists():
+                    files.append(str(candidate))
+
+        return {"format": fmt.key, "files": files}
