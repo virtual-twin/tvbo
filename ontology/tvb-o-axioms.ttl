@@ -1,4 +1,4 @@
-@prefix tvbo:    <https://w3id.org/tvbo/> .
+@prefix tvbo:    <http://www.thevirtualbrain.org/tvb-o/> .
 @prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
 @prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix owl:     <http://www.w3.org/2002/07/owl#> .
@@ -48,30 +48,36 @@ tvbo:CouplingInput a skos:Concept ;
     rdfs:seeAlso tvbo:PostsynapticPotential .
 
 tvbo:Excitation a skos:Concept ;
+    rdfs:label "Excitation"@en ;
     skos:prefLabel "Excitation"@en ;
     rdfs:comment "Generic depolarising synaptic effect; abstract parent of model-specific excitatory currents and conductances."@en ;
     skos:broadMatch obo:GO_0060079 .   # excitatory postsynaptic potential
 
 tvbo:Inhibition a skos:Concept ;
+    rdfs:label "Inhibition"@en ;
     skos:prefLabel "Inhibition"@en ;
     rdfs:comment "Generic hyperpolarising synaptic effect; abstract parent of model-specific inhibitory currents and conductances."@en ;
     skos:broadMatch obo:GO_0060080 .   # inhibitory postsynaptic potential
 
 tvbo:EIBalance a skos:Concept ;
+    rdfs:label "E/I balance"@en ;
     skos:prefLabel "E/I balance"@en ;
     rdfs:comment "Dynamic equilibrium between excitatory and inhibitory drive."@en ;
     skos:broadMatch obo:GO_0099177 .   # regulation of trans-synaptic signaling
 
 tvbo:FeedbackScaling a skos:Concept ;
+    rdfs:label "FeedbackScaling"@en ;
     skos:prefLabel "FeedbackScaling"@en ;
     rdfs:comment "Multiplicative gain applied to recurrent feedback. Control-theoretic concept with no faithful upstream GO mapping."@en .
 
 tvbo:InternalCoupling a skos:Concept ;
+    rdfs:label "InternalCoupling"@en ;
     skos:prefLabel "InternalCoupling"@en ;
     rdfs:comment "Within-population synaptic coupling, distinct from long-range inter-node coupling."@en ;
     skos:broadMatch obo:GO_0007268 .   # chemical synaptic transmission
 
 tvbo:TimeScaling a skos:Concept ;
+    rdfs:label "TimeScaling"@en ;
     skos:prefLabel "TimeScaling"@en ;
     rdfs:comment "Time-constant or rate parameter that sets the temporal scale of a dynamical variable. No faithful upstream GO mapping (GO_0050789 was rejected as overly generic)."@en .
 
@@ -360,7 +366,7 @@ tvbo:ExcitatoryInhibitorySubpopulations
 #
 
 tvbo:JansenRit
-    rdfs:label "Jansen-Rit"@en ;
+    skos:prefLabel "Jansen-Rit"@en ;
     tvbo:modelsAnatomicalRegion        UBERON:0000956 ;          # cerebral cortex
     tvbo:modelsCellType                CL:0000598, CL:0000099 ;  # pyramidal, interneuron
     tvbo:modelsNeurotransmitterSystem
@@ -391,7 +397,7 @@ tvbo:Epileptor
     tvbo:hasModelFeature               tvbo:FastSlowDecomposition .
 
 tvbo:ReducedWongWang
-    rdfs:label "Reduced Wong-Wang"@en ;
+    skos:prefLabel "Reduced Wong-Wang"@en ;
     tvbo:modelsCellType                CL:0000598, CL:0000099 ;  # pyramidal, interneuron
     tvbo:modelsNeurotransmitterSystem  GO:0035249,               # glutamatergic
                                        GO:0007214 ;              # GABAergic
