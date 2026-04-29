@@ -146,7 +146,7 @@ path = "tvbo/__init__.py"
 
 [tool.hatch.envs.dev]
 dependencies = [
-    "ruff",
+    "ruff>=0.15.12",
     "pytest",
     "pytest-cov",
     "pytest-xdist",
