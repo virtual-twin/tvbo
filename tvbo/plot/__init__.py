@@ -18,4 +18,4 @@ plot.ontology.plot_model('JansenRit')
 ```
 """
 
-from . import network, ontology, functions, timeseries, phase, animate
+from . import network, ontology, functions, timeseries, phase, animate, dynamics

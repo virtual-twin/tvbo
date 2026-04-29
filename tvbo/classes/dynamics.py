@@ -1388,6 +1388,15 @@ class Dynamics(tvbo_datamodel.Dynamics):
 
         return ontology.plot_model(self.ontology, **kwargs)
 
+    def plot(self, *dims, **kwargs):
+        """Plot trajectories of this dynamics in 1D, 2D, or 3D.
+
+        See :func:`tvbo.plot.dynamics.plot_dynamics` for parameters.
+        """
+        from tvbo.plot.dynamics import plot_dynamics
+
+        return plot_dynamics(self, *dims, **kwargs)
+
     def render_equation(self, obj, format="latex", inline_functions=False, **kwargs):
         from tvbo.codegen.code import render_equation
         from tvbo.classes.equation import sympify as tvbo_sympify
