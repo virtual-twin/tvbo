@@ -26,7 +26,7 @@ import yaml
 from rdflib import Graph, Literal, Namespace, URIRef
 from rdflib.namespace import DCTERMS, OWL, RDF, RDFS, SKOS, XSD
 
-REPO = pathlib.Path(__file__).resolve().parents[3]
+REPO = pathlib.Path(__file__).resolve().parents[2]
 DEFAULT_SCHEMA = REPO / "schema" / "tvbo_datamodel.yaml"
 DEFAULT_OWL = REPO / "ontology" / "tvb-o-struct.owl"
 
