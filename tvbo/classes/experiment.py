@@ -1863,114 +1863,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         return model
 
     def render_code(self, format="tvb", **kwargs):
-<<<<<<< Updated upstream
-        if format == "tvb":
-            template = templates.lookup.get_template("tvbo-tvb-SimulationExperiment.py.mako")
-            rendered_code = format_code(template.render(experiment=self))
-
-        elif format.lower() in ["autodiff", "jax"]:
-            template = templates.lookup.get_template("autodiff/tvbo-jax-sim.py.mako")
-            rendered_code = format_code(
-                template.render(experiment=self, **kwargs),
-                use_black=False,
-            )
-
-        elif format in ["pde", "pde-fem", "pde-python"]:
-            template = templates.lookup.get_template("tvbo-pde-fem.py.mako")
-            rendered_code = format_code(template.render(experiment=self), use_black=True)
-
-        elif format.lower() == "tvboptim":
-            template = templates.lookup.get_template("tvboptim/tvbo-tvboptim-experiment.py.mako")
-            rendered_code = format_code(
-                template.render(experiment=self, **kwargs),
-                use_black=False,
-            )
-
-        elif format.lower() in ["rateml", "rateml-python"]:
-            # RateML-style TVB Python model with Numba gufunc
-            template = templates.lookup.get_template("rateml/tvbo-rateml-python.py.mako")
-            rendered_code = format_code(
-                template.render(model=self.dynamics, experiment=self, **kwargs),
-                use_black=False,
-            )
-
-        elif format.lower() in ["rateml-cuda", "cuda"]:
-            # RateML-style CUDA kernel
-            template = templates.lookup.get_template("rateml/tvbo-rateml-cuda.c.mako")
-            rendered_code = template.render(model=self.dynamics, experiment=self, coupling=self.coupling, **kwargs)
-
-        elif format.lower() == "rateml-driver":
-            # PyCUDA driver for RateML CUDA kernel
-            template = templates.lookup.get_template("rateml/tvbo-rateml-driver.py.mako")
-            rendered_code = format_code(
-                template.render(model=self.dynamics, experiment=self, **kwargs),
-                use_black=False,
-            )
-
-        elif format.lower() == "julia":
-            template = templates.lookup.get_template("tvbo-julia-DifferentialEquations.jl.mako")
-            rendered_code = template.render(experiment=self, model=self.dynamics, **kwargs)
-
-        elif format.lower() in ["networkdynamics", "nd", "networkdynamics.jl"]:
-            from tvbo.adapters.base import BaseAdapter
-
-            adapter = BaseAdapter(self)
-            ctx = adapter.prepare_context()
-            ctx.update(kwargs)
-            template = templates.lookup.get_template("tvbo-nd-experiment.jl.mako")
-            rendered_code = template.render(**ctx)
-
-        elif format.lower() in ["mtk", "modelingtoolkit", "modelingtoolkit.jl"]:
-            from tvbo.adapters.modelingtoolkit import ModelingToolkitAdapter
-
-            adapter = ModelingToolkitAdapter(self)
-            rendered_code = adapter.render_code(**kwargs)
-
-        elif format.lower() in [
-            "bifurcationkit",
-            "bifurcationkit.jl",
-            "bifurcation",
-            "bifurcation-julia",
-        ]:
-            from tvbo.adapters.bifurcationkit import BifurcationKitAdapter
-
-            adapter = BifurcationKitAdapter(self)
-            rendered_code = adapter.render_code(**kwargs)
-
-        elif format.lower() in [
-            "pyrates-bifurcation",
-            "pyrates-bif",
-            "pycobi",
-            "bifurcation-pyrates",
-            "auto",
-            "auto-07p",
-        ]:
-            from tvbo.adapters.pyrates_bifurcation import PyRatesBifurcationAdapter
-
-            adapter = PyRatesBifurcationAdapter(self)
-            rendered_code = adapter.render_code(**kwargs)
-
-        elif format.lower() in ["lems", "neuroml", "nml"]:
-            from tvbo.adapters.neuroml import NeuroMLAdapter
-
-            adapter = NeuroMLAdapter(self)
-            kwargs.setdefault("use_standard_types", True)
-            rendered_code = adapter.render_code(**kwargs)
-
-        else:
-            raise ValueError(
-                f"Unknown format: {format}. Supported: tvb, autodiff, jax, pde, tvboptim, "
-                "rateml, rateml-python, rateml-cuda, cuda, rateml-driver, "
-                "julia, networkdynamics, nd, mtk, modelingtoolkit, "
-                "bifurcationkit.jl, pyrates-bifurcation, lems, neuroml, nml"
-            )
-
-        return rendered_code
-=======
         """Render generated code in *format* (back-compat shim around the registry)."""
         from tvbo import export as _export
         return _export.render(self, format, **kwargs)
->>>>>>> Stashed changes
 
     def render(self, format="yaml", **kwargs) -> str:
         """Unified entry point for rendering the experiment in any output format.
@@ -1994,19 +1889,11 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         from tvbo import export as _export
         return _export.render(self, format, **kwargs)
 
-<<<<<<< Updated upstream
-        # ── Serialisation ────────────────────────────────────────────────
-        if fmt == "yaml":
-            return self.to_yaml(filepath=kwargs.get("filepath"))
-        if fmt == "pyrates-yaml":
-            return self.to_yaml(filepath=kwargs.get("filepath"), format="pyrates")
-=======
     @classmethod
     def supported_export_formats(cls) -> list[dict]:
         """Return metadata for API/UI export format dropdowns."""
         from tvbo import export as _export
         return _export.list_format_dicts()
->>>>>>> Stashed changes
 
     def save(
         self,
