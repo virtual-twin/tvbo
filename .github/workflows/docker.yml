@@ -205,7 +205,7 @@ jobs:
     name: Docs (${{ matrix.shard }})
     needs: manifest
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     container:
       image: ghcr.io/virtual-twin/tvbo:${{ github.ref_name == 'main' && 'latest' || 'dev' }}
       credentials:
@@ -220,32 +220,39 @@ jobs:
             doc_pattern: "NeuroML"
             extra_args: ""
             xla_device_count: "8"
+            test_timeout: "900"
           # Julia backends: BifurcationKit, ModelingToolkit, NetworkDynamics
+          # test_timeout=1800: Julia cold precompilation can take >15 min in Docker
           - shard: julia
             doc_pattern: "BifurcationKit or ModelingToolkit or NetworkDynamics"
             extra_args: ""
             xla_device_count: "8"
+            test_timeout: "1800"
           # PyRates dynamical systems
           - shard: pyrates
             doc_pattern: "Pyrates"
             extra_args: ""
             xla_device_count: "8"
+            test_timeout: "900"
           # TVB interoperability
           - shard: tvb
             doc_pattern: "Interoperability/TVB"
             extra_args: ""
             xla_device_count: "8"
+            test_timeout: "900"
           # tvboptim docs in CI: keep only stable RWW path.
           # EI/JR are too heavy for current CI limits and run in manual workflows.
           - shard: tvboptim-rww
             doc_pattern: "RWW_tvboptim"
             extra_args: "--run-slow"
             xla_device_count: "8"
+            test_timeout: "900"
           # Replication studies
           - shard: replication
             doc_pattern: "Replication"
             extra_args: ""
             xla_device_count: "8"
+            test_timeout: "900"
           # Core: Usage, Specification, api, examples (non-NeuroML), OpenMINDS, BIDS, root index
           # Negative catch-all: everything not covered by the specialised shards above.
         #   - shard: core
@@ -282,7 +289,7 @@ jobs:
           pytest tests/test_docs.py -v --tb=long -m docs \
             -k "${{ matrix.doc_pattern }}" \
             ${{ matrix.extra_args }} \
-            --timeout=900 --timeout-method=thread \
+            --timeout=${{ matrix.test_timeout }} --timeout-method=thread \
             --override-ini="addopts="
 
   # ─── Release-ready check (main only) ────────────────────────
