@@ -96,6 +96,11 @@ gen-abox: gen-studies
 	@python scripts/ontology/gen_abox.py -o $(ABOX_OUT)
 	@echo "✓ A-box written to $(ABOX_OUT)"
 
+crosswalk:
+	@echo "Refreshing crosswalk + boundary-matrix from schema/api/odoo..."
+	@python scripts/ontology/backfill_crosswalk.py
+	@echo "✓ dev/OntologicalRestructuring/{crosswalk,boundary-matrix}.md updated"
+
 gen-all: gen-linkml gen-openminds gen-owl gen-shacl gen-abox
 	@echo "✓ All schemas generated"
 

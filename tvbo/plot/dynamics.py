@@ -169,7 +169,7 @@ def _kind_timeseries(dynamics, resolved, trials, time, ax, cmap, alpha, lw):
 
 
 def _kind_phase(dynamics, resolved, trials, time, ax, cmap, alpha, lw,
-                show_ic, color_by):
+                show_ic, color_by, ax_given=False):
     n_dims = len(resolved)
     if ax is None:
         if n_dims == 3:
@@ -213,8 +213,9 @@ def _kind_phase(dynamics, resolved, trials, time, ax, cmap, alpha, lw,
         elif n_dims == 2:
             if single_traj_time_color:
                 sc = ax.scatter(ys[0], ys[1], c=time, cmap=cmap, s=2)
-                cb = fig.colorbar(sc, ax=ax, shrink=0.8)
-                cb.set_label("time [ms]")
+                if not ax_given:
+                    cb = fig.colorbar(sc, ax=ax, shrink=0.8)
+                    cb.set_label("time [ms]")
             else:
                 ax.plot(ys[0], ys[1], color=color, lw=lw, alpha=alpha)
             if show_ic:
@@ -226,17 +227,18 @@ def _kind_phase(dynamics, resolved, trials, time, ax, cmap, alpha, lw,
                 for k in range(len(time) - 1):
                     ax.plot(ys[0][k:k + 2], ys[1][k:k + 2], ys[2][k:k + 2],
                             color=cm(t_norm(time[k])), lw=lw, alpha=alpha)
-                sm_t = plt.cm.ScalarMappable(cmap=cmap, norm=t_norm)
-                sm_t.set_array([])
-                cb = fig.colorbar(sm_t, ax=ax, shrink=0.8, pad=0.1)
-                cb.set_label("time [ms]")
+                if not ax_given:
+                    sm_t = plt.cm.ScalarMappable(cmap=cmap, norm=t_norm)
+                    sm_t.set_array([])
+                    cb = fig.colorbar(sm_t, ax=ax, shrink=0.8, pad=0.1)
+                    cb.set_label("time [ms]")
             else:
                 ax.plot(ys[0], ys[1], ys[2], color=color, lw=lw, alpha=alpha)
             if show_ic:
                 ax.scatter(ys[0][0], ys[1][0], ys[2][0],
                            color=color or "k", s=20, zorder=5)
 
-    if color_vals is not None and not single_traj_time_color:
+    if color_vals is not None and not single_traj_time_color and not ax_given:
         sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
         sm.set_array([])
         cb = fig.colorbar(sm, ax=ax, shrink=0.8)
@@ -252,7 +254,8 @@ def _kind_phase(dynamics, resolved, trials, time, ax, cmap, alpha, lw,
     return fig
 
 
-def _kind_vectorfield(dynamics, resolved, ax, grid_n, cmap, stream):
+def _kind_vectorfield(dynamics, resolved, ax, grid_n, cmap, stream, ax_given=False,
+                      alpha=0.8, lw=1.5):
     if len(resolved) != 2:
         raise ValueError("vectorfield requires exactly 2 dims (state variables)")
     state_names = list(dynamics.state_variables)
@@ -270,13 +273,14 @@ def _kind_vectorfield(dynamics, resolved, ax, grid_n, cmap, stream):
         v = float(sv.initial_value) if sv.initial_value is not None else 0.0
         return v - 1.0, v + 1.0
 
-    lo_x, hi_x = _range(sv_objs[sv_idx[0]])
-    lo_y, hi_y = _range(sv_objs[sv_idx[1]])
-
     if ax is None:
         fig, ax = plt.subplots(figsize=(5, 4.5))
+        lo_x, hi_x = _range(sv_objs[sv_idx[0]])
+        lo_y, hi_y = _range(sv_objs[sv_idx[1]])
     else:
         fig = ax.figure
+        lo_x, hi_x = ax.get_xlim()
+        lo_y, hi_y = ax.get_ylim()
 
     X, Y = np.meshgrid(np.linspace(lo_x, hi_x, grid_n), np.linspace(lo_y, hi_y, grid_n))
     base_ic = np.asarray(dynamics.get_initial_values(), dtype=float).reshape(-1)
@@ -293,12 +297,17 @@ def _kind_vectorfield(dynamics, resolved, ax, grid_n, cmap, stream):
 
     speed = np.hypot(U, V)
     if stream:
-        strm = ax.streamplot(X, Y, U, V, color=speed, cmap=cmap, density=1.2)
-        cb = fig.colorbar(strm.lines, ax=ax, shrink=0.8)
+        strm = ax.streamplot(X, Y, U, V, color=speed, cmap=cmap, density=1.2,
+                             arrowsize=1.0, linewidth=lw)
+        strm.lines.set_alpha(alpha)
+        if not ax_given:
+            cb = fig.colorbar(strm.lines, ax=ax, shrink=0.8)
+            cb.set_label("|f|")
     else:
-        q = ax.quiver(X, Y, U, V, speed, cmap=cmap)
-        cb = fig.colorbar(q, ax=ax, shrink=0.8)
-    cb.set_label("|f|")
+        q = ax.quiver(X, Y, U, V, speed, cmap=cmap, alpha=alpha)
+        if not ax_given:
+            cb = fig.colorbar(q, ax=ax, shrink=0.8)
+            cb.set_label("|f|")
     ax.set_xlabel(resolved[0][0]); ax.set_ylabel(resolved[1][0])
     ax.set_box_aspect(1)
     return fig
@@ -389,7 +398,8 @@ def plot_dynamics(
 
     if kind == "vectorfield":
         fig = _kind_vectorfield(dynamics, resolved, ax=ax, grid_n=grid_n,
-                                cmap=cmap, stream=stream)
+                                cmap=cmap, stream=stream, ax_given=ax_given,
+                                alpha=alpha, lw=lw)
     else:
         trials, time = _run_trials(dynamics, n_trials, duration, dt, u_0, transient)
         if kind == "timeseries":
@@ -397,8 +407,10 @@ def plot_dynamics(
                                    cmap=cmap, alpha=alpha, lw=lw)
         else:
             fig = _kind_phase(dynamics, resolved, trials, time, ax=ax, cmap=cmap,
-                              alpha=alpha, lw=lw, show_ic=show_ic, color_by=color_by)
+                              alpha=alpha, lw=lw, show_ic=show_ic, color_by=color_by,
+                              ax_given=ax_given)
 
     if not ax_given:
         plt.close(fig)
-    return fig
+        return fig
+    return None
