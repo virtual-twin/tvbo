@@ -2787,13 +2787,12 @@ def build_lems_context(experiment):
     elif dyn.name and not (dyn.state_variables or dyn.parameters):
         iri = str(getattr(dyn, "iri", "") or "")
         if not iri.startswith("neuroml:"):
-            from tvbo.data.registry import _build_name_index
-            from tvbo import database as _db
-            from pathlib import Path
+            from tvbo.data.registry import DATABASE_ROOT, _build_name_index
 
-            db_dir = Path(_db.__file__).parent / "models"
-            if dyn.name in _build_name_index(db_dir):
-                dyn = Dynamics.from_db(dyn.name)
+            if DATABASE_ROOT is not None:
+                db_dir = DATABASE_ROOT / "models"
+                if dyn.name in _build_name_index(db_dir):
+                    dyn = Dynamics.from_db(dyn.name)
 
     dyn_id = safe_id(dyn.name or "dynamics")
 
