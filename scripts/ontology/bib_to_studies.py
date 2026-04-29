@@ -92,8 +92,13 @@ def entry_to_yaml(entry: dict) -> dict:
     authors = split_authors(entry.get("author"))
     if authors:
         out["authors"] = authors
+    year = clean(entry.get("year"))
+    if year:
+        try:
+            out["year"] = int(year)
+        except ValueError:
+            out["year"] = year
     for src, dst in (
-        ("year", "year"),
         ("journal", "journal"),
         ("booktitle", "booktitle"),
         ("publisher", "publisher"),
