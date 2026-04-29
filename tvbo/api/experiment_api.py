@@ -7,11 +7,7 @@ Endpoints:
   GET /api/v1/experiments/{id}/render  — render experiment in any supported format
   POST /api/v1/experiments/render      — render or save an experiment from a payload
 """
-<<<<<<< Updated upstream
 
-=======
-import os
->>>>>>> Stashed changes
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query
