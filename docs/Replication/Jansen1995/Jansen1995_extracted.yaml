@@ -224,9 +224,8 @@ experiments:
         description: >-
           Sweep over 6 values of C demonstrating output regimes from noise
           through alpha to spike-wave and back to noise.
-        parameters:
-          C:
-            name: C
+        space:
+          - parameter: C
             explored_values:
               - 68          # hypoactive noise (md:L199)
               - 128         # noisy alpha transition
@@ -264,18 +263,16 @@ experiments:
           five regimes ordered: hypoactive noise → slow periodic (2-3 Hz) →
           alpha (8-9 Hz) → noisy alpha → hyperactive noise (beta-like).
         mode: product
-        parameters:
+        space:
           # md:L216 — "A was varied between 2.6 and 9.75 mV"
-          A:
-            name: A
+          - parameter: A
             unit: mV
             domain:
               lo: 2.6
               hi: 9.75
               n: 50
           # md:L216 — "B ranged from 17.6 to 110 mV"
-          B:
-            name: B
+          - parameter: B
             unit: mV
             domain:
               lo: 17.6
@@ -283,8 +280,7 @@ experiments:
               n: 50
           # md:L217 — "C from 108 to 675"
           # Paper Fig. 4 shows these 5 specific C values as rows
-          C:
-            name: C
+          - parameter: C
             explored_values:
               - 108
               - 135
@@ -292,8 +288,7 @@ experiments:
               - 405
               - 675
           # md:L217 — "v0 was either 3.12, 5.52, or 6.0 mV"
-          v0:
-            name: v0
+          - parameter: v0
             unit: mV
             explored_values:
               - 3.12
@@ -399,9 +394,8 @@ experiments:
           desynchronized noisy, saturated. Model is symmetric (identical columns +
           identical K values → symmetric output).
         mode: product
-        parameters:
-          K:
-            name: K
+        space:
+          - parameter: K
             label: "Per-node coupling strength (auto-expanded for heterogeneous)"
             domain:
               lo: "0"
@@ -681,9 +675,8 @@ experiments:
           K1 roughly one order of magnitude larger than K2
           (anatomically justified: feed-forward > feedback, Pandya & Yeterian 1990).
         mode: product
-        parameters:
-          K:
-            name: K
+        space:
+          - parameter: K
             label: "Inter-column coupling strength (heterogeneous, per-node)"
             domain:
               lo: 0
@@ -890,9 +883,8 @@ experiments:
         mode: zip
         n_trials: 20
         average: trials
-        parameters:
-          K:
-            name: K
+        space:
+          - parameter: K
             label: "Symmetric coupling K1=K2=K"
             description: "Specific values explored include K<10, K=10, K=70, K>100"
             # md:L253 — "K = K1 = K2"; K=10 (alpha attenuation), K=70 (distortion), K>100 (input shape)
@@ -913,9 +905,8 @@ experiments:
         mode: zip
         n_trials: 20
         average: trials
-        parameters:
-          K:
-            name: K
+        space:
+          - parameter: K
             label: "Per-node coupling (K[0]=K2, K[1]=K1)"
             description: "Heterogeneous K with per-element explored values"
             element_domains:
@@ -938,9 +929,8 @@ experiments:
           K[0]=K2=10 (received by col1), K[1]=K1=120 (received by col2).
         mode: zip
         n_trials: 5
-        parameters:
-          K:
-            name: K
+        space:
+          - parameter: K
             element_domains:
               - element: 0     # K[0] = K2 = 10
                 explored_values:
@@ -1134,9 +1124,8 @@ experiments:
         mode: zip
         n_trials: 40
         average: trials
-        parameters:
-          K:
-            name: K
+        space:
+          - parameter: K
             label: "Per-node coupling (K[0]=K2, K[1]=K1)"
             description: "Heterogeneous K with per-element explored values"
             element_domains:

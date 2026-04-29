@@ -31,7 +31,7 @@ Explore how the damping parameter μ affects oscillation behaviour.
 
 ```{python}
 from tvbo import Dynamics, SimulationExperiment
-from tvbo.datamodel.schema import Exploration, Parameter, Range
+from tvbo.datamodel.schema import Exploration, ExplorationAxis, Range
 from IPython.display import Markdown, display
 
 # Van der Pol oscillator
@@ -56,7 +56,7 @@ exp.explorations['mu_sweep'] = Exploration(
     name='mu_sweep',
     label='μ sweep',
     description='Effect of damping coefficient μ on VdP oscillations',
-    parameters=[Parameter(name='mu', domain=Range(lo=0.1, hi=10.0, n=6))],
+    space=[ExplorationAxis(parameter='VdP.mu', domain=Range(lo=0.1, hi=10.0, n=6))],
     mode='product',
 )
 
@@ -147,9 +147,9 @@ exp2.integration.step_size = 5e-3
 exp2.explorations['amp_landscape'] = Exploration(
     name='amp_landscape',
     label='a × I_ext amplitude landscape',
-    parameters=[
-        Parameter(name='a',     domain=Range(lo=0.5, hi=1.0, n=3)),
-        Parameter(name='I_ext', domain=Range(lo=0.0, hi=1.0, n=3)),
+    space=[
+        ExplorationAxis(parameter='a',     domain=Range(lo=0.5, hi=1.0, n=3)),
+        ExplorationAxis(parameter='I_ext', domain=Range(lo=0.0, hi=1.0, n=3)),
     ],
     mode='product',
 )
@@ -220,7 +220,7 @@ exp3.integration.step_size = 5e-3
 exp3.explorations['eta_sweep'] = Exploration(
     name='eta_sweep',
     label='η bifurcation sweep',
-    parameters=[Parameter(name='eta', domain=Range(lo=-10.0, hi=5.0, n=15))],
+    space=[ExplorationAxis(parameter='QIF.eta', domain=Range(lo=-10.0, hi=5.0, n=15))],
     mode='product',
 )
 
@@ -277,14 +277,14 @@ TVBO's `explorations` declaration maps directly to PyRates `grid_search()`:
 
 | TVBO concept | PyRates concept |
 |---|---|
-| `Exploration.parameters` + `Range(lo, hi, n)` | `param_grid = {name: linspace(lo, hi, n)}` |
+| `Exploration.space` + `Range(lo, hi, n)` | `param_grid = {name: linspace(lo, hi, n)}` |
 | `Exploration.mode = 'product'` | `permute_grid=True` (Cartesian product) |
 | `Exploration.mode = 'zip'` | `permute_grid=False` (pairwise) |
 | `result.explorations[name]` | returned `(results_df, results_map)` DataFrames |
 
 ```python
 from tvbo import Dynamics, SimulationExperiment
-from tvbo.datamodel.schema import Exploration, Parameter, Range
+from tvbo.datamodel.schema import Exploration, ExplorationAxis, Range
 
 exp = SimulationExperiment(dynamics=model)
 exp.integration.duration = T
@@ -292,7 +292,7 @@ exp.integration.step_size = dt
 
 exp.explorations['my_sweep'] = Exploration(
     name='my_sweep',
-    parameters=[Parameter(name='mu', domain=Range(lo=0.1, hi=10.0, n=6))],
+    space=[ExplorationAxis(parameter='Model.mu', domain=Range(lo=0.1, hi=10.0, n=6))],
     mode='product',  # or 'zip'
 )
 
