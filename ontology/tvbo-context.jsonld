@@ -1,0 +1,76 @@
+{
+  "@context": {
+    "_comment": "TVB-O JSON-LD context skeleton. Maps the LinkML schema prefix block (schema/tvbo_datamodel.yaml) plus the axioms-layer prefixes (ontology/tvb-o-axioms.ttl) to JSON-LD term definitions. Used to round-trip YAML database records through JSON-LD into Turtle and back. Term aliases below cover the slots whose `slot_uri` already points at a community vocabulary; ontology-internal slots remain under the default `tvbo:` namespace and resolve through `@vocab`.",
+
+    "@vocab":  "https://w3id.org/tvbo/",
+    "tvbo":    "https://w3id.org/tvbo/",
+    "linkml":  "https://w3id.org/linkml/",
+    "owl":     "http://www.w3.org/2002/07/owl#",
+    "rdf":     "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "rdfs":    "http://www.w3.org/2000/01/rdf-schema#",
+    "xsd":     "http://www.w3.org/2001/XMLSchema#",
+    "skos":    "http://www.w3.org/2004/02/skos/core#",
+    "prov":    "http://www.w3.org/ns/prov#",
+    "dcterms": "http://purl.org/dc/terms/",
+    "schema":  "http://schema.org/",
+    "bibo":    "http://purl.org/ontology/bibo/",
+    "sio":     "http://semanticscience.org/resource/",
+    "nidm":    "http://purl.org/nidash/nidm#",
+    "biotools":"https://bio.tools/ontology/",
+    "wd":      "http://www.wikidata.org/entity/",
+    "qudt":    "http://qudt.org/vocab/unit/",
+    "UO":      "http://purl.obolibrary.org/obo/UO_",
+    "oboInOwl":"http://www.geneontology.org/formats/oboInOwl#",
+    "GO":      "http://purl.obolibrary.org/obo/GO_",
+    "CL":      "http://purl.obolibrary.org/obo/CL_",
+    "UBERON":  "http://purl.obolibrary.org/obo/UBERON_",
+    "CHEBI":   "http://purl.obolibrary.org/obo/CHEBI_",
+    "MESH":    "http://purl.bioontology.org/ontology/MESH/",
+    "atom":    "https://openminds.ebrains.eu/sands/",
+
+    "id":   "@id",
+    "type": "@type",
+
+    "name":            { "@id": "schema:name" },
+    "label":           { "@id": "rdfs:label" },
+    "description":     { "@id": "dcterms:description" },
+    "identifier":      { "@id": "dcterms:identifier" },
+    "license":         { "@id": "dcterms:license" },
+    "creator":         { "@id": "dcterms:creator" },
+    "references":      { "@id": "dcterms:references", "@container": "@set" },
+    "subject":         { "@id": "dcterms:subject", "@container": "@set" },
+    "version":         { "@id": "schema:softwareVersion" },
+    "url":             { "@id": "schema:url",            "@type": "@id" },
+    "codeRepository":  { "@id": "schema:codeRepository", "@type": "@id" },
+    "doi":             { "@id": "bibo:doi" },
+    "notation":        { "@id": "skos:notation" },
+
+    "grounding": {
+      "@id": "oboInOwl:hasDbXref",
+      "@type": "@id",
+      "@container": "@set",
+      "_comment": "Per-parameter cross-reference to upstream community vocabularies. Replaces the legacy per-parameter OWL surrogate classes."
+    },
+
+    "modelsAnatomicalRegion":        { "@id": "tvbo:modelsAnatomicalRegion",        "@type": "@id", "@container": "@set" },
+    "modelsCellType":                 { "@id": "tvbo:modelsCellType",                 "@type": "@id", "@container": "@set" },
+    "modelsNeurotransmitterSystem":   { "@id": "tvbo:modelsNeurotransmitterSystem",   "@type": "@id", "@container": "@set" },
+
+    "exhibitsRegime":          { "@id": "tvbo:exhibitsRegime",       "@type": "@id", "@container": "@set" },
+    "exhibitsBifurcation":     { "@id": "tvbo:exhibitsBifurcation",  "@type": "@id", "@container": "@set" },
+    "hasAttractor":            { "@id": "tvbo:hasAttractor",         "@type": "@id", "@container": "@set" },
+    "hasStochasticityCharacter": { "@id": "tvbo:hasStochasticityCharacter", "@type": "@id" },
+    "phaseSpaceDimension":     { "@id": "tvbo:phaseSpaceDimension",  "@type": "xsd:positiveInteger" },
+    "hasTimescaleSeparation":  { "@id": "tvbo:hasTimescaleSeparation","@type": "xsd:boolean" },
+    "hasConservedQuantity":    { "@id": "tvbo:hasConservedQuantity", "@type": "xsd:boolean" },
+
+    "bifurcationType":         { "@id": "tvbo:bifurcationType",      "@type": "@id" },
+    "bifurcationParameter":    { "@id": "tvbo:bifurcationParameter", "@type": "@id" },
+    "criticalValue":           { "@id": "tvbo:criticalValue",        "@type": "xsd:double" },
+
+    "supportsTask":            { "@id": "tvbo:supportsTask",         "@type": "@id", "@container": "@set" },
+    "providesCapability":      { "@id": "tvbo:providesCapability",   "@type": "@id", "@container": "@set" },
+    "hasModelFeature":         { "@id": "tvbo:hasModelFeature",      "@type": "@id", "@container": "@set" },
+    "executableOn":            { "@id": "tvbo:executableOn",         "@type": "@id", "@container": "@set" }
+  }
+}

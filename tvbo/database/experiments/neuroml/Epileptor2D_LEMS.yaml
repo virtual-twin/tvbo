@@ -10,7 +10,9 @@ description: >
   Export the 2D Epileptor model from the TVBO database as LEMS XML.
   Demonstrates ConditionalDerivedVariable for Piecewise expressions.
 
-model: Epileptor2D
+dynamics:
+  name: Epileptor2D
+  iri: tvbo:Epileptor2D
 
 network:
   number_of_nodes: 1

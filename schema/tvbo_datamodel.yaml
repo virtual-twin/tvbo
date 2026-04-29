@@ -1,8 +1,11 @@
 ---
 id: https://w3id.org/tvbo
 name: tvb-datamodel
+version: 0.4.0
 description: Metadata schema for simulation studies using The Virtual Brain neuroinformatics platform or other dynamic network models of large-scale brain activity.
 title: The Virtual Brain Data Model
+license: https://spdx.org/licenses/EUPL-1.2
+created_on: '2024-01-01'
 prefixes:
     tvbo: http://www.thevirtualbrain.org/tvb-o/
     linkml: https://w3id.org/linkml/
@@ -14,8 +17,20 @@ prefixes:
     nidm: http://purl.org/nidash/nidm#
     biotools: https://bio.tools/ontology/
     wd: http://www.wikidata.org/entity/
+    dcterms: http://purl.org/dc/terms/
+    schema: http://schema.org/
+    skos: http://www.w3.org/2004/02/skos/core#
+    bibo: http://purl.org/ontology/bibo/
+    oboInOwl: http://www.geneontology.org/formats/oboInOwl#
+    GO: http://purl.obolibrary.org/obo/GO_
+    CL: http://purl.obolibrary.org/obo/CL_
+    UBERON: http://purl.obolibrary.org/obo/UBERON_
+    CHEBI: http://purl.obolibrary.org/obo/CHEBI_
+    MESH: http://purl.bioontology.org/ontology/MESH/
 imports:
     - linkml:types
+    - common
+    - units
     - SANDS
     - tvbo_study
     - tvb_dbs
@@ -25,9 +40,6 @@ default_prefix: tvbo
 default_range: string
 
 slots:
-    name:
-        range: string
-        key: true
     time_scale:
         range: UnitEnum
         ifabsent: "ms"
@@ -45,31 +57,63 @@ slots:
     model:
         range: Dynamics
     has_reference:
+        slot_uri: dcterms:references
         range: string
     references:
+        slot_uri: dcterms:references
         multivalued: true
         range: string
     label:
+        slot_uri: rdfs:label
         range: string
     acronym:
+        slot_uri: skos:notation
         range: string
     symbol:
         range: string
     domain:
         range: Range
     iri:
-        range: string
+        slot_uri: dcterms:identifier
+        range: uriorcurie
+        description: >-
+            Optional stable IRI (or compact URI) for this entity in an
+            external ontology or knowledge base. Used to load metadata
+            from an external source; not required when the entity is
+            fully self-contained (equations, parameters, etc. defined
+            in the file itself).
+    grounding:
+        slot_uri: oboInOwl:hasDbXref
+        range: uriorcurie
+        multivalued: true
+        description: >-
+            External ontology IRIs (typically GO, ChEBI, UBERON, CL, MeSH)
+            that this entity is a surrogate / abstraction / model of. Replaces
+            the legacy OWL pattern `tvbo:surrogate_of` by carrying the link
+            inline with the YAML data instance. Multiple IRIs allowed: a
+            single parameter may abstract several biological processes
+            (e.g. a synaptic conductance grounding both
+            GO:0060079 (excitatory PSP) and GO:0007268 (chemical synaptic
+            transmission)).
     value:
-        range: float
+        slot_uri: schema:value
+        range: ScalarValue
+        description: >-
+            Numeric, string, or boolean value. ScalarValue accepts any literal
+            primitive type, allowing parameters to carry control flags
+            (e.g., booleans) or symbolic placeholders alongside numeric defaults.
     file:
         range: string
     reported_optimum:
         range: float
     default:
+        slot_uri: schema:defaultValue
         range: string
     description:
+        slot_uri: dcterms:description
         range: string
     definition:
+        slot_uri: skos:definition
         range: string
     parameters:
         range: Parameter
@@ -80,13 +124,16 @@ slots:
         range: Equation
         inlined: true
     unit:
+        slot_uri: qudt:unit
         range: UnitEnum
         description: >-
             Physical unit of measurement. Values are drawn from the QUDT
             ontology (http://qudt.org/vocab/unit/) with UO cross-references
             where available.
     derived_from:
+        slot_uri: prov:wasDerivedFrom
     source:
+        slot_uri: dcterms:source
         range: string
     dataset_path:
         range: string
@@ -103,258 +150,6 @@ slots:
             Set false to suppress recording.
 
 enums:
-    UnitEnum:
-        description: >-
-            Physical units of measurement for model parameters, state variables,
-            and integration settings. Uses conventional abbreviations as values,
-            mapped to the QUDT ontology (http://qudt.org/vocab/unit/) with UO
-            cross-references where available.
-        permissible_values:
-            # ── Time ──
-            s:
-                meaning: qudt:SEC
-                exact_mappings:
-                    - UO:0000010
-                description: "Second"
-            ms:
-                meaning: qudt:MilliSEC
-                exact_mappings:
-                    - UO:0000028
-                description: "Millisecond"
-            us:
-                meaning: qudt:MicroSEC
-                exact_mappings:
-                    - UO:0000029
-                description: "Microsecond"
-            # ── Rates / inverse time ──
-            per_s:
-                meaning: qudt:PER-SEC
-                description: "Per second (s⁻¹)"
-            per_ms:
-                meaning: qudt:PER-MilliSEC
-                description: "Per millisecond (ms⁻¹)"
-            Hz:
-                meaning: qudt:HZ
-                exact_mappings:
-                    - UO:0000106
-                description: "Hertz (s⁻¹)"
-            kHz:
-                meaning: qudt:KiloHZ
-                description: "Kilohertz"
-            # ── Voltage ──
-            V:
-                meaning: qudt:V
-                exact_mappings:
-                    - UO:0000218
-                description: "Volt"
-            mV:
-                meaning: qudt:MilliV
-                exact_mappings:
-                    - UO:0000247
-                description: "Millivolt"
-            per_mV:
-                meaning: qudt:PER-MilliV
-                description: "Reciprocal millivolt (mV⁻¹)"
-            mV_per_ms:
-                meaning: qudt:MilliV-PER-MilliSEC
-                description: "Millivolt per millisecond"
-            mV_per_s:
-                meaning: qudt:MilliV-PER-SEC
-                description: "Millivolt per second"
-            # ── Current ──
-            A:
-                meaning: qudt:A
-                exact_mappings:
-                    - UO:0000011
-                description: "Ampere"
-            nA:
-                meaning: qudt:NanoA
-                description: "Nanoampere"
-            pA:
-                meaning: qudt:PicoA
-                exact_mappings:
-                    - UO:0010054
-                description: "Picoampere"
-            uA_per_cm2:
-                description: "Microampere per square centimetre (current density)"
-            # ── Capacitance ──
-            pF:
-                meaning: qudt:PicoFARAD
-                description: "Picofarad"
-            nF:
-                meaning: qudt:NanoFARAD
-                description: "Nanofarad"
-            uF_per_cm2:
-                description: "Microfarad per square centimetre (specific capacitance)"
-            # ── Conductance ──
-            nS:
-                meaning: qudt:NanoS
-                description: "Nanosiemens"
-            uS:
-                meaning: qudt:MicroS
-                description: "Microsiemens"
-            pS:
-                meaning: qudt:PicoS
-                description: "Picosiemens"
-            S_per_cm2:
-                description: "Siemens per square centimetre (conductance density)"
-            mS_per_cm2:
-                description: "Millisiemens per square centimetre (conductance density)"
-            S_per_m2:
-                description: "Siemens per square metre (conductance density, SI)"
-            nS_per_mV:
-                description: "Nanosiemens per millivolt"
-            # ── Charge (inverse) ──
-            per_nC:
-                meaning: qudt:PER-NanoC
-                description: "Reciprocal nanocoulomb (nC⁻¹)"
-            per_pC:
-                meaning: qudt:PER-PicoC
-                description: "Reciprocal picocoulomb (pC⁻¹)"
-            # ── Concentration ──
-            mol_per_m3:
-                meaning: qudt:MOL-PER-M3
-                description: "Mole per cubic metre (mol/m³)"
-            mol_per_cm3:
-                description: "Mole per cubic centimetre (mol/cm³)"
-            mmol_per_m3:
-                meaning: qudt:MilliMOL-PER-M3
-                description: "Millimole per cubic metre (mmol/m³ ≈ mM)"
-                aliases:
-                    - mM
-            mol_per_m_per_A_per_s:
-                description: "Mole per metre per ampere per second (concentration-current coupling)"
-            # ── Volume ──
-            um3:
-                meaning: qudt:MicroM3
-                description: "Cubic micrometre (µm³)"
-            # ── Length / distance ──
-            m:
-                meaning: qudt:M
-                exact_mappings:
-                    - UO:0000008
-                description: "Metre"
-            mm:
-                meaning: qudt:MilliM
-                exact_mappings:
-                    - UO:0000016
-                description: "Millimetre"
-            cm:
-                meaning: qudt:CentiM
-                exact_mappings:
-                    - UO:0000015
-                description: "Centimetre"
-            # ── Velocity ──
-            m_per_s:
-                meaning: qudt:M-PER-SEC
-                description: "Metre per second"
-            mm_per_ms:
-                meaning: qudt:MilliM-PER-MilliSEC
-                description: "Millimetre per millisecond (= m/s)"
-            # ── Gain / compound ──
-            Hz_per_nA:
-                description: "Hertz per nanoampere (neural gain)"
-            # ── Conductivity / permeability ──
-            S_per_m:
-                meaning: qudt:S-PER-M
-                description: "Siemens per metre (conductivity)"
-            H_per_m:
-                meaning: qudt:H-PER-M
-                description: "Henry per metre (permeability)"
-            # ── Resistance ──
-            ohm:
-                meaning: qudt:OHM
-                description: "Ohm (Ω)"
-            Mohm:
-                description: "Megaohm (MΩ)"
-            # ── Resistivity ──
-            kohm_cm:
-                description: "Kilo-ohm centimetre (axial resistivity)"
-            # ── Temperature ──
-            degC:
-                meaning: qudt:DEG_C
-                description: "Degree Celsius"
-            # ── Angular rate ──
-            rad_per_ms:
-                description: "Radian per millisecond"
-            # ── Dimensionless ──
-            dimensionless:
-                meaning: qudt:UNITLESS
-                exact_mappings:
-                    - UO:0000186
-                description: "Dimensionless (unitless)"
-            percent:
-                meaning: qudt:PERCENT
-                description: "Percent (%)"
-            arbitrary_unit:
-                description: "Arbitrary units (a.u.)"
-            # ── Mass ──
-            kg:
-                meaning: qudt:KiloGM
-                exact_mappings:
-                    - UO:0000009
-                description: "Kilogram"
-            kg_per_s:
-                description: "Kilogram per second"
-            # ── Acceleration ──
-            m_per_s2:
-                meaning: qudt:M-PER-SEC2
-                description: "Metre per second squared (acceleration)"
-            # ── Force / stiffness ──
-            N_per_m:
-                meaning: qudt:N-PER-M
-                description: "Newton per metre (spring constant)"
-            # ── Angle ──
-            rad:
-                meaning: qudt:RAD
-                exact_mappings:
-                    - UO:0000123
-                description: "Radian"
-            rad_per_s:
-                meaning: qudt:RAD-PER-SEC
-                description: "Radian per second (angular velocity)"
-            # ── Time squared ──
-            s2:
-                meaning: qudt:SEC2
-                description: "Second squared (inertia constant)"
-            # ── Per-unit (power systems) ──
-            per_unit:
-                description: "Per-unit (dimensionless power-systems convention)"
-
-    PhysicalDimension:
-        description: >-
-            Physical dimension categories for LEMS and dimensional analysis.
-            Each dimension decomposes into SI base dimensions (M, L, T, I, K, N).
-        permissible_values:
-            none:
-                description: "Dimensionless"
-            time:
-                description: "Time [T]"
-            per_time:
-                description: "Inverse time [T⁻¹]"
-            voltage:
-                description: "Voltage [M L² T⁻³ I⁻¹]"
-            current:
-                description: "Electric current [I]"
-            capacitance:
-                description: "Capacitance [M⁻¹ L⁻² T⁴ I²]"
-            conductance:
-                description: "Conductance [M⁻¹ L⁻² T³ I²]"
-            resistance:
-                description: "Resistance [M L² T⁻³ I⁻²]"
-            charge:
-                description: "Electric charge [T I]"
-            concentration:
-                description: "Concentration [L⁻³ N]"
-            substance:
-                description: "Amount of substance [N]"
-            length:
-                description: "Length [L]"
-            volume:
-                description: "Volume [L³]"
-            temperature:
-                description: "Temperature [K]"
-
     ImagingModality:
         permissible_values:
             BOLD:
@@ -568,18 +363,25 @@ enums:
                 description: "Coordinate list (data, row, col)"
 
 classes:
+    ScalarValue:
+        class_uri: linkml:Any
+        description: >-
+            A scalar value: float, integer, string, or boolean.
+            Used for slots that accept literals of any primitive type, such as
+            argument values which may be numbers, strings, references, or booleans.
+
     Range:
+        class_uri: tvbo:Range
         description: "Specifies a range for array generation, parameter bounds, or grid exploration."
         attributes:
             lo:
-                range: string
+                range: ScalarValue
                 description: "Lower bound or starting value. Can be a number or argument name."
-                ifabsent: string(0)
             hi:
-                range: string
+                range: ScalarValue
                 description: "Upper bound or stopping value. Can be a number or argument name."
             step:
-                range: string
+                range: ScalarValue
                 description: "Step size. Can be: number, argument name, or expression."
             n:
                 range: integer
@@ -605,6 +407,7 @@ classes:
                     element_domains to avoid ambiguous positional indexing.
 
     Equation:
+        class_uri: tvbo:Equation
         slots:
             - label
             - definition
@@ -635,6 +438,7 @@ classes:
                 ifabsent: false
 
     ConditionalBlock:
+        class_uri: tvbo:ConditionalBlock
         description: A single condition and its corresponding equation segment.
         attributes:
             condition:
@@ -645,6 +449,7 @@ classes:
                 range: string
 
     Stimulus:
+        class_uri: tvbo:Stimulus
         slots:
             - equation
             - parameters
@@ -663,6 +468,7 @@ classes:
                 array: {}
 
     Event:
+        class_uri: tvbo:Event
         description: >-
             A discrete or continuous event that modifies the system during simulation.
             Generalizes Stimulus: can represent external inputs (stimulus type),
@@ -751,6 +557,7 @@ classes:
                 description: "Duration of stimulus-type events."
 
     TemporalApplicableEquation:
+        class_uri: tvbo:TemporalApplicableEquation
         is_a: Equation
         slots:
             - parameters
@@ -793,9 +600,11 @@ classes:
                 description: "Processing pipeline used to generate the tractography"
             reference:
                 range: string
+                slot_uri: dcterms:references
                 description: "Publication or DOI reference for this tractography dataset"
 
     Matrix:
+        class_uri: tvbo:Matrix
         # implements:
         #   - linkml:TwoDimensionalArray
         #   - linkml:RowOrderedArray
@@ -831,6 +640,7 @@ classes:
             - dataLocation
 
     BrainRegionSeries:
+        class_uri: tvbo:BrainRegionSeries
         description: A series whose values represent latitude
         # implements:
         #   - linkml:OneDimensionalSeries
@@ -887,6 +697,9 @@ classes:
             acquisition:
                 range: string
                 description: "BIDS acq- entity (e.g., EEGstandard1005, MEGBrainstorm)"
+            hemi:
+                range: string
+                description: "BIDS hemi- entity (L or R) for hemisphere-specific surface/volume data"
 
     Network:
         class_uri: tvbo:Network
@@ -1023,6 +836,7 @@ classes:
                     automatic code generation across backends.
 
     GraphGenerator:
+        class_uri: tvbo:GraphGenerator
         description: >
             Backend-agnostic graph generator specification.  Captures the
             mathematical family (type) and its parameters so that each backend
@@ -1055,6 +869,7 @@ classes:
                     matched by the backend mapping to construct the call.
 
     File:
+        class_uri: tvbo:File
         slots:
             - name
             - description
@@ -1081,6 +896,7 @@ classes:
             id:
                 range: integer
                 required: true
+                slot_uri: dcterms:identifier
                 description: "Unique node identifier"
             dynamics:
                 range: Dynamics
@@ -1128,6 +944,15 @@ classes:
                 range: integer
                 required: false
                 description: "Target node ID (set for explicit edges, absent for template edges)"
+            weight:
+                range: float
+                description: "Connection weight (explicit edges)"
+            delay:
+                range: float
+                description: "Conduction delay (explicit edges, ms)"
+            distance:
+                range: float
+                description: "Edge length / tract distance (explicit edges, mm)"
             unit:
                 range: string
                 description: "Unit for matrix values (template edges only)"
@@ -1263,8 +1088,9 @@ classes:
 
             # Processing pipeline (sequence of Functions with input -> output flow)
             pipeline:
-                description: "Ordered sequence of Functions. Each Function transforms input -> output."
+                description: "Ordered sequence of Functions. Each step has a unique `name` (used to key step outputs) and transforms input -> output. List form preserves execution order."
                 multivalued: true
+                inlined: true
                 inlined_as_list: true
                 range: FunctionCall
 
@@ -1320,6 +1146,7 @@ classes:
             - description
             - source
             - references
+            - dataLocation
         slot_usage:
             name:
                 ifabsent: "Generic2dOscillator"
@@ -1417,6 +1244,7 @@ classes:
             - equation
             - unit
             - record
+            - grounding
         slot_usage:
             record:
                 ifabsent: true
@@ -1476,6 +1304,7 @@ classes:
                 inlined: true
 
     Distribution:
+        class_uri: tvbo:Distribution
         description: >-
             A probability distribution for sampling parameters or initial conditions.
             Standard distributions (Uniform, Gaussian) are specified by name and domain/parameters.
@@ -1522,9 +1351,11 @@ classes:
             - equation
             - unit
             - dataset_path
+            - grounding
         attributes:
             comment:
                 range: string
+                slot_uri: rdfs:comment
             heterogeneous:
                 range: boolean
             distribution:
@@ -1551,6 +1382,7 @@ classes:
                     share the same domain.
 
     CouplingInput:
+        class_uri: tvbo:CouplingInput
         description: "Specification of a coupling input channel for multi-coupling dynamics"
         slots:
             - name
@@ -1581,13 +1413,10 @@ classes:
             value:
                 description: >-
                     Argument value. Can be:
-                    - Literal: 1.0, "string", etc.
+                    - Literal: 1.0, "string", boolean, etc.
                     - Input reference: "input.frequencies" (from source_observation outputs)
                     - Cross-observation: "target_frequencies.peak_freqs" (from another observation)
-                any_of:
-                    - range: float
-                    - range: integer
-                    - range: string
+                range: ScalarValue
             unit:
                 range: string
 
@@ -1601,6 +1430,7 @@ classes:
             - name
             - acronym
             - label
+            - iri
             - equation
             - definition
             - description
@@ -1618,12 +1448,14 @@ classes:
                 description: "Name for this function's output (referenced by subsequent functions)"
                 range: string
             # Transformation definition (equation OR callable)
-            iri:
-                range: string
             arguments:
-                description: "Parameters/arguments for the function"
+                description: >-
+                    Variables consumed by the function (referenced in the
+                    equation). Each argument has a name and optional metadata
+                    (description, default value, unit).
                 multivalued: true
                 range: Argument
+                inlined: true
                 inlined_as_list: true
             output_equation:
                 description: "Output transformation equation (if equation-based)"
@@ -1652,6 +1484,7 @@ classes:
                 inlined: true
 
     Aggregation:
+        class_uri: tvbo:Aggregation
         description: >-
             Specifies how to aggregate values across a dimension.
             Used for loss functions to define per-element loss with reduction.
@@ -1665,6 +1498,7 @@ classes:
                 ifabsent: string(mean)
 
     LossFunction:
+        class_uri: tvbo:LossFunction
         is_a: Function
         description: >-
             A loss function for optimization with optional aggregation.
@@ -1678,11 +1512,14 @@ classes:
                 range: Aggregation
                 inlined: true
     FunctionCall:
+        class_uri: tvbo:FunctionCall
         description: >-
             Invocation of a function in a pipeline. Can reference a defined Function by name,
             OR inline a callable directly for external library functions,
             OR inline an equation, OR use class_call for class instantiation.
             Mirrors Function attributes so pipeline steps can be self-contained.
+            The `name` is an optional step label (used in pipelines for keyed access to step outputs);
+            it is NOT a global identifier (singleton uses like `loss`, `observable` may omit it).
         slots:
             - acronym
             - label
@@ -1690,8 +1527,9 @@ classes:
             - description
         attributes:
             name:
+                slot_uri: schema:name
                 range: string
-                description: "Optional name for this pipeline step"
+                description: "Optional step label; used in pipelines to key step outputs."
             function:
                 description: "Reference to a defined Function (by name)"
                 range: Function
@@ -1735,6 +1573,7 @@ classes:
                 range: string
 
     Callable:
+        class_uri: tvbo:Callable
         slots:
             - name
             - description
@@ -1746,6 +1585,7 @@ classes:
                 inlined: true
 
     ClassReference:
+        class_uri: tvbo:ClassReference
         description: >-
             Reference to a class that can be instantiated and called.
             Used for external library classes (e.g., tvboptim.Bold, custom monitors).
@@ -1776,6 +1616,7 @@ classes:
                 range: string
 
     Case:
+        class_uri: tvbo:Case
         attributes:
             condition:
                 range: string
@@ -1811,6 +1652,7 @@ classes:
             - equation
             - unit
             - record
+            - grounding
         slot_usage:
             record:
                 ifabsent: false
@@ -1866,6 +1708,7 @@ classes:
             - dataLocation
 
     DataSource:
+        class_uri: tvbo:DataSource
         description: "Specification for loading external/empirical data."
         slots:
             - name
@@ -1891,6 +1734,7 @@ classes:
                 description: "Optional preprocessing to apply after loading"
 
     OptimizationStage:
+        class_uri: tvbo:OptimizationStage
         description: >-
             A single stage in a multi-stage optimization workflow.
             Stages run sequentially, with each stage potentially using
@@ -1902,12 +1746,16 @@ classes:
         attributes:
             free_parameters:
                 multivalued: true
-                range: Parameter
-                inlined: false
+                range: FreeParameter
+                inlined: true
+                inlined_as_list: true
                 description: >-
-                    Parameters to optimize in this stage.
-                    Use 'shape' attribute to specify scalar vs regional.
-                    Example: {name: w, shape: "(n_nodes,)"} for heterogeneous.
+                    Parameters to optimize in this stage. Each entry is a
+                    FreeParameter that references an existing Parameter by
+                    dotted scope (e.g. "ReducedWongWang.w" or
+                    "FastLinearCoupling.G") and supplies optimization-specific
+                    metadata (heterogeneous, shape, bounds). No new Parameter
+                    is created here.
             algorithm:
                 range: string
                 ifabsent: string(adam)
@@ -1935,6 +1783,7 @@ classes:
                 description: "Previous stage to initialize from. Final values from that stage become initial values for this stage."
 
     Optimization:
+        class_uri: tvbo:Optimization
         is_a: OptimizationStage
         description: >-
             Configuration for parameter optimization.
@@ -1992,6 +1841,7 @@ classes:
     # =============================================================================
 
     Exploration:
+        class_uri: tvbo:Exploration
         description: "Parameter space exploration (grid search, sweep)."
         slots:
             - name
@@ -2004,11 +1854,25 @@ classes:
                 description: >-
                     Per-exploration execution configuration (overrides experiment-level defaults).
                     Useful for setting random_seed, n_workers for parallel grid search.
+            space:
+                multivalued: true
+                range: ExplorationAxis
+                inlined: true
+                inlined_as_list: true
+                description: >-
+                    Ordered list of exploration axes spanning the search space.
+                    Each axis references an existing Parameter (by dotted name,
+                    e.g. "ReducedWongWang.w" or "FastLinearCoupling.G") and
+                    supplies the Range to sweep. No new Parameter is created here.
             parameters:
                 multivalued: true
                 range: Parameter
                 inlined: true
-                description: "Parameters with domain ranges to explore (uses domain.lo, domain.hi, domain.n)"
+                inlined_as_list: true
+                description: >-
+                    Hyper-parameters of the exploration itself (e.g. tolerances,
+                    sampler settings, grid-refinement controls). Distinct from
+                    `space`, which defines what is being swept.
             mode:
                 range: string
                 ifabsent: string(product)
@@ -2034,11 +1898,96 @@ classes:
                     Averaging mode across trials. 'trials' = average over n_trials
                     independent runs (evoked potential paradigm). None = return all trials.
 
+    ExplorationAxis:
+        class_uri: tvbo:ExplorationAxis
+        description: >-
+            One axis of a parameter exploration grid. Points to an existing
+            Parameter (by dotted reference, e.g. "ReducedWongWang.w" or
+            "FastLinearCoupling.G") and supplies the sweep specification
+            (domain, explored_values, or per-element overrides).
+            No new Parameter is created.
+        slots:
+            - label
+            - description
+        attributes:
+            parameter:
+                range: Parameter
+                inlined: false
+                required: true
+                description: >-
+                    Dotted reference to the Parameter being swept.
+                    Format: "<scope>.<param_name>" where <scope> is either a
+                    Dynamics class name (e.g. "ReducedWongWang") or a coupling
+                    key (e.g. "FastLinearCoupling"). Resolved against the
+                    enclosing experiment at runtime.
+            domain:
+                range: Range
+                inlined: true
+                description: "Sweep range for this axis (lo, hi, n, step, log_scale)."
+            explored_values:
+                multivalued: true
+                range: float
+                array: {}
+                description: "Explicit list of values to sweep (overrides domain)."
+            element_domains:
+                multivalued: true
+                range: Range
+                inlined_as_list: true
+                description: >-
+                    Per-element sweep overrides for heterogeneous parameters
+                    (e.g. shape "(n_nodes,)"). When set, element_domains[i]
+                    replaces the shared domain for element i.
+            unit:
+                range: string
+                description: "Optional axis unit (defaults to the referenced Parameter's unit)."
+
+    FreeParameter:
+        class_uri: tvbo:FreeParameter
+        description: >-
+            One degree of freedom in an OptimizationStage. References an
+            existing Parameter by dotted scope (e.g. "ReducedWongWang.w"
+            or "FastLinearCoupling.G") and supplies optimization-specific
+            metadata (heterogeneous, shape, bounds, initial value).
+            No new Parameter is created here.
+        slots:
+            - label
+            - description
+        attributes:
+            parameter:
+                range: Parameter
+                inlined: false
+                required: true
+                description: >-
+                    Dotted reference to the Parameter to optimize.
+                    Format: "<scope>.<param_name>" where <scope> is either a
+                    Dynamics class name or a coupling key.
+            heterogeneous:
+                range: boolean
+                ifabsent: boolean(false)
+                description: >-
+                    If true, the parameter is optimized per-element
+                    (broadcast to `shape`). If false, a single scalar is
+                    optimized and broadcast at runtime.
+            shape:
+                range: string
+                description: >-
+                    Optimization shape as a Python-tuple-style string
+                    (e.g. "(n_nodes,)" or "(n_nodes, n_nodes)").
+                    Required when heterogeneous is true.
+            initial_value:
+                range: ScalarValue
+                description: "Optional initial value for the optimizer (overrides the referenced Parameter's value)."
+            domain:
+                range: Range
+                inlined: true
+                description: "Optional bounds (lo, hi) for constrained optimization."
+
     # =============================================================================
     # Iterative Tuning Algorithms (FIC, EIB, etc.)
     # =============================================================================
 
     UpdateRule:
+        class_uri: tvbo:UpdateRule
         description: >-
             Defines how a parameter is updated based on observables.
             Represents iterative learning rules like FIC or EIB updates.
@@ -2074,6 +2023,7 @@ classes:
                 description: Observables required by this update rule
 
     AlgorithmInclude:
+        class_uri: tvbo:AlgorithmInclude
         description: >-
             Reference to an included algorithm with optional argument overrides.
             Allows combining algorithms with different hyperparameter values.
@@ -2087,11 +2037,13 @@ classes:
                 multivalued: true
                 range: Parameter
                 inlined: true
+                inlined_as_list: true
                 description: >-
                     Override hyperparameter values for the included algorithm.
                     Maps parameter names to new values.
 
     TuningObjective:
+        class_uri: tvbo:TuningObjective
         description: >-
             Defines what the tuning algorithm optimizes for.
             Can be an activity target (FIC) or a connectivity target (EIB).
@@ -2119,6 +2071,7 @@ classes:
                 description: "Metric equation for matching (e.g., correlation, rmse)"
 
     Algorithm:
+        class_uri: tvbo:Algorithm
         description: >-
             A complete specification of an iterative parameter tuning algorithm.
             Combines update rules, objectives, observations, and hyperparameters.
@@ -2139,6 +2092,7 @@ classes:
                 multivalued: true
                 range: AlgorithmInclude
                 inlined: true
+                inlined_as_list: true
                 description: >-
                     Include update rules from other algorithms with optional argument overrides.
                     Unlike depends_on (sequential), includes means combined execution.
@@ -2158,6 +2112,7 @@ classes:
                 multivalued: true
                 range: UpdateRule
                 inlined: true
+                inlined_as_list: true
                 required: false
                 description: >-
                     How parameters are updated each iteration.
@@ -2166,6 +2121,7 @@ classes:
                 multivalued: true
                 range: Parameter
                 inlined: true
+                inlined_as_list: true
                 description: Additional algorithm-specific parameters
             learning_rate:
                 range: float
@@ -2192,6 +2148,7 @@ classes:
             functions:
                 multivalued: true
                 range: FunctionCall
+                inlined: true
                 inlined_as_list: true
                 description: >-
                     Function calls for tracking progress, computing metrics, etc.
@@ -2211,22 +2168,25 @@ classes:
     # =============================================================================
 
     Option:
+        class_uri: tvbo:Option
         description: >-
             A toolkit-specific key-value option (string name + string value).
             Used for backend settings that are not universal numeric parameters
             (e.g., solver name, tangent method, jacobian type).
-        attributes:
+        slots:
+            - name
+        slot_usage:
             name:
-                range: string
                 required: true
-                identifier: true
                 description: "Option name (key)."
+        attributes:
             value:
                 range: string
                 required: true
                 description: "Option value."
 
     Discretization:
+        class_uri: tvbo:Discretization
         description: >-
             Discretization method for boundary value problems in continuation
             (periodic orbits, connecting orbits, quasi-periodic tori).
@@ -2275,9 +2235,11 @@ classes:
                 multivalued: true
                 range: Option
                 inlined: true
+                inlined_as_list: true
                 description: "Toolkit-specific string options (jacobian type, etc.)."
 
     InitialState:
+        class_uri: tvbo:InitialState
         description: >-
             How to obtain the starting equilibrium or periodic orbit for
             continuation. Most robust: time-integrate to steady state.
@@ -2315,6 +2277,7 @@ classes:
                     'fold:2', a step number, etc.
 
     BranchSwitch:
+        class_uri: tvbo:BranchSwitch
         description: >-
             Specification for switching from a detected bifurcation point
             to a new branch (periodic orbits from Hopf, fold continuation,
@@ -2378,6 +2341,7 @@ classes:
                     (linear solver, etc.).
 
     Continuation:
+        class_uri: tvbo:Continuation
         description: >-
             Complete specification of a numerical continuation / bifurcation
             analysis. All universal solver settings live directly here.
@@ -2402,6 +2366,7 @@ classes:
                 multivalued: true
                 range: Parameter
                 inlined: true
+                inlined_as_list: true
                 description: >-
                     Parameters to vary. First parameter is primary (codim-1);
                     second enables codim-2 continuation. Each Parameter has
@@ -2500,11 +2465,12 @@ classes:
                 multivalued: true
                 range: Option
                 inlined: true
+                inlined_as_list: true
                 description: >-
                     Toolkit-specific string options (tangent method,
                     solver name, etc.).
-
     Solver:
+        class_uri: tvbo:Solver
         description: >-
             Lightweight specification of a numerical ODE solver / integrator.
             Covers adaptive solvers (Vern9, Rodas5, Tsit5, etc.) used in
@@ -2527,6 +2493,7 @@ classes:
                 description: "Relative tolerance for adaptive solvers."
 
     Integrator:
+        class_uri: tvbo:Integrator
         is_a: Solver
         description: >-
             Fixed-step or adaptive ODE integrator with TVB-specific extensions
@@ -2607,12 +2574,19 @@ classes:
                 inlined: true
             incoming_states:
                 range: StateVariable
+                inlined: false
                 multivalued: true
-                description: "References to state variables from connected nodes (source)"
+                description: >-
+                    References to state variables from connected (source) nodes.
+                    Auto-populated from state_variables with coupling_variable=true
+                    when omitted. Used by name in pre_expression.
             local_states:
                 range: StateVariable
+                inlined: false
                 multivalued: true
-                description: "References to state variables from local node (target)"
+                description: >-
+                    References to state variables from the local (target) node.
+                    Used by name in pre_expression.
             delayed:
                 range: boolean
                 ifabsent: true
@@ -2667,6 +2641,7 @@ classes:
                 description: "For hierarchical coupling: distribution method ('broadcast', 'weighted') or custom Function"
 
     RegionMapping:
+        class_uri: tvbo:RegionMapping
         description: "Maps vertices to parent regions for hierarchical/aggregated coupling"
         slots:
             - label
@@ -2685,6 +2660,7 @@ classes:
                 description: "Total number of regions"
 
     Sample:
+        class_uri: tvbo:Sample
         attributes:
             groups:
                 multivalued: true
@@ -2693,6 +2669,7 @@ classes:
                 range: integer
 
     ExecutionConfig:
+        class_uri: tvbo:ExecutionConfig
         description: "Configuration for computational execution (parallelization, precision, hardware)."
         attributes:
             n_workers:
@@ -2735,13 +2712,16 @@ classes:
             id:
                 identifier: true
                 range: integer
+                slot_uri: dcterms:identifier
             description:
                 range: string
+                slot_uri: dcterms:description
             additional_equations:
                 multivalued: true
                 range: Equation
             label:
                 range: string
+                slot_uri: rdfs:label
             dynamics:
                 range: Dynamics
                 inlined: true
@@ -2814,8 +2794,7 @@ classes:
                 description: >-
                     Numerical continuation and bifurcation analysis specifications.
                     Each entry defines a continuation experiment (equilibrium branch,
-                    codim-2 curve, periodic orbit family, etc.).
-            # Either reference a full reusable environment (preferred) or, for
+                    codim-2 curve, periodic orbit family, etc.).            # Either reference a full reusable environment (preferred) or, for
             # legacy/simple cases, a single software requirement.
             environment:
                 range: SoftwareEnvironment
@@ -2832,6 +2811,7 @@ classes:
             references:
                 multivalued: true
                 range: string
+                slot_uri: dcterms:references
             dataset:
                 range: Dataset
                 inlined: true
@@ -2841,6 +2821,7 @@ classes:
                     per-subject parallel jobs.
 
     SimulationStudy:
+        class_uri: tvbo:SimulationStudy
         # tree_root: true
         slots:
             - label
@@ -2852,10 +2833,13 @@ classes:
                 range: string
             title:
                 range: string
+                slot_uri: dcterms:title
             year:
                 range: integer
+                slot_uri: dcterms:issued
             doi:
                 range: string
+                slot_uri: bibo:doi
             sample:
                 range: Sample
             simulation_experiments:
@@ -2890,6 +2874,7 @@ classes:
                 description: "Unit of the sampling period (e.g., 'ms', 's')."
             unit:
                 range: string
+                slot_uri: qudt:unit
                 description: "Physical unit of the time series values."
             labels_ordering:
                 range: string
@@ -2914,12 +2899,15 @@ classes:
                 description: "BIDS task name for the simulation (e.g., 'rest', 'simulation')."
             subject_id:
                 range: string
+                slot_uri: dcterms:identifier
                 description: "BIDS subject identifier."
             session_id:
                 range: string
+                slot_uri: dcterms:identifier
                 description: "BIDS session identifier."
             run_id:
                 range: integer
+                slot_uri: dcterms:identifier
                 description: "BIDS run number."
             modality:
                 range: ImagingModality
@@ -2939,6 +2927,7 @@ classes:
 
     # nD array for field and image data
     NDArray:
+        class_uri: tvbo:NDArray
         attributes:
             shape:
                 multivalued: true
@@ -2955,6 +2944,7 @@ classes:
 
     # Spatial domain and mesh
     SpatialDomain:
+        class_uri: tvbo:SpatialDomain
         attributes:
             coordinate_space:
                 range: CommonCoordinateSpace
@@ -2969,6 +2959,7 @@ classes:
             - description
 
     Mesh:
+        class_uri: tvbo:Mesh
         attributes:
             element_type:
                 range: ElementType
@@ -3000,6 +2991,7 @@ classes:
 
     # Spatial field
     SpatialField:
+        class_uri: tvbo:SpatialField
         attributes:
             quantity_kind:
                 description: "Scalar, vector, or tensor."
@@ -3026,6 +3018,7 @@ classes:
 
     # Field-like state variable for PDEs (aligns with Dynamics.StateVariable)
     FieldStateVariable:
+        class_uri: tvbo:FieldStateVariable
         is_a: StateVariable
         attributes:
             mesh:
@@ -3038,6 +3031,7 @@ classes:
             - description
 
     DifferentialOperator:
+        class_uri: tvbo:DifferentialOperator
         attributes:
             operator_type:
                 range: OperatorType
@@ -3055,6 +3049,7 @@ classes:
             - equation
 
     BoundaryCondition:
+        class_uri: tvbo:BoundaryCondition
         attributes:
             bc_type:
                 range: BoundaryConditionType
@@ -3072,6 +3067,7 @@ classes:
             - description
 
     PDESolver:
+        class_uri: tvbo:PDESolver
         attributes:
             discretization:
                 range: DiscretizationMethod
@@ -3093,6 +3089,7 @@ classes:
             - environment
 
     PDE:
+        class_uri: tvbo:PDE
         description: "Partial differential equation problem definition."
         attributes:
             domain:

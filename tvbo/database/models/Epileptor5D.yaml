@@ -13,15 +13,13 @@ parameters:
     description: External input current to the second population
   Iext:
     name: Iext
-    definition: External input current to the first sub-population (x1_E5D, y1_E5D)
-      via the state-variable x1_E5D, in Epileptor5D (Jirsa et al.,2014).
+    definition: External input current to the first sub-population (x1_E5D, y1_E5D) via the state-variable x1_E5D, in Epileptor5D (Jirsa et al.,2014).
     value: 3.1
     domain:
       lo: 1.5
       hi: 5.0
       step: 0.1
-    description: External input current to the first sub-population (x1_E5D, y1_E5D)
-      via the state-variable x1_E5D, in Epileptor5D (Jirsa et al
+    description: External input current to the first sub-population (x1_E5D, y1_E5D) via the state-variable x1_E5D, in Epileptor5D (Jirsa et al
   Kf:
     name: Kf
     definition: Correspond to the coupling scaling on a fast time scale.
@@ -33,19 +31,16 @@ parameters:
     description: Correspond to the coupling scaling on a fast time scale
   Ks:
     name: Ks
-    definition: 'Permittivity coupling on the slow permittivity state-variable z_E5D
-      in Epileptor5D (Proix et al., 2014).
+    definition: 'Permittivity coupling on the slow permittivity state-variable z_E5D in Epileptor5D (Proix et al., 2014).
 
 
-      The coupling quantifies the influence of neuronal fast discharges x1_E5D on
-      the local slow permittivity variable z_E5D.'
+      The coupling quantifies the influence of neuronal fast discharges x1_E5D on the local slow permittivity variable z_E5D.'
     value: 0.0
     domain:
       lo: -4.0
       hi: 4.0
       step: 0.1
-    description: Permittivity coupling on the slow permittivity state-variable z_E5D
-      in Epileptor5D (Proix et al
+    description: Permittivity coupling on the slow permittivity state-variable z_E5D in Epileptor5D (Proix et al
   Kvf:
     name: Kvf
     definition: Coupling scaling on a very fast time scale.
@@ -72,50 +67,38 @@ parameters:
     description: Coefficient of the squared term in the first state variabel
   bb:
     name: bb
-    definition: Linear coefficient of lowpass excitatory coupling in fourth state
-      variable
+    definition: Linear coefficient of lowpass excitatory coupling in fourth state variable
     value: 2.0
-    description: Linear coefficient of lowpass excitatory coupling in fourth state
-      variable
+    description: Linear coefficient of lowpass excitatory coupling in fourth state variable
   c:
     name: c
-    definition: Additive coefficient for the second state variable,         called
-      :math:`y_{0}` in Jirsa paper
+    definition: Additive coefficient for the second state variable,         called :math:`y_{0}` in Jirsa paper
     value: 1.0
-    description: Additive coefficient for the second state variable,         called
-      :math:`y_{0}` in Jirsa paper
+    description: Additive coefficient for the second state variable,         called :math:`y_{0}` in Jirsa paper
   d:
     name: d
-    definition: Coefficient of the squared term in the derivative of the second state-variable
-      y1_E5D in Epileptor5D (Jirsa et al.,2014).
+    definition: Coefficient of the squared term in the derivative of the second state-variable y1_E5D in Epileptor5D (Jirsa et al.,2014).
     value: 5.0
-    description: Coefficient of the squared term in the derivative of the second state-variable
-      y1_E5D in Epileptor5D (Jirsa et al
+    description: Coefficient of the squared term in the derivative of the second state-variable y1_E5D in Epileptor5D (Jirsa et al
   modification:
     name: modification
-    definition: When modification is True, the function h_E5D uses a nonlinear influence
-      on z_E5D. The default value is False, i.e., linear influence on z_E5D.
+    definition: When modification is True, the function h_E5D uses a nonlinear influence on z_E5D. The default value is False, i.e., linear influence on z_E5D.
     value: 0.0
-    description: When modification is True, the function h_E5D uses a nonlinear influence
-      on z_E5D
+    description: When modification is True, the function h_E5D uses a nonlinear influence on z_E5D
   r:
     name: r
-    definition: Temporal scaling in the third state variable,         called :math:`1/\tau_{0}`
-      in Jirsa paper
+    definition: Temporal scaling in the third state variable,         called :math:`1/\tau_{0}` in Jirsa paper
     value: 0.00035
     domain:
       lo: 0.0
       hi: 0.001
       step: 5.0e-05
-    description: Temporal scaling in the third state variable,         called :math:`1/\tau_{0}`
-      in Jirsa paper
+    description: Temporal scaling in the third state variable,         called :math:`1/\tau_{0}` in Jirsa paper
   s:
     name: s
-    definition: Linear coefficient in the slow permittivity state-variable z_E5D in
-      Epileptor5D (Jirsa et al.,2014).
+    definition: Linear coefficient in the slow permittivity state-variable z_E5D in Epileptor5D (Jirsa et al.,2014).
     value: 4.0
-    description: Linear coefficient in the slow permittivity state-variable z_E5D
-      in Epileptor5D (Jirsa et al
+    description: Linear coefficient in the slow permittivity state-variable z_E5D in Epileptor5D (Jirsa et al
   slope:
     name: slope
     definition: Linear coefficient in the first state variable
@@ -141,71 +124,49 @@ parameters:
     description: Characteristic time scale of the whole-system Epileptor5D
   x0:
     name: x0
-    definition: 'Epileptogenicity Parameter. Degree of excitability or epileptogenicity
-      in Epileptor5D (Jirsa et al.,2014).
+    definition: 'Epileptogenicity Parameter. Degree of excitability or epileptogenicity in Epileptor5D (Jirsa et al.,2014).
 
 
-      If x0 is greater than a critical value, x0,critic = −2.05, the system can trigger
-      seizures autonomously; otherwise it is in its equilibrium state.
+      If x0 is greater than a critical value, x0,critic = −2.05, the system can trigger seizures autonomously; otherwise it is in its equilibrium state.
 
 
       Note:
 
       - If modification_E5D:
 
-      if x0 is smaller than a critical value, x0,critic = 2.91, can trigger seizures
-      autonomously; otherwise it is in its equilibrium state (Proix et al., 2014).'
+      if x0 is smaller than a critical value, x0,critic = 2.91, can trigger seizures autonomously; otherwise it is in its equilibrium state (Proix et al., 2014).'
     value: -1.6
     domain:
       lo: -3.0
       hi: -1.0
       step: 0.1
     description: Epileptogenicity Parameter
-description: "Epilepor5D (E5D) is a phenomenological, coupled, nonlinear five-dimensional\
-  \ (i.e., five state-variables ('x1', 'y1', 'z', 'x2', 'y2')) neural mass model able\
-  \ to realistically reproduce the temporal dynamics of epileptic seizures and the\
-  \ alternating sequence of seizures (ictal and interictal state; Jirsa et al.,2014;\
-  \ El Houssaini et al., 2015, 2020).\n\nEpileptor5D comprises three different time\
-  \ scales interacting together and accounting for various electrographic patterns:\
-  \ \n- the fastest and intermediate time scales are two coupled oscillators ((x1,\
-  \ y1) and (x2, y2)), accounting respectively for the low-voltage fast discharges\
-  \ (i.e., very fast oscillations) and spike-and-wave discharges. \n- the slowest\
-  \ time scale is responsible for leading the autonomous switch between interictal\
-  \ and ictal states and is driven by a slow-permittivity variable z. This switching\
-  \ is accompanied by a direct current (DC) shift that has been recorded in vitro\
-  \ and in vivo.\n\nThe main output of the model: -x1+ x2, bears analogy with the\
-  \ field potential, while the precise biophysical equivalent of the z variable is\
-  \ unknown and will be likely complex.\n\nNote: \n------\n- Equations and default\
-  \ parameters are taken from (Jirsa et al.,2014 & El Houssaini et al., 2015),\n-\
-  \ The integral coupling function g(x1) can be rewritten as an ordinary differential\
-  \ equation, which is technically introduced, here, as a sixth state-variable (see\
-  \ Jirsa et al.,2014),\n- The slow permittivity state-variable (z_E5D) can be modified\
-  \ to account for the time difference between the interictal (between seizures) and\
-  \ ictal (during seizure) states (see Proix et al., 2014)."
+    grounding:
+      - GO:0060079
+description: "Epilepor5D (E5D) is a phenomenological, coupled, nonlinear five-dimensional (i.e., five state-variables ('x1', 'y1', 'z', 'x2', 'y2')) neural mass model able to realistically reproduce the temporal dynamics of epileptic seizures and the alternating sequence of seizures (ictal and interictal state; Jirsa et al.,2014; El Houssaini et al., 2015, 2020).\n\nEpileptor5D comprises three different time scales interacting together and accounting for various electrographic patterns: \n- the fastest and intermediate time scales are two coupled oscillators ((x1, y1) and (x2, y2)), accounting respectively for the low-voltage fast discharges (i.e., very fast oscillations) and spike-and-wave discharges. \n- the slowest time scale is responsible for leading the autonomous switch between interictal and ictal states and is driven by a slow-permittivity variable z. This switching is accompanied by a direct current (DC) shift that has been recorded in vitro and in vivo.\n\nThe main output of the model: -x1+ x2, bears analogy with the field potential, while the precise biophysical equivalent of the z variable is unknown and will be likely complex.\n\nNote: \n------\n- Equations and default parameters are taken from (Jirsa et al.,2014 & El Houssaini et al., 2015),\n- The integral coupling function g(x1) can be rewritten as an ordinary differential equation, which is technically introduced, here, as a sixth state-variable (see Jirsa et al.,2014),\n- The slow permittivity state-variable (z_E5D) can be modified to account for the time difference between the interictal (between seizures) and ictal (during seizure) states (see Proix et al., 2014)."
 references:
-- Proix2014
-- Jirsa2014
+  - Proix2014
+  - Jirsa2014
 derived_variables:
   x1cond:
     name: x1cond
     symbol: x1cond
     equation:
       lhs: x1cond
-      rhs: Piecewise(((-a)*x1**2 + b*x1, x1 < 0), (slope - x2 + 0.6*(z - 4.0)**2,
-        True))
+      rhs: Piecewise(((-a)*x1**2 + b*x1, x1 < 0), (slope - x2 + 0.6*(z - 4.0)**2, True))
       latex: false
     conditional: true
     cases:
-    - condition: x1 < 0
-      equation:
-        lhs: x1cond
-        rhs: (-a)*x1**2 + b*x1
-        latex: false
-    - condition: 'True'
-      equation:
-        lhs: x1cond
-        rhs: slope - x2 + 0.6*(z - 1*4.0)**2
-        latex: false
+      - condition: x1 < 0
+        equation:
+          lhs: x1cond
+          rhs: (-a)*x1**2 + b*x1
+          latex: false
+      - condition: 'True'
+        equation:
+          lhs: x1cond
+          rhs: slope - x2 + 0.6*(z - 1*4.0)**2
+          latex: false
   y2cond:
     name: y2cond
     symbol: y2cond
@@ -215,16 +176,16 @@ derived_variables:
       latex: false
     conditional: true
     cases:
-    - condition: x2 < -0.25
-      equation:
-        lhs: y2cond
-        rhs: '0.0'
-        latex: false
-    - condition: 'True'
-      equation:
-        lhs: y2cond
-        rhs: aa*(x2 + 0.25)
-        latex: false
+      - condition: x2 < -0.25
+        equation:
+          lhs: y2cond
+          rhs: '0.0'
+          latex: false
+      - condition: 'True'
+        equation:
+          lhs: y2cond
+          rhs: aa*(x2 + 0.25)
+          latex: false
   zcond:
     name: zcond
     symbol: zcond
@@ -234,36 +195,35 @@ derived_variables:
       latex: false
     conditional: true
     cases:
-    - condition: z < 0
-      equation:
-        lhs: zcond
-        rhs: -0.1*z**7
-        latex: false
-    - condition: 'True'
-      equation:
-        lhs: zcond
-        rhs: '0.0'
-        latex: false
+      - condition: z < 0
+        equation:
+          lhs: zcond
+          rhs: -0.1*z**7
+          latex: false
+      - condition: 'True'
+        equation:
+          lhs: zcond
+          rhs: '0.0'
+          latex: false
   h:
     name: h
     symbol: h
     equation:
       lhs: h
-      rhs: Piecewise((x0 + 3/(exp((-x1 - 1*0.5)/0.1) + 1), modification > 0), (zcond
-        + 4*(-x0 + x1), True))
+      rhs: Piecewise((x0 + 3/(exp((-x1 - 1*0.5)/0.1) + 1), modification > 0), (zcond + 4*(-x0 + x1), True))
       latex: false
     conditional: true
     cases:
-    - condition: modification > 0
-      equation:
-        lhs: h
-        rhs: x0 + 3/(exp((-x1 - 0.5)/0.1) + 1)
-        latex: false
-    - condition: 'True'
-      equation:
-        lhs: h
-        rhs: zcond + 4*(-x0 + x1)
-        latex: false
+      - condition: modification > 0
+        equation:
+          lhs: h
+          rhs: x0 + 3/(exp((-x1 - 0.5)/0.1) + 1)
+          latex: false
+      - condition: 'True'
+        equation:
+          lhs: h
+          rhs: zcond + 4*(-x0 + x1)
+          latex: false
 coupling_inputs:
   c_pop0:
     name: c_pop0
@@ -277,8 +237,7 @@ state_variables:
     domain:
       lo: -1.0
       hi: 1.0
-    description: g_E5D is a low-pass filtered excitatory coupling function from sub-population
-      (x1_E5D, y1_E5D) to (x2_E5D, y2_E5D) in Epileptor5D (Jirsa et al
+    description: g_E5D is a low-pass filtered excitatory coupling function from sub-population (x1_E5D, y1_E5D) to (x2_E5D, y2_E5D) in Epileptor5D (Jirsa et al
     equation:
       lhs: Derivative(g, t)
       rhs: tt*(-0.01*g + 0.001*x1)
@@ -291,8 +250,7 @@ state_variables:
     domain:
       lo: -2.0
       hi: 1.0
-    description: First state-variable of the first Epileptor5D population (Jirsa et
-      al
+    description: First state-variable of the first Epileptor5D population (Jirsa et al
     equation:
       lhs: Derivative(x1, t)
       rhs: tt*(Iext + Kvf*c_pop0 + local_coupling*x1 + x1*x1cond + y1 - z)
@@ -305,8 +263,7 @@ state_variables:
     domain:
       lo: -2.0
       hi: 0.0
-    description: First state-variable of the second Epileptor5D sub-population (Jirsa
-      et al
+    description: First state-variable of the second Epileptor5D sub-population (Jirsa et al
     equation:
       lhs: Derivative(x2, t)
       rhs: tt*(Iext2 + Kf*c_pop1 + bb*g - x2**3 + x2 - y2 - 0.3*z + 1.05)
@@ -319,8 +276,7 @@ state_variables:
     domain:
       lo: -20.0
       hi: 2.0
-    description: Second state-variable of the first Epileptor5D sub-population (Jirsa
-      et al
+    description: Second state-variable of the first Epileptor5D sub-population (Jirsa et al
     equation:
       lhs: Derivative(y1, t)
       rhs: tt*(c - d*x1**2 - y1)
@@ -333,8 +289,7 @@ state_variables:
     domain:
       lo: 0.0
       hi: 2.0
-    description: Second state-variable of the second Epileptor5D population (Jirsa
-      et al
+    description: Second state-variable of the second Epileptor5D population (Jirsa et al
     equation:
       lhs: Derivative(y2, t)
       rhs: tt*(-y2 + y2cond)/tau

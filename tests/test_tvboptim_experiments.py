@@ -26,10 +26,10 @@ def test_experiment_runs(experiment_name):
     # Shrink any exploration grids so CI stays fast.
     if exp.explorations:
         for expl in exp.explorations.values():
-            if expl.parameters:
-                for param in expl.parameters.values():
-                    if param.domain is not None and getattr(param.domain, "n", None):
-                        param.domain.n = 2
+            if expl.space:
+                for axis in expl.space:
+                    if axis.domain is not None and getattr(axis.domain, "n", None):
+                        axis.domain.n = 2
 
     # Shrink algorithm and optimization iteration counts so CI stays fast.
     if exp.algorithms:

@@ -13,6 +13,8 @@ prefixes:
   bids: https://bids-specification.readthedocs.io/en/stable/
   obo: http://purl.obolibrary.org/obo/
   schema: http://schema.org/
+  dcterms: http://purl.org/dc/terms/
+  rdfs: http://www.w3.org/2000/01/rdf-schema#
 
 default_prefix: tvbo_study
 
@@ -24,6 +26,7 @@ slots:
     identifier: true
     range: string
     required: true
+    slot_uri: dcterms:identifier
     description: >-
       BIDS-compatible subject identifier (without 'sub-' prefix).
       Examples: '01', 'ctrl03', 'patient17'.
@@ -34,6 +37,7 @@ slots:
     identifier: true
     range: string
     required: true
+    slot_uri: dcterms:identifier
     description: >-
       BIDS session identifier (without 'ses-' prefix).
       Examples: 'baseline', '6month', 'pre', 'post'.
@@ -42,8 +46,15 @@ slots:
     identifier: true
     range: string
     required: true
+    slot_uri: dcterms:identifier
     description: >-
       Unique identifier for the dataset.
+
+  subjects:
+    multivalued: true
+    range: Subject
+    inlined: true
+    description: "Subjects in a dataset."
 
 classes:
 
@@ -57,6 +68,7 @@ classes:
     attributes:
       label:
         range: string
+        slot_uri: rdfs:label
         description: "Human-readable label for the subject."
       group:
         range: string
@@ -98,6 +110,7 @@ classes:
     attributes:
       label:
         range: string
+        slot_uri: rdfs:label
         description: "Human-readable session label."
       network:
         range: string
@@ -123,22 +136,20 @@ classes:
       backed by a BIDS directory layout.
     slots:
       - dataset_id
+      - subjects
     attributes:
       label:
         range: string
+        slot_uri: rdfs:label
         description: "Human-readable dataset name."
       description:
         range: string
+        slot_uri: dcterms:description
       bids_root:
         range: string
         description: >-
           Path to BIDS dataset root directory. When set, subject networks
           and empirical data paths are resolved relative to this root.
-      subjects:
-        multivalued: true
-        range: Subject
-        inlined: true
-        description: "Subjects in this dataset."
       conditions:
         multivalued: true
         range: string
@@ -147,6 +158,7 @@ classes:
           (e.g., ['rest', 'task-nback', 'task-motor']).
       reference:
         range: string
+        slot_uri: dcterms:references
         description: "DOI or citation for this dataset."
 
 enums:
