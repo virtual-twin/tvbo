@@ -7,8 +7,6 @@ description: >-
   Continuation of equilibria in the mean neural excitability η̄,
   reproducing the fold bifurcation diagram from Montbrió et al. (2015).
 
-model: QIF
-
 dynamics:
   name: QIF
   parameters:
@@ -38,8 +36,8 @@ continuations:
     free_parameters:
       - name: eta_bar
         domain:
-          lo: "-20"
-          hi: "20"
+          lo: -20
+          hi: 20
 
     ds: 0.0001
     ds_min: 1.0e-8

@@ -4,24 +4,26 @@ model_type: neural_mass
 parameters:
   C:
     name: C
-    definition: Coupling scaling factor. Strength of excitatory coupling and balance
-      between internal and local/global coupling strength.
+    definition: Coupling scaling factor. Strength of excitatory coupling and balance between internal and local/global coupling strength.
     value: 0.1
     domain:
       lo: 0.0
       hi: 1.0
       step: 0.01
     description: Coupling scaling factor
+    grounding:
+      - GO:0060079
   I_ext:
     name: I_ext
-    definition: Subcortical input current. Represents a non-specific excitation or
-      thalamic inputs.
+    definition: Subcortical input current. Represents a non-specific excitation or thalamic inputs.
     value: 0.3
     domain:
       lo: 0.165
       hi: 0.3
       step: 0.005
     description: Subcortical input current
+    grounding:
+      - GO:0060079
   Q_Vmax:
     name: Q_Vmax
     definition: Maximal firing rate for excitatory populations.
@@ -32,6 +34,9 @@ parameters:
       step: 0.001
     description: Maximal firing rate for excitatory populations
     unit: kHz
+    grounding:
+      - GO:0098976
+      - GO:0099605
   Q_Zmax:
     name: Q_Zmax
     definition: Maximal firing rate for inhibitory population.
@@ -42,6 +47,8 @@ parameters:
       step: 0.001
     description: Maximal firing rate for inhibitory population
     unit: kHz
+    grounding:
+      - GO:0099605
   T_Ca:
     name: T_Ca
     definition: Threshold value for Ca channels.
@@ -51,6 +58,9 @@ parameters:
       hi: -0.01
       step: 0.0025
     description: Threshold value for Ca channels
+    grounding:
+      - GO:0005262
+      - GO:1903233
   T_K:
     name: T_K
     definition: Threshold value for K channels.
@@ -60,6 +70,8 @@ parameters:
       hi: 0.0001
       step: 1.0e-05
     description: Threshold value for K channels
+    grounding:
+      - GO:0005267
   T_Na:
     name: T_Na
     definition: Threshold value for sodium channels.
@@ -69,6 +81,8 @@ parameters:
       hi: 0.3
       step: 0.025
     description: Threshold value for sodium channels
+    grounding:
+      - GO:0005272
   V_Ca:
     name: V_Ca
     definition: Calcium Nernst potential.
@@ -78,6 +92,8 @@ parameters:
       hi: 1.1
       step: 0.05
     description: Calcium Nernst potential
+    grounding:
+      - GO:0005262
   V_K:
     name: V_K
     definition: K Nernst potential.
@@ -87,6 +103,8 @@ parameters:
       hi: 1.0
       step: 0.1
     description: K Nernst potential
+    grounding:
+      - GO:0005267
   V_L:
     name: V_L
     definition: Nernst potential leak channels.
@@ -96,6 +114,8 @@ parameters:
       hi: -0.4
       step: 0.1
     description: Nernst potential leak channels
+    grounding:
+      - GO:0022840
   V_Na:
     name: V_Na
     definition: Na Nernst potential.
@@ -105,16 +125,19 @@ parameters:
       hi: 0.55
       step: 0.01
     description: Na Nernst potential
+    grounding:
+      - GO:0005272
   V_T:
     name: V_T
-    definition: Threshold potential for excitatory neurons. Describes the mean potential
-      of the excitatory population.
+    definition: Threshold potential for excitatory neurons. Describes the mean potential of the excitatory population.
     value: 0.0
     domain:
       lo: 0.0
       hi: 0.7
       step: 0.01
     description: Threshold potential for excitatory neurons
+    grounding:
+      - GO:0098815
   Z_T:
     name: Z_T
     definition: Threshold potential (mean) for inihibtory neurons.
@@ -124,6 +147,8 @@ parameters:
       hi: 0.1
       step: 0.005
     description: Threshold potential (mean) for inihibtory neurons
+    grounding:
+      - GO:0060080
   a_ee:
     name: a_ee
     definition: Excitatory-to-excitatory synaptic strength.
@@ -133,6 +158,8 @@ parameters:
       hi: 0.6
       step: 0.05
     description: Excitatory-to-excitatory synaptic strength
+    grounding:
+      - GO:0060079
   a_ei:
     name: a_ei
     definition: Excitatory-to-inhibitory synaptic strength.
@@ -142,6 +169,8 @@ parameters:
       hi: 2.0
       step: 0.1
     description: Excitatory-to-inhibitory synaptic strength
+    grounding:
+      - GO:0060079
   a_ie:
     name: a_ie
     definition: Inhibitory-to-excitatory synaptic strength.
@@ -151,6 +180,8 @@ parameters:
       hi: 2.0
       step: 0.1
     description: Inhibitory-to-excitatory synaptic strength
+    grounding:
+      - GO:0060080
   a_ne:
     name: a_ne
     definition: Non-specific-to-excitatory synaptic strength.
@@ -160,6 +191,8 @@ parameters:
       hi: 1.0
       step: 0.05
     description: Non-specific-to-excitatory synaptic strength
+    grounding:
+      - GO:0060079
   a_ni:
     name: a_ni
     definition: Non-specific-to-inhibitory synaptic strength.
@@ -169,6 +202,8 @@ parameters:
       hi: 0.5
       step: 0.05
     description: Non-specific-to-inhibitory synaptic strength
+    grounding:
+      - GO:0060080
   b:
     name: b
     definition: Time constant scaling factor.
@@ -180,74 +215,82 @@ parameters:
     description: Time constant scaling factor
   delta_Ca:
     name: delta_Ca
-    definition: Variance of Calcium channel threshold. Defines the steepness of the
-      sigmoid $m_{Ca}$.
+    definition: Variance of Calcium channel threshold. Defines the steepness of the sigmoid $m_{Ca}$.
     value: 0.15
     domain:
       lo: 0.1
       hi: 0.2
       step: 0.05
     description: Variance of Calcium channel threshold
+    grounding:
+      - GO:0005262
   delta_K:
     name: delta_K
-    definition: Variance of Potassium channel threshold. Defines the steepness of
-      the sigmoid $m_K$.
+    definition: Variance of Potassium channel threshold. Defines the steepness of the sigmoid $m_K$.
     value: 0.3
     domain:
       lo: 0.1
       hi: 0.4
       step: 0.1
     description: Variance of Potassium channel threshold
+    grounding:
+      - GO:0005267
   delta_Na:
     name: delta_Na
-    definition: Variance of sodium channel threshold. Defines the steepness of the
-      sigmoid $m_{Na}$.
+    definition: Variance of sodium channel threshold. Defines the steepness of the sigmoid $m_{Na}$.
     value: 0.15
     domain:
       lo: 0.1
       hi: 0.2
       step: 0.05
     description: Variance of sodium channel threshold
+    grounding:
+      - GO:0005272
   delta_V:
     name: delta_V
-    definition: Variance of excitatory threshold. Defines the steepness of sigmoid
-      $Q_V$.
+    definition: Variance of excitatory threshold. Defines the steepness of sigmoid $Q_V$.
     value: 0.65
     domain:
       lo: 0.49
       hi: 0.7
       step: 0.01
     description: Variance of excitatory threshold
+    grounding:
+      - GO:0060079
+      - tvbo:ExcitabilityThresholdVariance
   delta_Z:
     name: delta_Z
-    definition: Variance of inhibitory threshold. Defines the steepness of sigmoid
-      $Q_Z$.
+    definition: Variance of inhibitory threshold. Defines the steepness of sigmoid $Q_Z$.
     value: 0.7
     domain:
       lo: 0.001
       hi: 0.75
       step: 0.05
     description: Variance of inhibitory threshold
+    grounding:
+      - GO:0060080
   g_Ca:
     name: g_Ca
-    definition: Conductance of population of calcium (Ca++) channels. Describes the
-      maximal conductance if all channels are open.
+    definition: Conductance of population of calcium (Ca++) channels. Describes the maximal conductance if all channels are open.
     value: 1.1
     domain:
       lo: 0.9
       hi: 1.5
       step: 0.1
     description: Conductance of population of calcium (Ca++) channels
+    grounding:
+      - GO:0005262
   g_K:
     name: g_K
-    definition: Conductance of population of potassium (K) channels. Describes the
-      maximal conductance if all channels are open.
+    definition: Conductance of population of potassium (K) channels. Describes the maximal conductance if all channels are open.
     value: 2.0
     domain:
       lo: 1.95
       hi: 2.05
       step: 0.025
     description: Conductance of population of potassium (K) channels
+    grounding:
+      - GO:0005267
   g_L:
     name: g_L
     definition: Conductance of population of leak channels.
@@ -257,6 +300,8 @@ parameters:
       hi: 0.55
       step: 0.05
     description: Conductance of population of leak channels
+    grounding:
+      - GO:0022840
   g_Na:
     name: g_Na
     definition: Conductance of population of Na channels.
@@ -266,6 +311,8 @@ parameters:
       hi: 10.0
       step: 0.1
     description: Conductance of population of Na channels
+    grounding:
+      - GO:0005272
   phi:
     name: phi
     definition: Temperature scaling factor.
@@ -284,6 +331,8 @@ parameters:
       hi: 0.3
       step: 0.05
     description: Ratio of NMDA to AMPA receptors
+    grounding:
+      - GO:0004971
   t_scale:
     name: t_scale
     definition: Time scale factor
@@ -302,25 +351,13 @@ parameters:
       hi: 10.0
       step: 1.0
     description: Time constant for K relaxation time (ms)
-description: "The Larter-Breakspear is an extension (Breakspear et al., 2003a, 2003b)\
-  \ of the biophysical-inspired neural mass model of a cortical column (or area) from\
-  \ Larter et al. (1999), initially developed to simulate firing rate activity from\
-  \ focal region involved in partial seizure. It is determined by voltage- and ligand-gated\
-  \ ions channels and feedback between intensively interconnected excitatory and inhibitory\
-  \ neurons.\n\nThe Larter-Breakspear is a 3D model describing the local average states\
-  \ of two interconnected neural populations: pyramidal cells (PCs) and inhibitory\
-  \ interneurons (IINs), with an additional variable representing the potassium channels\
-  \ in the population of PCs.\n\nThe membrane potential of the pyramidal cells is\
-  \ the focus of the model and is governed by sodium, \npotassium, calcium and “leaky”\
-  \ ion channels, of which the voltage-gated potassium channels are modelled in more\
-  \ detail. \n\nThe excitatory to excitatory connections are modelled in more detail\
-  \ as glutamatergic connections with AMPA and NMDA receptors. \n\nNote:\n- Equations\
-  \ and default parameters are taken from (Breakspear et al., 2003b), \n- All equations\
-  \ and parameters are non-dimensional and normalized to neural capacitance C = 1."
+    grounding:
+      - GO:0005267
+description: "The Larter-Breakspear is an extension (Breakspear et al., 2003a, 2003b) of the biophysical-inspired neural mass model of a cortical column (or area) from Larter et al. (1999), initially developed to simulate firing rate activity from focal region involved in partial seizure. It is determined by voltage- and ligand-gated ions channels and feedback between intensively interconnected excitatory and inhibitory neurons.\n\nThe Larter-Breakspear is a 3D model describing the local average states of two interconnected neural populations: pyramidal cells (PCs) and inhibitory interneurons (IINs), with an additional variable representing the potassium channels in the population of PCs.\n\nThe membrane potential of the pyramidal cells is the focus of the model and is governed by sodium, \npotassium, calcium and “leaky” ion channels, of which the voltage-gated potassium channels are modelled in more detail. \n\nThe excitatory to excitatory connections are modelled in more detail as glutamatergic connections with AMPA and NMDA receptors. \n\nNote:\n- Equations and default parameters are taken from (Breakspear et al., 2003b), \n- All equations and parameters are non-dimensional and normalized to neural capacitance C = 1."
 references:
-- Breakspear2003
-- Larter1999
-- Breakspear2003a
+  - Breakspear2003
+  - Larter1999
+  - Breakspear2003a
 derived_variables:
   Q_V:
     name: Q_V
@@ -330,6 +367,8 @@ derived_variables:
       rhs: 0.5*Q_Vmax*(tanh((V - V_T)/delta_V) + 1)
       latex: false
     conditional: false
+    grounding:
+      - GO:0099605
   Q_Z:
     name: Q_Z
     description: Average firing rate of the population of IINs, Z.
@@ -338,33 +377,38 @@ derived_variables:
       rhs: 0.5*Q_Zmax*(tanh((Z - Z_T)/delta_Z) + 1)
       latex: false
     conditional: false
+    grounding:
+      - GO:0099605
   m_Ca:
     name: m_Ca
-    description: "Fraction of open calcium channels (Breakspear et al., 2003b). \n\
-      \nDescribes relationship between membrane voltage and channel conductance."
+    description: "Fraction of open calcium channels (Breakspear et al., 2003b). \n\nDescribes relationship between membrane voltage and channel conductance."
     equation:
       lhs: m_Ca
       rhs: 0.5*tanh((-T_Ca + V)/delta_Ca) + 0.5
       latex: false
     conditional: false
+    grounding:
+      - GO:0005262
   m_K:
     name: m_K
-    description: "Fraction of open potassium channels (Breakspear et al., 2003b).\
-      \ \n\nDescribes relationship between membrane voltage and channel conductance."
+    description: "Fraction of open potassium channels (Breakspear et al., 2003b). \n\nDescribes relationship between membrane voltage and channel conductance."
     equation:
       lhs: m_K
       rhs: 0.5*tanh((-T_K + V)/delta_K) + 0.5
       latex: false
     conditional: false
+    grounding:
+      - GO:0005267
   m_Na:
     name: m_Na
-    description: "Fraction of open sodium channels (Breakspear et al., 2003b). \n\n\
-      Describes relationship between membrane voltage and channel conductance."
+    description: "Fraction of open sodium channels (Breakspear et al., 2003b). \n\nDescribes relationship between membrane voltage and channel conductance."
     equation:
       lhs: m_Na
       rhs: 0.5*tanh((-T_Na + V)/delta_Na) + 0.5
       latex: false
     conditional: false
+    grounding:
+      - GO:0005272
   lc_0:
     name: lc_0
     equation:
@@ -386,13 +430,13 @@ state_variables:
     description: First state-variable of the Larter-Breakspear (Breakspear et al
     equation:
       lhs: Derivative(V, t)
-      rhs: t_scale*(I_ext*a_ne - Q_Z*Z*a_ie - W*g_K*(V - V_K) - g_L*(V - V_L) + m_Ca*(V
-        - V_Ca)*(-C*a_ee*c_pop0*r_NMDA - a_ee*r_NMDA*(1.0 - C)*(Q_V + lc_0) - g_Ca)
-        - (V - V_Na)*(C*a_ee*c_pop0 + a_ee*(1.0 - C)*(Q_V + lc_0) + g_Na*m_Na))
+      rhs: t_scale*(I_ext*a_ne - Q_Z*Z*a_ie - W*g_K*(V - V_K) - g_L*(V - V_L) + m_Ca*(V - V_Ca)*(-C*a_ee*c_pop0*r_NMDA - a_ee*r_NMDA*(1.0 - C)*(Q_V + lc_0) - g_Ca) - (V - V_Na)*(C*a_ee*c_pop0 + a_ee*(1.0 - C)*(Q_V + lc_0) + g_Na*m_Na))
       latex: false
     variable_of_interest: true
     coupling_variable: true
     initial_value: 0.1
+    grounding:
+      - GO:0042391
   W:
     name: W
     domain:
@@ -406,6 +450,8 @@ state_variables:
     variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
+    grounding:
+      - GO:0005267
   Z:
     name: Z
     domain:
@@ -419,4 +465,7 @@ state_variables:
     variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
+    grounding:
+      - CL:0000099
+      - GO:0060080
 number_of_modes: 1

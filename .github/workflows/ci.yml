@@ -66,6 +66,153 @@ jobs:
             - name: Mypy — type check (non-blocking)
               run: mypy tvbo || true
 
+    # ─── Always: schema validation gate ───────────────────────
+    # Validates every YAML in tvbo/database/ against the LinkML schema.
+    # Fast (~20s) and depends only on linkml + pyyaml, so runs on every PR
+    # without the full install matrix. Catches schema/database drift early.
+    schema-validate:
+        name: Schema validation
+        needs: lint
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        steps:
+            - uses: actions/checkout@v6
+            - uses: astral-sh/setup-uv@v8.1.0
+              with:
+                  python-version: "3.12"
+                  enable-cache: true
+                  activate-environment: true
+                  cache-dependency-glob: |
+                      pyproject.toml
+                      .github/workflows/ci.yml
+            - name: Install validation deps
+              # linkml/linkml-runtime pinned to v1.11.0-rc1 until 1.11 is on PyPI;
+              # required for SimpleDict-shorthand fixes in jsonschema generator.
+              run: |
+                  uv pip install \
+                      "linkml @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml" \
+                      "linkml-runtime @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml_runtime" \
+                      pyyaml pytest pytest-xdist
+            - name: Validate every database YAML against the LinkML schema
+              run: pytest -v --tb=short tests/test_database_validation.py
+
+    # ─── Always: schema artifact build (OWL + SHACL) ───────────
+    # Builds tvb-o-struct.owl and tvb-o.shacl.ttl from the LinkML schema on
+    # every PR. Gated/non-blocking initially: surfaces gen-owl / gen-shacl
+    # failures early without breaking the merge. Artifacts uploaded for
+    # downstream reasoner CI (PR-I) and external consumers.
+    schema-artifacts:
+        name: Schema artifacts (OWL + SHACL)
+        needs: lint
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        continue-on-error: true
+        steps:
+            - uses: actions/checkout@v6
+            - uses: astral-sh/setup-uv@v8.1.0
+              with:
+                  python-version: "3.12"
+                  enable-cache: true
+                  activate-environment: true
+                  cache-dependency-glob: |
+                      pyproject.toml
+                      .github/workflows/ci.yml
+            - name: Install LinkML
+              # Pinned to v1.11.0-rc1 (see pyproject.toml [tool.uv.sources]).
+              run: |
+                  uv pip install \
+                      "linkml @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml" \
+                      "linkml-runtime @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml_runtime"
+            - name: Generate OWL
+              run: make gen-owl
+            - name: Generate SHACL
+              run: make gen-shacl
+            - name: Upload schema artifacts
+              uses: actions/upload-artifact@v4
+              with:
+                  name: tvbo-ontology-artifacts
+                  path: |
+                      ontology/tvb-o-struct.owl
+                      ontology/tvb-o.shacl.ttl
+                  retention-days: 30
+
+    # ─── Always: ontology reasoner (ELK + HermiT via ROBOT) ────
+    # Runs OWL reasoning on the generated tvb-o-struct.owl to detect
+    # unsatisfiable classes, inconsistent ontologies, and inverse /
+    # functional / cardinality regressions. Uses ROBOT (the OBO standard
+    # CLI) with ELK (fast OWL-EL profile) by default and HermiT for full
+    # OWL-DL coverage. Non-blocking initially (continue-on-error) because
+    # the freshly-generated ontology has known cleanup pending in §2.4.
+    # Closes §2.6 first checkbox once flipped to required.
+    reasoner:
+        name: Ontology reasoner (ELK + HermiT)
+        needs: schema-artifacts
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        continue-on-error: true
+        steps:
+            - uses: actions/checkout@v6
+            - uses: astral-sh/setup-uv@v8.1.0
+              with:
+                  python-version: "3.12"
+                  enable-cache: true
+                  activate-environment: true
+                  cache-dependency-glob: |
+                      pyproject.toml
+                      .github/workflows/ci.yml
+            - name: Install LinkML
+              # Pinned to v1.11.0-rc1 (see pyproject.toml [tool.uv.sources]).
+              run: |
+                  uv pip install \
+                      "linkml @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml" \
+                      "linkml-runtime @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml_runtime"
+            - name: Generate OWL
+              run: make gen-owl
+            - name: Set up Java (for ROBOT)
+              uses: actions/setup-java@v4
+              with:
+                  distribution: temurin
+                  java-version: "17"
+            - name: Install ROBOT
+              run: |
+                  mkdir -p $HOME/.local/bin
+                  curl -L -o $HOME/.local/bin/robot.jar \
+                      https://github.com/ontodev/robot/releases/download/v1.9.6/robot.jar
+                  curl -L -o $HOME/.local/bin/robot \
+                      https://raw.githubusercontent.com/ontodev/robot/v1.9.6/bin/robot
+                  chmod +x $HOME/.local/bin/robot
+                  echo "$HOME/.local/bin" >> $GITHUB_PATH
+            - name: Reason with ELK (OWL-EL profile, fast)
+              run: |
+                  robot reason \
+                      --reasoner ELK \
+                      --input ontology/tvb-o-struct.owl \
+                      --output ontology/tvb-o-reasoned-elk.owl
+            - name: Reason with HermiT (OWL-DL, full coverage)
+              run: |
+                  robot reason \
+                      --reasoner HermiT \
+                      --input ontology/tvb-o-struct.owl \
+                      --output ontology/tvb-o-reasoned-hermit.owl
+            - name: Report unsatisfiable classes
+              run: |
+                  robot report \
+                      --input ontology/tvb-o-struct.owl \
+                      --output ontology/tvb-o-report.tsv \
+                      --fail-on ERROR \
+                      --print 20 || true
+            - name: Upload reasoner artifacts
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: tvbo-reasoner-artifacts
+                  path: |
+                      ontology/tvb-o-reasoned-elk.owl
+                      ontology/tvb-o-reasoned-hermit.owl
+                      ontology/tvb-o-report.tsv
+                  retention-days: 30
+                  if-no-files-found: warn
+
     # ─── Always: compatibility across Python versions ──────────
     compat:
         name: Python ${{ matrix.python-version }}
@@ -94,7 +241,12 @@ jobs:
                   key: venv-compat-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml', '.github/workflows/ci.yml') }}
             - name: Install (cache miss)
               if: steps.venv-cache.outputs.cache-hit != 'true'
-              run: uv pip install -e . pytest pytest-xdist pytest-timeout
+              # linkml/linkml-runtime pinned to v1.11.0-rc1; remove once on PyPI.
+              run: |
+                  uv pip install \
+                      "linkml @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml" \
+                      "linkml-runtime @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml_runtime"
+                  uv pip install -e . pytest pytest-xdist pytest-timeout
             - name: Refresh editable link (cache hit)
               if: steps.venv-cache.outputs.cache-hit == 'true'
               run: uv pip install -e . --no-deps
@@ -167,7 +319,12 @@ jobs:
                   key: venv-native-${{ matrix.shard }}-3.12-${{ hashFiles('pyproject.toml', '.github/workflows/ci.yml') }}
             - name: Install with all extras (cache miss)
               if: steps.venv-cache.outputs.cache-hit != 'true'
-              run: uv pip install -e ".[all]" pytest pytest-xdist pytest-timeout
+              # linkml/linkml-runtime pinned to v1.11.0-rc1; remove once on PyPI.
+              run: |
+                  uv pip install \
+                      "linkml @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml" \
+                      "linkml-runtime @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml_runtime"
+                  uv pip install -e ".[all]" pytest pytest-xdist pytest-timeout
             - name: Refresh editable link (cache hit)
               if: steps.venv-cache.outputs.cache-hit == 'true'
               run: uv pip install -e . --no-deps

@@ -11,7 +11,9 @@ description: >
   This model generalises FitzHugh-Nagumo. All 13 parameters, coupling inputs,
   and 2 state variables (V, W) are exported.
 
-model: Generic2dOscillator
+dynamics:
+  name: Generic2dOscillator
+  iri: tvbo:Generic2dOscillator
 
 network:
   number_of_nodes: 1

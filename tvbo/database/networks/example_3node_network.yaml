@@ -5,24 +5,24 @@ description: Example network with 3 nodes and two different coupling types (exci
   and inhibitory)
 number_of_nodes: 3
 coupling:
-- name: excitatory
-  label: Excitatory Linear Coupling
-  coupling_function:
-    rhs: a * x
-    parameters:
-    - name: a
-      value: 1.0
-  delayed: true
-- name: inhibitory
-  label: Inhibitory Sigmoidal Coupling
-  coupling_function:
-    rhs: -1.0 / (1.0 + exp(-a * (x - theta)))
-    parameters:
-    - name: a
-      value: 0.5
-    - name: theta
-      value: 0.0
-  delayed: true
+  excitatory:
+    label: Excitatory Linear Coupling
+    coupling_function:
+      rhs: a * x
+      parameters:
+        a:
+          value: 1.0
+    delayed: true
+  inhibitory:
+    label: Inhibitory Sigmoidal Coupling
+    coupling_function:
+      rhs: -1.0 / (1.0 + exp(-a * (x - theta)))
+      parameters:
+        a:
+          value: 0.5
+        theta:
+          value: 0.0
+    delayed: true
 parameters:
   G:
     value: 1.0
@@ -32,9 +32,7 @@ parameters:
 nodes:
 - id: 0
   label: Node_A
-  dynamics:
-    name: Generic2dOscillator
-    dataLocation: database/models/Generic2dOscillator.yaml
+  dynamics: Generic2dOscillator
   position:
     x: -10.0
     y: 0.0
@@ -47,9 +45,7 @@ nodes:
       value: 0.0
 - id: 1
   label: Node_B
-  dynamics:
-    name: Generic2dOscillator
-    dataLocation: database/models/Generic2dOscillator.yaml
+  dynamics: Generic2dOscillator
   position:
     x: 0.0
     y: 10.0
@@ -62,9 +58,7 @@ nodes:
       value: 0.0
 - id: 2
   label: Node_C
-  dynamics:
-    name: Generic2dOscillator
-    dataLocation: database/models/Generic2dOscillator.yaml
+  dynamics: Generic2dOscillator
   position:
     x: 10.0
     y: 0.0
@@ -78,61 +72,25 @@ nodes:
 edges:
 - source: 0
   target: 1
-  coupling:
-    name: excitatory
-    label: Excitatory Linear Coupling
-    coupling_function:
-      rhs: a * x
-      parameters:
-      - name: a
-        value: 1.0
-    delayed: true
+  coupling: excitatory
   weight: 0.8
   delay: 2.0
   distance: 14.14
 - source: 1
   target: 2
-  coupling:
-    name: excitatory
-    label: Excitatory Linear Coupling
-    coupling_function:
-      rhs: a * x
-      parameters:
-      - name: a
-        value: 1.0
-    delayed: true
+  coupling: excitatory
   weight: 0.9
   delay: 1.8
   distance: 14.14
 - source: 2
   target: 0
-  coupling:
-    name: inhibitory
-    label: Inhibitory Sigmoidal Coupling
-    coupling_function:
-      rhs: -1.0 / (1.0 + exp(-a * (x - theta)))
-      parameters:
-      - name: a
-        value: 0.5
-      - name: theta
-        value: 0.0
-    delayed: true
+  coupling: inhibitory
   weight: 0.6
   delay: 2.5
   distance: 20.0
 - source: 1
   target: 0
-  coupling:
-    name: inhibitory
-    label: Inhibitory Sigmoidal Coupling
-    coupling_function:
-      rhs: -1.0 / (1.0 + exp(-a * (x - theta)))
-      parameters:
-      - name: a
-        value: 0.5
-      - name: theta
-        value: 0.0
-    delayed: true
+  coupling: inhibitory
   weight: 0.4
   delay: 2.2
   distance: 14.14

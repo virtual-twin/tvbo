@@ -788,6 +788,7 @@ free_params = _p(opt, 'free_parameters', [])
 if isinstance(free_params, str):
     free_params = [free_params]
 free_params = list(free_params) if free_params else []
+free_params = [str(_p(fp, 'parameter', None) or _p(fp, 'name', None) or fp) for fp in free_params]
 algorithm = _p(opt, 'algorithm', None)
 opt_lr = _p(opt, 'learning_rate', None)
 max_iter = _p(opt, 'max_iterations', None)
@@ -849,6 +850,7 @@ s_free = _p(stage, 'free_parameters', [])
 if isinstance(s_free, str):
     s_free = [s_free]
 s_free = list(s_free) if s_free else []
+s_free = [str(_p(fp, 'parameter', None) or _p(fp, 'name', None) or fp) for fp in s_free]
 s_freeze = _p(stage, 'freeze_parameters', [])
 s_freeze = list(s_freeze) if s_freeze else []
 s_algo = _p(stage, 'algorithm', 'adam')
@@ -912,13 +914,8 @@ expl_label = _p(expl, 'label', expl_name)
 expl_desc = _p(expl, 'description', '')
 expl_mode = _p(expl, 'mode', 'product')
 expl_n_par = _p(expl, 'n_parallel', 1)
-expl_params = _p(expl, 'parameters', {})
-if isinstance(expl_params, dict):
-    ep_items = list(expl_params.items())
-elif hasattr(expl_params, 'items'):
-    ep_items = list(expl_params.items())
-else:
-    ep_items = [(_p(p, 'name', '?'), p) for p in (list(expl_params) if expl_params else [])]
+expl_axes = _p(expl, 'space', None) or []
+ep_items = [(str(_p(a, 'parameter', '?')).split('.', 1)[-1], a) for a in (list(expl_axes) if expl_axes else [])]
 observable = _p(expl, 'observable', None)
 %>\
 
