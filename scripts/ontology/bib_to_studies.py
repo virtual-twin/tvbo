@@ -15,7 +15,7 @@ import sys
 import bibtexparser
 import yaml
 
-ROOT = pathlib.Path(__file__).resolve().parents[3]
+ROOT = pathlib.Path(__file__).resolve().parents[2]
 DB = ROOT / "tvbo" / "database"
 STUDIES = DB / "studies"
 DEFAULT_BIBS = [DB / "references.bib", DB / "references_from_julia.bib"]
