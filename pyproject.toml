@@ -10,7 +10,7 @@ description = "The Virtual Brain Ontology"
 readme = "README.md"
 license = { text = "EUPL-1.2" }
 authors = [{ name = "Leon Martin", email = "leon.martin@bih-charite.de" }]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     # Core scientific
     "scipy>=1.15.0",
@@ -70,7 +70,13 @@ knowledge = [
 ]
 
 # Audio/signal processing
-audio = ["librosa>=0.10.2"]
+# Note: llvmlite >=0.44 has no macosx_x86_64 wheels for cp312/cp313, so we cap
+# numba/llvmlite on Intel Mac. See https://github.com/virtual-twin/tvbo/issues/7
+audio = [
+    "librosa>=0.10.2",
+    "numba<0.60;    sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "llvmlite<0.44; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+]
 
 # Documentation & reports
 docs = [
@@ -94,7 +100,14 @@ julia = ["juliacall>=0.9.20"]
 api = ["fastapi>=0.115.0", "uvicorn>=0.30.0", "docker>=7.1.0"]
 
 # TVB integration
-tvb = ["tvb-library", "tvb-framework", "tvb-data"]
+# Same Intel-Mac llvmlite cap as [audio]; tvb-library pulls numba transitively.
+tvb = [
+    "tvb-library",
+    "tvb-framework",
+    "tvb-data",
+    "numba<0.60;    sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "llvmlite<0.44; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+]
 
 # TVB optimization (JAX-based simulation & optimization)
 tvboptim = ["tvboptim"]

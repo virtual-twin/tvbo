@@ -108,7 +108,6 @@ Project.toml
 _test_*
 _check_*
 docs/Interoperability/Pyrates/_*
-uv.lock
 pyrates_run.py
 pyrates_run_*.py
 tvbo/database/studies/**/*.md
