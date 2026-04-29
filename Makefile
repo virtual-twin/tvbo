@@ -76,7 +76,7 @@ gen-owl:
 	@echo "Generating OWL ontology from LinkML schema..."
 	@mkdir -p ontology
 	@gen-owl $(SCHEMA_PATH) > $(OWL_OUT)
-	@python dev/OntologicalRestructuring/tools/postprocess_struct_owl.py --schema $(SCHEMA_PATH) --owl $(OWL_OUT)
+	@python scripts/ontology/postprocess_struct_owl.py --schema $(SCHEMA_PATH) --owl $(OWL_OUT)
 	@echo "✓ OWL ontology written to $(OWL_OUT)"
 
 gen-shacl:
@@ -87,13 +87,13 @@ gen-shacl:
 
 gen-studies:
 	@echo "Converting bibliographies into per-study YAML files..."
-	@python dev/OntologicalRestructuring/tools/bib_to_studies.py
+	@python scripts/ontology/bib_to_studies.py
 	@echo "✓ studies/ regenerated from bibtex"
 
 gen-abox: gen-studies
 	@echo "Generating A-box from YAML database..."
 	@mkdir -p ontology
-	@python dev/OntologicalRestructuring/tools/gen_abox.py -o $(ABOX_OUT)
+	@python scripts/ontology/gen_abox.py -o $(ABOX_OUT)
 	@echo "✓ A-box written to $(ABOX_OUT)"
 
 gen-all: gen-linkml gen-openminds gen-owl gen-shacl gen-abox
