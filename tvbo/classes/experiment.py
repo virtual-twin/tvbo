@@ -6,6 +6,7 @@
 import copy as _copy
 import os
 from os.path import join
+from pathlib import Path
 
 import jax
 import jax.numpy as jnp
@@ -94,6 +95,7 @@ def _upgrade_network_couplings(network, coupling_types=None):
 
 
 class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
+
     def __init__(self, **kwargs):
         """Initialize like the datamodel, but auto-assign an id when missing.
 
@@ -1861,6 +1863,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         return model
 
     def render_code(self, format="tvb", **kwargs):
+<<<<<<< Updated upstream
         if format == "tvb":
             template = templates.lookup.get_template("tvbo-tvb-SimulationExperiment.py.mako")
             rendered_code = format_code(template.render(experiment=self))
@@ -1963,25 +1966,24 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             )
 
         return rendered_code
+=======
+        """Render generated code in *format* (back-compat shim around the registry)."""
+        from tvbo import export as _export
+        return _export.render(self, format, **kwargs)
+>>>>>>> Stashed changes
 
     def render(self, format="yaml", **kwargs) -> str:
         """Unified entry point for rendering the experiment in any output format.
 
-        Dispatches to the appropriate renderer based on *format*:
-
-        - ``'yaml'`` — TVBO YAML specification (default)
-        - ``'pyrates-yaml'`` — PyRates YAML
-        - ``'report'`` / ``'markdown'`` / ``'md'`` — human-readable Markdown report
-        - ``'pdf'`` — report rendered to PDF (requires *outputfile* kwarg)
-        - ``'openminds'`` / ``'jsonld'`` — openMINDS JSON-LD (returns JSON string)
-        - ``'lems'`` / ``'neuroml'`` / ``'nml'`` — self-contained LEMS XML (``<Lems>`` root)
-        - Any code format accepted by :meth:`render_code` (``'tvb'``,
-          ``'jax'``, ``'tvboptim'``, ``'julia'``, ``'networkdynamics'``, …)
+        Dispatches via the :mod:`tvbo.export.registry`.  All supported
+        formats (YAML, openMINDS, markdown/PDF report, TVB, JAX, tvboptim,
+        Julia, NeuroML/LEMS, …) are looked up by canonical key or alias.
 
         Parameters
         ----------
         format : str
-            Target output format.
+            Target output format.  See :func:`tvbo.export.list_formats`
+            for the current set.
         **kwargs
             Forwarded to the underlying renderer.
 
@@ -1989,39 +1991,93 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         -------
         str
         """
-        fmt = format.lower()
+        from tvbo import export as _export
+        return _export.render(self, format, **kwargs)
 
+<<<<<<< Updated upstream
         # ── Serialisation ────────────────────────────────────────────────
         if fmt == "yaml":
             return self.to_yaml(filepath=kwargs.get("filepath"))
         if fmt == "pyrates-yaml":
             return self.to_yaml(filepath=kwargs.get("filepath"), format="pyrates")
+=======
+    @classmethod
+    def supported_export_formats(cls) -> list[dict]:
+        """Return metadata for API/UI export format dropdowns."""
+        from tvbo import export as _export
+        return _export.list_format_dicts()
+>>>>>>> Stashed changes
 
-        # ── Report ───────────────────────────────────────────────────────
-        if fmt in ("report", "markdown", "md", "pdf"):
-            report_fmt = "pdf" if fmt == "pdf" else "markdown"
-            return self.report(format=report_fmt, **kwargs)
+    def save(
+        self,
+        path: str | Path,
+        format: str | None = None,
+        metadata_only: bool = True,
+        **kwargs,
+    ) -> str:
+        """Render via :meth:`render` and persist to disk.
 
-        # ── openMINDS JSON-LD ────────────────────────────────────────────
-        if fmt in ("openminds", "jsonld", "json-ld"):
-            import json
-            from tvbo.adapters.openminds import experiment_to_openminds
+        Parameters
+        ----------
+        path : str or Path
+            Output file path **or** directory.  When a directory is given the
+            filename is derived from :meth:`get_experiment_file_prefix` and the
+            correct extension for *format* (BIDS-style).
+        format : str, optional
+            Export format key (e.g. ``'yaml'``, ``'tvb'``, ``'neuroml'``).
+            When omitted, inferred from *path* suffix.
+        metadata_only : bool
+            When ``True`` (default) only the textual/metadata artefact is
+            written.  When ``False`` and the experiment has a network, the
+            network arrays are also saved as an HDF5 sidecar file next to
+            *path*.
+        """
+        from tvbo import export as _export
 
-            indent = kwargs.pop("indent", 2)
-            data = experiment_to_openminds(self, **kwargs)
-            return json.dumps(data, indent=indent, default=str)
+        path = Path(path)
 
-        # ── Code generation (all other formats) ──────────────────────────
-        return self.render_code(format=format, **kwargs)
+        # Infer format from suffix if not provided
+        if format is None:
+            suffix_to_key = {
+                ".yaml": "yaml", ".yml": "yaml",
+                ".jsonld": "openminds", ".json": "openminds",
+                ".nml": "neuroml", ".xml": "lems",
+                ".py": "tvb", ".jl": "julia",
+                ".md": "markdown", ".pdf": "pdf",
+            }
+            format = suffix_to_key.get(path.suffix.lower(), "yaml")
+
+        fmt = _export.resolve(format)
+
+        # If path is a directory, auto-generate BIDS-style filename
+        if path.is_dir() or not path.suffix:
+            path.mkdir(parents=True, exist_ok=True)
+            path = path / f"{self.get_experiment_file_prefix()}{fmt.extension}"
+        else:
+            path.parent.mkdir(parents=True, exist_ok=True)
+
+        if fmt.key == "pdf":
+            fmt.renderer(self, outputfile=str(path), **kwargs)
+        else:
+            rendered = fmt.renderer(self, **kwargs)
+            with path.open("w", encoding="utf-8") as f:
+                f.write(rendered)
+
+        if not metadata_only and self.network is not None:
+            from tvbo.classes.network import Network
+
+            net = self.network
+            if not isinstance(net, Network):
+                net.__class__ = Network
+            net.save(path.with_stem(path.stem + "_network").with_suffix(".yaml"), binary_format="h5")
+
+        return str(path)
 
     def save_code(self, dir, file_name=None):
-        if file_name is None:
-            file_prefix = self.get_experiment_file_prefix()
-        else:
-            file_prefix = file_name
-        code_path = join(dir, f"{file_prefix}_simulation.py")
-        with open(code_path, "w", encoding="utf-8") as f:
-            f.write(self.render_code())
+        if file_name is not None:
+            from pathlib import Path as _Path
+            return self.save(_Path(dir) / file_name, format="tvb")
+        return self.save(dir, format="tvb")
 
     def get_parameters_collection(self, **kwargs):
         if keys_to_exclude := kwargs.get("keys_to_exclude", []):
