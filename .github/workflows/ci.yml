@@ -43,7 +43,7 @@ jobs:
             - name: Ruff — full lint (non-blocking)
               uses: astral-sh/ruff-action@v4.0.0
               with:
-                  args: "check --statistics --exit-zero --output-format=github ."
+                  args: "check --exit-zero ."
 
             # ruff format: report files needing reformatting, non-blocking.
             - name: Ruff format — check (non-blocking)
