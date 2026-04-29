@@ -42,10 +42,8 @@ jobs:
             # ruff: full lint summary, non-blocking until codebase is clean.
             - name: Ruff — full lint (non-blocking)
               uses: astral-sh/ruff-action@v4.0.0
-              env:
-                  RUFF_OUTPUT_FORMAT: text
               with:
-                  args: "check --statistics --exit-zero ."
+                  args: "check --exit-zero ."
 
             # ruff format: report files needing reformatting, non-blocking.
             - name: Ruff format — check (non-blocking)
