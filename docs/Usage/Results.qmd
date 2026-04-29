@@ -168,7 +168,19 @@ opt.simulation           # Post-optimization SimulationResult
 
 `ExperimentResult.export()` writes simulation data and experiment metadata to a
 [BIDS](https://bids-specification.readthedocs.io/)-compatible directory following
-[BEP034](https://bids.neuroimaging.io/bep034) conventions:
+[BEP034](https://bids.neuroimaging.io/bep034) conventions (computational model
+derivatives):
+
+```
+output_dir/
+├── dataset_description.json
+└── sub-{subject}/
+    ├── sub-{subject}_desc-{desc}_experiment.yaml   # full LinkML experiment spec
+    └── ts/
+        ├── sub-{subject}_desc-{desc}_ts-sim_State.nc    # raw state variables
+        ├── sub-{subject}_desc-{desc}_ts-sim_State.json  # sidecar metadata
+        └── sub-{subject}_desc-{desc}_ts-{obs}.nc        # one per observation
+```
 
 ```{python}
 import tempfile, os
@@ -212,25 +224,34 @@ result.export(
 
 ### Data Format: netCDF
 
-Simulation data is stored as **netCDF** — a self-describing scientific data format
-built on HDF5. Each file contains the full array with named dimensions and
-coordinates, readable by any netCDF/HDF5 tool:
+Simulation data is stored as **netCDF4** (`.nc`) — a self-describing scientific
+data format built on HDF5. Each file contains the full array with named
+dimensions and coordinates, readable by any netCDF *or* HDF5 tool.
+
+#### Why netCDF and not NIfTI or plain HDF5?
+
+| Format | Suitable? | Reason |
+|--------|-----------|--------|
+| **NIfTI** | No | Designed for volumetric (voxel) imaging. Region-by-region time series (`time × variable × node × mode`) don't fit the NIfTI data model and we'd lose labelled axes. |
+| **Plain HDF5** | Partially | HDF5 has no built-in concept of named dimensions or coordinate variables; we'd need to invent our own conventions. |
+| **netCDF4** | Yes | Self-describing dimensions + coordinates *and* HDF5-compatible storage. Round-trips xarray `DataArray`s losslessly. |
+
+::: {.callout-tip}
+netCDF4 files **are** HDF5 files. Any HDF5 reader (h5py, HDFView, MATLAB's
+`h5read`) can open them directly. The netCDF layer just adds self-describing
+dimension names and coordinates on top.
+:::
+
+#### Reading exported data back
 
 ```{python}
 import xarray as xr
 
-# Read back exported data
 nc_files = [f for f in os.listdir(os.path.join(outdir, "sub-01", "ts")) if f.endswith(".nc")]
 nc_path = os.path.join(outdir, "sub-01", "ts", nc_files[0])
 ds = xr.open_dataset(nc_path)
 ds['data']
 ```
-
-::: {.callout-tip}
-netCDF4 files **are** HDF5 files — any HDF5 reader (h5py, HDFView, MATLAB's
-`h5read`) can open them directly. The netCDF layer adds self-describing
-dimension names and coordinates.
-:::
 
 ```{python}
 # Clean up
