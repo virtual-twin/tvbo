@@ -2774,13 +2774,26 @@ def build_lems_context(experiment):
 
     dyn = experiment.dynamics
 
-    # Resolve model reference: if dynamics has a name but no state variables,
-    # it was loaded from a YAML `model: ModelName` reference and needs to be
-    # resolved from the database.
-    if dyn.name and not (dyn.state_variables or dyn.parameters):
-        from tvbo.classes.dynamics import Dynamics
+    # Resolve top-level dynamics:
+    # - If None (network-only experiments), use an empty placeholder; cell
+    #   types live in experiment.network.dynamics and are rendered separately.
+    # - If a YAML `model: ModelName` reference (name only, no SVs/params)
+    #   that exists in the TVBO database, load it. NeuroML/external refs
+    #   (iri starting with 'neuroml:', or names absent from the DB) are
+    #   left as-is and emitted via the network template.
+    from tvbo.classes.dynamics import Dynamics
+    if dyn is None:
+        dyn = Dynamics()
+    elif dyn.name and not (dyn.state_variables or dyn.parameters):
+        iri = str(getattr(dyn, "iri", "") or "")
+        if not iri.startswith("neuroml:"):
+            from tvbo.data.registry import _build_name_index
+            from tvbo import database as _db
+            from pathlib import Path
 
-        dyn = Dynamics.from_db(dyn.name)
+            db_dir = Path(_db.__file__).parent / "models"
+            if dyn.name in _build_name_index(db_dir):
+                dyn = Dynamics.from_db(dyn.name)
 
     dyn_id = safe_id(dyn.name or "dynamics")
 
