@@ -80,11 +80,17 @@ ${'\n'.join([f"$$\n{latex_equation(eq, mul_symbol='*')}\n$$" for eq in derived_v
 ${"### State Equations"}
 ${'\n'.join([f"$$\n{latex_equation(eq, mul_symbol='*')}\n$$" for eq in state_equations])}
 
+${"### State Variables"}
+
+| **Variable** | **Initial Value** | **Unit** | **Description** |
+|--------------|-------------------|----------|-----------------|
+${'\n'.join([f"| ${latex(Symbol(sv.name))}$ | {sv.initial_value if sv.initial_value is not None else '—'} | {'$' + unit_to_latex(sv.unit) + '$' if sv.unit and unit_to_latex(sv.unit) else '—'} | {sv.description or ''} |" for sv in model.state_variables.values()])}
+
 ${"### Parameters"}
 
 | **Parameter** | **Value** | **Unit** | **Description** |
 |---------------|-----------|----------|-----------------|
-${'\n'.join([f"| ${latex(Symbol(p.name))}$ | {p.value} | {'$' + unit_to_latex(p.unit) + '$' if p.unit and unit_to_latex(p.unit) else '—'} | {p.description} |" for p in model.parameters.values()])}
+${'\n'.join([f"| ${latex(Symbol(p.name))}$ | {p.value} | {'$' + unit_to_latex(p.unit) + '$' if p.unit and unit_to_latex(p.unit) else '—'} | {p.description or ''} |" for p in model.parameters.values()])}
 
 <%
 # Resolve references: try ontology objects first, then plain string list from YAML

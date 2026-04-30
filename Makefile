@@ -116,6 +116,7 @@ gen-merged: gen-owl gen-abox
 		--input $(OWL_OUT) \
 		--input $(AXIOMS_TTL) \
 		--input $(ABOX_OUT) \
+		query --update ontology/fix-punning.ru \
 		annotate \
 		--ontology-iri "https://w3id.org/tvbo/tvbo.owl" \
 		--version-iri "https://w3id.org/tvbo/$(shell date +%Y-%m-%d)/tvbo.owl" \
@@ -139,7 +140,6 @@ gen-widoco: gen-merged
 		-outFolder out \
 		-rewriteAll \
 		-webVowl \
-		-licensius \
 		-includeAnnotationProperties \
 		-getOntologyMetadata \
 		-uniteSections \
