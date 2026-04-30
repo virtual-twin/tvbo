@@ -177,8 +177,9 @@ ax.set(
 ax = axes["C"]
 expl = results.exploration.frequency_landscape
 pc = expl.grid.collect()
-n1 = exp.explorations["frequency_landscape"].parameters["a"].domain.n
-n2 = exp.explorations["frequency_landscape"].parameters["b"].domain.n
+_axes_by_param = {ax.parameter.split(".")[-1]: ax for ax in exp.explorations["frequency_landscape"].space}
+n1 = _axes_by_param["a"].domain.n
+n2 = _axes_by_param["b"].domain.n
 im = ax.imshow(
     expl.results.reshape(n1, n2).T,
     cmap="cividis",

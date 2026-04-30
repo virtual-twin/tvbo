@@ -271,6 +271,8 @@ website:
                 contents:
                   - section: "Schemas"
                     contents:
+                      - text: "common"
+                        href: datamodel/schemas/common.qmd
                       - text: "SANDS"
                         href: datamodel/schemas/SANDS.qmd
                       - text: "software"
@@ -281,6 +283,8 @@ website:
                         href: datamodel/schemas/tvb_dbs.qmd
                       - text: "tvbo_study"
                         href: datamodel/schemas/tvbo_study.qmd
+                      - text: "tvbo_units"
+                        href: datamodel/schemas/tvbo_units.qmd
                       - text: "types"
                         href: datamodel/schemas/types.qmd
                   - section: "Classes"
@@ -367,10 +371,14 @@ website:
                         href: datamodel/classes/ExecutionConfig.qmd
                       - text: "Exploration"
                         href: datamodel/classes/Exploration.qmd
+                      - text: "Exploration Axis"
+                        href: datamodel/classes/ExplorationAxis.qmd
                       - text: "Field State Variable"
                         href: datamodel/classes/FieldStateVariable.qmd
                       - text: "File"
                         href: datamodel/classes/File.qmd
+                      - text: "Free Parameter"
+                        href: datamodel/classes/FreeParameter.qmd
                       - text: "Function"
                         href: datamodel/classes/Function.qmd
                       - text: "Function Call"
@@ -425,6 +433,8 @@ website:
                         href: datamodel/classes/RegionMapping.qmd
                       - text: "Sample"
                         href: datamodel/classes/Sample.qmd
+                      - text: "Scalar Value"
+                        href: datamodel/classes/ScalarValue.qmd
                       - text: "Session"
                         href: datamodel/classes/Session.qmd
                       - text: "Simulation Experiment"
@@ -655,6 +665,8 @@ website:
                         href: datamodel/slots/definition.qmd
                       - text: "degree"
                         href: datamodel/slots/degree.qmd
+                      - text: "delay"
+                        href: datamodel/slots/delay.qmd
                       - text: "delayed"
                         href: datamodel/slots/delayed.qmd
                       - text: "delta_p"
@@ -695,6 +707,8 @@ website:
                         href: datamodel/slots/directed.qmd
                       - text: "discretization"
                         href: datamodel/slots/discretization.qmd
+                      - text: "distance"
+                        href: datamodel/slots/distance.qmd
                       - text: "distance_unit"
                         href: datamodel/slots/distance_unit.qmd
                       - text: "distribution"
@@ -807,6 +821,8 @@ website:
                         href: datamodel/slots/geometry.qmd
                       - text: "graph_generator"
                         href: datamodel/slots/graph_generator.qmd
+                      - text: "grounding"
+                        href: datamodel/slots/grounding.qmd
                       - text: "group"
                         href: datamodel/slots/group.qmd
                       - text: "groups"
@@ -821,6 +837,8 @@ website:
                         href: datamodel/slots/hasParent.qmd
                       - text: "head"
                         href: datamodel/slots/head.qmd
+                      - text: "hemi"
+                        href: datamodel/slots/hemi.qmd
                       - text: "hemisphere"
                         href: datamodel/slots/hemisphere.qmd
                       - text: "heterogeneous"
@@ -1049,6 +1067,8 @@ website:
                         href: datamodel/slots/over.qmd
                       - text: "package"
                         href: datamodel/slots/package.qmd
+                      - text: "parameter"
+                        href: datamodel/slots/parameter.qmd
                       - text: "parameters"
                         href: datamodel/slots/parameters.qmd
                       - text: "parcellation"
@@ -1199,6 +1219,8 @@ website:
                         href: datamodel/slots/source_var.qmd
                       - text: "sources"
                         href: datamodel/slots/sources.qmd
+                      - text: "space"
+                        href: datamodel/slots/space.qmd
                       - text: "sparse"
                         href: datamodel/slots/sparse.qmd
                       - text: "stages"
@@ -1339,6 +1361,8 @@ website:
                         href: datamodel/slots/warmup_from.qmd
                       - text: "warmup_source"
                         href: datamodel/slots/warmup_source.qmd
+                      - text: "weight"
+                        href: datamodel/slots/weight.qmd
                       - text: "weighted"
                         href: datamodel/slots/weighted.qmd
                       - text: "weighting"
@@ -1539,6 +1563,11 @@ website:
                         href: api/datamodel/schema.qmd
                   - section: "Export"
                     href: api/export/index.qmd
+                    contents:
+                      - text: "Formats"
+                        href: api/export/formats.qmd
+                      - text: "Registry"
+                        href: api/export/registry.qmd
                   - section: "from tvbo.jax import xarray_pytrees  # noqa: F401 – side effect: registers pytrees"
                     href: api/jax/index.qmd
                     contents:
@@ -1587,6 +1616,8 @@ website:
                         href: api/plot/animate.qmd
                       - text: "Bifurcation Diagram"
                         href: api/plot/bifurcation_diagram.qmd
+                      - text: "Dynamics"
+                        href: api/plot/dynamics.qmd
                       - text: "Functions"
                         href: api/plot/functions.qmd
                       - text: "Network"
