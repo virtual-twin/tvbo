@@ -71,6 +71,11 @@ gen-openminds:
 OWL_OUT = ontology/tvb-o-struct.owl
 SHACL_OUT = ontology/tvb-o.shacl.ttl
 ABOX_OUT = ontology/tvb-o-data.ttl
+AXIOMS_TTL = ontology/tvb-o-axioms.ttl
+MERGED_OUT = ontology/tvbo.owl
+WIDOCO_OUT = docs/ontology/spec
+ROBOT ?= robot
+WIDOCO_JAR ?= $(HOME)/work_data/software/widoco/widoco.jar
 
 gen-owl:
 	@echo "Generating OWL ontology from LinkML schema..."
@@ -101,8 +106,46 @@ crosswalk:
 	@python scripts/ontology/backfill_crosswalk.py
 	@echo "✓ dev/OntologicalRestructuring/{crosswalk,boundary-matrix}.md updated"
 
-gen-all: gen-linkml gen-openminds gen-owl gen-shacl gen-abox
+gen-all: gen-linkml gen-openminds gen-owl gen-shacl gen-abox gen-merged
 	@echo "✓ All schemas generated"
+
+gen-merged: gen-owl gen-abox
+	@echo "Merging T-box (struct + axioms) and A-box into a single distributable OWL file..."
+	@mkdir -p ontology
+	@$(ROBOT) merge \
+		--input $(OWL_OUT) \
+		--input $(AXIOMS_TTL) \
+		--input $(ABOX_OUT) \
+		annotate \
+		--ontology-iri "https://w3id.org/tvbo/tvbo.owl" \
+		--version-iri "https://w3id.org/tvbo/$(shell date +%Y-%m-%d)/tvbo.owl" \
+		reason --reasoner ELK \
+		--output $(MERGED_OUT)
+	@echo "✓ Merged ontology written to $(MERGED_OUT)"
+
+gen-widoco: gen-merged
+	@echo "Generating Widoco HTML documentation (W3C-style spec + WebVOWL)..."
+	@if [ ! -f "$(WIDOCO_JAR)" ]; then \
+		echo "ERROR: WIDOCO_JAR not found at $(WIDOCO_JAR)"; \
+		echo "Download from https://github.com/dgarijo/Widoco/releases and set WIDOCO_JAR=/path/to/widoco-launcher.jar"; \
+		exit 1; \
+	fi
+	@rm -rf $(WIDOCO_OUT)
+	@mkdir -p $(WIDOCO_OUT)
+	@java -jar $(WIDOCO_JAR) \
+		-ontFile $(MERGED_OUT) \
+		-outFolder $(WIDOCO_OUT) \
+		-rewriteAll \
+		-webVowl \
+		-licensius \
+		-includeAnnotationProperties \
+		-getOntologyMetadata \
+		-uniteSections \
+		-lang en
+	@cp $(MERGED_OUT) $(WIDOCO_OUT)/tvbo.owl
+	@cp $(AXIOMS_TTL) $(WIDOCO_OUT)/tvb-o-axioms.ttl
+	@cp $(SHACL_OUT) $(WIDOCO_OUT)/tvb-o.shacl.ttl
+	@echo "✓ Widoco docs written to $(WIDOCO_OUT)/ (served at /ontology/spec/ by Quarto)"
 
 build:
 	DOCKER_BUILDKIT=1 docker build --secret id=gitlab_token,env=GITLAB_TOKEN -t $(IMAGE_FULL) .
