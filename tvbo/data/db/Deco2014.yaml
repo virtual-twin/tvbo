@@ -8,7 +8,7 @@ simulation_experiments:
           label: "Reduced Wong Wang Model"
           model:
                   name: ReducedWongWangExcInh
-                  iri: http://www.thevirtualbrain.org/tvb-o/ReducedWongWangExcInh
+                  iri: https://w3id.org/tvbo/ReducedWongWangExcInh
                   parameters:
                           - a_E:
                                     value: 310

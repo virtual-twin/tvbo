@@ -730,7 +730,7 @@ def get_property_annotation(tvbo_class, property) -> List[owlready2.ThingClass]:
     CE = list(
         default_world.sparql(
             """
-                PREFIX tvb-o: <http://www.thevirtualbrain.org/tvb-o/>
+                PREFIX tvb-o: <https://w3id.org/tvbo/>
                 SELECT  ?x    WHERE {
 
                     ?class owl:someValuesFrom ??

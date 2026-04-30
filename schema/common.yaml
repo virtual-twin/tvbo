@@ -7,7 +7,7 @@ description: >-
 
 prefixes:
     linkml: https://w3id.org/linkml/
-    tvbo: http://www.thevirtualbrain.org/tvb-o/
+    tvbo: https://w3id.org/tvbo/
     schema: http://schema.org/
 
 default_prefix: tvbo

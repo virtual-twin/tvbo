@@ -1,7 +1,7 @@
 {
   "@context": {
     "@vocab": "https://openminds.ebrains.eu/vocab/",
-    "tvbo": "http://www.thevirtualbrain.org/tvb-o/",
+    "tvbo": "https://w3id.org/tvbo/",
     "sands": "https://openminds.ebrains.eu/sands/",
     "core": "https://openminds.ebrains.eu/core/",
     "computation": "https://openminds.ebrains.eu/computation/"
@@ -42,7 +42,7 @@
         "name": "Epileptor",
         "label": "Epileptor Neural Mass Model",
         "description": "A phenomenological model of seizure dynamics with fast and slow timescales, capable of reproducing the main features of seizure onset, propagation, and termination.",
-        "iri": "http://www.thevirtualbrain.org/tvb-o/Epileptor",
+        "iri": "https://w3id.org/tvbo/Epileptor",
         "system_type": "continuous",
         "references": [
           "Jirsa VK, et al. (2014). On the nature of seizure dynamics. Brain 137:2210-2230.",

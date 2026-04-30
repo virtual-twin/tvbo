@@ -9,7 +9,7 @@ simulation_experiments:
     description: "Computational modeling with TVB"
     model:
       name: "ReducedWongWang"
-      iri: "http://www.thevirtualbrain.org/tvb-o/ReducedWongWang"
+      iri: "https://w3id.org/tvbo/ReducedWongWang"
       parameters:
         - name: "conduction_velocity"
           value: 6.0

@@ -31,7 +31,7 @@ TYPE_MAPPING = {
 }
 
 CURIE_PREFIXES = {
-    "tvbo:": "http://www.thevirtualbrain.org/tvb-o/",
+    "tvbo:": "https://w3id.org/tvbo/",
     "rdfs:": "http://www.w3.org/2000/01/rdf-schema#",
     "owl:": "http://www.w3.org/2002/07/owl#",
 }
@@ -214,7 +214,7 @@ class DirectOntologyAPI:
 
     def get_schema_ontology_link(self, schema_class_name: str) -> Optional[Dict[str, Any]]:
         """Get ontology concept linked to a schema class."""
-        return self.get_by_iri(f"http://www.thevirtualbrain.org/tvb-o/{schema_class_name}")
+        return self.get_by_iri(f"https://w3id.org/tvbo/{schema_class_name}")
 
     def enrich_database_item(self, item: Dict[str, Any], type_name: str) -> Dict[str, Any]:
         """Enrich database item with ontology information."""

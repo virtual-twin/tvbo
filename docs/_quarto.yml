@@ -18,7 +18,11 @@ project:
     - Replication/*.qmd
     - Replication/**/*.qmd
     - Developer/*.md
+    - ontology/*.qmd
     - "!_archive/*"
+    - "!ontology/spec/**"
+  resources:
+    - ontology/spec/**
   output-dir: _site
 
 # Sidebar configuration lives in _toc.yml (single unified sidebar).
