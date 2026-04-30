@@ -14,8 +14,7 @@ import numpy as np
 from tvbo.adapters.base import BaseAdapter
 
 if TYPE_CHECKING:
-    from tvbo.data.types import ExperimentResult, SimulationResult, TimeSeries
-    from tvbo.classes.experiment import SimulationExperiment
+    from tvbo.data.types import ExperimentResult, SimulationResult
 
 
 # Julia packages required by NetworkDynamics.jl templates
@@ -52,17 +51,11 @@ def _extract_graph_data(n_nodes: int) -> dict:
     """
     from tvbo.run.julia import run_julia_code
 
-    adj = np.array(
-        run_julia_code("Array(adj_matrix)"), dtype=float
-    )
-    pos = np.array(
-        run_julia_code("Array(node_positions)"), dtype=float
-    )
+    adj = np.array(run_julia_code("Array(adj_matrix)"), dtype=float)
+    pos = np.array(run_julia_code("Array(node_positions)"), dtype=float)
     # Edge weights (only present for weighted graphs)
     try:
-        w = np.array(
-            run_julia_code("Array(edge_weights)"), dtype=float
-        )
+        w = np.array(run_julia_code("Array(edge_weights)"), dtype=float)
     except Exception:
         w = None
     return {"adjacency": adj, "positions": pos, "weights": w}
@@ -89,7 +82,7 @@ def _extract_edge_observables(
     # Also collect obssym from coupling observed definitions
     for obs_list in coupling_observed.values():
         for obs in obs_list:
-            name = getattr(obs, 'name', str(obs))
+            name = getattr(obs, "name", str(obs))
             if name not in all_syms:
                 all_syms.append(name)
 
@@ -102,9 +95,7 @@ def _extract_edge_observables(
 
     for sym in all_syms:
         try:
-            raw = run_julia_code(
-                f"hcat(sol(sol.t; idxs=eidxs(sol, :, :{sym})).u...)'"
-            )
+            raw = run_julia_code(f"hcat(sol(sol.t; idxs=eidxs(sol, :, :{sym})).u...)'")
             edge_data[sym] = np.array(raw, dtype=float)
         except Exception:
             pass  # Symbol not available in solution — skip
@@ -131,10 +122,7 @@ def _extract_vertex_observables(
 
     for sym in vertex_dv_names:
         try:
-            raw = run_julia_code(
-                f"hcat([sol(sol.t; idxs=vidxs(sol, i, :{sym})).u"
-                f" for i in 1:{n_nodes}]...)'"
-            )
+            raw = run_julia_code(f"hcat([sol(sol.t; idxs=vidxs(sol, i, :{sym})).u for i in 1:{n_nodes}]...)'")
             vertex_data[sym] = np.array(raw, dtype=float)
         except Exception:
             pass  # Symbol not available for all nodes — skip
@@ -171,8 +159,7 @@ class NetworkDynamicsAdapter(BaseAdapter):
         coupling_vars = self.get_coupling_vars(default_model)
         n_cv = len(coupling_vars) or 1
         sv_names = list(default_model.state_variables.keys())
-        cv_indices = [i for i, name in enumerate(sv_names)
-                      if name in coupling_vars]
+        cv_indices = [i for i, name in enumerate(sv_names) if name in coupling_vars]
 
         positions = np.zeros((len(nodes), n_cv))
         for node in nodes:
@@ -183,29 +170,27 @@ class NetworkDynamicsAdapter(BaseAdapter):
                 params = self.parse_node_parameters(node)
                 if params:
                     vals = list(params.values())
-                    positions[node.id, :len(vals)] = [
-                        float(v) for v in vals[:n_cv]
-                    ]
+                    positions[node.id, : len(vals)] = [float(v) for v in vals[:n_cv]]
             else:
                 # Dynamic node: positions from per-node state at cv indices
-                node_state = getattr(node, 'state', None)
+                node_state = getattr(node, "state", None)
                 init_vals = []
                 if node_state:
                     state_values = node_state.values() if isinstance(node_state, dict) else node_state
                     state_map = {}
                     for state_entry in state_values:
                         if isinstance(state_entry, dict):
-                            sv_name = state_entry.get('name')
-                            sv_value = state_entry.get('value')
+                            sv_name = state_entry.get("name")
+                            sv_value = state_entry.get("value")
                         else:
-                            sv_name = getattr(state_entry, 'name', None)
-                            sv_value = getattr(state_entry, 'value', None)
+                            sv_name = getattr(state_entry, "name", None)
+                            sv_value = getattr(state_entry, "value", None)
                         if sv_name is not None and sv_value is not None:
                             state_map[str(sv_name)] = float(sv_value)
                     init_vals = [state_map.get(name, None) for name in sv_names]
 
                 if not init_vals:
-                    legacy_init = getattr(node, 'initial_state', None)
+                    legacy_init = getattr(node, "initial_state", None)
                     if legacy_init:
                         init_vals = [float(v) for v in legacy_init]
 
@@ -238,15 +223,17 @@ class NetworkDynamicsAdapter(BaseAdapter):
             dyn_name = node_dynamics_map[node.id]
             dyn = dynamics_dict[dyn_name]
             meta[node.id] = {
-                'dynamics': dyn_name,
-                'params': self.parse_node_parameters(node),
-                'static': self.is_static(dyn),
-                'label': getattr(node, 'label', None),
+                "dynamics": dyn_name,
+                "params": self.parse_node_parameters(node),
+                "static": self.is_static(dyn),
+                "label": getattr(node, "label", None),
             }
         return meta
 
     def build_node_positions(
-        self, ts: "SimulationResult", ctx: dict,
+        self,
+        ts: "SimulationResult",
+        ctx: dict,
     ) -> np.ndarray:
         """Build ``(n_t, n_nodes, n_cv)`` position array from simulation data.
 
@@ -254,10 +241,10 @@ class NetworkDynamicsAdapter(BaseAdapter):
         of the properly shaped ``(time, variable, node)`` DataArray.
         For fixed nodes: positions are constant (from YAML parameters).
         """
-        dynamics_dict = ctx['dynamics_dict']
-        node_dynamics_map = ctx['node_dynamics_map']
-        nodes = ctx['nodes']
-        default_model = ctx['model']
+        dynamics_dict = ctx["dynamics_dict"]
+        node_dynamics_map = ctx["node_dynamics_map"]
+        nodes = ctx["nodes"]
+        default_model = ctx["model"]
         coupling_vars = self.get_coupling_vars(default_model)
         n_cv = len(coupling_vars) or 1
 
@@ -288,9 +275,7 @@ class NetworkDynamicsAdapter(BaseAdapter):
 
         ctx = self.prepare_context()
         ctx.update(kwargs)
-        template = templates.lookup.get_template(
-            "tvbo-nd-experiment.jl.mako"
-        )
+        template = templates.lookup.get_template("tvbo-nd-experiment.jl.mako")
         return template.render(**ctx)
 
     def run(self, **kwargs) -> "ExperimentResult":
@@ -323,11 +308,13 @@ class NetworkDynamicsAdapter(BaseAdapter):
 
         # 3. Change Julia working directory to YAML source dir
         #    so that readdlm("Norm_G_DTI.txt") etc. resolve correctly.
-        source = getattr(exp, '_source_file', None)
+        source = getattr(exp, "_source_file", None)
         import os
+
         original_cwd = os.getcwd()
         if source:
             from pathlib import Path
+
             src_dir = str(Path(source).parent)
             run_julia_code(f'cd("{src_dir}")')
 
@@ -339,18 +326,18 @@ class NetworkDynamicsAdapter(BaseAdapter):
 
         # 6. Reshape to TVBO convention
         ctx = self.prepare_context()
-        sv_names = ctx['sv_names']
-        n_sv = ctx['n_sv']
-        n_nodes = ctx['n_nodes']
-        is_hetero = ctx.get('is_heterogeneous', False)
+        sv_names = ctx["sv_names"]
+        ctx["n_sv"]
+        n_nodes = ctx["n_nodes"]
+        is_hetero = ctx.get("is_heterogeneous", False)
 
         if is_hetero:
             from tvbo.run.julia import run_julia_code
 
-            dynamics_dict = ctx['dynamics_dict']
-            node_dynamics_map = ctx['node_dynamics_map']
-            nodes = ctx['nodes']
-            default_name = ctx['model'].name if ctx['model'] else None
+            dynamics_dict = ctx["dynamics_dict"]
+            node_dynamics_map = ctx["node_dynamics_map"]
+            nodes = ctx["nodes"]
+            default_name = ctx["model"].name if ctx["model"] else None
 
             # Collect all unique state variable names (preserving order)
             all_sv_names = []
@@ -371,16 +358,18 @@ class NetworkDynamicsAdapter(BaseAdapter):
             # Extract per-variable time series via ND.jl vidxs (one Julia
             # call per unique SV — batches all nodes that share that variable)
             for sv_idx, sv_name in enumerate(all_sv_names):
-                node_ids = [n.id for n in nodes
-                            if (d := dynamics_dict.get(
-                                node_dynamics_map.get(n.id, default_name)))
-                            and d.state_variables and sv_name in d.state_variables]
+                node_ids = [
+                    n.id
+                    for n in nodes
+                    if (d := dynamics_dict.get(node_dynamics_map.get(n.id, default_name)))
+                    and d.state_variables
+                    and sv_name in d.state_variables
+                ]
                 if not node_ids:
                     continue
-                jl_ids = ', '.join(str(nid + 1) for nid in node_ids)
+                jl_ids = ", ".join(str(nid + 1) for nid in node_ids)
                 raw = run_julia_code(
-                    f"hcat([getindex.(sol(sol.t; idxs=vidxs(sol, i, :{sv_name})).u, 1)"
-                    f" for i in [{jl_ids}]]...)"
+                    f"hcat([getindex.(sol(sol.t; idxs=vidxs(sol, i, :{sv_name})).u, 1) for i in [{jl_ids}]]...)"
                 )
                 vals = np.array(raw, dtype=float)  # (n_t, len(node_ids))
                 for k, nid in enumerate(node_ids):
@@ -388,27 +377,25 @@ class NetworkDynamicsAdapter(BaseAdapter):
 
             da = xr.DataArray(
                 data=data,
-                dims=['time', 'variable', 'node'],
+                dims=["time", "variable", "node"],
                 coords={
-                    'time': np.asarray(t),
-                    'variable': all_sv_names,
-                    'node': [node.id for node in nodes],
+                    "time": np.asarray(t),
+                    "variable": all_sv_names,
+                    "node": [node.id for node in nodes],
                 },
             )
-            state_labels = all_sv_names
         else:
             da = solution_to_dataarray(t, u, sv_names, n_nodes)
-            state_labels = sv_names
 
         # 7. Extract edge observables from outsym metadata
         edge_data = _extract_edge_observables(
-            ctx.get('outsym_names', []),
-            ctx.get('coupling_observed', {}),
+            ctx.get("outsym_names", []),
+            ctx.get("coupling_observed", {}),
         )
 
         # 7b. Extract vertex derived-variable observables
         vertex_data = _extract_vertex_observables(
-            ctx.get('vertex_dv_names', []),
+            ctx.get("vertex_dv_names", []),
             n_nodes,
         )
 
@@ -423,13 +410,15 @@ class NetworkDynamicsAdapter(BaseAdapter):
 
         # Collect extra metadata
         extras = dict(sol=sol, graph=graph_data, edge_data=edge_data, vertex_data=vertex_data)
-        if is_hetero and self.get_coupling_vars(ctx['model']):
-            extras['node_positions'] = self.build_node_positions(sim, ctx)
-            extras['initial_positions'] = self.get_initial_positions()
-            extras['fixed_nodes'] = self.get_fixed_nodes()
-            extras['node_metadata'] = self.get_node_metadata()
+        if is_hetero and self.get_coupling_vars(ctx["model"]):
+            extras["node_positions"] = self.build_node_positions(sim, ctx)
+            extras["initial_positions"] = self.get_initial_positions()
+            extras["fixed_nodes"] = self.get_fixed_nodes()
+            extras["node_metadata"] = self.get_node_metadata()
 
         return ExperimentResult(
-            integration=sim, source=exp, name=getattr(exp, 'label', None),
+            integration=sim,
+            source=exp,
+            name=getattr(exp, "label", None),
             **extras,
         )

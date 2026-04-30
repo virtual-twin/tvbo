@@ -4,9 +4,9 @@
 Updates parcellation.atlas.name to normalized form and adds segmentation/scale
 to the bids: section where applicable.
 """
+
 import re
 import yaml
-from pathlib import Path
 from tvbo import database_path
 
 NET_DIR = database_path / "networks"
@@ -71,8 +71,7 @@ def fix_sidecar(yaml_path):
 
     if changed:
         with open(yaml_path, "w") as f:
-            yaml.dump(data, f, default_flow_style=False, sort_keys=False,
-                      allow_unicode=True)
+            yaml.dump(data, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
         print(f"  Fixed: {yaml_path.name}")
     return changed
 

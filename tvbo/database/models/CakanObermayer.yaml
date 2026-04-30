@@ -1,0 +1,219 @@
+name: CakanObermayer
+iri: tvbo:Cortical
+model_type: neural_mass
+description: >-
+  Adaptive linear-nonlinear (aLN) mean-field model of a network of
+  adaptive exponential integrate-and-fire (AdEx) neurons, comprising one
+  excitatory (E) and one inhibitory (I) population. Originally developed by
+  Augustin, Ladenbauer, Liebe & Obermayer (2017) and used as the
+  whole-brain mean-field in neurolib by Cakan, Jajcay & Obermayer (2021).
+
+  The legacy tvb-o.owl ontology referred to this model by the short name
+  ``Cortical`` (suffix ``_CO``); ``iri`` is preserved for backward
+  ontology mapping while ``name`` reflects the canonical attribution.
+
+  Defaults are taken verbatim from
+  ``neurolib/models/aln/loadDefaultParams.py``. Note that the full aLN
+  dynamics require a precomputed transfer-function lookup table
+  (``aln-precalc/quantities_cascade.h5``) that maps the filtered mean
+  input ``mu`` and the membrane-potential standard deviation ``sigma``
+  to a steady-state firing rate. The state-variable equations below are
+  the structural filtered-mean-input scaffold; the nonlinear transfer
+  function ``r_E = Phi(mu_E, sigma_E)`` cannot be expressed in YAML and
+  is therefore approximated as a sigmoid for backend code generation.
+references:
+- Augustin2017
+- Cakan2021
+parameters:
+  C:
+    name: C
+    definition: Membrane capacitance of a single AdEx neuron.
+    value: 200.0
+    domain: {lo: 50.0, hi: 500.0, step: 1.0}
+    unit: pF
+    grounding: [GO:0030322, GO:0042391, GO:0098696]
+  E_L:
+    name: E_L
+    definition: Leak reversal potential of a single AdEx neuron.
+    value: -65.0
+    domain: {lo: -90.0, hi: -50.0, step: 1.0}
+    unit: mV
+    grounding: [GO:0022840]
+  E_A:
+    name: E_A
+    definition: Reversal potential of the adaptation current.
+    value: -80.0
+    domain: {lo: -100.0, hi: -50.0, step: 1.0}
+    unit: mV
+    grounding: [GO:0042391]
+  I_A:
+    name: I_A
+    definition: Subthreshold adaptation conductance amplitude (a in AdEx).
+    value: 0.0
+    domain: {lo: 0.0, hi: 50.0, step: 0.1}
+    unit: nS
+    grounding: [GO:0060079]
+  J_EE:
+    name: J_EE
+    definition: Maximum excitatory-to-excitatory PSC amplitude (Jee_max in neurolib).
+    value: 2.43
+    domain: {lo: 0.0, hi: 10.0, step: 0.01}
+    unit: mV_per_ms
+    grounding: [GO:0060076, GO:0060079, GO:0098817]
+  J_EI:
+    name: J_EI
+    definition: Maximum inhibitory-to-excitatory PSC amplitude (Jei_max in neurolib, signed negative).
+    value: -3.3
+    domain: {lo: -10.0, hi: 0.0, step: 0.01}
+    unit: mV_per_ms
+    grounding: [GO:0060080, GO:0099536]
+  J_IE:
+    name: J_IE
+    definition: Maximum excitatory-to-inhibitory PSC amplitude (Jie_max in neurolib).
+    value: 2.6
+    domain: {lo: 0.0, hi: 10.0, step: 0.01}
+    unit: mV_per_ms
+    grounding: [GO:0060079]
+  J_II:
+    name: J_II
+    definition: Maximum inhibitory-to-inhibitory PSC amplitude (Jii_max in neurolib, signed negative).
+    value: -1.64
+    domain: {lo: -10.0, hi: 0.0, step: 0.01}
+    unit: mV_per_ms
+    grounding: [GO:0060080]
+  mu_E:
+    name: mu_E
+    definition: Mean external input current to the excitatory population (mue_ext_mean).
+    value: 0.4
+    domain: {lo: -2.0, hi: 5.0, step: 0.01}
+    unit: mV_per_ms
+  mu_I:
+    name: mu_I
+    definition: Mean external input current to the inhibitory population (mui_ext_mean).
+    value: 0.3
+    domain: {lo: -2.0, hi: 5.0, step: 0.01}
+    unit: mV_per_ms
+    grounding: [GO:0042391, GO:0060080, GO:0098828]
+  s_EE:
+    name: s_EE
+    definition: Standard deviation of the random-coupling-driven membrane-potential fluctuations entering the E->E channel (sigmae_ext component).
+    value: 1.5
+    domain: {lo: 0.1, hi: 5.0, step: 0.1}
+    unit: mV_per_ms
+    grounding: [GO:0060079, GO:0098815]
+  s_EI:
+    name: s_EI
+    definition: Standard deviation of the random-coupling-driven membrane-potential fluctuations entering the I->E channel.
+    value: 1.5
+    domain: {lo: 0.1, hi: 5.0, step: 0.1}
+    unit: mV_per_ms
+    grounding: [GO:0098815]
+  s_IE:
+    name: s_IE
+    definition: Standard deviation of the random-coupling-driven membrane-potential fluctuations entering the E->I channel.
+    value: 1.5
+    domain: {lo: 0.1, hi: 5.0, step: 0.1}
+    unit: mV_per_ms
+    grounding: [GO:0098815]
+  s_II:
+    name: s_II
+    definition: Standard deviation of the random-coupling-driven membrane-potential fluctuations entering the I->I channel.
+    value: 1.5
+    domain: {lo: 0.1, hi: 5.0, step: 0.1}
+    unit: mV_per_ms
+    grounding: [GO:0060080, GO:0098828]
+  tau_se:
+    name: tau_se
+    definition: Synaptic time constant of excitatory PSCs (E->E and E->I).
+    value: 2.0
+    domain: {lo: 0.1, hi: 20.0, step: 0.1}
+    unit: ms
+  tau_si:
+    name: tau_si
+    definition: Synaptic time constant of inhibitory PSCs (I->E and I->I).
+    value: 5.0
+    domain: {lo: 0.1, hi: 20.0, step: 0.1}
+    unit: ms
+  tau_A:
+    name: tau_A
+    definition: Time constant of the adaptation current.
+    value: 200.0
+    domain: {lo: 10.0, hi: 1000.0, step: 1.0}
+    unit: ms
+  r_max:
+    name: r_max
+    definition: Asymptotic firing rate used in the sigmoid surrogate for the aLN transfer function (sigmoid stand-in for the precomputed lookup table).
+    value: 0.2
+    domain: {lo: 0.001, hi: 1.0, step: 0.001}
+    unit: per_ms
+  mu_th:
+    name: mu_th
+    definition: Half-maximum input of the sigmoid transfer-function surrogate.
+    value: 1.0
+    domain: {lo: -5.0, hi: 5.0, step: 0.01}
+    unit: mV_per_ms
+  k_phi:
+    name: k_phi
+    definition: Steepness of the sigmoid transfer-function surrogate.
+    value: 1.0
+    domain: {lo: 0.01, hi: 10.0, step: 0.01}
+derived_variables:
+  r_E:
+    name: r_E
+    description: >-
+      Excitatory population firing rate. In full aLN this is
+      ``Phi(mu_E_eff, s_EE)`` with ``Phi`` precomputed; here a sigmoid
+      stand-in is used.
+    equation:
+      lhs: r_E
+      rhs: r_max/(1 + exp(-k_phi*(mu_se - mu_th)))
+      latex: false
+    conditional: false
+  r_I:
+    name: r_I
+    description: Inhibitory population firing rate (sigmoid stand-in for aLN Phi).
+    equation:
+      lhs: r_I
+      rhs: r_max/(1 + exp(-k_phi*(mu_si - mu_th)))
+      latex: false
+    conditional: false
+coupling_inputs:
+  c_pop0:
+    name: c_pop0
+state_variables:
+  mu_se:
+    name: mu_se
+    domain: {lo: -5.0, hi: 5.0}
+    description: Filtered mean synaptic input current to the excitatory population.
+    equation:
+      lhs: Derivative(mu_se, t)
+      rhs: (J_EE*r_E + J_EI*r_I + mu_E + c_pop0 - I_A_var/C - mu_se)/tau_se
+      latex: false
+    variable_of_interest: true
+    coupling_variable: true
+    initial_value: 0.0
+    unit: mV_per_ms
+  mu_si:
+    name: mu_si
+    domain: {lo: -5.0, hi: 5.0}
+    description: Filtered mean synaptic input current to the inhibitory population.
+    equation:
+      lhs: Derivative(mu_si, t)
+      rhs: (J_IE*r_E + J_II*r_I + mu_I - mu_si)/tau_si
+      latex: false
+    variable_of_interest: false
+    coupling_variable: false
+    initial_value: 0.0
+    unit: mV_per_ms
+  I_A_var:
+    name: I_A_var
+    domain: {lo: 0.0, hi: 500.0}
+    description: Adaptation current.
+    equation:
+      lhs: Derivative(I_A_var, t)
+      rhs: (I_A*(mu_se - E_A) - I_A_var)/tau_A
+      latex: false
+    variable_of_interest: false
+    coupling_variable: false
+    initial_value: 0.0
+    unit: pA

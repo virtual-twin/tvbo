@@ -155,12 +155,8 @@ def get_class_relationships(class_iri: Union[str, Any]) -> List[Tuple[Any, Any]]
     )
 
 
-def instance_class_relationship(
-    subject_iri: str, predicate: str = "prov:used"
-) -> List[Tuple[Any, Any]]:
-    predicate_restriction = (
-        f"?restriction owl:onProperty {predicate} ." if predicate else ""
-    )
+def instance_class_relationship(subject_iri: str, predicate: str = "prov:used") -> List[Tuple[Any, Any]]:
+    predicate_restriction = f"?restriction owl:onProperty {predicate} ." if predicate else ""
 
     query_string = f"""
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -201,7 +197,7 @@ def _label_search(label: str) -> List[Any]:
         (BOUND(?label) && CONTAINS(LCASE(?label), "{label.lower()}")) ||
         (BOUND(?synonym) && LCASE(?synonym) = "{label.lower()}") ||
         (BOUND(?acronym) && CONTAINS(LCASE(?acronym), "{label.lower()}")) ||
-        (BOUND(?symbol) && LCASE(?symbol) = "{label.lower().replace('$', '')}")
+        (BOUND(?symbol) && LCASE(?symbol) = "{label.lower().replace("$", "")}")
     )
     }}
     """
@@ -265,8 +261,8 @@ def label_search(
     # Optional include handling
     for inc in include:
         add_clause_and_filter(
-            f"tvbo:{inc}" if not ":" in inc else inc,
-            inc if not ":" in inc else inc.split(":")[1],
+            f"tvbo:{inc}" if ":" not in inc else inc,
+            inc if ":" not in inc else inc.split(":")[1],
         )
 
     optional_clauses_str = "\n    ".join(optional_clauses)
@@ -292,9 +288,7 @@ WHERE {{
     if root_class:
         if isinstance(root_class, str):
             root_class = ontology.onto.search_one(label=root_class)
-        results = ontology.intersection(
-            results, root_class.descendants(include_self=False)
-        )
+        results = ontology.intersection(results, root_class.descendants(include_self=False))
     return results
 
 
@@ -307,10 +301,7 @@ def get_children(cl: Any) -> List[Tuple[str, Any]]:
     storid = cl.storid
 
     predicates = ontology.onto.world._get_obj_triples_o_p(storid)
-    predicates_unabr = [
-        ontology.onto.world._unabbreviate(p)
-        for p in ontology.onto.world._get_obj_triples_o_p(storid)
-    ]
+    [ontology.onto.world._unabbreviate(p) for p in ontology.onto.world._get_obj_triples_o_p(storid)]
     edges = []
     for p in predicates:
         if p < 0:

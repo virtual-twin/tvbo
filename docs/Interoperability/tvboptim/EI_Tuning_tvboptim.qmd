@@ -8,7 +8,8 @@ Reproducing the FIC+EIB tuning workflow from [Schirner et al. (2023)](https://do
 # | output: false
 import os
 
-os.environ["XLA_FLAGS"] = "--xla_force_host_platform_device_count=8"
+device_count = os.environ.get("TVBO_XLA_DEVICE_COUNT", "8")
+os.environ["XLA_FLAGS"] = f"--xla_force_host_platform_device_count={device_count}"
 
 from tvbo import SimulationExperiment
 import matplotlib.pyplot as plt

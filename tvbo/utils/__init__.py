@@ -30,16 +30,20 @@ ROOT_DIR = abspath(dirname(__file__))
 # Backward-compatible re-exports (moved to tvbo.plot.utils)
 def __getattr__(name):
     _plot_names = {
-        'get_logo', 'hex2rgba', 'get_cmap', 'get_continuous_cmap', 'multiview',
-        'tvb_colors',
+        "get_logo",
+        "hex2rgba",
+        "get_cmap",
+        "get_continuous_cmap",
+        "multiview",
+        "tvb_colors",
     }
     if name in _plot_names:
         from tvbo.plot import utils as _plot_utils
-        if name == 'tvb_colors':
+
+        if name == "tvb_colors":
             return _plot_utils.tvb_colors_simple
         return getattr(_plot_utils, name)
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
 
 
 class Bunch(dict):
@@ -59,9 +63,7 @@ class Bunch(dict):
         try:
             return self[key]
         except KeyError:
-            raise AttributeError(
-                f"'{type(self).__name__}' has no attribute '{key}'"
-            )
+            raise AttributeError(f"'{type(self).__name__}' has no attribute '{key}'")
 
     def __setattr__(self, key, value):
         self[key] = value
@@ -70,9 +72,7 @@ class Bunch(dict):
         try:
             del self[key]
         except KeyError:
-            raise AttributeError(
-                f"'{type(self).__name__}' has no attribute '{key}'"
-            )
+            raise AttributeError(f"'{type(self).__name__}' has no attribute '{key}'")
 
     def __dir__(self):
         return list(super().__dir__()) + list(self.keys())
@@ -96,6 +96,7 @@ class Bunch(dict):
 
 try:
     from jax.tree_util import register_pytree_node_class
+
     register_pytree_node_class(Bunch)
 except ImportError:
     pass
@@ -137,6 +138,7 @@ def format_pytree_as_string(
     import jax
     import jax.numpy as jnp
     import equinox as eqx
+
     # Unicode box-drawing characters for the tree structure
     space = "    "
     branch = "│   "
@@ -170,8 +172,6 @@ def format_pytree_as_string(
 
     # Check if the object is a JAX array
     if isinstance(pytree, (jnp.ndarray, np.ndarray)):
-        shape_str = f"shape={pytree.shape}"
-        dtype_str = f"dtype={pytree.dtype}"
         # result.append(f"{current_prefix}{name}: Array({shape_str}, {dtype_str})")
         if show_array_values:
             # result.append(f"{current_prefix}{name}: Array({shape_str}, {dtype_str})")
@@ -211,9 +211,7 @@ def format_pytree_as_string(
                     hide_none,
                     show_array_values,
                 )
-                if (
-                    child_result
-                ):  # Only append if there's content (might be empty with show_numerical_only)
+                if child_result:  # Only append if there's content (might be empty with show_numerical_only)
                     result.append(child_result)
 
         # If it's a dataclass or a custom class with __dict__ attribute
@@ -234,9 +232,7 @@ def format_pytree_as_string(
                     result.append(child_result)
 
         # If it's a sequence (like list or tuple)
-        elif hasattr(pytree, "__len__") and not isinstance(
-            pytree, (str, bytes, bytearray)
-        ):
+        elif hasattr(pytree, "__len__") and not isinstance(pytree, (str, bytes, bytearray)):
             for i, item in enumerate(pytree):
                 child_result = format_pytree_as_string(
                     item,
@@ -253,9 +249,7 @@ def format_pytree_as_string(
 
         # For other types of containers
         else:
-            result.append(
-                f"{current_prefix}{name}: {type(pytree).__name__} (unknown structure)"
-            )
+            result.append(f"{current_prefix}{name}: {type(pytree).__name__} (unknown structure)")
 
     except Exception:
         # If we can't flatten it as a pytree, treat it as a leaf
@@ -293,9 +287,7 @@ def pretty_print_pytree(
     Returns:
         None
     """
-    formatted_string = format_pytree_as_string(
-        pytree, name, prefix, False, show_numerical_only, True, hide_none
-    )
+    formatted_string = format_pytree_as_string(pytree, name, prefix, False, show_numerical_only, True, hide_none)
     print(formatted_string)
 
 
@@ -368,6 +360,7 @@ def traverse_metadata(
     """Recursively traverses the attributes of a metadata object, calling a callback on each Parameter."""
     if target_instance is None:
         from tvbo.datamodel import schema as tvbo_datamodel
+
         target_instance = tvbo_datamodel.Parameter
     if callback is None:
         callback = add_to_parameters_collection
@@ -400,18 +393,30 @@ def traverse_metadata(
             current_path = path + [attr_name]
             if _is_datamodel_like(attr_value):
                 traverse_metadata(
-                    attr_value, target_instance, current_path,
-                    callback, callback_kwargs, keys_to_exclude,
+                    attr_value,
+                    target_instance,
+                    current_path,
+                    callback,
+                    callback_kwargs,
+                    keys_to_exclude,
                 )
             elif isinstance(attr_value, list):
                 for i, item in enumerate(attr_value):
                     traverse_metadata(
-                        item, target_instance, current_path + [i],
-                        callback, callback_kwargs, keys_to_exclude,
+                        item,
+                        target_instance,
+                        current_path + [i],
+                        callback,
+                        callback_kwargs,
+                        keys_to_exclude,
                     )
             elif isinstance(attr_value, dict):
                 for key, value in attr_value.items():
                     traverse_metadata(
-                        value, target_instance, current_path + [key],
-                        callback, callback_kwargs, keys_to_exclude,
+                        value,
+                        target_instance,
+                        current_path + [key],
+                        callback,
+                        callback_kwargs,
+                        keys_to_exclude,
                     )

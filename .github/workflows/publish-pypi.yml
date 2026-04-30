@@ -20,18 +20,22 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v6
 
-      - name: Setup Python
-        uses: actions/setup-python@v6
+      - uses: astral-sh/setup-uv@v8.1.0
         with:
           python-version: ${{ matrix.python-version }}
-
-      - name: Upgrade pip
-        run: python -m pip install --upgrade pip
+          enable-cache: true
+          activate-environment: true
+          cache-dependency-glob: |
+              pyproject.toml
+              .github/workflows/publish-pypi.yml
 
       - name: Install project (minimal) + test deps
+        # linkml/linkml-runtime pinned to v1.11.0-rc1 until 1.11 is on PyPI.
         run: |
-          python -m pip install .
-          python -m pip install pytest pytest-cov pytest-xdist
+            uv pip install \
+                "linkml @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml" \
+                "linkml-runtime @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml_runtime"
+            uv pip install . pytest pytest-cov pytest-xdist
 
       - name: Core tests (minimal install)
         run: pytest -q --override-ini="addopts=" tests/test_model_loading.py tests/test_graph.py tests/functional/test_dynamics_basic.py
@@ -44,15 +48,14 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v6
 
-      - name: Setup Python (build)
-        uses: actions/setup-python@v6
+      - uses: astral-sh/setup-uv@v8.1.0
         with:
           python-version: "3.12"
+          enable-cache: true
+          activate-environment: true
 
-      - name: Upgrade pip & install build backend
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install build twine
+      - name: Install build backend
+        run: uv pip install build twine
 
       - name: Build sdist and wheel
         run: python -m build

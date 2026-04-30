@@ -7,7 +7,7 @@ Endpoints:
 
 See §12.8 of the tvbo HDF5 format proposal v0.7.
 """
-from pathlib import Path
+
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query
@@ -67,24 +67,24 @@ def list_networks(
 
         # Extract tractogram name
         tract = getattr(net, "tractogram", None)
-        tract_name = (getattr(tract, "name", None) if tract
-                      else str(tract) if tract else None)
+        tract_name = getattr(tract, "name", None) if tract else str(tract) if tract else None
 
         if atlas and atlas_name and atlas.lower() not in atlas_name.lower():
             continue
-        if (tractogram and tract_name
-                and tractogram.lower() not in tract_name.lower()):
+        if tractogram and tract_name and tractogram.lower() not in tract_name.lower():
             continue
 
-        result.append({
-            "id": net_id,
-            "label": getattr(net, "label", net_id),
-            "atlas": atlas_name,
-            "tractogram": tract_name,
-            "number_of_nodes": getattr(net, "number_of_nodes", None),
-            "descriptor": getattr(net, "descriptor", None),
-            "bids_filename": getattr(net, "bids_filename", None),
-        })
+        result.append(
+            {
+                "id": net_id,
+                "label": getattr(net, "label", net_id),
+                "atlas": atlas_name,
+                "tractogram": tract_name,
+                "number_of_nodes": getattr(net, "number_of_nodes", None),
+                "descriptor": getattr(net, "descriptor", None),
+                "bids_filename": getattr(net, "bids_filename", None),
+            }
+        )
     return result
 
 
@@ -116,7 +116,6 @@ def get_data(network_id: str, format: str = Query("h5")):
         companion = NETWORK_DIR / data_file
         if companion.exists():
             media = "application/x-hdf5"
-            return FileResponse(
-                companion, media_type=media, filename=companion.name)
+            return FileResponse(companion, media_type=media, filename=companion.name)
 
     raise HTTPException(404, f"No binary data for network '{network_id}'")

@@ -185,7 +185,7 @@ def get_default(NMM):
     if isinstance(NMM, str):
         NMM = ontology.get_model(NMM)
 
-    suffix = ontology.get_model_suffix(NMM)
+    ontology.get_model_suffix(NMM)
     values = dict()
     for cls in NMM.descendants():
         v = cls.defaultValue.first()
@@ -194,9 +194,7 @@ def get_default(NMM):
     return values
 
 
-def get_param_config(
-    config_key="default", model=None, return_NMM=False, use_classes=False
-):
+def get_param_config(config_key="default", model=None, return_NMM=False, use_classes=False):
     """
     Retrieve the parameter configuration for a given configuration key.
 
@@ -233,7 +231,6 @@ def get_param_config(
     if config_key == "default":
         return ontology.get_default_values(model)
 
-    config_dict = dict()
     if not isinstance(config_key, str):
         conf = config_key
     else:
@@ -257,9 +254,7 @@ def get_param_config(
         NMM = model
 
     default_params = ontology.get_default_values(NMM)
-    config_params = {
-        k: v.value.first() for k, v in ontology.get_model_parameters(conf).items()
-    }
+    config_params = {k: v.value.first() for k, v in ontology.get_model_parameters(conf).items()}
     default_params.update(config_params)
     if return_NMM:
         return default_params, NMM
@@ -359,10 +354,7 @@ def get_coupling_parameters(CF):
         CF = ontology.get_coupling_function(CF)
     acr = CF.acronym.first()
     param_config = {
-        p.label.first().replace(f"_{acr}", ""): (
-            p.defaultValue.first() if p.defaultValue else 1
-        )
-        for p in CF.has_parameter
+        p.label.first().replace(f"_{acr}", ""): (p.defaultValue.first() if p.defaultValue else 1) for p in CF.has_parameter
     }
     return param_config
 
@@ -371,15 +363,7 @@ def get_model_configurations(model):
     if isinstance(model, str):
         model = ontology.get_model(model)
 
-    return list(
-        set(
-            [
-                inst
-                for inst in ontology.onto.ModelConfiguration.instances()
-                if model in inst.is_a
-            ]
-        )
-    )
+    return list(set([inst for inst in ontology.onto.ModelConfiguration.instances() if model in inst.is_a]))
 
 
 ############################################

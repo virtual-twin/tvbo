@@ -1,0 +1,23 @@
+id: https://w3id.org/tvbo/common
+name: common
+title: TVBO Common Slots
+description: >-
+    Shared slots reused across all TVBO sub-schemas. Ensures a single
+    canonical definition for cross-cutting attributes such as `name`.
+
+prefixes:
+    linkml: https://w3id.org/linkml/
+    tvbo: http://www.thevirtualbrain.org/tvb-o/
+    schema: http://schema.org/
+
+default_prefix: tvbo
+
+imports:
+    - linkml:types
+
+slots:
+    name:
+        slot_uri: schema:name
+        range: string
+        identifier: true
+        description: "Globally unique identifier for the entity."

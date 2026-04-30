@@ -68,8 +68,7 @@ class PyRatesBifurcationAdapter:
         conts = getattr(exp, "continuations", None) or {}
         if not conts:
             raise ValueError(
-                "No continuations defined. Add continuation specs via "
-                "exp.continuations or load from a bifurcation YAML."
+                "No continuations defined. Add continuation specs via exp.continuations or load from a bifurcation YAML."
             )
 
         results = {}
@@ -106,9 +105,7 @@ class PyRatesBifurcationAdapter:
         fp_name = fp["name"]
         p_min, p_max = fp["p_min"], fp["p_max"]
         pyrates_fp_name = _pyrates_param_name(fp_name)
-        auto_kwargs = self._cont_to_auto_kwargs(
-            continuation, pyrates_fp_name, p_min, p_max
-        )
+        auto_kwargs = self._cont_to_auto_kwargs(continuation, pyrates_fp_name, p_min, p_max)
 
         iss_duration = 10000.0
         if continuation and continuation.initial_state:
@@ -244,12 +241,16 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
 
             # Step 1: Time continuation to find equilibrium
             # PAR(14) = time in model units (AUTO has no unit system)
-            iss_duration = float(getattr(cont.initial_state, "duration", None)
-                                 or 10000.0) if cont.initial_state else 10000.0
+            iss_duration = float(getattr(cont.initial_state, "duration", None) or 10000.0) if cont.initial_state else 10000.0
             t_sols, t_cont = ode.run(
-                c="ivp", name="time",
-                DS=1e-4, DSMIN=1e-10, DSMAX=1.0,
-                EPSL=1e-08, EPSU=1e-08, EPSS=1e-06,
+                c="ivp",
+                name="time",
+                DS=1e-4,
+                DSMIN=1e-10,
+                DSMAX=1.0,
+                EPSL=1e-08,
+                EPSU=1e-08,
+                EPSS=1e-06,
                 NMX=50000,
                 UZR={14: iss_duration},
                 STOP={"UZ1"},
@@ -257,9 +258,7 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
 
             # Step 2: Parameter continuation from equilibrium
             # Pass the parameter name — PyCoBi maps it via _var_map
-            auto_kwargs = self._cont_to_auto_kwargs(
-                cont, pyrates_fp_name, p_min, p_max
-            )
+            auto_kwargs = self._cont_to_auto_kwargs(cont, pyrates_fp_name, p_min, p_max)
             p_sols, p_cont = ode.run(
                 origin=t_cont,
                 starting_point="UZ1",
@@ -271,27 +270,34 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
             po_results = []
             codim2_results = []
             if cont.branches:
-                branches = (
-                    list(cont.branches.values())
-                    if isinstance(cont.branches, dict)
-                    else list(cont.branches)
-                )
+                branches = list(cont.branches.values()) if isinstance(cont.branches, dict) else list(cont.branches)
                 for branch in branches:
                     # Detect codim-2 branches (have sub-continuation with free_parameters)
-                    bc = getattr(branch, 'continuation', None)
-                    has_fp2 = bc and getattr(bc, 'free_parameters', None)
+                    bc = getattr(branch, "continuation", None)
+                    has_fp2 = bc and getattr(bc, "free_parameters", None)
                     if has_fp2:
                         c2_res = self._run_codim2_branch(
-                            ode, p_cont, branch, cont,
-                            pyrates_fp_name, p_min, p_max,
+                            ode,
+                            p_cont,
+                            branch,
+                            cont,
+                            pyrates_fp_name,
+                            p_min,
+                            p_max,
                             state_var_names=state_var_names,
-                            icp=icp, fp_name=fp_name,
+                            icp=icp,
+                            fp_name=fp_name,
                         )
                         codim2_results.extend(c2_res)
                     else:
                         po_res = self._run_branch(
-                            ode, p_cont, branch, cont,
-                            pyrates_fp_name, p_min, p_max,
+                            ode,
+                            p_cont,
+                            branch,
+                            cont,
+                            pyrates_fp_name,
+                            p_min,
+                            p_max,
                         )
                         po_results.extend(po_res)
 
@@ -355,12 +361,10 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
             hp_label = hopf_points[i]
 
             try:
-                po_kwargs = self._cont_to_auto_kwargs(
-                    bc or cont, icp_name, p_min, p_max, is_po=True
-                )
+                po_kwargs = self._cont_to_auto_kwargs(bc or cont, icp_name, p_min, p_max, is_po=True)
                 po_kwargs.setdefault("ISW", -1)  # Branch switching
                 po_kwargs.setdefault("ISP", 2)
-                po_kwargs.setdefault("IPS", 2)   # Periodic orbit
+                po_kwargs.setdefault("IPS", 2)  # Periodic orbit
                 po_kwargs.setdefault("NTST", 400)
                 po_kwargs.setdefault("NCOL", 4)
 
@@ -381,9 +385,17 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
         return po_results
 
     def _run_codim2_branch(
-        self, ode, p_cont, branch, cont,
-        icp_name, p_min, p_max,
-        state_var_names=None, icp=1, fp_name="param",
+        self,
+        ode,
+        p_cont,
+        branch,
+        cont,
+        icp_name,
+        p_min,
+        p_max,
+        state_var_names=None,
+        icp=1,
+        fp_name="param",
     ):
         """Run a codim-2 continuation branch (fold or Hopf curve in 2-param space).
 
@@ -393,7 +405,7 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
         from tvbo.analysis.bifurcation import PyRatesBifurcationResult
 
         bc = branch.continuation
-        fp2 = getattr(bc, 'free_parameters', None) or {}
+        fp2 = getattr(bc, "free_parameters", None) or {}
         if isinstance(fp2, dict) and fp2:
             fp2_first = next(iter(fp2.values()))
         elif isinstance(fp2, list) and fp2:
@@ -406,12 +418,12 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
         p2_min = float(fp2_first.domain.lo) if fp2_first.domain else -20.0
         p2_max = float(fp2_first.domain.hi) if fp2_first.domain else 20.0
 
-        source = getattr(branch, 'source_point', None) or 'fold:all'
-        source_type = source.split(':')[0]  # 'hopf' or 'fold'
-        all_source = ':all' in source
+        source = getattr(branch, "source_point", None) or "fold:all"
+        source_type = source.split(":")[0]  # 'hopf' or 'fold'
+        all_source = ":all" in source
 
         # Map source type to AUTO special point labels
-        sp_type_map = {'hopf': 'HB', 'fold': 'LP', 'branch_point': 'BP'}
+        sp_type_map = {"hopf": "HB", "fold": "LP", "branch_point": "BP"}
         auto_sp = sp_type_map.get(source_type, source_type.upper())
 
         source_points = self._find_special_points(ode, "param", auto_sp)
@@ -421,24 +433,22 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
         if all_source:
             indices = list(range(len(source_points)))
         else:
-            idx_str = source.split(':')[1] if ':' in source else '-1'
-            if idx_str.lstrip('-').isdigit():
+            idx_str = source.split(":")[1] if ":" in source else "-1"
+            if idx_str.lstrip("-").isdigit():
                 idx = int(idx_str)
                 indices = [idx if idx >= 0 else len(source_points) + idx]
             else:
                 indices = list(range(len(source_points)))
 
         # Build AUTO kwargs for codim-2
-        c2_kwargs = self._cont_to_auto_kwargs(
-            bc or cont, icp_name, p_min, p_max
-        )
+        c2_kwargs = self._cont_to_auto_kwargs(bc or cont, icp_name, p_min, p_max)
         # Override ICP to be [p1, p2] for codim-2
         c2_kwargs["ICP"] = [icp_name, pyrates_fp2_name]
         # ISW=2 for branch switching (codim-2 curve tracing)
         c2_kwargs["ISW"] = 2
-        c2_kwargs["IPS"] = 1   # Equilibrium
-        c2_kwargs["ILP"] = 0   # Don't detect folds again
-        c2_kwargs["ISP"] = 2   # Detect bifurcations
+        c2_kwargs["IPS"] = 1  # Equilibrium
+        c2_kwargs["ILP"] = 0  # Don't detect folds again
+        c2_kwargs["ISP"] = 2  # Detect bifurcations
         # Second parameter bounds
         c2_kwargs["RL0"] = min(p_min, p2_min)
         c2_kwargs["RL1"] = max(p_max, p2_max)
@@ -511,11 +521,7 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
         """Extract the free parameter info from a Continuation spec."""
         fp_dict = cont.free_parameters if cont else None
         if fp_dict:
-            fp_first = (
-                next(iter(fp_dict.values()))
-                if isinstance(fp_dict, dict)
-                else fp_dict[0]
-            )
+            fp_first = next(iter(fp_dict.values())) if isinstance(fp_dict, dict) else fp_dict[0]
             name = str(fp_first.name)
             if fp_first.domain:
                 p_min = float(fp_first.domain.lo) if fp_first.domain.lo else -20
@@ -574,7 +580,7 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
             src = f.read()
 
         # Parse: args(4) = 0.0  ! I_
-        pat = re.compile(r'args\((\d+)\)\s*=\s*[^!]*!\s*(\S+)')
+        pat = re.compile(r"args\((\d+)\)\s*=\s*[^!]*!\s*(\S+)")
         for m in pat.finditer(src):
             idx = int(m.group(1))
             name = m.group(2)
@@ -604,10 +610,10 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
         kw["bidirectional"] = bool(getattr(cont, "bothside", False))
 
         if not is_po:
-            kw["IPS"] = 1   # Equilibrium continuation
-            kw["ILP"] = 1   # Detect fold bifurcations
-            kw["ISP"] = 2   # Full automatic bifurcation detection
-            kw["ISW"] = 1   # Normal continuation
+            kw["IPS"] = 1  # Equilibrium continuation
+            kw["ILP"] = 1  # Detect fold bifurcations
+            kw["ISP"] = 2  # Full automatic bifurcation detection
+            kw["ISW"] = 1  # Normal continuation
 
         # Step size — AUTO-07p default DS=1e-4 is often too small
         ds = getattr(cont, "ds", None)
@@ -662,18 +668,15 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
         if dyn_ref:
             dyn_name = str(dyn_ref)
             # Check primary dynamics
-            if exp.dynamics and getattr(exp.dynamics, 'name', None) == dyn_name:
+            if exp.dynamics and getattr(exp.dynamics, "name", None) == dyn_name:
                 return exp.dynamics
             # Check network dynamics dict
-            net_dyn = getattr(exp.network, 'dynamics', None) if exp.network else None
+            net_dyn = getattr(exp.network, "dynamics", None) if exp.network else None
             if isinstance(net_dyn, dict) and dyn_name in net_dyn:
                 return net_dyn[dyn_name]
         if exp.dynamics is not None:
             return exp.dynamics
-        raise ValueError(
-            f"Cannot resolve dynamics for continuation. "
-            f"dynamics='{dyn_ref}' not found."
-        )
+        raise ValueError(f"Cannot resolve dynamics for continuation. dynamics='{dyn_ref}' not found.")
 
     @staticmethod
     def _format_auto_kwargs(kw):

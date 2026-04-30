@@ -1,0 +1,416 @@
+#
+# Module: dynamics.py
+#
+# Author: Leon Martin
+# Copyright © 2024 Charité Universitätsmedizin Berlin.
+# Licensed under the EUPL-1.2-or-later
+#
+"""General-purpose plotting for ``Dynamics`` objects.
+
+A single entry point ``plot_dynamics`` (also exposed as ``Dynamics.plot``)
+that selects between several ``kind`` of representations: time series,
+1D/2D/3D phase portraits, and 2D vector fields. Dimensions can be
+state-variable names, derived-variable names, or arbitrary
+sympy-parseable expressions over them. Labels are rendered as LaTeX via
+``sympy.latex``. Styling and colormaps come from ``bsplot``.
+"""
+
+import bsplot
+import matplotlib.pyplot as plt
+import numpy as np
+import sympy as sp
+from sympy.parsing.sympy_parser import parse_expr
+
+
+# ---------------------------------------------------------------------------
+# Symbolic helpers
+# ---------------------------------------------------------------------------
+
+
+def _scope(dynamics):
+    return dynamics.get_symbolic_elements(include_time_symbol=True)
+
+
+def _latex_label(dim, dynamics):
+    """Render an arbitrary expression / name as a LaTeX axis label."""
+    expr = parse_expr(str(dim), local_dict=_scope(dynamics))
+    return f"${sp.latex(expr)}$"
+
+
+def _resolve(dim, dynamics):
+    """Parse ``dim`` and substitute derived vars/parameters → expression in state vars only.
+
+    Returns ``(latex_label, expr)``.
+    """
+    scope = _scope(dynamics)
+    state_names = list(dynamics.state_variables)
+    expr = parse_expr(str(dim), local_dict=scope)
+
+    derived_subs = {
+        sp.Symbol(name): parse_expr(str(dv.equation.rhs), local_dict=scope)
+        for name, dv in (getattr(dynamics, "derived_variables", {}) or {}).items()
+        if getattr(dv, "equation", None) is not None
+    }
+    for _ in range(20):
+        new = expr.xreplace(derived_subs)
+        if new == expr:
+            break
+        expr = new
+
+    param_subs = {
+        sp.Symbol(name): float(p.value)
+        for name, p in dynamics.parameters.items()
+        if p.value is not None
+    }
+    for name, dp in (getattr(dynamics, "derived_parameters", {}) or {}).items():
+        if getattr(dp, "equation", None) is not None:
+            param_subs[sp.Symbol(name)] = parse_expr(
+                str(dp.equation.rhs), local_dict=scope
+            ).xreplace(param_subs)
+    expr = expr.xreplace(param_subs)
+
+    extras = expr.free_symbols - {sp.Symbol(n) for n in state_names} - {sp.Symbol("t")}
+    if extras:
+        raise ValueError(
+            f"Expression {dim!r} has unresolved symbols: {sorted(map(str, extras))}"
+        )
+
+    return _latex_label(dim, dynamics), expr
+
+
+def _evaluator(expr, dynamics):
+    """Lambdify an expression over state variables and time."""
+    state_syms = [sp.Symbol(n) for n in dynamics.state_variables]
+    t_sym = sp.Symbol("t")
+    f = sp.lambdify(state_syms + [t_sym], expr, modules="numpy")
+
+    def _eval(traj, time):
+        cols = [traj[:, i] for i in range(traj.shape[1])]
+        out = f(*cols, time)
+        return np.broadcast_to(np.asarray(out, dtype=float), (traj.shape[0],)).copy()
+
+    return _eval
+
+
+# ---------------------------------------------------------------------------
+# Simulation helpers
+# ---------------------------------------------------------------------------
+
+
+def _initial_conditions(dynamics, n_trials, u_0):
+    n_sv = len(dynamics.state_variables)
+    if u_0 is not None:
+        u_0 = np.asarray(u_0, dtype=float)
+        if u_0.ndim == 1:
+            u_0 = np.broadcast_to(u_0, (n_trials, n_sv)).copy()
+        return u_0
+    if n_trials == 1:
+        return np.asarray(dynamics.get_initial_values(), dtype=float).reshape(1, n_sv)
+    return np.asarray(dynamics.get_initial_values(random=True, N=n_trials)).T
+
+
+def _run_trials(dynamics, n_trials, duration, dt, u_0, transient):
+    u_0 = _initial_conditions(dynamics, n_trials, u_0)
+    trajs, time = [], None
+    for i in range(n_trials):
+        ts = dynamics.run(duration=duration, dt=dt, u_0=u_0[i], save=False)
+        traj = ts.data[:, :, 0, 0]
+        t = ts.time
+        if transient > 0:
+            keep = t >= transient
+            traj, t = traj[keep], t[keep]
+        trajs.append(traj)
+        time = t
+    return trajs, time
+
+
+def _trial_colors(n_trials, cmap):
+    cm = plt.colormaps[cmap]
+    if n_trials == 1:
+        return [None], None
+    norm = plt.Normalize(0, n_trials - 1)
+    return [cm(norm(i)) for i in range(n_trials)], norm
+
+
+# ---------------------------------------------------------------------------
+# Kinds
+# ---------------------------------------------------------------------------
+
+
+def _kind_timeseries(dynamics, resolved, trials, time, ax, cmap, alpha, lw):
+    n_dims = len(resolved)
+    if ax is None:
+        fig, axes = plt.subplots(n_dims, 1, sharex=True, squeeze=False,
+                                 figsize=(6, 1.8 * n_dims))
+        axes = axes[:, 0]
+    else:
+        axes = np.atleast_1d(ax)
+        fig = axes[0].figure
+
+    colors, _ = _trial_colors(len(trials), cmap)
+    for d_idx, (label, expr) in enumerate(resolved):
+        evaluator = _evaluator(expr, dynamics)
+        for t_idx, traj in enumerate(trials):
+            bsplot.timeseries.plot_ts(
+                axes[d_idx], time, evaluator(traj, time),
+                label=f"trial {t_idx}" if d_idx == 0 and len(trials) > 1 else None,
+                data_label=label, time_unit="ms", box_aspect=None,
+            )
+            line = axes[d_idx].lines[-1]
+            if colors[t_idx] is not None:
+                line.set_color(colors[t_idx])
+            line.set_alpha(alpha)
+            line.set_linewidth(lw)
+        axes[d_idx].set_box_aspect(None)
+    if len(trials) > 1:
+        axes[0].legend(loc="best", fontsize="small", frameon=False)
+    fig.tight_layout()
+    return fig
+
+
+def _kind_phase(dynamics, resolved, trials, time, ax, cmap, alpha, lw,
+                show_ic, color_by, ax_given=False):
+    n_dims = len(resolved)
+    if ax is None:
+        if n_dims == 3:
+            fig = plt.figure(figsize=(5, 5))
+            ax = fig.add_subplot(111, projection="3d")
+        else:
+            fig, ax = plt.subplots(figsize=(5, 4.5))
+    else:
+        fig = ax.figure
+
+    evaluators = [_evaluator(expr, dynamics) for _, expr in resolved]
+    labels = [lbl for lbl, _ in resolved]
+    n_trials = len(trials)
+    cm = plt.colormaps[cmap]
+
+    if color_by is not None:
+        _, color_expr = _resolve(color_by, dynamics)
+        ce = _evaluator(color_expr, dynamics)
+        color_vals = np.array([float(ce(traj[:1], time[:1])[0]) for traj in trials])
+        color_label = _latex_label(color_by, dynamics)
+    elif n_trials > 1:
+        color_vals = np.arange(n_trials, dtype=float)
+        color_label = "trial"
+    else:
+        color_vals = None
+        color_label = None
+
+    if color_vals is not None:
+        lo, hi = float(color_vals.min()), float(color_vals.max())
+        norm = plt.Normalize(lo, hi if hi != lo else lo + 1)
+
+    single_traj_time_color = (n_trials == 1 and color_by is None and n_dims >= 2)
+
+    for i, traj in enumerate(trials):
+        ys = [evaluators[d](traj, time) for d in range(n_dims)]
+        color = cm(norm(color_vals[i])) if color_vals is not None else None
+        if n_dims == 1:
+            ax.plot(time, ys[0], color=color, lw=lw, alpha=alpha)
+            if show_ic:
+                ax.plot(time[0], ys[0][0], "o", color=color or "k", ms=4, zorder=5)
+        elif n_dims == 2:
+            if single_traj_time_color:
+                sc = ax.scatter(ys[0], ys[1], c=time, cmap=cmap, s=2)
+                if not ax_given:
+                    cb = fig.colorbar(sc, ax=ax, shrink=0.8)
+                    cb.set_label("time [ms]")
+            else:
+                ax.plot(ys[0], ys[1], color=color, lw=lw, alpha=alpha)
+            if show_ic:
+                ax.plot(ys[0][0], ys[1][0], "o", color=color or "k", ms=4, zorder=5)
+        else:
+            if single_traj_time_color:
+                # Color a 3D line by time using a LineCollection-like trick via segments
+                t_norm = plt.Normalize(time.min(), time.max())
+                for k in range(len(time) - 1):
+                    ax.plot(ys[0][k:k + 2], ys[1][k:k + 2], ys[2][k:k + 2],
+                            color=cm(t_norm(time[k])), lw=lw, alpha=alpha)
+                if not ax_given:
+                    sm_t = plt.cm.ScalarMappable(cmap=cmap, norm=t_norm)
+                    sm_t.set_array([])
+                    cb = fig.colorbar(sm_t, ax=ax, shrink=0.8, pad=0.1)
+                    cb.set_label("time [ms]")
+            else:
+                ax.plot(ys[0], ys[1], ys[2], color=color, lw=lw, alpha=alpha)
+            if show_ic:
+                ax.scatter(ys[0][0], ys[1][0], ys[2][0],
+                           color=color or "k", s=20, zorder=5)
+
+    if color_vals is not None and not single_traj_time_color and not ax_given:
+        sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+        sm.set_array([])
+        cb = fig.colorbar(sm, ax=ax, shrink=0.8)
+        cb.set_label(color_label)
+
+    if n_dims == 1:
+        ax.set_xlabel("time [ms]"); ax.set_ylabel(labels[0])
+    elif n_dims == 2:
+        ax.set_xlabel(labels[0]); ax.set_ylabel(labels[1])
+        ax.set_box_aspect(1)
+    else:
+        ax.set_xlabel(labels[0]); ax.set_ylabel(labels[1]); ax.set_zlabel(labels[2])
+    return fig
+
+
+def _kind_vectorfield(dynamics, resolved, ax, grid_n, cmap, stream, ax_given=False,
+                      alpha=0.8, lw=1.5):
+    if len(resolved) != 2:
+        raise ValueError("vectorfield requires exactly 2 dims (state variables)")
+    state_names = list(dynamics.state_variables)
+    sv_idx = []
+    for label, expr in resolved:
+        if not (isinstance(expr, sp.Symbol) and str(expr) in state_names):
+            raise ValueError("vectorfield dims must be state-variable names")
+        sv_idx.append(state_names.index(str(expr)))
+
+    sv_objs = list(dynamics.state_variables.values())
+
+    def _range(sv):
+        if sv.domain and sv.domain.lo is not None and sv.domain.hi is not None:
+            return float(sv.domain.lo), float(sv.domain.hi)
+        v = float(sv.initial_value) if sv.initial_value is not None else 0.0
+        return v - 1.0, v + 1.0
+
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(5, 4.5))
+        lo_x, hi_x = _range(sv_objs[sv_idx[0]])
+        lo_y, hi_y = _range(sv_objs[sv_idx[1]])
+    else:
+        fig = ax.figure
+        lo_x, hi_x = ax.get_xlim()
+        lo_y, hi_y = ax.get_ylim()
+
+    X, Y = np.meshgrid(np.linspace(lo_x, hi_x, grid_n), np.linspace(lo_y, hi_y, grid_n))
+    base_ic = np.asarray(dynamics.get_initial_values(), dtype=float).reshape(-1)
+    f = dynamics.execute(format="python")
+    U, V = np.zeros_like(X), np.zeros_like(Y)
+    for i in range(grid_n):
+        for j in range(grid_n):
+            u = base_ic.copy()
+            u[sv_idx[0]] = X[i, j]
+            u[sv_idx[1]] = Y[i, j]
+            du = np.asarray(f(u, 0.0))
+            U[i, j] = du[sv_idx[0]]
+            V[i, j] = du[sv_idx[1]]
+
+    speed = np.hypot(U, V)
+    if stream:
+        strm = ax.streamplot(X, Y, U, V, color=speed, cmap=cmap, density=1.2,
+                             arrowsize=1.0, linewidth=lw)
+        strm.lines.set_alpha(alpha)
+        if not ax_given:
+            cb = fig.colorbar(strm.lines, ax=ax, shrink=0.8)
+            cb.set_label("|f|")
+    else:
+        q = ax.quiver(X, Y, U, V, speed, cmap=cmap, alpha=alpha)
+        if not ax_given:
+            cb = fig.colorbar(q, ax=ax, shrink=0.8)
+            cb.set_label("|f|")
+    ax.set_xlabel(resolved[0][0]); ax.set_ylabel(resolved[1][0])
+    ax.set_box_aspect(1)
+    return fig
+
+
+# ---------------------------------------------------------------------------
+# Public API
+# ---------------------------------------------------------------------------
+
+
+_KINDS = ("auto", "timeseries", "phase", "vectorfield")
+
+
+def plot_dynamics(
+    dynamics,
+    *dims,
+    kind="auto",
+    duration=2000,
+    dt=0.1,
+    n_trials=1,
+    u_0=None,
+    color_by=None,
+    cmap="viridis",
+    transient=0.0,
+    ax=None,
+    show_ic=True,
+    lw=0.8,
+    alpha=0.8,
+    grid_n=20,
+    stream=True,
+):
+    """Plot a ``Dynamics`` in several ways.
+
+    Parameters
+    ----------
+    dynamics : Dynamics
+    *dims : str
+        1-3 dimensions: state-variable name, derived-variable name, or any
+        sympy-parseable expression over them. Defaults: first SV (timeseries),
+        first 2 SVs (phase / vectorfield).
+    kind : {"auto", "timeseries", "phase", "vectorfield"}
+        - ``timeseries``: stacked time series, one panel per dim.
+        - ``phase``: 1D/2D/3D phase portrait.
+        - ``vectorfield``: 2D vector field (stream- or quiver-plot).
+        - ``auto``: timeseries for 1 dim, phase for 2-3 dims.
+    duration, dt : float
+        Integration parameters in ms.
+    n_trials : int
+        Number of trajectories. ``> 1`` resamples ICs from each SV's distribution.
+    u_0 : array-like, optional
+        Explicit IC(s); shape ``(n_sv,)`` or ``(n_trials, n_sv)``.
+    color_by : str, optional
+        Variable / expression to color trajectories by (phase). Defaults to
+        trial index for multi-trial plots, time for single-trial 2D/3D.
+    cmap : str
+        Matplotlib / bsplot colormap name.
+    transient : float
+        Discard this many ms from the start of each trajectory.
+    ax : matplotlib.axes.Axes, optional
+    show_ic : bool
+    lw, alpha : float
+    grid_n : int
+        Grid resolution for ``kind="vectorfield"``.
+    stream : bool
+        Stream- vs quiver-plot for vectorfield.
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+    """
+    if kind not in _KINDS:
+        raise ValueError(f"kind must be one of {_KINDS}, got {kind!r}")
+
+    ax_given = ax is not None
+    state_names = list(dynamics.state_variables)
+    if not dims:
+        dims = (
+            tuple(state_names[: min(2, len(state_names))])
+            if kind in ("phase", "vectorfield")
+            else (state_names[0],)
+        )
+    if not 1 <= len(dims) <= 3:
+        raise ValueError(f"plot supports 1-3 dims, got {len(dims)}")
+    if kind == "auto":
+        kind = "timeseries" if len(dims) == 1 else "phase"
+
+    resolved = [_resolve(d, dynamics) for d in dims]
+
+    if kind == "vectorfield":
+        fig = _kind_vectorfield(dynamics, resolved, ax=ax, grid_n=grid_n,
+                                cmap=cmap, stream=stream, ax_given=ax_given,
+                                alpha=alpha, lw=lw)
+    else:
+        trials, time = _run_trials(dynamics, n_trials, duration, dt, u_0, transient)
+        if kind == "timeseries":
+            fig = _kind_timeseries(dynamics, resolved, trials, time, ax=ax,
+                                   cmap=cmap, alpha=alpha, lw=lw)
+        else:
+            fig = _kind_phase(dynamics, resolved, trials, time, ax=ax, cmap=cmap,
+                              alpha=alpha, lw=lw, show_ic=show_ic, color_by=color_by,
+                              ax_given=ax_given)
+
+    if not ax_given:
+        plt.close(fig)
+        return fig
+    return None

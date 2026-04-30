@@ -5,6 +5,7 @@ Export (tvbo → tvboptim)
 
 - :func:`to_tvboptim` — Network → tvboptim Network or DenseGraph / DenseDelayGraph
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -32,7 +33,9 @@ def _build_graph(network: "Network", delays: bool = True):
     if delays and lengths is not None and np.any(lengths > 0):
         delay_matrix = jnp.asarray(np.asarray(network.calculate_delays(), dtype=float))
         return DenseDelayGraph(
-            weights=weights, delays=delay_matrix, region_labels=labels,
+            weights=weights,
+            delays=delay_matrix,
+            region_labels=labels,
         )
     return DenseGraph(weights=weights, region_labels=labels)
 
@@ -44,7 +47,7 @@ def _extract_noise(dyn_obj):
     tvboptim ``AdditiveNoise`` or ``MultiplicativeNoise`` when found,
     ``None`` otherwise.
     """
-    svs = getattr(dyn_obj, 'state_variables', None)
+    svs = getattr(dyn_obj, "state_variables", None)
     if not svs:
         return None
 
@@ -53,16 +56,16 @@ def _extract_noise(dyn_obj):
     additive = True
 
     for sv_name, sv in svs.items():
-        sv_noise = getattr(sv, 'noise', None)
+        sv_noise = getattr(sv, "noise", None)
         if sv_noise is None:
             continue
         noisy_states.append(sv_name)
         # Extract sigma
-        sv_sigma = getattr(sv_noise, 'sigma', None)
+        sv_sigma = getattr(sv_noise, "sigma", None)
         if sv_sigma is not None:
             sigma = float(sv_sigma)
         # Check additive flag
-        if getattr(sv_noise, 'additive', True) is False:
+        if getattr(sv_noise, "additive", True) is False:
             additive = False
 
     if not noisy_states:
@@ -77,9 +80,11 @@ def _extract_noise(dyn_obj):
 
     if additive:
         from tvboptim.experimental.network_dynamics.noise import AdditiveNoise
+
         return AdditiveNoise(apply_to=apply_to, sigma=sigma)
     else:
         from tvboptim.experimental.network_dynamics.noise import MultiplicativeNoise
+
         return MultiplicativeNoise(apply_to=apply_to, sigma=sigma)
 
 
@@ -128,9 +133,9 @@ def to_tvboptim(
     # Auto-infer delays from coupling metadata if not specified
     if delays is None:
         delays = False
-        if hasattr(network, 'coupling') and network.coupling:
+        if hasattr(network, "coupling") and network.coupling:
             for coup_obj in network.coupling.values():
-                if getattr(coup_obj, 'delayed', False):
+                if getattr(coup_obj, "delayed", False):
                     delays = True
                     break
 
@@ -140,30 +145,27 @@ def to_tvboptim(
         return graph
 
     # Auto-extract dynamics from network if not provided
-    if dynamics is None and hasattr(network, 'dynamics') and network.dynamics:
+    if dynamics is None and hasattr(network, "dynamics") and network.dynamics:
         dyn_key = next(iter(network.dynamics))
         dyn_obj = network.dynamics[dyn_key]
-        dynamics = dyn_obj.execute('tvboptim')
+        dynamics = dyn_obj.execute("tvboptim")
     else:
         dyn_obj = None
 
     # Auto-extract coupling from network if not provided.
     # Resolution: use CouplingInput.source to remap function keys → CI keys,
     # then fall back to name matching, then positional order.
-    if coupling is None and hasattr(network, 'coupling') and network.coupling:
-        coup_dict = {
-            key: coup_obj.execute('tvboptim')
-            for key, coup_obj in network.coupling.items()
-        }
-        if dynamics is not None and hasattr(dynamics, 'COUPLING_INPUTS'):
+    if coupling is None and hasattr(network, "coupling") and network.coupling:
+        coup_dict = {key: coup_obj.execute("tvboptim") for key, coup_obj in network.coupling.items()}
+        if dynamics is not None and hasattr(dynamics, "COUPLING_INPUTS"):
             ci_keys = set(dynamics.COUPLING_INPUTS.keys())
             func_keys = list(coup_dict.keys())
 
             # Build func_name → ci_name mapping from source attribute
             remap = {}
-            if dyn_obj is not None and hasattr(dyn_obj, 'coupling_inputs') and dyn_obj.coupling_inputs:
+            if dyn_obj is not None and hasattr(dyn_obj, "coupling_inputs") and dyn_obj.coupling_inputs:
                 for ci_name, ci_obj in dyn_obj.coupling_inputs.items():
-                    src = getattr(ci_obj, 'source', None)
+                    src = getattr(ci_obj, "source", None)
                     if src and src in coup_dict:
                         remap[src] = ci_name
 

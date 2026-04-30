@@ -108,7 +108,6 @@ Project.toml
 _test_*
 _check_*
 docs/Interoperability/Pyrates/_*
-uv.lock
 pyrates_run.py
 pyrates_run_*.py
 tvbo/database/studies/**/*.md
@@ -131,4 +130,5 @@ tvbo/templates/modules/*.py.mako.py
 docs/Interoperability/NeuroML/examples/_*.*
 results/*.dat
 var
-docs/Interoperability/NeuroML/examples/Ex15_CaDynamics_files/execute-results/html.json
+docs/**/execute-results/
+docs/Interoperability/NeuroML/examples/Ex6_NMDA_files/execute-results/html.json

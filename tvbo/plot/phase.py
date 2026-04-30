@@ -14,7 +14,7 @@ import numpy as np
 def _extract_2d(result, x_var=None, y_var=None, region=0, mode=0):
     """Extract two variable time courses from a SimulationResult → (time, x, y, labels)."""
     data = result.data
-    var_names = list(np.atleast_1d(data.coords['variable'].values)) if 'variable' in data.coords else []
+    var_names = list(np.atleast_1d(data.coords["variable"].values)) if "variable" in data.coords else []
 
     if x_var is None:
         x_var = var_names[0] if len(var_names) >= 1 else None
@@ -25,19 +25,18 @@ def _extract_2d(result, x_var=None, y_var=None, region=0, mode=0):
         raise ValueError("Phase plot requires at least two state variables")
 
     sel_kw = {}
-    if 'node' in data.dims:
-        sel_kw['node'] = data.coords['node'].values[region]
-    if 'mode' in data.dims:
-        sel_kw['mode'] = mode
+    if "node" in data.dims:
+        sel_kw["node"] = data.coords["node"].values[region]
+    if "mode" in data.dims:
+        sel_kw["mode"] = mode
 
     x = np.asarray(data.sel(variable=x_var, **sel_kw)).ravel()
     y = np.asarray(data.sel(variable=y_var, **sel_kw)).ravel()
-    time = data.coords['time'].values if 'time' in data.coords else np.arange(len(x))
+    time = data.coords["time"].values if "time" in data.coords else np.arange(len(x))
     return time, x, y, str(x_var), str(y_var)
 
 
-def plot_phase(result, x_var=None, y_var=None, region=0, mode=0,
-               ax=None, colorbar=True, **kwargs):
+def plot_phase(result, x_var=None, y_var=None, region=0, mode=0, ax=None, colorbar=True, **kwargs):
     """2D phase-space trajectory colored by time.
 
     Parameters
@@ -63,22 +62,22 @@ def plot_phase(result, x_var=None, y_var=None, region=0, mode=0,
     if created:
         fig, ax = plt.subplots()
 
-    kwargs.setdefault('s', 1)
-    kwargs.setdefault('c', time)
-    kwargs.setdefault('cmap', 'viridis')
+    kwargs.setdefault("s", 1)
+    kwargs.setdefault("c", time)
+    kwargs.setdefault("cmap", "viridis")
     sc = ax.scatter(x, y, **kwargs)
-    if colorbar and kwargs.get('c') is not None:
+    if colorbar and kwargs.get("c") is not None:
         cb = ax.figure.colorbar(sc, ax=ax, shrink=0.8)
-        cb.set_label('time [ms]')
+        cb.set_label("time [ms]")
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
 
-    units = getattr(result, '_units', {})
-    xu, yu = units.get(xlabel, ''), units.get(ylabel, '')
+    units = getattr(result, "_units", {})
+    xu, yu = units.get(xlabel, ""), units.get(ylabel, "")
     if xu:
-        ax.set_xlabel(f'{xlabel} [{xu}]')
+        ax.set_xlabel(f"{xlabel} [{xu}]")
     if yu:
-        ax.set_ylabel(f'{ylabel} [{yu}]')
+        ax.set_ylabel(f"{ylabel} [{yu}]")
 
     if created:
         plt.close()
@@ -86,9 +85,9 @@ def plot_phase(result, x_var=None, y_var=None, region=0, mode=0,
     return None
 
 
-def plot_vector_field(result, x_var=None, y_var=None, region=0, mode=0,
-                      grid_n=20, ax=None, stream=True, trajectory=True,
-                      **kwargs):
+def plot_vector_field(
+    result, x_var=None, y_var=None, region=0, mode=0, grid_n=20, ax=None, stream=True, trajectory=True, **kwargs
+):
     """Vector field (streamplot or quiver) from the dynamics RHS.
 
     Requires ``result`` to carry a reference to the source experiment
@@ -114,13 +113,13 @@ def plot_vector_field(result, x_var=None, y_var=None, region=0, mode=0,
     time, traj_x, traj_y, xlabel, ylabel = _extract_2d(result, x_var, y_var, region, mode)
 
     # Try to get dynamics from the ExperimentResult's source
-    source = getattr(result, '_source', None) or getattr(result, 'source', None)
+    source = getattr(result, "_source", None) or getattr(result, "source", None)
     if source is None:
         raise ValueError(
             "Vector field requires access to the dynamics equations. "
             "Plot from the ExperimentResult level or pass source= explicitly."
         )
-    dynamics = getattr(source, 'dynamics', source)
+    dynamics = getattr(source, "dynamics", source)
 
     # Build lambdified RHS for the two selected variables
     all_svs = dynamics.state_variables
@@ -134,6 +133,7 @@ def plot_vector_field(result, x_var=None, y_var=None, region=0, mode=0,
 
     # Parse RHS expressions
     from sympy.parsing.sympy_parser import parse_expr
+
     rhs_x = parse_expr(str(all_svs[xlabel].equation.rhs), local_dict=sym_dict)
     rhs_y = parse_expr(str(all_svs[ylabel].equation.rhs), local_dict=sym_dict)
 
@@ -145,12 +145,12 @@ def plot_vector_field(result, x_var=None, y_var=None, region=0, mode=0,
     subs = dict(param_vals)
     for sv_name in sv_names:
         if sv_name not in (xlabel, ylabel):
-            if 'variable' in data.coords and sv_name in data.coords['variable'].values:
-                sel_kw = {'variable': sv_name}
-                if 'node' in data.dims:
-                    sel_kw['node'] = data.coords['node'].values[region]
-                if 'mode' in data.dims:
-                    sel_kw['mode'] = mode
+            if "variable" in data.coords and sv_name in data.coords["variable"].values:
+                sel_kw = {"variable": sv_name}
+                if "node" in data.dims:
+                    sel_kw["node"] = data.coords["node"].values[region]
+                if "mode" in data.dims:
+                    sel_kw["mode"] = mode
                 subs[sv_name] = float(np.asarray(data.sel(**sel_kw)).mean())
             else:
                 sv_obj = all_svs.get(sv_name)
@@ -160,8 +160,8 @@ def plot_vector_field(result, x_var=None, y_var=None, region=0, mode=0,
     rhs_y_sub = rhs_y.subs({sym_dict[k]: v for k, v in subs.items() if k in sym_dict})
 
     x_sym, y_sym = sym_dict[xlabel], sym_dict[ylabel]
-    fx = lambdify((x_sym, y_sym), rhs_x_sub, modules='numpy')
-    fy = lambdify((x_sym, y_sym), rhs_y_sub, modules='numpy')
+    fx = lambdify((x_sym, y_sym), rhs_x_sub, modules="numpy")
+    fy = lambdify((x_sym, y_sym), rhs_y_sub, modules="numpy")
 
     # Build grid
     margin = 0.1
@@ -180,24 +180,24 @@ def plot_vector_field(result, x_var=None, y_var=None, region=0, mode=0,
 
     if stream:
         speed = np.sqrt(U**2 + V**2)
-        kwargs.setdefault('color', speed)
-        kwargs.setdefault('cmap', 'coolwarm')
-        kwargs.setdefault('linewidth', 0.8)
+        kwargs.setdefault("color", speed)
+        kwargs.setdefault("cmap", "coolwarm")
+        kwargs.setdefault("linewidth", 0.8)
         ax.streamplot(xg, yg, U, V, **kwargs)
     else:
-        kwargs.setdefault('scale', None)
+        kwargs.setdefault("scale", None)
         ax.quiver(X, Y, U, V, **kwargs)
 
     if trajectory:
-        ax.plot(traj_x, traj_y, 'k-', linewidth=1, alpha=0.7, label='trajectory')
-        ax.plot(traj_x[0], traj_y[0], 'go', markersize=6, label='start')
-        ax.plot(traj_x[-1], traj_y[-1], 'rs', markersize=6, label='end')
-        ax.legend(fontsize='smaller')
+        ax.plot(traj_x, traj_y, "k-", linewidth=1, alpha=0.7, label="trajectory")
+        ax.plot(traj_x[0], traj_y[0], "go", markersize=6, label="start")
+        ax.plot(traj_x[-1], traj_y[-1], "rs", markersize=6, label="end")
+        ax.legend(fontsize="smaller")
 
-    units = getattr(result, '_units', {})
-    xu, yu = units.get(xlabel, ''), units.get(ylabel, '')
-    ax.set_xlabel(f'{xlabel} [{xu}]' if xu else xlabel)
-    ax.set_ylabel(f'{ylabel} [{yu}]' if yu else ylabel)
+    units = getattr(result, "_units", {})
+    xu, yu = units.get(xlabel, ""), units.get(ylabel, "")
+    ax.set_xlabel(f"{xlabel} [{xu}]" if xu else xlabel)
+    ax.set_ylabel(f"{ylabel} [{yu}]" if yu else ylabel)
 
     if created:
         plt.close()

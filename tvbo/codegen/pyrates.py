@@ -54,7 +54,7 @@ References
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from tvbo.classes.dynamics import Dynamics
@@ -89,7 +89,7 @@ def _unrename_expr(expr_str: str) -> str:
     """Reverse PYRATES_REPL in an expression string (whole-word replacement)."""
     for pyrates_name, orig_name in _PYRATES_REPL_REVERSE.items():
         # Word-boundary replacement to avoid partial matches
-        expr_str = re.sub(r'\b' + re.escape(pyrates_name) + r'\b', orig_name, expr_str)
+        expr_str = re.sub(r"\b" + re.escape(pyrates_name) + r"\b", orig_name, expr_str)
     return expr_str
 
 
@@ -265,9 +265,7 @@ def from_pyrates_yaml(filepath: str, operator_key: str | None = None) -> dict:
     if operator_key is not None:
         if operator_key not in operators:
             available = list(operators.keys())
-            raise ValueError(
-                f"Operator '{operator_key}' not found. Available: {available}"
-            )
+            raise ValueError(f"Operator '{operator_key}' not found. Available: {available}")
         return operators[operator_key]
 
     # Return first operator if no key specified

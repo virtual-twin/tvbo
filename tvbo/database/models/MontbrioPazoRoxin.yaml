@@ -11,6 +11,8 @@ parameters:
       hi: 10.0
       step: 0.01
     description: Mean heterogeneous noise
+    grounding:
+      - GO:0061669
   I:
     name: I
     definition: External Current
@@ -29,6 +31,9 @@ parameters:
       hi: 25.0
       step: 0.0001
     description: Mean Synaptic weight
+    grounding:
+      - GO:0042391
+      - GO:0099536
   cr:
     name: cr
     definition: It is the weight on Coupling through variable r.
@@ -49,15 +54,15 @@ parameters:
     description: It is the weight on Coupling through variable V
   eta:
     name: eta
-    definition: Constant parameter to scale the rate of feedback from the firing rate
-      variable to itself
+    definition: Constant parameter to scale the rate of feedback from the firing rate variable to itself
     value: -5.0
     domain:
       lo: -10.0
       hi: 10.0
       step: 0.0001
-    description: Constant parameter to scale the rate of feedback from the firing
-      rate variable to itself
+    description: Constant parameter to scale the rate of feedback from the firing rate variable to itself
+    grounding:
+      - GO:0099605
   tau:
     name: tau
     definition: Membrane time constant
@@ -69,7 +74,7 @@ parameters:
     description: Membrane time constant
 description: ''
 references:
-- Montbrio2015
+  - Montbrio2015
 coupling_inputs:
   c_pop0:
     name: c_pop0

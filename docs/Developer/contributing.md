@@ -68,8 +68,8 @@ The core quality gate. Ensures code is correct before it reaches `main`.
 │                  CI Pipeline                     │
 │                                                  │
 │  ┌──────┐                                        │
-│  │ Lint │ flake8 syntax check (blocking)         │
-│  └──┬───┘                                        │
+│  │ Lint │ ruff syntax check (blocking)           │
+│  └──┬───┘ ruff lint/format + mypy (non-blocking) │
 │     │                                            │
 │     ├──────────────┐                             │
 │     ▼              ▼                             │
@@ -93,7 +93,7 @@ The core quality gate. Ensures code is correct before it reaches `main`.
 
 | Job | What it does | Blocks merge? |
 |-----|-------------|---------------|
-| **Lint** | `flake8` syntax errors (`E9,F63,F7,F82`) + style warnings (non-blocking) | ✅ Yes (syntax errors) |
+| **Lint** | `ruff` syntax errors (`E9,F63,F7,F82`, blocking) + full lint + `ruff format --check` + `mypy` (non-blocking) | ✅ Yes (syntax errors) |
 | **Test** | `pytest -q` on Python 3.10, 3.11, 3.12, 3.13 (matrix) | ✅ Yes |
 | **Test Docs** | Converts all `.qmd` doc pages to notebooks and executes them end-to-end | ✅ Yes |
 | **Package** | Builds sdist + wheel, uploads as artifact (only on `main` push) | N/A |
@@ -259,14 +259,26 @@ pytest tests/test_docs.py -v -m docs
 pytest tests/functional/ -v
 ```
 
-### Linting
+### Linting & Formatting
+
+We use [`ruff`](https://docs.astral.sh/ruff/) for linting + formatting and [`mypy`](https://mypy.readthedocs.io/) for type checks. Install via `uv pip install ruff mypy` or use the `dev` env.
 
 ```bash
-# Blocking errors (must pass before merge)
-flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+# Blocking errors (must pass before merge): same gate as CI
+ruff check --select=E9,F63,F7,F82 .
 
-# Full style check (non-blocking)
-flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+# Full lint summary (non-blocking)
+ruff check --statistics .
+
+# Auto-fix what can be fixed
+ruff check --fix .
+
+# Format check / apply
+ruff format --check .   # report only
+ruff format .           # apply
+
+# Type check (non-blocking, ratcheting toward zero)
+mypy tvbo
 ```
 
 ### Building Docs Locally
@@ -313,7 +325,7 @@ Always commit the regenerated files alongside schema changes.
 Before opening a PR:
 
 - [ ] `pip install -e .` succeeds
-- [ ] `flake8 . --select=E9,F63,F7,F82` returns 0
+- [ ] `ruff check --select=E9,F63,F7,F82 .` returns 0
 - [ ] `pytest -q --ignore=tests/test_docs.py` passes
 - [ ] `python -c "from tvbo import Dynamics, SimulationExperiment"` works
 - [ ] If schema changed: `make gen-linkml` and commit generated files

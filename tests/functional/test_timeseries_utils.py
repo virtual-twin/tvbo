@@ -1,4 +1,5 @@
 """Test basic TimeSeries utilities: get_state_variable and calculate_frequency."""
+
 import numpy as np
 from tvbo.data.types import TimeSeries
 

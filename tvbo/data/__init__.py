@@ -12,7 +12,8 @@ Data Module
 
 Access and manage TVB-O data.
 """
-from .db import *
+
+from .db import *  # noqa: F403  # database submodule re-exports
 from .tvbo_data import ATLAS_DIR
 
 __all__ = [
@@ -25,19 +26,21 @@ __all__ = [
 
 
 def __getattr__(name):
-    if name in ("SimulationResult", "AlgorithmResult",
-                "OptimizationResult", "ExplorationResult"):
+    if name in ("SimulationResult", "AlgorithmResult", "OptimizationResult", "ExplorationResult"):
         from .types import (
             SimulationResult,
             AlgorithmResult,
             OptimizationResult,
             ExplorationResult,
         )
-        globals().update({
-            "SimulationResult": SimulationResult,
-            "AlgorithmResult": AlgorithmResult,
-            "OptimizationResult": OptimizationResult,
-            "ExplorationResult": ExplorationResult,
-        })
+
+        globals().update(
+            {
+                "SimulationResult": SimulationResult,
+                "AlgorithmResult": AlgorithmResult,
+                "OptimizationResult": OptimizationResult,
+                "ExplorationResult": ExplorationResult,
+            }
+        )
         return globals()[name]
     raise AttributeError(f"module 'tvbo.data' has no attribute {name!r}")

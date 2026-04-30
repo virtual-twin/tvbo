@@ -56,9 +56,7 @@ class Continuation(tvbo_datamodel.Continuation):
     # Factory constructors
     # ------------------------------------------------------------------
     @classmethod
-    def from_datamodel(
-        cls, cont_meta: tvbo_datamodel.Continuation
-    ) -> "Continuation":
+    def from_datamodel(cls, cont_meta: tvbo_datamodel.Continuation) -> "Continuation":
         """Create from an auto-generated datamodel instance."""
         return cls(**cont_meta._as_dict)
 
@@ -102,10 +100,12 @@ class Continuation(tvbo_datamodel.Continuation):
     def from_db(cls, name: str) -> "Continuation":
         """Load a Continuation by name from the tvbo database."""
         from tvbo.data.registry import resolve
+
         return cls.from_file(str(resolve("Continuation", name)))
 
     @classmethod
     def list_db(cls) -> list[str]:
         """List available continuations in the tvbo database."""
         from tvbo.data.registry import list_entries
+
         return list_entries("Continuation")

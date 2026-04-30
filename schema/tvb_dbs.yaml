@@ -6,6 +6,10 @@ description: Extension of the TVB data model for Deep Brain Stimulation (DBS) st
 prefixes:
   linkml: https://w3id.org/linkml/
   tvbo_dbs: http://www.thevirtualbrain.org/tvb-o/dbs/
+  dcterms: http://purl.org/dc/terms/
+  schema: http://schema.org/
+  skos: http://www.w3.org/2004/02/skos/core#
+  rdfs: http://www.w3.org/2000/01/rdf-schema#
 
 default_prefix: tvbo_dbs
 
@@ -17,6 +21,7 @@ slots:
   id:
     description: Surrogate integer key.
     range: integer
+    slot_uri: dcterms:identifier
 
 classes:
   DBSDataset:
@@ -53,6 +58,7 @@ classes:
     attributes:
       electrode_id:
         range: string
+        slot_uri: dcterms:identifier
         description: Unique identifier for this electrode
       manufacturer:
         range: string
@@ -88,12 +94,14 @@ classes:
     attributes:
       contact_id:
         range: integer
+        slot_uri: dcterms:identifier
         description: Identifier (e.g., 0, 1, 2)
       coordinate:
         range: Coordinate
         description: 3D coordinate of the contact center in the defined coordinate space
       label:
         range: string
+        slot_uri: rdfs:label
         description: Optional human-readable label (e.g., "1a")
 
   StimulationSetting:
@@ -153,18 +161,22 @@ classes:
     attributes:
       name:
         range: string
+        slot_uri: schema:name
         description: Full name of the scale (e.g., Unified Parkinson’s Disease Rating Scale)
       acronym:
         range: string
+        slot_uri: skos:notation
         description: Short abbreviation (e.g., UPDRS)
       version:
         range: string
+        slot_uri: schema:softwareVersion
         description: Version of the instrument (e.g., 3.0)
       domain:
         range: string
         description: Overall clinical domain (e.g., motor, cognition)
       reference:
         range: string
+        slot_uri: dcterms:references
         description: DOI, PMID or persistent identifier
 
   ClinicalScore:
@@ -174,16 +186,20 @@ classes:
     attributes:
       name:
         range: string
+        slot_uri: schema:name
         description: Full name of the score (e.g., Unified Parkinson's Disease Rating Scale - Part III)
       acronym:
         range: string
+        slot_uri: skos:notation
       description:
         range: string
+        slot_uri: dcterms:description
       domain:
         range: string
         description: Domain assessed (e.g. motor, mood, pain)
       reference:
         range: string
+        slot_uri: dcterms:references
         description: PubMed ID, DOI, or other reference to the score definition
       scale:
         range: ClinicalScale

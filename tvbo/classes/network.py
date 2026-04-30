@@ -5,7 +5,6 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import jax.numpy as jnp
 import jax.scipy as jsp
 import matplotlib.cm as cm
-import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
@@ -24,7 +23,7 @@ from tvbo.datamodel import schema as tvbo_datamodel
 NETWORK_DIR = database_dir("Network")
 
 try:
-    from bids.layout import BIDSLayout
+    from bids.layout import BIDSLayout  # noqa: F401  # optional dep probe
 
     connectome_data = None
     available_connectomes = []
@@ -103,9 +102,7 @@ def _discover_bids_measures(bids_dir) -> list[str]:
     import re
 
     bids_dir = Path(bids_dir)
-    relmat_files = list(bids_dir.glob("*_relmat.dense.tsv")) + list(
-        bids_dir.glob("*_relmat.tsv")
-    )
+    relmat_files = list(bids_dir.glob("*_relmat.dense.tsv")) + list(bids_dir.glob("*_relmat.tsv"))
     # Extract unique measure names
     measures = []
     seen = set()
@@ -121,11 +118,7 @@ def _discover_bids_measures(bids_dir) -> list[str]:
     # Classify: put weight-like first, length-like second
     weight_names = [m for m in measures if m.lower() in _WEIGHT_MEASURES]
     length_names = [m for m in measures if m.lower() in _LENGTH_MEASURES]
-    other = [
-        m
-        for m in measures
-        if m.lower() not in _WEIGHT_MEASURES and m.lower() not in _LENGTH_MEASURES
-    ]
+    other = [m for m in measures if m.lower() not in _WEIGHT_MEASURES and m.lower() not in _LENGTH_MEASURES]
 
     result = []
     if weight_names:
@@ -138,9 +131,7 @@ def _discover_bids_measures(bids_dir) -> list[str]:
     return result or measures
 
 
-def get_normative_connectome_data(
-    atlas: str, tractogram: str = "dTOR"
-) -> Tuple[np.ndarray, Optional[np.ndarray]]:
+def get_normative_connectome_data(atlas: str, tractogram: str = "dTOR") -> Tuple[np.ndarray, Optional[np.ndarray]]:
     """Load normative connectivity matrices from tvbo/database/networks/ HDF5 files.
 
     Parameters
@@ -165,10 +156,7 @@ def get_normative_connectome_data(
     """
     sidecar = _find_network_sidecar(atlas, tractogram)
     if sidecar is None:
-        raise FileNotFoundError(
-            f"No network found for atlas={atlas}, tractogram={tractogram} "
-            f"in {NETWORK_DIR}"
-        )
+        raise FileNotFoundError(f"No network found for atlas={atlas}, tractogram={tractogram} in {NETWORK_DIR}")
 
     from tvbo.data.network_io import load_network
 
@@ -267,11 +255,7 @@ class Network(tvbo_datamodel.Network):
                             tvbo_datamodel.Edge(
                                 source=i,
                                 target=j,
-                                parameters=[
-                                    tvbo_datamodel.Parameter(
-                                        name="weight", value=float(w_arr[i, j])
-                                    )
-                                ],
+                                parameters=[tvbo_datamodel.Parameter(name="weight", value=float(w_arr[i, j]))],
                             )
                         )
             kwargs["edges"] = edges
@@ -288,16 +272,8 @@ class Network(tvbo_datamodel.Network):
                     )._as_dict
                 # Safely get atlas name, handling missing atlas
                 parcellation = kwargs["parcellation"]
-                atlas = (
-                    parcellation.get("atlas")
-                    if isinstance(parcellation, dict)
-                    else getattr(parcellation, "atlas", None)
-                )
-                atlas_name = (
-                    atlas.get("name")
-                    if isinstance(atlas, dict)
-                    else getattr(atlas, "name", None) if atlas else None
-                )
+                atlas = parcellation.get("atlas") if isinstance(parcellation, dict) else getattr(parcellation, "atlas", None)
+                atlas_name = atlas.get("name") if isinstance(atlas, dict) else getattr(atlas, "name", None) if atlas else None
                 if not atlas_name:
                     # Skip normative data loading if no atlas specified
                     super().__init__(**kwargs)
@@ -328,10 +304,7 @@ class Network(tvbo_datamodel.Network):
                 kwargs["number_of_nodes"] = n_nodes
                 kwargs.setdefault(
                     "nodes",
-                    [
-                        tvbo_datamodel.Node(id=i, label=f"region_{i}")
-                        for i in range(n_nodes)
-                    ],
+                    [tvbo_datamodel.Node(id=i, label=f"region_{i}") for i in range(n_nodes)],
                 )
                 kwargs.setdefault("edges", [])
 
@@ -356,22 +329,20 @@ class Network(tvbo_datamodel.Network):
                 import warnings
 
                 warnings.warn(
-                    f"number_of_nodes={declared} doesn't match len(nodes)={n_nodes}. "
-                    f"Using {n_nodes} from nodes list."
+                    f"number_of_nodes={declared} doesn't match len(nodes)={n_nodes}. Using {n_nodes} from nodes list."
                 )
             kwargs["number_of_nodes"] = n_nodes
         # Create default nodes if number_of_nodes is set but nodes list is empty
         elif kwargs.get("number_of_nodes") and not kwargs.get("nodes"):
             n_nodes = kwargs["number_of_nodes"]
-            kwargs["nodes"] = [
-                tvbo_datamodel.Node(id=i, label=f"node_{i}") for i in range(n_nodes)
-            ]
+            kwargs["nodes"] = [tvbo_datamodel.Node(id=i, label=f"node_{i}") for i in range(n_nodes)]
 
         # Resolve Dynamics slot aliases (components → modes) in network dynamics
         # so the LinkML loader can construct Dynamics objects correctly.
         _net_dynamics = kwargs.get("dynamics")
         if isinstance(_net_dynamics, dict):
             from tvbo.classes.dynamics import _resolve_dynamics_aliases
+
             for _dk, _dv in _net_dynamics.items():
                 if isinstance(_dv, dict):
                     _resolve_dynamics_aliases(_dv)
@@ -385,10 +356,7 @@ class Network(tvbo_datamodel.Network):
                 self.number_of_nodes = n_nodes
         # Create default nodes if number_of_nodes is set but nodes list is empty
         elif self.number_of_nodes and not self.nodes:
-            self.nodes = [
-                tvbo_datamodel.Node(id=i, label=f"node_{i}")
-                for i in range(self.number_of_nodes)
-            ]
+            self.nodes = [tvbo_datamodel.Node(id=i, label=f"node_{i}") for i in range(self.number_of_nodes)]
 
         # Ensure conduction_speed exists in parameters
         if "conduction_speed" not in (self.parameters or {}):
@@ -682,9 +650,7 @@ class Network(tvbo_datamodel.Network):
             observational_measures = []
 
         # Find relmat files
-        relmat_files = list(bids_dir.glob("*_relmat.dense.tsv")) + list(
-            bids_dir.glob("*_relmat.tsv")
-        )
+        relmat_files = list(bids_dir.glob("*_relmat.dense.tsv")) + list(bids_dir.glob("*_relmat.tsv"))
 
         if not relmat_files:
             raise ValueError(f"No BEP017 relmat files found in {bids_dir}")
@@ -725,10 +691,7 @@ class Network(tvbo_datamodel.Network):
                     lengths = data
 
         if weights is None:
-            raise ValueError(
-                f"Could not load structural weights from {bids_dir}. "
-                f"Looked for measures: {structural_measures}"
-            )
+            raise ValueError(f"Could not load structural weights from {bids_dir}. Looked for measures: {structural_measures}")
 
         n_nodes = weights.shape[0]
 
@@ -769,9 +732,7 @@ class Network(tvbo_datamodel.Network):
         """Observational data loaded from BIDS (e.g., FC for optimization targets)."""
         # Use object.__getattribute__ to bypass LinkML and get plain Python dict
         try:
-            return object.__getattribute__(self, "__dict__").get(
-                "_bids_observations", {}
-            )
+            return object.__getattribute__(self, "__dict__").get("_bids_observations", {})
         except (AttributeError, KeyError):
             return {}
 
@@ -822,9 +783,7 @@ class Network(tvbo_datamodel.Network):
             structural_measures = _discover_bids_measures(bids_dir)
 
         # Find relmat files
-        relmat_files = list(bids_dir.glob("*_relmat.dense.tsv")) + list(
-            bids_dir.glob("*_relmat.tsv")
-        )
+        relmat_files = list(bids_dir.glob("*_relmat.dense.tsv")) + list(bids_dir.glob("*_relmat.tsv"))
 
         if not relmat_files:
             raise ValueError(f"No BEP017 relmat files found in {bids_dir}")
@@ -864,24 +823,17 @@ class Network(tvbo_datamodel.Network):
                 self.number_of_regions = n_nodes
 
                 # Load labels from nodeindices file
-                nodeindices_files = list(
-                    bids_dir.glob(f"*atlas-{atlas}*_nodeindices.tsv")
-                )
+                nodeindices_files = list(bids_dir.glob(f"*atlas-{atlas}*_nodeindices.tsv"))
                 if nodeindices_files:
                     df = pd.read_csv(nodeindices_files[0], sep="\t")
                     if "label" in df.columns:
                         labels = df["label"].tolist()
-                        self.nodes = [
-                            tvbo_datamodel.Node(id=i, label=labels[i])
-                            for i in range(n_nodes)
-                        ]
+                        self.nodes = [tvbo_datamodel.Node(id=i, label=labels[i]) for i in range(n_nodes)]
 
         # Load observational measures if requested
         if observational_measures:
             # Use object.__setattr__ to store as plain Python dict, bypassing LinkML
-            obs = object.__getattribute__(self, "__dict__").get(
-                "_bids_observations", {}
-            )
+            obs = object.__getattribute__(self, "__dict__").get("_bids_observations", {})
             for measure in observational_measures:
                 data = load_measure(measure)
                 if data is not None:
@@ -929,9 +881,7 @@ class Network(tvbo_datamodel.Network):
 
         # Update nodes if labels provided
         if labels is not None:
-            self.nodes = [
-                tvbo_datamodel.Node(id=i, label=labels[i]) for i in range(n_nodes)
-            ]
+            self.nodes = [tvbo_datamodel.Node(id=i, label=labels[i]) for i in range(n_nodes)]
 
         return self
 
@@ -1245,9 +1195,7 @@ class Network(tvbo_datamodel.Network):
         resp.raise_for_status()
         matches = resp.json()
         if not matches:
-            raise ValueError(
-                f"No network found for atlas={atlas}, " f"tractogram={tractogram}"
-            )
+            raise ValueError(f"No network found for atlas={atlas}, tractogram={tractogram}")
         net_id = matches[0]["id"]
 
         # Check cache
@@ -1276,9 +1224,7 @@ class Network(tvbo_datamodel.Network):
         return load_network(cached_yaml)
 
     @classmethod
-    def list_platform_networks(
-        cls, base_url: str = TVBO_PLATFORM_URL, **filters
-    ) -> List[Dict]:
+    def list_platform_networks(cls, base_url: str = TVBO_PLATFORM_URL, **filters) -> List[Dict]:
         """List available normative networks on the tvbo platform.
 
         Parameters
@@ -1301,9 +1247,7 @@ class Network(tvbo_datamodel.Network):
         return resp.json()
 
     @classmethod
-    def load(
-        cls, source: Union[str, Path, None] = None, **entities
-    ) -> Union["Network", list["Network"]]:
+    def load(cls, source: Union[str, Path, None] = None, **entities) -> Union["Network", list["Network"]]:
         """Unified loader: file path, database name, or BIDS entities.
 
         Accepts any of:
@@ -1358,9 +1302,7 @@ class Network(tvbo_datamodel.Network):
         raise ValueError("Provide a file path, database name, or BIDS entities.")
 
     @classmethod
-    def from_db(
-        cls, name: Optional[str] = None, **entities
-    ) -> Union["Network", list["Network"]]:
+    def from_db(cls, name: Optional[str] = None, **entities) -> Union["Network", list["Network"]]:
         """Load a Network from the tvbo database by name or BIDS entities.
 
         Supports two modes:
@@ -1400,9 +1342,7 @@ class Network(tvbo_datamodel.Network):
         matches = _filter_networks_by_entities(entities)
         if len(matches) == 0:
             available = [f.stem for f in NETWORK_DIR.glob("*.yaml")]
-            raise FileNotFoundError(
-                f"No network matching {entities}. " f"Available: {sorted(available)}"
-            )
+            raise FileNotFoundError(f"No network matching {entities}. Available: {sorted(available)}")
         if len(matches) == 1:
             return cls.from_file(str(matches[0]))
         return [cls.from_file(str(m)) for m in sorted(matches)]
@@ -1585,27 +1525,19 @@ class Network(tvbo_datamodel.Network):
             if isinstance(obj, dict):
                 # as_dict() serializes LinkML enums as {'_code': {'text': 'mm', ...}}
                 # Flatten back to the plain text key for clean round-trips
-                if (
-                    "_code" in obj
-                    and isinstance(obj["_code"], dict)
-                    and "text" in obj["_code"]
-                ):
+                if "_code" in obj and isinstance(obj["_code"], dict) and "text" in obj["_code"]:
                     return obj["_code"]["text"]
                 return {k: _strip_none(v) for k, v in obj.items() if v is not None}
             if isinstance(obj, list):
                 return [_strip_none(x) for x in obj]
             return obj
 
-        meta_json = _json.dumps(
-            _strip_none(meta_dict_without_arrays), sort_keys=True, default=_jsonable
-        )
+        meta_json = _json.dumps(_strip_none(meta_dict_without_arrays), sort_keys=True, default=_jsonable)
         aux = (meta_json,)
         return children, aux  # type: ignore[return-value]
 
     @classmethod
-    def tree_unflatten(
-        cls, aux_data: Tuple[str], children: Tuple[JaxArray, JaxArray]
-    ) -> "Connectome":
+    def tree_unflatten(cls, aux_data: Tuple[str], children: Tuple[JaxArray, JaxArray]) -> "Connectome":
         import json as _json
 
         (meta_json,) = aux_data
@@ -1632,16 +1564,12 @@ class Network(tvbo_datamodel.Network):
         return self
 
     # ---- Numeric accessors (compute on demand; no extra attributes) ----
-    def _matrix_from_array(
-        self, arr: Union[np.ndarray, JaxArray]
-    ) -> tvbo_datamodel.Matrix:
+    def _matrix_from_array(self, arr: Union[np.ndarray, JaxArray]) -> tvbo_datamodel.Matrix:
         arr = jnp.array(arr)
         N0, N1 = arr.shape
         x = tvbo_datamodel.BrainRegionSeries(values=[str(i) for i in range(N0)])
         y = tvbo_datamodel.BrainRegionSeries(values=[str(i) for i in range(N1)])
-        return tvbo_datamodel.Matrix(
-            x=x, y=y, values=arr.reshape(-1).astype(jnp.float32).tolist()
-        )
+        return tvbo_datamodel.Matrix(x=x, y=y, values=arr.reshape(-1).astype(jnp.float32).tolist())
 
     @staticmethod
     def _get_edge_param(edge, name: str) -> Optional[float]:
@@ -1795,7 +1723,6 @@ class Network(tvbo_datamodel.Network):
         print(f"Shape: {W.shape}, Mean: {W.mean():.3f}")
         ```
         """
-        format = "jax"
 
         if len(self.nodes) == 1:
             return np.zeros((1, 1))
@@ -1846,11 +1773,7 @@ class Network(tvbo_datamodel.Network):
             W = self._weights_from_edges()
 
         if W is None:
-            n = (
-                len(self.nodes)
-                if self.nodes
-                else (self.number_of_nodes or self.number_of_regions or 0)
-            )
+            n = len(self.nodes) if self.nodes else (self.number_of_nodes or self.number_of_regions or 0)
             if n > 0:
                 return np.zeros((n, n), dtype=np.float64)
             return None
@@ -1921,11 +1844,7 @@ class Network(tvbo_datamodel.Network):
         # Compute from edges (fallback for networks built from explicit edges)
         L = self._lengths_from_edges()
         if L is None:
-            n = (
-                len(self.nodes)
-                if self.nodes
-                else (self.number_of_nodes or self.number_of_regions or 0)
-            )
+            n = len(self.nodes) if self.nodes else (self.number_of_nodes or self.number_of_regions or 0)
             if n > 0:
                 return np.zeros((n, n), dtype=np.float64)
         return L
@@ -1957,9 +1876,7 @@ class Network(tvbo_datamodel.Network):
         """
         atlas = self.get_atlas()
         if atlas.terminology:
-            return {
-                e.name: e.lookupLabel for k, e in atlas.terminology.entities.items()
-            }
+            return {e.name: e.lookupLabel for k, e in atlas.terminology.entities.items()}
         return {}
 
     @property
@@ -1982,7 +1899,6 @@ class Network(tvbo_datamodel.Network):
         G = nx.MultiDiGraph()
 
         W = self.weights_matrix
-        L = self.lengths_matrix
 
         # Step 1: Add nodes (prefer explicit nodes, fall back to matrix size)
         if self.nodes:
@@ -2014,9 +1930,7 @@ class Network(tvbo_datamodel.Network):
         # Step 2: Add edges (prefer explicit edges, fall back to matrix)
         # Filter out template edges (no source/target) — those represent
         # matrix measures stored in the HDF5 companion, not graph edges.
-        explicit_edges = [
-            e for e in (self.edges or []) if getattr(e, "source", None) is not None
-        ]
+        explicit_edges = [e for e in (self.edges or []) if getattr(e, "source", None) is not None]
         if explicit_edges:
             # Use explicit edges
             for edge in explicit_edges:
@@ -2043,6 +1957,7 @@ class Network(tvbo_datamodel.Network):
             # Build edges from the union of all stored matrices, attaching
             # each matrix's values as named edge attributes.
             from scipy import sparse as _sp
+
             arrays = self._get_arrays()
 
             # Collect matrix names from in-memory arrays, template-edge metadata,
@@ -2067,9 +1982,7 @@ class Network(tvbo_datamodel.Network):
             if dense:
                 n = next(iter(dense.values())).shape[0]
                 if self.nodes and len(self.nodes) != n:
-                    raise ValueError(
-                        f"Matrix dimensions ({n}) don't match number of nodes ({len(self.nodes)})"
-                    )
+                    raise ValueError(f"Matrix dimensions ({n}) don't match number of nodes ({len(self.nodes)})")
                 for i in range(n):
                     for j in range(n):
                         edge_attrs = {"directed": True}
@@ -2083,8 +1996,7 @@ class Network(tvbo_datamodel.Network):
                             # Ensure "weight" exists for networkx compatibility
                             if "weight" not in edge_attrs:
                                 edge_attrs["weight"] = next(
-                                    (v for v in edge_attrs.values()
-                                     if isinstance(v, float) and v != 0),
+                                    (v for v in edge_attrs.values() if isinstance(v, float) and v != 0),
                                     1.0,
                                 )
                             G.add_edge(i, j, **edge_attrs)
@@ -2140,9 +2052,7 @@ class Network(tvbo_datamodel.Network):
         atlas_data = parc.atlas if parc and hasattr(parc, "atlas") else None  # type: ignore[attr-defined]
         return Atlas(atlas_data)
 
-    def compute_delays(
-        self, output_unit: Optional[str] = None
-    ) -> Union[np.ndarray, JaxArray]:
+    def compute_delays(self, output_unit: Optional[str] = None) -> Union[np.ndarray, JaxArray]:
         """Deprecated: use :meth:`calculate_delays` instead.
 
         Parameters
@@ -2206,9 +2116,7 @@ class Network(tvbo_datamodel.Network):
             from tvbo.adapters.tvboptim import to_tvboptim
 
             return to_tvboptim(self, **kwargs)
-        raise ValueError(
-            f"Format {format!r} not supported. Valid formats: tvb, networkx, tvboptim."
-        )
+        raise ValueError(f"Format {format!r} not supported. Valid formats: tvb, networkx, tvboptim.")
 
     def _build_networkx_graph(
         self,
@@ -2299,9 +2207,7 @@ class Network(tvbo_datamodel.Network):
         target_nodes = list(target.nodes)
         # If gain columns < total target nodes, select cortical subset
         if len(target_nodes) > n_cols:
-            cortical = [
-                n for n in target_nodes if n.label and str(n.label).startswith("ctx-")
-            ]
+            cortical = [n for n in target_nodes if n.label and str(n.label).startswith("ctx-")]
             if len(cortical) == n_cols:
                 target_nodes = cortical
             else:
@@ -2335,11 +2241,7 @@ class Network(tvbo_datamodel.Network):
         # --- gain edges (thresholded) ---
         vals = np.abs(gain)
         nonzero = vals[vals > 0]
-        threshold = (
-            np.percentile(nonzero, threshold_percentile)
-            if nonzero.size > 0 and threshold_percentile > 0
-            else 0.0
-        )
+        threshold = np.percentile(nonzero, threshold_percentile) if nonzero.size > 0 and threshold_percentile > 0 else 0.0
         for i in range(n_sensors):
             for j in range(n_cols):
                 v = float(vals[i, j])
@@ -2353,9 +2255,7 @@ class Network(tvbo_datamodel.Network):
 
         return G
 
-    def normalize_weights(
-        self, equation_rhs: str = "(M - M_min) / (M_max - M_min)"
-    ) -> None:
+    def normalize_weights(self, equation_rhs: str = "(M - M_min) / (M_max - M_min)") -> None:
         """Add a normalization transform for connection weights.
 
         Convenience wrapper for ``add_transform("weight", ...)``.
@@ -2487,8 +2387,8 @@ class Network(tvbo_datamodel.Network):
         w = self.plot_weights(axs[0], cmap=cmap, log=log_weights)
         fig.colorbar(w, ax=axs[0], shrink=0.5)
 
-        l = self.plot_lengths(axs[1], cmap=cmap)
-        fig.colorbar(l, ax=axs[1], shrink=0.5)
+        lengths_im = self.plot_lengths(axs[1], cmap=cmap)
+        fig.colorbar(lengths_im, ax=axs[1], shrink=0.5)
 
         plt.close()
         return fig
@@ -2570,9 +2470,9 @@ class Network(tvbo_datamodel.Network):
         (i.e. they lack source/target attributes).
         """
         edges_with_endpoints = [
-            e for e in self.edges
-            if hasattr(e, "source") and hasattr(e, "target")
-            and e.source is not None and e.target is not None
+            e
+            for e in self.edges
+            if hasattr(e, "source") and hasattr(e, "target") and e.source is not None and e.target is not None
         ]
         if not edges_with_endpoints:
             return None
@@ -2597,24 +2497,18 @@ class Network(tvbo_datamodel.Network):
 
         unit_ns = dict(vars(u))
 
-        distance_unit_str = unit_to_symbol(
-            getattr(self, "distance_unit", None) or "mm"
-        )
+        distance_unit_str = unit_to_symbol(getattr(self, "distance_unit", None) or "mm")
         cs_param = self.conduction_speed
         speed_unit_str = (
             unit_to_symbol(cs_param.unit)
             if cs_param and cs_param.unit
             else f"{distance_unit_str}/{unit_to_symbol(getattr(self, 'time_unit', None) or 'ms')}"
         )
-        native_time_str = unit_to_symbol(
-            getattr(self, "time_unit", None) or "ms"
-        )
+        unit_to_symbol(getattr(self, "time_unit", None) or "ms")
         target_time_str = unit_to_symbol(output_unit)
 
         # Native delay unit: distance / speed  (e.g. mm / (mm/ms) = ms)
-        native_delay = parse_expr(distance_unit_str, local_dict=unit_ns) / parse_expr(
-            speed_unit_str, local_dict=unit_ns
-        )
+        native_delay = parse_expr(distance_unit_str, local_dict=unit_ns) / parse_expr(speed_unit_str, local_dict=unit_ns)
         target_unit = parse_expr(target_time_str, local_dict=unit_ns)
 
         converted = u.convert_to(native_delay, target_unit)
@@ -2799,9 +2693,7 @@ class Network(tvbo_datamodel.Network):
             sort_idx = np.argsort(ids)
             centers = centers[sort_idx]
             labels = np.array(labels)[sort_idx]
-            center_mapping = {
-                int(i) - 1: tuple(center) for i, center in zip(sorted(ids), centers)
-            }
+            center_mapping = {int(i) - 1: tuple(center) for i, center in zip(sorted(ids), centers)}
         else:
             center_mapping = {i: tuple(center) for i, center in enumerate(centers)}
 
@@ -2996,10 +2888,7 @@ class Network(tvbo_datamodel.Network):
         Returns None if no explicit edges carry the requested parameter.
         """
         explicit = [
-            e
-            for e in (self.edges or [])
-            if getattr(e, "source", None) is not None
-            and getattr(e, "target", None) is not None
+            e for e in (self.edges or []) if getattr(e, "source", None) is not None and getattr(e, "target", None) is not None
         ]
         if not explicit:
             return None
@@ -3126,10 +3015,7 @@ class Network(tvbo_datamodel.Network):
                 import bsplot  # noqa: F401
 
                 centers = self.get_centers()
-                has_coords = any(
-                    not (c[0] == 0 and c[1] == 0 and c[2] == 0)
-                    for c in centers.values()
-                )
+                has_coords = any(not (c[0] == 0 and c[1] == 0 and c[2] == 0) for c in centers.values())
                 plot_brain = has_coords
             except (ImportError, Exception):
                 plot_brain = False
@@ -3226,10 +3112,7 @@ class Network(tvbo_datamodel.Network):
                 graph_obj = self.graph
                 if edge_percentile > 0:
                     edge_weights = np.array(
-                        [
-                            abs(d.get("weight", 1.0))
-                            for _, _, _, d in graph_obj.edges(keys=True, data=True)
-                        ],
+                        [abs(d.get("weight", 1.0)) for _, _, _, d in graph_obj.edges(keys=True, data=True)],
                         dtype=float,
                     )
                     if edge_weights.size > 0:
@@ -3240,9 +3123,7 @@ class Network(tvbo_datamodel.Network):
                 else:
                     n_visible_edges = graph_obj.number_of_edges()
 
-                auto_edge_labels = (
-                    True if max_edge_labels < 0 else n_visible_edges <= max_edge_labels
-                )
+                auto_edge_labels = True if max_edge_labels < 0 else n_visible_edges <= max_edge_labels
                 graph_defaults = {
                     "node_labels": True,
                     "edge_labels": auto_edge_labels,
@@ -3458,22 +3339,12 @@ class Network(tvbo_datamodel.Network):
         if name in arrays:
             mat = arrays[name]
         # 2. Lazy store (from file)
-        elif (
-            hasattr(self, "_store") and self._store is not None and name in self._store
-        ):
+        elif hasattr(self, "_store") and self._store is not None and name in self._store:
             mat = self._store[name]
         # 3. Legacy caches
-        elif (
-            name in ("weight", "weights")
-            and hasattr(self, "_cached_weights")
-            and self._cached_weights is not None
-        ):
+        elif name in ("weight", "weights") and hasattr(self, "_cached_weights") and self._cached_weights is not None:
             mat = self._cached_weights
-        elif (
-            name in ("length", "lengths")
-            and hasattr(self, "_cached_lengths")
-            and self._cached_lengths is not None
-        ):
+        elif name in ("length", "lengths") and hasattr(self, "_cached_lengths") and self._cached_lengths is not None:
             mat = self._cached_lengths
 
         if mat is None:

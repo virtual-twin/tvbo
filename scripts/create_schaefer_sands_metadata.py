@@ -43,9 +43,7 @@ NIFTI_PATTERN = re.compile(
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Generate SANDS metadata for Schaefer atlas files."
-    )
+    parser = argparse.ArgumentParser(description="Generate SANDS metadata for Schaefer atlas files.")
     parser.add_argument(
         "--original-dir",
         type=Path,
@@ -99,10 +97,7 @@ def parse_lut(scale: int, seg: str) -> dict[int, dict[str, str | int]]:
 
 
 def parse_centroids(scale: int, seg: str, res: str) -> dict[int, dict[str, str | float]]:
-    centroid_name = (
-        f"Schaefer2018_{scale}Parcels_{seg}_order_"
-        f"FSLMNI152_{res}.Centroid_RAS.csv"
-    )
+    centroid_name = f"Schaefer2018_{scale}Parcels_{seg}_order_FSLMNI152_{res}.Centroid_RAS.csv"
     centroid_url = f"{CBIG_CENTROID_DIR}/{centroid_name}"
     text = fetch_text(centroid_url)
 
@@ -133,10 +128,7 @@ def rgb_hex(red: int, green: int, blue: int) -> str:
 
 def metadata_filename(scale: int, seg: str, res: str) -> str:
     res_num = res.replace("mm", "")
-    return (
-        f"tpl-FSLMNI152_atlas-Schaefer2018_seg-{seg}_"
-        f"scale-{scale}_res-{res_num}_desc-ordered_dseg.yaml"
-    )
+    return f"tpl-FSLMNI152_atlas-Schaefer2018_seg-{seg}_scale-{scale}_res-{res_num}_desc-ordered_dseg.yaml"
 
 
 def build_metadata(scale: int, seg: str, res: str, nifti_name: str) -> dict:

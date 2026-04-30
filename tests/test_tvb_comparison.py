@@ -3,7 +3,9 @@
 Comprehensive comparison between schema-driven BOLD and TVB native implementation.
 Tests that our corrected HRF (time-reversed) produces the same results as TVB.
 """
+
 import pytest
+
 pytest.importorskip("tvb")
 
 import sys
@@ -84,6 +86,7 @@ def load_schema_model():
     print("Loading schema-driven model...")
 
     from tvbo import database_path
+
     observation = yaml_loader.load(
         str(database_path / "observation_models" / "bold_tvb.yaml"),
         target_class=Observation,
@@ -91,9 +94,7 @@ def load_schema_model():
 
     template_dir = "/Users/leonmartin_bih/tools/tvbo/tvbo/templates/autodiff"
     lookup = TemplateLookup(directories=[template_dir])
-    template = Template(
-        filename=f"{template_dir}/jax-observation.py.mako", lookup=lookup
-    )
+    template = Template(filename=f"{template_dir}/jax-observation.py.mako", lookup=lookup)
 
     code = template.render(observation=observation, dt=4)
     namespace = {}
@@ -139,11 +140,9 @@ def run_comparison():
     tvb_raw_signal = np.concatenate(tvb_raw_data, axis=0)
     tvb_raw_times = np.array(tvb_raw_times)
 
-    print(f"TVB simulation complete:")
+    print("TVB simulation complete:")
     print(f"  Raw output: {len(tvb_raw_signal)} time points @ 4ms")
-    print(
-        f"  BOLD output: {len(tvb_bold_signal)} time points @ {(tvb_bold_times[1]-tvb_bold_times[0])*1000:.0f}ms"
-    )
+    print(f"  BOLD output: {len(tvb_bold_signal)} time points @ {(tvb_bold_times[1] - tvb_bold_times[0]) * 1000:.0f}ms")
 
     # Apply schema model to same raw input
     print("\nApplying schema-driven BOLD model...")
@@ -165,9 +164,7 @@ def run_comparison():
 
     schema_bold = schema_namespace["observe_BOLD_TVB"](schema_input)
 
-    print(
-        f"Schema BOLD output: {len(schema_bold.data)} time points @ {schema_bold.sample_period*1000:.0f}ms"
-    )
+    print(f"Schema BOLD output: {len(schema_bold.data)} time points @ {schema_bold.sample_period * 1000:.0f}ms")
 
     # Get HRF kernels for comparison
     print("\nComparing HRF kernels...")
@@ -178,18 +175,16 @@ def run_comparison():
     schema_hrf = schema_namespace["HemodynamicResponseFunctionTVB"](schema_input_s)
     schema_hrf_data = np.array(schema_hrf.data).flatten()
 
-    print(f"\nTVB HRF:")
+    print("\nTVB HRF:")
     print(f"  Length: {len(tvb_hrf)} points")
-    print(
-        f"  Peak index: {tvb_hrf.argmax()} ({100*tvb_hrf.argmax()/len(tvb_hrf):.1f}% of duration)"
-    )
+    print(f"  Peak index: {tvb_hrf.argmax()} ({100 * tvb_hrf.argmax() / len(tvb_hrf):.1f}% of duration)")
     print(f"  Peak value: {tvb_hrf.max():.6f}")
     print(f"  Integral: {tvb_hrf.sum():.2f}")
 
-    print(f"\nSchema HRF:")
+    print("\nSchema HRF:")
     print(f"  Length: {len(schema_hrf_data)} points")
     print(
-        f"  Peak index: {schema_hrf_data.argmax()} ({100*schema_hrf_data.argmax()/len(schema_hrf_data):.1f}% of duration)"
+        f"  Peak index: {schema_hrf_data.argmax()} ({100 * schema_hrf_data.argmax() / len(schema_hrf_data):.1f}% of duration)"
     )
     print(f"  Peak value: {schema_hrf_data.max():.6f}")
     print(f"  Integral: {schema_hrf_data.sum():.2f}")
@@ -199,7 +194,7 @@ def run_comparison():
     value_match = np.isclose(tvb_hrf.max(), schema_hrf_data.max(), rtol=0.01)
     integral_match = np.isclose(tvb_hrf.sum(), schema_hrf_data.sum(), rtol=0.01)
 
-    print(f"\nHRF Comparison:")
+    print("\nHRF Comparison:")
     print(f"  Peak position difference: {peak_diff} points")
     print(f"  Peak values match: {'✓' if value_match else '✗'}")
     print(f"  Integrals match: {'✓' if integral_match else '✗'}")
@@ -227,17 +222,11 @@ def run_comparison():
         print(f"  {t:8.2f}  |  {tvb_val:9.6f}  |  {schema_val:9.6f}  |  {diff:+.6f}")
 
     # Calculate statistics
-    mse = np.mean(
-        (schema_bold_data[:n_compare] - tvb_bold_data_aligned[:n_compare]) ** 2
-    )
-    max_diff = np.max(
-        np.abs(schema_bold_data[:n_compare] - tvb_bold_data_aligned[:n_compare])
-    )
-    correlation = np.corrcoef(
-        schema_bold_data[:n_compare], tvb_bold_data_aligned[:n_compare]
-    )[0, 1]
+    mse = np.mean((schema_bold_data[:n_compare] - tvb_bold_data_aligned[:n_compare]) ** 2)
+    max_diff = np.max(np.abs(schema_bold_data[:n_compare] - tvb_bold_data_aligned[:n_compare]))
+    correlation = np.corrcoef(schema_bold_data[:n_compare], tvb_bold_data_aligned[:n_compare])[0, 1]
 
-    print(f"\nBOLD Signal Statistics:")
+    print("\nBOLD Signal Statistics:")
     print(f"  MSE: {mse:.8f}")
     print(f"  Max absolute difference: {max_diff:.6f}")
     print(f"  Correlation: {correlation:.6f}")
@@ -250,9 +239,7 @@ def run_comparison():
 
     # HRF comparison
     axs[0, 0].plot(tvb_hrf_times, tvb_hrf, "o-", label="TVB", alpha=0.7, markersize=3)
-    axs[0, 0].plot(
-        schema_hrf.time, schema_hrf_data, "s-", label="Schema", alpha=0.7, markersize=3
-    )
+    axs[0, 0].plot(schema_hrf.time, schema_hrf_data, "s-", label="Schema", alpha=0.7, markersize=3)
     axs[0, 0].set_title("HRF Kernel Comparison")
     axs[0, 0].set_xlabel("Time [s]")
     axs[0, 0].set_ylabel("HRF Amplitude")
@@ -261,9 +248,7 @@ def run_comparison():
 
     # HRF overlay (zoomed)
     axs[0, 1].plot(tvb_hrf_times, tvb_hrf, "o-", label="TVB", alpha=0.7, markersize=3)
-    axs[0, 1].plot(
-        schema_hrf.time, schema_hrf_data, "s-", label="Schema", alpha=0.7, markersize=3
-    )
+    axs[0, 1].plot(schema_hrf.time, schema_hrf_data, "s-", label="Schema", alpha=0.7, markersize=3)
     axs[0, 1].set_xlim(20, 30)  # Zoom to peak region
     axs[0, 1].set_title("HRF Peak Region (20-30s)")
     axs[0, 1].set_xlabel("Time [s]")
@@ -319,10 +304,7 @@ def run_comparison():
     axs[1, 0].grid(True, alpha=0.3)
 
     # Difference plot
-    diff = (
-        schema_bold_data[: len(tvb_bold_data_aligned)]
-        - tvb_bold_data_aligned[: len(schema_bold_data)]
-    )
+    diff = schema_bold_data[: len(tvb_bold_data_aligned)] - tvb_bold_data_aligned[: len(schema_bold_data)]
     axs[1, 1].plot(schema_bold.time[: len(diff)], diff, "r-", linewidth=2)
     axs[1, 1].set_title(f"Difference (Schema - TVB)\nMSE={mse:.2e}")
     axs[1, 1].set_xlabel("Time [s]")
@@ -331,9 +313,7 @@ def run_comparison():
     axs[1, 1].grid(True, alpha=0.3)
 
     # Scatter plot
-    axs[1, 2].scatter(
-        tvb_bold_data_aligned[: len(schema_bold_data)], schema_bold_data, alpha=0.5
-    )
+    axs[1, 2].scatter(tvb_bold_data_aligned[: len(schema_bold_data)], schema_bold_data, alpha=0.5)
     min_val = min(tvb_bold_data_aligned.min(), schema_bold_data.min())
     max_val = max(tvb_bold_data_aligned.max(), schema_bold_data.max())
     axs[1, 2].plot([min_val, max_val], [min_val, max_val], "r--", label="Perfect match")
@@ -354,7 +334,7 @@ def run_comparison():
         dpi=150,
         bbox_inches="tight",
     )
-    print(f"Plot saved to: tests/tvb_comparison.png")
+    print("Plot saved to: tests/tvb_comparison.png")
     plt.show()
 
     # Final verdict

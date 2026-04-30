@@ -12,16 +12,20 @@ use raw yaml.safe_load → cls(**dict) for LinkML classes.
 
 See §12.2 of the tvbo HDF5 format proposal v0.7.
 """
+
 import yaml as _yaml
 import numpy as np
 from pathlib import Path
-from linkml_runtime.loaders import yaml_loader, json_loader
-from linkml_runtime.dumpers import yaml_dumper, json_dumper
+from linkml_runtime.loaders import yaml_loader
+from linkml_runtime.dumpers import yaml_dumper
 
 SCHEMA_VERSION = "tvb-datamodel/0.7.0"
 
 from tvbo.data.matrix_io import (
-    read_matrix, write_matrix, auto_format, LazyArrayStore,
+    read_matrix,
+    write_matrix,
+    auto_format,
+    LazyArrayStore,
 )
 
 # ── BIDS filename patterns (canonical definition, used by converters) ─
@@ -40,15 +44,11 @@ RELMAT_PATTERNS = [
 
 SENSOR_PATTERNS = [
     # Template-level sensor network with atlas (forward-model projection)
-    "tpl-{template}_acq-{acquisition}"
-    "[_atlas-{atlas}][_desc-{description}]"
-    "_sensors{extension|.h5}",
+    "tpl-{template}_acq-{acquisition}[_atlas-{atlas}][_desc-{description}]_sensors{extension|.h5}",
     # Template-level sensor network without atlas
-    "tpl-{template}_acq-{acquisition}"
-    "[_desc-{description}]_sensors{extension|.h5}",
+    "tpl-{template}_acq-{acquisition}[_desc-{description}]_sensors{extension|.h5}",
     # Sensor network without standard template
-    "acq-{acquisition}[_desc-{description}]"
-    "_sensors{extension|.h5}",
+    "acq-{acquisition}[_desc-{description}]_sensors{extension|.h5}",
 ]
 
 # ── Helpers ───────────────────────────────────────────────────────────
@@ -119,8 +119,7 @@ def _write_dimension_labels(dataset, meta: dict, column_labels: list[str]):
     # Row labels from network nodes
     nodes = meta.get("nodes", [])
     if nodes:
-        row_labels = [str(n.get("label", f"node_{n.get('id', i)}"))
-                      for i, n in enumerate(nodes)]
+        row_labels = [str(n.get("label", f"node_{n.get('id', i)}")) for i, n in enumerate(nodes)]
         row_ds = grp.create_dataset(
             "_dim_row_labels",
             data=np.array(row_labels, dtype=h5py.string_dtype()),
@@ -148,8 +147,7 @@ def _write_edges(store, meta: dict, arrays: dict, edge_params: dict):
 
     store.attrs["tvbo_class"] = "tvbo:Network"
     store.attrs["sidecar_file"] = str(meta.get("_sidecar_name", ""))
-    store.attrs["schema_version"] = str(meta.get(
-        "schema_version", "tvb-datamodel/0.7.0"))
+    store.attrs["schema_version"] = str(meta.get("schema_version", "tvb-datamodel/0.7.0"))
 
     for name, matrix in arrays.items():
         m = edge_meta.get(name, {})
@@ -213,14 +211,26 @@ def _v07_postprocess(meta: dict) -> dict:
 
     # 3. Reorder keys: v0.7 §4 ordering
     key_order = [
-        "tvbo_class", "schema_version",
-        "label", "description", "number_of_nodes",
-        "descriptor", "distance_unit", "time_unit", "data_file",
-        "parent_network", "node_mapping",
-        "provenance", "bids",
-        "dynamics", "coupling",
-        "parameters", "parcellation", "tractogram",
-        "nodes", "edges",
+        "tvbo_class",
+        "schema_version",
+        "label",
+        "description",
+        "number_of_nodes",
+        "descriptor",
+        "distance_unit",
+        "time_unit",
+        "data_file",
+        "parent_network",
+        "node_mapping",
+        "provenance",
+        "bids",
+        "dynamics",
+        "coupling",
+        "parameters",
+        "parcellation",
+        "tractogram",
+        "nodes",
+        "edges",
     ]
     ordered = {}
     for k in key_order:
@@ -254,8 +264,7 @@ def _purify(obj):
     return obj
 
 
-def _write_v07_sidecar(network, sidecar_path: Path, sidecar_format: str,
-                       data_file: str = None):
+def _write_v07_sidecar(network, sidecar_path: Path, sidecar_format: str, data_file: str = None):
     """Write a strict v0.7-compliant YAML or JSON sidecar.
 
     Dumps the network via LinkML, post-processes to v0.7 form,
@@ -270,18 +279,19 @@ def _write_v07_sidecar(network, sidecar_path: Path, sidecar_format: str,
 
     if sidecar_format == "json":
         import json
+
         with open(sidecar_path, "w") as f:
             json.dump(meta, f, indent=2)
     else:
         with open(sidecar_path, "w") as f:
-            _yaml.dump(meta, f, default_flow_style=False, sort_keys=False,
-                       allow_unicode=True)
+            _yaml.dump(meta, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
 
 
 def _create_ds(grp, name, *, data, **kwargs):
     """Create a dataset compatible with both h5py and zarr v3."""
     try:
         import zarr
+
         if isinstance(grp, zarr.Group):
             return grp.create_array(name, data=data, **kwargs)
     except ImportError:
@@ -323,9 +333,12 @@ def _write_nodes(store, network):
             coords.append([float(pos.x), float(pos.y), float(pos.z)])
     if coords:
         import numpy as _np
+
         grp = store.require_group("nodes")
         _create_ds(
-            grp, "coordinates", data=_np.array(coords, dtype="float32"),
+            grp,
+            "coordinates",
+            data=_np.array(coords, dtype="float32"),
         )
 
 
@@ -364,16 +377,14 @@ def _write_mesh(store, network):
     # Vertices (V, 3)
     v = _np.asarray(vertices, dtype="float32")
     v_chunks = (min(v.shape[0], 4096), 3)
-    _create_ds(mesh_grp, "vertices", data=v,
-               chunks=v_chunks, compression="gzip")
+    _create_ds(mesh_grp, "vertices", data=v, chunks=v_chunks, compression="gzip")
 
     # Elements (E, K)
     try:
         elements = object.__getattribute__(network, "_mesh_elements")
         e = _np.asarray(elements, dtype="int32")
         e_chunks = (min(e.shape[0], 4096), e.shape[1])
-        _create_ds(mesh_grp, "elements", data=e,
-                   chunks=e_chunks, compression="gzip")
+        _create_ds(mesh_grp, "elements", data=e, chunks=e_chunks, compression="gzip")
     except AttributeError:
         pass
 
@@ -382,13 +393,13 @@ def _write_mesh(store, network):
         normals = object.__getattribute__(network, "_mesh_normals")
         n = _np.asarray(normals, dtype="float32")
         n_chunks = (min(n.shape[0], 4096), 3)
-        _create_ds(mesh_grp, "normals", data=n,
-                   chunks=n_chunks, compression="gzip")
+        _create_ds(mesh_grp, "normals", data=n, chunks=n_chunks, compression="gzip")
     except AttributeError:
         pass
 
 
 # ── Load ──────────────────────────────────────────────────────────────
+
 
 def load_network(yaml_path):
     """Load a tvbo Network from YAML/JSON sidecar + companion reference.
@@ -412,7 +423,7 @@ def load_network(yaml_path):
     from tvbo.classes.network import Network
 
     yaml_path = Path(yaml_path)
-    ext = yaml_path.suffix.lower()
+    yaml_path.suffix.lower()
 
     # Load as dict first to extract data_file (not a schema field)
     meta_dict = yaml_loader.load_as_dict(str(yaml_path))
@@ -425,6 +436,7 @@ def load_network(yaml_path):
 
     # Reconstruct clean YAML without non-schema fields for LinkML loader
     import yaml as _yaml
+
     clean_yaml = _yaml.dump(meta_dict, Dumper=_yaml.SafeDumper)
     net = yaml_loader.loads(clean_yaml, Network)
 
@@ -454,21 +466,20 @@ def _load_mesh(network, companion_path):
     if ext not in (".h5", ".hdf5"):
         return
     import h5py
+
     with h5py.File(companion_path, "r") as f:
         if "mesh" not in f:
             return
         mg = f["mesh"]
         if "vertices" in mg:
-            object.__setattr__(network, "_mesh_vertices",
-                               np.asarray(mg["vertices"][:], dtype="float32"))
+            object.__setattr__(network, "_mesh_vertices", np.asarray(mg["vertices"][:], dtype="float32"))
         if "elements" in mg:
-            object.__setattr__(network, "_mesh_elements",
-                               np.asarray(mg["elements"][:], dtype="int32"))
+            object.__setattr__(network, "_mesh_elements", np.asarray(mg["elements"][:], dtype="int32"))
         if "normals" in mg:
-            object.__setattr__(network, "_mesh_normals",
-                               np.asarray(mg["normals"][:], dtype="float32"))
+            object.__setattr__(network, "_mesh_normals", np.asarray(mg["normals"][:], dtype="float32"))
         # Reconstruct Mesh metadata object
         from tvbo.datamodel import schema as tvbo_datamodel
+
         et = mg.attrs.get("element_type", None)
         if isinstance(et, bytes):
             et = et.decode("utf-8")
@@ -484,8 +495,8 @@ def _load_mesh(network, companion_path):
 
 # ── Save ──────────────────────────────────────────────────────────────
 
-def save_network(network, yaml_path, binary_format: str = "h5",
-                 sidecar_format: str = "yaml"):
+
+def save_network(network, yaml_path, binary_format: str = "h5", sidecar_format: str = "yaml"):
     """Save a tvbo Network as sidecar + binary companion.
 
     Uses LinkML yaml_dumper or json_dumper for schema-valid sidecar
@@ -572,6 +583,7 @@ def save_network(network, yaml_path, binary_format: str = "h5",
 
     if binary_format in ("h5", "hdf5"):
         import h5py
+
         with h5py.File(companion, "w") as f:
             _write_edges(f, meta, arrays, edge_params)
             _write_nodes(f, network)
@@ -579,6 +591,7 @@ def save_network(network, yaml_path, binary_format: str = "h5",
 
     elif binary_format == "zarr":
         import zarr
+
         z = zarr.open(str(companion), mode="w")
         _write_edges(z, meta, arrays, edge_params)
         _write_nodes(z, network)
@@ -592,5 +605,4 @@ def save_network(network, yaml_path, binary_format: str = "h5",
 
     meta.pop("_sidecar_name", None)
     # Write v0.7-compliant sidecar
-    _write_v07_sidecar(network, sidecar_path, sidecar_format,
-                       data_file=companion.name)
+    _write_v07_sidecar(network, sidecar_path, sidecar_format, data_file=companion.name)

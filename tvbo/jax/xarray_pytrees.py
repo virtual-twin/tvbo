@@ -22,6 +22,7 @@ import xarray
 # as static auxiliary data in pytree flatten/unflatten.
 # ---------------------------------------------------------------------------
 
+
 class _HashableCoords(collections.abc.Mapping):
     """Hashable wrapper around a dict of xarray Variables (coordinates).
 
@@ -52,12 +53,7 @@ class _HashableCoords(collections.abc.Mapping):
             object.__setattr__(
                 self,
                 "_hash",
-                hash(
-                    frozenset(
-                        (name, var.data.tobytes())
-                        for name, var in self._variables.items()
-                    )
-                ),
+                hash(frozenset((name, var.data.tobytes()) for name, var in self._variables.items())),
             )
         return self._hash
 
@@ -69,8 +65,7 @@ class _HashableCoords(collections.abc.Mapping):
         if self._variables is other._variables:
             return True
         return self._variables.keys() == other._variables.keys() and all(
-            variable.equals(other._variables[name])
-            for name, variable in self._variables.items()
+            variable.equals(other._variables[name]) for name, variable in self._variables.items()
         )
 
 
@@ -83,6 +78,7 @@ def _maybe_hash_coords(coords):
 # ---------------------------------------------------------------------------
 # xarray.Variable
 # ---------------------------------------------------------------------------
+
 
 def _flatten_variable(v: xarray.Variable):
     children = (v._data,)
@@ -108,6 +104,7 @@ def _unflatten_variable(aux, children):
 # xarray.DataArray
 # ---------------------------------------------------------------------------
 
+
 def _flatten_data_array(da: xarray.DataArray):
     children = (da._variable,)
     aux = (da._name, _maybe_hash_coords(da._coords), da._indexes)
@@ -128,6 +125,7 @@ def _unflatten_data_array(aux, children):
 # ---------------------------------------------------------------------------
 # xarray.Dataset
 # ---------------------------------------------------------------------------
+
 
 def _flatten_dataset(ds: xarray.Dataset):
     variables = ds._variables
@@ -159,13 +157,7 @@ def _unflatten_dataset(aux, children):
 # Registration (runs on import)
 # ---------------------------------------------------------------------------
 
-jax.tree_util.register_pytree_node(
-    xarray.Variable, _flatten_variable, _unflatten_variable
-)
+jax.tree_util.register_pytree_node(xarray.Variable, _flatten_variable, _unflatten_variable)
 jax.tree_util.register_static(xarray.IndexVariable)
-jax.tree_util.register_pytree_node(
-    xarray.DataArray, _flatten_data_array, _unflatten_data_array
-)
-jax.tree_util.register_pytree_node(
-    xarray.Dataset, _flatten_dataset, _unflatten_dataset
-)
+jax.tree_util.register_pytree_node(xarray.DataArray, _flatten_data_array, _unflatten_data_array)
+jax.tree_util.register_pytree_node(xarray.Dataset, _flatten_dataset, _unflatten_dataset)

@@ -5,7 +5,7 @@ IMAGE_TAG=latest
 IMAGE_FULL=$(IMAGE_NAME):$(IMAGE_TAG)
 TARBALL_PATH=/Users/leonmartin_bih/projects/TVB-O/tvbo-container/tvbo.tar.gz
 
-.PHONY: help build save run docs-quarto docs-jupyter docs-to-py docs-rm-py docs-test docs-pytest docs-pytest-all docs-test-all docs-preview docs-render docs-clean docs-publish docs-publish-changed pypi-release release gen-linkml gen-openminds all
+.PHONY: help build save run docs-quarto docs-jupyter docs-to-py docs-rm-py docs-test docs-pytest docs-pytest-all docs-test-all docs-preview docs-render docs-clean docs-publish docs-publish-changed pypi-release release gen-linkml gen-openminds gen-owl gen-shacl gen-all all
 
 help: ## Show this help
 	@echo "TVBO Makefile"
@@ -19,6 +19,8 @@ help: ## Show this help
 	@echo "Schema Generation:"
 	@echo "  make gen-linkml         Generate Python datamodel from LinkML schema"
 	@echo "  make gen-openminds      Generate openMINDS schemas from LinkML"
+	@echo "  make gen-owl            Generate OWL ontology (tvb-o-struct.owl) from LinkML"
+	@echo "  make gen-shacl          Generate SHACL shapes (tvb-o.shacl.ttl) from LinkML"
 	@echo "  make gen-all            Run all schema generators"
 	@echo ""
 	@echo "Documentation:"
@@ -66,7 +68,40 @@ gen-openminds:
 	@python $(OPENMINDS_DIR)/generate_openminds.py
 	@echo "✓ openMINDS schemas generated in $(OPENMINDS_DIR)/schemas/"
 
-gen-all: gen-linkml gen-openminds
+OWL_OUT = ontology/tvb-o-struct.owl
+SHACL_OUT = ontology/tvb-o.shacl.ttl
+ABOX_OUT = ontology/tvb-o-data.ttl
+
+gen-owl:
+	@echo "Generating OWL ontology from LinkML schema..."
+	@mkdir -p ontology
+	@gen-owl $(SCHEMA_PATH) > $(OWL_OUT)
+	@python scripts/ontology/postprocess_struct_owl.py --schema $(SCHEMA_PATH) --owl $(OWL_OUT)
+	@echo "✓ OWL ontology written to $(OWL_OUT)"
+
+gen-shacl:
+	@echo "Generating SHACL shapes from LinkML schema..."
+	@mkdir -p ontology
+	@gen-shacl $(SCHEMA_PATH) > $(SHACL_OUT)
+	@echo "✓ SHACL shapes written to $(SHACL_OUT)"
+
+gen-studies:
+	@echo "Converting bibliographies into per-study YAML files..."
+	@python scripts/ontology/bib_to_studies.py
+	@echo "✓ studies/ regenerated from bibtex"
+
+gen-abox: gen-studies
+	@echo "Generating A-box from YAML database..."
+	@mkdir -p ontology
+	@python scripts/ontology/gen_abox.py -o $(ABOX_OUT)
+	@echo "✓ A-box written to $(ABOX_OUT)"
+
+crosswalk:
+	@echo "Refreshing crosswalk + boundary-matrix from schema/api/odoo..."
+	@python scripts/ontology/backfill_crosswalk.py
+	@echo "✓ dev/OntologicalRestructuring/{crosswalk,boundary-matrix}.md updated"
+
+gen-all: gen-linkml gen-openminds gen-owl gen-shacl gen-abox
 	@echo "✓ All schemas generated"
 
 build:

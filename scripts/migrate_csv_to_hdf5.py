@@ -7,6 +7,7 @@ creates HDF5 companion + updated YAML sidecar in database/networks/.
 Usage:
     python scripts/migrate_csv_to_hdf5.py [--dry-run]
 """
+
 import sys
 import numpy as np
 from pathlib import Path
@@ -35,8 +36,7 @@ def find_csv_pairs(csv_dir: Path) -> dict:
     return pairs
 
 
-def migrate_one(base_name: str, csv_paths: dict, out_dir: Path,
-                dry_run: bool = False):
+def migrate_one(base_name: str, csv_paths: dict, out_dir: Path, dry_run: bool = False):
     """Convert one CSV pair to HDF5+YAML."""
     import h5py
     from tvbo.data.matrix_io import write_matrix, auto_format
@@ -44,8 +44,8 @@ def migrate_one(base_name: str, csv_paths: dict, out_dir: Path,
     weights_csv = csv_paths["weights"]
     lengths_csv = csv_paths.get("lengths")
 
-    weights = np.loadtxt(weights_csv, delimiter=',')
-    lengths = np.loadtxt(lengths_csv, delimiter=',') if lengths_csv else None
+    weights = np.loadtxt(weights_csv, delimiter=",")
+    lengths = np.loadtxt(lengths_csv, delimiter=",") if lengths_csv else None
     n = weights.shape[0]
 
     # Determine output name from CSV base
@@ -77,19 +77,18 @@ def migrate_one(base_name: str, csv_paths: dict, out_dir: Path,
 
     # Parse existing YAML sidecar if it exists, otherwise create new
     edges = [
-        {"name": "weights", "format": fmt, "weighted": True,
-         "valid_diagonal": False, "non_negative": True},
+        {"name": "weights", "format": fmt, "weighted": True, "valid_diagonal": False, "non_negative": True},
     ]
     if lengths is not None:
         edges.append(
-            {"name": "lengths", "unit": "mm", "format": fmt, "weighted": True,
-             "valid_diagonal": False, "non_negative": True}
+            {"name": "lengths", "unit": "mm", "format": fmt, "weighted": True, "valid_diagonal": False, "non_negative": True}
         )
 
     # Try to read existing sidecar for metadata
     existing_meta = {}
     if yaml_path.exists():
         import yaml
+
         with open(yaml_path) as fh:
             existing_meta = yaml.safe_load(fh) or {}
 
@@ -103,8 +102,7 @@ def migrate_one(base_name: str, csv_paths: dict, out_dir: Path,
     }
 
     # Preserve parcellation, tractogram, descriptor info
-    for key in ("parcellation", "tractogram", "descriptor",
-                "description", "parameters"):
+    for key in ("parcellation", "tractogram", "descriptor", "description", "parameters"):
         if key in existing_meta:
             meta[key] = existing_meta[key]
 
@@ -113,18 +111,25 @@ def migrate_one(base_name: str, csv_paths: dict, out_dir: Path,
         meta["tractogram"] = {"name": meta["tractogram"]}
 
     # Remove old CSV paths
-    for key in ("weights", "lengths", "weights_min", "weights_max",
-                "weights_mean", "weights_median", "weights_histogram",
-                "type"):
+    for key in (
+        "weights",
+        "lengths",
+        "weights_min",
+        "weights_max",
+        "weights_mean",
+        "weights_median",
+        "weights_histogram",
+        "type",
+    ):
         meta.pop(key, None)
 
     import yaml
+
     with open(yaml_path, "w") as fh:
-        yaml.dump(meta, fh, default_flow_style=False, sort_keys=False,
-                  allow_unicode=True)
+        yaml.dump(meta, fh, default_flow_style=False, sort_keys=False, allow_unicode=True)
 
     sz = h5_path.stat().st_size
-    print(f"  {base_name}: {n}x{n} ({fmt}) → {h5_name} ({sz/1024:.1f} KB)")
+    print(f"  {base_name}: {n}x{n} ({fmt}) → {h5_name} ({sz / 1024:.1f} KB)")
 
 
 def main():
@@ -149,10 +154,10 @@ def main():
         total_h5 = sum(f.stat().st_size for f in h5_files)
         csv_files = list(CSV_DIR.glob("*.csv"))
         total_csv = sum(f.stat().st_size for f in csv_files)
-        print(f"\nMigration complete:")
-        print(f"  {len(h5_files)} HDF5 files ({total_h5/1024/1024:.1f} MB)")
-        print(f"  {len(csv_files)} CSV files ({total_csv/1024/1024:.1f} MB)")
-        print(f"  Compression ratio: {total_csv/total_h5:.1f}x")
+        print("\nMigration complete:")
+        print(f"  {len(h5_files)} HDF5 files ({total_h5 / 1024 / 1024:.1f} MB)")
+        print(f"  {len(csv_files)} CSV files ({total_csv / 1024 / 1024:.1f} MB)")
+        print(f"  Compression ratio: {total_csv / total_h5:.1f}x")
 
 
 if __name__ == "__main__":

@@ -6,6 +6,7 @@ Verifies that tvbo can:
 2. Import TVB surface simulation data (connectivity + surface + region_mapping)
    → save multi-level YAML+HDF5 → verify mesh + node_mapping persist.
 """
+
 import numpy as np
 import pytest
 import tempfile
@@ -15,6 +16,7 @@ try:
     from tvb.datatypes.connectivity import Connectivity
     from tvb.datatypes.surfaces import CorticalSurface
     from tvb.datatypes.region_mapping import RegionMapping
+
     _HAVE_TVB = True
 except ImportError:
     _HAVE_TVB = False
@@ -34,6 +36,7 @@ class TestConnectivityRoundTrip:
     def test_from_tvb_basic(self, tvb_conn):
         """Network.from_tvb preserves node count and descriptor."""
         from tvbo import Network
+
         net = Network.from_tvb(tvb_conn)
         assert net.number_of_nodes == tvb_conn.weights.shape[0]
         assert net.descriptor == "SC"
@@ -41,22 +44,29 @@ class TestConnectivityRoundTrip:
     def test_weights_preserved(self, tvb_conn):
         """Weights matrix survives import."""
         from tvbo import Network
+
         net = Network.from_tvb(tvb_conn)
         np.testing.assert_allclose(
-            net.weights_matrix, tvb_conn.weights, atol=1e-10,
+            net.weights_matrix,
+            tvb_conn.weights,
+            atol=1e-10,
         )
 
     def test_lengths_preserved(self, tvb_conn):
         """Tract lengths matrix survives import."""
         from tvbo import Network
+
         net = Network.from_tvb(tvb_conn)
         np.testing.assert_allclose(
-            net.lengths_matrix, tvb_conn.tract_lengths, atol=1e-10,
+            net.lengths_matrix,
+            tvb_conn.tract_lengths,
+            atol=1e-10,
         )
 
     def test_centres_preserved(self, tvb_conn):
         """Node centres (x, y, z) survive import."""
         from tvbo import Network
+
         net = Network.from_tvb(tvb_conn)
         centres = np.array(list(net.get_centers().values()), dtype="float64")
         np.testing.assert_allclose(centres, tvb_conn.centres, atol=1e-10)
@@ -64,6 +74,7 @@ class TestConnectivityRoundTrip:
     def test_labels_preserved(self, tvb_conn):
         """Region labels survive import."""
         from tvbo import Network
+
         net = Network.from_tvb(tvb_conn)
         tvb_labels = list(tvb_conn.region_labels)
         tvbo_labels = [n.label for n in net.nodes]
@@ -72,6 +83,7 @@ class TestConnectivityRoundTrip:
     def test_conduction_speed_preserved(self, tvb_conn):
         """Conduction speed survives import."""
         from tvbo import Network
+
         net = Network.from_tvb(tvb_conn)
         cs = net.parameters.get("conduction_speed")
         assert cs is not None
@@ -81,6 +93,7 @@ class TestConnectivityRoundTrip:
     def test_cortical_flags_preserved(self, tvb_conn):
         """Per-node cortical flag survives as node parameter."""
         from tvbo import Network
+
         net = Network.from_tvb(tvb_conn)
         if tvb_conn.cortical is not None and len(tvb_conn.cortical) > 0:
             for i, node in enumerate(net.nodes):
@@ -119,11 +132,15 @@ class TestConnectivityRoundTrip:
             tvb_conn2 = net2.execute(format="tvb")
 
             np.testing.assert_allclose(
-                tvb_conn2.weights, tvb_conn.weights, atol=1e-6,
+                tvb_conn2.weights,
+                tvb_conn.weights,
+                atol=1e-6,
                 err_msg="Weights not preserved in round-trip",
             )
             np.testing.assert_allclose(
-                tvb_conn2.tract_lengths, tvb_conn.tract_lengths, atol=1e-6,
+                tvb_conn2.tract_lengths,
+                tvb_conn.tract_lengths,
+                atol=1e-6,
                 err_msg="Tract lengths not preserved in round-trip",
             )
 
@@ -146,6 +163,7 @@ class TestSurfaceRoundTrip:
     def test_from_tvb_surface_creates_two_networks(self, tvb_data):
         """from_tvb_surface returns (region_net, surface_net)."""
         from tvbo import Network
+
         conn, surf, rmap = tvb_data
         region_net, surface_net = Network.from_tvb_surface(conn, surf, rmap)
         assert region_net.number_of_nodes == conn.weights.shape[0]
@@ -154,6 +172,7 @@ class TestSurfaceRoundTrip:
     def test_surface_mesh_data(self, tvb_data):
         """Mesh data (vertices, triangles, normals) is attached."""
         from tvbo import Network
+
         conn, surf, rmap = tvb_data
 
         _, surface_net = Network.from_tvb_surface(conn, surf, rmap)
@@ -168,6 +187,7 @@ class TestSurfaceRoundTrip:
     def test_node_mapping_preserved(self, tvb_data):
         """Region mapping (vertex→region) is stored as node_mapping."""
         from tvbo import Network
+
         conn, surf, rmap = tvb_data
 
         _, surface_net = Network.from_tvb_surface(conn, surf, rmap)
@@ -178,6 +198,7 @@ class TestSurfaceRoundTrip:
     def test_parent_network_linked(self, tvb_data):
         """Surface network references region network as parent."""
         from tvbo import Network
+
         conn, surf, rmap = tvb_data
 
         region_net, surface_net = Network.from_tvb_surface(conn, surf, rmap)
@@ -211,12 +232,15 @@ class TestSurfaceRoundTrip:
 
                 v = f["mesh/vertices"][:]
                 np.testing.assert_allclose(
-                    v, surf.vertices, atol=1e-5,
+                    v,
+                    surf.vertices,
+                    atol=1e-5,
                     err_msg="Vertices not preserved in HDF5",
                 )
                 t = f["mesh/elements"][:]
                 np.testing.assert_array_equal(
-                    t, surf.triangles,
+                    t,
+                    surf.triangles,
                     err_msg="Triangles not preserved in HDF5",
                 )
 
@@ -234,8 +258,7 @@ class TestSurfaceRoundTrip:
             save_network(surface_net, path, binary_format="h5")
 
             with h5py.File(path.with_suffix(".h5"), "r") as f:
-                assert "mesh/region_mapping" in f, \
-                    "Region mapping not written to HDF5"
+                assert "mesh/region_mapping" in f, "Region mapping not written to HDF5"
                 mapping = f["mesh/region_mapping"][:]
                 expected = np.asarray(rmap.array_data, dtype="int32")
                 np.testing.assert_array_equal(mapping, expected)

@@ -53,7 +53,7 @@ def test_model_loads(model_path, model_name):
 
     # Basic validation
     assert model is not None, "Model should not be None"
-    assert hasattr(model, 'name'), "Model should have a name attribute"
+    assert hasattr(model, "name"), "Model should have a name attribute"
 
     # Verify the model name matches
     if raw.get("name"):
@@ -85,29 +85,27 @@ if __name__ == "__main__":
                 raw = yaml.safe_load(f)
 
             if not isinstance(raw, dict):
-                print(f"   ⚠️  SKIP: Not a dict")
+                print("   ⚠️  SKIP: Not a dict")
                 continue
 
             model = Dynamics.from_file(path)
-            print(f"   ✅ Loaded successfully")
+            print("   ✅ Loaded successfully")
             success_count += 1
 
         except Exception as e:
             error_msg = str(e)
             print(f"   ❌ FAILED: {type(e).__name__}: {error_msg[:100]}")
-            failed_models.append({
-                "path": str(Path(path).relative_to(REPO_ROOT)),
-                "name": name,
-                "error": f"{type(e).__name__}: {error_msg}"
-            })
+            failed_models.append(
+                {"path": str(Path(path).relative_to(REPO_ROOT)), "name": name, "error": f"{type(e).__name__}: {error_msg}"}
+            )
 
     print("\n" + "=" * 80)
-    print(f"\n📊 SUMMARY:")
+    print("\n📊 SUMMARY:")
     print(f"   ✅ Success: {success_count}")
     print(f"   ❌ Failed: {len(failed_models)}")
 
     if failed_models:
-        print(f"\n❌ Failed Models:")
+        print("\n❌ Failed Models:")
         for fm in failed_models:
             print(f"\n   Model: {fm['name']}")
             print(f"   File: {fm['path']}")

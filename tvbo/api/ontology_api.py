@@ -100,11 +100,7 @@ def ontoclass2dict(ontoclass):
             else (
                 ontoclass.description.first()
                 if ontoclass.description
-                else (
-                    ontoclass.definition.first().split(".")[0]
-                    if ontoclass.definition
-                    else None
-                )
+                else (ontoclass.definition.first().split(".")[0] if ontoclass.definition else None)
             )
         ),
         "collapsed": True,
@@ -157,7 +153,7 @@ class OntologyAPI:
         # for node_id, node in nodes.items():
         # self.expand_node_relationships(node_id, add_nodes=False)
 
-        graph = self.update_graph()
+        self.update_graph()
 
         # return graph
 
@@ -273,12 +269,7 @@ class OntologyAPI:
         return self.graph
 
     def add_children(self, node_id):
-        self.nodes.update(
-            {
-                s_id: ontoclass2dict(onto.world._get_by_storid(s_id))
-                for s_id in G.successors(node_id)
-            }
-        )
+        self.nodes.update({s_id: ontoclass2dict(onto.world._get_by_storid(s_id)) for s_id in G.successors(node_id)})
 
         for r in onto.world._get_by_storid(node_id).requires:
             self.nodes.update({r.storid: ontoclass2dict(r)})
@@ -355,9 +346,7 @@ class OntologyAPI:
         child_nodes = [self.nodes[s] for s in G.successors(node_id)]
         child_links = [
             {"source": src, "target": tgt, "type": type_val}
-            for src, tgt, type_val in {
-                (node_id, s, G[node_id][s][0]["type"]) for s in G.successors(node_id)
-            }
+            for src, tgt, type_val in {(node_id, s, G[node_id][s][0]["type"]) for s in G.successors(node_id)}
         ]
         return {"nodes": child_nodes, "links": child_links}
 
@@ -378,9 +367,7 @@ class OntologyAPI:
         parent_nodes = [self.nodes[s] for s in G.predecessors(node_id)]
         parent_links = [
             {"source": src, "target": tgt, "type": type_val}
-            for src, tgt, type_val in {
-                (s, node_id, G[s][node_id][0]["type"]) for s in G.predecessors(node_id)
-            }
+            for src, tgt, type_val in {(s, node_id, G[s][node_id][0]["type"]) for s in G.predecessors(node_id)}
         ]
 
         return {"nodes": parent_nodes, "links": parent_links}
@@ -441,3 +428,44 @@ class OntologyAPI:
             id=1,
             **md,
         )
+
+    def get_export_formats(self) -> list:
+        """Return supported export format descriptors for UI dropdowns."""
+        from tvbo import export as _export
+        return _export.list_format_dicts()
+
+    def export_experiment(
+        self,
+        format: str,
+        directory: str,
+        metadata_only: bool = True,
+        **kwargs,
+    ) -> dict:
+        """Render the configured experiment and save into *directory*.
+
+        Thin wrapper around :meth:`SimulationExperiment.save`. Returns a
+        ``{"format", "files"}`` dict describing what was written. Format
+        resolution (canonical key + aliases + extension) lives in
+        :mod:`tvbo.export.registry`.
+        """
+        from pathlib import Path
+        from tvbo import export as _export
+
+        fmt = _export.resolve(format)
+        out_dir = Path(directory)
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+        saved_path = self.experiment.save(
+            out_dir, format=fmt.key, metadata_only=metadata_only, **kwargs
+        )
+        files = [saved_path]
+
+        # Network HDF5 sidecar (if save() wrote one)
+        if not metadata_only:
+            stem = Path(saved_path).stem
+            for ext in (".yaml", ".h5"):
+                candidate = out_dir / f"{stem}_network{ext}"
+                if candidate.exists():
+                    files.append(str(candidate))
+
+        return {"format": fmt.key, "files": files}

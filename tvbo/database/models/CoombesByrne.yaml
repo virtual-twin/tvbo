@@ -28,15 +28,15 @@ parameters:
     description: Parameter of the alpha-function
   eta:
     name: eta
-    definition: "Constant parameter to scale the rate of feedback from the\n     \
-      \       firing rate variable to itself"
+    definition: "Constant parameter to scale the rate of feedback from the\n            firing rate variable to itself"
     value: 20.0
     domain:
       lo: -10.0
       hi: 10.0
       step: 0.0001
-    description: Constant parameter to scale the rate of feedback from the             firing
-      rate variable to itself
+    description: Constant parameter to scale the rate of feedback from the             firing rate variable to itself
+    grounding:
+      - GO:0099605
   k:
     name: k
     definition: Local coupling strength
@@ -55,8 +55,10 @@ parameters:
       hi: 0.0
       step: 0.01
     description: QIF membrane reversal potential
+    grounding:
+      - GO:0042391
 references:
-- Byrne2020
+  - Byrne2020
 coupling_inputs:
   c_pop0:
     name: c_pop0

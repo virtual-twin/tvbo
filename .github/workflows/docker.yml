@@ -23,14 +23,26 @@ env:
   PIP_NO_WARN_SCRIPT_LOCATION: "1"
 
 jobs:
-  # ─── Build & push Docker image ──────────────────────────────
+  # ─── Build & push Docker image (native per-arch, then merge) ────────────
+  # We build amd64 and arm64 on NATIVE runners in parallel instead of
+  # cross-compiling under QEMU. Each arch caches independently. A final
+  # job stitches the two arch-tagged images into the final multi-arch tag.
   build:
-    runs-on: ubuntu-latest
+    name: Build (${{ matrix.platform.tag }})
+    runs-on: ${{ matrix.platform.runner }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - { runner: ubuntu-latest,    arch: amd64, tag: linux-amd64 }
+          - { runner: ubuntu-24.04-arm, arch: arm64, tag: linux-arm64 }
+    outputs:
+      digest-amd64: ${{ steps.export.outputs.digest-amd64 }}
+      digest-arm64: ${{ steps.export.outputs.digest-arm64 }}
 
     steps:
       - uses: actions/checkout@v6
-
-      - uses: docker/setup-qemu-action@v4
 
       - uses: docker/setup-buildx-action@v4
 
@@ -51,6 +63,10 @@ jobs:
           images: |
             leonmartin2/tvbo
             ghcr.io/${{ github.repository }}
+          # Per-arch tag suffix so we can push both arches without colliding,
+          # then merge into the canonical tags in the manifest job.
+          flavor: |
+            suffix=-${{ matrix.platform.arch }},onlatest=true
           tags: |
             type=ref,event=branch
             type=semver,pattern={{version}}
@@ -58,58 +74,195 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
 
       - uses: docker/build-push-action@v7
+        id: build
         with:
           context: .
           file: docker/Dockerfile
           push: true
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/${{ matrix.platform.arch }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           provenance: false
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=${{ matrix.platform.arch }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.platform.arch }}
 
-  # ─── Container tests (after build) ──────────────────────────
-  test-container:
-    name: Container tests
+      - name: Export digest
+        id: export
+        run: |
+          echo "digest-${{ matrix.platform.arch }}=${{ steps.build.outputs.digest }}" >> "$GITHUB_OUTPUT"
+
+  # ─── Stitch per-arch images into multi-arch manifests ───────────────────
+  manifest:
+    name: Multi-arch manifest
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/metadata-action@v6
+        id: meta
+        with:
+          images: |
+            leonmartin2/tvbo
+            ghcr.io/${{ github.repository }}
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=sha,prefix=
+            type=raw,value=latest,enable={{is_default_branch}}
+      - name: Create and push multi-arch manifest
+        run: |
+          set -euo pipefail
+          while IFS= read -r tag; do
+            [ -z "$tag" ] && continue
+            echo "Creating manifest for $tag"
+            docker buildx imagetools create -t "$tag" \
+              "${tag}-amd64" \
+              "${tag}-arm64"
+          done <<< "${{ steps.meta.outputs.tags }}"
+
+  # ─── Container tests (after build) ──────────────────────────
+  # Sharded for parallelism + per-test timeout so hangs surface as
+  # tracebacks instead of silent runner kills.
+  test-container:
+    name: Container (${{ matrix.shard }})
+    needs: manifest
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
     container:
       image: ghcr.io/virtual-twin/tvbo:${{ github.ref_name == 'main' && 'latest' || 'dev' }}
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - shard: core
+            paths: >-
+              tests/test_model_loading.py
+              tests/test_graph.py
+              tests/test_package_structure.py
+              tests/test_network_io.py
+              tests/functional/test_dynamics_basic.py
+              tests/functional/test_metadata_import.py
+              tests/functional/test_simulation_experiment_basic.py
+              tests/functional/test_timeseries_utils.py
+              tests/functional/test_simulation_backends_core.py
+            needs_julia_refdata: false
+          - shard: tvboptim
+            paths: >-
+              tests/test_tvboptim_experiments.py
+              tests/functional/test_simulation_backends_tvboptim.py
+            needs_julia_refdata: false
+          - shard: tvb
+            paths: >-
+              tests/test_tvb_comparison.py
+              tests/test_tvb_interop.py
+              tests/functional/test_simulation_backends_tvb.py
+            needs_julia_refdata: false
+          - shard: pyrates-neuroml
+            paths: >-
+              tests/functional/test_pyrates_integration.py
+              tests/functional/test_simulation_backends_pyrates.py
+              tests/functional/test_simulation_backends_neuroml.py
+              tests/test_full_workflow_comparison.py
+            needs_julia_refdata: false
+          - shard: julia
+            paths: >-
+              tests/functional/test_simulation_backends_julia.py
+              tests/test_networkdynamics_comparison.py
+            needs_julia_refdata: true
     steps:
       - uses: actions/checkout@v6
       - name: Configure git for private repos
         run: git config --global url."https://${{ secrets.PRIVATE_REPO_TOKEN }}@github.com/".insteadOf "https://github.com/"
-      - name: Install dev code + test deps
-        run: pip install -e ".[all]" pytest-xdist
-      - name: Generate reference data
+      - name: Link checkout as editable (deps already in image)
+        run: uv pip install --system -e . --no-deps && uv pip install --system pytest-xdist pytest-timeout
+      - name: Generate Julia reference data
+        if: matrix.needs_julia_refdata
         run: python -c "from juliacall import Main; Main.seval('include(\"tests/reference_data/generate_nd_references.jl\")')"
-      - name: Run Python tests (no Julia, no docs)
+      - name: Run shard "${{ matrix.shard }}"
         run: |
-          pytest -x -q --ignore=tests/test_docs.py \
-            --ignore=tests/functional/test_simulation_backends_julia.py \
-            --ignore=tests/test_networkdynamics_comparison.py \
-            --override-ini="addopts="
-      - name: Run Julia tests
-        run: |
-          pytest -x -q \
-            tests/functional/test_simulation_backends_julia.py \
-            tests/test_networkdynamics_comparison.py \
-            --override-ini="addopts="
+          pytest -x -v --tb=short \
+            --timeout=600 --timeout-method=thread \
+            --override-ini="addopts=" \
+            ${{ matrix.paths }}
 
   # ─── Doc tests (after build) ─────────────────────────────────
+  # ─── Doc tests — one shard per backend, all run in parallel ────────────
   test-docs:
-    name: Doc tests
-    needs: build
+    name: Docs (${{ matrix.shard }})
+    needs: manifest
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     container:
       image: ghcr.io/virtual-twin/tvbo:${{ github.ref_name == 'main' && 'latest' || 'dev' }}
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # NeuroML/LEMS examples (40 docs, jNeuroML + NEURON backend)
+          - shard: neuroml
+            doc_pattern: "NeuroML"
+            extra_args: ""
+            xla_device_count: "8"
+            test_timeout: "900"
+          # Julia backends: BifurcationKit, ModelingToolkit, NetworkDynamics
+          # test_timeout=1800: Julia cold precompilation can take >15 min in Docker
+          - shard: julia
+            doc_pattern: "BifurcationKit or ModelingToolkit or NetworkDynamics"
+            extra_args: ""
+            xla_device_count: "8"
+            test_timeout: "1800"
+          # PyRates dynamical systems
+          - shard: pyrates
+            doc_pattern: "Pyrates"
+            extra_args: ""
+            xla_device_count: "8"
+            test_timeout: "900"
+          # TVB interoperability
+          - shard: tvb
+            doc_pattern: "Interoperability/TVB"
+            extra_args: ""
+            xla_device_count: "8"
+            test_timeout: "900"
+          # tvboptim docs in CI: keep only stable RWW path.
+          # EI/JR are too heavy for current CI limits and run in manual workflows.
+          - shard: tvboptim-rww
+            doc_pattern: "RWW_tvboptim"
+            extra_args: "--run-slow"
+            xla_device_count: "8"
+            test_timeout: "900"
+          # Replication studies
+          - shard: replication
+            doc_pattern: "Replication"
+            extra_args: ""
+            xla_device_count: "8"
+            test_timeout: "900"
+          # Core: Usage, Specification, api, examples (non-NeuroML), OpenMINDS, BIDS, root index
+          # Negative catch-all: everything not covered by the specialised shards above.
+        #   - shard: core
+        #     doc_pattern: "not NeuroML and not BifurcationKit and not ModelingToolkit and not NetworkDynamics and not Pyrates and not TVB and not tvboptim and not Replication"
+        #     extra_args: ""
+    env:
+      JAX_PLATFORMS: cpu
+      XLA_PYTHON_CLIENT_ALLOCATOR: platform
+      XLA_PYTHON_CLIENT_PREALLOCATE: "false"
+      TVBO_XLA_DEVICE_COUNT: ${{ matrix.xla_device_count }}
     steps:
       - uses: actions/checkout@v6
       - name: Ensure Quarto is available
@@ -129,10 +282,15 @@ jobs:
           fi
       - name: Configure git for private repos
         run: git config --global url."https://${{ secrets.PRIVATE_REPO_TOKEN }}@github.com/".insteadOf "https://github.com/"
-      - name: Install dev code + test deps
-        run: pip install -e ".[all]" pytest-xdist
-      - name: Run doc tests
-        run: pytest tests/test_docs.py -x -v --tb=long -m docs --run-slow --override-ini="addopts="
+      - name: Link checkout as editable (deps already in image)
+        run: uv pip install --system -e . --no-deps && uv pip install --system pytest-xdist pytest-timeout
+      - name: Run doc tests (${{ matrix.shard }})
+        run: |
+          pytest tests/test_docs.py -v --tb=long -m docs \
+            -k "${{ matrix.doc_pattern }}" \
+            ${{ matrix.extra_args }} \
+            --timeout=${{ matrix.test_timeout }} --timeout-method=thread \
+            --override-ini="addopts="
 
   # ─── Release-ready check (main only) ────────────────────────
   release-ready:
@@ -142,15 +300,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
+      - uses: astral-sh/setup-uv@v8.1.0
         with:
           python-version: "3.12"
-          cache: "pip"
+          enable-cache: true
+          activate-environment: true
       - name: Configure git for private repos
         run: git config --global url."https://${{ secrets.PRIVATE_REPO_TOKEN }}@github.com/".insteadOf "https://github.com/"
 
       - name: Install build tools
-        run: pip install build twine check-wheel-contents
+        run: uv pip install build twine check-wheel-contents
 
       - name: Build sdist and wheel
         run: python -m build
@@ -174,8 +333,12 @@ jobs:
           echo "Version $PKG_VERSION is consistent."
 
       - name: Verify package installs cleanly from wheel
+        # linkml/linkml-runtime pinned to v1.11.0-rc1 until 1.11 is on PyPI.
         run: |
-          pip install dist/*.whl
+          uv pip install \
+              "linkml @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml" \
+              "linkml-runtime @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml_runtime"
+          uv pip install dist/*.whl
           python -c "from tvbo import Dynamics, SimulationExperiment; print('Import OK')"
 
       - name: Upload release-ready artifacts

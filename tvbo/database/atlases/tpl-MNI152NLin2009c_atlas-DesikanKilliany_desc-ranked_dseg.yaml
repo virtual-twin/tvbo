@@ -1,6 +1,5 @@
 name: DesikanKilliany
-coordinateSpace:
-  abbreviation: MNI152NLin2009c
+coordinateSpace: MNI152NLin2009c
 terminology:
   entities:
     left-cerebellum-cortex:

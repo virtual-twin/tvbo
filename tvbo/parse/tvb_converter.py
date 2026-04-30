@@ -1,4 +1,5 @@
 """Convert TVB simulator objects to tvbo datamodel instances."""
+
 from typing import Any, Union
 
 from tvbo.datamodel import schema as tvbo_datamodel
@@ -8,9 +9,9 @@ def _to_scalar(val):
     """Extract a Python scalar from a numpy array or other array-like."""
     if val is None:
         return None
-    if hasattr(val, 'item'):
+    if hasattr(val, "item"):
         return val.item() if val.ndim == 0 else val.flat[0]
-    if hasattr(val, '__len__') and len(val) > 0:
+    if hasattr(val, "__len__") and len(val) > 0:
         return float(val[0])
     return float(val)
 
@@ -50,7 +51,6 @@ def simulator2metadata(sim: Any, experiment_id: Union[int, None] = None, odir: U
     except Exception as e:
         print(f"{e} Falling back to summary_info.")
         for k, v in dict(getattr(sim.model, "summary_info", lambda: {})()).items():
-
             if k in {
                 "Type",
                 "title",
@@ -78,14 +78,8 @@ def simulator2metadata(sim: Any, experiment_id: Union[int, None] = None, odir: U
         model_metadata.state_variables[sv] = tvbo_datamodel.StateVariable(
             name=sv,
             coupling_variable=bool(i in getattr(sim.model, "cvar", []) or []),
-            variable_of_interest=bool(
-                sv in getattr(sim.model, "variables_of_interest", []) or []
-            ),
-            domain=(
-                tvbo_datamodel.Range(lo=float(lo), hi=float(hi))
-                if (lo is not None or hi is not None)
-                else None
-            ),
+            variable_of_interest=bool(sv in getattr(sim.model, "variables_of_interest", []) or []),
+            domain=(tvbo_datamodel.Range(lo=float(lo), hi=float(hi)) if (lo is not None or hi is not None) else None),
             boundaries=boundaries,
             initial_value=float(ics[0, i, :, 0].mean()) if ics is not None else None,
         )
@@ -100,9 +94,7 @@ def simulator2metadata(sim: Any, experiment_id: Union[int, None] = None, odir: U
     # --- Integration ---
     integrator_info = dict(getattr(sim.integrator, "summary_info", lambda: {})())
     integrator_type = integrator_info.get("Type", "")
-    method = (
-        integrator_type.replace("Stochastic", "").replace("Deterministic", "").strip()
-    )
+    method = integrator_type.replace("Stochastic", "").replace("Deterministic", "").strip()
 
     noise_meta = None
     noise_obj = getattr(sim.integrator, "noise", None)
@@ -118,13 +110,13 @@ def simulator2metadata(sim: Any, experiment_id: Union[int, None] = None, odir: U
             else:
                 nsig_val = float(nsig)
             if nsig_val is not None:
-                params["nsig"] = tvbo_datamodel.Parameter(
-                    name="nsig", value=nsig_val
-                )
+                params["nsig"] = tvbo_datamodel.Parameter(name="nsig", value=nsig_val)
 
         if nsig.shape[0] > 1:
             for i, sv in enumerate(getattr(sim.model, "state_variables")):
-                model_metadata.state_variables[sv].noise = tvbo_datamodel.Noise(parameters={'sigma': {'value': float((2.0 * nsig_arr[i]) ** 0.5)}})
+                model_metadata.state_variables[sv].noise = tvbo_datamodel.Noise(
+                    parameters={"sigma": {"value": float((2.0 * nsig_arr[i]) ** 0.5)}}
+                )
 
         for key in ("tau", "ntau"):
             try:
@@ -143,22 +135,18 @@ def simulator2metadata(sim: Any, experiment_id: Union[int, None] = None, odir: U
                 rs = getattr(noise_obj, "random_stream", None)
                 nseed = getattr(rs, "seed", None) if rs is not None else None
             if nseed is not None:
-                params["noise_seed"] = tvbo_datamodel.Parameter(
-                    name="noise_seed", value=int(nseed)
-                )
+                params["noise_seed"] = tvbo_datamodel.Parameter(name="noise_seed", value=int(nseed))
         except Exception:
             pass
 
         additive = False
         try:
-            from tvb.simulator.noise import Additive as _Add, Multiplicative as _Mul
+            from tvb.simulator.noise import Additive as _Add
+
             additive = isinstance(noise_obj, _Add)
         except Exception:
             try:
-                additive = (
-                    dict(getattr(noise_obj, "summary_info", lambda: {})()).get("Type")
-                    == "Additive"
-                )
+                additive = dict(getattr(noise_obj, "summary_info", lambda: {})()).get("Type") == "Additive"
             except Exception:
                 additive = False
 
@@ -195,15 +183,10 @@ def simulator2metadata(sim: Any, experiment_id: Union[int, None] = None, odir: U
         stimulus_metadata = tvbo_datamodel.Stimulus(
             label=type(sim.stimulus).__name__,
             weighting=list(getattr(sim.stimulus, "weight", []) or []),
-            equation=tvbo_datamodel.Equation(
-                pycode=getattr(getattr(sim.stimulus, "temporal", None), "equation", "")
-            ),
+            equation=tvbo_datamodel.Equation(pycode=getattr(getattr(sim.stimulus, "temporal", None), "equation", "")),
             parameters={
                 k: tvbo_datamodel.Parameter(name=k, value=_to_scalar(v))
-                for k, v in (
-                    getattr(getattr(sim.stimulus, "temporal", None), "parameters", {})
-                    or {}
-                ).items()
+                for k, v in (getattr(getattr(sim.stimulus, "temporal", None), "parameters", {}) or {}).items()
             },
         )
     else:
@@ -213,6 +196,7 @@ def simulator2metadata(sim: Any, experiment_id: Union[int, None] = None, odir: U
     # Delegate to the canonical from_tvb converter which uses the current
     # Network schema (nodes + set_matrix, not the removed weights/lengths fields)
     from tvbo.data.converters import from_tvb as _from_tvb_connectivity
+
     network_metadata = _from_tvb_connectivity(sim.connectivity)
 
     # --- Assemble experiment ---
@@ -227,8 +211,10 @@ def simulator2metadata(sim: Any, experiment_id: Union[int, None] = None, odir: U
     # Software environment
     try:
         import platform as _platform
+
         try:
             import tvb as _tvb
+
             tvb_version = getattr(_tvb, "__version__", None)
         except Exception:
             tvb_version = None

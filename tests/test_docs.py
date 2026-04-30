@@ -11,7 +11,6 @@ Run single doc: pytest tests/test_docs.py -k "Network" -v
 
 import json
 import os
-import re
 import glob
 import subprocess
 import pytest
@@ -54,11 +53,7 @@ for path in qmd_files:
 
 
 @pytest.mark.docs
-@pytest.mark.parametrize(
-    "qmd_path,doc_name",
-    test_params,
-    ids=lambda x: x if isinstance(x, str) else Path(x).stem
-)
+@pytest.mark.parametrize("qmd_path,doc_name", test_params, ids=lambda x: x if isinstance(x, str) else Path(x).stem)
 def test_doc_executes(qmd_path, doc_name):
     """Test that a documentation notebook executes without errors."""
     qmd_path = Path(qmd_path)
@@ -68,10 +63,7 @@ def test_doc_executes(qmd_path, doc_name):
     ipynb_path = qmd_path.with_suffix(".ipynb")
     try:
         result = subprocess.run(
-            ["quarto", "convert", str(qmd_path), "--output", str(ipynb_path)],
-            capture_output=True,
-            text=True,
-            cwd=str(doc_dir)
+            ["quarto", "convert", str(qmd_path), "--output", str(ipynb_path)], capture_output=True, text=True, cwd=str(doc_dir)
         )
         assert result.returncode == 0, f"quarto convert failed: {result.stderr}"
         assert ipynb_path.exists(), f"Notebook not created: {ipynb_path}"
@@ -101,13 +93,17 @@ def test_doc_executes(qmd_path, doc_name):
         # Execute the notebook
         env = os.environ.copy()
         env["MPLBACKEND"] = "Agg"  # Non-interactive matplotlib backend
+        # Keep JAX memory usage bounded in CI notebooks (notably tvboptim docs).
+        env.setdefault("JAX_PLATFORMS", "cpu")
+        env.setdefault("XLA_PYTHON_CLIENT_ALLOCATOR", "platform")
+        env.setdefault("XLA_PYTHON_CLIENT_PREALLOCATE", "false")
 
         result = subprocess.run(
             ["jupyter", "execute", str(ipynb_path)],
             capture_output=True,
             text=True,
             cwd=str(doc_dir),  # Run from doc's directory for correct relative paths
-            env=env
+            env=env,
         )
 
         # Check for execution errors

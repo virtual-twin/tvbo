@@ -11,9 +11,7 @@ import numpy as np
 
 
 # TODO: bands, colors params. not used, remove?
-def plot_power_spectrum(
-    frequency, power, bands=None, colors=None, ax=None, label="simulation"
-):
+def plot_power_spectrum(frequency, power, bands=None, colors=None, ax=None, label="simulation"):
 
     ax.plot(
         frequency,
@@ -39,12 +37,8 @@ def plot_power_spectrum(
 
     # Adding vertical lines and labels for different frequency bands
     for i, (band, (start, end)) in enumerate(bands.items()):
-        mid_point = 10 ** (
-            np.log10(start) + (np.log10(end) - np.log10(start)) / 2
-        )  # Logarithmic midpoint
-        ax.axvspan(
-            start, end, color=colors[i], alpha=0.2
-        )  # Colored background with alpha transparency
+        mid_point = 10 ** (np.log10(start) + (np.log10(end) - np.log10(start)) / 2)  # Logarithmic midpoint
+        ax.axvspan(start, end, color=colors[i], alpha=0.2)  # Colored background with alpha transparency
         ax.axvline(x=end, color=colors[i], linestyle="--")  # End of the band
         ax.text(
             mid_point,

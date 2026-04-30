@@ -13,6 +13,7 @@ This module provides utilities for working with TVB and the Gene Ontology.
 
 .. moduleauthor:: Leon K. Martin
 """
+
 import json
 import logging
 import os
@@ -27,7 +28,7 @@ import pandas as pd
 try:
     import pybel
     from goatools import obo_parser
-    import wget
+    import wget  # noqa: F401  # optional dep probe
 except ImportError as e:
     raise ImportError(
         "TVB-GO module requires knowledge extras. Install with:\n"
@@ -45,34 +46,18 @@ KEYWORD_DIR = join(TVBGO_DIR, "Tripletts_with_keywords")
 
 df_tvbgo = pd.read_excel(join(TVBGO_DIR, "TVB-O_GO_list_curation_Julie_Courtiol.xlsx"))
 
-kw2tvbo = pd.read_csv(
-    join(KEYWORD_DIR, "Model_parameter_keywords_TVB3_2_final.csv"), sep=";"
-)
+kw2tvbo = pd.read_csv(join(KEYWORD_DIR, "Model_parameter_keywords_TVB3_2_final.csv"), sep=";")
 go2kw = pd.read_csv(join(KEYWORD_DIR, "GO_terms_keywords_TVBO3_2_final.csv"), sep=";")
 
 # Keyword cluster
 df_clust = pd.read_excel(KEYWORD_DIR + "/Keywords_cluster.xlsx")
 
 kw_clust = dict()
-kw_clust["excitation"] = [
-    i.lower().strip().replace('"', "") for i in df_clust["Cluster"].dropna().to_list()
-]
-kw_clust["inhibition"] = [
-    i.lower().strip().replace('"', "")
-    for i in df_clust["Unnamed: 3"].dropna().to_list()
-]
-kw_clust["e/i balance"] = [
-    i.lower().strip().replace('"', "")
-    for i in df_clust["Unnamed: 4"].dropna().to_list()
-]
-kw_clust["internal coupling"] = [
-    i.lower().strip().replace('"', "")
-    for i in df_clust["Unnamed: 5"].dropna().to_list()
-]
-kw_clust["time_scaling"] = [
-    i.lower().strip().replace('"', "")
-    for i in df_clust["Unnamed: 6"].dropna().to_list()
-]
+kw_clust["excitation"] = [i.lower().strip().replace('"', "") for i in df_clust["Cluster"].dropna().to_list()]
+kw_clust["inhibition"] = [i.lower().strip().replace('"', "") for i in df_clust["Unnamed: 3"].dropna().to_list()]
+kw_clust["e/i balance"] = [i.lower().strip().replace('"', "") for i in df_clust["Unnamed: 4"].dropna().to_list()]
+kw_clust["internal coupling"] = [i.lower().strip().replace('"', "") for i in df_clust["Unnamed: 5"].dropna().to_list()]
+kw_clust["time_scaling"] = [i.lower().strip().replace('"', "") for i in df_clust["Unnamed: 6"].dropna().to_list()]
 
 
 def bel2label(node):
@@ -224,9 +209,7 @@ def get_term(go_id):
         term = json.loads(ret.read())
         return term["results"][0]
     else:
-        raise ValueError(
-            "Couldn't receive information from QuickGO. Check GO ID and try again."
-        )
+        raise ValueError("Couldn't receive information from QuickGO. Check GO ID and try again.")
 
 
 def retrieve_go_id(term):

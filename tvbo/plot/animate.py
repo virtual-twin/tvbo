@@ -16,30 +16,30 @@ def _graph_from_experiment(result):
 
     Returns ``{'positions': ndarray(N,2), 'adjacency': ndarray(N,N)}`` or None.
     """
-    exp_result = getattr(result, '_source', None)
+    exp_result = getattr(result, "_source", None)
     if exp_result is None:
         return None
-    experiment = getattr(exp_result, 'source', None)
+    experiment = getattr(exp_result, "source", None)
     if experiment is None:
         return None
-    network = getattr(experiment, 'network', None)
+    network = getattr(experiment, "network", None)
     if network is None:
         return None
 
-    import networkx as nx
     G = network.graph
     from tvbo.plot.network import _resolve_positions
+
     pos_dict = _resolve_positions(G, "spring", network=network)
 
     node_ids = sorted(G.nodes)
     positions = np.array([pos_dict[n][:2] for n in node_ids])
 
-    W = getattr(network, 'weights_matrix', None)
+    W = getattr(network, "weights_matrix", None)
     if W is None:
         W = np.zeros((len(node_ids), len(node_ids)))
 
-    labels = [G.nodes[n].get('label', f'node_{n}') for n in node_ids]
-    return {'positions': positions, 'adjacency': np.asarray(W), 'labels': labels}
+    labels = [G.nodes[n].get("label", f"node_{n}") for n in node_ids]
+    return {"positions": positions, "adjacency": np.asarray(W), "labels": labels}
 
 
 def _extract_node_timeseries(data, max_points=200):
@@ -50,8 +50,8 @@ def _extract_node_timeseries(data, max_points=200):
     *max_points* samples the arrays are downsampled so that animations
     stay lightweight.
     """
-    dims = data.dims if hasattr(data, 'dims') else ()
-    time = data.coords['time'].values if 'time' in data.coords else np.arange(data.shape[0])
+    dims = data.dims if hasattr(data, "dims") else ()
+    time = data.coords["time"].values if "time" in data.coords else np.arange(data.shape[0])
 
     # Compute downsample indices once (shared across variables)
     n_t = len(time)
@@ -61,8 +61,8 @@ def _extract_node_timeseries(data, max_points=200):
     else:
         idx = None
 
-    if 'variable' in dims:
-        var_names = list(np.atleast_1d(data.coords['variable'].values))
+    if "variable" in dims:
+        var_names = list(np.atleast_1d(data.coords["variable"].values))
         slices = []
         for vn in var_names:
             arr = np.asarray(data.sel(variable=vn))
@@ -70,14 +70,14 @@ def _extract_node_timeseries(data, max_points=200):
             if arr.ndim == 1:
                 arr = arr[:, np.newaxis]
             elif arr.ndim >= 3:
-                arr = arr[..., 0]   # drop mode dim
+                arr = arr[..., 0]  # drop mode dim
             if idx is not None:
                 arr = arr[idx]
             slices.append((str(vn), arr, time))
         return slices
 
     # Variable dim already selected away
-    vn = str(data.coords['variable'].values) if 'variable' in data.coords else 'state'
+    vn = str(data.coords["variable"].values) if "variable" in data.coords else "state"
     arr = np.asarray(data)
     if arr.ndim == 1:
         arr = arr[:, np.newaxis]
@@ -88,8 +88,7 @@ def _extract_node_timeseries(data, max_points=200):
     return [(vn, arr, time)]
 
 
-def animate_network(result, state=None, interval=50, cmap='viridis',
-                    node_size=120, figsize=None, format=None):
+def animate_network(result, state=None, interval=50, cmap="viridis", node_size=120, figsize=None, format=None):
     """Animate time-series on a graph layout (nodes colored by state value).
 
     Supports the ``.sel(variable='V').animate()`` pattern: if the variable
@@ -121,17 +120,14 @@ def animate_network(result, state=None, interval=50, cmap='viridis',
     """
     from matplotlib.animation import FuncAnimation
 
-    graph = getattr(result, 'graph', None)
+    graph = getattr(result, "graph", None)
     if graph is None:
-        extras = getattr(result, '_extras', {})
-        graph = extras.get('graph')
+        extras = getattr(result, "_extras", {})
+        graph = extras.get("graph")
     if graph is None:
         graph = _graph_from_experiment(result)
     if graph is None:
-        raise ValueError(
-            "No network metadata available for graph animation. "
-            "Use result.animate(type='timeseries') instead."
-        )
+        raise ValueError("No network metadata available for graph animation. Use result.animate(type='timeseries') instead.")
 
     data = result.data
 
@@ -140,23 +136,26 @@ def animate_network(result, state=None, interval=50, cmap='viridis',
         if isinstance(state, str):
             data = data.sel(variable=state)
         else:
-            var_names = list(np.atleast_1d(data.coords['variable'].values))
+            var_names = list(np.atleast_1d(data.coords["variable"].values))
             data = data.sel(variable=var_names[state])
 
     slices = _extract_node_timeseries(data)
     n_vars = len(slices)
 
-    pos = graph['positions']
-    adj = graph['adjacency']
+    pos = graph["positions"]
+    adj = graph["adjacency"]
     x, y = pos[:, 0], pos[:, 1]
-    labels = graph.get('labels')
+    labels = graph.get("labels")
 
     if figsize is None:
         figsize = (10, 3.5 * n_vars)
 
     fig, axes = plt.subplots(
-        n_vars, 2, figsize=figsize, squeeze=False,
-        gridspec_kw={'width_ratios': [1, 1.2]},
+        n_vars,
+        2,
+        figsize=figsize,
+        squeeze=False,
+        gridspec_kw={"width_ratios": [1, 1.2]},
     )
     fig.dpi = 72  # keep PNGs small for to_jshtml() embed_limit
 
@@ -172,25 +171,39 @@ def animate_network(result, state=None, interval=50, cmap='viridis',
             for j in range(adj.shape[1]):
                 if adj[i, j] != 0:
                     ax_graph.plot(
-                        [x[i], x[j]], [y[i], y[j]],
-                        color='lightgray', linewidth=0.5, zorder=0,
+                        [x[i], x[j]],
+                        [y[i], y[j]],
+                        color="lightgray",
+                        linewidth=0.5,
+                        zorder=0,
                     )
 
         sc = ax_graph.scatter(
-            x, y, c=vals[0], cmap=cmap, s=node_size,
-            vmin=vmin, vmax=vmax, zorder=2,
-            edgecolors='k', linewidths=0.5,
+            x,
+            y,
+            c=vals[0],
+            cmap=cmap,
+            s=node_size,
+            vmin=vmin,
+            vmax=vmax,
+            zorder=2,
+            edgecolors="k",
+            linewidths=0.5,
         )
         if labels:
             for k, lbl in enumerate(labels):
                 ax_graph.annotate(
-                    lbl, (x[k], y[k]), fontsize=7, ha='center',
-                    va='bottom', xytext=(0, 5),
-                    textcoords='offset points',
+                    lbl,
+                    (x[k], y[k]),
+                    fontsize=7,
+                    ha="center",
+                    va="bottom",
+                    xytext=(0, 5),
+                    textcoords="offset points",
                 )
-        ax_graph.set_aspect('equal')
-        ax_graph.set_title(f'{vn}  t = {time[0]:.2f}')
-        ax_graph.axis('off')
+        ax_graph.set_aspect("equal")
+        ax_graph.set_title(f"{vn}  t = {time[0]:.2f}")
+        ax_graph.axis("off")
         fig.colorbar(sc, ax=ax_graph, shrink=0.7)
 
         # Time-series panel — raw per-node traces
@@ -199,17 +212,21 @@ def animate_network(result, state=None, interval=50, cmap='viridis',
         lines = []
         for i in range(n_nodes):
             lbl_i = labels[i] if labels else None
-            ln, = ax_ts.plot(
-                [], [], color=cm(node_norm(i)),
-                linewidth=0.8, alpha=0.7, label=lbl_i,
+            (ln,) = ax_ts.plot(
+                [],
+                [],
+                color=cm(node_norm(i)),
+                linewidth=0.8,
+                alpha=0.7,
+                label=lbl_i,
             )
             lines.append(ln)
         ax_ts.set_xlim(time[0], time[-1])
         margin = 0.05 * abs(vmax - vmin) if vmax != vmin else 0.1
         ax_ts.set_ylim(vmin - margin, vmax + margin)
-        ax_ts.set_xlabel('time')
+        ax_ts.set_xlabel("time")
         ax_ts.set_ylabel(vn)
-        ax_ts.legend(loc='upper right', fontsize='x-small')
+        ax_ts.legend(loc="upper right", fontsize="x-small")
 
         all_artists.append((sc, lines, vals, time, ax_graph, vn))
 
@@ -223,9 +240,9 @@ def animate_network(result, state=None, interval=50, cmap='viridis',
         arts = []
         for sc, lines, vals, time, ax_g, vn in all_artists:
             sc.set_array(vals[i])
-            ax_g.set_title(f'{vn}  t = {time[i]:.2f}')
+            ax_g.set_title(f"{vn}  t = {time[i]:.2f}")
             for j, ln in enumerate(lines):
-                ln.set_data(time[:i + 1], vals[:i + 1, j])
+                ln.set_data(time[: i + 1], vals[: i + 1, j])
             arts.extend([sc] + lines)
         return arts
 
@@ -234,8 +251,7 @@ def animate_network(result, state=None, interval=50, cmap='viridis',
     return ani
 
 
-def animate_timeseries(result, state=None, interval=50, cmap='viridis',
-                       figsize=None):
+def animate_timeseries(result, state=None, interval=50, cmap="viridis", figsize=None):
     """Animate evolving time-series traces (no graph layout needed).
 
     Supports ``.sel(variable='V').animate(type='timeseries')``.
@@ -264,7 +280,7 @@ def animate_timeseries(result, state=None, interval=50, cmap='viridis',
         if isinstance(state, str):
             data = data.sel(variable=state)
         else:
-            var_names = list(np.atleast_1d(data.coords['variable'].values))
+            var_names = list(np.atleast_1d(data.coords["variable"].values))
             data = data.sel(variable=var_names[state])
 
     slices = _extract_node_timeseries(data)
@@ -285,12 +301,12 @@ def animate_timeseries(result, state=None, interval=50, cmap='viridis',
         norm = plt.Normalize(vmin=0, vmax=max(n_traces - 1, 1))
         lines = []
         for i in range(n_traces):
-            ln, = ax.plot([], [], color=cm(norm(i)), linewidth=0.8, alpha=0.7)
+            (ln,) = ax.plot([], [], color=cm(norm(i)), linewidth=0.8, alpha=0.7)
             lines.append(ln)
         ax.set_xlim(time[0], time[-1])
         margin = 0.05 * abs(vmax - vmin) if vmax != vmin else 0.1
         ax.set_ylim(vmin - margin, vmax + margin)
-        ax.set_xlabel('time')
+        ax.set_xlabel("time")
         ax.set_ylabel(vn)
         all_artists.append((lines, vals, time, ax))
 
@@ -303,9 +319,9 @@ def animate_timeseries(result, state=None, interval=50, cmap='viridis',
     def update(i):
         arts = []
         for lines, vals, time, ax in all_artists:
-            ax.set_title(f't = {time[i]:.2f}')
+            ax.set_title(f"t = {time[i]:.2f}")
             for j, ln in enumerate(lines):
-                ln.set_data(time[:i + 1], vals[:i + 1, j])
+                ln.set_data(time[: i + 1], vals[: i + 1, j])
             arts.extend(lines)
         return arts
 
@@ -314,8 +330,7 @@ def animate_timeseries(result, state=None, interval=50, cmap='viridis',
     return ani
 
 
-def animate_phase(result, x_var=None, y_var=None, region=0, mode=0,
-                  interval=50, trail=200, figsize=(6, 5)):
+def animate_phase(result, x_var=None, y_var=None, region=0, mode=0, interval=50, trail=200, figsize=(6, 5)):
     """Animate phase-space trajectory with a trailing tail.
 
     Parameters
@@ -341,22 +356,22 @@ def animate_phase(result, x_var=None, y_var=None, region=0, mode=0,
     ax.set_xlim(x.min() - 0.05 * np.ptp(x), x.max() + 0.05 * np.ptp(x))
     ax.set_ylim(y.min() - 0.05 * np.ptp(y), y.max() + 0.05 * np.ptp(y))
 
-    units = getattr(result, '_units', {})
-    xu, yu = units.get(xlabel, ''), units.get(ylabel, '')
-    ax.set_xlabel(f'{xlabel} [{xu}]' if xu else xlabel)
-    ax.set_ylabel(f'{ylabel} [{yu}]' if yu else ylabel)
+    units = getattr(result, "_units", {})
+    xu, yu = units.get(xlabel, ""), units.get(ylabel, "")
+    ax.set_xlabel(f"{xlabel} [{xu}]" if xu else xlabel)
+    ax.set_ylabel(f"{ylabel} [{yu}]" if yu else ylabel)
 
-    line, = ax.plot([], [], 'b-', linewidth=0.8, alpha=0.7)
-    point, = ax.plot([], [], 'ro', markersize=6)
+    (line,) = ax.plot([], [], "b-", linewidth=0.8, alpha=0.7)
+    (point,) = ax.plot([], [], "ro", markersize=6)
 
     step = max(1, len(time) // 400)
     frames = list(range(0, len(time), step))
 
     def update(frame):
         lo = max(0, frame - trail)
-        line.set_data(x[lo:frame + 1], y[lo:frame + 1])
+        line.set_data(x[lo : frame + 1], y[lo : frame + 1])
         point.set_data([x[frame]], [y[frame]])
-        ax.set_title(f't = {time[frame]:.1f} ms')
+        ax.set_title(f"t = {time[frame]:.1f} ms")
         return line, point
 
     ani = FuncAnimation(fig, update, frames=frames, interval=interval, blit=False)
@@ -376,7 +391,7 @@ def animate_phase(result, x_var=None, y_var=None, region=0, mode=0,
 
 # Built-in composite types: string -> list of panel names
 _COMPOSITE_TYPES = {
-    'pendulum': ['pendulum_bob', 'timeseries'],
+    "pendulum": ["pendulum_bob", "timeseries"],
 }
 
 
@@ -389,7 +404,7 @@ def _panel_timeseries(result, ax, max_points=200):
     for vn, vals, time in slices:
         n_traces = vals.shape[1]
         for j in range(n_traces):
-            ln, = ax.plot([], [], linewidth=0.8, alpha=0.7, label=vn if n_traces == 1 else f'{vn}[{j}]')
+            (ln,) = ax.plot([], [], linewidth=0.8, alpha=0.7, label=vn if n_traces == 1 else f"{vn}[{j}]")
             all_lines.append(ln)
             all_data.append((vals[:, j], time))
 
@@ -400,13 +415,13 @@ def _panel_timeseries(result, ax, max_points=200):
         margin = 0.05 * abs(vmax - vmin) if vmax != vmin else 0.1
         ax.set_xlim(time[0], time[-1])
         ax.set_ylim(vmin - margin, vmax + margin)
-    ax.set_xlabel('time')
-    ax.legend(loc='upper right', fontsize='small')
+    ax.set_xlabel("time")
+    ax.legend(loc="upper right", fontsize="small")
     n_frames = len(slices[0][2]) if slices else 0
 
     def update(i):
         for ln, (vals, time) in zip(all_lines, all_data):
-            ln.set_data(time[:i + 1], vals[:i + 1])
+            ln.set_data(time[: i + 1], vals[: i + 1])
         return all_lines
 
     return n_frames, update
@@ -415,15 +430,15 @@ def _panel_timeseries(result, ax, max_points=200):
 def _panel_pendulum_bob(result, ax, max_points=200):
     """Panel: pendulum bob swinging from origin."""
     data = result.data
-    time_raw = data.coords['time'].values if 'time' in data.coords else np.arange(data.shape[0])
-    var_names = list(np.atleast_1d(data.coords['variable'].values)) if 'variable' in data.coords else []
+    time_raw = data.coords["time"].values if "time" in data.coords else np.arange(data.shape[0])
+    var_names = list(np.atleast_1d(data.coords["variable"].values)) if "variable" in data.coords else []
 
     # Try x/y derived variables first, fall back to sin/cos of first state var
-    if 'x' in var_names and 'y' in var_names:
-        x_raw = np.asarray(data.sel(variable='x')).ravel()
-        y_raw = np.asarray(data.sel(variable='y')).ravel()
-    elif 'theta' in var_names:
-        theta = np.asarray(data.sel(variable='theta')).ravel()
+    if "x" in var_names and "y" in var_names:
+        x_raw = np.asarray(data.sel(variable="x")).ravel()
+        y_raw = np.asarray(data.sel(variable="y")).ravel()
+    elif "theta" in var_names:
+        theta = np.asarray(data.sel(variable="theta")).ravel()
         x_raw = np.sin(theta)
         y_raw = -np.cos(theta)
     else:
@@ -442,11 +457,11 @@ def _panel_pendulum_bob(result, ax, max_points=200):
     lim = max(abs(x_ds).max(), abs(y_ds).max()) + pad
     ax.set_xlim(-lim, lim)
     ax.set_ylim(-lim, pad)
-    ax.set_aspect('equal')
-    ax.set_xlabel('x')
-    ax.set_ylabel('y')
+    ax.set_aspect("equal")
+    ax.set_xlabel("x")
+    ax.set_ylabel("y")
 
-    line, = ax.plot([], [], 'o-', lw=2, markersize=8)
+    (line,) = ax.plot([], [], "o-", lw=2, markersize=8)
 
     n_frames = len(x_ds)
 
@@ -460,6 +475,7 @@ def _panel_pendulum_bob(result, ax, max_points=200):
 def _panel_phase(result, ax, max_points=200, trail=None):
     """Panel: phase-space trajectory with trailing tail."""
     from tvbo.plot.phase import _extract_2d
+
     time, x, y, xlabel, ylabel = _extract_2d(result, None, None, 0, 0)
 
     n_t = len(time)
@@ -475,14 +491,14 @@ def _panel_phase(result, ax, max_points=200, trail=None):
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
 
-    line, = ax.plot([], [], 'b-', linewidth=0.8, alpha=0.7)
-    point, = ax.plot([], [], 'ro', markersize=6)
+    (line,) = ax.plot([], [], "b-", linewidth=0.8, alpha=0.7)
+    (point,) = ax.plot([], [], "ro", markersize=6)
 
     n_frames = len(time)
 
     def update(i):
         lo = max(0, i - trail)
-        line.set_data(x[lo:i + 1], y[lo:i + 1])
+        line.set_data(x[lo : i + 1], y[lo : i + 1])
         point.set_data([x[i]], [y[i]])
         return [line, point]
 
@@ -491,14 +507,13 @@ def _panel_phase(result, ax, max_points=200, trail=None):
 
 # Registry of panel functions
 _PANEL_REGISTRY = {
-    'timeseries': _panel_timeseries,
-    'pendulum_bob': _panel_pendulum_bob,
-    'phase': _panel_phase,
+    "timeseries": _panel_timeseries,
+    "pendulum_bob": _panel_pendulum_bob,
+    "phase": _panel_phase,
 }
 
 
-def animate_multi(result, panels, interval=50, figsize=None, max_points=200,
-                  save=None, fps=20):
+def animate_multi(result, panels, interval=50, figsize=None, max_points=200, save=None, fps=20):
     """Compose multiple animation panels into a single FuncAnimation.
 
     Parameters
@@ -526,7 +541,7 @@ def animate_multi(result, panels, interval=50, figsize=None, max_points=200,
     if figsize is None:
         figsize = (4 * n_panels, 3)
 
-    fig, axes = plt.subplots(1, n_panels, figsize=figsize, layout='compressed')
+    fig, axes = plt.subplots(1, n_panels, figsize=figsize, layout="compressed")
     if n_panels == 1:
         axes = [axes]
 
@@ -550,6 +565,6 @@ def animate_multi(result, panels, interval=50, figsize=None, max_points=200,
     plt.close(fig)
 
     if save:
-        ani.save(save, writer='pillow', fps=fps)
+        ani.save(save, writer="pillow", fps=fps)
 
     return ani
