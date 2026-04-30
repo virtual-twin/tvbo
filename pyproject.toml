@@ -131,11 +131,18 @@ allow-direct-references = true
 linkml = { git = "https://github.com/linkml/linkml.git", tag = "v1.11.0-rc1", subdirectory = "packages/linkml" }
 linkml-runtime = { git = "https://github.com/linkml/linkml.git", tag = "v1.11.0-rc1", subdirectory = "packages/linkml_runtime" }
 
+[tool.hatch.build.targets.wheel]
+packages = ["tvbo"]
+
+[tool.hatch.build.targets.sdist]
+include = ["tvbo/**", "README.md", "pyproject.toml", "LICENSE"]
+
 [tool.hatch.build]
-include = ["tvbo/**", "README.md"]
+include = ["tvbo/**"]
 exclude = [
     "tvbo/database/networks/*.h5",
     "tvbo/data/tvbo_data/atlas/**/*.nii.gz",
+    "tvbo/data/tvbo_data/atlas/**/*.yaml",
     "tvbo/data/go-basic.obo",
     "tvbo/data/ontology/_tvb-o.owl",
     "tvbo/data/NeuroMMSig_abeta_subgraph.dill",

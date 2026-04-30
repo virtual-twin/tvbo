@@ -14,12 +14,6 @@ This module provides utilities for generating reports related to model parameter
 
 .. moduleauthor:: Leon K. Martin
 
-Attributes:
------------
-from tvbo import ontology, config
-import operator
-import pandas as pd
-
 Functions:
 ----------
 """
