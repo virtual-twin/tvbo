@@ -75,7 +75,7 @@ AXIOMS_TTL = ontology/tvb-o-axioms.ttl
 MERGED_OUT = ontology/tvbo.owl
 WIDOCO_OUT = docs/ontology/spec
 ROBOT ?= robot
-WIDOCO_JAR ?= $(HOME)/work_data/software/widoco/widoco.jar
+WIDOCO_IMAGE ?= ghcr.io/dgarijo/widoco:v1.4.25
 
 gen-owl:
 	@echo "Generating OWL ontology from LinkML schema..."
@@ -124,17 +124,20 @@ gen-merged: gen-owl gen-abox
 	@echo "✓ Merged ontology written to $(MERGED_OUT)"
 
 gen-widoco: gen-merged
-	@echo "Generating Widoco HTML documentation (W3C-style spec + WebVOWL)..."
-	@if [ ! -f "$(WIDOCO_JAR)" ]; then \
-		echo "ERROR: WIDOCO_JAR not found at $(WIDOCO_JAR)"; \
-		echo "Download from https://github.com/dgarijo/Widoco/releases and set WIDOCO_JAR=/path/to/widoco-launcher.jar"; \
+	@echo "Generating Widoco HTML documentation (W3C-style spec + WebVOWL) via Docker..."
+	@if ! command -v docker >/dev/null 2>&1; then \
+		echo "ERROR: docker not found on PATH. Install Docker or run via CI."; \
 		exit 1; \
 	fi
 	@rm -rf $(WIDOCO_OUT)
-	@mkdir -p $(WIDOCO_OUT)
-	@java -jar $(WIDOCO_JAR) \
-		-ontFile $(MERGED_OUT) \
-		-outFolder $(WIDOCO_OUT) \
+	@mkdir -p $(WIDOCO_OUT) ontology/widoco-in
+	@cp $(MERGED_OUT) ontology/widoco-in/tvbo.owl
+	@docker run --rm \
+		-v "$(PWD)/ontology/widoco-in:/usr/local/widoco/in:ro" \
+		-v "$(PWD)/$(WIDOCO_OUT):/usr/local/widoco/out" \
+		$(WIDOCO_IMAGE) \
+		-ontFile in/tvbo.owl \
+		-outFolder out \
 		-rewriteAll \
 		-webVowl \
 		-licensius \
@@ -145,6 +148,7 @@ gen-widoco: gen-merged
 	@cp $(MERGED_OUT) $(WIDOCO_OUT)/tvbo.owl
 	@cp $(AXIOMS_TTL) $(WIDOCO_OUT)/tvb-o-axioms.ttl
 	@cp $(SHACL_OUT) $(WIDOCO_OUT)/tvb-o.shacl.ttl
+	@rm -rf ontology/widoco-in
 	@echo "✓ Widoco docs written to $(WIDOCO_OUT)/ (served at /ontology/spec/ by Quarto)"
 
 build:
