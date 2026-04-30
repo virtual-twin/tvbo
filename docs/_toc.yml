@@ -261,7 +261,7 @@ website:
                   - text: "Specification (Widoco)"
                     href: ontology/spec/index-en.html
                   - text: "WebVOWL visualisation"
-                    href: ontology/spec/webvowl/index.html#ontology.owl
+                    href: ontology/spec/webvowl/index.html#ontology
 
               - text: "---"
 
