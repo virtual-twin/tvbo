@@ -1529,9 +1529,6 @@ website:
                         href: api/datamodel/schema.qmd
                   - section: "Export"
                     href: api/export/index.qmd
-                    contents:
-                      - text: "Report"
-                        href: api/export/report.qmd
                   - section: "from tvbo.jax import xarray_pytrees  # noqa: F401 – side effect: registers pytrees"
                     href: api/jax/index.qmd
                     contents:
