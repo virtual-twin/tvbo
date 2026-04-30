@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-04-28T14:52:48
+# Generation date: 2026-04-30T13:13:40
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -82,10 +82,10 @@ RDFS = CurieNamespace('rdfs', 'http://www.w3.org/2000/01/rdf-schema#')
 SCHEMA = CurieNamespace('schema', 'http://schema.org/')
 SIO = CurieNamespace('sio', 'http://semanticscience.org/resource/')
 SKOS = CurieNamespace('skos', 'http://www.w3.org/2004/02/skos/core#')
-TVBO = CurieNamespace('tvbo', 'http://www.thevirtualbrain.org/tvb-o/')
-TVBO_DBS = CurieNamespace('tvbo_dbs', 'http://www.thevirtualbrain.org/tvb-o/dbs/')
-TVBO_STUDY = CurieNamespace('tvbo_study', 'http://www.thevirtualbrain.org/tvb-o/study/')
-TVBO_SW = CurieNamespace('tvbo_sw', 'http://www.thevirtualbrain.org/tvb-o/software/')
+TVBO = CurieNamespace('tvbo', 'https://w3id.org/tvbo/')
+TVBO_DBS = CurieNamespace('tvbo_dbs', 'https://w3id.org/tvbo/dbs/')
+TVBO_STUDY = CurieNamespace('tvbo_study', 'https://w3id.org/tvbo/study/')
+TVBO_SW = CurieNamespace('tvbo_sw', 'https://w3id.org/tvbo/software/')
 WD = CurieNamespace('wd', 'http://www.wikidata.org/entity/')
 DEFAULT_ = TVBO
 

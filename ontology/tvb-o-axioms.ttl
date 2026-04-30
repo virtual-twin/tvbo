@@ -1,4 +1,4 @@
-@prefix tvbo:    <http://www.thevirtualbrain.org/tvb-o/> .
+@prefix tvbo:    <https://w3id.org/tvbo/> .
 @prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
 @prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix owl:     <http://www.w3.org/2002/07/owl#> .
@@ -407,3 +407,364 @@ tvbo:ReducedWongWang
     tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
     tvbo:hasTimescaleSeparation        false ;
     tvbo:hasModelFeature               tvbo:ExcitatoryInhibitorySubpopulations .
+
+#
+# ─────────────────────────────────────────────────────────────────
+# Per-model briefs (full coverage of canonical mean-field models).
+# ─────────────────────────────────────────────────────────────────
+#
+# Each brief asserts only properties that are supported by the
+# original publication and the YAML definition. Open-world semantics
+# apply: absence of an axiom does not imply its negation.
+#
+
+# Reduced Wong-Wang variants — share E/I architecture and cortical scope.
+tvbo:ReducedWongWangExcInh
+    skos:prefLabel "Reduced Wong-Wang (E/I)"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
+    tvbo:modelsCellType                CL:0000598, CL:0000099 ;
+    tvbo:modelsNeurotransmitterSystem  GO:0035249, GO:0007214 ;
+    tvbo:phaseSpaceDimension           2 ;
+    tvbo:exhibitsRegime                tvbo:Bistable, tvbo:Multistable ;
+    tvbo:hasAttractor                  tvbo:FixedPoint ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasTimescaleSeparation        false ;
+    tvbo:hasModelFeature               tvbo:ExcitatoryInhibitorySubpopulations .
+
+tvbo:ReducedWongWangFunc
+    rdfs:label     "Reduced Wong-Wang (functional)"@en ;
+    skos:prefLabel "Reduced Wong-Wang (functional)"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
+    tvbo:phaseSpaceDimension           1 ;
+    tvbo:exhibitsRegime                tvbo:Bistable ;
+    tvbo:hasAttractor                  tvbo:FixedPoint ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic .
+
+tvbo:ReducedWongWangTvboptim
+    skos:prefLabel "Reduced Wong-Wang (tvboptim)"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
+    tvbo:phaseSpaceDimension           1 ;
+    tvbo:exhibitsRegime                tvbo:Bistable ;
+    tvbo:hasAttractor                  tvbo:FixedPoint ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic .
+
+# Jansen-Rit family — 6-D cortical column with sigmoid activation.
+tvbo:Jansen1995
+    rdfs:label     "Jansen 1995"@en ;
+    skos:prefLabel "Jansen 1995"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
+    tvbo:modelsCellType                CL:0000598, CL:0000099 ;
+    tvbo:modelsNeurotransmitterSystem  GO:0035249, GO:0007214 ;
+    tvbo:phaseSpaceDimension           6 ;
+    tvbo:exhibitsRegime                tvbo:Oscillatory, tvbo:Quiescent ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:Hopf ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasTimescaleSeparation        false ;
+    tvbo:hasModelFeature               tvbo:SigmoidActivation .
+
+tvbo:JansenRit1995
+    skos:prefLabel "Jansen-Rit 1995"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
+    tvbo:phaseSpaceDimension           6 ;
+    tvbo:exhibitsRegime                tvbo:Oscillatory, tvbo:Quiescent ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:Hopf ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasModelFeature               tvbo:SigmoidActivation .
+
+tvbo:ZetterbergJansen
+    skos:prefLabel "Zetterberg-Jansen"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
+    tvbo:phaseSpaceDimension           6 ;
+    tvbo:exhibitsRegime                tvbo:Oscillatory ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:Hopf ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasModelFeature               tvbo:SigmoidActivation .
+
+# Wilson-Cowan — 2-D E/I cortical mean field.
+tvbo:WilsonCowan
+    skos:prefLabel "Wilson-Cowan"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
+    tvbo:modelsCellType                CL:0000598, CL:0000099 ;
+    tvbo:modelsNeurotransmitterSystem  GO:0035249, GO:0007214 ;
+    tvbo:phaseSpaceDimension           2 ;
+    tvbo:exhibitsRegime                tvbo:Oscillatory, tvbo:Bistable, tvbo:Quiescent ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:Hopf ] ,
+                                       [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:SaddleNode ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasTimescaleSeparation        false ;
+    tvbo:hasModelFeature               tvbo:SigmoidActivation,
+                                       tvbo:ExcitatoryInhibitorySubpopulations .
+
+# Generic 2-D oscillator (FitzHugh-Nagumo-like normal form).
+tvbo:Generic2dOscillator
+    skos:prefLabel "Generic 2-D oscillator"@en ;
+    tvbo:phaseSpaceDimension           2 ;
+    tvbo:exhibitsRegime                tvbo:Excitable, tvbo:Oscillatory, tvbo:Bistable ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:Hopf ] ,
+                                       [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:SaddleNode ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasTimescaleSeparation        true .
+
+# Generic linear — used as null/baseline reference.
+tvbo:GenericLinear
+    skos:prefLabel "Generic linear"@en ;
+    tvbo:phaseSpaceDimension           1 ;
+    tvbo:exhibitsRegime                tvbo:Quiescent ;
+    tvbo:hasAttractor                  tvbo:FixedPoint ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasTimescaleSeparation        false .
+
+# Supercritical Hopf normal form.
+tvbo:SupHopf
+    skos:prefLabel "Supercritical Hopf"@en ;
+    tvbo:phaseSpaceDimension           2 ;
+    tvbo:exhibitsRegime                tvbo:Quiescent, tvbo:Oscillatory ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:SupercriticalHopf ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic .
+
+# Hopfield-style continuous attractor network.
+tvbo:Hopfield
+    skos:prefLabel "Hopfield"@en ;
+    tvbo:phaseSpaceDimension           2 ;
+    tvbo:exhibitsRegime                tvbo:Multistable ;
+    tvbo:hasAttractor                  tvbo:FixedPoint ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasModelFeature               tvbo:SigmoidActivation .
+
+# Kuramoto phase oscillator (per-node, 1 SV).
+tvbo:Kuramoto
+    skos:prefLabel "Kuramoto"@en ;
+    tvbo:phaseSpaceDimension           1 ;
+    tvbo:exhibitsRegime                tvbo:Oscillatory ;
+    tvbo:hasAttractor                  tvbo:LimitCycle, tvbo:Torus ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasTimescaleSeparation        false .
+
+tvbo:Kuramoto2
+    rdfs:label     "Kuramoto (extended)"@en ;
+    skos:prefLabel "Kuramoto (extended)"@en ;
+    tvbo:phaseSpaceDimension           2 ;
+    tvbo:exhibitsRegime                tvbo:Oscillatory ;
+    tvbo:hasAttractor                  tvbo:LimitCycle, tvbo:Torus ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic .
+
+# Larter-Breakspear — 3-D conductance-based cortical mean field.
+tvbo:LarterBreakspear
+    skos:prefLabel "Larter-Breakspear"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
+    tvbo:modelsCellType                CL:0000598, CL:0000099 ;
+    tvbo:modelsNeurotransmitterSystem  GO:0035249, GO:0007214 ;
+    tvbo:phaseSpaceDimension           3 ;
+    tvbo:exhibitsRegime                tvbo:Oscillatory, tvbo:Bistable, tvbo:Chaotic ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:Hopf ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle, tvbo:StrangeAttractor ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasTimescaleSeparation        true ;
+    tvbo:hasModelFeature               tvbo:ExcitatoryInhibitorySubpopulations .
+
+# Montbrio-Pazo-Roxin — exact mean field of QIF neurons.
+tvbo:MontbrioPazoRoxin
+    skos:prefLabel "Montbrio-Pazo-Roxin"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
+    tvbo:phaseSpaceDimension           2 ;
+    tvbo:exhibitsRegime                tvbo:Oscillatory, tvbo:Bistable, tvbo:Quiescent ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:Hopf ] ,
+                                       [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:SaddleNode ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic .
+
+# Coombes-Byrne — next-generation neural mass (theta-neuron mean field).
+tvbo:CoombesByrne
+    skos:prefLabel "Coombes-Byrne"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
+    tvbo:phaseSpaceDimension           4 ;
+    tvbo:exhibitsRegime                tvbo:Oscillatory, tvbo:Quiescent ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:Hopf ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic .
+
+tvbo:CoombesByrne2D
+    skos:prefLabel "Coombes-Byrne 2D"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
+    tvbo:phaseSpaceDimension           2 ;
+    tvbo:exhibitsRegime                tvbo:Oscillatory, tvbo:Quiescent ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:Hopf ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic .
+
+# Dumont-Gutkin — theta-neuron mean field with synaptic dynamics.
+tvbo:DumontGutkin
+    skos:prefLabel "Dumont-Gutkin"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
+    tvbo:phaseSpaceDimension           8 ;
+    tvbo:exhibitsRegime                tvbo:Oscillatory, tvbo:Bistable ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:Hopf ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasModelFeature               tvbo:ExcitatoryInhibitorySubpopulations .
+
+# Stefanescu-Jirsa reduced HH-like models.
+tvbo:StefanescuJirsa2D
+    skos:prefLabel "Stefanescu-Jirsa 2D"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
+    tvbo:phaseSpaceDimension           4 ;
+    tvbo:exhibitsRegime                tvbo:Oscillatory, tvbo:Bistable, tvbo:Bursting ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasTimescaleSeparation        true .
+
+tvbo:StefanescuJirsa3D
+    skos:prefLabel "Stefanescu-Jirsa 3D"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
+    tvbo:phaseSpaceDimension           6 ;
+    tvbo:exhibitsRegime                tvbo:Oscillatory, tvbo:Bursting, tvbo:Chaotic ;
+    tvbo:hasAttractor                  tvbo:LimitCycle, tvbo:StrangeAttractor ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasTimescaleSeparation        true .
+
+# Cakan-Obermayer ALN (adaptive linear-nonlinear) cortical mean field.
+tvbo:CakanObermayer
+    skos:prefLabel "Cakan-Obermayer ALN"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
+    tvbo:modelsCellType                CL:0000598, CL:0000099 ;
+    tvbo:modelsNeurotransmitterSystem  GO:0035249, GO:0007214 ;
+    tvbo:phaseSpaceDimension           6 ;
+    tvbo:exhibitsRegime                tvbo:Oscillatory, tvbo:Bistable, tvbo:Quiescent ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:Hopf ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasTimescaleSeparation        true ;
+    tvbo:hasModelFeature               tvbo:ExcitatoryInhibitorySubpopulations .
+
+# Zerlaut adaptive exponential mean field, first-order.
+tvbo:ZerlautAdaptationFirstOrder
+    skos:prefLabel "Zerlaut (first-order adaptation)"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
+    tvbo:modelsCellType                CL:0000598, CL:0000099 ;
+    tvbo:modelsNeurotransmitterSystem  GO:0035249, GO:0007214 ;
+    tvbo:phaseSpaceDimension           5 ;
+    tvbo:exhibitsRegime                tvbo:Oscillatory, tvbo:Quiescent ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:Hopf ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasTimescaleSeparation        true ;
+    tvbo:hasModelFeature               tvbo:ExcitatoryInhibitorySubpopulations .
+
+# Tsodyks-Markram short-term plasticity.
+tvbo:TsodyksMarkram
+    skos:prefLabel "Tsodyks-Markram"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
+    tvbo:modelsNeurotransmitterSystem  GO:0035249 ;
+    tvbo:phaseSpaceDimension           3 ;
+    tvbo:exhibitsRegime                tvbo:Oscillatory, tvbo:Quiescent ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic .
+
+# Epileptor variants — all model epileptic seizure dynamics.
+tvbo:Epileptor2D
+    skos:prefLabel "Epileptor 2D"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0002728 ;
+    dcterms:subject                    MESH:D004827 ;
+    tvbo:phaseSpaceDimension           2 ;
+    tvbo:exhibitsRegime                tvbo:Bistable, tvbo:Oscillatory ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:SaddleNode ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic .
+
+tvbo:Epileptor3DStefanescuMcDonald
+    skos:prefLabel "Epileptor 3D (Stefanescu-McDonald)"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0002728 ;
+    dcterms:subject                    MESH:D004827 ;
+    tvbo:phaseSpaceDimension           3 ;
+    tvbo:exhibitsRegime                tvbo:Bursting, tvbo:Bistable ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasTimescaleSeparation        true ;
+    tvbo:hasModelFeature               tvbo:FastSlowDecomposition .
+
+tvbo:Epileptor5D
+    skos:prefLabel "Epileptor 5D"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0002728 ;
+    dcterms:subject                    MESH:D004827 ;
+    tvbo:phaseSpaceDimension           5 ;
+    tvbo:exhibitsRegime                tvbo:Bursting, tvbo:Bistable, tvbo:Oscillatory ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:SaddleNode ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasTimescaleSeparation        true ;
+    tvbo:hasModelFeature               tvbo:FastSlowDecomposition .
+
+tvbo:EpileptorRestingState
+    skos:prefLabel "Epileptor (resting-state)"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956, UBERON:0002728 ;
+    dcterms:subject                    MESH:D004827 ;
+    tvbo:phaseSpaceDimension           8 ;
+    tvbo:exhibitsRegime                tvbo:Bursting, tvbo:Bistable, tvbo:Oscillatory ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:SaddleNode ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasTimescaleSeparation        true ;
+    tvbo:hasModelFeature               tvbo:FastSlowDecomposition .
+
+# Gast-Schmidt-Knosche (synaptic depression / facilitation) variants.
+tvbo:GastSchmidtKnosche_SD
+    skos:prefLabel "Gast-Schmidt-Knosche (synaptic depression)"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
+    tvbo:modelsNeurotransmitterSystem  GO:0035249 ;
+    tvbo:phaseSpaceDimension           4 ;
+    tvbo:exhibitsRegime                tvbo:Oscillatory, tvbo:Quiescent ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:Hopf ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic .
+
+tvbo:GastSchmidtKnosche_SF
+    skos:prefLabel "Gast-Schmidt-Knosche (synaptic facilitation)"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
+    tvbo:modelsNeurotransmitterSystem  GO:0035249 ;
+    tvbo:phaseSpaceDimension           4 ;
+    tvbo:exhibitsRegime                tvbo:Oscillatory, tvbo:Quiescent ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:Hopf ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic .
+
+# K-ion exchange model (extracellular potassium dynamics, seizure-like).
+tvbo:KIonEx
+    skos:prefLabel "K-ion exchange"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956, UBERON:0002728 ;
+    dcterms:subject                    MESH:D004827 ;
+    tvbo:phaseSpaceDimension           5 ;
+    tvbo:exhibitsRegime                tvbo:Bursting, tvbo:Bistable, tvbo:Oscillatory ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:SaddleNode ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasTimescaleSeparation        true ;
+    tvbo:hasModelFeature               tvbo:FastSlowDecomposition .
+

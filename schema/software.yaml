@@ -10,7 +10,7 @@ description: >-
 
 prefixes:
     linkml: https://w3id.org/linkml/
-    tvbo_sw: http://www.thevirtualbrain.org/tvb-o/software/
+    tvbo_sw: https://w3id.org/tvbo/software/
     schema: http://schema.org/
     doap: http://usefulinc.com/ns/doap#
     sio: http://semanticscience.org/resource/

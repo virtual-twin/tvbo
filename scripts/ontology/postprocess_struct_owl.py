@@ -31,7 +31,7 @@ DEFAULT_SCHEMA = REPO / "schema" / "tvbo_datamodel.yaml"
 DEFAULT_OWL = REPO / "ontology" / "tvb-o-struct.owl"
 
 CANONICAL_IRI = URIRef("https://w3id.org/tvbo/struct")
-TVBO = Namespace("http://www.thevirtualbrain.org/tvb-o/")
+TVBO = Namespace("https://w3id.org/tvbo/")
 PAV = Namespace("http://purl.org/pav/")
 
 
