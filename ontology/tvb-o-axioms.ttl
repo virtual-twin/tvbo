@@ -1,0 +1,409 @@
+@prefix tvbo:    <http://www.thevirtualbrain.org/tvb-o/> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix obo:     <http://purl.obolibrary.org/obo/> .
+@prefix dc:      <http://purl.org/dc/elements/1.1/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix UBERON:  <http://purl.obolibrary.org/obo/UBERON_> .
+@prefix CL:      <http://purl.obolibrary.org/obo/CL_> .
+@prefix GO:      <http://purl.obolibrary.org/obo/GO_> .
+@prefix MESH:    <http://purl.bioontology.org/ontology/MESH/> .
+
+#
+# ─────────────────────────────────────────────────────────────────
+# Ontology header.
+# ─────────────────────────────────────────────────────────────────
+#
+
+<https://w3id.org/tvbo/axioms> a owl:Ontology ;
+    dcterms:title       "TVB-O hand-authored axioms layer"@en ;
+    dcterms:description "Axioms layered on top of `tvb-o-struct.owl` (LinkML-generated). Captures statements LinkML cannot express: SKOS anchoring of abstract concepts, backend/task/capability vocabulary, biological-substrate links, and dynamical-systems annotations."@en ;
+    dcterms:license     <https://creativecommons.org/licenses/by/4.0/> ;
+    dcterms:creator     "TVB-O contributors" ;
+    rdfs:seeAlso        <https://w3id.org/tvbo/struct> .
+
+# Property declarations needed for OWL DL cleanliness.
+dcterms:subject     a owl:AnnotationProperty .
+dcterms:license     a owl:AnnotationProperty .
+dcterms:creator     a owl:AnnotationProperty .
+dcterms:title       a owl:AnnotationProperty .
+dcterms:description a owl:AnnotationProperty .
+
+#
+# ─────────────────────────────────────────────────────────────────
+# §4.0 SKOS anchoring of abstract concepts.
+# ─────────────────────────────────────────────────────────────────
+#
+# Seven abstract concepts that have no concrete YAML parameter to
+# attach a `grounding:` slot to. Anchored to upstream GO biological-
+# process terms via `skos:broadMatch` only when the GO term genuinely
+# subsumes the concept; otherwise no mapping is asserted.
+#
+
+tvbo:CouplingInput a skos:Concept ;
+    skos:prefLabel "CouplingInput"@en ;
+    rdfs:comment "Aggregate input arriving at a node from connected nodes; modelled as the postsynaptic potential induced by long-range projections."@en ;
+    rdfs:seeAlso tvbo:PostsynapticPotential .
+
+tvbo:Excitation a skos:Concept ;
+    rdfs:label "Excitation"@en ;
+    skos:prefLabel "Excitation"@en ;
+    rdfs:comment "Generic depolarising synaptic effect; abstract parent of model-specific excitatory currents and conductances."@en ;
+    skos:broadMatch obo:GO_0060079 .   # excitatory postsynaptic potential
+
+tvbo:Inhibition a skos:Concept ;
+    rdfs:label "Inhibition"@en ;
+    skos:prefLabel "Inhibition"@en ;
+    rdfs:comment "Generic hyperpolarising synaptic effect; abstract parent of model-specific inhibitory currents and conductances."@en ;
+    skos:broadMatch obo:GO_0060080 .   # inhibitory postsynaptic potential
+
+tvbo:EIBalance a skos:Concept ;
+    rdfs:label "E/I balance"@en ;
+    skos:prefLabel "E/I balance"@en ;
+    rdfs:comment "Dynamic equilibrium between excitatory and inhibitory drive."@en ;
+    skos:broadMatch obo:GO_0099177 .   # regulation of trans-synaptic signaling
+
+tvbo:FeedbackScaling a skos:Concept ;
+    rdfs:label "FeedbackScaling"@en ;
+    skos:prefLabel "FeedbackScaling"@en ;
+    rdfs:comment "Multiplicative gain applied to recurrent feedback. Control-theoretic concept with no faithful upstream GO mapping."@en .
+
+tvbo:InternalCoupling a skos:Concept ;
+    rdfs:label "InternalCoupling"@en ;
+    skos:prefLabel "InternalCoupling"@en ;
+    rdfs:comment "Within-population synaptic coupling, distinct from long-range inter-node coupling."@en ;
+    skos:broadMatch obo:GO_0007268 .   # chemical synaptic transmission
+
+tvbo:TimeScaling a skos:Concept ;
+    rdfs:label "TimeScaling"@en ;
+    skos:prefLabel "TimeScaling"@en ;
+    rdfs:comment "Time-constant or rate parameter that sets the temporal scale of a dynamical variable. No faithful upstream GO mapping (GO_0050789 was rejected as overly generic)."@en .
+
+#
+# ─────────────────────────────────────────────────────────────────
+# §4.1 Technical axioms — backends, simulation tasks, capabilities.
+# ─────────────────────────────────────────────────────────────────
+#
+# Class hierarchy:
+#   Backend            (a backend / simulation engine)
+#   SimulationTask     (a computational job a user requests)
+#   BackendCapability  (a feature a backend either provides or lacks)
+#
+# Object properties:
+#   tvbo:supportsTask         Backend  -> SimulationTask
+#   tvbo:providesCapability   Backend  -> BackendCapability
+#   tvbo:executableOn         Dynamics | SimulationExperiment -> Backend
+#
+
+tvbo:Backend a owl:Class ;
+    rdfs:label "Backend"@en ;
+    rdfs:comment "A code-generation or simulation backend (JAX, TVB, PyRates, tvboptim, NetworkDynamics.jl, BifurcationKit.jl)."@en .
+
+tvbo:SimulationTask a owl:Class ;
+    rdfs:label "Simulation task"@en ;
+    rdfs:comment "A computational task: forward integration in some formalism, parameter exploration, gradient-based optimisation, numerical continuation, or bifurcation analysis."@en .
+
+tvbo:BackendCapability a owl:Class ;
+    rdfs:label "Backend capability"@en ;
+    rdfs:comment "A feature a backend either provides or lacks (autodiff, JIT, GPU, vectorised RNG, delay buffer, stochastic solver, stiff solver, continuation solver, code generation, etc.). Used to gate task support."@en .
+
+tvbo:supportsTask a owl:ObjectProperty ;
+    rdfs:domain tvbo:Backend ;
+    rdfs:range  tvbo:SimulationTask ;
+    rdfs:label  "supports task"@en .
+
+tvbo:providesCapability a owl:ObjectProperty ;
+    rdfs:domain tvbo:Backend ;
+    rdfs:range  tvbo:BackendCapability ;
+    rdfs:label  "provides capability"@en .
+
+tvbo:executableOn a owl:ObjectProperty ;
+    rdfs:range tvbo:Backend ;
+    rdfs:label "executable on"@en .
+
+# Simulation tasks (instances) — organised by mathematical formalism.
+
+tvbo:ODEIntegration         a tvbo:SimulationTask ; rdfs:label "ODE integration"@en ;
+    rdfs:comment "Forward integration of a deterministic ordinary differential equation."@en .
+tvbo:DDEIntegration         a tvbo:SimulationTask ; rdfs:label "DDE integration"@en ;
+    rdfs:comment "Forward integration of a delay differential equation (e.g. long-range axonal delays)."@en .
+tvbo:SDEIntegration         a tvbo:SimulationTask ; rdfs:label "SDE integration"@en ;
+    rdfs:comment "Forward integration of a stochastic differential equation."@en .
+tvbo:SDDEIntegration        a tvbo:SimulationTask ; rdfs:label "SDDE integration"@en ;
+    rdfs:comment "Forward integration of a stochastic delay differential equation."@en .
+tvbo:RDEIntegration         a tvbo:SimulationTask ; rdfs:label "RDE integration"@en ;
+    rdfs:comment "Forward integration of a random differential equation: parameters drawn from a distribution (Bayesian / ensemble simulation)."@en .
+tvbo:EventDrivenIntegration a tvbo:SimulationTask ; rdfs:label "Event-driven integration"@en ;
+    rdfs:comment "Spike-based or hybrid event-driven simulation of a neural network."@en .
+tvbo:NumericalContinuation  a tvbo:SimulationTask ; rdfs:label "Numerical continuation"@en ;
+    rdfs:comment "Tracking of equilibria, periodic orbits, or invariant manifolds as a parameter is varied."@en .
+tvbo:BifurcationAnalysis    a tvbo:SimulationTask ; rdfs:label "Bifurcation analysis"@en ;
+    rdfs:comment "Detection and classification of bifurcations along a continuation branch."@en .
+tvbo:ParameterExploration   a tvbo:SimulationTask ; rdfs:label "Parameter exploration"@en .
+tvbo:GradientBasedOptimization a tvbo:SimulationTask ; rdfs:label "Gradient-based optimisation"@en .
+
+# Backend capabilities (instances).
+
+tvbo:Autodiff             a tvbo:BackendCapability ; rdfs:label "Automatic differentiation"@en .
+tvbo:JITCompilation       a tvbo:BackendCapability ; rdfs:label "Just-in-time compilation"@en .
+tvbo:GPUSupport           a tvbo:BackendCapability ; rdfs:label "GPU execution"@en .
+tvbo:VectorizedRNG        a tvbo:BackendCapability ; rdfs:label "Vectorised RNG"@en .
+tvbo:NumPyExecution       a tvbo:BackendCapability ; rdfs:label "NumPy execution"@en .
+tvbo:BuiltinModelLibrary  a tvbo:BackendCapability ; rdfs:label "Built-in model library"@en .
+tvbo:CodeGeneration       a tvbo:BackendCapability ; rdfs:label "Symbolic code generation"@en ;
+    rdfs:comment "Backend emits standalone simulator source code from a model specification."@en .
+tvbo:NetworkXTopology     a tvbo:BackendCapability ; rdfs:label "NetworkX topology API"@en .
+tvbo:JuliaJIT             a tvbo:BackendCapability ; rdfs:label "Julia JIT"@en .
+tvbo:DiffEqIntegrators    a tvbo:BackendCapability ; rdfs:label "DifferentialEquations.jl integrators"@en .
+tvbo:ContinuationSolver   a tvbo:BackendCapability ; rdfs:label "Continuation solver"@en .
+tvbo:DelayHistoryBuffer   a tvbo:BackendCapability ; rdfs:label "Delay history buffer"@en ;
+    rdfs:comment "Storage and interpolation of past states required for DDE/SDDE integration."@en .
+tvbo:StochasticSolver     a tvbo:BackendCapability ; rdfs:label "Stochastic solver"@en .
+tvbo:StiffSolver          a tvbo:BackendCapability ; rdfs:label "Stiff solver"@en .
+
+# Backends (instances) and their task / capability declarations.
+
+tvbo:JAX a tvbo:Backend ;
+    rdfs:label "JAX"@en ;
+    tvbo:supportsTask       tvbo:ODEIntegration, tvbo:SDEIntegration,
+                            tvbo:ParameterExploration, tvbo:GradientBasedOptimization ;
+    tvbo:providesCapability tvbo:Autodiff, tvbo:JITCompilation, tvbo:GPUSupport,
+                            tvbo:VectorizedRNG, tvbo:CodeGeneration .
+
+tvbo:TVB a tvbo:Backend ;
+    rdfs:label "TVB"@en ;
+    tvbo:supportsTask       tvbo:ODEIntegration, tvbo:DDEIntegration,
+                            tvbo:SDEIntegration, tvbo:SDDEIntegration,
+                            tvbo:ParameterExploration ;
+    tvbo:providesCapability tvbo:NumPyExecution, tvbo:BuiltinModelLibrary,
+                            tvbo:DelayHistoryBuffer, tvbo:StochasticSolver .
+
+tvbo:PyRates a tvbo:Backend ;
+    rdfs:label "PyRates"@en ;
+    tvbo:supportsTask       tvbo:ODEIntegration, tvbo:DDEIntegration ;
+    tvbo:providesCapability tvbo:CodeGeneration, tvbo:NetworkXTopology,
+                            tvbo:DelayHistoryBuffer .
+
+tvbo:tvboptim a tvbo:Backend ;
+    rdfs:label "tvboptim"@en ;
+    tvbo:supportsTask       tvbo:ODEIntegration, tvbo:SDEIntegration,
+                            tvbo:GradientBasedOptimization ;
+    tvbo:providesCapability tvbo:Autodiff, tvbo:JITCompilation, tvbo:StochasticSolver,
+                            tvbo:CodeGeneration .
+
+tvbo:NetworkDynamics a tvbo:Backend ;
+    rdfs:label "NetworkDynamics.jl"@en ;
+    tvbo:supportsTask       tvbo:ODEIntegration, tvbo:DDEIntegration,
+                            tvbo:SDEIntegration, tvbo:SDDEIntegration,
+                            tvbo:ParameterExploration ;
+    tvbo:providesCapability tvbo:JuliaJIT, tvbo:DiffEqIntegrators,
+                            tvbo:DelayHistoryBuffer, tvbo:StochasticSolver, tvbo:StiffSolver .
+
+tvbo:BifurcationKit a tvbo:Backend ;
+    rdfs:label "BifurcationKit.jl"@en ;
+    tvbo:supportsTask       tvbo:NumericalContinuation, tvbo:BifurcationAnalysis ;
+    tvbo:providesCapability tvbo:ContinuationSolver, tvbo:JuliaJIT .
+
+#
+# ─────────────────────────────────────────────────────────────────
+# §4.2 Biological substrate axioms.
+# ─────────────────────────────────────────────────────────────────
+#
+
+tvbo:modelsAnatomicalRegion a owl:ObjectProperty ;
+    rdfs:label "models anatomical region"@en ;
+    rdfs:comment "Anatomical region(s) the Dynamics model is intended to represent. Range: UBERON terms."@en .
+
+tvbo:modelsCellType a owl:ObjectProperty ;
+    rdfs:label "models cell type"@en ;
+    rdfs:comment "Cell type(s) whose collective dynamics the model represents. Range: CL terms."@en .
+
+tvbo:modelsNeurotransmitterSystem a owl:ObjectProperty ;
+    rdfs:label "models neurotransmitter system"@en ;
+    rdfs:comment "Neurotransmitter system(s) whose synaptic dynamics the model represents. Range: GO biological-process terms."@en .
+
+#
+# ─────────────────────────────────────────────────────────────────
+# §4.3 Dynamical-systems axioms.
+# ─────────────────────────────────────────────────────────────────
+#
+# All `DynamicalProperty` siblings and their named members (Excitable,
+# Hopf, FixedPoint, ...) are owl:Class entities so subtyping works
+# (e.g. SubcriticalHopf ⊑ Hopf) without OWL Full punning. Per-model
+# bifurcation events are reified through `tvbo:BifurcationEvent`.
+#
+
+tvbo:DynamicalProperty a owl:Class ;
+    rdfs:label "Dynamical property"@en ;
+    rdfs:comment "Top-level grouping for qualitative phase-space properties."@en .
+
+tvbo:DynamicalRegime a owl:Class ; rdfs:subClassOf tvbo:DynamicalProperty ;
+    rdfs:label "Dynamical regime"@en .
+tvbo:Bifurcation     a owl:Class ; rdfs:subClassOf tvbo:DynamicalProperty ;
+    rdfs:label "Bifurcation"@en .
+tvbo:Attractor       a owl:Class ; rdfs:subClassOf tvbo:DynamicalProperty ;
+    rdfs:label "Attractor"@en .
+tvbo:Stochasticity   a owl:Class ; rdfs:subClassOf tvbo:DynamicalProperty ;
+    rdfs:label "Stochasticity character"@en ;
+    rdfs:comment "Stochasticity character of the model definition itself, independent of any optional integrator-level noise injection."@en .
+
+# Regime classes.
+tvbo:Excitable    a owl:Class ; rdfs:subClassOf tvbo:DynamicalRegime ; rdfs:label "Excitable"@en .
+tvbo:Oscillatory  a owl:Class ; rdfs:subClassOf tvbo:DynamicalRegime ; rdfs:label "Oscillatory"@en .
+tvbo:Bistable     a owl:Class ; rdfs:subClassOf tvbo:DynamicalRegime ; rdfs:label "Bistable"@en .
+tvbo:Multistable  a owl:Class ; rdfs:subClassOf tvbo:DynamicalRegime ; rdfs:label "Multistable"@en .
+tvbo:Chaotic      a owl:Class ; rdfs:subClassOf tvbo:DynamicalRegime ; rdfs:label "Chaotic"@en .
+tvbo:Quiescent    a owl:Class ; rdfs:subClassOf tvbo:DynamicalRegime ; rdfs:label "Quiescent"@en .
+tvbo:Bursting     a owl:Class ; rdfs:subClassOf tvbo:DynamicalRegime ; rdfs:label "Bursting"@en .
+
+# Bifurcation classes.
+tvbo:SaddleNode             a owl:Class ; rdfs:subClassOf tvbo:Bifurcation ; rdfs:label "Saddle-node"@en .
+tvbo:Hopf                   a owl:Class ; rdfs:subClassOf tvbo:Bifurcation ; rdfs:label "Hopf"@en .
+tvbo:SubcriticalHopf        a owl:Class ; rdfs:subClassOf tvbo:Hopf ;        rdfs:label "Subcritical Hopf"@en .
+tvbo:SupercriticalHopf      a owl:Class ; rdfs:subClassOf tvbo:Hopf ;        rdfs:label "Supercritical Hopf"@en .
+tvbo:Pitchfork              a owl:Class ; rdfs:subClassOf tvbo:Bifurcation ; rdfs:label "Pitchfork"@en .
+tvbo:Transcritical          a owl:Class ; rdfs:subClassOf tvbo:Bifurcation ; rdfs:label "Transcritical"@en .
+tvbo:HomoclinicBifurcation  a owl:Class ; rdfs:subClassOf tvbo:Bifurcation ; rdfs:label "Homoclinic"@en .
+tvbo:FoldOfLimitCycles      a owl:Class ; rdfs:subClassOf tvbo:Bifurcation ; rdfs:label "Fold of limit cycles"@en .
+tvbo:PeriodDoubling         a owl:Class ; rdfs:subClassOf tvbo:Bifurcation ; rdfs:label "Period doubling"@en .
+tvbo:BogdanovTakens         a owl:Class ; rdfs:subClassOf tvbo:Bifurcation ; rdfs:label "Bogdanov-Takens"@en .
+
+# Attractor classes.
+tvbo:FixedPoint       a owl:Class ; rdfs:subClassOf tvbo:Attractor ; rdfs:label "Fixed point"@en .
+tvbo:LimitCycle       a owl:Class ; rdfs:subClassOf tvbo:Attractor ; rdfs:label "Limit cycle"@en .
+tvbo:Torus            a owl:Class ; rdfs:subClassOf tvbo:Attractor ; rdfs:label "Torus"@en .
+tvbo:StrangeAttractor a owl:Class ; rdfs:subClassOf tvbo:Attractor ; rdfs:label "Strange attractor"@en .
+
+# Stochasticity classes.
+tvbo:Deterministic        a owl:Class ; rdfs:subClassOf tvbo:Stochasticity ; rdfs:label "Deterministic"@en .
+tvbo:AdditiveNoise        a owl:Class ; rdfs:subClassOf tvbo:Stochasticity ; rdfs:label "Additive noise"@en .
+tvbo:MultiplicativeNoise  a owl:Class ; rdfs:subClassOf tvbo:Stochasticity ; rdfs:label "Multiplicative noise"@en .
+tvbo:ColoredNoise         a owl:Class ; rdfs:subClassOf tvbo:Stochasticity ; rdfs:label "Coloured noise"@en .
+
+# Object / data properties on Dynamics models.
+tvbo:exhibitsRegime a owl:ObjectProperty ;
+    rdfs:label "exhibits regime"@en ;
+    rdfs:comment "Object is a Regime class (open-world: model may admit additional regimes for parameter values not yet catalogued)."@en .
+
+tvbo:exhibitsBifurcation a owl:ObjectProperty ;
+    rdfs:range tvbo:BifurcationEvent ;
+    rdfs:label "exhibits bifurcation"@en ;
+    rdfs:comment "Range is a reified BifurcationEvent that records the bifurcation type, the locus parameter, and (optionally) the critical value."@en .
+
+tvbo:hasAttractor a owl:ObjectProperty ;
+    rdfs:label "has attractor"@en .
+
+tvbo:hasStochasticityCharacter a owl:ObjectProperty, owl:FunctionalProperty ;
+    rdfs:label "has stochasticity character"@en ;
+    rdfs:comment "Intrinsic stochasticity of the model definition itself. A model whose equations are deterministic but is integrated with additive noise via the Integrator is still tvbo:Deterministic here."@en .
+
+tvbo:phaseSpaceDimension a owl:DatatypeProperty, owl:FunctionalProperty ;
+    rdfs:range xsd:positiveInteger ;
+    rdfs:label "phase-space dimension"@en .
+
+tvbo:hasTimescaleSeparation a owl:DatatypeProperty ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "has timescale separation"@en .
+
+tvbo:hasConservedQuantity a owl:DatatypeProperty ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "has conserved quantity"@en .
+
+#
+# Reified bifurcation event.
+#
+# A bifurcation event ties (i) the bifurcation type, (ii) the parameter
+# along which the bifurcation occurs, and (iii) the model that exhibits
+# it. The parameter range is left open because parameter IRIs are minted
+# inside the per-model namespaces by the schema-generated struct OWL.
+#
+
+tvbo:BifurcationEvent a owl:Class ;
+    rdfs:label "Bifurcation event"@en ;
+    rdfs:comment "Reified record of a bifurcation in a specific model along a specific parameter."@en .
+
+tvbo:bifurcationType a owl:ObjectProperty ;
+    rdfs:domain tvbo:BifurcationEvent ;
+    rdfs:label "bifurcation type"@en ;
+    rdfs:comment "Object is a Bifurcation class (e.g. tvbo:Hopf). Encoded as a class so DL reasoners can use the subClassOf hierarchy on the Bifurcation tree."@en .
+
+tvbo:bifurcationParameter a owl:ObjectProperty ;
+    rdfs:domain tvbo:BifurcationEvent ;
+    rdfs:label "bifurcation parameter"@en ;
+    rdfs:comment "Parameter (CURIE into the per-model parameter namespace) along which the bifurcation is observed."@en .
+
+tvbo:criticalValue a owl:DatatypeProperty, owl:FunctionalProperty ;
+    rdfs:domain tvbo:BifurcationEvent ;
+    rdfs:range xsd:double ;
+    rdfs:label "critical value"@en .
+
+#
+# ─────────────────────────────────────────────────────────────────
+# §4.4 Model features (intrinsic structural traits, distinct from
+# backend capabilities).
+# ─────────────────────────────────────────────────────────────────
+#
+
+tvbo:ModelFeature a owl:Class ;
+    rdfs:label "Model feature"@en ;
+    rdfs:comment "Intrinsic structural trait of a Dynamics model (e.g. sigmoid activation, fast-slow decomposition, E/I subpopulations). Distinct from BackendCapability: a feature is what the model has, a capability is what a backend provides."@en .
+
+tvbo:hasModelFeature a owl:ObjectProperty ;
+    rdfs:range tvbo:ModelFeature ;
+    rdfs:label "has model feature"@en .
+
+tvbo:SigmoidActivation             a tvbo:ModelFeature ; rdfs:label "Sigmoid activation"@en .
+tvbo:FastSlowDecomposition         a tvbo:ModelFeature ; rdfs:label "Fast-slow decomposition"@en .
+tvbo:ExcitatoryInhibitorySubpopulations
+                                   a tvbo:ModelFeature ; rdfs:label "Excitatory/inhibitory subpopulations"@en .
+
+#
+# ─────────────────────────────────────────────────────────────────
+# Per-model briefs (pilot: JansenRit, Epileptor, ReducedWongWang).
+# ─────────────────────────────────────────────────────────────────
+#
+
+tvbo:JansenRit
+    skos:prefLabel "Jansen-Rit"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956 ;          # cerebral cortex
+    tvbo:modelsCellType                CL:0000598, CL:0000099 ;  # pyramidal, interneuron
+    tvbo:modelsNeurotransmitterSystem
+        GO:0035249,                                              # glutamatergic synaptic transmission
+        GO:0007214 ;                                             # GABAergic synaptic transmission
+    tvbo:phaseSpaceDimension           6 ;
+    tvbo:exhibitsRegime                tvbo:Oscillatory, tvbo:Quiescent ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:Hopf ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasTimescaleSeparation        false ;
+    tvbo:hasModelFeature               tvbo:SigmoidActivation .
+
+tvbo:Epileptor
+    rdfs:label "Epileptor"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0002728 ;          # hippocampus (mesial temporal lobe)
+    dcterms:subject                    MESH:D004827 ;            # Epilepsy
+    tvbo:phaseSpaceDimension           6 ;
+    tvbo:exhibitsRegime                tvbo:Bursting, tvbo:Bistable, tvbo:Oscillatory ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:SaddleNode ] ,
+                                       [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:HomoclinicBifurcation ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasTimescaleSeparation        true ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasModelFeature               tvbo:FastSlowDecomposition .
+
+tvbo:ReducedWongWang
+    skos:prefLabel "Reduced Wong-Wang"@en ;
+    tvbo:modelsCellType                CL:0000598, CL:0000099 ;  # pyramidal, interneuron
+    tvbo:modelsNeurotransmitterSystem  GO:0035249,               # glutamatergic
+                                       GO:0007214 ;              # GABAergic
+    tvbo:phaseSpaceDimension           1 ;
+    tvbo:exhibitsRegime                tvbo:Bistable, tvbo:Multistable ;
+    tvbo:hasAttractor                  tvbo:FixedPoint ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasTimescaleSeparation        false ;
+    tvbo:hasModelFeature               tvbo:ExcitatoryInhibitorySubpopulations .

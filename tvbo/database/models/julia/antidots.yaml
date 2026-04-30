@@ -79,7 +79,7 @@ derived_variables:
       - condition: 'True'
         equation:
           lhs: Ux
-          rhs: 0
+          rhs: '0'
           latex: false
   Uy:
     name: Uy
@@ -96,7 +96,7 @@ derived_variables:
       - condition: 'True'
         equation:
           lhs: Uy
-          rhs: 0
+          rhs: '0'
           latex: false
 description: |-
   Hamiltonian antidot lattice (periodic Sinai-like billiard) with smooth circular

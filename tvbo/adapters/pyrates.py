@@ -79,17 +79,16 @@ def _patch_pyrates_networkx_backend():
     def _plain_new(cls, *_args, **_kwargs):
         return object.__new__(cls)
 
-    if getattr(ComputeGraph.__new__, '_dispatchable', False) or 'argmap' in getattr(
-            ComputeGraph.__new__, '__qualname__', ''):
+    if getattr(ComputeGraph.__new__, "_dispatchable", False) or "argmap" in getattr(ComputeGraph.__new__, "__qualname__", ""):
         ComputeGraph.__new__ = _plain_new
     # Also check inherited __new__ from networkx
     try:
-        ComputeGraph(backend='default')
+        ComputeGraph(backend="default")
     except (ImportError, TypeError):
         ComputeGraph.__new__ = _plain_new
 
     try:
-        ComputeGraphBackProp(backend='default')
+        ComputeGraphBackProp(backend="default")
     except (ImportError, TypeError):
         ComputeGraphBackProp.__new__ = _plain_new
 
@@ -150,6 +149,7 @@ def _patch_pyrates_missing_funcs():
         # Also monkey-patch ExpressionParser.parse_expr to inject funcs
         # into compute graph backends that were already instantiated.
         import pyrates.backend.parser as _pr_parser
+
         _orig_parse_expr = _pr_parser.ExpressionParser.parse_expr
 
         def _patched_parse_expr(self):
@@ -169,16 +169,16 @@ def _inline_model_functions(expr, dyn):
     """
     import sympy as sp
 
-    functions = getattr(dyn, 'functions', None)
+    functions = getattr(dyn, "functions", None)
     if not functions:
         return expr
 
     for func_name, func_def in functions.items():
-        func_eq = getattr(func_def, 'equation', None)
+        func_eq = getattr(func_def, "equation", None)
         if not func_eq or not func_eq.rhs:
             continue
-        args = getattr(func_def, 'arguments', None) or []
-        arg_names = [str(getattr(a, 'name', a)) for a in args]
+        args = getattr(func_def, "arguments", None) or []
+        arg_names = [str(getattr(a, "name", a)) for a in args]
         sym_func = sp.Function(func_name)
         for match in expr.atoms(sp.Function(func_name)):
             if match.func == sym_func:
@@ -255,14 +255,10 @@ class PyRatesAdapter(BaseAdapter):
         # Check network size for matrix-based edges
         network = getattr(exp, "network", None)
         n_nodes = self._get_node_count(network)
-        use_matrix_edges = n_nodes > matrix_edge_threshold and hasattr(
-            network, "weights_matrix"
-        )
+        use_matrix_edges = n_nodes > matrix_edge_threshold and hasattr(network, "weights_matrix")
 
         # ── Shared setup: single YAML export + circuit load ──────────
-        circuit, tmpdir, pkg_name = self._load_circuit_from_yaml(
-            include_edges=not use_matrix_edges
-        )
+        circuit, tmpdir, pkg_name = self._load_circuit_from_yaml(include_edges=not use_matrix_edges)
 
         try:
             # For large networks, add edges via matrix
@@ -286,9 +282,7 @@ class PyRatesAdapter(BaseAdapter):
             sim_result = None
             if integration:
                 int_kwargs = dict(kwargs)
-                int_kwargs.setdefault(
-                    "file_name", f"pyrates_run_{pkg_name}_{run_id}"
-                )
+                int_kwargs.setdefault("file_name", f"pyrates_run_{pkg_name}_{run_id}")
 
                 result_df = circuit.run(
                     step_size=integration.step_size,
@@ -306,9 +300,7 @@ class PyRatesAdapter(BaseAdapter):
             explorations = getattr(exp, "explorations", None) or {}
             expl_results = {}
             if explorations:
-                expl_results = self._run_explorations(
-                    circuit, outputs, solver, pkg_name, **kwargs
-                )
+                expl_results = self._run_explorations(circuit, outputs, solver, pkg_name, **kwargs)
 
         finally:
             try:
@@ -388,9 +380,7 @@ class PyRatesAdapter(BaseAdapter):
                 **gs_kwargs,
             )
 
-            results[expl_name] = self._df_to_exploration_result(
-                results_df, results_map, axes, expl, expl_name
-            )
+            results[expl_name] = self._df_to_exploration_result(results_df, results_map, axes, expl, expl_name)
 
         return results
 
@@ -414,12 +404,14 @@ class PyRatesAdapter(BaseAdapter):
         param_map: dict = {}
         axes: list = []
 
-        for param in expl.parameters.values():
-            name = param.name
-            domain = getattr(param, "domain", None)
+        for axis in expl.space:
+            ref = str(axis.parameter)
+            # Dotted ref "Class.param" → use bare param name as grid key
+            name = ref.split(".", 1)[1] if "." in ref else ref
+            domain = getattr(axis, "domain", None)
 
             # Get sweep values
-            explored = getattr(param, "explored_values", None)
+            explored = getattr(axis, "explored_values", None)
             if explored:
                 values = np.array([float(v) for v in explored])
             elif domain:
@@ -528,15 +520,12 @@ class PyRatesAdapter(BaseAdapter):
                 solver = method
             elif method:
                 raise ValueError(
-                    f"Unsupported integration method '{method}' for PyRates. "
-                    f"Supported: {list(TVBO_TO_PYRATES_SOLVER.keys())}"
+                    f"Unsupported integration method '{method}' for PyRates. Supported: {list(TVBO_TO_PYRATES_SOLVER.keys())}"
                 )
             else:
                 solver = "heun"
         elif solver not in PYRATES_SOLVERS:
-            raise ValueError(
-                f"Invalid solver '{solver}'. Supported: {sorted(PYRATES_SOLVERS)}"
-            )
+            raise ValueError(f"Invalid solver '{solver}'. Supported: {sorted(PYRATES_SOLVERS)}")
         return solver
 
     def _get_node_count(self, network) -> int:
@@ -577,13 +566,9 @@ class PyRatesAdapter(BaseAdapter):
             # Schema-based Network: each node declares its dynamics
             default_dyn = next(iter(dynamics_dict), None)
             for node in network.nodes:
-                label = str(
-                    getattr(node, "label", None) or f"node_{node.id}"
-                ).replace(" ", "_").replace("-", "_")
+                label = str(getattr(node, "label", None) or f"node_{node.id}").replace(" ", "_").replace("-", "_")
                 dyn_name = (
-                    node.dynamics
-                    if isinstance(node.dynamics, str)
-                    else getattr(node.dynamics, "name", None)
+                    node.dynamics if isinstance(node.dynamics, str) else getattr(node.dynamics, "name", None)
                 ) or default_dyn
                 if dyn_name:
                     nmap.setdefault(dyn_name, {"op": f"{dyn_name}_op", "nodes": []})
@@ -595,11 +580,9 @@ class PyRatesAdapter(BaseAdapter):
             if weights is not None:
                 n_nodes = weights.shape[0]
             if hasattr(network, "node_labels") and network.node_labels:
-                labels = [str(l).replace(" ", "_").replace("-", "_")
-                          for l in network.node_labels]
+                labels = [str(lbl).replace(" ", "_").replace("-", "_") for lbl in network.node_labels]
             elif hasattr(network, "region_labels") and network.region_labels:
-                labels = [str(l).replace(" ", "_").replace("-", "_")
-                          for l in network.region_labels]
+                labels = [str(lbl).replace(" ", "_").replace("-", "_") for lbl in network.region_labels]
             else:
                 labels = [f"node_{i}" for i in range(n_nodes)]
             dyn_name = next(iter(dynamics_dict))
@@ -648,11 +631,7 @@ class PyRatesAdapter(BaseAdapter):
         dynamics = getattr(exp, "dynamics", None)
 
         if network is not None:
-            circuit_name = (
-                getattr(network, "label", None)
-                or getattr(network, "name", None)
-                or "tvbo_circuit"
-            )
+            circuit_name = getattr(network, "label", None) or getattr(network, "name", None) or "tvbo_circuit"
         elif dynamics is not None:
             model_name = getattr(dynamics, "name", None) or "tvbo_model"
             circuit_name = f"{model_name}_circuit"
@@ -677,12 +656,12 @@ class PyRatesAdapter(BaseAdapter):
         shutil.rmtree(tmpdir, ignore_errors=True)
         # Remove PyRates-generated .py files from cwd
         import glob
+
         for f in glob.glob(f"pyrates_run_{pkg_name}_*.py"):
             os.remove(f)
 
     def _add_edges_from_matrix(self, circuit, network) -> None:
         """Add edges to circuit using weight matrix (efficient for large networks)."""
-        exp = self.experiment
         dynamics_dict = self.build_dynamics_dict()
 
         # Get node labels
@@ -708,7 +687,7 @@ class PyRatesAdapter(BaseAdapter):
             src_var = f"{dyn_name}_op/x"
 
         # Target: coupling input
-        ci = getattr(first_dyn, 'coupling_inputs', None) or getattr(first_dyn, 'coupling_terms', None)
+        ci = getattr(first_dyn, "coupling_inputs", None) or getattr(first_dyn, "coupling_terms", None)
         if ci:
             tgt_var = f"{dyn_name}_op/{list(ci.keys())[0]}"
         else:
@@ -755,8 +734,7 @@ class PyRatesAdapter(BaseAdapter):
         nmap = self._pyrates_node_map()
 
         # Single-node circuits use clean variable names (no node prefix)
-        single_node = (len(nmap) == 1
-                       and len(next(iter(nmap.values()))["nodes"]) == 1)
+        single_node = len(nmap) == 1 and len(next(iter(nmap.values()))["nodes"]) == 1
 
         outputs = {}
         for dyn_name, info in nmap.items():
@@ -764,7 +742,7 @@ class PyRatesAdapter(BaseAdapter):
             if not dyn:
                 continue
             for node_label in info["nodes"]:
-                for sv_name in (dyn.state_variables or {}):
+                for sv_name in dyn.state_variables or {}:
                     py_name = PYRATES_REPL.get(sv_name, sv_name)
                     key = sv_name if single_node else f"{node_label}_{sv_name}"
                     outputs[key] = f"{node_label}/{info['op']}/{py_name}"
@@ -777,7 +755,6 @@ class PyRatesAdapter(BaseAdapter):
         PyRates only records state variables. This method evaluates output
         equations (like 'r_eff = r_in*x') using recorded state values and parameters.
         """
-        import sympy as sp
 
         exp = self.experiment
         dynamics = self.build_dynamics_dict()
@@ -808,17 +785,11 @@ class PyRatesAdapter(BaseAdapter):
                 safe_label = str(node_label).replace(" ", "_").replace("-", "_")
                 prefix = f"{safe_label}_"
 
-                dyn_name = (
-                    node.dynamics
-                    if isinstance(node.dynamics, str)
-                    else getattr(node.dynamics, "name", None)
-                )
+                dyn_name = node.dynamics if isinstance(node.dynamics, str) else getattr(node.dynamics, "name", None)
                 dyn = dynamics.get(dyn_name) if dyn_name else default_dyn
 
                 if dyn and dyn.output:
-                    self._compute_node_outputs(
-                        result, dyn, prefix, safe_label, edge_map, n_time
-                    )
+                    self._compute_node_outputs(result, dyn, prefix, safe_label, edge_map, n_time)
         else:
             # Single dynamics case
             dyn = default_dyn
@@ -847,16 +818,8 @@ class PyRatesAdapter(BaseAdapter):
             src_safe = str(src_label).replace(" ", "_").replace("-", "_")
             tgt_safe = str(tgt_label).replace(" ", "_").replace("-", "_")
 
-            src_var = (
-                getattr(edge, "source_var", None)
-                or getattr(edge, "source_variable", None)
-                or "r"
-            )
-            tgt_var = (
-                getattr(edge, "target_var", None)
-                or getattr(edge, "target_variable", None)
-                or "r_in"
-            )
+            src_var = getattr(edge, "source_var", None) or getattr(edge, "source_variable", None) or "r"
+            tgt_var = getattr(edge, "target_var", None) or getattr(edge, "target_variable", None) or "r_in"
 
             if tgt_safe not in edge_map:
                 edge_map[tgt_safe] = {}
@@ -982,11 +945,7 @@ class PyRatesAdapter(BaseAdapter):
                 node_label = getattr(node, "label", None) or f"node_{node.id}"
                 safe_label = str(node_label).replace(" ", "_").replace("-", "_")
 
-                dyn_name = (
-                    node.dynamics
-                    if isinstance(node.dynamics, str)
-                    else getattr(node.dynamics, "name", None)
-                )
+                dyn_name = node.dynamics if isinstance(node.dynamics, str) else getattr(node.dynamics, "name", None)
 
                 if dyn_name:
                     op_name = f"{dyn_name}_op"
@@ -1028,7 +987,7 @@ class PyRatesAdapter(BaseAdapter):
                 prefix = f"{node_label}_"
                 if col.startswith(prefix):
                     node_name = node_label
-                    sv_name = col[len(prefix):]
+                    sv_name = col[len(prefix) :]
                     break
 
             if node_name is None:
@@ -1057,7 +1016,7 @@ class PyRatesAdapter(BaseAdapter):
 
         da = xr.DataArray(
             data=data,
-            dims=['time', 'variable', 'node'],
-            coords={'time': time, 'variable': sv_names, 'node': node_names},
+            dims=["time", "variable", "node"],
+            coords={"time": time, "variable": sv_names, "node": node_names},
         )
         return SimulationResult(data=da)

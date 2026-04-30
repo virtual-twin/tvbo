@@ -11,18 +11,18 @@
 id: 4
 label: "Multiscale BNM: Decision-Making with E/I Balance Tuning"
 description: >
-    Multiscale brain network model coupling large-scale structural connectivity
-    with a small-scale frontoparietal circuit for decision-making (DM) and
-    working memory (WM). The large-scale model uses the Reduced Wong-Wang model
-    (Deco et al., 2014, JNeurosci) with explicit excitatory and inhibitory
-    populations. The functional circuit implements winner-take-all DM and
-    persistent-activity WM based on Murray, Jaramillo & Wang (2017, JNeurosci).
+  Multiscale brain network model coupling large-scale structural connectivity
+  with a small-scale frontoparietal circuit for decision-making (DM) and
+  working memory (WM). The large-scale model uses the Reduced Wong-Wang model
+  (Deco et al., 2014, JNeurosci) with explicit excitatory and inhibitory
+  populations. The functional circuit implements winner-take-all DM and
+  persistent-activity WM based on Murray, Jaramillo & Wang (2017, JNeurosci).
 
-    Key innovation: The ratio of long-range excitation (LRE) to feedforward
-    inhibition (FFI) controls functional connectivity between brain regions.
-    This E/I balance tuning enables fitting personalized brain network models
-    to empirical functional connectivity and explains individual differences
-    in cognitive performance (speed-accuracy trade-off in intelligence tests).
+  Key innovation: The ratio of long-range excitation (LRE) to feedforward
+  inhibition (FFI) controls functional connectivity between brain regions.
+  This E/I balance tuning enables fitting personalized brain network models
+  to empirical functional connectivity and explains individual differences
+  in cognitive performance (speed-accuracy trade-off in intelligence tests).
 
 
 
@@ -34,842 +34,842 @@ network:
 # =============================================================================
 # DYNAMICS: Two interconnected models at different scales
 # =============================================================================
-    dynamics:
+  dynamics:
         # =========================================================================
         # LARGE-SCALE DYNAMICS: Reduced Wong-Wang with EI Balance (Deco 2014)
         # =========================================================================
-        ReducedWongWangEI:
-            name: ReducedWongWangEI
-            label: "Reduced Wong-Wang Model with E/I Balance"
-            description: >
-                Dynamical mean field model with explicit excitatory (E) and inhibitory (I)
-                populations derived from a spiking neuronal network. Extended with
-                long-range excitation (LRE) and feedforward inhibition (FFI) pathways
-                to enable E/I balance tuning for FC fitting.
-            output:
-                - S_E
-                - S_I
-                - I_E
-                - r_E
-                - r_I
-            references:
-                - "Deco, G. et al. (2014). How local excitation-inhibition ratio impacts the whole brain dynamics. J Neurosci 34:7886-7898"
-                - "Wong, K.F. & Wang, X.J. (2006). A recurrent network mechanism of time integration in perceptual decisions. J Neurosci 26:1314-1328"
+    ReducedWongWangEI:
+      name: ReducedWongWangEI
+      label: "Reduced Wong-Wang Model with E/I Balance"
+      description: >
+        Dynamical mean field model with explicit excitatory (E) and inhibitory (I)
+        populations derived from a spiking neuronal network. Extended with
+        long-range excitation (LRE) and feedforward inhibition (FFI) pathways
+        to enable E/I balance tuning for FC fitting.
+      output:
+        - S_E
+        - S_I
+        - I_E
+        - r_E
+        - r_I
+      references:
+        - "Deco, G. et al. (2014). How local excitation-inhibition ratio impacts the whole brain dynamics. J Neurosci 34:7886-7898"
+        - "Wong, K.F. & Wang, X.J. (2006). A recurrent network mechanism of time integration in perceptual decisions. J Neurosci 26:1314-1328"
 
             # --- PARAMETERS ---
-            parameters:
+      parameters:
                 # Excitatory population parameters
-                a_E:
-                    label: "Excitatory gain"
-                    value: 310.0
-                    unit: per_nC
-                b_E:
-                    label: "Excitatory threshold"
-                    value: 125.0
-                    unit: Hz
-                d_E:
-                    label: "Excitatory noise factor"
-                    value: 0.16
-                    unit: s
-                gamma_E:
-                    label: "Excitatory kinetic parameter"
-                    value: 0.000641
-                    description: "gamma_E = 0.641/1000 (units converted to ms)"
-                tau_E:
-                    label: "Excitatory NMDA time constant"
-                    value: 100.0
-                    unit: ms
+        a_E:
+          label: "Excitatory gain"
+          value: 310.0
+          unit: per_nC
+        b_E:
+          label: "Excitatory threshold"
+          value: 125.0
+          unit: Hz
+        d_E:
+          label: "Excitatory noise factor"
+          value: 0.16
+          unit: s
+        gamma_E:
+          label: "Excitatory kinetic parameter"
+          value: 0.000641
+          description: "gamma_E = 0.641/1000 (units converted to ms)"
+        tau_E:
+          label: "Excitatory NMDA time constant"
+          value: 100.0
+          unit: ms
 
                 # Inhibitory population parameters
-                a_I:
-                    label: "Inhibitory gain"
-                    value: 615.0
-                    unit: per_nC
-                b_I:
-                    label: "Inhibitory threshold"
-                    value: 177.0
-                    unit: Hz
-                d_I:
-                    label: "Inhibitory noise factor"
-                    value: 0.087
-                    unit: s
-                gamma_I:
-                    label: "Inhibitory kinetic parameter"
-                    value: 0.001
-                    description: "gamma_I = 1.0/1000 (units converted to ms)"
-                tau_I:
-                    label: "Inhibitory GABA time constant"
-                    value: 10.0
-                    unit: ms
+        a_I:
+          label: "Inhibitory gain"
+          value: 615.0
+          unit: per_nC
+        b_I:
+          label: "Inhibitory threshold"
+          value: 177.0
+          unit: Hz
+        d_I:
+          label: "Inhibitory noise factor"
+          value: 0.087
+          unit: s
+        gamma_I:
+          label: "Inhibitory kinetic parameter"
+          value: 0.001
+          description: "gamma_I = 1.0/1000 (units converted to ms)"
+        tau_I:
+          label: "Inhibitory GABA time constant"
+          value: 10.0
+          unit: ms
 
                 # Synaptic coupling
-                w_plus:
-                    label: "Local excitatory recurrence"
-                    value: 1.4
-                J_NMDA:
-                    label: "NMDA synaptic coupling strength"
-                    value: 0.15
-                    unit: nA
-                J_i:
-                    label: "Local inhibitory feedback weight"
-                    value: 1.0
-                    unit: nA
-                    description: "Tuned by FIC algorithm, heterogeneous across nodes"
-                    heterogeneous: true
-                    free: true
-                    shape: "(n_nodes,)"
+        w_plus:
+          label: "Local excitatory recurrence"
+          value: 1.4
+        J_NMDA:
+          label: "NMDA synaptic coupling strength"
+          value: 0.15
+          unit: nA
+        J_i:
+          label: "Local inhibitory feedback weight"
+          value: 1.0
+          unit: nA
+          description: "Tuned by FIC algorithm, heterogeneous across nodes"
+          heterogeneous: true
+          free: true
+          shape: "(n_nodes,)"
 
                 # External inputs
-                I_0:
-                    label: "Background input current"
-                    value: 0.382
-                    unit: nA
-                W_E:
-                    label: "External input scaling (excitatory)"
-                    value: 1.0
-                W_I:
-                    label: "External input scaling (inhibitory)"
-                    value: 0.7
+        I_0:
+          label: "Background input current"
+          value: 0.382
+          unit: nA
+        W_E:
+          label: "External input scaling (excitatory)"
+          value: 1.0
+        W_I:
+          label: "External input scaling (inhibitory)"
+          value: 0.7
 
                 # Global coupling
-                G:
-                    label: "Global coupling strength"
-                    value: 0.5
-                    description: "Scales structural connectivity weights"
+        G:
+          label: "Global coupling strength"
+          value: 0.5
+          description: "Scales structural connectivity weights"
 
                 # Noise
-                sigma:
-                    label: "Noise amplitude"
-                    value: 0.00316228
-                    unit: nA
-                    description: "sqrt(0.01^2 / dt) for dt=1ms"
+        sigma:
+          label: "Noise amplitude"
+          value: 0.00316228
+          unit: nA
+          description: "sqrt(0.01^2 / dt) for dt=1ms"
 
             # --- DERIVED VARIABLES ---
-            derived_variables:
+      derived_variables:
                 # Excitatory population
-                x_E:
-                    label: "Excitatory activation"
-                    equation:
-                        rhs: "a_E * (W_E * I_0 + w_plus * J_NMDA * S_E + c_lre - J_i * S_I) - b_E"
-                    description: "Pre-sigmoid activation for excitatory population"
-                r_E:
-                    label: "Excitatory firing rate"
-                    equation:
-                        rhs: "x_E / (1.0 - exp(-d_E * x_E))"
-                    unit: Hz
-                    description: "Sigmoidal transfer function for excitatory population"
+        x_E:
+          label: "Excitatory activation"
+          equation:
+            rhs: "a_E * (W_E * I_0 + w_plus * J_NMDA * S_E + c_lre - J_i * S_I) - b_E"
+          description: "Pre-sigmoid activation for excitatory population"
+        r_E:
+          label: "Excitatory firing rate"
+          equation:
+            rhs: "x_E / (1.0 - exp(-d_E * x_E))"
+          unit: Hz
+          description: "Sigmoidal transfer function for excitatory population"
 
                 # Inhibitory population
-                x_I:
-                    label: "Inhibitory activation"
-                    equation:
-                        rhs: "a_I * (W_I * I_0 + J_NMDA * S_E + c_ffi - S_I) - b_I"
-                    description: "Pre-sigmoid activation for inhibitory population"
-                r_I:
-                    label: "Inhibitory firing rate"
-                    equation:
-                        rhs: "x_I / (1.0 - exp(-d_I * x_I))"
-                    unit: Hz
-                    description: "Sigmoidal transfer function for inhibitory population"
+        x_I:
+          label: "Inhibitory activation"
+          equation:
+            rhs: "a_I * (W_I * I_0 + J_NMDA * S_E + c_ffi - S_I) - b_I"
+          description: "Pre-sigmoid activation for inhibitory population"
+        r_I:
+          label: "Inhibitory firing rate"
+          equation:
+            rhs: "x_I / (1.0 - exp(-d_I * x_I))"
+          unit: Hz
+          description: "Sigmoidal transfer function for inhibitory population"
 
                 # Input current for monitoring/coupling to small-scale
-                I_E:
-                    label: "Excitatory input current"
-                    equation:
-                        rhs: "W_E * I_0 + w_plus * J_NMDA * S_E + c_lre - J_i * S_I"
-                    unit: nA
+        I_E:
+          label: "Excitatory input current"
+          equation:
+            rhs: "W_E * I_0 + w_plus * J_NMDA * S_E + c_lre - J_i * S_I"
+          unit: nA
 
             # --- STATE VARIABLES ---
-            state_variables:
-                S_E:
-                    label: "Excitatory synaptic gating"
-                    equation:
-                        rhs: "-(S_E / tau_E) + (1.0 - S_E) * r_E * gamma_E"
-                    initial_value: 0.001
-                    domain:
-                        lo: 0.0
-                        hi: 1.0
-                    description: "Fraction of open NMDA channels (excitatory)"
-                    coupling_variable: true
-                    noise:
-                        additive: true
-                        parameters:
-                            sigma:
-                                value: 0.00316228
-                                unit: nA
-                S_I:
-                    label: "Inhibitory synaptic gating"
-                    equation:
-                        rhs: "-(S_I / tau_I) + r_I * gamma_I"
-                    initial_value: 0.001
-                    domain:
-                        lo: 0.0
-                        hi: 1.0
-                    description: "Fraction of open GABA channels (inhibitory)"
-                    noise:
-                        additive: true
-                        parameters:
-                            sigma:
-                                value: 0.00316228
-                                unit: nA
+      state_variables:
+        S_E:
+          label: "Excitatory synaptic gating"
+          equation:
+            rhs: "-(S_E / tau_E) + (1.0 - S_E) * r_E * gamma_E"
+          initial_value: 0.001
+          domain:
+            lo: 0.0
+            hi: 1.0
+          description: "Fraction of open NMDA channels (excitatory)"
+          coupling_variable: true
+          noise:
+            additive: true
+            parameters:
+              sigma:
+                value: 0.00316228
+                unit: nA
+        S_I:
+          label: "Inhibitory synaptic gating"
+          equation:
+            rhs: "-(S_I / tau_I) + r_I * gamma_I"
+          initial_value: 0.001
+          domain:
+            lo: 0.0
+            hi: 1.0
+          description: "Fraction of open GABA channels (inhibitory)"
+          noise:
+            additive: true
+            parameters:
+              sigma:
+                value: 0.00316228
+                unit: nA
 
             # --- COUPLING INPUTS ---
-            coupling_inputs:
-                EIBCoupling:
-                    dimension: 2
-                    keys: [c_lre, c_ffi]
-                    description: "Dual-output coupling: long-range excitation (c_lre) and feedforward inhibition (c_ffi)"
+      coupling_inputs:
+        EIBCoupling:
+          dimension: 2
+          keys: [c_lre, c_ffi]
+          description: "Dual-output coupling: long-range excitation (c_lre) and feedforward inhibition (c_ffi)"
 
         # =========================================================================
         # SMALL-SCALE DYNAMICS: Frontoparietal DM/WM Circuit (Murray-Wang 2017)
         # =========================================================================
-        MurrayWangDM:
-            name: MurrayWangDM
-            label: "Murray-Wang Frontoparietal Decision-Making Circuit"
-            description: >
-                Two-module circuit for decision-making (DM) and working memory (WM).
-                Module 1 (PPC - posterior parietal cortex): sensory evidence accumulation.
-                Module 2 (PFC - prefrontal cortex): decision/action selection.
-                Each module has two populations (A, B) competing via cross-inhibition.
-                Winner-take-all dynamics for DM; persistent activity for WM.
-            output:
-                - S_A1
-                - S_B1
-                - S_A2
-                - S_B2
-                - r_A1
-                - r_B1
-                - r_A2
-                - r_B2
-            references:
-                - "Murray, J.D., Jaramillo, J., & Wang, X.J. (2017). Working memory and decision-making in a frontoparietal circuit model. J Neurosci 37:12167-12186"
+    MurrayWangDM:
+      name: MurrayWangDM
+      label: "Murray-Wang Frontoparietal Decision-Making Circuit"
+      description: >
+        Two-module circuit for decision-making (DM) and working memory (WM).
+        Module 1 (PPC - posterior parietal cortex): sensory evidence accumulation.
+        Module 2 (PFC - prefrontal cortex): decision/action selection.
+        Each module has two populations (A, B) competing via cross-inhibition.
+        Winner-take-all dynamics for DM; persistent activity for WM.
+      output:
+        - S_A1
+        - S_B1
+        - S_A2
+        - S_B2
+        - r_A1
+        - r_B1
+        - r_A2
+        - r_B2
+      references:
+        - "Murray, J.D., Jaramillo, J., & Wang, X.J. (2017). Working memory and decision-making in a frontoparietal circuit model. J Neurosci 37:12167-12186"
 
             # --- PARAMETERS ---
-            parameters:
+      parameters:
                 # Transfer function parameters
-                a:
-                    label: "Input-output gain"
-                    value: 270.0
-                    unit: Hz_per_nA
-                b:
-                    label: "Input-output threshold"
-                    value: 108.0
-                    unit: Hz
-                c:
-                    label: "Saturation factor"
-                    value: 0.154
-                    unit: s
+        a:
+          label: "Input-output gain"
+          value: 270.0
+          unit: Hz_per_nA
+        b:
+          label: "Input-output threshold"
+          value: 108.0
+          unit: Hz
+        c:
+          label: "Saturation factor"
+          value: 0.154
+          unit: s
 
                 # Synaptic dynamics
-                tau:
-                    label: "NMDA time constant"
-                    value: 60.0
-                    unit: ms
-                gamma:
-                    label: "NMDA saturation rate"
-                    value: 0.641
+        tau:
+          label: "NMDA time constant"
+          value: 60.0
+          unit: ms
+        gamma:
+          label: "NMDA saturation rate"
+          value: 0.641
 
                 # Background input
-                I_0:
-                    label: "Background current"
-                    value: 0.334
-                    unit: nA
+        I_0:
+          label: "Background current"
+          value: 0.334
+          unit: nA
 
                 # Noise parameters
-                tau_AMPA:
-                    label: "AMPA noise time constant"
-                    value: 2.0
-                    unit: ms
-                sigma_noise:
-                    label: "AMPA noise strength"
-                    value: 0.009
-                    unit: nA
+        tau_AMPA:
+          label: "AMPA noise time constant"
+          value: 2.0
+          unit: ms
+        sigma_noise:
+          label: "AMPA noise strength"
+          value: 0.009
+          unit: nA
 
                 # Connection weights - Module 1 (PPC)
-                J_same_M1:
-                    label: "Same-population weight (Module 1)"
-                    value: 0.3169
-                    description: "J_same = (J_S + J_T) / 2 = (0.35 + 0.28387) / 2"
-                J_diff_M1:
-                    label: "Cross-population weight (Module 1)"
-                    value: -0.0330
-                    description: "J_diff = J_T - J_same"
+        J_same_M1:
+          label: "Same-population weight (Module 1)"
+          value: 0.3169
+          description: "J_same = (J_S + J_T) / 2 = (0.35 + 0.28387) / 2"
+        J_diff_M1:
+          label: "Cross-population weight (Module 1)"
+          value: -0.0330
+          description: "J_diff = J_T - J_same"
 
                 # Connection weights - Module 2 (PFC)
-                J_same_M2:
-                    label: "Same-population weight (Module 2)"
-                    value: 0.351
-                    description: "J_same = (J_S + J_T) / 2 = (0.4182 + 0.28387) / 2"
-                J_diff_M2:
-                    label: "Cross-population weight (Module 2)"
-                    value: -0.0671
-                    description: "J_diff = J_T - J_same"
+        J_same_M2:
+          label: "Same-population weight (Module 2)"
+          value: 0.351
+          description: "J_same = (J_S + J_T) / 2 = (0.4182 + 0.28387) / 2"
+        J_diff_M2:
+          label: "Cross-population weight (Module 2)"
+          value: -0.0671
+          description: "J_diff = J_T - J_same"
 
                 # Inter-module connections (M1 -> M2)
-                J_same_M1_to_M2:
-                    label: "Same-population weight (M1 to M2)"
-                    value: 0.075
-                    description: "J_same = (J_S + J_T) / 2 = (0.15 + 0) / 2"
-                J_diff_M1_to_M2:
-                    label: "Cross-population weight (M1 to M2)"
-                    value: -0.075
-                    description: "J_diff = J_T - J_same"
+        J_same_M1_to_M2:
+          label: "Same-population weight (M1 to M2)"
+          value: 0.075
+          description: "J_same = (J_S + J_T) / 2 = (0.15 + 0) / 2"
+        J_diff_M1_to_M2:
+          label: "Cross-population weight (M1 to M2)"
+          value: -0.075
+          description: "J_diff = J_T - J_same"
 
                 # Inter-module connections (M2 -> M1)
-                J_same_M2_to_M1:
-                    label: "Same-population weight (M2 to M1)"
-                    value: 0.02
-                    description: "J_same = (J_S + J_T) / 2 = (0.04 + 0) / 2"
-                J_diff_M2_to_M1:
-                    label: "Cross-population weight (M2 to M1)"
-                    value: -0.02
-                    description: "J_diff = J_T - J_same"
+        J_same_M2_to_M1:
+          label: "Same-population weight (M2 to M1)"
+          value: 0.02
+          description: "J_same = (J_S + J_T) / 2 = (0.04 + 0) / 2"
+        J_diff_M2_to_M1:
+          label: "Cross-population weight (M2 to M1)"
+          value: -0.02
+          description: "J_diff = J_T - J_same"
 
                 # Stimulus parameters
-                I_e:
-                    label: "Stimulus strength"
-                    value: 0.0118
-                    unit: nA
-                contrast:
-                    label: "Stimulus contrast"
-                    value: 6.4
-                    unit: percent
-                    description: "Evidence strength: (A - B) / (A + B) * 100"
+        I_e:
+          label: "Stimulus strength"
+          value: 0.0118
+          unit: nA
+        contrast:
+          label: "Stimulus contrast"
+          value: 6.4
+          unit: percent
+          description: "Evidence strength: (A - B) / (A + B) * 100"
 
             # --- DERIVED VARIABLES ---
-            derived_variables:
+      derived_variables:
                 # Applied currents based on contrast
-                I_appA:
-                    label: "Applied current to population A"
-                    equation:
-                        rhs: "I_e * (1 + contrast / 100)"
-                    unit: nA
-                I_appB:
-                    label: "Applied current to population B"
-                    equation:
-                        rhs: "I_e * (1 - contrast / 100)"
-                    unit: nA
+        I_appA:
+          label: "Applied current to population A"
+          equation:
+            rhs: "I_e * (1 + contrast / 100)"
+          unit: nA
+        I_appB:
+          label: "Applied current to population B"
+          equation:
+            rhs: "I_e * (1 - contrast / 100)"
+          unit: nA
 
                 # Input currents for each population
-                I_A1:
-                    label: "Input current to A1 (PPC-A)"
-                    equation:
-                        rhs: "J_same_M1 * S_A1 + J_diff_M1 * S_B1 + J_same_M2_to_M1 * S_A2 + J_diff_M2_to_M1 * S_B2 + I_0 + I_net_bg_PPC + I_appA"
-                I_B1:
-                    label: "Input current to B1 (PPC-B)"
-                    equation:
-                        rhs: "J_diff_M1 * S_A1 + J_same_M1 * S_B1 + J_diff_M2_to_M1 * S_A2 + J_same_M2_to_M1 * S_B2 + I_0 + I_net_bg_PPC + I_appB"
-                I_A2:
-                    label: "Input current to A2 (PFC-A)"
-                    equation:
-                        rhs: "J_same_M1_to_M2 * S_A1 + J_diff_M1_to_M2 * S_B1 + J_same_M2 * S_A2 + J_diff_M2 * S_B2 + I_0 + I_net_bg_PFC"
-                I_B2:
-                    label: "Input current to B2 (PFC-B)"
-                    equation:
-                        rhs: "J_diff_M1_to_M2 * S_A1 + J_same_M1_to_M2 * S_B1 + J_diff_M2 * S_A2 + J_same_M2 * S_B2 + I_0 + I_net_bg_PFC"
+        I_A1:
+          label: "Input current to A1 (PPC-A)"
+          equation:
+            rhs: "J_same_M1 * S_A1 + J_diff_M1 * S_B1 + J_same_M2_to_M1 * S_A2 + J_diff_M2_to_M1 * S_B2 + I_0 + I_net_bg_PPC + I_appA"
+        I_B1:
+          label: "Input current to B1 (PPC-B)"
+          equation:
+            rhs: "J_diff_M1 * S_A1 + J_same_M1 * S_B1 + J_diff_M2_to_M1 * S_A2 + J_same_M2_to_M1 * S_B2 + I_0 + I_net_bg_PPC + I_appB"
+        I_A2:
+          label: "Input current to A2 (PFC-A)"
+          equation:
+            rhs: "J_same_M1_to_M2 * S_A1 + J_diff_M1_to_M2 * S_B1 + J_same_M2 * S_A2 + J_diff_M2 * S_B2 + I_0 + I_net_bg_PFC"
+        I_B2:
+          label: "Input current to B2 (PFC-B)"
+          equation:
+            rhs: "J_diff_M1_to_M2 * S_A1 + J_same_M1_to_M2 * S_B1 + J_diff_M2 * S_A2 + J_same_M2 * S_B2 + I_0 + I_net_bg_PFC"
 
                 # Firing rates
-                r_A1:
-                    label: "Firing rate A1"
-                    equation:
-                        rhs: "(a * I_A1 - b) / (1 - exp(-c * (a * I_A1 - b)))"
-                    unit: Hz
-                r_B1:
-                    label: "Firing rate B1"
-                    equation:
-                        rhs: "(a * I_B1 - b) / (1 - exp(-c * (a * I_B1 - b)))"
-                    unit: Hz
-                r_A2:
-                    label: "Firing rate A2"
-                    equation:
-                        rhs: "(a * I_A2 - b) / (1 - exp(-c * (a * I_A2 - b)))"
-                    unit: Hz
-                r_B2:
-                    label: "Firing rate B2"
-                    equation:
-                        rhs: "(a * I_B2 - b) / (1 - exp(-c * (a * I_B2 - b)))"
-                    unit: Hz
+        r_A1:
+          label: "Firing rate A1"
+          equation:
+            rhs: "(a * I_A1 - b) / (1 - exp(-c * (a * I_A1 - b)))"
+          unit: Hz
+        r_B1:
+          label: "Firing rate B1"
+          equation:
+            rhs: "(a * I_B1 - b) / (1 - exp(-c * (a * I_B1 - b)))"
+          unit: Hz
+        r_A2:
+          label: "Firing rate A2"
+          equation:
+            rhs: "(a * I_A2 - b) / (1 - exp(-c * (a * I_A2 - b)))"
+          unit: Hz
+        r_B2:
+          label: "Firing rate B2"
+          equation:
+            rhs: "(a * I_B2 - b) / (1 - exp(-c * (a * I_B2 - b)))"
+          unit: Hz
 
             # --- STATE VARIABLES ---
-            state_variables:
-                S_A1:
-                    label: "Synaptic gating A1 (PPC-A)"
-                    equation:
-                        rhs: "-(S_A1 / tau) + gamma * (1.0 - S_A1) * r_A1 / 1000.0"
-                    initial_value: 0.0
-                    domain:
-                        lo: 0.0
-                        hi: 1.0
-                S_B1:
-                    label: "Synaptic gating B1 (PPC-B)"
-                    equation:
-                        rhs: "-(S_B1 / tau) + gamma * (1.0 - S_B1) * r_B1 / 1000.0"
-                    initial_value: 0.0
-                    domain:
-                        lo: 0.0
-                        hi: 1.0
-                S_A2:
-                    label: "Synaptic gating A2 (PFC-A)"
-                    equation:
-                        rhs: "-(S_A2 / tau) + gamma * (1.0 - S_A2) * r_A2 / 1000.0"
-                    initial_value: 0.0
-                    domain:
-                        lo: 0.0
-                        hi: 1.0
-                S_B2:
-                    label: "Synaptic gating B2 (PFC-B)"
-                    equation:
-                        rhs: "-(S_B2 / tau) + gamma * (1.0 - S_B2) * r_B2 / 1000.0"
-                    initial_value: 0.0
-                    domain:
-                        lo: 0.0
-                        hi: 1.0
+      state_variables:
+        S_A1:
+          label: "Synaptic gating A1 (PPC-A)"
+          equation:
+            rhs: "-(S_A1 / tau) + gamma * (1.0 - S_A1) * r_A1 / 1000.0"
+          initial_value: 0.0
+          domain:
+            lo: 0.0
+            hi: 1.0
+        S_B1:
+          label: "Synaptic gating B1 (PPC-B)"
+          equation:
+            rhs: "-(S_B1 / tau) + gamma * (1.0 - S_B1) * r_B1 / 1000.0"
+          initial_value: 0.0
+          domain:
+            lo: 0.0
+            hi: 1.0
+        S_A2:
+          label: "Synaptic gating A2 (PFC-A)"
+          equation:
+            rhs: "-(S_A2 / tau) + gamma * (1.0 - S_A2) * r_A2 / 1000.0"
+          initial_value: 0.0
+          domain:
+            lo: 0.0
+            hi: 1.0
+        S_B2:
+          label: "Synaptic gating B2 (PFC-B)"
+          equation:
+            rhs: "-(S_B2 / tau) + gamma * (1.0 - S_B2) * r_B2 / 1000.0"
+          initial_value: 0.0
+          domain:
+            lo: 0.0
+            hi: 1.0
 
                 # AMPA noise processes
-                I_noise_A:
-                    label: "AMPA noise for population A"
-                    equation:
-                        rhs: "(-I_noise_A + eta * sqrt(tau_AMPA * sigma_noise**2)) / tau_AMPA"
-                    initial_value: 0.0
-                    description: "Ornstein-Uhlenbeck noise process"
-                I_noise_B:
-                    label: "AMPA noise for population B"
-                    equation:
-                        rhs: "(-I_noise_B + eta * sqrt(tau_AMPA * sigma_noise**2)) / tau_AMPA"
-                    initial_value: 0.0
-                    description: "Ornstein-Uhlenbeck noise process"
+        I_noise_A:
+          label: "AMPA noise for population A"
+          equation:
+            rhs: "(-I_noise_A + eta * sqrt(tau_AMPA * sigma_noise**2)) / tau_AMPA"
+          initial_value: 0.0
+          description: "Ornstein-Uhlenbeck noise process"
+        I_noise_B:
+          label: "AMPA noise for population B"
+          equation:
+            rhs: "(-I_noise_B + eta * sqrt(tau_AMPA * sigma_noise**2)) / tau_AMPA"
+          initial_value: 0.0
+          description: "Ornstein-Uhlenbeck noise process"
 
 
-    label: "HCP MMP Connectome (379 regions)"
-    description: >
-        Structural connectivity from Human Connectome Project dwMRI tractography.
-        Uses the HCP multimodal parcellation (Glasser et al., 2016) with 379 regions.
-        Connectivity matrices include streamline counts and tract lengths for delays.
-    number_of_nodes: 379
+  label: "HCP MMP Connectome (379 regions)"
+  description: >
+    Structural connectivity from Human Connectome Project dwMRI tractography.
+    Uses the HCP multimodal parcellation (Glasser et al., 2016) with 379 regions.
+    Connectivity matrices include streamline counts and tract lengths for delays.
+  number_of_nodes: 379
 
     # For simplified 2-node toy model (as in Python notebook)
     # number_of_nodes: 2
 
-    parameters:
-        conduction_speed:
-            name: conduction_speed
-            label: global_trans_v
-            value: 1.0
-            unit: m_per_s
-            description: "Global transmission velocity for computing delays"
-        G:
-            name: G
-            value: 0.5
-            description: "Global scaling factor for connectivity weights"
+  parameters:
+    conduction_speed:
+      name: conduction_speed
+      label: global_trans_v
+      value: 1.0
+      unit: m_per_s
+      description: "Global transmission velocity for computing delays"
+    G:
+      name: G
+      value: 0.5
+      description: "Global scaling factor for connectivity weights"
 
-    transforms:
-        - name: weight
-          equation:
-            rhs: "W * G * J_NMDA"
-            description: "SC weights scaled by global coupling and NMDA strength"
+  transforms:
+    - name: weight
+      equation:
+        rhs: "W * G * J_NMDA"
+        description: "SC weights scaled by global coupling and NMDA strength"
 
-    coupling:
-        EIBCoupling:
-            label: "EI-Balance Coupling"
-            description: >
-                Dual-weight coupling producing two outputs from excitatory activity:
-                long-range excitation (wLRE) to distant excitatory populations and
-                feedforward inhibition (wFFI) to distant inhibitory populations.
-                E/I ratio = wLRE / wFFI controls functional connectivity.
-            delayed: true
-            parameters:
-                wLRE:
-                    label: "Long-range excitation weights"
-                    value: 1.0
-                    description: "Multiplier for SC weights in LRE pathway"
-                    heterogeneous: true
-                    free: true
-                    shape: "(n_nodes, n_nodes)"
-                    domain:
-                        lo: 0.0
-                wFFI:
-                    label: "Feedforward inhibition weights"
-                    value: 1.0
-                    description: "Multiplier for SC weights in FFI pathway"
-                    heterogeneous: true
-                    free: true
-                    shape: "(n_nodes, n_nodes)"
-                    domain:
-                        lo: 0.0
-            incoming_states:
-                - S_E
-            pre_expression:
-                rhs: "[sum_j(C_ij * wLRE_ij * S_E_j(t - delay_ij)), sum_j(C_ij * wFFI_ij * S_E_j(t - delay_ij))]"
-                description: "Delayed coupling with separate LRE and FFI pathways"
-            post_expression:
-                rhs: "[c_lre, c_ffi]"
-                description: "Output as [LRE input, FFI input] for each node"
+  coupling:
+    EIBCoupling:
+      label: "EI-Balance Coupling"
+      description: >
+        Dual-weight coupling producing two outputs from excitatory activity:
+        long-range excitation (wLRE) to distant excitatory populations and
+        feedforward inhibition (wFFI) to distant inhibitory populations.
+        E/I ratio = wLRE / wFFI controls functional connectivity.
+      delayed: true
+      parameters:
+        wLRE:
+          label: "Long-range excitation weights"
+          value: 1.0
+          description: "Multiplier for SC weights in LRE pathway"
+          heterogeneous: true
+          free: true
+          shape: "(n_nodes, n_nodes)"
+          domain:
+            lo: 0.0
+        wFFI:
+          label: "Feedforward inhibition weights"
+          value: 1.0
+          description: "Multiplier for SC weights in FFI pathway"
+          heterogeneous: true
+          free: true
+          shape: "(n_nodes, n_nodes)"
+          domain:
+            lo: 0.0
+      incoming_states:
+        - S_E
+      pre_expression:
+        rhs: "[sum_j(C_ij * wLRE_ij * S_E_j(t - delay_ij)), sum_j(C_ij * wFFI_ij * S_E_j(t - delay_ij))]"
+        description: "Delayed coupling with separate LRE and FFI pathways"
+      post_expression:
+        rhs: "[c_lre, c_ffi]"
+        description: "Output as [LRE input, FFI input] for each node"
 
 # =============================================================================
 # INTEGRATION: Euler method
 # =============================================================================
 integration:
-    method: euler
-    description: "Forward Euler integration with dt = 1 ms"
-    step_size: 1.0
-    duration: 30000.0
-    transient_time: 25000.0
-    unit: ms
-    noise:
-        additive: true
-        gaussian: true
-        seed: 1403
-        parameters:
-            sigma:
-                value: 0.00316228
-                unit: nA
+  method: euler
+  description: "Forward Euler integration with dt = 1 ms"
+  step_size: 1.0
+  duration: 30000.0
+  transient_time: 25000.0
+  unit: ms
+  noise:
+    additive: true
+    gaussian: true
+    seed: 1403
+    parameters:
+      sigma:
+        value: 0.00316228
+        unit: nA
 
 # =============================================================================
 # FUNCTIONS: Reusable computation blocks
 # =============================================================================
 functions:
-    MW_noise:
-        name: MW_noise
-        description: |
-            Ornstein-Uhlenbeck noise process for AMPA synapses.
-            Generates temporally correlated noise with tau_AMPA time constant.
-        equation:
-            rhs: "I_noise + dt * ((-I_noise + randn() * sqrt(tau_AMPA * sigma_noise**2)) / tau_AMPA)"
-            description: "OU noise: dI = -I/tau dt + sigma*sqrt(2/tau)*dW"
-            parameters:
-                tau_AMPA:
-                    value: 2.0
-                    unit: ms
-                sigma_noise:
-                    value: 0.009
-                    unit: nA
-        arguments:
-            - name: I_noise
-              description: "Current noise state"
+  MW_noise:
+    name: MW_noise
+    description: |
+      Ornstein-Uhlenbeck noise process for AMPA synapses.
+      Generates temporally correlated noise with tau_AMPA time constant.
+    equation:
+      rhs: "I_noise + dt * ((-I_noise + randn() * sqrt(tau_AMPA * sigma_noise**2)) / tau_AMPA)"
+      description: "OU noise: dI = -I/tau dt + sigma*sqrt(2/tau)*dW"
+      parameters:
+        tau_AMPA:
+          value: 2.0
+          unit: ms
+        sigma_noise:
+          value: 0.009
+          unit: nA
+    arguments:
+      - name: I_noise
+        description: "Current noise state"
 
-    transfer_function_E:
-        name: transfer_function_E
-        description: |
-            Sigmoidal transfer function for excitatory population.
-            Converts input current to firing rate.
-        equation:
-            rhs: "(a_E * I - b_E) / (1 - exp(-d_E * (a_E * I - b_E)))"
-            parameters:
-                a_E:
-                    value: 310.0
-                    unit: per_nC
-                b_E:
-                    value: 125.0
-                    unit: Hz
-                d_E:
-                    value: 0.16
-                    unit: s
-        arguments:
-            - name: I
-              description: "Input current (nA)"
+  transfer_function_E:
+    name: transfer_function_E
+    description: |
+      Sigmoidal transfer function for excitatory population.
+      Converts input current to firing rate.
+    equation:
+      rhs: "(a_E * I - b_E) / (1 - exp(-d_E * (a_E * I - b_E)))"
+      parameters:
+        a_E:
+          value: 310.0
+          unit: per_nC
+        b_E:
+          value: 125.0
+          unit: Hz
+        d_E:
+          value: 0.16
+          unit: s
+    arguments:
+      - name: I
+        description: "Input current (nA)"
 
-    transfer_function_I:
-        name: transfer_function_I
-        description: |
-            Sigmoidal transfer function for inhibitory population.
-            Converts input current to firing rate.
-        equation:
-            rhs: "(a_I * I - b_I) / (1 - exp(-d_I * (a_I * I - b_I)))"
-            parameters:
-                a_I:
-                    value: 615.0
-                    unit: per_nC
-                b_I:
-                    value: 177.0
-                    unit: Hz
-                d_I:
-                    value: 0.087
-                    unit: s
-        arguments:
-            - name: I
-              description: "Input current (nA)"
+  transfer_function_I:
+    name: transfer_function_I
+    description: |
+      Sigmoidal transfer function for inhibitory population.
+      Converts input current to firing rate.
+    equation:
+      rhs: "(a_I * I - b_I) / (1 - exp(-d_I * (a_I * I - b_I)))"
+      parameters:
+        a_I:
+          value: 615.0
+          unit: per_nC
+        b_I:
+          value: 177.0
+          unit: Hz
+        d_I:
+          value: 0.087
+          unit: s
+    arguments:
+      - name: I
+        description: "Input current (nA)"
 
-    transfer_function_MW:
-        name: transfer_function_MW
-        description: |
-            Transfer function for Murray-Wang DM circuit populations.
-        equation:
-            rhs: "(a * I - b) / (1 - exp(-c * (a * I - b)))"
-            parameters:
-                a:
-                    value: 270.0
-                    unit: Hz_per_nA
-                b:
-                    value: 108.0
-                    unit: Hz
-                c:
-                    value: 0.154
-                    unit: s
-        arguments:
-            - name: I
-              description: "Input current (nA)"
+  transfer_function_MW:
+    name: transfer_function_MW
+    description: |
+      Transfer function for Murray-Wang DM circuit populations.
+    equation:
+      rhs: "(a * I - b) / (1 - exp(-c * (a * I - b)))"
+      parameters:
+        a:
+          value: 270.0
+          unit: Hz_per_nA
+        b:
+          value: 108.0
+          unit: Hz
+        c:
+          value: 0.154
+          unit: s
+    arguments:
+      - name: I
+        description: "Input current (nA)"
 
-    normalize_input:
-        name: normalize_input
-        description: |
-            Normalize large-scale BNM input for coupling to DM circuit.
-            Range normalization from [a_old, b_old] to [a_new, b_new].
-        equation:
-            rhs: "(b_new - a_new) * (I_E - a_old) / (b_old - a_old) + a_new"
-            parameters:
-                a_new:
-                    value: -0.006
-                    unit: nA
-                b_new:
-                    value: 0.001
-                    unit: nA
-        arguments:
-            - name: I_E
-              description: "Excitatory input current from BNM"
-            - name: a_old
-              description: "Original range lower bound (region-specific)"
-            - name: b_old
-              description: "Original range upper bound (region-specific)"
+  normalize_input:
+    name: normalize_input
+    description: |
+      Normalize large-scale BNM input for coupling to DM circuit.
+      Range normalization from [a_old, b_old] to [a_new, b_new].
+    equation:
+      rhs: "(b_new - a_new) * (I_E - a_old) / (b_old - a_old) + a_new"
+      parameters:
+        a_new:
+          value: -0.006
+          unit: nA
+        b_new:
+          value: 0.001
+          unit: nA
+    arguments:
+      - name: I_E
+        description: "Excitatory input current from BNM"
+      - name: a_old
+        description: "Original range lower bound (region-specific)"
+      - name: b_old
+        description: "Original range upper bound (region-specific)"
 
-    compute_fc:
-        name: compute_fc
-        description: |
-            Compute functional connectivity as Pearson correlations between
-            node time series. Diagonal is set to 0.
-        callable:
-            module: numpy
-            name: corrcoef
-        arguments:
-            - name: timeseries
-              description: "Time series matrix (T x N)"
+  compute_fc:
+    name: compute_fc
+    description: |
+      Compute functional connectivity as Pearson correlations between
+      node time series. Diagonal is set to 0.
+    callable:
+      module: numpy
+      name: corrcoef
+    arguments:
+      - name: timeseries
+        description: "Time series matrix (T x N)"
 
-    corr:
-        name: corr
-        description: |
-            Pearson correlation coefficient between two vectors.
-        equation:
-            rhs: "Sum((x[t] - mean_x) * (y[t] - mean_y), (t, 0, n-1)) / (sqrt(Sum((x[t] - mean_x)**2, (t, 0, n-1))) * sqrt(Sum((y[t] - mean_y)**2, (t, 0, n-1))))"
-        arguments:
-            - name: x
-              description: "First vector"
-            - name: y
-              description: "Second vector"
-            - name: n
-              description: "Vector length"
+  corr:
+    name: corr
+    description: |
+      Pearson correlation coefficient between two vectors.
+    equation:
+      rhs: "Sum((x[t] - mean_x) * (y[t] - mean_y), (t, 0, n-1)) / (sqrt(Sum((x[t] - mean_x)**2, (t, 0, n-1))) * sqrt(Sum((y[t] - mean_y)**2, (t, 0, n-1))))"
+    arguments:
+      - name: x
+        description: "First vector"
+      - name: y
+        description: "Second vector"
+      - name: n
+        description: "Vector length"
 
-    rmse:
-        name: rmse
-        description: |
-            Root mean squared error between two vectors or matrices.
-        equation:
-            rhs: "sqrt(Sum((x[i] - y[i])**2, (i, 0, n-1)) / n)"
-        arguments:
-            - name: x
-              description: "First array"
-            - name: y
-              description: "Second array"
-            - name: n
-              description: "Array length"
+  rmse:
+    name: rmse
+    description: |
+      Root mean squared error between two vectors or matrices.
+    equation:
+      rhs: "sqrt(Sum((x[i] - y[i])**2, (i, 0, n-1)) / n)"
+    arguments:
+      - name: x
+        description: "First array"
+      - name: y
+        description: "Second array"
+      - name: n
+        description: "Array length"
 
-    FIC_update_rule:
-        name: FIC_update_rule
-        description: |
-            Feedback Inhibition Control update rule.
-            Adjusts local inhibitory weight J_i to maintain target firing rate.
-            Based on Vogels et al. (2011) inhibitory plasticity rule.
-        equation:
-            rhs: "J_i + eta_FIC * (r_I * r_E - rho_0 * r_I)"
-            description: "Delta_J_i = eta * (pre * post - target * pre)"
-            parameters:
-                eta_FIC:
-                    value: 0.001
-                    description: "FIC learning rate"
-                rho_0:
-                    value: 4.0
-                    unit: Hz
-                    description: "Target firing rate for excitatory population"
-        arguments:
-            - name: J_i
-              description: "Current inhibitory weight"
-            - name: r_E
-              description: "Excitatory firing rate (post)"
-            - name: r_I
-              description: "Inhibitory firing rate (pre)"
+  FIC_update_rule:
+    name: FIC_update_rule
+    description: |
+      Feedback Inhibition Control update rule.
+      Adjusts local inhibitory weight J_i to maintain target firing rate.
+      Based on Vogels et al. (2011) inhibitory plasticity rule.
+    equation:
+      rhs: "J_i + eta_FIC * (r_I * r_E - rho_0 * r_I)"
+      description: "Delta_J_i = eta * (pre * post - target * pre)"
+      parameters:
+        eta_FIC:
+          value: 0.001
+          description: "FIC learning rate"
+        rho_0:
+          value: 4.0
+          unit: Hz
+          description: "Target firing rate for excitatory population"
+    arguments:
+      - name: J_i
+        description: "Current inhibitory weight"
+      - name: r_E
+        description: "Excitatory firing rate (post)"
+      - name: r_I
+        description: "Inhibitory firing rate (pre)"
 
-    EIB_update_wLRE:
-        name: EIB_update_wLRE
-        description: |
-            E/I balance update rule for long-range excitation weights.
-            Increases wLRE where simulated FC is below target FC.
-        equation:
-            rhs: "wLRE_ij + eta_EI * (FC_target_ij - FC_sim_ij) * rmse_i"
-            description: "wLRE += eta * diff_FC * rmse"
-        arguments:
-            - name: wLRE_ij
-              description: "Current LRE weight"
-            - name: FC_target_ij
-              description: "Target FC for connection i-j"
-            - name: FC_sim_ij
-              description: "Simulated FC for connection i-j"
-            - name: rmse_i
-              description: "Row-wise RMSE between target and simulated FC"
-            - name: eta_EI
-              value: 0.1
-              description: "E/I balance learning rate"
+  EIB_update_wLRE:
+    name: EIB_update_wLRE
+    description: |
+      E/I balance update rule for long-range excitation weights.
+      Increases wLRE where simulated FC is below target FC.
+    equation:
+      rhs: "wLRE_ij + eta_EI * (FC_target_ij - FC_sim_ij) * rmse_i"
+      description: "wLRE += eta * diff_FC * rmse"
+    arguments:
+      - name: wLRE_ij
+        description: "Current LRE weight"
+      - name: FC_target_ij
+        description: "Target FC for connection i-j"
+      - name: FC_sim_ij
+        description: "Simulated FC for connection i-j"
+      - name: rmse_i
+        description: "Row-wise RMSE between target and simulated FC"
+      - name: eta_EI
+        value: 0.1
+        description: "E/I balance learning rate"
 
-    EIB_update_wFFI:
-        name: EIB_update_wFFI
-        description: |
-            E/I balance update rule for feedforward inhibition weights.
-            Decreases wFFI where simulated FC is below target FC.
-        equation:
-            rhs: "wFFI_ij - eta_EI * (FC_target_ij - FC_sim_ij) * rmse_i"
-            description: "wFFI -= eta * diff_FC * rmse"
-        arguments:
-            - name: wFFI_ij
-              description: "Current FFI weight"
-            - name: FC_target_ij
-              description: "Target FC for connection i-j"
-            - name: FC_sim_ij
-              description: "Simulated FC for connection i-j"
-            - name: rmse_i
-              description: "Row-wise RMSE between target and simulated FC"
-            - name: eta_EI
-              value: 0.1
-              description: "E/I balance learning rate"
+  EIB_update_wFFI:
+    name: EIB_update_wFFI
+    description: |
+      E/I balance update rule for feedforward inhibition weights.
+      Decreases wFFI where simulated FC is below target FC.
+    equation:
+      rhs: "wFFI_ij - eta_EI * (FC_target_ij - FC_sim_ij) * rmse_i"
+      description: "wFFI -= eta * diff_FC * rmse"
+    arguments:
+      - name: wFFI_ij
+        description: "Current FFI weight"
+      - name: FC_target_ij
+        description: "Target FC for connection i-j"
+      - name: FC_sim_ij
+        description: "Simulated FC for connection i-j"
+      - name: rmse_i
+        description: "Row-wise RMSE between target and simulated FC"
+      - name: eta_EI
+        value: 0.1
+        description: "E/I balance learning rate"
 
-    decision_threshold:
-        name: decision_threshold
-        description: |
-            Detect when firing rate crosses decision threshold.
-            Returns time step when threshold is first crossed.
-        source_code: |
-            for i in range(len(r)):
-                if r[i] > threshold:
-                    return i
-            return -1
-        arguments:
-            - name: r
-              description: "Firing rate time series"
-            - name: threshold
-              value: 30.0
-              unit: Hz
-              description: "Decision threshold (30 Hz for detection, 40 Hz for action)"
+  decision_threshold:
+    name: decision_threshold
+    description: |
+      Detect when firing rate crosses decision threshold.
+      Returns time step when threshold is first crossed.
+    source_code: |
+      for i in range(len(r)):
+          if r[i] > threshold:
+              return i
+      return -1
+    arguments:
+      - name: r
+        description: "Firing rate time series"
+      - name: threshold
+        value: 30.0
+        unit: Hz
+        description: "Decision threshold (30 Hz for detection, 40 Hz for action)"
 
 # =============================================================================
 # OBSERVATIONS: Measurements from simulation
 # =============================================================================
 observations:
-    S_E_timeseries:
-        label: "Excitatory Synaptic Activity"
-        description: "Time series of S_E for all nodes"
-        source: S_E
-        period: 1.0
+  S_E_timeseries:
+    label: "Excitatory Synaptic Activity"
+    description: "Time series of S_E for all nodes"
+    source: S_E
+    period: 1.0
 
-    I_E_timeseries:
-        label: "Excitatory Input Current"
-        description: "Time series of I_E for all nodes"
-        source: I_E
-        period: 1.0
+  I_E_timeseries:
+    label: "Excitatory Input Current"
+    description: "Time series of I_E for all nodes"
+    source: I_E
+    period: 1.0
 
-    mean_S_E:
-        label: "Mean Excitatory Activity"
-        description: "Temporal mean of S_E over simulation window"
-        source: S_E
-        aggregation: mean
+  mean_S_E:
+    label: "Mean Excitatory Activity"
+    description: "Temporal mean of S_E over simulation window"
+    source: S_E
+    aggregation: mean
 
-    mean_r_E:
-        label: "Mean Excitatory Firing Rate"
-        description: "Temporal mean of r_E (target: 4 Hz)"
-        source: r_E
-        aggregation: mean
+  mean_r_E:
+    label: "Mean Excitatory Firing Rate"
+    description: "Temporal mean of r_E (target: 4 Hz)"
+    source: r_E
+    aggregation: mean
 
-    input_correlation:
-        label: "Input Current Correlation"
-        description: "Correlation between I_E time series across nodes"
-        source: I_E
-        pipeline:
-            - callable:
-                  module: numpy
-                  name: corrcoef
+  input_correlation:
+    label: "Input Current Correlation"
+    description: "Correlation between I_E time series across nodes"
+    source: I_E
+    pipeline:
+      - callable:
+          module: numpy
+          name: corrcoef
 
-    input_amplitude:
-        label: "Mean Input Amplitude"
-        description: "Mean amplitude of I_E across time"
-        source: I_E
-        aggregation: mean
+  input_amplitude:
+    label: "Mean Input Amplitude"
+    description: "Mean amplitude of I_E across time"
+    source: I_E
+    aggregation: mean
 
     # Decision-making observations
-    r_A1_timeseries:
-        label: "PPC-A Firing Rate"
-        description: "Firing rate of PPC population A (evidence for option A)"
-        source: r_A1
-        period: 1.0
+  r_A1_timeseries:
+    label: "PPC-A Firing Rate"
+    description: "Firing rate of PPC population A (evidence for option A)"
+    source: r_A1
+    period: 1.0
 
-    r_B1_timeseries:
-        label: "PPC-B Firing Rate"
-        description: "Firing rate of PPC population B (evidence for option B)"
-        source: r_B1
-        period: 1.0
+  r_B1_timeseries:
+    label: "PPC-B Firing Rate"
+    description: "Firing rate of PPC population B (evidence for option B)"
+    source: r_B1
+    period: 1.0
 
-    r_A2_timeseries:
-        label: "PFC-A Firing Rate"
-        description: "Firing rate of PFC population A (action for option A)"
-        source: r_A2
-        period: 1.0
+  r_A2_timeseries:
+    label: "PFC-A Firing Rate"
+    description: "Firing rate of PFC population A (action for option A)"
+    source: r_A2
+    period: 1.0
 
-    r_B2_timeseries:
-        label: "PFC-B Firing Rate"
-        description: "Firing rate of PFC population B (action for option B)"
-        source: r_B2
-        period: 1.0
+  r_B2_timeseries:
+    label: "PFC-B Firing Rate"
+    description: "Firing rate of PFC population B (action for option B)"
+    source: r_B2
+    period: 1.0
 
 # =============================================================================
 # DERIVED OBSERVATIONS
 # =============================================================================
 derived_observations:
-    fc_sim:
-        label: "Simulated Functional Connectivity"
-        description: "Pearson correlation matrix from S_E time series"
-        source_observations:
-            - S_E_timeseries
-        pipeline:
-            - callable:
-                  module: numpy
-                  name: corrcoef
+  fc_sim:
+    label: "Simulated Functional Connectivity"
+    description: "Pearson correlation matrix from S_E time series"
+    source_observations:
+      - S_E_timeseries
+    pipeline:
+      - callable:
+          module: numpy
+          name: corrcoef
 
-    correct_response:
-        label: "Decision Accuracy"
-        description: >
-            Whether the correct decision was made: mean(r_A2[-200:]) > 30
-            and mean(r_B2[-200:]) < 30 when A is the correct choice.
-        source_observations:
-            - r_A2_timeseries
-            - r_B2_timeseries
-        pipeline:
-            - callable:
-                  name: evaluate_decision
-                  module: custom
-              arguments:
-                  - name: r_A2
-                    value: r_A2_timeseries
-                  - name: r_B2
-                    value: r_B2_timeseries
-                  - name: threshold
-                    value: 30.0
+  correct_response:
+    label: "Decision Accuracy"
+    description: >
+      Whether the correct decision was made: mean(r_A2[-200:]) > 30
+      and mean(r_B2[-200:]) < 30 when A is the correct choice.
+    source_observations:
+      - r_A2_timeseries
+      - r_B2_timeseries
+    pipeline:
+      - callable:
+          name: evaluate_decision
+          module: custom
+        arguments:
+          - name: r_A2
+            value: r_A2_timeseries
+          - name: r_B2
+            value: r_B2_timeseries
+          - name: threshold
+            value: 30.0
 
-    decision_time_A:
-        label: "Decision Time for A"
-        description: "Time when r_A1 first exceeds threshold (25 Hz)"
-        source_observations:
-            - r_A1_timeseries
-        pipeline:
-            - function: decision_threshold
-              arguments:
-                  - name: r
-                    value: r_A1_timeseries
-                  - name: threshold
-                    value: 25.0
+  decision_time_A:
+    label: "Decision Time for A"
+    description: "Time when r_A1 first exceeds threshold (25 Hz)"
+    source_observations:
+      - r_A1_timeseries
+    pipeline:
+      - function: decision_threshold
+        arguments:
+          - name: r
+            value: r_A1_timeseries
+          - name: threshold
+            value: 25.0
 
 # =============================================================================
 # ALGORITHMS: Iterative Parameter Tuning
@@ -878,150 +878,151 @@ algorithms:
     # =========================================================================
     # FIC: Feedback Inhibition Control
     # =========================================================================
-    - name: fic
-      description: >
-          Feedback Inhibition Control (Deco et al., 2014) adjusts local
-          inhibitory weight J_i to maintain excitatory firing rate at target
-          (4 Hz). Applied once per BOLD TR (720 ms in this study).
-      type: fic
-      objective:
-          type: activity_target
-          target_variable: r_E
-          target_value: 4.0
-          description: "Maintain mean r_E at 4 Hz"
-      observations:
-          - mean_r_E
-      update_rules:
-          - name: J_i_update
-            target_parameter:
-                name: J_i
-            equation:
-                rhs: "J_i + eta_FIC * (r_I * r_E - rho_0 * r_I)"
-            bounds:
-                lo: 0.0
-      hyperparameters:
-          - name: eta_FIC
-            value: 0.001
-          - name: rho_0
-            value: 4.0
-      simulation_period: 720.0
-      n_iterations: -1
+  fic:
+    description: >
+      Feedback Inhibition Control (Deco et al., 2014) adjusts local
+      inhibitory weight J_i to maintain excitatory firing rate at target
+      (4 Hz). Applied once per BOLD TR (720 ms in this study).
+    type: fic
+    objective:
+      type: activity_target
+      target_variable: r_E
+      target_value: 4.0
+      description: "Maintain mean r_E at 4 Hz"
+    observations:
+      - mean_r_E
+    update_rules:
+      - name: J_i_update
+        target_parameter:
+          name: J_i
+        equation:
+          rhs: "J_i + eta_FIC * (r_I * r_E - rho_0 * r_I)"
+        bounds:
+          lo: 0.0
+    hyperparameters:
+      - name: eta_FIC
+        value: 0.001
+      - name: rho_0
+        value: 4.0
+    simulation_period: 720.0
+    n_iterations: -1
 
     # =========================================================================
     # EIB: Excitation-Inhibition Balance Tuning
     # =========================================================================
-    - name: eib
-      description: >
-          E/I Balance tuning algorithm that adjusts wLRE and wFFI to match
-          simulated FC with empirical FC. Uses online learning during simulation
-          with a Hebbian-like rule: increase wLRE (decrease wFFI) where FC is
-          too low, decrease wLRE (increase wFFI) where FC is too high.
-      type: eib
-      depends_on: fic
-      objective:
-          type: fc_matching
-          target_data: fc_target
-          description: "Match simulated FC to empirical FC"
-      observations:
-          - fc_sim
-          - fc_target
-      update_rules:
-          - name: wLRE_update
-            target_parameter:
-                name: wLRE
-            equation:
-                rhs: "wLRE_ij + eta_EI * (FC_target_ij - FC_sim_ij) * rmse_i"
-            bounds:
-                lo: 0.0
-            warmup: true
-          - name: wFFI_update
-            target_parameter:
-                name: wFFI
-            equation:
-                rhs: "wFFI_ij - eta_EI * (FC_target_ij - FC_sim_ij) * rmse_i"
-            bounds:
-                lo: 0.0
-            warmup: true
-      hyperparameters:
-          - name: eta_EI
-            value: 0.1
-            description: "Initial learning rate (halved each stage)"
-          - name: window_size
-            value: 150
-            description: "FC window size in TRs (doubled each stage)"
-      n_iterations: 6
-      simulation_period: 36000000.0
-      learning_rate_schedule: "halving"
+  eib:
+    description: >
+      E/I Balance tuning algorithm that adjusts wLRE and wFFI to match
+      simulated FC with empirical FC. Uses online learning during simulation
+      with a Hebbian-like rule: increase wLRE (decrease wFFI) where FC is
+      too low, decrease wLRE (increase wFFI) where FC is too high.
+    type: eib
+    depends_on: [fic]
+    objective:
+      type: fc_matching
+      target_data: fc_target
+      description: "Match simulated FC to empirical FC"
+    observations:
+      - fc_sim
+      - fc_target
+    update_rules:
+      - name: wLRE_update
+        target_parameter:
+          name: wLRE
+        equation:
+          rhs: "wLRE_ij + eta_EI * (FC_target_ij - FC_sim_ij) * rmse_i"
+        bounds:
+          lo: 0.0
+        warmup: true
+      - name: wFFI_update
+        target_parameter:
+          name: wFFI
+        equation:
+          rhs: "wFFI_ij - eta_EI * (FC_target_ij - FC_sim_ij) * rmse_i"
+        bounds:
+          lo: 0.0
+        warmup: true
+    hyperparameters:
+      - name: eta_EI
+        value: 0.1
+        description: "Initial learning rate (halved each stage)"
+      - name: window_size
+        value: 150
+        description: "FC window size in TRs (doubled each stage)"
+    n_iterations: 6
+    simulation_period: 36000000.0
+    learning_rate_schedule: "halving"
 
 # =============================================================================
 # EXPLORATIONS: Parameter Sweeps
 # =============================================================================
 explorations:
-    - name: EI_ratio_sweep
-      label: "E/I Ratio Parameter Sweep"
-      description: >
-          Sweep E/I ratio from 0.01 to 100 (50 log-spaced values) to study
-          effect on functional connectivity and decision-making performance.
-          Uses simplified 2-node network.
-      parameters:
-          - name: EI_ratio
-            domain:
-                lo: 0.01
-                hi: 100.0
-                n: 50
-                log_scale: true
-      observable:
-          function: fc_sim
-      mode: product
-      n_parallel: 1
+  EI_ratio_sweep:
+    label: "E/I Ratio Parameter Sweep"
+    description: >
+      Sweep E/I ratio from 0.01 to 100 (50 log-spaced values) to study
+      effect on functional connectivity and decision-making performance.
+      Uses simplified 2-node network.
+    space:
+      - parameter: ReducedWongWangEI.EI_ratio
+        domain:
+          lo: 0.01
+          hi: 100.0
+          n: 50
+          log_scale: true
+    observable:
+      function: fc_sim
+    mode: product
+    n_parallel: 1
 
-    - name: contrast_sweep
-      label: "Stimulus Contrast Sweep"
-      description: >
-          Sweep stimulus contrast from 0.8% to 6.4% to study decision-making
-          accuracy and response times.
-      parameters:
-          - name: contrast
-            domain:
-                lo: 0.8
-                hi: 6.4
-                n: 8
+  contrast_sweep:
+    label: "Stimulus Contrast Sweep"
+    description: >
+      Sweep stimulus contrast from 0.8% to 6.4% to study decision-making
+      accuracy and response times.
+    space:
+      - parameter: MurrayWangDM.contrast
+        domain:
+          lo: 0.8
+          hi: 6.4
+          n: 8
 
 # =============================================================================
 # EXECUTION CONFIGURATION
 # =============================================================================
 execution:
-    n_workers: 1
-    precision: float32
-    random_seed: 1403
-    accelerator: cpu
+  n_workers: 1
+  precision: float32
+  random_seed: 1403
+  accelerator: cpu
 
 # =============================================================================
 # ENVIRONMENT
 # =============================================================================
 environment:
-    name: "multiscale-bnm-dm"
-    requirements:
-        - name: numpy
-          version_spec: ">=1.20.3"
-          role: runtime
-        - name: scipy
-          version_spec: ">=1.7.1"
-          role: runtime
-        - name: matplotlib
-          version_spec: ">=3.4.3"
-          role: analysis
-        - name: gcc
-          version_spec: ">=9.4"
-          role: engine
-          description: "For C code compilation"
+  name: "multiscale-bnm-dm"
+  requirements:
+    - name: numpy
+      version_spec: ">=1.20.3"
+      role: runtime
+    - name: scipy
+      version_spec: ">=1.7.1"
+      role: runtime
+    - name: matplotlib
+      version_spec: ">=3.4.3"
+      role: analysis
+    - name: gcc
+      version_spec: ">=9.4"
+      role: engine
+      description: "For C code compilation"
 
 # =============================================================================
 # REFERENCES
 # =============================================================================
 references:
-    - "Schirner, M., Deco, G., & Ritter, P. (2023). Learning how network structure shapes decision-making for bio-inspired computing. Nature Communications, 14(1), Article 2963. https://doi.org/10.1038/s41467-023-38626-y"
-    - "Murray, J.D., Jaramillo, J., & Wang, X.J. (2017). Working memory and decision-making in a frontoparietal circuit model. Journal of Neuroscience, 37(50), 12167-12186."
-    - "Deco, G., Ponce-Alvarez, A., Hagmann, P., Romani, G.L., Mantini, D., & Corbetta, M. (2014). How local excitation-inhibition ratio impacts the whole brain dynamics. Journal of Neuroscience, 34(23), 7886-7898."
-    - "Wong, K.F. & Wang, X.J. (2006). A recurrent network mechanism of time integration in perceptual decisions. Journal of Neuroscience, 26(4), 1314-1328."
-    - "Vogels, T.P., Sprekeler, H., Zenke, F., Clopath, C., & Gerstner, W. (2011). Inhibitory plasticity balances excitation and inhibition in sensory pathways and memory networks. Science, 334(6062), 1569-1573."
+  - "Schirner, M., Deco, G., & Ritter, P. (2023). Learning how network structure shapes decision-making for bio-inspired computing. Nature Communications, 14(1), Article 2963. https://doi.org/10.1038/s41467-023-38626-y"
+  - "Murray, J.D., Jaramillo, J., & Wang, X.J. (2017). Working memory and decision-making in a frontoparietal circuit model. Journal of Neuroscience, 37(50), 12167-12186."
+  - "Deco, G., Ponce-Alvarez, A., Hagmann, P., Romani, G.L., Mantini, D., & Corbetta, M. (2014). How local excitation-inhibition ratio impacts the whole brain dynamics. Journal of Neuroscience, 34(23),
+    7886-7898."
+  - "Wong, K.F. & Wang, X.J. (2006). A recurrent network mechanism of time integration in perceptual decisions. Journal of Neuroscience, 26(4), 1314-1328."
+  - "Vogels, T.P., Sprekeler, H., Zenke, F., Clopath, C., & Gerstner, W. (2011). Inhibitory plasticity balances excitation and inhibition in sensory pathways and memory networks. Science, 334(6062), 1569-1573."

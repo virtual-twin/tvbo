@@ -5,13 +5,12 @@ filenames — no manual filename construction.
 
 TVB converters have moved to :mod:`tvbo.adapters.tvb`.
 """
+
 import json
 import numpy as np
 from pathlib import Path
-from bids.layout.writing import build_path
 
-from tvbo.data.matrix_io import auto_format
-from tvbo.data.network_io import RELMAT_PATTERNS, _template_edges
+from tvbo.data.network_io import _template_edges
 
 
 def relmat_entities(network) -> dict:
@@ -33,16 +32,14 @@ def relmat_entities(network) -> dict:
     """
     if isinstance(network, dict):
         bids = network.get("bids", {})
-        atlas = (network.get("parcellation", {})
-                 .get("atlas", {}).get("name", ""))
+        atlas = network.get("parcellation", {}).get("atlas", {}).get("name", "")
         descriptor = network.get("descriptor")
     else:
         bids = getattr(network, "bids", None) or {}
         if not isinstance(bids, dict):
             bids = {
                 k: getattr(bids, k, None)
-                for k in ("template", "subject", "session", "cohort",
-                           "reconstruction", "space", "segmentation", "scale")
+                for k in ("template", "subject", "session", "cohort", "reconstruction", "space", "segmentation", "scale")
             }
         parc = getattr(network, "parcellation", None)
         atlas = ""
@@ -78,10 +75,7 @@ def sensor_entities(network) -> dict:
     else:
         bids = getattr(network, "bids", None) or {}
         if not isinstance(bids, dict):
-            bids = {
-                k: getattr(bids, k, None)
-                for k in ("template", "acquisition", "atlas")
-            }
+            bids = {k: getattr(bids, k, None) for k in ("template", "acquisition", "atlas")}
         descriptor = getattr(network, "descriptor", None)
 
     return {
@@ -125,8 +119,7 @@ def to_bep017(network, output_dir):
         np.savetxt(out / tsv_name, arrays[name], delimiter="\t", fmt="%.8g")
 
         # JSON sidecar (tvbo fields → BEP017 field names)
-        _get = ((lambda k, d: e.get(k, d)) if isinstance(e, dict)
-                else (lambda k, d: getattr(e, k, d)))
+        _get = (lambda k, d: e.get(k, d)) if isinstance(e, dict) else (lambda k, d: getattr(e, k, d))
         sidecar = {
             "RelationshipMeasure": name,
             "Directed": _get("directed", False),
@@ -150,8 +143,7 @@ def to_bep017(network, output_dir):
         lines = ["matrix_index\tnode_file\tnode_index\tlabel"]
         for node in nodes:
             nid = node.id if hasattr(node, "id") else node["id"]
-            nlabel = (node.label if hasattr(node, "label")
-                      else node.get("label", ""))
+            nlabel = node.label if hasattr(node, "label") else node.get("label", "")
             lines.append(f"{nid}\tatlas-{atlas}\t{nid}\t{nlabel}")
         (out / f"atlas-{atlas}_nodeindices.tsv").write_text("\n".join(lines))
 

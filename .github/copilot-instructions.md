@@ -199,7 +199,7 @@ L = Sum(1 - corr(x[i], y[i]), (i, 0, N-1)) / N  # NOT a custom Mean() function
 - YAML-based model/experiment specification using LinkML schema
 - Built-in visualization and analysis tools
 
-**Key Stats:** ~20k LOC Python, uses Hatchling build system, requires Python ≥3.10 (CI tests 3.10-3.13).
+**Key Stats:** ~20k LOC Python, uses Hatchling build system, requires Python ≥3.11 (CI tests 3.11-3.13).
 
 ## Quick Reference Commands
 
@@ -213,7 +213,7 @@ L = Sum(1 - corr(x[i], y[i]), (i, 0, N-1)) / N  # NOT a custom Mean() function
 > source /Users/leonmartin_bih/tools/tvbo/.venv/bin/activate
 > ```
 > Never use the system Python or a different interpreter.
-> **Exception:** GitHub Actions CI uses plain `pip` because `uv` is not pre-installed there — do not change CI workflow `pip` calls to `uv`.
+> **CI also uses `uv`** via `astral-sh/setup-uv` — use `uv pip install` in CI workflows too.
 
 ### Environment Setup (ALWAYS do first)
 ```bash

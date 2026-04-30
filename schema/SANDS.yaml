@@ -6,6 +6,9 @@ description: Schema for modeling a Brain Atlas, extending the researchProduct sc
 prefixes:
   linkml: https://w3id.org/linkml/
   atom: http://uri.interlex.org/tgbugs/uris/readable/
+  dcterms: http://purl.org/dc/terms/
+  skos: http://www.w3.org/2004/02/skos/core#
+  schema: http://schema.org/
 
 default_prefix: atom
 
@@ -60,6 +63,7 @@ classes:
     slots:
       - name
       - abbreviation
+      - alternateName
       - unit
       - license
     class_uri: atom:atlas/Transformation
@@ -131,6 +135,7 @@ slots:
   abbreviation:
     description: Slot for the abbreviation of a resource.
     range: string
+    slot_uri: skos:notation
 
   alternateName:
     description: Enter any alternate names, including abbreviations, for this entity.
@@ -141,11 +146,13 @@ slots:
   author:
     range: string
     multivalued: true
+    slot_uri: dcterms:creator
 
   digitalIdentifier:
     description: Add the digital identifier of this brain atlas or coordinate space version.
     range: string
     multivalued: true
+    slot_uri: dcterms:identifier
 
   hasParent:
     description: Add all anatomical parent structures for this entity as defined within the corresponding brain atlas.
@@ -155,6 +162,7 @@ slots:
 
   isVersionOf:
     description: Linked type for the version of a brain atlas or coordinate space.
+    slot_uri: dcterms:isVersionOf
     union_of:
       - BrainAtlas
       - CommonCoordinateSpace
@@ -163,6 +171,7 @@ slots:
 
   license:
     description: Linked type for the license of the brain atlas or coordinate space version.
+    slot_uri: dcterms:license
 
   lookupLabel:
     description: Enter the label used for looking up this entity in the parcellation terminology.
@@ -178,6 +187,7 @@ slots:
   versionIdentifier:
     description: Enter the version identifier of this brain atlas or coordinate space version.
     range: string
+    slot_uri: dcterms:hasVersion
 
   dataLocation:
     description: Add the location of the data file containing the parcellation terminology.
@@ -185,4 +195,7 @@ slots:
 
   coordinateSpace:
     range: CommonCoordinateSpace
-    description: "Add the common coordinate space used for this brain atlas version."
+    description: >-
+      Common coordinate space (e.g. FSLMNI152, MNI152NLin2009cAsym).
+      Reference by name; the CommonCoordinateSpace must be defined in
+      tvbo/database/coordinate_spaces/ (or future equivalent location).

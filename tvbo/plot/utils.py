@@ -77,18 +77,11 @@ def hex_to_sortable_hsv(hex_color):
 
 
 # TVB-Colors
-formatted_hex_colors = [
-    "#" + color.strip("#")
-    for color in extract_svg_colors(f"{constants.DATA_DIR}/tvb_logo.svg")
-]
+formatted_hex_colors = ["#" + color.strip("#") for color in extract_svg_colors(f"{constants.DATA_DIR}/tvb_logo.svg")]
 
 # Sort the colors using the new conversion function
 _tvb_colors = sorted(formatted_hex_colors, key=hex_to_sortable_hsv)
-tvb_colors = list(
-    np.array(_tvb_colors)[
-        [0, 1, 2, 3, 5, 7, 8, 10, 12, 15, 16, 20, 21, 22, 23, 24, 25, 26]
-    ]
-)
+tvb_colors = list(np.array(_tvb_colors)[[0, 1, 2, 3, 5, 7, 8, 10, 12, 15, 16, 20, 21, 22, 23, 24, 25, 26]])
 
 # Simple 4-color palette for quick use
 tvb_colors_simple = ["#2E9795", "#935495", "#4EA8E5", "#E58221"]
@@ -135,6 +128,7 @@ def get_cmap(colors=None):
     ListedColormap
     """
     from matplotlib.colors import ListedColormap
+
     return ListedColormap(colors or tvb_colors_simple)
 
 
@@ -165,10 +159,7 @@ def get_continuous_cmap(hex_list, float_list=None):
 
     cdict = {}
     for num, col in enumerate(["red", "green", "blue"]):
-        cdict[col] = [
-            [float_list[i], rgb_list[i][num], rgb_list[i][num]]
-            for i in range(len(float_list))
-        ]
+        cdict[col] = [[float_list[i], rgb_list[i][num], rgb_list[i][num]] for i in range(len(float_list))]
     return mpl.colors.LinearSegmentedColormap("my_cmp", segmentdata=cdict, N=256)
 
 
@@ -210,17 +201,16 @@ def multiview(data, cortex, suptitle="", figsize=(15, 10), **kwds):
         "both-superior": Triangulation(y, x, tri[np.argsort(tz)]),
     }
 
-    def plotview(i, j, k, viewkey, z=None, zlim=None, zthresh=None,
-                 suptitle="", shaded=True, cmap=plt.cm.coolwarm, viewlabel=False):
+    def plotview(
+        i, j, k, viewkey, z=None, zlim=None, zthresh=None, suptitle="", shaded=True, cmap=plt.cm.coolwarm, viewlabel=False
+    ):
         v = views[viewkey]
         ax = plt.subplot(i, j, k)
         if z is None:
             z = np.random.rand(v.x.shape[0])
         if not viewlabel:
             plt.axis("off")
-        kwargs = (
-            {"shading": "gouraud"} if shaded else {"edgecolors": "k", "linewidth": 0.1}
-        )
+        kwargs = {"shading": "gouraud"} if shaded else {"edgecolors": "k", "linewidth": 0.1}
         if zthresh:
             z = z.copy() * (abs(z) > zthresh)
         tc = ax.tripcolor(v, z, cmap=cmap, **kwargs)

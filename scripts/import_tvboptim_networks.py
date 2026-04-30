@@ -12,14 +12,14 @@ matrices across subjects, using the 84-node Desikan-Killiany parcellation
 Coordinates are sourced from the existing 87-node dTOR DK network
 via abbreviation → FreeSurfer label mapping.
 """
+
 import numpy as np
 from pathlib import Path
 
 from tvbo import Network, database_path
 from tvbo.datamodel import tvbo_datamodel
 
-TVBOPTIM_DATA = Path("/Users/leonmartin_bih/work_data/toolboxes/tvboptim"
-                     "/src/tvboptim/data")
+TVBOPTIM_DATA = Path("/Users/leonmartin_bih/work_data/toolboxes/tvboptim/src/tvboptim/data")
 NETWORK_DIR = database_path / "networks"
 
 # --------------------------------------------------------------------------- #
@@ -152,22 +152,23 @@ ABBREV_TO_FREESURFER = {
 def _get_dk87_coords():
     """Load coordinates from the existing 87-node DK network, keyed by label."""
     results = Network.from_db(
-        atlas="DesikanKilliany", rec="dTOR", cohort="HCPYA", desc="SC",
+        atlas="DesikanKilliany",
+        rec="dTOR",
+        cohort="HCPYA",
+        desc="SC",
     )
     if isinstance(results, list):
         dk87 = [r for r in results if "ranked" not in r.label.lower()][0]
     else:
         dk87 = results
     centers = dk87.get_centers()
-    return {node.label: centers[i] for i, node in enumerate(dk87.nodes)
-            if i in centers}
+    return {node.label: centers[i] for i, node in enumerate(dk87.nodes) if i in centers}
 
 
 def import_dk_average():
     """Import dk_average SC + FC as a single network."""
     # Load labels from SC source
-    sc_data = np.load(TVBOPTIM_DATA / EDGE_DEFS["weight"]["source"],
-                      allow_pickle=True)
+    sc_data = np.load(TVBOPTIM_DATA / EDGE_DEFS["weight"]["source"], allow_pickle=True)
     labels = [str(lbl) for lbl in sc_data["region_labels"]]
 
     # Load all edge matrices from declarative definitions
@@ -177,8 +178,7 @@ def import_dk_average():
         matrices[name] = data[edef["key"]].astype(np.float32)
 
     # Build network from weight + length, then add remaining matrices
-    net = Network.from_matrix(matrices["weight"], matrices["length"],
-                              labels=labels)
+    net = Network.from_matrix(matrices["weight"], matrices["length"], labels=labels)
     for name, mat in matrices.items():
         if name not in ("weight", "length"):
             net.set_matrix(name, mat)
@@ -221,13 +221,11 @@ def import_dk_average():
             if attr in edef:
                 setattr(e, attr, edef[attr])
 
-    fname = ("tpl-MNI152NLin2009cAsym_rec-avgMatrix"
-             "_atlas-DesikanKilliany_desc-SCFC_relmat")
+    fname = "tpl-MNI152NLin2009cAsym_rec-avgMatrix_atlas-DesikanKilliany_desc-SCFC_relmat"
     out_path = NETWORK_DIR / f"{fname}.yaml"
     net.save(out_path)
     print(f"Saved: {out_path.name}")
-    print(f"  {len(labels)} nodes, {len(EDGE_DEFS)} matrices "
-          f"({', '.join(EDGE_DEFS)})")
+    print(f"  {len(labels)} nodes, {len(EDGE_DEFS)} matrices ({', '.join(EDGE_DEFS)})")
     print(f"  Coordinates matched: {matched}/{len(labels)}")
 
 

@@ -13,7 +13,6 @@ Author: Leon Martin
 
 from typing import Any
 import requests
-import nibabel as nib
 from nibabel.loadsave import load as nib_load
 import tempfile
 

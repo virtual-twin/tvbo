@@ -2,179 +2,179 @@
 id: 1
 label: "JR Peak Frequency Optimization"
 description: >
-    Reproducing MEG Resting-State Frequency Gradients with Network Dynamics.
-    This experiment fits region-specific Jansen-Rit parameters to reproduce
-    the empirical frequency gradient from visual cortex (11 Hz) to association
-    areas (7 Hz).
+  Reproducing MEG Resting-State Frequency Gradients with Network Dynamics.
+  This experiment fits region-specific Jansen-Rit parameters to reproduce
+  the empirical frequency gradient from visual cortex (11 Hz) to association
+  areas (7 Hz).
 
 # --------------------------------------------------------
 # LOCAL DYNAMICS: Jansen-Rit Neural Mass Model (6-dimensional)
 # From tvboptim.experimental.network_dynamics.dynamics.tvb.JansenRit
 # --------------------------------------------------------
 dynamics:
-    name: JansenRit
-    label: "Jansen-Rit Neural Mass Model"
-    description: >
-        Neural mass model with three populations (pyramidal, excitatory interneurons,
-        inhibitory interneurons). Produces characteristic alpha-band oscillations.
+  name: JansenRit
+  label: "Jansen-Rit Neural Mass Model"
+  description: >
+    Neural mass model with three populations (pyramidal, excitatory interneurons,
+    inhibitory interneurons). Produces characteristic alpha-band oscillations.
 
     # --- PARAMETERS (from JansenRit.DEFAULT_PARAMS in JR.qmd) ---
-    parameters:
-        A:
-            value: 3.25
-            description: "Maximum amplitude of EPSP [mV]"
-            unit: mV
-        B:
-            value: 22.0
-            description: "Maximum amplitude of IPSP [mV]"
-            unit: mV
-        a:
-            value: 0.065
-            description: "Reciprocal of membrane time constant (excitatory)"
-            domain: { lo: 0.001, hi: 0.2 }
-            unit: per_ms
-        b:
-            value: 0.065
-            description: "Reciprocal of membrane time constant (inhibitory)"
-            domain: { lo: 0.001, hi: 0.2 }
-            unit: per_ms
-        v0:
-            value: 5.52
-            description: "Firing threshold [mV]"
-            unit: mV
-        nu_max:
-            value: 0.0025
-            description: "Maximum firing rate"
-            unit: per_ms
-        r:
-            value: 0.56
-            description: "Steepness of sigmoid"
-            unit: per_mV
-        J:
-            value: 135.0
-            description: "Average number of synapses"
-        a_1:
-            value: 1.0
-            description: "Excitatory feedback probability"
-        a_2:
-            value: 0.8
-            description: "Slow excitatory feedback probability"
-        a_3:
-            value: 0.25
-            description: "Inhibitory feedback probability"
-        a_4:
-            value: 0.25
-            description: "Slow inhibitory feedback probability"
-        mu:
-            value: 0.15
-            description: "Mean input firing rate"
+  parameters:
+    A:
+      value: 3.25
+      description: "Maximum amplitude of EPSP [mV]"
+      unit: mV
+    B:
+      value: 22.0
+      description: "Maximum amplitude of IPSP [mV]"
+      unit: mV
+    a:
+      value: 0.065
+      description: "Reciprocal of membrane time constant (excitatory)"
+      domain: {lo: 0.001, hi: 0.2}
+      unit: per_ms
+    b:
+      value: 0.065
+      description: "Reciprocal of membrane time constant (inhibitory)"
+      domain: {lo: 0.001, hi: 0.2}
+      unit: per_ms
+    v0:
+      value: 5.52
+      description: "Firing threshold [mV]"
+      unit: mV
+    nu_max:
+      value: 0.0025
+      description: "Maximum firing rate"
+      unit: per_ms
+    r:
+      value: 0.56
+      description: "Steepness of sigmoid"
+      unit: per_mV
+    J:
+      value: 135.0
+      description: "Average number of synapses"
+    a_1:
+      value: 1.0
+      description: "Excitatory feedback probability"
+    a_2:
+      value: 0.8
+      description: "Slow excitatory feedback probability"
+    a_3:
+      value: 0.25
+      description: "Inhibitory feedback probability"
+    a_4:
+      value: 0.25
+      description: "Slow inhibitory feedback probability"
+    mu:
+      value: 0.15
+      description: "Mean input firing rate"
 
     # --- DERIVED VARIABLES (sigmoid activations) ---
-    derived_variables:
-        sigm_y1_y2:
-            equation:
-                rhs: "2.0 * nu_max / (1.0 + exp(r * (v0 - (y1 - y2))))"
-            description: "Sigmoid of y1-y2"
-        sigm_y0_1:
-            equation:
-                rhs: "2.0 * nu_max / (1.0 + exp(r * (v0 - (a_1 * J * y0))))"
-            description: "Sigmoid of a_1*J*y0"
-        sigm_y0_3:
-            equation:
-                rhs: "2.0 * nu_max / (1.0 + exp(r * (v0 - (a_3 * J * y0))))"
-            description: "Sigmoid of a_3*J*y0"
+  derived_variables:
+    sigm_y1_y2:
+      equation:
+        rhs: "2.0 * nu_max / (1.0 + exp(r * (v0 - (y1 - y2))))"
+      description: "Sigmoid of y1-y2"
+    sigm_y0_1:
+      equation:
+        rhs: "2.0 * nu_max / (1.0 + exp(r * (v0 - (a_1 * J * y0))))"
+      description: "Sigmoid of a_1*J*y0"
+    sigm_y0_3:
+      equation:
+        rhs: "2.0 * nu_max / (1.0 + exp(r * (v0 - (a_3 * J * y0))))"
+      description: "Sigmoid of a_3*J*y0"
 
     # --- STATE VARIABLES (6D system) ---
-    state_variables:
-        y0:
-            equation:
-                rhs: "y3"
-            initial_value: 0.0
-        y1:
-            equation:
-                rhs: "y4"
-            initial_value: 5.0
-        y2:
-            equation:
-                rhs: "y5"
-            initial_value: 5.0
-        y3:
-            equation:
-                rhs: "A * a * sigm_y1_y2 - 2.0 * a * y3 - a**2 * y0"
-            initial_value: 0.0
-        y4:
-            equation:
-                rhs: "A * a * (mu + a_2 * J * sigm_y0_1 + DelayedSigmoidalJansenRit) - 2.0 * a * y4 - a**2 * y1"
-            initial_value: 0.0
-            coupling_variable: true
-        y5:
-            equation:
-                rhs: "B * b * (a_4 * J * sigm_y0_3) - 2.0 * b * y5 - b**2 * y2"
-            initial_value: 0.0
+  state_variables:
+    y0:
+      equation:
+        rhs: "y3"
+      initial_value: 0.0
+    y1:
+      equation:
+        rhs: "y4"
+      initial_value: 5.0
+    y2:
+      equation:
+        rhs: "y5"
+      initial_value: 5.0
+    y3:
+      equation:
+        rhs: "A * a * sigm_y1_y2 - 2.0 * a * y3 - a**2 * y0"
+      initial_value: 0.0
+    y4:
+      equation:
+        rhs: "A * a * (mu + a_2 * J * sigm_y0_1 + DelayedSigmoidalJansenRit) - 2.0 * a * y4 - a**2 * y1"
+      initial_value: 0.0
+      coupling_variable: true
+    y5:
+      equation:
+        rhs: "B * b * (a_4 * J * sigm_y0_3) - 2.0 * b * y5 - b**2 * y2"
+      initial_value: 0.0
 
     # --- COUPLING INPUTS ---
     # Key must match network.coupling key (which becomes class name)
-    coupling_inputs:
-        DelayedSigmoidalJansenRit:
-            dimension: 1
+  coupling_inputs:
+    DelayedSigmoidalJansenRit:
+      dimension: 1
 
 # --------------------------------------------------------
 # NETWORK
 # --------------------------------------------------------
 network:
-    label: "Desikan-Killiany"
-    description: "Structural connectivity from dk_average dataset"
-    bids_dir: "../networks/bids/dk_average"
-    structural_measures: [streamlineCount, tractLength]
-    parameters:
-        conduction_speed:
-            name: conduction_speed
-            value: 3.0
-            unit: mm_per_ms
-    transforms:
-        - name: weight
-          equation:
-            rhs: "W / W_max"
+  label: "Desikan-Killiany"
+  description: "Structural connectivity from dk_average dataset"
+  bids_dir: "../networks/bids/dk_average"
+  structural_measures: [streamlineCount, tractLength]
+  parameters:
+    conduction_speed:
+      name: conduction_speed
+      value: 3.0
+      unit: mm_per_ms
+  transforms:
+    - name: weight
+      equation:
+        rhs: "W / W_max"
 
     # Coupling functions: key == class name == coupling_input key
-    coupling:
-        DelayedSigmoidalJansenRit:
-            label: "Delayed Sigmoidal Jansen-Rit Coupling"
-            description: "Sigmoidal Jansen-Rit coupling function with delays"
-            delayed: true
-            parameters:
-                G:
-                    value: 15.0
-                    description: "Global coupling strength"
-                    free: true
-                cmin:
-                    value: 0.0
-                cmax:
-                    value: 0.005
-                    description: "2 * nu_max from TVB default"
-                midpoint:
-                    value: 6.0
-                r:
-                    value: 0.56
-            incoming_states: [y1, y2]
-            pre_expression:
-                rhs: "cmin + (cmax - cmin) / (1.0 + exp(r * (midpoint - (y1 - y2))))"
-            post_expression:
-                rhs: "G * gx"
+  coupling:
+    DelayedSigmoidalJansenRit:
+      label: "Delayed Sigmoidal Jansen-Rit Coupling"
+      description: "Sigmoidal Jansen-Rit coupling function with delays"
+      delayed: true
+      parameters:
+        G:
+          value: 15.0
+          description: "Global coupling strength"
+          free: true
+        cmin:
+          value: 0.0
+        cmax:
+          value: 0.005
+          description: "2 * nu_max from TVB default"
+        midpoint:
+          value: 6.0
+        r:
+          value: 0.56
+      incoming_states: [y1, y2]
+      pre_expression:
+        rhs: "cmin + (cmax - cmin) / (1.0 + exp(r * (midpoint - (y1 - y2))))"
+      post_expression:
+        rhs: "G * gx"
 
 # --------------------------------------------------------
 # INTEGRATION: Heun solver with dt=1.0 ms
 # --------------------------------------------------------
 integration:
-    method: Heun
-    step_size: 1.0
-    duration: 1000
-    transient_time: 20000
-    noise:
-        additive: true
-        parameters:
-            sigma:
-                value: 0.0001
+  method: Heun
+  step_size: 1.0
+  duration: 1000
+  transient_time: 20000
+  noise:
+    additive: true
+    parameters:
+      sigma:
+        value: 0.0001
 
 # =============================================================================
 # REUSABLE FUNCTIONS (DRY principle)
@@ -182,81 +182,81 @@ integration:
 # Priority: equation > callable > source_code (last resort)
 functions:
     # Array operations (source_code for Python indexing patterns)
-    subsample:
-        name: subsample
-        description: "Downsample array by step factor"
-        source_code: "data[::step]"
-        arguments:
-            - name: data
-              description: "Input array"
-            - name: step
-              value: 10
-              description: "Downsample factor (1ms * 10 = 10ms period = 100 Hz)"
+  subsample:
+    name: subsample
+    description: "Downsample array by step factor"
+    source_code: "data[::step]"
+    arguments:
+      - name: data
+        description: "Input array"
+      - name: step
+        value: 10
+        description: "Downsample factor (1ms * 10 = 10ms period = 100 Hz)"
 
-    index_at:
-        name: index_at
-        description: "Index into array at given position"
-        source_code: "arr[idx]"
-        arguments:
-            - name: arr
-              description: "Input array"
-            - name: idx
-              description: "Index position"
+  index_at:
+    name: index_at
+    description: "Index into array at given position"
+    source_code: "arr[idx]"
+    arguments:
+      - name: arr
+        description: "Input array"
+      - name: idx
+        description: "Index position"
 
     # Mathematical functions (equation-based)
-    compute_target_frequencies:
-        name: compute_target_frequencies
-        description: "Compute target frequencies from tract lengths to visual cortex"
-        equation:
-            rhs: "f_max - (f_max - f_min) * (d - min(d)) / (max(d) - min(d))"
-            definition: "Linear mapping from distance to frequency: f_max at visual cortex, f_min at maximum distance"
-        arguments:
-            - name: d
-              description: "Distance array from visual cortex for each region"
-            - name: f_min
-              value: 7.0
-              description: "Minimum frequency at max distance [Hz]"
-            - name: f_max
-              value: 11.0
-              description: "Maximum frequency at visual cortex [Hz]"
+  compute_target_frequencies:
+    name: compute_target_frequencies
+    description: "Compute target frequencies from tract lengths to visual cortex"
+    equation:
+      rhs: "f_max - (f_max - f_min) * (d - min(d)) / (max(d) - min(d))"
+      definition: "Linear mapping from distance to frequency: f_max at visual cortex, f_min at maximum distance"
+    arguments:
+      - name: d
+        description: "Distance array from visual cortex for each region"
+      - name: f_min
+        value: 7.0
+        description: "Minimum frequency at max distance [Hz]"
+      - name: f_max
+        value: 11.0
+        description: "Maximum frequency at visual cortex [Hz]"
 
-    cauchy_pdf:
-        name: cauchy_pdf
-        description: "Cauchy-Lorentz probability density function"
-        equation:
-            rhs: "1 / (pi * gamma * (1 + ((x - x0) / gamma)**2))"
-            definition: "Cauchy-Lorentz distribution centered at x0 with scale gamma"
-        arguments:
-            - name: x
-              description: "Input values (frequency axis)"
-            - name: x0
-              description: "Peak location for each region (target frequencies)"
-            - name: gamma
-              value: 1.0
-              description: "Scale parameter (half-width at half-maximum)"
+  cauchy_pdf:
+    name: cauchy_pdf
+    description: "Cauchy-Lorentz probability density function"
+    equation:
+      rhs: "1 / (pi * gamma * (1 + ((x - x0) / gamma)**2))"
+      definition: "Cauchy-Lorentz distribution centered at x0 with scale gamma"
+    arguments:
+      - name: x
+        description: "Input values (frequency axis)"
+      - name: x0
+        description: "Peak location for each region (target frequencies)"
+      - name: gamma
+        value: 1.0
+        description: "Scale parameter (half-width at half-maximum)"
 
-    correlation:
-        name: correlation
-        description: "Pearson correlation coefficient"
-        equation:
-            rhs: "Sum((x[i] - mean(x)) * (y[i] - mean(y)), (i, 0, n-1)) / sqrt(Sum((x[i] - mean(x))**2, (i, 0, n-1)) * Sum((y[i] - mean(y))**2, (i, 0, n-1)))"
-            definition: "Pearson product-moment correlation coefficient"
-        arguments:
-            - name: x
-              description: "First array"
-            - name: y
-              description: "Second array"
+  correlation:
+    name: correlation
+    description: "Pearson correlation coefficient"
+    equation:
+      rhs: "Sum((x[i] - mean(x)) * (y[i] - mean(y)), (i, 0, n-1)) / sqrt(Sum((x[i] - mean(x))**2, (i, 0, n-1)) * Sum((y[i] - mean(y))**2, (i, 0, n-1)))"
+      definition: "Pearson product-moment correlation coefficient"
+    arguments:
+      - name: x
+        description: "First array"
+      - name: y
+        description: "Second array"
 
-    spectral_loss:
-        name: spectral_loss
-        description: "1 - correlation between simulated and target spectra (per-element)"
-        equation:
-            rhs: "1 - correlation(simulated, target)"
-        arguments:
-            - name: simulated
-              description: "Simulated power spectrum for one region"
-            - name: target
-              description: "Target power spectrum for one region"
+  spectral_loss:
+    name: spectral_loss
+    description: "1 - correlation between simulated and target spectra (per-element)"
+    equation:
+      rhs: "1 - correlation(simulated, target)"
+    arguments:
+      - name: simulated
+        description: "Simulated power spectrum for one region"
+      - name: target
+        description: "Target power spectrum for one region"
 
 # =============================================================================
 # OBSERVATIONS: Derived from simulation data
@@ -266,200 +266,200 @@ functions:
 # =============================================================================
 observations:
     # Root: Power Spectral Density from simulation state variable y0
-    simulated_psd:
-        label: "Simulated Power Spectral Density"
-        description: "Power spectral density using Welch's method on simulated y0"
-        source: y0
-        pipeline:
-            - function: subsample
-              arguments:
-                  - name: data
-                    value: integration.result
-                    description: "Input time series from simulation"
-            - callable:
-                  module: jax.numpy
-                  name: transpose
-              output: transposed
-              arguments:
-                  - name: a
-                    value: subsample
-                    description: "Subsampled time series"
-            - callable:
-                  module: jax.scipy.signal
-                  name: welch
-              output: frequencies, psd
-              arguments:
-                  - name: x
-                    value: transposed
-                    description: "Transposed time series (nodes, time)"
-                  - name: fs
-                    value: 100.0
-                    description: "Sampling frequency (Hz)"
-                  - name: nperseg
-                    value: 256
-                    description: "Segment length for Welch"
+  simulated_psd:
+    label: "Simulated Power Spectral Density"
+    description: "Power spectral density using Welch's method on simulated y0"
+    source: y0
+    pipeline:
+      - function: subsample
+        arguments:
+          - name: data
+            value: integration.result
+            description: "Input time series from simulation"
+      - callable:
+          module: jax.numpy
+          name: transpose
+        output: transposed
+        arguments:
+          - name: a
+            value: subsample
+            description: "Subsampled time series"
+      - callable:
+          module: jax.scipy.signal
+          name: welch
+        output: frequencies, psd
+        arguments:
+          - name: x
+            value: transposed
+            description: "Transposed time series (nodes, time)"
+          - name: fs
+            value: 100.0
+            description: "Sampling frequency (Hz)"
+          - name: nperseg
+            value: 256
+            description: "Segment length for Welch"
 
 # =============================================================================
 # DERIVED OBSERVATIONS: Computed from other observations
 # =============================================================================
 derived_observations:
     # Derived: Average spectrum across regions
-    avg_spectrum:
-        name: avg_spectrum
-        label: "Average Spectrum"
-        description: "Mean power spectrum across all regions"
-        source_observations:
-            - simulated_psd
-        pipeline:
-            - callable:
-                  module: jax.numpy
-                  name: mean
-              output: avg_psd
-              arguments:
-                  - name: a
-                    value: simulated_psd.psd
-                    description: "Power spectrum from simulated_psd observation"
-                  - name: axis
-                    value: 0
-                    description: "Average over regions dimension"
+  avg_spectrum:
+    name: avg_spectrum
+    label: "Average Spectrum"
+    description: "Mean power spectrum across all regions"
+    source_observations:
+      - simulated_psd
+    pipeline:
+      - callable:
+          module: jax.numpy
+          name: mean
+        output: avg_psd
+        arguments:
+          - name: a
+            value: simulated_psd.psd
+            description: "Power spectrum from simulated_psd observation"
+          - name: axis
+            value: 0
+            description: "Average over regions dimension"
 
     # Derived: Peak frequency per region
-    peak_frequencies:
-        label: "Peak Frequencies per Region"
-        description: "Peak frequency for each brain region from its PSD"
-        source_observations:
-            - simulated_psd
-        pipeline:
-            - callable:
-                  module: jax.numpy
-                  name: argmax
-              output: peak_indices
-              arguments:
-                  - name: a
-                    value: simulated_psd.psd
-                    description: "PSD array (regions, 1, frequencies)"
-                  - name: axis
-                    value: -1
-                    description: "Find max along frequency axis"
-            - callable:
-                  module: jax.numpy
-                  name: squeeze
-              output: peak_indices_squeezed
-              arguments:
-                  - name: a
-                    value: peak_indices
-            - function: index_at
-              output: peak_frequencies
-              arguments:
-                  - name: arr
-                    value: simulated_psd.frequencies
-                    description: "Frequency array from PSD"
-                  - name: idx
-                    value: peak_indices_squeezed
-                    description: "Indices of peak frequencies per region"
+  peak_frequencies:
+    label: "Peak Frequencies per Region"
+    description: "Peak frequency for each brain region from its PSD"
+    source_observations:
+      - simulated_psd
+    pipeline:
+      - callable:
+          module: jax.numpy
+          name: argmax
+        output: peak_indices
+        arguments:
+          - name: a
+            value: simulated_psd.psd
+            description: "PSD array (regions, 1, frequencies)"
+          - name: axis
+            value: -1
+            description: "Find max along frequency axis"
+      - callable:
+          module: jax.numpy
+          name: squeeze
+        output: peak_indices_squeezed
+        arguments:
+          - name: a
+            value: peak_indices
+      - function: index_at
+        output: peak_frequencies
+        arguments:
+          - name: arr
+            value: simulated_psd.frequencies
+            description: "Frequency array from PSD"
+          - name: idx
+            value: peak_indices_squeezed
+            description: "Indices of peak frequencies per region"
 
     # Derived: Peak frequency from average spectrum (scalar)
-    peak_frequency:
-        label: "Peak Frequency"
-        description: "Extract peak frequency from average spectrum"
-        source_observations:
-            - avg_spectrum
-            - simulated_psd
-        pipeline:
-            - callable:
-                  module: jax.numpy
-                  name: argmax
-              output: peak_idx
-              arguments:
-                  - name: a
-                    value: avg_spectrum
-                    description: "Average power spectrum (output of jnp.mean)"
-            - function: index_at
-              arguments:
-                  - name: arr
-                    value: simulated_psd.frequencies
-                    description: "Frequency array from PSD"
-                  - name: idx
-                    value: peak_idx
-                    description: "Index of peak frequency"
+  peak_frequency:
+    label: "Peak Frequency"
+    description: "Extract peak frequency from average spectrum"
+    source_observations:
+      - avg_spectrum
+      - simulated_psd
+    pipeline:
+      - callable:
+          module: jax.numpy
+          name: argmax
+        output: peak_idx
+        arguments:
+          - name: a
+            value: avg_spectrum
+            description: "Average power spectrum (output of jnp.mean)"
+      - function: index_at
+        arguments:
+          - name: arr
+            value: simulated_psd.frequencies
+            description: "Frequency array from PSD"
+          - name: idx
+            value: peak_idx
+            description: "Index of peak frequency"
 
 # =============================================================================
 # OPTIMIZATION: Loss compares simulated_psd.psd to external target_data
 # =============================================================================
 optimizations:
-    - name: spectral_gradient_fit
-      label: "Spectral Gradient Fitting"
-      description: >
-          Fit region-specific a and b parameters to reproduce the MEG frequency
-          gradient. Target frequencies range from 11 Hz (visual cortex) to 7 Hz
-          (most distant regions from lateral occipital gyrus).
+  spectral_gradient_fit:
+    label: "Spectral Gradient Fitting"
+    description: >
+      Fit region-specific a and b parameters to reproduce the MEG frequency
+      gradient. Target frequencies range from 11 Hz (visual cortex) to 7 Hz
+      (most distant regions from lateral occipital gyrus).
 
       # Free parameters to optimize (references to dynamics.parameters by name)
-      free_parameters:
-          - name: a
-            heterogeneous: true
-          - name: b
-            heterogeneous: true
+    free_parameters:
+      - parameter: JansenRit.a
+        heterogeneous: true
+      - parameter: JansenRit.b
+        heterogeneous: true
 
       # Loss function: references spectral_loss from functions
       # Aggregate specifies vmap (per-node) + reduction (mean)
       # Arguments with 'value' reference observations; without 'value' = runtime input
-      loss:
-          function: spectral_loss
-          aggregate:
-              over: node
-              type: mean
-          arguments:
-              - name: simulated
-                value: observations.simulated_psd.psd
-                description: "Simulated power spectrum from observation (n_regions, n_freqs)"
-              - name: target
-                description: "Target power spectrum (passed to optimizer at runtime)"
+    loss:
+      function: spectral_loss
+      aggregate:
+        over: node
+        type: mean
+      arguments:
+        - name: simulated
+          value: observations.simulated_psd.psd
+          description: "Simulated power spectrum from observation (n_regions, n_freqs)"
+        - name: target
+          description: "Target power spectrum (passed to optimizer at runtime)"
 
       # Optimizer configuration
-      algorithm: adamaxw
-      learning_rate: 0.001
-      max_iterations: 151
+    algorithm: adamaxw
+    learning_rate: 0.001
+    max_iterations: 151
 
 # --------------------------------------------------------
 # PARAMETER EXPLORATION: Grid search over a and b
 # --------------------------------------------------------
 explorations:
-    - name: frequency_landscape
-      label: "Frequency Landscape Exploration"
-      description: >
-          Grid search over a and b parameters to map the relationship between
-          time constants and peak oscillation frequency. Used to understand
-          the parameter landscape before optimization.
+  frequency_landscape:
+    label: "Frequency Landscape Exploration"
+    description: >
+      Grid search over a and b parameters to map the relationship between
+      time constants and peak oscillation frequency. Used to understand
+      the parameter landscape before optimization.
 
       # Parameters with grid specifications (use domain with n for grid points)
-      parameters:
-          - name: a
-            domain:
-                lo: 0.001
-                hi: 0.2
-                n: 32
-                log_scale: false
-          - name: b
-            domain:
-                lo: 0.001
-                hi: 0.2
-                n: 32
-                log_scale: false
+    space:
+      - parameter: JansenRit.a
+        domain:
+          lo: 0.001
+          hi: 0.2
+          n: 32
+          log_scale: false
+      - parameter: JansenRit.b
+        domain:
+          lo: 0.001
+          hi: 0.2
+          n: 32
+          log_scale: false
 
       # Grid combination mode
-      mode: product # Full Cartesian product (n x n points)
+    mode: product   # Full Cartesian product (n x n points)
 
       # Parallelization
-      n_parallel: 1 # Number of parallel workers for pmap
+    n_parallel: 1   # Number of parallel workers for pmap
 
       # Observable to compute at each grid point
-      observable:
-          function: peak_frequency
+    observable:
+      function: peak_frequency
 
 execution:
-    n_workers: 8
+  n_workers: 8
 
 references:
-    - "Mahjoory et al. (2020) eLife 9:e53715 - MEG frequency gradient"
-    - "Jansen & Rit (1995) Biol Cybern 73:357-366 - Neural mass model"
+  - "Mahjoory et al. (2020) eLife 9:e53715 - MEG frequency gradient"
+  - "Jansen & Rit (1995) Biol Cybern 73:357-366 - Neural mass model"

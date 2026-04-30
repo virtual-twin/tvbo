@@ -7,7 +7,8 @@ Reproducing MEG resting-state frequency gradients using network dynamics. Fits r
 ```{python}
 #| output: false
 import os
-os.environ["XLA_FLAGS"] = "--xla_force_host_platform_device_count=8"
+device_count = os.environ.get("TVBO_XLA_DEVICE_COUNT", "8")
+os.environ["XLA_FLAGS"] = f"--xla_force_host_platform_device_count={device_count}"
 
 from tvbo import SimulationExperiment, Network
 from tvboptim.data import load_structural_connectivity
@@ -294,10 +295,10 @@ from bsplot.data.surface import get_surface_geometry
 
 # Load fsaverage parcellation annotations
 labels_lh, _, names_lh = read_annot(
-    "/Applications/freesurfer/7.4.1/subjects/fsaverage/label/lh.aparc.annot"
+    "data/lh.aparc.annot"
 )
 labels_rh, _, names_rh = read_annot(
-    "/Applications/freesurfer/7.4.1/subjects/fsaverage/label/rh.aparc.annot"
+    "data/rh.aparc.annot"
 )
 
 # TVB abbreviated labels → FreeSurfer aparc names

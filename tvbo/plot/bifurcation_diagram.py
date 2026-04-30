@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 from sympy import parse_expr, pycode, symbols
-import pandas as pd
 from tvbo.classes import equation as equations
 
 
@@ -32,12 +31,12 @@ def compute_voi(df, VOI, prefix="", state_var_index=None):
     variables = list(exp.free_symbols)
 
     # For single variable that doesn't exist as column, check if it's in 'x'
-    if len(variables) == 1 and 'x' in df.columns and state_var_index is not None:
+    if len(variables) == 1 and "x" in df.columns and state_var_index is not None:
         var_name = str(variables[0])
         if var_name in state_var_index:
             # Extract the specific state variable from 'x' column
             idx = state_var_index[var_name]
-            return df['x'].apply(lambda x_val: x_val[idx] if hasattr(x_val, '__getitem__') else x_val)
+            return df["x"].apply(lambda x_val: x_val[idx] if hasattr(x_val, "__getitem__") else x_val)
 
     # Otherwise, try standard evaluation with prefix substitution
     exp = exp.subs({v: symbols(f"{prefix}{v}") for v in variables})
@@ -48,34 +47,34 @@ def plot_equilibrium_branch(df, ax, ICS=None, VOI=None, **kwargs):
     color_cycle = plt.rcParams["axes.prop_cycle"].by_key()["color"]
     stable_color = color_cycle[0]  # First color for stable
     unstable_color = color_cycle[0]  # Second color for unstable
-    points = df.specialpoint.dropna().unique()
+    df.specialpoint.dropna().unique()
     # Julia BifurcationKit color mapping replicated (subset)
     julia_colorbif = {
-        'fold': 'black',
-        'hopf': 'red',
-        'bp': 'blue',
-        'nd': 'magenta',
-        'none': 'yellow',
-        'ns': 'orange',
-        'pd': 'green',
-        'bt': 'red',
-        'cusp': 'sienna',
-        'gh': 'brown',
-        'zh': 'burlywood',
-        'hh': 'green',
-        'R': 'chartreuse',
-        'R1': 'chartreuse',
-        'R2': 'chartreuse',
-        'R3': 'chartreuse',
-        'R4': 'blue',
-        'foldFlip': 'navy',
-        'ch': 'darkred',
-        'foldNS': 'cyan',
-        'flipNS': 'goldenrod',
-        'pdNS': 'maroon',
-        'nsns': 'purple',
-        'gpd': 'salmon',
-        'user': 'goldenrod'
+        "fold": "black",
+        "hopf": "red",
+        "bp": "blue",
+        "nd": "magenta",
+        "none": "yellow",
+        "ns": "orange",
+        "pd": "green",
+        "bt": "red",
+        "cusp": "sienna",
+        "gh": "brown",
+        "zh": "burlywood",
+        "hh": "green",
+        "R": "chartreuse",
+        "R1": "chartreuse",
+        "R2": "chartreuse",
+        "R3": "chartreuse",
+        "R4": "blue",
+        "foldFlip": "navy",
+        "ch": "darkred",
+        "foldNS": "cyan",
+        "flipNS": "goldenrod",
+        "pdNS": "maroon",
+        "nsns": "purple",
+        "gpd": "salmon",
+        "user": "goldenrod",
     }
     colormap = julia_colorbif
 
@@ -106,7 +105,7 @@ def plot_equilibrium_branch(df, ax, ICS=None, VOI=None, **kwargs):
         if r.specialpoint != "endpoint":
             # Add label only if it hasn't been added before
             current_labels = ax.get_legend_handles_labels()[1]
-            color = colormap.get(r.specialpoint, 'black')
+            color = colormap.get(r.specialpoint, "black")
             ax.scatter(
                 r.param,
                 compute_voi(df, VOI).loc[i],
@@ -114,8 +113,6 @@ def plot_equilibrium_branch(df, ax, ICS=None, VOI=None, **kwargs):
                 label=r.specialpoint if r.specialpoint not in current_labels else None,
                 color=color,
             )
-
-
 
 
 def plot_periodic_orbit(df_po, VOI, ax, color_cycle_index=1, **kwargs):

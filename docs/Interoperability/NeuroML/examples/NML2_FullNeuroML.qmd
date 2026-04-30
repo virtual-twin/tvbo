@@ -13,10 +13,12 @@ A comprehensive example combining all major NeuroML elements in a single file:
 - Explicit input (pulse generator)
 
 ```{python}
-from pathlib import Path
 
-nml_file = Path.home() / "work_data/toolboxes/NeuroML2/examples/NML2_FullNeuroML.nml"
-text = nml_file.read_text()
+import urllib.request
+
+url = "https://raw.githubusercontent.com/NeuroML/NeuroML2/master/examples/NML2_FullNeuroML.nml"
+with urllib.request.urlopen(url) as resp:
+    text = resp.read().decode()
 
 # Count element types
 import re

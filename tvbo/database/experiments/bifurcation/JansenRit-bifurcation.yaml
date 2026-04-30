@@ -8,7 +8,9 @@ description: >-
   continuation parameter. Two fold bifurcations and a Hopf bifurcation
   delimit the oscillatory regime.
 
-model: JansenRit
+dynamics:
+  name: JansenRit
+  iri: tvbo:JansenRit
 
 continuations:
   # ── Codim-1 in p ──────────────────────────────────────────────
@@ -19,8 +21,8 @@ continuations:
     free_parameters:
       - name: p
         domain:
-          lo: "0"
-          hi: "0.5"
+          lo: 0
+          hi: 0.5
 
     ds: 0.001
     ds_min: 1.0e-6
@@ -35,15 +37,15 @@ continuations:
     bothside: true
 
     branches:
-      - name: po_alpha_rhythm
+      po_alpha_rhythm:
         description: "Alpha-rhythm periodic orbit branch from Hopf point"
         source_point: "hopf:all"
         discretization:
           method: collocation
           parameters:
-            - name: mesh_intervals
+            mesh_intervals:
               value: 50
-            - name: degree
+            degree:
               value: 4
         continuation:
           name: po_alpha_continuation
@@ -59,12 +61,12 @@ continuations:
     free_parameters:
       - name: p
         domain:
-          lo: "0"
-          hi: "0.5"
+          lo: 0
+          hi: 0.5
       - name: C
         domain:
-          lo: "10"
-          hi: "500"
+          lo: 10
+          hi: 500
 
     ds: 0.01
     max_steps: 500
@@ -81,12 +83,12 @@ continuations:
     free_parameters:
       - name: p
         domain:
-          lo: "0"
-          hi: "0.5"
+          lo: 0
+          hi: 0.5
       - name: C
         domain:
-          lo: "10"
-          hi: "500"
+          lo: 10
+          hi: 500
 
     ds: 0.01
     max_steps: 500

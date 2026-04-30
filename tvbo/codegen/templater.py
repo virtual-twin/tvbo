@@ -44,14 +44,10 @@ def get_statevariable_equations(model):
     state_variable_dfuns = {
         k: diff_eqs[
             (
-                ontology.intersection(
-                    v.subclasses(), ontology.onto.TimeDerivative.descendants()
-                )[0]
+                ontology.intersection(v.subclasses(), ontology.onto.TimeDerivative.descendants())[0]
                 .label.first()
                 .replace(acr, "")
-                if ontology.intersection(
-                    v.subclasses(), ontology.onto.TimeDerivative.descendants()
-                )
+                if ontology.intersection(v.subclasses(), ontology.onto.TimeDerivative.descendants())
                 else v.has_derivative[0].label.first().replace(acr, "")
             )
         ]
@@ -78,8 +74,7 @@ def get_model_info(model):
 
     # TODO: Remove hack that replaces 'e' with 'E' in equations created by pycode
     ninvar_dfuns = {
-        var: re.sub(r"(?<=[( ])e(?= )", "E", pycode(eq, fully_qualified_modules=False))
-        for var, eq in ninvar_dfuns.items()
+        var: re.sub(r"(?<=[( ])e(?= )", "E", pycode(eq, fully_qualified_modules=False)) for var, eq in ninvar_dfuns.items()
     }
     for var, eq in ninvar_dfuns.items():
         if "if" in eq and "else" in eq:
@@ -114,16 +109,10 @@ def get_param_info(param_class):
 
 
 def get_sv_info(sv_class):
-    range = (
-        sv_class.stateVariableRange.first().split(",")
-        if sv_class.stateVariableRange
-        else [-1e100, 1e100]
-    )
+    range = sv_class.stateVariableRange.first().split(",") if sv_class.stateVariableRange else [-1e100, 1e100]
 
     if sv_class.stateVariableBoundaries:
-        boundaries = [
-            svb.strip() for svb in sv_class.stateVariableBoundaries.first().split(",")
-        ]
+        boundaries = [svb.strip() for svb in sv_class.stateVariableBoundaries.first().split(",")]
 
     else:
         boundaries = (None, None)
@@ -146,20 +135,11 @@ def equation2class(EQ, fout=None, print_source=False, **kwargs):
     var = sp.symbols("var")
     eq_name = EQ.label.first()
     definition = EQ.definition.first()
-    eq_type = ", ".join(
-        [
-            c.name
-            for c in ontology.intersection(
-                EQ.is_a, ontology.onto.Equation.descendants()
-            )
-        ]
-    )
+    eq_type = ", ".join([c.name for c in ontology.intersection(EQ.is_a, ontology.onto.Equation.descendants())])
 
     eq = equations.sympify_value(EQ)
     code_str = boolean2bitwise(
-        equations.convert_ifelse_to_np_where(
-            pycode(eq.subs({"t": var}), fully_qualified_modules=False)
-        )
+        equations.convert_ifelse_to_np_where(pycode(eq.subs({"t": var}), fully_qualified_modules=False))
     )
     latex_str = sp.latex(eq, mul_symbol="dot")
 
@@ -187,9 +167,7 @@ def equation2class(EQ, fout=None, print_source=False, **kwargs):
             f.write(rendered_code)
     else:
         exec(rendered_code, exec_globals, local_vars)
-        eq_kwargs = {
-            k: v for k, v in values.items() if k in ["equation", "parameters", "gid"]
-        }
+        eq_kwargs = {k: v for k, v in values.items() if k in ["equation", "parameters", "gid"]}
         tvbo_equation = local_vars[f"{eq_name}"](**eq_kwargs)
         return tvbo_equation
 
@@ -214,9 +192,7 @@ def coupling2class(CF, fout=None, print_source=False, **kwargs):
         class_name=coupling_name,
         pre_expr=fpre,
         post_expr=fpost,
-        parameters={
-            v["label"]: tvbo_datamodel.Parameter(**v) for k, v in parameters.items()
-        },
+        parameters={v["label"]: tvbo_datamodel.Parameter(**v) for k, v in parameters.items()},
         sparse=sparse,
     )
     if print_source:
@@ -258,10 +234,7 @@ def model2class(
         model = ontology.get_model(model)
 
         if not model:
-            raise ValueError(
-                f"Model {model} not found in the ontology. Available models:"
-                + "\n".join(ontology.get_models())
-            )
+            raise ValueError(f"Model {model} not found in the ontology. Available models:" + "\n".join(ontology.get_models()))
 
     if sub_ninvars:
         split_nonintegrated_variables = False
@@ -285,9 +258,7 @@ def model2class(
     sv_dfuns.update(model_info["ninvar_dfuns"])
 
     if sub_ninvars:
-        sv_dfuns = equations.substitute_function_in_state_equations(
-            sv_dfuns, model_info["ninvar_dfuns"]
-        )
+        sv_dfuns = equations.substitute_function_in_state_equations(sv_dfuns, model_info["ninvar_dfuns"])
 
     parameters = dict()
     for k, param in model_info["parameters"].items():

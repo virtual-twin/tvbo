@@ -39,14 +39,14 @@ CURIE_PREFIXES = {
 
 def _get_label(entity) -> str:
     """Get entity label."""
-    if hasattr(entity, 'label') and entity.label:
+    if hasattr(entity, "label") and entity.label:
         return entity.label.first() or entity.name
     return entity.name
 
 
 def _get_symbol(entity) -> str:
     """Get LaTeX symbol representation."""
-    if hasattr(entity, 'symbol') and entity.symbol and entity.symbol.first():
+    if hasattr(entity, "symbol") and entity.symbol and entity.symbol.first():
         return rf"${latex(symbols(entity.symbol.first()))}$"
     return _get_label(entity)
 
@@ -54,7 +54,7 @@ def _get_symbol(entity) -> str:
 def _get_type(entity) -> str:
     """Get primary type/class."""
     type_entity = ontology.get_type(entity)
-    if hasattr(type_entity, 'label') and type_entity.label:
+    if hasattr(type_entity, "label") and type_entity.label:
         return type_entity.label.first() or type_entity.name
     return type_entity.name
 
@@ -63,19 +63,19 @@ def _serialize_entity(entity) -> Dict[str, Any]:
     """Serialize an ontology entity to dict."""
     # Safely get optional attributes
     definition = ""
-    if hasattr(entity, 'definition') and entity.definition:
+    if hasattr(entity, "definition") and entity.definition:
         definition = entity.definition.first() or ""
 
     description = ""
-    if hasattr(entity, 'description') and entity.description:
+    if hasattr(entity, "description") and entity.description:
         description = entity.description.first() or ""
-    elif hasattr(entity, 'title') and entity.title:
+    elif hasattr(entity, "title") and entity.title:
         description = entity.title.first() or ""
     elif definition:
-        description = definition.split('.')[0]
+        description = definition.split(".")[0]
 
-    is_a = [p.name for p in entity.is_a if isinstance(p, owl.ThingClass) and p.name != 'Thing']
-    requires = [r.storid for r in entity.requires] if hasattr(entity, 'requires') and entity.requires else []
+    is_a = [p.name for p in entity.is_a if isinstance(p, owl.ThingClass) and p.name != "Thing"]
+    requires = [r.storid for r in entity.requires] if hasattr(entity, "requires") and entity.requires else []
 
     return {
         "id": f"onto_{entity.storid}",
@@ -127,7 +127,7 @@ class DirectOntologyAPI:
         """Get entity by CURIE (e.g., 'tvbo:Equation')."""
         for prefix, base in CURIE_PREFIXES.items():
             if curie.startswith(prefix):
-                return self.get_by_iri(base + curie[len(prefix):])
+                return self.get_by_iri(base + curie[len(prefix) :])
         return self.get_by_iri(curie)
 
     def get_children(self, storid: int) -> Dict[str, Any]:
@@ -140,13 +140,9 @@ class DirectOntologyAPI:
             if child and child.storid not in seen:
                 seen.add(child.storid)
                 nodes.append(_serialize_entity(child))
-                links.append({
-                    "source": child.storid,
-                    "target": storid,
-                    "type": predicate.replace("rdfs:subClassOf", "is_a")
-                })
+                links.append({"source": child.storid, "target": storid, "type": predicate.replace("rdfs:subClassOf", "is_a")})
 
-        if hasattr(entity, 'requires'):
+        if hasattr(entity, "requires"):
             for req in entity.requires:
                 if req.storid not in seen:
                     seen.add(req.storid)
@@ -165,14 +161,10 @@ class DirectOntologyAPI:
             if parent and parent.storid not in seen:
                 seen.add(parent.storid)
                 nodes.append(_serialize_entity(parent))
-                links.append({
-                    "source": storid,
-                    "target": parent.storid,
-                    "type": predicate.replace("rdfs:subClassOf", "is_a")
-                })
+                links.append({"source": storid, "target": parent.storid, "type": predicate.replace("rdfs:subClassOf", "is_a")})
 
         for parent in entity.is_a:
-            if isinstance(parent, owl.ThingClass) and parent.name != 'Thing' and parent.storid not in seen:
+            if isinstance(parent, owl.ThingClass) and parent.name != "Thing" and parent.storid not in seen:
                 seen.add(parent.storid)
                 nodes.append(_serialize_entity(parent))
                 links.append({"source": storid, "target": parent.storid, "type": "is_a"})
@@ -208,13 +200,15 @@ class DirectOntologyAPI:
 
                 # Add is_a links to parents
                 for parent in cls.is_a:
-                    if isinstance(parent, owl.ThingClass) and parent.name != 'Thing':
-                        links.append({
-                            "source": cls.storid,
-                            "target": parent.storid,
-                            "type": "is_a",
-                            "label": "is_a",
-                        })
+                    if isinstance(parent, owl.ThingClass) and parent.name != "Thing":
+                        links.append(
+                            {
+                                "source": cls.storid,
+                                "target": parent.storid,
+                                "type": "is_a",
+                                "label": "is_a",
+                            }
+                        )
 
         return {"nodes": nodes, "links": links}
 

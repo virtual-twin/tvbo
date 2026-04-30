@@ -16,7 +16,6 @@ from tvbo.classes import equation as equations
 
 def plot_coupling_function(CF, ax=None):
     # Extract acronym and set parameter configuration
-    acr = CF.acronym  # TODO: acr not used, remove?
     param_config = config.get_coupling_parameters(CF)
 
     # Define symbolic variables
@@ -54,9 +53,7 @@ def plot_coupling_function(CF, ax=None):
     if len(list(eq.free_symbols)) > 1:
         # 3D Plot
         X, Y = np.meshgrid(x_vals, y_vals)
-        eq_sympy = lambdify(
-            (list(eq.free_symbols)[0], list(eq.free_symbols)[1]), eq, "numpy"
-        )
+        eq_sympy = lambdify((list(eq.free_symbols)[0], list(eq.free_symbols)[1]), eq, "numpy")
         Z = eq_sympy(X, Y)
         ax.plot_surface(X, Y, Z, cmap="viridis")
         ax.set_xlabel("$x_j$")
@@ -75,17 +72,12 @@ def plot_coupling_function(CF, ax=None):
             ax.get_xlim()[1],
             ax.get_ylim()[0],
             ax.get_zlim()[1]
-            + 0.5
-            * (
-                ax.get_zlim()[1] - ax.get_zlim()[0]
-            ),  # if CF.name == "KuramotoCouplingFunction" else ax.get_zlim()[1],
+            + 0.5 * (ax.get_zlim()[1] - ax.get_zlim()[0]),  # if CF.name == "KuramotoCouplingFunction" else ax.get_zlim()[1],
             f"${latex_eq}$",
             # fontsize=12,
             ha="left",
             va="top",
-            bbox=dict(
-                boxstyle="round,pad=0.5", facecolor=(1, 1, 1, 0.8), edgecolor="black"
-            ),
+            bbox=dict(boxstyle="round,pad=0.5", facecolor=(1, 1, 1, 0.8), edgecolor="black"),
         )
 
     else:
@@ -104,9 +96,7 @@ def plot_coupling_function(CF, ax=None):
             # fontsize=12,
             ha="left",
             va="top",
-            bbox=dict(
-                boxstyle="round,pad=0.5", facecolor=(1, 1, 1, 0.8), edgecolor="black"
-            ),
+            bbox=dict(boxstyle="round,pad=0.5", facecolor=(1, 1, 1, 0.8), edgecolor="black"),
         )
     ax.set_title(CF.name)
 
@@ -114,9 +104,7 @@ def plot_coupling_function(CF, ax=None):
         return fig
 
 
-def plot_temporal_equation(
-    EQ, t_ms, title="Stimulation pulse sequence", plot_kwargs=None, ax=None, **kwargs
-):
+def plot_temporal_equation(EQ, t_ms, title="Stimulation pulse sequence", plot_kwargs=None, ax=None, **kwargs):
     if plot_kwargs is None:
         plot_kwargs = {}
     if isinstance(EQ, owl.ThingClass):

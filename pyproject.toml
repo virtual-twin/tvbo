@@ -10,7 +10,7 @@ description = "The Virtual Brain Ontology"
 readme = "README.md"
 license = { text = "EUPL-1.2" }
 authors = [{ name = "Leon Martin", email = "leon.martin@bih-charite.de" }]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     # Core scientific
     "scipy>=1.15.0",
@@ -19,7 +19,11 @@ dependencies = [
     "xarray>=2025.0",
 
     # Data models & schema (pydantic, pyyaml, rdflib are transitive via linkml-runtime)
+    # NOTE: requires linkml/linkml-runtime >= 1.11 for SimpleDict-shorthand fixes
+    # in _normalize_inlined and the jsonschema generator. Until 1.11.0 is on PyPI
+    # we install from the v1.11.0-rc1 tag via [tool.uv.sources] below.
     "linkml-runtime>=1.8.5",
+    "linkml>=1.8.5",
     "h5py>=3.12.1",
 
     # Ontologies
@@ -46,8 +50,11 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# NeuroML/LEMS support
+# NeuroML/LEMS support (pyNeuroML + LEMS engine)
 neuroml = ["PyLEMS>=0.6.7", "pyNeuroML>=0.7.0"]
+
+# NEURON simulator (required for multi-compartment NeuroML export backend)
+neuron = ["neuron"]
 
 # Data formats (tractograms, HDF5)
 data = ["dipy>=1.10.0"]
@@ -63,7 +70,13 @@ knowledge = [
 ]
 
 # Audio/signal processing
-audio = ["librosa>=0.10.2"]
+# Note: llvmlite >=0.44 has no macosx_x86_64 wheels for cp312/cp313, so we cap
+# numba/llvmlite on Intel Mac. See https://github.com/virtual-twin/tvbo/issues/7
+audio = [
+    "librosa>=0.10.2",
+    "numba<0.60;    sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "llvmlite<0.44; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+]
 
 # Documentation & reports
 docs = [
@@ -87,13 +100,20 @@ julia = ["juliacall>=0.9.20"]
 api = ["fastapi>=0.115.0", "uvicorn>=0.30.0", "docker>=7.1.0"]
 
 # TVB integration
-tvb = ["tvb-library", "tvb-framework", "tvb-data"]
+# Same Intel-Mac llvmlite cap as [audio]; tvb-library pulls numba transitively.
+tvb = [
+    "tvb-library",
+    "tvb-framework",
+    "tvb-data",
+    "numba<0.60;    sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "llvmlite<0.44; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+]
 
 # TVB optimization (JAX-based simulation & optimization)
 tvboptim = ["tvboptim"]
 
 # Full install (all features)
-all = ["tvbo[neuroml,data,knowledge,audio,api,tvb,tvboptim,docs,pyrates,julia]"]
+all = ["tvbo[neuroml,neuron,data,knowledge,audio,api,tvb,tvboptim,docs,pyrates,julia]"]
 
 [project.urls]
 homepage = "https://virtual-twin.github.io/tvbo/"
@@ -103,6 +123,13 @@ bug-tracker = "https://github.com/virtual-twin/tvbo/issues"
 
 [tool.hatch.metadata]
 allow-direct-references = true
+
+# uv source overrides: install linkml + linkml-runtime from the v1.11.0-rc1 tag
+# until 1.11.0 is published to PyPI. Required for SimpleDict shorthand fixes
+# in _normalize_inlined and the jsonschema generator.
+[tool.uv.sources]
+linkml = { git = "https://github.com/linkml/linkml.git", tag = "v1.11.0-rc1", subdirectory = "packages/linkml" }
+linkml-runtime = { git = "https://github.com/linkml/linkml.git", tag = "v1.11.0-rc1", subdirectory = "packages/linkml_runtime" }
 
 [tool.hatch.build]
 include = ["tvbo/**", "README.md"]
@@ -132,7 +159,7 @@ path = "tvbo/__init__.py"
 
 [tool.hatch.envs.dev]
 dependencies = [
-    "flake8",
+    "ruff>=0.15.12",
     "pytest",
     "pytest-cov",
     "pytest-xdist",
@@ -140,7 +167,55 @@ dependencies = [
     "mypy",
     "nbformat>=5.10.0",
     "nbclient>=0.10.0",
+    "pre-commit",
 ]
+
+[tool.ruff]
+line-length = 127
+extend-exclude = [
+    ".venv",
+    "venv",
+    "build",
+    "dist",
+    "docs/.quarto",
+    "docs/_site",
+    "docs/**/.vdoc.*.py",
+    "tvbo/datamodel/**",
+]
+
+[tool.ruff.lint]
+# Pyflakes (F), pycodestyle errors (E) + warnings (W).
+# C90 (mccabe complexity) is advisory and tracked separately; not gated.
+select = ["E", "F", "W"]
+# Auto-generated code: don't lint generated LinkML models.
+exclude = ["tvbo/datamodel/**"]
+# Idiomatic patterns that we accept across the codebase.
+ignore = [
+    "E501", # line-too-long: many docstrings narrate; black/format handles code.
+    "E402", # module-import-not-at-top: needed by ontology bootstrap & similar.
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Star imports are the documented owlready2 usage pattern.
+"tvbo/ontology/owl.py" = ["F403", "F405"]
+# Package re-exports via `from . import x` are intentional.
+"**/__init__.py" = ["F401", "F405"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.format]
+# Black-compatible defaults.
+quote-style = "double"
+indent-style = "space"
+
+[tool.mypy]
+python_version = "3.12"
+# Non-blocking mode: report issues but don't fail builds yet.
+ignore_missing_imports = true
+follow_imports = "silent"
+exclude = ["tvbo/datamodel/", "tests/", ".venv/", "build/", "dist/", "docs/"]
+files = ["tvbo"]
 
 [tool.pytest.ini_options]
 addopts = "-n 1 --dist=loadscope"

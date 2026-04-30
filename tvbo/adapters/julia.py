@@ -41,9 +41,7 @@ def get_julia(compiled_modules=True):
         try:
             from juliacall import Main
         except ImportError:
-            raise ImportError(
-                "juliacall package not installed. Run: pip install juliacall"
-            )
+            raise ImportError("juliacall package not installed. Run: pip install juliacall")
         _julia_main = Main
     return None, _julia_main
 
@@ -85,14 +83,14 @@ def eval_with_auto_install(code, max_retries=3):
         except Exception as e:
             error_msg = str(e)
             # Check if it's a missing package error
-            match = re.search(r'Package (\w+) not found', error_msg)
+            match = re.search(r"Package (\w+) not found", error_msg)
             if match and attempt < max_retries - 1:
                 package_name = match.group(1)
                 try:
                     install_julia_package(package_name, Main)
                     # Retry after installing
                     continue
-                except Exception as install_error:
+                except Exception:
                     print(f"Failed to auto-install {package_name}, re-raising original error")
                     raise e
             else:

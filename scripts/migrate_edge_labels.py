@@ -8,6 +8,7 @@ Renames HDF5 groups and YAML sidecar edge labels:
 Uses Network load/save round-trip: loads each network, renames internal
 arrays and template edge labels, then saves back to the same path.
 """
+
 from pathlib import Path
 
 from tvbo import database_path
@@ -42,7 +43,7 @@ def migrate_network(sidecar: Path) -> bool:
             changed = True
 
     # Rename template edge labels
-    for e in (net.edges or []):
+    for e in net.edges or []:
         lbl = getattr(e, "label", None)
         if lbl in RENAMES:
             e.label = RENAMES[lbl]

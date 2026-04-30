@@ -45,16 +45,12 @@ __authors__ = [
     "Petra Ritter",
 ]
 
-__version__ = "0.3.12"
+__version__ = "0.4.0"
 __maintainer__ = "Leon K. Martin (leon.martin@bih-charite.de)"
 __contact__ = "petra.ritter@charite.de"
 __status__ = "beta"
 
-__copyright__ = (
-    "Copyright (c) 2026, "
-    "Brain Simulation Section"
-    "Charité Universitätsmedizin Berlin"
-)
+__copyright__ = "Copyright (c) 2026, Brain Simulation SectionCharité Universitätsmedizin Berlin"
 __license__ = "EUPL-1.2-or-later"
 
 
@@ -78,13 +74,15 @@ def _configure_jax_backend():
     if "JAX_PLATFORMS" in os.environ:
         return
     try:
-        import jax                                     # noqa: E402
+        import jax  # noqa: E402
+
         if jax.default_backend().upper() == "METAL":
             # Quick smoke-test: try the simplest device operation
             try:
                 jax.numpy.zeros(1)
             except Exception:
                 import warnings
+
                 warnings.warn(
                     "jax-metal plugin detected but incompatible with the "
                     "installed JAX version. Falling back to CPU. "
@@ -93,15 +91,14 @@ def _configure_jax_backend():
                     RuntimeWarning,
                     stacklevel=2,
                 )
-                jax.config.update(
-                    "jax_default_device", jax.devices("cpu")[0]
-                )
+                jax.config.update("jax_default_device", jax.devices("cpu")[0])
     except ImportError:
         pass  # JAX not installed – nothing to configure
 
 
 _configure_jax_backend()
 # ---------------------------------------------------------------------------
+
 
 # ---------------------------------------------------------------------------
 # PyRates / networkx compatibility
@@ -120,7 +117,8 @@ def _patch_pyrates_networkx_backend():
     """
     try:
         from pyrates.backend.computegraph import (
-            ComputeGraph, ComputeGraphBackProp,
+            ComputeGraph,
+            ComputeGraphBackProp,
         )
     except ImportError:
         return
@@ -131,7 +129,7 @@ def _patch_pyrates_networkx_backend():
     # Check if the __new__ is wrapped by networkx dispatch
     for klass in (ComputeGraph, ComputeGraphBackProp):
         try:
-            klass(backend='default')
+            klass(backend="default")
         except (ImportError, TypeError):
             klass.__new__ = _plain_new
 
@@ -170,6 +168,7 @@ _LAZY_ALIASES = {
 def __getattr__(name):
     if name in _LAZY_IMPORTS:
         import importlib
+
         mod = importlib.import_module(_LAZY_IMPORTS[name], __name__)
         attr = getattr(mod, name if name != "database_path" else "DATABASE_ROOT")
         globals()[name] = attr
@@ -177,6 +176,7 @@ def __getattr__(name):
     if name in _LAZY_ALIASES:
         real_name, module = _LAZY_ALIASES[name]
         import importlib
+
         mod = importlib.import_module(module, __name__)
         attr = getattr(mod, real_name)
         globals()[name] = attr

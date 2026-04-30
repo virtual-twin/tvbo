@@ -22,7 +22,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies (but NOT tvbo - we'll mount and pip install -e it)
+# linkml/linkml-runtime pinned to v1.11.0-rc1 (see Dockerfile note).
 RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir \
+        "linkml @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml" \
+        "linkml-runtime @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml_runtime" \
     && pip install --no-cache-dir jupyterlab uvicorn fastapi tvboptim juliacall pyjulia
 
 ENV AUTO_DIR=/auto-07p

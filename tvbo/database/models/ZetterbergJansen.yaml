@@ -11,6 +11,9 @@ parameters:
       hi: 9.75
       step: 0.05
     description: Maximum amplitude of EPSP [mV]
+    grounding:
+      - GO:0060079
+      - GO:0098815
   Hi:
     name: Hi
     definition: Maximum amplitude of IPSP [mV]. Also called average synaptic gain.
@@ -20,36 +23,44 @@ parameters:
       hi: 110.0
       step: 0.2
     description: Maximum amplitude of IPSP [mV]
+    grounding:
+      - GO:0060080
+      - GO:0098828
   P:
     name: P
-    definition: "Maximum firing rate to the pyramidal population [ms^-1].\n      \
-      \  (External stimulus. Constant intensity.Entry point for coupling.)"
+    definition: "Maximum firing rate to the pyramidal population [ms^-1].\n        (External stimulus. Constant intensity.Entry point for coupling.)"
     value: 0.12
     domain:
       lo: 0.0
       hi: 0.35
       step: 0.01
     description: Maximum firing rate to the pyramidal population [ms^-1]
+    grounding:
+      - CL:0000598
+      - GO:0099605
   Q:
     name: Q
-    definition: "Maximum firing rate to the interneurons population [ms^-1].\n   \
-      \     (External stimulus. Constant intensity.Entry point for coupling.)"
+    definition: "Maximum firing rate to the interneurons population [ms^-1].\n        (External stimulus. Constant intensity.Entry point for coupling.)"
     value: 0.12
     domain:
       lo: 0.0
       hi: 0.35
       step: 0.01
     description: Maximum firing rate to the interneurons population [ms^-1]
+    grounding:
+      - CL:0000099
+      - GO:0099605
   U:
     name: U
-    definition: "Maximum firing rate to the stellate population [ms^-1].\n       \
-      \ (External stimulus. Constant intensity.Entry point for coupling.)"
+    definition: "Maximum firing rate to the stellate population [ms^-1].\n        (External stimulus. Constant intensity.Entry point for coupling.)"
     value: 0.12
     domain:
       lo: 0.0
       hi: 0.35
       step: 0.01
     description: Maximum firing rate to the stellate population [ms^-1]
+    grounding:
+      - GO:0099605
   e0:
     name: e0
     definition: Half of the maximum population mean firing rate [ms^-1].
@@ -59,6 +70,8 @@ parameters:
       hi: 0.00375
       step: 1.0e-05
     description: Half of the maximum population mean firing rate [ms^-1]
+    grounding:
+      - GO:0099605
   gamma_1T:
     name: gamma_1T
     definition: Coupling factor from the extrinisic input to the spiny stellate population.
@@ -68,6 +81,8 @@ parameters:
       hi: 1000.0
       step: 5.0
     description: Coupling factor from the extrinisic input to the spiny stellate population
+    grounding:
+      - GO:0099536
   gamma_1:
     name: gamma_1
     definition: Average number of synapses between populations (pyramidal to stellate).
@@ -77,6 +92,9 @@ parameters:
       hi: 1350.0
       step: 5.0
     description: Average number of synapses between populations (pyramidal to stellate)
+    grounding:
+      - CL:0000598
+      - GO:0099536
   gamma_2T:
     name: gamma_2T
     definition: Coupling factor from the extrinisic input to the pyramidal population.
@@ -86,6 +104,9 @@ parameters:
       hi: 1000.0
       step: 5.0
     description: Coupling factor from the extrinisic input to the pyramidal population
+    grounding:
+      - CL:0000598
+      - GO:0099536
   gamma_2:
     name: gamma_2
     definition: Average number of synapses between populations (stellate to pyramidal).
@@ -95,6 +116,8 @@ parameters:
       hi: 200.0
       step: 10.0
     description: Average number of synapses between populations (stellate to pyramidal)
+    grounding:
+      - GO:0099536
   gamma_3T:
     name: gamma_3T
     definition: Coupling factor from the extrinisic input to the inhibitory population.
@@ -104,6 +127,8 @@ parameters:
       hi: 1000.0
       step: 5.0
     description: Coupling factor from the extrinisic input to the inhibitory population
+    grounding:
+      - GO:0099536
   gamma_3:
     name: gamma_3
     definition: Connectivity constant (pyramidal to interneurons)
@@ -113,6 +138,10 @@ parameters:
       hi: 200.0
       step: 10.0
     description: Connectivity constant (pyramidal to interneurons)
+    grounding:
+      - CL:0000099
+      - CL:0000598
+      - GO:0099536
   gamma_4:
     name: gamma_4
     definition: Connectivity constant (interneurons to pyramidal)
@@ -122,6 +151,9 @@ parameters:
       hi: 200.0
       step: 10.0
     description: Connectivity constant (interneurons to pyramidal)
+    grounding:
+      - CL:0000099
+      - CL:0000598
   gamma_5:
     name: gamma_5
     definition: Connectivity constant (interneurons to interneurons)
@@ -131,30 +163,26 @@ parameters:
       hi: 100.0
       step: 10.0
     description: Connectivity constant (interneurons to interneurons)
+    grounding:
+      - CL:0000099
   ke:
     name: ke
-    definition: "Reciprocal of the time constant of passive membrane and all\n   \
-      \     other spatially distributed delays in the dendritic network [ms^-1].\n\
-      \        Also called average synaptic time constant."
+    definition: "Reciprocal of the time constant of passive membrane and all\n        other spatially distributed delays in the dendritic network [ms^-1].\n        Also called average synaptic time constant."
     value: 0.1
     domain:
       lo: 0.05
       hi: 0.15
       step: 0.01
-    description: Reciprocal of the time constant of passive membrane and all         other
-      spatially distributed delays in the dendritic network [ms^-1]
+    description: Reciprocal of the time constant of passive membrane and all         other spatially distributed delays in the dendritic network [ms^-1]
   ki:
     name: ki
-    definition: "Reciprocal of the time constant of passive membrane and all\n   \
-      \     other spatially distributed delays in the dendritic network [ms^-1].\n\
-      \        Also called average synaptic time constant."
+    definition: "Reciprocal of the time constant of passive membrane and all\n        other spatially distributed delays in the dendritic network [ms^-1].\n        Also called average synaptic time constant."
     value: 0.05
     domain:
       lo: 0.025
       hi: 0.075
       step: 0.005
-    description: Reciprocal of the time constant of passive membrane and all         other
-      spatially distributed delays in the dendritic network [ms^-1]
+    description: Reciprocal of the time constant of passive membrane and all         other spatially distributed delays in the dendritic network [ms^-1]
   rho_1:
     name: rho_1
     definition: Steepness of the sigmoidal transformation [mV^-1].
@@ -166,10 +194,7 @@ parameters:
     description: Steepness of the sigmoidal transformation [mV^-1]
   rho_2:
     name: rho_2
-    definition: "Firing threshold (PSP) for which a 50% firing rate is achieved.\n\
-      \        In other words, it is the value of the average membrane potential\n\
-      \        corresponding to the inflection point of the sigmoid [mV]. Population\
-      \ mean firing threshold."
+    definition: "Firing threshold (PSP) for which a 50% firing rate is achieved.\n        In other words, it is the value of the average membrane potential\n        corresponding to the inflection point of the sigmoid [mV]. Population mean firing threshold."
     value: 6.0
     domain:
       lo: 3.12
@@ -178,7 +203,7 @@ parameters:
     description: Firing threshold (PSP) for which a 50% firing rate is achieved
 description: ''
 references:
-- Zetterberg1978
+  - Zetterberg1978
 derived_variables:
   coupled_input:
     name: coupled_input
@@ -192,61 +217,58 @@ derived_variables:
     symbol: sigma_v1
     equation:
       lhs: sigma_v1
-      rhs: Piecewise((0, rho_1*(rho_2 - v1) > 709), (2*e0/(exp(rho_1*(rho_2 - v1))
-        + 1), True))
+      rhs: Piecewise((0, rho_1*(rho_2 - v1) > 709), (2*e0/(exp(rho_1*(rho_2 - v1)) + 1), True))
       latex: false
     conditional: true
     cases:
-    - condition: rho_1*(rho_2 - v1) > 709
-      equation:
-        lhs: sigma_v1
-        rhs: '0'
-        latex: false
-    - condition: 'True'
-      equation:
-        lhs: sigma_v1
-        rhs: 2*e0/(exp(rho_1*(rho_2 - v1)) + 1)
-        latex: false
+      - condition: rho_1*(rho_2 - v1) > 709
+        equation:
+          lhs: sigma_v1
+          rhs: '0'
+          latex: false
+      - condition: 'True'
+        equation:
+          lhs: sigma_v1
+          rhs: 2*e0/(exp(rho_1*(rho_2 - v1)) + 1)
+          latex: false
   sigma_v23:
     name: sigma_v23
     symbol: sigma_v23
     equation:
       lhs: sigma_v23
-      rhs: Piecewise((0, rho_1*(rho_2 - (v2 - v3)) > 709), (2*e0/(exp(rho_1*(rho_2
-        - (v2 - v3))) + 1), True))
+      rhs: Piecewise((0, rho_1*(rho_2 - (v2 - v3)) > 709), (2*e0/(exp(rho_1*(rho_2 - (v2 - v3))) + 1), True))
       latex: false
     conditional: true
     cases:
-    - condition: rho_1*(rho_2 - (v2 - v3)) > 709
-      equation:
-        lhs: sigma_v23
-        rhs: '0'
-        latex: false
-    - condition: 'True'
-      equation:
-        lhs: sigma_v23
-        rhs: 2*e0/(exp(rho_1*(rho_2 - (v2 - v3))) + 1)
-        latex: false
+      - condition: rho_1*(rho_2 - (v2 - v3)) > 709
+        equation:
+          lhs: sigma_v23
+          rhs: '0'
+          latex: false
+      - condition: 'True'
+        equation:
+          lhs: sigma_v23
+          rhs: 2*e0/(exp(rho_1*(rho_2 - (v2 - v3))) + 1)
+          latex: false
   sigma_v45:
     name: sigma_v45
     symbol: sigma_v45
     equation:
       lhs: sigma_v45
-      rhs: Piecewise((0, rho_1*(rho_2 - (v4 - v5)) > 709), (2*e0/(exp(rho_1*(rho_2
-        - (v4 - v5))) + 1), True))
+      rhs: Piecewise((0, rho_1*(rho_2 - (v4 - v5)) > 709), (2*e0/(exp(rho_1*(rho_2 - (v4 - v5))) + 1), True))
       latex: false
     conditional: true
     cases:
-    - condition: rho_1*(rho_2 - (v4 - v5)) > 709
-      equation:
-        lhs: sigma_v45
-        rhs: '0'
-        latex: false
-    - condition: 'True'
-      equation:
-        lhs: sigma_v45
-        rhs: 2*e0/(exp(rho_1*(rho_2 - (v4 - v5))) + 1)
-        latex: false
+      - condition: rho_1*(rho_2 - (v4 - v5)) > 709
+        equation:
+          lhs: sigma_v45
+          rhs: '0'
+          latex: false
+      - condition: 'True'
+        equation:
+          lhs: sigma_v45
+          rhs: 2*e0/(exp(rho_1*(rho_2 - (v4 - v5))) + 1)
+          latex: false
 coupling_inputs:
   c_pop0:
     name: c_pop0

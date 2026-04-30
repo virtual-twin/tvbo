@@ -3,6 +3,7 @@
 
 # The Virtual Brain Ontology
 [![Lint & Test](https://github.com/virtual-twin/tvbo/actions/workflows/ci.yml/badge.svg)](https://github.com/virtual-twin/tvbo/actions/workflows/ci.yml)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![PyPI version](https://img.shields.io/pypi/v/tvbo.svg)](https://pypi.org/project/tvbo/)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/tvbo)](https://pypi.org/project/tvbo/)
 [![License](https://img.shields.io/badge/License-EUPL--1.2-blue.svg)](LICENSE)
@@ -17,9 +18,13 @@ pip install tvbo
 
 ### Platform Notes
 
-**Intel Mac Users (x86_64):** Due to JAX dropping Intel Mac support in version 0.5.0+, you need Python 3.9-3.12. The package will automatically install JAX 0.4.28 which is the last version supporting Intel Macs.
+**Intel Mac Users (x86_64):** TVBO requires Python ≥3.11. On Intel Macs, the
+`[audio]` and `[tvb]` extras pin `numba<0.60` / `llvmlite<0.44` because newer
+llvmlite has no `macosx_x86_64` wheels for Python 3.12+. JAX is also pinned to
+0.4.28 (the last Intel-Mac release).
 
-**Apple Silicon Mac Users:** Python ≥3.10 is supported. You'll get the latest compatible JAX version automatically.
+**Apple Silicon Mac Users:** Python ≥3.11 is supported. You'll get the latest
+compatible JAX version automatically.
 
 ## 📖 Quick Start
 

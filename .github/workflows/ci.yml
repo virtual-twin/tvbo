@@ -20,62 +20,317 @@ permissions:
 # Shared environment variables for all jobs
 env:
     JAX_PLATFORMS: cpu
-    PIP_DISABLE_PIP_VERSION_CHECK: "1"
-    PIP_NO_WARN_SCRIPT_LOCATION: "1"
+    # uv: bytecode-compile installed wheels for faster cold starts
+    UV_COMPILE_BYTECODE: "1"
+    # uv: copy from the cache instead of hardlinking (CI runner safe)
+    UV_LINK_MODE: copy
 
 jobs:
-    # ─── Always: lint ──────────────────────────────────────────
+    # ─── Always: lint, format & type-check ────────────────────
     lint:
         name: Lint
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v6
-            - uses: actions/setup-python@v6
+
+            # ruff: blocking syntax-error subset (same gate as before).
+            - name: Ruff — syntax errors (blocking)
+              uses: astral-sh/ruff-action@v4.0.0
+              with:
+                  args: "check --select=E9,F63,F7,F82 --output-format=github ."
+
+            # ruff: full lint summary, non-blocking until codebase is clean.
+            - name: Ruff — full lint (non-blocking)
+              uses: astral-sh/ruff-action@v4.0.0
+              with:
+                  args: "check --exit-zero ."
+
+            # ruff format: report files needing reformatting, non-blocking.
+            - name: Ruff format — check (non-blocking)
+              uses: astral-sh/ruff-action@v4.0.0
+              with:
+                  args: "format --check --diff ."
+              continue-on-error: true
+
+            # mypy: type-check the source tree, non-blocking.
+            - uses: astral-sh/setup-uv@v8.1.0
               with:
                   python-version: "3.12"
-                  cache: "pip"
-            - run: pip install flake8
-            - name: Syntax errors (blocking)
-              run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-            - name: Style warnings (non-blocking)
-              run: flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+                  enable-cache: true
+                  activate-environment: true
+                  cache-dependency-glob: |
+                      pyproject.toml
+                      .github/workflows/ci.yml
+            - name: Install mypy
+              run: uv pip install mypy
+            - name: Mypy — type check (non-blocking)
+              run: mypy tvbo || true
+
+    # ─── Always: schema validation gate ───────────────────────
+    # Validates every YAML in tvbo/database/ against the LinkML schema.
+    # Fast (~20s) and depends only on linkml + pyyaml, so runs on every PR
+    # without the full install matrix. Catches schema/database drift early.
+    schema-validate:
+        name: Schema validation
+        needs: lint
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        steps:
+            - uses: actions/checkout@v6
+            - uses: astral-sh/setup-uv@v8.1.0
+              with:
+                  python-version: "3.12"
+                  enable-cache: true
+                  activate-environment: true
+                  cache-dependency-glob: |
+                      pyproject.toml
+                      .github/workflows/ci.yml
+            - name: Install validation deps
+              # linkml/linkml-runtime pinned to v1.11.0-rc1 until 1.11 is on PyPI;
+              # required for SimpleDict-shorthand fixes in jsonschema generator.
+              run: |
+                  uv pip install \
+                      "linkml @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml" \
+                      "linkml-runtime @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml_runtime" \
+                      pyyaml pytest pytest-xdist
+            - name: Validate every database YAML against the LinkML schema
+              run: pytest -v --tb=short tests/test_database_validation.py
+
+    # ─── Always: schema artifact build (OWL + SHACL) ───────────
+    # Builds tvb-o-struct.owl and tvb-o.shacl.ttl from the LinkML schema on
+    # every PR. Gated/non-blocking initially: surfaces gen-owl / gen-shacl
+    # failures early without breaking the merge. Artifacts uploaded for
+    # downstream reasoner CI (PR-I) and external consumers.
+    schema-artifacts:
+        name: Schema artifacts (OWL + SHACL)
+        needs: lint
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        continue-on-error: true
+        steps:
+            - uses: actions/checkout@v6
+            - uses: astral-sh/setup-uv@v8.1.0
+              with:
+                  python-version: "3.12"
+                  enable-cache: true
+                  activate-environment: true
+                  cache-dependency-glob: |
+                      pyproject.toml
+                      .github/workflows/ci.yml
+            - name: Install LinkML
+              # Pinned to v1.11.0-rc1 (see pyproject.toml [tool.uv.sources]).
+              run: |
+                  uv pip install \
+                      "linkml @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml" \
+                      "linkml-runtime @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml_runtime"
+            - name: Generate OWL
+              run: make gen-owl
+            - name: Generate SHACL
+              run: make gen-shacl
+            - name: Upload schema artifacts
+              uses: actions/upload-artifact@v4
+              with:
+                  name: tvbo-ontology-artifacts
+                  path: |
+                      ontology/tvb-o-struct.owl
+                      ontology/tvb-o.shacl.ttl
+                  retention-days: 30
+
+    # ─── Always: ontology reasoner (ELK + HermiT via ROBOT) ────
+    # Runs OWL reasoning on the generated tvb-o-struct.owl to detect
+    # unsatisfiable classes, inconsistent ontologies, and inverse /
+    # functional / cardinality regressions. Uses ROBOT (the OBO standard
+    # CLI) with ELK (fast OWL-EL profile) by default and HermiT for full
+    # OWL-DL coverage. Non-blocking initially (continue-on-error) because
+    # the freshly-generated ontology has known cleanup pending in §2.4.
+    # Closes §2.6 first checkbox once flipped to required.
+    reasoner:
+        name: Ontology reasoner (ELK + HermiT)
+        needs: schema-artifacts
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        continue-on-error: true
+        steps:
+            - uses: actions/checkout@v6
+            - uses: astral-sh/setup-uv@v8.1.0
+              with:
+                  python-version: "3.12"
+                  enable-cache: true
+                  activate-environment: true
+                  cache-dependency-glob: |
+                      pyproject.toml
+                      .github/workflows/ci.yml
+            - name: Install LinkML
+              # Pinned to v1.11.0-rc1 (see pyproject.toml [tool.uv.sources]).
+              run: |
+                  uv pip install \
+                      "linkml @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml" \
+                      "linkml-runtime @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml_runtime"
+            - name: Generate OWL
+              run: make gen-owl
+            - name: Set up Java (for ROBOT)
+              uses: actions/setup-java@v4
+              with:
+                  distribution: temurin
+                  java-version: "17"
+            - name: Install ROBOT
+              run: |
+                  mkdir -p $HOME/.local/bin
+                  curl -L -o $HOME/.local/bin/robot.jar \
+                      https://github.com/ontodev/robot/releases/download/v1.9.6/robot.jar
+                  curl -L -o $HOME/.local/bin/robot \
+                      https://raw.githubusercontent.com/ontodev/robot/v1.9.6/bin/robot
+                  chmod +x $HOME/.local/bin/robot
+                  echo "$HOME/.local/bin" >> $GITHUB_PATH
+            - name: Reason with ELK (OWL-EL profile, fast)
+              run: |
+                  robot reason \
+                      --reasoner ELK \
+                      --input ontology/tvb-o-struct.owl \
+                      --output ontology/tvb-o-reasoned-elk.owl
+            - name: Reason with HermiT (OWL-DL, full coverage)
+              run: |
+                  robot reason \
+                      --reasoner HermiT \
+                      --input ontology/tvb-o-struct.owl \
+                      --output ontology/tvb-o-reasoned-hermit.owl
+            - name: Report unsatisfiable classes
+              run: |
+                  robot report \
+                      --input ontology/tvb-o-struct.owl \
+                      --output ontology/tvb-o-report.tsv \
+                      --fail-on ERROR \
+                      --print 20 || true
+            - name: Upload reasoner artifacts
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: tvbo-reasoner-artifacts
+                  path: |
+                      ontology/tvb-o-reasoned-elk.owl
+                      ontology/tvb-o-reasoned-hermit.owl
+                      ontology/tvb-o-report.tsv
+                  retention-days: 30
+                  if-no-files-found: warn
 
     # ─── Always: compatibility across Python versions ──────────
     compat:
         name: Python ${{ matrix.python-version }}
         needs: lint
         runs-on: ubuntu-latest
+        timeout-minutes: 20
         strategy:
             fail-fast: false
             matrix:
-                python-version: ["3.10", "3.11", "3.12", "3.13"]
+                python-version: ["3.11", "3.12", "3.13"]
         steps:
             - uses: actions/checkout@v6
-            - uses: actions/setup-python@v6
+            - uses: astral-sh/setup-uv@v8.1.0
               with:
                   python-version: ${{ matrix.python-version }}
-                  cache: "pip"
-            - run: pip install -e . pytest pytest-xdist
+                  enable-cache: true
+                  activate-environment: true
+                  cache-dependency-glob: |
+                      pyproject.toml
+                      .github/workflows/ci.yml
+            - name: Cache .venv
+              id: venv-cache
+              uses: actions/cache@v5
+              with:
+                  path: .venv
+                  key: venv-compat-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml', '.github/workflows/ci.yml') }}
+            - name: Install (cache miss)
+              if: steps.venv-cache.outputs.cache-hit != 'true'
+              # linkml/linkml-runtime pinned to v1.11.0-rc1; remove once on PyPI.
+              run: |
+                  uv pip install \
+                      "linkml @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml" \
+                      "linkml-runtime @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml_runtime"
+                  uv pip install -e . pytest pytest-xdist pytest-timeout
+            - name: Refresh editable link (cache hit)
+              if: steps.venv-cache.outputs.cache-hit == 'true'
+              run: uv pip install -e . --no-deps
             - name: Core tests
-              run: pytest -q -n auto --dist=loadscope tests/test_model_loading.py tests/test_graph.py tests/functional/test_dynamics_basic.py
+              run: |
+                  pytest -v --tb=short -n auto --dist=loadscope \
+                      --timeout=600 --timeout-method=thread \
+                      tests/test_model_loading.py tests/test_graph.py \
+                      tests/functional/test_dynamics_basic.py
 
     # ─── All PRs + push to main: native tests (no container) ──
+    # Sharded into parallel jobs so one slow/heavy backend doesn't OOM or
+    # exceed the runner watchdog. Each shard has its own timeout, and
+    # pytest-timeout surfaces hangs as tracebacks instead of silent kills.
     test-native:
-        name: Native tests
+        name: Native (${{ matrix.shard }})
         needs: lint
         if: >-
             github.event_name == 'pull_request'
             || (github.event_name == 'push' && github.ref == 'refs/heads/main')
         runs-on: ubuntu-latest
+        timeout-minutes: 45
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    - shard: core
+                      paths: >-
+                          tests/test_model_loading.py
+                          tests/test_graph.py
+                          tests/test_package_structure.py
+                          tests/test_network_io.py
+                          tests/functional/test_dynamics_basic.py
+                          tests/functional/test_metadata_import.py
+                          tests/functional/test_simulation_experiment_basic.py
+                          tests/functional/test_timeseries_utils.py
+                          tests/functional/test_simulation_backends_core.py
+                    - shard: tvboptim
+                      paths: >-
+                          tests/test_tvboptim_experiments.py
+                          tests/functional/test_simulation_backends_tvboptim.py
+                    - shard: tvb
+                      paths: >-
+                          tests/test_tvb_comparison.py
+                          tests/test_tvb_interop.py
+                          tests/functional/test_simulation_backends_tvb.py
+                    - shard: pyrates-neuroml
+                      paths: >-
+                          tests/functional/test_pyrates_integration.py
+                          tests/functional/test_simulation_backends_pyrates.py
+                          tests/functional/test_simulation_backends_neuroml.py
+                          tests/test_full_workflow_comparison.py
         steps:
             - uses: actions/checkout@v6
-            - uses: actions/setup-python@v6
+            - uses: astral-sh/setup-uv@v8.1.0
               with:
                   python-version: "3.12"
-                  cache: "pip"
+                  enable-cache: true
+                  activate-environment: true
+                  cache-dependency-glob: |
+                      pyproject.toml
+                      .github/workflows/ci.yml
             - name: Configure git for private repos
               run: git config --global url."https://${{ secrets.PRIVATE_REPO_TOKEN }}@github.com/".insteadOf "https://github.com/"
-            - name: Install with all extras
-              run: pip install -e ".[all]" pytest pytest-xdist
-            - name: Run tests (no doc tests)
-              run: pytest -x -q --ignore=tests/test_docs.py --override-ini="addopts="
+            - name: Cache .venv
+              id: venv-cache
+              uses: actions/cache@v5
+              with:
+                  path: .venv
+                  key: venv-native-${{ matrix.shard }}-3.12-${{ hashFiles('pyproject.toml', '.github/workflows/ci.yml') }}
+            - name: Install with all extras (cache miss)
+              if: steps.venv-cache.outputs.cache-hit != 'true'
+              # linkml/linkml-runtime pinned to v1.11.0-rc1; remove once on PyPI.
+              run: |
+                  uv pip install \
+                      "linkml @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml" \
+                      "linkml-runtime @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml_runtime"
+                  uv pip install -e ".[all]" pytest pytest-xdist pytest-timeout
+            - name: Refresh editable link (cache hit)
+              if: steps.venv-cache.outputs.cache-hit == 'true'
+              run: uv pip install -e . --no-deps
+            - name: Run shard "${{ matrix.shard }}"
+              run: |
+                  pytest -x -v --tb=short \
+                      --timeout=600 --timeout-method=thread \
+                      --override-ini="addopts=" \
+                      ${{ matrix.paths }}

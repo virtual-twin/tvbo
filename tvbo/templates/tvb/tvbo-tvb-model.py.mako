@@ -55,6 +55,9 @@ class ${model.name}(Model):
 
     _nvar = ${len(model.state_variables)}
     state_variables = ${list(model.state_variables.keys())}
+% if getattr(model, 'number_of_modes', None) and model.number_of_modes != 1:
+    number_of_modes = ${model.number_of_modes}
+% endif
 ########## StateVariable Ranges and Boundaries ##########
 <%
 # Define 1e9 constant for readability
