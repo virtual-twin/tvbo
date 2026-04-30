@@ -6,6 +6,7 @@
 # Licensed under the EUPL-1.2-or-later
 #
 
+import copy as _copy
 import os
 import re
 import tempfile
@@ -21,17 +22,18 @@ from sympy import Derivative, Eq, Function, Symbol, latex, pycode, symbols
 
 from tvbo import templates
 from tvbo.analysis import BifurcationResult
-from tvbo.data.types import TimeSeries
-from tvbo.datamodel import schema as tvbo_datamodel
-from tvbo.datamodel import pydantic as _pdm
-from tvbo.datamodel.schema import Case, ConditionalBlock, DerivedVariable, Equation
-from tvbo.utils import report
-from tvbo.codegen import templater
-from tvbo.ontology import owl as ontology, query
 from tvbo.classes import equation as _equation_mod
 from tvbo.classes.perturbation import Stimulus
-
+from tvbo.codegen import templater
+from tvbo.data.types import TimeSeries
+from tvbo.datamodel import pydantic as _pdm
+from tvbo.datamodel import schema as tvbo_datamodel
+from tvbo.datamodel.schema import (Case, ConditionalBlock, DerivedVariable,
+                                   Equation)
+from tvbo.ontology import owl as ontology
+from tvbo.ontology import query
 from tvbo.parse.expression import parse_eq
+from tvbo.utils import report
 
 TEMPLATES = templates.root
 available_neural_mass_models = set(ontology.get_models().values())
@@ -783,6 +785,7 @@ class Dynamics(tvbo_datamodel.Dynamics):
         >>> Dynamics.db_overview(model_type='neural_mass')
         """
         import pandas as pd
+
         from tvbo.data.registry import list_entries_with_metadata
 
         rows = list_entries_with_metadata("Dynamics")
@@ -914,6 +917,7 @@ class Dynamics(tvbo_datamodel.Dynamics):
         [Eq(signal(t), sin(theta(t)))]
         """
         import sympy as sp
+
         from tvbo.parse.expression import parse_eq
 
         t = Symbol("t")
@@ -1398,8 +1402,8 @@ class Dynamics(tvbo_datamodel.Dynamics):
         return plot_dynamics(self, *dims, **kwargs)
 
     def render_equation(self, obj, format="latex", inline_functions=False, **kwargs):
-        from tvbo.codegen.code import render_equation
         from tvbo.classes.equation import sympify as tvbo_sympify
+        from tvbo.codegen.code import render_equation
 
         scope = self.get_symbolic_elements()
         # Tell the printer which names are functions so it emits f(x) cleanly
@@ -2087,11 +2091,8 @@ class Dynamics(tvbo_datamodel.Dynamics):
 
         if "julia" in format:
             code = self.render_code(format=format, **kwargs)
-            from tvbo.run.julia import (
-                extract_bifurcation_result,
-                extract_ode_solution,
-                run_julia_code,
-            )
+            from tvbo.run.julia import (extract_bifurcation_result,
+                                        extract_ode_solution, run_julia_code)
 
             run_julia_code(code)
             if format == "julia":
@@ -2435,6 +2436,47 @@ from tvb.basic.neotraits.api import NArray, List, Range, Final"""
         with open(join(opath, f"{self.name}." + extension), "w") as f:
             f.write(self.generate_report(format=format))
 
+    def copy(self, **overrides) -> "Dynamics":
+        """Return a deep copy of this experiment.
+
+        Use keyword overrides to set attributes on the returned copy.
+
+        Errors are not swallowed; if a field can't be copied, an exception is raised.
+        """
+        new_obj = _copy.deepcopy(self)
+        for k, v in overrides.items():
+            setattr(new_obj, k, v)
+        return new_obj
+
+    # Python copy protocol hooks
+    def __copy__(self):
+        # Keep Python's copy.copy semantics: shallow copy
+        cls = self.__class__
+        clone = cls.__new__(cls)
+        for k, v in self.__dict__.items():
+            setattr(clone, k, v)
+        return clone
+
+    def __deepcopy__(self, memo):
+        import dataclasses
+
+        cls = self.__class__
+        # For dataclasses, we need to copy all fields, not just __dict__
+        # __dict__ may not include fields that are still at their default values
+        data = {}
+        if dataclasses.is_dataclass(self):
+            for field in dataclasses.fields(self):
+                value = getattr(self, field.name, None)
+                data[field.name] = _copy.deepcopy(value, memo)
+        else:
+            # Fallback for non-dataclass
+            for k, v in self.__dict__.items():
+                data[k] = _copy.deepcopy(v, memo)
+
+        # Create clone using proper constructor to ensure all defaults are set
+        clone = cls(**data)
+        memo[id(self)] = clone
+        return clone
 
 class Model(Dynamics):
     def __init__(self, name, ontology=None, metadata=None, **kwargs):
