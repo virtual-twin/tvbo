@@ -108,13 +108,56 @@ jobs:
                               dpkg -i /tmp/quarto.deb && rm /tmp/quarto.deb
                           fi
                           quarto --version
+                          # Regenerate ontology artefacts (struct + abox + merged).
+                          # ROBOT is preinstalled in the tvbo image; if not, fall back to apt.
+                          if ! command -v robot >/dev/null 2>&1; then
+                              apt-get update
+                              apt-get install -y --no-install-recommends default-jre-headless
+                              curl -sSL -o /usr/local/bin/robot https://raw.githubusercontent.com/ontodev/robot/master/bin/robot
+                              curl -sSL -o /usr/local/bin/robot.jar https://github.com/ontodev/robot/releases/latest/download/robot.jar
+                              chmod +x /usr/local/bin/robot
+                          fi
+                          make gen-merged
                           cd docs
                           # Cold build: drop every cache so all code cells re-execute.
                           rm -rf _freeze .quarto _site .jupyter_cache
                           quarto render --cache-refresh
                           # Hand ownership back to the host runner user.
                           chown -R "${HOST_UID}:${HOST_GID}" _site _freeze .quarto 2>/dev/null || true
+                          chown -R "${HOST_UID}:${HOST_GID}" /work/ontology /work/docs/ontology 2>/dev/null || true
                       '
+
+            # ── Run Widoco on the host (Docker-in-Docker would be needed
+            #    inside the tvbo container, so we keep it on the host) and
+            #    drop its output into docs/_site/ontology/spec/ as static
+            #    resources. Quarto already published _site above, so we
+            #    overlay the spec/ folder before the gh-pages publish step.
+            - name: Generate Widoco specification (W3C-style HTML + WebVOWL)
+              env:
+                  WIDOCO_IMAGE: ghcr.io/dgarijo/widoco:v1.4.25
+              run: |
+                  set -euxo pipefail
+                  mkdir -p docs/_site/ontology/spec ontology/widoco-in
+                  cp ontology/tvbo.owl ontology/widoco-in/tvbo.owl
+                  docker pull "${WIDOCO_IMAGE}"
+                  docker run --rm \
+                      -v "${PWD}/ontology/widoco-in:/usr/local/widoco/in:ro" \
+                      -v "${PWD}/docs/_site/ontology/spec:/usr/local/widoco/out" \
+                      "${WIDOCO_IMAGE}" \
+                      -ontFile in/tvbo.owl \
+                      -outFolder out \
+                      -rewriteAll \
+                      -webVowl \
+                      -licensius \
+                      -includeAnnotationProperties \
+                      -getOntologyMetadata \
+                      -uniteSections \
+                      -lang en
+                  # Bundle downloadable artefacts alongside the spec.
+                  cp ontology/tvbo.owl            docs/_site/ontology/spec/tvbo.owl
+                  cp ontology/tvb-o-axioms.ttl    docs/_site/ontology/spec/tvb-o-axioms.ttl
+                  cp ontology/tvb-o.shacl.ttl    docs/_site/ontology/spec/tvb-o.shacl.ttl
+                  rm -rf ontology/widoco-in
 
             # ── Publish via Quarto's native gh-pages flow ────────────────
             # `quarto publish gh-pages` manages the gh-pages branch (orphan,
