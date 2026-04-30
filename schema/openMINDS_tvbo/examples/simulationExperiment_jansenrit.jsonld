@@ -1,7 +1,7 @@
 {
   "@context": {
     "@vocab": "https://openminds.ebrains.eu/vocab/",
-    "tvbo": "http://www.thevirtualbrain.org/tvb-o/",
+    "tvbo": "https://w3id.org/tvbo/",
     "sands": "https://openminds.ebrains.eu/sands/",
     "core": "https://openminds.ebrains.eu/core/",
     "computation": "https://openminds.ebrains.eu/computation/"
@@ -17,7 +17,7 @@
     "name": "JansenRit",
     "label": "Jansen-Rit Neural Mass Model",
     "description": "A neural mass model describing the dynamics of cortical columns with pyramidal and interneuron populations.",
-    "iri": "http://www.thevirtualbrain.org/tvb-o/JansenRit",
+    "iri": "https://w3id.org/tvbo/JansenRit",
     "system_type": "continuous",
     "number_of_modes": 1,
     "references": [

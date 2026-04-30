@@ -9,7 +9,7 @@ simulation_experiments:
     description: "Meanfield Model as in [@Deco2013]"
     model:
       name: ReducedWongWang
-      iri: http://www.thevirtualbrain.org/tvb-o/ReducedWongWang
+      iri: https://w3id.org/tvbo/ReducedWongWang
       parameters:
         - name: gamma
           value: 0.641

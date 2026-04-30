@@ -1,4 +1,4 @@
-id: http://www.thevirtualbrain.org/tvbo/study
+id: https://w3id.org/tvbo/study
 name: tvbo_study
 title: TVB-O Study Schema
 description: >-
@@ -9,7 +9,7 @@ description: >-
 
 prefixes:
   linkml: https://w3id.org/linkml/
-  tvbo_study: http://www.thevirtualbrain.org/tvb-o/study/
+  tvbo_study: https://w3id.org/tvbo/study/
   bids: https://bids-specification.readthedocs.io/en/stable/
   obo: http://purl.obolibrary.org/obo/
   schema: http://schema.org/

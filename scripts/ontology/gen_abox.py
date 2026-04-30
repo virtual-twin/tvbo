@@ -33,7 +33,7 @@ from rdflib.namespace import OWL, RDF, RDFS, SKOS, XSD
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 DB = ROOT / "tvbo" / "database"
 
-TVBO = Namespace("http://www.thevirtualbrain.org/tvb-o/")
+TVBO = Namespace("https://w3id.org/tvbo/")
 DCTERMS = Namespace("http://purl.org/dc/terms/")
 OBOINOWL = Namespace("http://www.geneontology.org/formats/oboInOwl#")
 SCHEMA = Namespace("http://schema.org/")

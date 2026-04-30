@@ -13,7 +13,7 @@ prefixes = {
     "http://www.w3.org/1999/02/22-rdf-syntax-ns#": "rdf:",
     "http://www.w3.org/2000/01/rdf-schema#": "rdfs:",
     "http://www.w3.org/2002/07/owl#": "owl:",
-    "http://www.thevirtualbrain.org/tvb-o/": "tvbo:",
+    "https://w3id.org/tvbo/": "tvbo:",
 }
 
 
@@ -123,7 +123,7 @@ def _search_by_label(label: str) -> List[Any]:
     sparql_string = f"""
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
     PREFIX owl: <http://www.w3.org/2002/07/owl#>
-    PREFIX tvbo: <http://www.thevirtualbrain.org/tvb-o/>
+    PREFIX tvbo: <https://w3id.org/tvbo/>
 
     SELECT ?class
     WHERE {{
@@ -144,7 +144,7 @@ def get_class_relationships(class_iri: Union[str, Any]) -> List[Tuple[Any, Any]]
         f"""
         PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
         PREFIX owl: <http://www.w3.org/2002/07/owl#>
-        PREFIX tvbo: <http://www.thevirtualbrain.org/tvb-o/>
+        PREFIX tvbo: <https://w3id.org/tvbo/>
 
         SELECT ?p ?object
         WHERE {{
@@ -162,7 +162,7 @@ def instance_class_relationship(subject_iri: str, predicate: str = "prov:used") 
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
     PREFIX owl: <http://www.w3.org/2002/07/owl#>
     PREFIX prov: <http://www.w3.org/ns/prov#>
-    PREFIX tvbo: <http://www.thevirtualbrain.org/tvb-o/>
+    PREFIX tvbo: <https://w3id.org/tvbo/>
 
     SELECT ?p ?object
     WHERE {{
@@ -183,7 +183,7 @@ def _label_search(label: str) -> List[Any]:
     sparql_string = f"""
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
     PREFIX owl: <http://www.w3.org/2002/07/owl#>
-    PREFIX tvbo: <http://www.thevirtualbrain.org/tvb-o/>
+    PREFIX tvbo: <https://w3id.org/tvbo/>
 
     SELECT ?subject
     WHERE {{
@@ -271,7 +271,7 @@ def label_search(
     sparql_string = rf"""
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX owl: <http://www.w3.org/2002/07/owl#>
-PREFIX tvbo: <http://www.thevirtualbrain.org/tvb-o/>
+PREFIX tvbo: <https://w3id.org/tvbo/>
 PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
 
 SELECT ?subject
