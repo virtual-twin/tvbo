@@ -71,6 +71,11 @@ gen-openminds:
 OWL_OUT = ontology/tvb-o-struct.owl
 SHACL_OUT = ontology/tvb-o.shacl.ttl
 ABOX_OUT = ontology/tvb-o-data.ttl
+AXIOMS_TTL = ontology/tvb-o-axioms.ttl
+MERGED_OUT = ontology/tvbo.owl
+WIDOCO_OUT = docs/ontology/spec
+ROBOT ?= robot
+WIDOCO_IMAGE ?= ghcr.io/dgarijo/widoco:v1.4.25
 
 gen-owl:
 	@echo "Generating OWL ontology from LinkML schema..."
@@ -101,8 +106,48 @@ crosswalk:
 	@python scripts/ontology/backfill_crosswalk.py
 	@echo "✓ dev/OntologicalRestructuring/{crosswalk,boundary-matrix}.md updated"
 
-gen-all: gen-linkml gen-openminds gen-owl gen-shacl gen-abox
+gen-all: gen-linkml gen-openminds gen-owl gen-shacl gen-abox gen-merged
 	@echo "✓ All schemas generated"
+
+gen-merged: gen-owl gen-abox
+	@echo "Merging T-box (struct + axioms) and A-box into a single distributable OWL file..."
+	@mkdir -p ontology
+	@$(ROBOT) merge \
+		--input $(OWL_OUT) \
+		--input $(AXIOMS_TTL) \
+		--input $(ABOX_OUT) \
+		query --update ontology/fix-punning.ru \
+		annotate \
+		--ontology-iri "https://w3id.org/tvbo/tvbo.owl" \
+		--version-iri "https://w3id.org/tvbo/$(shell date +%Y-%m-%d)/tvbo.owl" \
+		reason --reasoner ELK \
+		--output $(MERGED_OUT)
+	@echo "✓ Merged ontology written to $(MERGED_OUT)"
+
+gen-widoco: gen-merged
+	@echo "Generating Widoco HTML documentation (W3C-style spec + WebVOWL) via Docker..."
+	@if ! command -v docker >/dev/null 2>&1; then \
+		echo "ERROR: docker not found on PATH. Install Docker or run via CI."; \
+		exit 1; \
+	fi
+	@rm -rf $(WIDOCO_OUT)
+	@mkdir -p $(WIDOCO_OUT)
+	@docker run --rm --platform linux/amd64 \
+		-v "$(PWD)/ontology:/usr/local/widoco/in:ro" \
+		-v "$(PWD)/$(WIDOCO_OUT):/usr/local/widoco/out" \
+		$(WIDOCO_IMAGE) \
+		-ontFile in/tvbo.owl \
+		-outFolder out \
+		-rewriteAll \
+		-webVowl \
+		-includeAnnotationProperties \
+		-getOntologyMetadata \
+		-uniteSections \
+		-lang en
+	@cp $(MERGED_OUT) $(WIDOCO_OUT)/tvbo.owl
+	@cp $(AXIOMS_TTL) $(WIDOCO_OUT)/tvb-o-axioms.ttl
+	@cp $(SHACL_OUT) $(WIDOCO_OUT)/tvb-o.shacl.ttl
+	@echo "✓ Widoco docs written to $(WIDOCO_OUT)/ (served at /ontology/spec/ by Quarto)"
 
 build:
 	DOCKER_BUILDKIT=1 docker build --secret id=gitlab_token,env=GITLAB_TOKEN -t $(IMAGE_FULL) .

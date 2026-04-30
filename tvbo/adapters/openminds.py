@@ -48,7 +48,7 @@ __all__ = [
 
 OPENMINDS_CONTEXT = {
     "@vocab": "https://openminds.ebrains.eu/vocab/",
-    "tvbo": "http://www.thevirtualbrain.org/tvb-o/",
+    "tvbo": "https://w3id.org/tvbo/",
     "sands": "https://openminds.ebrains.eu/sands/",
     "core": "https://openminds.ebrains.eu/core/",
     "computation": "https://openminds.ebrains.eu/computation/",

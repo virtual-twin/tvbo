@@ -126,7 +126,8 @@ _T = TypeVar("_T")
 AnyShapeArray = TypeAliasType(
     "AnyShapeArray", list[Union[_T, "AnyShapeArray[_T]"]], type_params=(_T,)
 )
-linkml_meta = LinkMLMeta({'default_prefix': 'tvbo',
+linkml_meta = LinkMLMeta({'created_on': '2024-01-01T00:00:00',
+     'default_prefix': 'tvbo',
      'default_range': 'string',
      'description': 'Metadata schema for simulation studies using The Virtual '
                     'Brain neuroinformatics platform or other dynamic network '
@@ -178,7 +179,7 @@ linkml_meta = LinkMLMeta({'default_prefix': 'tvbo',
                   'skos': {'prefix_prefix': 'skos',
                            'prefix_reference': 'http://www.w3.org/2004/02/skos/core#'},
                   'tvbo': {'prefix_prefix': 'tvbo',
-                           'prefix_reference': 'http://www.thevirtualbrain.org/tvb-o/'},
+                           'prefix_reference': 'https://w3id.org/tvbo/'},
                   'wd': {'prefix_prefix': 'wd',
                          'prefix_reference': 'http://www.wikidata.org/entity/'}},
      'source_file': 'schema/tvbo_datamodel.yaml',
@@ -1417,7 +1418,7 @@ class Subject(ConfiguredBaseModel):
     """
     A participant in a study. Each subject typically has their own brain network (connectome) and empirical recordings. Corresponds to a BIDS 'sub-' entity.
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'http://www.thevirtualbrain.org/tvbo/study'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo/study'})
 
     subject_id: str = Field(default=..., description="""BIDS-compatible subject identifier (without 'sub-' prefix). Examples: '01', 'ctrl03', 'patient17'.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Subject', 'TimeSeries'],
          'exact_mappings': ['schema:identifier'],
@@ -1479,7 +1480,7 @@ class Session(ConfiguredBaseModel):
     """
     A data collection session for a subject. Corresponds to a BIDS 'ses-' entity. Sessions capture longitudinal timepoints (baseline, follow-up), different experimental conditions, or repeated measures.
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'http://www.thevirtualbrain.org/tvbo/study'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo/study'})
 
     session_id: str = Field(default=..., description="""BIDS session identifier (without 'ses-' prefix). Examples: 'baseline', '6month', 'pre', 'post'.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Session', 'TimeSeries'], 'slot_uri': 'dcterms:identifier'} })
     label: Optional[str] = Field(default=None, description="""Human-readable session label.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
@@ -1536,7 +1537,7 @@ class Dataset(ConfiguredBaseModel):
     """
     A collection of subjects for a multi-subject study. Provides the subject/session structure needed for workflow rendering. Optionally backed by a BIDS directory layout.
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'http://www.thevirtualbrain.org/tvbo/study'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo/study'})
 
     dataset_id: str = Field(default=..., description="""Unique identifier for the dataset.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset'], 'slot_uri': 'dcterms:identifier'} })
     subjects: Optional[dict[str, Subject]] = Field(default=None, description="""Subjects in a dataset.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset']} })
@@ -1647,7 +1648,7 @@ class DBSDataset(Dataset):
     """
     Collection of data related to a specific DBS study.
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'http://www.thevirtualbrain.org/tvbo/dbs',
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo/dbs',
          'slot_usage': {'subjects': {'name': 'subjects', 'range': 'DBSSubject'}}})
 
     clinical_scores: Optional[list[ClinicalScore]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['DBSDataset']} })
@@ -1767,7 +1768,7 @@ class DBSSubject(Subject):
     """
     Human or animal subject receiving DBS.
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'http://www.thevirtualbrain.org/tvbo/dbs'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo/dbs'})
 
     diagnosis: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['DBSSubject']} })
     handedness: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['DBSSubject']} })
@@ -1839,7 +1840,7 @@ class Electrode(ConfiguredBaseModel):
     """
     Implanted DBS electrode and contact geometry.
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'http://www.thevirtualbrain.org/tvbo/dbs'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo/dbs'})
 
     electrode_id: Optional[str] = Field(default=None, description="""Unique identifier for this electrode""", json_schema_extra = { "linkml_meta": {'domain_of': ['Electrode'], 'slot_uri': 'dcterms:identifier'} })
     manufacturer: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Electrode']} })
@@ -1864,7 +1865,7 @@ class Contact(ConfiguredBaseModel):
     """
     Individual contact on a DBS electrode.
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'http://www.thevirtualbrain.org/tvbo/dbs'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo/dbs'})
 
     contact_id: Optional[int] = Field(default=None, description="""Identifier (e.g., 0, 1, 2)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Contact'], 'slot_uri': 'dcterms:identifier'} })
     coordinate: Optional[Coordinate] = Field(default=None, description="""3D coordinate of the contact center in the defined coordinate space""", json_schema_extra = { "linkml_meta": {'domain_of': ['Contact']} })
@@ -1919,7 +1920,7 @@ class StimulationSetting(ConfiguredBaseModel):
     """
     DBS parameters for a specific session.
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'http://www.thevirtualbrain.org/tvbo/dbs'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo/dbs'})
 
     electrode_reference: Optional[Electrode] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StimulationSetting']} })
     amplitude: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StimulationSetting']} })
@@ -1934,7 +1935,7 @@ class DBSProtocol(ConfiguredBaseModel):
     """
     A protocol describing DBS therapy, potentially bilateral or multi-lead.
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'http://www.thevirtualbrain.org/tvbo/dbs'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo/dbs'})
 
     name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
@@ -1983,7 +1984,7 @@ class ClinicalScale(ConfiguredBaseModel):
     """
     A clinical assessment inventory or structured scale composed of multiple scores or items.
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'http://www.thevirtualbrain.org/tvbo/dbs'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo/dbs'})
 
     acronym: Optional[str] = Field(default=None, description="""Short abbreviation (e.g., UPDRS)""", json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
                        'ClinicalScore',
@@ -2048,7 +2049,7 @@ class ClinicalScore(ConfiguredBaseModel):
     """
     Metadata about a clinical score or scale.
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'http://www.thevirtualbrain.org/tvbo/dbs'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo/dbs'})
 
     acronym: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
                        'ClinicalScore',
@@ -2162,7 +2163,7 @@ class ClinicalImprovement(ConfiguredBaseModel):
     """
     Relative improvement on a defined clinical score.
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'http://www.thevirtualbrain.org/tvbo/dbs'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo/dbs'})
 
     score: Optional[ClinicalScore] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalImprovement']} })
     baseline_value: Optional[float] = Field(default=None, description="""Preoperative baseline value of the score""", json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalImprovement']} })
@@ -2177,7 +2178,7 @@ class EField(ConfiguredBaseModel):
     """
     Simulated electric field from DBS modeling.
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'http://www.thevirtualbrain.org/tvbo/dbs'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/tvbo/dbs'})
 
     volume_data: Optional[str] = Field(default=None, description="""Reference to raw or thresholded volume""", json_schema_extra = { "linkml_meta": {'domain_of': ['EField']} })
     coordinate_space: Optional[str] = Field(default=None, description="""Reference to a common coordinate space (e.g. MNI152)""", json_schema_extra = { "linkml_meta": {'domain_of': ['DBSDataset',
