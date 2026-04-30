@@ -4325,12 +4325,7 @@
 
     <!-- https://w3id.org/tvbo/symmetry -->
 
-    <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/symmetry">
-        <rdfs:label>symmetry (slot)</rdfs:label>
-        <skos:definition>Edge symmetry type for NetworkDynamics.jl EdgeModel: &apos;directed&apos; (default), &apos;antisymmetric&apos;, or &apos;symmetric&apos;. AntiSymmetric edges flip sign for the reverse direction.</skos:definition>
-        <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
-        <skos:notation>symmetry</skos:notation>
-    </owl:DatatypeProperty>
+    <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/symmetry"/>
     
 
 
@@ -8818,12 +8813,6 @@
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="https://w3id.org/tvbo/name"/>
-                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-            </owl:Restriction>
-        </rdfs:subClassOf>
-        <rdfs:subClassOf>
-            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/observed"/>
                 <owl:allValuesFrom rdf:resource="https://w3id.org/tvbo/DerivedVariable"/>
             </owl:Restriction>
@@ -8862,6 +8851,12 @@
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/regional_connectivity"/>
                 <owl:allValuesFrom rdf:resource="https://w3id.org/tvbo/Network"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/symmetry"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
@@ -8998,14 +8993,14 @@
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="https://w3id.org/tvbo/sparse"/>
-                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/name"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="https://w3id.org/tvbo/symmetry"/>
-                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/sparse"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
@@ -40442,6 +40437,12 @@ Key innovation: The ratio of long-range excitation (LRE) to feedforward inhibiti
         <rdfs:label>source (slot)</rdfs:label>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
         <skos:notation>source</skos:notation>
+    </rdf:Description>
+    <rdf:Description rdf:about="https://w3id.org/tvbo/symmetry">
+        <rdfs:label>symmetry (slot)</rdfs:label>
+        <skos:definition>Edge symmetry type for NetworkDynamics.jl EdgeModel: &apos;directed&apos; (default), &apos;antisymmetric&apos;, or &apos;symmetric&apos;. AntiSymmetric edges flip sign for the reverse direction.</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
+        <skos:notation>symmetry</skos:notation>
     </rdf:Description>
     <rdf:Description rdf:about="https://w3id.org/tvbo/target_component">
         <rdfs:label>target_component (slot)</rdfs:label>

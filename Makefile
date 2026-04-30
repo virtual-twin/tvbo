@@ -130,10 +130,9 @@ gen-widoco: gen-merged
 		exit 1; \
 	fi
 	@rm -rf $(WIDOCO_OUT)
-	@mkdir -p $(WIDOCO_OUT) ontology/widoco-in
-	@cp $(MERGED_OUT) ontology/widoco-in/tvbo.owl
-	@docker run --rm \
-		-v "$(PWD)/ontology/widoco-in:/usr/local/widoco/in:ro" \
+	@mkdir -p $(WIDOCO_OUT)
+	@docker run --rm --platform linux/amd64 \
+		-v "$(PWD)/ontology:/usr/local/widoco/in:ro" \
 		-v "$(PWD)/$(WIDOCO_OUT):/usr/local/widoco/out" \
 		$(WIDOCO_IMAGE) \
 		-ontFile in/tvbo.owl \
@@ -148,7 +147,6 @@ gen-widoco: gen-merged
 	@cp $(MERGED_OUT) $(WIDOCO_OUT)/tvbo.owl
 	@cp $(AXIOMS_TTL) $(WIDOCO_OUT)/tvb-o-axioms.ttl
 	@cp $(SHACL_OUT) $(WIDOCO_OUT)/tvb-o.shacl.ttl
-	@rm -rf ontology/widoco-in
 	@echo "✓ Widoco docs written to $(WIDOCO_OUT)/ (served at /ontology/spec/ by Quarto)"
 
 build:

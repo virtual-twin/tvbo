@@ -137,11 +137,10 @@ jobs:
                   WIDOCO_IMAGE: ghcr.io/dgarijo/widoco:v1.4.25
               run: |
                   set -euxo pipefail
-                  mkdir -p docs/_site/ontology/spec ontology/widoco-in
-                  cp ontology/tvbo.owl ontology/widoco-in/tvbo.owl
-                  docker pull "${WIDOCO_IMAGE}"
-                  docker run --rm \
-                      -v "${PWD}/ontology/widoco-in:/usr/local/widoco/in:ro" \
+                  mkdir -p docs/_site/ontology/spec
+                  docker pull --platform linux/amd64 "${WIDOCO_IMAGE}"
+                  docker run --rm --platform linux/amd64 \
+                      -v "${PWD}/ontology:/usr/local/widoco/in:ro" \
                       -v "${PWD}/docs/_site/ontology/spec:/usr/local/widoco/out" \
                       "${WIDOCO_IMAGE}" \
                       -ontFile in/tvbo.owl \
@@ -157,7 +156,6 @@ jobs:
                   cp ontology/tvbo.owl            docs/_site/ontology/spec/tvbo.owl
                   cp ontology/tvb-o-axioms.ttl    docs/_site/ontology/spec/tvb-o-axioms.ttl
                   cp ontology/tvb-o.shacl.ttl    docs/_site/ontology/spec/tvb-o.shacl.ttl
-                  rm -rf ontology/widoco-in
 
             # ── Publish via Quarto's native gh-pages flow ────────────────
             # `quarto publish gh-pages` manages the gh-pages branch (orphan,
