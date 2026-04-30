@@ -255,6 +255,16 @@ website:
 
               - text: "---"
 
+              - section: "Ontology"
+                href: ontology/index.qmd
+                contents:
+                  - text: "Specification (Widoco)"
+                    href: ontology/spec/index-en.html
+                  - text: "WebVOWL visualisation"
+                    href: ontology/spec/webvowl/index.html#ontology.owl
+
+              - text: "---"
+
 # BEGIN:datamodel-autogen
               - section: "Data Model"
                 href: datamodel/index.qmd
