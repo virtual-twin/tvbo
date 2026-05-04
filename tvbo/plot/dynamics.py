@@ -323,7 +323,8 @@ def _kind_vectorfield(dynamics, resolved, ax, grid_n, cmap, stream, ax_given=Fal
 
 def _kind_phaseplane(dynamics, resolved, ax, grid_n, cmap, stream, ax_given,
                      alpha, lw, n_trajectories=0, traj_duration=200, traj_dt=0.1,
-                     show_nullclines=True, show_fixed_points=True):
+                     show_nullclines=True, show_fixed_points=True,
+                     show_limit_cycle=True):
     """Vector field + nullclines + (optional) sample trajectories.
 
     Nullclines are the zero-level contours of each component of the vector
@@ -380,6 +381,28 @@ def _kind_phaseplane(dynamics, resolved, ax, grid_n, cmap, stream, ax_given,
                         seen.append(sol)
         for x_fp, y_fp in seen:
             ax.plot(x_fp, y_fp, "ko", ms=7, mec="white", mew=1.2, zorder=10)
+
+    if show_limit_cycle:
+        # Integrate one long trajectory from a small offset, discard
+        # transient, and check if the tail forms a closed loop. If yes,
+        # draw it as a red ring (and mark the inner unstable focus).
+        state_names = list(dynamics.state_variables)
+        sv_idx = [state_names.index(str(expr)) for _, expr in resolved]
+        base_ic = np.asarray(dynamics.get_initial_values(), dtype=float).reshape(-1)
+        u0 = base_ic.copy()
+        u0[sv_idx[0]] += 0.05
+        u0[sv_idx[1]] += 0.05
+        ts = dynamics.run(duration=max(traj_duration * 4, 200),
+                          dt=traj_dt, u_0=u0, save=False)
+        traj = ts.data[:, :, 0, 0]
+        x = traj[:, sv_idx[0]]; y = traj[:, sv_idx[1]]
+        n = len(x)
+        tail = slice(int(n * 0.7), n)
+        xt, yt = x[tail], y[tail]
+        amp = np.hypot(xt.max() - xt.min(), yt.max() - yt.min())
+        closes = np.hypot(xt[0] - xt[-1], yt[0] - yt[-1]) < 0.1 * amp
+        if amp > 0.05 and closes:
+            ax.plot(xt, yt, color="red", lw=1.8, zorder=9)
 
     if n_trajectories > 0:
         from numpy.random import default_rng
