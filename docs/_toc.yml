@@ -58,6 +58,21 @@ website:
                         href: Usage/ModelFitting.qmd
                       - text: "Bifurcation Analysis"
                         href: Usage/BifurcationAnalysis.qmd
+                      - section: "Bifurcation Tutorial"
+                        href: Usage/BifurcationTutorial/index.qmd
+                        contents:
+                          - text: "1. Linear Stability"
+                            href: Usage/BifurcationTutorial/01-LinearStability.qmd
+                          - text: "2. 2D Phase Portraits"
+                            href: Usage/BifurcationTutorial/02-PhasePortrait2D.qmd
+                          - text: "3. Saddle-Node"
+                            href: Usage/BifurcationTutorial/03-SaddleNode.qmd
+                          - text: "4. Pitchfork"
+                            href: Usage/BifurcationTutorial/04-Pitchfork.qmd
+                          - text: "5. Hysteresis"
+                            href: Usage/BifurcationTutorial/05-Hysteresis.qmd
+                          - text: "6. Hopf"
+                            href: Usage/BifurcationTutorial/06-Hopf.qmd
                       - text: "Visualization"
                         href: Usage/Visualization.qmd
                       - text: "Output Specification"
@@ -80,6 +95,42 @@ website:
                         href: Usage/HeterogeneousEdges.qmd
                       - text: "Unit-Aware Computations"
                         href: Usage/UnitValidation.qmd
+
+              - section: "Command-Line Interface"
+                href: CLI/index.qmd
+                contents:
+                  - text: "Specs and resolution"
+                    href: CLI/specs.qmd
+                  - section: "Verbs"
+                    contents:
+                      - text: "tvbo run"
+                        href: CLI/run.qmd
+                      - text: "tvbo export"
+                        href: CLI/export.qmd
+                      - text: "tvbo save"
+                        href: CLI/save.qmd
+                      - text: "tvbo import"
+                        href: CLI/import.qmd
+                      - text: "tvbo info"
+                        href: CLI/info.qmd
+                      - text: "tvbo formats"
+                        href: CLI/formats.qmd
+                      - text: "tvbo validate"
+                        href: CLI/validate.qmd
+                      - text: "tvbo config"
+                        href: CLI/config.qmd
+                  - section: "Workflows & HPC"
+                    contents:
+                      - text: "tvbo workflow"
+                        href: CLI/workflow.qmd
+                      - text: "Workflow kits anatomy"
+                        href: CLI/workflow-kits.qmd
+                      - text: "Backends"
+                        href: CLI/backends.qmd
+                      - text: "HPC patterns"
+                        href: CLI/hpc.qmd
+                  - text: "Recipes"
+                    href: CLI/recipes.qmd
 
               - section: "Interoperability"
                 href: Interoperability/index.qmd

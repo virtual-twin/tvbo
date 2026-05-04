@@ -1,0 +1,80 @@
+---
+title: "3. Saddle-Node"
+sidebar: usage
+jupyter: python3
+---
+
+The saddle-node (fold) bifurcation is the simplest codim-1 bifurcation:
+
+$$
+\dot x = a - x^2.
+$$
+
+For $a > 0$ there are two fixed points $x_{\pm} = \pm\sqrt a$ (one stable,
+one unstable); they collide and annihilate at $a = 0$. The legacy figure
+`SaddleNode.png` is the bifurcation diagram in $(a, x)$.
+
+```{python}
+from tvbo import Dynamics, Continuation, SimulationExperiment
+
+SN_YAML = """
+name: SaddleNode
+description: Canonical saddle-node $\\dot x = a - x^2$.
+parameters:
+  a:
+    name: a
+    value: 1.0
+state_variables:
+  x:
+    name: x
+    domain: { lo: -2.0, hi: 2.0 }
+    equation:
+      lhs: Derivative(x, t)
+      rhs: a - x**2
+    initial_value: 1.0
+"""
+
+CONT_YAML = """
+name: sn_in_a
+dynamics: SaddleNode
+free_parameters:
+  - name: a
+    domain: { lo: -2.0, hi: 2.0 }
+max_steps: 200
+ds: 0.01
+bothside: true
+"""
+
+dyn = Dynamics.from_string(SN_YAML)
+cont = Continuation.from_string(CONT_YAML)
+exp = SimulationExperiment(dynamics=dyn, continuations=[cont])
+```
+
+## BifurcationKit.jl
+
+```{python}
+result_jl = exp.run("bifurcationkit.jl")
+result_jl.continuations["sn_in_a"].plot(VOI="x")
+```
+
+## PyRates / PyCoBi
+
+```{python}
+result_py = exp.run("pyrates-bifurcation")
+result_py.continuations["sn_in_a"].plot(VOI="x")
+```
+
+## AUTO-07p (NumCont)
+
+This is the backend used by the original standalone `SaddleNode.py` example:
+an AUTO-07p Fortran binary built on-the-fly from the YAML, then continued
+bidirectionally (`bothside: true` ↔ standalone `DS=-0.01`).
+
+```{python}
+result_auto = exp.run("auto-07p")
+result_auto.continuations["sn_in_a"].plot(VOI="x")
+```
+
+The fold point appears at $a = 0$ in all three backends. The upper branch is
+stable, the lower branch unstable -- exactly the Fortran/AUTO output but
+generated end-to-end from the YAML strings above.

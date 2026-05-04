@@ -49,6 +49,186 @@ _C = {
 }
 
 
+# ── Unified style registry for bifurcation diagram elements ──────────
+# Single source of truth for branch lines (SFP/UFP/SLC/ULC) and special
+# points (LP/HB/BP/PD/TR/CP/GH/ZH/BT/HH). Used by plot_branch,
+# plot_special_points, plot_3d, and the BifLegend helper.
+
+_LINE_BASE = dict(marker="", lw=1.5, picker=True, pickradius=8, zorder=5)
+_MARK_BASE = dict(lw=0, linestyle="none", fillstyle="full",
+                  markeredgecolor="white", markeredgewidth=0.8,
+                  markersize=8, alpha=1, zorder=50)
+
+BIF_STYLES = {
+    # Branch lines
+    "SFP": dict(color=_C["stable"],   ls="-", lw=1.5, label="Stable FP",   zorder=5),
+    "UFP": dict(color=_C["stable"],   ls=":", lw=1.5, label="Unstable FP", zorder=5),
+    "SLC": dict(color=_C["po_line"],  ls="-", lw=1.5, label="Stable LC",   zorder=5),
+    "ULC": dict(color=_C["po_line"],  ls=":", lw=1.5, label="Unstable LC", zorder=5),
+    # Codim-1 special points
+    "LP": dict(marker="o", color=_C["fold"], label="LP"),     # fold / saddle-node
+    "HB": dict(marker="o", color=_C["hopf"], label="Hopf"),   # Hopf
+    "BP": dict(marker="s", color=_C["bp"],   label="BP"),     # branch point
+    "PD": dict(marker="^", color=_C["pd"],   label="PD"),     # period doubling
+    "TR": dict(marker="*", color=_C["ns"],   label="Torus"),  # torus / Neimark-Sacker
+    # Codim-2 special points
+    "CP": dict(marker="D", color=_C["cusp"], label="Cusp"),
+    "GH": dict(marker="d", color=_C["gh"],   label="GH"),
+    "BT": dict(marker="*", color=_C["bt"],   label="BT"),
+    "ZH": dict(marker="o", color=_C["zh"],   label="ZH"),
+    "HH": dict(marker="p", color=_C["gh"],   label="HH"),
+    # PO-on-LC special points (prefix LC_)
+    "LC_LP": dict(marker="o", color="purple",     label="LC LP"),
+    "LC_PD": dict(marker="^", color="cyan",       label="LC PD"),
+    "LC_TR": dict(marker="*", color="yellowgreen", label="LC TR"),
+    "LC_BP": dict(marker="s", color=_C["bp"],     label="LC BP"),
+    "LC_EP": dict(marker="none", color=_C["po_line"], label="LC EP"),
+}
+
+# Canonical TY normalisation (lower-case backend strings → upper TY key)
+_TY_ALIASES = {
+    # equilibria
+    "fold": "LP", "saddle-node": "LP", "sn": "LP", "lp": "LP",
+    "hopf": "HB", "hb": "HB",
+    "bp": "BP", "branchpoint": "BP", "branch-point": "BP",
+    # PO codim-1
+    "pd": "PD", "period-doubling": "PD",
+    "ns": "TR", "tr": "TR", "neimark-sacker": "TR", "torus": "TR",
+    # codim-2
+    "cusp": "CP", "cp": "CP",
+    "gh": "GH", "bautin": "GH",
+    "bt": "BT", "bogdanov-takens": "BT",
+    "zh": "ZH", "zero-hopf": "ZH",
+    "hh": "HH", "hopf-hopf": "HH",
+}
+
+
+def canonical_ty(ty):
+    """Normalise any backend label to a key in ``BIF_STYLES``."""
+    if ty is None:
+        return None
+    s = str(ty).strip()
+    if not s:
+        return None
+    # Already canonical (incl. LC_ prefix)
+    if s in BIF_STYLES:
+        return s
+    su = s.upper()
+    if su in BIF_STYLES:
+        return su
+    return _TY_ALIASES.get(s.lower())
+
+
+def get_bif_style(ty, base=None):
+    """Look up the merged style dict for a TY (e.g. 'LP', 'fold', 'SLC').
+
+    ``base`` defaults to the line/marker base style depending on whether
+    the entry is a branch (no marker) or a point (marker is present).
+    """
+    key = canonical_ty(ty) or ty
+    style = BIF_STYLES.get(key)
+    if style is None:
+        return None
+    if base is None:
+        base = _MARK_BASE if "marker" in style and style.get("marker") not in (None, "", "none") else _LINE_BASE
+    out = dict(base)
+    out.update(style)
+    return out
+
+
+# ── Coord DSL & PO orbit reductions ──────────────────────────────────
+# Reduce an orbit mesh (n_orbit, n_time) → (n_orbit,) per-step value.
+
+def _reduce_minmax(arr):
+    return np.array([arr.min(axis=-1), arr.max(axis=-1)])
+
+
+def _reduce_avg(arr, t=None):
+    if t is None:
+        return arr.mean(axis=-1)
+    return np.trapz(arr, t, axis=-1) / (t[-1] - t[0])
+
+
+def _reduce_min(arr):
+    return arr.min(axis=-1)
+
+
+def _reduce_max(arr):
+    return arr.max(axis=-1)
+
+
+def _reduce_norm(arr):
+    return np.sqrt((arr ** 2).mean(axis=-1))
+
+
+PO_REDUCTIONS = {
+    "minmax": _reduce_minmax,
+    "avg": _reduce_avg,
+    "min": _reduce_min,
+    "max": _reduce_max,
+    "norm": _reduce_norm,
+}
+
+
+def resolve_coord(df, expr, state_var_index=None, po_orbits=None):
+    """Evaluate one coord expression against ``df`` (and optionally PO meshes).
+
+    Accepts:
+      * a column name in ``df`` (e.g. ``'x'``, ``'param'``)
+      * a sympy-parseable expression of column names (e.g. ``'V**2 + W'``)
+      * a reduction call ``'minmax(V)'`` / ``'avg(V)'`` / ``'norm(V)'``
+        which uses the PO orbit meshes if available, else falls back to
+        the column itself.
+
+    Returns a pandas Series (or ndarray for minmax → shape (2, N)).
+    """
+    if expr is None:
+        return None
+    s = str(expr).strip()
+    # Reduction call
+    for name, fn in PO_REDUCTIONS.items():
+        prefix = f"{name}("
+        if s.startswith(prefix) and s.endswith(")"):
+            sv = s[len(prefix):-1].strip()
+            if po_orbits:
+                arr = np.array([np.asarray(o[sv]) for o in po_orbits])  # (n_orb, n_t)
+                if name == "avg":
+                    return fn(arr, t=np.asarray(po_orbits[0]["t"]))
+                return fn(arr)
+            # No PO meshes: fall through to plain column eval
+            return compute_voi(df, sv, state_var_index=state_var_index)
+    # Plain column or expression
+    return compute_voi(df, s, state_var_index=state_var_index)
+
+
+def resolve_coords(coords, df, state_var_index=None, po_orbits=None,
+                   default_voi=None, default_param="param"):
+    """Normalise the user's ``coords`` argument to a tuple of arrays.
+
+    ``coords`` accepts:
+      * ``None``               → ``(param, default_voi)``
+      * ``'V'``                → ``(param, V)``
+      * ``'minmax(V)'``        → ``(param, [Vmin, Vmax])``
+      * ``(p, V)``             → 2D
+      * ``(p, V, W)``          → 3D
+    Each element may itself be a string or already-resolved array.
+    """
+    if coords is None:
+        coords = (default_param, default_voi)
+    elif isinstance(coords, str):
+        coords = (default_param, coords)
+    elif not isinstance(coords, (list, tuple)):
+        coords = (default_param, coords)
+
+    out = []
+    for c in coords:
+        if isinstance(c, str):
+            out.append(resolve_coord(df, c, state_var_index=state_var_index, po_orbits=po_orbits))
+        else:
+            out.append(c)
+    return tuple(out)
+
+
 def _apply_style():
     """Activate tvbo publication style if bsplot is available."""
     try:
@@ -314,100 +494,125 @@ class BifurcationResult:
                 self.hopf_steps = self.df.loc[hopf_mask, "step"].tolist()
                 self.bp_steps = self.df.loc[bp_mask, "step"].tolist()
 
-    def plot_special_points(self, VOI, ax=None, **kwargs):
-        _sp_colors = {
-            "fold": _C["fold"],
-            "hopf": _C["hopf"],
-            "bp": _C["bp"],
-            "nd": "#888888",
-            "none": "#888888",
-            "ns": _C["ns"],
-            "pd": _C["pd"],
-            "bt": _C["bt"],
-            "cusp": _C["cusp"],
-            "gh": _C["gh"],
-            "zh": _C["zh"],
-            "hh": _C["gh"],
-        }
-        _sp_markers = {
-            "fold": "s",
-            "hopf": "o",
-            "bp": "D",
-            "nd": "v",
-            "ns": "^",
-            "pd": "p",
-            "bt": "s",
-            "cusp": "D",
-            "gh": "^",
-            "zh": "v",
-            "hh": "p",
-        }
+    def plot_special_points(self, VOI, ax=None, types=None, **kwargs):
+        """Mark codim-1 special points (LP/HB/BP/PD/TR/...) on ``ax``.
+
+        Parameters
+        ----------
+        types : iterable[str], optional
+            Restrict markers to these canonical TYs (e.g. ``['LP','HB']``).
+            By default every TY found in ``df.specialpoint`` is plotted
+            (except ``endpoint``).
+        """
+        if ax is None or "specialpoint" not in self.df.columns:
+            return
+        is_po = bool(getattr(self, "is_po", False))
+        type_filter = {canonical_ty(t) for t in types} if types else None
+        clabels = ax.get_legend_handles_labels()[1]
 
         for i, r in self.df[self.df["specialpoint"].notna()].iterrows():
-            sp = str(r.specialpoint).lower().split(",")[0].strip()
-            if sp in ("endpoint", "none", "nan", ""):
-                continue
-            current_labels = ax.get_legend_handles_labels()[1]
-            color = _sp_colors.get(sp, "#333333")
-            marker = _sp_markers.get(sp, "o")
-            ax.scatter(
-                r.param,
-                compute_voi(self.df, VOI, state_var_index=self.state_var_index).loc[i],
-                zorder=5,
-                s=40,
-                marker=marker,
-                facecolors=color,
-                edgecolors="white",
-                linewidths=0.8,
-                label=(sp.upper() if sp.upper() not in current_labels else None),
-            )
+            sp_raw = str(r.specialpoint)
+            for sp in sp_raw.split(","):
+                sp = sp.strip()
+                if sp.lower() in ("endpoint", "none", "nan", ""):
+                    continue
+                key = canonical_ty(sp)
+                if key is None:
+                    continue
+                if is_po and not key.startswith("LC_"):
+                    key = f"LC_{key}"
+                if type_filter and key not in type_filter:
+                    continue
+                style = get_bif_style(key)
+                if style is None:
+                    continue
+                # scatter-style draw via plot for legend consistency
+                voi_val = compute_voi(self.df, VOI, state_var_index=self.state_var_index).loc[i]
+                lab = style.get("label")
+                ax.plot(
+                    [r.param], [voi_val],
+                    marker=style.get("marker", "o"),
+                    color=style.get("color", "#333"),
+                    markersize=style.get("markersize", 8),
+                    markeredgecolor=style.get("markeredgecolor", "white"),
+                    markeredgewidth=style.get("markeredgewidth", 0.8),
+                    linestyle="none",
+                    zorder=style.get("zorder", 50),
+                    label=(lab if lab and lab not in clabels else None),
+                )
+                if lab and lab not in clabels:
+                    clabels.append(lab)
 
     def plot_branch(self, ax, ICS=None, VOI=None, **kwargs):
         VOI = self._resolve_voi(VOI)
         if self.df.empty:
             return
+        is_po = bool(getattr(self, "is_po", False))
         lw = kwargs.pop("linewidth", kwargs.pop("lw", None))
         _plot_ignore = {
-            "periodic_orbits",
-            "verbose",
-            "max_steps",
-            "ds",
-            "dsmin",
-            "dsmax",
-            "p_min",
-            "p_max",
-            "quiet",
-            "detect_bifurcation",
-            "nev",
-            "n_inversion",
-            "max_bisection_steps",
-            "tol_stability",
-            "bothside",
-            "bifurcation_points",
-            "n_runs",
-            "model",
-            "state_var_index",
-            "ICS",
+            "periodic_orbits", "verbose", "max_steps", "ds", "dsmin", "dsmax",
+            "p_min", "p_max", "quiet", "detect_bifurcation", "nev", "n_inversion",
+            "max_bisection_steps", "tol_stability", "bothside", "bifurcation_points",
+            "n_runs", "model", "state_var_index", "ICS", "types", "coords",
+            "po_orbits", "branch_id",
         }
         plot_kwargs = {k: v for k, v in kwargs.items() if k not in _plot_ignore}
         if "stable" not in self.df.columns:
             self.df["stable"] = True
-        self.df["segment"] = (self.df.stable != self.df.stable.shift()).cumsum()
-
-        for segment_id, segment_data in self.df.groupby("segment"):
-            is_stable = segment_data.iloc[0].stable
-            label = "Stable" if is_stable else "Unstable"
-            current_labels = ax.get_legend_handles_labels()[1]
+        # Group per (optional branch_id, contiguous-stability) segment
+        if "branch_id" in self.df.columns:
+            group_cols = ["branch_id"]
+        else:
+            group_cols = []
+        df_plot = self.df.copy()
+        df_plot["__seg"] = (df_plot.stable != df_plot.stable.shift()).cumsum()
+        clabels = ax.get_legend_handles_labels()[1]
+        for _, segment_data in df_plot.groupby(group_cols + ["__seg"]):
+            is_stable = bool(segment_data.iloc[0].stable)
+            ty = ("SLC" if is_stable else "ULC") if is_po else ("SFP" if is_stable else "UFP")
+            style = get_bif_style(ty)
+            kw = dict(style)
+            if lw is not None:
+                kw["lw"] = lw
+            kw.update(plot_kwargs)
+            lab = kw.pop("label", None)
             ax.plot(
                 segment_data["param"],
                 compute_voi(segment_data, VOI, state_var_index=self.state_var_index),
-                "-" if is_stable else "--",
-                color=(_C["stable"] if is_stable else _C["unstable"]),
-                linewidth=lw if lw is not None else (1.5 if is_stable else 1.0),
-                zorder=2 if is_stable else 1,
-                label=label if label not in current_labels else None,
-                **plot_kwargs,
+                color=kw.pop("color"),
+                linestyle=kw.pop("ls", kw.pop("linestyle", "-")),
+                linewidth=kw.pop("lw", kw.pop("linewidth", 1.5)),
+                zorder=kw.pop("zorder", 5),
+                label=(lab if lab and lab not in clabels else None),
+                **{k: v for k, v in kw.items() if k not in ("marker", "picker", "pickradius", "fillstyle", "alpha")},
             )
+            if lab and lab not in clabels:
+                clabels.append(lab)
+
+    def bif_legend(self, ax, tys, labels=None, **lgd_kwargs):
+        """Add a curated legend listing the selected TYs.
+
+        Mirrors ``ContinuationPlot.BifLegend``: draws an off-screen artist
+        per TY using the central style registry and feeds them to a single
+        ``ax.legend`` call so the user can pin exactly which entries appear.
+        """
+        handles = []
+        xlim, ylim = ax.get_xlim(), ax.get_ylim()
+        for k, ty in enumerate(tys):
+            style = get_bif_style(ty)
+            if style is None:
+                continue
+            kw = dict(style)
+            if labels and k < len(labels):
+                kw["label"] = labels[k]
+            h, = ax.plot([xlim[0]], [ylim[0]], **{
+                k_: v for k_, v in kw.items()
+                if k_ not in ("picker", "pickradius", "fillstyle", "zorder")
+            })
+            h.remove()
+            handles.append(h)
+        ax.set_xlim(*xlim); ax.set_ylim(*ylim)
+        return ax.legend(handles=handles, **lgd_kwargs)
 
     def plot_equilibrium_branch(self, ax, ICS=None, VOI=None, **kwargs):
         VOI = self._resolve_voi(VOI)
@@ -505,6 +710,9 @@ class BifurcationResult:
             return []
 
     def plot(self, ax=None, ICS=None, VOI=None, save=None, **kwargs):
+        # Auto-dispatch to codim-2 rendering when nested continuation produced codim-2 curves.
+        if getattr(self, "codim2_curves", None):
+            return self._plot_codim2(ax=ax, ICS=ICS, save=save, **kwargs)
         _apply_style()
         if ax is None:
             fig, ax = plt.subplots(figsize=(4.5, 3.5))
@@ -552,7 +760,7 @@ class BifurcationResult:
             fig.savefig(save, dpi=500, bbox_inches="tight")
         return ax
 
-    def plot_codim2(self, ax=None, ICS=None, ICS2=None, save=None, **kwargs):
+    def _plot_codim2(self, ax=None, ICS=None, ICS2=None, save=None, **kwargs):
         """Plot codim-2 bifurcation curves in (param1, param2) space.
 
         Axis convention:
@@ -816,18 +1024,40 @@ class BifurcationResult:
             Y = c2_default + W_scaled
             Z = V_mesh
 
-            ax.plot_surface(
-                X,
-                Y,
-                Z,
-                alpha=0.2,
-                color=_C["po_surface"],
-                edgecolor="none",
-                shade=True,
-                zorder=3,
-            )
+            # Per-orbit stability → split surface into stable/unstable
+            # contiguous segments (stable → plot_surface, unstable →
+            # plot_wireframe), mirroring ContinuationPlot.PlotBifCurve.
+            if "stable" in po_br.df.columns and len(po_br.df) >= n_orb:
+                # Sample stability at the same indices used for orbits
+                sample_idx = np.unique(np.round(np.linspace(0, len(po_br.df) - 1, n_orb)).astype(int))
+                stab_arr = po_br.df["stable"].values[sample_idx[:n_orb]].astype(bool)
+            else:
+                stab_arr = np.ones(n_orb, dtype=bool)
 
-            # Wireframe orbit loops (every ~5th)
+            # Contiguous stability segments
+            seg_breaks = np.concatenate([[0], np.where(np.diff(stab_arr.astype(int)) != 0)[0] + 1, [n_orb]])
+            for s_start, s_end in zip(seg_breaks[:-1], seg_breaks[1:]):
+                if s_end - s_start < 2:
+                    continue
+                seg_stable = bool(stab_arr[s_start])
+                Xs, Ys, Zs = X[s_start:s_end], Y[s_start:s_end], Z[s_start:s_end]
+                slc_style = get_bif_style("SLC" if seg_stable else "ULC")
+                color = slc_style["color"] if slc_style else _C["po_line"]
+                if seg_stable:
+                    ax.plot_surface(
+                        Xs, Ys, Zs,
+                        alpha=0.25, color=color, edgecolor="none",
+                        shade=True, zorder=3, rasterized=True,
+                    )
+                else:
+                    ax.plot_wireframe(
+                        Xs, Ys, Zs,
+                        alpha=0.5, color=color, linewidth=0.6,
+                        rstride=max(1, (s_end - s_start) // 6), cstride=10,
+                        zorder=3, rasterized=True,
+                    )
+
+            # Wireframe orbit loops (every ~5th) for visual cue
             step = max(1, n_orb // 8)
             for j in range(0, n_orb, step):
                 xx = np.append(X[j, :], X[j, 0])
@@ -1324,4 +1554,273 @@ class PyRatesBifurcationResult(BifurcationResult):
         return df
 
 
-__all__ = ["BifurcationResult", "PyRatesBifurcationResult"]
+class NumContBifurcationResult(BifurcationResult):
+    """Bifurcation result from the in-tree AUTO-07p (numcont) backend.
+
+    Wraps an ``auto.bifDiag`` (returned by ``auto.run``) and exposes
+    the common ``BifurcationResult`` interface (``df``, ``hopf_indices``,
+    ``periodic_orbits``, ...). Uses ``auto-07p`` directly; no external
+    package dependency.
+    """
+
+    # AUTO label → canonical specialpoint string used by plotting code
+    _LABEL_MAP = {
+        "HB": "hopf",
+        "LP": "fold",
+        "BP": "bp",
+        "PD": "pd",
+        "TR": "ns",
+        "EP": "endpoint",
+        "MX": "mx",
+        "UZ": "uz",
+    }
+
+    def __init__(
+        self,
+        bd,
+        cont_name=None,
+        model=None,
+        continuation=None,
+        ICS=None,
+        periodic_orbits_raw=None,
+        workdir=None,
+        **kwargs,
+    ):
+        # Skip parent __init__ (it expects juliacall objects)
+        self.br = bd
+        self.cont_name = cont_name
+        self.model = model
+        self.continuation = continuation
+        self.ICS = ICS
+        self.workdir = workdir
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
+        sv_names = list(model.state_variables.keys()) if model else []
+        self.state_var_index = {name: idx for idx, name in enumerate(sv_names)}
+
+        # Build df from the equilibrium continuation branches
+        self.df = self._extract_branch_df(bd, sv_names, ICS)
+
+        # Special-point indices in df
+        self.hopf_indices = []
+        self.bp_indices = []
+        self.hopf_steps = []
+        self.bp_steps = []
+        if "specialpoint" in self.df.columns:
+            sp = self.df["specialpoint"].astype(str)
+            hopf_mask = sp.str.contains("hopf", case=False, na=False)
+            bp_mask = sp.str.contains("bp", case=False, na=False)
+            self.hopf_indices = self.df.index[hopf_mask].tolist()
+            self.bp_indices = self.df.index[bp_mask].tolist()
+            if "step" in self.df.columns:
+                self.hopf_steps = self.df.loc[hopf_mask, "step"].tolist()
+                self.bp_steps = self.df.loc[bp_mask, "step"].tolist()
+
+        # Wrap each periodic orbit
+        self.periodic_orbits = []
+        for po_name, po_bd in periodic_orbits_raw or []:
+            po = NumContBifurcationResult(
+                po_bd,
+                cont_name=po_name,
+                model=model,
+                continuation=continuation,
+                ICS=ICS,
+                workdir=workdir,
+            )
+            self.periodic_orbits.append(po)
+
+        self.codim2_curves = []
+
+    # ── Extraction helpers ───────────────────────────────────────────────
+
+    @classmethod
+    def _extract_branch_df(cls, bd, sv_names, fp_name):
+        """Concatenate every branch in `bd` into a single DataFrame.
+
+        Adds a ``branch_id`` column so downstream plotting can keep
+        sub-branches visually distinct (multi-branch dispatch).
+        """
+        frames = []
+        for bid, br in enumerate(bd):
+            df_br = cls._branch_to_df(br, sv_names, fp_name)
+            if not df_br.empty:
+                df_br["branch_id"] = bid
+                frames.append(df_br)
+        if not frames:
+            return pd.DataFrame()
+        return pd.concat(frames, ignore_index=True)
+
+    @classmethod
+    def _branch_to_df(cls, branch, sv_names, fp_name):
+        coordnames = list(branch.coordnames)
+        coordarray = np.asarray(branch.coordarray)
+        if coordarray.size == 0 or coordarray.ndim != 2:
+            return pd.DataFrame()
+        n_rows = coordarray.shape[1]
+
+        cols = {cn: coordarray[i] for i, cn in enumerate(coordnames)}
+        df = pd.DataFrame(cols)
+        df["step"] = np.arange(n_rows)
+
+        # Resolve PAR(i) → name via parsed constants header (branch.c)
+        c = getattr(branch, "c", {}) or {}
+        parnames_raw = c.get("parnames", {}) if isinstance(c, dict) else {}
+        # parnames may be a dict ({1: 'a', ...}) or a list of (idx, name) tuples
+        pname_by_idx = {}
+        if isinstance(parnames_raw, dict):
+            items_iter = parnames_raw.items()
+        elif isinstance(parnames_raw, (list, tuple)):
+            items_iter = parnames_raw
+        else:
+            items_iter = []
+        for k, v in items_iter:
+            try:
+                pname_by_idx[int(k)] = str(v)
+            except (TypeError, ValueError):
+                pass
+
+        # 'param' column = free parameter
+        for col in list(df.columns):
+            if col.startswith("PAR(") and col.endswith(")"):
+                try:
+                    idx = int(col[4:-1])
+                except ValueError:
+                    continue
+                pname = pname_by_idx.get(idx)
+                if pname:
+                    df[pname] = df[col]
+                    if pname == fp_name:
+                        df["param"] = df[col]
+        if "param" not in df.columns:
+            # Fallback: assume PAR(1) is the active parameter
+            if "PAR(1)" in df.columns:
+                df["param"] = df["PAR(1)"]
+            elif fp_name and fp_name in df.columns:
+                df["param"] = df[fp_name]
+
+        # State variable columns
+        for i, sv in enumerate(sv_names, start=1):
+            ucol = f"U({i})"
+            if ucol in df.columns:
+                df[sv] = df[ucol]
+
+        # Stability — branch.stability() returns signed segment endpoints
+        stable = np.ones(n_rows, dtype=bool)
+        try:
+            stab = branch.stability()
+            prev = 0
+            for s in stab:
+                end = abs(int(s))
+                stable[prev:end] = int(s) < 0  # negative => stable segment
+                prev = end
+        except Exception:
+            pass
+        df["stable"] = stable
+
+        # Special points from branch.labels
+        df["specialpoint"] = ""
+        labels = getattr(branch, "labels", None)
+        if labels is not None:
+            by_label = getattr(labels, "by_label", None)
+            label_iter = by_label.items() if hasattr(by_label, "items") else (
+                labels.items() if hasattr(labels, "items") else []
+            )
+            for label, points in label_iter:
+                canon = cls._LABEL_MAP.get(str(label).upper())
+                if not canon:
+                    continue
+                # ``points`` is a dict keyed by 0-based point index, with
+                # values like {'LAB': N, 'TY number': N, 'solution': ...}.
+                if isinstance(points, dict):
+                    point_items = points.items()
+                else:
+                    # Defensive fallback for list-of-(idx, payload).
+                    point_items = points
+                for idx, payload in point_items:
+                    try:
+                        idx = int(idx)
+                    except (TypeError, ValueError):
+                        continue
+                    if 0 <= idx < n_rows:
+                        cur = df.at[idx, "specialpoint"]
+                        df.at[idx, "specialpoint"] = canon if not cur else f"{cur},{canon}"
+        return df
+
+
+__all__ = [
+    "BifurcationResult",
+    "PyRatesBifurcationResult",
+    "NumContBifurcationResult",
+    "BIF_STYLES",
+    "canonical_ty",
+    "get_bif_style",
+    "resolve_coord",
+    "resolve_coords",
+    "PO_REDUCTIONS",
+    "CurvePicker",
+]
+
+
+# ── Interactive curve picker (port of ContinuationPlot.CurvePicker) ──
+
+class CurvePicker:
+    """Click any branch line to inspect the underlying point.
+
+    Activated via ``BifurcationResult.enable_picker(ax, callback=...)``.
+    Each branch line drawn by ``plot_branch`` carries ``picker=True`` so
+    matplotlib raises a ``pick_event`` on click; the picker resolves the
+    nearest df row and forwards it to ``callback(result, row_index)``.
+    """
+
+    def __init__(self, fig, result, callback=None):
+        self.fig = fig
+        self.result = result
+        self.callback = callback or self._default_print
+        self.cid = fig.canvas.mpl_connect("pick_event", self._on_pick)
+        self._marker = None
+
+    def _default_print(self, result, idx):
+        row = result.df.iloc[idx]
+        sv_cols = [c for c in result.state_var_index] if result.state_var_index else []
+        info = ", ".join(f"{c}={row[c]:.4g}" for c in (["param"] + sv_cols) if c in row)
+        sp = row.get("specialpoint", "")
+        print(f"[idx={idx}] {info}{(' [' + sp + ']') if sp else ''}")
+
+    def _on_pick(self, event):
+        if not hasattr(event, "mouseevent") or event.mouseevent.button != 1:
+            return
+        line = event.artist
+        ind = event.ind[0] if len(event.ind) else 0
+        x, y = line.get_data()
+        ax = line.axes
+        if self._marker is not None:
+            try:
+                self._marker.remove()
+            except Exception:
+                pass
+        self._marker, = ax.plot([x[ind]], [y[ind]], "o",
+                                color="C0", zorder=100, ms=8,
+                                markeredgecolor="white", markeredgewidth=1)
+        self.fig.canvas.draw_idle()
+        # Resolve nearest df row by param value
+        try:
+            df = self.result.df
+            row_idx = int(np.abs(df["param"].values - x[ind]).argmin())
+            self.callback(self.result, row_idx)
+        except Exception as exc:
+            print(f"[CurvePicker] callback failed: {exc}")
+
+    def disconnect(self):
+        if self.cid is not None:
+            self.fig.canvas.mpl_disconnect(self.cid)
+            self.cid = None
+
+
+def _enable_picker(self, ax=None, callback=None):
+    """Attach a ``CurvePicker`` to ``ax``'s figure (or current figure)."""
+    fig = ax.get_figure() if ax is not None else plt.gcf()
+    return CurvePicker(fig, self, callback=callback)
+
+
+BifurcationResult.enable_picker = _enable_picker

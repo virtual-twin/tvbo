@@ -1,0 +1,140 @@
+---
+title: "6. Hopf Normal Form"
+sidebar: usage
+jupyter: python3
+---
+
+The supercritical Hopf normal form in Cartesian coordinates:
+
+$$
+\begin{aligned}
+\dot x_1 &= (a - r^2)\,x_1 - w\,x_2 \\
+\dot x_2 &= (a - r^2)\,x_2 + w\,x_1
+\end{aligned}
+\qquad r^2 = x_1^2 + x_2^2.
+$$
+
+For $a < 0$ the origin is a stable focus; at $a = 0$ a Hopf bifurcation
+gives birth to a stable limit cycle of radius $\sqrt a$ and angular
+frequency $w$. The legacy figures
+`HopfPhasePortrait_and_BifDiag3D_a={-2,-1,-0.15,0.5,1,1.5}.png` show, for
+each $a$, the 2D phase portrait alongside the 3D bifurcation diagram with
+the periodic-orbit tube.
+
+```{python}
+from tvbo import Dynamics, Continuation, SimulationExperiment
+import matplotlib.pyplot as plt
+
+try:
+    from bsplot import style
+    style.use('tvbo')
+except ImportError:
+    pass
+
+HOPF_YAML = """
+name: HopfNF
+description: Supercritical Hopf normal form (Cartesian).
+parameters:
+  a: { name: a, value: 0.5 }
+  w: { name: w, value: 1.0 }
+state_variables:
+  x1:
+    name: x1
+    domain: { lo: -2.0, hi: 2.0 }
+    equation:
+      lhs: Derivative(x1, t)
+      rhs: (a - x1**2 - x2**2)*x1 - w*x2
+    initial_value: 0.1
+  x2:
+    name: x2
+    domain: { lo: -2.0, hi: 2.0 }
+    equation:
+      lhs: Derivative(x2, t)
+      rhs: (a - x1**2 - x2**2)*x2 + w*x1
+    initial_value: 0.1
+"""
+```
+
+## Phase portraits across $a$
+
+Six instances of the same dynamics, one per $a$ value, each visualised via
+the `Dynamics.plot(kind="vectorfield")` shortcut:
+
+```{python}
+a_values = [-2.0, -1.0, -0.15, 0.5, 1.0, 1.5]
+fig, axes = plt.subplots(2, 3, figsize=(11, 7.5))
+for ax, a in zip(axes.flat, a_values):
+    dyn = Dynamics.from_string(HOPF_YAML)
+    dyn.parameters['a'].value = a
+    dyn.plot("x1", "x2", kind="vectorfield", ax=ax, grid_n=22)
+    ax.set_title(f"$a = {a}$")
+plt.tight_layout()
+plt.show()
+```
+
+The transition from a stable focus ($a < 0$) to a stable limit cycle
+surrounding an unstable focus ($a > 0$) is visible by inspection.
+
+## Bifurcation diagram with limit-cycle continuation
+
+A single 1-parameter sweep in $a$ for the equilibrium branch, plus a nested
+branch that picks up periodic orbits from each detected Hopf point:
+
+```{python}
+dyn = Dynamics.from_string(HOPF_YAML)
+
+CONT_YAML = """
+name: hopf_in_a
+dynamics: HopfNF
+free_parameters:
+  - name: a
+    domain: { lo: -2.0, hi: 2.0 }
+max_steps: 400
+ds: 0.01
+bothside: true
+branches:
+  - name: po_from_hopf
+    source_point: "hopf:all"
+    bothside: true
+"""
+
+cont = Continuation.from_string(CONT_YAML)
+exp = SimulationExperiment(dynamics=dyn, continuations=[cont])
+result = exp.run("bifurcationkit.jl")
+hopf = result.continuations["hopf_in_a"]
+hopf.plot(VOI="x1")
+```
+
+## 3D bifurcation diagram
+
+The full picture: equilibrium spine (with stability colouring), Hopf point,
+and the limit-cycle tube whose radius grows like $\sqrt a$:
+
+```{python}
+hopf.plot_3d(VOI="x1")
+```
+
+## AUTO-07p (NumCont)
+
+Mirrors the standalone `PhasePortraitHopf.py` example: AUTO-07p
+time-integrates from the YAML defaults to a stable focus (or limit cycle),
+sweeps $a$ in both directions, and -- when the equilibrium branch yields a
+Hopf label -- continues the periodic orbit out via the nested branch
+declared above as `source_point: "hopf:all"`.
+
+```{python}
+result_auto = exp.run("auto-07p")
+hopf_auto = result_auto.continuations["hopf_in_a"]
+hopf_auto.plot(VOI="x1")
+```
+
+The 3D view uses the unified style registry: stable LC segments are
+rendered as a tube surface, unstable ones as a wireframe.
+
+```{python}
+hopf_auto.plot_3d(VOI="x1")
+```
+
+This single TVBO experiment reproduces the entire figure series of the
+legacy tutorial -- without writing a `model.f90`, without a global
+continuation registry, and using only the YAML strings declared above.

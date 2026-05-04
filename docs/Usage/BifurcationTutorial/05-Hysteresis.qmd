@@ -1,0 +1,81 @@
+---
+title: "5. Hysteresis (Double Saddle-Node)"
+sidebar: usage
+jupyter: python3
+---
+
+A small constant tilt added to the pitchfork unfolds it into a hysteresis
+curve with **two** saddle-node bifurcations:
+
+$$
+\dot x = a + x - x^3.
+$$
+
+The bifurcation diagram in $(a, x)$ is the classic S-curve with two folds
+($\dot{} = $ vertical tangents). Reproduces `Hysteresis.png`.
+
+```{python}
+from tvbo import Dynamics, Continuation, SimulationExperiment
+
+HY_YAML = """
+name: Hysteresis
+description: Double saddle-node / hysteresis $\\dot x = a + x - x^3$.
+parameters:
+  a:
+    name: a
+    value: 0.0
+state_variables:
+  x:
+    name: x
+    domain: { lo: -2.0, hi: 2.0 }
+    equation:
+      lhs: Derivative(x, t)
+      rhs: a + x - x**3
+    initial_value: 1.0
+"""
+
+CONT_YAML = """
+name: hy_in_a
+dynamics: Hysteresis
+free_parameters:
+  - name: a
+    domain: { lo: -2.0, hi: 2.0 }
+max_steps: 600
+ds: 0.005
+bothside: true
+"""
+
+dyn = Dynamics.from_string(HY_YAML)
+cont = Continuation.from_string(CONT_YAML)
+exp = SimulationExperiment(dynamics=dyn, continuations=[cont])
+```
+
+## BifurcationKit.jl
+
+```{python}
+result_jl = exp.run("bifurcationkit.jl")
+result_jl.continuations["hy_in_a"].plot(VOI="x")
+```
+
+## PyRates / PyCoBi
+
+```{python}
+result_py = exp.run("pyrates-bifurcation")
+result_py.continuations["hy_in_a"].plot(VOI="x")
+```
+
+## AUTO-07p (NumCont)
+
+Direct analogue of the standalone `DoubleSaddleNode.py` example. AUTO-07p
+time-integrates from the model defaults to land on the upper stable branch,
+then sweeps $a$ in both directions so both saddle-nodes are picked up in a
+single merged diagram.
+
+```{python}
+result_auto = exp.run("auto-07p")
+result_auto.continuations["hy_in_a"].plot(VOI="x")
+```
+
+The two saddle-node points at $a = \pm\,2/(3\sqrt 3) \approx \pm 0.385$ frame
+the bistable region. Sweeping $a$ slowly from left to right and back traces
+out the hysteresis loop characteristic of switching dynamics.
