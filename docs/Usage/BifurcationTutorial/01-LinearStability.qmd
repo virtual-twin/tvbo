@@ -1,0 +1,94 @@
+---
+title: "1. Linear Stability"
+sidebar: usage
+jupyter: python3
+---
+
+The simplest dynamical system illustrating stability:
+
+$$
+\dot x = a\,x
+$$
+
+For $a > 0$ the origin is unstable (exponential growth). For $a < 0$ it is
+linearly stable (exponential decay). At $a = 0$ the system loses hyperbolicity.
+
+We define the system inline as a TVBO `Dynamics` and integrate it via the
+class's own [`.plot()`](../Visualization.qmd) method:
+
+```{python}
+from tvbo import Dynamics
+import matplotlib.pyplot as plt
+
+LIN_YAML = """
+name: LinearScalar
+description: |
+  Scalar linear ODE $\\dot x = a x$. Stability of the origin is governed by
+  the sign of $a$.
+parameters:
+  a:
+    name: a
+    value: 1.0
+state_variables:
+  x:
+    name: x
+    domain: { lo: -5.0, hi: 5.0 }
+    equation:
+      lhs: Derivative(x, t)
+      rhs: a*x
+    initial_value: 1.0
+"""
+
+dyn_unstable = Dynamics.from_string(LIN_YAML)
+dyn_unstable.parameters['a'].value = 1.0
+
+dyn_stable = Dynamics.from_string(LIN_YAML)
+dyn_stable.parameters['a'].value = -1.0
+```
+
+## Reproducing `ExpExample0Red.png`
+
+Both trajectories start at $x_0 = 1$ and are integrated for $4$ time units.
+
+```{python}
+fig, ax = plt.subplots(figsize=(5, 4))
+dyn_unstable.plot("x", duration=4, dt=1e-3, ax=ax)
+dyn_stable.plot("x", duration=4, dt=1e-3, ax=ax)
+ax.set_xlabel("Time $t$"); ax.set_ylabel("$x(t)$")
+ax.set_ylim(-0.2, 4)
+ax.lines[0].set_label("$a=1$")
+ax.lines[1].set_label("$a=-1$")
+ax.legend(handlelength=1)
+plt.tight_layout()
+plt.show()
+```
+
+## Reproducing `ExpExamplePert.png`
+
+Same system, but starting from a tiny perturbation $\delta = 10^{-6}$ applied
+at $t = 1$:
+
+```{python}
+import numpy as np
+
+tv = np.linspace(0, 4, 1000)
+n4 = tv.size // 4
+delta = 1e-6
+x_pos = np.zeros_like(tv); x_pos[n4:] = delta * np.exp(tv[n4:] - tv[n4])
+x_neg = np.zeros_like(tv); x_neg[n4:] = delta * np.exp(-(tv[n4:] - tv[n4]))
+
+fig, ax = plt.subplots(figsize=(5, 4))
+ax.axhline(0, color="#c9211e", linestyle="--")
+ax.plot(tv, x_pos, color="C0", lw=2, label="$a=1$")
+ax.plot(tv, x_neg, color="C1", lw=2, label="$a=-1$")
+ax.set_xlabel("Time $t$"); ax.set_ylabel("$x(t)$")
+ax.set_ylim(-0.2 * 1e-5 / 4, 1e-5)
+ax.legend(handlelength=1)
+plt.tight_layout()
+plt.show()
+```
+
+The qualitative behaviour is identical to the un-perturbed case: the only
+information that survives a small perturbation of an unstable trajectory is
+the sign of $a$. This motivates the local-flow / linearisation viewpoint
+explored in the next section.

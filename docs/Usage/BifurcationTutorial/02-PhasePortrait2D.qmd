@@ -1,0 +1,56 @@
+---
+title: "2. 2D Phase Portraits"
+sidebar: usage
+jupyter: python3
+---
+
+For 2D linear systems
+
+$$
+\dot{\vec x} = A\,\vec x, \qquad
+A = \begin{pmatrix} a_{11} & a_{12} \\ a_{21} & a_{22} \end{pmatrix}
+$$
+
+the eigenvalues of $A$ classify the origin as node, focus, saddle, or center.
+The legacy figure `PhasePortraitSaddle.png` shows the **saddle** case
+$A = \begin{pmatrix} 1 & -1 \\ -1 & -1 \end{pmatrix}$
+($\lambda_{\pm} = \pm\sqrt 2$).
+
+We encode the system inline as a `Dynamics` and let
+`plot_dynamics(..., kind="vectorfield")` draw the stream-plot.
+
+```{python}
+from tvbo import Dynamics
+from tvbo.plot.dynamics import plot_dynamics
+import matplotlib.pyplot as plt
+
+SADDLE_YAML = """
+name: Saddle2D
+description: |
+  Two-dimensional linear ODE with saddle equilibrium at the origin.
+state_variables:
+  x1:
+    name: x1
+    domain: { lo: -2.0, hi: 2.0 }
+    equation:
+      lhs: Derivative(x1, t)
+      rhs: x1 - x2
+    initial_value: 0.5
+  x2:
+    name: x2
+    domain: { lo: -2.0, hi: 2.0 }
+    equation:
+      lhs: Derivative(x2, t)
+      rhs: -x1 - x2
+    initial_value: 0.5
+"""
+
+dyn = Dynamics.from_string(SADDLE_YAML)
+dyn.plot(kind='vectorfield')
+```
+
+The two real eigenvalues with opposite sign are visible as the orthogonal
+stable / unstable manifolds crossing at the origin. Replacing the off-diagonal
+entries with positive signs (or zeroing the diagonal) reproduces the other
+canonical 2D phase portraits (node, focus, center) without changing any code
+outside the YAML string.

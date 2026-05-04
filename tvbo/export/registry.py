@@ -19,10 +19,13 @@ extension/UI dropdown all light up automatically.
 from __future__ import annotations
 
 from dataclasses import dataclass, field, asdict
+from pathlib import Path
 from typing import Any, Callable, Iterable
 
 # Renderer signature: (experiment, **kwargs) -> str
 Renderer = Callable[..., str]
+# Importer signature: (path) -> SimulationExperiment | SimulationStudy | Network | Dynamics | ...
+Importer = Callable[..., Any]
 
 
 @dataclass(frozen=True)
@@ -36,6 +39,8 @@ class ExportFormat:
     aliases: tuple[str, ...] = ()
     supports_with_data: bool = False
     description: str = ""
+    importer: Importer | None = None
+    extensions: tuple[str, ...] = ()  # extra accepted file suffixes (incl. leading dot)
 
     def to_public_dict(self) -> dict[str, Any]:
         """Serialisable view (without the renderer callable)."""
@@ -100,3 +105,41 @@ def keys() -> Iterable[str]:
 def render(experiment, fmt_key: str, **kwargs) -> str:
     """Convenience: resolve *fmt_key* and invoke its renderer."""
     return resolve(fmt_key).renderer(experiment, **kwargs)
+
+
+def _all_extensions(fmt: ExportFormat) -> tuple[str, ...]:
+    """All file suffixes claimed by *fmt* (canonical + extras), lowercased."""
+    exts = (fmt.extension, *fmt.extensions)
+    return tuple(e.lower() for e in exts if e)
+
+
+def resolve_by_extension(suffix: str) -> ExportFormat:
+    """Look up a format by file suffix (e.g. ``'.yaml'``, ``'.nml'``).
+
+    Raises ``ValueError`` if no format claims the suffix or if multiple
+    formats claim it ambiguously.
+    """
+    suffix = suffix.lower()
+    if not suffix.startswith("."):
+        suffix = "." + suffix
+    matches = [f for f in list_formats() if suffix in _all_extensions(f)]
+    if not matches:
+        raise ValueError(f"No export format registered for suffix {suffix!r}.")
+    if len(matches) > 1:
+        keys_ = sorted({f.key for f in matches})
+        raise ValueError(
+            f"Suffix {suffix!r} is ambiguous — claimed by: {', '.join(keys_)}. "
+            f"Pass an explicit format."
+        )
+    return matches[0]
+
+
+def load(fmt_key: str, path: str | Path, **kwargs) -> Any:
+    """Resolve *fmt_key* and invoke its importer on *path*.
+
+    Raises ``ValueError`` if the format has no importer registered.
+    """
+    fmt = resolve(fmt_key)
+    if fmt.importer is None:
+        raise ValueError(f"Export format {fmt.key!r} has no importer registered.")
+    return fmt.importer(path, **kwargs)

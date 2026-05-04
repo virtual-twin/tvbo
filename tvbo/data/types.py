@@ -914,14 +914,14 @@ class ExplorationResult(Bunch):
             return np.arange(n_time) * self.dt
         return np.arange(n_time)
 
-    def plot(self, figsize=None, sharex=True, **kwargs):
+    def plot(self, figsize=None, sharex=True, ax=None, **kwargs):
         """Plot exploration results.
 
         For time series results: subplots for each parameter value.
-        For scalar results: line plot or heatmap over parameter space.
+        For scalar results: line plot (1D) or filled-contour heatmap (2D), drawn into ``ax`` if given.
         """
         if not self.is_timeseries:
-            return self._plot_scalar(figsize=figsize, **kwargs)
+            return self._plot_scalar(figsize=figsize, ax=ax, **kwargs)
         return self._plot_timeseries(figsize=figsize, sharex=sharex, **kwargs)
 
     def _plot_timeseries(self, figsize=None, sharex=True, **kwargs):
@@ -966,31 +966,67 @@ class ExplorationResult(Bunch):
         plt.close()
         return fig
 
-    def _plot_scalar(self, figsize=None, **kwargs):
-        """Plot scalar results as line plot (1D) or heatmap (2D)."""
+    def _plot_scalar(self, figsize=None, ax=None, cmap="viridis", levels=20, colorbar=True, **kwargs):
+        """Plot scalar results as line plot (1D) or filled-contour heatmap (2D)."""
         if self.results is None:
             return None
         grid = self.as_grid()
         if grid is None:
             return None
 
+        def _axis_name(axis_info, default):
+            return axis_info.get("name", default) if isinstance(axis_info, dict) else getattr(axis_info, "name", default)
+
+        def _axis_values(axis_info, default_size):
+            if isinstance(axis_info, dict):
+                explored_values = axis_info.get("explored_values")
+                lo = axis_info.get("lo")
+                hi = axis_info.get("hi")
+                n = axis_info.get("n")
+            else:
+                explored_values = getattr(axis_info, "explored_values", None)
+                lo = getattr(axis_info, "lo", None)
+                hi = getattr(axis_info, "hi", None)
+                n = getattr(axis_info, "n", None)
+
+            if explored_values is not None:
+                values = np.asarray(explored_values)
+                if values.size > 0:
+                    return values
+
+            if lo is not None and hi is not None:
+                n_points = int(n) if n is not None else int(default_size)
+                return np.linspace(float(lo), float(hi), n_points)
+
+            return np.arange(default_size)
+
         if len(self._grid_shape) == 1:
             ax_info = self.axes[0]
-            values = np.asarray(ax_info["explored_values"]) if "explored_values" in ax_info else np.arange(self._grid_shape[0])
-            fig, ax = plt.subplots(figsize=figsize or (8, 4))
+            values = _axis_values(ax_info, self._grid_shape[0])
+            if ax is None:
+                fig, ax = plt.subplots(figsize=figsize or (8, 4))
+            else:
+                fig = ax.figure
             ax.plot(values, np.asarray(grid), "o-", **kwargs)
-            ax.set_xlabel(getattr(ax_info, "name", "param"))
+            ax.set_xlabel(_axis_name(ax_info, "param"))
             ax.set_ylabel(self.observable or "value")
             ax.set_title(self.name or "Exploration")
-            plt.close()
             return fig
         elif len(self._grid_shape) == 2:
-            fig, ax = plt.subplots(figsize=figsize or (8, 6))
-            ax.imshow(np.asarray(grid).T, aspect="auto", origin="lower")
-            ax.set_xlabel(getattr(self.axes[0], "name", "axis 0"))
-            ax.set_ylabel(getattr(self.axes[1], "name", "axis 1"))
-            ax.set_title(self.name or "Exploration")
-            plt.close()
+            ax0, ax1 = self.axes[0], self.axes[1]
+            xv = _axis_values(ax0, self._grid_shape[0])
+            yv = _axis_values(ax1, self._grid_shape[1])
+            if ax is None:
+                fig, ax = plt.subplots(figsize=figsize or (8, 6))
+            else:
+                fig = ax.figure
+            cs = ax.contourf(xv, yv, np.asarray(grid).T, levels=levels, cmap=cmap, **kwargs)
+            ax.set_xlabel(_axis_name(ax0, "axis 0"))
+            ax.set_ylabel(_axis_name(ax1, "axis 1"))
+            if self.name:
+                ax.set_title(self.name)
+            if colorbar:
+                fig.colorbar(cs, ax=ax, label=self.observable or "value", shrink=0.7)
             return fig
         return None
 
@@ -1492,7 +1528,12 @@ class ExperimentResult:
         continuations = {}
         if hasattr(ts, "sol") and extras.get("_is_bifurcation", False):
             extras.pop("_is_bifurcation")
-            continuations["default"] = ts.sol
+            continuation_name = getattr(ts.sol, "name", None)
+            if not continuation_name and source is not None:
+                source_continuations = getattr(source, "continuations", None) or {}
+                if len(source_continuations) == 1:
+                    continuation_name = next(iter(source_continuations.keys()))
+            continuations[continuation_name or "default"] = ts.sol
 
         return cls(
             integration=sim_result,

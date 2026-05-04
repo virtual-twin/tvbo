@@ -13,11 +13,16 @@ import numpy as np
 if TYPE_CHECKING:
     from tvbo.export.experiment import SimulationExperiment
 
-from .bifurcation import BifurcationResult, PyRatesBifurcationResult  # re-export
+from .bifurcation import (  # re-export
+    BifurcationResult,
+    NumContBifurcationResult,
+    PyRatesBifurcationResult,
+)
 
 __all__ = [
     "BifurcationResult",
     "PyRatesBifurcationResult",
+    "NumContBifurcationResult",
     "compare_timeseries",
     "per_window_fc",
     "ttest_correlation_strength",

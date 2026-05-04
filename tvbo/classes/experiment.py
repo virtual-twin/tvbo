@@ -213,6 +213,12 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         if getattr(self, "integration", None) and not isinstance(self.integration, Integrator):
             self.integration = _coerce(Integrator, self.integration)
 
+        if getattr(self, "stimulation", None):
+            from tvbo.classes import perturbation
+
+            if not isinstance(self.stimulation, perturbation.Stimulus):
+                self.stimulation = _coerce(perturbation.Stimulus, self.stimulation)
+
         # Auto-upgrade continuations to runtime Continuation class
         conts = getattr(self, "continuations", None)
         if conts and isinstance(conts, dict):
@@ -411,6 +417,18 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             integ._populate_from_ontology()
         if not getattr(obj, "integration", None):
             obj.__dict__["integration"] = Integrator(method="Heun")
+
+        # -- Upgrade Stimulation via __class__ reassignment --
+        stim = getattr(obj, "stimulation", None)
+        if stim is not None:
+            from tvbo.classes import perturbation
+
+            if not isinstance(stim, perturbation.Stimulus):
+                if isinstance(stim, tvbo_datamodel.Stimulus):
+                    stim.__class__ = perturbation.Stimulus
+                elif isinstance(stim, dict):
+                    stim = perturbation.Stimulus(**stim)
+                obj.__dict__["stimulation"] = stim
 
         # -- Upgrade Coupling via __class__ reassignment --
         coup = getattr(obj, "coupling", None)
@@ -1558,10 +1576,18 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             "pyrates-bif",
             "pycobi",
             "bifurcation-pyrates",
-            "auto",
-            "auto-07p",
         ]:
             return self._run_pyrates_bifurcation(**kwargs)
+
+        elif format.lower() in [
+            "numcont",
+            "auto",
+            "auto-07p",
+            "auto07p",
+            "bifurcation-auto7p",
+            "bifurcation-numcont",
+        ]:
+            return self._run_numcont(**kwargs)
 
         elif format.lower() in [
             "julia",
@@ -1643,7 +1669,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         adapter = BifurcationKitAdapter(self)
         bif_result = adapter.run(**kwargs)
         return ExperimentResult(
-            continuations={"default": bif_result},
+            continuations=self._wrap_bifurcation_result(bif_result),
             source=self,
             name=self.label,
         )
@@ -1655,10 +1681,30 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         adapter = PyRatesBifurcationAdapter(self)
         bif_result = adapter.run(**kwargs)
         return ExperimentResult(
-            continuations={"default": bif_result},
+            continuations=self._wrap_bifurcation_result(bif_result),
             source=self,
             name=self.label,
         )
+
+    def _run_numcont(self, **kwargs) -> ExperimentResult:
+        """Run bifurcation analysis via the in-tree AUTO-07p (numcont) adapter."""
+        from tvbo.adapters.numcont import NumContAdapter
+
+        adapter = NumContAdapter(self)
+        bif_result = adapter.run(**kwargs)
+        return ExperimentResult(
+            continuations=self._wrap_bifurcation_result(bif_result),
+            source=self,
+            name=self.label,
+        )
+
+    def _wrap_bifurcation_result(self, bif_result):
+        """Map adapter return (single result or dict) to named continuations dict."""
+        if isinstance(bif_result, dict):
+            return bif_result
+        conts = getattr(self, "continuations", None) or {}
+        name = next(iter(conts.keys())) if conts else "default"
+        return {name: bif_result}
 
     def _run_julia(self, **kwargs) -> ExperimentResult:
         """Run simulation using DifferentialEquations.jl via juliacall."""

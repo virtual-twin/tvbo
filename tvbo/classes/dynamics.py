@@ -1725,7 +1725,8 @@ class Dynamics(tvbo_datamodel.Dynamics):
             rendered_code = template.render(**ctx)
             return templater.format_code(rendered_code, format=format)
         elif format == "bifurcation-numcont":
-            template = templates.lookup.get_template("tvbo-numcont.py.mako")
+            # The numcont backend now consumes the f90 source directly.
+            template = templates.lookup.get_template("tvbo-auto7p.py.mako")
         elif format == "bifurcation-auto7p":
             template = templates.lookup.get_template("tvbo-auto7p.py.mako")
         elif format in ["pde-fem", "pde-python", "pde"]:
@@ -1835,37 +1836,21 @@ class Dynamics(tvbo_datamodel.Dynamics):
             return imported_module
 
         elif format in ["bifurcation-numcont", "bifurcation-auto7p"]:
-            try:
-                import importlib
+            # Standalone in-tree AUTO-07p backend (no external `numcont` package).
+            # Builds a one-off SimulationExperiment wrapping this Dynamics and
+            # delegates to NumContAdapter.
+            from tvbo.adapters.numcont import NumContAdapter
+            from tvbo.classes.continuation import Continuation
+            from tvbo.classes.experiment import SimulationExperiment
 
-                _numcont = importlib.import_module("numcont")
-                cs = getattr(_numcont, "ContinuationSystem")
-            except Exception as e:
-                raise RuntimeError("numcont is not installed. Install it to use bifurcation formats.") from e
-
-            namespace = {"join": join, "cs": cs, "np": np}
-            exec(
-                self.render_code(format="bifurcation-numcont", **kwargs),
-                globals(),
-                namespace,
+            cont = kwargs.pop("continuation", None) or Continuation(name=self.name + "_eq")
+            exp = SimulationExperiment(
+                name=self.name,
+                label=getattr(self, "label", self.name),
+                dynamics=self,
+                continuations={cont.name: cont},
             )
-            DynamicalSystem = namespace[self.name + "BifModel"]
-
-            tempdir = tempfile.mkdtemp(prefix=self.name + "_")
-            auto_files_dir = join(tempdir, "AutoFiles")
-            os.makedirs(auto_files_dir, exist_ok=True)
-            model_file_path = join(auto_files_dir, "model.f90")
-
-            model_code = self.render_code("bifurcation-auto7p")
-            with open(model_file_path, "w") as model_file:
-                model_file.write(model_code)
-
-            system = DynamicalSystem(
-                fortran_file=join(tempdir, "AutoFiles/model"),
-                data_path=join(tempdir, "AutoFiles/BifurcationData"),
-            )
-
-            return system
+            return NumContAdapter(exp).run(**kwargs)
 
         else:
             rendered_code = clean_code(self.render_code(format=format, **kwargs))

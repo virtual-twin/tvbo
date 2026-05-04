@@ -1,0 +1,80 @@
+---
+title: "4. Pitchfork"
+sidebar: usage
+jupyter: python3
+---
+
+The (super-critical) pitchfork bifurcation:
+
+$$
+\dot x = a\,x - x^3.
+$$
+
+At $a = 0$ the trivial equilibrium $x = 0$ loses stability and two new stable
+branches $x_{\pm} = \pm\sqrt a$ are born. Reproduces `PitchFork.png`.
+
+```{python}
+from tvbo import Dynamics, Continuation, SimulationExperiment
+
+PF_YAML = """
+name: Pitchfork
+description: Supercritical pitchfork $\\dot x = a x - x^3$.
+parameters:
+  a:
+    name: a
+    value: 1.0
+state_variables:
+  x:
+    name: x
+    domain: { lo: -2.0, hi: 2.0 }
+    equation:
+      lhs: Derivative(x, t)
+      rhs: a*x - x**3
+    initial_value: 0.01
+"""
+
+CONT_YAML = """
+name: pf_in_a
+dynamics: Pitchfork
+free_parameters:
+  - name: a
+    domain: { lo: -1.0, hi: 2.0 }
+max_steps: 400
+ds: 0.005
+bothside: true
+"""
+
+dyn = Dynamics.from_string(PF_YAML)
+cont = Continuation.from_string(CONT_YAML)
+exp = SimulationExperiment(dynamics=dyn, continuations=[cont])
+```
+
+## BifurcationKit.jl
+
+```{python}
+result_jl = exp.run("bifurcationkit.jl")
+result_jl.continuations["pf_in_a"].plot(VOI="x")
+```
+
+## PyRates / PyCoBi
+
+```{python}
+result_py = exp.run("pyrates-bifurcation")
+result_py.continuations["pf_in_a"].plot(VOI="x")
+```
+
+## AUTO-07p (NumCont)
+
+Mirrors the standalone `PitchFork.py` example: AUTO-07p time-integrates the
+YAML-defined system to a steady state, then continues in both directions of
+$a$ via `bothside: true`.
+
+```{python}
+result_auto = exp.run("auto-07p")
+result_auto.continuations["pf_in_a"].plot(VOI="x")
+```
+
+Note that detecting all three branches typically requires the continuation to
+be started from a *non-zero* initial guess so that branch-switching at the
+pitchfork point is triggered. All backends label the bifurcation point at
+$a = 0$ accordingly.
