@@ -1,0 +1,82 @@
+---
+title: "tvbo validate"
+---
+
+Sub-tree of validators for TVB-O YAML and adjacent standards (BIDS, SED-ML, COMBINE/OMEX).
+
+## Synopsis
+
+```text
+tvbo validate schema PATH [--class TARGET_CLASS]
+tvbo validate bids   PATH
+tvbo validate sedml  PATH
+tvbo validate omex   PATH
+```
+
+## `validate schema` — LinkML structural validation
+
+Runs LinkML JSON-Schema validation against the shipped `tvbo_datamodel.yaml`.
+
+| Flag | Default | Purpose |
+|------|---------|---------|
+| `PATH` | _(required)_ | YAML file. |
+| `--class` | auto-detected | LinkML target class. The validator looks for a top-level `class:` key in the YAML; otherwise falls back to `SimulationExperiment`. |
+
+```bash
+tvbo validate schema ./study.yaml
+tvbo validate schema ./model.yaml --class Dynamics
+```
+
+Exit code `0` = valid. Non-zero with one line per issue otherwise.
+
+## `validate bids` — BIDS dataset
+
+Wraps [`bids_validator`](https://pypi.org/project/bids-validator/). Iterates every file under `PATH`, prints any that violate BIDS naming rules, and exits non-zero if any are invalid.
+
+```bash
+tvbo validate bids /data/derivatives/sub-01
+```
+
+Requires `bids-validator`:
+
+```bash
+uv pip install bids-validator
+```
+
+## `validate sedml` — SED-ML (shallow stub)
+
+Today this checks that the file:
+
+1. Is readable as text.
+2. Contains a `<sedML>` (or `<sedml>`) root element.
+
+Full SED-ML L1V4 validation is scheduled for a post-P3 milestone. The stub is useful as a CI smoke test today.
+
+```bash
+tvbo validate sedml ./experiment.sedml
+```
+
+## `validate omex` — COMBINE/OMEX archive (shallow stub)
+
+Checks that the file:
+
+1. Is a valid zip archive.
+2. Contains `manifest.xml` at the archive root.
+
+Full COMBINE archive validation is scheduled for a post-P3 milestone.
+
+```bash
+tvbo validate omex ./bundle.omex
+```
+
+## Exit codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | All checks passed |
+| `non-zero` | One or more failures (validator details on `stderr`) |
+
+## See also
+
+- [`tvbo info`](info.qmd) — inspect without validating
+- [Standards roadmap](../Interoperability/index.qmd)

@@ -1,0 +1,100 @@
+---
+title: "HPC patterns"
+---
+
+This page collects the HPC-relevant flags that span multiple verbs (`run`, `workflow`, `--set` overrides) and shows the canonical patterns for cluster, container, and chunking workflows.
+
+## Engine dispatch (one command, end to end)
+
+```bash
+tvbo run experiment:JR_MEG --engine slurm --backend jax -o ./run-001
+```
+
+Equivalent to:
+
+```bash
+tvbo workflow slurm experiment:JR_MEG --backend jax -o ./run-001/run.sbatch
+sbatch ./run-001/run.sbatch
+```
+
+For `snakemake` and `nextflow`, the artefact is written but **no launcher is invoked** — call `snakemake --cores all` or `nextflow run main.nf` yourself. This intentional asymmetry exists because Slurm's `sbatch` is fire-and-forget while Snakemake / Nextflow typically need a sustained shell.
+
+## Sharding with `--slurm-chunk i/N`
+
+Every cell of the cartesian product of exploration axes gets a deterministic index `j`. `--slurm-chunk i/N` runs cell `j` iff `j % N == i`. The Slurm template emits `--array=0-(N-1)` headers and passes the array index as `i`:
+
+```bash
+# Cell 0 only
+tvbo run experiment:Sweep --slurm-chunk 0/16 -o ./out
+
+# All cells from this array task into a labelled subdirectory per cell
+tvbo run experiment:Sweep --slurm-chunk ${SLURM_ARRAY_TASK_ID}/16 -o ./out
+```
+
+Each cell writes to `<out_dir>/cell_<j:06d>/`. This is what the generated `run.sbatch` does internally.
+
+## Containers (`--container IMAGE`)
+
+```bash
+tvbo run experiment:JR_MEG --container ghcr.io/the-virtual-brain/tvbo:0.7.0
+```
+
+Runtime selection:
+
+| Condition | Runtime |
+|-----------|---------|
+| `singularity` on `PATH` or `SINGULARITY_BIND` set | `singularity exec --bind $PWD:$PWD <image> tvbo …` |
+| otherwise | `docker run --rm -e TVBO_IN_CONTAINER=1 -v $PWD:$PWD -w $PWD <image> tvbo …` |
+
+The inner invocation has `TVBO_IN_CONTAINER=1` set so it does not recursively re-exec.
+
+The same flag works in workflow kits via `--set container=…`:
+
+```bash
+tvbo workflow slurm experiment:JR_MEG --backend jax \
+    --set container=ghcr.io/the-virtual-brain/tvbo:0.7.0 \
+    -o ./kit
+```
+
+The generated `run.sbatch` then wraps every `python scripts/...` invocation in `singularity exec <image>`.
+
+## Workflow spec overrides (`--set KEY=VALUE`)
+
+Any key under the Study's `workflow:` block can be overridden from the CLI. Dotted keys nest, and values are coerced (booleans, then ints, then floats):
+
+```bash
+tvbo workflow slurm experiment:JR_MEG --backend jax \
+    --set slurm.account=brain \
+    --set slurm.time=04:00:00 \
+    --set slurm.mem=32G \
+    --set slurm.gres=gpu:1 \
+    --set retries=2 \
+    -o ./kit
+```
+
+The full provenance of every override is recorded in the generated `README.md` so the kit is self-documenting.
+
+## Provenance in the kit's README
+
+Every kit's `README.md` ends with a reproducibility block:
+
+```markdown
+## Reproducibility
+
+- backend       : `jax` (JAX)
+- container     : `ghcr.io/the-virtual-brain/tvbo:0.7.0`
+- workflow cells: 88 (chunk=4, array tasks=22)
+- vectorize_axes: ['G', 'noise_seed']
+- workflow_axes : ['subject']
+
+### CLI overrides
+- `slurm.account` = `brain` (flag)
+- `slurm.time` = `04:00:00` (flag)
+```
+
+## See also
+
+- [`tvbo run`](run.qmd) — execution flags
+- [`tvbo workflow`](workflow.qmd) — emitter flags
+- [Workflow kits anatomy](workflow-kits.qmd) — what each file does
+- [Backends](backends.qmd) — vectorize vs. fan-out

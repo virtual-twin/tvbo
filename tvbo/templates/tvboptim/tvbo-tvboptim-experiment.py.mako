@@ -1154,13 +1154,11 @@ def compute_all_observations(result, state, result_transient=None):
                 pipeline_call = str(fname) if fname else None
 %>
 % if obs_name not in network_observation_names:
-% if has_pipeline:
-    # ${obs_name}: pipeline-based observation
+    # ${obs_name}: observation derived from simulation state
     _${obs_name}_monitor = ${obs_class}(history=result_transient)
     _${obs_name}_result = _${obs_name}_monitor(result)
     # Keep full result to preserve named outputs (e.g., .psd, .frequencies)
     obs.${obs_name} = _${obs_name}_result
-% endif
 % endif
 % endfor
 
@@ -1940,7 +1938,7 @@ def run_experiment(
         )
         % endfor
 
-        results.exploration = exploration_result
+        results.explorations = exploration_result
         print("  Explorations complete.")
     % endif
 

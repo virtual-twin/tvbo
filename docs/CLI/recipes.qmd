@@ -1,0 +1,120 @@
+---
+title: "Recipes"
+---
+
+Copy-paste cookbook for common tasks.
+
+## Inspect what's in a YAML before running
+
+```bash
+tvbo info ./study.yaml
+tvbo info ./study.yaml --json | jq .explorations
+```
+
+## Convert YAML ↔ openMINDS JSON-LD
+
+```bash
+tvbo export openminds ./study.yaml -o ./bundle.jsonld
+tvbo import ./bundle.jsonld --format openminds -o ./roundtrip.yaml
+```
+
+## Generate runnable scripts for every backend
+
+```bash
+for fmt in tvb tvboptim jax pde networkdynamics modelingtoolkit; do
+    tvbo export "$fmt" experiment:JR_MEG -o "./scripts/${fmt}/"
+done
+```
+
+## Quickly check a Markdown report
+
+```bash
+tvbo export markdown experiment:JR_MEG | less
+```
+
+## Run one experiment from a multi-experiment study
+
+```bash
+tvbo run study:Schirner2023 --experiment JR_MEG -b jax -o ./out
+```
+
+## Sweep G locally with the JAX backend (vectorized — single process)
+
+The `jax` backend vectorizes parameter sweeps internally, so this stays a single process:
+
+```bash
+tvbo run experiment:G_Sweep -b jax -o ./out
+```
+
+## The same sweep on Slurm with array tasks
+
+Switch the backend to one without parameter vectorization (e.g. `tvb`) and use the workflow emitter:
+
+```bash
+tvbo workflow slurm experiment:G_Sweep -b tvb -o ./kit
+sbatch ./kit/run.sbatch
+```
+
+The kit's `README.md` will report `workflow cells: <N>, array tasks: <N>`.
+
+## Snakemake kit, JAX backend, GPU container
+
+```bash
+tvbo workflow snakemake experiment:JR_MEG -b jax \
+    --set container=ghcr.io/the-virtual-brain/tvbo:0.7.0-gpu \
+    --set retries=1 \
+    -o ./kit-jax-gpu
+
+cd kit-jax-gpu && snakemake --cores 8
+```
+
+## Run only cell 5 of an array job locally for debugging
+
+```bash
+tvbo run experiment:Sweep -b jax --slurm-chunk 5/16 -o ./debug-cell5
+```
+
+## Validate before committing
+
+Useful as a pre-commit hook:
+
+```bash
+tvbo validate schema ./study.yaml
+tvbo validate bids   ./bids/
+```
+
+## CI smoke test for SED-ML / OMEX outputs
+
+```bash
+tvbo validate sedml ./out/experiment.sedml
+tvbo validate omex  ./out/bundle.omex
+```
+
+## Re-run a kit on another machine without `tvbo`
+
+After copying the kit:
+
+```bash
+# Plain Python — no tvbo needed at runtime
+python ./kit/scripts/JR_MEG_FrequencyGradient_Optimization.py \
+    --spec ./kit/spec/JR_MEG_FrequencyGradient_Optimization.yaml \
+    --output ./reproduced
+
+# Or fire the engine
+sbatch ./kit/run.sbatch
+snakemake --cores all -d ./kit
+nextflow run ./kit/main.nf
+```
+
+## Print only the artefact (no kit) — useful for piping
+
+```bash
+tvbo workflow slurm experiment:JR_MEG -b jax --stdout > run.sbatch
+```
+
+## See also
+
+- [Specs and resolution](specs.qmd)
+- [`tvbo run`](run.qmd)
+- [`tvbo workflow`](workflow.qmd)
+- [HPC patterns](hpc.qmd)

@@ -1,0 +1,88 @@
+---
+title: "Command-Line Interface"
+sidebar: cli
+page-layout: full
+---
+
+The `tvbo` command-line interface is the primary entry point for running, exporting, importing, validating, and orchestrating TVB-O simulations from a shell. It is **registry-driven** (every backend and file format is a plug-in entry) and **transport-aware** (specs may be local files, ontology CURIEs, database names, or — in upcoming releases — HTTP URLs).
+
+## Command tree at a glance
+
+```text
+tvbo
+├── run         Execute a SimulationStudy or SimulationExperiment
+├── export      Render a SPEC into a target format (no execution)
+├── save        Like export, but with bundled binary data when supported
+├── import      Load a foreign file (auto-dispatch by extension)
+├── info        Inspect a SPEC (tasks, outputs, declared backends)
+├── formats     List all registered I/O formats
+├── version     Print the tvbo version
+├── validate    [schema | bids | sedml | omex]
+├── config      [path | show]
+└── workflow    [plan | slurm | snakemake | nextflow | backends]
+```
+
+## What is a SPEC?
+
+Most verbs take a single positional argument called **SPEC**, which can be:
+
+| Form | Example | Resolves to |
+|------|---------|-------------|
+| File path | `./study.yaml`, `/abs/path.yaml` | YAML loaded by LinkML |
+| CURIE | `experiment:JR_Optimization`, `dynamics:JansenRit` | Database lookup by class + name |
+| Bare name | `JR_Optimization` | Tries Study → Experiment → Dynamics in order |
+| `file://` URI | `file:///tmp/foo.yaml` | Same as a path |
+| `http(s)://` URI | _(reserved)_ | Pulled remotely in a future milestone |
+
+See [Specs and resolution](specs.qmd) for the full rules.
+
+## Verb reference
+
+::: {.callout-tip}
+Each page below documents one verb (or sub-tree) with all flags, exit codes, and worked examples.
+:::
+
+- [Specs and resolution](specs.qmd) — how `tvbo` finds your file
+- [`tvbo run`](run.qmd) — execute a study or experiment
+- [`tvbo export`](export.qmd) — render code/serialisations without executing
+- [`tvbo save`](save.qmd) — `export --with-data`
+- [`tvbo import`](import.qmd) — load foreign files into TVBO objects
+- [`tvbo info`](info.qmd) — inspect a SPEC without running it
+- [`tvbo formats`](formats.qmd) — list registered I/O formats
+- [`tvbo validate`](validate.qmd) — schema, BIDS, SED-ML, OMEX validation
+- [`tvbo config`](config.qmd) — view CLI configuration
+- [`tvbo workflow`](workflow.qmd) — emit Slurm / Snakemake / Nextflow kits
+- [Workflow kits anatomy](workflow-kits.qmd) — what a generated kit contains
+- [Backends](backends.qmd) — capability table, vectorize-vs-fanout
+- [HPC patterns](hpc.qmd) — containers, sharding, engine dispatch
+- [Recipes](recipes.qmd) — copy-paste cookbook
+
+## Two execution paths
+
+The CLI exposes two complementary execution paths:
+
+1. **Direct execution** — `tvbo run` invokes the requested backend in-process and saves results. Best for laptops, CI, and short experiments.
+2. **Workflow emission** — `tvbo workflow {slurm,snakemake,nextflow}` writes a self-contained reproducibility kit (workflow artefact + frozen backend script + frozen YAML spec + README) and exits. The kit is portable: it can be `tar`-ed up, moved to an HPC cluster, and run independently of `tvbo`.
+
+The same Study YAML produces a *different* DAG depending on the chosen backend, because the planner consults the [backend capability table](backends.qmd) (mirrored from `ontology/tvb-o-axioms.ttl §4.1`) to decide which sweep axes can be vectorized inside the backend versus fanned out across workflow tasks.
+
+## Quick start
+
+```bash
+# Inspect a study
+tvbo info study:Schirner2023_MultiscaleBNM_DM
+
+# Render JAX code to stdout
+tvbo export jax experiment:JR_MEG_FrequencyGradient_Optimization
+
+# Run locally with the tvboptim backend
+tvbo run experiment:JR_MEG_FrequencyGradient_Optimization -b tvboptim -o ./out
+
+# Emit a Snakemake reproducibility kit
+tvbo workflow snakemake experiment:JR_MEG_FrequencyGradient_Optimization \
+    --backend jax -o ./kit-jax
+
+# Submit the same study via Slurm in one shot
+tvbo run experiment:JR_MEG_FrequencyGradient_Optimization \
+    --engine slurm --backend jax -o ./run-001
+```
