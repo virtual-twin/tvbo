@@ -1,0 +1,65 @@
+---
+title: "tvbo info"
+---
+
+Inspect a SPEC without running it. Useful for checking what experiments live inside a study, what explorations are declared, or how many parameters a model has.
+
+## Synopsis
+
+```text
+tvbo info SPEC [--json]
+```
+
+## Flags
+
+| Flag | Default | Purpose |
+|------|---------|---------|
+| `SPEC` | _(required)_ | Path, CURIE, or bare DB name. |
+| `--json` | _(off)_ | Emit machine-readable JSON instead of the human table. |
+
+## Output (human format)
+
+The human output starts with `<Type> (<kind>)` and lists key attributes and aggregates. The exact fields depend on the SPEC kind:
+
+### `experiment`
+
+```text
+SimulationExperiment (experiment)
+  label: JR Peak Frequency Optimization
+  has_integration: True
+  has_network: True
+  explorations: [G_sweep, k_sweep]
+```
+
+### `study`
+
+```text
+SimulationStudy (study)
+  label: Schirner et al. 2023 — Multiscale BNM
+  experiments: [3]
+    - JR_MEG_FrequencyGradient_Optimization
+    - RWW_BOLD_FIC
+    - …
+```
+
+### `dynamics`
+
+```text
+Dynamics (dynamics)
+  name: JansenRit
+  n_parameters: 7
+  n_state_variables: 6
+```
+
+## JSON output
+
+`--json` emits the same payload as a parseable JSON document. Use it from shell pipelines or for downstream tools:
+
+```bash
+tvbo info experiment:JR_MEG --json | jq '.explorations'
+```
+
+## See also
+
+- [Specs and resolution](specs.qmd)
+- [`tvbo workflow plan`](workflow.qmd) — much richer plan output for HPC sweeps

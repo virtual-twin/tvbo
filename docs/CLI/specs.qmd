@@ -1,0 +1,62 @@
+---
+title: "Specs and resolution"
+---
+
+Most CLI verbs take a single positional **SPEC** argument. This page documents how a SPEC is resolved into a Python object.
+
+## Accepted forms
+
+| Form | Example | Notes |
+|------|---------|-------|
+| Relative path | `./study.yaml` | Anything containing `/`, starting with `.`, or with a file suffix is treated as a path. |
+| Absolute path | `/data/studies/foo.yaml` | Same. |
+| `file://` URI | `file:///tmp/foo.yaml` | Stripped to a path. |
+| CURIE | `experiment:JR_Optimization` | `prefix:name` — prefix selects the LinkML class, `name` is looked up in the database. |
+| Bare name | `JR_Optimization` | Tried as Study, then Experiment, then Dynamics. |
+| HTTP(S) URI | `https://…/foo.yaml` | **Not yet implemented.** Download locally first. |
+
+## Known CURIE prefixes
+
+| Prefix | LinkML class |
+|--------|--------------|
+| `study` | `SimulationStudy` |
+| `experiment` | `SimulationExperiment` |
+| `dynamics`, `model` | `Dynamics` |
+| `network` | `Network` |
+| `coupling` | `Coupling` |
+| `integrator` | `Integrator` |
+| `function` | `Function` |
+| `observation` | `Observation` |
+| `atlas` | `BrainAtlas` |
+| `continuation` | `Continuation` |
+
+Unknown prefixes raise a typed error listing the valid ones.
+
+## Resolution algorithm
+
+```text
+spec
+ ├── starts with http(s)://       → not implemented yet (helpful error)
+ ├── starts with file://          → strip scheme, treat as path
+ ├── looks like a path            → load YAML by extension
+ ├── contains ":" → CURIE         → look up <class> by <name> in the database
+ └── otherwise (bare name)        → try Study, Experiment, Dynamics in order
+```
+
+The verb learns the *kind* (`study`, `experiment`, `dynamics`, …) from the resolution, so downstream behaviour can branch on it (for example, `tvbo run` iterates over experiments inside a study).
+
+## Examples
+
+```bash
+# All four resolve to the same SimulationExperiment
+tvbo info ./experiments/JR_MEG.yaml
+tvbo info file:///abs/path/JR_MEG.yaml
+tvbo info experiment:JR_MEG_FrequencyGradient_Optimization
+tvbo info JR_MEG_FrequencyGradient_Optimization
+```
+
+## Errors you may see
+
+- `No such file: <path>` — the path does not exist on disk.
+- `Unknown CURIE prefix 'xyz'. Known: atlas, continuation, …` — the prefix is misspelled.
+- `HTTP transport not yet implemented (C2). Pull the file locally first: <url>` — the HTTP transport milestone is pending.

@@ -1,0 +1,54 @@
+---
+title: "tvbo import"
+---
+
+Load a foreign file into a TVBO object via the registry's importer dispatch.
+
+## Synopsis
+
+```text
+tvbo import PATH
+    [--format KEY]
+    [--output, -o PATH]
+```
+
+## Flags
+
+| Flag | Default | Purpose |
+|------|---------|---------|
+| `PATH` | _(required)_ | Input file. Must exist and be readable. |
+| `--format` | _(inferred from extension)_ | Force a specific format key. |
+| `--output, -o` | _(none)_ | If given, save the loaded object as YAML to this path. |
+
+## Behaviour
+
+1. Resolves the format either from `--format` or by file extension (`.yaml` → `yaml`, `.jsonld` → `openminds`, …).
+2. If the format has no registered importer, errors out with `Format 'X' has no importer.`
+3. Calls `tvbo.export.load(format_key, path)` to produce a Python object.
+4. If `--output` is given and the object exposes `.save()`, writes it as YAML to `--output`.
+
+## Which formats can be imported?
+
+```bash
+tvbo formats
+```
+
+The `importer` column shows `yes` for every format that supports import. Today this includes `yaml`, `openminds`, and a small number of standards adapters; more will be added as importers land for SED-ML, OMEX, and BIDS.
+
+## Examples
+
+```bash
+# Load a YAML experiment (extension inferred)
+tvbo import ./study.yaml
+
+# Force the openMINDS importer regardless of extension
+tvbo import ./bundle.jsonld --format openminds
+
+# Convert openMINDS → TVBO YAML in one step
+tvbo import ./bundle.jsonld --format openminds -o ./study.yaml
+```
+
+## See also
+
+- [`tvbo export`](export.qmd) — inverse direction
+- [`tvbo formats`](formats.qmd) — see which formats are importable
