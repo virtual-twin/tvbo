@@ -255,7 +255,7 @@ def _kind_phase(dynamics, resolved, trials, time, ax, cmap, alpha, lw,
 
 
 def _kind_vectorfield(dynamics, resolved, ax, grid_n, cmap, stream, ax_given=False,
-                      alpha=0.8, lw=1.5):
+                      alpha=0.8, lw=1.5, _return_axes_only=False):
     if len(resolved) != 2:
         raise ValueError("vectorfield requires exactly 2 dims (state variables)")
     state_names = list(dynamics.state_variables)
@@ -281,6 +281,11 @@ def _kind_vectorfield(dynamics, resolved, ax, grid_n, cmap, stream, ax_given=Fal
         fig = ax.figure
         lo_x, hi_x = ax.get_xlim()
         lo_y, hi_y = ax.get_ylim()
+        # If caller gave an empty axis with default (0,1) limits, fall back to domain
+        if (lo_x, hi_x) == (0.0, 1.0):
+            lo_x, hi_x = _range(sv_objs[sv_idx[0]])
+        if (lo_y, hi_y) == (0.0, 1.0):
+            lo_y, hi_y = _range(sv_objs[sv_idx[1]])
 
     X, Y = np.meshgrid(np.linspace(lo_x, hi_x, grid_n), np.linspace(lo_y, hi_y, grid_n))
     base_ic = np.asarray(dynamics.get_initial_values(), dtype=float).reshape(-1)
@@ -300,16 +305,97 @@ def _kind_vectorfield(dynamics, resolved, ax, grid_n, cmap, stream, ax_given=Fal
         strm = ax.streamplot(X, Y, U, V, color=speed, cmap=cmap, density=1.2,
                              arrowsize=1.0, linewidth=lw)
         strm.lines.set_alpha(alpha)
-        if not ax_given:
+        if not ax_given and not _return_axes_only:
             cb = fig.colorbar(strm.lines, ax=ax, shrink=0.8)
             cb.set_label("|f|")
     else:
         q = ax.quiver(X, Y, U, V, speed, cmap=cmap, alpha=alpha)
-        if not ax_given:
+        if not ax_given and not _return_axes_only:
             cb = fig.colorbar(q, ax=ax, shrink=0.8)
             cb.set_label("|f|")
     ax.set_xlabel(resolved[0][0]); ax.set_ylabel(resolved[1][0])
+    ax.set_xlim(lo_x, hi_x); ax.set_ylim(lo_y, hi_y)
     ax.set_box_aspect(1)
+    if _return_axes_only:
+        return fig, (X, Y, U, V)
+    return fig
+
+
+def _kind_phaseplane(dynamics, resolved, ax, grid_n, cmap, stream, ax_given,
+                     alpha, lw, n_trajectories=0, traj_duration=200, traj_dt=0.1,
+                     show_nullclines=True, show_fixed_points=True):
+    """Vector field + nullclines + (optional) sample trajectories.
+
+    Nullclines are the zero-level contours of each component of the vector
+    field (``\\dot x_i = 0``). Their intersections are equilibria.
+    """
+    fig, (X, Y, U, V) = _kind_vectorfield(
+        dynamics, resolved, ax=ax, grid_n=max(grid_n, 30),
+        cmap=cmap, stream=stream, ax_given=ax_given,
+        alpha=alpha * 0.6, lw=lw * 0.6, _return_axes_only=True,
+    )
+    if ax is None:
+        ax = fig.axes[0]
+
+    if show_nullclines:
+        ax.contour(X, Y, U, levels=[0], colors="C0", linewidths=1.5,
+                   linestyles="-", alpha=0.9)
+        ax.contour(X, Y, V, levels=[0], colors="C3", linewidths=1.5,
+                   linestyles="-", alpha=0.9)
+        # Legend proxies
+        from matplotlib.lines import Line2D
+        proxies = [
+            Line2D([0], [0], color="C0", lw=1.5,
+                   label=f"$\\dot {{{resolved[0][0].strip('$')}}} = 0$"),
+            Line2D([0], [0], color="C3", lw=1.5,
+                   label=f"$\\dot {{{resolved[1][0].strip('$')}}} = 0$"),
+        ]
+        ax.legend(handles=proxies, loc="best", fontsize="small", frameon=False)
+
+    if show_fixed_points:
+        # Detect fixed points by sign-change crossings in both U and V.
+        # Robust grid-based heuristic: cells where U and V both straddle 0.
+        from scipy.optimize import fsolve
+        f = dynamics.execute(format="python")
+        state_names = list(dynamics.state_variables)
+        sv_idx = [state_names.index(str(expr)) for _, expr in resolved]
+        base_ic = np.asarray(dynamics.get_initial_values(), dtype=float).reshape(-1)
+
+        def _rhs(xy):
+            u = base_ic.copy()
+            u[sv_idx[0]] = xy[0]; u[sv_idx[1]] = xy[1]
+            du = np.asarray(f(u, 0.0))
+            return [du[sv_idx[0]], du[sv_idx[1]]]
+
+        seen = []
+        for i in range(X.shape[0] - 1):
+            for j in range(X.shape[1] - 1):
+                u_box = U[i:i + 2, j:j + 2]
+                v_box = V[i:i + 2, j:j + 2]
+                if (u_box.min() <= 0 <= u_box.max()) and (v_box.min() <= 0 <= v_box.max()):
+                    sol, _, ier, _ = fsolve(
+                        _rhs, [X[i, j], Y[i, j]], full_output=True
+                    )
+                    if ier == 1 and not any(np.allclose(sol, s, atol=1e-3) for s in seen):
+                        seen.append(sol)
+        for x_fp, y_fp in seen:
+            ax.plot(x_fp, y_fp, "ko", ms=7, mec="white", mew=1.2, zorder=10)
+
+    if n_trajectories > 0:
+        from numpy.random import default_rng
+        rng = default_rng(0)
+        lo_x, hi_x = ax.get_xlim(); lo_y, hi_y = ax.get_ylim()
+        state_names = list(dynamics.state_variables)
+        sv_idx = [state_names.index(str(expr)) for _, expr in resolved]
+        base_ic = np.asarray(dynamics.get_initial_values(), dtype=float).reshape(-1)
+        for _ in range(n_trajectories):
+            u0 = base_ic.copy()
+            u0[sv_idx[0]] = rng.uniform(lo_x, hi_x)
+            u0[sv_idx[1]] = rng.uniform(lo_y, hi_y)
+            ts = dynamics.run(duration=traj_duration, dt=traj_dt, u_0=u0, save=False)
+            traj = ts.data[:, :, 0, 0]
+            ax.plot(traj[:, sv_idx[0]], traj[:, sv_idx[1]],
+                    color="0.2", lw=0.8, alpha=0.7)
     return fig
 
 
@@ -318,7 +404,7 @@ def _kind_vectorfield(dynamics, resolved, ax, grid_n, cmap, stream, ax_given=Fal
 # ---------------------------------------------------------------------------
 
 
-_KINDS = ("auto", "timeseries", "phase", "vectorfield")
+_KINDS = ("auto", "timeseries", "phase", "vectorfield", "phaseplane")
 
 
 def plot_dynamics(
@@ -338,6 +424,9 @@ def plot_dynamics(
     alpha=0.8,
     grid_n=20,
     stream=True,
+    n_trajectories=0,
+    show_nullclines=True,
+    show_fixed_points=True,
 ):
     """Plot a ``Dynamics`` in several ways.
 
@@ -347,11 +436,13 @@ def plot_dynamics(
     *dims : str
         1-3 dimensions: state-variable name, derived-variable name, or any
         sympy-parseable expression over them. Defaults: first SV (timeseries),
-        first 2 SVs (phase / vectorfield).
-    kind : {"auto", "timeseries", "phase", "vectorfield"}
+        first 2 SVs (phase / vectorfield / phaseplane).
+    kind : {"auto", "timeseries", "phase", "vectorfield", "phaseplane"}
         - ``timeseries``: stacked time series, one panel per dim.
         - ``phase``: 1D/2D/3D phase portrait.
         - ``vectorfield``: 2D vector field (stream- or quiver-plot).
+        - ``phaseplane``: vector field + nullclines + (optional) sample
+          trajectories + auto-detected fixed points.
         - ``auto``: timeseries for 1 dim, phase for 2-3 dims.
     duration, dt : float
         Integration parameters in ms.
@@ -370,9 +461,13 @@ def plot_dynamics(
     show_ic : bool
     lw, alpha : float
     grid_n : int
-        Grid resolution for ``kind="vectorfield"``.
+        Grid resolution for ``kind="vectorfield"`` / ``"phaseplane"``.
     stream : bool
-        Stream- vs quiver-plot for vectorfield.
+        Stream- vs quiver-plot for vectorfield / phaseplane.
+    n_trajectories : int
+        Number of sample trajectories overlaid on a phase plane (random ICs).
+    show_nullclines, show_fixed_points : bool
+        Toggles for ``kind="phaseplane"``.
 
     Returns
     -------
@@ -386,7 +481,7 @@ def plot_dynamics(
     if not dims:
         dims = (
             tuple(state_names[: min(2, len(state_names))])
-            if kind in ("phase", "vectorfield")
+            if kind in ("phase", "vectorfield", "phaseplane")
             else (state_names[0],)
         )
     if not 1 <= len(dims) <= 3:
@@ -400,6 +495,14 @@ def plot_dynamics(
         fig = _kind_vectorfield(dynamics, resolved, ax=ax, grid_n=grid_n,
                                 cmap=cmap, stream=stream, ax_given=ax_given,
                                 alpha=alpha, lw=lw)
+    elif kind == "phaseplane":
+        fig = _kind_phaseplane(dynamics, resolved, ax=ax, grid_n=grid_n,
+                               cmap=cmap, stream=stream, ax_given=ax_given,
+                               alpha=alpha, lw=lw,
+                               n_trajectories=n_trajectories,
+                               traj_duration=duration, traj_dt=dt,
+                               show_nullclines=show_nullclines,
+                               show_fixed_points=show_fixed_points)
     else:
         trials, time = _run_trials(dynamics, n_trials, duration, dt, u_0, transient)
         if kind == "timeseries":
@@ -414,3 +517,63 @@ def plot_dynamics(
         plt.close(fig)
         return fig
     return None
+
+
+def animate_dynamics(
+    dynamics,
+    parameter,
+    values,
+    *dims,
+    kind="vectorfield",
+    interval=80,
+    figsize=(5, 4.5),
+    title_fmt="{name} = {value:.3f}",
+    **kwargs,
+):
+    """Animate a :class:`Dynamics` by sweeping one parameter through ``values``.
+
+    For each frame the parameter is set, the chosen ``kind`` of plot is drawn
+    on the same axes (cleared between frames), and a title shows the current
+    value. Returns a :class:`matplotlib.animation.FuncAnimation` that you can
+    display with ``anim.to_jshtml()`` (Quarto / notebooks) or save with
+    ``anim.save("foo.mp4")``.
+
+    Parameters
+    ----------
+    dynamics : Dynamics
+    parameter : str
+        Name of the parameter to sweep (must be in ``dynamics.parameters``).
+    values : sequence of float
+        Parameter values, one per frame.
+    *dims, kind, **kwargs
+        Forwarded to :func:`plot_dynamics`.
+    interval : int
+        Delay between frames in ms.
+    figsize : (float, float)
+    title_fmt : str
+        Format string with ``{name}`` and ``{value}`` placeholders.
+    """
+    import copy
+    from matplotlib.animation import FuncAnimation
+
+    if parameter not in dynamics.parameters:
+        raise ValueError(
+            f"parameter {parameter!r} not in dynamics "
+            f"(available: {list(dynamics.parameters)})"
+        )
+
+    dyn = copy.deepcopy(dynamics)
+    fig, ax = plt.subplots(figsize=figsize)
+
+    def _update(frame_idx):
+        ax.clear()
+        val = float(values[frame_idx])
+        dyn.parameters[parameter].value = val
+        plot_dynamics(dyn, *dims, kind=kind, ax=ax, **kwargs)
+        ax.set_title(title_fmt.format(name=parameter, value=val))
+        return ax.get_children()
+
+    anim = FuncAnimation(fig, _update, frames=len(values),
+                         interval=interval, blit=False)
+    plt.close(fig)
+    return anim

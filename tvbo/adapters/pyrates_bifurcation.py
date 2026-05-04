@@ -204,7 +204,7 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
         from pycobi import ODESystem
         from pyrates import clear
 
-        from tvbo.analysis.bifurcation import PyRatesBifurcationResult
+        from tvbo.analysis.bifurcation import BifurcationResult
 
         # Resolve free parameter
         fp = self._get_free_parameter(cont, model)
@@ -235,6 +235,21 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
             ode = ODESystem(eq_file=eq_file, working_dir=None, init_cont=False)
             state_var_names = list(model.state_variables.keys())
             self._populate_var_map(ode, eq_file, state_var_names)
+
+            # Guard: PyCoBi's _create_summary() crashes on NDIM=1 systems
+            # (KeyError: 'U(1)'). PyRates + AUTO-07p both handle 1-D scalar
+            # ODEs correctly; the bug is in PyCoBi's summary builder.
+            # See https://github.com/pyrates-neuroscience/PyCoBi
+            if len(state_var_names) < 2:
+                raise NotImplementedError(
+                    f"The 'pyrates-bifurcation' backend cannot continue the "
+                    f"1-D system '{getattr(model, 'name', '?')}' "
+                    f"(state variables: {state_var_names}). "
+                    f"PyCoBi's summary builder requires NDIM >= 2 and raises "
+                    f"KeyError('U(1)') for scalar ODEs. "
+                    f"For 1-D systems use the 'auto-07p' or "
+                    f"'bifurcationkit.jl' backend instead."
+                )
 
             # Now PyCoBi knows the correct PAR index for each parameter
             icp = ode._var_map[pyrates_fp_name]["cont"]
@@ -303,7 +318,7 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
 
             # Build result (icp is the numeric index for DataFrame extraction)
             state_var_names = list(model.state_variables.keys())
-            result = PyRatesBifurcationResult(
+            result = BifurcationResult.from_pycobi(
                 ode=ode,
                 cont_name="param",
                 model=model,
@@ -402,7 +417,7 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
         Uses AUTO-07p's ``ISW=2`` (branch switching) with two free parameters
         (``ICP=[p1, p2]``) to trace a fold or Hopf curve in the (p1, p2) plane.
         """
-        from tvbo.analysis.bifurcation import PyRatesBifurcationResult
+        from tvbo.analysis.bifurcation import BifurcationResult
 
         bc = branch.continuation
         fp2 = getattr(bc, "free_parameters", None) or {}
@@ -469,7 +484,7 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
                     name=c2_name,
                     **c2_kwargs,
                 )
-                c2_res = PyRatesBifurcationResult(
+                c2_res = BifurcationResult.from_pycobi(
                     ode=ode,
                     cont_name=c2_name,
                     model=None,  # Not needed for codim-2 curves

@@ -24,6 +24,7 @@ the periodic-orbit tube.
 ```{python}
 from tvbo import Dynamics, Continuation, SimulationExperiment
 import matplotlib.pyplot as plt
+import numpy as np
 
 try:
     from bsplot import style
@@ -44,36 +45,60 @@ state_variables:
     equation:
       lhs: Derivative(x1, t)
       rhs: (a - x1**2 - x2**2)*x1 - w*x2
-    initial_value: 0.1
+    initial_value: 0.0
   x2:
     name: x2
     domain: { lo: -2.0, hi: 2.0 }
     equation:
       lhs: Derivative(x2, t)
       rhs: (a - x1**2 - x2**2)*x2 + w*x1
-    initial_value: 0.1
+    initial_value: 0.0
 """
 ```
 
-## Phase portraits across $a$
+## Phase portraits across $a$ — animation
 
-Six instances of the same dynamics, one per $a$ value, each visualised via
-the `Dynamics.plot(kind="vectorfield")` shortcut:
+The legacy figure series `HopfPhasePortrait_and_BifDiag3D_a=*.png` shows
+six static panels for fixed values of $a$. Here we use the new
+`Dynamics.animate(...)` shortcut to *sweep* $a$ continuously across the
+bifurcation, generating a single animation that captures the entire
+qualitative transition from stable focus to limit cycle.
+
+```{python}
+from IPython.display import Image
+
+dyn = Dynamics.from_string(HOPF_YAML)
+anim = dyn.animate("a", np.linspace(-2.0, 1.5, 24),
+                   "x1", "x2", kind="phaseplane",
+                   grid_n=18, n_trajectories=3, duration=15,
+                   figsize=(5.2, 4.8),
+                   title_fmt=r"$a = {value:+.2f}$")
+anim.save("hopf_sweep.gif", writer="pillow", fps=8)
+Image("hopf_sweep.gif")
+```
+
+The blue and red curves are the two nullclines $\dot x_1 = 0$ and
+$\dot x_2 = 0$; their intersection is the equilibrium. As $a$ crosses $0$
+the equilibrium changes from a stable focus to an unstable one, and a
+stable limit cycle of radius $\sqrt a$ appears around it.
+
+## Phase portraits across $a$ — static grid (legacy figures)
+
+For reference, the same six values rendered as a static grid using
+`kind='phaseplane'`:
 
 ```{python}
 a_values = [-2.0, -1.0, -0.15, 0.5, 1.0, 1.5]
 fig, axes = plt.subplots(2, 3, figsize=(11, 7.5))
 for ax, a in zip(axes.flat, a_values):
-    dyn = Dynamics.from_string(HOPF_YAML)
-    dyn.parameters['a'].value = a
-    dyn.plot("x1", "x2", kind="vectorfield", ax=ax, grid_n=22)
+    dyn_a = Dynamics.from_string(HOPF_YAML)
+    dyn_a.parameters['a'].value = a
+    dyn_a.plot("x1", "x2", kind="phaseplane", ax=ax,
+               grid_n=22, n_trajectories=2, duration=15)
     ax.set_title(f"$a = {a}$")
-plt.tight_layout()
-plt.show()
+    ax.set_xlim(-2, 2); ax.set_ylim(-2, 2)
+plt.tight_layout(); plt.show()
 ```
-
-The transition from a stable focus ($a < 0$) to a stable limit cycle
-surrounding an unstable focus ($a > 0$) is visible by inspection.
 
 ## Bifurcation diagram with limit-cycle continuation
 

@@ -14,7 +14,7 @@ p = merge(p, (${ICS} = ${float(p_start)},))
 # Initial conditions from model defaults
 x0 = [
         % for sv in svs:
-        ${sv.initial_value if sv.initial_value != 0 else 0.1}, # Initial value for ${sv.name}
+        ${sv.initial_value if sv.initial_value is not None else 0.1}, # Initial value for ${sv.name}
         % endfor
     ]
 

@@ -1401,6 +1401,16 @@ class Dynamics(tvbo_datamodel.Dynamics):
 
         return plot_dynamics(self, *dims, **kwargs)
 
+    def animate(self, parameter, values, *dims, **kwargs):
+        """Animate by sweeping one parameter through ``values``.
+
+        See :func:`tvbo.plot.dynamics.animate_dynamics` for parameters.
+        Returns a :class:`matplotlib.animation.FuncAnimation`.
+        """
+        from tvbo.plot.dynamics import animate_dynamics
+
+        return animate_dynamics(self, parameter, values, *dims, **kwargs)
+
     def render_equation(self, obj, format="latex", inline_functions=False, **kwargs):
         from tvbo.classes.equation import sympify as tvbo_sympify
         from tvbo.codegen.code import render_equation
