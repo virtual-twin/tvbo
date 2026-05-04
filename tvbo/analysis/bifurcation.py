@@ -407,49 +407,69 @@ def compute_voi(df, VOI, prefix="", state_var_index=None):
 
 
 class BifurcationResult:
-    def __init__(self, br, **kwargs):
+    """Backend-agnostic bifurcation result.
+
+    A single ``BifurcationResult`` represents one continuation branch
+    (equilibrium, periodic orbit, or codim-2 curve) regardless of the
+    backend that produced it (BifurcationKit.jl, PyRates/PyCoBi,
+    AUTO-07p/numcont). Once the data lives in ``self.df`` and the
+    nested ``periodic_orbits`` / ``codim2_curves`` lists, *all* plotting,
+    legend, and export methods (``plot``, ``plot_3d``, ``bif_legend``,
+    ``enable_picker``, ...) work uniformly across backends.
+
+    There are *no* backend-specific result subclasses. Each adapter
+    extracts a unified DataFrame and either calls the constructor
+    directly with ``df=...`` or one of the factory shortcuts:
+
+    * ``BifurcationResult.from_bifkit(br, ...)`` — BifurcationKit.jl
+      ``ContResult`` (juliacall).
+    * ``BifurcationResult.from_pycobi(ode, cont_name, ...)`` —
+      PyRates / PyCoBi ``ODESystem`` continuations.
+    * ``BifurcationResult.from_auto(bd, ...)`` — in-tree AUTO-07p
+      ``bifDiag`` (numcont backend).
+
+    All visual differences between backends are encoded in the unified
+    :data:`BIF_STYLES` registry, not in subclasses.
+    """
+
+    def __init__(self, br=None, *, df=None, **kwargs):
         self.br = br
         for k, v in kwargs.items():
             setattr(self, k, v)
 
         # Extract state variable names and create index mapping
-        self.state_var_index = {}
-        if hasattr(self, "ICS") and hasattr(self, "model"):
-            # Get state variables from model if available
+        self.state_var_index = kwargs.get("state_var_index", {})
+        if not self.state_var_index and getattr(self, "model", None) is not None:
             if hasattr(self.model, "state_variables"):
-                self.state_var_index = {name: idx for idx, name in enumerate(self.model.state_variables.keys())}
+                self.state_var_index = {n: i for i, n in enumerate(self.model.state_variables.keys())}
 
-        # Allow explicit state_var_index to be passed
-        if "state_var_index" in kwargs:
-            self.state_var_index = kwargs["state_var_index"]
+        # Path A — pre-extracted DataFrame (from any adapter):
+        # base class just stores it and finalises bookkeeping.
+        if df is not None:
+            self.df = df
+            if not hasattr(self, "codim2_curves"):
+                self.codim2_curves = []
+            if not hasattr(self, "periodic_orbits"):
+                self.periodic_orbits = []
+            self._finalize()
+            return
 
-        sp_list = None  # list of dicts from _extract_special_points
-
-        kind = continuation_kind(br)
-
-        if kind == "EquilibriumCont":
+        # Path B — raw juliacall BifurcationKit ``ContResult``:
+        # extract a DataFrame the same way the BK adapter would.
+        sp_list = None
+        kind = continuation_kind(br) if br is not None else None
+        if kind in ("EquilibriumCont", "PeriodicOrbitCont", "HopfCont", "FoldCont"):
             self.df = _extract_equilibrium_df(br)
             sp_list = _extract_special_points(br)
-
-        elif kind == "PeriodicOrbitCont":
-            # PO ContResult has the same .branch StructArray as equilibrium
-            self.df = _extract_equilibrium_df(br)
-            sp_list = _extract_special_points(br)
-
-        elif kind in ("HopfCont", "FoldCont"):
-            # Codim-2 ContResult: same .branch StructArray layout
-            self.df = _extract_equilibrium_df(br)
-            sp_list = _extract_special_points(br)
-
-        # Fallback: ensure df always exists
         if not hasattr(self, "df"):
             self.df = pd.DataFrame()
-
-        # Initialize codim-2 curves list (populated by adapters after init)
         if not hasattr(self, "codim2_curves"):
             self.codim2_curves = []
+        if not hasattr(self, "periodic_orbits"):
+            self.periodic_orbits = []
 
-        # Annotate special points (fold, hopf, bp, endpoint, etc.)
+        # Annotate special points (BK path only — PyRates/NumCont
+        # already populate ``df['specialpoint']`` in their adapters)
         if sp_list:
             if "specialpoint" not in self.df.columns:
                 self.df["specialpoint"] = None
@@ -466,10 +486,7 @@ class BifurcationResult:
                     rows = self.df.index[self.df.step == step].tolist()
                 else:
                     pval = point.get("param", np.nan)
-                    if np.isfinite(pval):
-                        rows = [int(np.abs(self.df.param - pval).argmin())]
-                    else:
-                        rows = []
+                    rows = [int(np.abs(self.df.param - pval).argmin())] if np.isfinite(pval) else []
                 for rix in rows:
                     existing = self.df.at[rix, "specialpoint"]
                     if existing is None or existing == "":
@@ -478,21 +495,124 @@ class BifurcationResult:
                         self.df.at[rix, "specialpoint"] = f"{existing},{typ}"
                     self.df.at[rix, "sp_norm"] = norm
                     self.df.at[rix, "sp_idx"] = idx_val
-        # Store hopf and bp indices (row indices in the DataFrame) and corresponding step values
-        # A row might contain multiple specialpoint labels separated by commas.
+
+        self._finalize()
+
+    # ── Shared post-extraction bookkeeping ──────────────────────────────
+    def _finalize(self):
+        """Populate ``hopf_indices`` / ``bp_indices`` (+ matching steps).
+
+        Called once by ``__init__`` regardless of which adapter built
+        the DataFrame.
+        """
         self.hopf_indices = []
         self.bp_indices = []
         self.hopf_steps = []
         self.bp_steps = []
-        if "specialpoint" in self.df.columns:
-            sp_series = self.df["specialpoint"].astype(str)
-            hopf_mask = sp_series.str.contains("hopf", case=False, na=False)
-            bp_mask = sp_series.str.contains("bp", case=False, na=False)
-            self.hopf_indices = self.df.index[hopf_mask].tolist()
-            self.bp_indices = self.df.index[bp_mask].tolist()
-            if "step" in self.df.columns:
-                self.hopf_steps = self.df.loc[hopf_mask, "step"].tolist()
-                self.bp_steps = self.df.loc[bp_mask, "step"].tolist()
+        if self.df is None or self.df.empty or "specialpoint" not in self.df.columns:
+            return
+        sp = self.df["specialpoint"].astype(str)
+        hopf_mask = sp.str.contains("hopf|HB", case=False, na=False, regex=True)
+        bp_mask = sp.str.contains(r"\bbp\b|BP", case=False, na=False, regex=True)
+        self.hopf_indices = self.df.index[hopf_mask].tolist()
+        self.bp_indices = self.df.index[bp_mask].tolist()
+        if "step" in self.df.columns:
+            self.hopf_steps = self.df.loc[hopf_mask, "step"].tolist()
+            self.bp_steps = self.df.loc[bp_mask, "step"].tolist()
+
+    # ── Backend factory shortcuts ───────────────────────────────────────
+    @classmethod
+    def from_bifkit(cls, br, **kwargs):
+        """Wrap a BifurcationKit.jl ``ContResult`` (juliacall object)."""
+        return cls(br=br, **kwargs)
+
+    @classmethod
+    def from_pycobi(cls, ode, cont_name, *, model=None, state_var_names=None,
+                    icp=1, fp_name="param", periodic_orbit_results=None,
+                    codim2_results=None, **kwargs):
+        """Wrap a PyRates / PyCoBi continuation by name.
+
+        All visualisation/export logic lives on this class -- the
+        adapter just hands the extracted DataFrame straight to
+        ``__init__``.
+        """
+        sv_names = list(state_var_names or [])
+        df = _extract_pycobi_df(ode, cont_name, sv_names, icp)
+
+        # Recursively wrap nested PO continuations
+        periodic_orbits = []
+        for po_name, _po_cont in periodic_orbit_results or []:
+            periodic_orbits.append(
+                cls.from_pycobi(
+                    ode, po_name,
+                    model=model, state_var_names=sv_names,
+                    icp=icp, fp_name=fp_name,
+                )
+            )
+
+        # Codim-2 curves: existing BifurcationResult instances; just
+        # augment with their second-parameter trajectory.
+        codim2_curves = []
+        ICS2 = None
+        for c2_res in codim2_results or []:
+            icp2 = getattr(c2_res, "_icp2", None)
+            if icp2 is not None and not c2_res.df.empty:
+                c2_res.df = _add_pycobi_param2(
+                    ode, c2_res.df,
+                    getattr(c2_res, "_cont_name", None) or cont_name,
+                    sv_names, icp2,
+                )
+            codim2_curves.append(c2_res)
+        if codim2_results:
+            ICS2 = getattr(codim2_results[0], "_fp2_name", "param2")
+
+        result = cls(
+            br=None,
+            df=df,
+            model=model,
+            ICS=fp_name,
+            ode=ode,
+            state_var_index={n: i for i, n in enumerate(sv_names)},
+            periodic_orbits=periodic_orbits,
+            codim2_curves=codim2_curves,
+            **kwargs,
+        )
+        if ICS2 is not None:
+            result._ICS2 = ICS2
+        return result
+
+    @classmethod
+    def from_auto(cls, bd, *, cont_name=None, model=None, continuation=None,
+                  ICS=None, periodic_orbits_raw=None, workdir=None, **kwargs):
+        """Wrap an AUTO-07p ``bifDiag`` (numcont backend)."""
+        sv_names = list(model.state_variables.keys()) if model else []
+        df = _extract_auto_df(bd, sv_names, ICS)
+
+        periodic_orbits = []
+        for po_name, po_bd in periodic_orbits_raw or []:
+            periodic_orbits.append(
+                cls.from_auto(
+                    po_bd, cont_name=po_name,
+                    model=model, continuation=continuation,
+                    ICS=ICS, workdir=workdir,
+                )
+            )
+
+        return cls(
+            br=bd,
+            df=df,
+            model=model,
+            ICS=ICS,
+            state_var_index={n: i for i, n in enumerate(sv_names)},
+            periodic_orbits=periodic_orbits,
+            codim2_curves=[],
+            cont_name=cont_name,
+            continuation=continuation,
+            workdir=workdir,
+            **kwargs,
+        )
+
+
 
     def plot_special_points(self, VOI, ax=None, types=None, **kwargs):
         """Mark codim-1 special points (LP/HB/BP/PD/TR/...) on ``ax``.
@@ -1181,577 +1301,357 @@ class BifurcationResult:
         return ax
 
 
-class PyRatesBifurcationResult(BifurcationResult):
-    """Bifurcation result from PyRates/PyCoBi (AUTO-07p) backend.
+# ── Backend extractors (formerly PyRates/NumCont subclass methods) ──
+#
+# These functions convert backend-native objects (PyCoBi ``ODESystem``,
+# AUTO-07p ``bifDiag``) into the unified DataFrame schema consumed by
+# :class:`BifurcationResult`. Keeping them at module level (instead of
+# nested inside subclasses) makes the data flow explicit:
+#
+#     backend_object → _extract_<backend>_df(...) → BifurcationResult(df=...)
+#
+# and lets the same plotting/legend/export code apply to *every*
+# backend without inheritance.
 
-    Provides the same interface as ``BifurcationResult`` but extracts
-    data from PyCoBi's ``ODESystem`` instead of juliacall objects.
+# Standard columns expected by all extractors
+_BIF_STANDARD_COLS = ["param", "stable", "step", "specialpoint", "n_unstable", "n_imag"]
+
+# AUTO label → canonical specialpoint name used by plotting layer
+_AUTO_LABEL_MAP = {
+    "HB": "hopf", "LP": "fold", "BP": "bp", "PD": "pd", "TR": "ns",
+    "EP": "endpoint", "MX": "mx", "UZ": "uz",
+    "BT": "bt", "CP": "cusp", "GH": "gh", "ZH": "zh",
+}
+
+
+# ── PyRates / PyCoBi extractor ──────────────────────────────────────────
+
+def _add_pycobi_param2(ode, df, cont_name, state_var_names, icp2):
+    """Append a ``param2`` column to a codim-2 DataFrame.
+
+    Pulls the second free-parameter trajectory from PyCoBi's raw AUTO
+    branch (or, on failure, its summary).
     """
-
-    def __init__(
-        self,
-        ode,
-        cont_name,
-        model=None,
-        state_var_names=None,
-        icp=1,
-        fp_name="param",
-        periodic_orbit_results=None,
-        codim2_results=None,
-        **kwargs,
-    ):
-        # Skip parent __init__ (it uses juliacall)
-        self.br = None
-        self.ode = ode
-        self.model = model
-        self.ICS = fp_name
-        for k, v in kwargs.items():
-            setattr(self, k, v)
-
-        self.state_var_index = {}
-        if state_var_names:
-            self.state_var_index = {name: idx for idx, name in enumerate(state_var_names)}
-
-        # Extract continuation data from PyCoBi's summary DataFrame
-        self.df = self._extract_pycobi_df(ode, cont_name, state_var_names, icp)
-
-        # Build hopf/bp index lists
-        self.hopf_indices = []
-        self.bp_indices = []
-        self.hopf_steps = []
-        self.bp_steps = []
-        if "specialpoint" in self.df.columns:
-            sp_series = self.df["specialpoint"].astype(str)
-            hopf_mask = sp_series.str.contains("hopf|HB", case=False, na=False)
-            bp_mask = sp_series.str.contains("bp|BP", case=False, na=False)
-            self.hopf_indices = self.df.index[hopf_mask].tolist()
-            self.bp_indices = self.df.index[bp_mask].tolist()
-            if "step" in self.df.columns:
-                self.hopf_steps = self.df.loc[hopf_mask, "step"].tolist()
-                self.bp_steps = self.df.loc[bp_mask, "step"].tolist()
-
-        # Handle periodic orbits
-        self.periodic_orbits = []
-        if periodic_orbit_results:
-            for po_name, po_cont in periodic_orbit_results:
-                po_res = PyRatesBifurcationResult(
-                    ode=ode,
-                    cont_name=po_name,
-                    model=model,
-                    state_var_names=state_var_names,
-                    icp=icp,
-                    fp_name=fp_name,
+    par2_col = f"PAR({icp2})"
+    try:
+        cont_key = ode._results_map[cont_name]
+        sol = ode.auto_solutions[cont_key]
+        branch = sol.data[0]
+        branch_data = branch.todict()
+        if par2_col in branch_data:
+            p2_vals = [float(v) for v in branch_data[par2_col]]
+            if len(p2_vals) >= len(df):
+                df["param2"] = p2_vals[: len(df)]
+            else:
+                df["param2"] = np.interp(
+                    np.linspace(0, 1, len(df)),
+                    np.linspace(0, 1, len(p2_vals)),
+                    p2_vals,
                 )
-                self.periodic_orbits.append(po_res)
-
-        # Handle codim-2 curves
-        self.codim2_curves = []
-        if codim2_results:
-            for c2_res in codim2_results:
-                # Extract the 2nd parameter column into df['param2']
-                icp2 = getattr(c2_res, "_icp2", None)
-                if icp2 is not None and not c2_res.df.empty:
-                    c2_res.df = self._add_param2_column(
-                        ode,
-                        c2_res.df,
-                        getattr(c2_res, "_cont_name", None) or cont_name,
-                        state_var_names,
-                        icp2,
-                    )
-                self.codim2_curves.append(c2_res)
-
-            # Store _ICS2 for labeling
-            if codim2_results:
-                self._ICS2 = getattr(codim2_results[0], "_fp2_name", "param2")
-
-    # Standard columns expected by plot_branch / plot_special_points
-    _STANDARD_COLS = [
-        "param",
-        "stable",
-        "step",
-        "specialpoint",
-        "n_unstable",
-        "n_imag",
-    ]
-
-    @staticmethod
-    def _add_param2_column(ode, df, cont_name, state_var_names, icp2):
-        """Add 'param2' column to a codim-2 DataFrame.
-
-        Extracts the second free parameter from raw branch data.
-        """
-        par2_col = f"PAR({icp2})"
-        try:
-            cont_key = ode._results_map[cont_name]
-            sol = ode.auto_solutions[cont_key]
-            branch = sol.data[0]
-            branch_data = branch.todict()
-            if par2_col in branch_data:
-                p2_vals = [float(v) for v in branch_data[par2_col]]
-                # Align with df length
-                if len(p2_vals) >= len(df):
-                    df["param2"] = p2_vals[: len(df)]
-                else:
-                    # Interpolate or pad
-                    df["param2"] = np.interp(
-                        np.linspace(0, 1, len(df)),
-                        np.linspace(0, 1, len(p2_vals)),
-                        p2_vals,
-                    )
-        except (KeyError, IndexError, AttributeError):
-            # Fallback: try from summary
-            try:
-                summary = ode.get_summary(cont_name)
-                if summary is not None and len(summary) > 0:
-                    cols = summary.columns
-                    translated = ode._var_map_inv.get(par2_col, ode._var_map_inv.get(icp2, None))
-                    for cand in [translated, par2_col]:
-                        if cand and (cand, "") in cols:
-                            p2_vals = [float(summary.iloc[i][(cand, "")]) for i in range(len(summary))]
-                            if len(p2_vals) >= len(df):
-                                df["param2"] = p2_vals[: len(df)]
-                            break
-            except Exception:
-                pass
-        return df
-
-    @staticmethod
-    def _extract_pycobi_df(ode, cont_name, state_var_names, icp):
-        """Extract continuation branch as a pandas DataFrame from PyCoBi.
-
-        Uses the full branch data from AUTO's raw solution (every
-        continuation step) for a smooth curve, and overlays true
-        bifurcation point labels from ``get_summary``.
-
-        For periodic-orbit continuations the raw fort.7 data has mesh
-        discretisation columns, so we fall back to ``get_summary``
-        which provides proper min/max envelopes.
-        """
-        # True bifurcation types only (no UZ, EP, RG, MX)
-        auto_to_bif = {
-            "LP": "fold",
-            "HB": "hopf",
-            "BP": "bp",
-            "PD": "pd",
-            "TR": "ns",
-            "BT": "bt",
-            "CP": "cusp",
-            "GH": "gh",
-            "ZH": "zh",
-        }
-
-        def _empty_df():
-            cols = list(state_var_names or []) + PyRatesBifurcationResult._STANDARD_COLS
-            return pd.DataFrame(columns=cols)
-
-        def _parse_stability(sv):
-            if isinstance(sv, (bool, np.bool_)):
-                return bool(sv)
-            if isinstance(sv, (int, np.integer, float, np.floating)):
-                return sv > 0
-            if isinstance(sv, str):
-                return sv.strip().upper() in ("S", "TRUE", "1")
-            try:
-                return bool(sv.item())
-            except (AttributeError, ValueError):
-                return True
-
-        # --- Get summary (always needed for stability + special pts) ---
+    except (KeyError, IndexError, AttributeError):
         try:
             summary = ode.get_summary(cont_name)
-        except (KeyError, IndexError, AttributeError):
-            summary = None
-
-        # --- Full curve from raw AUTO branch data ---
-        branch_data = None
-        n_steps = 0
-        try:
-            cont_key = ode._results_map[cont_name]
-            sol = ode.auto_solutions[cont_key]
-            branch = sol.data[0]
-            branch_data = branch.todict()
-            n_steps = len(branch)
-        except (KeyError, IndexError, AttributeError):
-            pass
-
-        # Detect periodic-orbit continuation: if get_summary has
-        # MultiIndex tuple columns for state variables (e.g. ('V', 0)
-        # and ('V', 1) for min/max envelope), use summary-based path.
-        is_po = False
-        if summary is not None and len(summary) > 0 and state_var_names:
-            sv0 = state_var_names[0]
-            auto0 = "U(1)"
-            s_cols = summary.columns
-            is_po = ((sv0, 0) in s_cols and (sv0, 1) in s_cols) or ((auto0, 0) in s_cols and (auto0, 1) in s_cols)
-
-        par_col = f"PAR({icp})"
-
-        def _col(name, cols):
-            """Resolve a column name in a possibly-MultiIndex columns.
-
-            PyCoBi's get_summary returns a MultiIndex where ALL
-            columns are tuples: state vars as ``('V', 0)``,
-            ``('V', 1)`` and metadata as ``('stability', '')``, etc.
-
-            When columns are a MultiIndex, ``'stability' in cols``
-            matches level-0, but ``rd['stability']`` returns a
-            sub-Series instead of a scalar — so we must return the
-            full tuple key.
-            """
-            # Check tuple forms first (safe for both Index and MultiIndex)
-            if (name, "") in cols:
-                return (name, "")
-            if (name, 0) in cols:
-                return (name, 0)
-            # Plain string — only valid for a flat Index
-            if isinstance(cols, pd.MultiIndex):
-                return None
-            if name in cols:
-                return name
-            return None
-
-        # ── Periodic-orbit path: use get_summary with min/max ──
-        if is_po or (n_steps == 0 and summary is not None):
-            if summary is None or len(summary) == 0:
-                return _empty_df()
-            cols = summary.columns
-
-            # Resolve parameter column (translated or raw)
-            s_par_col = None
-            translated = ode._var_map_inv.get(par_col, ode._var_map_inv.get(icp, None))
-            for cand in [translated, par_col]:
-                if cand:
-                    resolved = _col(cand, cols)
-                    if resolved is not None:
-                        s_par_col = resolved
+            if summary is not None and len(summary) > 0:
+                cols = summary.columns
+                translated = ode._var_map_inv.get(par2_col, ode._var_map_inv.get(icp2, None))
+                for cand in [translated, par2_col]:
+                    if cand and (cand, "") in cols:
+                        p2_vals = [float(summary.iloc[i][(cand, "")]) for i in range(len(summary))]
+                        if len(p2_vals) >= len(df):
+                            df["param2"] = p2_vals[: len(df)]
                         break
+        except Exception:
+            pass
+    return df
 
-            # Resolve state-variable columns (MultiIndex tuples)
-            sv_col_map = {}
-            if state_var_names:
-                for i, sv_name in enumerate(state_var_names):
-                    auto_name = f"U({i + 1})"
-                    val_col = max_col = None
-                    for cand in [sv_name, auto_name]:
-                        if (cand, 0) in cols:
-                            val_col = (cand, 0)
-                            max_col = (cand, 1) if (cand, 1) in cols else None
-                            break
-                        if cand in cols:
-                            val_col = cand
-                            break
-                    if val_col is not None:
-                        sv_col_map[sv_name] = {"val": val_col, "max": max_col}
 
-            stab_col = _col("stability", cols)
-            bif_col = _col("bifurcation", cols)
+def _extract_pycobi_df(ode, cont_name, state_var_names, icp):
+    """Convert a PyCoBi continuation result into the unified DataFrame.
 
-            rows = []
-            for row_idx in range(len(summary)):
-                rd = summary.iloc[row_idx]
-                row = {}
-                for sv_name, ci in sv_col_map.items():
-                    v = rd[ci["val"]]
-                    if ci["max"] is not None:
-                        mx = rd[ci["max"]]
-                        row[sv_name] = float(np.max(mx))
-                        row[f"max_{sv_name}"] = float(np.max(mx))
-                        row[f"min_{sv_name}"] = float(np.min(v))
-                    elif hasattr(v, "__len__") and not isinstance(v, str):
-                        row[sv_name] = float(np.max(v))
-                        row[f"max_{sv_name}"] = float(np.max(v))
-                        row[f"min_{sv_name}"] = float(np.min(v))
-                    else:
-                        row[sv_name] = float(v)
-                row["param"] = float(rd[s_par_col]) if s_par_col else np.nan
-                stab = True
-                if stab_col is not None:
-                    stab = _parse_stability(rd[stab_col])
-                row["stable"] = stab
-                row["step"] = row_idx
-                bif_type = None
-                if bif_col is not None:
-                    bv = str(rd[bif_col]).strip()
-                    bif_type = auto_to_bif.get(bv)
-                row["specialpoint"] = bif_type
-                row["n_unstable"] = 0
-                row["n_imag"] = 0
-                rows.append(row)
+    Uses the full raw AUTO branch for equilibria (every continuation
+    step) and falls back to ``get_summary`` -- which provides min/max
+    envelopes -- for periodic-orbit branches.
+    """
+    auto_to_bif = {k: v for k, v in _AUTO_LABEL_MAP.items()
+                   if k in {"LP", "HB", "BP", "PD", "TR", "BT", "CP", "GH", "ZH"}}
 
-            if not rows:
-                return _empty_df()
-            df = pd.DataFrame(rows)
-            df["stable"] = df["stable"].astype(bool)
-            return df
+    def _empty_df():
+        return pd.DataFrame(columns=list(state_var_names or []) + _BIF_STANDARD_COLS)
 
-        # ── Equilibrium path: full curve from raw branch data ──
-        if branch_data is None or n_steps == 0:
+    def _parse_stability(sv):
+        if isinstance(sv, (bool, np.bool_)):
+            return bool(sv)
+        if isinstance(sv, (int, np.integer, float, np.floating)):
+            return sv > 0
+        if isinstance(sv, str):
+            return sv.strip().upper() in ("S", "TRUE", "1")
+        try:
+            return bool(sv.item())
+        except (AttributeError, ValueError):
+            return True
+
+    try:
+        summary = ode.get_summary(cont_name)
+    except (KeyError, IndexError, AttributeError):
+        summary = None
+
+    branch_data = None
+    n_steps = 0
+    try:
+        cont_key = ode._results_map[cont_name]
+        sol = ode.auto_solutions[cont_key]
+        branch = sol.data[0]
+        branch_data = branch.todict()
+        n_steps = len(branch)
+    except (KeyError, IndexError, AttributeError):
+        pass
+
+    is_po = False
+    if summary is not None and len(summary) > 0 and state_var_names:
+        sv0 = state_var_names[0]
+        s_cols = summary.columns
+        is_po = ((sv0, 0) in s_cols and (sv0, 1) in s_cols) or (("U(1)", 0) in s_cols and ("U(1)", 1) in s_cols)
+
+    par_col = f"PAR({icp})"
+
+    def _col(name, cols):
+        if (name, "") in cols:
+            return (name, "")
+        if (name, 0) in cols:
+            return (name, 0)
+        if isinstance(cols, pd.MultiIndex):
+            return None
+        if name in cols:
+            return name
+        return None
+
+    # ── Periodic-orbit path: summary-based with min/max ──
+    if is_po or (n_steps == 0 and summary is not None):
+        if summary is None or len(summary) == 0:
             return _empty_df()
+        cols = summary.columns
+        s_par_col = None
+        translated = ode._var_map_inv.get(par_col, ode._var_map_inv.get(icp, None))
+        for cand in [translated, par_col]:
+            if cand:
+                resolved = _col(cand, cols)
+                if resolved is not None:
+                    s_par_col = resolved
+                    break
+
+        sv_col_map = {}
+        if state_var_names:
+            for i, sv_name in enumerate(state_var_names):
+                auto_name = f"U({i + 1})"
+                val_col = max_col = None
+                for cand in [sv_name, auto_name]:
+                    if (cand, 0) in cols:
+                        val_col = (cand, 0)
+                        max_col = (cand, 1) if (cand, 1) in cols else None
+                        break
+                    if cand in cols:
+                        val_col = cand
+                        break
+                if val_col is not None:
+                    sv_col_map[sv_name] = {"val": val_col, "max": max_col}
+
+        stab_col = _col("stability", cols)
+        bif_col = _col("bifurcation", cols)
 
         rows = []
-        for step in range(n_steps):
+        for row_idx in range(len(summary)):
+            rd = summary.iloc[row_idx]
             row = {}
-            if state_var_names:
-                for i, sv_name in enumerate(state_var_names):
-                    auto_col = f"U({i + 1})"
-                    if auto_col in branch_data:
-                        row[sv_name] = float(branch_data[auto_col][step])
-            if par_col in branch_data:
-                row["param"] = float(branch_data[par_col][step])
-            else:
-                row["param"] = np.nan
-            row["stable"] = True
-            row["step"] = step
-            row["specialpoint"] = None
+            for sv_name, ci in sv_col_map.items():
+                v = rd[ci["val"]]
+                if ci["max"] is not None:
+                    mx = rd[ci["max"]]
+                    row[sv_name] = float(np.max(mx))
+                    row[f"max_{sv_name}"] = float(np.max(mx))
+                    row[f"min_{sv_name}"] = float(np.min(v))
+                elif hasattr(v, "__len__") and not isinstance(v, str):
+                    row[sv_name] = float(np.max(v))
+                    row[f"max_{sv_name}"] = float(np.max(v))
+                    row[f"min_{sv_name}"] = float(np.min(v))
+                else:
+                    row[sv_name] = float(v)
+            row["param"] = float(rd[s_par_col]) if s_par_col else np.nan
+            row["stable"] = _parse_stability(rd[stab_col]) if stab_col is not None else True
+            row["step"] = row_idx
+            bif_type = None
+            if bif_col is not None:
+                bif_type = auto_to_bif.get(str(rd[bif_col]).strip())
+            row["specialpoint"] = bif_type
             row["n_unstable"] = 0
             row["n_imag"] = 0
             rows.append(row)
-
         if not rows:
             return _empty_df()
-
         df = pd.DataFrame(rows)
-
-        # Overlay stability + special points from summary
-        if summary is not None and len(summary) > 0:
-            cols = summary.columns
-            s_par_col = None
-            translated = ode._var_map_inv.get(par_col, ode._var_map_inv.get(icp, None))
-            for cand in [translated, par_col]:
-                if cand:
-                    resolved = _col(cand, cols)
-                    if resolved is not None:
-                        s_par_col = resolved
-                        break
-
-            stab_col = _col("stability", cols)
-            bif_col = _col("bifurcation", cols)
-
-            stab_data = []
-            for row_idx in range(len(summary)):
-                rd = summary.iloc[row_idx]
-                p_val = float(rd[s_par_col]) if s_par_col else np.nan
-                stab = _parse_stability(rd[stab_col]) if stab_col is not None else True
-                bif_type = None
-                if bif_col is not None:
-                    bv = str(rd[bif_col]).strip()
-                    bif_type = auto_to_bif.get(bv)
-                stab_data.append((p_val, stab, bif_type))
-
-            if stab_data and s_par_col:
-                lp = np.array([s[0] for s in stab_data])
-                ls = np.array([s[1] for s in stab_data])
-                bp = df["param"].values
-                nearest = np.abs(bp[:, None] - lp[None, :]).argmin(axis=1)
-                df["stable"] = ls[nearest]
-                for _, (pv, __, bt) in enumerate(stab_data):
-                    if bt is None:
-                        continue
-                    si = int(np.abs(bp - pv).argmin())
-                    df.loc[si, "specialpoint"] = bt
-
         df["stable"] = df["stable"].astype(bool)
         return df
 
+    # ── Equilibrium path: full curve from raw branch data ──
+    if branch_data is None or n_steps == 0:
+        return _empty_df()
 
-class NumContBifurcationResult(BifurcationResult):
-    """Bifurcation result from the in-tree AUTO-07p (numcont) backend.
+    rows = []
+    for step in range(n_steps):
+        row = {}
+        if state_var_names:
+            for i, sv_name in enumerate(state_var_names):
+                auto_col = f"U({i + 1})"
+                if auto_col in branch_data:
+                    row[sv_name] = float(branch_data[auto_col][step])
+        row["param"] = float(branch_data[par_col][step]) if par_col in branch_data else np.nan
+        row["stable"] = True
+        row["step"] = step
+        row["specialpoint"] = None
+        row["n_unstable"] = 0
+        row["n_imag"] = 0
+        rows.append(row)
+    if not rows:
+        return _empty_df()
+    df = pd.DataFrame(rows)
 
-    Wraps an ``auto.bifDiag`` (returned by ``auto.run``) and exposes
-    the common ``BifurcationResult`` interface (``df``, ``hopf_indices``,
-    ``periodic_orbits``, ...). Uses ``auto-07p`` directly; no external
-    package dependency.
-    """
-
-    # AUTO label → canonical specialpoint string used by plotting code
-    _LABEL_MAP = {
-        "HB": "hopf",
-        "LP": "fold",
-        "BP": "bp",
-        "PD": "pd",
-        "TR": "ns",
-        "EP": "endpoint",
-        "MX": "mx",
-        "UZ": "uz",
-    }
-
-    def __init__(
-        self,
-        bd,
-        cont_name=None,
-        model=None,
-        continuation=None,
-        ICS=None,
-        periodic_orbits_raw=None,
-        workdir=None,
-        **kwargs,
-    ):
-        # Skip parent __init__ (it expects juliacall objects)
-        self.br = bd
-        self.cont_name = cont_name
-        self.model = model
-        self.continuation = continuation
-        self.ICS = ICS
-        self.workdir = workdir
-        for k, v in kwargs.items():
-            setattr(self, k, v)
-
-        sv_names = list(model.state_variables.keys()) if model else []
-        self.state_var_index = {name: idx for idx, name in enumerate(sv_names)}
-
-        # Build df from the equilibrium continuation branches
-        self.df = self._extract_branch_df(bd, sv_names, ICS)
-
-        # Special-point indices in df
-        self.hopf_indices = []
-        self.bp_indices = []
-        self.hopf_steps = []
-        self.bp_steps = []
-        if "specialpoint" in self.df.columns:
-            sp = self.df["specialpoint"].astype(str)
-            hopf_mask = sp.str.contains("hopf", case=False, na=False)
-            bp_mask = sp.str.contains("bp", case=False, na=False)
-            self.hopf_indices = self.df.index[hopf_mask].tolist()
-            self.bp_indices = self.df.index[bp_mask].tolist()
-            if "step" in self.df.columns:
-                self.hopf_steps = self.df.loc[hopf_mask, "step"].tolist()
-                self.bp_steps = self.df.loc[bp_mask, "step"].tolist()
-
-        # Wrap each periodic orbit
-        self.periodic_orbits = []
-        for po_name, po_bd in periodic_orbits_raw or []:
-            po = NumContBifurcationResult(
-                po_bd,
-                cont_name=po_name,
-                model=model,
-                continuation=continuation,
-                ICS=ICS,
-                workdir=workdir,
-            )
-            self.periodic_orbits.append(po)
-
-        self.codim2_curves = []
-
-    # ── Extraction helpers ───────────────────────────────────────────────
-
-    @classmethod
-    def _extract_branch_df(cls, bd, sv_names, fp_name):
-        """Concatenate every branch in `bd` into a single DataFrame.
-
-        Adds a ``branch_id`` column so downstream plotting can keep
-        sub-branches visually distinct (multi-branch dispatch).
-        """
-        frames = []
-        for bid, br in enumerate(bd):
-            df_br = cls._branch_to_df(br, sv_names, fp_name)
-            if not df_br.empty:
-                df_br["branch_id"] = bid
-                frames.append(df_br)
-        if not frames:
-            return pd.DataFrame()
-        return pd.concat(frames, ignore_index=True)
-
-    @classmethod
-    def _branch_to_df(cls, branch, sv_names, fp_name):
-        coordnames = list(branch.coordnames)
-        coordarray = np.asarray(branch.coordarray)
-        if coordarray.size == 0 or coordarray.ndim != 2:
-            return pd.DataFrame()
-        n_rows = coordarray.shape[1]
-
-        cols = {cn: coordarray[i] for i, cn in enumerate(coordnames)}
-        df = pd.DataFrame(cols)
-        df["step"] = np.arange(n_rows)
-
-        # Resolve PAR(i) → name via parsed constants header (branch.c)
-        c = getattr(branch, "c", {}) or {}
-        parnames_raw = c.get("parnames", {}) if isinstance(c, dict) else {}
-        # parnames may be a dict ({1: 'a', ...}) or a list of (idx, name) tuples
-        pname_by_idx = {}
-        if isinstance(parnames_raw, dict):
-            items_iter = parnames_raw.items()
-        elif isinstance(parnames_raw, (list, tuple)):
-            items_iter = parnames_raw
-        else:
-            items_iter = []
-        for k, v in items_iter:
-            try:
-                pname_by_idx[int(k)] = str(v)
-            except (TypeError, ValueError):
-                pass
-
-        # 'param' column = free parameter
-        for col in list(df.columns):
-            if col.startswith("PAR(") and col.endswith(")"):
-                try:
-                    idx = int(col[4:-1])
-                except ValueError:
+    # Overlay stability + special points from summary
+    if summary is not None and len(summary) > 0:
+        cols = summary.columns
+        s_par_col = None
+        translated = ode._var_map_inv.get(par_col, ode._var_map_inv.get(icp, None))
+        for cand in [translated, par_col]:
+            if cand:
+                resolved = _col(cand, cols)
+                if resolved is not None:
+                    s_par_col = resolved
+                    break
+        stab_col = _col("stability", cols)
+        bif_col = _col("bifurcation", cols)
+        stab_data = []
+        for row_idx in range(len(summary)):
+            rd = summary.iloc[row_idx]
+            p_val = float(rd[s_par_col]) if s_par_col else np.nan
+            stab = _parse_stability(rd[stab_col]) if stab_col is not None else True
+            bif_type = None
+            if bif_col is not None:
+                bif_type = auto_to_bif.get(str(rd[bif_col]).strip())
+            stab_data.append((p_val, stab, bif_type))
+        if stab_data and s_par_col:
+            lp = np.array([s[0] for s in stab_data])
+            ls = np.array([s[1] for s in stab_data])
+            bp = df["param"].values
+            nearest = np.abs(bp[:, None] - lp[None, :]).argmin(axis=1)
+            df["stable"] = ls[nearest]
+            for pv, _, bt in stab_data:
+                if bt is None:
                     continue
-                pname = pname_by_idx.get(idx)
-                if pname:
-                    df[pname] = df[col]
-                    if pname == fp_name:
-                        df["param"] = df[col]
-        if "param" not in df.columns:
-            # Fallback: assume PAR(1) is the active parameter
-            if "PAR(1)" in df.columns:
-                df["param"] = df["PAR(1)"]
-            elif fp_name and fp_name in df.columns:
-                df["param"] = df[fp_name]
+                si = int(np.abs(bp - pv).argmin())
+                df.loc[si, "specialpoint"] = bt
+    df["stable"] = df["stable"].astype(bool)
+    return df
 
-        # State variable columns
-        for i, sv in enumerate(sv_names, start=1):
-            ucol = f"U({i})"
-            if ucol in df.columns:
-                df[sv] = df[ucol]
 
-        # Stability — branch.stability() returns signed segment endpoints
-        stable = np.ones(n_rows, dtype=bool)
+# ── AUTO-07p (numcont) extractor ────────────────────────────────────────
+
+def _auto_branch_to_df(branch, sv_names, fp_name):
+    """Convert one AUTO ``branch`` into the unified DataFrame."""
+    coordnames = list(branch.coordnames)
+    coordarray = np.asarray(branch.coordarray)
+    if coordarray.size == 0 or coordarray.ndim != 2:
+        return pd.DataFrame()
+    n_rows = coordarray.shape[1]
+
+    df = pd.DataFrame({cn: coordarray[i] for i, cn in enumerate(coordnames)})
+    df["step"] = np.arange(n_rows)
+
+    # Resolve PAR(i) → name via parsed constants header (branch.c)
+    c = getattr(branch, "c", {}) or {}
+    parnames_raw = c.get("parnames", {}) if isinstance(c, dict) else {}
+    pname_by_idx = {}
+    items_iter = (parnames_raw.items() if isinstance(parnames_raw, dict)
+                  else parnames_raw if isinstance(parnames_raw, (list, tuple))
+                  else [])
+    for k, v in items_iter:
         try:
-            stab = branch.stability()
-            prev = 0
-            for s in stab:
-                end = abs(int(s))
-                stable[prev:end] = int(s) < 0  # negative => stable segment
-                prev = end
-        except Exception:
+            pname_by_idx[int(k)] = str(v)
+        except (TypeError, ValueError):
             pass
-        df["stable"] = stable
 
-        # Special points from branch.labels
-        df["specialpoint"] = ""
-        labels = getattr(branch, "labels", None)
-        if labels is not None:
-            by_label = getattr(labels, "by_label", None)
-            label_iter = by_label.items() if hasattr(by_label, "items") else (
-                labels.items() if hasattr(labels, "items") else []
-            )
-            for label, points in label_iter:
-                canon = cls._LABEL_MAP.get(str(label).upper())
-                if not canon:
+    for col in list(df.columns):
+        if col.startswith("PAR(") and col.endswith(")"):
+            try:
+                idx = int(col[4:-1])
+            except ValueError:
+                continue
+            pname = pname_by_idx.get(idx)
+            if pname:
+                df[pname] = df[col]
+                if pname == fp_name:
+                    df["param"] = df[col]
+    if "param" not in df.columns:
+        if "PAR(1)" in df.columns:
+            df["param"] = df["PAR(1)"]
+        elif fp_name and fp_name in df.columns:
+            df["param"] = df[fp_name]
+
+    for i, sv in enumerate(sv_names, start=1):
+        ucol = f"U({i})"
+        if ucol in df.columns:
+            df[sv] = df[ucol]
+
+    # Stability — branch.stability() returns signed segment endpoints
+    stable = np.ones(n_rows, dtype=bool)
+    try:
+        prev = 0
+        for s in branch.stability():
+            end = abs(int(s))
+            stable[prev:end] = int(s) < 0  # negative => stable segment
+            prev = end
+    except Exception:
+        pass
+    df["stable"] = stable
+
+    # Special points from branch.labels
+    df["specialpoint"] = ""
+    labels = getattr(branch, "labels", None)
+    if labels is not None:
+        by_label = getattr(labels, "by_label", None)
+        label_iter = (by_label.items() if hasattr(by_label, "items")
+                      else labels.items() if hasattr(labels, "items") else [])
+        for label, points in label_iter:
+            canon = _AUTO_LABEL_MAP.get(str(label).upper())
+            if not canon:
+                continue
+            point_items = points.items() if isinstance(points, dict) else points
+            for idx, _payload in point_items:
+                try:
+                    idx = int(idx)
+                except (TypeError, ValueError):
                     continue
-                # ``points`` is a dict keyed by 0-based point index, with
-                # values like {'LAB': N, 'TY number': N, 'solution': ...}.
-                if isinstance(points, dict):
-                    point_items = points.items()
-                else:
-                    # Defensive fallback for list-of-(idx, payload).
-                    point_items = points
-                for idx, payload in point_items:
-                    try:
-                        idx = int(idx)
-                    except (TypeError, ValueError):
-                        continue
-                    if 0 <= idx < n_rows:
-                        cur = df.at[idx, "specialpoint"]
-                        df.at[idx, "specialpoint"] = canon if not cur else f"{cur},{canon}"
-        return df
+                if 0 <= idx < n_rows:
+                    cur = df.at[idx, "specialpoint"]
+                    df.at[idx, "specialpoint"] = canon if not cur else f"{cur},{canon}"
+    return df
 
+
+def _extract_auto_df(bd, sv_names, fp_name):
+    """Concatenate every branch in an AUTO ``bifDiag`` into one DataFrame.
+
+    Adds a ``branch_id`` column so plotting can keep sub-branches distinct.
+    """
+    frames = []
+    for bid, br in enumerate(bd):
+        df_br = _auto_branch_to_df(br, sv_names, fp_name)
+        if not df_br.empty:
+            df_br["branch_id"] = bid
+            frames.append(df_br)
+    return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
+
+
+# Stub kept for the deprecated dummy class definition below.
 
 __all__ = [
     "BifurcationResult",
-    "PyRatesBifurcationResult",
-    "NumContBifurcationResult",
     "BIF_STYLES",
     "canonical_ty",
     "get_bif_style",

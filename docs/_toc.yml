@@ -73,6 +73,8 @@ website:
                             href: Usage/BifurcationTutorial/05-Hysteresis.qmd
                           - text: "6. Hopf"
                             href: Usage/BifurcationTutorial/06-Hopf.qmd
+                          - text: "7. Numerical Continuation"
+                            href: Usage/BifurcationTutorial/07-NumericalContinuation.qmd
                       - text: "Visualization"
                         href: Usage/Visualization.qmd
                       - text: "Output Specification"

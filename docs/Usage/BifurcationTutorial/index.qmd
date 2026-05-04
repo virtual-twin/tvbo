@@ -30,11 +30,12 @@ through the unified [`Continuation`](../BifurcationAnalysis.qmd) API.
 | § | Page | Legacy script | System | Figure(s) reproduced |
 |---|---|---|---|---|
 | 1 | [Linear Stability](01-LinearStability.qmd) | `ExpExample.py` | $\dot x = a\,x$ | `ExpExample0Red.png`, `ExpExamplePert.png` |
-| 2 | [2D Phase Portraits](02-PhasePortrait2D.qmd) | `PhasePortrait2DLinearSystem.py` | $\dot{\vec x} = A\vec x$, saddle | `PhasePortraitSaddle.png` |
+| 2 | [2D Phase Portraits](02-PhasePortrait2D.qmd) | `PhasePortrait2DLinearSystem.py` | $\dot{\vec x} = A\vec x$ — node, saddle, focus, centre | `PhasePortraitSaddle.png` |
 | 3 | [Saddle-Node](03-SaddleNode.qmd) | `SaddleNode.py` | $\dot x = a - x^2$ | `SaddleNode.png` |
 | 4 | [Pitchfork](04-Pitchfork.qmd) | `PitchFork.py` | $\dot x = a x - x^3$ | `PitchFork.png` |
 | 5 | [Hysteresis](05-Hysteresis.qmd) | `DoubleSaddleNode.py` | $\dot x = a + x - x^3$ | `Hysteresis.png` |
 | 6 | [Hopf normal form](06-Hopf.qmd) | `PhasePortraitHopf.py` | $\dot x_1 = (a-r^2)x_1 - w x_2$, $\dot x_2 = (a-r^2)x_2 + w x_1$ | `HopfPhasePortrait_and_BifDiag3D_a=*.png` |
+| 7 | [Numerical Continuation](07-NumericalContinuation.qmd) | — | theory: Newton, pseudo-arclength, branch switching | — |
 
 ## Methodology
 
@@ -86,15 +87,28 @@ result.continuations["eq_in_a"].plot(VOI="x")
 
 ### Phase portraits
 
-For pure phase-portrait figures we use `plot_dynamics` with `kind="vectorfield"`:
+For pure phase-portrait figures we use `Dynamics.plot` with
+`kind="vectorfield"` (stream-plot only) or `kind="phaseplane"` (stream-plot
+plus nullclines and detected fixed points):
 
 ```python
-from tvbo.plot.dynamics import plot_dynamics
-plot_dynamics(dyn, "x1", "x2", kind="vectorfield")
+dyn.plot("x1", "x2", kind="phaseplane", n_trajectories=3)
 ```
 
-This produces a stream-plot of $\dot{\vec x}$ over the state-variable
-domains declared in the YAML.
+Both kinds use the state-variable domains declared in the YAML to set the
+axis limits.
+
+### Animations across a parameter
+
+`Dynamics.animate(parameter, values, *dims, kind=...)` produces a
+`matplotlib.animation.FuncAnimation` by re-running `plot()` for each value
+of the chosen parameter:
+
+```python
+anim = dyn.animate("a", np.linspace(-2, 1.5, 60),
+                   "x1", "x2", kind="phaseplane")
+HTML(anim.to_jshtml())
+```
 
 ### 3D Hopf diagram
 

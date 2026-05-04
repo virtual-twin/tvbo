@@ -198,7 +198,7 @@ class NumContAdapter:
     def _run_one(self, model, cont, cont_name, **kwargs):
         import auto
 
-        from tvbo.analysis.bifurcation import NumContBifurcationResult
+        from tvbo.analysis.bifurcation import BifurcationResult
 
         # 1. Render f90 to a temporary working dir
         workdir = tempfile.mkdtemp(prefix=f"tvbo_numcont_{model.name}_")
@@ -288,7 +288,7 @@ class NumContAdapter:
         finally:
             os.chdir(cwd0)
 
-        return NumContBifurcationResult(
+        return BifurcationResult.from_auto(
             R_eq,
             cont_name=cont_name,
             model=model,
