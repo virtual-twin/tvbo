@@ -827,6 +827,59 @@ class BifurcationResult:
             return result
 
         except Exception:
+            pass
+
+        # AUTO-07p backend: ``self.br`` is a ``bifDiag`` whose call returns a
+        # ``parseS`` of ``AUTOSolution`` objects. Each holds the full orbit
+        # mesh in ``coordarray`` (shape ``(ndim, ntst*ncol+1)``), ``indepvararray``
+        # (mesh times in [0, 1] times PERIOD) and ``PAR`` (parameter dict).
+        try:
+            sols = self.br()  # parseS
+            n_sol = len(sols)
+            if n_sol == 0:
+                return []
+            sv_names = list(self.state_var_index.keys()) if self.state_var_index else []
+            if not sv_names:
+                sv_names = list(sols[0].coordnames)
+            par_name = None
+            if not self.df.empty:
+                # Param-name guess: first ICP from continuation, else 'a'
+                par_name = sv_names[0]  # placeholder; overridden below
+            # Pick the parameter that varies in PO branch (matches df.param)
+            try:
+                p0 = float(sols[0].PAR[list(sols[0].PAR.coordnames)[0]])
+                pN = float(sols[-1].PAR[list(sols[-1].PAR.coordnames)[0]])
+                if abs(pN - p0) > 1e-9:
+                    par_name = list(sols[0].PAR.coordnames)[0]
+            except Exception:
+                pass
+            # Better: use df['param'] alignment via solution index
+            indices = np.unique(np.round(np.linspace(0, n_sol - 1, min(n_samples, n_sol))).astype(int))
+            result = []
+            for idx in indices:
+                s = sols[int(idx)]
+                arr = np.array(s.coordarray)
+                t = np.array(s.indepvararray)
+                # Find param: look for any matching entry in df by step
+                try:
+                    p_val = None
+                    for pname in s.PAR.coordnames:
+                        v = float(s.PAR[pname])
+                        if not self.df.empty and "param" in self.df.columns:
+                            if np.any(np.abs(self.df["param"].values - v) < 1e-6):
+                                p_val = v
+                                break
+                    if p_val is None:
+                        p_val = float(s.PAR[list(s.PAR.coordnames)[0]])
+                except Exception:
+                    p_val = float("nan")
+                d = {"param": p_val, "t": t}
+                for i, sv in enumerate(sv_names):
+                    if i < arr.shape[0]:
+                        d[sv] = arr[i]
+                result.append(d)
+            return result
+        except Exception:
             return []
 
     def plot(self, ax=None, ICS=None, VOI=None, save=None, **kwargs):
@@ -853,19 +906,29 @@ class BifurcationResult:
                 if max_col in po_br.df.columns:
                     params = po_br.df["param"].values
                     v_max = po_br.df[max_col].values
-                    v_min = po_br.df[min_col].values
+                    v_min = (po_br.df[min_col].values
+                             if min_col in po_br.df.columns else None)
                     clabels = ax.get_legend_handles_labels()[1]
-                    ax.fill_between(
-                        params,
-                        v_min,
-                        v_max,
-                        color=_C["po_env"],
-                        alpha=0.15,
-                        label=("PO envelope" if "PO envelope" not in clabels else None),
-                        zorder=0,
-                    )
+                    if v_min is not None:
+                        ax.fill_between(
+                            params,
+                            v_min,
+                            v_max,
+                            color=_C["po_env"],
+                            alpha=0.15,
+                            label=("PO envelope" if "PO envelope" not in clabels else None),
+                            zorder=0,
+                        )
+                        ax.plot(params, v_min, "-", color=_C["po_line"], linewidth=0.8, alpha=0.6)
+                    else:
+                        ax.plot(
+                            params, v_max, "-",
+                            color=_C["po_line"], linewidth=1.2,
+                            label=("PO max" if "PO max" not in clabels else None),
+                            zorder=0,
+                        )
+                        continue
                     ax.plot(params, v_max, "-", color=_C["po_line"], linewidth=0.8, alpha=0.6)
-                    ax.plot(params, v_min, "-", color=_C["po_line"], linewidth=0.8, alpha=0.6)
                     po_br.plot_special_points(VOI=max_col, ax=ax, **kwargs)
                 elif VOI in po_br.df.columns:
                     po_br.plot_branch(ax, ICS=ICS, VOI=VOI, **kwargs)
@@ -1094,7 +1157,9 @@ class BifurcationResult:
                 min_col = f"min_{VOI}"
                 if max_col in po_br.df.columns:
                     y_po = np.full(len(po_br.df), c2_default)
-                    for col in [max_col, min_col]:
+                    cols_avail = [c for c in (max_col, min_col)
+                                  if c in po_br.df.columns]
+                    for col in cols_avail:
                         clabels = ax.get_legend_handles_labels()[1]
                         ax.plot(
                             po_br.df["param"].values,
@@ -1204,7 +1269,9 @@ class BifurcationResult:
                 min_col = f"min_{VOI}"
                 if max_col in po_br.df.columns:
                     y_po = np.full(len(po_br.df), c2_default)
-                    for col in [max_col, min_col]:
+                    cols_avail = [c for c in (max_col, min_col)
+                                  if c in po_br.df.columns]
+                    for col in cols_avail:
                         clabels = ax.get_legend_handles_labels()[1]
                         ax.plot(
                             po_br.df["param"].values,
@@ -1290,7 +1357,7 @@ class BifurcationResult:
                             label=lbl if lbl not in clabels else None,
                         )
 
-        ics2_label = ICS2 or c2_ics or "param2"
+        ics2_label = ICS2 or c2_ics or sv2 or "param2"
         ax.set_xlabel(ics_label, fontsize=8, labelpad=6)
         ax.set_ylabel(ics2_label, fontsize=8, labelpad=6)
         ax.set_zlabel(VOI, fontsize=8, labelpad=6)
@@ -1299,6 +1366,200 @@ class BifurcationResult:
         if save:
             fig.savefig(save, dpi=500, bbox_inches="tight")
         return ax
+
+    def _lc_ring_at_param(self, val, VOI, sv2, y_center, n_theta=80):
+        """Sample a closed periodic-orbit loop at ``param=val`` for 3D overlay.
+
+        Returns ``(X, Y, Z)`` arrays (length ``n_theta + 1``, last point
+        repeats the first) tracing the limit cycle in the same coordinates
+        used by :meth:`plot_3d` (``x = param``, ``y = y_center + sv2_disp``,
+        ``z = VOI``), or ``None`` if no PO branch covers ``val``.
+        """
+        po_list = getattr(self, "periodic_orbits", None) or []
+        if not po_list:
+            return None
+
+        for po_br in po_list:
+            df = po_br.df
+            if df.empty or "param" not in df.columns:
+                continue
+            params = df["param"].values
+            if val < params.min() or val > params.max():
+                continue
+
+            # Try full orbit shape first (Julia BifurcationKit / AUTO bd()).
+            # Reuse the EXACT same Y-scaling that plot_3d applies to the
+            # PO tube so the ring sits on the tube's surface, not next to it.
+            orbits = po_br.extract_orbit_meshes(n_samples=max(8, n_theta // 4))
+            if orbits and sv2 and VOI in orbits[0] and sv2 in orbits[0]:
+                o_params = np.array([o["param"] for o in orbits])
+                j = int(np.abs(o_params - val).argmin())
+                orb = orbits[j]
+                t = orb["t"]
+                t_norm = (t - t[0]) / (t[-1] - t[0])
+                t_uni = np.linspace(0, 1, n_theta, endpoint=False)
+                z = np.interp(t_uni, t_norm, orb[VOI])
+                w = np.interp(t_uni, t_norm, orb[sv2])
+
+                # Replicate plot_3d's W-scaling: collect all sv2 samples to
+                # get the global W_range and use abs(y_center)*0.5 (or 5.0)
+                # as the y_range proxy when no codim-2 curves exist.
+                all_w = []
+                for o in orbits:
+                    if sv2 in o:
+                        all_w.append(np.asarray(o[sv2]))
+                W_all = np.concatenate(all_w) if all_w else w
+                W_range_all = float(W_all.max() - W_all.min())
+                y_range = abs(y_center) * 0.5 or 5.0
+                if W_range_all > 0:
+                    w_disp = (w - W_all.mean()) / W_range_all * y_range * 0.15
+                else:
+                    w_disp = np.zeros_like(w)
+
+                X = np.full(n_theta + 1, val)
+                Y = np.append(y_center + w_disp, y_center + w_disp[0])
+                Z = np.append(z, z[0])
+                return X, Y, Z
+
+            # Fallback: AUTO-style envelope. Reconstruct an ellipse from
+            # max_<sv> radii in the (sv2, VOI) plane around the equilibrium.
+            max_voi = f"max_{VOI}"
+            if max_voi not in df.columns:
+                continue
+            r_voi = float(np.interp(val, params, df[max_voi].values))
+            r_sv2 = 0.0
+            if sv2 and f"max_{sv2}" in df.columns:
+                r_sv2 = float(np.interp(val, params, df[f"max_{sv2}"].values))
+
+            # Center on equilibrium at this param (z) and y_center (y).
+            z_eq = 0.0
+            if not self.df.empty and "param" in self.df.columns:
+                eq_params = self.df["param"].values
+                voi_eq = compute_voi(self.df, VOI,
+                                     state_var_index=self.state_var_index).values
+                z_eq = float(np.interp(val, eq_params, voi_eq))
+
+            theta = np.linspace(0, 2 * np.pi, n_theta + 1)
+            X = np.full_like(theta, val)
+            Y = y_center + r_sv2 * np.sin(theta)
+            Z = z_eq + r_voi * np.cos(theta)
+            return X, Y, Z
+
+        return None
+
+    def animate(self, dynamics, parameter, values, *dims,
+                kind="phaseplane", VOI=None, interval=80,
+                figsize=(11, 4.8), title_fmt="{name} = {value:+.2f}",
+                marker_kwargs=None, **plot_kwargs):
+        """Animate ``dynamics`` alongside this 3D bifurcation diagram.
+
+        For each value of ``parameter`` a left panel re-renders a
+        ``Dynamics`` plot (``kind`` forwarded to :func:`plot_dynamics`,
+        defaults to ``"phaseplane"``), while a right panel shows
+        :meth:`plot_3d` once with a moving marker that tracks the
+        current parameter value on the equilibrium backbone.
+
+        Parameters
+        ----------
+        dynamics : Dynamics
+            Model whose parameter is being swept.
+        parameter : str
+            Parameter name (must exist in ``dynamics.parameters`` and
+            match this result's continuation parameter).
+        values : sequence of float
+            Parameter values, one per frame.
+        *dims, **plot_kwargs
+            Forwarded to :func:`tvbo.plot.dynamics.plot_dynamics`.
+        kind : str
+            Plot kind for the left panel (default ``"phaseplane"``).
+        VOI : str, optional
+            State variable plotted on the z-axis of the 3D diagram.
+        interval : int
+            Delay between frames in ms.
+        figsize : (float, float)
+        title_fmt : str
+            Title format with ``{name}`` and ``{value}`` placeholders.
+        marker_kwargs : dict, optional
+            Style overrides for the moving marker.
+
+        Returns
+        -------
+        matplotlib.animation.FuncAnimation
+        """
+        import copy
+        from matplotlib.animation import FuncAnimation
+        from tvbo.plot.dynamics import plot_dynamics
+
+        if parameter not in dynamics.parameters:
+            raise ValueError(
+                f"parameter {parameter!r} not in dynamics "
+                f"(available: {list(dynamics.parameters)})"
+            )
+
+        dyn = copy.deepcopy(dynamics)
+        VOI = self._resolve_voi(VOI)
+
+        fig = plt.figure(figsize=figsize)
+        ax_left = fig.add_subplot(1, 2, 1)
+        ax_right = fig.add_subplot(1, 2, 2, projection="3d")
+        self.plot_3d(ax=ax_right, VOI=VOI)
+
+        # Backbone position (param, c2_default, voi_eq) for marker lookup
+        params = self.df["param"].values if not self.df.empty else np.array([])
+        voi_eq = (compute_voi(self.df, VOI, state_var_index=self.state_var_index).values
+                  if not self.df.empty else np.array([]))
+        # y-coordinate matches plot_3d backbone (median of codim-2 if any, else 0)
+        y_bb = 0.0
+        if hasattr(ax_right, "lines") and ax_right.lines:
+            ydata = ax_right.lines[0].get_ydata()
+            if len(ydata):
+                y_bb = float(ydata[0])
+
+        # Resolve "other" state variable name (sv2) for LC ring rendering
+        sv_names = list(self.state_var_index.keys()) if self.state_var_index else []
+        sv2 = next((s for s in sv_names if s != VOI), None)
+
+        mk = dict(marker="o", s=80, color="red", edgecolors="white",
+                  linewidths=1.0, zorder=20)
+        if marker_kwargs:
+            mk.update(marker_kwargs)
+        marker = ax_right.scatter([params[0] if len(params) else 0.0],
+                                  [y_bb],
+                                  [voi_eq[0] if len(voi_eq) else 0.0], **mk)
+        ring_artist = [None]  # boxed so the closure can rebind it
+
+        def _update(frame_idx):
+            ax_left.clear()
+            val = float(values[frame_idx])
+            dyn.parameters[parameter].value = val
+            plot_dynamics(dyn, *dims, kind=kind, ax=ax_left, **plot_kwargs)
+            ax_left.set_title(title_fmt.format(name=parameter, value=val),
+                              color="red")
+            if len(params):
+                i = int(np.abs(params - val).argmin())
+                z_val = float(voi_eq[i]) if len(voi_eq) else 0.0
+                marker._offsets3d = ([val], [y_bb], [z_val])
+
+            # LC ring: clear previous, draw current if val sits on a PO branch
+            if ring_artist[0] is not None:
+                try:
+                    ring_artist[0].remove()
+                except Exception:
+                    pass
+                ring_artist[0] = None
+            ring = self._lc_ring_at_param(val, VOI, sv2, y_bb)
+            if ring is not None:
+                X, Y, Z = ring
+                ring_artist[0], = ax_right.plot(
+                    X, Y, Z, "-", color="red", linewidth=2.0,
+                    zorder=21, alpha=0.95,
+                )
+            return [ax_left, marker]
+
+        anim = FuncAnimation(fig, _update, frames=len(values),
+                             interval=interval, blit=False)
+        plt.close(fig)
+        return anim
 
 
 # ── Backend extractors (formerly PyRates/NumCont subclass methods) ──
@@ -1599,6 +1860,19 @@ def _auto_branch_to_df(branch, sv_names, fp_name):
         if ucol in df.columns:
             df[sv] = df[ucol]
 
+    # Periodic-orbit branches: AUTO writes ``MAX <sv>`` / ``MIN <sv>``
+    # (or ``MAX U(i)``) into the b-file. Map those to the canonical
+    # ``max_<sv>`` / ``min_<sv>`` columns the plot layer expects, and
+    # fall back to ``MAX`` as the SV column when no U(i) was emitted.
+    for i, sv in enumerate(sv_names, start=1):
+        for prefix, target in (("MAX", "max"), ("MIN", "min")):
+            for src in (f"{prefix} {sv}", f"{prefix} U({i})"):
+                if src in df.columns:
+                    df[f"{target}_{sv}"] = df[src]
+                    if sv not in df.columns:
+                        df[sv] = df[src]
+                    break
+
     # Stability — branch.stability() returns signed segment endpoints
     stable = np.ones(n_rows, dtype=bool)
     try:
@@ -1638,6 +1912,9 @@ def _extract_auto_df(bd, sv_names, fp_name):
     """Concatenate every branch in an AUTO ``bifDiag`` into one DataFrame.
 
     Adds a ``branch_id`` column so plotting can keep sub-branches distinct.
+    For periodic-orbit branches, augments missing ``min_<sv>`` columns by
+    scanning the orbit solutions in ``bd()`` (AUTO does not write MIN to
+    the b-file).
     """
     frames = []
     for bid, br in enumerate(bd):
@@ -1645,7 +1922,44 @@ def _extract_auto_df(bd, sv_names, fp_name):
         if not df_br.empty:
             df_br["branch_id"] = bid
             frames.append(df_br)
-    return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
+    if not frames:
+        return pd.DataFrame()
+    df = pd.concat(frames, ignore_index=True)
+
+    # Fill missing min_<sv> by sampling orbit solutions when this is a PO bd.
+    needs_min = [sv for sv in sv_names
+                 if f"max_{sv}" in df.columns and f"min_{sv}" not in df.columns]
+    if needs_min:
+        try:
+            sols = bd()
+            n = len(sols)
+            if n:
+                # Map solution index → row in df by matching param values
+                params = df["param"].values if "param" in df.columns else None
+                for sv in needs_min:
+                    df[f"min_{sv}"] = np.full(len(df), np.nan)
+                for sidx in range(n):
+                    s = sols[sidx]
+                    arr = np.array(s.coordarray)
+                    try:
+                        p_val = float(s.PAR[fp_name]) if fp_name else float(s.PAR[
+                            list(s.PAR.coordnames)[0]])
+                    except Exception:
+                        continue
+                    if params is None or len(params) == 0:
+                        continue
+                    j = int(np.abs(params - p_val).argmin())
+                    for i, sv in enumerate(sv_names):
+                        if i < arr.shape[0] and f"min_{sv}" in df.columns:
+                            df.at[j, f"min_{sv}"] = float(arr[i].min())
+                # Backfill with -max as a last resort for symmetric orbits
+                for sv in needs_min:
+                    mask = df[f"min_{sv}"].isna()
+                    if mask.any() and f"max_{sv}" in df.columns:
+                        df.loc[mask, f"min_{sv}"] = -df.loc[mask, f"max_{sv}"]
+        except Exception:
+            pass
+    return df
 
 
 # Stub kept for the deprecated dummy class definition below.

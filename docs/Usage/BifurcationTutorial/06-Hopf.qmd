@@ -4,37 +4,22 @@ sidebar: usage
 jupyter: python3
 ---
 
-The supercritical Hopf normal form in Cartesian coordinates:
-
-$$
-\begin{aligned}
-\dot x_1 &= (a - r^2)\,x_1 - w\,x_2 \\
-\dot x_2 &= (a - r^2)\,x_2 + w\,x_1
-\end{aligned}
-\qquad r^2 = x_1^2 + x_2^2.
-$$
-
-For $a < 0$ the origin is a stable focus; at $a = 0$ a Hopf bifurcation
-gives birth to a stable limit cycle of radius $\sqrt a$ and angular
-frequency $w$. The legacy figures
-`HopfPhasePortrait_and_BifDiag3D_a={-2,-1,-0.15,0.5,1,1.5}.png` show, for
-each $a$, the 2D phase portrait alongside the 3D bifurcation diagram with
-the periodic-orbit tube.
-
 ```{python}
+from IPython.display import Markdown
 from tvbo import Dynamics, Continuation, SimulationExperiment
 import matplotlib.pyplot as plt
 import numpy as np
 
-try:
-    from bsplot import style
-    style.use('tvbo')
-except ImportError:
-    pass
-
-HOPF_YAML = """
+HOPF_YAML = r"""
 name: HopfNF
-description: Supercritical Hopf normal form (Cartesian).
+description: |
+    Supercritical Hopf normal form (Cartesian).
+    For $a < 0$ the origin is a stable focus; at $a = 0$ a Hopf bifurcation
+    gives birth to a stable limit cycle of radius $\sqrt a$ and angular
+    frequency $w$. The legacy figures
+    `HopfPhasePortrait_and_BifDiag3D_a={-2,-1,-0.15,0.5,1,1.5}.png` show, for
+    each $a$, the 2D phase portrait alongside the 3D bifurcation diagram with
+    the periodic-orbit tube.
 parameters:
   a: { name: a, value: 0.5 }
   w: { name: w, value: 1.0 }
@@ -54,33 +39,20 @@ state_variables:
       rhs: (a - x1**2 - x2**2)*x2 + w*x1
     initial_value: 0.0
 """
+
+dyn_a = Dynamics.from_string(HOPF_YAML)
+
+Markdown(dyn_a.render('markdown'))
 ```
 
 ## Phase portraits across $a$ — animation
 
 The legacy figure series `HopfPhasePortrait_and_BifDiag3D_a=*.png` shows
-six static panels for fixed values of $a$. Here we use the new
-`Dynamics.animate(...)` shortcut to *sweep* $a$ continuously across the
-bifurcation, generating a single animation that captures the entire
-qualitative transition from stable focus to limit cycle.
-
-```{python}
-from IPython.display import Image
-
-dyn = Dynamics.from_string(HOPF_YAML)
-anim = dyn.animate("a", np.linspace(-2.0, 1.5, 24),
-                   "x1", "x2", kind="phaseplane",
-                   grid_n=18, n_trajectories=3, duration=15,
-                   figsize=(5.2, 4.8),
-                   title_fmt=r"$a = {value:+.2f}$")
-anim.save("hopf_sweep.gif", writer="pillow", fps=8)
-Image("hopf_sweep.gif")
-```
-
-The blue and red curves are the two nullclines $\dot x_1 = 0$ and
-$\dot x_2 = 0$; their intersection is the equilibrium. As $a$ crosses $0$
-the equilibrium changes from a stable focus to an unstable one, and a
-stable limit cycle of radius $\sqrt a$ appears around it.
+six static panels for fixed values of $a$. Below we use
+`BifurcationResult.animate(...)` further down to generate a single
+animation that captures the whole transition from stable focus to limit
+cycle alongside the 3D bifurcation diagram. First, the static reference
+grid:
 
 ## Phase portraits across $a$ — static grid (legacy figures)
 
@@ -91,7 +63,6 @@ For reference, the same six values rendered as a static grid using
 a_values = [-2.0, -1.0, -0.15, 0.5, 1.0, 1.5]
 fig, axes = plt.subplots(2, 3, figsize=(11, 7.5))
 for ax, a in zip(axes.flat, a_values):
-    dyn_a = Dynamics.from_string(HOPF_YAML)
     dyn_a.parameters['a'].value = a
     dyn_a.plot("x1", "x2", kind="phaseplane", ax=ax,
                grid_n=22, n_trajectories=2, duration=15)
@@ -138,6 +109,24 @@ and the limit-cycle tube whose radius grows like $\sqrt a$:
 ```{python}
 hopf.plot_3d(VOI="x1")
 ```
+
+## Combined sweep: phase portrait + 3D diagram
+
+`BifurcationResult.animate(...)` ties the two views together. The left
+panel re-renders the phase portrait at the current value of $a$; the
+right panel shows the 3D diagram once with a moving red marker that
+tracks the position on the equilibrium backbone.
+
+```{python}
+anim = hopf.animate(dyn, "a", np.linspace(-2.0, 1.5, 24),
+                    "x1", "x2", VOI="x1",
+                    grid_n=18, n_trajectories=3, duration=15,
+                    figsize=(11, 4.8),
+                    title_fmt=r"$a = {value:+.2f}$")
+anim.save("hopf_sweep.gif", writer="pillow", fps=8)
+```
+
+![](hopf_sweep.gif)
 
 ## AUTO-07p (NumCont)
 

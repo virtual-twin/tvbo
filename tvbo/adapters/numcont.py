@@ -196,7 +196,13 @@ class NumContAdapter:
         raise ValueError(f"Cannot resolve dynamics for continuation '{cont}'.")
 
     def _run_one(self, model, cont, cont_name, **kwargs):
-        import auto
+        import contextlib
+        import io
+        # AUTO-07p prints a Tkinter import warning to stdout even when
+        # plotting is unused. Suppress it.
+        _buf = io.StringIO()
+        with contextlib.redirect_stdout(_buf):
+            import auto
 
         from tvbo.analysis.bifurcation import BifurcationResult
 
