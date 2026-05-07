@@ -132,6 +132,68 @@ def _trial_colors(n_trials, cmap):
     return [cm(norm(i)) for i in range(n_trials)], norm
 
 
+def _render_dynamics_panel(dynamics, panel, ax, cache):
+    # Compatibility shim: moved to tvbo.plot.dynamics_layout
+    from tvbo.plot.dynamics_layout import render_dynamics_panel
+
+    return render_dynamics_panel(dynamics, panel, ax, cache)
+
+
+def _finish_panel(ax, panel):
+    # Compatibility shim: moved to tvbo.plot.layout_mosaic
+    from tvbo.plot.layout_mosaic import finish_panel
+
+    return finish_panel(ax, panel)
+
+
+def plot_dynamics_layout(
+    dynamics,
+    layout=None,
+    panels=None,
+    figsize=None,
+    subplot_kwargs=None,
+    fig=None,
+    axes=None,
+):
+    # Compatibility shim: moved to tvbo.plot.dynamics_layout
+    from tvbo.plot.dynamics_layout import plot_dynamics_layout as _plot_dynamics_layout
+
+    return _plot_dynamics_layout(
+        dynamics,
+        layout=layout,
+        panels=panels,
+        figsize=figsize,
+        subplot_kwargs=subplot_kwargs,
+        fig=fig,
+        axes=axes,
+    )
+
+
+def plot_experiment_layout(
+    experiment,
+    layout=None,
+    panels=None,
+    figsize=None,
+    subplot_kwargs=None,
+    run_kwargs=None,
+    fig=None,
+    axes=None,
+):
+    # Compatibility shim: moved to tvbo.plot.experiment_layout
+    from tvbo.plot.experiment_layout import plot_experiment_layout as _plot_experiment_layout
+
+    return _plot_experiment_layout(
+        experiment,
+        layout=layout,
+        panels=panels,
+        figsize=figsize,
+        subplot_kwargs=subplot_kwargs,
+        run_kwargs=run_kwargs,
+        fig=fig,
+        axes=axes,
+    )
+
+
 # ---------------------------------------------------------------------------
 # Kinds
 # ---------------------------------------------------------------------------
@@ -322,7 +384,7 @@ def _kind_vectorfield(dynamics, resolved, ax, grid_n, cmap, stream, ax_given=Fal
 
 
 def _kind_phaseplane(dynamics, resolved, ax, grid_n, cmap, stream, ax_given,
-                     alpha, lw, n_trajectories=0, traj_duration=200, traj_dt=0.1,
+                     alpha, lw, n_trajectories=0, traj_duration=200, traj_dt=0.01,
                      show_nullclines=True, show_fixed_points=True,
                      show_limit_cycle=True):
     """Vector field + nullclines + (optional) sample trajectories.

@@ -20,7 +20,7 @@ except ImportError:
 
 from tvbo import templates
 from tvbo.classes.network import Network
-from tvbo.data.types import SimulationResult, SimulationState, TimeSeries, ExperimentResult
+from tvbo.data.types import SimulationResult, SimulationState, TimeSeries, ExperimentResult, ExplorationResult
 from tvbo.datamodel import schema as tvbo_datamodel
 from linkml_runtime.utils.yamlutils import YAMLRoot
 from linkml_runtime.utils.enumerations import EnumDefinitionImpl
@@ -398,14 +398,16 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             for v in dyn.values():
                 if isinstance(v, tvbo_datamodel.Dynamics) and not isinstance(v, Dynamics):
                     v.__class__ = Dynamics
-                    v.enrich_from_ontology()
+                    if getattr(v, "iri", None):
+                        v.enrich_from_ontology()
             first = next(iter(dyn.values()))
             obj.__dict__["dynamics"] = first
             obj.__dict__["model"] = first.name
         elif isinstance(dyn, tvbo_datamodel.Dynamics):
             if not isinstance(dyn, Dynamics):
                 dyn.__class__ = Dynamics
-                dyn.enrich_from_ontology()
+                if getattr(dyn, "iri", None):
+                    dyn.enrich_from_ontology()
             obj.__dict__["model"] = dyn.name
         else:
             obj.__dict__.setdefault("dynamics", None)
@@ -414,7 +416,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         integ = getattr(obj, "integration", None)
         if integ is not None and not isinstance(integ, Integrator):
             integ.__class__ = Integrator
-            integ._populate_from_ontology()
+            if getattr(integ, "iri", None):
+                integ._populate_from_ontology()
         if not getattr(obj, "integration", None):
             obj.__dict__["integration"] = Integrator(method="Heun")
 
@@ -458,7 +461,17 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         # Upgrade network coupling entries (no type refs in from_datamodel path)
         _upgrade_network_couplings(obj.network)
 
-        obj.__dict__["_source_file"] = None
+        obj.__dict__["_source_file"] = getattr(cls, "_pending_source_file", None)
+
+        # Trigger sidecar load if network references a companion data file.
+        net = obj.network
+        if (net is not None
+                and getattr(net, "data_file", None)
+                and not getattr(net, "_store", None)):
+            obj._load_network_from_data_file()
+        elif net is not None and getattr(net, "bids_dir", None):
+            obj._load_network_from_bids()
+
         return obj
 
     @classmethod
@@ -1410,6 +1423,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             # Mode defaults to 'all' - run complete workflow
             mode = kwargs.pop("mode", "all")
 
+            # Build node labels from network.nodes (used as xarray 'node' coord)
+            node_labels = [n.label for n in self.network.nodes] if self.network.nodes else None
+
             # Run the experiment with optional per-step timing
             if benchmark:
                 # Run with detailed timing
@@ -1417,6 +1433,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 results = ns.run_experiment(
                     weights=self.network.weights,
                     distances=self.network.distances,
+                    region_labels=node_labels,
                     mode=mode,
                     **kwargs,
                 )
@@ -1431,6 +1448,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 raw_results = ns.run_experiment(
                     weights=self.network.weights,
                     distances=self.network.distances,
+                    region_labels=node_labels,
                     mode=mode,
                     **kwargs,
                 )
@@ -1666,10 +1684,12 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         """Run bifurcation analysis via BifurcationKit.jl."""
         from tvbo.adapters.bifurcationkit import BifurcationKitAdapter
 
+        exploration_kwargs = kwargs.pop("exploration_kwargs", {})
         adapter = BifurcationKitAdapter(self)
         bif_result = adapter.run(**kwargs)
         return ExperimentResult(
             continuations=self._wrap_bifurcation_result(bif_result),
+            explorations=self._run_python_explorations(**exploration_kwargs),
             source=self,
             name=self.label,
         )
@@ -1678,10 +1698,12 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         """Run bifurcation analysis via PyRates/PyCoBi (AUTO-07p)."""
         from tvbo.adapters.pyrates_bifurcation import PyRatesBifurcationAdapter
 
+        exploration_kwargs = kwargs.pop("exploration_kwargs", {})
         adapter = PyRatesBifurcationAdapter(self)
         bif_result = adapter.run(**kwargs)
         return ExperimentResult(
             continuations=self._wrap_bifurcation_result(bif_result),
+            explorations=self._run_python_explorations(**exploration_kwargs),
             source=self,
             name=self.label,
         )
@@ -1690,13 +1712,66 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         """Run bifurcation analysis via the in-tree AUTO-07p (numcont) adapter."""
         from tvbo.adapters.numcont import NumContAdapter
 
+        exploration_kwargs = kwargs.pop("exploration_kwargs", {})
         adapter = NumContAdapter(self)
         bif_result = adapter.run(**kwargs)
         return ExperimentResult(
             continuations=self._wrap_bifurcation_result(bif_result),
+            explorations=self._run_python_explorations(**exploration_kwargs),
             source=self,
             name=self.label,
         )
+
+    def _run_python_explorations(self, **kwargs):
+        """Run declared time-series explorations directly from the dynamics object."""
+        explorations = getattr(self, "explorations", None) or {}
+        if not explorations:
+            return {}
+
+        from itertools import product
+
+        results = {}
+        duration = kwargs.get("duration", getattr(self.integration, "duration", 1200))
+        dt = kwargs.get("dt", getattr(self.integration, "step_size", 0.1))
+
+        for name, exploration in explorations.items():
+            axes = list(getattr(exploration, "space", None) or [])
+            axis_values = []
+            axis_info = []
+            for axis in axes:
+                parameter = str(getattr(axis, "parameter"))
+                values = list(getattr(axis, "explored_values", None) or [])
+                if not values:
+                    raise ValueError(f"Exploration {name!r} axis {parameter!r} needs explored_values")
+                axis_values.append(values)
+                axis_info.append({"name": parameter, "n": len(values), "explored_values": values})
+
+            obs = getattr(exploration, "observable", None)
+            output_name = getattr(obs, "output", None) or getattr(obs, "function", None) or getattr(obs, "name", None)
+            output_names = [str(output_name)] if output_name else [next(iter(self.dynamics.state_variables))]
+            state_names = list(self.dynamics.state_variables)
+            output_indices = [state_names.index(var) for var in output_names]
+
+            dyn = self.dynamics.copy()
+            data = []
+            for values in product(*axis_values):
+                for axis, value in zip(axes, values):
+                    parameter = str(getattr(axis, "parameter"))
+                    parameter_name = parameter.split(".")[-1]
+                    dyn.parameters[parameter_name].value = float(value)
+                ts = dyn.run(format="python", duration=duration, dt=dt)
+                data.append(ts.data[:, output_indices, 0, 0])
+
+            results[str(name)] = ExplorationResult(
+                name=str(name),
+                axes=axis_info,
+                results=np.asarray(data),
+                observable=", ".join(output_names),
+                dt=dt,
+                output_names=output_names,
+            )
+
+        return results
 
     def _wrap_bifurcation_result(self, bif_result):
         """Map adapter return (single result or dict) to named continuations dict."""
@@ -1712,6 +1787,31 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         adapter = DiffEqAdapter(self)
         return adapter.run(**kwargs)
+
+    def plot(self, layout=None, panels=None, run_kwargs=None, auto=True, **kwargs):
+        """Plot experiment outputs directly or compose multi-panel layouts.
+
+        By default (``auto=True``), this runs the experiment once, infers
+        task-aware panels, and renders a flexible subplot_mosaic layout.
+        """
+        from tvbo.plot.experiment_layout import plot_experiment_layout
+
+        fig = kwargs.pop("fig", None)
+        axes = kwargs.pop("axes", None)
+        if auto or layout is not None or panels is not None or fig is not None or axes is not None:
+            return plot_experiment_layout(
+                self,
+                layout=layout,
+                panels=panels,
+                figsize=kwargs.pop("figsize", None),
+                subplot_kwargs=kwargs.pop("subplot_kwargs", None),
+                run_kwargs=run_kwargs,
+                fig=fig,
+                axes=axes,
+            )
+
+        result = self.run(**(run_kwargs or {}))
+        return result.plot(**kwargs)
 
     def get_experiment_file_prefix(self):
         desc = self.dynamics.label or self.dynamics.name or "simulation"

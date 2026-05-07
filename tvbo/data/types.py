@@ -18,7 +18,7 @@ from jax.tree_util import register_pytree_node_class
 import jax.numpy as jnp
 
 
-def _to_dataarray(raw_data, raw_time=None, state_names=None):
+def _to_dataarray(raw_data, raw_time=None, state_names=None, nodes=None):
     """Convert raw ndarray + metadata to xr.DataArray.
 
     Parameters
@@ -56,6 +56,12 @@ def _to_dataarray(raw_data, raw_time=None, state_names=None):
             coords["variable"] = list(state_names)
     if "mode" in dims:
         coords["mode"] = list(range(data_np.shape[dims.index("mode")]))
+    if "node" in dims:
+        n_nodes = data_np.shape[dims.index("node")]
+        if nodes and len(nodes) == n_nodes:
+            coords["node"] = [str(n) for n in nodes]
+        else:
+            coords["node"] = list(range(n_nodes))
     return xr.DataArray(data=data_np, dims=dims, coords=coords)
 
 
@@ -85,7 +91,7 @@ class SimulationResult:
         Warm-up simulation result that preceded this one.
     """
 
-    def __init__(self, data=None, observations=None, transient=None, *, result=None, state_names=None, units=None, **kwargs):
+    def __init__(self, data=None, observations=None, transient=None, *, result=None, state_names=None, nodes=None, units=None, **kwargs):
         self._extras = {}
         self._timeseries = None
         self._units = units or {}  # {variable_name: unit_string}
@@ -95,9 +101,9 @@ class SimulationResult:
         if result is not None and data is None:
             raw_data = result.data if hasattr(result, "data") else result
             raw_time = result.ts if hasattr(result, "ts") else None
-            data = _to_dataarray(raw_data, raw_time, state_names)
+            data = _to_dataarray(raw_data, raw_time, state_names, nodes)
         elif data is not None and not isinstance(data, xr.DataArray):
-            data = _to_dataarray(data, None, state_names)
+            data = _to_dataarray(data, None, state_names, nodes)
 
         self.data = data
         self.observations = observations if observations is not None else {}

@@ -81,6 +81,8 @@ website:
                         href: Specification/Output.qmd
                   - section: "Simulation Features"
                     contents:
+                      - text: "Initial Conditions & Initial State"
+                        href: Usage/InitialConditions.qmd
                       - text: "Events & Stimulation"
                         href: Usage/Events.qmd
                       - text: "Noise & Stochastic Integration"

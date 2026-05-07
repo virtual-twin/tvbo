@@ -180,3 +180,7 @@ ani.save("diffusion.gif", writer="pillow", fps=20)
 | `network.coupling.*.parameters` | `psym = [:K => 3.0, ...]` | edge |
 | `network.edges` | `SimpleDiGraph` / `complete_graph` | experiment |
 | `integration` | `ODEProblem` + `solve(prob, Tsit5())` | experiment |
+
+::: {.callout-tip}
+The distribution-based IC and parameter sampling described above is specific to the NetworkDynamics.jl (Julia) backend. For the Python/tvboptim backend, see [Initial Conditions & Initial State](../../Usage/InitialConditions.qmd) — which covers `state:` per-node overrides, `Exploration(n_trials=N)` sampling, and transient warm-up.
+:::
