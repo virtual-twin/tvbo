@@ -89,9 +89,69 @@ def _upgrade_network_couplings(network, coupling_types=None):
         # Upgrade __class__ to runtime Coupling (skip if already runtime)
         if not isinstance(coup, Coupling):
             coup.__class__ = Coupling
+            # Always trigger ontology population (idempotent).
+            if not getattr(coup, "pre_expression", None):
+                coup._populate_from_ontology()
         # Apply type-based fill if a type reference was specified
         if key in coupling_types:
             coup.populate_from_type(coupling_types[key])
+
+
+def _resolve_coupling(experiment):
+    """Reconcile coupling declarations across experiment / network / dynamics.
+
+    Single source of truth for both ``__init__`` and ``from_datamodel`` paths.
+
+    Rules:
+      1. If ``network.coupling`` is populated, mirror its first entry to
+         ``experiment.coupling``.
+      2. Else, if ``dynamics.coupling_inputs`` declares coupling targets,
+         seed ``network.coupling`` from ``experiment.coupling`` (or a default
+         ``Linear`` if absent) so a single canonical container exists.
+      3. Auto-populate ``incoming_states`` on each coupling from the dynamics'
+         ``state_variables[*].coupling_variable == True`` flag — but only when
+         the coupling declares neither incoming nor local states. Couplings
+         that explicitly declare ``local_states`` (e.g. vectorized matmul
+         flavors) are left untouched.
+    """
+    dyn = getattr(experiment, "dynamics", None)
+    network = getattr(experiment, "network", None)
+    if network is None:
+        return
+
+    dyn_ci = getattr(dyn, "coupling_inputs", None)
+    has_coupling_inputs = bool(dyn_ci)
+    net_coup = getattr(network, "coupling", None)
+    exp_coup = getattr(experiment, "coupling", None)
+
+    if net_coup:
+        if isinstance(net_coup, dict) and net_coup:
+            experiment.coupling = next(iter(net_coup.values()))
+    elif has_coupling_inputs:
+        func = exp_coup
+        if not func or not isinstance(func, Coupling):
+            func = Coupling(name="Linear", iri="tvbo:Linear")
+            experiment.coupling = func
+        elif not getattr(func, "iri", None):
+            func.iri = "tvbo:Linear"
+        # Ensure ontology-derived fields (pre/post expressions, parameters)
+        # are populated — backends require them at codegen time.
+        if not getattr(func, "pre_expression", None):
+            func._populate_from_ontology()
+        coup_name = str(getattr(func, "name", "Linear"))
+        network.coupling[coup_name] = func
+
+    if dyn:
+        cvars = [
+            str(sv.name)
+            for sv in (getattr(dyn, "state_variables", None) or {}).values()
+            if getattr(sv, "coupling_variable", False)
+        ]
+        if cvars:
+            for coup in (getattr(network, "coupling", None) or {}).values():
+                if (not getattr(coup, "incoming_states", None)
+                        and not getattr(coup, "local_states", None)):
+                    coup.incoming_states = list(cvars)
 
 
 class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
@@ -227,6 +287,14 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     val.__class__ = Continuation
                     conts[key] = val
 
+        # Auto-upgrade events to runtime Event class (adds .plot() helper)
+        evts = getattr(self, "events", None)
+        if evts and hasattr(evts, "items"):
+            from tvbo.classes.event import Event as _EventCls
+            for val in evts.values():
+                if val is not None and not isinstance(val, _EventCls):
+                    val.__class__ = _EventCls
+
         if not getattr(self, "network", None):
             self.network = Network()
         else:
@@ -243,46 +311,11 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         # Upgrade network.coupling entries to runtime Coupling + apply type fills
         _upgrade_network_couplings(self.network, _coupling_types)
-
-        # --- Coupling resolution: network.coupling is canonical ---
-        # Keys may be function names or coupling_input names; backends
-        # handle the mapping at the adapter boundary.
-        dyn_ci = getattr(getattr(self, "dynamics", None), "coupling_inputs", None)
-        has_coupling_inputs = bool(dyn_ci)
-        net_coup = getattr(self.network, "coupling", None)
-        exp_coup = getattr(self, "coupling", None)
-
-        if net_coup:
-            # network.coupling supervenes: derive exp.coupling from first entry
-            if isinstance(net_coup, dict) and net_coup:
-                self.coupling = next(iter(net_coup.values()))
-        elif has_coupling_inputs:
-            # No network.coupling — populate from exp.coupling or default
-            func = exp_coup
-            if not func:
-                func = Coupling(name="Linear", iri="tvbo:Linear")
-                self.coupling = func
-            coup_name = str(getattr(func, "name", "Linear"))
-            self.network.coupling[coup_name] = func
-
-        # Auto-populate incoming_states on couplings from dynamics' coupling_variable flag.
-        # coupling.incoming_states supervenes: if the coupling already declares which
-        # states it receives, that is authoritative. Only when incoming_states is empty
-        # do we fall back to state variables with coupling_variable=True in the dynamics.
-        # IMPORTANT: If a coupling already declares local_states (e.g. FastLinearCoupling),
-        # it intentionally only uses local states for vectorized matmul — do NOT force
-        # incoming_states on it, as that would break the vectorized code path.
-        dyn = getattr(self, "dynamics", None)
-        if dyn:
-            cvars = [
-                str(sv.name)
-                for sv in (getattr(dyn, "state_variables", None) or {}).values()
-                if getattr(sv, "coupling_variable", False)
-            ]
-            if cvars:
-                for coup in (getattr(self.network, "coupling", None) or {}).values():
-                    if not getattr(coup, "incoming_states", None) and not getattr(coup, "local_states", None):
-                        coup.incoming_states = list(cvars)
+        # NOTE: coupling resolution (incoming_states / network.coupling seeding)
+        # is intentionally deferred to ``configure()`` so it runs lazily at the
+        # execution boundary across all backends and so the resolved state is
+        # observable in the spec only after the user explicitly prepared the
+        # experiment. See ``configure()``.
 
         # Get source file path if loading from file (set by from_file classmethod)
         self._source_file = getattr(self.__class__, "_pending_source_file", None)
@@ -416,8 +449,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         integ = getattr(obj, "integration", None)
         if integ is not None and not isinstance(integ, Integrator):
             integ.__class__ = Integrator
-            if getattr(integ, "iri", None):
-                integ._populate_from_ontology()
+            # Always trigger population (idempotent: only fills missing fields).
+            # Lookup is by ``self.method`` when ``iri`` is unset.
+            integ._populate_from_ontology()
         if not getattr(obj, "integration", None):
             obj.__dict__["integration"] = Integrator(method="Heun")
 
@@ -437,8 +471,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         coup = getattr(obj, "coupling", None)
         if coup is not None and not isinstance(coup, Coupling):
             coup.__class__ = Coupling
-            # Populate from ontology if iri is set and expressions are missing
-            if getattr(coup, "iri", None) and not getattr(coup, "pre_expression", None):
+            # Always trigger population (idempotent). Lookup by ``self.name``
+            # when ``iri`` is unset.
+            if not getattr(coup, "pre_expression", None):
                 coup._populate_from_ontology()
         if not getattr(obj, "coupling", None):
             obj.__dict__["coupling"] = Coupling(name="Linear")
@@ -460,6 +495,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         # Upgrade network coupling entries (no type refs in from_datamodel path)
         _upgrade_network_couplings(obj.network)
+        # Coupling resolution deferred to ``configure()`` (see __post_init__).
 
         obj.__dict__["_source_file"] = getattr(cls, "_pending_source_file", None)
 
@@ -1194,6 +1230,12 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             self.monitors = meta_list
 
     def configure(self):
+        # Reconcile experiment / network / dynamics coupling declarations.
+        # Runs at the execution boundary — backend-agnostic, idempotent, and
+        # the resolved state persists on the experiment so YAML re-serialization
+        # and metadata export reflect what was actually executed.
+        _resolve_coupling(self)
+
         # Disable delayed logic if the connectome has no path lengths or conduction speed is infinite
         try:
             network = getattr(self, "network", None)
@@ -1300,6 +1342,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     coupling_params[param_name] = np.full((N,), float(current_value))
 
     def execute(self, format="tvb", **kwargs):
+        # Ensure coupling resolution / delay flags are normalized before any
+        # backend code generation. Idempotent — safe if called twice via run().
+        self.configure()
         if format.lower() == "tvb":
             code = self.render_code(format=format)
             namespace = templater.exec_globals
@@ -2010,6 +2055,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
     def render_code(self, format="tvb", **kwargs):
         """Render generated code in *format* (back-compat shim around the registry)."""
+        # Backend codegen requires resolved coupling/delay metadata. Idempotent.
+        self.configure()
         from tvbo import export as _export
         return _export.render(self, format, **kwargs)
 

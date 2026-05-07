@@ -920,18 +920,19 @@ class ExplorationResult(Bunch):
             return np.arange(n_time) * self.dt
         return np.arange(n_time)
 
-    def plot(self, figsize=None, sharex=True, ax=None, **kwargs):
+    def plot(self, figsize=None, sharex=True, ax=None, overlay=False, **kwargs):
         """Plot exploration results.
 
-        For time series results: subplots for each parameter value.
+        For time series results: subplots for each parameter value by default,
+        or a single overlaid axis when ``overlay=True``.
         For scalar results: line plot (1D) or filled-contour heatmap (2D), drawn into ``ax`` if given.
         """
         if not self.is_timeseries:
             return self._plot_scalar(figsize=figsize, ax=ax, **kwargs)
-        return self._plot_timeseries(figsize=figsize, sharex=sharex, **kwargs)
+        return self._plot_timeseries(figsize=figsize, sharex=sharex, ax=ax, overlay=overlay, **kwargs)
 
-    def _plot_timeseries(self, figsize=None, sharex=True, **kwargs):
-        """Plot time series for each parameter value as subplots."""
+    def _plot_timeseries(self, figsize=None, sharex=True, ax=None, overlay=False, **kwargs):
+        """Plot time series for each parameter value."""
         if self.results is None:
             return None
 
@@ -939,6 +940,34 @@ class ExplorationResult(Bunch):
         n = int(ax_info.n) if ax_info else self.results.shape[0]
         time = self._get_time_axis()
         output_label = self.observable or ", ".join(self.output_names) or "output"
+
+        ax_values = np.asarray(ax_info["explored_values"]) if ax_info else None
+
+        if overlay:
+            if ax is None:
+                fig, ax = plt.subplots(figsize=figsize or (8, 4))
+            else:
+                fig = ax.figure
+
+            for i in range(n):
+                data = np.asarray(self.results[i]).squeeze()
+                label = None
+                if ax_values is not None:
+                    label = f"{ax_info.name}={float(ax_values[i]):.4g}"
+                if data.ndim > 1:
+                    for node_idx in range(data.shape[-1]):
+                        ax.plot(time, data[:, node_idx], alpha=0.7, label=label if node_idx == 0 else None, **kwargs)
+                else:
+                    ax.plot(time, data, label=label, **kwargs)
+
+            ax.set_xlabel("Time" + (f" (dt={self.dt})" if self.dt else " (steps)"))
+            ax.set_ylabel(output_label)
+            ax.set_title(self.name or output_label)
+            if ax_values is not None:
+                ax.legend(frameon=False)
+            fig.tight_layout()
+            plt.close(fig)
+            return fig
 
         fig, axes = plt.subplots(
             n,
@@ -948,8 +977,6 @@ class ExplorationResult(Bunch):
         )
         if n == 1:
             axes = [axes]
-
-        ax_values = np.asarray(ax_info["explored_values"]) if ax_info else None
 
         for i, ax in enumerate(axes):
             data = np.asarray(self.results[i])  # (n_time, ...) or (n_time,)
@@ -1194,12 +1221,27 @@ class ExperimentResult:
                         units[str(n)] = str(u)
                 integration._units = units
 
+    # Singular-to-plural aliases for back-compat with docs/notebooks that
+    # access result.exploration.X / result.optimization.X / etc.
+    _singular_aliases = {
+        "exploration": "explorations",
+        "optimization": "optimizations",
+        "algorithm": "algorithms",
+        "continuation": "continuations",
+    }
+
     def __getattr__(self, name):
         if name.startswith("_"):
             raise AttributeError(name)
         # Check extras first
         if name in self._extras:
             return self._extras[name]
+        # Singular -> plural alias (e.g. result.exploration -> result.explorations)
+        plural = self._singular_aliases.get(name)
+        if plural is not None:
+            val = self.__dict__.get(plural)
+            if val is not None:
+                return val
         # Delegate to integration for backward compat (result.data, result.time, etc.)
         integration = self.__dict__.get("integration")
         if integration is not None and hasattr(integration, name):

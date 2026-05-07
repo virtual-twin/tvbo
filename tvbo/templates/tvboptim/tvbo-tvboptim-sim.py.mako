@@ -135,7 +135,7 @@ model = None
 # Dynamics Model
 # =============================================================================
 
-<%include file="tvbo-tvboptim-dfun.py.mako" />
+<%include file="/tvboptim/tvbo-tvboptim-dfun.py.mako" />
 
 
 # =============================================================================

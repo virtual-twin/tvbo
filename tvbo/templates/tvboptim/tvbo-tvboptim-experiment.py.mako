@@ -468,8 +468,18 @@ def get_pipeline_output_key(obs_name):
     return None
 
 # === Exploration metadata ===
-# Schema: experiment.explorations is multivalued dict
-exploration_list = list(experiment.explorations.values()) if experiment.explorations else []
+# Schema: experiment.explorations is a multivalued dict, but users sometimes
+# assign a single Exploration / list directly (which clobbers the container
+# with a JsonObj that has no .values()). Coerce defensively.
+_expl = experiment.explorations
+if not _expl:
+    exploration_list = []
+elif hasattr(_expl, 'values') and callable(_expl.values):
+    exploration_list = list(_expl.values())
+elif isinstance(_expl, (list, tuple)):
+    exploration_list = list(_expl)
+else:
+    exploration_list = [_expl]
 has_explorations = len(exploration_list) > 0
 
 # Parse explorations - uses schema ifabsent defaults
@@ -478,7 +488,8 @@ explorations = []
 for expl in exploration_list:
     assert expl.name, "exploration.name required in YAML"
     exp_info = {
-        'name': expl.name,
+        # Sanitize: name is used as a Python function identifier in generated code.
+        'name': safe_name(expl.name),
         'label': expl.label or '',
         # mode has schema ifabsent: string(product)
         'mode': expl.mode or 'product',
@@ -769,7 +780,7 @@ def get_solver():
 % endif
     return solver
 
-<%include file="tvbo-tvboptim-dfun.py.mako" />
+<%include file="/tvboptim/tvbo-tvboptim-dfun.py.mako" />
 
 <%include file="tvbo-tvboptim-cfun.py.mako" />
 

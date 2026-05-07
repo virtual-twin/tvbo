@@ -88,7 +88,7 @@ def _extract_node_timeseries(data, max_points=200):
     return [(vn, arr, time)]
 
 
-def animate_network(result, state=None, interval=50, cmap="viridis", node_size=120, figsize=None, format=None, edge_color="lightgray"):
+def animate_network(result, state=None, interval=50, cmap="viridis", node_size=120, figsize=None, format=None):
     """Animate time-series on a graph layout (nodes colored by state value).
 
     Supports the ``.sel(variable='V').animate()`` pattern: if the variable
@@ -173,7 +173,7 @@ def animate_network(result, state=None, interval=50, cmap="viridis", node_size=1
                     ax_graph.plot(
                         [x[i], x[j]],
                         [y[i], y[j]],
-                        color=edge_color,
+                        color="lightgray",
                         linewidth=0.5,
                         zorder=0,
                     )
