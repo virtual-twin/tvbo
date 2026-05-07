@@ -317,7 +317,9 @@ def _kind_phase(dynamics, resolved, trials, time, ax, cmap, alpha, lw,
 
 
 def _kind_vectorfield(dynamics, resolved, ax, grid_n, cmap, stream, ax_given=False,
-                      alpha=0.8, lw=1.5, _return_axes_only=False):
+                      alpha=0.8, lw=1.5, quiver_scale=None,
+                      quiver_width=None, stream_density=1.2,
+                      stream_arrowsize=1.0, _return_axes_only=False):
     if len(resolved) != 2:
         raise ValueError("vectorfield requires exactly 2 dims (state variables)")
     state_names = list(dynamics.state_variables)
@@ -364,14 +366,20 @@ def _kind_vectorfield(dynamics, resolved, ax, grid_n, cmap, stream, ax_given=Fal
 
     speed = np.hypot(U, V)
     if stream:
-        strm = ax.streamplot(X, Y, U, V, color=speed, cmap=cmap, density=1.2,
-                             arrowsize=1.0, linewidth=lw)
+        strm = ax.streamplot(X, Y, U, V, color=speed, cmap=cmap,
+                             density=stream_density,
+                             arrowsize=stream_arrowsize, linewidth=lw)
         strm.lines.set_alpha(alpha)
         if not ax_given and not _return_axes_only:
             cb = fig.colorbar(strm.lines, ax=ax, shrink=0.8)
             cb.set_label("|f|")
     else:
-        q = ax.quiver(X, Y, U, V, speed, cmap=cmap, alpha=alpha)
+        quiver_kwargs = {"cmap": cmap, "alpha": alpha}
+        if quiver_scale is not None:
+            quiver_kwargs.update(angles="xy", scale_units="xy", scale=quiver_scale)
+        if quiver_width is not None:
+            quiver_kwargs["width"] = quiver_width
+        q = ax.quiver(X, Y, U, V, speed, **quiver_kwargs)
         if not ax_given and not _return_axes_only:
             cb = fig.colorbar(q, ax=ax, shrink=0.8)
             cb.set_label("|f|")
@@ -509,6 +517,10 @@ def plot_dynamics(
     alpha=0.8,
     grid_n=20,
     stream=True,
+    stream_density=1.2,
+    stream_arrowsize=1.0,
+    quiver_scale=None,
+    quiver_width=None,
     n_trajectories=0,
     show_nullclines=True,
     show_fixed_points=True,
@@ -549,6 +561,10 @@ def plot_dynamics(
         Grid resolution for ``kind="vectorfield"`` / ``"phaseplane"``.
     stream : bool
         Stream- vs quiver-plot for vectorfield / phaseplane.
+    stream_density, stream_arrowsize : float
+        Matplotlib streamplot controls used when ``stream=True``.
+    quiver_scale, quiver_width : float, optional
+        Matplotlib quiver sizing controls used when ``stream=False``.
     n_trajectories : int
         Number of sample trajectories overlaid on a phase plane (random ICs).
     show_nullclines, show_fixed_points : bool
@@ -579,7 +595,11 @@ def plot_dynamics(
     if kind == "vectorfield":
         fig = _kind_vectorfield(dynamics, resolved, ax=ax, grid_n=grid_n,
                                 cmap=cmap, stream=stream, ax_given=ax_given,
-                                alpha=alpha, lw=lw)
+                                alpha=alpha, lw=lw,
+                                quiver_scale=quiver_scale,
+                                quiver_width=quiver_width,
+                                stream_density=stream_density,
+                                stream_arrowsize=stream_arrowsize)
     elif kind == "phaseplane":
         fig = _kind_phaseplane(dynamics, resolved, ax=ax, grid_n=grid_n,
                                cmap=cmap, stream=stream, ax_given=ax_given,

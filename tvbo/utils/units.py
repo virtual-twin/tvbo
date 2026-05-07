@@ -14,6 +14,8 @@ as defined in the LinkML schema (``schema/tvbo_datamodel.yaml``).
 * ``normalize_unit(raw)`` — convert legacy free-text strings to UnitEnum values
 """
 
+import re
+
 # ── UnitEnum → LEMS dimension ────────────────────────────────────────
 
 _UNIT_TO_LEMS_DIM = {
@@ -253,25 +255,35 @@ _UNIT_TO_LATEX = {
     "A": r"\mathrm{A}",
     "nA": r"\mathrm{nA}",
     "pA": r"\mathrm{pA}",
+    "uA_per_cm2": r"\frac{\mathrm{\mu A}}{\mathrm{cm}^2}",
     "uA": r"\mathrm{\mu A}",
     # Capacitance
     "pF": r"\mathrm{pF}",
     "nF": r"\mathrm{nF}",
+    "uF_per_cm2": r"\frac{\mathrm{\mu F}}{\mathrm{cm}^2}",
     "uF": r"\mathrm{\mu F}",
     # Conductance
     "nS": r"\mathrm{nS}",
     "uS": r"\mathrm{\mu S}",
     "mS": r"\mathrm{mS}",
     "pS": r"\mathrm{pS}",
+    "S_per_cm2": r"\frac{\mathrm{S}}{\mathrm{cm}^2}",
+    "mS_per_cm2": r"\frac{\mathrm{mS}}{\mathrm{cm}^2}",
+    "S_per_m2": r"\frac{\mathrm{S}}{\mathrm{m}^2}",
+    "nS_per_mV": r"\frac{\mathrm{nS}}{\mathrm{mV}}",
     # Resistance
+    "ohm": r"\mathrm{\Omega}",
     "kohm": r"\mathrm{k\Omega}",
     "Mohm": r"\mathrm{M\Omega}",
+    "kohm_cm": r"\mathrm{k\Omega\,cm}",
     # Charge (inverse)
     "per_nC": r"\mathrm{nC}^{-1}",
     "per_pC": r"\mathrm{pC}^{-1}",
     # Concentration
     "mol_per_m3": r"\frac{\mathrm{mol}}{\mathrm{m}^3}",
+    "mol_per_cm3": r"\frac{\mathrm{mol}}{\mathrm{cm}^3}",
     "mmol_per_m3": r"\frac{\mathrm{mmol}}{\mathrm{m}^3}",
+    "mol_per_m_per_A_per_s": r"\frac{\mathrm{mol}}{\mathrm{m}\,\mathrm{A}\,\mathrm{s}}",
     "mM": r"\mathrm{mM}",
     "M": r"\mathrm{M}",
     # Volume
@@ -380,16 +392,49 @@ _LEGACY_TO_ENUM = {
     "nanoampere": "nA",
     "pA": "pA",
     "picoampere": "pA",
+    "uA_per_cm2": "uA_per_cm2",
+    "uA/cm2": "uA_per_cm2",
+    "uA/cm^2": "uA_per_cm2",
+    "uA/cm**2": "uA_per_cm2",
+    "uA/cm²": "uA_per_cm2",
+    "µA/cm2": "uA_per_cm2",
+    "µA/cm²": "uA_per_cm2",
     # Capacitance
     "pF": "pF",
     "picofarad": "pF",
     "nF": "nF",
     "nanofarad": "nF",
+    "uF_per_cm2": "uF_per_cm2",
+    "uF/cm2": "uF_per_cm2",
+    "uF/cm^2": "uF_per_cm2",
+    "uF/cm**2": "uF_per_cm2",
+    "uF/cm²": "uF_per_cm2",
+    "µF/cm2": "uF_per_cm2",
+    "µF/cm²": "uF_per_cm2",
     # Conductance
     "nS": "nS",
     "nanosiemens": "nS",
     "uS": "uS",
     "microsiemens": "uS",
+    "pS": "pS",
+    "picosiemens": "pS",
+    "S_per_cm2": "S_per_cm2",
+    "S/cm2": "S_per_cm2",
+    "S/cm^2": "S_per_cm2",
+    "S/cm**2": "S_per_cm2",
+    "S/cm²": "S_per_cm2",
+    "mS_per_cm2": "mS_per_cm2",
+    "mS/cm2": "mS_per_cm2",
+    "mS/cm^2": "mS_per_cm2",
+    "mS/cm**2": "mS_per_cm2",
+    "mS/cm²": "mS_per_cm2",
+    "S_per_m2": "S_per_m2",
+    "S/m2": "S_per_m2",
+    "S/m^2": "S_per_m2",
+    "S/m**2": "S_per_m2",
+    "S/m²": "S_per_m2",
+    "nS_per_mV": "nS_per_mV",
+    "nS/mV": "nS_per_mV",
     # Charge (inverse)
     "nC^-1": "per_nC",
     "(nC)^-1": "per_nC",
@@ -406,6 +451,12 @@ _LEGACY_TO_ENUM = {
     "mol/m3": "mol_per_m3",
     "mol_per_m3": "mol_per_m3",
     "mole_per_cubic_metre": "mol_per_m3",
+    "mol/cm**3": "mol_per_cm3",
+    "mol/cm^3": "mol_per_cm3",
+    "mol/cm3": "mol_per_cm3",
+    "mol/cm³": "mol_per_cm3",
+    "mol_per_cm3": "mol_per_cm3",
+    "mole_per_cubic_centimetre": "mol_per_cm3",
     "mMol/m**3": "mmol_per_m3",
     "mMol/m^3": "mmol_per_m3",
     "mmol/m**3": "mmol_per_m3",
@@ -413,6 +464,8 @@ _LEGACY_TO_ENUM = {
     "mM": "mmol_per_m3",
     "mmol_per_m3": "mmol_per_m3",
     "millimole_per_cubic_metre": "mmol_per_m3",
+    "mol_per_m_per_A_per_s": "mol_per_m_per_A_per_s",
+    "mol/m/A/s": "mol_per_m_per_A_per_s",
     # Volume
     "umeter**3": "um3",
     "um^3": "um3",
@@ -428,6 +481,7 @@ _LEGACY_TO_ENUM = {
     "centimetre": "cm",
     # Velocity
     "m/s": "m_per_s",
+    "m/ms": "m_per_s",
     "m_per_s": "m_per_s",
     "mm/ms": "mm_per_ms",
     "mm_per_ms": "mm_per_ms",
@@ -440,6 +494,18 @@ _LEGACY_TO_ENUM = {
     "S_per_m": "S_per_m",
     "H/m": "H_per_m",
     "H_per_m": "H_per_m",
+    # Resistance
+    "ohm": "ohm",
+    "Ω": "ohm",
+    "Mohm": "Mohm",
+    "MΩ": "Mohm",
+    "kohm_cm": "kohm_cm",
+    "kohm.cm": "kohm_cm",
+    "kohm·cm": "kohm_cm",
+    # Temperature
+    "degC": "degC",
+    "degree_Celsius": "degC",
+    "°C": "degC",
     # Angular
     "rad": "rad",
     "radian": "rad",
@@ -454,6 +520,12 @@ _LEGACY_TO_ENUM = {
     "kilogram": "kg",
     "kg/s": "kg_per_s",
     "kg_per_s": "kg_per_s",
+    "kg/s^2": "N_per_m",
+    "kg/s**2": "N_per_m",
+    "kg/s²": "N_per_m",
+    "kg/ms^2": "N_per_m",
+    "kg/ms**2": "N_per_m",
+    "kg/ms²": "N_per_m",
     # Acceleration
     "m/s²": "m_per_s2",
     "m/s^2": "m_per_s2",
@@ -483,11 +555,106 @@ _LEGACY_TO_ENUM = {
     "r_pearson": "dimensionless",
 }
 
+_SUPERSCRIPT_TO_ASCII = str.maketrans(
+    {
+        "⁰": "0",
+        "¹": "1",
+        "²": "2",
+        "³": "3",
+        "⁴": "4",
+        "⁵": "5",
+        "⁶": "6",
+        "⁷": "7",
+        "⁸": "8",
+        "⁹": "9",
+        "⁻": "-",
+    }
+)
+
+_UNIT_EQUIVALENTS = {
+    "m_per_ms": "m_per_s",
+    "kg_per_s2": "N_per_m",
+    "kg_per_ms2": "N_per_m",
+}
+
+
+def _clean_unit_text(raw):
+    text = str(raw).strip().translate(_SUPERSCRIPT_TO_ASCII)
+    text = text.replace("µ", "u").replace("μ", "u")
+    text = text.replace("−", "-")
+    text = text.replace("·", "*").replace("×", "*")
+    text = re.sub(r"\s+per\s+", "/", text, flags=re.IGNORECASE)
+    text = re.sub(r"\s+", "", text)
+    text = re.sub(r"([A-Za-z0-9)])(-\d+)", r"\1^\2", text)
+    return text.replace("**", "^")
+
+
+def _unit_part_to_key(part):
+    part = part.strip("()")
+    match = re.fullmatch(r"([A-Za-z]+)(?:\^?(-?\d+))?", part)
+    if not match:
+        return part
+    base, exponent = match.groups()
+    if exponent in (None, "1"):
+        return base
+    if exponent.startswith("-"):
+        return None
+    return f"{base}{exponent}"
+
+
+def _resolve_unit_candidate(candidate):
+    if candidate in _LEGACY_TO_ENUM.values():
+        return candidate
+    return _UNIT_EQUIVALENTS.get(candidate)
+
+
+def _slash_unit_to_enum(text):
+    parts = text.split("/")
+    if len(parts) < 2:
+        return None
+
+    numerator = _unit_part_to_key(parts[0])
+    denominator = [_unit_part_to_key(part) for part in parts[1:]]
+    if any(part is None for part in denominator):
+        return None
+
+    if numerator == "1":
+        candidate = "per_" + "_per_".join(denominator)
+    else:
+        candidate = numerator + "_per_" + "_per_".join(denominator)
+    return _resolve_unit_candidate(candidate)
+
+
+def _product_unit_to_enum(text):
+    parts = text.split("*")
+    if len(parts) < 2:
+        return None
+
+    numerator = []
+    denominator = []
+    for part in parts:
+        if "^-" in part:
+            base, exponent = part.split("^-", 1)
+            key = _unit_part_to_key(f"{base}^{exponent}")
+            if key is None:
+                return None
+            denominator.append(key)
+        else:
+            key = _unit_part_to_key(part)
+            if key is None:
+                return None
+            numerator.append(key)
+
+    if not denominator:
+        return None
+    candidate = "_".join(numerator) + "_per_" + "_per_".join(denominator)
+    return _resolve_unit_candidate(candidate)
+
 
 def normalize_unit(raw):
     """Convert a legacy free-text unit string to a UnitEnum value name.
 
-    Accepts both abbreviations and full names.
+    Accepts abbreviations, full names, slash notation, and exponent notation.
     Returns ``None`` if the string cannot be mapped.
 
     >>> normalize_unit("mV")
@@ -496,6 +663,8 @@ def normalize_unit(raw):
     'mV'
     >>> normalize_unit("ms^-1")
     'per_ms'
+    >>> normalize_unit("kg/ms^2")
+    'N_per_m'
     >>> normalize_unit(None)
     """
     if raw is None:
@@ -503,7 +672,18 @@ def normalize_unit(raw):
     raw = str(raw).strip()
     if not raw:
         return None
-    return _LEGACY_TO_ENUM.get(raw)
+    direct = _LEGACY_TO_ENUM.get(raw)
+    if direct:
+        return direct
+
+    cleaned = _clean_unit_text(raw)
+    direct = _LEGACY_TO_ENUM.get(cleaned)
+    if direct:
+        return direct
+    if cleaned in _LEGACY_TO_ENUM.values():
+        return cleaned
+
+    return _slash_unit_to_enum(cleaned) or _product_unit_to_enum(cleaned)
 
 
 # ── UnitEnum → display symbol ────────────────────────────────────────
@@ -519,13 +699,25 @@ _DISPLAY_SYMBOLS = {
     "per_nC": "1/nC",
     "per_pC": "1/pC",
     "mol_per_m3": "mol/m^3",
+    "mol_per_cm3": "mol/cm^3",
     "mmol_per_m3": "mmol/m^3",
+    "mol_per_m_per_A_per_s": "mol/m/A/s",
     "um3": "um^3",
     "m_per_s": "m/s",
     "mm_per_ms": "mm/ms",
     "Hz_per_nA": "Hz/nA",
     "S_per_m": "S/m",
     "H_per_m": "H/m",
+    "uA_per_cm2": "uA/cm^2",
+    "uF_per_cm2": "uF/cm^2",
+    "S_per_cm2": "S/cm^2",
+    "mS_per_cm2": "mS/cm^2",
+    "S_per_m2": "S/m^2",
+    "nS_per_mV": "nS/mV",
+    "ohm": "ohm",
+    "Mohm": "Mohm",
+    "kohm_cm": "kohm cm",
+    "degC": "degC",
     "rad_per_ms": "rad/ms",
     "rad_per_s": "rad/s",
     "kg_per_s": "kg/s",

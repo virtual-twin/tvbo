@@ -13,7 +13,7 @@ from numpy import *
 from tvb.basic.neotraits.api import Attr, Final, HasTraits, List, NArray, Range
 from tvb.simulator.simulator import Simulator
 from tvb.simulator.common import simple_gen_astr
-from tvb.simulator.coupling import Coupling, SparseCoupling
+from tvb.simulator.coupling import Coupling, SparseCoupling, Linear
 from tvb.simulator.history import SparseHistory
 from tvb.simulator.models.base import Model
 from tvb.simulator.noise import Additive, Multiplicative

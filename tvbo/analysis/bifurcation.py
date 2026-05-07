@@ -1447,10 +1447,64 @@ class BifurcationResult:
 
         return None
 
+    def _lc_orbit_at_param(self, val, x_var, y_var, n_theta=240):
+        """Sample a periodic orbit in phase-plane coordinates."""
+        po_list = getattr(self, "periodic_orbits", None) or []
+        if not po_list:
+            return None
+
+        for po_br in po_list:
+            df = po_br.df
+            if df.empty or "param" not in df.columns:
+                continue
+            params = df["param"].values
+            if val < params.min() or val > params.max():
+                continue
+
+            orbits = po_br.extract_orbit_meshes(n_samples=max(8, n_theta // 4))
+            if orbits and x_var in orbits[0] and y_var in orbits[0]:
+                o_params = np.array([o["param"] for o in orbits])
+                j = int(np.abs(o_params - val).argmin())
+                orb = orbits[j]
+                t = np.asarray(orb["t"])
+                if len(t) < 2:
+                    continue
+                t_norm = (t - t[0]) / (t[-1] - t[0])
+                t_uni = np.linspace(0, 1, n_theta, endpoint=False)
+                x = np.interp(t_uni, t_norm, orb[x_var])
+                y = np.interp(t_uni, t_norm, orb[y_var])
+                return np.r_[x, x[0]], np.r_[y, y[0]]
+
+            max_x = f"max_{x_var}"
+            if max_x not in df.columns:
+                continue
+            max_y = f"max_{y_var}"
+            r_x = float(np.interp(val, params, df[max_x].values))
+            r_y = float(np.interp(val, params, df[max_y].values)) if max_y in df.columns else r_x
+
+            x_eq = 0.0
+            y_eq = 0.0
+            if not self.df.empty and "param" in self.df.columns:
+                eq_params = self.df["param"].values
+                x_eq_vals = compute_voi(self.df, x_var, state_var_index=self.state_var_index).values
+                y_eq_vals = compute_voi(self.df, y_var, state_var_index=self.state_var_index).values
+                x_eq = float(np.interp(val, eq_params, x_eq_vals))
+                y_eq = float(np.interp(val, eq_params, y_eq_vals))
+
+            theta = np.linspace(0, 2 * np.pi, n_theta + 1)
+            return x_eq + r_x * np.cos(theta), y_eq + r_y * np.sin(theta)
+
+        return None
+
     def animate(self, dynamics, parameter, values, *dims,
                 kind="phaseplane", VOI=None, interval=80,
                 figsize=(11, 4.8), title_fmt="{name} = {value:+.2f}",
-                marker_kwargs=None, **plot_kwargs):
+                marker_kwargs=None, simulation=False,
+                simulation_duration=200.0, simulation_dt=0.01,
+                simulation_backend="tvboptim",
+                simulation_initial_values=None,
+                trajectory_kwargs=None, show_periodic_orbit=True,
+                orbit_kwargs=None, **plot_kwargs):
         """Animate ``dynamics`` alongside this 3D bifurcation diagram.
 
         For each value of ``parameter`` a left panel re-renders a
@@ -1481,6 +1535,27 @@ class BifurcationResult:
             Title format with ``{name}`` and ``{value}`` placeholders.
         marker_kwargs : dict, optional
             Style overrides for the moving marker.
+        simulation : bool
+            If true, overlay a trajectory computed with
+            :class:`tvbo.classes.experiment.SimulationExperiment` for each
+            frame. This keeps animated trajectories on the same backend path
+            as full experiments instead of using ``Dynamics.run``.
+        simulation_duration, simulation_dt : float
+            Integration settings used when ``simulation`` is true.
+        simulation_backend : str
+            Backend passed to ``SimulationExperiment.run``.
+        simulation_initial_values : dict or callable, optional
+            State-variable initial values used for each simulated frame. If a
+            callable is supplied, it receives the current parameter value and
+            returns a mapping for that frame. Returning ``None`` skips the
+            simulated trajectory for that frame.
+        trajectory_kwargs : dict, optional
+            Style overrides for simulated trajectory overlays.
+        show_periodic_orbit : bool
+            Draw the current periodic orbit in phase-plane coordinates when a
+            periodic-orbit ring is also available in the bifurcation panel.
+        orbit_kwargs : dict, optional
+            Style overrides for the phase-plane periodic-orbit circle.
 
         Returns
         -------
@@ -1490,6 +1565,8 @@ class BifurcationResult:
         from matplotlib.animation import FuncAnimation
         from tvbo.plot.dynamics import plot_dynamics
 
+        values = list(values)
+
         if parameter not in dynamics.parameters:
             raise ValueError(
                 f"parameter {parameter!r} not in dynamics "
@@ -1498,6 +1575,37 @@ class BifurcationResult:
 
         dyn = copy.deepcopy(dynamics)
         VOI = self._resolve_voi(VOI)
+        phase_dims = [str(d) for d in dims[:2]]
+        if not phase_dims and len(dynamics.state_variables) >= 2:
+            phase_dims = list(dynamics.state_variables)[:2]
+
+        trajectory_data = []
+        if simulation:
+            from tvbo.classes.experiment import SimulationExperiment
+
+            for val in values:
+                frame_initial_values = (
+                    simulation_initial_values(float(val))
+                    if callable(simulation_initial_values)
+                    else simulation_initial_values
+                )
+                if frame_initial_values is None:
+                    trajectory_data.append(None)
+                    continue
+
+                sim_dyn = copy.deepcopy(dynamics)
+                sim_dyn.parameters[parameter].value = float(val)
+                if frame_initial_values:
+                    for name, value in frame_initial_values.items():
+                        sim_dyn.state_variables[name].initial_value = float(value)
+                exp = SimulationExperiment(dynamics=sim_dyn)
+                exp.integration.duration = simulation_duration
+                exp.integration.step_size = simulation_dt
+                res = exp.run(simulation_backend).integration
+                trajectory_data.append({
+                    name: np.asarray(res.data.sel(variable=name)).squeeze()
+                    for name in phase_dims
+                })
 
         fig = plt.figure(figsize=figsize)
         ax_left = fig.add_subplot(1, 2, 1)
@@ -1528,11 +1636,22 @@ class BifurcationResult:
                                   [voi_eq[0] if len(voi_eq) else 0.0], **mk)
         ring_artist = [None]  # boxed so the closure can rebind it
 
+        traj_style = dict(color="red", lw=1.2, alpha=0.9, zorder=9)
+        if trajectory_kwargs:
+            traj_style.update(trajectory_kwargs)
+        orbit_style = dict(color="red", lw=2.0, alpha=0.95, zorder=11)
+        if orbit_kwargs:
+            orbit_style.update(orbit_kwargs)
+
         def _update(frame_idx):
             ax_left.clear()
             val = float(values[frame_idx])
             dyn.parameters[parameter].value = val
             plot_dynamics(dyn, *dims, kind=kind, ax=ax_left, **plot_kwargs)
+            if simulation and len(phase_dims) >= 2:
+                traj = trajectory_data[frame_idx]
+                if traj is not None:
+                    ax_left.plot(traj[phase_dims[0]], traj[phase_dims[1]], **traj_style)
             ax_left.set_title(title_fmt.format(name=parameter, value=val),
                               color="red")
             if len(params):
@@ -1554,6 +1673,10 @@ class BifurcationResult:
                     X, Y, Z, "-", color="red", linewidth=2.0,
                     zorder=21, alpha=0.95,
                 )
+                if show_periodic_orbit and len(phase_dims) >= 2:
+                    orbit = self._lc_orbit_at_param(val, phase_dims[0], phase_dims[1])
+                    if orbit is not None:
+                        ax_left.plot(*orbit, **orbit_style)
             return [ax_left, marker]
 
         anim = FuncAnimation(fig, _update, frames=len(values),

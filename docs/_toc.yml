@@ -87,6 +87,8 @@ website:
                         href: Usage/Events.qmd
                       - text: "Noise & Stochastic Integration"
                         href: Usage/Noise.qmd
+                      - text: "Cross-Backend Numerical Parity"
+                        href: Usage/CrossBackendParity.qmd
                   - section: "Advanced"
                     contents:
                       - text: "Creating Custom Networks"

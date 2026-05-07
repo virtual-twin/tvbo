@@ -316,6 +316,9 @@ class Coupling(tvbo_datamodel.Coupling):
         fmt = format.lower()
         if fmt == "yaml":
             return self.to_yaml(filepath=kwargs.get("filepath"))
+        if fmt in ("report", "markdown", "md", "pdf"):
+            report_fmt = "pdf" if fmt == "pdf" else "markdown"
+            return self.report(format=report_fmt, **kwargs)
         return self.render_code(format=format, **kwargs)
 
     def render_code(self, format="tvb", model=None, alt_label=None, **kwargs):
@@ -333,9 +336,38 @@ class Coupling(tvbo_datamodel.Coupling):
         elif format.lower() == "python":
             from tvbo.codegen.code import render_expression
 
-            render_expression(self.equation, format="python")
+            rendered_code = render_expression(self.equation, format="python")
+
+        else:
+            raise ValueError(f"Unsupported render_code format: {format!r}")
 
         return templater.format_code(rendered_code)
+
+    def report(self, format: str = "markdown", outputfile: str | None = None) -> str:
+        """Render a human-readable markdown (or pdf) report for this coupling.
+
+        Includes pre/post expressions, the full assembled coupling equation
+        (``Coupling.equation``), and the parameter table.
+        """
+        fmt = format.lower()
+        if fmt not in ("markdown", "md", "pdf"):
+            raise ValueError("format must be one of: markdown, md, pdf")
+
+        template = templates.lookup.get_template("report/tvbo-report-coupling.md.mako")
+        md = template.render(coupling=self)
+
+        if outputfile:
+            if fmt == "pdf":
+                from tvbo.utils import report as _report
+                _report.to_pdf(md, outputfile)
+            else:
+                with open(outputfile, "w", encoding="utf-8") as f:
+                    f.write(md)
+        return md
+
+    def generate_report(self, format: str = "markdown", outputfile: str | None = None) -> str:
+        """Backward-compatible alias for :meth:`report`."""
+        return self.report(format=format, outputfile=outputfile)
 
     def execute(self, format="tvb", alt_label=None, **kwargs):
         if format == "tvb":

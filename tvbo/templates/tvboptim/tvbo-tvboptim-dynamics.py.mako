@@ -17,4 +17,4 @@ from tvboptim.experimental.network_dynamics.core.bunch import Bunch
 from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
 
 
-<%include file="tvbo-tvboptim-dfun.py.mako" />
+<%include file="/tvboptim/tvbo-tvboptim-dfun.py.mako" />
