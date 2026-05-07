@@ -71,7 +71,14 @@ first_coupling_key = list(coupling_inputs_dict.keys())[0] if coupling_inputs_dic
 has_coupling = bool(coupling_inputs_dict)
 
 # Build all_couplings dict from network.coupling (keyed by function name — schema convention)
+# Fall back to experiment-level coupling if network.coupling is empty.
 all_couplings = dict(network.coupling.items()) if network.coupling else {}
+if not all_couplings and getattr(experiment, 'coupling', None):
+    _exp_c = experiment.coupling
+    if hasattr(_exp_c, 'items'):
+        all_couplings = dict(_exp_c.items())
+    else:
+        all_couplings = {_exp_c.name or 'coupling': _exp_c}
 
 # Map coupling_input names to (func_name, coupling_obj) for tvboptim coupling_dict
 # tvboptim keys coupling by coupling_input name, schema keys by function name
@@ -137,24 +144,37 @@ solver_class = SOLVER_MAP.get(method)
 assert solver_class, f"Unknown solver method: {method}. Valid: {list(SOLVER_MAP.keys())}"
 dt = float(integration.step_size)
 
-# Noise configuration from state_variables or integration
+# Noise configuration from state_variables or integration.
+# tvboptim's AdditiveGaussianNoise expects sigma = standard deviation
+# of the per-step Wiener increment (increment = sigma * sqrt(dt) * N(0,1)).
+# TVB's convention stores nsig = D = sigma^2 / 2 in `noise.intensity`.
+# So when the YAML provides `intensity` (TVB style), convert via
+# sigma = sqrt(2 * intensity). When it provides `sigma` directly, use as-is.
+import math as _math
+def _noise_sigma(noise_obj):
+    if not noise_obj:
+        return 0.0
+    sp = (noise_obj.parameters or {}).get('sigma') if noise_obj.parameters else None
+    if sp is not None:
+        return float(sp.value if sp.value is not None else sp)
+    intens = getattr(noise_obj, 'intensity', None)
+    if intens is not None:
+        D = float(intens.value if intens.value is not None else intens)
+        return _math.sqrt(2.0 * D) if D > 0 else 0.0
+    return 0.0
+
 noise_sigma_per_state = []
 noise_targets = []
 for sv_name, sv in model.state_variables.items():
-    sigma = 0.0
-    if sv.noise and sv.noise.parameters:
-        sigma_param = sv.noise.parameters['sigma'] if 'sigma' in sv.noise.parameters else None
-        if sigma_param:
-            sigma = float(sigma_param.value if sigma_param.value is not None else sigma_param)
-        if sigma > 0:
-            noise_targets.append(sv_name)
+    sigma = _noise_sigma(getattr(sv, 'noise', None))
+    if sigma > 0:
+        noise_targets.append(sv_name)
     noise_sigma_per_state.append(sigma)
 
 # Integration-level noise applies to all states if no per-state noise
-if not any(s > 0 for s in noise_sigma_per_state) and integration.noise and integration.noise.parameters:
-    sigma_param = integration.noise.parameters['sigma'] if 'sigma' in integration.noise.parameters else None
-    if sigma_param:
-        sigma = float(sigma_param.value if sigma_param.value is not None else sigma_param)
+if not any(s > 0 for s in noise_sigma_per_state):
+    sigma = _noise_sigma(getattr(integration, 'noise', None))
+    if sigma > 0:
         noise_sigma_per_state = [sigma] * len(model.state_variables)
         noise_targets = list(model.state_variables.keys())
 
@@ -259,6 +279,7 @@ for sv_name, sv in model.state_variables.items():
             'lo': lo,
             'hi': hi,
             'idx': state_names.index(sv_name),
+            'seed': int(getattr(dist, 'seed', None) or 42),
         }
 
 # === Events metadata (stimuli and other time-dependent inputs) ===
@@ -863,6 +884,32 @@ def create_network(
         % endif
     )
 
+% if sv_distribution_info:
+def _sample_initial_conditions(state, key=None):
+    """Sample initial conditions from state variable distributions.
+
+    Each state variable with a ``distribution`` slot is replaced per-node by a
+    draw from that distribution. The default RNG seed is taken from the
+    distribution's ``seed`` slot (falls back to 42).
+    """
+    if key is None:
+        key = jax.random.key(${list(sv_distribution_info.values())[0]['seed']})
+    _keys = jax.random.split(key, ${len(sv_distribution_info)})
+    ic = state.initial_state.dynamics  # (n_states,) broadcast or (n_states, n_nodes)
+    # Ensure per-node shape so sampling produces independent values per node
+    if ic.ndim == 1:
+        ic = jnp.broadcast_to(ic[:, None], (ic.shape[0], n_nodes)).copy()
+% for _si, (_sv_name, _sv_info) in enumerate(sv_distribution_info.items()):
+% if _sv_info['dist'] in ('gaussian', 'normal'):
+    ic = ic.at[${_sv_info['idx']}].set(${(_sv_info['lo'] + _sv_info['hi']) / 2} + ${(_sv_info['hi'] - _sv_info['lo']) / 4.0} * jax.random.normal(_keys[${_si}], (n_nodes,)))
+% else:
+    ic = ic.at[${_sv_info['idx']}].set(jax.random.uniform(_keys[${_si}], (n_nodes,), minval=${_sv_info['lo']}, maxval=${_sv_info['hi']}))
+% endif
+% endfor
+    state.initial_state.dynamics = ic
+    return state
+% endif
+
 def run_simulation(
     network: Network,
     t1: float = ${t1_default},
@@ -879,6 +926,10 @@ def run_simulation(
     # Run transient simulation to settle network dynamics
     if t_transient > 0:
         model_fn_init, state_init = prepare(network, solver, t0=t0, t1=t_transient, dt=dt)
+        % if sv_distribution_info:
+        # Sample initial conditions from state variable distributions
+        state_init = _sample_initial_conditions(state_init)
+        % endif
         % if node_state_overrides:
         # Per-node initial state overrides for transient
         % for sv_name, sv_vals in node_state_overrides.items():
@@ -895,6 +946,10 @@ def run_simulation(
     % endif
 
     model_fn, state = prepare(network, solver, t0=t0, t1=t1, dt=dt)
+    % if sv_distribution_info:
+    # Sample initial conditions from state variable distributions
+    state = _sample_initial_conditions(state)
+    % endif
     % if node_state_overrides:
     # Per-node initial state overrides (from node ``state:`` YAML entries)
     # initial_state.dynamics is [n_states, n_nodes] — set per-state row
@@ -1905,8 +1960,8 @@ def run_experiment(
     from tvbo.templates.tvboptim.utils import get_recorded_variable_names as _grvn
     _, _requested_aux, result_var_names = _grvn(model, experiment)
 %>
-    transient_result = SimulationResult(result=transient, state_names=${result_var_names}) if transient is not None else None
-    main_result = SimulationResult(result=result, observations=observations, state_names=${result_var_names}, transient=transient_result) if result is not None else None
+    transient_result = SimulationResult(result=transient, state_names=${result_var_names}, nodes=region_labels) if transient is not None else None
+    main_result = SimulationResult(result=result, observations=observations, state_names=${result_var_names}, nodes=region_labels, transient=transient_result) if result is not None else None
 
     results = Bunch(
         # Core simulation infrastructure (always present)

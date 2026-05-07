@@ -88,7 +88,7 @@ def _extract_node_timeseries(data, max_points=200):
     return [(vn, arr, time)]
 
 
-def animate_network(result, state=None, interval=50, cmap="viridis", node_size=120, figsize=None, format=None):
+def animate_network(result, state=None, interval=50, cmap="viridis", node_size=120, figsize=None, format=None, edge_color="lightgray"):
     """Animate time-series on a graph layout (nodes colored by state value).
 
     Supports the ``.sel(variable='V').animate()`` pattern: if the variable
@@ -173,7 +173,7 @@ def animate_network(result, state=None, interval=50, cmap="viridis", node_size=1
                     ax_graph.plot(
                         [x[i], x[j]],
                         [y[i], y[j]],
-                        color="lightgray",
+                        color=edge_color,
                         linewidth=0.5,
                         zorder=0,
                     )
@@ -206,16 +206,13 @@ def animate_network(result, state=None, interval=50, cmap="viridis", node_size=1
         ax_graph.axis("off")
         fig.colorbar(sc, ax=ax_graph, shrink=0.7)
 
-        # Time-series panel — raw per-node traces
-        cm = plt.get_cmap(cmap)
-        node_norm = plt.Normalize(vmin=0, vmax=max(n_nodes - 1, 1))
+        # Time-series panel — raw per-node traces (use default cycler for node identity)
         lines = []
         for i in range(n_nodes):
             lbl_i = labels[i] if labels else None
             (ln,) = ax_ts.plot(
                 [],
                 [],
-                color=cm(node_norm(i)),
                 linewidth=0.8,
                 alpha=0.7,
                 label=lbl_i,
@@ -251,7 +248,7 @@ def animate_network(result, state=None, interval=50, cmap="viridis", node_size=1
     return ani
 
 
-def animate_timeseries(result, state=None, interval=50, cmap="viridis", figsize=None):
+def animate_timeseries(result, state=None, interval=50, cmap=None, figsize=None):
     """Animate evolving time-series traces (no graph layout needed).
 
     Supports ``.sel(variable='V').animate(type='timeseries')``.
@@ -297,11 +294,16 @@ def animate_timeseries(result, state=None, interval=50, cmap="viridis", figsize=
         ax = axes[row, 0]
         vmin, vmax = float(vals.min()), float(vals.max())
         n_traces = vals.shape[1]
-        cm = plt.get_cmap(cmap)
-        norm = plt.Normalize(vmin=0, vmax=max(n_traces - 1, 1))
+        if cmap is not None:
+            cm = plt.get_cmap(cmap)
+            norm = plt.Normalize(vmin=0, vmax=max(n_traces - 1, 1))
+            colors = [cm(norm(i)) for i in range(n_traces)]
+        else:
+            colors = [None] * n_traces
         lines = []
         for i in range(n_traces):
-            (ln,) = ax.plot([], [], color=cm(norm(i)), linewidth=0.8, alpha=0.7)
+            kw = {} if colors[i] is None else {"color": colors[i]}
+            (ln,) = ax.plot([], [], linewidth=0.8, alpha=0.7, **kw)
             lines.append(ln)
         ax.set_xlim(time[0], time[-1])
         margin = 0.05 * abs(vmax - vmin) if vmax != vmin else 0.1

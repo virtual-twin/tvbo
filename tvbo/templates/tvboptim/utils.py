@@ -87,6 +87,7 @@ def get_recorded_variable_names(model: Any, experiment: Any = None) -> Tuple[Lis
 
     The generated dynamics class declares ``VARIABLES_OF_INTEREST = state_names + recorded_aux``
     where ``recorded_aux`` is the union of:
+      * derived variables with ``record: true``,
       * model.output entries that are derived (auxiliary) variables, and
       * derived variables referenced as the ``source`` of any experiment observation
         (so observations of auxiliaries work without requiring users to also list them
@@ -107,6 +108,12 @@ def get_recorded_variable_names(model: Any, experiment: Any = None) -> Tuple[Lis
     if isinstance(output_vars, str):
         output_vars = [output_vars]
     requested_aux = [v for v in output_vars if v in aux_names]
+
+    # Include derived variables marked with record: true
+    if model and getattr(model, "derived_variables", None):
+        for dv_name, dv in model.derived_variables.items():
+            if getattr(dv, "record", False) and dv_name not in requested_aux:
+                requested_aux.append(dv_name)
 
     if experiment is not None and getattr(experiment, "observations", None):
         for obs in experiment.observations.values():

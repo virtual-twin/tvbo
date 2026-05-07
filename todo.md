@@ -77,3 +77,16 @@ source .venv/bin/activate
 uv pip install -e . --reinstall
 pytest tests/test_database_validation.py -q
 ```
+
+## Per Task Backend Support in yaml
+- Currently we're selecting backends per runtime and we have defaults set in tvbo
+- It would be more valid and correct, if we define the backend to run a task with in the yaml/metadata spec it self. There we have the Software component, so we can also directly pin the current version and environment after we ran it.
+  1. Select backend/software to run with in yaml
+  2. If no version/environment is specified, it can be then set from the current environment the experiment is executed in. So metadata gets enriched post-run to be shared correctly.
+  3. Running SimulationExperiment should be possible in both ways, 1) exactly the same environment as specified in yaml, 2) own environment
+
+
+## Revisit Heterogenous parameter specification
+
+- What is the current status of Network.nodes and where are the parameters to be expected?
+  - Node.dynamics.parameters or Node.parameters?

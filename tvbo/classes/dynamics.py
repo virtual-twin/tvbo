@@ -28,8 +28,7 @@ from tvbo.codegen import templater
 from tvbo.data.types import TimeSeries
 from tvbo.datamodel import pydantic as _pdm
 from tvbo.datamodel import schema as tvbo_datamodel
-from tvbo.datamodel.schema import (Case, ConditionalBlock, DerivedVariable,
-                                   Equation)
+from tvbo.datamodel.schema import Case, ConditionalBlock, DerivedVariable, Equation
 from tvbo.ontology import owl as ontology
 from tvbo.ontology import query
 from tvbo.parse.expression import parse_eq
@@ -63,10 +62,16 @@ def _normalize_conditionals(model):
         if not cases:
             continue
         # Already normalized — skip
-        if getattr(dv.equation, "conditionals", None) and len(dv.equation.conditionals) > 0:
+        if (
+            getattr(dv.equation, "conditionals", None)
+            and len(dv.equation.conditionals) > 0
+        ):
             continue
         # Populate equation.conditionals from dv.cases
-        dv.equation.conditionals = [ConditionalBlock(condition=case.condition, expression=case.equation.rhs) for case in cases]
+        dv.equation.conditionals = [
+            ConditionalBlock(condition=case.condition, expression=case.equation.rhs)
+            for case in cases
+        ]
         # Mark the DV as conditional if not already
         if not getattr(dv, "conditional", False):
             dv.conditional = True
@@ -116,7 +121,9 @@ def order_by_equations(derived_variables, dependent_equations):
     """
     dependency = {k.replace("dot", ""): v for k, v in dependent_equations.items()}
     # Order derived_variables based on the order in dependent_equations
-    ordered_dict = {k: derived_variables[k] for k in dependency if k in derived_variables}
+    ordered_dict = {
+        k: derived_variables[k] for k in dependency if k in derived_variables
+    }
 
     return ordered_dict
 
@@ -124,11 +131,17 @@ def order_by_equations(derived_variables, dependent_equations):
 def class2metadata(ontoclass, metadata):
     if not metadata.description:
         metadata.description = ontology.get_def(ontoclass, mode="long")
-    dependent_equations = _equation_mod.sort_equations_by_dependencies(_equation_mod.symbolic_model_equations(ontoclass))
-    state_variables = order_by_equations(ontology.get_model_statevariables(ontoclass), dependent_equations)
+    dependent_equations = _equation_mod.sort_equations_by_dependencies(
+        _equation_mod.symbolic_model_equations(ontoclass)
+    )
+    state_variables = order_by_equations(
+        ontology.get_model_statevariables(ontoclass), dependent_equations
+    )
     state_variables = ontology.get_model_statevariables(ontoclass)
 
-    functions = order_by_equations(ontology.get_model_functions(ontoclass), dependent_equations)
+    functions = order_by_equations(
+        ontology.get_model_functions(ontoclass), dependent_equations
+    )
 
     for k, v in state_variables.items():
         range = ontology.get_range(v)
@@ -147,10 +160,11 @@ def class2metadata(ontoclass, metadata):
                         name=k,
                         equation=tvbo_datamodel.Equation(
                             lhs=td.symbol.first(),
-                            rhs=td.value.first().replace("numpy.", "").replace("np.", ""),
+                            rhs=td.value.first()
+                            .replace("numpy.", "")
+                            .replace("np.", ""),
                         ),
                         description=ontology.get_def(v),
-                        domain=tvbo_datamodel.Range(lo=range[0], hi=range[1]),
                         boundaries=boundaries,
                         coupling_variable=v in ontoclass.has_cvar,
                     )
@@ -165,9 +179,9 @@ def class2metadata(ontoclass, metadata):
                     rhs=td.value.first().replace("numpy.", "").replace("np.", ""),
                 ),
                 "description": state_var.description or ontology.get_def(v),
-                "domain": state_var.domain or tvbo_datamodel.Range(lo=range[0], hi=range[1]),
                 "boundaries": state_var.boundaries or boundaries,
-                "coupling_variable": state_var.coupling_variable or (v in ontoclass.has_cvar),
+                "coupling_variable": state_var.coupling_variable
+                or (v in ontoclass.has_cvar),
             }
 
             for attr, value in updates.items():
@@ -191,7 +205,9 @@ def class2metadata(ontoclass, metadata):
         | set(functions.keys())
     )
     # Add coupling terms from ontology
-    onto_coupling_terms = ontology.get_model_coupling_terms(ontoclass, only_global=False)
+    onto_coupling_terms = ontology.get_model_coupling_terms(
+        ontoclass, only_global=False
+    )
     known_names |= set(onto_coupling_terms.keys())
 
     local_dict = {name: Symbol(name) for name in known_names}
@@ -223,7 +239,9 @@ def class2metadata(ontoclass, metadata):
                         name=k,
                         equation=tvbo_datamodel.Equation(
                             lhs=v.symbol.first(),
-                            rhs=v.value.first().replace("numpy.", "").replace("np.", ""),
+                            rhs=v.value.first()
+                            .replace("numpy.", "")
+                            .replace("np.", ""),
                         ),
                         description=v.definition.first(),
                     )
@@ -242,12 +260,18 @@ def class2metadata(ontoclass, metadata):
                         symbol=condpar.symbol.first(),
                         conditional=True,
                         cases=[
-                            Case(condition=condition, equation=Equation(lhs=name, rhs=expr)) for expr, condition in val.args
+                            Case(
+                                condition=condition,
+                                equation=Equation(lhs=name, rhs=expr),
+                            )
+                            for expr, condition in val.args
                         ],
                         equation=tvbo_datamodel.Equation(
                             lhs=name,
                             conditionals=[
-                                tvbo_datamodel.ConditionalBlock(condition=condtion, expression=expr)
+                                tvbo_datamodel.ConditionalBlock(
+                                    condition=condtion, expression=expr
+                                )
                                 for expr, condtion in val.args
                             ],
                         ),
@@ -315,7 +339,11 @@ def update_parameters(metadata, ontoclass, verbose=0, only_used=True, **kwargs):
 
         for eq_dict in eq_dicts:
             for item in eq_dict.values():
-                if hasattr(item, "equation") and item.equation and hasattr(item.equation, "rhs"):
+                if (
+                    hasattr(item, "equation")
+                    and item.equation
+                    and hasattr(item.equation, "rhs")
+                ):
                     expr = parse_expr(str(item.equation.rhs), local_dict=local_dict)
                     used_symbols.update(str(s) for s in expr.free_symbols)
 
@@ -334,7 +362,9 @@ def update_parameters(metadata, ontoclass, verbose=0, only_used=True, **kwargs):
         else:
             domain = None
 
-        if label not in metadata.parameters and not any(synonym in metadata.parameters for synonym in k.synonym + k.symbol):
+        if label not in metadata.parameters and not any(
+            synonym in metadata.parameters for synonym in k.synonym + k.symbol
+        ):
             if verbose > 0:
                 print(f"using parameter {label} from the ontology")
             metadata.parameters.update(
@@ -342,7 +372,9 @@ def update_parameters(metadata, ontoclass, verbose=0, only_used=True, **kwargs):
                     label: tvbo_datamodel.Parameter(
                         name=label,
                         value=kwargs.get(k, v),
-                        description=ontology.get_def(k, mode="short").replace("\n", " "),
+                        description=ontology.get_def(k, mode="short").replace(
+                            "\n", " "
+                        ),
                         domain=domain,
                         definition=k.definition.first(),
                     )
@@ -351,10 +383,14 @@ def update_parameters(metadata, ontoclass, verbose=0, only_used=True, **kwargs):
 
         if label in metadata.parameters:
             if metadata.parameters[label].description is None:
-                metadata.parameters[label].description = ontology.get_def(k, mode="short").replace("\n", " ")
+                metadata.parameters[label].description = ontology.get_def(
+                    k, mode="short"
+                ).replace("\n", " ")
 
             if metadata.parameters[label].unit is None:
-                metadata.parameters[label].unit = k.has_unit.first().name if k.has_unit else k.unit.first()
+                metadata.parameters[label].unit = (
+                    k.has_unit.first().name if k.has_unit else k.unit.first()
+                )
 
             if metadata.parameters[label].value is None:
                 metadata.parameters[label].value = k.defaultValue.first()
@@ -417,7 +453,14 @@ def update_equations(model):
                     continue
 
                 if len(labelsearch) > 1:
-                    labelsearch = list(np.array(labelsearch)[[ontology.replace_suffix(lbl) == str(s) for lbl in labelsearch]])
+                    labelsearch = list(
+                        np.array(labelsearch)[
+                            [
+                                ontology.replace_suffix(lbl) == str(s)
+                                for lbl in labelsearch
+                            ]
+                        ]
+                    )
 
                 synonyms = labelsearch[0].synonym + labelsearch[0].symbol
 
@@ -429,9 +472,14 @@ def update_equations(model):
                 if match:
                     substitutions.update({s: Symbol(match)})
 
-    def substitute_equations(metadata_dict, substitutions, equations, time_derivative=False):
+    def substitute_equations(
+        metadata_dict, substitutions, equations, time_derivative=False
+    ):
         for variable_key, v in metadata_dict.items():
-            if isinstance(v.equation, type(None)) and str(variable_key) in equations.keys():
+            if (
+                isinstance(v.equation, type(None))
+                and str(variable_key) in equations.keys()
+            ):
                 eq = tvbo_datamodel.Equation(rhs=equations[str(variable_key)])
             elif str(variable_key) in equations.keys():
                 eq = equations[str(variable_key)]
@@ -491,7 +539,9 @@ def sort_equations(model, variable_type):
     sorted_variables_metadata = {}
     for var_name in sorted_variables:
         if str(var_name) in model[variable_type]:
-            sorted_variables_metadata[str(var_name)] = original_metadata.pop(str(var_name))
+            sorted_variables_metadata[str(var_name)] = original_metadata.pop(
+                str(var_name)
+            )
 
     for missing_key in original_metadata:
         sorted_variables_metadata = {
@@ -521,7 +571,9 @@ def _resolve_dynamics_aliases(d: dict) -> dict:
     for alias, canonical in _DYNAMICS_SLOT_ALIASES.items():
         if alias in d:
             if canonical in d:
-                raise ValueError(f"Cannot specify both '{alias}' and '{canonical}' — '{alias}' is an alias for '{canonical}'.")
+                raise ValueError(
+                    f"Cannot specify both '{alias}' and '{canonical}' — '{alias}' is an alias for '{canonical}'."
+                )
             d[canonical] = d.pop(alias)
     # Recurse into sub-dynamics (modes values may themselves use aliases)
     modes = d.get("modes")
@@ -547,7 +599,9 @@ def _validate_dynamics_kwargs(kwargs: dict) -> None:
     if output is not None and isinstance(output, dict):
         # Check if it looks like derived variable definitions
         first_val = next(iter(output.values()), None)
-        if isinstance(first_val, dict) and ("equation" in first_val or "rhs" in first_val):
+        if isinstance(first_val, dict) and (
+            "equation" in first_val or "rhs" in first_val
+        ):
             raise ValueError(
                 "'output' should be a list of variable names, not variable definitions. "
                 "Did you mean 'derived_variables'?\n\n"
@@ -563,8 +617,14 @@ def _validate_dynamics_kwargs(kwargs: dict) -> None:
             )
 
 
-class Dynamics(tvbo_datamodel.Dynamics):
-    def __init__(self, name="Dynamics", _skip_ontology: bool = False, use_ontology: bool = False, **kwargs):
+class DynamicalSystem(tvbo_datamodel.Dynamics):
+    def __init__(
+        self,
+        name="Dynamics",
+        _skip_ontology: bool = False,
+        use_ontology: bool = False,
+        **kwargs,
+    ):
         if name is not None:
             kwargs["name"] = str(name)
 
@@ -599,7 +659,9 @@ class Dynamics(tvbo_datamodel.Dynamics):
 
     # Factory constructors
     @classmethod
-    def from_datamodel(cls, model_meta: tvbo_datamodel.Dynamics, use_ontology: bool = False):
+    def from_datamodel(
+        cls, model_meta: tvbo_datamodel.Dynamics, use_ontology: bool = False
+    ):
         """Create from a datamodel Dynamics instance by copying its
         already-normalized state (avoids ``_as_dict`` re-init crash on
         ``inlined_as_dict`` fields)."""
@@ -615,7 +677,9 @@ class Dynamics(tvbo_datamodel.Dynamics):
     def from_ontology(cls, ontoclass: owlready2.ThingClass | str, **kwargs):
         # Construct with name and then populate from ontology
         if isinstance(ontoclass, str):
-            ontoclass = query.label_search(ontoclass, root_class="NeuralMassModel", exact_match=["label"])[0]
+            ontoclass = query.label_search(
+                ontoclass, root_class="NeuralMassModel", exact_match=["label"]
+            )[0]
         inst = cls(name=ontoclass.name, **kwargs)
         inst._populate_from_ontology(ontoclass, **kwargs)
         inst.update_metadata()
@@ -623,7 +687,9 @@ class Dynamics(tvbo_datamodel.Dynamics):
         return inst
 
     @classmethod
-    def from_file(cls, path: str | os.PathLike, use_ontology: bool = False) -> "Dynamics":
+    def from_file(
+        cls, path: str | os.PathLike, use_ontology: bool = False
+    ) -> "Dynamics":
         data = yaml_loader.load_as_dict(str(path))
         _resolve_dynamics_aliases(data)
         inst = cls(**data)
@@ -892,7 +958,9 @@ class Dynamics(tvbo_datamodel.Dynamics):
 
     @property
     def keyed_parameters(self):
-        return {Symbol(p.name): p.value for p in getattr(self, "parameters", {}).values()}
+        return {
+            Symbol(p.name): p.value for p in getattr(self, "parameters", {}).values()
+        }
 
     @property
     def symbolic(self):
@@ -974,7 +1042,8 @@ class Dynamics(tvbo_datamodel.Dynamics):
             dv_eqs = []
             for name, dv in getattr(self, "derived_variables", {}).items():
                 has_conds = (
-                    bool(getattr(dv.equation, "conditionals", None)) and len(getattr(dv.equation, "conditionals", [])) > 0
+                    bool(getattr(dv.equation, "conditionals", None))
+                    and len(getattr(dv.equation, "conditionals", [])) > 0
                 )
                 if getattr(dv, "conditional", False) and has_conds:
                     rhs = _equation_mod.conditionals2piecewise(dv.equation)
@@ -1070,7 +1139,9 @@ class Dynamics(tvbo_datamodel.Dynamics):
                 self.state_variables[v].equation = equation
             elif v in self.derived_variables:
                 # Preserve conditionals through the equation update
-                old_conds = getattr(self.derived_variables[v].equation, "conditionals", None)
+                old_conds = getattr(
+                    self.derived_variables[v].equation, "conditionals", None
+                )
                 if old_conds:
                     equation.conditionals = old_conds
                 self.derived_variables[v].equation = equation
@@ -1095,7 +1166,9 @@ class Dynamics(tvbo_datamodel.Dynamics):
                 return tvbo_datamodel.Range(lo=float(lo), hi=float(hi))
             if len(domain) == 3:
                 lo, hi, step = domain
-                return tvbo_datamodel.Range(lo=float(lo), hi=float(hi), step=float(step))
+                return tvbo_datamodel.Range(
+                    lo=float(lo), hi=float(hi), step=float(step)
+                )
         return domain
 
     def _coerce_equation(self, expr, lhs: str | None = None):
@@ -1152,7 +1225,9 @@ class Dynamics(tvbo_datamodel.Dynamics):
         )
         return self
 
-    def update_parameters_from_equations(self, default_value: float = 1.0, overwrite: bool = False):
+    def update_parameters_from_equations(
+        self, default_value: float = 1.0, overwrite: bool = False
+    ):
         """Scan all equations and add any free symbols as parameters (default value if missing).
 
         - Skips symbols that are known state variables, derived variables, or function arguments
@@ -1182,7 +1257,11 @@ class Dynamics(tvbo_datamodel.Dynamics):
         nonparam_known.add("t")
 
         # If any existing parameters clash with known entities, remove them (they were falsely inferred earlier)
-        to_remove = [pname for pname in list(self.parameters.keys()) if str(pname) in nonparam_known]
+        to_remove = [
+            pname
+            for pname in list(self.parameters.keys())
+            if str(pname) in nonparam_known
+        ]
         for pname in to_remove:
             del self.parameters[pname]
 
@@ -1202,7 +1281,9 @@ class Dynamics(tvbo_datamodel.Dynamics):
             if s in known:
                 continue
             if overwrite or s not in self.parameters:
-                self.parameters[s] = tvbo_datamodel.Parameter(name=s, value=float(default_value))
+                self.parameters[s] = tvbo_datamodel.Parameter(
+                    name=s, value=float(default_value)
+                )
                 added.append(s)
 
         return added
@@ -1224,7 +1305,11 @@ class Dynamics(tvbo_datamodel.Dynamics):
         stimulation_variable: bool | None = None,
         symbol: str | None = None,
     ):
-        eq = self._coerce_equation(equation, lhs=str(name)) if equation is not None else None
+        eq = (
+            self._coerce_equation(equation, lhs=str(name))
+            if equation is not None
+            else None
+        )
         self.state_variables[str(name)] = tvbo_datamodel.StateVariable(
             name=str(name),
             equation=eq,
@@ -1269,7 +1354,11 @@ class Dynamics(tvbo_datamodel.Dynamics):
                         equation=tvbo_datamodel.Equation(lhs=str(name), rhs=str(expr)),
                     )
                 )
-                cond_blocks.append(tvbo_datamodel.ConditionalBlock(condition=str(cond), expression=str(expr)))
+                cond_blocks.append(
+                    tvbo_datamodel.ConditionalBlock(
+                        condition=str(cond), expression=str(expr)
+                    )
+                )
         if cond_blocks:
             eq.conditionals = cond_blocks
         self.derived_variables[str(name)] = tvbo_datamodel.DerivedVariable(
@@ -1298,13 +1387,21 @@ class Dynamics(tvbo_datamodel.Dynamics):
         # Normalize arguments into a dict[str, Parameter]
         if isinstance(arguments, dict):
             args_dict = {
-                str(k): (v if isinstance(v, tvbo_datamodel.Parameter) else tvbo_datamodel.Parameter(name=str(k)))
+                str(k): (
+                    v
+                    if isinstance(v, tvbo_datamodel.Parameter)
+                    else tvbo_datamodel.Parameter(name=str(k))
+                )
                 for k, v in arguments.items()
             }
         else:
             args = list(arguments) if isinstance(arguments, (list, tuple)) else []
             args_dict = {str(a): tvbo_datamodel.Parameter(name=str(a)) for a in args}
-        eq = self._coerce_equation(expression, lhs=str(name)) if expression is not None else None
+        eq = (
+            self._coerce_equation(expression, lhs=str(name))
+            if expression is not None
+            else None
+        )
         self.functions[str(name)] = tvbo_datamodel.Function(
             name=str(name),
             equation=eq,
@@ -1358,7 +1455,11 @@ class Dynamics(tvbo_datamodel.Dynamics):
         """Add an output variable. Creates a derived_variable and adds its name to output list."""
         name_str = str(name)
         # Create derived variable with the equation
-        eq = self._coerce_equation(expression, lhs=name_str) if expression is not None else None
+        eq = (
+            self._coerce_equation(expression, lhs=name_str)
+            if expression is not None
+            else None
+        )
         self.derived_variables[name_str] = tvbo_datamodel.DerivedVariable(
             name=name_str, equation=eq, unit=unit, description=description
         )
@@ -1377,7 +1478,11 @@ class Dynamics(tvbo_datamodel.Dynamics):
         description: str | None = None,
         symbol: str | None = None,
     ):
-        eq = self._coerce_equation(expression, lhs=str(name)) if expression is not None else None
+        eq = (
+            self._coerce_equation(expression, lhs=str(name))
+            if expression is not None
+            else None
+        )
         self.derived_parameters[str(name)] = tvbo_datamodel.DerivedParameter(
             name=str(name),
             equation=eq,
@@ -1398,6 +1503,20 @@ class Dynamics(tvbo_datamodel.Dynamics):
         See :func:`tvbo.plot.dynamics.plot_dynamics` for parameters.
         """
         from tvbo.plot.dynamics import plot_dynamics
+        from tvbo.plot.dynamics_layout import plot_dynamics_layout
+
+        layout = kwargs.pop("layout", None)
+        panels = kwargs.pop("panels", None)
+        if layout is not None or panels is not None:
+            return plot_dynamics_layout(
+                self,
+                layout=layout,
+                panels=panels,
+                figsize=kwargs.pop("figsize", None),
+                subplot_kwargs=kwargs.pop("subplot_kwargs", None),
+                fig=kwargs.pop("fig", None),
+                axes=kwargs.pop("axes", None),
+            )
 
         return plot_dynamics(self, *dims, **kwargs)
 
@@ -1433,7 +1552,9 @@ class Dynamics(tvbo_datamodel.Dynamics):
         # For conditional derived variables, use conditionals2piecewise
         # which reads from dv.equation.conditionals (canonical location).
         eq_to_render = obj.equation
-        if getattr(obj, "conditional", False) and getattr(obj.equation, "conditionals", None):
+        if getattr(obj, "conditional", False) and getattr(
+            obj.equation, "conditionals", None
+        ):
             eq_rhs_str = str(obj.equation.rhs) if obj.equation.rhs else ""
             if "Piecewise" not in eq_rhs_str:
                 pw = _equation_mod.conditionals2piecewise(obj.equation)
@@ -1463,13 +1584,17 @@ class Dynamics(tvbo_datamodel.Dynamics):
 
         equations["derived-parameters"] = []
         for k, dp in self.derived_parameters.items():
-            equations["derived-parameters"].append(Eq(lhs=Symbol(k), rhs=parse_eq(dp.equation, local_dict=scope)))
+            equations["derived-parameters"].append(
+                Eq(lhs=Symbol(k), rhs=parse_eq(dp.equation, local_dict=scope))
+            )
 
         equations["functions"] = []
         for k, f in self.functions.items():
             arguments = [Symbol(arg.name) for arg in f.arguments]
             k = Function(k)(*arguments)
-            equations["functions"].append(Eq(lhs=k, rhs=parse_eq(f.equation, local_dict=scope)))
+            equations["functions"].append(
+                Eq(lhs=k, rhs=parse_eq(f.equation, local_dict=scope))
+            )
 
         equations["derived-variables"] = []
         for k, dv in self.derived_variables.items():
@@ -1511,7 +1636,11 @@ class Dynamics(tvbo_datamodel.Dynamics):
         if format == "state-equations":
 
             def _sv_name(_eq):
-                return _eq.lhs.args[0].name if isinstance(_eq.lhs, Derivative) else _eq.lhs.name
+                return (
+                    _eq.lhs.args[0].name
+                    if isinstance(_eq.lhs, Derivative)
+                    else _eq.lhs.name
+                )
 
             return {_sv_name(_eq): _eq for _eq in equations["state-equations"]}
 
@@ -1522,7 +1651,10 @@ class Dynamics(tvbo_datamodel.Dynamics):
             if var_name_str in self.derived_variables:
                 dv = self.derived_variables[var_name_str]
                 equations["output-transformations"].append(
-                    Eq(lhs=Symbol(var_name_str), rhs=parse_eq(dv.equation, local_dict=scope))
+                    Eq(
+                        lhs=Symbol(var_name_str),
+                        rhs=parse_eq(dv.equation, local_dict=scope),
+                    )
                 )
             elif var_name_str in self.state_variables:
                 # State variable directly as output - no transformation needed
@@ -1530,7 +1662,9 @@ class Dynamics(tvbo_datamodel.Dynamics):
                 # real state equation in the flat dict returned by get_equations()
                 pass
             else:
-                raise ValueError(f"Output variable '{var_name_str}' not found in derived_variables or state_variables")
+                raise ValueError(
+                    f"Output variable '{var_name_str}' not found in derived_variables or state_variables"
+                )
         # self.keyed_equations = equations
         if format == "dict":
             return equations
@@ -1539,7 +1673,11 @@ class Dynamics(tvbo_datamodel.Dynamics):
             (
                 eq.lhs.name
                 if isinstance(eq.lhs, Function)
-                else (eq.lhs.args[0].name if isinstance(eq.lhs, Derivative) else eq.lhs.name)
+                else (
+                    eq.lhs.args[0].name
+                    if isinstance(eq.lhs, Derivative)
+                    else eq.lhs.name
+                )
             ): eq
             for eq in equations["derived-parameters"]
             + equations["functions"]
@@ -1569,7 +1707,9 @@ class Dynamics(tvbo_datamodel.Dynamics):
                 # Convert SymPy Float to Python float for YAML serialization
                 self.derived_parameters[k].value = float(sol)
 
-            return {k: self.derived_parameters[k].value for k in self.derived_parameters}
+            return {
+                k: self.derived_parameters[k].value for k in self.derived_parameters
+            }
         else:
             return None
 
@@ -1596,7 +1736,11 @@ class Dynamics(tvbo_datamodel.Dynamics):
         # Coupling inputs don't have model-specific suffixes in ontology
         coupling_term_names = set(getattr(self, "coupling_inputs", {}).keys())
         for n in G.nodes:
-            suffix = ontology.get_model_suffix(self.ontology or self.name) if str(n) not in coupling_term_names else ""
+            suffix = (
+                ontology.get_model_suffix(self.ontology or self.name)
+                if str(n) not in coupling_term_names
+                else ""
+            )
             if isinstance(n, sympy.core.function.Derivative):
                 searchstr = f"{n.args[0]}dot{suffix}"
             else:
@@ -1647,12 +1791,20 @@ class Dynamics(tvbo_datamodel.Dynamics):
             G = G[0]
 
         if color_nodes_by is not None:
-            G, G_onto, symbol_onto_mapping, onto_symbol_mapping = self.get_dependency_tree(
-                ontomapping=True, include_state_equations=True
+            G, G_onto, symbol_onto_mapping, onto_symbol_mapping = (
+                self.get_dependency_tree(ontomapping=True, include_state_equations=True)
             )
             edgecolor = None
-            cat_dict, categories = ontology_plot.get_node_color_mapping(G_onto, color_nodes_by, return_categories=True)
-            kwargs.update({"node_colors": [cat_dict[categories[symbol_onto_mapping[n]]] for n in G.nodes]})
+            cat_dict, categories = ontology_plot.get_node_color_mapping(
+                G_onto, color_nodes_by, return_categories=True
+            )
+            kwargs.update(
+                {
+                    "node_colors": [
+                        cat_dict[categories[symbol_onto_mapping[n]]] for n in G.nodes
+                    ]
+                }
+            )
 
         G = nx.relabel_nodes(
             G,
@@ -1670,7 +1822,10 @@ class Dynamics(tvbo_datamodel.Dynamics):
                 default=None,
             )
             if min_y is not None:
-                pos = {key: (x, min_y) if isinstance(key, sympy.Derivative) else (x, y) for key, (x, y) in pos.items()}
+                pos = {
+                    key: (x, min_y) if isinstance(key, sympy.Derivative) else (x, y)
+                    for key, (x, y) in pos.items()
+                }
         else:
             pos = nx.kamada_kawai_layout(G)
 
@@ -1725,13 +1880,17 @@ class Dynamics(tvbo_datamodel.Dynamics):
             template = templates.lookup.get_template("tvbo-jax-dfuns.py.mako")
 
         elif format == "julia":
-            template = templates.lookup.get_template("tvbo-julia-DifferentialEquations.jl.mako")
+            template = templates.lookup.get_template(
+                "tvbo-julia-DifferentialEquations.jl.mako"
+            )
         elif format == "bifurcation-julia":
             from tvbo.adapters.bifurcationkit import BifurcationKitAdapter
 
             continuation = kwargs.pop("continuation", None)
             ctx = BifurcationKitAdapter._prepare_context(self, continuation, **kwargs)
-            template = templates.lookup.get_template("tvbo-julia-BifurcationKit.jl.mako")
+            template = templates.lookup.get_template(
+                "tvbo-julia-BifurcationKit.jl.mako"
+            )
             rendered_code = template.render(**ctx)
             return templater.format_code(rendered_code, format=format)
         elif format == "bifurcation-numcont":
@@ -1750,7 +1909,9 @@ class Dynamics(tvbo_datamodel.Dynamics):
         else:
             raise ValueError(f"Format {format} not supported.")
 
-        rendered_code = template.render(model=self, format=format, jax="jax" in format, **kwargs)
+        rendered_code = template.render(
+            model=self, format=format, jax="jax" in format, **kwargs
+        )
         return templater.format_code(rendered_code, format=format)
 
     def render(self, format="yaml", **kwargs) -> str:
@@ -1796,8 +1957,12 @@ class Dynamics(tvbo_datamodel.Dynamics):
     def display_markdown(self, format="tvb", **kwargs):
         from IPython.display import Markdown
 
-        code = templater.format_code(self.render_code(format=format, **kwargs), format=format)
-        return Markdown(f"```{'python' if format in ['tvb', 'python', 'jax', 'autodiff'] else format}\n{code}\n```")
+        code = templater.format_code(
+            self.render_code(format=format, **kwargs), format=format
+        )
+        return Markdown(
+            f"```{'python' if format in ['tvb', 'python', 'jax', 'autodiff'] else format}\n{code}\n```"
+        )
 
     def execute(self, format="tvb", **kwargs):
 
@@ -1824,20 +1989,33 @@ class Dynamics(tvbo_datamodel.Dynamics):
                 Module = getattr(_sympy2c, "Module")
                 OdeFast = getattr(_sympy2c, "OdeFast")
             except Exception as e:
-                raise RuntimeError("sympy2c is not installed. Install it to use format='c' or 'sympy2c'.") from e
+                raise RuntimeError(
+                    "sympy2c is not installed. Install it to use format='c' or 'sympy2c'."
+                ) from e
 
             params = self.keyed_parameters
-            params.update({Symbol(str(ci)): 0.0 for ci in getattr(self, "coupling_inputs", {})})
+            params.update(
+                {Symbol(str(ci)): 0.0 for ci in getattr(self, "coupling_inputs", {})}
+            )
             params.update({Symbol("local_coupling"): 0.0})
 
             scope = self.get_symbolic_elements()
-            derived_variables = {Symbol(k): parse_eq(v.equation, local_dict=scope) for k, v in self.derived_variables.items()}
+            derived_variables = {
+                Symbol(k): parse_eq(v.equation, local_dict=scope)
+                for k, v in self.derived_variables.items()
+            }
 
             lhs = list()
             rhs = list()
             for k, v in self.get_equations(format="state-equations").items():
                 lhs.append(Symbol(k))
-                expr = v.rhs.subs(params).subs(derived_variables).subs(derived_variables).subs(derived_variables).subs(params)
+                expr = (
+                    v.rhs.subs(params)
+                    .subs(derived_variables)
+                    .subs(derived_variables)
+                    .subs(derived_variables)
+                    .subs(params)
+                )
                 rhs.append(expr)
 
             module_decl = Module()
@@ -1853,7 +2031,9 @@ class Dynamics(tvbo_datamodel.Dynamics):
             from tvbo.classes.continuation import Continuation
             from tvbo.classes.experiment import SimulationExperiment
 
-            cont = kwargs.pop("continuation", None) or Continuation(name=self.name + "_eq")
+            cont = kwargs.pop("continuation", None) or Continuation(
+                name=self.name + "_eq"
+            )
             exp = SimulationExperiment(
                 name=self.name,
                 label=getattr(self, "label", self.name),
@@ -1903,7 +2083,11 @@ class Dynamics(tvbo_datamodel.Dynamics):
 
         local_ct = lems.ComponentType(
             name=self.name,
-            description=(self.ontology.description.first() if self.ontology and self.ontology.description else None),
+            description=(
+                self.ontology.description.first()
+                if self.ontology and self.ontology.description
+                else None
+            ),
         )
         model.add(local_ct)
 
@@ -1938,7 +2122,9 @@ class Dynamics(tvbo_datamodel.Dynamics):
                         exposure=dp.name,
                     )
                     for case in dp.cases:
-                        condition_str = None if case.condition is True else str(case.condition)
+                        condition_str = (
+                            None if case.condition is True else str(case.condition)
+                        )
                         cv.add_case(
                             lems.Case(
                                 condition=condition_str,
@@ -1968,20 +2154,26 @@ class Dynamics(tvbo_datamodel.Dynamics):
 
         for sv in _ontology.get_model_statevariables(self.ontology).values():
             sv_name = _ontology.replace_suffix(sv)
-            dimension = unit_to_lems_dimension(sv.has_unit.first().label.first() if sv.has_unit.first() else None)
+            dimension = unit_to_lems_dimension(
+                sv.has_unit.first().label.first() if sv.has_unit.first() else None
+            )
             sv_start = sv_name + "_0"
 
             if assign_uniform:
                 init_conds[sv_start] = initial_conditions
             else:
-                init_conds[sv_start] = init_conds.get(sv_start, init_conds.get(sv_name, 0.0))
+                init_conds[sv_start] = init_conds.get(
+                    sv_start, init_conds.get(sv_name, 0.0)
+                )
 
             deriv = sv.has_derivative.first()
 
             local_ct.add(lems.Parameter(name=sv_start, dimension=dimension))
             local_ct.add(lems.Exposure(name=sv_name, dimension=dimension))
 
-            local_ct.dynamics.add(lems.StateVariable(name=sv_name, dimension=dimension, exposure=sv_name))
+            local_ct.dynamics.add(
+                lems.StateVariable(name=sv_name, dimension=dimension, exposure=sv_name)
+            )
             # Base derivative from ontology
             base_expr = str(_equation_mod.sympify_value(deriv)).replace("**", "^")
             # Do not inject extra inputs here; global coupling is represented via coupling_inputs (e.g., c_pop0)
@@ -2026,7 +2218,9 @@ class Dynamics(tvbo_datamodel.Dynamics):
         kwargs = {k: kwargs[k] for k in sorted(kwargs.keys())}
         filename = join(
             tempdir,
-            self.name + f"_format-{format}_" + "_".join(f"{k}-{v}" for k, v in kwargs.items()),
+            self.name
+            + f"_format-{format}_"
+            + "_".join(f"{k}-{v}" for k, v in kwargs.items()),
         )
 
         return filename
@@ -2041,19 +2235,25 @@ class Dynamics(tvbo_datamodel.Dynamics):
                 stacklevel=2,
             )
         # Auto-detect: if any SV has a distribution, sample from it
-        has_distributions = any(getattr(sv, "distribution", None) for sv in self.state_variables.values())
+        has_distributions = any(
+            getattr(sv, "distribution", None) for sv in self.state_variables.values()
+        )
         if random or has_distributions:
             init = []
             for k, sv in self.state_variables.items():
                 dist = getattr(sv, "distribution", None)
                 if dist:
                     # Use distribution.domain, fall back to sv.domain
-                    domain = getattr(dist, "domain", None) or getattr(sv, "domain", None)
+                    domain = getattr(dist, "domain", None) or getattr(
+                        sv, "domain", None
+                    )
                     lo = float(domain.lo) if domain and domain.lo is not None else -10.0
                     hi = float(domain.hi) if domain and domain.hi is not None else 10.0
                     dist_name = str(getattr(dist, "name", "Uniform")).lower()
                     if dist_name in ("gaussian", "normal"):
-                        sv_init = np.random.normal(loc=(lo + hi) / 2, scale=(hi - lo) / 6, size=N)
+                        sv_init = np.random.normal(
+                            loc=(lo + hi) / 2, scale=(hi - lo) / 6, size=N
+                        )
                     else:
                         sv_init = np.random.uniform(lo, hi, size=N)
                 elif random:
@@ -2067,17 +2267,24 @@ class Dynamics(tvbo_datamodel.Dynamics):
                 else:
                     # No distribution, no random flag → use initial_value
                     sv_init = np.repeat(
-                        float(sv.initial_value) if sv.initial_value is not None else default,
+                        (
+                            float(sv.initial_value)
+                            if sv.initial_value is not None
+                            else default
+                        ),
                         N,
                     )
                 init.append(sv_init)
         else:
             init = [
-                float(sv.initial_value) if sv.initial_value is not None else default for sv in self.state_variables.values()
+                float(sv.initial_value) if sv.initial_value is not None else default
+                for sv in self.state_variables.values()
             ]
         return np.array(init)
 
-    def run(self, format="python", verbose=0, save=True, run_kwargs={}, **kwargs) -> TimeSeries | BifurcationResult:
+    def run(
+        self, format="python", verbose=0, save=True, run_kwargs={}, **kwargs
+    ) -> TimeSeries | BifurcationResult:
         if save:
             kwargs.update({"filename": self.get_run_filename(format=format, **kwargs)})
 
@@ -2086,8 +2293,11 @@ class Dynamics(tvbo_datamodel.Dynamics):
 
         if "julia" in format:
             code = self.render_code(format=format, **kwargs)
-            from tvbo.run.julia import (extract_bifurcation_result,
-                                        extract_ode_solution, run_julia_code)
+            from tvbo.run.julia import (
+                extract_bifurcation_result,
+                extract_ode_solution,
+                run_julia_code,
+            )
 
             run_julia_code(code)
             if format == "julia":
@@ -2111,15 +2321,18 @@ class Dynamics(tvbo_datamodel.Dynamics):
                 bif_res = BifurcationResult(br=br_obj, model=self, **kwargs)
                 # Auto-detect PO branches from continuation object or explicit kwarg
                 cont = kwargs.get("continuation", None)
-                _has_branches = ("periodic_orbits" in kwargs and kwargs["periodic_orbits"]) or (
-                    cont and getattr(cont, "branches", None)
-                )
+                _has_branches = (
+                    "periodic_orbits" in kwargs and kwargs["periodic_orbits"]
+                ) or (cont and getattr(cont, "branches", None))
                 if _has_branches:
                     from tvbo.adapters.julia import eval_with_auto_install
 
                     try:
                         po = eval_with_auto_install("po_results")
-                        bif_res.periodic_orbits = [BifurcationResult(br=p, model=self, **kwargs) for p in po.branches]
+                        bif_res.periodic_orbits = [
+                            BifurcationResult(br=p, model=self, **kwargs)
+                            for p in po.branches
+                        ]
                     except Exception as e:
                         import warnings
 
@@ -2134,7 +2347,9 @@ class Dynamics(tvbo_datamodel.Dynamics):
             if getattr(self, "system_type", "continuous") == "discrete":
                 # Initial conditions
                 if "u_0" not in kwargs:
-                    u_0 = self.get_initial_values(random=kwargs.get("random_initial_conditions", False))
+                    u_0 = self.get_initial_values(
+                        random=kwargs.get("random_initial_conditions", False)
+                    )
                 else:
                     u_0 = kwargs.pop("u_0")
 
@@ -2191,7 +2406,9 @@ class Dynamics(tvbo_datamodel.Dynamics):
 
             if "u_0" not in kwargs:
                 # Initial conditions
-                u_0 = self.get_initial_values(random=kwargs.get("random_initial_conditions", False))
+                u_0 = self.get_initial_values(
+                    random=kwargs.get("random_initial_conditions", False)
+                )
             else:
                 u_0 = kwargs.pop("u_0")
 
@@ -2205,7 +2422,9 @@ class Dynamics(tvbo_datamodel.Dynamics):
             else:
                 t = kwargs.pop("t")
             # Run the simulation with the updated parameters
-            solution_slider = odeint(lambda u, t: model_dfun(u, t, **run_kwargs), u_0, t)
+            solution_slider = odeint(
+                lambda u, t: model_dfun(u, t, **run_kwargs), u_0, t
+            )
 
             return TimeSeries(
                 data=solution_slider.reshape(*solution_slider.shape, 1, 1),
@@ -2223,7 +2442,9 @@ class Dynamics(tvbo_datamodel.Dynamics):
             T = kwargs.pop("t", np.arange(0, duration, dt, dtype=np.float64))
 
             compiled_module = self.execute(format=format, **kwargs)
-            result, diagnostics = compiled_module.solve_fast_robertson(u_0, T, rtol=rtol, atol=atol)
+            result, diagnostics = compiled_module.solve_fast_robertson(
+                u_0, T, rtol=rtol, atol=atol
+            )
             return TimeSeries(
                 data=result.reshape(*result.shape, 1, 1),
                 time=T,
@@ -2235,7 +2456,9 @@ class Dynamics(tvbo_datamodel.Dynamics):
 
     def add_stimulus(self, stimulus, as_derived_variable=True):
 
-        if not any([sv.stimulation_variable for sv in self.state_variables.values()]) and not any(
+        if not any(
+            [sv.stimulation_variable for sv in self.state_variables.values()]
+        ) and not any(
             ["stim_t" in sv.equation.rhs for sv in self.state_variables.values()]
         ):
             print(
@@ -2250,9 +2473,18 @@ class Dynamics(tvbo_datamodel.Dynamics):
             params = {param_map[k]: v for k, v in params.items()}
             eq = eq.subs(param_map)
             self.derived_variables.update(
-                {"stim_t": tvbo_datamodel.DerivedVariable(name="stim_t", equation=tvbo_datamodel.Equation(rhs=eq))}
+                {
+                    "stim_t": tvbo_datamodel.DerivedVariable(
+                        name="stim_t", equation=tvbo_datamodel.Equation(rhs=eq)
+                    )
+                }
             )
-            self.parameters.update({str(k): tvbo_datamodel.Parameter(name=str(k), value=v) for k, v in params.items()})
+            self.parameters.update(
+                {
+                    str(k): tvbo_datamodel.Parameter(name=str(k), value=v)
+                    for k, v in params.items()
+                }
+            )
 
     def find_periodic_orbits(self, f):
         # Get the directory and the basename without extension
@@ -2278,83 +2510,41 @@ class Dynamics(tvbo_datamodel.Dynamics):
         ax2=None,
         **kwargs,
     ):
-        colors = colormaps["viridis"](np.linspace(0, 1, n_runs + 1))[:-1]
+        panels = {
+            "a": {
+                "kind": "bifurcation",
+                "run": {"format": "bifurcation-julia", "ICS": ICS, **kwargs},
+                "plot": {"VOI": VOI, "ICS": ICS},
+                "title": "Bifurcation diagram",
+            },
+            "b": {
+                "kind": "parameter_sweep_timeseries",
+                "parameter": ICS,
+                "dims": (VOI,),
+                "t": t,
+                "from_panel": "a",
+                "n_values": n_runs,
+                "legend_title": ICS,
+                "title": "Time series",
+            },
+        }
 
-        if ax1 is None:
-            fig, axs = plt.subplots(ncols=2)
-            ax1, ax2 = axs
-            return_fig = True
-        else:
-            return_fig = False
+        if ax1 is None and ax2 is None:
+            return self.plot(layout="ab", panels=panels)
 
-        ax1.set_title("Bifurcation diagram")
-        ax2.set_title("Time series")
-        # Compute bifurcation result directly and plot via its method
-        bif = self.run(format="bifurcation-julia", ICS=ICS, **kwargs)
-        bif.plot(VOI=VOI, ICS=ICS, ax=ax1)
-        y0, y1 = ax1.get_ylim()
-
-        # Parameter sweep across continuation parameter range inferred from result
-        p_min, p_max = bif.df["param"].min(), bif.df["param"].max()
-        a_values = np.linspace(p_min, p_max, n_runs)
-
-        for i, p in enumerate(a_values):
-            self.parameters[ICS].value = p
-
-            data = self.run(format="python", t=t)
-            # exp = experiment.SimulationExperiment(
-            #     id=i, model=self, connectivity={"number_of_regions": 1}
-            # )
-            # self.experiments.update({ICS: {p: exp}})
-
-            # data = self.experiments[ICS][p].simulation_data
-            # data = exp.run(simulation_length=simulation_length)["Raw"]
-
-            ax2.plot(
-                data.time,
-                data.get_state_variable(VOI).data.squeeze(),
-                alpha=0.5,
-                color=colors[i],
-                label=f"{p:.2f}",
-            )
-
-            ax1.vlines(p, y0, y1, color=colors[i], alpha=0.5, linestyle="--", linewidth=0.5)
-            ax1.annotate(
-                f"{p:.2f}",
-                xy=(p, y1),
-                xytext=(p, y1),
-                # arrowprops=dict(facecolor="black", shrink=0.05),
-                ha="left",
-                fontsize=8,
-            )
-        ax2.set_xlabel("Time in ms")
-        ax2.set_ylabel(f"${latex(Symbol(VOI))}$")
-
-        ax2.legend(
-            title=ICS,
-            handlelength=0.5,
-            fontsize=8,
-            handletextpad=0.5,
-            loc="lower right",
+        from tvbo.plot.dynamics_layout import (
+            render_dynamics_panel as _render_dynamics_panel,
         )
-        ax1.legend(
-            handlelength=1,
-            fontsize=8,
-            handletextpad=0.5,
-            loc="lower right",
-        )
-        ax1.set_ylim(y0, y1)
+        from tvbo.plot.layout_mosaic import finish_panel as _finish_panel
 
-        if return_fig:
-            for ax in fig.axes:
-                ax.set_box_aspect(1)
-                ax.spines["top"].set_visible(False)
-                ax.spines["right"].set_visible(False)
-
-            fig.tight_layout()
-
-            plt.close()
-            return fig
+        cache = {}
+        _render_dynamics_panel(self, panels["a"], ax1, cache)
+        cache["a"] = self.run(format="bifurcation-julia", ICS=ICS, **kwargs)
+        ax1.clear()
+        cache["a"].plot(VOI=VOI, ICS=ICS, ax=ax1)
+        _render_dynamics_panel(self, panels["b"], ax2, cache)
+        _finish_panel(ax1, panels["a"])
+        _finish_panel(ax2, panels["b"])
 
     def parameter_table(self):
         import pandas as pd
@@ -2379,14 +2569,12 @@ class Dynamics(tvbo_datamodel.Dynamics):
     def save_python_class(self, directory="."):
         fpath = join(directory, f"{self.name}.py")
         with open(fpath, "w") as f:
-            f.write(
-                """
+            f.write("""
 import math
 import numpy as np
 from tvb.simulator.models.base import ModelNumbaDfun, Model
 from numba import guvectorize, float64
-from tvb.basic.neotraits.api import NArray, List, Range, Final"""
-            )
+from tvb.basic.neotraits.api import NArray, List, Range, Final""")
             f.write(self.render_code())
 
     def generate_report(
@@ -2473,6 +2661,13 @@ from tvb.basic.neotraits.api import NArray, List, Range, Final"""
         memo[id(self)] = clone
         return clone
 
-class Model(Dynamics):
+
+class Model(DynamicalSystem):
     def __init__(self, name, ontology=None, metadata=None, **kwargs):
         super().__init__(name=name, **kwargs)
+
+
+class Dynamics(DynamicalSystem):
+    def __init__(self, name, **kwargs):
+        super().__init__(name=name, **kwargs)
+

@@ -15,17 +15,18 @@ import numpy as np
 
 
 def _prepare(data):
-    """Average multi-node data along node dim → (time, variable)."""
+    """Extract time, variable names, and the data array unchanged.
+
+    Per-node traces are preserved. If a single aggregate (e.g. mean) is
+    desired it must be specified explicitly in the YAML as an observation.
+    """
 
     time = data.coords["time"].values if "time" in data.coords else np.arange(data.shape[0])
     if "variable" in data.coords:
         var_names = list(np.atleast_1d(data.coords["variable"].values))
     else:
         var_names = None
-    arr = data
-    if "node" in arr.dims:
-        arr = arr.mean(dim="node")
-    return time, var_names, arr
+    return time, var_names, data
 
 
 def _group_by_unit(var_names, units):
@@ -69,11 +70,20 @@ def plot_timeseries(result, ax=None, **kwargs):
         if created:
             fig, ax = plt.subplots()
         label = var_names[0] if var_names else None
-        ax.plot(time, np.asarray(arr).reshape(len(time), -1), label=label, **kwargs)
+        arr_2d = np.asarray(arr).reshape(len(time), -1)
+        node_labels = (
+            [str(n) for n in arr.coords["node"].values]
+            if "node" in getattr(arr, "dims", ())
+            else [str(i) for i in range(arr_2d.shape[1])]
+        )
+        for i in range(arr_2d.shape[1]):
+            ax.plot(time, arr_2d[:, i], label=f"node {node_labels[i]}", **kwargs)
         ax.set_xlabel("time [ms]")
         if label:
             u = str(units.get(label, ""))
             ax.set_ylabel(f"{label} [{u}]" if u else label)
+        if arr_2d.shape[1] > 1:
+            ax.legend(fontsize="smaller")
         if created:
             plt.close()
             return fig
