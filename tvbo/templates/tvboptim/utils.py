@@ -32,8 +32,14 @@ from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 
 def safe_name(name: str) -> str:
-    """Convert name to valid Python identifier."""
-    return str(name).replace(" ", "_").replace("-", "_").lower()
+    """Convert name to valid Python identifier (preserves case).
+
+    Python identifiers are case-sensitive, and result keys must match the
+    user's YAML keys verbatim so that ``res.explorations.C_sweep_fig3``
+    works for a YAML entry named ``C_sweep_fig3``. Only characters that
+    are invalid in identifiers (spaces, hyphens) are replaced.
+    """
+    return str(name).replace(" ", "_").replace("-", "_")
 
 
 def as_list(obj: Any) -> list:
