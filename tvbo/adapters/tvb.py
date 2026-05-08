@@ -499,17 +499,21 @@ def to_tvb_monitor(observation):
             hrf_cls = _HRF_CLASSES.get(str(arg.value))
             if hrf_cls:
                 hrf = hrf_cls()
-                # Populate HRF parameters from pipeline
+                # Populate HRF parameters from declarative pipeline constants.
                 for step in observation.pipeline or []:
-                    step_name = str(getattr(step, "name", ""))
-                    if step_name in ("hrf_kernel", "hemodynamic_response"):
-                        eq = getattr(step, "equation", None)
-                        if eq:
-                            eq_params = getattr(eq, "parameters", None) or {}
-                            for pk, pv in eq_params.items() if hasattr(eq_params, "items") else []:
-                                val = getattr(pv, "value", None)
-                                if val is not None and str(pk) in hrf.parameters:
-                                    hrf.parameters[str(pk)] = float(val)
+                    eq = getattr(step, "equation", None)
+                    if not eq:
+                        continue
+                    eq_params = getattr(eq, "parameters", None) or {}
+                    if hasattr(eq_params, "items"):
+                        parameter_items = eq_params.items()
+                    else:
+                        parameter_items = ((getattr(parameter, "name", None), parameter) for parameter in eq_params)
+                    for param_key, param in parameter_items:
+                        param_name = getattr(param, "name", None) or param_key
+                        val = getattr(param, "value", None)
+                        if val is not None and str(param_name) in hrf.parameters:
+                            hrf.parameters[str(param_name)] = float(val)
                 kwargs["hrf_kernel"] = hrf
         elif arg_name == "hrf_length" and arg.value is not None:
             kwargs["hrf_length"] = float(arg.value)

@@ -131,16 +131,18 @@ def _get_hrf_params(obs):
                 hrf_length_from_cr = True
 
     for step in (getattr(obs, 'pipeline', None) or []):
+        eq = getattr(step, 'equation', None)
+        if eq:
+            for pk, pv in (getattr(eq, 'parameters', {}) or {}).items():
+                param_name = getattr(pv, 'name', None) or pk
+                val = getattr(pv, 'value', None)
+                if val is not None:
+                    hrf_eq_params[str(param_name)] = float(val)
+
         sn = str(getattr(step, 'name', '') or '')
         sf = str(getattr(step, 'function', '') or '')
         if sn in ('hemodynamic_response', 'hrf_kernel',
                    'HemodynamicResponseFunctionTVB') or sf == 'hrf_kernel':
-            eq = getattr(step, 'equation', None)
-            if eq:
-                for pk, pv in (getattr(eq, 'parameters', {}) or {}).items():
-                    val = getattr(pv, 'value', None)
-                    if val is not None:
-                        hrf_eq_params[str(pk)] = float(val)
             # Only use pipeline duration if constructor_args didn't set hrf_length
             if not hrf_length_from_cr:
                 tr = getattr(step, 'time_range', None)

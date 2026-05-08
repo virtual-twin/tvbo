@@ -240,6 +240,175 @@ def to_numeric(val: Any) -> Union[int, float, Any]:
     return val
 
 
+def iter_parameter_values(parameters: Any):
+    """Yield ``(name, value)`` pairs from schema Parameter collections."""
+    if not parameters:
+        return
+
+    if hasattr(parameters, "items"):
+        parameter_items = parameters.items()
+    elif isinstance(parameters, (list, tuple)):
+        parameter_items = ((getattr(parameter, "name", None), parameter) for parameter in parameters)
+    else:
+        parameter_items = []
+
+    for parameter_key, parameter in parameter_items:
+        parameter_name = getattr(parameter, "name", None) or parameter_key
+        parameter_value = getattr(parameter, "value", parameter)
+        if parameter_name is not None and parameter_value is not None:
+            yield str(parameter_name), to_numeric(parameter_value)
+
+
+def parameter_value(parameters: Any, name: str, default: Any = None) -> Any:
+    """Return a named Parameter value from a schema collection."""
+    for parameter_name, value in iter_parameter_values(parameters):
+        if parameter_name == name:
+            return value
+    return default
+
+
+def pipeline_equation_parameters(pipeline: Any) -> Dict[str, Any]:
+    """Collect equation parameters from all observation pipeline steps."""
+    values = {}
+    for step in pipeline or []:
+        equation = getattr(step, "equation", None)
+        if equation is None:
+            continue
+        for parameter_name, value in iter_parameter_values(getattr(equation, "parameters", None)):
+            values[parameter_name] = value
+    return values
+
+
+def pipeline_argument(pipeline: Any, name: str) -> Any:
+    """Return the first named pipeline argument object."""
+    for step in pipeline or []:
+        for argument in getattr(step, "arguments", None) or []:
+            if getattr(argument, "name", None) == name:
+                return argument
+    return None
+
+
+def time_argument_ms(argument: Any, default: float) -> float:
+    """Resolve a time-valued schema argument to milliseconds."""
+    if argument is None or getattr(argument, "value", None) is None:
+        return default
+    value = float(to_numeric(argument.value))
+    unit = str(getattr(argument, "unit", "") or "").lower()
+    if unit in {"s", "sec", "second", "seconds"}:
+        return value * 1000.0
+    return value
+
+
+def _literal_code(value: Any) -> str:
+    """Render a literal constructor value as generated Python code."""
+    return repr(value)
+
+
+def _set_literal_arg(class_info: Dict[str, Any], name: str, value: Any) -> None:
+    class_info["constructor_args"][name] = value
+    class_info["constructor_arg_codes"][name] = _literal_code(value)
+
+
+def _set_code_arg(class_info: Dict[str, Any], name: str, code: str) -> None:
+    class_info["constructor_arg_codes"][name] = code
+
+
+def _base_class_info(module: str, name: str, source_info: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        "name": name,
+        "module": module,
+        "constructor_args": {},
+        "constructor_arg_codes": {},
+        "call_args": source_info.get("call_args", {}),
+        "warmup_source": source_info.get("warmup_source"),
+        "accepts_voi": False,
+        "accepts_history": bool(source_info.get("warmup_source")),
+        "extra_imports": [],
+    }
+
+
+def adapt_class_reference_for_tvboptim(class_info: Dict[str, Any], obs: Any, dt: float) -> Optional[Dict[str, Any]]:
+    """Translate schema class references to native tvboptim monitor classes.
+
+    Database observation metadata may point at TVB monitor classes because the
+    same schema object is used by the TVB backend. The tvboptim backend should
+    consume the equivalent tvboptim monitor API when one exists.
+    """
+    class_info.setdefault("constructor_arg_codes", {
+        name: _literal_code(value)
+        for name, value in class_info.get("constructor_args", {}).items()
+        if value is not None
+    })
+    class_info.setdefault("accepts_voi", False)
+    class_info.setdefault("accepts_history", bool(class_info.get("warmup_source")))
+    class_info.setdefault("extra_imports", [])
+
+    module = str(class_info.get("module") or "")
+    class_name = str(class_info.get("name") or "")
+    if module != "tvb.simulator.monitors":
+        return class_info
+
+    if class_name == "Bold":
+        return _adapt_tvb_bold_reference(class_info, obs, dt)
+    if class_name == "TemporalAverage":
+        return _adapt_tvb_downsampling_reference(class_info, obs, "TemporalAverage")
+    if class_name == "SubSample":
+        return _adapt_tvb_downsampling_reference(class_info, obs, "SubSampling")
+    return class_info
+
+
+def _adapt_tvb_downsampling_reference(class_info: Dict[str, Any], obs: Any, tvboptim_class_name: str) -> Dict[str, Any]:
+    if tvboptim_class_name == "TemporalAverage":
+        tvboptim_class_name = "TVBTemporalAverage"
+        module = "tvbo.templates.tvboptim.observations"
+    else:
+        module = "tvboptim.observations.tvb_monitors.downsampling"
+    adapted = _base_class_info(
+        module,
+        tvboptim_class_name,
+        class_info,
+    )
+    period = class_info.get("constructor_args", {}).get("period", getattr(obs, "period", None))
+    if period is not None:
+        _set_literal_arg(adapted, "period", to_numeric(period))
+    adapted["accepts_voi"] = True
+    return adapted
+
+
+def _adapt_tvb_bold_reference(class_info: Dict[str, Any], obs: Any, dt: float) -> Optional[Dict[str, Any]]:
+    constructor_args = class_info.get("constructor_args", {})
+    hrf_kernel = constructor_args.get("hrf_kernel", "FirstOrderVolterra")
+    if str(hrf_kernel) != "FirstOrderVolterra":
+        return None
+
+    adapted = _base_class_info(
+        "tvbo.templates.tvboptim.observations",
+        "TVBBold",
+        class_info,
+    )
+    adapted["accepts_voi"] = True
+    adapted["accepts_history"] = True
+
+    equation_parameters = pipeline_equation_parameters(getattr(obs, "pipeline", None))
+    period = constructor_args.get("period", getattr(obs, "period", None))
+    if period is None:
+        period = parameter_value(getattr(obs, "parameters", None), "TR")
+    if period is not None:
+        _set_literal_arg(adapted, "period", to_numeric(period))
+    stock_dt = pipeline_argument(getattr(obs, "pipeline", None), "stock_dt")
+    _set_literal_arg(adapted, "downsample_period", time_argument_ms(stock_dt, 4.0))
+
+    for argument_name in ("k_1", "V_0"):
+        if argument_name in equation_parameters:
+            _set_literal_arg(adapted, argument_name, equation_parameters[argument_name])
+
+    _set_literal_arg(adapted, "hrf_length", to_numeric(constructor_args.get("hrf_length", 20000.0)))
+    for argument_name in ("tau_s", "tau_f", "scaling"):
+        if argument_name in equation_parameters:
+            _set_literal_arg(adapted, argument_name, equation_parameters[argument_name])
+    return adapted
+
+
 # =============================================================================
 # State Variable Bounds
 # =============================================================================
@@ -336,6 +505,9 @@ def obs_has_all_args(obs: Any) -> bool:
     Returns True if all pipeline step arguments either have values
     or are implicitly satisfied by source.
     """
+    if getattr(obs, "class_reference", None):
+        return True
+
     pipeline = getattr(obs, "pipeline", None) or []
     has_source = getattr(obs, "source", None) or getattr(obs, "source_observation", None)
 

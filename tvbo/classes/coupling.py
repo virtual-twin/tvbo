@@ -558,13 +558,18 @@ class Coupling(tvbo_datamodel.Coupling):
                     )
                 )
 
-            fig, ax = plt.subplots(figsize=(4, 3))
+            if ax is None:
+                fig, ax = plt.subplots(figsize=(4, 3))
+                return_fig = True
+            else:
+                return_fig = False
             ax.plot(xs, ys)
             ax.set_xlabel(f"x[{k}]")
             ax.set_ylabel("y(i)")
             ax.set_title("Coupling vs single input component")
-            plt.close()
-            return fig
+            if return_fig:
+                plt.close()
+                return fig
 
 
 def get_global_coupling_functions():
