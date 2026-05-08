@@ -221,3 +221,34 @@ def build():
 
 # Convenience: export a ready-to-use solver using the baked experiment
 solve_pde, visualize, meta = build()
+
+
+# ---------------------------------------------------------------------------
+# Standalone entry point (executed when this script is run directly).
+# ---------------------------------------------------------------------------
+if __name__ == "__main__":
+    import argparse
+    from pathlib import Path as _Path
+
+    _parser = argparse.ArgumentParser(description="Run PDE-FEM TVBO simulation")
+    _parser.add_argument("-t", "--t-end", type=float, default=None,
+                         help="End time of simulation (defaults to dt only)")
+    _parser.add_argument("-o", "--output", type=_Path, default=None,
+                         help="Output .npz file (or directory)")
+    _args = _parser.parse_args()
+
+    _outpath = None
+    if _args.output is not None:
+        _out = _args.output
+        if _out.suffix != ".npz":
+            _out.mkdir(parents=True, exist_ok=True)
+            _outpath = str(_out / "result.npz")
+        else:
+            _out.parent.mkdir(parents=True, exist_ok=True)
+            _outpath = str(_out)
+
+    _u, _U = solve_pde(t_end=_args.t_end, outpath=_outpath)
+    print(f"Done: u.shape={getattr(_u, 'shape', None)}, "
+          f"steps={'-' if _U is None else _U.shape[0]}")
+    if _outpath:
+        print(f"Wrote results to {_outpath}")

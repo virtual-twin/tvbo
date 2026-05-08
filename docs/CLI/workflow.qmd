@@ -1,0 +1,126 @@
+---
+title: "tvbo workflow"
+---
+
+Sub-tree that turns a Study or Experiment into a self-contained, portable reproducibility kit for an HPC scheduler or a workflow engine.
+
+## Sub-commands
+
+| Command | Purpose |
+|---------|---------|
+| `tvbo workflow plan` | Show the resolved plan (no files written) |
+| `tvbo workflow slurm` | Emit an `sbatch` kit |
+| `tvbo workflow snakemake` | Emit a Snakemake kit |
+| `tvbo workflow nextflow` | Emit a Nextflow kit |
+| `tvbo workflow backends` | List backends and their ontology-derived capabilities |
+
+All emitter commands share the same flag surface. The kit layout is documented on its own page: see [Workflow kits anatomy](workflow-kits.qmd).
+
+## Common flags
+
+| Flag | Default | Purpose |
+|------|---------|---------|
+| `SPEC` | _(required)_ | Path, CURIE, or DB name (Study or Experiment). |
+| `--backend, -b` | `tvboptim` | Backend whose code is rendered into the kit's `scripts/` and whose `vectorize_axes` drive the planner. |
+| `--experiment` | _(first in study)_ | If SPEC is a Study, pick this experiment by `key`/`name`/`label`. |
+| `-o, --output` | `out/<study>/<exp>/<engine>/` | Output directory for the kit. |
+| `--set KEY=VALUE` | _(none, repeatable)_ | Override a workflow spec key. Dotted keys nest, e.g. `--set slurm.account=foo`. Booleans/numbers are coerced. |
+| `--stdout` | _(off)_ | Print the artefact text only and skip kit creation. |
+
+## `tvbo workflow plan`
+
+Compute the plan and print it. `--json` emits machine-readable output:
+
+```bash
+tvbo workflow plan experiment:JR_MEG --backend jax
+```
+
+Sample output:
+
+```text
+study      : default
+experiment : JR_MEG_FrequencyGradient_Optimization
+backend    : jax (JAX)
+engine     : local
+container  : (none)
+out_dir    : out/{wildcards}
+
+vectorized inside backend (1 job covers all):
+  - G            ReducedWongWang.G   kind=parameters         n=11
+  - seed         integrator.noise_seed kind=noise_seed       n=8
+
+workflow-fanned axes (engine spawns 1 task per cell):
+  (none)
+
+total workflow cells : 1
+chunk                : 1  →  1 array task(s)
+```
+
+If the same experiment is planned against `--backend tvb` (which has empty `vectorize_axes`), every axis becomes a workflow-fanned axis and produces 88 cells.
+
+## `tvbo workflow slurm` / `snakemake` / `nextflow`
+
+Each command writes a complete kit:
+
+```bash
+tvbo workflow snakemake experiment:JR_MEG \
+    --backend jax \
+    --set slurm.account=tvbo \
+    --set slurm.time=02:00:00 \
+    -o ./kits/jr_meg_jax
+```
+
+Resulting layout (see [Workflow kits anatomy](workflow-kits.qmd) for details):
+
+```text
+kits/jr_meg_jax/
+├── Snakefile
+├── scripts/
+│   └── JR_MEG_FrequencyGradient_Optimization.py
+├── spec/
+│   └── JR_MEG_FrequencyGradient_Optimization.yaml
+└── README.md
+```
+
+`--stdout` prints the artefact only, suitable for pipelines:
+
+```bash
+tvbo workflow slurm experiment:JR_MEG --backend jax --stdout > run.sbatch
+```
+
+## `tvbo workflow backends`
+
+Prints the ontology-derived capability table (see [Backends](backends.qmd) for the full discussion):
+
+```bash
+tvbo workflow backends
+tvbo workflow backends --json
+```
+
+Sample row:
+
+```text
+jax  (JAX)
+  tasks         : GradientBasedOptimization, ODEIntegration, ParameterExploration, SDEIntegration
+  capabilities  : Autodiff, CodeGeneration, GPUSupport, JITCompilation, VectorizedRNG
+  vectorize_axes: initial_conditions, noise_seed, parameters
+```
+
+## How the plan is built
+
+1. Resolve SPEC → Study (+ Experiment) or Experiment.
+2. Merge `study.workflow:` block with all `--set KEY=VALUE` overrides (dotted keys nest).
+3. Extract every `ExplorationAxis` from `experiment.explorations`. Each axis is classified by its dotted parameter path:
+    - `noise_seed` if the path contains `noise_seed` or ends with `.seed`
+    - `initial_conditions` if the path mentions `initial_conditions`
+    - `subjects` if it mentions `subject` or `sample`
+    - otherwise `parameters`
+4. For each axis, place it as **vectorized** (handled inside the backend) or **workflow-fanned** (a wildcard / array index) according to the backend's `vectorize_axes` set.
+5. Compute total workflow cells (`product(n_i)` for workflow axes), default chunk = 1, derive number of array tasks.
+
+## See also
+
+- [Workflow kits anatomy](workflow-kits.qmd)
+- [Backends](backends.qmd) — what each backend vectorizes
+- [HPC patterns](hpc.qmd) — sharding, containers, retries
+- [`tvbo run --engine`](run.qmd) — one-command emit + submit

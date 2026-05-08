@@ -9,6 +9,8 @@ def test_simulation_experiment_auto_components():
     oc = ontology.get_model("JansenRit")
     dyn = Dynamics.from_ontology(oc)
     exp = SimulationExperiment(dynamics=dyn)
+    # Coupling resolution is deferred to configure() (execution boundary)
+    exp.configure()
 
     # Auto-filled components
     assert exp.integration is not None, "Integrator should be auto-created"

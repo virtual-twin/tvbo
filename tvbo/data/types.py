@@ -18,7 +18,7 @@ from jax.tree_util import register_pytree_node_class
 import jax.numpy as jnp
 
 
-def _to_dataarray(raw_data, raw_time=None, state_names=None):
+def _to_dataarray(raw_data, raw_time=None, state_names=None, nodes=None):
     """Convert raw ndarray + metadata to xr.DataArray.
 
     Parameters
@@ -56,6 +56,12 @@ def _to_dataarray(raw_data, raw_time=None, state_names=None):
             coords["variable"] = list(state_names)
     if "mode" in dims:
         coords["mode"] = list(range(data_np.shape[dims.index("mode")]))
+    if "node" in dims:
+        n_nodes = data_np.shape[dims.index("node")]
+        if nodes and len(nodes) == n_nodes:
+            coords["node"] = [str(n) for n in nodes]
+        else:
+            coords["node"] = list(range(n_nodes))
     return xr.DataArray(data=data_np, dims=dims, coords=coords)
 
 
@@ -85,7 +91,7 @@ class SimulationResult:
         Warm-up simulation result that preceded this one.
     """
 
-    def __init__(self, data=None, observations=None, transient=None, *, result=None, state_names=None, units=None, **kwargs):
+    def __init__(self, data=None, observations=None, transient=None, *, result=None, state_names=None, nodes=None, units=None, **kwargs):
         self._extras = {}
         self._timeseries = None
         self._units = units or {}  # {variable_name: unit_string}
@@ -95,9 +101,9 @@ class SimulationResult:
         if result is not None and data is None:
             raw_data = result.data if hasattr(result, "data") else result
             raw_time = result.ts if hasattr(result, "ts") else None
-            data = _to_dataarray(raw_data, raw_time, state_names)
+            data = _to_dataarray(raw_data, raw_time, state_names, nodes)
         elif data is not None and not isinstance(data, xr.DataArray):
-            data = _to_dataarray(data, None, state_names)
+            data = _to_dataarray(data, None, state_names, nodes)
 
         self.data = data
         self.observations = observations if observations is not None else {}
@@ -914,18 +920,19 @@ class ExplorationResult(Bunch):
             return np.arange(n_time) * self.dt
         return np.arange(n_time)
 
-    def plot(self, figsize=None, sharex=True, **kwargs):
+    def plot(self, figsize=None, sharex=True, ax=None, overlay=False, **kwargs):
         """Plot exploration results.
 
-        For time series results: subplots for each parameter value.
-        For scalar results: line plot or heatmap over parameter space.
+        For time series results: subplots for each parameter value by default,
+        or a single overlaid axis when ``overlay=True``.
+        For scalar results: line plot (1D) or filled-contour heatmap (2D), drawn into ``ax`` if given.
         """
         if not self.is_timeseries:
-            return self._plot_scalar(figsize=figsize, **kwargs)
-        return self._plot_timeseries(figsize=figsize, sharex=sharex, **kwargs)
+            return self._plot_scalar(figsize=figsize, ax=ax, **kwargs)
+        return self._plot_timeseries(figsize=figsize, sharex=sharex, ax=ax, overlay=overlay, **kwargs)
 
-    def _plot_timeseries(self, figsize=None, sharex=True, **kwargs):
-        """Plot time series for each parameter value as subplots."""
+    def _plot_timeseries(self, figsize=None, sharex=True, ax=None, overlay=False, **kwargs):
+        """Plot time series for each parameter value."""
         if self.results is None:
             return None
 
@@ -933,6 +940,34 @@ class ExplorationResult(Bunch):
         n = int(ax_info.n) if ax_info else self.results.shape[0]
         time = self._get_time_axis()
         output_label = self.observable or ", ".join(self.output_names) or "output"
+
+        ax_values = np.asarray(ax_info["explored_values"]) if ax_info else None
+
+        if overlay:
+            if ax is None:
+                fig, ax = plt.subplots(figsize=figsize or (8, 4))
+            else:
+                fig = ax.figure
+
+            for i in range(n):
+                data = np.asarray(self.results[i]).squeeze()
+                label = None
+                if ax_values is not None:
+                    label = f"{ax_info.name}={float(ax_values[i]):.4g}"
+                if data.ndim > 1:
+                    for node_idx in range(data.shape[-1]):
+                        ax.plot(time, data[:, node_idx], alpha=0.7, label=label if node_idx == 0 else None, **kwargs)
+                else:
+                    ax.plot(time, data, label=label, **kwargs)
+
+            ax.set_xlabel("Time" + (f" (dt={self.dt})" if self.dt else " (steps)"))
+            ax.set_ylabel(output_label)
+            ax.set_title(self.name or output_label)
+            if ax_values is not None:
+                ax.legend(frameon=False)
+            fig.tight_layout()
+            plt.close(fig)
+            return fig
 
         fig, axes = plt.subplots(
             n,
@@ -942,8 +977,6 @@ class ExplorationResult(Bunch):
         )
         if n == 1:
             axes = [axes]
-
-        ax_values = np.asarray(ax_info["explored_values"]) if ax_info else None
 
         for i, ax in enumerate(axes):
             data = np.asarray(self.results[i])  # (n_time, ...) or (n_time,)
@@ -966,31 +999,67 @@ class ExplorationResult(Bunch):
         plt.close()
         return fig
 
-    def _plot_scalar(self, figsize=None, **kwargs):
-        """Plot scalar results as line plot (1D) or heatmap (2D)."""
+    def _plot_scalar(self, figsize=None, ax=None, cmap="viridis", levels=20, colorbar=True, **kwargs):
+        """Plot scalar results as line plot (1D) or filled-contour heatmap (2D)."""
         if self.results is None:
             return None
         grid = self.as_grid()
         if grid is None:
             return None
 
+        def _axis_name(axis_info, default):
+            return axis_info.get("name", default) if isinstance(axis_info, dict) else getattr(axis_info, "name", default)
+
+        def _axis_values(axis_info, default_size):
+            if isinstance(axis_info, dict):
+                explored_values = axis_info.get("explored_values")
+                lo = axis_info.get("lo")
+                hi = axis_info.get("hi")
+                n = axis_info.get("n")
+            else:
+                explored_values = getattr(axis_info, "explored_values", None)
+                lo = getattr(axis_info, "lo", None)
+                hi = getattr(axis_info, "hi", None)
+                n = getattr(axis_info, "n", None)
+
+            if explored_values is not None:
+                values = np.asarray(explored_values)
+                if values.size > 0:
+                    return values
+
+            if lo is not None and hi is not None:
+                n_points = int(n) if n is not None else int(default_size)
+                return np.linspace(float(lo), float(hi), n_points)
+
+            return np.arange(default_size)
+
         if len(self._grid_shape) == 1:
             ax_info = self.axes[0]
-            values = np.asarray(ax_info["explored_values"]) if "explored_values" in ax_info else np.arange(self._grid_shape[0])
-            fig, ax = plt.subplots(figsize=figsize or (8, 4))
+            values = _axis_values(ax_info, self._grid_shape[0])
+            if ax is None:
+                fig, ax = plt.subplots(figsize=figsize or (8, 4))
+            else:
+                fig = ax.figure
             ax.plot(values, np.asarray(grid), "o-", **kwargs)
-            ax.set_xlabel(getattr(ax_info, "name", "param"))
+            ax.set_xlabel(_axis_name(ax_info, "param"))
             ax.set_ylabel(self.observable or "value")
             ax.set_title(self.name or "Exploration")
-            plt.close()
             return fig
         elif len(self._grid_shape) == 2:
-            fig, ax = plt.subplots(figsize=figsize or (8, 6))
-            ax.imshow(np.asarray(grid).T, aspect="auto", origin="lower")
-            ax.set_xlabel(getattr(self.axes[0], "name", "axis 0"))
-            ax.set_ylabel(getattr(self.axes[1], "name", "axis 1"))
-            ax.set_title(self.name or "Exploration")
-            plt.close()
+            ax0, ax1 = self.axes[0], self.axes[1]
+            xv = _axis_values(ax0, self._grid_shape[0])
+            yv = _axis_values(ax1, self._grid_shape[1])
+            if ax is None:
+                fig, ax = plt.subplots(figsize=figsize or (8, 6))
+            else:
+                fig = ax.figure
+            cs = ax.contourf(xv, yv, np.asarray(grid).T, levels=levels, cmap=cmap, **kwargs)
+            ax.set_xlabel(_axis_name(ax0, "axis 0"))
+            ax.set_ylabel(_axis_name(ax1, "axis 1"))
+            if self.name:
+                ax.set_title(self.name)
+            if colorbar:
+                fig.colorbar(cs, ax=ax, label=self.observable or "value", shrink=0.7)
             return fig
         return None
 
@@ -1152,12 +1221,27 @@ class ExperimentResult:
                         units[str(n)] = str(u)
                 integration._units = units
 
+    # Singular-to-plural aliases for back-compat with docs/notebooks that
+    # access result.exploration.X / result.optimization.X / etc.
+    _singular_aliases = {
+        "exploration": "explorations",
+        "optimization": "optimizations",
+        "algorithm": "algorithms",
+        "continuation": "continuations",
+    }
+
     def __getattr__(self, name):
         if name.startswith("_"):
             raise AttributeError(name)
         # Check extras first
         if name in self._extras:
             return self._extras[name]
+        # Singular -> plural alias (e.g. result.exploration -> result.explorations)
+        plural = self._singular_aliases.get(name)
+        if plural is not None:
+            val = self.__dict__.get(plural)
+            if val is not None:
+                return val
         # Delegate to integration for backward compat (result.data, result.time, etc.)
         integration = self.__dict__.get("integration")
         if integration is not None and hasattr(integration, name):
@@ -1492,7 +1576,12 @@ class ExperimentResult:
         continuations = {}
         if hasattr(ts, "sol") and extras.get("_is_bifurcation", False):
             extras.pop("_is_bifurcation")
-            continuations["default"] = ts.sol
+            continuation_name = getattr(ts.sol, "name", None)
+            if not continuation_name and source is not None:
+                source_continuations = getattr(source, "continuations", None) or {}
+                if len(source_continuations) == 1:
+                    continuation_name = next(iter(source_continuations.keys()))
+            continuations[continuation_name or "default"] = ts.sol
 
         return cls(
             integration=sim_result,

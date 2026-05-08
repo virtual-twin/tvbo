@@ -1,0 +1,67 @@
+---
+title: "tvbo formats"
+---
+
+List every registered I/O format. The registry is open: any package can register a new format by importing `tvbo.export.registry.register(...)` at module load.
+
+## Synopsis
+
+```text
+tvbo formats [--json]
+```
+
+## Columns
+
+| Column | Meaning |
+|--------|---------|
+| `key` | Canonical key used by `tvbo export`, `save`, `import`. |
+| `extension` | Default file extension (used when an output directory is given). |
+| `media_type` | MIME-type advertised in HTTP/openMINDS contexts. |
+| `with_data` | `yes` if the format supports `--with-data` bundling. |
+| `importer` | `yes` if the format has a registered importer. |
+| `aliases` | Comma-separated alternative keys recognised by the CLI. |
+
+## Built-in formats
+
+The following ship with `tvbo` (the registry is populated at first import of `tvbo.export.formats`):
+
+| Key | Extension | Type | Notes |
+|-----|-----------|------|-------|
+| `yaml` | `.yaml` | LinkML serialisation | aliases: `tvbo`, `tvbo-yaml`; supports `--with-data` |
+| `pyrates-yaml` | `.yaml` | PyRates-compatible YAML | alias: `pyrates_yaml` |
+| `openminds` | `.jsonld` | openMINDS JSON-LD | aliases: `jsonld`, `json-ld` |
+| `markdown` | `.md` | Markdown report | aliases: `md`, `report` |
+| `pdf` | `.pdf` | PDF report | |
+| `neuroml` | `.nml` | NeuroML standard components | alias: `nml` |
+| `lems` | `.xml` | LEMS custom components | |
+| `tvb` | `.py` | TVB Python script (runnable) | |
+| `tvboptim` | `.py` | tvboptim Python script (runnable) | alias: `tvb-optim` |
+| `jax` | `.py` | JAX Python script (runnable) | alias: `autodiff` |
+| `pde` | `.py` | PDE-FEM Python script (runnable) | aliases: `pde-fem`, `pde-python` |
+| `julia` | `.jl` | DifferentialEquations.jl script | aliases: `diffeq`, `differentialequations` |
+| `networkdynamics` | `.jl` | NetworkDynamics.jl script | aliases: `nd`, `networkdynamics.jl` |
+| `modelingtoolkit` | `.jl` | ModelingToolkit.jl script | aliases: `mtk`, `modelingtoolkit.jl` |
+| `bifurcationkit` | `.jl` | BifurcationKit.jl script | aliases: `bifurcationkit.jl`, `bifurcation`, `bifurcation-julia` |
+| `pyrates-bifurcation` | `.py` | PyRates / AUTO-07p bifurcation | aliases: `pyrates-bif`, `pycobi`, `auto`, `auto-07p` |
+| `rateml` | `.py` | RateML Python (Numba gufunc) | alias: `rateml-python` |
+| `rateml-cuda` | `.c` | RateML CUDA kernel | alias: `cuda` |
+| `rateml-driver` | `.py` | RateML PyCUDA driver | |
+
+::: {.callout-note}
+The above table is a snapshot. The CLI is the authoritative source — run `tvbo formats` to see what is actually installed.
+:::
+
+## Examples
+
+```bash
+# Default human table (sorted by key)
+tvbo formats
+
+# Machine-readable
+tvbo formats --json | jq '.[] | select(.format == "jax")'
+```
+
+## See also
+
+- [`tvbo export`](export.qmd)
+- [`tvbo import`](import.qmd)

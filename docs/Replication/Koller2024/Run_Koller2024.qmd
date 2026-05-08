@@ -1,0 +1,132 @@
+---
+title: "Koller, Schirner, Ritter (2024)"
+description: "Replication of cortical traveling waves and frequency gradients on the human connectome."
+jupyter: python3
+---
+
+Full replication of the simulation suite from
+@Koller2024 (Nature Communications, 2024,
+[doi:10.1038/s41467-024-47860-x](https://doi.org/10.1038/s41467-024-47860-x)).
+
+The study is encoded in [`Koller2024.yaml`](Koller2024.yaml) as a single
+`SimulationStudy` containing 14 experiments (Figures 2, 3, 5, 6, 7, 8, 9 plus
+supplementary controls). Two model classes are exercised: Kuramoto phase
+oscillators on a 2D abstract sheet (Exp 01-06) and Kuramoto / Jansen-Rit
+neural masses on the Schaefer-1000 HCP cortical connectome (Exp 30-51).
+
+```{python}
+from tvbo import SimulationStudy
+import bsplot
+import importlib
+import Koller2024_plot as kplot
+
+bsplot.style.use("tvbo")
+
+odir = "./figures"
+study = SimulationStudy.from_file("Koller2024.yaml")
+```
+
+## Experiment 01 + 02 — 2D sheet: gradient vs uniform (Fig. 2)
+
+```{python}
+res_grad = study.get_experiment(1).run("tvboptim")
+res_unif = study.get_experiment(2).run("tvboptim")
+fig2 = kplot.plot_fig2(res_grad, res_unif)
+# fig2.savefig(f"{odir}/Koller2024_Fig2.png", dpi=300)
+fig2
+```
+
+## Experiment 03 — IF gradient sweep (Fig. 3)
+
+```{python}
+res3 = study.get_experiment(3).run("tvb")
+importlib.reload(kplot)
+fig3 = kplot.plot_fig3(res3)
+# fig3.savefig(f"{odir}/Koller2024_Fig3.png", dpi=300)
+fig3
+```
+
+## Experiment 06 — Stronger coupling control (supplementary)
+
+```{python}
+res6 = study.get_experiment(6).run("tvb")
+```
+
+## Experiments 30, 31, 32, 33, 34, 38, 39 — Cortical SC variants (Fig. 5)
+
+```{python}
+res5 = {
+    "main":        study.get_experiment(30).run("tvb"),
+    "shuffled":    study.get_experiment(31).run("tvb"),
+    "distance":    study.get_experiment(32).run("tvb"),
+    "jansenrit":   study.get_experiment(33).run("tvb"),
+    "normalised":  study.get_experiment(34).run("tvb"),
+    "no_delay":    study.get_experiment(38).run("tvb"),
+    "const_delay": study.get_experiment(39).run("tvb"),
+}
+importlib.reload(kplot)
+fig5 = kplot.plot_fig5(res5)
+fig5.savefig(f"{odir}/Koller2024_Fig5.png", dpi=300)
+fig5
+```
+
+## Experiment 40 — IF x K x v parameter sweep (Figs 6, 7, 8)
+
+This is the most expensive experiment: 4 IF values x 39 K values x 10 v values
+x 10 trials = 15 600 simulations. Run on a workstation with sufficient memory.
+
+```{python}
+res40 = study.get_experiment(40).run("tvb")
+```
+
+```{python}
+importlib.reload(kplot)
+fig6 = kplot.plot_fig6(res40)
+fig6.savefig(f"{odir}/Koller2024_Fig6.png", dpi=300)
+fig6
+```
+
+```{python}
+importlib.reload(kplot)
+fig7 = kplot.plot_fig7(res40)
+fig7.savefig(f"{odir}/Koller2024_Fig7.png", dpi=300)
+fig7
+```
+
+```{python}
+import numpy as np
+instrength = kplot._instrength(res40.results[0])
+importlib.reload(kplot)
+fig8 = kplot.plot_fig8(res40, instrength)
+fig8.savefig(f"{odir}/Koller2024_Fig8.png", dpi=300)
+fig8
+```
+
+## Experiments 481 + 482 — Best-fit NMF subnetworks (Fig. 9)
+
+```{python}
+res_alpha = study.get_experiment(481).run("tvb")
+res_beta  = study.get_experiment(482).run("tvb")
+importlib.reload(kplot)
+fig9 = kplot.plot_fig9(res_alpha, res_beta, instrength)
+fig9.savefig(f"{odir}/Koller2024_Fig9.png", dpi=300)
+fig9
+```
+
+## Experiments 50 + 51 — Robustness controls (Suppl. Fig. S4)
+
+```{python}
+res50 = study.get_experiment(50).run("tvb")
+res51 = study.get_experiment(51).run("tvb")
+importlib.reload(kplot)
+figS4 = kplot.plot_figS4(res50, res51)
+figS4.savefig(f"{odir}/Koller2024_FigS4.png", dpi=300)
+figS4
+```
+
+## Experiment 48 — Full NMF parameter sweep (optional, expensive)
+
+```{python}
+# Uncomment to run the full NMF subnetwork (IF x K x v) sweep.
+# res48 = study.get_experiment(48).run("tvb")
+```

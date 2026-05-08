@@ -30,10 +30,10 @@ Markdown(model.generate_report())
 ```{python}
 cont = Continuation.from_string(
     """\
-name: eq_in_a
-label: "Equilibrium branch in a"
+name: eq_in_I
+label: "Equilibrium branch in I"
 description: >-
-    Continue the equilibrium branch of the Generic2dOscillator as parameter a is varied. Detect Hopf bifurcations and continue periodic orbits from all Hopf points.
+    Continue the equilibrium branch of the Generic2dOscillator as parameter I is varied. Detect Hopf bifurcations and continue periodic orbits from all Hopf points.
 
 dynamics: Generic2dOscillator
 
@@ -52,18 +52,24 @@ branches:
 exp = SimulationExperiment(dynamics=model, continuations=[cont])
 ```
 
+Each `exp.run(...)` call returns an `ExperimentResult`. Continuation outputs are stored in
+`result.continuations` and keyed by the continuation `name` from the metadata. For single-continuation
+experiments, the container still delegates plotting methods to that continuation for convenience.
+
 ### BifurcationKit.jl backend
 
 ```{python}
 bif_result_jl = exp.run("bifurcationkit.jl")
-bif_result_jl.plot(VOI='V')
+eq_in_I_jl = bif_result_jl.continuations["eq_in_I"]
+eq_in_I_jl.plot(VOI="V")
 ```
 
 ### PyRates/PyCoBi backend (same specification!)
 
 ```{python}
 bif_result_py = exp.run("pyrates-bifurcation")
-bif_result_py.plot(VOI='V')
+eq_in_I_py = bif_result_py.continuations["eq_in_I"]
+eq_in_I_py.plot(VOI="V")
 ```
 
 
@@ -113,14 +119,16 @@ exp_c2 = SimulationExperiment(dynamics=model, continuations=[cont_c2])
 
 ```{python}
 result_c2_jl = exp_c2.run("bifurcationkit.jl")
-result_c2_jl.plot_codim2()
+eq_I_with_codim2_jl = result_c2_jl.continuations["eq_I_with_codim2"]
+eq_I_with_codim2_jl.plot()
 ```
 
 ### PyRates/PyCoBi codim-2
 
 ```{python}
 result_c2_py = exp_c2.run("pyrates-bifurcation")
-result_c2_py.plot_codim2()
+eq_I_with_codim2_py = result_c2_py.continuations["eq_I_with_codim2"]
+eq_I_with_codim2_py.plot()
 ```
 
 ### 3D Bifurcation Diagram
@@ -128,7 +136,7 @@ result_c2_py.plot_codim2()
 The 3D plot shows the equilibrium backbone, periodic orbit tube surfaces (using the second state variable for cross-section shape), and codim-2 curves sweeping through parameter space:
 
 ```{python}
-result_c2_jl.plot_3d(VOI='V')
+eq_I_with_codim2_jl.plot_3d(VOI="V")
 ```
 
 The tube surface shows the actual orbit shape at each parameter value — the cross-section is the V-W phase portrait projected along the parameter axis. Individual orbit loops are drawn for clarity.
@@ -165,5 +173,5 @@ exp = SimulationExperiment(
     dynamics=Dynamics.from_ontology("JansenRit"), continuations=[cont]
 )
 bif_result2 = exp.run("bifurcationkit.jl")
-bif_result2.plot(VOI="y0")
+bif_result2.continuations["jr_mu"].plot(VOI="y0")
 ```

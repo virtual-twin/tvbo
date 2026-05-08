@@ -25,7 +25,10 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
 
     @classmethod
     def from_file(cls, filepath):
-        return yaml_loader.load(filepath, cls)
+        from pathlib import Path
+        study = yaml_loader.load(filepath, cls)
+        study._source_file = str(Path(filepath).resolve())
+        return study
 
     @classmethod
     def from_datamodel(cls, datamodel: tvbo_datamodel.SimulationStudy):
@@ -51,9 +54,16 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
     def get_experiment(self, experiment_id):
         """Retrieve a single experiment by its declared id."""
         exps = getattr(self, "experiments", None) or []
+        source_file = getattr(self, "_source_file", None)
         for exp_dm in exps:
             if getattr(exp_dm, "id", None) == experiment_id:
-                return experiment.SimulationExperiment.from_datamodel(exp_dm)
+                if source_file:
+                    experiment.SimulationExperiment._pending_source_file = source_file
+                try:
+                    exp = experiment.SimulationExperiment.from_datamodel(exp_dm)
+                finally:
+                    experiment.SimulationExperiment._pending_source_file = None
+                return exp
         available = [getattr(e, "id", None) for e in exps]
         raise KeyError(f"Experiment {experiment_id!r} not found. Available: {available}")
 

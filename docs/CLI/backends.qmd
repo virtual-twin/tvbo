@@ -1,0 +1,72 @@
+---
+title: "Backends"
+---
+
+The CLI's planner is **backend-aware**: the same `study.yaml` produces a different DAG depending on which backend is chosen, because each backend has a different set of axes it can vectorize internally. The capability table below is mirrored in code in `tvbo.cli._backends.BACKENDS` and round-tripped from `ontology/tvb-o-axioms.ttl §4.1`.
+
+## Capability matrix
+
+| Backend | Tasks | Capabilities | Vectorize axes |
+|---------|-------|--------------|----------------|
+| `jax` | ODE, SDE, ParameterExploration, GradientBasedOptimization | Autodiff, JIT, GPU, VectorizedRNG, CodeGeneration | `parameters`, `initial_conditions`, `noise_seed` |
+| `tvboptim` | ODE, SDE, GradientBasedOptimization | Autodiff, JIT, StochasticSolver, CodeGeneration | `parameters`, `initial_conditions`, `noise_seed`, `subjects` |
+| `pyrates` | ODE, DDE | CodeGeneration, NetworkXTopology, DelayHistoryBuffer | `parameters` |
+| `tvb` | ODE, DDE, SDE, SDDE, ParameterExploration | NumPyExecution, BuiltinModelLibrary, DelayHistoryBuffer, StochasticSolver | _(none — everything fans out)_ |
+| `networkdynamics` | ODE, DDE, SDE, SDDE, ParameterExploration | JuliaJIT, DiffEqIntegrators, DelayHistoryBuffer, StochasticSolver, StiffSolver | `parameters` |
+| `bifurcationkit` | NumericalContinuation, BifurcationAnalysis | ContinuationSolver, JuliaJIT | `parameters` |
+| `numpy` | ODE, SDE | NumPyExecution | _(none)_ |
+
+Aliases: `nd` → `networkdynamics`, `auto` / `auto-07p` → see `pyrates-bifurcation`. Run `tvbo workflow backends` for the live table.
+
+## Vectorize vs. workflow-fanned axes
+
+Each `ExplorationAxis` declared in your study has a *kind* (parameters / initial_conditions / noise_seed / subjects). The planner places the axis based on the backend's `vectorize_axes`:
+
+```text
+axis.kind ∈ backend.vectorize_axes  →  vectorized inside one job
+                                  else →  fanned out as workflow tasks
+```
+
+Example: a study with two axes (`G`, `noise_seed`) of size 11 and 8.
+
+| Backend | Vectorized | Fanned | Workflow cells | Array tasks |
+|---------|------------|--------|----------------|-------------|
+| `jax` | both | none | 1 | 1 |
+| `tvboptim` | both | none | 1 | 1 |
+| `pyrates` | `G` | `noise_seed` | 8 | 8 |
+| `tvb` | none | both | 88 | 88 |
+| `networkdynamics` | `G` | `noise_seed` | 8 | 8 |
+
+This is the *same `study.yaml`* — the work is moved between the inside of the simulator and the workflow engine purely on the basis of ontology-declared backend capability.
+
+## Axis classification
+
+A dotted parameter path is bucketed by `tvbo.cli._backends.axis_kind_of`:
+
+| Pattern | Kind |
+|---------|------|
+| contains `noise_seed`, ends with `.seed` | `noise_seed` |
+| contains `initial_condition` or starts with `initial_conditions` | `initial_conditions` |
+| contains `subject` or `sample` | `subjects` |
+| anything else | `parameters` |
+
+You can override placement explicitly in `study.workflow.distribute`:
+
+```yaml
+workflow:
+  distribute:
+    vectorize: [G, K_e]   # force these into the backend
+    workflow:  [seed]     # force this to fan out
+```
+
+## Why the table lives in code *and* ontology
+
+- The OWL axioms are the **machine-readable contract** for downstream reasoners and the platform UI.
+- The Python table is the **runtime fast path** — it is a `dict[str, BackendSpec]` lookup with no RDFLib import.
+- A round-trip test (`tests/test_cli_backends_match_ontology.py`) keeps them in sync.
+
+## See also
+
+- [`tvbo workflow plan`](workflow.qmd) — see how axes are placed for your study
+- [`tvbo workflow backends`](workflow.qmd#tvbo-workflow-backends) — print the table
+- `ontology/tvb-o-axioms.ttl` §4.1 — authoritative source

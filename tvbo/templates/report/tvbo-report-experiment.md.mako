@@ -24,6 +24,7 @@ Context Variables:
 <%
 from sympy import latex, Eq, Symbol
 from tvbo.utils import report
+from tvbo.utils.units import unit_to_latex
 from tvbo.parse.expression import parse_eq
 
 # ── Short-hands ──
@@ -72,6 +73,136 @@ def sec():
 # ── Safe attribute access ──
 def _p(obj, name, default=None):
     return getattr(obj, name, default) if obj is not None else default
+
+def _present(value):
+    return value not in (None, '', [], {})
+
+def _as_list(value):
+    if not value:
+        return []
+    if isinstance(value, str):
+        return [value]
+    if hasattr(value, 'values'):
+        return list(value.values())
+    return list(value) if isinstance(value, (list, tuple, set)) else [value]
+
+def _items(value):
+    if not value:
+        return []
+    if hasattr(value, 'items'):
+        return list(value.items())
+    if hasattr(value, 'values'):
+        return [(_p(item, 'name', f'item_{idx}'), item) for idx, item in enumerate(value.values())]
+    if isinstance(value, list):
+        return [(_p(item, 'name', f'item_{idx}'), item) for idx, item in enumerate(value)]
+    return []
+
+def _unit_text(unit):
+    unit_ltx = unit_to_latex(unit) if unit else ''
+    return '$' + unit_ltx + '$' if unit_ltx else '—'
+
+def _range_text(range_obj):
+    if not range_obj:
+        return ''
+    values = _p(range_obj, 'explored_values', None)
+    if values:
+        values = [str(v) for v in values]
+        return '{' + ', '.join(values[:8]) + ('...' if len(values) > 8 else '') + '}'
+    lo = _p(range_obj, 'lo', None)
+    hi = _p(range_obj, 'hi', None)
+    step = _p(range_obj, 'step', None)
+    n_points = _p(range_obj, 'n', None)
+    log_scale = _p(range_obj, 'log_scale', False)
+    parts = []
+    if lo is not None or hi is not None:
+        parts.append(f"[{lo if lo is not None else '-∞'}, {hi if hi is not None else '∞'}]")
+    if step is not None:
+        parts.append(f"step={step}")
+    if n_points is not None:
+        parts.append(f"n={n_points}")
+    if log_scale:
+        parts.append('log')
+    return ', '.join(parts)
+
+def _distribution_text(distribution):
+    if not distribution:
+        return ''
+    name = _p(distribution, 'name', 'Distribution')
+    domain = _range_text(_p(distribution, 'domain', None))
+    axis = _p(distribution, 'axis', None)
+    seed = _p(distribution, 'seed', None)
+    parts = [str(name)]
+    if domain:
+        parts.append(domain)
+    if axis:
+        parts.append(f"axis={axis}")
+    if seed is not None:
+        parts.append(f"seed={seed}")
+    return ' '.join(parts)
+
+def _metadata_text(obj):
+    bits = []
+    if _present(_p(obj, 'domain', None)):
+        bits.append(_range_text(_p(obj, 'domain')))
+    if _present(_p(obj, 'boundaries', None)):
+        bits.append('bounds ' + _range_text(_p(obj, 'boundaries')))
+    if _present(_p(obj, 'distribution', None)):
+        bits.append(_distribution_text(_p(obj, 'distribution')))
+    return '; '.join([bit for bit in bits if bit]) or '—'
+
+def _flag_text(obj, flags):
+    labels = []
+    for name, label in flags:
+        if _p(obj, name, False):
+            labels.append(label)
+    shape = _p(obj, 'shape', None)
+    if shape:
+        labels.append(f"shape={shape}")
+    dataset_path = _p(obj, 'dataset_path', None)
+    if dataset_path:
+        labels.append(f"data={dataset_path}")
+    optimum = _p(obj, 'reported_optimum', None)
+    if optimum is not None:
+        labels.append(f"optimum={optimum}")
+    return ', '.join(labels) or '—'
+
+def _name_text(value):
+    if value is None:
+        return '—'
+    return str(_p(value, 'name', value))
+
+def _argument_items(arguments):
+    if not arguments:
+        return []
+    if hasattr(arguments, 'items'):
+        return list(arguments.items())
+    if hasattr(arguments, 'values'):
+        return [(_p(arg, 'name', f'arg_{idx}'), arg) for idx, arg in enumerate(arguments.values())]
+    if isinstance(arguments, list):
+        return [(_p(arg, 'name', f'arg_{idx}'), arg) for idx, arg in enumerate(arguments)]
+    return []
+
+def _arguments_text(arguments):
+    parts = []
+    for arg_name, arg in _argument_items(arguments):
+        value = _p(arg, 'value', None)
+        unit = _p(arg, 'unit', None)
+        desc = _p(arg, 'description', '')
+        item = str(arg_name)
+        if value is not None:
+            item += f"={value}"
+        if unit:
+            item += f" {unit}"
+        if desc:
+            item += f" ({desc})"
+        parts.append(item)
+    return ', '.join(parts) or '—'
+
+def _callable_text(obj):
+    callable_obj = _p(obj, 'callable', None) or _p(obj, 'class_call', None) or obj
+    name = _p(callable_obj, 'name', None)
+    module = _p(callable_obj, 'module', None)
+    return f"{module}.{name}" if module and name else str(name or '—')
 
 # ── Collect all known symbols for equation parsing ──
 all_param_names = []
@@ -163,134 +294,13 @@ def _pipeline_str(pipeline):
         names.append(str(fn) if fn else '?')
     return ' → '.join(names)
 %>
-# ${exp.label or 'Simulation Experiment'}
+**${exp.label or 'Simulation Experiment'}**
 
 % if getattr(exp, 'description', None):
 ${exp.description}
 
 % endif
----
 
-<%
-# ═══════════════════════════════════════════════════════════════════
-# SECTION: BRAIN NETWORK
-# ═══════════════════════════════════════════════════════════════════
-%>\
-% if net:
-<%
-s = sec()
-n_regions = _p(net, 'number_of_nodes', None) or _p(net, 'number_of_regions', None)
-cond_speed = _p(net, 'conduction_speed', None)
-gcs = _p(net, 'global_coupling_strength', None)
-transforms = _p(net, 'transforms', None) or []
-net_label = _p(net, 'label', '')
-net_desc = _p(net, 'description', '')
-parcellation = _p(net, 'parcellation', None)
-structural = _p(net, 'structural_measures', []) or []
-observational = _p(net, 'observational_measures', []) or []
-%>\
-
-${'##'} ${s}. Brain Network${ ': ' + net_label if net_label else ''}
-
-% if net_desc:
-${net_desc.strip()}
-
-% endif
-% if parcellation:
-<%
-parc_label = _p(parcellation, 'label', '') or _p(parcellation, 'name', '')
-parc_atlas = _p(parcellation, 'atlas', '')
-%>\
-% if parc_label:
-- **Parcellation:** ${parc_label}${ ' (' + parc_atlas.name + ')' if parc_atlas else ''}
-% endif
-% endif
-% if n_regions:
-- **Regions:** ${n_regions}
-% endif
-% if cond_speed:
-- **Conduction velocity:** ${_p(cond_speed, 'value', '?')} ${_p(cond_speed, 'unit', 'mm/ms') or 'mm/ms'}
-% endif
-% if gcs:
-- **Global coupling strength:** $${latex(Symbol(_p(gcs, 'name', 'G')))} = ${_p(gcs, 'value', '?')}$
-% endif
-% if transforms:
-% for t in transforms:
-- **Transform (${t.name}):** $M_{\text{out}} = ${safe_latex(str(t.equation.rhs), ['W', 'M', 'W_max', 'W_min', 'M_max', 'M_min', 'max', 'min'])}$
-% endfor
-% endif
-% if structural:
-- **Structural measures:** ${', '.join(structural) if isinstance(structural, list) else structural}
-% endif
-% if observational:
-- **Observational measures:** ${', '.join(observational) if isinstance(observational, list) else observational}
-% endif
-
-<%
-# Coupling functions (from network or experiment-level)
-cpl_list = list(net_couplings.items()) if net_couplings else ([(cpl.name, cpl)] if cpl and hasattr(cpl, 'name') else [])
-%>\
-% for cpl_name, cpl_obj in cpl_list:
-<%
-cpl_label = _p(cpl_obj, 'label', cpl_name)
-cpl_desc = _p(cpl_obj, 'description', '')
-cpl_delayed = _p(cpl_obj, 'delayed', False)
-
-incoming = _p(cpl_obj, 'incoming_states', [])
-if isinstance(incoming, str):
-    incoming = [incoming]
-incoming = list(incoming) if incoming else []
-
-cpl_params_obj = _p(cpl_obj, 'parameters', {})
-if isinstance(cpl_params_obj, dict):
-    cpl_items = list(cpl_params_obj.items())
-elif hasattr(cpl_params_obj, 'items'):
-    cpl_items = list(cpl_params_obj.items())
-else:
-    cpl_items = [(getattr(p, 'name', '?'), p) for p in (list(cpl_params_obj) if cpl_params_obj else [])]
-cpl_pnames = [n for n, _ in cpl_items]
-%>\
-
-${'###'} Coupling: ${cpl_label or cpl_name}
-
-% if cpl_desc:
-${cpl_desc.strip()}
-
-% endif
-% if incoming:
-Receives ${ ', '.join(['$' + latex(Symbol(s)) + '$' for s in incoming])} from connected regions\
-% if cpl_delayed:
- with conduction delays\
-% endif
-.
-
-% endif
-% if hasattr(cpl_obj, 'pre_expression') and cpl_obj.pre_expression:
-<%
-pre_rhs = getattr(cpl_obj.pre_expression, 'rhs', str(cpl_obj.pre_expression))
-%>
-**Pre-synaptic:** $c_{\text{pre}} = ${safe_latex(str(pre_rhs), cpl_pnames + incoming)}$
-
-% endif
-% if hasattr(cpl_obj, 'post_expression') and cpl_obj.post_expression:
-<%
-post_rhs = getattr(cpl_obj.post_expression, 'rhs', str(cpl_obj.post_expression))
-%>
-**Post-synaptic:** $c_{\text{post}} = ${safe_latex(str(post_rhs), cpl_pnames + ['gx'])}$
-
-% endif
-% if cpl_items:
-
-| Parameter | Value | Description |
-|:----------|------:|:------------|
-% for pname, param in cpl_items:
-<% pval = _p(param, 'value', '—'); pdesc = _p(param, 'description', '') or ''; pfree = _p(param, 'free', False); phet = _p(param, 'heterogeneous', False); tags = []; tags.append('free') if pfree else None; tags.append('heterogeneous') if phet else None; tag_str = f" *({', '.join(tags)})*" if tags else '' %>\
-| $${latex(Symbol(pname))}$ | ${pval} | ${pdesc}${tag_str} |
-% endfor
-% endif
-
-% endfor
-% endif
 <%
 # ═══════════════════════════════════════════════════════════════════
 # SECTION: LOCAL DYNAMICS
@@ -308,22 +318,40 @@ dparams = getattr(model, 'derived_parameters', {}) or {}
 mfuncs = getattr(model, 'functions', {}) or {}
 params = getattr(model, 'parameters', {}) or {}
 output = getattr(model, 'output', []) or []
+coupling_inputs = getattr(model, 'coupling_inputs', {}) or {}
+coupling_terms = getattr(model, 'coupling_terms', {}) or {}
+observed = getattr(model, 'observed', {}) or {}
+events = getattr(model, 'events', []) or []
+model_summary = []
+if _p(model, 'model_type', None):
+    model_summary.append(f"type: {_p(model, 'model_type')}")
+if _p(model, 'system_type', None):
+    model_summary.append(f"system: {_p(model, 'system_type')}")
+if _p(model, 'autonomous', None) is not None:
+    model_summary.append(f"autonomous: {_p(model, 'autonomous')}")
+if _p(model, 'number_of_modes', None):
+    model_summary.append(f"modes: {_p(model, 'number_of_modes')}")
+model_summary.append(f"state variables: {len(svars)}")
+model_summary.append(f"parameters: {len(params)}")
+if dvars:
+    model_summary.append(f"derived variables: {len(dvars)}")
+if dparams:
+    model_summary.append(f"derived parameters: {len(dparams)}")
+if mfuncs:
+    model_summary.append(f"functions: {len(mfuncs)}")
+if output:
+    model_summary.append("outputs: " + ", ".join([str(item) for item in output]))
 %>\
 
-${'##'} ${s}. Local Dynamics: ${model_label}
+**Local Dynamics: ${model_label}**
 
 % if model_desc:
-${model_desc.strip().split('.')[0]}.
-% endif
-% if svars:
-The model comprises **${len(svars)} state variables**\
-% if dvars:
- and **${len(dvars)} derived variable${'s' if len(dvars) > 1 else ''}**\
-% endif
-.
-% endif
+${model_desc.strip()}
 
-${'###'} ${s}.1 State Equations
+% endif
+${'; '.join(model_summary)}.
+
+**State Equations**
 
 % for name, svar in svars.items():
 <%
@@ -368,17 +396,34 @@ $$${fname}(${', '.join(arg_names)}) = ${safe_latex(func_rhs, arg_names)}$$
 % endfor
 % endif
 
-${'###'} ${s}.2 Parameters
+% if svars:
+**State Variables**
 
-| Parameter | Value | Unit | Description |
-|:----------|------:|:-----|:------------|
-% for name, param in params.items():
-| $${latex(Symbol(name))}$ | ${_p(param, 'value', '—')} | ${_p(param, 'unit', '—') or '—'} | ${_p(param, 'description', '') or ''} |
+| Variable | Initial Value | Unit | Equation | Domain / Sampling | Flags | Description |
+|:---------|:--------------|:-----|:---------|:------------------|:------|:------------|
+% for name, svar in svars.items():
+| $${latex(Symbol(name))}$ | ${_p(svar, 'initial_value', '—')} | ${_unit_text(_p(svar, 'unit', None))} | ${_p(svar, 'equation_type', 'differential')} (order ${_p(svar, 'equation_order', 1)}) | ${_metadata_text(svar)} | ${_flag_text(svar, [('variable_of_interest', 'VOI'), ('coupling_variable', 'coupling'), ('stimulation_variable', 'stimulation'), ('record', 'recorded')])} | ${_p(svar, 'description', '') or _p(svar, 'definition', '') or ''} |
 % endfor
+
+% endif
+% if params:
+**Parameters**
+
+| Parameter | Value | Default | Unit | Domain / Sampling | Flags | Description |
+|:----------|------:|:--------|:-----|:------------------|:------|:------------|
+% for name, param in params.items():
+| $${latex(Symbol(name))}$ | ${_p(param, 'value', '—')} | ${_p(param, 'default', '—') if _p(param, 'default', None) is not None else '—'} | ${_unit_text(_p(param, 'unit', None))} | ${_metadata_text(param)} | ${_flag_text(param, [('free', 'free'), ('heterogeneous', 'heterogeneous')])} | ${_p(param, 'description', '') or _p(param, 'definition', '') or ''} |
+% endfor
+
+% endif
 % if dparams:
+**Derived Parameters**
+
+| Parameter | Expression | Description |
+|:----------|:-----------|:------------|
 % for name, dp in dparams.items():
 <% dp_eq = getattr(dp, 'equation', None); dp_rhs = getattr(dp_eq, 'rhs', '') if dp_eq else ''; dp_desc = _p(dp, 'description', '') or 'Derived' %>\
-| $${latex(Symbol(name))}$ | $${safe_latex(dp_rhs)}$ | — | ${dp_desc} |
+| $${latex(Symbol(name))}$ | $${safe_latex(dp_rhs)}$ | ${dp_desc} |
 % endfor
 % endif
 
@@ -402,6 +447,302 @@ out_names = [n for n in out_names if n not in dvars]
 **Output:** ${', '.join(['$' + latex(Symbol(n)) + '$' for n in out_names])}
 % endif
 % endif
+% if coupling_inputs:
+**Coupling Inputs**
+
+| Input | Source | Dimension | Keys | Description |
+|:------|:-------|----------:|:-----|:------------|
+% for input_name, input_obj in _items(coupling_inputs):
+| ${input_name} | ${_p(input_obj, 'source', '—') or '—'} | ${_p(input_obj, 'dimension', 1)} | ${', '.join(_as_list(_p(input_obj, 'keys', []))) or '—'} | ${_p(input_obj, 'description', '') or ''} |
+% endfor
+
+% endif
+% if coupling_terms:
+**Coupling Terms**
+
+| Term | Value | Domain / Sampling | Flags | Description |
+|:-----|------:|:------------------|:------|:------------|
+% for term_name, term in _items(coupling_terms):
+| $${latex(Symbol(term_name))}$ | ${_p(term, 'value', '—')} | ${_metadata_text(term)} | ${_flag_text(term, [('free', 'free'), ('heterogeneous', 'heterogeneous')])} | ${_p(term, 'description', '') or _p(term, 'definition', '') or ''} |
+% endfor
+
+% endif
+% if observed:
+**Observed Variables:** ${', '.join([str(name) for name, _ in _items(observed)])}
+
+% endif
+% if events:
+**Events:** ${', '.join([_name_text(item) for item in _as_list(events)])}
+
+% endif
+% endif
+<%
+# ═══════════════════════════════════════════════════════════════════
+# SECTION: BRAIN NETWORK
+# ═══════════════════════════════════════════════════════════════════
+%>\
+% if net:
+<%
+s = sec()
+n_regions = _p(net, 'number_of_nodes', None) or _p(net, 'number_of_regions', None)
+cond_speed = _p(net, 'conduction_speed', None)
+gcs = _p(net, 'global_coupling_strength', None)
+transforms = _p(net, 'transforms', None) or []
+net_label = _p(net, 'label', '')
+net_desc = _p(net, 'description', '')
+parcellation = _p(net, 'parcellation', None)
+structural = _p(net, 'structural_measures', []) or []
+observational = _p(net, 'observational_measures', []) or []
+data_file = _p(net, 'data_file', None)
+descriptor = _p(net, 'descriptor', None)
+bids_dir = _p(net, 'bids_dir', None)
+coordinate_space = _p(net, 'coordinate_space', None)
+distance_unit = _p(net, 'distance_unit', None)
+time_unit = _p(net, 'time_unit', None)
+weights = _p(net, 'weights', None)
+nodes = _as_list(_p(net, 'nodes', []))
+edges = _as_list(_p(net, 'edges', []))
+edge_matrix_files = _as_list(_p(net, 'edge_matrix_files', []))
+graph_generator = _p(net, 'graph_generator', None)
+
+def _matrix_summary(matrix):
+    if matrix is None:
+        return ''
+    parts = []
+    shape = _p(matrix, 'shape', None)
+    if shape:
+        parts.append('shape=' + 'x'.join([str(item) for item in shape]))
+    fmt = _p(matrix, 'format', None)
+    if fmt:
+        parts.append(f"format={fmt}")
+    dtype = _p(matrix, 'dtype', None)
+    if dtype:
+        parts.append(f"dtype={dtype}")
+    location = _p(matrix, 'dataLocation', None) or _p(matrix, 'dataset_path', None)
+    if location:
+        parts.append(f"data={location}")
+    return ', '.join(parts)
+%>\
+
+**Brain Network${ ': ' + net_label if net_label else ''}**
+
+% if net_desc:
+${net_desc.strip()}
+
+% endif
+<%
+parc_label = _p(parcellation, 'label', '') or _p(parcellation, 'name', '')
+parc_atlas = _p(parcellation, 'atlas', '')
+%>\
+
+| Setting | Value |
+|:--------|:------|
+% if parc_label:
+| Parcellation | ${parc_label}${ ' (' + _name_text(parc_atlas) + ')' if parc_atlas else ''} |
+% endif
+% if n_regions:
+| Regions | ${n_regions} |
+% endif
+% if cond_speed:
+| Conduction velocity | ${_p(cond_speed, 'value', '?')} ${_p(cond_speed, 'unit', 'mm/ms') or 'mm/ms'} |
+% endif
+% if gcs:
+| Global coupling strength | $${latex(Symbol(_p(gcs, 'name', 'G')))} = ${_p(gcs, 'value', '?')}$ |
+% endif
+% if coordinate_space:
+| Coordinate space | ${_name_text(coordinate_space)} |
+% endif
+% if distance_unit:
+| Distance unit | ${distance_unit} |
+% endif
+% if time_unit:
+| Time unit | ${time_unit} |
+% endif
+% if descriptor:
+| Descriptor | ${descriptor} |
+% endif
+% if data_file:
+| Data file | ${data_file} |
+% endif
+% if bids_dir:
+| BIDS directory | ${bids_dir} |
+% endif
+% if transforms:
+% for t in transforms:
+| Transform (${t.name}) | $M_{\text{out}} = ${safe_latex(str(t.equation.rhs), ['W', 'M', 'W_max', 'W_min', 'M_max', 'M_min', 'max', 'min'])}$ |
+% endfor
+% endif
+% if structural:
+| Structural measures | ${', '.join(structural) if isinstance(structural, list) else structural} |
+% endif
+% if observational:
+| Observational measures | ${', '.join(observational) if isinstance(observational, list) else observational} |
+% endif
+% if nodes:
+| Nodes | ${len(nodes)} explicit nodes |
+% endif
+% if edges:
+| Edges | ${len(edges)} explicit edges |
+% endif
+% if graph_generator:
+| Graph generator | ${_p(graph_generator, 'type', _name_text(graph_generator))} |
+% endif
+% if weights is not None:
+| Weights | ${_matrix_summary(weights) or 'provided'} |
+% endif
+% if edge_matrix_files:
+| Edge matrix files | ${', '.join([_p(item, 'path', _name_text(item)) for item in edge_matrix_files])} |
+% endif
+
+<%
+# Coupling functions (from network or experiment-level)
+cpl_list = list(net_couplings.items()) if net_couplings else ([(cpl.name, cpl)] if cpl and hasattr(cpl, 'name') else [])
+%>\
+% for cpl_name, cpl_obj in cpl_list:
+<%
+cpl_label = _p(cpl_obj, 'label', cpl_name)
+cpl_desc = _p(cpl_obj, 'description', '')
+cpl_delayed = _p(cpl_obj, 'delayed', False)
+
+incoming = _p(cpl_obj, 'incoming_states', [])
+if isinstance(incoming, str):
+    incoming = [incoming]
+incoming = list(incoming) if incoming else []
+local_states = _as_list(_p(cpl_obj, 'local_states', []))
+
+cpl_params_obj = _p(cpl_obj, 'parameters', {})
+if isinstance(cpl_params_obj, dict):
+    cpl_items = list(cpl_params_obj.items())
+elif hasattr(cpl_params_obj, 'items'):
+    cpl_items = list(cpl_params_obj.items())
+else:
+    cpl_items = [(getattr(p, 'name', '?'), p) for p in (list(cpl_params_obj) if cpl_params_obj else [])]
+cpl_pnames = [n for n, _ in cpl_items]
+
+pre_rhs = getattr(_p(cpl_obj, 'pre_expression', None), 'rhs', '')
+post_rhs = getattr(_p(cpl_obj, 'post_expression', None), 'rhs', '')
+
+coupling_meta = []
+for attr, label in (
+    ('coupling_function', 'function'),
+    ('aggregation', 'aggregation'),
+    ('inner_coupling', 'inner'),
+    ('outsym', 'output symbol'),
+    ('observed', 'observed'),
+):
+    value = _p(cpl_obj, attr, None)
+    if value:
+        coupling_meta.append(f"{label}: {value}")
+
+# Full assembled coupling equation (post[gx -> Sum_j w[i,j]*pre])
+full_latex = ''
+try:
+    sym = cpl_obj.symbolic() if hasattr(cpl_obj, 'symbolic') else None
+    if sym is not None:
+        full_latex = latex(sym, mul_symbol='dot')
+    elif hasattr(cpl_obj, 'equation') and cpl_obj.equation is not None:
+        full_latex = latex(cpl_obj.equation, mul_symbol='dot')
+except Exception:
+    full_latex = ''
+%>\
+
+**Coupling: ${cpl_label or cpl_name}**
+
+% if cpl_desc:
+${cpl_desc.strip()}
+
+% endif
+% if full_latex:
+$$c = ${full_latex}$$
+
+% endif
+% if coupling_meta or incoming or local_states or cpl_delayed or _p(cpl_obj, 'sparse', False) or _p(cpl_obj, 'symmetry', None):
+| Property | Value |
+|:---------|:------|
+% if incoming:
+| Incoming states | ${', '.join(['$' + latex(Symbol(s)) + '$' for s in incoming])} |
+% endif
+% if local_states:
+| Local states | ${', '.join(['$' + latex(Symbol(s)) + '$' for s in local_states])} |
+% endif
+% if cpl_delayed:
+| Delays | enabled |
+% endif
+% if _p(cpl_obj, 'sparse', False):
+| Connectivity storage | sparse |
+% endif
+% if _p(cpl_obj, 'symmetry', None):
+| Symmetry | ${_p(cpl_obj, 'symmetry')} |
+% endif
+% for meta_item in coupling_meta:
+<% meta_key, meta_value = meta_item.split(': ', 1) %>\
+| ${meta_key.capitalize()} | ${meta_value} |
+% endfor
+
+% endif
+% if incoming:
+Receives ${ ', '.join(['$' + latex(Symbol(s)) + '$' for s in incoming])} from connected regions\
+% if cpl_delayed:
+ with conduction delays\
+% endif
+.
+
+% endif
+% if pre_rhs:
+**Pre-synaptic:** $c_{\text{pre}} = ${safe_latex(str(pre_rhs), cpl_pnames + incoming)}$
+
+% endif
+% if post_rhs:
+**Post-synaptic:** $c_{\text{post}} = ${safe_latex(str(post_rhs), cpl_pnames + ['gx'])}$
+
+% endif
+% if cpl_items:
+
+| Parameter | Value | Unit | Domain / Sampling | Flags | Description |
+|:----------|------:|:-----|:------------------|:------|:------------|
+% for pname, param in cpl_items:
+| $${latex(Symbol(pname))}$ | ${_p(param, 'value', '—')} | ${_unit_text(_p(param, 'unit', None))} | ${_metadata_text(param)} | ${_flag_text(param, [('free', 'free'), ('heterogeneous', 'heterogeneous')])} | ${_p(param, 'description', '') or _p(param, 'definition', '') or ''} |
+% endfor
+% endif
+
+% endfor
+% endif
+<%
+# ═══════════════════════════════════════════════════════════════════
+# STIMULATION
+# ═══════════════════════════════════════════════════════════════════
+%>\
+% if stim:
+<%
+s = sec()
+stim_eq = _p(stim, 'equation', None)
+stim_rhs = getattr(stim_eq, 'rhs', '') if stim_eq else ''
+stim_params = _p(stim, 'parameters', {})
+if hasattr(stim_params, 'values'):
+    stim_param_list = list(stim_params.values())
+elif isinstance(stim_params, list):
+    stim_param_list = stim_params
+else:
+    stim_param_list = [stim_params] if stim_params else []
+%>\
+
+**Stimulation Protocol**
+
+% if _p(stim, 'description', None):
+${_p(stim, 'description').strip()}
+
+% endif
+% if stim_rhs:
+$$I_{\text{stim}}(t) = ${safe_latex(stim_rhs, [_p(p, 'name', '') for p in stim_param_list])}$$
+% endif
+
+% if stim_param_list:
+| Parameter | Value | Unit | Domain / Sampling | Flags | Description |
+|:----------|------:|:-----|:------------------|:------|:------------|
+% for param in stim_param_list:
+| $${latex(Symbol(_p(param, 'name', '?')))}$ | ${_p(param, 'value', '—')} | ${_unit_text(_p(param, 'unit', None))} | ${_metadata_text(param)} | ${_flag_text(param, [('free', 'free'), ('heterogeneous', 'heterogeneous')])} | ${_p(param, 'description', '') or _p(param, 'definition', '') or ''} |
+% endfor
+% endif
 % endif
 <%
 # ═══════════════════════════════════════════════════════════════════
@@ -416,17 +757,79 @@ dt = _p(integ, 'step_size', 1.0)
 duration = _p(integ, 'duration', None)
 transient = _p(integ, 'transient_time', 0)
 noise = _p(integ, 'noise', None)
+steps = _p(integ, 'steps', None)
+abs_tol = _p(integ, 'abs_tol', None)
+rel_tol = _p(integ, 'rel_tol', None)
+state_wise_sigma = _p(integ, 'state_wise_sigma', []) or []
+scipy_ode_base = _p(integ, 'scipy_ode_base', False)
+number_of_stages = _p(integ, 'number_of_stages', None)
+delayed_integration = _p(integ, 'delayed', None)
+integration_params = _items(_p(integ, 'parameters', {}))
+intermediate_expressions = _items(_p(integ, 'intermediate_expressions', []))
+update_expression = _p(integ, 'update_expression', None)
 %>\
 
-${'##'} ${s}. Numerical Integration
+**Numerical Integration**
 
-- **Method:** ${method}
-- **Time step:** $\Delta t = ${dt}$ ms
+% if _p(integ, 'description', None):
+${_p(integ, 'description').strip()}
+
+% endif
+| Setting | Value |
+|:--------|:------|
+| Method | ${method} |
+| Time step | $\Delta t = ${dt}$ ms |
 % if duration:
-- **Duration:** ${duration} ms
+| Duration | ${duration} ms |
 % endif
 % if transient:
-- **Transient:** ${transient} ms (discarded)
+| Transient | ${transient} ms discarded |
+% endif
+% if steps:
+| Steps | ${steps} |
+% endif
+% if abs_tol is not None:
+| Absolute tolerance | ${abs_tol} |
+% endif
+% if rel_tol is not None:
+| Relative tolerance | ${rel_tol} |
+% endif
+% if number_of_stages:
+| Stages | ${number_of_stages} |
+% endif
+% if delayed_integration is not None:
+| Delayed state history | ${delayed_integration} |
+% endif
+% if scipy_ode_base:
+| SciPy ODE base | ${scipy_ode_base} |
+% endif
+% if state_wise_sigma:
+| State-wise sigma | ${', '.join([str(value) for value in state_wise_sigma])} |
+% endif
+
+% if integration_params:
+| Parameter | Value | Unit | Domain / Sampling | Description |
+|:----------|------:|:-----|:------------------|:------------|
+% for param_name, param in integration_params:
+| $${latex(Symbol(param_name))}$ | ${_p(param, 'value', '—')} | ${_unit_text(_p(param, 'unit', None))} | ${_metadata_text(param)} | ${_p(param, 'description', '') or _p(param, 'definition', '') or ''} |
+% endfor
+
+% endif
+% if intermediate_expressions or update_expression:
+**Integration Update Expressions**
+
+% for expr_name, expr in intermediate_expressions:
+<% expr_eq = _p(expr, 'equation', None); expr_rhs = getattr(expr_eq, 'rhs', '') if expr_eq else '' %>\
+% if expr_rhs:
+$$${eq_latex(expr_name, expr_rhs)}$$
+% endif
+% endfor
+% if update_expression:
+<% update_eq = _p(update_expression, 'equation', None); update_rhs = getattr(update_eq, 'rhs', '') if update_eq else '' %>\
+% if update_rhs:
+$$${eq_latex(_p(update_expression, 'name', 'x_{n+1}'), update_rhs)}$$
+% endif
+% endif
 % endif
 
 % if noise:
@@ -440,16 +843,28 @@ elif isinstance(noise_params, list):
     noise_param_list = noise_params
 else:
     noise_param_list = [noise_params] if noise_params else []
+noise_bits = []
+for attr, label in (('name', 'name'), ('noise_type', 'type'), ('axis', 'axis'), ('seed', 'seed')):
+    value = _p(noise, attr, None)
+    if value is not None:
+        noise_bits.append(f"{label}={value}")
+noise_distribution = _p(noise, 'distribution', None)
+if noise_distribution:
+    noise_bits.append(_distribution_text(noise_distribution))
 %>
 ${'Additive' if noise_additive else 'Multiplicative'} Gaussian noise: $d\mathbf{x} = f(\mathbf{x},t)\,dt + \sigma\,d\mathbf{W}_t$
+
+% if noise_bits:
+${', '.join(noise_bits)}.
+% endif
 
 % if noise_nsig is not None:
 $\sigma = ${noise_nsig}$
 % elif noise_param_list:
-| Parameter | Value |
-|:----------|------:|
+| Parameter | Value | Unit | Domain / Sampling | Description |
+|:----------|------:|:-----|:------------------|:------------|
 % for np_item in noise_param_list:
-| $${latex(Symbol(_p(np_item, 'name', 'σ')))}$ | ${_p(np_item, 'value', '—')} |
+| $${latex(Symbol(_p(np_item, 'name', 'σ')))}$ | ${_p(np_item, 'value', '—')} | ${_unit_text(_p(np_item, 'unit', None))} | ${_metadata_text(np_item)} | ${_p(np_item, 'description', '') or _p(np_item, 'definition', '') or ''} |
 % endfor
 % endif
 % endif
@@ -465,27 +880,77 @@ has_obs = bool(observations) or bool(derived_observations)
 s = sec()
 %>\
 
-${'##'} ${s}. Observations
+**Observations**
 
 % if observations:
-${'###'} ${s}.1 Primary Observations
+*Primary Observations*
 
-| Name | Source | Period | Pipeline |
-|:-----|:-------|-------:|:---------|
+| Name | Source | Sampling / Window | Pipeline | Description |
+|:-----|:-------|:------------------|:---------|:------------|
 % for oname, obs in observations.items():
-<% obs_label = _p(obs, 'label', oname); obs_source = _p(obs, 'source', None); obs_period = _p(obs, 'period', None); obs_agg = _p(obs, 'aggregation', None); pipeline = _p(obs, 'pipeline', []); period_str = f"{obs_period} ms" if obs_period else (str(obs_agg) if obs_agg else '—'); src_str = '$' + str(obs_source) + '$' if obs_source else '—' %>\
-| **${obs_label}** | ${src_str} | ${period_str} | ${_pipeline_str(pipeline)} |
+<%
+obs_label = _p(obs, 'label', oname)
+obs_source = _p(obs, 'source', None)
+obs_period = _p(obs, 'period', None)
+obs_downsample = _p(obs, 'downsample_period', None)
+obs_agg = _p(obs, 'aggregation', None)
+obs_modality = _p(obs, 'imaging_modality', None)
+obs_time_scale = _p(obs, 'time_scale', None)
+obs_voi = _p(obs, 'voi', None)
+obs_skip = _p(obs, 'skip_t', None)
+obs_tail = _p(obs, 'tail_samples', None)
+obs_window = _p(obs, 'window_size', None)
+obs_warmup = _p(obs, 'warmup_source', None)
+obs_data = _p(obs, 'data_source', None)
+pipeline = _p(obs, 'pipeline', [])
+sampling_bits = []
+if obs_period:
+    sampling_bits.append(f"period={obs_period} ms")
+if obs_downsample:
+    sampling_bits.append(f"downsample={obs_downsample} ms")
+if obs_agg:
+    sampling_bits.append(f"aggregation={obs_agg}")
+if obs_modality:
+    sampling_bits.append(f"modality={obs_modality}")
+if obs_time_scale:
+    sampling_bits.append(f"scale={obs_time_scale}")
+if obs_voi is not None:
+    sampling_bits.append(f"VOI={obs_voi}")
+if obs_skip is not None:
+    sampling_bits.append(f"skip={obs_skip}")
+if obs_tail is not None:
+    sampling_bits.append(f"tail={obs_tail}")
+if obs_window is not None:
+    sampling_bits.append(f"window={obs_window}")
+if obs_warmup:
+    sampling_bits.append(f"warm-up={obs_warmup}")
+if obs_data:
+    sampling_bits.append(f"data={_name_text(obs_data)}")
+period_str = ', '.join(sampling_bits) or '—'
+src_str = '$' + str(obs_source) + '$' if obs_source else '—'
+%>\
+| **${obs_label}** | ${src_str} | ${period_str} | ${_pipeline_str(pipeline)} | ${_p(obs, 'description', '') or ''} |
 % endfor
 % endif
 
 % if derived_observations:
-${'###'} ${s}.2 Derived Observations
+*Derived Observations*
 
-| Name | Source Observations | Pipeline |
-|:-----|:-------------------|:---------|
+| Name | Source Observations | Sampling / Window | Pipeline | Description |
+|:-----|:-------------------|:------------------|:---------|:------------|
 % for doname, dobs in derived_observations.items():
-<% dobs_label = _p(dobs, 'label', doname); src_obs = _p(dobs, 'source_observations', []); src_obs = [src_obs] if isinstance(src_obs, str) else (list(src_obs) if src_obs else []); d_pipeline = _p(dobs, 'pipeline', []) %>\
-| **${dobs_label}** | ${', '.join(src_obs)} | ${_pipeline_str(d_pipeline)} |
+<%
+dobs_label = _p(dobs, 'label', doname)
+src_obs = _p(dobs, 'source_observations', [])
+src_obs = [src_obs] if isinstance(src_obs, str) else (list(src_obs) if src_obs else [])
+d_pipeline = _p(dobs, 'pipeline', [])
+d_sampling = []
+for attr, label in (('aggregation', 'aggregation'), ('skip_t', 'skip'), ('tail_samples', 'tail'), ('window_size', 'window'), ('time_scale', 'scale')):
+    value = _p(dobs, attr, None)
+    if value is not None:
+        d_sampling.append(f"{label}={value}")
+%>\
+| **${dobs_label}** | ${', '.join([str(item) for item in src_obs])} | ${', '.join(d_sampling) or '—'} | ${_pipeline_str(d_pipeline)} | ${_p(dobs, 'description', '') or ''} |
 % endfor
 % endif
 
@@ -496,7 +961,7 @@ obs_with_pipeline = [(oname, obs) for oname, obs in all_obs if _p(obs, 'pipeline
 subsec = 3 if derived_observations else 2
 %>
 % if obs_with_pipeline:
-${'###'} ${s}.${subsec} Processing Pipelines
+*Processing Pipelines*
 
 % for oname, obs in obs_with_pipeline:
 <%
@@ -507,23 +972,17 @@ if not isinstance(pipeline, list):
 %>\
 **${obs_label}:**
 
-| Step | Function | Output | Arguments |
-|-----:|:---------|:-------|:----------|
+| Step | Function | Input | Output | Arguments | Description |
+|-----:|:---------|:------|:-------|:----------|:------------|
 % for i, step in enumerate(pipeline):
 <%
 fn = _p(step, 'function', None) or _p(_p(step, 'callable', None), 'name', None) or _p(_p(step, 'class_call', None), 'name', None)
+step_in = _p(step, 'input', '—')
 step_out = _p(step, 'output', '—')
 step_args = _p(step, 'arguments', {})
-if hasattr(step_args, 'items'):
-    arg_strs = [f"{k}={_p(v, 'value', '?')}" for k, v in step_args.items()]
-elif hasattr(step_args, 'values'):
-    arg_strs = [f"{_p(a, 'name', '?')}={_p(a, 'value', '?')}" for a in step_args.values()]
-elif isinstance(step_args, list):
-    arg_strs = [f"{_p(a, 'name', '?')}={_p(a, 'value', '?')}" for a in step_args]
-else:
-    arg_strs = []
+step_desc = _p(step, 'description', '') or ''
 %>\
-| ${i+1} | `${fn or '?'}` | ${step_out} | ${', '.join(arg_strs) if arg_strs else '—'} |
+| ${i+1} | `${fn or '?'}` | ${step_in} | ${step_out} | ${_arguments_text(step_args)} | ${step_desc} |
 % endfor
 
 % endfor
@@ -531,46 +990,78 @@ else:
 % endif
 <%
 # ═══════════════════════════════════════════════════════════════════
-# SECTION: EXPERIMENT-LEVEL FUNCTIONS
+# SECTION: EXPLORATIONS (parameter sweeps)
 # ═══════════════════════════════════════════════════════════════════
-funcs_with_eq = {k: f for k, f in functions.items() if _p(_p(f, 'equation', None), 'rhs', '')}
 %>\
-% if funcs_with_eq:
+% if explorations:
 <%
 s = sec()
 %>\
 
-${'##'} ${s}. Functions
+**Parameter Explorations**
 
-% for fname, func in funcs_with_eq.items():
+% for expl_idx, (expl_name, expl) in enumerate(explorations.items()):
 <%
-func_desc = _p(func, 'description', '')
-if func_desc:
-    func_desc = func_desc.strip().split('\n')[0]
-func_eq = _p(func, 'equation', None)
-func_rhs = getattr(func_eq, 'rhs', '') if func_eq else ''
-arg_names = _get_func_args(func)
-# Equation-level parameters
-eq_params = getattr(func_eq, 'parameters', None) if func_eq else None
-if hasattr(eq_params, 'values'):
-    eq_params = list(eq_params.values())
-elif isinstance(eq_params, dict):
-    eq_params = list(eq_params.values())
-elif not isinstance(eq_params, list) if eq_params else True:
-    eq_params = []
-%>
-**${fname}**${'  —  ' + func_desc if func_desc else ''}
+expl_label = _p(expl, 'label', expl_name)
+expl_desc = _p(expl, 'description', '')
+expl_mode = _p(expl, 'mode', 'product')
+expl_n_par = _p(expl, 'n_parallel', 1)
+expl_axes = _p(expl, 'space', None) or []
+ep_items = [(str(_p(a, 'parameter', '?')).split('.', 1)[-1], a) for a in (list(expl_axes) if expl_axes else [])]
+observable = _p(expl, 'observable', None)
+%>\
 
-$$${fname}(${', '.join(arg_names)}) = ${safe_latex(func_rhs, arg_names)}$$
+*${expl_label}*
 
-% if eq_params:
-| Parameter | Value | Description |
-|:----------|------:|:------------|
-% for ep in eq_params:
-| $${latex(Symbol(_p(ep, 'name', '?')))}$ | ${_p(ep, 'value', '—')} | ${_p(ep, 'description', '') or ''} |
-% endfor
+% if expl_desc:
+${expl_desc.strip()}
 
 % endif
+| Setting | Value |
+|:--------|:------|
+| Mode | ${expl_mode} |
+% if expl_n_par:
+| Parallel evaluations | ${expl_n_par} |
+% endif
+
+| Parameter | Values / Range | Steps |
+|:----------|:---------------|------:|
+% for ep_name, ep in ep_items:
+<%
+domain = _p(ep, 'domain', None)
+explored = _p(ep, 'explored_values', None)
+if explored:
+    vals = [str(v) for v in explored]
+    if len(vals) <= 8:
+        range_str = '{' + ', '.join(vals) + '}'
+    else:
+        range_str = f"[{vals[0]}, ..., {vals[-1]}]"
+    n = len(vals)
+elif domain:
+    lo = _p(domain, 'lo', '?')
+    hi = _p(domain, 'hi', '?')
+    n = _p(domain, 'n', '?')
+    log = _p(domain, 'log_scale', False)
+    range_str = f"[{lo}, {hi}]" + (' (log)' if log else '')
+else:
+    range_str = '—'
+    n = '—'
+%>\
+| $${latex(Symbol(ep_name))}$ | ${range_str} | ${n} |
+% endfor
+
+% if observable:
+<%
+obs_fn = _p(observable, 'function', None) or _p(_p(observable, 'callable', None), 'name', None)
+obs_args = _p(observable, 'arguments', {})
+%>
+**Observable:** `${obs_fn or '?'}`
+% if obs_args:
+
+Arguments: ${_arguments_text(obs_args)}
+% endif
+% endif
+
 % endfor
 % endif
 <%
@@ -583,7 +1074,7 @@ $$${fname}(${', '.join(arg_names)}) = ${safe_latex(func_rhs, arg_names)}$$
 s = sec()
 %>\
 
-${'##'} ${s}. Algorithms
+**Algorithms**
 
 % for algo_idx, (algo_name, algo) in enumerate(algorithms.items()):
 <%
@@ -636,7 +1127,7 @@ if isinstance(algo_obs, str):
 algo_obs = list(algo_obs) if algo_obs else []
 %>\
 
-${'###'} ${s}.${algo_idx + 1} ${algo_label}
+*${algo_label}*
 
 % if algo_desc:
 ${algo_desc.strip()}
@@ -699,7 +1190,7 @@ warmup = _p(rule, 'warmup', None)
 # Collect all hyperparameter names for parsing update rule equations
 hp_names = [n for n, _ in hp_items]
 %>
-${'####'} ${rule_name}${'  —  ' + rule_desc if rule_desc else ''}
+**${rule_name}**${'  —  ' + rule_desc if rule_desc else ''}
 
 $$${latex(Symbol(tp_name))} \leftarrow ${safe_latex(rule_rhs, hp_names + [str(r) for r in requires])}$$
 
@@ -719,24 +1210,38 @@ Requires: ${', '.join([str(r) for r in requires])}
 
 | Setting | Value |
 |:--------|------:|
-% if n_iter:
+% if algo_type:
+| Type | ${algo_type} |
+% endif
+% if n_iter is not None:
 | Iterations | ${n_iter} |
 % endif
 % if sim_period:
 | Simulation period | ${sim_period} ms |
 % endif
-% if lr:
+% if lr is not None:
 | Learning rate | ${lr} |
+% endif
+% if lr_warmup:
+| Learning-rate warm-up | ${lr_warmup} |
 % endif
 % if lr_schedule:
 | LR schedule | ${lr_schedule} |
 % endif
-% if apply_every and apply_every != 1:
+% if apply_every:
 | Apply every | ${apply_every} steps |
 % endif
+
+% if hp_items:
+**Hyperparameters**
+
+| Hyperparameter | Value | Unit | Domain / Sampling | Description |
+|:---------------|------:|:-----|:------------------|:------------|
 % for hp_name, hp in hp_items:
-| ${hp_name} | ${_p(hp, 'value', '—')} |
+| ${hp_name} | ${_p(hp, 'value', '—')} | ${_unit_text(_p(hp, 'unit', None))} | ${_metadata_text(hp)} | ${_p(hp, 'description', '') or _p(hp, 'definition', '') or ''} |
 % endfor
+
+% endif
 
 % endfor
 % endif
@@ -750,7 +1255,7 @@ Requires: ${', '.join([str(r) for r in requires])}
 s = sec()
 %>\
 
-${'##'} ${s}. Optimization
+**Optimization**
 
 % for opt_idx, (opt_name, opt) in enumerate(optimizations.items()):
 <%
@@ -795,7 +1300,7 @@ max_iter = _p(opt, 'max_iterations', None)
 opt_integ = _p(opt, 'integration', None)
 %>\
 
-${'###'} ${s}.${opt_idx + 1} ${opt_label}
+*${opt_label}*
 
 % if opt_desc:
 ${opt_desc.strip()}
@@ -840,7 +1345,7 @@ ${opt_desc.strip()}
 % endif
 
 % if stage_items:
-${'####'} Stages
+**Stages**
 
 % for st_idx, (st_name, stage) in enumerate(stage_items):
 <%
@@ -898,102 +1403,77 @@ Frozen: ${', '.join(['$' + latex(Symbol(str(p))) + '$' for p in s_freeze])}
 % endif
 <%
 # ═══════════════════════════════════════════════════════════════════
-# SECTION: EXPLORATIONS (parameter sweeps)
+# SECTION: EXPERIMENT-LEVEL FUNCTIONS
 # ═══════════════════════════════════════════════════════════════════
+funcs_with_eq = {k: f for k, f in functions.items() if _p(_p(f, 'equation', None), 'rhs', '')}
 %>\
-% if explorations:
+% if funcs_with_eq:
 <%
 s = sec()
 %>\
 
-${'##'} ${s}. Parameter Explorations
+**Functions**
 
-% for expl_idx, (expl_name, expl) in enumerate(explorations.items()):
+% for fname, func in funcs_with_eq.items():
 <%
-expl_label = _p(expl, 'label', expl_name)
-expl_desc = _p(expl, 'description', '')
-expl_mode = _p(expl, 'mode', 'product')
-expl_n_par = _p(expl, 'n_parallel', 1)
-expl_axes = _p(expl, 'space', None) or []
-ep_items = [(str(_p(a, 'parameter', '?')).split('.', 1)[-1], a) for a in (list(expl_axes) if expl_axes else [])]
-observable = _p(expl, 'observable', None)
-%>\
-
-${'###'} ${s}.${expl_idx + 1} ${expl_label}
-
-% if expl_desc:
-${expl_desc.strip()}
-
-% endif
-**Mode:** ${expl_mode}
-
-| Parameter | Values / Range | Steps |
-|:----------|:---------------|------:|
-% for ep_name, ep in ep_items:
-<%
-domain = _p(ep, 'domain', None)
-explored = _p(ep, 'explored_values', None)
-if explored:
-    vals = [str(v) for v in explored]
-    if len(vals) <= 8:
-        range_str = '{' + ', '.join(vals) + '}'
-    else:
-        range_str = f"[{vals[0]}, ..., {vals[-1]}]"
-    n = len(vals)
-elif domain:
-    lo = _p(domain, 'lo', '?')
-    hi = _p(domain, 'hi', '?')
-    n = _p(domain, 'n', '?')
-    log = _p(domain, 'log_scale', False)
-    range_str = f"[{lo}, {hi}]" + (' (log)' if log else '')
-else:
-    range_str = '—'
-    n = '—'
-%>\
-| $${latex(Symbol(ep_name))}$ | ${range_str} | ${n} |
-% endfor
-
-% if observable:
-<%
-obs_fn = _p(observable, 'function', None) or _p(_p(observable, 'callable', None), 'name', None)
+func_desc = _p(func, 'description', '')
+if func_desc:
+    func_desc = func_desc.strip().split('\n')[0]
+func_eq = _p(func, 'equation', None)
+func_rhs = getattr(func_eq, 'rhs', '') if func_eq else ''
+arg_names = _get_func_args(func)
+func_meta = []
+for attr, label in (('input', 'input'), ('output', 'output'), ('apply_on_dimension', 'dimension')):
+    value = _p(func, attr, None)
+    if value:
+        func_meta.append((label, _name_text(value)))
+if _p(func, 'callable', None):
+    func_meta.append(('callable', _callable_text(func)))
+requirements = _as_list(_p(func, 'requirements', []))
+if requirements:
+    func_meta.append(('requirements', ', '.join([str(item) for item in requirements])))
+aggregate = _p(func, 'aggregate', None)
+if aggregate:
+    func_meta.append(('aggregate', f"{_p(aggregate, 'type', 'mean')} over {_p(aggregate, 'over', '?')}"))
+time_range = _p(func, 'time_range', None)
+if time_range:
+    func_meta.append(('time range', _range_text(time_range)))
+# Equation-level parameters
+eq_params = getattr(func_eq, 'parameters', None) if func_eq else None
+if hasattr(eq_params, 'values'):
+    eq_params = list(eq_params.values())
+elif isinstance(eq_params, dict):
+    eq_params = list(eq_params.values())
+elif not isinstance(eq_params, list) if eq_params else True:
+    eq_params = []
 %>
-**Observable:** `${obs_fn or '?'}`
-% endif
+**${fname}**${'  —  ' + func_desc if func_desc else ''}
 
+% if func_meta:
+| Property | Value |
+|:---------|:------|
+% for meta_name, meta_value in func_meta:
+| ${meta_name} | ${meta_value} |
 % endfor
-% endif
-<%
-# ═══════════════════════════════════════════════════════════════════
-# STIMULATION
-# ═══════════════════════════════════════════════════════════════════
-%>\
-% if stim:
-<%
-s = sec()
-stim_eq = _p(stim, 'equation', None)
-stim_rhs = getattr(stim_eq, 'rhs', '') if stim_eq else ''
-stim_params = _p(stim, 'parameters', {})
-if hasattr(stim_params, 'values'):
-    stim_param_list = list(stim_params.values())
-elif isinstance(stim_params, list):
-    stim_param_list = stim_params
-else:
-    stim_param_list = [stim_params] if stim_params else []
-%>\
 
-${'##'} ${s}. Stimulation Protocol
-
-% if stim_rhs:
-$$I_{\text{stim}}(t) = ${safe_latex(stim_rhs, [_p(p, 'name', '') for p in stim_param_list])}$$
 % endif
 
-% if stim_param_list:
-| Parameter | Value | Unit | Description |
-|:----------|------:|:-----|:------------|
-% for param in stim_param_list:
-| $${latex(Symbol(_p(param, 'name', '?')))}$ | ${_p(param, 'value', '—')} | ${_p(param, 'unit', '—') or '—'} | ${_p(param, 'description', '') or ''} |
+% if arg_names:
+Arguments: ${', '.join(arg_names)}
+
+% endif
+
+$$${fname}(${', '.join(arg_names)}) = ${safe_latex(func_rhs, arg_names)}$$
+
+% if eq_params:
+| Parameter | Value | Description |
+|:----------|------:|:------------|
+% for ep in eq_params:
+| $${latex(Symbol(_p(ep, 'name', '?')))}$ | ${_p(ep, 'value', '—')} | ${_p(ep, 'description', '') or ''} |
 % endfor
+
 % endif
+% endfor
 % endif
 <%
 # ═══════════════════════════════════════════════════════════════════
@@ -1011,7 +1491,7 @@ has_exec_info = exec_precision or (exec_accel and exec_accel != 'cpu') or exec_s
 %>\
 % if has_exec_info:
 
-${'##'} ${s}. Execution
+**Execution**
 
 | Setting | Value |
 |:--------|------:|
@@ -1042,9 +1522,7 @@ ref_names = [getattr(r, 'name', None) for r in all_refs if getattr(r, 'name', No
 %>\
 % if ref_names or references:
 
----
-
-${'##'} References
+**References**
 
 % if ref_names:
 ${"\n\n".join([report.get_citation(n) for n in ref_names])}

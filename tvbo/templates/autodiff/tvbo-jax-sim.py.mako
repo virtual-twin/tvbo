@@ -336,3 +336,41 @@ def kernel(state):
     % else:
     return (result, new_ics)
     % endif
+
+
+# ---------------------------------------------------------------------------
+# Standalone entry point (executed when this script is run directly).
+# Reconstructs the experiment from the frozen YAML spec and invokes kernel().
+# ---------------------------------------------------------------------------
+if __name__ == "__main__":
+    import argparse
+    from pathlib import Path as _Path
+
+    _parser = argparse.ArgumentParser(description="Run JAX-generated TVBO simulation")
+    _parser.add_argument("--spec", type=_Path, default=None,
+                         help="YAML experiment spec (default: ../spec/*.yaml next to this script)")
+    _parser.add_argument("-o", "--output", type=_Path, default=None,
+                         help="Output directory for the result")
+    _args = _parser.parse_args()
+
+    _spec = _args.spec
+    if _spec is None:
+        _candidates = sorted((_Path(__file__).resolve().parent.parent / "spec").glob("*.yaml"))
+        if not _candidates:
+            raise SystemExit("No spec found; pass --spec PATH")
+        _spec = _candidates[0]
+
+    from tvbo import SimulationExperiment
+    _experiment = SimulationExperiment.from_yaml(str(_spec))
+    _state = _experiment.collect_state()
+    _result = kernel(_state)
+    print(f"Done: {type(_result).__name__}, shape={getattr(_result, 'shape', None)}")
+
+    if _args.output is not None:
+        _args.output.mkdir(parents=True, exist_ok=True)
+        if hasattr(_result, "save"):
+            _result.save(str(_args.output))
+        else:
+            import numpy as _np
+            _np.savez(_args.output / "result.npz", data=getattr(_result, "data", _result))
+        print(f"Wrote results to {_args.output}")

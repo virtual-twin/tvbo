@@ -47,7 +47,13 @@ dependencies = [
 
     # BIDS dataset support
     "pybids>=0.16.0",
+
+    # CLI (typer pulls in click; rich is optional but useful for tables)
+    "typer>=0.12",
 ]
+
+[project.scripts]
+tvbo = "tvbo.cli:app"
 
 [project.optional-dependencies]
 # NeuroML/LEMS support (pyNeuroML + LEMS engine)

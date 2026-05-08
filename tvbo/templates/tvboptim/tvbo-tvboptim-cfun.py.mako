@@ -29,13 +29,19 @@ if 'experiment' in context.keys():
             keys = getattr(ci, 'keys', None)
             coupling_inputs_info[ci_key] = {'dimension': dim, 'keys': list(keys) if keys else None}
 
-    # Get all couplings from network.coupling
+    # Get all couplings from network.coupling, fall back to experiment-level coupling
     all_couplings = {}
     if hasattr(network, 'coupling') and network.coupling:
         if hasattr(network.coupling, 'items'):
             all_couplings = dict(network.coupling.items())
         elif hasattr(network.coupling, 'keys'):
             all_couplings = {k: network.coupling[k] for k in network.coupling.keys()}
+    if not all_couplings and getattr(experiment, 'coupling', None):
+        _exp_c = experiment.coupling
+        if hasattr(_exp_c, 'items'):
+            all_couplings = dict(_exp_c.items())
+        else:
+            all_couplings = {_exp_c.name or 'coupling': _exp_c}
 
 elif 'coupling' in context.keys():
     _standalone_coupling = context['coupling']

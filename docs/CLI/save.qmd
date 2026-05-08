@@ -1,0 +1,30 @@
+---
+title: "tvbo save"
+---
+
+Convenience alias for `tvbo export --with-data`. Use this when you need a single artefact that bundles both metadata and binary data (connectome matrices, parcellation labels, surfaces, etc.) — for example, when packaging a study for a collaborator or for archival.
+
+## Synopsis
+
+```text
+tvbo save FORMAT SPEC --output, -o PATH
+```
+
+`--output` is required (unlike `tvbo export`, where omitting it streams to stdout).
+
+## Examples
+
+```bash
+# Bundle YAML + binary network data
+tvbo save yaml experiment:JR_MEG -o ./bundle.yaml
+
+# Same, but openMINDS JSON-LD
+tvbo save openminds experiment:JR_MEG -o ./bundle.jsonld
+```
+
+Only formats whose registry entry says `with_data: yes` (visible in `tvbo formats`) actually pack data; for others, the output is identical to `tvbo export`.
+
+## See also
+
+- [`tvbo export`](export.qmd) — the underlying verb
+- [`tvbo formats`](formats.qmd) — which formats support `--with-data`

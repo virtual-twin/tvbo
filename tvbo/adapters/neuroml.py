@@ -2783,7 +2783,7 @@ def build_lems_context(experiment):
     #   left as-is and emitted via the network template.
     from tvbo.classes.dynamics import Dynamics
     if dyn is None:
-        dyn = Dynamics()
+        dyn = Dynamics(name="dynamics")
     elif dyn.name and not (dyn.state_variables or dyn.parameters):
         iri = str(getattr(dyn, "iri", "") or "")
         if not iri.startswith("neuroml:"):
