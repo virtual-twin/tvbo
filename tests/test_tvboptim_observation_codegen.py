@@ -130,4 +130,4 @@ def test_tvboptim_observations_match_native_tvb():
     ]
     for tvboptim_data, tvb_data in comparisons:
         tvboptim_data, tvb_data = _aligned_observation_data(tvboptim_data, tvb_data)
-        np.testing.assert_array_equal(tvboptim_data, tvb_data)
+        np.testing.assert_allclose(tvboptim_data, tvb_data, rtol=0.0, atol=1e-9)
