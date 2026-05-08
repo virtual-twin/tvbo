@@ -2,7 +2,10 @@
 <%doc>TVB-Optim Observation Template. Context: experiment (SimulationExperiment).</%doc>
 <%
 from tvbo.codegen import render_expression
-from tvbo.templates.tvboptim.utils import get_attr, to_numeric, get_recorded_variable_names
+from tvbo.templates.tvboptim.utils import (
+    get_attr, to_numeric, get_recorded_variable_names,
+    adapt_class_reference_for_tvboptim,
+)
 
 model = experiment.dynamics
 state_names = list(model.state_variables.keys()) if model else ['x']
@@ -399,8 +402,12 @@ def parse_class_reference(class_ref, obs):
         'name': get_attr(class_ref, 'name'),
         'module': get_attr(class_ref, 'module'),
         'constructor_args': {},
+        'constructor_arg_codes': {},
         'call_args': {},
         'warmup_source': get_attr(class_ref, 'warmup_source') or get_attr(obs, 'warmup_source'),
+        'accepts_voi': False,
+        'accepts_history': False,
+        'extra_imports': [],
     }
 
     # Parse constructor_args
@@ -408,7 +415,10 @@ def parse_class_reference(class_ref, obs):
         name = get_attr(arg, 'name')
         val = get_attr(arg, 'value')
         if name:
-            result['constructor_args'][str(name)] = to_numeric(val) if val is not None else None
+            parsed_value = to_numeric(val) if val is not None else None
+            result['constructor_args'][str(name)] = parsed_value
+            if parsed_value is not None:
+                result['constructor_arg_codes'][str(name)] = repr(parsed_value)
 
     # Parse call_args
     for arg in (get_attr(class_ref, 'call_args') or []):
@@ -417,14 +427,14 @@ def parse_class_reference(class_ref, obs):
         if name:
             result['call_args'][str(name)] = val
 
-    return result
+    return adapt_class_reference_for_tvboptim(result, obs, dt)
 
 # =============================================================================
 
 # =============================================================================
 obs_list = []
 callable_imports = {}  # {module: set(qualnames)}
-class_ref_imports = {}  # {module: class_name}
+class_ref_imports = {}  # {module: set(class_names)}
 
 for obs_name, obs in observations.items():
     info = {
@@ -446,8 +456,10 @@ for obs_name, obs in observations.items():
     if class_ref:
         info['class_reference'] = parse_class_reference(class_ref, obs)
         # Collect import
-        if info['class_reference']['module']:
-            class_ref_imports[info['class_reference']['module']] = info['class_reference']['name']
+        if info['class_reference'] and info['class_reference']['module']:
+            class_ref_imports.setdefault(info['class_reference']['module'], set()).add(info['class_reference']['name'])
+            for extra_module, extra_name in info['class_reference'].get('extra_imports', []):
+                class_ref_imports.setdefault(extra_module, set()).add(extra_name)
 
     # Source state variable (what this observation monitors from simulation)
     src = get_attr(obs, 'source')
@@ -599,8 +611,10 @@ import ${module}
 % endif
 % endfor
 
-% for module, class_name in class_ref_imports.items():
+% for module, class_names in sorted(class_ref_imports.items()):
+% for class_name in sorted(class_names):
 from ${module} import ${class_name} as _Ext${class_name}
+% endfor
 % endfor
 
 % for obs in obs_list:
@@ -646,8 +660,12 @@ ${obs_name} = jnp.asarray(_bids_network.observations['${network_obs_key}'])
     ext_class_name = class_ref['name']
     ext_module = class_ref['module']
     constructor_args = class_ref['constructor_args']
+    constructor_arg_codes = dict(class_ref.get('constructor_arg_codes') or {})
     call_args = class_ref['call_args']
     warmup_source = class_ref.get('warmup_source')
+    accepts_history = class_ref.get('accepts_history') or bool(warmup_source)
+    if class_ref.get('accepts_voi') and 'voi' not in constructor_arg_codes:
+        constructor_arg_codes['voi'] = 'voi'
 
     # Build constructor kwargs string
     init_kwargs = []
@@ -660,7 +678,7 @@ ${obs_name} = jnp.asarray(_bids_network.observations['${network_obs_key}'])
     init_kwargs_str = ', '.join(init_kwargs)
 
     # Check if history is needed (warmup_source specified)
-    needs_history = bool(warmup_source)
+    needs_history = bool(accepts_history)
 %>
 
 class ${class_name}(eqx.Module):
@@ -683,14 +701,14 @@ class ${class_name}(eqx.Module):
             **kwargs: Additional arguments passed to ${ext_class_name}
         """
         # Merge default constructor args with kwargs (filter out internal keys)
-        _init_kwargs = {${', '.join([f"'{k}': {repr(v)}" for k, v in constructor_args.items() if v is not None])}}
+        _init_kwargs = {${', '.join([f"'{k}': {v}" for k, v in constructor_arg_codes.items()])}}
         # Filter out internal keys not meant for external class
-        _internal_keys = {'result', 'result_transient', 'model_fn', 'state'}
+        _internal_keys = {'result', 'result_transient', 'model_fn', 'state', 'history'}
         _init_kwargs.update({k: v for k, v in kwargs.items() if k not in _internal_keys})
 % if needs_history:
         _init_kwargs['history'] = history
 % endif
-% if 'voi' in constructor_args or needs_history:
+    % if class_ref.get('accepts_voi') or 'voi' in constructor_arg_codes or needs_history:
         _init_kwargs.setdefault('voi', voi)
 % endif
 
