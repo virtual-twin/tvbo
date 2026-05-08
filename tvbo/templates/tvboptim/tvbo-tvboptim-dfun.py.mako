@@ -16,7 +16,9 @@ Output:
 <%
 import textwrap
 from tvbo.codegen import render_expression
-from tvbo.templates.tvboptim.utils import get_param_info, get_recorded_variable_names
+from tvbo.templates.tvboptim.utils import (
+    get_param_info, get_recorded_variable_names, get_coupling_input_info
+)
 
 # Get model from context
 if 'experiment' in context.keys():
@@ -104,24 +106,11 @@ param_names = regular_param_names
 #    → COUPLING_INPUTS = {'coupling': 2}
 #    → lre = coupling.coupling[0], ffi = coupling.coupling[1]
 #
-coupling_inputs_dict = {}
-coupling_keys = {}  # ci_name -> list of key names (for unpacking)
-
-if hasattr(model, 'coupling_inputs') and model.coupling_inputs:
-    for ci_name, ci in model.coupling_inputs.items():
-        dim = getattr(ci, 'dimension', 1) or 1
-        coupling_inputs_dict[ci_name] = dim
-        keys = getattr(ci, 'keys', None)
-        if keys:
-            coupling_keys[ci_name] = list(keys)
-elif hasattr(model, 'coupling_terms') and model.coupling_terms:
-    # Deprecated fallback: use coupling_terms with dimension 1 each
-    for ct_name in model.coupling_terms.keys():
-        coupling_inputs_dict[ct_name] = 1
+coupling_inputs_info = get_coupling_input_info(model)
+coupling_inputs_dict = {ci_name: info['dimension'] for ci_name, info in coupling_inputs_info.items()}
+coupling_keys = {ci_name: info['keys'] for ci_name, info in coupling_inputs_info.items() if info['keys']}
 
 local_coupling_term = str(getattr(model, 'local_coupling_term', '') or '')
-if local_coupling_term in coupling_inputs_dict:
-    local_coupling_term = ''
 
 class_name = model.name.replace(' ', '').replace('-', '') if hasattr(model, 'name') and model.name else 'GeneratedDynamics'
 

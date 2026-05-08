@@ -134,6 +134,114 @@ def get_recorded_variable_names(model: Any, experiment: Any = None) -> Tuple[Lis
     return state_names, requested_aux, all_var_names
 
 
+def get_coupling_input_info(model: Any) -> Dict[str, Dict[str, Any]]:
+    """Return declared coupling input metadata in schema order.
+
+    Each entry contains ``dimension`` and optional named ``keys``. Legacy
+    ``coupling_terms`` are treated as dimension-1 inputs for backward
+    compatibility, but new metadata should use ``coupling_inputs``.
+    """
+    coupling_inputs_info = {}
+    if model and getattr(model, "coupling_inputs", None):
+        for input_name, coupling_input in model.coupling_inputs.items():
+            keys = getattr(coupling_input, "keys", None)
+            coupling_inputs_info[str(input_name)] = {
+                "dimension": int(getattr(coupling_input, "dimension", 1) or 1),
+                "keys": list(keys) if keys else None,
+            }
+    elif model and getattr(model, "coupling_terms", None):
+        for input_name in model.coupling_terms.keys():
+            coupling_inputs_info[str(input_name)] = {"dimension": 1, "keys": None}
+    return coupling_inputs_info
+
+
+def get_experiment_couplings(experiment: Any) -> Dict[str, Any]:
+    """Return network or experiment coupling functions keyed by source name."""
+    if not experiment:
+        return {}
+
+    network = getattr(experiment, "network", None)
+    network_coupling = getattr(network, "coupling", None) if network else None
+    if network_coupling:
+        if hasattr(network_coupling, "items"):
+            return dict(network_coupling.items())
+        if hasattr(network_coupling, "keys"):
+            return {key: network_coupling[key] for key in network_coupling.keys()}
+
+    experiment_coupling = getattr(experiment, "coupling", None)
+    if experiment_coupling:
+        if hasattr(experiment_coupling, "items"):
+            return dict(experiment_coupling.items())
+        return {getattr(experiment_coupling, "name", None) or "coupling": experiment_coupling}
+    return {}
+
+
+def resolve_coupling_mapping(
+    model: Any,
+    all_couplings: Dict[str, Any],
+    coupling_inputs_info: Optional[Dict[str, Dict[str, Any]]] = None,
+) -> Tuple[Dict[str, Tuple[str, Any]], Dict[str, str]]:
+    """Resolve schema coupling inputs to backend coupling function sources.
+
+    Resolution order follows ``CouplingInput.source`` and the schema fallback:
+    explicit source, same-name source, then declaration order for remaining
+    sources. Declared inputs without a source remain unbound; generated dfun
+    code reads missing coupling attributes as zero, which is the tvboptim
+    contract for inactive input channels.
+    """
+    coupling_inputs_info = coupling_inputs_info or get_coupling_input_info(model)
+    all_couplings = dict(all_couplings or {})
+    coupling_input_objects = dict(getattr(model, "coupling_inputs", {}) or {}) if model else {}
+
+    input_names = list(coupling_inputs_info.keys())
+    coupling_items = list(all_couplings.items())
+    input_to_coupling = {}
+    source_to_first_input = {}
+
+    for input_name in input_names:
+        coupling_input = coupling_input_objects.get(input_name)
+        source = getattr(coupling_input, "source", None)
+        if not source:
+            continue
+        source = str(source)
+        if source not in all_couplings:
+            raise ValueError(
+                f"CouplingInput '{input_name}' declares source '{source}', "
+                f"but available coupling sources are {list(all_couplings.keys())}."
+            )
+        input_to_coupling[input_name] = (source, all_couplings[source])
+        source_to_first_input.setdefault(source, input_name)
+
+    for input_name in input_names:
+        if input_name not in input_to_coupling and input_name in all_couplings:
+            input_to_coupling[input_name] = (input_name, all_couplings[input_name])
+            source_to_first_input.setdefault(input_name, input_name)
+
+    unmapped_inputs = [name for name in input_names if name not in input_to_coupling]
+    unmapped_couplings = [(name, obj) for name, obj in coupling_items if name not in source_to_first_input]
+    if len(unmapped_couplings) > len(unmapped_inputs):
+        raise ValueError(
+            "Ambiguous coupling mapping: coupling sources "
+            f"{[name for name, _ in unmapped_couplings]} do not map to coupling inputs {input_names}. "
+            "Set CouplingInput.source or use matching source/input names."
+        )
+    for input_name, (source_name, coupling_obj) in zip(unmapped_inputs, unmapped_couplings):
+        input_to_coupling[input_name] = (source_name, coupling_obj)
+        source_to_first_input.setdefault(source_name, input_name)
+
+    source_dimensions = {}
+    for input_name, (source_name, _coupling_obj) in input_to_coupling.items():
+        dimension = coupling_inputs_info[input_name]["dimension"]
+        previous_dimension = source_dimensions.setdefault(source_name, dimension)
+        if previous_dimension != dimension:
+            raise ValueError(
+                f"Coupling source '{source_name}' is mapped to inputs with different dimensions. "
+                "Use separate coupling sources for distinct output shapes."
+            )
+
+    return input_to_coupling, source_to_first_input
+
+
 def get_node_state_overrides(
     network: Any, n_nodes: int, state_names: List[str], default_initial_state: List[float]
 ) -> Dict[str, List[float]]:

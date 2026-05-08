@@ -8,7 +8,8 @@ from tvbo.templates.tvboptim.utils import (
     safe_name, as_list, get_attr, is_network_observation, obs_has_all_args,
     get_observation_refs, parse_loss_function, parse_free_param, get_domain_bounds,
     parse_exploration, get_param_info, get_node_param_overrides,
-    get_node_state_overrides
+    get_node_state_overrides, get_coupling_input_info, get_experiment_couplings,
+    resolve_coupling_mapping
 )
 import numpy as np
 
@@ -53,74 +54,18 @@ state_bounds_lo, state_bounds_hi, has_state_bounds = get_state_bounds(model)
 state_bounds_lo_str = format_bounds_array(state_bounds_lo, 'jax')
 state_bounds_hi_str = format_bounds_array(state_bounds_hi, 'jax')
 
-# Build coupling_inputs dict from model.coupling_inputs
-coupling_inputs_dict = {}
-coupling_keys = {}  # ci_name -> list of key names
-
-if model.coupling_inputs:
-    for ci_name, ci in model.coupling_inputs.items():
-        coupling_inputs_dict[ci_name] = ci.dimension or 1
-        if ci.keys:
-            coupling_keys[ci_name] = list(ci.keys)
-elif model.coupling_terms:
-    for ct_name in model.coupling_terms.keys():
-        coupling_inputs_dict[ct_name] = 1
+# Build coupling input metadata from schema declarations.
+coupling_inputs_info = get_coupling_input_info(model)
+coupling_inputs_dict = {ci_name: info['dimension'] for ci_name, info in coupling_inputs_info.items()}
+coupling_keys = {ci_name: info['keys'] for ci_name, info in coupling_inputs_info.items() if info['keys']}
 
 # First coupling input key (for parameter access) - None for uncoupled models
 first_coupling_key = list(coupling_inputs_dict.keys())[0] if coupling_inputs_dict else None
 has_coupling = bool(coupling_inputs_dict)
 
-# Build all_couplings dict from network.coupling (keyed by function name — schema convention)
-# Fall back to experiment-level coupling if network.coupling is empty.
-all_couplings = dict(network.coupling.items()) if network.coupling else {}
-if not all_couplings and getattr(experiment, 'coupling', None):
-    _exp_c = experiment.coupling
-    if hasattr(_exp_c, 'items'):
-        all_couplings = dict(_exp_c.items())
-    else:
-        all_couplings = {_exp_c.name or 'coupling': _exp_c}
-
-# Map coupling_input names to (func_name, coupling_obj) for tvboptim coupling_dict
-# tvboptim keys coupling by coupling_input name, schema keys by function name
-# Resolution order follows the CouplingInput.source schema contract:
-#   1. Explicit source on CouplingInput (ci.source == func_name)
-#   2. Same name (ci_name == func_name)
-#   3. Remaining functions → remaining inputs by declaration order
-# Extra declared coupling inputs are left unbound; tvboptim supplies zeros.
-ci_coupling_map = {}  # ci_name -> (func_name, coupling_obj)
-func_to_first_ci = {}  # func_name -> first ci_name (for state access translation)
-coupling_input_objects = dict(model.coupling_inputs.items()) if model.coupling_inputs else {}
-
-if coupling_inputs_dict and all_couplings:
-    funcs = list(all_couplings.items())  # [(name, obj), ...]
-    ci_names = list(coupling_inputs_dict.keys())
-
-    # 1. Explicit source attribute
-    for ci_name in ci_names:
-        ci_obj = coupling_input_objects.get(ci_name)
-        src = getattr(ci_obj, 'source', None)
-        if src and src in all_couplings:
-            ci_coupling_map[ci_name] = (src, all_couplings[src])
-            func_to_first_ci.setdefault(src, ci_name)
-
-    # 2. Same name match
-    for ci_name in ci_names:
-        if ci_name not in ci_coupling_map and ci_name in all_couplings:
-            ci_coupling_map[ci_name] = (ci_name, all_couplings[ci_name])
-            func_to_first_ci.setdefault(ci_name, ci_name)
-
-    # 3/4. Fallback for remaining unmapped
-    _unmapped_cis = [c for c in ci_names if c not in ci_coupling_map]
-    _unmapped_funcs = [(n, o) for n, o in funcs if n not in func_to_first_ci]
-    if len(_unmapped_funcs) > len(_unmapped_cis):
-        raise ValueError(
-            f"Ambiguous coupling mapping for {model.name}: coupling functions "
-            f"{[name for name, _ in _unmapped_funcs]} do not map to coupling inputs {ci_names}. "
-            "Set CouplingInput.source or provide matching names."
-        )
-    for ci_name, (_fn, _co) in zip(_unmapped_cis, _unmapped_funcs):
-        ci_coupling_map[ci_name] = (_fn, _co)
-        func_to_first_ci.setdefault(_fn, ci_name)
+# Build all_couplings dict from network.coupling, keyed by source name.
+all_couplings = get_experiment_couplings(experiment)
+ci_coupling_map, func_to_first_ci = resolve_coupling_mapping(model, all_couplings, coupling_inputs_info)
 # Translate function-name coupling key to ci name for tvboptim state access
 _to_ci_key = lambda k: func_to_first_ci.get(k, k) if k else None
 

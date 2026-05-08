@@ -1,10 +1,16 @@
+from types import SimpleNamespace
+
 import numpy as np
 import pytest
 from linkml_runtime.loaders import yaml_loader
 
 from tvbo import Coupling, Dynamics, Network, Observation, SimulationExperiment, database_path
 from tvbo.datamodel.schema import Observation as SchemaObservation
-from tvbo.templates.tvboptim.utils import get_observation_refs
+from tvbo.templates.tvboptim.utils import (
+    get_coupling_input_info,
+    get_observation_refs,
+    resolve_coupling_mapping,
+)
 
 
 def _reduced_wong_wang_without_local_coupling_input():
@@ -104,6 +110,31 @@ def test_tvboptim_allows_unbound_declared_coupling_inputs_as_zero():
 
     signal = result.sel(variable="signal")
     assert signal.data.shape[0] > 0
+
+
+def test_coupling_inputs_resolve_to_parallel_sources():
+    model = SimpleNamespace(
+        coupling_inputs={
+            "left": SimpleNamespace(source="Left", dimension=1, keys=[]),
+            "right": SimpleNamespace(source="Right", dimension=1, keys=[]),
+            "inactive": SimpleNamespace(source=None, dimension=1, keys=[]),
+        },
+        coupling_terms=None,
+    )
+    couplings = {"Left": object(), "Right": object()}
+
+    coupling_inputs_info = get_coupling_input_info(model)
+    input_to_coupling, source_to_input = resolve_coupling_mapping(
+        model,
+        couplings,
+        coupling_inputs_info,
+    )
+
+    assert list(input_to_coupling) == ["left", "right"]
+    assert input_to_coupling["left"] == ("Left", couplings["Left"])
+    assert input_to_coupling["right"] == ("Right", couplings["Right"])
+    assert "inactive" not in input_to_coupling
+    assert source_to_input == {"Left": "left", "Right": "right"}
 
 
 def test_tvboptim_observations_match_native_tvb():

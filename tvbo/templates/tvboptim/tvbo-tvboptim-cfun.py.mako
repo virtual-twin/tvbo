@@ -14,34 +14,18 @@ Output:
 </%doc>
 <%
 from tvbo.codegen import render_expression
-from tvbo.templates.tvboptim.utils import get_param_info
+from tvbo.templates.tvboptim.utils import (
+    get_param_info, get_coupling_input_info, get_experiment_couplings,
+    resolve_coupling_mapping
+)
 
 # Two modes: experiment (full pipeline) or standalone (single coupling)
 if 'experiment' in context.keys():
     network = experiment.network
     model = experiment.dynamics
 
-    # Build coupling_inputs lookup: key -> {dimension, keys}
-    coupling_inputs_info = {}
-    if hasattr(model, 'coupling_inputs') and model.coupling_inputs:
-        for ci_key, ci in model.coupling_inputs.items():
-            dim = getattr(ci, 'dimension', 1) or 1
-            keys = getattr(ci, 'keys', None)
-            coupling_inputs_info[ci_key] = {'dimension': dim, 'keys': list(keys) if keys else None}
-
-    # Get all couplings from network.coupling, fall back to experiment-level coupling
-    all_couplings = {}
-    if hasattr(network, 'coupling') and network.coupling:
-        if hasattr(network.coupling, 'items'):
-            all_couplings = dict(network.coupling.items())
-        elif hasattr(network.coupling, 'keys'):
-            all_couplings = {k: network.coupling[k] for k in network.coupling.keys()}
-    if not all_couplings and getattr(experiment, 'coupling', None):
-        _exp_c = experiment.coupling
-        if hasattr(_exp_c, 'items'):
-            all_couplings = dict(_exp_c.items())
-        else:
-            all_couplings = {_exp_c.name or 'coupling': _exp_c}
+    coupling_inputs_info = get_coupling_input_info(model)
+    all_couplings = get_experiment_couplings(experiment)
 
 elif 'coupling' in context.keys():
     _standalone_coupling = context['coupling']
@@ -52,39 +36,7 @@ elif 'coupling' in context.keys():
 else:
     assert False, "cfun template requires 'experiment' or 'coupling' in context"
 
-# Build func_name -> ci_name mapping.
-# Resolution order:
-#   1. Explicit source on CouplingInput (ci.source == func_name)
-#   2. Same name (ci_name == func_name)
-#   3. Remaining functions → remaining inputs by declaration order
-# Extra declared coupling inputs are left unbound and receive zeros at runtime.
-_func_to_ci = {}
-if coupling_inputs_info and all_couplings:
-    _funcs = list(all_couplings.keys())
-    _ci_names = list(coupling_inputs_info.keys())
-
-    # 1. Explicit source attribute
-    if hasattr(model, 'coupling_inputs') and model is not None and model.coupling_inputs:
-        for ci_key, ci in model.coupling_inputs.items():
-            src = getattr(ci, 'source', None)
-            if src and src in all_couplings:
-                _func_to_ci[src] = ci_key
-
-    # 2. Same name match
-    for fn in _funcs:
-        if fn not in _func_to_ci and fn in coupling_inputs_info:
-            _func_to_ci[fn] = fn
-
-    # 3/4. Fallback for remaining unmapped functions
-    _unmapped_funcs = [f for f in _funcs if f not in _func_to_ci]
-    _unmapped_cis = [c for c in _ci_names if c not in _func_to_ci.values()]
-    if len(_unmapped_funcs) > len(_unmapped_cis):
-        raise ValueError(
-            f"Ambiguous coupling mapping: coupling functions {_unmapped_funcs} "
-            f"do not map to coupling inputs {_ci_names}. Set CouplingInput.source or provide matching names."
-        )
-    for _ci, _fn in zip(_unmapped_cis, _unmapped_funcs):
-        _func_to_ci.setdefault(_fn, _ci)
+_ci_coupling_map, _func_to_ci = resolve_coupling_mapping(model, all_couplings, coupling_inputs_info)
 
 def parse_list_elements(rhs_str):
     """Parse a list literal string into elements, respecting nesting."""
