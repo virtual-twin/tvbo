@@ -28,6 +28,29 @@ a self-describing YAML file. Each defines:
 - **data_source** — optional link to a sensor network (for EEG/MEG/iEEG)
 - **parameters** — physical constants (conductivity, permeability, TR, ...)
 
+The TVBO object is the source of truth. A `class_reference` records where
+an observation came from, for example `tvb.simulator.monitors.Bold`, but
+backend adapters still materialize the right runtime object for the target
+backend. The native TVB adapter builds TVB monitor instances. The tvboptim
+adapter builds tvboptim-compatible monitor wrappers that preserve TVB
+sampling and buffering semantics without importing TVB monitor classes into
+the generated tvboptim solve loop.
+
+For BOLD, the metadata must include the full hemodynamic recipe rather than
+only a class name: the monitor period, the intermediate stock/downsample
+period, the HRF kernel equation, and all equation parameters used by the
+Volterra transform. The keyed YAML container supplies object names from the
+keys, so parameter entries do not repeat `name:` unless the value is genuinely
+different from the key.
+
+The round-trip workflow is therefore:
+
+1. Ingest or write a TVB monitor as an `Observation` with complete metadata.
+2. Keep that observation backend-neutral in YAML and Python objects.
+3. Let each backend adapter translate the metadata to its native runtime API.
+4. Compare backend outputs at the observation level, allowing only numerical
+    solver roundoff between different execution engines.
+
 ```{python}
 print("Available observation models:")
 for name in Observation.list_db():

@@ -6,6 +6,44 @@ jupyter: python3
 
 Observation models define what to measure from a simulation — BOLD signals, functional connectivity, power spectral density, and custom pipelines. Everything is defined in YAML: functions are declared in the `functions:` section and referenced by name in the observation `pipeline:`.
 
+## Schema Contract
+
+An observation is backend-neutral metadata. It can point back to an external
+class through `class_reference`, but the runtime class is selected by the
+backend adapter. Native TVB receives TVB monitor objects; tvboptim receives
+tvboptim-compatible observation wrappers with the same sampling and buffering
+semantics.
+
+Use the schema fields directly:
+
+- `period`: monitor sampling period in ms. For BOLD this is the TR.
+- `downsample_period`: intermediate monitor period, when a backend uses a stock
+    buffer before final sampling.
+- `source` or `voi`: state variable or variable index to observe.
+- `pipeline`: ordered equation/callable/time-range steps.
+- `class_reference`: provenance and constructor metadata for external monitor
+    APIs.
+- `parameters`: physical constants and reusable observation parameters.
+- `data_source`: linked empirical data or sensor/gain network metadata.
+
+For keyed YAML containers, the key resolves to the object name. Prefer this:
+
+```yaml
+parameters:
+    TR:
+        value: 720.0
+        unit: ms
+```
+
+Do not add `name: TR` only to repeat the key. The same applies to pipeline
+equation parameters and other keyed schema containers.
+
+BOLD observations should carry the complete HRF metadata: `period`, stock or
+downsample timing, the HRF kernel equation in a time-range pipeline step, and
+all equation parameters such as `tau_f`, `tau_s`, `k_1`, and `V_0`. This lets
+TVBO reproduce native TVB monitor behavior while still generating clean code
+for tvboptim and other backends.
+
 ## BOLD Signal
 
 The Balloon-Windkessel hemodynamic model transforms neural activity into a BOLD fMRI signal. The pipeline is defined entirely in YAML — each function is specified with its equation, callable, or time range, then chained together:
