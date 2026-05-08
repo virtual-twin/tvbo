@@ -1,0 +1,108 @@
+---
+title: "Workflow kits anatomy"
+---
+
+Every successful `tvbo workflow {slurm,snakemake,nextflow}` invocation writes a **self-contained reproducibility kit**. This page documents the layout and the contract each file fulfils.
+
+## Layout
+
+```text
+<out_dir>/
+├── <artefact>             # Snakefile / run.sbatch / main.nf
+├── scripts/
+│   └── <experiment>.<ext> # Frozen backend code, runnable with python or julia
+├── spec/
+│   └── <experiment>.yaml  # Frozen YAML snapshot of the experiment
+└── README.md              # Provenance + how-to-run
+```
+
+The directory is **portable**: `tar` it up, copy it to another machine, install `tvbo` (or just the runtime needed by the backend), and re-run end to end.
+
+## Files
+
+### Workflow artefact
+
+Filename depends on the engine:
+
+| Engine | Filename |
+|--------|----------|
+| `slurm` | `run.sbatch` |
+| `snakemake` | `Snakefile` |
+| `nextflow` | `main.nf` |
+
+Each artefact:
+
+- Sets up engine-specific job parameters (Slurm headers, Snakemake `rule all`, Nextflow channels) from the merged `slurm.*` / `snakemake.*` / `nextflow.*` workflow blocks.
+- Iterates the workflow-fanned axes — one array task / rule instance / process invocation per cell.
+- Inside each cell, runs **`python scripts/<exp>.<ext>`** when the frozen script is present, otherwise falls back to `tvbo run experiment:<key> --backend=… --slurm-chunk=…`. This means the kit is *not* required to have `tvbo` installed at run time — only the backend's runtime (e.g. `jax`, `julia`).
+- Optionally wraps the inner command in `singularity exec <image>` when `--set container=…` was passed.
+
+### `scripts/<experiment>.<ext>`
+
+Frozen backend code, produced by `experiment.render(format=BACKEND)`. The extension is taken from the backend's registered `ExportFormat.extension` (`.py` for `jax`/`tvb`/`tvboptim`/`pde`, `.jl` for `networkdynamics`/`modelingtoolkit`, etc.).
+
+All Python backends generate scripts with an `if __name__ == "__main__":` block, so they are directly runnable without `tvbo`:
+
+```bash
+python scripts/JR_MEG_FrequencyGradient_Optimization.py --help
+```
+
+The block typically:
+
+1. Parses `--spec PATH` (defaults to the sibling `spec/*.yaml`)
+2. Loads the experiment via `SimulationExperiment.from_yaml(spec)`
+3. Calls `experiment.collect_state()` and runs the generated kernel
+4. Saves the result to `--output DIR`
+
+Julia backends emit top-level `solve(...)` calls and are runnable as:
+
+```bash
+julia --project=. scripts/JR_MEG_FrequencyGradient_Optimization.jl
+```
+
+### `spec/<experiment>.yaml`
+
+The frozen YAML snapshot of the experiment, produced by `experiment.render(format='yaml')`. It is the single source of truth the frozen script consumes at run time. **Do not edit by hand** unless you intend to change the rerun behaviour.
+
+### `README.md`
+
+Auto-generated provenance + how-to-run. Sections:
+
+1. **Layout** — file inventory.
+2. **Run** — copy-pasteable command for the engine (`sbatch …`, `snakemake --cores all`, `nextflow run main.nf`).
+3. **Reproducibility**:
+    - backend (key + label)
+    - container image (or `(none)`)
+    - cell counts: workflow cells, chunk size, array tasks
+    - vectorized vs. workflow-fanned axes (with names + ranges)
+4. **CLI overrides** — every `--set KEY=VALUE` recorded with its source.
+
+## Why a *kit* (not a single file)?
+
+Earlier prototypes wrote only the workflow artefact (`run.sbatch`, `Snakefile`, …). That works when `tvbo` is reliably installed everywhere the kit runs, but fails for two important reproducibility scenarios:
+
+1. **Long-term archival.** Years later, the `tvbo` version that produced the artefact may not be installable. The frozen `scripts/*.py` and `spec/*.yaml` are the durable contract.
+2. **Cross-machine / container migration.** The kit can be moved to a node that only has the backend's runtime (e.g. a JAX wheel and Python). The artefact dispatches to the local script, no `tvbo` needed.
+
+The kit pattern also lets the artefact remain trivially small: the workflow engine only has to call `python scripts/<exp>.py` rather than know about `tvbo`'s CLI surface.
+
+## Inspecting a kit
+
+```bash
+# Show the artefact
+cat ./kit/Snakefile
+
+# Show the README's reproducibility section
+grep -A 99 '## Reproducibility' ./kit/README.md
+
+# Re-run exactly one cell locally
+python ./kit/scripts/JR_MEG_FrequencyGradient_Optimization.py \
+    --spec ./kit/spec/JR_MEG_FrequencyGradient_Optimization.yaml \
+    --output ./local-cell-0
+```
+
+## See also
+
+- [`tvbo workflow`](workflow.qmd) — the emitter commands
+- [HPC patterns](hpc.qmd) — sharding and containers
+- [Backends](backends.qmd) — what determines `vectorize_axes` vs `workflow_axes`

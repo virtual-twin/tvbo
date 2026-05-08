@@ -1,8 +1,23 @@
 from sympy import parse_expr, Symbol, Function, IndexedBase, Sum, Product, sqrt
 from sympy.parsing.sympy_parser import (
     standard_transformations,
-    implicit_multiplication_application,
     convert_xor,
+    split_symbols_custom,
+    implicit_multiplication,
+    implicit_application,
+    function_exponentiation,
+)
+
+# Implicit multiplication WITHOUT split_symbols: multi-letter identifiers
+# (e.g. "perturbation") stay as a single Symbol instead of being expanded into
+# the product of their letters. Digit-prefix splitting like "2x" -> "2*x"
+# is unaffected because that lives in `implicit_multiplication`.
+_no_split_symbols = split_symbols_custom(lambda _name: False)
+_implicit_mul_app_no_split = (
+    _no_split_symbols,
+    implicit_multiplication,
+    implicit_application,
+    function_exponentiation,
 )
 from sympy.parsing.latex import parse_latex
 
@@ -208,7 +223,7 @@ def parse_eq(
     extra_transformations = tuple(kwargs.pop("extra_transformations", ()))
     transformations = kwargs.pop(
         "transformations",
-        standard_transformations + (implicit_multiplication_application, convert_xor) + extra_transformations,
+        standard_transformations + _implicit_mul_app_no_split + (convert_xor,) + extra_transformations,
     )
 
     # Remaining kwargs forwarded to parse_expr (e.g., evaluate=False, global_dict=...)

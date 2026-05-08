@@ -13,7 +13,9 @@ from .registry import (  # noqa: F401
     has,
     list_format_dicts,
     list_formats,
+    load,
     register,
     render,
     resolve,
+    resolve_by_extension,
 )

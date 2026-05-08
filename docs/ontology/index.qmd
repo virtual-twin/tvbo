@@ -18,7 +18,7 @@ from the LinkML schema and the hand-authored axiom layer.
 :::
 
 - [Open the W3C-style specification](spec/index-en.html)
-- [Open the WebVOWL visualisation](spec/webvowl/index.html#ontology.owl)
+- [Open the WebVOWL visualisation](spec/webvowl/index.html#ontology)
 - [Browse the SHACL shapes](spec/tvb-o.shacl.ttl)
 
 ## Stable identifiers

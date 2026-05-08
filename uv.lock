@@ -6521,6 +6521,7 @@ dependencies = [
     { name = "pydot" },
     { name = "scipy" },
     { name = "sympy" },
+    { name = "typer" },
     { name = "xarray" },
 ]
 
@@ -6688,6 +6689,7 @@ requires-dist = [
     { name = "tvb-library", marker = "extra == 'tvb'" },
     { name = "tvboptim", marker = "extra == 'all'" },
     { name = "tvboptim", marker = "extra == 'tvboptim'" },
+    { name = "typer", specifier = ">=0.12" },
     { name = "uvicorn", marker = "extra == 'all'", specifier = ">=0.30.0" },
     { name = "uvicorn", marker = "extra == 'api'", specifier = ">=0.30.0" },
     { name = "wget", marker = "extra == 'all'", specifier = ">=3.2" },

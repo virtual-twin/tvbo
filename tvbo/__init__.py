@@ -148,6 +148,7 @@ _LAZY_IMPORTS = {
     "SimulationExperiment": ".classes",
     "SimulationStudy": ".classes",
     "Dynamics": ".classes.dynamics",
+    "DynamicalSystem": ".classes.dynamics",
     "Continuation": ".classes.continuation",
     "Coupling": ".classes.coupling",
     "Noise": ".classes.noise",
@@ -182,3 +183,8 @@ def __getattr__(name):
         globals()[name] = attr
         return attr
     raise AttributeError(f"module 'tvbo' has no attribute {name!r}")
+
+
+# Eager side-effect imports: attach helper methods (.plot(), …) to
+# auto-generated schema classes so users get them on bare ``schema.Event(...)``.
+from tvbo.classes import event as _event_helpers  # noqa: F401,E402

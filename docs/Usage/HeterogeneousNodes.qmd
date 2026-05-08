@@ -191,3 +191,7 @@ ax.set_ylabel("Relaxation\n(VdP)")
 ax.set_xlabel("Time (ms)")
 plt.show()
 ```
+
+::: {.callout-tip}
+To set per-node **initial states** (not just parameters), see [Initial Conditions & Initial State](InitialConditions.qmd). Node-level `state:` blocks let you set different starting values of each state variable per node, with optional random sampling via distributions.
+:::

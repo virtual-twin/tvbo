@@ -1,0 +1,65 @@
+---
+title: "tvbo export"
+---
+
+Render a SPEC into any registered target format. **No execution happens** — `export` is for code generation, serialisation, and reports.
+
+## Synopsis
+
+```text
+tvbo export FORMAT SPEC
+    [--output, -o PATH]
+    [--metadata-only / --with-data]
+```
+
+## Flags
+
+| Flag | Default | Purpose |
+|------|---------|---------|
+| `FORMAT` | _(required)_ | Format key or alias (see [`tvbo formats`](formats.qmd)). |
+| `--output, -o` | stdout | Output file or directory. When omitted, prints to stdout (text formats only). |
+| `--metadata-only / --with-data` | `--metadata-only` | Whether to bundle binary network data alongside the metadata. Only formats whose registry row says `with_data: yes` honour this flag. |
+
+## Behaviour
+
+1. Resolves SPEC to an object.
+2. Looks up the format in the registry (resolves aliases).
+3. If `--output` is omitted, calls `obj.render(format=…)` and echoes the text.
+4. If `--output` is given and the object has a `.save()` method, calls `obj.save(output, format=…, metadata_only=…)`.
+5. Otherwise renders text and writes it to `output` (auto-naming the file if a directory is passed).
+
+## Examples
+
+```bash
+# Pretty-print as YAML to stdout
+tvbo export yaml experiment:JR_MEG
+
+# Generate a self-contained JAX script
+tvbo export jax experiment:JR_MEG -o ./scripts/jr_meg.py
+
+# Generate a NetworkDynamics.jl experiment
+tvbo export networkdynamics experiment:JR_MEG -o ./scripts/jr_meg.jl
+
+# Generate a Markdown report
+tvbo export markdown experiment:JR_MEG -o ./reports/
+
+# JSON-LD via openMINDS
+tvbo export openminds experiment:JR_MEG -o ./jsonld/
+```
+
+## Format aliases
+
+Aliases are resolved transparently. For example, all of these select the JAX renderer:
+
+```bash
+tvbo export jax       experiment:JR_MEG
+tvbo export autodiff  experiment:JR_MEG     # alias for `jax`
+```
+
+Run `tvbo formats` to see the full alias list.
+
+## See also
+
+- [`tvbo save`](save.qmd) — `export --with-data` shortcut
+- [`tvbo formats`](formats.qmd) — list registered formats
+- [`tvbo import`](import.qmd) — inverse direction (foreign → TVBO)

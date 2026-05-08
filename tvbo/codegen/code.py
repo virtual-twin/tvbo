@@ -514,6 +514,19 @@ class FortranPrinter(spf.FCodePrinter):
         settings.setdefault("contract", False)
         super().__init__(settings=settings)
 
+    # SymPy's FCodePrinter inlines symbolic constants like ``pi`` and ``E``
+    # by emitting a ``parameter (pi = ...)`` declaration, which is invalid
+    # inside an expression context (e.g. ``F(1) = parameter (pi=...) pi*r``).
+    # Render them as plain double-precision literals instead.
+    def _print_NumberSymbol(self, expr):
+        return self._settings.get("precision_str", "%.17g") % float(expr) + "d0"
+
+    _print_Catalan = _print_NumberSymbol
+    _print_EulerGamma = _print_NumberSymbol
+    _print_Exp1 = _print_NumberSymbol
+    _print_GoldenRatio = _print_NumberSymbol
+    _print_Pi = _print_NumberSymbol
+
 
 class LEMSPrinter(StrPrinter):
     """Printer for LEMS (Low Entropy Model Specification) math expressions.

@@ -20,7 +20,7 @@ except ImportError:
 
 from tvbo import templates
 from tvbo.classes.network import Network
-from tvbo.data.types import SimulationResult, SimulationState, TimeSeries, ExperimentResult
+from tvbo.data.types import SimulationResult, SimulationState, TimeSeries, ExperimentResult, ExplorationResult
 from tvbo.datamodel import schema as tvbo_datamodel
 from linkml_runtime.utils.yamlutils import YAMLRoot
 from linkml_runtime.utils.enumerations import EnumDefinitionImpl
@@ -89,9 +89,69 @@ def _upgrade_network_couplings(network, coupling_types=None):
         # Upgrade __class__ to runtime Coupling (skip if already runtime)
         if not isinstance(coup, Coupling):
             coup.__class__ = Coupling
+            # Always trigger ontology population (idempotent).
+            if not getattr(coup, "pre_expression", None):
+                coup._populate_from_ontology()
         # Apply type-based fill if a type reference was specified
         if key in coupling_types:
             coup.populate_from_type(coupling_types[key])
+
+
+def _resolve_coupling(experiment):
+    """Reconcile coupling declarations across experiment / network / dynamics.
+
+    Single source of truth for both ``__init__`` and ``from_datamodel`` paths.
+
+    Rules:
+      1. If ``network.coupling`` is populated, mirror its first entry to
+         ``experiment.coupling``.
+      2. Else, if ``dynamics.coupling_inputs`` declares coupling targets,
+         seed ``network.coupling`` from ``experiment.coupling`` (or a default
+         ``Linear`` if absent) so a single canonical container exists.
+      3. Auto-populate ``incoming_states`` on each coupling from the dynamics'
+         ``state_variables[*].coupling_variable == True`` flag — but only when
+         the coupling declares neither incoming nor local states. Couplings
+         that explicitly declare ``local_states`` (e.g. vectorized matmul
+         flavors) are left untouched.
+    """
+    dyn = getattr(experiment, "dynamics", None)
+    network = getattr(experiment, "network", None)
+    if network is None:
+        return
+
+    dyn_ci = getattr(dyn, "coupling_inputs", None)
+    has_coupling_inputs = bool(dyn_ci)
+    net_coup = getattr(network, "coupling", None)
+    exp_coup = getattr(experiment, "coupling", None)
+
+    if net_coup:
+        if isinstance(net_coup, dict) and net_coup:
+            experiment.coupling = next(iter(net_coup.values()))
+    elif has_coupling_inputs:
+        func = exp_coup
+        if not func or not isinstance(func, Coupling):
+            func = Coupling(name="Linear", iri="tvbo:Linear")
+            experiment.coupling = func
+        elif not getattr(func, "iri", None):
+            func.iri = "tvbo:Linear"
+        # Ensure ontology-derived fields (pre/post expressions, parameters)
+        # are populated — backends require them at codegen time.
+        if not getattr(func, "pre_expression", None):
+            func._populate_from_ontology()
+        coup_name = str(getattr(func, "name", "Linear"))
+        network.coupling[coup_name] = func
+
+    if dyn:
+        cvars = [
+            str(sv.name)
+            for sv in (getattr(dyn, "state_variables", None) or {}).values()
+            if getattr(sv, "coupling_variable", False)
+        ]
+        if cvars:
+            for coup in (getattr(network, "coupling", None) or {}).values():
+                if (not getattr(coup, "incoming_states", None)
+                        and not getattr(coup, "local_states", None)):
+                    coup.incoming_states = list(cvars)
 
 
 class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
@@ -213,6 +273,12 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         if getattr(self, "integration", None) and not isinstance(self.integration, Integrator):
             self.integration = _coerce(Integrator, self.integration)
 
+        if getattr(self, "stimulation", None):
+            from tvbo.classes import perturbation
+
+            if not isinstance(self.stimulation, perturbation.Stimulus):
+                self.stimulation = _coerce(perturbation.Stimulus, self.stimulation)
+
         # Auto-upgrade continuations to runtime Continuation class
         conts = getattr(self, "continuations", None)
         if conts and isinstance(conts, dict):
@@ -220,6 +286,14 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 if val is not None and not isinstance(val, Continuation):
                     val.__class__ = Continuation
                     conts[key] = val
+
+        # Auto-upgrade events to runtime Event class (adds .plot() helper)
+        evts = getattr(self, "events", None)
+        if evts and hasattr(evts, "items"):
+            from tvbo.classes.event import Event as _EventCls
+            for val in evts.values():
+                if val is not None and not isinstance(val, _EventCls):
+                    val.__class__ = _EventCls
 
         if not getattr(self, "network", None):
             self.network = Network()
@@ -237,46 +311,11 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         # Upgrade network.coupling entries to runtime Coupling + apply type fills
         _upgrade_network_couplings(self.network, _coupling_types)
-
-        # --- Coupling resolution: network.coupling is canonical ---
-        # Keys may be function names or coupling_input names; backends
-        # handle the mapping at the adapter boundary.
-        dyn_ci = getattr(getattr(self, "dynamics", None), "coupling_inputs", None)
-        has_coupling_inputs = bool(dyn_ci)
-        net_coup = getattr(self.network, "coupling", None)
-        exp_coup = getattr(self, "coupling", None)
-
-        if net_coup:
-            # network.coupling supervenes: derive exp.coupling from first entry
-            if isinstance(net_coup, dict) and net_coup:
-                self.coupling = next(iter(net_coup.values()))
-        elif has_coupling_inputs:
-            # No network.coupling — populate from exp.coupling or default
-            func = exp_coup
-            if not func:
-                func = Coupling(name="Linear", iri="tvbo:Linear")
-                self.coupling = func
-            coup_name = str(getattr(func, "name", "Linear"))
-            self.network.coupling[coup_name] = func
-
-        # Auto-populate incoming_states on couplings from dynamics' coupling_variable flag.
-        # coupling.incoming_states supervenes: if the coupling already declares which
-        # states it receives, that is authoritative. Only when incoming_states is empty
-        # do we fall back to state variables with coupling_variable=True in the dynamics.
-        # IMPORTANT: If a coupling already declares local_states (e.g. FastLinearCoupling),
-        # it intentionally only uses local states for vectorized matmul — do NOT force
-        # incoming_states on it, as that would break the vectorized code path.
-        dyn = getattr(self, "dynamics", None)
-        if dyn:
-            cvars = [
-                str(sv.name)
-                for sv in (getattr(dyn, "state_variables", None) or {}).values()
-                if getattr(sv, "coupling_variable", False)
-            ]
-            if cvars:
-                for coup in (getattr(self.network, "coupling", None) or {}).values():
-                    if not getattr(coup, "incoming_states", None) and not getattr(coup, "local_states", None):
-                        coup.incoming_states = list(cvars)
+        # NOTE: coupling resolution (incoming_states / network.coupling seeding)
+        # is intentionally deferred to ``configure()`` so it runs lazily at the
+        # execution boundary across all backends and so the resolved state is
+        # observable in the spec only after the user explicitly prepared the
+        # experiment. See ``configure()``.
 
         # Get source file path if loading from file (set by from_file classmethod)
         self._source_file = getattr(self.__class__, "_pending_source_file", None)
@@ -392,14 +431,16 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             for v in dyn.values():
                 if isinstance(v, tvbo_datamodel.Dynamics) and not isinstance(v, Dynamics):
                     v.__class__ = Dynamics
-                    v.enrich_from_ontology()
+                    if getattr(v, "iri", None):
+                        v.enrich_from_ontology()
             first = next(iter(dyn.values()))
             obj.__dict__["dynamics"] = first
             obj.__dict__["model"] = first.name
         elif isinstance(dyn, tvbo_datamodel.Dynamics):
             if not isinstance(dyn, Dynamics):
                 dyn.__class__ = Dynamics
-                dyn.enrich_from_ontology()
+                if getattr(dyn, "iri", None):
+                    dyn.enrich_from_ontology()
             obj.__dict__["model"] = dyn.name
         else:
             obj.__dict__.setdefault("dynamics", None)
@@ -408,16 +449,31 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         integ = getattr(obj, "integration", None)
         if integ is not None and not isinstance(integ, Integrator):
             integ.__class__ = Integrator
+            # Always trigger population (idempotent: only fills missing fields).
+            # Lookup is by ``self.method`` when ``iri`` is unset.
             integ._populate_from_ontology()
         if not getattr(obj, "integration", None):
             obj.__dict__["integration"] = Integrator(method="Heun")
+
+        # -- Upgrade Stimulation via __class__ reassignment --
+        stim = getattr(obj, "stimulation", None)
+        if stim is not None:
+            from tvbo.classes import perturbation
+
+            if not isinstance(stim, perturbation.Stimulus):
+                if isinstance(stim, tvbo_datamodel.Stimulus):
+                    stim.__class__ = perturbation.Stimulus
+                elif isinstance(stim, dict):
+                    stim = perturbation.Stimulus(**stim)
+                obj.__dict__["stimulation"] = stim
 
         # -- Upgrade Coupling via __class__ reassignment --
         coup = getattr(obj, "coupling", None)
         if coup is not None and not isinstance(coup, Coupling):
             coup.__class__ = Coupling
-            # Populate from ontology if iri is set and expressions are missing
-            if getattr(coup, "iri", None) and not getattr(coup, "pre_expression", None):
+            # Always trigger population (idempotent). Lookup by ``self.name``
+            # when ``iri`` is unset.
+            if not getattr(coup, "pre_expression", None):
                 coup._populate_from_ontology()
         if not getattr(obj, "coupling", None):
             obj.__dict__["coupling"] = Coupling(name="Linear")
@@ -439,8 +495,19 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         # Upgrade network coupling entries (no type refs in from_datamodel path)
         _upgrade_network_couplings(obj.network)
+        # Coupling resolution deferred to ``configure()`` (see __post_init__).
 
-        obj.__dict__["_source_file"] = None
+        obj.__dict__["_source_file"] = getattr(cls, "_pending_source_file", None)
+
+        # Trigger sidecar load if network references a companion data file.
+        net = obj.network
+        if (net is not None
+                and getattr(net, "data_file", None)
+                and not getattr(net, "_store", None)):
+            obj._load_network_from_data_file()
+        elif net is not None and getattr(net, "bids_dir", None):
+            obj._load_network_from_bids()
+
         return obj
 
     @classmethod
@@ -1163,6 +1230,12 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             self.monitors = meta_list
 
     def configure(self):
+        # Reconcile experiment / network / dynamics coupling declarations.
+        # Runs at the execution boundary — backend-agnostic, idempotent, and
+        # the resolved state persists on the experiment so YAML re-serialization
+        # and metadata export reflect what was actually executed.
+        _resolve_coupling(self)
+
         # Disable delayed logic if the connectome has no path lengths or conduction speed is infinite
         try:
             network = getattr(self, "network", None)
@@ -1269,6 +1342,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     coupling_params[param_name] = np.full((N,), float(current_value))
 
     def execute(self, format="tvb", **kwargs):
+        # Ensure coupling resolution / delay flags are normalized before any
+        # backend code generation. Idempotent — safe if called twice via run().
+        self.configure()
         if format.lower() == "tvb":
             code = self.render_code(format=format)
             namespace = templater.exec_globals
@@ -1392,6 +1468,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             # Mode defaults to 'all' - run complete workflow
             mode = kwargs.pop("mode", "all")
 
+            # Build node labels from network.nodes (used as xarray 'node' coord)
+            node_labels = [n.label for n in self.network.nodes] if self.network.nodes else None
+
             # Run the experiment with optional per-step timing
             if benchmark:
                 # Run with detailed timing
@@ -1399,6 +1478,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 results = ns.run_experiment(
                     weights=self.network.weights,
                     distances=self.network.distances,
+                    region_labels=node_labels,
                     mode=mode,
                     **kwargs,
                 )
@@ -1413,6 +1493,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 raw_results = ns.run_experiment(
                     weights=self.network.weights,
                     distances=self.network.distances,
+                    region_labels=node_labels,
                     mode=mode,
                     **kwargs,
                 )
@@ -1558,10 +1639,18 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             "pyrates-bif",
             "pycobi",
             "bifurcation-pyrates",
-            "auto",
-            "auto-07p",
         ]:
             return self._run_pyrates_bifurcation(**kwargs)
+
+        elif format.lower() in [
+            "numcont",
+            "auto",
+            "auto-07p",
+            "auto07p",
+            "bifurcation-auto7p",
+            "bifurcation-numcont",
+        ]:
+            return self._run_numcont(**kwargs)
 
         elif format.lower() in [
             "julia",
@@ -1640,10 +1729,12 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         """Run bifurcation analysis via BifurcationKit.jl."""
         from tvbo.adapters.bifurcationkit import BifurcationKitAdapter
 
+        exploration_kwargs = kwargs.pop("exploration_kwargs", {})
         adapter = BifurcationKitAdapter(self)
         bif_result = adapter.run(**kwargs)
         return ExperimentResult(
-            continuations={"default": bif_result},
+            continuations=self._wrap_bifurcation_result(bif_result),
+            explorations=self._run_python_explorations(**exploration_kwargs),
             source=self,
             name=self.label,
         )
@@ -1652,13 +1743,88 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         """Run bifurcation analysis via PyRates/PyCoBi (AUTO-07p)."""
         from tvbo.adapters.pyrates_bifurcation import PyRatesBifurcationAdapter
 
+        exploration_kwargs = kwargs.pop("exploration_kwargs", {})
         adapter = PyRatesBifurcationAdapter(self)
         bif_result = adapter.run(**kwargs)
         return ExperimentResult(
-            continuations={"default": bif_result},
+            continuations=self._wrap_bifurcation_result(bif_result),
+            explorations=self._run_python_explorations(**exploration_kwargs),
             source=self,
             name=self.label,
         )
+
+    def _run_numcont(self, **kwargs) -> ExperimentResult:
+        """Run bifurcation analysis via the in-tree AUTO-07p (numcont) adapter."""
+        from tvbo.adapters.numcont import NumContAdapter
+
+        exploration_kwargs = kwargs.pop("exploration_kwargs", {})
+        adapter = NumContAdapter(self)
+        bif_result = adapter.run(**kwargs)
+        return ExperimentResult(
+            continuations=self._wrap_bifurcation_result(bif_result),
+            explorations=self._run_python_explorations(**exploration_kwargs),
+            source=self,
+            name=self.label,
+        )
+
+    def _run_python_explorations(self, **kwargs):
+        """Run declared time-series explorations directly from the dynamics object."""
+        explorations = getattr(self, "explorations", None) or {}
+        if not explorations:
+            return {}
+
+        from itertools import product
+
+        results = {}
+        duration = kwargs.get("duration", getattr(self.integration, "duration", 1200))
+        dt = kwargs.get("dt", getattr(self.integration, "step_size", 0.1))
+
+        for name, exploration in explorations.items():
+            axes = list(getattr(exploration, "space", None) or [])
+            axis_values = []
+            axis_info = []
+            for axis in axes:
+                parameter = str(getattr(axis, "parameter"))
+                values = list(getattr(axis, "explored_values", None) or [])
+                if not values:
+                    raise ValueError(f"Exploration {name!r} axis {parameter!r} needs explored_values")
+                axis_values.append(values)
+                axis_info.append({"name": parameter, "n": len(values), "explored_values": values})
+
+            obs = getattr(exploration, "observable", None)
+            output_name = getattr(obs, "output", None) or getattr(obs, "function", None) or getattr(obs, "name", None)
+            output_names = [str(output_name)] if output_name else [next(iter(self.dynamics.state_variables))]
+            state_names = list(self.dynamics.state_variables)
+            output_indices = [state_names.index(var) for var in output_names]
+
+            dyn = self.dynamics.copy()
+            data = []
+            for values in product(*axis_values):
+                for axis, value in zip(axes, values):
+                    parameter = str(getattr(axis, "parameter"))
+                    parameter_name = parameter.split(".")[-1]
+                    dyn.parameters[parameter_name].value = float(value)
+                ts = dyn.run(format="python", duration=duration, dt=dt)
+                data.append(ts.data[:, output_indices, 0, 0])
+
+            results[str(name)] = ExplorationResult(
+                name=str(name),
+                axes=axis_info,
+                results=np.asarray(data),
+                observable=", ".join(output_names),
+                dt=dt,
+                output_names=output_names,
+            )
+
+        return results
+
+    def _wrap_bifurcation_result(self, bif_result):
+        """Map adapter return (single result or dict) to named continuations dict."""
+        if isinstance(bif_result, dict):
+            return bif_result
+        conts = getattr(self, "continuations", None) or {}
+        name = next(iter(conts.keys())) if conts else "default"
+        return {name: bif_result}
 
     def _run_julia(self, **kwargs) -> ExperimentResult:
         """Run simulation using DifferentialEquations.jl via juliacall."""
@@ -1666,6 +1832,31 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         adapter = DiffEqAdapter(self)
         return adapter.run(**kwargs)
+
+    def plot(self, layout=None, panels=None, run_kwargs=None, auto=True, **kwargs):
+        """Plot experiment outputs directly or compose multi-panel layouts.
+
+        By default (``auto=True``), this runs the experiment once, infers
+        task-aware panels, and renders a flexible subplot_mosaic layout.
+        """
+        from tvbo.plot.experiment_layout import plot_experiment_layout
+
+        fig = kwargs.pop("fig", None)
+        axes = kwargs.pop("axes", None)
+        if auto or layout is not None or panels is not None or fig is not None or axes is not None:
+            return plot_experiment_layout(
+                self,
+                layout=layout,
+                panels=panels,
+                figsize=kwargs.pop("figsize", None),
+                subplot_kwargs=kwargs.pop("subplot_kwargs", None),
+                run_kwargs=run_kwargs,
+                fig=fig,
+                axes=axes,
+            )
+
+        result = self.run(**(run_kwargs or {}))
+        return result.plot(**kwargs)
 
     def get_experiment_file_prefix(self):
         desc = self.dynamics.label or self.dynamics.name or "simulation"
@@ -1864,6 +2055,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
     def render_code(self, format="tvb", **kwargs):
         """Render generated code in *format* (back-compat shim around the registry)."""
+        # Backend codegen requires resolved coupling/delay metadata. Idempotent.
+        self.configure()
         from tvbo import export as _export
         return _export.render(self, format, **kwargs)
 

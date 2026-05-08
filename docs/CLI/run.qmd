@@ -1,0 +1,117 @@
+---
+title: "tvbo run"
+---
+
+Execute a `SimulationStudy` or `SimulationExperiment` against a chosen backend, with optional sharding, container isolation, and HPC dispatch.
+
+## Synopsis
+
+```text
+tvbo run SPEC
+    [--backend, -b BACKEND]
+    [--out-dir, -o DIR]
+    [--experiment NAME]
+    [--duration MS]
+    [--engine, -e {local|slurm|snakemake|nextflow}]
+    [--container IMAGE]
+    [--slurm-chunk i/N]
+```
+
+## Flags
+
+| Flag | Default | Purpose |
+|------|---------|---------|
+| `--backend, -b` | `tvboptim` | Execution backend. See [`tvbo workflow backends`](backends.qmd) for the full list. |
+| `--out-dir, -o` | _(none)_ | Directory to write results into. When omitted, no files are written. |
+| `--experiment` | _(all)_ | If SPEC is a Study, run only this named experiment. |
+| `--duration` | _(spec)_ | Override `integration.duration` in milliseconds. |
+| `--engine, -e` | `local` | `local` runs in-process; the others re-emit via `tvbo workflow ENGINE` and submit. |
+| `--container` | _(none)_ | OCI image to re-exec inside (Singularity preferred, then Docker). |
+| `--slurm-chunk` | _(none)_ | `i/N` — shard the sweep grid: cell `j` runs iff `j % N == i`. |
+
+## Behaviour by `kind`
+
+`tvbo run` dispatches on the resolved SPEC kind:
+
+| Kind | Behaviour |
+|------|-----------|
+| `experiment` | Calls `experiment.run(format=BACKEND, **overrides)`. |
+| `study` | Iterates over `study.experiments`; if `--experiment NAME` is given, only that one runs. |
+| anything else | Errors with `tvbo run does not yet support kind=<kind>`. |
+
+## Sharding (`--slurm-chunk i/N`)
+
+When the experiment carries one or more `Exploration`s, `--slurm-chunk` lets a single Slurm array task run a deterministic subset of cells:
+
+```bash
+# Array task 3 out of 16 — runs cells where j % 16 == 3
+tvbo run experiment:Sweep --backend jax --slurm-chunk 3/16 -o ./out
+```
+
+Internally, the planner enumerates the cartesian product of all exploration axes and skips cells whose index mod `N` is not equal to `i`. Each cell is written to `<out_dir>/cell_<j:06d>/`. This is what the workflow templates emit by default for Slurm.
+
+## Container re-exec (`--container IMAGE`)
+
+```bash
+tvbo run experiment:JR_MEG --backend jax \
+    --container ghcr.io/the-virtual-brain/tvbo:0.7.0 -o ./out
+```
+
+If `singularity` is on `PATH` (or `SINGULARITY_BIND` is set), the command re-execs as:
+
+```bash
+singularity exec --bind $PWD:$PWD <image> tvbo <original argv>
+```
+
+Otherwise it falls back to Docker:
+
+```bash
+docker run --rm -e TVBO_IN_CONTAINER=1 -v $PWD:$PWD -w $PWD <image> tvbo <original argv>
+```
+
+The `TVBO_IN_CONTAINER=1` environment variable is set in the inner invocation to prevent recursive re-exec.
+
+## Engine dispatch (`--engine`)
+
+Non-`local` engines re-emit the run as a workflow kit and submit it:
+
+```bash
+tvbo run experiment:JR_MEG --engine slurm --backend jax -o ./run-001
+```
+
+is equivalent to:
+
+```bash
+tvbo workflow slurm experiment:JR_MEG --backend jax -o ./run-001/run.sbatch
+sbatch ./run-001/run.sbatch
+```
+
+For `snakemake` and `nextflow`, only the artefact is written — no automatic launcher is invoked. See [HPC patterns](hpc.qmd) for the full lifecycle.
+
+## Examples
+
+```bash
+# Local run on the default backend, no output saved
+tvbo run experiment:JR_MEG_FrequencyGradient_Optimization
+
+# Local run with JAX, write results
+tvbo run experiment:JR_MEG -b jax -o ./out
+
+# Override the integration window
+tvbo run experiment:JR_MEG -b jax --duration 30000 -o ./out
+
+# Pick one experiment from a multi-experiment study
+tvbo run study:Schirner2023 --experiment JR_MEG -b jax -o ./out
+
+# Submit via Slurm in one command
+tvbo run experiment:JR_MEG --engine slurm -b jax -o ./run-001
+
+# Container-isolated run
+tvbo run experiment:JR_MEG -b jax --container ghcr.io/the-virtual-brain/tvbo:0.7.0
+```
+
+## See also
+
+- [Backends](backends.qmd) — what each backend can do
+- [HPC patterns](hpc.qmd) — sharding, containers, retries
+- [`tvbo workflow`](workflow.qmd) — emit kits without launching

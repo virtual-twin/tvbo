@@ -1,0 +1,50 @@
+---
+title: "tvbo config"
+---
+
+View the user-level CLI configuration. Configuration writing is scheduled for milestone C2; today the verb is read-only.
+
+## Synopsis
+
+```text
+tvbo config path
+tvbo config show
+```
+
+## Resolution rules
+
+The config file is located at:
+
+```text
+${XDG_CONFIG_HOME:-$HOME/.config}/tvbo/config.toml
+```
+
+`XDG_CONFIG_HOME` honours the [XDG Base Directory specification](https://specifications.freedesktop.org/basedir-spec/) when set.
+
+## Sub-commands
+
+### `tvbo config path`
+
+Print the resolved path. Useful in shell pipelines, e.g.:
+
+```bash
+$EDITOR "$(tvbo config path)"
+```
+
+### `tvbo config show`
+
+Print the file contents. Prints `# (no config at <path>)` to `stderr` and exits `0` if the file is missing.
+
+## Roadmap
+
+The C2 milestone will add:
+
+- `tvbo config set KEY=VALUE` — write into the user file
+- `tvbo config get KEY` — read a single value
+- Profile support for multiple HPC clusters and multiple credential sets
+
+Until then, edit the TOML file by hand.
+
+## See also
+
+- [HPC patterns](hpc.qmd) — values planned to live under `slurm.*`, `container.*`
