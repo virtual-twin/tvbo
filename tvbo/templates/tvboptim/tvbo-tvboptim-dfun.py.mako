@@ -119,6 +119,10 @@ elif hasattr(model, 'coupling_terms') and model.coupling_terms:
     for ct_name in model.coupling_terms.keys():
         coupling_inputs_dict[ct_name] = 1
 
+local_coupling_term = str(getattr(model, 'local_coupling_term', '') or '')
+if local_coupling_term in coupling_inputs_dict:
+    local_coupling_term = ''
+
 class_name = model.name.replace(' ', '').replace('-', '') if hasattr(model, 'name') and model.name else 'GeneratedDynamics'
 
 # Build EXTERNAL_INPUTS from experiment.events (stimulus-type events)
@@ -210,6 +214,9 @@ class ${class_name}(AbstractDynamics):
         ${ci_name} = coupling.${ci_name} if hasattr(coupling, '${ci_name}') else jnp.zeros(${ci_dim})
         % endif
         % endfor
+        % if local_coupling_term:
+        ${local_coupling_term} = 0.0
+        % endif
 
         % for ei_name in external_inputs_dict:
         ${ei_name} = external.${ei_name}[0] if hasattr(external, '${ei_name}') else 0.0

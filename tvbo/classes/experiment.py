@@ -1385,7 +1385,14 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         else:
             raise ValueError(f"Format {format} not supported. Valid formats: tvb, tvboptim, jax.")
 
-    def run(self, format="tvboptim", initial_conditions=None, **kwargs):
+    def run(self, format="tvboptim", initial_conditions=None, quiet=False, **kwargs):
+        import contextlib
+        import io
+
+        if quiet:
+            with contextlib.redirect_stdout(io.StringIO()):
+                return self.run(format=format, initial_conditions=initial_conditions, quiet=False, **kwargs)
+
         if "duration" in kwargs:
             self.integration.duration = kwargs.pop("duration")
 

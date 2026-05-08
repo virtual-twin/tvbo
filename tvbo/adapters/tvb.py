@@ -36,6 +36,16 @@ def _to_scalar(val):
     return float(val)
 
 
+def _observation_period(observation):
+    period = getattr(observation, "period", None)
+    if period is not None:
+        return float(period)
+    parameters = getattr(observation, "parameters", None) or {}
+    tr = parameters.get("TR") if hasattr(parameters, "get") else None
+    tr_value = getattr(tr, "value", None) if tr is not None else None
+    return float(tr_value) if tr_value is not None else None
+
+
 def _extract_dynamics(sim) -> tvbo_datamodel.Dynamics:
     """Extract Dynamics metadata from a TVB model."""
     model_metadata = tvbo_datamodel.Dynamics(
@@ -441,7 +451,7 @@ def to_tvb_monitor(observation):
 
     cr = getattr(observation, "class_reference", None)
     name = str(observation.name)
-    period = observation.period
+    period = _observation_period(observation)
 
     # Resolve TVB monitor class from class_reference or name
     _NAME_TO_MONITOR = {

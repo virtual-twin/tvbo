@@ -288,6 +288,18 @@ def pipeline_argument(pipeline: Any, name: str) -> Any:
     return None
 
 
+def pipeline_kernel_equation(pipeline: Any) -> Optional[str]:
+    """Return the equation from the first time-range pipeline step."""
+    for step in pipeline or []:
+        if getattr(step, "time_range", None) is None:
+            continue
+        equation = getattr(step, "equation", None)
+        rhs = getattr(equation, "rhs", None) if equation is not None else None
+        if rhs:
+            return str(rhs)
+    return None
+
+
 def time_argument_ms(argument: Any, default: float) -> float:
     """Resolve a time-valued schema argument to milliseconds."""
     if argument is None or getattr(argument, "value", None) is None:
@@ -397,6 +409,11 @@ def _adapt_tvb_bold_reference(class_info: Dict[str, Any], obs: Any, dt: float) -
         _set_literal_arg(adapted, "period", to_numeric(period))
     stock_dt = pipeline_argument(getattr(obs, "pipeline", None), "stock_dt")
     _set_literal_arg(adapted, "downsample_period", time_argument_ms(stock_dt, 4.0))
+
+    hrf_equation = pipeline_kernel_equation(getattr(obs, "pipeline", None))
+    if hrf_equation:
+        _set_literal_arg(adapted, "hrf_equation", hrf_equation)
+        _set_literal_arg(adapted, "hrf_parameters", equation_parameters)
 
     for argument_name in ("k_1", "V_0"):
         if argument_name in equation_parameters:

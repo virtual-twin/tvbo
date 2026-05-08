@@ -82,20 +82,22 @@ if not all_couplings and getattr(experiment, 'coupling', None):
 
 # Map coupling_input names to (func_name, coupling_obj) for tvboptim coupling_dict
 # tvboptim keys coupling by coupling_input name, schema keys by function name
-# Resolution order:
+# Resolution order follows the CouplingInput.source schema contract:
 #   1. Explicit source on CouplingInput (ci.source == func_name)
 #   2. Same name (ci_name == func_name)
-#   3. Single func → broadcast to all coupling inputs
-#   4. Same count → positional zip
+#   3. Remaining functions → remaining inputs by declaration order
+# Extra declared coupling inputs are left unbound; tvboptim supplies zeros.
 ci_coupling_map = {}  # ci_name -> (func_name, coupling_obj)
 func_to_first_ci = {}  # func_name -> first ci_name (for state access translation)
+coupling_input_objects = dict(model.coupling_inputs.items()) if model.coupling_inputs else {}
+
 if coupling_inputs_dict and all_couplings:
     funcs = list(all_couplings.items())  # [(name, obj), ...]
     ci_names = list(coupling_inputs_dict.keys())
 
     # 1. Explicit source attribute
     for ci_name in ci_names:
-        ci_obj = coupling_inputs_dict[ci_name]
+        ci_obj = coupling_input_objects.get(ci_name)
         src = getattr(ci_obj, 'source', None)
         if src and src in all_couplings:
             ci_coupling_map[ci_name] = (src, all_couplings[src])
@@ -110,15 +112,15 @@ if coupling_inputs_dict and all_couplings:
     # 3/4. Fallback for remaining unmapped
     _unmapped_cis = [c for c in ci_names if c not in ci_coupling_map]
     _unmapped_funcs = [(n, o) for n, o in funcs if n not in func_to_first_ci]
-    if len(_unmapped_funcs) == 1 and _unmapped_cis:
-        # Single unmapped function → broadcast to all remaining CIs
-        for ci_name in _unmapped_cis:
-            ci_coupling_map[ci_name] = _unmapped_funcs[0]
-        func_to_first_ci.setdefault(_unmapped_funcs[0][0], _unmapped_cis[0])
-    elif len(_unmapped_funcs) == len(_unmapped_cis):
-        for ci_name, (_fn, _co) in zip(_unmapped_cis, _unmapped_funcs):
-            ci_coupling_map[ci_name] = (_fn, _co)
-            func_to_first_ci.setdefault(_fn, ci_name)
+    if len(_unmapped_funcs) > len(_unmapped_cis):
+        raise ValueError(
+            f"Ambiguous coupling mapping for {model.name}: coupling functions "
+            f"{[name for name, _ in _unmapped_funcs]} do not map to coupling inputs {ci_names}. "
+            "Set CouplingInput.source or provide matching names."
+        )
+    for ci_name, (_fn, _co) in zip(_unmapped_cis, _unmapped_funcs):
+        ci_coupling_map[ci_name] = (_fn, _co)
+        func_to_first_ci.setdefault(_fn, ci_name)
 # Translate function-name coupling key to ci name for tvboptim state access
 _to_ci_key = lambda k: func_to_first_ci.get(k, k) if k else None
 
@@ -814,12 +816,16 @@ def create_network(
     % endfor
 % endif
 
+    graph_weights = weights.T
+
     % if has_delay:
     if delays is None:
-        delays = jnp.zeros_like(weights)
-    graph = DenseDelayGraph(weights, delays, region_labels=region_labels)
+        graph_delays = jnp.zeros_like(graph_weights)
+    else:
+        graph_delays = delays.T
+    graph = DenseDelayGraph(graph_weights, graph_delays, region_labels=region_labels)
     % else:
-    graph = DenseGraph(weights, region_labels=region_labels)
+    graph = DenseGraph(graph_weights, region_labels=region_labels)
     % endif
 
     n_nodes = weights.shape[0]

@@ -1,5 +1,6 @@
 """TVB-compatible observation monitors for generated tvboptim code."""
 
+import importlib.util
 import math
 
 import equinox as eqx
@@ -53,6 +54,8 @@ class TVBBold(AbstractMonitor):
     k_1: float = eqx.field(static=True)
     V_0: float = eqx.field(static=True)
     scaling: float = eqx.field(static=True)
+    hrf_equation: str = eqx.field(static=True)
+    hrf_parameters: object = eqx.field(static=True)
     history: object = eqx.field(static=True)
 
     def __init__(
@@ -65,6 +68,8 @@ class TVBBold(AbstractMonitor):
         tau_s=0.8,
         tau_f=0.4,
         scaling=1.0 / 3.0,
+        hrf_equation="1/3 * exp(-0.5*(t / tau_s)) * sin(sqrt(1/tau_f - 1/(4*tau_s**2)) * t) / sqrt(1/tau_f - 1/(4*tau_s**2))",
+        hrf_parameters=None,
         voi=None,
         history=None,
     ):
@@ -77,6 +82,8 @@ class TVBBold(AbstractMonitor):
         self.tau_s = tau_s
         self.tau_f = tau_f
         self.scaling = scaling
+        self.hrf_equation = hrf_equation
+        self.hrf_parameters = hrf_parameters or {}
         self.history = history
 
     def _hrf(self):
@@ -85,13 +92,22 @@ class TVBBold(AbstractMonitor):
         stock_time_max = self.hrf_length / 1000.0
         stock_time_step = stock_time_max / stock_steps
         stock_time = np.arange(0.0, stock_time_max, stock_time_step)
-        frequency = np.sqrt(1.0 / self.tau_f - 1.0 / (4.0 * self.tau_s**2))
-        kernel_values = (
-            self.scaling
-            * np.exp(-0.5 * (stock_time / self.tau_s))
-            * np.sin(frequency * stock_time)
-            / np.sqrt(1.0 / self.tau_f - 1.0 / (4.0 * self.tau_s**2))
-        )
+        namespace = {
+            "t": stock_time,
+            "var": stock_time,
+            "tau_s": self.tau_s,
+            "tau_f": self.tau_f,
+            "k_1": self.k_1,
+            "V_0": self.V_0,
+            "scaling": self.scaling,
+            **dict(self.hrf_parameters),
+        }
+        if importlib.util.find_spec("numexpr") is not None:
+            import numexpr
+
+            kernel_values = numexpr.evaluate(self.hrf_equation, local_dict=namespace)
+        else:
+            kernel_values = eval(self.hrf_equation, np.__dict__, namespace)
         return kernel_values[::-1][np.newaxis, :]
 
     def __call__(self, sol):
@@ -101,6 +117,9 @@ class TVBBold(AbstractMonitor):
         output_interim_count = output_step_count // interim_step_count
 
         interim = TVBTemporalAverage(voi=self.voi, period=self.downsample_period)(sol).ys
+        squeeze_mode = interim.ndim == 3
+        if squeeze_mode:
+            interim = interim[..., np.newaxis]
         hrf = self._hrf()
         stock = np.zeros((hrf.shape[1], *interim.shape[1:]))
 
@@ -112,9 +131,10 @@ class TVBBold(AbstractMonitor):
             if interim_index % output_interim_count == 0:
                 roll_index = (interim_index % stock.shape[0]) - 1
                 rolled_hrf = np.roll(hrf, roll_index, axis=1)
-                stock_for_dot = stock[..., np.newaxis].transpose((1, 2, 0, 3))
+                stock_for_dot = stock.transpose((1, 2, 0, 3))
                 bold = (np.dot(rolled_hrf, stock_for_dot) - 1.0) * self.k_1 * self.V_0
-                outputs.append(bold.reshape(stock.shape[1:]))
+                output = bold.reshape(stock.shape[1:])
+                outputs.append(output[..., 0] if squeeze_mode else output)
                 times.append(t0 + interim_index * interim_step_count * dt)
 
         return NativeSolution(

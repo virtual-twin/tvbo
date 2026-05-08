@@ -12,22 +12,14 @@ else:
     standalone = True
 render = lambda obj: model.render_equation(obj, format='numpy')
 
-# In TVB, local_coupling is a separate dfun argument, not part of the coupling array.
-# Use the ontology to identify which coupling inputs are global (part of coupling array)
-# vs local (passed as separate dfun argument). This correctly handles models like SupHopf
-# that have named local coupling terms (e.g. lc_0) beyond just 'local_coupling'.
-from tvbo.ontology import owl as _onto
-try:
-    _global_names = set(_onto.get_model_coupling_terms(model.name, only_global=True).keys())
-    global_coupling_inputs = {k: v for k, v in model.coupling_inputs.items() if k in _global_names}
-except Exception:
-    # Model not in ontology — filter by naming convention:
-    # 'local_coupling' and 'lc_*' prefixed terms are local coupling
-    def _is_local(name):
-        return name == 'local_coupling' or name.startswith('lc_')
-    global_coupling_inputs = {k: v for k, v in model.coupling_inputs.items() if not _is_local(k)}
-local_coupling_inputs = {k: v for k, v in model.coupling_inputs.items() if k not in global_coupling_inputs}
-has_local_coupling = bool(local_coupling_inputs)
+# In TVB, the simulator exposes one explicit dfun argument for local coupling.
+# TVBO marks that symbol with Dynamics.local_coupling_term. Coupling input names
+# remain ordinary names: no name is treated as local unless the schema says so.
+local_coupling_term = str(getattr(model, 'local_coupling_term', '') or '')
+global_coupling_inputs = {
+    k: v for k, v in model.coupling_inputs.items()
+    if not local_coupling_term or k != local_coupling_term
+}
 %>
 % if standalone:
 # Auto-generated standalone model file
@@ -188,6 +180,9 @@ def format_range_or_boundary(sv, attr, default=(NEGINFINITY, INFINITY)):
 % for p in model.parameters:
         ${p} = self.${p}
 % endfor
+% if local_coupling_term and local_coupling_term != 'local_coupling':
+    ${local_coupling_term} = local_coupling
+% endif
 
 % if model.functions:
         # Functions

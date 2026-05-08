@@ -9,6 +9,7 @@ description: >-
     a nonlinear Volterra transformation.
 
 imaging_modality: BOLD
+period: 720.0
 
 class_reference:
     name: Bold

@@ -53,9 +53,6 @@ coupling_inputs:
 state_variables:
     theta:
         name: theta
-        domain:
-            lo: 0.0
-            hi: 6.283185307179586
         description:
             The Kuramoto model has only one state variable representing oscillations
             in general

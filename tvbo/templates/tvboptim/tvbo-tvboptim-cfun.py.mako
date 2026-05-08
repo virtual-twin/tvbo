@@ -56,8 +56,8 @@ else:
 # Resolution order:
 #   1. Explicit source on CouplingInput (ci.source == func_name)
 #   2. Same name (ci_name == func_name)
-#   3. Single CI + single func → auto-map
-#   4. Same count → positional zip
+#   3. Remaining functions → remaining inputs by declaration order
+# Extra declared coupling inputs are left unbound and receive zeros at runtime.
 _func_to_ci = {}
 if coupling_inputs_info and all_couplings:
     _funcs = list(all_couplings.keys())
@@ -78,11 +78,13 @@ if coupling_inputs_info and all_couplings:
     # 3/4. Fallback for remaining unmapped functions
     _unmapped_funcs = [f for f in _funcs if f not in _func_to_ci]
     _unmapped_cis = [c for c in _ci_names if c not in _func_to_ci.values()]
-    if len(_unmapped_funcs) == 1 and len(_unmapped_cis) == 1:
-        _func_to_ci[_unmapped_funcs[0]] = _unmapped_cis[0]
-    elif len(_unmapped_funcs) == len(_unmapped_cis):
-        for _ci, _fn in zip(_unmapped_cis, _unmapped_funcs):
-            _func_to_ci.setdefault(_fn, _ci)
+    if len(_unmapped_funcs) > len(_unmapped_cis):
+        raise ValueError(
+            f"Ambiguous coupling mapping: coupling functions {_unmapped_funcs} "
+            f"do not map to coupling inputs {_ci_names}. Set CouplingInput.source or provide matching names."
+        )
+    for _ci, _fn in zip(_unmapped_cis, _unmapped_funcs):
+        _func_to_ci.setdefault(_fn, _ci)
 
 def parse_list_elements(rhs_str):
     """Parse a list literal string into elements, respecting nesting."""

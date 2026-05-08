@@ -7,6 +7,13 @@ from tvbo.datamodel.schema import Observation as SchemaObservation
 from tvbo.templates.tvboptim.utils import get_observation_refs
 
 
+def _reduced_wong_wang_without_local_coupling_input():
+    dynamics = Dynamics.from_db("ReducedWongWang")
+    dynamics.local_coupling_term = "local_coupling"
+    dynamics.coupling_inputs.pop("local_coupling", None)
+    return dynamics
+
+
 def _two_node_bold_experiment(duration=1000.0):
     network = Network.from_matrix(
         weights=np.array([[0.0, 0.2], [0.1, 0.0]]),
@@ -15,7 +22,7 @@ def _two_node_bold_experiment(duration=1000.0):
     )
     network.coupling["Linear"] = Coupling.from_db("Linear")
     return SimulationExperiment(
-        dynamics=Dynamics.from_db("ReducedWongWang"),
+        dynamics=_reduced_wong_wang_without_local_coupling_input(),
         network=network,
         integration={"method": "Heun", "duration": duration, "step_size": 0.1},
         observations=[
@@ -44,9 +51,19 @@ def test_bold_tvb_metadata_resolves_keyed_parameter_names():
     observation = yaml_loader.load(str(path), target_class=SchemaObservation)
 
     assert observation.name == "BOLD_TVB"
+    assert observation.period == 720.0
     assert observation.parameters["TR"].name == "TR"
     assert observation.pipeline[1].equation.parameters["tau_f"].name == "tau_f"
     assert observation.pipeline[-1].equation.parameters["V_0"].name == "V_0"
+
+
+def test_tvb_adapter_resolves_bold_period_from_metadata():
+    pytest.importorskip("tvb")
+    from tvbo.adapters.tvb import to_tvb_monitor
+
+    monitor = to_tvb_monitor(Observation.from_db("Bold_TVB"))
+
+    assert monitor.period == 720.0
 
 
 def test_tvboptim_uses_native_monitors_for_tvb_class_references():
@@ -74,6 +91,19 @@ def test_tvboptim_uses_native_monitors_for_tvb_class_references():
     assert bold._monitor.downsample_period == 4.0
     assert bold._monitor.k_1 == 5.6
     assert bold._monitor.V_0 == 0.02
+
+
+def test_tvboptim_allows_unbound_declared_coupling_inputs_as_zero():
+    pytest.importorskip("tvboptim")
+
+    result = SimulationExperiment(dynamics=Dynamics.from_db("Kuramoto2")).run(
+        "tvboptim",
+        duration=10,
+        quiet=True,
+    )
+
+    signal = result.sel(variable="signal")
+    assert signal.data.shape[0] > 0
 
 
 def test_tvboptim_observations_match_native_tvb():
