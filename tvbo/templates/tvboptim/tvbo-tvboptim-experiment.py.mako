@@ -8,6 +8,7 @@ from tvbo.templates.tvboptim.utils import (
     safe_name, as_list, get_attr, is_network_observation, obs_has_all_args,
     get_observation_refs, parse_loss_function, parse_free_param, get_domain_bounds,
     parse_exploration, get_param_info, get_node_param_overrides,
+    normalize_coupling_aliases,
     get_node_state_overrides
 )
 import numpy as np
@@ -79,6 +80,7 @@ if not all_couplings and getattr(experiment, 'coupling', None):
         all_couplings = dict(_exp_c.items())
     else:
         all_couplings = {_exp_c.name or 'coupling': _exp_c}
+all_couplings = normalize_coupling_aliases(all_couplings, model)
 
 # Map coupling_input names to (func_name, coupling_obj) for tvboptim coupling_dict
 # tvboptim keys coupling by coupling_input name, schema keys by function name
