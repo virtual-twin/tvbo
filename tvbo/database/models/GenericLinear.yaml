@@ -21,11 +21,10 @@ description: The Generic Linear (GL) is a phenomenological, linear one-dimension
   one state-variable ('x')) neural mass model (Galán, 2008).
 references:
 - Galan2008
+local_coupling_term: local_coupling
 coupling_inputs:
   c_pop0:
     name: c_pop0
-  local_coupling:
-    name: local_coupling
 state_variables:
   x:
     name: x

@@ -51,10 +51,12 @@ def _tvb_compatible(model_file):
     if meta.get("system_type") == "discrete":
         return False
     # TVB coupling array size = number of coupling variables (cvar).
-    # Models with more *global* coupling inputs than coupling variables can't
-    # run on TVB.  local_coupling / lc_* are separate dfun arguments.
+    # Models with more global coupling inputs than coupling variables can't
+    # run on TVB. Simulator-local coupling is declared explicitly via
+    # local_coupling_term and is not part of the coupling array.
     ci = meta.get("coupling_inputs", {})
-    n_global = sum(1 for name in ci if name != "local_coupling" and not name.startswith("lc_"))
+    local_coupling_term = meta.get("local_coupling_term")
+    n_global = sum(1 for name in ci if name != local_coupling_term)
     n_coupling_vars = sum(
         1 for sv in meta.get("state_variables", {}).values() if isinstance(sv, dict) and sv.get("coupling_variable")
     )

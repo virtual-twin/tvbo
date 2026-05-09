@@ -37,13 +37,12 @@ derived_variables:
       rhs: local_coupling*x
       latex: false
     conditional: false
+local_coupling_term: local_coupling
 coupling_inputs:
   c_pop0:
     name: c_pop0
   c_pop1:
     name: c_pop1
-  local_coupling:
-    name: local_coupling
 state_variables:
   x:
     name: x

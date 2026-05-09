@@ -114,11 +114,10 @@ derived_variables:
     description: Per-mode offset entering the beta dynamics.
     equation: {lhs: n_i, rhs: 'a', latex: false}
     conditional: false
+local_coupling_term: local_coupling
 coupling_inputs:
   c_pop0:
     name: c_pop0
-  local_coupling:
-    name: local_coupling
 state_variables:
   xi:
     name: xi

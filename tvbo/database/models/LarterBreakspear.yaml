@@ -416,11 +416,10 @@ derived_variables:
       rhs: Q_V*local_coupling
       latex: false
     conditional: false
+local_coupling_term: local_coupling
 coupling_inputs:
   c_pop0:
     name: c_pop0
-  local_coupling:
-    name: local_coupling
 state_variables:
   V:
     name: V

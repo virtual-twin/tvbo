@@ -298,11 +298,10 @@ derived_variables:
       rhs: c_i/(1.0 + exp(-a_i*(-b_i + x_i))) - 1.0*shift_sigmoid/(exp(a_i*b_i) + 1.0)
       latex: false
     conditional: false
+local_coupling_term: local_coupling
 coupling_inputs:
   c_pop0:
     name: c_pop0
-  local_coupling:
-    name: local_coupling
 state_variables:
   E:
     name: E

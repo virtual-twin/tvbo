@@ -119,11 +119,10 @@ description: The Generic 2-Dimensional Oscillator (G2D) is a phenomenological, c
 references:
   - Nagumo1962
   - Fitzhugh1961
+local_coupling_term: local_coupling
 coupling_inputs:
   c_glob:
     name: c_glob
-  local_coupling:
-    name: local_coupling
 state_variables:
   V:
     name: V

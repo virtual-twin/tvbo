@@ -165,11 +165,10 @@ derived_variables:
     description: Per-mode adaptation offset entering the gamma dynamics.
     equation: {lhs: n_i, rhs: 'r*s*x_0', latex: false}
     conditional: false
+local_coupling_term: local_coupling
 coupling_inputs:
   c_pop0:
     name: c_pop0
-  local_coupling:
-    name: local_coupling
 state_variables:
   xi:
     name: xi

@@ -45,11 +45,10 @@ derived_variables:
         equation:
             rhs: sin(theta)
 
+local_coupling_term: local_coupling
 coupling_inputs:
     c_glob:
         name: c_glob
-    local_coupling:
-        name: local_coupling
 state_variables:
     theta:
         name: theta

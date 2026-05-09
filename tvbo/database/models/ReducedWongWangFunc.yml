@@ -95,11 +95,10 @@ derived_variables:
       rhs: I_o + J_N*S*local_coupling + J_N*S*w + J_N*c_pop0
       latex: false
     conditional: false
+local_coupling_term: local_coupling
 coupling_inputs:
   c_pop0:
     name: c_pop0
-  local_coupling:
-    name: local_coupling
 state_variables:
   S:
     name: S

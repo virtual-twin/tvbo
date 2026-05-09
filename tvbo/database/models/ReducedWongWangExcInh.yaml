@@ -268,11 +268,10 @@ derived_variables:
     grounding:
       - GO:0060080
       - GO:0099605
+local_coupling_term: local_coupling
 coupling_inputs:
   c_glob:
     name: c_glob
-  local_coupling:
-    name: local_coupling
 state_variables:
   S_e:
     name: S_e

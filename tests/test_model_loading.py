@@ -66,6 +66,15 @@ def test_all_models_found():
     print(f"\nFound {len(model_files)} model files to test")
 
 
+@pytest.mark.parametrize("model_path,model_name", test_params, ids=lambda x: x[1] if isinstance(x, str) else str(x))
+def test_local_coupling_term_is_not_global_input(model_path, model_name):
+    """Local simulator coupling must not also be a global coupling input."""
+    model = Dynamics.from_file(model_path)
+    local_coupling_term = getattr(model, "local_coupling_term", None)
+    if local_coupling_term:
+        assert str(local_coupling_term) not in model.coupling_inputs
+
+
 if __name__ == "__main__":
     # Allow running as a script for quick testing
     import sys

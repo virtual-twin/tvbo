@@ -269,11 +269,10 @@ derived_variables:
           lhs: sigma_v45
           rhs: 2*e0/(exp(rho_1*(rho_2 - (v4 - v5))) + 1)
           latex: false
+local_coupling_term: local_coupling
 coupling_inputs:
   c_pop0:
     name: c_pop0
-  local_coupling:
-    name: local_coupling
 state_variables:
   v1:
     name: v1
