@@ -847,6 +847,20 @@ class ExplorationResult(Bunch):
                 # Scalar: flatten for backward compatibility
                 self.results = results_arr.flatten()
                 self.is_timeseries = False
+
+            # Trials-only explorations (no sweep axes) can be emitted as
+            # (1, n_trials, n_time, ...). Collapse the synthetic grid axis so
+            # plotting interprets axis 1 as time instead of trials.
+            n_trials = int(getattr(self, "n_trials", 1) or 1)
+            if (
+                self.is_timeseries
+                and not self.axes
+                and n_trials > 1
+                and self.results.ndim >= 3
+                and self.results.shape[0] == 1
+                and self.results.shape[1] == n_trials
+            ):
+                self.results = self.results[0]
         else:
             self.results = None
             self.is_timeseries = False
