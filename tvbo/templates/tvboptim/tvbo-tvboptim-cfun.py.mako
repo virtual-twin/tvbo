@@ -14,7 +14,7 @@ Output:
 </%doc>
 <%
 from tvbo.codegen import render_expression
-from tvbo.templates.tvboptim.utils import get_param_info
+from tvbo.templates.tvboptim.utils import get_param_info, normalize_coupling_aliases
 
 # Two modes: experiment (full pipeline) or standalone (single coupling)
 if 'experiment' in context.keys():
@@ -42,11 +42,12 @@ if 'experiment' in context.keys():
             all_couplings = dict(_exp_c.items())
         else:
             all_couplings = {_exp_c.name or 'coupling': _exp_c}
+    all_couplings = normalize_coupling_aliases(all_couplings, model)
 
 elif 'coupling' in context.keys():
     _standalone_coupling = context['coupling']
     model = None
-    all_couplings = {_standalone_coupling.name: _standalone_coupling}
+    all_couplings = normalize_coupling_aliases({_standalone_coupling.name: _standalone_coupling}, model)
     coupling_inputs_info = {}
 
 else:

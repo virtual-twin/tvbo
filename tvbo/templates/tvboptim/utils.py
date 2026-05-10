@@ -240,6 +240,60 @@ def to_numeric(val: Any) -> Union[int, float, Any]:
     return val
 
 
+def normalize_coupling_aliases(all_couplings: Dict[str, Any], model: Any = None) -> Dict[str, Any]:
+    """Collapse duplicate keys that point to the same coupling object.
+
+    tvbo can expose one coupling under multiple names such as the coupling
+    function name, a coupling-input key, or an explicit CouplingInput.source.
+    tvboptim only needs one key per distinct object, so prefer stable,
+    user-meaningful aliases before attempting input-to-coupling mapping.
+    """
+    if not all_couplings:
+        return {}
+
+    ci_names = set()
+    explicit_sources = set()
+    if model is not None and getattr(model, "coupling_inputs", None):
+        for ci_name, ci in model.coupling_inputs.items():
+            ci_names.add(str(ci_name))
+            source = getattr(ci, "source", None)
+            if source:
+                explicit_sources.add(str(source))
+
+    def rank(key: str, coupling: Any) -> tuple[int, int, str]:
+        key = str(key)
+        coupling_name = str(getattr(coupling, "name", "") or "")
+        if key in explicit_sources:
+            return (0, len(key), key)
+        if key in ci_names:
+            return (1, len(key), key)
+        if coupling_name and key == coupling_name:
+            return (2, len(key), key)
+        return (3, len(key), key)
+
+    deduped = {}
+    chosen_keys = {}
+    for key, coupling in all_couplings.items():
+        key = str(key)
+        if coupling is None:
+            deduped[key] = coupling
+            continue
+
+        coupling_id = id(coupling)
+        current_key = chosen_keys.get(coupling_id)
+        if current_key is None:
+            chosen_keys[coupling_id] = key
+            deduped[key] = coupling
+            continue
+
+        if rank(key, coupling) < rank(current_key, coupling):
+            deduped.pop(current_key, None)
+            deduped[key] = coupling
+            chosen_keys[coupling_id] = key
+
+    return deduped
+
+
 def iter_parameter_values(parameters: Any):
     """Yield ``(name, value)`` pairs from schema Parameter collections."""
     if not parameters:
