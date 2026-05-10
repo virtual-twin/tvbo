@@ -113,3 +113,17 @@ There are classical examples, however we need to find a solution to describe any
 - Correlation (FC, FCD)
 - Projection (Matrix-Multiplication)
 - Convolution
+
+
+## Documentation
+
+- [ ] Always describe both, 1) Python API for model specification, 2) Pure Yaml
+    > Currently, it is not clear how to use python-API, e.g. for defining/adding Observations and pipelines. Also always using pure yaml is not intuitive enough for iteratively setting up experiments.
+
+
+## Migrate to Pydantic
+
+- [ ] Find out if there is any benefit of linkml gen-python instead of gen-pydantic. Do we really need both?
+- [ ] Change import of metadata-classes, so we can import all from tvbo.classes or tvbo.schema.
+    > Having a common import structure for classes with extra functionality (inherited from LinkML) and pure LinkML export would be nice, so it's not confusing from where to import certain classes.
+
