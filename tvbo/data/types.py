@@ -81,6 +81,7 @@ def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1,
     arr = np.asarray(stacked_arr)
     grid_dims = []
     grid_coords = {}
+    grid_sizes = []
     for ax in axes_info:
         ax_name = ax.get("name") if isinstance(ax, dict) else getattr(ax, "name", None)
         if not ax_name:
@@ -90,9 +91,24 @@ def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1,
             if isinstance(ax, dict)
             else getattr(ax, "explored_values", None)
         )
+        ax_n = ax.get("n") if isinstance(ax, dict) else getattr(ax, "n", None)
+        if ax_n is None and ax_vals is not None:
+            ax_n = len(np.asarray(ax_vals))
         grid_dims.append(ax_name)
+        grid_sizes.append(int(ax_n) if ax_n is not None else None)
         if ax_vals is not None:
             grid_coords[ax_name] = np.asarray(ax_vals)
+
+    # Multi-axis 'product'-mode explorations come back with a flat leading
+    # dim of size prod(grid_sizes). Reshape into per-axis dims so the
+    # DataArray gets one named axis per parameter.
+    if (
+        len(grid_dims) > 1
+        and arr.ndim >= 1
+        and all(s is not None for s in grid_sizes)
+        and arr.shape[0] == int(np.prod(grid_sizes))
+    ):
+        arr = arr.reshape(tuple(grid_sizes) + arr.shape[1:])
 
     n_grid = len(grid_dims)
     inner_shape = arr.shape[n_grid:]
