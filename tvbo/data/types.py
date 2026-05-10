@@ -65,6 +65,102 @@ def _to_dataarray(raw_data, raw_time=None, state_names=None, nodes=None):
     return xr.DataArray(data=data_np, dims=dims, coords=coords)
 
 
+def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1, name=None):
+    """Build an ``xr.DataArray`` from a parameter-grid-stacked array.
+
+    Outer dims correspond to exploration axes (parameter names with their
+    explored values as coords). When ``n_trials > 1`` and the leading inner
+    axis matches, a ``trial`` dim is inserted after the grid dims. Remaining
+    inner dims follow the simulation convention ``(time, variable, node,
+    mode)``; the leading ``time`` dim is included only when ``intrinsic_ts``
+    carries a multi-step time vector matching the leading remaining shape,
+    so time-aggregated observations don't get a spurious ``time`` axis.
+    """
+    if stacked_arr is None:
+        return None
+    arr = np.asarray(stacked_arr)
+    grid_dims = []
+    grid_coords = {}
+    for ax in axes_info:
+        ax_name = ax.get("name") if isinstance(ax, dict) else getattr(ax, "name", None)
+        if not ax_name:
+            continue
+        ax_vals = (
+            ax.get("explored_values")
+            if isinstance(ax, dict)
+            else getattr(ax, "explored_values", None)
+        )
+        grid_dims.append(ax_name)
+        if ax_vals is not None:
+            grid_coords[ax_name] = np.asarray(ax_vals)
+
+    n_grid = len(grid_dims)
+    inner_shape = arr.shape[n_grid:]
+
+    # Trials-only explorations have no grid axes but still get a synthetic
+    # leading axis from stacking a single observable_fn call. Collapse it so
+    # the trial dim sits where downstream selection expects it.
+    if (
+        n_grid == 0
+        and n_trials > 1
+        and len(inner_shape) >= 2
+        and inner_shape[0] == 1
+        and inner_shape[1] == n_trials
+    ):
+        arr = arr[0]
+        inner_shape = inner_shape[1:]
+
+    coords = dict(grid_coords)
+
+    has_trial = (
+        n_trials > 1 and len(inner_shape) > 0 and inner_shape[0] == n_trials
+    )
+    if has_trial:
+        trial_dims = ["trial"]
+        coords["trial"] = np.arange(n_trials)
+        post_trial_shape = inner_shape[1:]
+    else:
+        trial_dims = []
+        post_trial_shape = inner_shape
+
+    ts_arr = None
+    if intrinsic_ts is not None:
+        ts_arr = np.asarray(intrinsic_ts)
+        while ts_arr.ndim > 1:
+            ts_arr = ts_arr[0]
+
+    has_time = (
+        ts_arr is not None
+        and ts_arr.size > 1
+        and len(post_trial_shape) > 0
+        and ts_arr.size == post_trial_shape[0]
+    )
+
+    if has_time:
+        post_time_template = ["variable", "node", "mode"]
+        inner_dims = ["time"] + [
+            post_time_template[i] if i < len(post_time_template) else f"dim_{i}"
+            for i in range(len(post_trial_shape) - 1)
+        ]
+        coords["time"] = ts_arr
+    else:
+        # Time-aggregated (or no time) — assume spatial layout
+        # (variable, node, mode), aligned to the right of the convention.
+        spatial_template = ["variable", "node", "mode"]
+        inner_dims = (
+            spatial_template[-len(post_trial_shape):] if post_trial_shape else []
+        )
+
+    # Drop trailing singleton inner dims so we don't fabricate axes that don't
+    # actually carry information (e.g. mode/node when size 1).
+    while inner_dims and arr.shape[-1] == 1:
+        arr = arr[..., 0]
+        inner_dims = inner_dims[:-1]
+
+    all_dims = grid_dims + trial_dims + inner_dims
+    return xr.DataArray(data=arr, dims=all_dims, coords=coords, name=name)
+
+
 # =============================================================================
 # Result Classes for Simulation Experiments
 # =============================================================================
@@ -820,6 +916,7 @@ class ExplorationResult(Bunch):
         observable: str = None,
         dt: float = None,
         output_names: list = None,
+        observations=None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -829,6 +926,9 @@ class ExplorationResult(Bunch):
         self.observable = observable
         self.dt = dt
         self.output_names = output_names or []
+        # Per-grid-point observations as {name: xr.DataArray} with grid axes
+        # prepended to each observation's intrinsic dims (time/variable/node/mode).
+        self.observations = observations or {}
 
         # Compute expected grid shape from axes
         self._grid_shape = tuple(

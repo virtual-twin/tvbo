@@ -703,6 +703,9 @@ import ${mod}
 
 # Result classes from tvbo
 from tvbo.data.types import SimulationResult, AlgorithmResult, OptimizationResult, ExplorationResult
+% if has_explorations:
+from tvbo.data.types import _stacked_to_dataarray as _stacked_to_dataarray
+% endif
 
 % if stochastic_param_info:
 
@@ -1501,6 +1504,14 @@ def run_optimization(
     obs_name = expl.get('observable', '')
     output_key = expl.get('output_key')
     grid_desc = ' x '.join([f"{ax['name']}[{ax['n']}]" for ax in expl['axes']]) if has_axes else f"{expl.get('n_trials', 1)} trials"
+    # When no observable is specified and the schema defines observations,
+    # the exploration computes them per grid point and bundles raw data + observations.
+    bundles_observations = (
+        obs_type != 'function_call'
+        and not obs_name
+        and not has_model_output
+        and bool(observation_names or derived_observation_names)
+    )
 %>
 def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_workers}, **kwargs):
     """${expl['label']} - ${grid_desc}."""
@@ -1648,11 +1659,20 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
         result = _expl_model_fn(s)
         return result.data[:, ${len(state_names)}:, ...]
 % else:
-    # No observable specified, no model output — return full simulation data
+% if bundles_observations:
+    # No observable specified — return raw data + all schema observations per grid point
+    @jax.jit
+    def observable_fn(s):
+        result = _expl_model_fn(s)
+        _obs = compute_all_observations(result, s, result_transient)
+        return Bunch(data=result.data, ts=result.ts, observations=_obs)
+% else:
+    # No observable specified, no model output, no observations — return full simulation data
     @jax.jit
     def observable_fn(s):
         result = _expl_model_fn(s)
         return result.data
+% endif
 % endif
 % elif is_derived_obs:
     # ${obs_name} is a derived observation - use compute_all_observations
@@ -1799,11 +1819,14 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
 
 % if has_axes:
     exec_runner = ParallelExecution(observable_fn, grid, n_pmap=n_pmap)
-    results = exec_runner.run()
+    _grid_outputs = list(exec_runner.run())
 % else:
     # Trial-only exploration — no parameter grid
-    results = [observable_fn(_expl_state)]
+    _grid_outputs = [observable_fn(_expl_state)]
 % endif
+    # Tree-aware stack: works for both array returns and pytree returns
+    # (e.g. Bunch with data + observations when no observable is specified).
+    _stacked = jax.tree.map(lambda *xs: jnp.stack(xs), *_grid_outputs)
 
     # Build axes info for ExplorationResult
     _axes_info = [
@@ -1833,17 +1856,40 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
 % endfor
     ]
 
+% if bundles_observations:
+    # observable_fn returned Bunch(data, ts, observations). Convert each
+    # observation to an xr.DataArray with grid axes prepended for clean,
+    # metadata-consistent representation.
+    _stacked_results = _stacked.data
+    _stacked_ts = getattr(_stacked, 'ts', None)
+    _observations_xr = {}
+    for _obs_key, _obs_val in _stacked.observations.items():
+        if str(_obs_key).startswith('_'):
+            continue
+        _arr = getattr(_obs_val, 'ys', getattr(_obs_val, 'data', _obs_val))
+        _ts = getattr(_obs_val, 'ts', None)
+        _observations_xr[_obs_key] = _stacked_to_dataarray(
+            _arr, _axes_info, intrinsic_ts=_ts,
+            n_trials=${expl.get('n_trials', 1)}, name=str(_obs_key),
+        )
+% else:
+    _stacked_results = _stacked
+    _stacked_ts = None
+    _observations_xr = {}
+% endif
+
     return ExplorationResult(
         name='${expl['name']}',
 % if has_axes:
         grid=grid,
 % endif
-        results=jnp.stack(results),
+        results=_stacked_results,
         axes=_axes_info,
 <% _obs_label = obs_name if obs_name else (', '.join(model_output_vars) if has_model_output else obs_func) %>\
         observable='${_obs_label}',
         dt=${dt},
         output_names=${model_output_vars if has_model_output and not obs_name else []},
+        observations=_observations_xr,
 % if expl.get('n_trials', 1) > 1:
         n_trials=${expl['n_trials']},
 % if expl.get('average'):
