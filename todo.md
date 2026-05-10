@@ -156,3 +156,11 @@ is list.
 
 But we want to be able to change the space of a specific axis. therefore we need keys.
 
+
+## Enable backend spec in yaml/metadata for different SimulationExperiment Tasks
+- We already have the software database, implement the SimulationExperiment.run() with no backend specified,
+-  the default backend can be still tvboptim but in metadat defined already
+- This will go towards no hardcoded asumption in python runtime for tvbo
+- Allows SimulationEperiment with multiple backends per task
+    - Running integration/exploration with tvboptim
+    - Bifurcation analysis with julia

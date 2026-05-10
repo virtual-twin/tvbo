@@ -43,22 +43,9 @@ jobs:
             # For workflow_dispatch the user supplies the exact image tag.
             - name: Resolve container tag
               id: tag
-              env:
-                  INPUT_TAG: ${{ inputs.tag }}
-                  RELEASE_TAG: ${{ github.event.release.tag_name }}
               run: |
-                  set -euo pipefail
-                  if [[ -n "${INPUT_TAG}" ]]; then
-                      TAG="${INPUT_TAG}"
-                  elif [[ -n "${RELEASE_TAG}" ]]; then
-                      # Strip a single leading 'v' (v1.2.3 -> 1.2.3) to match the
-                      # docker/metadata-action semver tag.
-                      TAG="${RELEASE_TAG#v}"
-                  else
-                      TAG="latest"
-                  fi
-                  echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
-                  echo "Container tag: ${TAG}"
+                  echo "tag=latest" >> "$GITHUB_OUTPUT"
+                  echo "Container tag: latest"
 
             - uses: actions/checkout@v6
               with:
