@@ -115,6 +115,14 @@ There are classical examples, however we need to find a solution to describe any
 - Convolution
 
 
+### Explorations: Observations should be also available in Explorations
+
+So I want to setup:
+- Observation (let's say just mean)
+- Exploration axis (parameter sweep)
+- Plot Observation over a
+
+
 ## Documentation
 
 - [ ] Always describe both, 1) Python API for model specification, 2) Pure Yaml
@@ -127,3 +135,9 @@ There are classical examples, however we need to find a solution to describe any
 - [ ] Change import of metadata-classes, so we can import all from tvbo.classes or tvbo.schema.
     > Having a common import structure for classes with extra functionality (inherited from LinkML) and pure LinkML export would be nice, so it's not confusing from where to import certain classes.
 
+
+## Linkml Yaml shorthands
+- [ ] Investigate shorthands for specs.
+    > - It is a little cumbersome to specify equations always with `rhs` (equation={'rhs':'x+y'}), since we most of the time only need to specify `rhs` attribute. However it is relevant to have a proper `Equation` class. We need different equation types (differential, etc.), for StateVariable (ODE, PDE, ...), DerivedVariable (just algebraic), etc.
+    > - So shortcutting to `equation='x+y'`, which resolves into `equation={'rhs':'x+y'}` would be really useful. But it needs to be linkml-native. No monkey-patching or hacks.
+    > - It would be great that we can set for each class, that has equation as property, so we can define axioms, which equation-type they expect. We need to find out, if this is possible.
