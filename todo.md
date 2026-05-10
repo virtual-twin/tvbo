@@ -90,3 +90,26 @@ pytest tests/test_database_validation.py -q
 
 - What is the current status of Network.nodes and where are the parameters to be expected?
   - Node.dynamics.parameters or Node.parameters?
+
+
+## Improve Observations
+
+- If we change to the task-based approach (SED-ML interoperability), we might also define the Observation-Pipeline as DAG of Tasks. By that, it gets more aligned with the other Specs (e.g. Pipeline).
+    - A tasks requires specification of input, function, output (like FunctionCall).
+
+- Is DerivedObservation as concept really sound? Actually, it would be more minimal to use single Observation class, but to clarify what is the output dimensionality.
+  - Is it still time-series or has it changed dimnensionality, i.e. was as a dimensionality reduction on time-dimension applied
+
+So we need to find a generalizable way to describe these Observations as pipeline of tasks, what needs to be done to derive a certain observation from the raw timeseries.
+- Is additional data needed (external observation)?
+- What dimension is looked at?
+- What data is selected?
+
+Examples:
+There are classical examples, however we need to find a solution to describe any potential Observation
+
+- Mean timeseries
+- Frequency Spectrum / Single Band-Power
+- Correlation (FC, FCD)
+- Projection (Matrix-Multiplication)
+- Convolution
