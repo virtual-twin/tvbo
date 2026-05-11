@@ -1579,6 +1579,8 @@ class Network(tvbo_datamodel.Network):
         """Compute weights matrix from edges.
 
         Looks for 'weight' parameter in edge.parameters.
+        Matrices are target-by-source: an edge source -> target is stored at
+        [target, source], matching the coupling convention used by backends.
         Undirected edges (directed=False) are mirrored to produce symmetric matrix.
         Returns None if no edges are defined.
         """
@@ -1594,10 +1596,10 @@ class Network(tvbo_datamodel.Network):
                 w = self._get_edge_param(edge, "weight")
                 if w is None:
                     w = 1.0  # edge exists → default unit weight
-                W[i, j] = w
+                W[j, i] = w
                 # Mirror for undirected edges (symmetric)
                 if not edge.directed:
-                    W[j, i] = w
+                    W[i, j] = w
         return W
 
     def _get_node_position(self, node_id: int) -> Optional[Tuple[float, float, float]]:
@@ -1629,7 +1631,9 @@ class Network(tvbo_datamodel.Network):
     def _lengths_from_edges(self) -> Optional[np.ndarray]:
         """Compute lengths/distances matrix from edges.
 
-        Looks for 'distance' parameter in edge.parameters.
+        Looks for 'length' or 'distance' parameter in edge.parameters.
+        Matrices are target-by-source: an edge source -> target is stored at
+        [target, source], matching the coupling convention used by backends.
         If no distance is specified but nodes have positions, computes
         Euclidean distance from node coordinates (in distance_unit).
         Undirected edges (directed=False) are mirrored to produce symmetric matrix.
@@ -1644,16 +1648,18 @@ class Network(tvbo_datamodel.Network):
             if i is None or j is None:
                 continue
             if 0 <= i < n and 0 <= j < n:
-                d = self._get_edge_param(edge, "distance")
+                d = self._get_edge_param(edge, "length")
+                if d is None:
+                    d = self._get_edge_param(edge, "distance")
                 # If no explicit distance, compute from node positions
                 if d is None or d == 0:
                     d = self._compute_euclidean_distance(i, j)
                 if d is None:
                     d = 0.0
-                L[i, j] = d
+                L[j, i] = d
                 # Mirror for undirected edges (symmetric)
                 if not edge.directed:
-                    L[j, i] = d
+                    L[i, j] = d
         return L
 
     def _delays_from_edges(self) -> Optional[np.ndarray]:
@@ -1674,10 +1680,10 @@ class Network(tvbo_datamodel.Network):
                 continue
             if 0 <= i < n and 0 <= j < n:
                 delay = self._get_edge_param(edge, "delay")
-                D[i, j] = delay
+                D[j, i] = delay
                 # Mirror for undirected edges (symmetric)
                 if not edge.directed:
-                    D[j, i] = delay
+                    D[i, j] = delay
                 if delay > 0:
                     has_delays = True
         return D if has_delays else None
@@ -2479,14 +2485,17 @@ class Network(tvbo_datamodel.Network):
 
         n = self.number_of_nodes or 1
         delays = np.full((n, n), np.nan)
+        has_delays = False
         for edge in edges_with_endpoints:
-            delay_val = 0.0
             if hasattr(edge, "parameters") and edge.parameters:
                 delay_param = edge.parameters.get("delay")
                 if delay_param and hasattr(delay_param, "value"):
                     delay_val = float(delay_param.value)
-            delays[edge.source, edge.target] = delay_val
-        return delays
+                    delays[edge.target, edge.source] = delay_val
+                    has_delays = has_delays or delay_val > 0
+                    if not edge.directed:
+                        delays[edge.source, edge.target] = delay_val
+        return delays if has_delays else None
 
     def _unit_conversion_factor(self, output_unit: str) -> float:
         """Compute multiplicative factor to convert native delay units to *output_unit*."""

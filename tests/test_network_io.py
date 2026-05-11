@@ -91,6 +91,62 @@ class TestMatrixRoundTrip:
 
 
 class TestNetworkIO:
+    def test_edge_length_delays_follow_conduction_speed(self):
+        from tvbo import Network
+
+        net = Network.from_string(
+            """
+number_of_nodes: 2
+nodes:
+  - {id: 0, label: R0}
+  - {id: 1, label: R1}
+edges:
+  - source: 0
+    target: 1
+    directed: true
+    parameters:
+      weight: {value: 1.0}
+      length: {value: 30.0, unit: mm}
+"""
+        )
+
+        net.parameters["conduction_speed"].value = 3.0
+        assert net.weights_matrix[1, 0] == 1.0
+        assert net.weights_matrix[0, 1] == 0.0
+        assert net.lengths_matrix[1, 0] == 30.0
+        assert net.lengths_matrix[0, 1] == 0.0
+        assert net.calculate_delays()[1, 0] == 10.0
+        assert net.calculate_delays()[0, 1] == 0.0
+
+        net.parameters["conduction_speed"].value = 0.003
+        assert net.calculate_delays()[1, 0] == 10000.0
+
+    def test_edge_delay_parameters_bypass_conduction_speed(self):
+        from tvbo import Network
+
+        net = Network.from_string(
+            """
+number_of_nodes: 2
+nodes:
+  - {id: 0, label: R0}
+  - {id: 1, label: R1}
+edges:
+  - source: 0
+    target: 1
+    directed: true
+    parameters:
+      weight: {value: 1.0}
+      delay: {value: 30.0, unit: ms}
+"""
+        )
+
+        net.parameters["conduction_speed"].value = 3.0
+        assert net.calculate_delays()[1, 0] == 30.0
+        assert np.isnan(net.calculate_delays()[0, 1])
+
+        net.parameters["conduction_speed"].value = 0.003
+        assert net.calculate_delays()[1, 0] == 30.0
+
     def test_load_new_format_roundtrip(self):
         """Create a new-format sidecar+HDF5, then load it back."""
         from tvbo import Network

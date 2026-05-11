@@ -1248,17 +1248,13 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             else:
                 conn = Network(network)
 
-            # Try to get lengths matrix
+            # Try to get delays from explicit edge delays or length / speed.
             try:
-                L = conn.lengths_matrix
+                delays = conn.calculate_delays()
             except Exception:
-                L = None
+                delays = None
 
-            # Disable delays if lengths are None or all zeros
-            params = conn.parameters or {}
-            cs_param = params["conduction_speed"] if "conduction_speed" in params else None
-            cs_val = float(cs_param.value) if cs_param and cs_param.value else 1.0
-            if L is None or np.allclose(L, 0) or np.allclose(L.max() / cs_val, 0):
+            if delays is None or np.allclose(np.nan_to_num(delays, nan=0.0), 0):
                 if getattr(self, "integration", None) is not None:
                     self.integration.delayed = False
                 if getattr(self, "coupling", None) is not None:
@@ -1471,6 +1467,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             # Build node labels from network.nodes (used as xarray 'node' coord)
             node_labels = [n.label for n in self.network.nodes] if self.network.nodes else None
 
+            delay_matrix = self.network.calculate_delays() if getattr(self.coupling, "delayed", False) else None
+
             # Run the experiment with optional per-step timing
             if benchmark:
                 # Run with detailed timing
@@ -1478,6 +1476,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 results = ns.run_experiment(
                     weights=self.network.weights,
                     distances=self.network.distances,
+                    delays=delay_matrix,
                     region_labels=node_labels,
                     mode=mode,
                     **kwargs,
@@ -1493,6 +1492,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 raw_results = ns.run_experiment(
                     weights=self.network.weights,
                     distances=self.network.distances,
+                    delays=delay_matrix,
                     region_labels=node_labels,
                     mode=mode,
                     **kwargs,

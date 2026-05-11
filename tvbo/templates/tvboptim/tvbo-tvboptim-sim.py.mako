@@ -256,13 +256,16 @@ NOISE_SIGMA = ${noise_sigma[0]}
 # Main Entry Point
 # =============================================================================
 
-def run_experiment(weights, distances=None, region_labels=None):
+def run_experiment(weights, distances=None, delays=None, region_labels=None):
     """Run the complete ${dynamics_class} simulation workflow."""
     global model
 
     weights = jnp.array(weights)
     % if has_delay:
-    delays = jnp.array(distances) / CONDUCTION_SPEED if (distances is not None and CONDUCTION_SPEED > 0) else jnp.zeros_like(weights)
+    if delays is None:
+        delays = jnp.array(distances) / CONDUCTION_SPEED if (distances is not None and CONDUCTION_SPEED > 0) else jnp.zeros_like(weights)
+    else:
+        delays = jnp.array(delays)
     network = create_network(weights, delays, region_labels=region_labels, noise_sigma=NOISE_SIGMA)
     % else:
     network = create_network(weights, region_labels=region_labels, noise_sigma=NOISE_SIGMA)
