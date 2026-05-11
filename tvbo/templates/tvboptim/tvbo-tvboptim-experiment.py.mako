@@ -1909,6 +1909,7 @@ ${const.all_constants(experiment)}
 def run_experiment(
     weights: jnp.ndarray,
     distances: jnp.ndarray = None,
+    delays: jnp.ndarray = None,
     region_labels: list = None,
     mode: str = "all",
     stage: str = None,
@@ -1924,7 +1925,10 @@ def run_experiment(
     print("=" * 60)
 
     % if has_delay:
-    delays = jnp.array(distances) / ${conduction_speed} if (distances is not None and ${conduction_speed} > 0) else jnp.zeros_like(weights)
+    if delays is None:
+        delays = jnp.array(distances) / ${conduction_speed} if (distances is not None and ${conduction_speed} > 0) else jnp.zeros_like(weights)
+    else:
+        delays = jnp.array(delays)
     network = create_network(weights, delays, region_labels=region_labels, noise_sigma=${noise_sigma_value})
     % else:
     network = create_network(weights, region_labels=region_labels, noise_sigma=${noise_sigma_value})
