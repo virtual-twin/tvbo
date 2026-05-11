@@ -164,3 +164,7 @@ But we want to be able to change the space of a specific axis. therefore we need
 - Allows SimulationEperiment with multiple backends per task
     - Running integration/exploration with tvboptim
     - Bifurcation analysis with julia
+
+
+## Bifurcation result needs to be also xarray structure!
+- selection of variables should be possible etc.
