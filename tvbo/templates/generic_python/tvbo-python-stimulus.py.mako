@@ -14,7 +14,7 @@ import numpy as np
 
 def ${stimulus.label }(t, ${', '.join([f"{p}={v}" for p,v in params.items()])}):
 
-    eq_t =  ${render_expression(eq, format='jax' if jax else 'python')}
+    eq_t =  ${render_expression(eq, format='jax' if jax else 'numpy')}
 
     return eq_t
 
