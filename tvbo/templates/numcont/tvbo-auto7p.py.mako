@@ -13,6 +13,12 @@ dv_names = list(model.derived_variables.keys()) if model.derived_variables else 
 dp_names = list(model.derived_parameters.keys()) if model.derived_parameters else []
 all_symbols = sv_names + param_names + ct_names + dv_names + dp_names
 
+# For single-node bifurcation analysis, all coupling inputs must be zeroed
+# out (they are otherwise undeclared Fortran identifiers). Use coupling_inputs
+# (canonical) and fall back to coupling_terms (deprecated) for old models.
+ci_names = list(model.coupling_inputs.keys()) if model.coupling_inputs else []
+coupling_zero = list({*ci_names, *ct_names})
+
 replace = {
     p.name: (p.name + 'low' if p.name[0].islower() and p.name in [n.name.lower() for n in params if n.name != p.name] else p.name)
     for p in params
@@ -49,13 +55,12 @@ SUBROUTINE FUNC(NDIM, U, ICP, PAR, IJAC, F, DFDU, DFDP)
 
 % if model.derived_variables:
     % for k,v in model.derived_variables.items():
-    ${k} = ${render_eq(v.equation, user_functions={f:f for f in model.functions.keys()}, format='fortran', replace=replace, parameters=all_symbols)}
+    ${k} = ${render_eq(v.equation, user_functions={f:f for f in model.functions.keys()}, format='fortran', replace=replace, parameters=all_symbols, remove=coupling_zero)}
     % endfor
 % endif
 
     % for i, sv in enumerate(model.state_variables.values()):
-    F(${i+1}) = ${render_eq(sv.equation, user_functions={f:f for f in model.functions.keys()}, format='fortran', replace=replace, parameters=all_symbols, remove=['local_coupling']+
-        [f.name for f in model.coupling_terms.values()])}
+    F(${i+1}) = ${render_eq(sv.equation, user_functions={f:f for f in model.functions.keys()}, format='fortran', replace=replace, parameters=all_symbols, remove=coupling_zero)}
     % endfor
 
 END SUBROUTINE FUNC
