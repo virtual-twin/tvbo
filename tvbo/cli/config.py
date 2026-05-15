@@ -17,11 +17,13 @@ def _config_path() -> Path:
 
 @app.command("path", help="Print the resolved path to the user config file.")
 def path() -> None:
+    """Print the resolved path to the user config file (`$XDG_CONFIG_HOME/tvbo/config.toml`)."""
     typer.echo(_config_path())
 
 
 @app.command("show", help="Print the contents of the user config file.")
 def show() -> None:
+    """Print the contents of the user config file, or a `# (no config)` notice if absent."""
     p = _config_path()
     if not p.exists():
         typer.echo(f"# (no config at {p})", err=True)

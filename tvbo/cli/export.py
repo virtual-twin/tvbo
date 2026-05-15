@@ -21,6 +21,12 @@ def export(
         help="Bundle binary network/data alongside the metadata file.",
     ),
 ) -> None:
+    """Render *spec* into *format* without executing it.
+
+    Resolves *spec* (file path, CURIE, or DB name) to a TVBO object and
+    writes the rendered output to *--output* or stdout. Use `tvbo formats`
+    to list available format keys.
+    """
     kind, obj = _common.resolve_spec(spec)
 
     fmt = _export.resolve(format)

@@ -151,22 +151,17 @@ Raises:
 
 Don't list `RuntimeError`, `AssertionError`, etc. unless they're a deliberate part of the contract. Internal failures are not callers' business.
 
-## 8. `Examples:` — runnable when possible
+## 8. `Examples:` — choose `python` vs `{python}` carefully
 
-Doctest-style `>>>` examples render nicely and double as smoke tests if anyone runs them.
+**Critical for TVBO:** the API site executes every ` ```{python}` block on render. A broken example *breaks the docs build*. There are three legal forms; pick whichever you can guarantee works:
 
-```python
-"""Summary.
+### Form A — illustrative code block (default)
 
-Examples:
-    >>> exp = SimulationExperiment.from_db("Schirner2023_MultiscaleBNM_DM")
-    >>> result = exp.run("jax", duration=1_000)
-    >>> result.integration.data.shape
-    (1000, 2, 68, 1)
-"""
-```
+Use a plain ` ```python ` fence. Quarto renders it as syntax-highlighted code without executing. Choose this when:
 
-For non-runnable examples (e.g. requires a GUI, a network, or large data), use a fenced code block instead:
+- The example references state defined in another method's docstring
+- It requires a GUI, network, large data, or interactive input
+- You're not 100% sure it runs cleanly in a fresh kernel
 
 ```python
 """Summary.
@@ -178,6 +173,48 @@ Examples:
     ```
 """
 ```
+
+### Form B — executable, self-contained
+
+Use ` ```{python} ` (with the curly braces) **only if the snippet can run end-to-end with no setup beyond `import`s on the first line**. Each docstring renders to its own page, and Quarto runs each `{python}` cell in a kernel shared across all cells *on that page*. Don't rely on state from another method's example.
+
+```python
+"""Summary.
+
+Examples:
+    ```{python}
+    from tvbo import Dynamics
+    dyn = Dynamics.from_db("Generic2dOscillator")
+    print(dyn.name)
+    ```
+"""
+```
+
+If the example needs a DB-resolved object, the import + construction must both be inside the cell.
+
+### Form C — doctest
+
+`>>>` lines render as illustrative code (not executed by Quarto). Useful if you also run `pytest --doctest-modules`:
+
+```python
+"""Summary.
+
+Examples:
+    >>> from tvbo import Dynamics
+    >>> Dynamics.from_db("Generic2dOscillator").name
+    'Generic2dOscillator'
+"""
+```
+
+### Audit
+
+To find broken executable examples before they break the doc build:
+
+```bash
+grep -rn '```{python}' tvbo/   # every executable block under the package
+```
+
+Each match should either (a) be self-contained with imports, or (b) be downgraded to plain ` ```python`. There is no third option — leaving a half-broken `{python}` block in a docstring *will* break `quarto render`.
 
 ## 9. Classes
 
