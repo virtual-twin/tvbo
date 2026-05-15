@@ -1149,6 +1149,8 @@ classes:
             - references
             - dataLocation
         slot_usage:
+            name:
+                ifabsent: "Dynamics"
             system_type:
                 ifabsent: "continuous"
         attributes:
@@ -2550,6 +2552,9 @@ classes:
             - iri
             - parameters
             - description
+        slot_usage:
+            name:
+                ifabsent: "Linear"
         attributes:
             # Standard coupling attributes
             coupling_function:
