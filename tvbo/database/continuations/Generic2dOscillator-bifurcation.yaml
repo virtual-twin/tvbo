@@ -4,7 +4,9 @@ description: >-
   Continue the equilibrium branch of the Generic2dOscillator as parameter
   a is varied. Detect Hopf bifurcations and continue periodic orbits from
   all Hopf points.
-dynamics: Generic2dOscillator
+dynamics:
+  name: Generic2dOscillator
+  iri: tvbo:Generic2dOscillator
 
 free_parameters:
   - name: a
