@@ -86,10 +86,9 @@ jobs:
                       pyproject.toml
                       .github/workflows/ci.yml
             - name: Install validation deps
-              # linkml/linkml-runtime pinned to v1.11.0-rc1 until 1.11 is on PyPI;
-              # required for SimpleDict-shorthand fixes in jsonschema generator.
               run: |
                   uv pip install \
+                      "linkml>=1.11.0" "linkml-runtime>=1.11.0" \
                       pyyaml pytest pytest-xdist
             - name: Validate every database YAML against the LinkML schema
               run: pytest -v --tb=short tests/test_database_validation.py
@@ -115,6 +114,11 @@ jobs:
                   cache-dependency-glob: |
                       pyproject.toml
                       .github/workflows/ci.yml
+            - name: Install schema-gen deps
+              run: |
+                  uv pip install \
+                      "linkml>=1.11.0" "linkml-runtime>=1.11.0" \
+                      pyyaml rdflib
             - name: Generate OWL
               run: make gen-owl
             - name: Generate SHACL
@@ -152,6 +156,11 @@ jobs:
                   cache-dependency-glob: |
                       pyproject.toml
                       .github/workflows/ci.yml
+            - name: Install schema-gen deps
+              run: |
+                  uv pip install \
+                      "linkml>=1.11.0" "linkml-runtime>=1.11.0" \
+                      pyyaml rdflib
             - name: Generate OWL
               run: make gen-owl
             - name: Set up Java (for ROBOT)
