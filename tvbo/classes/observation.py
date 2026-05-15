@@ -147,6 +147,18 @@ def instance2metadata(instance, **kwargs):
 
 
 class Function(tvbo_datamodel.Function):
+    """A named symbolic transformation applied to simulation outputs.
+
+    `Function` wraps an `equation` (RHS string parseable by SymPy) plus
+    parameters and metadata. Used as the building block of
+    [`ObservationModel`](#tvbo.classes.observation.ObservationModel)s
+    (e.g. BOLD HRF, sigmoid firing-rate, band-pass filter) and as derived
+    quantities (e.g. coherence, PSD, FC).
+
+    Construct from a callable, from the curated ontology by name, or by
+    passing `equation=`, `parameters=`, etc. inline.
+    """
+
     def __init__(self, instance=None, **kwargs):
         """Initialize Function with datamodel fields only.
 
@@ -434,6 +446,15 @@ class Function(tvbo_datamodel.Function):
 
 
 class ObservationModel:
+    """A directed graph of `Function`s transforming simulation output to observables.
+
+    `ObservationModel` chains symbolic and numerical operations (e.g. BOLD
+    HRF → low-pass filter → downsample → FC matrix) on a per-region time
+    series. Nodes are `Function`s; edges describe data flow from `Input` to
+    `Output`. Use `add_node(name, function, ...)`, `add_edge(src, dst)` and
+    `run()` to evaluate the pipeline.
+    """
+
     # TODO: Checkout dask for parallel execution
 
     def __init__(self, data=None):
