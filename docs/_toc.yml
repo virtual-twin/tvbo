@@ -344,21 +344,21 @@ website:
                 contents:
                   - section: "Schemas"
                     contents:
-                      - text: "common"
+                      - text: "Common"
                         href: datamodel/schemas/common.qmd
                       - text: "SANDS"
                         href: datamodel/schemas/SANDS.qmd
-                      - text: "software"
+                      - text: "Software"
                         href: datamodel/schemas/software.qmd
-                      - text: "tvb-datamodel"
+                      - text: "TVB Datamodel"
                         href: datamodel/schemas/tvb-datamodel.qmd
-                      - text: "tvb_dbs"
+                      - text: "TVB Databases"
                         href: datamodel/schemas/tvb_dbs.qmd
-                      - text: "tvbo_study"
+                      - text: "TVB-O Study"
                         href: datamodel/schemas/tvbo_study.qmd
-                      - text: "tvbo_units"
+                      - text: "TVB-O Units"
                         href: datamodel/schemas/tvbo_units.qmd
-                      - text: "types"
+                      - text: "Types"
                         href: datamodel/schemas/types.qmd
                   - section: "Classes"
                     contents:
@@ -370,7 +370,7 @@ website:
                         href: datamodel/classes/AlgorithmInclude.qmd
                       - text: "Argument"
                         href: datamodel/classes/Argument.qmd
-                      - text: "Bids Entities"
+                      - text: "BIDS Entities"
                         href: datamodel/classes/BidsEntities.qmd
                       - text: "Boundary Condition"
                         href: datamodel/classes/BoundaryCondition.qmd
@@ -1526,31 +1526,31 @@ website:
                     contents:
                       - text: "Base"
                         href: api/adapters/base.qmd
-                      - text: "Bids"
+                      - text: "BIDS"
                         href: api/adapters/bids.qmd
-                      - text: "Bifurcationkit"
+                      - text: "BifurcationKit"
                         href: api/adapters/bifurcationkit.qmd
-                      - text: "Diffeq"
+                      - text: "DiffEq"
                         href: api/adapters/diffeq.qmd
                       - text: "Julia"
                         href: api/adapters/julia.qmd
-                      - text: "Modelingtoolkit"
+                      - text: "ModelingToolkit"
                         href: api/adapters/modelingtoolkit.qmd
-                      - text: "Networkdynamics"
+                      - text: "NetworkDynamics"
                         href: api/adapters/networkdynamics.qmd
-                      - text: "Neuroml"
+                      - text: "NeuroML"
                         href: api/adapters/neuroml.qmd
-                      - text: "Numcont"
+                      - text: "NumCont"
                         href: api/adapters/numcont.qmd
-                      - text: "Openminds"
+                      - text: "openMINDS"
                         href: api/adapters/openminds.qmd
-                      - text: "Pyrates"
+                      - text: "PyRates"
                         href: api/adapters/pyrates.qmd
-                      - text: "Pyrates Bifurcation"
+                      - text: "PyRates (Bifurcation)"
                         href: api/adapters/pyrates_bifurcation.qmd
-                      - text: "Tvb"
+                      - text: "TVB"
                         href: api/adapters/tvb.qmd
-                      - text: "Tvboptim"
+                      - text: "tvboptim"
                         href: api/adapters/tvboptim.qmd
                   - section: "Analysis"
                     href: api/analysis/index.qmd
@@ -1612,7 +1612,7 @@ website:
                         href: api/cli/export.qmd
                       - text: "Formats"
                         href: api/cli/formats.qmd
-                      - text: "Import "
+                      - text: "Import"
                         href: api/cli/import_.qmd
                       - text: "Info"
                         href: api/cli/info.qmd
@@ -1633,13 +1633,13 @@ website:
                     contents:
                       - text: "Code"
                         href: api/codegen/code.qmd
-                      - text: "Cuda"
+                      - text: "CUDA"
                         href: api/codegen/cuda.qmd
                       - text: "Functions"
                         href: api/codegen/functions.qmd
-                      - text: "Lems"
+                      - text: "LEMS"
                         href: api/codegen/lems.qmd
-                      - text: "Pyrates"
+                      - text: "PyRates"
                         href: api/codegen/pyrates.qmd
                       - text: "Templater"
                         href: api/codegen/templater.qmd
@@ -1682,11 +1682,11 @@ website:
                         href: api/ontology/config.qmd
                       - text: "Constants"
                         href: api/ontology/constants.qmd
-                      - text: "Db"
+                      - text: "DB"
                         href: api/ontology/db.qmd
                       - text: "Graph"
                         href: api/ontology/graph.qmd
-                      - text: "Owl"
+                      - text: "OWL"
                         href: api/ontology/owl.qmd
                       - text: "Query"
                         href: api/ontology/query.qmd
@@ -1698,7 +1698,7 @@ website:
                       - section: "Semantic Web"
                         href: api/ontology/semanticweb/index.qmd
                         contents:
-                          - text: "Tvbgo"
+                          - text: "TVB-GO"
                             href: api/ontology/semanticweb/tvbgo.qmd
                   - section: "Parse"
                     href: api/parse/index.qmd
