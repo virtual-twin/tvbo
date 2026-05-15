@@ -42,6 +42,11 @@ available_neural_mass_models = set(ontology.get_models().values())
 
 
 def clean_code(code):
+    """Replace Unicode infinity (`∞`) with the Python literal `inf`.
+
+    Generated model code occasionally carries the ∞ glyph from upstream
+    ontology labels; SymPy and most backends can't parse it.
+    """
     cleaned_code = re.sub(r"∞", "inf", code)
     return cleaned_code
 
@@ -129,6 +134,16 @@ def order_by_equations(derived_variables, dependent_equations):
 
 
 def class2metadata(ontoclass, metadata):
+    """Populate a `Dynamics` metadata object from an owlready2 ontology class.
+
+    Fills in description, state variables (with equations, boundaries, and
+    coupling-variable flags), derived variables, and parameters by querying
+    the TVB-O ontology for the corresponding semantic annotations.
+
+    Args:
+        ontoclass: The owlready2 class to read from.
+        metadata: The `Dynamics` instance to populate in place.
+    """
     if not metadata.description:
         metadata.description = ontology.get_def(ontoclass, mode="long")
     dependent_equations = _equation_mod.sort_equations_by_dependencies(
@@ -397,7 +412,12 @@ def update_parameters(metadata, ontoclass, verbose=0, only_used=True, **kwargs):
 
 
 def update_equations(model):
+    """Normalize equation symbols on *model* (in place).
 
+    Builds a substitution map that rewrites raw RHS strings into canonical
+    SymPy form: `*_dot` / `dot*` names become time derivatives, derived
+    variables are inlined, and Heaviside / acronym placeholders are resolved.
+    """
     substitutions = {}
 
     t = symbols("t")
@@ -522,6 +542,17 @@ def update_equations(model):
 
 
 def sort_equations(model, variable_type):
+    """Reorder `model[variable_type]` by topological dependency order, in place.
+
+    Resolves the model's equation dependency DAG and reorders the variables
+    so each equation appears after the variables it references — required by
+    backends that emit straight-line code (JAX, NumPy printers).
+
+    Args:
+        model: The dynamics model whose equations should be sorted.
+        variable_type: Attribute name — typically `"state_variables"`,
+            `"derived_variables"`, or `"functions"`.
+    """
     # Skip sorting for list format (e.g., output as list of names)
     if isinstance(model[variable_type], list):
         return
@@ -618,6 +649,17 @@ def _validate_dynamics_kwargs(kwargs: dict) -> None:
 
 
 class DynamicalSystem(tvbo_datamodel.Dynamics):
+    """Enhanced base class for `Dynamics` adding Python-side behaviour.
+
+    Wraps the generated LinkML `Dynamics` datamodel with the methods that
+    make a model usable: ontology resolution (`use_ontology=True`), symbolic
+    representation via SymPy, equation reordering, backend code generation,
+    YAML / JSON / Pydantic round-tripping, and matplotlib plotting hooks.
+
+    Most users should construct via [`Dynamics`](#tvbo.classes.dynamics.Dynamics)
+    or `Dynamics.from_db(name)` — this class is the implementation base.
+    """
+
     def __init__(
         self,
         name="Dynamics",
@@ -625,6 +667,21 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         use_ontology: bool = False,
         **kwargs,
     ):
+        iri = kwargs.get("iri")
+        if iri and (name is None or name == "Dynamics") and "parameters" not in kwargs:
+            local = iri.split(":", 1)[-1] if ":" in iri else iri
+            try:
+                from tvbo.data.registry import resolve
+                yaml_path = resolve("Dynamics", local)
+                loaded = yaml_loader.load_as_dict(str(yaml_path))
+                _resolve_dynamics_aliases(loaded)
+                for key, value in loaded.items():
+                    kwargs.setdefault(key, value)
+                name = kwargs.pop("name", local)
+                _skip_ontology = True
+            except (FileNotFoundError, RuntimeError):
+                pass
+
         if name is not None:
             kwargs["name"] = str(name)
 
@@ -2663,11 +2720,50 @@ from tvb.basic.neotraits.api import NArray, List, Range, Final""")
 
 
 class Model(DynamicalSystem):
+    """Deprecated alias for [`Dynamics`](#tvbo.classes.dynamics.Dynamics).
+
+    Kept for backwards compatibility — new code should use `Dynamics`.
+    """
+
     def __init__(self, name, ontology=None, metadata=None, **kwargs):
         super().__init__(name=name, **kwargs)
 
 
 class Dynamics(DynamicalSystem):
-    def __init__(self, name, **kwargs):
+    """A named local neural-mass / population model: parameters, state variables, equations.
+
+    The smallest runnable unit in TVBO. A `Dynamics` binds a name to a set
+    of parameters and an ODE system, and is round-trippable through YAML,
+    SymPy, and any of the supported backends (JAX, TVB, PyRates, Julia, …).
+
+    Construct one inline, from the curated TVB-O database, or by IRI:
+
+    Examples:
+        ```python
+        from tvbo import Dynamics
+
+        # Inline
+        lorenz = Dynamics(
+            parameters={"sigma": {"value": 10.0}, "rho": {"value": 28.0},
+                        "beta": {"value": 8/3}},
+            state_variables={
+                "X": {"equation": {"rhs": "sigma * (Y - X)"}},
+                "Y": {"equation": {"rhs": "X * (rho - Z) - Y"}},
+                "Z": {"equation": {"rhs": "X * Y - beta * Z"}},
+            },
+        )
+
+        # From the curated database
+        rww = Dynamics.from_db("ReducedWongWangExcInh")
+
+        # By IRI (resolved at construction time)
+        rww = Dynamics(iri="tvbo:ReducedWongWangExcInh")
+        ```
+
+    See the [writing-models](../../../skills/writing-models/SKILL.md) skill
+    for the YAML form and equation conventions.
+    """
+
+    def __init__(self, name=None, **kwargs):
         super().__init__(name=name, **kwargs)
 

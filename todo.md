@@ -100,3 +100,32 @@ Neurodata without Borders (NDWB)
 
 ## Bifurcation result needs to be also xarray structure!
 - selection of variables should be possible etc.
+
+
+## Harmonize IRI resolution and DB metadata fetching across all classes
+- Currently each runtime class handles `iri`-based sourcing differently:
+    - `Coupling.__init__` auto-resolves via `_populate_from_ontology` after super().__init__
+    - `DynamicalSystem.__init__` resolves via the registry before super().__init__ (loads full YAML and merges)
+    - `Network` derives `name` from `iri` for `atlas` / `tractogram` but does no DB fetch
+    - `SimulationExperiment.__init__` does its own backfill for nested dicts (parcellation/tractogram/atlas)
+- Each class also has its own `from_db` / `from_file` / `from_ontology` factories with subtly different behavior.
+- Needed: one canonical IRI resolution layer that any schema class can opt into:
+    1. Single `_resolve_iri(iri, category) -> dict` helper (registry-first, ontology fallback).
+    2. Consistent rule for "iri given, name missing/default" → load and merge (user kwargs win).
+    3. Apply uniformly to Dynamics, Coupling, Tractogram, Parcellation/BrainAtlas, and any future class with an `iri` slot.
+    4. Drop duplicate ad-hoc backfill code in `SimulationExperiment.__init__` and `Network.__init__` once the per-class path is uniform.
+
+
+## Drop `use_ontology` / `_skip_ontology` flags once IRI handling is canonical
+- Today there are ~37 occurrences across `tvbo/` of `use_ontology`, `_skip_ontology`, `_populate_from_ontology*` runtime flags that gate ontology backfill.
+- Once IRI is the canonical way to declare a sourced component, the flag becomes redundant: **iri present → use ontology/DB data; iri absent → fully self-contained spec.**
+- Override semantics should follow YAML/dict merge: ontology defaults are the base, user-provided fields override key by key. Example target:
+    ```python
+    Dynamics(iri='tvbo:ReducedWongWang', parameters={'a': {'value': 2}})
+    # → loads all parameters/state_variables from ontology, then overrides only a.value
+    ```
+- Cleanup steps:
+    1. Remove `use_ontology` / `_skip_ontology` parameters from `DynamicalSystem.__init__`, `Dynamics.from_*`, `Coupling.*` and any other class constructors.
+    2. Remove the explicit `_populate_from_ontology_by_name()` / `_populate_from_ontology()` call sites — they become unconditional inside the single `_resolve_iri` step from the previous TODO.
+    3. Ensure parameter/state-variable merging is non-destructive: user dict values overwrite at the leaf level (e.g. `parameters.a.value`), not the whole `parameters` slot.
+    4. Update tests that pass `use_ontology=True/False` explicitly.
