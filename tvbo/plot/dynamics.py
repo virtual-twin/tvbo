@@ -155,6 +155,7 @@ def plot_dynamics_layout(
     fig=None,
     axes=None,
 ):
+    """Backwards-compatible shim — delegates to [`tvbo.plot.dynamics_layout.plot_dynamics_layout`](./dynamics_layout.qmd#tvbo.plot.dynamics_layout.plot_dynamics_layout)."""
     # Compatibility shim: moved to tvbo.plot.dynamics_layout
     from tvbo.plot.dynamics_layout import plot_dynamics_layout as _plot_dynamics_layout
 
@@ -179,6 +180,7 @@ def plot_experiment_layout(
     fig=None,
     axes=None,
 ):
+    """Backwards-compatible shim — delegates to [`tvbo.plot.experiment_layout.plot_experiment_layout`](./experiment_layout.qmd#tvbo.plot.experiment_layout.plot_experiment_layout)."""
     # Compatibility shim: moved to tvbo.plot.experiment_layout
     from tvbo.plot.experiment_layout import plot_experiment_layout as _plot_experiment_layout
 
