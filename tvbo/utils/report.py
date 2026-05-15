@@ -19,6 +19,8 @@ Functions:
 """
 
 import operator
+from typing import Any
+
 import pandas as pd
 from tvbo.data import db
 
@@ -132,7 +134,7 @@ def save_latex(conf, fpath):
 ##############
 
 
-def render_citation(citation, style="apa"):
+def render_citation(citation: Any, style: str = "apa") -> str:
     """Render an ontology citation instance as formatted text.
 
     Args:

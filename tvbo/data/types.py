@@ -2541,7 +2541,7 @@ class TimeSeries:
             labels_dimensions["Region"].remove(region)
         return self.duplicate(data=data, labels_dimensions=labels_dimensions)
 
-    def calculate_frequency(self, state_variable=None, region=0, mode=0):
+    def calculate_frequency(self, state_variable=None, region=0, mode=0) -> float:
         """
         Calculate the dominant frequency of the time series data using FFT.
 
