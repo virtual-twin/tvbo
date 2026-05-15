@@ -17,7 +17,9 @@ continuations:
   eq_in_p:
     name: eq_in_p
     label: "Equilibrium branch in p"
-    dynamics: JansenRit
+    dynamics:
+      name: JansenRit
+      iri: tvbo:JansenRit
     free_parameters:
       - name: p
         domain:
