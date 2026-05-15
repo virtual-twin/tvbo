@@ -32,9 +32,6 @@ jobs:
       - name: Install project (minimal) + test deps
         # linkml/linkml-runtime pinned to v1.11.0-rc1 until 1.11 is on PyPI.
         run: |
-            uv pip install \
-                "linkml @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml" \
-                "linkml-runtime @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml_runtime"
             uv pip install . pytest pytest-cov pytest-xdist
 
       - name: Core tests (minimal install)

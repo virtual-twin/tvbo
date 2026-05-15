@@ -17,13 +17,8 @@ dependencies = [
     "numpy>=2.0.0",
     "pandas>=2.2.3",
     "xarray>=2025.0",
-
-    # Data models & schema (pydantic, pyyaml, rdflib are transitive via linkml-runtime)
-    # NOTE: requires linkml/linkml-runtime >= 1.11 for SimpleDict-shorthand fixes
-    # in _normalize_inlined and the jsonschema generator. Until 1.11.0 is on PyPI
-    # we install from the v1.11.0-rc1 tag via [tool.uv.sources] below.
-    "linkml-runtime>=1.8.5",
-    "linkml>=1.8.5",
+    "linkml-runtime>=1.11.0",
+    "linkml>=1.11.0",
     "h5py>=3.12.1",
 
     # Ontologies
@@ -129,13 +124,6 @@ bug-tracker = "https://github.com/virtual-twin/tvbo/issues"
 
 [tool.hatch.metadata]
 allow-direct-references = true
-
-# uv source overrides: install linkml + linkml-runtime from the v1.11.0-rc1 tag
-# until 1.11.0 is published to PyPI. Required for SimpleDict shorthand fixes
-# in _normalize_inlined and the jsonschema generator.
-[tool.uv.sources]
-linkml = { git = "https://github.com/linkml/linkml.git", tag = "v1.11.0-rc1", subdirectory = "packages/linkml" }
-linkml-runtime = { git = "https://github.com/linkml/linkml.git", tag = "v1.11.0-rc1", subdirectory = "packages/linkml_runtime" }
 
 [tool.hatch.build.targets.wheel]
 packages = ["tvbo"]

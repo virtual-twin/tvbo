@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-04-30T13:13:40
+# Generation date: 2026-05-15T09:56:49
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -59,7 +59,7 @@ from rdflib import (
 from linkml_runtime.linkml_model.types import Boolean, Date, Datetime, Float, Integer, String, Uri, Uriorcurie
 from linkml_runtime.utils.metamodelcore import Bool, URI, URIorCURIE, XSDDate, XSDDateTime
 
-metamodel_version = "1.7.0"
+metamodel_version = "1.11.0"
 version = "0.4.0"
 
 # Namespaces
@@ -117,6 +117,10 @@ class ObservationName(extended_str):
     pass
 
 
+class DerivedObservationName(ObservationName):
+    pass
+
+
 class DynamicsName(extended_str):
     pass
 
@@ -145,7 +149,19 @@ class FunctionName(extended_str):
     pass
 
 
+class LossFunctionName(FunctionName):
+    pass
+
+
 class CallableName(extended_str):
+    pass
+
+
+class ClassReferenceName(CallableName):
+    pass
+
+
+class DerivedParameterName(ParameterName):
     pass
 
 
@@ -158,6 +174,10 @@ class DataSourceName(extended_str):
 
 
 class OptimizationStageName(extended_str):
+    pass
+
+
+class OptimizationName(OptimizationStageName):
     pass
 
 
@@ -189,6 +209,14 @@ class CouplingName(extended_str):
     pass
 
 
+class SimulationExperimentId(extended_int):
+    pass
+
+
+class FieldStateVariableName(StateVariableName):
+    pass
+
+
 class BrainAtlasName(extended_str):
     pass
 
@@ -213,6 +241,14 @@ class DatasetDatasetId(extended_str):
     pass
 
 
+class DBSDatasetDatasetId(DatasetDatasetId):
+    pass
+
+
+class DBSSubjectSubjectId(SubjectSubjectId):
+    pass
+
+
 class DBSProtocolName(extended_str):
     pass
 
@@ -221,51 +257,15 @@ class SoftwarePackageName(extended_str):
     pass
 
 
+class SimulationToolName(SoftwarePackageName):
+    pass
+
+
 class SoftwareRequirementName(extended_str):
     pass
 
 
 class SoftwareEnvironmentName(extended_str):
-    pass
-
-
-class SimulationExperimentId(extended_int):
-    pass
-
-
-class DerivedObservationName(ObservationName):
-    pass
-
-
-class FieldStateVariableName(StateVariableName):
-    pass
-
-
-class DerivedParameterName(ParameterName):
-    pass
-
-
-class LossFunctionName(FunctionName):
-    pass
-
-
-class ClassReferenceName(CallableName):
-    pass
-
-
-class OptimizationName(OptimizationStageName):
-    pass
-
-
-class DBSSubjectSubjectId(SubjectSubjectId):
-    pass
-
-
-class DBSDatasetDatasetId(DatasetDatasetId):
-    pass
-
-
-class SimulationToolName(SoftwarePackageName):
     pass
 
 

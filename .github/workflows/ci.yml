@@ -90,8 +90,6 @@ jobs:
               # required for SimpleDict-shorthand fixes in jsonschema generator.
               run: |
                   uv pip install \
-                      "linkml @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml" \
-                      "linkml-runtime @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml_runtime" \
                       pyyaml pytest pytest-xdist
             - name: Validate every database YAML against the LinkML schema
               run: pytest -v --tb=short tests/test_database_validation.py
@@ -117,12 +115,6 @@ jobs:
                   cache-dependency-glob: |
                       pyproject.toml
                       .github/workflows/ci.yml
-            - name: Install LinkML
-              # Pinned to v1.11.0-rc1 (see pyproject.toml [tool.uv.sources]).
-              run: |
-                  uv pip install \
-                      "linkml @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml" \
-                      "linkml-runtime @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml_runtime"
             - name: Generate OWL
               run: make gen-owl
             - name: Generate SHACL
@@ -160,12 +152,6 @@ jobs:
                   cache-dependency-glob: |
                       pyproject.toml
                       .github/workflows/ci.yml
-            - name: Install LinkML
-              # Pinned to v1.11.0-rc1 (see pyproject.toml [tool.uv.sources]).
-              run: |
-                  uv pip install \
-                      "linkml @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml" \
-                      "linkml-runtime @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml_runtime"
             - name: Generate OWL
               run: make gen-owl
             - name: Set up Java (for ROBOT)
@@ -243,9 +229,6 @@ jobs:
               if: steps.venv-cache.outputs.cache-hit != 'true'
               # linkml/linkml-runtime pinned to v1.11.0-rc1; remove once on PyPI.
               run: |
-                  uv pip install \
-                      "linkml @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml" \
-                      "linkml-runtime @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml_runtime"
                   uv pip install -e . pytest pytest-xdist pytest-timeout
             - name: Refresh editable link (cache hit)
               if: steps.venv-cache.outputs.cache-hit == 'true'
@@ -321,9 +304,6 @@ jobs:
               if: steps.venv-cache.outputs.cache-hit != 'true'
               # linkml/linkml-runtime pinned to v1.11.0-rc1; remove once on PyPI.
               run: |
-                  uv pip install \
-                      "linkml @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml" \
-                      "linkml-runtime @ git+https://github.com/linkml/linkml.git@v1.11.0-rc1#subdirectory=packages/linkml_runtime"
                   uv pip install -e ".[all]" pytest pytest-xdist pytest-timeout
             - name: Refresh editable link (cache hit)
               if: steps.venv-cache.outputs.cache-hit == 'true'
