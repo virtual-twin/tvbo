@@ -28,4 +28,3 @@ python scripts/update_toc_api.py
 python scripts/update_toc_replication.py
 python scripts/generate_datamodel_docs.py
 python scripts/update_toc_datamodel.py
-python scripts/fix_mermaid_blocks.py

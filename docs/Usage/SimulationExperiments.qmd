@@ -50,24 +50,35 @@ exp = SimulationExperiment(dynamics=model)
 
 ### With explicit components
 
-Each section accepts either an instance or a dict. To resolve a component
-through the ontology / database, set its `iri` to a `tvbo:` CURIE — that
-triggers the ontology lookup and backfills the rest of the fields:
+TVBO is **declarative about where information comes from**. Every component
+in an experiment is either:
+
+1. **Fully specified inline** — a Python instance or a dict containing all
+   parameters, equations, etc.
+2. **Loaded from YAML** — see [`from_file`](#from-a-yaml-file) /
+   `from_string`.
+3. **Pointed at semantically** — a dict with an `iri` CURIE identifying the
+   source. The IRI's prefix selects the source (`tvbo:` for the built-in
+   ontology, but also e.g. `neuroml:`, `kg:`, …); the rest of the dict is
+   backfilled from that source.
 
 ```{python}
+from tvbo import SimulationExperiment
 exp = SimulationExperiment(
     dynamics={"name": "ReducedWongWang", "iri": "tvbo:ReducedWongWangExcInh"},
-    coupling="Linear",
+    coupling={"iri": "tvbo:Linear"},
     network={
-        "parcellation": {"atlas": {"name": "DesikanKilliany"}},
-        "tractogram":   {"name": "dTOR"},
+        "parcellation": {"iri": "tvbo:DesikanKilliany"},
+        "tractogram": {"iri": "tvbo:dTOR"},
     },
     integration={"method": "Heun", "duration": 10_000, "noise": None},
 )
 ```
 
-`coupling` additionally accepts a bare string (e.g. `"Linear"`) as shorthand
-for `{"name": "Linear", "iri": "tvbo:Linear"}`.
+The IRI is the load-bearing piece — a bare name string is not semantically
+resolvable across multiple sources. (For `coupling` only, a bare string is
+accepted as a shorthand that auto-prefixes `tvbo:`, but prefer the explicit
+`iri` form so the source is unambiguous.)
 
 See [Defining Networks](../Specification/Network.qmd),
 [Coupling Functions](CouplingFunctions.qmd) and
