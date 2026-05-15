@@ -3398,17 +3398,30 @@ class Parcellation(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE'],
          'slot_uri': 'rdfs:label'} })
+    iri: Optional[str] = Field(default=None, description="""Optional stable IRI (or compact URI) for this entity in an external ontology or knowledge base. Used to load metadata from an external source; not required when the entity is fully self-contained (equations, parameters, etc. defined in the file itself).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation',
+                       'Tractogram',
+                       'Dynamics',
+                       'Function',
+                       'Coupling'],
+         'slot_uri': 'dcterms:identifier'} })
     data_source: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation', 'Tractogram', 'Observation']} })
-    atlas: BrainAtlas = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation', 'BidsEntities']} })
+    atlas: Optional[BrainAtlas] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation', 'BidsEntities']} })
 
 
 class Tractogram(ConfiguredBaseModel):
     """
     Reference to tractography/diffusion MRI data used to derive structural connectivity
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Tractogram', 'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Tractogram',
+         'from_schema': 'https://w3id.org/tvbo',
+         'rules': [{'description': 'If iri is absent, name is required',
+                    'postconditions': {'slot_conditions': {'name': {'name': 'name',
+                                                                    'required': True}}},
+                    'preconditions': {'slot_conditions': {'iri': {'name': 'iri',
+                                                                  'value_presence': 'ABSENT'}}}}],
+         'slot_usage': {'name': {'identifier': False, 'name': 'name'}}})
 
-    name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: Optional[str] = Field(default=None, description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
@@ -3489,6 +3502,12 @@ class Tractogram(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE'],
          'slot_uri': 'rdfs:label'} })
+    iri: Optional[str] = Field(default=None, description="""Optional stable IRI (or compact URI) for this entity in an external ontology or knowledge base. Used to load metadata from an external source; not required when the entity is fully self-contained (equations, parameters, etc. defined in the file itself).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation',
+                       'Tractogram',
+                       'Dynamics',
+                       'Function',
+                       'Coupling'],
+         'slot_uri': 'dcterms:identifier'} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
                        'ClinicalScore',
                        'SoftwarePackage',
@@ -3839,8 +3858,8 @@ class Network(ConfiguredBaseModel):
                        'PDE']} })
     nodes: Optional[list[Node]] = Field(default=None, description="""List of nodes with individual dynamics (optional, for heterogeneous networks)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
     edges: Optional[list[Edge]] = Field(default=None, description="""List of directed edges with coupling references (optional, for explicit edge definition)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
-    coupling: Optional[dict[str, Coupling]] = Field(default=None, description="""Reusable coupling configurations referenced by edges (e.g., 'instant', 'delayed', 'inhibitory')""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network', 'Edge', 'SimulationExperiment']} })
-    dynamics: Optional[dict[str, Dynamics]] = Field(default=None, description="""Dictionary of dynamics models keyed by name. Nodes reference these by name. For heterogeneous networks with per-node dynamics.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network',
+    coupling: Optional[list[Coupling]] = Field(default=None, description="""Reusable coupling configurations referenced by edges (e.g., 'instant', 'delayed', 'inhibitory')""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network', 'Edge', 'SimulationExperiment']} })
+    dynamics: Optional[list[Dynamics]] = Field(default=None, description="""Dictionary of dynamics models keyed by name. Nodes reference these by name. For heterogeneous networks with per-node dynamics.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network',
                        'Node',
                        'Edge',
                        'Continuation',
@@ -4224,7 +4243,7 @@ class Node(ConfiguredBaseModel):
     record: Optional[bool] = Field(default=True, description="""Whether to include this element in simulation output files. Applicable to state variables (default true), derived variables (default false), and network nodes (default true). Set false to suppress recording.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'StateVariable', 'DerivedVariable'], 'ifabsent': 'True'} })
     id: int = Field(default=..., description="""Unique node identifier""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'SimulationExperiment'],
          'slot_uri': 'dcterms:identifier'} })
-    dynamics: Optional[str] = Field(default=None, description="""Dynamics model governing this node's behavior. Can be a reference (by name) or inline definition. If not provided, uses experiment's dynamics.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network',
+    dynamics: Optional[Dynamics] = Field(default=None, description="""Dynamics model governing this node's behavior. Can be a reference (by name) or inline definition. If not provided, uses experiment's dynamics.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network',
                        'Node',
                        'Edge',
                        'Continuation',
@@ -4429,11 +4448,11 @@ class Edge(ConfiguredBaseModel):
     non_negative: Optional[bool] = Field(default=True, description="""All values >= 0""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge'], 'ifabsent': 'boolean(true)'} })
     source_var: Optional[str] = Field(default=None, description="""Output variable from source node to use (e.g., 'x_out'). If not specified, uses first output variable from source dynamics.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
     target_var: Optional[str] = Field(default=None, description="""Input variable on target node to connect to (e.g., 'c_in'). If not specified, uses first coupling input from target dynamics.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
-    coupling: Optional[str] = Field(default=None, description="""Coupling function for this edge. Can be a reference (by name) to coupling or inline definition. If not provided, uses experiment's default coupling.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network', 'Edge', 'SimulationExperiment']} })
+    coupling: Optional[Coupling] = Field(default=None, description="""Coupling function for this edge. Can be a reference (by name) to coupling or inline definition. If not provided, uses experiment's default coupling.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network', 'Edge', 'SimulationExperiment']} })
     directed: Optional[bool] = Field(default=False, description="""Whether the edge is directed. If false, represents a symmetric/bidirectional connection.""", json_schema_extra = { "linkml_meta": {'domain_of': ['GraphGenerator', 'Edge'], 'ifabsent': 'False'} })
     target_network: Optional[str] = Field(default=None, description="""Path or name of the Network whose nodes define the columns of a non-square (projection) matrix. For example, a gain matrix with shape (n_sensors, n_regions) references the brain parcellation network here.  Row labels come from the parent Network's own nodes.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
     dimension_labels: Optional[list[str]] = Field(default=None, description="""Ordered labels for the matrix columns (dim-1) when the matrix is non-square.  Row labels (dim-0) are the parent Network's node labels.  Stored as HDF5 dimension scales in the companion file.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
-    dynamics: Optional[str] = Field(default=None, description="""Dynamics model for this edge. When specified, the edge has its own state variables and ODE (EdgeModel with f in ND.jl). Uses the same Dynamics class as nodes — state_variables define edge states, derived_variables define observables, output defines what is visible for plotting/analysis. The coupling_function on Coupling still defines how vertex outputs map to edge outputs for aggregation at vertices.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network',
+    dynamics: Optional[Dynamics] = Field(default=None, description="""Dynamics model for this edge. When specified, the edge has its own state variables and ODE (EdgeModel with f in ND.jl). Uses the same Dynamics class as nodes — state_variables define edge states, derived_variables define observables, output defines what is visible for plotting/analysis. The coupling_function on Coupling still defines how vertex outputs map to edge outputs for aggregation at vertices.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network',
                        'Node',
                        'Edge',
                        'Continuation',
@@ -4835,12 +4854,19 @@ class Dynamics(ConfiguredBaseModel):
          'class_uri': 'tvbo:Dynamics',
          'comments': ['Successor class replacing deprecated NeuralMassModel.'],
          'from_schema': 'https://w3id.org/tvbo',
-         'slot_usage': {'name': {'ifabsent': 'Generic2dOscillator', 'name': 'name'},
+         'rules': [{'description': 'If iri is absent, name is required',
+                    'postconditions': {'slot_conditions': {'name': {'name': 'name',
+                                                                    'required': True}}},
+                    'preconditions': {'slot_conditions': {'iri': {'name': 'iri',
+                                                                  'value_presence': 'ABSENT'}}}}],
+         'slot_usage': {'name': {'identifier': False,
+                                 'ifabsent': 'Generic2dOscillator',
+                                 'name': 'name'},
                         'system_type': {'ifabsent': 'continuous',
                                         'name': 'system_type'}}})
 
     has_reference: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics'], 'slot_uri': 'dcterms:references'} })
-    name: str = Field(default="Generic2dOscillator", description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: Optional[str] = Field(default="Generic2dOscillator", description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
@@ -4922,7 +4948,11 @@ class Dynamics(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE'],
          'slot_uri': 'rdfs:label'} })
-    iri: Optional[str] = Field(default=None, description="""Optional stable IRI (or compact URI) for this entity in an external ontology or knowledge base. Used to load metadata from an external source; not required when the entity is fully self-contained (equations, parameters, etc. defined in the file itself).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function', 'Coupling'],
+    iri: Optional[str] = Field(default=None, description="""Optional stable IRI (or compact URI) for this entity in an external ontology or knowledge base. Used to load metadata from an external source; not required when the entity is fully self-contained (equations, parameters, etc. defined in the file itself).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation',
+                       'Tractogram',
+                       'Dynamics',
+                       'Function',
+                       'Coupling'],
          'slot_uri': 'dcterms:identifier'} })
     parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
                        'Stimulus',
@@ -5016,12 +5046,12 @@ class Dynamics(ConfiguredBaseModel):
     state_variables: Optional[dict[str, StateVariable]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'PDE']} })
     modified: Optional[bool] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics']} })
     output: Optional[list[str]] = Field(default=None, description="""Output variable names to include in simulation results. References to state_variables or derived_variables by name.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function', 'FunctionCall']} })
-    derived_from_model: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics']} })
+    derived_from_model: Optional[Dynamics] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics']} })
     number_of_modes: Optional[int] = Field(default=1, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics'], 'ifabsent': 'integer(1)'} })
     local_coupling_term: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics']} })
     functions: Optional[dict[str, Function]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Algorithm', 'SimulationExperiment', 'PDE']} })
     stimulus: Optional[Stimulus] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics']} })
-    modes: Optional[dict[str, Dynamics]] = Field(default=None, json_schema_extra = { "linkml_meta": {'aliases': ['components'], 'domain_of': ['Dynamics']} })
+    modes: Optional[list[Dynamics]] = Field(default=None, json_schema_extra = { "linkml_meta": {'aliases': ['components'], 'domain_of': ['Dynamics']} })
     model_type: Optional[ModelType] = Field(default=None, description="""Coarse classification of this model (mean_field, neural_mass, phase_oscillator, phenomenological, spiking, generic, field). Used for filtering in Dynamics.list_db(model_type=...).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics']} })
     system_type: Optional[SystemType] = Field(default=SystemType.continuous, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics'], 'ifabsent': 'continuous'} })
     autonomous: Optional[bool] = Field(default=True, description="""Whether the system is autonomous (equations do not depend explicitly on time t). Non-autonomous systems have explicit time dependence, e.g. f*cos(omega*t).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics'], 'ifabsent': 'true'} })
@@ -5812,7 +5842,11 @@ class Function(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE'],
          'slot_uri': 'rdfs:label'} })
-    iri: Optional[str] = Field(default=None, description="""Optional stable IRI (or compact URI) for this entity in an external ontology or knowledge base. Used to load metadata from an external source; not required when the entity is fully self-contained (equations, parameters, etc. defined in the file itself).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function', 'Coupling'],
+    iri: Optional[str] = Field(default=None, description="""Optional stable IRI (or compact URI) for this entity in an external ontology or knowledge base. Used to load metadata from an external source; not required when the entity is fully self-contained (equations, parameters, etc. defined in the file itself).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation',
+                       'Tractogram',
+                       'Dynamics',
+                       'Function',
+                       'Coupling'],
          'slot_uri': 'dcterms:identifier'} })
     equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
                        'Event',
@@ -6007,7 +6041,11 @@ class LossFunction(Function):
                        'PDESolver',
                        'PDE'],
          'slot_uri': 'rdfs:label'} })
-    iri: Optional[str] = Field(default=None, description="""Optional stable IRI (or compact URI) for this entity in an external ontology or knowledge base. Used to load metadata from an external source; not required when the entity is fully self-contained (equations, parameters, etc. defined in the file itself).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function', 'Coupling'],
+    iri: Optional[str] = Field(default=None, description="""Optional stable IRI (or compact URI) for this entity in an external ontology or knowledge base. Used to load metadata from an external source; not required when the entity is fully self-contained (equations, parameters, etc. defined in the file itself).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation',
+                       'Tractogram',
+                       'Dynamics',
+                       'Function',
+                       'Coupling'],
          'slot_uri': 'dcterms:identifier'} })
     equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
                        'Event',
@@ -8604,7 +8642,7 @@ class Continuation(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE'],
          'slot_uri': 'dcterms:description'} })
-    dynamics: Optional[str] = Field(default=None, description="""Reference to the dynamical system model (by name). Resolved from the experiment's dynamics dict at runtime.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network',
+    dynamics: Optional[Dynamics] = Field(default=None, description="""Reference to the dynamical system model (by name). Resolved from the experiment's dynamics dict at runtime.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network',
                        'Node',
                        'Edge',
                        'Continuation',
@@ -8761,9 +8799,16 @@ class Integrator(Solver):
 class Coupling(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Coupling',
          'from_schema': 'https://w3id.org/tvbo',
-         'slot_usage': {'name': {'ifabsent': 'Linear', 'name': 'name'}}})
+         'rules': [{'description': 'If iri is absent, name is required',
+                    'postconditions': {'slot_conditions': {'name': {'name': 'name',
+                                                                    'required': True}}},
+                    'preconditions': {'slot_conditions': {'iri': {'name': 'iri',
+                                                                  'value_presence': 'ABSENT'}}}}],
+         'slot_usage': {'name': {'identifier': False,
+                                 'ifabsent': 'Linear',
+                                 'name': 'name'}}})
 
-    name: str = Field(default="Linear", description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: Optional[str] = Field(default="Linear", description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
@@ -8845,7 +8890,11 @@ class Coupling(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE'],
          'slot_uri': 'rdfs:label'} })
-    iri: Optional[str] = Field(default=None, description="""Optional stable IRI (or compact URI) for this entity in an external ontology or knowledge base. Used to load metadata from an external source; not required when the entity is fully self-contained (equations, parameters, etc. defined in the file itself).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Function', 'Coupling'],
+    iri: Optional[str] = Field(default=None, description="""Optional stable IRI (or compact URI) for this entity in an external ontology or knowledge base. Used to load metadata from an external source; not required when the entity is fully self-contained (equations, parameters, etc. defined in the file itself).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation',
+                       'Tractogram',
+                       'Dynamics',
+                       'Function',
+                       'Coupling'],
          'slot_uri': 'dcterms:identifier'} })
     parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
                        'Stimulus',
@@ -9082,7 +9131,7 @@ class SimulationExperiment(ConfiguredBaseModel):
          'from_schema': 'https://w3id.org/tvbo',
          'tree_root': True})
 
-    model: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Electrode', 'SimulationExperiment', 'SimulationStudy']} })
+    model: Optional[Dynamics] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Electrode', 'SimulationExperiment', 'SimulationStudy']} })
     id: int = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'SimulationExperiment'],
          'slot_uri': 'dcterms:identifier'} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
@@ -9266,7 +9315,7 @@ class SimulationStudy(ConfiguredBaseModel):
          'slot_uri': 'rdfs:label'} })
     derived_from: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Provenance', 'SimulationStudy'],
          'slot_uri': 'prov:wasDerivedFrom'} })
-    model: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Electrode', 'SimulationExperiment', 'SimulationStudy']} })
+    model: Optional[Dynamics] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Electrode', 'SimulationExperiment', 'SimulationStudy']} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
                        'ClinicalScore',
                        'SoftwarePackage',

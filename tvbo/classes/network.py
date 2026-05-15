@@ -207,8 +207,50 @@ def _network_ref_string(net: "Network") -> str:
     )
 
 
+def _backfill_name_from_iri(obj: Any, nested_key: str | None = None) -> None:
+    """If ``obj`` (or ``obj[nested_key]``) is a dict with ``iri`` but no ``name``,
+    derive ``name`` from the IRI's local part. Mutates in place."""
+    if obj is None:
+        return
+    target = obj
+    if nested_key is not None:
+        target = obj.get(nested_key) if isinstance(obj, dict) else getattr(obj, nested_key, None)
+    if not isinstance(target, dict):
+        return
+    if target.get("name"):
+        return
+    iri = target.get("iri")
+    if not iri:
+        return
+    target["name"] = iri.split(":", 1)[-1] if ":" in iri else iri
+
+
 @register_pytree_node_class
 class Network(tvbo_datamodel.Network):
+    """A brain network: parcellation, connectome, per-node dynamics, and coupling.
+
+    The spatial substrate of a `SimulationExperiment`. A `Network` ties an
+    atlas/parcellation to a tractogram (structural connectivity matrix +
+    optional path lengths) and, optionally, per-node `Dynamics` overrides
+    and node-level coupling parameters.
+
+    Construct inline, by IRI (resolved against the curated database), or
+    from a NumPy / pandas matrix via [`Network.from_array`](#tvbo.classes.network.Network.from_array).
+
+    Examples:
+        ```python
+        net = Network(
+            parcellation={"atlas": {"iri": "tvbo:DesikanKilliany"}},
+            tractogram={"iri": "tvbo:dTOR"},
+        )
+        ```
+
+    See the [Network specification](../../../Specification/Network.qmd) for
+    the slot-by-slot reference and the
+    [`Connectome`](#tvbo.classes.network.Connectome) subclass for matrix-style
+    networks without an explicit parcellation.
+    """
+
     @property
     def number_of_regions(self) -> int:
         """Deprecated alias for number_of_nodes."""
@@ -223,6 +265,11 @@ class Network(tvbo_datamodel.Network):
         if "number_of_regions" in kwargs:
             kwargs.setdefault("number_of_nodes", kwargs.pop("number_of_regions"))
             kwargs.pop("number_of_regions", None)
+
+        # Derive name from iri where missing (so the dataclass post-init
+        # doesn't raise MissingRequiredField on iri-only construction).
+        _backfill_name_from_iri(kwargs.get("parcellation"), nested_key="atlas")
+        _backfill_name_from_iri(kwargs.get("tractogram"))
 
         # Check if nodes/edges or edge_matrix_files are already provided
         has_nodes = "nodes" in kwargs and kwargs["nodes"]
@@ -274,15 +321,25 @@ class Network(tvbo_datamodel.Network):
                 parcellation = kwargs["parcellation"]
                 atlas = parcellation.get("atlas") if isinstance(parcellation, dict) else getattr(parcellation, "atlas", None)
                 atlas_name = atlas.get("name") if isinstance(atlas, dict) else getattr(atlas, "name", None) if atlas else None
+                if not atlas_name and atlas:
+                    atlas_iri = atlas.get("iri") if isinstance(atlas, dict) else getattr(atlas, "iri", None)
+                    if atlas_iri:
+                        atlas_name = atlas_iri.split(":", 1)[-1] if ":" in atlas_iri else atlas_iri
                 if not atlas_name:
                     # Skip normative data loading if no atlas specified
                     super().__init__(**kwargs)
                     return
                 tractogram = kwargs.get("tractogram", "dTOR")
                 if isinstance(tractogram, dict):
-                    tractogram = tractogram.get("name", "dTOR")
+                    tractogram = tractogram.get("name") or (
+                        tractogram.get("iri", "").split(":", 1)[-1] if tractogram.get("iri") else "dTOR"
+                    )
                 elif hasattr(tractogram, "name"):
-                    tractogram = tractogram.name or "dTOR"
+                    tractogram = tractogram.name or (
+                        getattr(tractogram, "iri", "").split(":", 1)[-1]
+                        if getattr(tractogram, "iri", None)
+                        else "dTOR"
+                    )
                 w_arr, l_arr = get_normative_connectome_data(atlas_name, tractogram)
 
                 n_nodes = w_arr.shape[0]

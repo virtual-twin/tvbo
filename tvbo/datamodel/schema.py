@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-05-15T09:56:49
+# Generation date: 2026-05-15T14:33:17
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -563,21 +563,23 @@ class Parcellation(YAMLRoot):
     class_name: ClassVar[str] = "Parcellation"
     class_model_uri: ClassVar[URIRef] = TVBO.Parcellation
 
-    atlas: Union[dict, "BrainAtlas"] = None
     label: Optional[str] = None
+    iri: Optional[Union[str, URIorCURIE]] = None
     data_source: Optional[str] = None
+    atlas: Optional[Union[dict, "BrainAtlas"]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
-        if self._is_empty(self.atlas):
-            self.MissingRequiredField("atlas")
-        if not isinstance(self.atlas, BrainAtlas):
-            self.atlas = BrainAtlas(**as_dict(self.atlas))
-
         if self.label is not None and not isinstance(self.label, str):
             self.label = str(self.label)
 
+        if self.iri is not None and not isinstance(self.iri, URIorCURIE):
+            self.iri = URIorCURIE(self.iri)
+
         if self.data_source is not None and not isinstance(self.data_source, str):
             self.data_source = str(self.data_source)
+
+        if self.atlas is not None and not isinstance(self.atlas, BrainAtlas):
+            self.atlas = BrainAtlas(**as_dict(self.atlas))
 
         super().__post_init__(**kwargs)
 
@@ -596,6 +598,7 @@ class Tractogram(YAMLRoot):
 
     name: Union[str, TractogramName] = None
     label: Optional[str] = None
+    iri: Optional[Union[str, URIorCURIE]] = None
     description: Optional[str] = None
     data_source: Optional[str] = None
     number_of_subjects: Optional[int] = None
@@ -611,6 +614,9 @@ class Tractogram(YAMLRoot):
 
         if self.label is not None and not isinstance(self.label, str):
             self.label = str(self.label)
+
+        if self.iri is not None and not isinstance(self.iri, URIorCURIE):
+            self.iri = URIorCURIE(self.iri)
 
         if self.description is not None and not isinstance(self.description, str):
             self.description = str(self.description)
@@ -6426,7 +6432,7 @@ slots.parcellation__data_source = Slot(uri=TVBO.data_source, name="parcellation_
                    model_uri=TVBO.parcellation__data_source, domain=None, range=Optional[str])
 
 slots.parcellation__atlas = Slot(uri=TVBO.atlas, name="parcellation__atlas", curie=TVBO.curie('atlas'),
-                   model_uri=TVBO.parcellation__atlas, domain=None, range=Union[dict, BrainAtlas])
+                   model_uri=TVBO.parcellation__atlas, domain=None, range=Optional[Union[dict, BrainAtlas]])
 
 slots.tractogram__data_source = Slot(uri=TVBO.data_source, name="tractogram__data_source", curie=TVBO.curie('data_source'),
                    model_uri=TVBO.tractogram__data_source, domain=None, range=Optional[str])
@@ -8086,6 +8092,9 @@ slots.softwareEnvironment__requirements = Slot(uri=TVBO_SW.requirements, name="s
 
 slots.system_type = Slot(uri=TVBO.system_type, name="system_type", curie=TVBO.curie('system_type'),
                    model_uri=TVBO.system_type, domain=None, range=Optional[str])
+
+slots.Tractogram_name = Slot(uri=SCHEMA.name, name="Tractogram_name", curie=SCHEMA.curie('name'),
+                   model_uri=TVBO.Tractogram_name, domain=Tractogram, range=Union[str, TractogramName])
 
 slots.Node_record = Slot(uri=TVBO.record, name="Node_record", curie=TVBO.curie('record'),
                    model_uri=TVBO.Node_record, domain=Node, range=Optional[Union[bool, Bool]])

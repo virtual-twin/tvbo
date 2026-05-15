@@ -154,7 +154,75 @@ def _resolve_coupling(experiment):
                     coup.incoming_states = list(cvars)
 
 
+def _iri_local(iri: str) -> str:
+    return iri.split(":", 1)[-1] if ":" in iri else iri
+
+
+def _backfill_name_from_iri(d):
+    """If d is a dict with iri but no name, inject name from iri's local part."""
+    if isinstance(d, dict) and d.get("iri") and not d.get("name"):
+        d["name"] = _iri_local(d["iri"])
+
+
+def _merge_from_registry(d, category: str):
+    """If d is a dict with iri but no parameters, load the registry YAML and
+    merge (user-provided keys win). Falls back to name-only backfill if the
+    iri does not resolve to a DB entry."""
+    if not isinstance(d, dict) or not d.get("iri"):
+        return
+    iri = d["iri"]
+    local = _iri_local(iri)
+    try:
+        from tvbo.data.registry import resolve
+        from linkml_runtime.loaders import yaml_loader
+
+        loaded = yaml_loader.load_as_dict(str(resolve(category, local)))
+        if isinstance(loaded, dict):
+            for k, v in loaded.items():
+                d.setdefault(k, v)
+            return
+    except (FileNotFoundError, RuntimeError, ValueError):
+        pass
+    d.setdefault("name", local)
+
+
 class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
+    """The central runnable object in TVBO: a complete brain-network simulation spec.
+
+    Bundles `dynamics`, `coupling`, `network`, `integration`, `observations`,
+    and any analysis layers (stimulation, algorithms, explorations, …) into
+    one declarative specification. The same instance can be:
+
+    - **executed** in any registered backend (`run("jax")`, `run("tvb")`, …)
+    - **serialized** to YAML, BIDS, openMINDS, or LEMS
+    - **rendered** as code for inspection or external use (`render_code(...)`)
+    - **reported** as Markdown or HTML (`report(...)`)
+
+    Construct via direct kwargs, from a `Dynamics` instance, by name from the
+    curated database (`from_db`), or by loading a YAML / BIDS export.
+
+    Examples:
+        ```python
+        from tvbo import Dynamics, SimulationExperiment
+
+        exp = SimulationExperiment(dynamics=Dynamics.from_db("Generic2dOscillator"))
+        result = exp.run("jax", duration=5_000)
+
+        # Or fully declarative
+        exp = SimulationExperiment(
+            dynamics={"iri": "tvbo:ReducedWongWangExcInh"},
+            coupling={"iri": "tvbo:Linear"},
+            network={"parcellation": {"atlas": {"iri": "tvbo:DesikanKilliany"}},
+                     "tractogram":   {"iri": "tvbo:dTOR"}},
+            integration={"method": "Heun", "duration": 10_000, "noise": None},
+        )
+        ```
+
+    See the [Usage / Simulation Experiments](../../../Usage/SimulationExperiments.qmd)
+    page for the full constructor surface and the
+    [`running-simulations`](../../../skills/running-simulations/SKILL.md) skill
+    for backend choices.
+    """
 
     def __init__(self, **kwargs):
         """Initialize like the datamodel, but auto-assign an id when missing.
@@ -219,6 +287,24 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 for _dv in net_dyn.values():
                     if isinstance(_dv, dict):
                         _resolve_dynamics_aliases(_dv)
+
+        # Resolve iri-only refs by loading from the registry (full population
+        # for dynamics/coupling) or backfilling name (for parcellation/tractogram).
+        _merge_from_registry(kwargs.get("dynamics"), "Dynamics")
+        _merge_from_registry(kwargs.get("coupling"), "Coupling")
+        net_kw = kwargs.get("network")
+        if isinstance(net_kw, dict):
+            parc = net_kw.get("parcellation")
+            if isinstance(parc, dict):
+                # parcellation: {"iri": "tvbo:X"} → wrap into atlas
+                if parc.get("iri") and not parc.get("atlas"):
+                    parc["atlas"] = {"name": _iri_local(parc["iri"])}
+                _backfill_name_from_iri(parc.get("atlas"))
+            _backfill_name_from_iri(net_kw.get("tractogram"))
+            # Eagerly construct the wrapper Network so its __init__ runs
+            # (loads normative connectivity from atlas/tractogram). The parent
+            # __post_init__ accepts a Network instance as-is.
+            kwargs["network"] = Network(**net_kw)
 
         # Delegate to the parent dataclass initializer
         super().__init__(**kwargs)

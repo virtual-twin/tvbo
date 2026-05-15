@@ -570,11 +570,11 @@ classes:
         class_uri: tvbo:Parcellation
         slots:
             - label
+            - iri
         attributes:
             data_source:
                 range: string
             atlas:
-                required: true
                 range: BrainAtlas
                 inlined: true
 
@@ -584,7 +584,21 @@ classes:
         slots:
             - name
             - label
+            - iri
             - description
+        slot_usage:
+            name:
+                identifier: false
+        rules:
+            - description: "If iri is absent, name is required"
+              preconditions:
+                  slot_conditions:
+                      iri:
+                          value_presence: ABSENT
+              postconditions:
+                  slot_conditions:
+                      name:
+                          required: true
         attributes:
             data_source:
                 range: string
@@ -1149,9 +1163,20 @@ classes:
             - dataLocation
         slot_usage:
             name:
+                identifier: false
                 ifabsent: "Generic2dOscillator"
             system_type:
                 ifabsent: "continuous"
+        rules:
+            - description: "If iri is absent, name is required"
+              preconditions:
+                  slot_conditions:
+                      iri:
+                          value_presence: ABSENT
+              postconditions:
+                  slot_conditions:
+                      name:
+                          required: true
         attributes:
             derived_parameters:
                 multivalued: true
@@ -2553,7 +2578,18 @@ classes:
             - description
         slot_usage:
             name:
+                identifier: false
                 ifabsent: "Linear"
+        rules:
+            - description: "If iri is absent, name is required"
+              preconditions:
+                  slot_conditions:
+                      iri:
+                          value_presence: ABSENT
+              postconditions:
+                  slot_conditions:
+                      name:
+                          required: true
         attributes:
             # Standard coupling attributes
             coupling_function:

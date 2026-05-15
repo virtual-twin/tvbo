@@ -85,6 +85,19 @@ def load_acoustic_stimulus_from_audiofile(file_path, sampling_rate=1000, duratio
 
 
 class Stimulus(tvbo_datamodel.Stimulus):
+    """An exogenous perturbation injected into a `SimulationExperiment`.
+
+    A `Stimulus` describes *what* gets perturbed (target state variable),
+    *where* (spatial pattern across nodes), *when* (temporal envelope), and
+    *how much* (amplitude). The pattern and envelope are arbitrary symbolic
+    expressions, so the same class covers DC steps, sinusoids, Gaussian
+    pulses, and audio-file replay.
+
+    Attach via `experiment.add_stimulus(stim)`; see
+    [`load_acoustic_stimulus_from_audiofile`](#tvbo.classes.perturbation.load_acoustic_stimulus_from_audiofile)
+    for the WAV/MP3 entry point.
+    """
+
     def __init__(self, **kwargs):
         # if isinstance(instance, owl.ThingClass):
         #     self.ontology = instance

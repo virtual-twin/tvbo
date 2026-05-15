@@ -6,6 +6,21 @@ from tvbo.utils import report
 
 
 class SimulationStudy(tvbo_datamodel.SimulationStudy):
+    """A collection of related `SimulationExperiment`s with shared provenance.
+
+    Aggregates the experiments behind a published paper or analysis (model,
+    DOI, year, citation, dataset) into one declarative YAML/Pydantic object.
+    Load with `from_db(name)` for curated studies, `from_file(path)` for
+    local YAML, or `from_openminds(...)` for JSON-LD provenance graphs.
+
+    The most-used entry points are
+    [`get_experiment(id)`](#tvbo.classes.study.SimulationStudy.get_experiment)
+    to materialise a single run, [`cite()`](#tvbo.classes.study.SimulationStudy.cite)
+    for the formatted citation, and
+    [`to_openminds(...)`](#tvbo.classes.study.SimulationStudy.to_openminds) for
+    JSON-LD export.
+    """
+
     def __repr__(self) -> str:
         key = self.key or "?"
         title = self.title or "Untitled Study"
