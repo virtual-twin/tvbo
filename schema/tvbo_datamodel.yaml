@@ -586,19 +586,6 @@ classes:
             - label
             - iri
             - description
-        slot_usage:
-            name:
-                identifier: false
-        rules:
-            - description: "If iri is absent, name is required"
-              preconditions:
-                  slot_conditions:
-                      iri:
-                          value_presence: ABSENT
-              postconditions:
-                  slot_conditions:
-                      name:
-                          required: true
         attributes:
             data_source:
                 range: string
@@ -1162,21 +1149,8 @@ classes:
             - references
             - dataLocation
         slot_usage:
-            name:
-                identifier: false
-                ifabsent: "Generic2dOscillator"
             system_type:
                 ifabsent: "continuous"
-        rules:
-            - description: "If iri is absent, name is required"
-              preconditions:
-                  slot_conditions:
-                      iri:
-                          value_presence: ABSENT
-              postconditions:
-                  slot_conditions:
-                      name:
-                          required: true
         attributes:
             derived_parameters:
                 multivalued: true
@@ -2576,20 +2550,6 @@ classes:
             - iri
             - parameters
             - description
-        slot_usage:
-            name:
-                identifier: false
-                ifabsent: "Linear"
-        rules:
-            - description: "If iri is absent, name is required"
-              preconditions:
-                  slot_conditions:
-                      iri:
-                          value_presence: ABSENT
-              postconditions:
-                  slot_conditions:
-                      name:
-                          required: true
         attributes:
             # Standard coupling attributes
             coupling_function:

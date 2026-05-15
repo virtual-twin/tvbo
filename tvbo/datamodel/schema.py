@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-05-15T14:33:17
+# Generation date: 2026-05-15T16:21:56
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -1329,7 +1329,7 @@ class Dynamics(YAMLRoot):
     class_name: ClassVar[str] = "Dynamics"
     class_model_uri: ClassVar[URIRef] = TVBO.Dynamics
 
-    name: Union[str, DynamicsName] = "Generic2dOscillator"
+    name: Union[str, DynamicsName] = None
     has_reference: Optional[str] = None
     label: Optional[str] = None
     iri: Optional[Union[str, URIorCURIE]] = None
@@ -3194,7 +3194,7 @@ class Coupling(YAMLRoot):
     class_name: ClassVar[str] = "Coupling"
     class_model_uri: ClassVar[URIRef] = TVBO.Coupling
 
-    name: Union[str, CouplingName] = "Linear"
+    name: Union[str, CouplingName] = None
     label: Optional[str] = None
     iri: Optional[Union[str, URIorCURIE]] = None
     parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
@@ -8093,14 +8093,8 @@ slots.softwareEnvironment__requirements = Slot(uri=TVBO_SW.requirements, name="s
 slots.system_type = Slot(uri=TVBO.system_type, name="system_type", curie=TVBO.curie('system_type'),
                    model_uri=TVBO.system_type, domain=None, range=Optional[str])
 
-slots.Tractogram_name = Slot(uri=SCHEMA.name, name="Tractogram_name", curie=SCHEMA.curie('name'),
-                   model_uri=TVBO.Tractogram_name, domain=Tractogram, range=Union[str, TractogramName])
-
 slots.Node_record = Slot(uri=TVBO.record, name="Node_record", curie=TVBO.curie('record'),
                    model_uri=TVBO.Node_record, domain=Node, range=Optional[Union[bool, Bool]])
-
-slots.Dynamics_name = Slot(uri=SCHEMA.name, name="Dynamics_name", curie=SCHEMA.curie('name'),
-                   model_uri=TVBO.Dynamics_name, domain=Dynamics, range=Union[str, DynamicsName])
 
 slots.Dynamics_system_type = Slot(uri=TVBO.system_type, name="Dynamics_system_type", curie=TVBO.curie('system_type'),
                    model_uri=TVBO.Dynamics_system_type, domain=Dynamics, range=Optional[str])
@@ -8116,9 +8110,6 @@ slots.DerivedVariable_record = Slot(uri=TVBO.record, name="DerivedVariable_recor
 
 slots.Option_name = Slot(uri=SCHEMA.name, name="Option_name", curie=SCHEMA.curie('name'),
                    model_uri=TVBO.Option_name, domain=Option, range=Union[str, OptionName])
-
-slots.Coupling_name = Slot(uri=SCHEMA.name, name="Coupling_name", curie=SCHEMA.curie('name'),
-                   model_uri=TVBO.Coupling_name, domain=Coupling, range=Union[str, CouplingName])
 
 slots.DBSDataset_subjects = Slot(uri=TVBO_STUDY.subjects, name="DBSDataset_subjects", curie=TVBO_STUDY.curie('subjects'),
                    model_uri=TVBO.DBSDataset_subjects, domain=DBSDataset, range=Optional[Union[dict[Union[str, DBSSubjectSubjectId], Union[dict, "DBSSubject"]], list[Union[dict, "DBSSubject"]]]])
