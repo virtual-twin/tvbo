@@ -2,7 +2,14 @@
 
 ## Harmonize class names with `tvboptim`
 
-- change tvbo's "ExplorationAxis" to more broad "DataAxis" to fit with tvboptim's framework. It also makes more senese and is in line with tvbo's generalization goal.
+Rename `ExplorationAxis` → `Axis` and reshape it so tvbo can declaratively
+specify any `Space` configuration that tvboptim supports
+(`GridAxis`, `LogGridAxis`, `UniformAxis`, `DataAxis`, `NumPyroAxis`).
+`Space`/`ExplorationSpace` become aliases of `Exploration`; the slot
+`Exploration.space` becomes `Exploration.axes`.
+
+Full design, rationale, file-by-file impact, and step-by-step
+implementation plan: **see `dev/tvboptim_harmonization.md`**.
 
 ## Backend-in-Metadata + Per-Task Backend Dispatch
 

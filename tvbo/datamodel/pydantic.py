@@ -4847,11 +4847,12 @@ class Dynamics(ConfiguredBaseModel):
          'class_uri': 'tvbo:Dynamics',
          'comments': ['Successor class replacing deprecated NeuralMassModel.'],
          'from_schema': 'https://w3id.org/tvbo',
-         'slot_usage': {'system_type': {'ifabsent': 'continuous',
+         'slot_usage': {'name': {'ifabsent': 'Dynamics', 'name': 'name'},
+                        'system_type': {'ifabsent': 'continuous',
                                         'name': 'system_type'}}})
 
     has_reference: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics'], 'slot_uri': 'dcterms:references'} })
-    name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: str = Field(default="Dynamics", description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
@@ -4886,6 +4887,7 @@ class Dynamics(ConfiguredBaseModel):
                        'BranchSwitch',
                        'Continuation',
                        'Coupling'],
+         'ifabsent': 'Dynamics',
          'slot_uri': 'schema:name'} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Subject',
@@ -8781,9 +8783,11 @@ class Integrator(Solver):
 
 
 class Coupling(ConfiguredBaseModel):
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Coupling', 'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Coupling',
+         'from_schema': 'https://w3id.org/tvbo',
+         'slot_usage': {'name': {'ifabsent': 'Linear', 'name': 'name'}}})
 
-    name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
+    name: str = Field(default="Linear", description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
                        'ParcellationEntity',
                        'DBSProtocol',
@@ -8818,6 +8822,7 @@ class Coupling(ConfiguredBaseModel):
                        'BranchSwitch',
                        'Continuation',
                        'Coupling'],
+         'ifabsent': 'Linear',
          'slot_uri': 'schema:name'} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Subject',
