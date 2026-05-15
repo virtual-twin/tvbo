@@ -1,6 +1,16 @@
-# skills/git.md
+---
+name: git
+description: Rules for git operations in TVBO. The user manages all version control. Use when clarifying what git actions are allowed or when a task involves version control.
+metadata:
+  audience: maintainer
+  applies_to:
+    - "**"
+  tags: [git, workflow]
+---
 
-Rules for git operations. The user manages all version control themselves.
+# Git Rules
+
+The user owns all version control. Never perform write git operations on their behalf.
 
 ## Prohibited Actions
 

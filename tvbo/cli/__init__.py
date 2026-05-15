@@ -16,6 +16,7 @@ from . import (
     import_ as _import_cmd,
     run as _run_cmd,
     save as _save_cmd,
+    skills as _skills_cmd,
     validate as _validate_cmd,
     version as _version_cmd,
     workflow as _workflow_cmd,
@@ -42,6 +43,7 @@ app.command("version", help="Print the tvbo version.")(_version_cmd.version)
 app.add_typer(_validate_cmd.app, name="validate", help="Validate YAML / OMEX / BIDS / SED-ML files.")
 app.add_typer(_config_cmd.app, name="config", help="Manage CLI configuration.")
 app.add_typer(_workflow_cmd.app, name="workflow", help="Plan / emit HPC + pipeline artefacts (slurm, snakemake, nextflow).")
+app.add_typer(_skills_cmd.app, name="skills", help="Render skills for Claude Code / Copilot / Cursor; install user skills locally.")
 
 
 __all__ = ["app"]

@@ -1,0 +1,191 @@
+---
+title: "Skill reference"
+subtitle: "Every skill bundled with TVBO, what it teaches, when it fires"
+---
+
+This page is the canonical list of every skill TVBO ships. Two flavours:
+
+- **User skills** — shipped in the `tvbo` wheel, installed onto your machine
+  by `tvbo skills install`.
+- **Maintainer skills** — live in the TVBO repository, used by anyone working
+  *on* TVBO (or browsing its source through an AI assistant).
+
+The split is by **audience**, not capability — user skills are still rich
+behavioural rules, just scoped to library *usage* rather than library
+*development*.
+
+---
+
+## User skills
+
+These are the four skills `pip install tvbo && tvbo skills install` puts on
+your machine.
+
+### `tvbo-overview`
+
+::: {.callout-note}
+**Fires when:** "What is TVBO?", "How is TVBO organised?", "Should I use TVBO for this?"
+:::
+
+The three-pillar mental model:
+
+1. **LinkML datamodel** — structured metadata in `schema/*.yaml`, generated
+   Python types in `tvbo/datamodel/` (never hand-edited).
+2. **Ontology** — `tvb-o.owl` carries axioms about `SimulationExperiment`,
+   `SimulationStudy`, `Network`, `DynamicalSystem`, `Software`.
+3. **TVBO Python package** — specifies models, loads experiments, generates
+   code for every backend, and executes them.
+
+Plus the Odoo **platform** at [tvbo.charite.de](https://tvbo.charite.de) as
+a fourth, separate management layer.
+
+### `tvbo-writing-models`
+
+::: {.callout-note}
+**Fires when:** Editing `.yaml` / `.yml` / `.py` files that look like Dynamics specs.
+:::
+
+Teaches:
+
+- The YAML and Python forms of a `Dynamics`
+- That `lhs` is LaTeX (not Python) — `\dot{X}` for time derivatives
+- That `rhs` is SymPy-parseable, names must match parameters/state variables
+- That parameters carry `value`, state variables carry `equation` — never both
+- That `tvbo/datamodel/**` is generated; don't hand-edit it
+
+### `tvbo-running-simulations`
+
+::: {.callout-note}
+**Fires when:** Working in `.py` / `.ipynb` files involving simulation, JAX, TVB, PyRates, or Julia.
+:::
+
+Teaches:
+
+- The `SimulationExperiment(dynamics).run(duration).plot()` pattern
+- How to render code without executing (`render_code('jax')`)
+- Which extra to install per backend (`tvbo[jax]`, `tvbo[tvb]`,
+  `tvbo[pyrates]`, `tvbo[julia]`, `tvbo[neuroml]`, `tvbo[tvboptim]`)
+- Intel-Mac pinning quirks (numba/llvmlite/jax)
+
+### `tvbo-platform`
+
+::: {.callout-note}
+**Fires when:** Working with `tvbo.api`, sharing experiments, or asking about [tvbo.charite.de](https://tvbo.charite.de).
+:::
+
+Teaches:
+
+- The platform is an Odoo service separate from the Python package
+- Public reads vs API-key-gated private records
+- Where each REST client module lives (`tvbo/api/ontology_api.py`,
+  `dynamics_api.py`, `experiment_api.py`, `network_api.py`)
+- That the platform is the **system of record** for shared experiments —
+  always check the stored revision when reproducing a run
+
+---
+
+## Maintainer skills
+
+These are committed to the TVBO repository under `.claude/skills/` and
+`.github/instructions/`. Any AI assistant working inside a clone of `tvbo`
+gets them automatically. They are **not** installed by
+`tvbo skills install` unless you pass `--audience maintainer` or
+`--audience all`.
+
+### `git`
+
+::: {.callout-warning title="Critical"}
+The user owns all version control. The AI assistant must **never** run
+`git add`, `git commit`, `git push`, or use any GitKraken write-tools.
+:::
+
+Allowed: read-only inspection (`git status`, `git diff`, `git log`,
+`git branch`), branch switching when explicitly requested, fetch/pull
+when explicitly requested.
+
+### `writing-code`
+
+Behavioural guidelines: think before coding, simplicity first, surgical
+changes, goal-driven execution. Designed to reduce the most common LLM
+coding mistakes (over-engineering, scope creep, unrequested refactors).
+
+### `linkml-schema`
+
+The `tvbo/datamodel/**` directory is **generated** from `schema/*.yaml`
+by the LinkML pipeline. Hand-editing the generated dir will silently
+break on the next regeneration. `pyproject.toml` excludes it from `ruff`
+and `mypy` to make this explicit.
+
+The skill encodes: where the canonical source lives, the regeneration
+workflow, the lint exclusions, and the LinkML 1.11+ version requirement.
+
+### `codegen-templates`
+
+How TVBO compiles a `Dynamics` to runnable backend code:
+
+- `tvbo/templates/` holds per-backend template trees (Mako-based).
+- `tvbo/codegen/` dispatches to the right template per backend.
+- `tvbo/adapters/` wraps external simulators (TVB, Julia, NeuroML,
+  PyRates, BifurcationKit, ModelingToolkit, NetworkDynamics, openMINDS,
+  tvboptim). Contract: `tvbo/adapters/base.py`.
+
+Includes the new-backend checklist (adapter, template tree, pytest
+marker, dispatch, optional dependency).
+
+### `tests-and-backends`
+
+The full table of `backend_*` pytest markers (`backend_jax`,
+`backend_tvb`, `backend_pyrates`, `backend_tvboptim`, `backend_julia`
+and its sub-markers, `backend_neuroml`), plus `slow`, `julia`, `docs`,
+the `--run-slow` flag, and the `-n 1 --dist=loadscope` default options.
+
+### `grill-me`
+
+A workflow skill: instructs the assistant to interview the user
+relentlessly about a plan or design until reaching shared understanding,
+resolving each branch of the decision tree. Used for designing larger
+changes.
+
+---
+
+## Canonical source vs adapter output
+
+Every skill above has **exactly one canonical source**:
+
+- User skills: `tvbo/skills/canonical/<name>/SKILL.md`
+- Maintainer skills: `skills/<name>/SKILL.md`
+
+The adapter outputs (`.claude/skills/`, `.github/instructions/`,
+`.cursor/rules/`, `AGENTS.md` index, raw prompt) are **generated**. Never
+edit them by hand — `tvbo skills sync` (or the next install) will revert
+your changes.
+
+If you want to *modify* a skill's content, edit the canonical source and
+re-run `tvbo skills sync`.
+
+If you want to *add* a new skill, create
+`skills/<new-name>/SKILL.md` (maintainer) or
+`tvbo/skills/canonical/<new-name>/SKILL.md` (user) and run sync.
+
+## Skill frontmatter schema
+
+```yaml
+---
+name: my-skill                       # slug, must match the directory name
+description: One-line summary used by Claude Code to pick the skill on demand.
+metadata:
+  audience: user                     # user | maintainer | both
+  applies_to:                        # globs — used by Copilot applyTo + Cursor globs
+    - "**/*.py"
+    - "**/*.ipynb"
+  tags: [jax, simulation]            # for filtering with --tag (future)
+  requires_extras: ["jax"]           # optional — pulled into user docs
+---
+
+# Markdown body — same content across every adapter target.
+```
+
+`audience`, `applies_to`, `tags`, and `requires_extras` are nested under
+`metadata:` to satisfy VS Code's SKILL.md schema linter, which only
+allows a known set of top-level attributes (plus a free-form
+`metadata` block). The renderer reads both forms.

@@ -302,12 +302,28 @@ website:
 
               - text: "Platform"
                 href: platform.qmd
+
+              - section: "Agentic Coding"
+                href: agents/index.qmd
+                contents:
+                  - text: "For Beginners"
+                    href: agents/beginner.qmd
+                  - text: "Installing & Tuning Skills"
+                    href: agents/installing-skills.qmd
+                  - text: "Skill Reference"
+                    href: agents/skills-reference.qmd
+                  - text: "AGENTS.md"
+                    href: agents/agents-md.qmd
+                  - text: "Maintainer Guide"
+                    href: agents/maintainer-guide.qmd
 # BEGIN:replication-autogen
               - section: "Replication Studies"
                 href: Replication/index.qmd
                 contents:
                   - text: "Jansen & Rit (1995)"
                     href: Replication/Jansen1995/Run_Jansen1995.qmd
+                  - text: "Koller, Schirner, Ritter (2024)"
+                    href: Replication/Koller2024/Run_Koller2024.qmd
 # END:replication-autogen
 
               - text: "---"
@@ -1524,6 +1540,8 @@ website:
                         href: api/adapters/networkdynamics.qmd
                       - text: "Neuroml"
                         href: api/adapters/neuroml.qmd
+                      - text: "Numcont"
+                        href: api/adapters/numcont.qmd
                       - text: "Openminds"
                         href: api/adapters/openminds.qmd
                       - text: "Pyrates"
@@ -1567,6 +1585,8 @@ website:
                         href: api/classes/dynamics.qmd
                       - text: "Equation"
                         href: api/classes/equation.qmd
+                      - text: "Event"
+                        href: api/classes/event.qmd
                       - text: "Experiment"
                         href: api/classes/experiment.qmd
                       - text: "Function"
@@ -1583,6 +1603,31 @@ website:
                         href: api/classes/perturbation.qmd
                       - text: "Study"
                         href: api/classes/study.qmd
+                  - section: "See ``dev/tvbo-cli.md`` for the full design. The CLI is Typer-based,"
+                    href: api/cli/index.qmd
+                    contents:
+                      - text: "Config"
+                        href: api/cli/config.qmd
+                      - text: "Export"
+                        href: api/cli/export.qmd
+                      - text: "Formats"
+                        href: api/cli/formats.qmd
+                      - text: "Import "
+                        href: api/cli/import_.qmd
+                      - text: "Info"
+                        href: api/cli/info.qmd
+                      - text: "Run"
+                        href: api/cli/run.qmd
+                      - text: "Save"
+                        href: api/cli/save.qmd
+                      - text: "Skills"
+                        href: api/cli/skills.qmd
+                      - text: "Validate"
+                        href: api/cli/validate.qmd
+                      - text: "Version"
+                        href: api/cli/version.qmd
+                      - text: "Workflow"
+                        href: api/cli/workflow.qmd
                   - section: "TVB-O Code Generation"
                     href: api/codegen/index.qmd
                     contents:
@@ -1675,8 +1720,14 @@ website:
                         href: api/plot/bifurcation_diagram.qmd
                       - text: "Dynamics"
                         href: api/plot/dynamics.qmd
+                      - text: "Dynamics Layout"
+                        href: api/plot/dynamics_layout.qmd
+                      - text: "Experiment Layout"
+                        href: api/plot/experiment_layout.qmd
                       - text: "Functions"
                         href: api/plot/functions.qmd
+                      - text: "Layout Mosaic"
+                        href: api/plot/layout_mosaic.qmd
                       - text: "Network"
                         href: api/plot/network.qmd
                       - text: "Network Graph"
@@ -1708,11 +1759,15 @@ website:
                       - section: "tvboptim"
                         href: api/templates/tvboptim/index.qmd
                         contents:
+                          - text: "Observations"
+                            href: api/templates/tvboptim/observations.qmd
                           - text: "Utils"
                             href: api/templates/tvboptim/utils.qmd
                   - section: "Utilities"
                     href: api/utils/index.qmd
                     contents:
+                      - text: "Auto"
+                        href: api/utils/auto.qmd
                       - text: "Report"
                         href: api/utils/report.qmd
                       - text: "Units"

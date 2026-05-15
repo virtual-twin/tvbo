@@ -20,6 +20,7 @@ project:
     - Replication/**/*.qmd
     - Developer/*.md
     - ontology/*.qmd
+    - agents/*.qmd
     - "!_archive/*"
     - "!ontology/spec/**"
   resources:
@@ -55,6 +56,8 @@ website:
               href: datamodel/index.qmd
             - text: "Platform"
               href: platform.qmd
+            - text: "Agents"
+              href: agents/index.qmd
 
         tools:
             - icon: github
