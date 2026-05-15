@@ -50,12 +50,13 @@ exp = SimulationExperiment(dynamics=model)
 
 ### With explicit components
 
-Each section accepts either an instance, a dict, or a name string that resolves
-through the ontology / database:
+Each section accepts either an instance or a dict. To resolve a component
+through the ontology / database, set its `iri` to a `tvbo:` CURIE — that
+triggers the ontology lookup and backfills the rest of the fields:
 
 ```{python}
 exp = SimulationExperiment(
-    dynamics="ReducedWongWangExcInh",
+    dynamics={"name": "ReducedWongWang", "iri": "tvbo:ReducedWongWangExcInh"},
     coupling="Linear",
     network={
         "parcellation": {"atlas": {"name": "DesikanKilliany"}},
@@ -64,6 +65,9 @@ exp = SimulationExperiment(
     integration={"method": "Heun", "duration": 10_000, "noise": None},
 )
 ```
+
+`coupling` additionally accepts a bare string (e.g. `"Linear"`) as shorthand
+for `{"name": "Linear", "iri": "tvbo:Linear"}`.
 
 See [Defining Networks](../Specification/Network.qmd),
 [Coupling Functions](CouplingFunctions.qmd) and

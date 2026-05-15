@@ -1,5 +1,9 @@
 # TODO
 
+## Harmonize class names with `tvboptim`
+
+- change tvbo's "ExplorationAxis" to more broad "DataAxis" to fit with tvboptim's framework. It also makes more senese and is in line with tvbo's generalization goal.
+
 ## Per Task Backend Support in yaml
 - Currently we're selecting backends per runtime and we have defaults set in tvbo
 - It would be more valid and correct, if we define the backend to run a task with in the yaml/metadata spec it self. There we have the Software component, so we can also directly pin the current version and environment after we ran it.
