@@ -66,6 +66,7 @@ def bids(
     path: Path = typer.Argument(..., exists=True, file_okay=False, dir_okay=True,
                                 readable=True, help="BIDS dataset root."),
 ) -> None:
+    """Validate a BIDS dataset directory using the `bids_validator` package."""
     try:
         from bids_validator import BIDSValidator  # type: ignore
     except ImportError:
@@ -94,6 +95,10 @@ def bids(
 def sedml(
     path: Path = typer.Argument(..., exists=True, readable=True, help="SED-ML XML file."),
 ) -> None:
+    """Shallow SED-ML check — confirms the file has a `<sedML>` root element.
+
+    Full L1V4 validation is scheduled for the post-P3 milestone.
+    """
     text = path.read_text(encoding="utf-8", errors="replace")
     if "<sedML" not in text and "<sedml" not in text:
         _common.die(f"{path}: does not look like SED-ML (no <sedML> root element).")
@@ -107,6 +112,10 @@ def sedml(
 def omex(
     path: Path = typer.Argument(..., exists=True, readable=True, help="OMEX archive (.omex / .zip)."),
 ) -> None:
+    """Shallow OMEX check — confirms the archive is a zip with `manifest.xml` at the root.
+
+    Full COMBINE-archive validation is scheduled for the post-P3 milestone.
+    """
     import zipfile
     if not zipfile.is_zipfile(path):
         _common.die(f"{path}: not a zip archive (OMEX must be a zip).")
@@ -128,6 +137,7 @@ def all_(
                                 help="Glob pattern, e.g. '*.yml' or '**/*.yaml'."),
     fail_fast: bool = typer.Option(False, "--fail-fast", help="Stop at first failure."),
 ) -> None:
+    """Recursively run `validate schema` on every YAML file under *directory* matching *pattern*."""
     files = sorted(directory.rglob(pattern))
     if not files:
         _common.die(f"No files matching {pattern!r} under {directory}.")
