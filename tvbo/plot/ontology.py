@@ -9,7 +9,7 @@
 Plotting functions for visualizing networks
 -------------------------------------------
 
-```{python}
+```python
 # | fig-align: center
 import matplotlib.pyplot as plt
 from tvbo import plot
@@ -521,7 +521,7 @@ def draw_custom_arrows(
         Optional[Dict[Any, Any]]: Color mapping if return_color_mapping is True, otherwise None.
 
     Example:
-        ```{python}
+        ```python
         import networkx as nx
         import matplotlib.pyplot as plt
         from tvbo.plot.ontology import draw_custom_arrows, draw_custom_nodes

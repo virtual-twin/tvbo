@@ -507,7 +507,7 @@ class Network(tvbo_datamodel.Network):
 
         Examples
         --------
-        ```{python}
+        ```python
         from tvbo.datamodel import schema as tvbo_datamodel
         dm = tvbo_datamodel.Network(number_of_nodes=10)
         sc = Connectome.from_datamodel(dm)
@@ -557,7 +557,7 @@ class Network(tvbo_datamodel.Network):
 
         Examples
         --------
-        ```{python}
+        ```python
         import numpy as np
         from tvbo import Network
 
@@ -963,7 +963,7 @@ class Network(tvbo_datamodel.Network):
 
         Examples
         --------
-        ```{python}
+        ```python
         from tvbo import Network
 
         network = Network.from_string('''
@@ -1460,7 +1460,7 @@ class Network(tvbo_datamodel.Network):
 
         Examples
         --------
-        ```{python}
+        ```python
         sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
         yaml_str = sc.to_yaml()
         sc.to_yaml("connectome.yaml")  # Save to file
@@ -1756,7 +1756,7 @@ class Network(tvbo_datamodel.Network):
 
         Examples
         --------
-        ```{python}
+        ```python
         net = Network.from_matrix(weights, lengths, labels=["A", "B", "C"])
         print(net.node_labels)  # ['A', 'B', 'C']
         ```
@@ -1780,7 +1780,7 @@ class Network(tvbo_datamodel.Network):
 
         Examples
         --------
-        ```{python}
+        ```python
         net = Network.from_matrix(weights, lengths)
         W = net.weights_matrix
         print(f"Shape: {W.shape}, Mean: {W.mean():.3f}")
@@ -1865,7 +1865,7 @@ class Network(tvbo_datamodel.Network):
 
         Examples
         --------
-        ```{python}
+        ```python
         net = Network.from_matrix(weights, lengths)
         L = net.lengths_matrix
         print(f"Mean length: {L.mean():.1f} mm")
@@ -1931,7 +1931,7 @@ class Network(tvbo_datamodel.Network):
 
         Examples
         --------
-        ```{python}
+        ```python
         sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
         labels = sc.labels
         print(f"Number of labeled regions: {len(labels)}")
@@ -2086,7 +2086,7 @@ class Network(tvbo_datamodel.Network):
 
         Examples
         --------
-        ```{python}
+        ```python
         sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
         atlas = sc.atlas
         print(atlas.region_labels)
@@ -2104,7 +2104,7 @@ class Network(tvbo_datamodel.Network):
 
         Examples
         --------
-        ```{python}
+        ```python
         sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
         atlas = sc.get_atlas()
         ```
@@ -2331,7 +2331,7 @@ class Network(tvbo_datamodel.Network):
 
         Examples
         --------
-        ```{python}
+        ```python
         sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
         sc.normalize_weights("M / M_max")  # Normalize to [0, 1]
         normalized = sc.weights_matrix  # Returns normalized weights
@@ -2362,7 +2362,7 @@ class Network(tvbo_datamodel.Network):
 
         Examples
         --------
-        ```{python}
+        ```python
         import matplotlib.pyplot as plt
         sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
         fig, ax = plt.subplots()
@@ -2407,7 +2407,7 @@ class Network(tvbo_datamodel.Network):
 
         Examples
         --------
-        ```{python}
+        ```python
         import matplotlib.pyplot as plt
         sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
         fig, ax = plt.subplots()
@@ -2440,7 +2440,7 @@ class Network(tvbo_datamodel.Network):
 
         Examples
         --------
-        ```{python}
+        ```python
         sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
         sc.plot_matrix(log_weights=True)
         ```
@@ -2492,7 +2492,7 @@ class Network(tvbo_datamodel.Network):
 
         Examples
         --------
-        ```{python}
+        ```python
         import matplotlib.pyplot as plt
         sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
         delays = sc.calculate_delays(conduction_speed=3.0)
@@ -2601,7 +2601,7 @@ class Network(tvbo_datamodel.Network):
 
         Examples
         --------
-        ```{python}
+        ```python
         # From explicit nodes/edges
         network = Network(nodes=[...], edges=[...])
         G = network.create_graph()
@@ -2692,7 +2692,7 @@ class Network(tvbo_datamodel.Network):
 
         Examples
         --------
-        ```{python}
+        ```python
         sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
         centers = sc.get_centers()
         for idx, (x, y, z) in centers.items():
@@ -2840,7 +2840,7 @@ class Network(tvbo_datamodel.Network):
 
         Examples
         --------
-        ```{python}
+        ```python
         import matplotlib.pyplot as plt
         sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
 
@@ -3044,7 +3044,7 @@ class Network(tvbo_datamodel.Network):
 
         Examples
         --------
-        ```{python}
+        ```python
         sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
         sc.plot_overview(log_weights=True)
         ```
@@ -3229,7 +3229,7 @@ class Network(tvbo_datamodel.Network):
 
         Examples
         --------
-        ```{python}
+        ```python
         sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
         sc.normalize()
         normalized_weights = sc.weights_matrix  # Now in [0, 1] range
@@ -3630,7 +3630,7 @@ class Network(tvbo_datamodel.Network):
 
         Examples
         --------
-        ```{python}
+        ```python
         sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
         sc.add_transform("weight", "M / M_max")
         ```

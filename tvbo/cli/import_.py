@@ -19,6 +19,11 @@ def import_(
         help="If given, save the loaded object as YAML to this path.",
     ),
 ) -> None:
+    """Load a foreign file via the registry's importer dispatch.
+
+    Picks an importer by `--format` if given, otherwise by file extension.
+    Optionally re-saves the loaded object as canonical TVBO YAML.
+    """
     if format is None:
         fmt = _export.resolve_by_extension(path.suffix)
     else:

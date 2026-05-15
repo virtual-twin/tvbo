@@ -11,7 +11,7 @@ TVB-O's plotting utilities
 This module contains utilities for plotting TVB-O models.
 
 
-```{python}
+```python
 from tvbo import plot
 
 plot.ontology.plot_model('JansenRit')
