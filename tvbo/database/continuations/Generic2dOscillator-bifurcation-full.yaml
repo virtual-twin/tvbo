@@ -12,9 +12,7 @@ description: >-
   fold and Hopf bifurcations, then branches to periodic orbits from
   both Hopf points with fine-tuned solver settings.
 
-dynamics:
-  name: Generic2dOscillator
-  iri: tvbo:Generic2dOscillator
+dynamics: Generic2dOscillator
 
 # ── Free parameters ──────────────────────────────────────────────────────────
 # Which parameter(s) to vary. The first entry is the primary continuation

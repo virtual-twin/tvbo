@@ -4,12 +4,133 @@
 
 - change tvbo's "ExplorationAxis" to more broad "DataAxis" to fit with tvboptim's framework. It also makes more senese and is in line with tvbo's generalization goal.
 
-## Per Task Backend Support in yaml
-- Currently we're selecting backends per runtime and we have defaults set in tvbo
-- It would be more valid and correct, if we define the backend to run a task with in the yaml/metadata spec it self. There we have the Software component, so we can also directly pin the current version and environment after we ran it.
-  1. Select backend/software to run with in yaml
-  2. If no version/environment is specified, it can be then set from the current environment the experiment is executed in. So metadata gets enriched post-run to be shared correctly.
-  3. Running SimulationExperiment should be possible in both ways, 1) exactly the same environment as specified in yaml, 2) own environment
+## Backend-in-Metadata + Per-Task Backend Dispatch
+
+Move backend specification from runtime arg to metadata, so each `Task` in a
+`SimulationExperiment` carries its own backend. `exp.run()` executes the full
+Task DAG (integration with tvboptim, bifurcation with bifurcationkit,
+exploration with pyrates, …); `exp.run('jax')` / `exp.run(integration='jax')`
+/ `exp.run({'main': 'jax'})` override at runtime. Sharing the YAML is enough
+to know how the experiment is run; same experiment can be re-rendered or
+re-run with a different backend.
+
+**Depends on** the Task hierarchy refactor in
+`dev/Interoperability/SedML/plan.md` §4.2.1 (Integration as a first-class
+Task, `Algorithm` broadened, deprecated read aliases for legacy slots).
+Backend-in-metadata work is additive on top of that schema.
+
+### Design decisions (locked)
+- **Slot on Task** — `software: SoftwareRequirement`, peer to `execution:
+  ExecutionConfig`. Mirrors experiment-level peers
+  (`environment: SoftwareEnvironment`, `execution: ExecutionConfig`).
+  YAML alias: `backend:`.
+- **Polymorphic authoring form** — bare renderer key (`tvboptim`), package
+  IRI (`tvbo:TVB-Optim`), or full `SoftwareRequirement` object. All coerce
+  to canonical `SoftwareRequirement` via one resolver shared by YAML
+  coercion and runtime overrides.
+- **Resolution precedence** at run time:
+  1. runtime override (`exp.run(...)`) — kwarg form (`integration=`,
+     `continuation=`) and dict-by-name form (`{'main': 'jax'}`); positional
+     `exp.run('jax')` overrides Integration tasks only (back-compat).
+  2. `task.software` (authored or enriched).
+  3. `tvbo/database/defaults.yaml` keyed by Task class
+     (`Integration: tvboptim`, `Continuation: bifurcationkit`,
+     `Exploration: pyrates`, …). Overridable per-install via env var.
+  4. `experiment.environment` is **not** a source — it's a *constraint*;
+     validated at `exp.run()` entry, `strict=True` by default.
+- **Renderer-key ↔ SoftwarePackage map** — new multivalued slot
+  `provides_format: [string]` on `SoftwarePackage`. The database YAMLs
+  under `tvbo/database/software/*.yaml` become load-bearing (one package
+  may provide many formats; e.g. PyRates → `pyrates`, `pyrates-yaml`,
+  `pyrates-bifurcation`).
+- **Execution model** — `exp.run()` runs **all** tasks in topological
+  order of `depends_on`/`simulates`; returns `WorkflowResult` keyed by
+  task name. Fail-fast by default; `continue_on_error=True` for batch.
+  (Lazy variant — `exp.run(lazy=True)` returning a deferred
+  `Workflow` — proposed for later, not in scope here.)
+- **Execution adapters** — `Executor` per language in `tvbo/run/`:
+  `PythonExecutor` (in-kernel `exec`), `JuliaExecutor` (juliacall,
+  in-process), others as needed. Snakemake/Nextflow handoff is an
+  opt-in render target (`exp.export_workflow('snakemake')`), not the
+  default execution mode.
+- **Render API** — rename `render_code()` → `render()`; default groups
+  tasks by output language (one file per language). New `language` slot
+  on `ExportFormat` reflects the rendered code's language (not the
+  underlying engine's). Same override forms as `run()`; `task=` escape
+  hatch returns a single string. Rendering does not mutate the spec.
+- **Post-run enrichment** — `task.software` is enriched **in place** with
+  resolved `version_spec`/`hash` from the live env after `run()`. YAML
+  evolves: authored short form round-trips pre-run; enriched form on
+  post-run save. Untouched tasks stay in authored form. Strict pin
+  (`==X.Y.Z`) errors on env mismatch; constraint (`>=X`) satisfies-and-keeps;
+  `exp.run(env='current')` forces re-enrichment.
+- **Unknown backends** — hard error with did-you-mean suggestion
+  (Levenshtein over registered renderer keys + package IRIs).
+- **Migration** — load-time shim accepts deprecated slots (`integration:`,
+  `explorations:`, `continuations:`, `algorithms:`, `optimizations:`,
+  legacy `dynamics:`/`network:`/`coupling:`) and constructs equivalent
+  `tasks:` list in memory with a `DeprecationWarning`. CLI command
+  `tvbo migrate <yaml>` rewrites in place. Shim removal target: two
+  release cycles after ship.
+
+### Implementation plan (dependency order)
+1. **Schema additions** (LinkML, in `schema/`):
+   - `Task` hierarchy from SED-ML plan §4.2.1 (`Task`, `Integration`,
+     `Exploration`, `Optimization`, `Continuation`, `Algorithm`,
+     `ParameterTuning`, `Analysis`, `Inference`, `Surrogate`).
+   - Add `software: SoftwareRequirement` slot on `Task`, with
+     polymorphic `any_of: [string, SoftwareRequirement]` coercion. Alias
+     `backend`.
+   - Add `provides_format: [string]` slot on `SoftwarePackage`.
+   - Add `language: string` slot on `ExportFormat` (registry-side, not
+     schema).
+   - Populate `provides_format:` on existing
+     `tvbo/database/software/*.yaml` (TVB-Optim → tvboptim; TVB → tvb;
+     PyRates → pyrates, pyrates-yaml, pyrates-bifurcation; jaxley → jax;
+     BifurcationKit.jl → bifurcationkit; AUTO-07p → pyrates-bifurcation
+     companion; …).
+2. **Defaults file** `tvbo/database/defaults.yaml` — Task class →
+   renderer key. Env-var override (e.g. `TVBO_TASK_DEFAULTS=/path`).
+3. **Resolver** `tvbo/run/resolve.py` — single function consumed by
+   YAML coercion (Task.software) and runtime overrides
+   (`exp.run(...)`). Polymorphic input → canonical
+   `SoftwareRequirement`. Handles the (a)/(b)/(d) precedence chain and
+   the (c) constraint validation.
+4. **Executor adapters** under `tvbo/run/`:
+   - `python.py` — in-kernel `exec`.
+   - `julia.py` — juliacall, in-process.
+   - Wire each `Executor` to its language; `WorkflowResult` aggregator
+     handles cross-task dependency by passing upstream `TaskResult`s.
+5. **`SimulationExperiment.run()` rewrite** — topological execution
+   over `tasks:`; dispatch per-task through the resolver + Executor;
+   replace the `if format == ...` chain with registry-driven dispatch;
+   keep the old `format=` kwarg as a back-compat alias for the
+   positional override.
+6. **`SimulationExperiment.render()` rewrite** — rename from
+   `render_code` (keep alias); group tasks by `ExportFormat.language`;
+   per-task `software` resolution; one file per language; `task=` single
+   render escape hatch.
+7. **Post-run enrichment** — `Executor.execute()` returns the resolved
+   `SoftwareRequirement` (with `version_spec`/`hash`); `run()` writes it
+   back into the in-memory `task.software`. `exp.save()` serialises the
+   enriched form. Add `exp.run(record_provenance=False)` to opt out.
+8. **Migration shim** — load-time read of deprecated slots in the
+   pydantic `SimulationExperiment` (`model_validator(mode='before')`),
+   emit `DeprecationWarning`. Per the SED-ML plan, the slots already
+   exist as `deprecated:` aliases — just wire the rewrite logic.
+9. **CLI migration command** `tvbo migrate <yaml>` — rewrite legacy
+   YAMLs in place to the new `tasks:` form. Idempotent.
+10. **`exp.export_workflow('snakemake')` / `'nextflow'`** — opt-in
+    render target, not on the run path. Defer.
+11. **Tests** — fixture: migrate `tvbo/database/experiments/bifurcation/
+    JansenRit-bifurcation.yaml` (mixed Continuation tasks + implicit
+    warmup Integration); round-trip authored ↔ enriched form; verify
+    `exp.run()` end-to-end with mixed Python+Julia backends; verify
+    `exp.run('jax')` overrides Integration only.
+12. **Docs** — update `docs/Usage/SimulationExperiments.qmd` to show:
+    authoring `tasks:` with per-task `backend:`; `exp.run()` /
+    `exp.run('jax')` / `exp.run(integration=...)`; provenance enrichment
+    on save; the `tvbo migrate` flow.
 
 
 ## Revisit Heterogenous parameter specification
@@ -87,15 +208,6 @@ But we want to be able to change the space of a specific axis. therefore we need
 
 ## Data Standards
 Neurodata without Borders (NDWB)
-
-
-## Enable backend spec in yaml/metadata for different SimulationExperiment Tasks
-- We already have the software database, implement the SimulationExperiment.run() with no backend specified,
--  the default backend can be still tvboptim but in metadat defined already
-- This will go towards no hardcoded asumption in python runtime for tvbo
-- Allows SimulationEperiment with multiple backends per task
-    - Running integration/exploration with tvboptim
-    - Bifurcation analysis with julia
 
 
 ## Bifurcation result needs to be also xarray structure!
