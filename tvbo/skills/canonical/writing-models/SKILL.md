@@ -62,21 +62,25 @@ lorenz = Dynamics(
 )
 ```
 
-## Loading a curated model from the database / ontology
+## Loading a curated model from a source
 
-For a curated model, use `Dynamics.from_db("<DBKey>")`, or — when nesting
-inside a `SimulationExperiment` spec — pass a dict with an `iri`:
+TVBO components are declarative: a `Dynamics` is either specified inline (as
+above), loaded from YAML, or **pointed at semantically via an `iri`**. The
+IRI's prefix names the source — `tvbo:` for the built-in ontology, but the
+same mechanism is intended to dispatch to other prefixes (e.g. `neuroml:`)
+that resolve from other ontologies / data sources.
 
 ```python
-# Direct construction
+# Direct construction (Python API)
 dyn = Dynamics.from_db("ReducedWongWangExcInh")
 
-# Inline inside a SimulationExperiment dict — `iri` triggers ontology lookup
+# As a semantic pointer inside a SimulationExperiment dict
 dynamics = {"name": "ReducedWongWang", "iri": "tvbo:ReducedWongWangExcInh"}
 ```
 
-A bare name string (`dynamics="ReducedWongWangExcInh"`) is **not** resolved —
-the `iri` is what triggers ontology / database population.
+A bare name string (`dynamics="ReducedWongWangExcInh"`) is **not** a semantic
+pointer — there's no prefix, so the resolver cannot tell which source to
+query. Always include the `iri`.
 
 ## Conventions and pitfalls
 
