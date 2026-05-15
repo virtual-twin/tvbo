@@ -276,6 +276,22 @@ def plot_curve(
     annotate=None,
     **kwargs,
 ):
+    """Draw a quadratic Bézier arrow from *start* to *end* on *ax*.
+
+    Used internally by the ontology-graph layout to render edges with smooth
+    curvature controlled by *rad*. Optional *annotate* renders a midpoint label.
+
+    Args:
+        ax: Target matplotlib axes.
+        start: `(x, y)` start coordinate.
+        end: `(x, y)` end coordinate.
+        rad: Curvature offset; `0` is a straight line, positive bends right.
+        color: Stroke color.
+        shrinkA, shrinkB: Endpoint shrinkage (fraction of segment length).
+        arrow_size: Head width.
+        arrow_style: Matplotlib arrow style (e.g. `"->"`, `"-|>"`).
+        annotate: Optional midpoint label string.
+    """
     font_size = kwargs.pop("font_size") if "font_size" in kwargs else 12
 
     x1, y1 = start
@@ -1623,6 +1639,30 @@ def plot_model(
     node_kwargs={},
     **kwargs,
 ):
+    """Render a `Dynamics` model as a directed graph: parameters → equations → state vars.
+
+    The graph layout is computed via a force-directed algorithm tuned by
+    *k_factor*. Node coloring is driven by the variable's `math_type`
+    (parameter / derived variable / state variable / function) unless overridden.
+
+    Args:
+        model: A `Dynamics` instance.
+        k_factor: Spring-constant multiplier for the force-directed layout.
+        edge_cmap: Matplotlib colormap name for edges.
+        node_cmap: Matplotlib colormap name for nodes.
+        edge_width: Stroke width for edges (auto-scaled with *font_size*).
+        font_size: Axes font size; also rescales edge width.
+        node_colors: Either a category attribute (`"math_type"`) or a dict of overrides.
+        add_equations_to_labels: Append the LaTeX equation to each node label.
+        add_parameter_values: Append the current value to parameter labels.
+        circle_matches: Draw a circle around nodes whose name matches the model's coupling vars.
+        ax: Existing matplotlib axes; created if `None`.
+        legend: Whether to render the category legend.
+        legend_kwargs: Forwarded to the legend constructor.
+        figsize: Figure size when *ax* is `None`.
+        edge_kwargs: Forwarded to the edge-drawing helper.
+        node_kwargs: Forwarded to the node-drawing helper.
+    """
     edge_width = font_size / 20
     edge_kwargs.update({"shrinkA": 15 * (font_size / 20), "shrinkB": 15 * (font_size / 20)})
     if isinstance(model, str):

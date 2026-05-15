@@ -15,6 +15,18 @@ from tvbo.classes import equation as equations
 
 
 def plot_coupling_function(CF, ax=None):
+    """Plot a `CouplingFunction`'s response curve over a sensible input range.
+
+    Picks the input domain based on the function's name (`±π` for Kuramoto,
+    `±1000` for Sigmoidal, `±10` otherwise), substitutes the curated default
+    parameters, and renders the SymPy expression as a 1-D curve with a LaTeX
+    title.
+
+    Args:
+        CF: The coupling function (an instance of `Coupling`-derived class
+            or an ontology lookup result).
+        ax: Existing matplotlib axes to draw into; created if `None`.
+    """
     # Extract acronym and set parameter configuration
     param_config = config.get_coupling_parameters(CF)
 
@@ -105,6 +117,19 @@ def plot_coupling_function(CF, ax=None):
 
 
 def plot_temporal_equation(EQ, t_ms, title="Stimulation pulse sequence", plot_kwargs=None, ax=None, **kwargs):
+    """Plot a temporal equation (SymPy expression or ontology entity) over a time vector.
+
+    Substitutes ontology-curated default parameters (overridable via
+    `**kwargs`) and evaluates the expression pointwise at each value of *t_ms*.
+
+    Args:
+        EQ: A SymPy expression or an owlready2 class representing a temporal equation.
+        t_ms: 1-D array-like of time points in milliseconds.
+        title: Axes title.
+        plot_kwargs: Forwarded to `ax.plot(...)`.
+        ax: Existing matplotlib axes; created if `None`.
+        **kwargs: Override symbolic parameters by name.
+    """
     if plot_kwargs is None:
         plot_kwargs = {}
     if isinstance(EQ, owl.ThingClass):
