@@ -112,6 +112,19 @@ def foo(x: int, y: str = "z", *args, **kwargs):
 
 Skip `self` / `cls`. Don't write `Args:` at all when the function takes no documented parameters.
 
+**Never** group multiple parameter names on one line — `foo, bar: Both are ...` makes quartodoc emit a warning and the entry won't render correctly. Give each parameter its own line, even if the body is duplicated:
+
+```python
+# ✗ Wrong — quartodoc can't parse this
+Args:
+    edge_cmap, node_cmap: Matplotlib colormap names.
+
+# ✓ Right
+Args:
+    edge_cmap: Matplotlib colormap name for edges.
+    node_cmap: Matplotlib colormap name for nodes.
+```
+
 ## 6. `Returns:` — describe what comes back
 
 ```python
