@@ -7,4 +7,5 @@ import tvbo
 
 
 def version() -> None:
+    """Print the installed TVBO package version."""
     typer.echo(tvbo.__version__)

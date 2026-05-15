@@ -125,6 +125,8 @@ website:
                         href: CLI/validate.qmd
                       - text: "tvbo config"
                         href: CLI/config.qmd
+                      - text: "tvbo skills"
+                        href: CLI/skills.qmd
                   - section: "Workflows & HPC"
                     contents:
                       - text: "tvbo workflow"
