@@ -19,6 +19,7 @@ def schema(
         help="LinkML target class (auto-detected from `class:` key when omitted).",
     ),
 ) -> None:
+    """Validate *path* against the LinkML schema; auto-detects target class from `class:` key."""
     from linkml_runtime.loaders import yaml_loader
     from linkml.validator import Validator
     from linkml.validator.plugins import JsonschemaValidationPlugin
