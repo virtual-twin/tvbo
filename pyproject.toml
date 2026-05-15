@@ -117,7 +117,7 @@ tvboptim = ["tvboptim"]
 all = ["tvbo[neuroml,neuron,data,knowledge,audio,api,tvb,tvboptim,docs,pyrates,julia]"]
 
 [project.urls]
-homepage = "https://virtual-twin.github.io/tvbo/"
+homepage = "https://tvbo.charite.de"
 documentation = "https://virtual-twin.github.io/tvbo/"
 repository = "https://github.com/virtual-twin/tvbo"
 bug-tracker = "https://github.com/virtual-twin/tvbo/issues"
