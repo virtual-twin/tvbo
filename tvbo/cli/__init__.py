@@ -24,7 +24,24 @@ from . import (
 
 app = typer.Typer(
     name="tvbo",
-    help="The Virtual Brain Ontology — command-line interface.",
+    help=(
+        "The Virtual Brain Ontology — command-line interface.\n"
+        "\n"
+        "Quick start:\n"
+        "  tvbo run experiment:JR_MEG_FrequencyGradient_Optimization\n"
+        "  tvbo info <SPEC>            inspect tasks, outputs, backends\n"
+        "  tvbo export jax <SPEC>      render code without executing\n"
+        "  tvbo workflow snakemake <SPEC> -o ./kit\n"
+        "\n"
+        "AI-assistant skills (Claude Code, Cursor, Copilot, raw API):\n"
+        "  tvbo skills install --target claude-code     install user skills (default)\n"
+        "  tvbo skills install --target cursor          install Cursor rules\n"
+        "  tvbo skills install --target prompt > p.md   dump as a system prompt\n"
+        "  tvbo skills uninstall                        remove TVBO-managed skill files\n"
+        "  tvbo skills --help                           all targets, scopes, flags\n"
+        "\n"
+        "Docs: https://thevirtualbrain.github.io/tvbo/  (see Agentic Coding section)"
+    ),
     no_args_is_help=True,
     add_completion=True,
     pretty_exceptions_show_locals=False,
