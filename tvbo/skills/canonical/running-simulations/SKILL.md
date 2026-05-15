@@ -25,24 +25,37 @@ experiment.run(duration=1000).plot()
 
 `run()` returns a result container; `plot()` is built-in. For details see `tvbo/run/`, `tvbo/plot/`, `tvbo/analysis/`.
 
-## Resolving components from the database / ontology
+## Declarative sourcing: inline vs YAML vs IRI
 
-`SimulationExperiment` sections accept an instance or a dict. To pull a curated
-component from the database/ontology, set its `iri` to a `tvbo:` CURIE — that
-is what triggers the lookup. A bare name string is **not** sufficient for
-`dynamics`/`network`.
+TVBO is declarative about **where each component comes from**. A
+`SimulationExperiment` section is always one of:
+
+1. **Fully inline** — a Python instance or a dict containing every field.
+2. **From YAML** — `SimulationExperiment.from_file(...)` / `from_string(...)`.
+3. **Semantic pointer** — a dict with an `iri` CURIE. The prefix selects the
+   source (`tvbo:` for the built-in ontology; in principle other prefixes
+   like `neuroml:` can resolve from other sources); remaining fields are
+   backfilled from that source.
+
+A bare name string is not a semantic pointer — it has no prefix, so the
+resolver cannot tell which source to query. Use the `iri` form:
 
 ```python
 exp = SimulationExperiment(
     dynamics={"name": "ReducedWongWang", "iri": "tvbo:ReducedWongWangExcInh"},
-    coupling="Linear",   # bare string is allowed only for `coupling`
+    coupling={"name": "Linear", "iri": "tvbo:Linear"},
     network={
-        "parcellation": {"atlas": {"name": "DesikanKilliany"}},
-        "tractogram":   {"name": "dTOR"},
+        "parcellation": {"atlas": {"name": "DesikanKilliany",
+                                    "iri": "tvbo:DesikanKilliany"}},
+        "tractogram":   {"name": "dTOR", "iri": "tvbo:dTOR"},
     },
     integration={"method": "Heun", "duration": 10_000, "noise": None},
 )
 ```
+
+`coupling` additionally accepts a bare string as a `tvbo:`-prefixed shorthand,
+but prefer the explicit `iri` form for clarity and to avoid coupling docs to
+the default namespace.
 
 ## Picking a backend
 
