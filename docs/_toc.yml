@@ -324,8 +324,6 @@ website:
                 contents:
                   - text: "Jansen & Rit (1995)"
                     href: Replication/Jansen1995/Run_Jansen1995.qmd
-                  - text: "Koller, Schirner, Ritter (2024)"
-                    href: Replication/Koller2024/Run_Koller2024.qmd
 # END:replication-autogen
 
               - text: "---"
