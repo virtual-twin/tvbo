@@ -255,6 +255,11 @@ def plan_cmd(
     ),
     json: bool = typer.Option(False, "--json"),
 ) -> None:
+    """Show the resolved workflow plan for *spec* without emitting any artefacts.
+
+    Reports the chosen study/experiment, backend, engine, vectorized vs
+    workflow-fanned axes, total cell count, chunking, and applied overrides.
+    """
     plan, _exp = _build_plan(spec, engine=engine, backend=backend,
                              experiment=experiment, overrides=override)
 
@@ -329,6 +334,7 @@ def slurm(
     override: list[str] = typer.Option([], "--set"),
     stdout: bool = typer.Option(False, "--stdout", help="Print artefact only; do not write a kit."),
 ) -> None:
+    """Emit a self-contained sbatch kit (`run.sbatch` + scripts + frozen spec)."""
     _emit("slurm", spec=spec, backend=backend, experiment=experiment,
           output=output, override=override, stdout=stdout)
 
@@ -342,6 +348,7 @@ def snakemake(
     override: list[str] = typer.Option([], "--set"),
     stdout: bool = typer.Option(False, "--stdout", help="Print artefact only; do not write a kit."),
 ) -> None:
+    """Emit a self-contained Snakemake kit (`Snakefile` + scripts + frozen spec)."""
     _emit("snakemake", spec=spec, backend=backend, experiment=experiment,
           output=output, override=override, stdout=stdout)
 
@@ -355,6 +362,7 @@ def nextflow(
     override: list[str] = typer.Option([], "--set"),
     stdout: bool = typer.Option(False, "--stdout", help="Print artefact only; do not write a kit."),
 ) -> None:
+    """Emit a self-contained Nextflow kit (`main.nf` + scripts + frozen spec)."""
     _emit("nextflow", spec=spec, backend=backend, experiment=experiment,
           output=output, override=override, stdout=stdout)
 
@@ -363,6 +371,7 @@ def nextflow(
 def backends(
     json: bool = typer.Option(False, "--json"),
 ) -> None:
+    """List execution backends and their ontology-derived capabilities (continuous/spiking/jit/etc.)."""
     rows = []
     for spec in list_backends():
         rows.append({
