@@ -4008,6 +4008,8 @@ class GraphGenerator(ConfiguredBaseModel):
                        'Integrator',
                        'Coupling',
                        'PDE']} })
+    builder: Optional[Callable] = Field(default=None, description="""Optional Python callable that builds the network at YAML load time. When set, ``Network._resolve`` imports ``<module>.<name>`` and invokes it with the ``parameters`` block as keyword arguments. The callable must return either a ``Network`` instance or a tuple ``(weights, lengths, node_params)``. Use the existing ``Callable`` slots (``name`` is the function name, ``module`` is its dotted module path). Reuses the same idiom as TVB monitor class references; no free ``module:function`` strings.
+""", json_schema_extra = { "linkml_meta": {'domain_of': ['GraphGenerator']} })
 
 
 class File(ConfiguredBaseModel):

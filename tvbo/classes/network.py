@@ -461,10 +461,116 @@ class Network(tvbo_datamodel.Network):
             self._resolve_from_data_file(source_dir)
         elif getattr(self, "bids_dir", None):
             self._resolve_from_bids_dir(source_dir)
-        # graph_generator.builder branch lands in A2.
+        elif self._has_graph_generator_builder():
+            self._resolve_from_graph_generator(source_dir)
         elif getattr(self, "parcellation", None):
             self._resolve_from_parcellation()
         self._resolved = True
+
+    def _has_graph_generator_builder(self) -> bool:
+        gg = getattr(self, "graph_generator", None)
+        if gg is None:
+            return False
+        return getattr(gg, "builder", None) is not None
+
+    def _resolve_from_graph_generator(self, source_dir: Optional[Union[str, Path]]) -> None:
+        """Invoke ``graph_generator.builder`` (a Callable) and copy its result onto self.
+
+        The builder is a TVBO ``Callable`` (the same idiom used for monitor
+        class references). Its ``module`` and ``name`` fields locate a
+        Python callable; the ``graph_generator.parameters`` dict is passed
+        as keyword arguments. The callable must return either a ``Network``
+        instance or a tuple ``(weights, lengths)`` / ``(weights, lengths,
+        node_params)``.
+
+        ``source_dir`` is forwarded so builders that need it (e.g. for
+        loading companion artefacts) can request it as a keyword argument.
+        """
+        gg = self.graph_generator
+        cb = gg.builder
+        module_name = getattr(cb, "module", None)
+        func_name = getattr(cb, "name", None)
+        if not module_name or not func_name:
+            raise ValueError(
+                "graph_generator.builder must have both `module` and `name` "
+                f"set (got module={module_name!r}, name={func_name!r})"
+            )
+
+        import importlib
+
+        # Make the YAML source directory importable so builders can live
+        # next to the study YAML.
+        added_to_path = False
+        if source_dir is not None:
+            src = str(Path(source_dir).resolve())
+            if src not in os.sys.path:
+                os.sys.path.insert(0, src)
+                added_to_path = True
+
+        try:
+            mod = importlib.import_module(module_name)
+            fn = getattr(mod, func_name)
+
+            # Flatten Parameter list to a plain kwargs dict.
+            kwargs: Dict[str, Any] = {}
+            for p in (gg.parameters or {}).values():
+                pname = getattr(p, "name", None)
+                if pname is None:
+                    continue
+                kwargs[pname] = getattr(p, "value", None)
+            if getattr(gg, "seed", None) is not None:
+                kwargs.setdefault("seed", gg.seed)
+
+            result = fn(**kwargs)
+        finally:
+            if added_to_path:
+                try:
+                    os.sys.path.remove(src)
+                except ValueError:
+                    pass
+
+        # Accept either a Network or a (weights, lengths[, node_params]) tuple.
+        if isinstance(result, Network):
+            for attr in ("nodes", "edges", "number_of_nodes", "descriptor"):
+                val = getattr(result, attr, None)
+                if val is not None:
+                    setattr(self, attr, val)
+            for cache in ("_cached_weights", "_cached_lengths", "_store",
+                          "_mesh", "_mesh_vertices", "_mesh_elements",
+                          "_mesh_normals"):
+                v = getattr(result, cache, None)
+                if v is not None:
+                    setattr(self, cache, v)
+        else:
+            if not isinstance(result, tuple) or len(result) not in (2, 3):
+                raise TypeError(
+                    "graph_generator.builder must return a Network or a "
+                    "(weights, lengths) / (weights, lengths, node_params) tuple."
+                )
+            weights = np.asarray(result[0])
+            lengths = np.asarray(result[1]) if result[1] is not None else None
+            node_params = result[2] if len(result) == 3 else None
+            n_nodes = weights.shape[0]
+            self.number_of_nodes = n_nodes
+            self.nodes = [
+                tvbo_datamodel.Node(id=i, label=f"node_{i}") for i in range(n_nodes)
+            ]
+            self.edges = []
+            self._cached_weights = weights
+            if lengths is not None:
+                self._cached_lengths = lengths
+            if node_params:
+                # Builder may attach per-node parameters as a dict of
+                # {param_name: array of len n_nodes}. Materialise these
+                # onto each Node so downstream codegen can consume them.
+                for pname, arr in node_params.items():
+                    arr = np.asarray(arr)
+                    for i in range(n_nodes):
+                        if self.nodes[i].parameters is None:
+                            self.nodes[i].parameters = {}
+                        self.nodes[i].parameters[pname] = tvbo_datamodel.Parameter(
+                            name=pname, value=float(arr[i])
+                        )
 
     def _resolve_from_data_file(self, source_dir: Optional[Union[str, Path]]) -> None:
         """Populate self from a companion .h5/.zarr sidecar referenced by ``self.data_file``."""
