@@ -32,18 +32,30 @@ except ImportError:
     available_connectomes = []
 
 
-def _find_network_sidecar(atlas: str, tractogram: str) -> Optional[Path]:
+def _find_network_sidecar(
+    atlas: str,
+    tractogram: str,
+    segmentation: Optional[str] = None,
+    scale: Optional[str] = None,
+) -> Optional[Path]:
     """Find the YAML sidecar for a given atlas + tractogram combination.
 
     Searches tvbo/database/networks/ for files matching the atlas and rec- entities.
-    Falls back to partial matching if exact match fails.
+    When ``segmentation`` / ``scale`` are given, also requires ``seg-<segmentation>``
+    and ``scale-<scale>``. Falls back to partial matching if exact match fails.
     """
     for f in NETWORK_DIR.glob("*.yaml"):
         stem = f.stem
-        if f"atlas-{atlas}" in stem and f"rec-{tractogram}" in stem:
-            # Skip ranked/ordered variants unless explicitly requested
-            if "seg-" not in stem:
-                return f
+        if f"atlas-{atlas}" not in stem or f"rec-{tractogram}" not in stem:
+            continue
+        if segmentation is not None and f"seg-{segmentation}" not in stem:
+            continue
+        if scale is not None and f"scale-{scale}" not in stem:
+            continue
+        # Only skip seg- variants when the caller did NOT request one.
+        if segmentation is None and "seg-" in stem:
+            continue
+        return f
     # Fallback: try with normalized atlas names
     atlas_map = {
         "Schaefer1000": "Schaefer2018",
@@ -55,7 +67,7 @@ def _find_network_sidecar(atlas: str, tractogram: str) -> Optional[Path]:
     }
     mapped = atlas_map.get(atlas, atlas)
     if mapped != atlas:
-        return _find_network_sidecar(mapped, tractogram)
+        return _find_network_sidecar(mapped, tractogram, segmentation, scale)
     return None
 
 
@@ -131,7 +143,12 @@ def _discover_bids_measures(bids_dir) -> list[str]:
     return result or measures
 
 
-def get_normative_connectome_data(atlas: str, tractogram: str = "dTOR") -> Tuple[np.ndarray, Optional[np.ndarray]]:
+def get_normative_connectome_data(
+    atlas: str,
+    tractogram: str = "dTOR",
+    segmentation: Optional[str] = None,
+    scale: Optional[str] = None,
+) -> Tuple[np.ndarray, Optional[np.ndarray]]:
     """Load normative connectivity matrices from tvbo/database/networks/ HDF5 files.
 
     Parameters
@@ -140,6 +157,9 @@ def get_normative_connectome_data(atlas: str, tractogram: str = "dTOR") -> Tuple
         Name of the brain parcellation atlas (e.g., "DesikanKilliany", "Destrieux")
     tractogram : str
         Tractogram/reconstruction pipeline (e.g., "dTOR", "MghUscHcp32", "PPMI85")
+    segmentation, scale : str, optional
+        BIDS ``seg-`` and ``scale-`` entity values used to disambiguate
+        sub-resolutions of the same atlas (e.g. Schaefer2018 7Networks/1000).
 
     Returns
     -------
@@ -152,11 +172,17 @@ def get_normative_connectome_data(atlas: str, tractogram: str = "dTOR") -> Tuple
     --------
     ```python
     weights, lengths = get_normative_connectome_data("DesikanKilliany", "dTOR")
+    weights, lengths = get_normative_connectome_data(
+        "Schaefer2018", "dTOR", segmentation="7Networks", scale="1000"
+    )
     ```
     """
-    sidecar = _find_network_sidecar(atlas, tractogram)
+    sidecar = _find_network_sidecar(atlas, tractogram, segmentation, scale)
     if sidecar is None:
-        raise FileNotFoundError(f"No network found for atlas={atlas}, tractogram={tractogram} in {NETWORK_DIR}")
+        raise FileNotFoundError(
+            f"No network found for atlas={atlas}, tractogram={tractogram}, "
+            f"seg={segmentation}, scale={scale} in {NETWORK_DIR}"
+        )
 
     from tvbo.data.network_io import load_network
 
@@ -309,74 +335,15 @@ class Network(tvbo_datamodel.Network):
             kwargs["number_of_nodes"] = n_nodes
             has_edges = True
 
-        # Load normative data if parcellation/atlas specified and no explicit connectivity
+        # Normalise an inline string parcellation -> Parcellation dict so the
+        # parent constructor accepts it. Materialisation of normative data
+        # happens later in self._resolve().
         if not has_nodes and not has_edges and not has_edge_files:
-            if kwargs.get("parcellation"):
-                if isinstance(kwargs["parcellation"], str):
-                    kwargs["parcellation"] = tvbo_datamodel.Parcellation(
-                        label=kwargs["parcellation"],
-                        atlas=tvbo_datamodel.BrainAtlas(name=kwargs["parcellation"]),
-                    )._as_dict
-                # Safely get atlas name, handling missing atlas
-                parcellation = kwargs["parcellation"]
-                atlas = parcellation.get("atlas") if isinstance(parcellation, dict) else getattr(parcellation, "atlas", None)
-                atlas_name = atlas.get("name") if isinstance(atlas, dict) else getattr(atlas, "name", None) if atlas else None
-                if not atlas_name and atlas:
-                    atlas_iri = atlas.get("iri") if isinstance(atlas, dict) else getattr(atlas, "iri", None)
-                    if atlas_iri:
-                        atlas_name = atlas_iri.split(":", 1)[-1] if ":" in atlas_iri else atlas_iri
-                if not atlas_name:
-                    # Skip normative data loading if no atlas specified
-                    super().__init__(**kwargs)
-                    return
-                tractogram = kwargs.get("tractogram", "dTOR")
-                if isinstance(tractogram, dict):
-                    tractogram = tractogram.get("name") or (
-                        tractogram.get("iri", "").split(":", 1)[-1] if tractogram.get("iri") else "dTOR"
-                    )
-                elif hasattr(tractogram, "name"):
-                    tractogram = tractogram.name or (
-                        getattr(tractogram, "iri", "").split(":", 1)[-1]
-                        if getattr(tractogram, "iri", None)
-                        else "dTOR"
-                    )
-                w_arr, l_arr = get_normative_connectome_data(atlas_name, tractogram)
-
-                n_nodes = w_arr.shape[0]
-
-                # Handle mismatched weight/length matrix sizes
-                if l_arr is not None and l_arr.shape[0] != n_nodes:
-                    import warnings
-
-                    warnings.warn(
-                        f"Weight matrix ({n_nodes}x{n_nodes}) and length matrix "
-                        f"({l_arr.shape[0]}x{l_arr.shape[1]}) have different sizes. "
-                        f"Using minimum size."
-                    )
-                    n_nodes = min(n_nodes, l_arr.shape[0])
-                    w_arr = w_arr[:n_nodes, :n_nodes]
-                    l_arr = l_arr[:n_nodes, :n_nodes]
-
-                # Store matrices directly (avoid creating explicit edges for large networks)
-                kwargs["number_of_nodes"] = n_nodes
-                kwargs.setdefault(
-                    "nodes",
-                    [tvbo_datamodel.Node(id=i, label=f"region_{i}") for i in range(n_nodes)],
-                )
-                kwargs.setdefault("edges", [])
-
-                super().__init__(**kwargs)
-
-                # Cache matrices for efficient access
-                self._cached_weights = w_arr
-                self._cached_lengths = l_arr
-
-                # Ensure conduction_speed for early return path
-                if "conduction_speed" not in (self.parameters or {}):
-                    self.parameters["conduction_speed"] = tvbo_datamodel.Parameter(
-                        name="conduction_speed", label="v", value=3.0, unit="mm_per_ms"
-                    )
-                return  # Skip rest of __init__ — already called super()
+            if isinstance(kwargs.get("parcellation"), str):
+                kwargs["parcellation"] = tvbo_datamodel.Parcellation(
+                    label=kwargs["parcellation"],
+                    atlas=tvbo_datamodel.BrainAtlas(name=kwargs["parcellation"]),
+                )._as_dict
 
         # Infer n_nodes from nodes if present (authoritative source)
         if "nodes" in kwargs and kwargs["nodes"]:
@@ -420,6 +387,207 @@ class Network(tvbo_datamodel.Network):
             self.parameters["conduction_speed"] = tvbo_datamodel.Parameter(
                 name="conduction_speed", label="v", value=3.0, unit="mm_per_ms"
             )
+
+        # Materialise connectivity from the declarative spec (parcellation,
+        # data_file, bids_dir, graph_generator). Idempotent; safe to call
+        # multiple times. See Network._resolve. Pick up the YAML source
+        # directory from the SimulationExperiment context (set by from_file)
+        # so relative paths resolve correctly even when Network is built as
+        # a kwarg inside SimulationExperiment.__init__.
+        from tvbo.classes.experiment import SimulationExperiment as _SE
+        _source_dir = None
+        _pending = getattr(_SE, "_pending_source_file", None)
+        if _pending:
+            _source_dir = os.path.dirname(_pending)
+        self._resolve(source_dir=_source_dir)
+
+    # -------------------------------------------------------------------- #
+    # Canonical resolver                                                   #
+    # -------------------------------------------------------------------- #
+    def _is_materialized(self) -> bool:
+        """Return True when this Network already carries connectivity data.
+
+        A Network is "materialized" if it has cached weight matrices, a lazy
+        array store (h5 companion), or an explicit edges list. Used by
+        ``_resolve`` to short-circuit when no further loading is required.
+        """
+        if getattr(self, "_cached_weights", None) is not None:
+            return True
+        if getattr(self, "_store", None) is not None:
+            return True
+        edges = getattr(self, "edges", None)
+        if edges:
+            return True
+        return False
+
+    def _resolve(self, source_dir: Optional[Union[str, Path]] = None) -> None:
+        """Materialise this Network's connectivity from its declarative spec.
+
+        Single source of truth for "given the YAML, populate the matrices".
+        Idempotent: a successful resolution sets ``self._resolved = True``
+        and subsequent calls are no-ops. Safe to call from
+        ``Network.__init__``, ``Network.from_file``, and from
+        ``SimulationExperiment.from_datamodel`` via a one-line hook.
+
+        Resolution order (first match wins):
+
+        1. Already materialised (cached weights / store / explicit edges):
+           mark resolved and return.
+        2. ``data_file`` companion (.h5 / .zarr + .yaml sidecar): load
+           lazily via ``tvbo.data.network_io.attach_lazy_store``.
+        3. ``bids_dir`` BEP017 directory: route through ``from_bids`` and
+           copy matrices onto self.
+        4. ``graph_generator.builder`` Callable: invoke (added in A2).
+        5. ``parcellation`` (+ optional ``tractogram``, ``bids.segmentation``,
+           ``bids.scale``): normative DB load via
+           ``get_normative_connectome_data``.
+        6. None of the above: no-op (Network must have been constructed via
+           explicit ``nodes``/``edges`` or ``Network.from_matrix``).
+
+        Parameters
+        ----------
+        source_dir
+            Directory used to resolve relative paths in ``data_file`` or
+            ``bids_dir``. When ``None``, paths are taken as absolute or
+            resolved against ``cwd``. Callers loading from a YAML file
+            should pass the YAML's parent directory.
+        """
+        if getattr(self, "_resolved", False):
+            return
+        if self._is_materialized():
+            self._resolved = True
+            return
+        if getattr(self, "data_file", None):
+            self._resolve_from_data_file(source_dir)
+        elif getattr(self, "bids_dir", None):
+            self._resolve_from_bids_dir(source_dir)
+        # graph_generator.builder branch lands in A2.
+        elif getattr(self, "parcellation", None):
+            self._resolve_from_parcellation()
+        self._resolved = True
+
+    def _resolve_from_data_file(self, source_dir: Optional[Union[str, Path]]) -> None:
+        """Populate self from a companion .h5/.zarr sidecar referenced by ``self.data_file``."""
+        data_file = Path(self.data_file)
+        if not data_file.is_absolute():
+            base = Path(source_dir) if source_dir else Path.cwd()
+            data_file = (base / data_file).resolve()
+        sidecar = data_file.with_suffix(".yaml") if data_file.suffix in (".h5", ".zarr") else data_file
+        if not sidecar.exists():
+            raise FileNotFoundError(f"No YAML sidecar found for {data_file}")
+
+        from tvbo.data.network_io import load_network
+
+        loaded = load_network(sidecar)
+        # The sidecar is the authoritative source of connectivity. Replace
+        # connectivity-bearing fields unconditionally. Inline-authored
+        # coupling / transforms / parameters live in slots NOT listed here
+        # and are preserved on self.
+        for attr in ("nodes", "edges", "number_of_nodes", "descriptor"):
+            val = getattr(loaded, attr, None)
+            if val is not None:
+                setattr(self, attr, val)
+        store = getattr(loaded, "_store", None)
+        if store is not None:
+            self._store = store
+        for cache in ("_cached_weights", "_cached_lengths", "_mesh",
+                       "_mesh_vertices", "_mesh_elements", "_mesh_normals"):
+            v = getattr(loaded, cache, None)
+            if v is not None:
+                setattr(self, cache, v)
+
+    def _resolve_from_bids_dir(self, source_dir: Optional[Union[str, Path]]) -> None:
+        """Populate self from a BEP017 BIDS directory at ``self.bids_dir``."""
+        bids_dir = Path(self.bids_dir)
+        if not bids_dir.is_absolute():
+            base = Path(source_dir) if source_dir else Path.cwd()
+            bids_dir = (base / bids_dir).resolve()
+        # Reuse the from_bids classmethod, then copy its state onto self.
+        atlas = None
+        if self.parcellation:
+            parc = self.parcellation
+            atlas_obj = parc.get("atlas") if isinstance(parc, dict) else getattr(parc, "atlas", None)
+            atlas = atlas_obj.get("name") if isinstance(atlas_obj, dict) else getattr(atlas_obj, "name", None)
+        loaded = type(self).from_bids(
+            bids_dir,
+            atlas=atlas,
+            structural_measures=list(self.structural_measures) if self.structural_measures else None,
+            observational_measures=list(self.observational_measures) if self.observational_measures else None,
+        )
+        for attr in ("nodes", "edges", "number_of_nodes"):
+            val = getattr(loaded, attr, None)
+            if val is not None:
+                setattr(self, attr, val)
+        for cache in ("_cached_weights", "_cached_lengths", "_observations", "_store"):
+            v = getattr(loaded, cache, None)
+            if v is not None:
+                setattr(self, cache, v)
+
+    def _resolve_from_parcellation(self) -> None:
+        """Populate self from a parcellation + tractogram normative DB lookup."""
+        parc = self.parcellation
+        atlas = parc.get("atlas") if isinstance(parc, dict) else getattr(parc, "atlas", None)
+        atlas_name = None
+        if atlas is not None:
+            atlas_name = atlas.get("name") if isinstance(atlas, dict) else getattr(atlas, "name", None)
+            if not atlas_name:
+                iri = atlas.get("iri") if isinstance(atlas, dict) else getattr(atlas, "iri", None)
+                if iri:
+                    atlas_name = iri.split(":", 1)[-1] if ":" in iri else iri
+        if not atlas_name:
+            return  # No atlas → nothing to resolve.
+
+        tractogram = self.tractogram
+        trk_name = None
+        if tractogram is not None:
+            trk_name = tractogram.get("name") if isinstance(tractogram, dict) else getattr(tractogram, "name", None)
+            if not trk_name:
+                iri = tractogram.get("iri") if isinstance(tractogram, dict) else getattr(tractogram, "iri", None)
+                if iri:
+                    trk_name = iri.split(":", 1)[-1] if ":" in iri else iri
+        trk_name = trk_name or "dTOR"
+
+        # Optional BIDS disambiguation (seg-, scale-) when the same atlas is
+        # published at multiple resolutions or segmentations.
+        bids_meta = getattr(self, "bids", None)
+        seg = scale = None
+        if isinstance(bids_meta, dict):
+            seg = bids_meta.get("segmentation")
+            scale = bids_meta.get("scale")
+        elif bids_meta is not None:
+            seg = getattr(bids_meta, "segmentation", None)
+            scale = getattr(bids_meta, "scale", None)
+        if scale is not None:
+            scale = str(scale)
+
+        try:
+            w_arr, l_arr = get_normative_connectome_data(
+                atlas_name, trk_name, segmentation=seg, scale=scale
+            )
+        except FileNotFoundError:
+            return
+
+        n_nodes = w_arr.shape[0]
+        if l_arr is not None and l_arr.shape[0] != n_nodes:
+            import warnings
+
+            warnings.warn(
+                f"Weight matrix ({n_nodes}x{n_nodes}) and length matrix "
+                f"({l_arr.shape[0]}x{l_arr.shape[1]}) have different sizes. "
+                f"Using minimum size."
+            )
+            n_nodes = min(n_nodes, l_arr.shape[0])
+            w_arr = w_arr[:n_nodes, :n_nodes]
+            l_arr = l_arr[:n_nodes, :n_nodes]
+
+        if not self.nodes or len(self.nodes) != n_nodes:
+            self.nodes = [tvbo_datamodel.Node(id=i, label=f"region_{i}") for i in range(n_nodes)]
+        if not self.edges:
+            self.edges = []
+        self.number_of_nodes = n_nodes
+        self._cached_weights = np.asarray(w_arr)
+        if l_arr is not None:
+            self._cached_lengths = np.asarray(l_arr)
 
     # -- Backward-compat properties: conduction_speed, global_coupling_strength --
     @property
