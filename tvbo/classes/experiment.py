@@ -406,11 +406,12 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         # Get source file path if loading from file (set by from_file classmethod)
         self._source_file = getattr(self.__class__, "_pending_source_file", None)
 
-        # Load network from BIDS if bids_dir is specified
-        if hasattr(self.network, "bids_dir") and self.network.bids_dir:
-            self._load_network_from_bids()
-        elif hasattr(self.network, "data_file") and self.network.data_file and not getattr(self.network, "_store", None):
-            self._load_network_from_data_file()
+        # Materialise the network from its declarative spec. All branching
+        # lives in Network._resolve; this hook only supplies the YAML
+        # source directory for relative-path resolution.
+        if self.network is not None and not getattr(self.network, "_resolved", False):
+            source_dir = Path(self._source_file).parent if self._source_file else None
+            self.network._resolve(source_dir=source_dir)
 
         if not getattr(self, "integration", None):
             self.integration = Integrator(method="Heun")
@@ -585,14 +586,15 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         obj.__dict__["_source_file"] = getattr(cls, "_pending_source_file", None)
 
-        # Trigger sidecar load if network references a companion data file.
+        # Materialise the network from its declarative spec (data_file,
+        # bids_dir, parcellation, graph_generator). All branching logic lives
+        # in Network._resolve; this hook only supplies the YAML source
+        # directory for relative-path resolution.
         net = obj.network
-        if (net is not None
-                and getattr(net, "data_file", None)
-                and not getattr(net, "_store", None)):
-            obj._load_network_from_data_file()
-        elif net is not None and getattr(net, "bids_dir", None):
-            obj._load_network_from_bids()
+        if net is not None and not getattr(net, "_resolved", False):
+            source_file = getattr(obj, "_source_file", None)
+            source_dir = Path(source_file).parent if source_file else None
+            net._resolve(source_dir=source_dir)
 
         return obj
 

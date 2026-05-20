@@ -1934,9 +1934,16 @@ def run_experiment(
     network = create_network(weights, region_labels=region_labels, noise_sigma=${noise_sigma_value})
     % endif
 
-    # Determine if we need to run main simulation or just transient
-    # For algorithm/optimization/exploration modes, we only need transient - main simulation runs after
+    # Determine if we need to run main simulation or just transient.
+    # When an exploration is configured, each exploration function builds its
+    # own prepare() (with its own transient+main window) and runs from random
+    # ICs per trial. The top-level main sim is therefore redundant work under
+    # mode='all'; downstream consumers should read explorations.trials.results.
+    % if has_explorations:
+    run_main = mode in ('simulation', None)
+    % else:
     run_main = mode in ('simulation', 'all', None)
+    % endif
 
     # Run simulation to get model_fn and state (includes transient settling if configured)
     sim_result = run_simulation(network, t1=${t1_default}, dt=${dt}, t_transient=${transient_time}, run_main=run_main)
