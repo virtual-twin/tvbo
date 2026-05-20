@@ -235,6 +235,129 @@ Neurodata without Borders (NDWB)
     4. Drop duplicate ad-hoc backfill code in `SimulationExperiment.__init__` and `Network.__init__` once the per-class path is uniform.
 
 
+## Backend-independent declarative network construction (`NetworkRecipe`)
+
+**Motivation.** Today procedural networks are built via
+`graph_generator.builder: Callable` pointing at a Python function
+(see `dev/Replication/Koller2024/.../koller2024_networks.py`). This is
+the Python-only entry point. To make TVBO truly backend-independent
+the construction *recipe* itself should live in the YAML, so a Julia
+or MATLAB codegen can emit equivalent native code without porting the
+Python builder.
+
+**Concrete target — express the Koller2024 2D sheet in pure YAML**:
+
+```yaml
+graph_generator:
+  name: Koller2024_2DSheet
+  recipe:
+    layout:
+      type: grid_2d
+      nx: 30
+      ny: 30
+      x_extent: {value: 140.0, unit: mm}
+      y_extent: {value: 140.0, unit: mm}
+    derived:
+      d_ij:
+        type: pairwise_distance
+        metric: euclidean
+        positions: layout
+        self: inf
+      a_ij:
+        type: equation
+        rhs: "(1 / (2*sigma)) * exp(-d_ij / sigma)"
+        parameters: {sigma: 10.0}
+      mask_ij:
+        type: stochastic_mask
+        condition: "d_ij <= abs(sample)"
+        sample: {distribution: Exponential, scale: 17.0}
+        seed: 42
+      a_masked:
+        type: equation
+        rhs: "a_ij * mask_ij"
+      a_normalized:
+        type: normalize
+        axis: 0     # column-normalize
+        of: a_masked
+      sink_pdf:
+        type: gaussian_pdf
+        positions: layout
+        mean: [40.0, 40.0]
+        cov: 300.0
+      source_pdf:
+        type: gaussian_pdf
+        positions: layout
+        mean: [100.0, 100.0]
+        cov: 300.0
+      gradient_template:
+        type: minmax_rescale
+        of: "sink_pdf - source_pdf"
+        to: [-1, 1]
+    outputs:
+      weights:
+        type: equation
+        rhs: "transpose(a_normalized * (alpha * gradient_template + beta))"
+        parameters: {alpha: 2.0, beta: 4.0}
+      lengths:
+        type: equation
+        rhs: "transpose(d_ij)"
+        diagonal: 0.0
+      node_parameters:
+        gradient_template: gradient_template
+```
+
+**Schema additions required.** A new `NetworkRecipe` class containing:
+
+- `layout` block: a small enum of position layouts (`grid_2d`,
+  `grid_3d`, `sphere`, `from_atlas_centres`, `inline_coordinates`)
+  with their respective parameters.
+- `derived` block: an ordered DAG of named intermediates, each one
+  of:
+  - `pairwise_distance` (with metric)
+  - `equation` (sympy/numpy expression over previously-named
+    intermediates and parameters)
+  - `stochastic_mask` (Boolean mask from a distribution sample
+    against a condition; seed-controlled)
+  - `gaussian_pdf` / `distribution_pdf` (evaluate a distribution
+    PDF at the positions)
+  - `normalize` (axis-aware scalar normalisation: column/row/global)
+  - `minmax_rescale` (with target range)
+  - `reduce` (sum/mean/max along an axis)
+- `outputs` block: required `weights`, optional `lengths`,
+  `node_parameters` mapping each node-shaped intermediate to a
+  named `Node.parameters` entry.
+
+**Why generalizable, not Koller-specific.** Every primitive above is a
+textbook graph-construction operation: distance kernels, threshold
+masks, Gaussian fields, axis normalisation. Roberts 2019, Pang 2023,
+Cabral 2011 all assemble networks from the same vocabulary. The
+recipe schema lets any paper's construction live in one declarative
+block, identical across backends.
+
+**Codegen targets.** Each backend in `tvbo/templates/` (currently
+`tvb`, `tvboptim`, the report templates, and the Julia template
+under `tvbo-nd-experiment.jl.mako.py`) emits equivalent native code
+from the same NetworkRecipe spec:
+
+- Python (tvb / tvboptim): numpy + scipy.spatial / scipy.stats /
+  jax.numpy.
+- Julia (Graphs.jl + Distributions.jl).
+- MATLAB (built-ins).
+
+**Migration path.** The existing `graph_generator.builder: Callable`
+path stays — recipes are an additional, more declarative route. A
+recipe with no Callable invokes pure-codegen materialisation; a
+Callable with no recipe stays Python-only (current state). Studies
+can mix: prefer recipes when the construction is composable, fall
+back to builders for one-off Python logic.
+
+**Scope.** Substantial: 2–3 days of schema + codegen work + tests.
+**Defer until** after the Koller replication ships its first
+end-to-end run, then come back to migrate Koller's 2D sheet from
+`koller2024_networks.py:build_2d_sheet` to a pure-YAML recipe and
+delete the builder module entirely.
+
+
 ## Drop `use_ontology` / `_skip_ontology` flags once IRI handling is canonical
 - Today there are ~37 occurrences across `tvbo/` of `use_ontology`, `_skip_ontology`, `_populate_from_ontology*` runtime flags that gate ontology backfill.
 - Once IRI is the canonical way to declare a sourced component, the flag becomes redundant: **iri present → use ontology/DB data; iri absent → fully self-contained spec.**
