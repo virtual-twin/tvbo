@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-05-15T16:52:34
+# Generation date: 2026-05-20T16:41:30
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -941,6 +941,7 @@ class GraphGenerator(YAMLRoot):
     seed: Optional[int] = None
     directed: Optional[Union[bool, Bool]] = False
     parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
+    builder: Optional[Union[dict, "Callable"]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
@@ -963,6 +964,9 @@ class GraphGenerator(YAMLRoot):
             self.directed = Bool(self.directed)
 
         self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
+
+        if self.builder is not None and not isinstance(self.builder, Callable):
+            self.builder = Callable(**as_dict(self.builder))
 
         super().__post_init__(**kwargs)
 
@@ -6580,6 +6584,9 @@ slots.graphGenerator__directed = Slot(uri=TVBO.directed, name="graphGenerator__d
 
 slots.graphGenerator__parameters = Slot(uri=TVBO.parameters, name="graphGenerator__parameters", curie=TVBO.curie('parameters'),
                    model_uri=TVBO.graphGenerator__parameters, domain=None, range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]])
+
+slots.graphGenerator__builder = Slot(uri=TVBO.builder, name="graphGenerator__builder", curie=TVBO.curie('builder'),
+                   model_uri=TVBO.graphGenerator__builder, domain=None, range=Optional[Union[dict, Callable]])
 
 slots.file__type = Slot(uri=TVBO.type, name="file__type", curie=TVBO.curie('type'),
                    model_uri=TVBO.file__type, domain=None, range=Optional[str])

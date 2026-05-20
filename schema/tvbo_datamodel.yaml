@@ -868,6 +868,20 @@ classes:
                 description: >
                     Generator parameters (e.g. k, p, dims).  Names are
                     matched by the backend mapping to construct the call.
+            builder:
+                range: Callable
+                inlined: true
+                description: >
+                    Optional Python callable that builds the network at YAML
+                    load time. When set, ``Network._resolve`` imports
+                    ``<module>.<name>`` and invokes it with the
+                    ``parameters`` block as keyword arguments. The callable
+                    must return either a ``Network`` instance or a tuple
+                    ``(weights, lengths, node_params)``. Use the existing
+                    ``Callable`` slots (``name`` is the function name,
+                    ``module`` is its dotted module path). Reuses the same
+                    idiom as TVB monitor class references; no free
+                    ``module:function`` strings.
 
     File:
         class_uri: tvbo:File
