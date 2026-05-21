@@ -38,7 +38,7 @@ From datamodel object:
 import os
 from typing import Callable, Dict, List, Optional
 
-from linkml_runtime.loaders import yaml_loader
+from tvbo.utils import yaml_loader
 
 from tvbo.datamodel import schema as tvbo_datamodel
 

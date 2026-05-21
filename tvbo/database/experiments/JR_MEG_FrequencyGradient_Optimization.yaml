@@ -269,7 +269,7 @@ observations:
   simulated_psd:
     label: "Simulated Power Spectral Density"
     description: "Power spectral density using Welch's method on simulated y0"
-    source: y0
+    source: [y0]
     pipeline:
       - function: subsample
         arguments:

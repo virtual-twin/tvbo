@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-05-20T18:53:18
+# Generation date: 2026-05-21T12:59:44
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -5938,6 +5938,10 @@ class SimulationScale(EnumDefinitionImpl):
         text="network_system",
         description="Whole-brain or large-scale network of regions.",
         meaning=WD["Q1073340"])
+    whole_brain = PermissibleValue(
+        text="whole_brain",
+        description="Whole-brain models targeting cortex-wide dynamics.",
+        meaning=WD["Q239456"])
 
     _defn = EnumDefinition(
         name="SimulationScale",
@@ -5986,6 +5990,14 @@ class ToolRole(EnumDefinitionImpl):
         text="continuation_tool",
         description="Numerical continuation / bifurcation analysis.",
         meaning=WD["Q858926"])
+    inference_framework = PermissibleValue(
+        text="inference_framework",
+        description="Probabilistic / Bayesian inference toolkit for model parameters.",
+        meaning=WD["Q3508889"])
+    feature_extraction = PermissibleValue(
+        text="feature_extraction",
+        description="Feature library or pipeline for derived signal descriptors.",
+        meaning=WD["Q1392628"])
 
     _defn = EnumDefinition(
         name="ToolRole",
@@ -6042,6 +6054,10 @@ class ModelParadigm(EnumDefinitionImpl):
     dynamic_mean_field = PermissibleValue(
         text="dynamic_mean_field",
         description="Dynamic mean-field approximation (e.g., Deco et al.).")
+    neural_field = PermissibleValue(
+        text="neural_field",
+        description="Continuous neural field equations (Amari, Wilson-Cowan field).",
+        meaning=WD["Q7003015"])
     data_standard = PermissibleValue(
         text="data_standard",
         description="Data format or exchange standard.",
@@ -6123,6 +6139,10 @@ class EcosystemEnum(EnumDefinitionImpl):
         text="maven",
         description="Maven Central Repository (Java).",
         meaning=WD["Q6795527"])
+    docker = PermissibleValue(
+        text="docker",
+        description="Docker container registry / image distribution.",
+        meaning=WD["Q15206305"])
 
     _defn = EnumDefinition(
         name="EcosystemEnum",

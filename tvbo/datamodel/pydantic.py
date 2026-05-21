@@ -536,6 +536,10 @@ class SimulationScale(str, Enum):
     """
     Whole-brain or large-scale network of regions.
     """
+    whole_brain = "whole_brain"
+    """
+    Whole-brain models targeting cortex-wide dynamics.
+    """
 
 
 class ToolRole(str, Enum):
@@ -581,6 +585,14 @@ class ToolRole(str, Enum):
     continuation_tool = "continuation_tool"
     """
     Numerical continuation / bifurcation analysis.
+    """
+    inference_framework = "inference_framework"
+    """
+    Probabilistic / Bayesian inference toolkit for model parameters.
+    """
+    feature_extraction = "feature_extraction"
+    """
+    Feature library or pipeline for derived signal descriptors.
     """
 
 
@@ -635,6 +647,10 @@ class ModelParadigm(str, Enum):
     dynamic_mean_field = "dynamic_mean_field"
     """
     Dynamic mean-field approximation (e.g., Deco et al.).
+    """
+    neural_field = "neural_field"
+    """
+    Continuous neural field equations (Amari, Wilson-Cowan field).
     """
     data_standard = "data_standard"
     """
@@ -719,6 +735,10 @@ class EcosystemEnum(str, Enum):
     maven = "maven"
     """
     Maven Central Repository (Java).
+    """
+    docker = "docker"
+    """
+    Docker container registry / image distribution.
     """
 
 
@@ -9053,7 +9073,7 @@ class SimulationExperiment(ConfiguredBaseModel):
          'domain_of': ['SimulationExperiment']} })
     network: Optional[Network] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Subject', 'Session', 'SimulationExperiment']} })
     coupling: Optional[Coupling] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Network', 'Edge', 'SimulationExperiment']} })
-    observations: Optional[dict[str, Observation]] = Field(default=None, description="""All observations on this experiment, raw and derived, keyed by name. Derived status is structural: an Observation is derived iff any item in its multivalued ``source`` slot names another observation in this same dict (see `tvbo.codegen.templater.is_derived`). Legacy ``derived_observations:`` blocks in older YAMLs are accepted by the load-time shim and merged here (Q35).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Algorithm', 'SimulationExperiment']} })
+    observations: Optional[dict[str, Observation]] = Field(default=None, description="""All observations on this experiment, keyed by name. An Observation is considered derived (computed from other observations rather than directly from state variables) when any item in its multivalued ``source`` slot names another observation in this same dict.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Algorithm', 'SimulationExperiment']} })
     functions: Optional[dict[str, Function]] = Field(default=None, description="""Reusable function definitions. Referenced by name in observation pipelines. Enables DRY: define compute_fc once, use in both simulated and empirical paths.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Algorithm', 'SimulationExperiment', 'PDE']} })
     stimulation: Optional[Stimulus] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     events: Optional[dict[str, Event]] = Field(default=None, description="""Events that apply at the experiment level. For component-level events, attach them to individual nodes or edges instead.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'Edge', 'Dynamics', 'SimulationExperiment']} })

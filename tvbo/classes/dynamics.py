@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 import owlready2
-from linkml_runtime.loaders import yaml_loader
+from tvbo.utils import yaml_loader
 from matplotlib import colormaps
 from sympy import Derivative, Eq, Function, Symbol, latex, pycode, symbols
 

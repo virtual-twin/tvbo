@@ -235,16 +235,21 @@ ${_fdef}
         d${sv.name}_dt = ${jaxcode_obj(sv)}
         % endfor
 
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(d${list(model.state_variables.keys())[0]}_dt).shape
+
         derivatives = jnp.stack([
             % for sv in model.state_variables.values():
-            jnp.atleast_1d(d${sv.name}_dt),
+            jnp.broadcast_to(jnp.atleast_1d(d${sv.name}_dt), _per_node_shape),
             % endfor
         ], axis=0)
 
         % if aux_names:
         auxiliaries = jnp.stack([
             % for aux in aux_names:
-            jnp.atleast_1d(${aux}),
+            jnp.broadcast_to(jnp.atleast_1d(${aux}), _per_node_shape),
             % endfor
         ], axis=0)
         % else:

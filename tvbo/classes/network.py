@@ -287,6 +287,9 @@ class Network(tvbo_datamodel.Network):
         self.number_of_nodes = value
 
     def __init__(self, **kwargs: Any) -> None:
+        # Strip internal-only flags that may leak in from serialised forms.
+        for _internal in ("_resolved",):
+            kwargs.pop(_internal, None)
         # Resolve deprecated number_of_regions -> number_of_nodes
         if "number_of_regions" in kwargs:
             kwargs.setdefault("number_of_nodes", kwargs.pop("number_of_regions"))
@@ -737,6 +740,7 @@ class Network(tvbo_datamodel.Network):
             "_parent_network_obj",
             "_save_path",
             "_orientations",
+            "_resolved",
             # _mesh is no longer a private cache — it's the LinkML
             # Network.mesh slot. Keep the array caches that adapters set.
             "_mesh_vertices",
@@ -1260,7 +1264,7 @@ class Network(tvbo_datamodel.Network):
         print(network.label)
         ```
         """
-        from linkml_runtime.loaders import yaml_loader
+        from tvbo.utils import yaml_loader
 
         return yaml_loader.loads(yaml_string, cls)
 

@@ -201,7 +201,7 @@ class Function(tvbo_datamodel.Function):
     @classmethod
     def from_file(cls, filepath: str):
         """Create Function from a file."""
-        from linkml_runtime.loaders import yaml_loader
+        from tvbo.utils import yaml_loader
 
         return yaml_loader.load(filepath, target_class=cls)
 
@@ -739,7 +739,7 @@ class Observation(tvbo_datamodel.Observation):
     @classmethod
     def from_file(cls, path: str) -> "Observation":
         """Load an Observation from a YAML file."""
-        from linkml_runtime.loaders import yaml_loader
+        from tvbo.utils import yaml_loader
 
         return yaml_loader.load(str(path), target_class=cls)
 

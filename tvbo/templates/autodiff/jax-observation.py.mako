@@ -135,8 +135,18 @@ ${jaxfunc.generate_function(func, get_func_name(func))}
 
 % endfor
 
+<%
+    # ``source`` is multivalued; for raw observations there is one entry
+    # (a state-variable reference). Take the first scalar value.
+    _src = getattr(observation, 'source', None)
+    if isinstance(_src, (list, tuple)):
+        _src = _src[0] if _src else None
+    if _src is not None and hasattr(_src, 'name'):
+        _src = _src.name
+    _state_default = "'" + str(_src) + "'" if _src else 'None'
+%>
 # Compose functions into observation pipeline
-def ${observation.name}(ts: TimeSeries, state=${"'" + observation.source + "'" if hasattr(observation, 'source') and observation.source else 'None'}):
+def ${observation.name}(ts: TimeSeries, state=${_state_default}):
     # Extract state variable if specified
     if state is not None:
         ts = ts.get_state(state)

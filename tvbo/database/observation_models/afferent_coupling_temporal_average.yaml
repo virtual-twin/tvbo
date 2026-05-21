@@ -6,7 +6,7 @@ description: >-
     Temporally averaged afferent coupling input at each node. Combines
     coupling input recording with temporal averaging.
 
-source: coupling
+source: [coupling]
 period: 0.9765625  # ms (~1024 Hz default)
 
 class_reference:
