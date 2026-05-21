@@ -22,11 +22,17 @@ descriptor: MEGAlpha
 observational_measures: [megalpha]
 structural_measures: []                            # no edges — this is a dscalar carrier
 number_of_nodes: 68
+distance_unit: mm
+time_unit: ms
 
-parcellation:
-  atlas:
-    name: DesikanKilliany
-    coordinateSpace: MNI152NLin2009c
+# Parcellation reference kept as a comment for grounding. We do NOT inline
+# `parcellation:` here because that would trigger atlas-based node generation
+# (87 entries including subcortical), and this dscalar carries values only
+# for the 68 cortical parcels. The atlas alignment is by node label
+# (`ctx-{lh,rh}-<region>`) and verified by the consumer.
+#
+# parcellation:
+#   atlas: { name: DesikanKilliany, coordinateSpace: MNI152NLin2009c }
 
 # -----------------------------------------------------------------------------
 # Per-region values. Ordering: all-left-hemisphere then all-right-hemisphere
