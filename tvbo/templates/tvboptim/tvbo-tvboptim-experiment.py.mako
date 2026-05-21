@@ -633,13 +633,23 @@ for expl in exploration_list:
 has_observations = len(observations) > 0
 
 # Parse observations - these only have source (state variable), no derived observations
+def _first_source_name(obs):
+    src = getattr(obs, 'source', None)
+    if not src:
+        return None
+    if isinstance(src, (list, tuple)):
+        src = src[0] if src else None
+    if src is None:
+        return None
+    return src.name if hasattr(src, 'name') and src.name else str(src)
+
 obs_list = []
 for obs_name, obs in observations.items():
     obs_info = {
         'name': obs_name,
         'label': obs.label or '',
         'description': obs.description or '',
-        'source': obs.source.name if obs.source and hasattr(obs.source, 'name') else str(obs.source) if obs.source else None,
+        'source': _first_source_name(obs),
         'equation': obs.equation.rhs if obs.equation else None,
     }
     obs_list.append(obs_info)
@@ -1942,15 +1952,8 @@ def run_experiment(
     % endif
 
     # Determine if we need to run main simulation or just transient.
-    # When an exploration is configured, each exploration function builds its
-    # own prepare() (with its own transient+main window) and runs from random
-    # ICs per trial. The top-level main sim is therefore redundant work under
-    # mode='all'; downstream consumers should read explorations.trials.results.
-    % if has_explorations:
-    run_main = mode in ('simulation', None)
-    % else:
+    # For algorithm/optimization/exploration modes, we only need transient - main simulation runs after
     run_main = mode in ('simulation', 'all', None)
-    % endif
 
     # Run simulation to get model_fn and state (includes transient settling if configured)
     sim_result = run_simulation(network, t1=${t1_default}, dt=${dt}, t_transient=${transient_time}, run_main=run_main)

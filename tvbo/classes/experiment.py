@@ -174,7 +174,7 @@ def _merge_from_registry(d, category: str):
     local = _iri_local(iri)
     try:
         from tvbo.data.registry import resolve
-        from linkml_runtime.loaders import yaml_loader
+        from tvbo.utils import yaml_loader
 
         loaded = yaml_loader.load_as_dict(str(resolve(category, local)))
         if isinstance(loaded, dict):
@@ -675,7 +675,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     @classmethod
     def from_file(cls, filepath: str):
         from pathlib import Path
-        from linkml_runtime.loaders import yaml_loader
+        from tvbo.utils import yaml_loader
         import yaml
 
         # Store source file path BEFORE loading so __init__ can use it
@@ -717,7 +717,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         ...     A: {value: 3.25}
         ... ''')
         """
-        from linkml_runtime.loaders import yaml_loader
+        from tvbo.utils import yaml_loader
         import yaml
 
         data_as_dict = yaml.safe_load(yaml_string) or {}

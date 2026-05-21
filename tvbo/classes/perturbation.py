@@ -146,7 +146,7 @@ class Stimulus(tvbo_datamodel.Stimulus):
 
     @classmethod
     def from_file(cls, filepath: os.PathLike):
-        from linkml_runtime.loaders import yaml_loader
+        from tvbo.utils import yaml_loader
 
         return yaml_loader.load(filepath, target_class=cls)
 
