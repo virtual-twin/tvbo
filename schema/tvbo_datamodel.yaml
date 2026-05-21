@@ -150,6 +150,24 @@ slots:
             Set false to suppress recording.
 
 enums:
+    ParallelMode:
+        description: >-
+            How a trial / grid-point axis is realised at JAX codegen time. The
+            choice trades peak memory against throughput: vmap batches in
+            parallel (fast, n_trials × working-set memory), lax_map runs
+            sequentially via ``jax.lax.map`` (memory bounded by one trial),
+            pmap shards across devices, auto picks vmap when the estimated
+            batched memory fits and lax_map otherwise.
+        permissible_values:
+            auto:
+                description: "Pick vmap when memory permits, lax_map otherwise."
+            vmap:
+                description: "Parallel batched execution (jax.vmap). Fast; high peak memory."
+            lax_map:
+                description: "Sequential execution via jax.lax.map. Slower; bounded memory."
+            pmap:
+                description: "Cross-device parallel execution (jax.pmap). For multi-GPU/TPU."
+
     ImagingModality:
         permissible_values:
             BOLD:
@@ -694,6 +712,190 @@ classes:
             generated_by:
                 range: string
                 description: "Software/agent identifier (prov:wasGeneratedBy)"
+            experiment_yaml_hash:
+                range: string
+                description: >-
+                    SHA-256 hex digest of the normalised experiment YAML
+                    that produced this artifact. Used by the cross-experiment
+                    cache (see :class:`SimulationStudy.from_file`) to detect
+                    when a cached upstream result has gone stale because the
+                    experiment's spec was edited. Computed as
+                    ``hashlib.sha256(yaml.safe_dump(normalized_yaml).encode()).hexdigest()``
+                    over the fully resolved (post-``!include``) experiment
+                    block.
+            inputs:
+                multivalued: true
+                range: ReferenceFingerprint
+                inlined_as_list: true
+                description: >-
+                    Per-input fingerprints for cache invalidation. Each
+                    entry records the IRI + dotted-field path of an
+                    ``aux_data`` reference plus the (mtime, size, sha256)
+                    of the underlying file at the time the artifact was
+                    produced. A downstream cache hit requires every
+                    fingerprint to match the current file state.
+
+    ReferenceFingerprint:
+        class_uri: tvbo:ReferenceFingerprint
+        description: >-
+            Cache-invalidation fingerprint for one ``aux_data`` reference.
+            Captures enough about the upstream artifact that a downstream
+            cache can decide cheaply (via mtime + size) whether to trust the
+            cached result, falling back to a hash recompute on mismatch.
+        attributes:
+            iri:
+                range: string
+                required: true
+                description: "IRI of the referenced artifact (Network, ExperimentResult, BehavioralData, ...)."
+            field:
+                range: string
+                description: "Dotted-path subkey within the referenced entity (optional)."
+            mtime:
+                range: float
+                description: "File modification time at fingerprinting (POSIX timestamp)."
+            size:
+                range: integer
+                description: "File size in bytes at fingerprinting."
+            hash:
+                range: string
+                description: "SHA-256 hex digest of the file at fingerprinting (recomputed lazily when mtime/size differ)."
+
+    Phenotype:
+        class_uri: tvbo:Phenotype
+        description: >-
+            Per-subject phenotype table (BIDS ``phenotype/`` directory
+            convention). Carries cognitive scores, clinical scales,
+            demographic variables, behavioral task outputs, physiological
+            measures, or any other per-subject numeric measurement bundle
+            for a cohort. Sidecar companion to per-subject Network sidecars
+            in multi-subject studies that correlate simulated quantities
+            with empirical scores (e.g. PMAT24_A, g-factor, CardSort,
+            ProcSpeed for Schirner 2023). The yaml carries metadata + the
+            measure list; the h5 carries ``measures/<name>`` 1-D float
+            arrays of length ``len(subjects)``.
+
+            Aligns with the BIDS phenotype standard
+            (https://bids-specification.readthedocs.io/en/stable/modality-agnostic-files/phenotypic-and-assessment-data.html)
+            and with NIDM's ``nidm:Phenotype`` concept. Per-measure
+            metadata can optionally carry Cognitive Atlas
+            (https://www.cognitiveatlas.org/) ``cogat:Task`` and
+            ``cogat:Concept`` IRIs via ``measure_specs``.
+        slots:
+            - label
+            - description
+        attributes:
+            dataset_id:
+                range: string
+                required: true
+                description: "Unique identifier for this phenotype bundle."
+                slot_uri: dcterms:identifier
+            subjects:
+                multivalued: true
+                range: string
+                required: true
+                description: >-
+                    Ordered list of subject IDs (e.g. HCP-YA 6-digit IDs).
+                    Each ``measures/<name>`` array in the h5 companion is
+                    indexed by this order.
+            measures:
+                multivalued: true
+                range: string
+                description: >-
+                    Names of the measures present in the h5 companion
+                    (one ``measures/<name>`` dataset per name). Example:
+                    ``[g_factor, PMAT24_A_CR, PMAT24_A_RTCR,
+                    CardSort_Unadj, ProcSpeed_Unadj]``.
+            measure_specs:
+                multivalued: true
+                range: MeasureSpec
+                inlined_as_list: true
+                description: >-
+                    Optional per-measure metadata (Cognitive Atlas IRIs,
+                    units, description). When present, each entry's ``name``
+                    must match an entry in ``measures``.
+            category:
+                range: string
+                ifabsent: string(cognitive)
+                description: >-
+                    Coarse classification of the phenotype bundle, used
+                    for filtering in larger study libraries. Canonical
+                    values: ``cognitive`` (intelligence / memory /
+                    attention scores), ``clinical`` (UPDRS, MMSE, …),
+                    ``behavioral`` (raw task outputs), ``demographic``,
+                    ``physiological``, ``derived`` (composite scores
+                    like g-factor or brain-age). Free string — extend
+                    as needed.
+            data_file:
+                range: string
+                required: true
+                description: "Path to the h5 companion (relative to the yaml)."
+            cohort:
+                range: string
+                description: "Cohort label (e.g. 'HCPYA', 'PPMI')."
+            provenance:
+                range: Provenance
+                inlined: true
+                description: "W3C PROV-O metadata for the source of these scores."
+
+    MeasureSpec:
+        class_uri: tvbo:MeasureSpec
+        description: >-
+            Metadata for one phenotype measure. Optional per-measure
+            entry on ``Phenotype.measure_specs``.
+        attributes:
+            name:
+                range: string
+                required: true
+                description: "Must match the measure name in ``Phenotype.measures``."
+            task_iri:
+                range: string
+                description: >-
+                    Cognitive Atlas (``cogat:``) IRI of the assessment
+                    instrument / task that produced this measure
+                    (e.g. ``cogat:trm_4a3fd79d09cba`` for PMAT24).
+            concept_iri:
+                range: string
+                description: >-
+                    Cognitive Atlas IRI of the cognitive construct measured
+                    (e.g. ``cogat:trm_521ef89ce5e84`` for fluid intelligence).
+            unit:
+                range: string
+                description: "Unit annotation (e.g. 'count', 'ms', 'z-score')."
+            measure_type:
+                range: string
+                description: >-
+                    Sub-type within the phenotype (e.g. 'raw', 'unadjusted',
+                    'age-corrected', 'derived', 'RT', 'accuracy').
+            description:
+                range: string
+
+    NamedArray:
+        class_uri: tvbo:NamedArray
+        description: >-
+            A named numeric array. Used as a sidecar slot value where a
+            schema-typed object (e.g. ``ExperimentResult.parameters``) holds
+            multiple arrays addressable by name (``w_LRE``, ``w_FFI``,
+            ``J_i``, ...). The actual numeric data lives in the companion
+            ``.h5`` at ``parameters/<name>``; the YAML carries only the
+            descriptor.
+        attributes:
+            name:
+                range: string
+                required: true
+                description: "Field name; matches the h5 dataset path under ``parameters/``."
+            shape:
+                multivalued: true
+                range: integer
+                description: "Array dimensions."
+            dtype:
+                range: string
+                ifabsent: string(float32)
+                description: "Numpy dtype string."
+            unit:
+                range: string
+                description: "Optional unit annotation (e.g. 'nA')."
+            description:
+                range: string
 
     BidsEntities:
         class_uri: tvbo:BidsEntities
@@ -2085,6 +2287,24 @@ classes:
                 description: >-
                     Averaging mode across trials. 'trials' = average over n_trials
                     independent runs (evoked potential paradigm). None = return all trials.
+            parallel_mode:
+                range: ParallelMode
+                description: >-
+                    How trial-axis parallelism is realised at codegen time.
+                    ``vmap`` batches all trials in parallel (fast, peak memory
+                    ~n_trials × per-trial working set). ``lax_map`` runs them
+                    sequentially via ``jax.lax.map`` (slower, peak memory
+                    bounded by one trial). ``pmap`` shards across devices for
+                    multi-GPU. ``auto`` (default) picks ``vmap`` when the
+                    estimated batched memory fits, ``lax_map`` otherwise.
+            parallel_batch_size:
+                range: integer
+                description: >-
+                    Chunk size for ``lax_map`` and chunked-``vmap`` modes.
+                    ``1`` = strictly sequential (minimum memory). Larger
+                    values amortise compile overhead across trials at the
+                    cost of memory. Ignored when parallel_mode is ``vmap``
+                    (which always uses the full n_trials axis).
 
     ExplorationAxis:
         class_uri: tvbo:ExplorationAxis
@@ -2896,6 +3116,7 @@ classes:
         class_uri: tvbo:Simulation
         slots:
             - model
+            - references
         attributes:
             id:
                 identifier: true
@@ -2994,10 +3215,6 @@ classes:
                 range: SoftwareRequirement
                 description: "(Deprecated) Single software requirement; prefer 'environment' with aggregated requirements."
                 inlined: true
-            references:
-                multivalued: true
-                range: string
-                slot_uri: dcterms:references
             dataset:
                 range: Dataset
                 inlined: true
@@ -3014,6 +3231,7 @@ classes:
             - derived_from
             - model
             - description
+            - references
         attributes:
             key:
                 range: string

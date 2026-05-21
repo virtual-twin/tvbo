@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-05-21T17:29:11
+# Generation date: 2026-05-21T19:37:25
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -733,6 +733,8 @@ class Provenance(YAMLRoot):
     date_created: Optional[str] = None
     license: Optional[str] = None
     generated_by: Optional[str] = None
+    experiment_yaml_hash: Optional[str] = None
+    inputs: Optional[Union[Union[dict, "ReferenceFingerprint"], list[Union[dict, "ReferenceFingerprint"]]]] = empty_list()
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self.derived_from is not None and not isinstance(self.derived_from, str):
@@ -750,6 +752,211 @@ class Provenance(YAMLRoot):
 
         if self.generated_by is not None and not isinstance(self.generated_by, str):
             self.generated_by = str(self.generated_by)
+
+        if self.experiment_yaml_hash is not None and not isinstance(self.experiment_yaml_hash, str):
+            self.experiment_yaml_hash = str(self.experiment_yaml_hash)
+
+        self._normalize_inlined_as_list(slot_name="inputs", slot_type=ReferenceFingerprint, key_name="iri", keyed=False)
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
+class ReferenceFingerprint(YAMLRoot):
+    """
+    Cache-invalidation fingerprint for one ``aux_data`` reference. Captures enough about the upstream artifact that a
+    downstream cache can decide cheaply (via mtime + size) whether to trust the cached result, falling back to a hash
+    recompute on mismatch.
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO["ReferenceFingerprint"]
+    class_class_curie: ClassVar[str] = "tvbo:ReferenceFingerprint"
+    class_name: ClassVar[str] = "ReferenceFingerprint"
+    class_model_uri: ClassVar[URIRef] = TVBO.ReferenceFingerprint
+
+    iri: str = None
+    field: Optional[str] = None
+    mtime: Optional[float] = None
+    size: Optional[int] = None
+    hash: Optional[str] = None
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self._is_empty(self.iri):
+            self.MissingRequiredField("iri")
+        if not isinstance(self.iri, str):
+            self.iri = str(self.iri)
+
+        if self.field is not None and not isinstance(self.field, str):
+            self.field = str(self.field)
+
+        if self.mtime is not None and not isinstance(self.mtime, float):
+            self.mtime = float(self.mtime)
+
+        if self.size is not None and not isinstance(self.size, int):
+            self.size = int(self.size)
+
+        if self.hash is not None and not isinstance(self.hash, str):
+            self.hash = str(self.hash)
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
+class Phenotype(YAMLRoot):
+    """
+    Per-subject phenotype table (BIDS ``phenotype/`` directory convention). Carries cognitive scores, clinical scales,
+    demographic variables, behavioral task outputs, physiological measures, or any other per-subject numeric
+    measurement bundle for a cohort. Sidecar companion to per-subject Network sidecars in multi-subject studies that
+    correlate simulated quantities with empirical scores (e.g. PMAT24_A, g-factor, CardSort, ProcSpeed for Schirner
+    2023). The yaml carries metadata + the measure list; the h5 carries ``measures/<name>`` 1-D float arrays of length
+    ``len(subjects)``.
+    Aligns with the BIDS phenotype standard
+    (https://bids-specification.readthedocs.io/en/stable/modality-agnostic-files/phenotypic-and-assessment-data.html)
+    and with NIDM's ``nidm:Phenotype`` concept. Per-measure metadata can optionally carry Cognitive Atlas
+    (https://www.cognitiveatlas.org/) ``cogat:Task`` and ``cogat:Concept`` IRIs via ``measure_specs``.
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO["Phenotype"]
+    class_class_curie: ClassVar[str] = "tvbo:Phenotype"
+    class_name: ClassVar[str] = "Phenotype"
+    class_model_uri: ClassVar[URIRef] = TVBO.Phenotype
+
+    dataset_id: str = None
+    subjects: Union[str, list[str]] = None
+    data_file: str = None
+    label: Optional[str] = None
+    description: Optional[str] = None
+    measures: Optional[Union[str, list[str]]] = empty_list()
+    measure_specs: Optional[Union[Union[dict, "MeasureSpec"], list[Union[dict, "MeasureSpec"]]]] = empty_list()
+    category: Optional[str] = "cognitive"
+    cohort: Optional[str] = None
+    provenance: Optional[Union[dict, Provenance]] = None
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self._is_empty(self.dataset_id):
+            self.MissingRequiredField("dataset_id")
+        if not isinstance(self.dataset_id, str):
+            self.dataset_id = str(self.dataset_id)
+
+        if self._is_empty(self.subjects):
+            self.MissingRequiredField("subjects")
+        if not isinstance(self.subjects, list):
+            self.subjects = [self.subjects] if self.subjects is not None else []
+        self.subjects = [v if isinstance(v, str) else str(v) for v in self.subjects]
+
+        if self._is_empty(self.data_file):
+            self.MissingRequiredField("data_file")
+        if not isinstance(self.data_file, str):
+            self.data_file = str(self.data_file)
+
+        if self.label is not None and not isinstance(self.label, str):
+            self.label = str(self.label)
+
+        if self.description is not None and not isinstance(self.description, str):
+            self.description = str(self.description)
+
+        if not isinstance(self.measures, list):
+            self.measures = [self.measures] if self.measures is not None else []
+        self.measures = [v if isinstance(v, str) else str(v) for v in self.measures]
+
+        self._normalize_inlined_as_list(slot_name="measure_specs", slot_type=MeasureSpec, key_name="name", keyed=False)
+
+        if self.category is not None and not isinstance(self.category, str):
+            self.category = str(self.category)
+
+        if self.cohort is not None and not isinstance(self.cohort, str):
+            self.cohort = str(self.cohort)
+
+        if self.provenance is not None and not isinstance(self.provenance, Provenance):
+            self.provenance = Provenance(**as_dict(self.provenance))
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
+class MeasureSpec(YAMLRoot):
+    """
+    Metadata for one phenotype measure. Optional per-measure entry on ``Phenotype.measure_specs``.
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO["MeasureSpec"]
+    class_class_curie: ClassVar[str] = "tvbo:MeasureSpec"
+    class_name: ClassVar[str] = "MeasureSpec"
+    class_model_uri: ClassVar[URIRef] = TVBO.MeasureSpec
+
+    name: str = None
+    task_iri: Optional[str] = None
+    concept_iri: Optional[str] = None
+    unit: Optional[str] = None
+    measure_type: Optional[str] = None
+    description: Optional[str] = None
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self._is_empty(self.name):
+            self.MissingRequiredField("name")
+        if not isinstance(self.name, str):
+            self.name = str(self.name)
+
+        if self.task_iri is not None and not isinstance(self.task_iri, str):
+            self.task_iri = str(self.task_iri)
+
+        if self.concept_iri is not None and not isinstance(self.concept_iri, str):
+            self.concept_iri = str(self.concept_iri)
+
+        if self.unit is not None and not isinstance(self.unit, str):
+            self.unit = str(self.unit)
+
+        if self.measure_type is not None and not isinstance(self.measure_type, str):
+            self.measure_type = str(self.measure_type)
+
+        if self.description is not None and not isinstance(self.description, str):
+            self.description = str(self.description)
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
+class NamedArray(YAMLRoot):
+    """
+    A named numeric array. Used as a sidecar slot value where a schema-typed object (e.g.
+    ``ExperimentResult.parameters``) holds multiple arrays addressable by name (``w_LRE``, ``w_FFI``, ``J_i``, ...).
+    The actual numeric data lives in the companion ``.h5`` at ``parameters/<name>``; the YAML carries only the
+    descriptor.
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO["NamedArray"]
+    class_class_curie: ClassVar[str] = "tvbo:NamedArray"
+    class_name: ClassVar[str] = "NamedArray"
+    class_model_uri: ClassVar[URIRef] = TVBO.NamedArray
+
+    name: str = None
+    shape: Optional[Union[int, list[int]]] = empty_list()
+    dtype: Optional[str] = "float32"
+    unit: Optional[str] = None
+    description: Optional[str] = None
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self._is_empty(self.name):
+            self.MissingRequiredField("name")
+        if not isinstance(self.name, str):
+            self.name = str(self.name)
+
+        if not isinstance(self.shape, list):
+            self.shape = [self.shape] if self.shape is not None else []
+        self.shape = [v if isinstance(v, int) else int(v) for v in self.shape]
+
+        if self.dtype is not None and not isinstance(self.dtype, str):
+            self.dtype = str(self.dtype)
+
+        if self.unit is not None and not isinstance(self.unit, str):
+            self.unit = str(self.unit)
+
+        if self.description is not None and not isinstance(self.description, str):
+            self.description = str(self.description)
 
         super().__post_init__(**kwargs)
 
@@ -2470,6 +2677,8 @@ class Exploration(YAMLRoot):
     n_parallel: Optional[int] = 1
     n_trials: Optional[int] = 1
     average: Optional[str] = None
+    parallel_mode: Optional[Union[str, "ParallelMode"]] = None
+    parallel_batch_size: Optional[int] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
@@ -2506,6 +2715,12 @@ class Exploration(YAMLRoot):
 
         if self.average is not None and not isinstance(self.average, str):
             self.average = str(self.average)
+
+        if self.parallel_mode is not None and not isinstance(self.parallel_mode, ParallelMode):
+            self.parallel_mode = ParallelMode(self.parallel_mode)
+
+        if self.parallel_batch_size is not None and not isinstance(self.parallel_batch_size, int):
+            self.parallel_batch_size = int(self.parallel_batch_size)
 
         super().__post_init__(**kwargs)
 
@@ -5265,6 +5480,31 @@ class SoftwareEnvironment(YAMLRoot):
 
 
 # Enumerations
+class ParallelMode(EnumDefinitionImpl):
+    """
+    How a trial / grid-point axis is realised at JAX codegen time. The choice trades peak memory against throughput:
+    vmap batches in parallel (fast, n_trials × working-set memory), lax_map runs sequentially via ``jax.lax.map``
+    (memory bounded by one trial), pmap shards across devices, auto picks vmap when the estimated batched memory fits
+    and lax_map otherwise.
+    """
+    auto = PermissibleValue(
+        text="auto",
+        description="Pick vmap when memory permits, lax_map otherwise.")
+    vmap = PermissibleValue(
+        text="vmap",
+        description="Parallel batched execution (jax.vmap). Fast; high peak memory.")
+    lax_map = PermissibleValue(
+        text="lax_map",
+        description="Sequential execution via jax.lax.map. Slower; bounded memory.")
+    pmap = PermissibleValue(
+        text="pmap",
+        description="Cross-device parallel execution (jax.pmap). For multi-GPU/TPU.")
+
+    _defn = EnumDefinition(
+        name="ParallelMode",
+        description="""How a trial / grid-point axis is realised at JAX codegen time. The choice trades peak memory against throughput: vmap batches in parallel (fast, n_trials × working-set memory), lax_map runs sequentially via ``jax.lax.map`` (memory bounded by one trial), pmap shards across devices, auto picks vmap when the estimated batched memory fits and lax_map otherwise.""",
+    )
+
 class ImagingModality(EnumDefinitionImpl):
 
     BOLD = PermissibleValue(
@@ -6576,6 +6816,84 @@ slots.provenance__license = Slot(uri=TVBO.license, name="provenance__license", c
 slots.provenance__generated_by = Slot(uri=TVBO.generated_by, name="provenance__generated_by", curie=TVBO.curie('generated_by'),
                    model_uri=TVBO.provenance__generated_by, domain=None, range=Optional[str])
 
+slots.provenance__experiment_yaml_hash = Slot(uri=TVBO.experiment_yaml_hash, name="provenance__experiment_yaml_hash", curie=TVBO.curie('experiment_yaml_hash'),
+                   model_uri=TVBO.provenance__experiment_yaml_hash, domain=None, range=Optional[str])
+
+slots.provenance__inputs = Slot(uri=TVBO.inputs, name="provenance__inputs", curie=TVBO.curie('inputs'),
+                   model_uri=TVBO.provenance__inputs, domain=None, range=Optional[Union[Union[dict, ReferenceFingerprint], list[Union[dict, ReferenceFingerprint]]]])
+
+slots.referenceFingerprint__iri = Slot(uri=TVBO.iri, name="referenceFingerprint__iri", curie=TVBO.curie('iri'),
+                   model_uri=TVBO.referenceFingerprint__iri, domain=None, range=str)
+
+slots.referenceFingerprint__field = Slot(uri=TVBO.field, name="referenceFingerprint__field", curie=TVBO.curie('field'),
+                   model_uri=TVBO.referenceFingerprint__field, domain=None, range=Optional[str])
+
+slots.referenceFingerprint__mtime = Slot(uri=TVBO.mtime, name="referenceFingerprint__mtime", curie=TVBO.curie('mtime'),
+                   model_uri=TVBO.referenceFingerprint__mtime, domain=None, range=Optional[float])
+
+slots.referenceFingerprint__size = Slot(uri=TVBO.size, name="referenceFingerprint__size", curie=TVBO.curie('size'),
+                   model_uri=TVBO.referenceFingerprint__size, domain=None, range=Optional[int])
+
+slots.referenceFingerprint__hash = Slot(uri=TVBO.hash, name="referenceFingerprint__hash", curie=TVBO.curie('hash'),
+                   model_uri=TVBO.referenceFingerprint__hash, domain=None, range=Optional[str])
+
+slots.phenotype__dataset_id = Slot(uri=DCTERMS.identifier, name="phenotype__dataset_id", curie=DCTERMS.curie('identifier'),
+                   model_uri=TVBO.phenotype__dataset_id, domain=None, range=str)
+
+slots.phenotype__subjects = Slot(uri=TVBO.subjects, name="phenotype__subjects", curie=TVBO.curie('subjects'),
+                   model_uri=TVBO.phenotype__subjects, domain=None, range=Union[str, list[str]])
+
+slots.phenotype__measures = Slot(uri=TVBO.measures, name="phenotype__measures", curie=TVBO.curie('measures'),
+                   model_uri=TVBO.phenotype__measures, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.phenotype__measure_specs = Slot(uri=TVBO.measure_specs, name="phenotype__measure_specs", curie=TVBO.curie('measure_specs'),
+                   model_uri=TVBO.phenotype__measure_specs, domain=None, range=Optional[Union[Union[dict, MeasureSpec], list[Union[dict, MeasureSpec]]]])
+
+slots.phenotype__category = Slot(uri=TVBO.category, name="phenotype__category", curie=TVBO.curie('category'),
+                   model_uri=TVBO.phenotype__category, domain=None, range=Optional[str])
+
+slots.phenotype__data_file = Slot(uri=TVBO.data_file, name="phenotype__data_file", curie=TVBO.curie('data_file'),
+                   model_uri=TVBO.phenotype__data_file, domain=None, range=str)
+
+slots.phenotype__cohort = Slot(uri=TVBO.cohort, name="phenotype__cohort", curie=TVBO.curie('cohort'),
+                   model_uri=TVBO.phenotype__cohort, domain=None, range=Optional[str])
+
+slots.phenotype__provenance = Slot(uri=TVBO.provenance, name="phenotype__provenance", curie=TVBO.curie('provenance'),
+                   model_uri=TVBO.phenotype__provenance, domain=None, range=Optional[Union[dict, Provenance]])
+
+slots.measureSpec__name = Slot(uri=TVBO.name, name="measureSpec__name", curie=TVBO.curie('name'),
+                   model_uri=TVBO.measureSpec__name, domain=None, range=str)
+
+slots.measureSpec__task_iri = Slot(uri=TVBO.task_iri, name="measureSpec__task_iri", curie=TVBO.curie('task_iri'),
+                   model_uri=TVBO.measureSpec__task_iri, domain=None, range=Optional[str])
+
+slots.measureSpec__concept_iri = Slot(uri=TVBO.concept_iri, name="measureSpec__concept_iri", curie=TVBO.curie('concept_iri'),
+                   model_uri=TVBO.measureSpec__concept_iri, domain=None, range=Optional[str])
+
+slots.measureSpec__unit = Slot(uri=TVBO.unit, name="measureSpec__unit", curie=TVBO.curie('unit'),
+                   model_uri=TVBO.measureSpec__unit, domain=None, range=Optional[str])
+
+slots.measureSpec__measure_type = Slot(uri=TVBO.measure_type, name="measureSpec__measure_type", curie=TVBO.curie('measure_type'),
+                   model_uri=TVBO.measureSpec__measure_type, domain=None, range=Optional[str])
+
+slots.measureSpec__description = Slot(uri=TVBO.description, name="measureSpec__description", curie=TVBO.curie('description'),
+                   model_uri=TVBO.measureSpec__description, domain=None, range=Optional[str])
+
+slots.namedArray__name = Slot(uri=TVBO.name, name="namedArray__name", curie=TVBO.curie('name'),
+                   model_uri=TVBO.namedArray__name, domain=None, range=str)
+
+slots.namedArray__shape = Slot(uri=TVBO.shape, name="namedArray__shape", curie=TVBO.curie('shape'),
+                   model_uri=TVBO.namedArray__shape, domain=None, range=Optional[Union[int, list[int]]])
+
+slots.namedArray__dtype = Slot(uri=TVBO.dtype, name="namedArray__dtype", curie=TVBO.curie('dtype'),
+                   model_uri=TVBO.namedArray__dtype, domain=None, range=Optional[str])
+
+slots.namedArray__unit = Slot(uri=TVBO.unit, name="namedArray__unit", curie=TVBO.curie('unit'),
+                   model_uri=TVBO.namedArray__unit, domain=None, range=Optional[str])
+
+slots.namedArray__description = Slot(uri=TVBO.description, name="namedArray__description", curie=TVBO.curie('description'),
+                   model_uri=TVBO.namedArray__description, domain=None, range=Optional[str])
+
 slots.bidsEntities__template = Slot(uri=TVBO.template, name="bidsEntities__template", curie=TVBO.curie('template'),
                    model_uri=TVBO.bidsEntities__template, domain=None, range=Optional[str])
 
@@ -7175,6 +7493,12 @@ slots.exploration__n_trials = Slot(uri=TVBO.n_trials, name="exploration__n_trial
 
 slots.exploration__average = Slot(uri=TVBO.average, name="exploration__average", curie=TVBO.curie('average'),
                    model_uri=TVBO.exploration__average, domain=None, range=Optional[str])
+
+slots.exploration__parallel_mode = Slot(uri=TVBO.parallel_mode, name="exploration__parallel_mode", curie=TVBO.curie('parallel_mode'),
+                   model_uri=TVBO.exploration__parallel_mode, domain=None, range=Optional[Union[str, "ParallelMode"]])
+
+slots.exploration__parallel_batch_size = Slot(uri=TVBO.parallel_batch_size, name="exploration__parallel_batch_size", curie=TVBO.curie('parallel_batch_size'),
+                   model_uri=TVBO.exploration__parallel_batch_size, domain=None, range=Optional[int])
 
 slots.explorationAxis__parameter = Slot(uri=TVBO.parameter, name="explorationAxis__parameter", curie=TVBO.curie('parameter'),
                    model_uri=TVBO.explorationAxis__parameter, domain=None, range=Union[str, ParameterName])
