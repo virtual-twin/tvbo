@@ -726,6 +726,17 @@ classes:
                 range: Edge
                 inlined_as_list: true
                 description: "List of directed edges with coupling references (optional, for explicit edge definition)"
+            primary_weight:
+                range: string
+                description: >-
+                    Name of the edge group that should serve as the canonical
+                    weights matrix when ``weights_matrix`` is queried. Lets a
+                    single Network sidecar bundle several connectivity variants
+                    (e.g. band-specific NMF reweightings, distance-modulated SC,
+                    shuffled controls) under different edge names while still
+                    presenting one of them as the active weight to consumers
+                    (simulators, observation pipelines). Defaults to ``weight``
+                    / ``weights`` / ``sc`` lookup when not set.
             coupling:
                 multivalued: true
                 range: Coupling

@@ -52,12 +52,20 @@ def _build_unames(model) -> dict[int, str]:
 
 
 def _schema_initial_values(model) -> np.ndarray:
-    """Initial state from model state-variable defaults (`.value`) or zeros."""
+    """Initial state from model state-variable defaults.
+
+    Reads ``StateVariable.initial_value`` (the canonical schema field, per
+    ``schema/tvbo_datamodel.yaml:1346-1348``) with ``StateVariable.value`` as
+    a legacy fallback for older models. Defaults to 0.0 when neither is set.
+    """
     n = len(model.state_variables)
     x0 = np.zeros(n)
     for i, sv in enumerate(model.state_variables.values()):
-        if getattr(sv, "value", None) is not None:
-            x0[i] = float(sv.value)
+        v = getattr(sv, "initial_value", None)
+        if v is None:
+            v = getattr(sv, "value", None)
+        if v is not None:
+            x0[i] = float(v)
     return x0
 
 

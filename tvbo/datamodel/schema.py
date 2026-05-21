@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-05-21T12:59:44
+# Generation date: 2026-05-21T15:34:05
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -818,6 +818,7 @@ class Network(YAMLRoot):
     parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
     nodes: Optional[Union[Union[dict, "Node"], list[Union[dict, "Node"]]]] = empty_list()
     edges: Optional[Union[Union[dict, "Edge"], list[Union[dict, "Edge"]]]] = empty_list()
+    primary_weight: Optional[str] = None
     coupling: Optional[Union[dict[Union[str, CouplingName], Union[dict, "Coupling"]], list[Union[dict, "Coupling"]]]] = empty_dict()
     dynamics: Optional[Union[dict[Union[str, DynamicsName], Union[dict, "Dynamics"]], list[Union[dict, "Dynamics"]]]] = empty_dict()
     number_of_nodes: Optional[int] = 1
@@ -854,6 +855,9 @@ class Network(YAMLRoot):
         if not isinstance(self.edges, list):
             self.edges = [self.edges] if self.edges is not None else []
         self.edges = [v if isinstance(v, Edge) else Edge(**as_dict(v)) for v in self.edges]
+
+        if self.primary_weight is not None and not isinstance(self.primary_weight, str):
+            self.primary_weight = str(self.primary_weight)
 
         self._normalize_inlined_as_dict(slot_name="coupling", slot_type=Coupling, key_name="name", keyed=True)
 
@@ -6560,6 +6564,9 @@ slots.network__nodes = Slot(uri=TVBO.nodes, name="network__nodes", curie=TVBO.cu
 
 slots.network__edges = Slot(uri=TVBO.edges, name="network__edges", curie=TVBO.curie('edges'),
                    model_uri=TVBO.network__edges, domain=None, range=Optional[Union[Union[dict, Edge], list[Union[dict, Edge]]]])
+
+slots.network__primary_weight = Slot(uri=TVBO.primary_weight, name="network__primary_weight", curie=TVBO.curie('primary_weight'),
+                   model_uri=TVBO.network__primary_weight, domain=None, range=Optional[str])
 
 slots.network__coupling = Slot(uri=TVBO.coupling, name="network__coupling", curie=TVBO.curie('coupling'),
                    model_uri=TVBO.network__coupling, domain=None, range=Optional[Union[dict[Union[str, CouplingName], Union[dict, Coupling]], list[Union[dict, Coupling]]]])

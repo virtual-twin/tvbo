@@ -192,11 +192,12 @@ n_nodes = N_nodes = getattr(network, 'number_of_nodes', None) or getattr(network
 _cs = getattr(network, 'conduction_speed', None)
 conduction_speed = float(_cs.value if hasattr(_cs, 'value') else _cs) if _cs is not None else 1.0
 
-# Transforms (optional)
-_transforms = getattr(network, 'transforms', None) or []
-_weight_transforms = [t for t in _transforms if t.name == 'weight']
-has_weight_transforms = len(_weight_transforms) > 0
-weight_transform_jax = [jaxcode(t.equation.rhs) for t in _weight_transforms] if has_weight_transforms else []
+# Network.transforms is applied once at resolution time by
+# Network._apply_transform, so by the time `weights` reaches the
+# generated `run_experiment` it is already the transformed matrix.
+# No runtime inlining is needed.
+has_weight_transforms = False
+weight_transform_jax = []
 
 # Simulation parameters
 assert integration.duration, "integration.duration required in YAML"
@@ -973,7 +974,10 @@ def run_simulation(
         network.update_history(result_transient)
     % endif
 
-    model_fn, state = prepare(network, solver, t0=t0, t1=t1, dt=dt)
+    # Main sim chains onto the transient: solver runs from t=t_transient to
+    # t=t_transient + t1, so its time coord continues where the transient left
+    # off. The caller still passes t1 as the main-sim duration.
+    model_fn, state = prepare(network, solver, t0=t0 + t_transient, t1=t0 + t_transient + t1, dt=dt)
     % if sv_distribution_info:
     # Sample initial conditions from state variable distributions
     state = _sample_initial_conditions(state)
