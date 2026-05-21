@@ -1525,12 +1525,14 @@ def run_optimization(
     obs_name = expl.get('observable', '')
     output_key = expl.get('output_key')
     grid_desc = ' x '.join([f"{ax['name']}[{ax['n']}]" for ax in expl['axes']]) if has_axes else f"{expl.get('n_trials', 1)} trials"
-    # When no observable is specified and the schema defines observations,
-    # the exploration computes them per grid point and bundles raw data + observations.
+    # B-stream: when the YAML declares observations, the JIT'd observable_fn
+    # returns ONLY the reduced observation values (no trajectory). This
+    # supersedes the legacy model-output extraction path (which would have
+    # returned a sliced trajectory) — the model.output declaration is only
+    # used for the model-output extraction when NO observations are declared.
     bundles_observations = (
         obs_type != 'function_call'
         and not obs_name
-        and not has_model_output
         and bool(observation_names or derived_observation_names)
     )
 %>
@@ -1667,7 +1669,17 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
     if not n_aux and model.derived_variables:
         n_aux = len(model.derived_variables)
 %>
-% if has_model_output and n_aux == 1:
+% if bundles_observations:
+    # B-stream: with observations declared, the JIT'd observable_fn returns
+    # ONLY the reduced observation values, never the trajectory. Output size
+    # per trial is the sum of declared observation shapes (typically per-node
+    # or per-pair statistics) rather than (T, n_states, n_nodes), so trial
+    # vmaps and grid axes stay tractable on commodity hardware.
+    @jax.jit
+    def observable_fn(s):
+        result = _expl_model_fn(s)
+        return compute_all_observations(result, s, result_transient)
+% elif has_model_output and n_aux == 1:
     # Single model output — extract as (T, n_nodes) dropping the variable dimension
     @jax.jit
     def observable_fn(s):
@@ -1680,20 +1692,11 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
         result = _expl_model_fn(s)
         return result.data[:, ${len(state_names)}:, ...]
 % else:
-% if bundles_observations:
-    # No observable specified — return raw data + all schema observations per grid point
-    @jax.jit
-    def observable_fn(s):
-        result = _expl_model_fn(s)
-        _obs = compute_all_observations(result, s, result_transient)
-        return Bunch(data=result.data, ts=result.ts, observations=_obs)
-% else:
     # No observable specified, no model output, no observations — return full simulation data
     @jax.jit
     def observable_fn(s):
         result = _expl_model_fn(s)
         return result.data
-% endif
 % endif
 % elif is_derived_obs:
     # ${obs_name} is a derived observation - use compute_all_observations
@@ -1878,13 +1881,12 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
     ]
 
 % if bundles_observations:
-    # observable_fn returned Bunch(data, ts, observations). Convert each
-    # observation to an xr.DataArray with grid axes prepended for clean,
-    # metadata-consistent representation.
-    _stacked_results = _stacked.data
-    _stacked_ts = getattr(_stacked, 'ts', None)
+    # B-stream: observable_fn returned a Bunch of reduced observations.
+    # No raw trajectory to attach; wrap each observation as xr.DataArray.
+    _stacked_results = None
+    _stacked_ts = None
     _observations_xr = {}
-    for _obs_key, _obs_val in _stacked.observations.items():
+    for _obs_key, _obs_val in _stacked.items():
         if str(_obs_key).startswith('_'):
             continue
         _arr = getattr(_obs_val, 'ys', getattr(_obs_val, 'data', _obs_val))
