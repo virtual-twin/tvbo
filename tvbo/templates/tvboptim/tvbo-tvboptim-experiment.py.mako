@@ -1525,11 +1525,11 @@ def run_optimization(
     obs_name = expl.get('observable', '')
     output_key = expl.get('output_key')
     grid_desc = ' x '.join([f"{ax['name']}[{ax['n']}]" for ax in expl['axes']]) if has_axes else f"{expl.get('n_trials', 1)} trials"
-    # B-stream: when the YAML declares observations, the JIT'd observable_fn
-    # returns ONLY the reduced observation values (no trajectory). This
-    # supersedes the legacy model-output extraction path (which would have
-    # returned a sliced trajectory) — the model.output declaration is only
-    # used for the model-output extraction when NO observations are declared.
+    # When the YAML declares observations, the JIT'd observable_fn returns
+    # only the reduced observation values (no trajectory). This supersedes
+    # the legacy model-output extraction path (which would have returned a
+    # sliced trajectory) — the model.output declaration is only used for
+    # model-output extraction when no observations are declared.
     bundles_observations = (
         obs_type != 'function_call'
         and not obs_name
@@ -1670,11 +1670,11 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
         n_aux = len(model.derived_variables)
 %>
 % if bundles_observations:
-    # B-stream: with observations declared, the JIT'd observable_fn returns
-    # ONLY the reduced observation values, never the trajectory. Output size
-    # per trial is the sum of declared observation shapes (typically per-node
-    # or per-pair statistics) rather than (T, n_states, n_nodes), so trial
-    # vmaps and grid axes stay tractable on commodity hardware.
+    # Observations declared: observable_fn returns only the reduced
+    # observation values per grid point (no trajectory). Output size is
+    # the sum of declared observation shapes — typically per-node or
+    # per-pair statistics — rather than (T, n_states, n_nodes), so trial
+    # vmaps and grid axes stay tractable.
     @jax.jit
     def observable_fn(s):
         result = _expl_model_fn(s)
@@ -1881,7 +1881,7 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
     ]
 
 % if bundles_observations:
-    # B-stream: observable_fn returned a Bunch of reduced observations.
+    # observable_fn returned a Bunch of reduced observations.
     # No raw trajectory to attach; wrap each observation as xr.DataArray.
     _stacked_results = None
     _stacked_ts = None

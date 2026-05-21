@@ -1018,6 +1018,14 @@ class StandardGraphType(str, Enum):
     """
     Grid/lattice graph (params: dims)
     """
+    RandomReservoir = "RandomReservoir"
+    """
+    Sparse random recurrent adjacency with post-hoc spectral- radius rescaling. Parameters: n, sparsity, spectral_radius, weight_distribution, seed. Canonical Echo State Network substrate (Jaeger 2001) for reservoir computing.
+    """
+    WeightShuffle = "WeightShuffle"
+    """
+    Derived generator: permute the non-zero entries of a source matrix. Parameters: source (IRI to another Network), preserve (binary_mask | degree | weight_distribution), seed. Used for null-model controls (e.g. shuffled SC).
+    """
 
 
 class DimensionType(str, Enum):
@@ -3046,6 +3054,7 @@ class Stimulus(ConfiguredBaseModel):
          'slot_uri': 'rdfs:label'} })
     regions: Optional[AnyShapeArray[int]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'Event']} })
     weighting: Optional[AnyShapeArray[float]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'Event']} })
+    noise: Optional[Noise] = Field(default=None, description="""Optional stochastic contribution to the stimulus. Mirrors state_variables.noise on the Dynamics side. The stimulus value at each integration step is the sum of `equation`'s evaluation (deterministic, if set) and a draw from this Noise process. When only `noise` is set and `equation` is absent, the stimulus IS the noise (pure stochastic source — e.g. iid uniform driver for memory-capacity benchmarks; signal+noise paradigms for psychophysics).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'StateVariable', 'Integrator']} })
 
 
 class Event(ConfiguredBaseModel):
@@ -3880,6 +3889,8 @@ class Network(ConfiguredBaseModel):
                        'Edge',
                        'Continuation',
                        'SimulationExperiment']} })
+    node_template: Optional[Node] = Field(default=None, description="""Default Node attributes applied to every Node in this Network. Explicit entries in `nodes:` override the template field-by-field (shallow replace, same semantics as `dict.update`). Reserved per-Node slots (id, label, position, region) come from the data backbone (Network.iri-loaded parcellation or procedural generator) and are ignored if set on the template. Lets a homogeneous Network declare its per-Node configuration once without enumerating regions.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
+    edge_template: Optional[Edge] = Field(default=None, description="""Default Edge attributes applied to every Edge in this Network. Explicit entries in `edges:` override the template field-by-field. Reserved per-Edge slots (source, target, weight, delay, distance) come from the data backbone (loaded matrix or procedural generator) and are ignored if set on the template.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
     number_of_nodes: Optional[int] = Field(default=1, description="""Number of nodes in the network (derived from nodes if not set)""", json_schema_extra = { "linkml_meta": {'aliases': ['number_of_nodes', 'number_of_regions'],
          'domain_of': ['Network'],
          'ifabsent': 'integer(1)'} })
@@ -4286,6 +4297,7 @@ class Node(ConfiguredBaseModel):
     region: Optional[str] = Field(default=None, description="""Brain region or anatomical label""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'SpatialDomain']} })
     state: Optional[dict[str, StateValue]] = Field(default=None, description="""Per-node initial state variable values, keyed by state variable name.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node']} })
     events: Optional[dict[str, Event]] = Field(default=None, description="""Events attached to this node (e.g., threshold-based state changes).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'Edge', 'Dynamics', 'SimulationExperiment']} })
+    subnetwork: Optional[Network] = Field(default=None, description="""Optional finer-scale Network that \"lives inside\" this Node (network-of-networks / multi-scale primitive). The subnetwork's nodes map (one-to-many) to this single parent Node. Cross-scale signal flow is declared as ordinary Edges in the subnetwork's `edges` list, using `source_network` / `target_network` with the `parent` sentinel to traverse up the hierarchy. The subnetwork may carry its own `graph_generator` (discrete sub-network — reservoir, spiking population, jaxley compartments) and/or `mesh` (continuous surface field) — one unified slot for reservoirs-per-region, spiking-populations-per-region, cells-per-region, and surface-mesh-patches-per-region. Recursive: a subnetwork's Nodes can themselves carry subnetworks.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node']} })
 
 
 class StateValue(ConfiguredBaseModel):
@@ -4459,7 +4471,7 @@ class Edge(ConfiguredBaseModel):
                        'Integrator',
                        'Coupling',
                        'PDE']} })
-    source: Optional[int] = Field(default=None, description="""Source node ID (set for explicit edges, absent for template edges)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge', 'Observation', 'Dynamics', 'CouplingInput']} })
+    source: Optional[int] = Field(default=None, description="""Source node ID (set for explicit edges, absent for template edges)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge', 'Observation', 'Dynamics', 'Parameter', 'CouplingInput']} })
     target: Optional[int] = Field(default=None, description="""Target node ID (set for explicit edges, absent for template edges)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
     weight: Optional[float] = Field(default=None, description="""Connection weight (explicit edges)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
     delay: Optional[float] = Field(default=None, description="""Conduction delay (explicit edges, ms)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
@@ -4484,7 +4496,8 @@ class Edge(ConfiguredBaseModel):
     target_var: Optional[str] = Field(default=None, description="""Input variable on target node to connect to (e.g., 'c_in'). If not specified, uses first coupling input from target dynamics.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
     coupling: Optional[str] = Field(default=None, description="""Coupling function for this edge. Can be a reference (by name) to coupling or inline definition. If not provided, uses experiment's default coupling.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network', 'Edge', 'SimulationExperiment']} })
     directed: Optional[bool] = Field(default=False, description="""Whether the edge is directed. If false, represents a symmetric/bidirectional connection.""", json_schema_extra = { "linkml_meta": {'domain_of': ['GraphGenerator', 'Edge'], 'ifabsent': 'False'} })
-    target_network: Optional[str] = Field(default=None, description="""Path or name of the Network whose nodes define the columns of a non-square (projection) matrix. For example, a gain matrix with shape (n_sensors, n_regions) references the brain parcellation network here.  Row labels come from the parent Network's own nodes.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
+    source_network: Optional[str] = Field(default=None, description="""Path or name of the Network whose nodes define the source endpoints of this Edge. Symmetric counterpart to `target_network`. Together they let an Edge bridge any two Networks: both unset (within-Network edge), one set (this Network ↔ the named one), or both set (peer-to-peer projection between two other Networks). Accepts either an absolute IRI (peer Network) or the relative-path sentinel `parent` / `parent/parent` (cross-scale up/down via the Node.subnetwork hierarchy).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
+    target_network: Optional[str] = Field(default=None, description="""Path or name of the Network whose nodes define the target endpoints (e.g. the columns of a non-square projection matrix such as a gain matrix region → EEG sensors). Also accepts the relative-path sentinel `parent` / `parent/parent` for cross-scale signal flow up the Node.subnetwork hierarchy. One mechanism handles both projection matrices (absolute IRI) and multi-scale boundaries (sentinel).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
     dimension_labels: Optional[list[str]] = Field(default=None, description="""Ordered labels for the matrix columns (dim-1) when the matrix is non-square.  Row labels (dim-0) are the parent Network's node labels.  Stored as HDF5 dimension scales in the companion file.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
     dynamics: Optional[str] = Field(default=None, description="""Dynamics model for this edge. When specified, the edge has its own state variables and ODE (EdgeModel with f in ND.jl). Uses the same Dynamics class as nodes — state_variables define edge states, derived_variables define observables, output defines what is visible for plotting/analysis. The coupling_function on Coupling still defines how vertex outputs map to edge outputs for aggregation at vertices.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network',
                        'Node',
@@ -4674,7 +4687,7 @@ class Observation(ConfiguredBaseModel):
     environment: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'SimulationExperiment', 'PDESolver']} })
     time_scale: Optional[UnitEnum] = Field(default=UnitEnum.ms, description="""Time unit for the integration / simulation. Determines the physical time meaning of one model time-step.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'Integrator'], 'ifabsent': 'ms'} })
     source: Optional[list[str]] = Field(default=None, description="""Ordered list of inputs this observation derives from. Each entry is either a StateVariable reference (raw observation of an integrated trajectory, e.g. ``S_e``) or an Observation reference (derived observation, e.g. ``bold``). Codegen checks each source name against ``experiment.observations``; names matching an existing observation flag the parent as derived.""", json_schema_extra = { "linkml_meta": {'any_of': [{'range': 'StateVariable'}, {'range': 'Observation'}],
-         'domain_of': ['Edge', 'Observation', 'Dynamics', 'CouplingInput']} })
+         'domain_of': ['Edge', 'Observation', 'Dynamics', 'Parameter', 'CouplingInput']} })
     aux_data: Optional[list[Reference]] = Field(default=None, description="""Ordered list of auxiliary inputs the observation pipeline consumes. Examples: a Surface mesh's faces array, an empirical FC matrix on a reference Network, or another Observation's output. Resolved load-time eagerly; rendered code is self-contained.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
     period: Optional[float] = Field(default=None, description="""Sampling period for monitors (ms). For BOLD: TR in ms.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
     downsample_period: Optional[float] = Field(default=None, description="""Intermediate downsampling period (ms). For BOLD: typically matches dt.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
@@ -4859,7 +4872,7 @@ class Dynamics(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE'],
          'slot_uri': 'dcterms:description'} })
-    source: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Edge', 'Observation', 'Dynamics', 'CouplingInput'],
+    source: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Edge', 'Observation', 'Dynamics', 'Parameter', 'CouplingInput'],
          'slot_uri': 'dcterms:source'} })
     references: Optional[list[str]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Provenance', 'Dynamics', 'SimulationExperiment'],
          'slot_uri': 'dcterms:references'} })
@@ -5084,13 +5097,13 @@ class StateVariable(ConfiguredBaseModel):
     coupling_variable: Optional[bool] = Field(default=False, description="""Whether this state variable is transmitted to connected nodes through the coupling function. In TVB terms, this determines the cvar indices (state variables extracted from history and fed into the coupling function). The coupling function may override this via its incoming_states attribute.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable'], 'ifabsent': 'False'} })
     equation_type: Optional[str] = Field(default="differential", description="""Type of equation: 'differential' (default) means dx/dt = rhs, 'algebraic' means 0 = rhs or x ~ rhs (DAE constraint). Algebraic equations are used by ModelingToolkit.jl backend.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable'], 'ifabsent': 'string(differential)'} })
     equation_order: Optional[int] = Field(default=1, description="""Order of the time derivative on the LHS. Default 1 means dx/dt = rhs (first-order ODE). Order 2 means d²x/dt² = rhs (second-order ODE), etc. Higher-order ODEs are automatically lowered to coupled first-order systems by backends like ModelingToolkit.jl via mtkcompile.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable'], 'ifabsent': 'int(1)'} })
-    noise: Optional[Noise] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable', 'Integrator']} })
+    noise: Optional[Noise] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'StateVariable', 'Integrator']} })
     stimulation_variable: Optional[bool] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable']} })
     boundaries: Optional[Range] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable']} })
     initial_value: Optional[float] = Field(default=0.1, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable', 'FreeParameter', 'SpatialField'],
          'ifabsent': 'float(0.1)'} })
     derivative_initial_value: Optional[float] = Field(default=None, description="""Initial value for the first time derivative, used when equation_order > 1. For a second-order ODE d²x/dt² = f, this sets dx/dt(0). Required by ModelingToolkit.jl to fully specify higher-order initial value problems.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable']} })
-    distribution: Optional[Distribution] = Field(default=None, description="""Distribution for sampling initial conditions per node. If present, initial_value is used as fallback/mean.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable', 'Parameter', 'Coupling']} })
+    distribution: Optional[Distribution] = Field(default=None, description="""Distribution for sampling initial conditions per node. If present, initial_value is used as fallback/mean.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable', 'Parameter', 'Noise', 'Coupling']} })
     history: Optional[TimeSeries] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable']} })
 
 
@@ -5365,7 +5378,9 @@ class Parameter(ConfiguredBaseModel):
          'slot_uri': 'oboInOwl:hasDbXref'} })
     comment: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter'], 'slot_uri': 'rdfs:comment'} })
     heterogeneous: Optional[bool] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter', 'FreeParameter']} })
-    distribution: Optional[Distribution] = Field(default=None, description="""Distribution for heterogeneous per-node parameter sampling. Implies heterogeneous=true.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable', 'Parameter', 'Coupling']} })
+    distribution: Optional[Distribution] = Field(default=None, description="""Distribution for heterogeneous per-node parameter sampling. Implies heterogeneous=true.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable', 'Parameter', 'Noise', 'Coupling']} })
+    source: Optional[str] = Field(default=None, description="""Data source for this parameter's value. When set, the value is loaded from the referenced entity rather than being a YAML literal. The referent is typically a Network with per-node parameters (dscalar pattern) or a flat dataset (HDF5, TSV). Combine with `measure:` when the source exposes multiple named measures. Distinct from the global `iri:` slot, which is reserved for ontology grounding.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge', 'Observation', 'Dynamics', 'Parameter', 'CouplingInput']} })
+    measure: Optional[str] = Field(default=None, description="""Selector into the source. When `source` points at a Network with per-node parameters (or a dscalar with multiple maps), picks which named measure to load. Aligns with names listed in Network.structural_measures / Network.observational_measures. Ignored when the source resolves to a scalar/array dataset.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
     free: Optional[bool] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
     shape: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Matrix', 'Parameter', 'FreeParameter', 'NDArray']} })
     explored_values: Optional[AnyShapeArray[float]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Range', 'Parameter', 'ExplorationAxis']} })
@@ -5466,7 +5481,7 @@ class CouplingInput(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE'],
          'slot_uri': 'dcterms:description'} })
-    source: Optional[str] = Field(default=None, description="""Name of the coupling function that feeds this input. When omitted, resolved automatically: (1) same name as a coupling function → direct match, (2) single coupling input and single coupling function → auto-mapped, (3) multiple of each → positional order.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge', 'Observation', 'Dynamics', 'CouplingInput']} })
+    source: Optional[str] = Field(default=None, description="""Name of the coupling function that feeds this input. When omitted, resolved automatically: (1) same name as a coupling function → direct match, (2) single coupling input and single coupling function → auto-mapped, (3) multiple of each → positional order.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge', 'Observation', 'Dynamics', 'Parameter', 'CouplingInput']} })
     dimension: Optional[int] = Field(default=1, description="""Dimensionality of the coupling input (number of coupled values)""", json_schema_extra = { "linkml_meta": {'domain_of': ['CouplingInput'], 'ifabsent': 'integer(1)'} })
     keys: Optional[list[str]] = Field(default=None, description="""Named keys for multi-dimensional coupling. When dimension > 1, provides symbolic names for each index (e.g., keys: [lre, ffi] for dimension: 2). Used in equations as variable names.""", json_schema_extra = { "linkml_meta": {'domain_of': ['CouplingInput']} })
 
@@ -6547,7 +6562,9 @@ class DerivedParameter(Parameter):
          'slot_uri': 'oboInOwl:hasDbXref'} })
     comment: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter'], 'slot_uri': 'rdfs:comment'} })
     heterogeneous: Optional[bool] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter', 'FreeParameter']} })
-    distribution: Optional[Distribution] = Field(default=None, description="""Distribution for heterogeneous per-node parameter sampling. Implies heterogeneous=true.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable', 'Parameter', 'Coupling']} })
+    distribution: Optional[Distribution] = Field(default=None, description="""Distribution for heterogeneous per-node parameter sampling. Implies heterogeneous=true.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable', 'Parameter', 'Noise', 'Coupling']} })
+    source: Optional[str] = Field(default=None, description="""Data source for this parameter's value. When set, the value is loaded from the referenced entity rather than being a YAML literal. The referent is typically a Network with per-node parameters (dscalar pattern) or a flat dataset (HDF5, TSV). Combine with `measure:` when the source exposes multiple named measures. Distinct from the global `iri:` slot, which is reserved for ontology grounding.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge', 'Observation', 'Dynamics', 'Parameter', 'CouplingInput']} })
+    measure: Optional[str] = Field(default=None, description="""Selector into the source. When `source` points at a Network with per-node parameters (or a dscalar with multiple maps), picks which named measure to load. Aligns with names listed in Network.structural_measures / Network.observational_measures. Ignored when the source resolves to a scalar/array dataset.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
     free: Optional[bool] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
     shape: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Matrix', 'Parameter', 'FreeParameter', 'NDArray']} })
     explored_values: Optional[AnyShapeArray[float]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Range', 'Parameter', 'ExplorationAxis']} })
@@ -6773,6 +6790,7 @@ class Noise(ConfiguredBaseModel):
          'ifabsent': 'integer(42)'} })
     random_state: Optional[RandomStream] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Noise']} })
     intensity: Optional[Parameter] = Field(default=None, description="""Optional scalar or vector intensity parameter for noise.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Noise']} })
+    distribution: Optional[Distribution] = Field(default=None, description="""Optional probability distribution from which the noise draws its samples. When set, takes precedence over the `noise_type` / `gaussian` flags — any Distribution family is accepted (Uniform { lo, hi }, Normal { mean, std }, LogNormal { mu, sigma }, Beta, …). Reuses the existing Distribution class also used by Parameter.distribution.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable', 'Parameter', 'Noise', 'Coupling']} })
     function: Optional[Function] = Field(default=None, description="""Optional functional form of the noise (callable specification).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Distribution', 'FunctionCall', 'Noise']} })
     pycode: Optional[str] = Field(default=None, description="""Inline Python code representation of the noise process.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Equation', 'Noise']} })
     targets: Optional[dict[str, StateVariable]] = Field(default=None, description="""State variables this noise applies to; if omitted, applies globally.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Noise']} })
@@ -8621,7 +8639,7 @@ class Integrator(Solver):
          'domain_of': ['Integrator'],
          'ifabsent': 'float(0.01220703125)'} })
     steps: Optional[int] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator']} })
-    noise: Optional[Noise] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable', 'Integrator']} })
+    noise: Optional[Noise] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'StateVariable', 'Integrator']} })
     state_wise_sigma: Optional[list[float]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator']} })
     transient_time: Optional[float] = Field(default=0, json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator'], 'ifabsent': 'float(0)'} })
     scipy_ode_base: Optional[bool] = Field(default=False, json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator'], 'ifabsent': 'False'} })
@@ -8813,7 +8831,7 @@ class Coupling(ConfiguredBaseModel):
     aggregation: Optional[str] = Field(default=None, description="""For hierarchical coupling: aggregation method ('sum', 'mean', 'max') or custom Function""", json_schema_extra = { "linkml_meta": {'any_of': [{'range': 'string'}, {'range': 'Function'}],
          'domain_of': ['Observation', 'Coupling']} })
     distribution: Optional[str] = Field(default=None, description="""For hierarchical coupling: distribution method ('broadcast', 'weighted') or custom Function""", json_schema_extra = { "linkml_meta": {'any_of': [{'range': 'string'}, {'range': 'Function'}],
-         'domain_of': ['StateVariable', 'Parameter', 'Coupling']} })
+         'domain_of': ['StateVariable', 'Parameter', 'Noise', 'Coupling']} })
 
 
 class RegionMapping(ConfiguredBaseModel):
@@ -10044,13 +10062,13 @@ class FieldStateVariable(StateVariable):
     coupling_variable: Optional[bool] = Field(default=False, description="""Whether this state variable is transmitted to connected nodes through the coupling function. In TVB terms, this determines the cvar indices (state variables extracted from history and fed into the coupling function). The coupling function may override this via its incoming_states attribute.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable'], 'ifabsent': 'False'} })
     equation_type: Optional[str] = Field(default="differential", description="""Type of equation: 'differential' (default) means dx/dt = rhs, 'algebraic' means 0 = rhs or x ~ rhs (DAE constraint). Algebraic equations are used by ModelingToolkit.jl backend.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable'], 'ifabsent': 'string(differential)'} })
     equation_order: Optional[int] = Field(default=1, description="""Order of the time derivative on the LHS. Default 1 means dx/dt = rhs (first-order ODE). Order 2 means d²x/dt² = rhs (second-order ODE), etc. Higher-order ODEs are automatically lowered to coupled first-order systems by backends like ModelingToolkit.jl via mtkcompile.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable'], 'ifabsent': 'int(1)'} })
-    noise: Optional[Noise] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable', 'Integrator']} })
+    noise: Optional[Noise] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'StateVariable', 'Integrator']} })
     stimulation_variable: Optional[bool] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable']} })
     boundaries: Optional[Range] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable']} })
     initial_value: Optional[float] = Field(default=0.1, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable', 'FreeParameter', 'SpatialField'],
          'ifabsent': 'float(0.1)'} })
     derivative_initial_value: Optional[float] = Field(default=None, description="""Initial value for the first time derivative, used when equation_order > 1. For a second-order ODE d²x/dt² = f, this sets dx/dt(0). Required by ModelingToolkit.jl to fully specify higher-order initial value problems.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable']} })
-    distribution: Optional[Distribution] = Field(default=None, description="""Distribution for sampling initial conditions per node. If present, initial_value is used as fallback/mean.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable', 'Parameter', 'Coupling']} })
+    distribution: Optional[Distribution] = Field(default=None, description="""Distribution for sampling initial conditions per node. If present, initial_value is used as fallback/mean.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable', 'Parameter', 'Noise', 'Coupling']} })
     history: Optional[TimeSeries] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable']} })
 
 

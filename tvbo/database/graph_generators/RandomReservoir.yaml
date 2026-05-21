@@ -1,0 +1,51 @@
+name: RandomReservoir
+description: >-
+  Sparse random recurrent adjacency with post-hoc spectral-radius rescaling —
+  the canonical Echo State Network substrate (Jaeger 2001). The recurrent
+  reservoir of an ESN is fully described by four numbers: size, sparsity,
+  target spectral radius, and the weight distribution of the non-zero entries.
+iri: tvbo:RandomReservoir
+
+parameters:
+  n:                  { range: integer, description: "Number of nodes" }
+  sparsity:           { range: float,   description: "Fraction of non-zero weights in [0, 1]" }
+  spectral_radius:    { range: float,   description: "Target spectral radius (post-rescaling)" }
+  weight_distribution:
+    range: Distribution
+    description: "Distribution from which non-zero weights are drawn. Default: Normal(0, 1)."
+  seed: { range: integer, required: false }
+
+# Symbolic procedure — backend-independent. Each step is a named intermediate
+# expressed via canonical array primitives (sample, eigvals, max, abs, ...).
+# Backends that implement these primitives translate natively; backends that
+# don't fall back to the `bindings:` block below.
+procedure:
+  steps:
+    - name: raw
+      description: "n×n matrix sampled from the weight distribution"
+      equation:
+        rhs: "sample(weight_distribution, shape=(n, n), seed=seed)"
+    - name: mask
+      description: "Bernoulli sparsity mask (1 with prob = sparsity)"
+      equation:
+        rhs: "sample(Uniform(0, 1), shape=(n, n), seed=seed + 1) < sparsity"
+    - name: masked
+      equation:
+        rhs: "raw * mask"
+    - name: rho
+      description: "Current spectral radius (largest absolute eigenvalue)"
+      equation:
+        rhs: "max(abs(eigvals(masked)))"
+  output:
+    weights:
+      equation:
+        rhs: "masked * (spectral_radius / rho)"
+
+# Python materialiser used by Network.resolve() at load time. Returns a dict
+# {weights: ndarray (n, n)}. Other backends materialise from the symbolic
+# procedure above.
+bindings:
+  python:
+    library: tvbo.graph_generators.builtins
+    callable: random_reservoir
+    args: [n, sparsity, spectral_radius, weight_distribution, seed]
