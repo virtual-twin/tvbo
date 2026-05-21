@@ -2074,9 +2074,19 @@ class Network(tvbo_datamodel.Network):
         if hasattr(self, "_pytree_data") and self._pytree_data is not None:
             return self._pytree_data[0]
 
-        # Check _arrays (set by set_matrix / add_edges)
+        # Check _arrays (set by set_matrix / add_edges). When the sidecar
+        # declares a `primary_weight`, that named edge wins over the default
+        # weight / weights / sc lookup — lets one Network file expose
+        # several variants under named edges and pick the active one.
         _arrs = self._get_arrays()
-        if "weight" in _arrs:
+        _primary = getattr(self, "primary_weight", None)
+        if _primary and _primary in _arrs:
+            from scipy import sparse as _sp
+
+            W = _arrs[_primary]
+            if _sp.issparse(W):
+                W = W.toarray()
+        elif "weight" in _arrs:
             from scipy import sparse as _sp
 
             W = _arrs["weight"]
@@ -2104,7 +2114,10 @@ class Network(tvbo_datamodel.Network):
         elif hasattr(self, "_store") and self._store is not None:
             # Lazy load from companion file (set by load_network)
             arrays = self._store.arrays
-            if "weight" in arrays:
+            if _primary and _primary in arrays:
+                self._cached_weights = arrays[_primary]
+                W = self._cached_weights
+            elif "weight" in arrays:
                 self._cached_weights = arrays["weight"]
                 W = self._cached_weights
             elif "weights" in arrays:
@@ -3855,10 +3868,24 @@ class Network(tvbo_datamodel.Network):
         c = getattr(func, "callable", None)
         if c is not None:
             import importlib
+            import inspect
 
             mod = importlib.import_module(c.module)
             fn = getattr(mod, c.name)
-            return fn(M)
+            kwargs = {}
+            for arg in (getattr(func, "arguments", None) or []):
+                aname = getattr(arg, "name", None)
+                if aname is not None:
+                    kwargs[aname] = getattr(arg, "value", None)
+            available = {"L": self.lengths_matrix, "network": self}
+            sig = inspect.signature(fn)
+            accepts_var_kw = any(
+                p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values()
+            )
+            for key, val in available.items():
+                if key in sig.parameters or accepts_var_kw:
+                    kwargs.setdefault(key, val)
+            return fn(M, **kwargs)
 
         # Equation-based transform
         eq = getattr(func, "equation", None)
@@ -3866,22 +3893,41 @@ class Network(tvbo_datamodel.Network):
             return M
         from tvbo.codegen.code import parse_eq, render_expression
 
+        # Substitute scalar argument values: prefer Function.arguments, fall
+        # back to Equation.parameters for legacy specs.
+        arg_values: dict = {}
+        for a in (getattr(func, "arguments", None) or []):
+            aname = getattr(a, "name", None)
+            if aname is not None:
+                arg_values[aname] = getattr(a, "value", None)
+        if hasattr(eq, "parameters") and eq.parameters:
+            for pname, pval in eq.parameters.items():
+                arg_values.setdefault(pname, getattr(pval, "value", pval))
+
         exp = parse_eq(eq)
         if exp is not None:
-            subs_map = {}
-            for s in exp.free_symbols:
-                sname = str(s)
-                if hasattr(eq, "parameters") and sname in eq.parameters:
-                    subs_map[s] = eq.parameters[sname].value
+            subs_map = {s: arg_values[str(s)] for s in exp.free_symbols if str(s) in arg_values}
             if subs_map:
                 exp = exp.subs(subs_map)
+
+        # Generic primitives available to any equation transform.
+        # *_safe variants substitute 1 for zero entries so isolated nodes
+        # do not produce NaNs under row/column normalisation.
+        L = self.lengths_matrix
+        _rs = M.sum(axis=1, keepdims=True)
+        _cs = M.sum(axis=0, keepdims=True)
         env = {
             "M": M,
             "W": M,
+            "L": L,
             "M_min": jnp.nanmin(M),
             "W_min": jnp.nanmin(M),
             "M_max": jnp.nanmax(M),
             "W_max": jnp.nanmax(M),
+            "W_rowsum": _rs,
+            "W_colsum": _cs,
+            "W_rowsum_safe": jnp.where(_rs > 0, _rs, 1.0),
+            "W_colsum_safe": jnp.where(_cs > 0, _cs, 1.0),
             "jnp": jnp,
             "np": jnp,
             "jsp": jsp,
