@@ -583,8 +583,22 @@ class BifurcationResult:
 
     @classmethod
     def from_auto(cls, bd, *, cont_name=None, model=None, continuation=None,
-                  ICS=None, periodic_orbits_raw=None, workdir=None, **kwargs):
-        """Wrap an AUTO-07p ``bifDiag`` (numcont backend)."""
+                  ICS=None, periodic_orbits_raw=None, codim2_raw=None,
+                  workdir=None, **kwargs):
+        """Wrap an AUTO-07p ``bifDiag`` (numcont backend).
+
+        Parameters
+        ----------
+        bd : auto.bifDiag
+            The codim-1 equilibrium continuation result.
+        codim2_raw : list, optional
+            ``[(name, source_type, fp1_name, fp2_name, R_c2), …]`` —
+            codim-2 fold/Hopf/BP curves produced by
+            ``NumContAdapter._run_codim2_branches``. Each entry is wrapped
+            as a child ``BifurcationResult`` and attached to
+            ``self.codim2_curves`` with metadata (``_source_type``,
+            ``_fp2_name``) that ``_plot_codim2`` consumes.
+        """
         sv_names = list(model.state_variables.keys()) if model else []
         df = _extract_auto_df(bd, sv_names, ICS)
 
@@ -598,6 +612,32 @@ class BifurcationResult:
                 )
             )
 
+        codim2_curves = []
+        for c2_name, c2_source_type, c2_fp1, c2_fp2, c2_bd in codim2_raw or []:
+            # The codim-2 continuation tracks (fp1, fp2). ICS=fp1 makes the
+            # 'param' column carry fp1; the 'param2' column is fp2 (already
+            # resolved by _auto_branch_to_df from PAR(.) → parnames mapping).
+            c2_df = _extract_auto_df(c2_bd, sv_names, c2_fp1)
+            # Promote second-parameter column for _plot_codim2 ergonomics
+            if c2_fp2 in c2_df.columns and "param2" not in c2_df.columns:
+                c2_df = c2_df.copy()
+                c2_df["param2"] = c2_df[c2_fp2]
+            c2_result = cls(
+                br=c2_bd,
+                df=c2_df,
+                model=model,
+                ICS=c2_fp1,
+                state_var_index={n: i for i, n in enumerate(sv_names)},
+                cont_name=c2_name,
+                continuation=continuation,
+                workdir=workdir,
+            )
+            # Metadata consumed by _plot_codim2
+            c2_result._source_type = c2_source_type
+            c2_result._fp2_name = c2_fp2
+            c2_result._ICS2 = c2_fp2
+            codim2_curves.append(c2_result)
+
         return cls(
             br=bd,
             df=df,
@@ -605,7 +645,7 @@ class BifurcationResult:
             ICS=ICS,
             state_var_index={n: i for i, n in enumerate(sv_names)},
             periodic_orbits=periodic_orbits,
-            codim2_curves=[],
+            codim2_curves=codim2_curves,
             cont_name=cont_name,
             continuation=continuation,
             workdir=workdir,
