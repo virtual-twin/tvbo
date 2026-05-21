@@ -15,7 +15,13 @@ experiment : object with .observations dict
 """
 import os as _os
 
-observations = getattr(experiment, 'observations', None) or {}
+from tvbo.codegen.templater import is_derived as _is_derived
+_all_observations = getattr(experiment, 'observations', None) or {}
+# Drop derived observations — they are not per-step monitor candidates.
+if hasattr(_all_observations, 'items'):
+    observations = {n: o for n, o in _all_observations.items() if not _is_derived(o, experiment)}
+else:
+    observations = _all_observations
 
 # ── classification helpers ──────────────────────────────────────────
 
@@ -207,12 +213,19 @@ def _get_sensor_file(obs):
 
 obs_list = []   # (obs_name, obs, category)
 
+def _source_strings(o):
+    src = getattr(o, 'source', None)
+    if not src:
+        return []
+    items = src if isinstance(src, (list, tuple)) else [src]
+    return [str(getattr(i, 'name', None) or i) for i in items]
+
 for obs_name, obs in (observations.items() if hasattr(observations, 'items') else []):
     cat = _classify(obs)
     # Skip observations that are not TVB monitor candidates
     if getattr(obs, 'aggregation', None) is not None and cat == 'raw':
         continue  # batch aggregation, not a per-step monitor
-    if str(getattr(obs, 'source', '') or '').startswith('network.'):
+    if any(s.startswith('network.') for s in _source_strings(obs)):
         continue  # static data, not a monitor
     obs_list.append((str(obs_name), obs, cat))
 

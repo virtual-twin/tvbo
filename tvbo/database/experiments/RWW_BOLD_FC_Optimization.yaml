@@ -279,14 +279,11 @@ observations:
           - name: data
             value: volterra_transform
 
-# =============================================================================
-# DERIVED OBSERVATIONS: Computed from other observations
-# =============================================================================
-derived_observations:
+  # === Derived observations (computed from other observations) ===
   fc:
     label: "Simulated Functional Connectivity"
     description: "Pearson correlation matrix from BOLD time series"
-    source_observations:
+    source:
       - bold
     pipeline:
       - callable:

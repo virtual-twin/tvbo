@@ -533,12 +533,23 @@ def is_network_observation(obs: Any) -> bool:
     """Check if observation is a network observation (static data from network).
 
     Network observations have source starting with 'network.observations' or 'network.edges'.
+    The slot is multivalued; for raw network observations there is exactly
+    one entry. Accept both scalar and list forms.
     """
     if not obs:
         return False
     source = getattr(obs, "source", None)
-    if source and (str(source).startswith("network.observations") or str(source).startswith("network.edges")):
-        return True
+    if not source:
+        return False
+    if isinstance(source, (list, tuple)):
+        items = source
+    else:
+        items = [source]
+    for item in items:
+        name = item.name if hasattr(item, "name") else item
+        s = str(name)
+        if s.startswith("network.observations") or s.startswith("network.edges"):
+            return True
     return False
 
 

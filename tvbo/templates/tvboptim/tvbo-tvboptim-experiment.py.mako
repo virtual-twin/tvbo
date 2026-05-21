@@ -438,11 +438,13 @@ if has_optimization:
     assert max_steps is not None, "optimization.max_iterations not found (schema default: 100)"
 
 # === Observations metadata ===
-# Schema: experiment.observations is multivalued dict
-observations = dict(experiment.observations) if experiment.observations else {}
-
-# Derived observations from schema (explicit, separate slot) - define early for use in get_pipeline_output_key
-derived_observations_dict = dict(experiment.derived_observations) if experiment.derived_observations else {}
+# Split experiment.observations into raw vs derived views based on
+# whether each Observation's `source` references another observation
+# in the same experiment.
+from tvbo.codegen.templater import is_derived as _is_derived
+_all_observations = dict(experiment.observations) if experiment.observations else {}
+observations = {n: o for n, o in _all_observations.items() if not _is_derived(o, experiment)}
+derived_observations_dict = {n: o for n, o in _all_observations.items() if _is_derived(o, experiment)}
 derived_observation_names = set(derived_observations_dict.keys())
 
 def get_obs(name):
@@ -1119,7 +1121,7 @@ if loss_functions:
         dobs_def = derived_observations_dict.get(dobs_name)
         if dobs_def:
             sources = []
-            for src in (dobs_def.source_observations or []):
+            for src in [_s for _s in (dobs_def.source or []) if (getattr(_s, 'name', None) or _s) in _all_observations]:
                 src_name = str(src) if not hasattr(src, 'name') else str(src.name)
                 sources.append(src_name)
                 if src_name in observation_names and src_name not in network_observation_names and src_name not in derived_observation_names:
@@ -1163,7 +1165,7 @@ def get_observation_dependencies(obs_name, derived_obs_dict):
     deps = set()
     dobs_def = derived_obs_dict.get(obs_name)
     if dobs_def:
-        for src in (dobs_def.source_observations or []):
+        for src in [_s for _s in (dobs_def.source or []) if (getattr(_s, 'name', None) or _s) in _all_observations]:
             src_name = str(src) if not hasattr(src, 'name') else str(src.name)
             deps.add(src_name)
     return deps
@@ -1201,6 +1203,8 @@ def compute_all_observations(result, state, result_transient=None):
 <%
     if obs_name in network_observation_names:
         continue  # Skip network observations, already handled above
+    if obs_name in derived_observation_names:
+        continue  # Derived observations are emitted in the dedicated loop below.
 
     obs_def = observations_dict.get(obs_name)
     has_pipeline = obs_def and obs_def.pipeline if obs_def else False
@@ -1236,10 +1240,13 @@ def compute_all_observations(result, state, result_transient=None):
     # Derived observations (from derived_observations in schema)
 % for dobs_name, dobs in derived_observations_dict.items():
 <%
-    # Get source_observations (multivalued, required)
+    # Source names of this derived observation, filtered to entries that
+    # name another observation in the experiment.
     src_obs_list = []
-    for so in (dobs.source_observations or []):
-        src_obs_list.append(str(so) if not hasattr(so, 'name') else str(so.name))
+    for so in (dobs.source or []):
+        _so_name = str(so) if not hasattr(so, 'name') else str(so.name)
+        if _so_name in _all_observations:
+            src_obs_list.append(_so_name)
 
     # Get pipeline callable
     pipeline_call = None
@@ -2243,9 +2250,16 @@ def run_experiment(
             # Check for data_source (external file)
             if hasattr(obs_def, 'data_source') and obs_def.data_source is not None:
                 input_names.append(obs_name)
-            # Check for network observation (from BIDS)
-            elif hasattr(obs_def, 'source') and obs_def.source and str(obs_def.source).startswith('network.observations.'):
-                network_obs_inputs.append(obs_name)
+            else:
+                # Check for network observation (from BIDS). `source` is
+                # multivalued; for raw observations there is exactly one entry.
+                _src = getattr(obs_def, 'source', None)
+                if isinstance(_src, (list, tuple)):
+                    _src = _src[0] if _src else None
+                if _src is not None and hasattr(_src, 'name'):
+                    _src = _src.name
+                if _src and str(_src).startswith('network.observations.'):
+                    network_obs_inputs.append(obs_name)
 
     # Get dependencies for this algorithm
     algo_deps = algorithms_deps.get(algo_name, [])
@@ -2302,16 +2316,15 @@ def run_experiment(
     # Use hyperparams_dict which already includes hyperparams from included algorithms
     algo_has_window_size = 'window_size' in hyperparams_dict
 
-    # Find source observations needed (derived observations depend on source observations)
-    # With DerivedObservation, look in derived_observations_dict for source_observations
+    # Source observations needed for derived ones in this algorithm.
     algo_source_obs_needed = set()
     for obs_name in obs_names:
-        # Check if this is a derived observation
         dobs_def = derived_observations_dict.get(obs_name)
-        if dobs_def and dobs_def.source_observations:
-            for src_obs in dobs_def.source_observations:
+        if dobs_def and dobs_def.source:
+            for src_obs in dobs_def.source:
                 src_name = src_obs.name if hasattr(src_obs, 'name') else str(src_obs)
-                algo_source_obs_needed.add(src_name)
+                if src_name in _all_observations:
+                    algo_source_obs_needed.add(src_name)
     algo_needs_buffers = algo_has_window_size and len(algo_source_obs_needed) > 0
 %>
 

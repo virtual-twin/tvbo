@@ -148,6 +148,21 @@ Backend-in-metadata work is additive on top of that schema.
 
 ## Improve Observations
 
+- **Stateful Observations** (BOLD / balloon-Windkessel pattern). Some
+  observers carry their own ODE state (s,f,v,q) driven by parent
+  neural activity, with a linear/algebraic read-out applied to the
+  integrated state. Decision: extend `Observation` with an optional
+  embedded `dynamics:` (referenced by IRI to a regular `Dynamics`
+  entry such as `BalloonWindkessel.yaml`), an `input:` slot
+  (`source` variable on parent + `forcing_slot` name on the
+  sub-Dynamics), and a `readout:` algebraic map. Also add
+  `Dynamics.forcing_inputs: [name]` to distinguish external driving
+  inputs from network coupling. Preserves Observation semantics (no
+  feedback, no role in `Network` topology) while reusing the full
+  Dynamics infrastructure. Full schema sketch in
+  `dev/Interoperability/vbjax.md` §7.9. Chains naturally with the
+  pipeline DAG below via the same `input:` field.
+
 - If we change to the task-based approach (SED-ML interoperability), we might also define the Observation-Pipeline as DAG of Tasks. By that, it gets more aligned with the other Specs (e.g. Pipeline).
     - A tasks requires specification of input, function, output (like FunctionCall).
 
@@ -235,24 +250,56 @@ Neurodata without Borders (NDWB)
     4. Drop duplicate ad-hoc backfill code in `SimulationExperiment.__init__` and `Network.__init__` once the per-class path is uniform.
 
 
-## Backend-independent declarative network construction (`NetworkRecipe`)
+## Backend-independent declarative network construction (`NetworkGenerator`)
 
 **Motivation.** Today procedural networks are built via
 `graph_generator.builder: Callable` pointing at a Python function
 (see `dev/Replication/Koller2024/.../koller2024_networks.py`). This is
-the Python-only entry point. To make TVBO truly backend-independent
-the construction *recipe* itself should live in the YAML, so a Julia
-or MATLAB codegen can emit equivalent native code without porting the
+the Python-only entry point. To make TVBO truly backend-independent,
+the construction spec itself should live in the YAML so a Julia or
+MATLAB codegen can emit equivalent native code without porting the
 Python builder.
 
-**Concrete target — express the Koller2024 2D sheet in pure YAML**:
+**Terminology.** Use `NetworkGenerator`, the standard graph-theory
+term — NetworkX has `networkx.generators`, igraph has
+`Graph.Generators`, Graphs.jl has `SimpleGraphs.Generators`. A
+generator yields a `Network` (`weights`, optionally `lengths`,
+optionally per-node parameters). The generator is metadata on
+`Network`, not a parallel concept.
+
+### Two tiers of generator
+
+**Tier 1 — named built-in generators (small, finite catalogue).**
+Most papers and most vbjax examples just need one of:
+
+- `Complete {n}` — all-to-all (vbjax `00_intro`, `parsweep`, `01_sweep`)
+- `Grid2D {nx, ny, extent}` — Cartesian sheet
+- `SphericalGrid {nlat, nlon}` — drives neural-field examples
+  (vbjax `make_shtdiff`, classical TVB surface models)
+- `Lattice3D {nx, ny, nz}` — cubic lattice
+- `FromAtlasCentres {atlas}` — node positions from a parcellation
+- `ErdosRenyi {n, p}` / `BarabasiAlbert {n, m}` / `WattsStrogatz {n, k, p}`
+  — standard random-graph models
+- `FromTractogram {source_file, format}` — loaded connectome
+  (already the dominant TVBO path — this just names it as one
+  generator among several)
+
+Each is a named subclass of `NetworkGenerator` with explicit slots; no
+DAG, no expressions. Schema cost: tiny.
+
+**Tier 2 — `Procedural` generator (DAG of construction steps).** For
+papers whose network construction *isn't* one of the named built-ins
+(Koller2024 2D-sheet with stochastic masks + Gaussian fields +
+gradient template is the motivating case), allow a `Procedural`
+generator whose body is an ordered DAG of named intermediates:
 
 ```yaml
-graph_generator:
-  name: Koller2024_2DSheet
-  recipe:
+network:
+  generator:
+    name: Koller2024_2DSheet
+    type: Procedural
     layout:
-      type: grid_2d
+      type: Grid2D
       nx: 30
       ny: 30
       x_extent: {value: 140.0, unit: mm}
@@ -306,13 +353,11 @@ graph_generator:
         gradient_template: gradient_template
 ```
 
-**Schema additions required.** A new `NetworkRecipe` class containing:
+**Schema for `Procedural`:**
 
-- `layout` block: a small enum of position layouts (`grid_2d`,
-  `grid_3d`, `sphere`, `from_atlas_centres`, `inline_coordinates`)
-  with their respective parameters.
-- `derived` block: an ordered DAG of named intermediates, each one
-  of:
+- `layout`: a `NetworkGenerator` from Tier 1 that produces positions
+  (typically `Grid2D`, `SphericalGrid`, `FromAtlasCentres`).
+- `derived`: an ordered DAG of named intermediates, each one of:
   - `pairwise_distance` (with metric)
   - `equation` (sympy/numpy expression over previously-named
     intermediates and parameters)
@@ -323,39 +368,163 @@ graph_generator:
   - `normalize` (axis-aware scalar normalisation: column/row/global)
   - `minmax_rescale` (with target range)
   - `reduce` (sum/mean/max along an axis)
-- `outputs` block: required `weights`, optional `lengths`,
-  `node_parameters` mapping each node-shaped intermediate to a
-  named `Node.parameters` entry.
+- `outputs`: required `weights`, optional `lengths`, `node_parameters`
+  mapping each node-shaped intermediate to a named `Node.parameters`
+  entry.
 
 **Why generalizable, not Koller-specific.** Every primitive above is a
 textbook graph-construction operation: distance kernels, threshold
 masks, Gaussian fields, axis normalisation. Roberts 2019, Pang 2023,
-Cabral 2011 all assemble networks from the same vocabulary. The
-recipe schema lets any paper's construction live in one declarative
-block, identical across backends.
+Cabral 2011 all assemble networks from the same vocabulary.
 
 **Codegen targets.** Each backend in `tvbo/templates/` (currently
-`tvb`, `tvboptim`, the report templates, and the Julia template
-under `tvbo-nd-experiment.jl.mako.py`) emits equivalent native code
-from the same NetworkRecipe spec:
+`tvb`, `tvboptim`, the report templates, the Julia template under
+`tvbo-nd-experiment.jl.mako.py`, and the future `vbjax` template)
+emits equivalent native code from the same generator spec:
 
-- Python (tvb / tvboptim): numpy + scipy.spatial / scipy.stats /
-  jax.numpy.
+- Python (tvb / tvboptim / vbjax): numpy + scipy.spatial /
+  scipy.stats / jax.numpy.
 - Julia (Graphs.jl + Distributions.jl).
 - MATLAB (built-ins).
 
 **Migration path.** The existing `graph_generator.builder: Callable`
-path stays — recipes are an additional, more declarative route. A
-recipe with no Callable invokes pure-codegen materialisation; a
-Callable with no recipe stays Python-only (current state). Studies
-can mix: prefer recipes when the construction is composable, fall
-back to builders for one-off Python logic.
+path stays — generators are an additional, more declarative route. A
+generator with no Callable invokes pure-codegen materialisation; a
+Callable with no generator stays Python-only (current state). Studies
+can mix: prefer named Tier-1 generators when applicable, fall back to
+`Procedural` for paper-specific constructions, fall back to a
+Callable for one-off Python logic.
 
-**Scope.** Substantial: 2–3 days of schema + codegen work + tests.
-**Defer until** after the Koller replication ships its first
+**Scope.**
+- Tier 1 (named built-ins): small, ~1 day per generator. `SphericalGrid`
+  is the only one needed by vbjax (drives the neural-field examples).
+- Tier 2 (`Procedural` DAG): 2–3 days of schema + codegen work + tests.
+
+**Defer Tier 2 until** after the Koller replication ships its first
 end-to-end run, then come back to migrate Koller's 2D sheet from
-`koller2024_networks.py:build_2d_sheet` to a pure-YAML recipe and
-delete the builder module entirely.
+`koller2024_networks.py:build_2d_sheet` to a pure-YAML `Procedural`
+generator and delete the builder module entirely. Tier 1 can land
+incrementally as needed by individual interop plans.
+
+
+## vbjax interoperability backend
+
+Add `vbjax` (Sanz-Leon / Woodman, JAX-based virtual brain library) as a
+first-class backend. Goal: every script in
+`/Users/leonmartin_bih/work_data/toolboxes/vbjax/examples/` is replicated
+by a pure-YAML TVBO `SimulationExperiment` — no Python hacks, no
+backend-specific escape hatches in the YAML, no wrapper modules. The
+adapter under `tvbo/adapters/vbjax.py` + templates under
+`tvbo/templates/vbjax/` are the only places vbjax-specific code lives.
+
+vbjax is structurally close to the existing `tvboptim` JAX backend
+(same JAX substrate, same noise-array-as-input idiom, same MPR/JR
+neural-mass dfun structure — see
+`tvbo/database/models/MontbrioPazoRoxin.yaml` whose `cr`/`cv` parameters
+already mirror `mpr_default_theta`). The work is mostly: catalogue the
+vbjax primitives, decide for each whether it maps to existing TVBO
+schema or needs a small additive extension, then write the
+template/adapter pair.
+
+Full design, primitive inventory, per-example YAML replication
+strategy, schema additions, and phased roadmap:
+**see `dev/Interoperability/vbjax.md`**.
+
+Depends on:
+- Backend-in-metadata + per-task dispatch (this file, §2). vbjax
+  becomes a `provides_format: [vbjax]` entry on the existing
+  `tvbo/database/software/vbjax.yaml` `SoftwarePackage`, with a
+  defaults-file entry routing `Integration` tasks to it on demand.
+- Backend-independent declarative network construction (this file,
+  `NetworkGenerator`). vbjax only needs the **Tier-1** part: one
+  named built-in generator (`SphericalGrid`) for the neural-field
+  example, plus a `Network.local_connectivity` slot (already a
+  first-class concept in classical TVB) backed by `make_shtdiff`.
+  The `Procedural` DAG (Tier 2) is Koller2024's concern, not
+  vbjax's. Most vbjax examples just load a tractogram or use
+  all-to-all coupling — the current `Network` already covers them;
+  high-resolution connectome examples (`delays-hcp.py`, `hires.py`)
+  only need a `Network.tractogram.format: dense | coo | csr` slot
+  so the adapter can pick `make_spmv` vs dense matmul.
+
+Cross-check findings worth surfacing here (full table in
+`dev/Interoperability/vbjax.md` §4.1):
+- **`bold_dfun` is a Dynamics, not an Observation.** It is a 4-state
+  ODE (`s,f,v,q`) with `BOLDTheta` parameters
+  (`tau_s,tau_f,tau_o,alpha,te,v0,e0,epsilon,nu_0,r_0` + reciprocals
+  + `k1,k2,k3`); `make_bold` integrates it via `heun_step` and then
+  samples `v0*(k1*(1-q)+k2*(1-q/v)+k3*(1-v))` as the observation
+  read-out. The existing `tvbo/database/observation_models/bold_*.yaml`
+  are convolution/HRF-kernel monitors (classical-TVB style) — they
+  do **not** carry `s/f/v/q` state or the BOLDTheta fields, so the
+  earlier "✅ present as Observation" status was misleading. Action:
+  add a new `tvbo/database/models/BalloonWindkessel.yaml` Dynamics
+  plus a thin Observation reading the linear sample from its state;
+  keep the existing kernel-based bold_*.yaml as a separate family.
+
+
+## vbi (Virtual Brain Inference) interoperability backend
+
+Add `vbi` (Ziaeemehr, Woodman, Hashemi, Jirsa — INS Marseille,
+[`github.com/ins-amu/vbi`](https://github.com/ins-amu/vbi), DOI
+[10.5281/zenodo.14795543](https://doi.org/10.5281/zenodo.14795543)) as a
+first-class **inference** backend. Goal: every notebook in
+`/Users/leonmartin_bih/work_data/toolboxes/vbi/docs/examples/*.ipynb`
+(~30 notebooks) reproduced as a pure-YAML TVBO `SimulationExperiment` —
+no Python hacks, no escape hatches in the YAML, no per-notebook wrapper
+modules. The adapter under `tvbo/adapters/vbi.py` + templates under
+`tvbo/templates/vbi/` are the only places vbi-specific code lives.
+
+vbi is **the inference complement** to vbjax. Where vbjax is a JAX
+integrator + neural-mass library (one backend, one paradigm), vbi is a
+**multi-backend simulator** (Numba JIT, C++ compiled, CuPy GPU, PyTorch
+autograd, JAX lazy, TVB kernels) wrapped behind a unified per-model
+`run()` API, plus a 40+ time-series **feature library** and two
+**posterior-estimation paths** (the `sbi` toolkit — SNPE/SNLE/SNRE with
+MAF/NSF/MDN — and a built-in autograd CDE with MDN/MAF estimators in
+`vbi/cde.py`). For TVBO this lands three things at once:
+
+1. **`Inference` Task** — the headline SBI workflow (sample prior →
+   simulate → extract features → train density estimator → sample
+   posterior) becomes a first-class Task class, complementing the
+   existing `Optimization` and `Exploration` tasks. Already implied
+   by SED-ML §4.2.1.
+2. **Feature-extraction pipeline** — vbi's `cfg` dict (40+ features
+   organised by domain: statistical, spectral, FC/FCD, complexity,
+   event-detection) becomes a structured TVBO `Observation` pipeline.
+   Closes the long-standing "Improve Observations" todo (this file).
+3. **Backend-per-model routing** — vbi keeps Numba / C++ / CuPy /
+   PyTorch / JAX / TVBk implementations of the *same* model under
+   `vbi/models/<backend>/<model>.py`. This is the cleanest possible
+   stress-test for the Backend-in-Metadata work (this file, §2): the
+   YAML carries `task.software: vbi-numba` (or `vbi-cupy`, etc.) and
+   the adapter dispatches. Same model + same parameters + different
+   backend keys = identical results modulo numerical noise.
+
+Full design, primitive inventory, per-notebook YAML replication
+strategy, schema additions, and phased roadmap:
+**see `dev/Interoperability/vbi.md`**.
+
+Depends on:
+- Backend-in-Metadata + per-task dispatch (this file, §2). vbi
+  registers six renderer keys on one `SoftwarePackage`:
+  `vbi-numba`, `vbi-cpp`, `vbi-cupy`, `vbi-jax`, `vbi-pytorch`,
+  `vbi-tvbk` — exactly the "one package, many `provides_format`"
+  case the schema slot was designed for.
+- `Inference` Task class from SED-ML §4.2.1
+  (`dev/Interoperability/SedML/plan.md`). vbi is its first real
+  consumer.
+- `Observation` pipelines (this file, "Improve Observations"). vbi's
+  `cfg` is essentially a feature-pipeline spec; TVBO needs the same
+  structure to express it natively.
+- Revisit Heterogeneous parameter specification (this file). vbi's
+  `_as_1d_array_like()` broadcasting (scalar → per-node vector → per-sim
+  matrix) is exactly the schema gap that todo motivates.
+- vbi shares neural-mass models with vbjax and the classical TVBO DB
+  (MPR, JR, WilsonCowan, Stuart-Landau, RWW/WW, VEP, BVEP-family).
+  Reuse the existing `tvbo/database/models/*.yaml` entries; only
+  `DampOscillator`, `GHB`, `RWW` (full Wong-Wang), and `Stuart-Landau`
+  need new DB entries.
 
 
 ## Drop `use_ontology` / `_skip_ontology` flags once IRI handling is canonical
@@ -371,3 +540,38 @@ delete the builder module entirely.
     2. Remove the explicit `_populate_from_ontology_by_name()` / `_populate_from_ontology()` call sites — they become unconditional inside the single `_resolve_iri` step from the previous TODO.
     3. Ensure parameter/state-variable merging is non-destructive: user dict values overwrite at the leaf level (e.g. `parameters.a.value`), not the whole `parameters` slot.
     4. Update tests that pass `use_ontology=True/False` explicitly.
+
+
+## Experimental / parked
+
+### Composite / coupled Dynamics
+
+A `CompositeDynamics` that bundles N sub-`Dynamics` with declared
+**bidirectional** data flow between them, lowered at codegen time to
+one combined `dfun` over the stacked state vector. Distinct from the
+stateful-Observation pattern (see `Improve Observations` above), which
+only handles unidirectional, observer-style coupling without feedback.
+
+Motivating use cases (none of them blocking today):
+- Excitatory–inhibitory pairs authored as two separate `Dynamics`
+  (Wilson–Cowan, Jansen–Rit decomposition) instead of one merged model.
+- Neural–glial / neural–vascular models where the auxiliary
+  compartment feeds back into the neural state (unlike BOLD which
+  doesn't).
+- Multi-compartment single-cell models (soma + dendrite + axon).
+- Heterogeneous node groups *within a single node* — e.g. an MPR
+  population coupled to a slow-adaptation variable that modulates `η`.
+- Possible future home for the vbjax `Dopa` model if/when its
+  AMPA / GABA / dopamine sub-states are factored into separate
+  `Dynamics` instead of one 6-state monolithic `DopamineQIF.yaml`.
+
+Schema-wise this needs: a `CompositeDynamics` class holding a list of
+sub-`Dynamics` plus a `couplings:` block declaring how each
+sub-Dynamics' state variables feed into the others' equations. State
+naming becomes namespaced (`<sub>.<var>`). Codegen stacks states and
+emits one big dfun.
+
+Do **not** materialise until a concrete bidirectional use case shows up
+in the roadmap. The vbjax BOLD case explicitly does *not* need this —
+it's covered by stateful Observations. Keeping this here so the design
+space stays mapped.

@@ -299,16 +299,13 @@ observations:
             value: 256
             description: "Segment length for Welch"
 
-# =============================================================================
-# DERIVED OBSERVATIONS: Computed from other observations
-# =============================================================================
-derived_observations:
+  # === Derived observations (computed from other observations) ===
     # Derived: Average spectrum across regions
   avg_spectrum:
     name: avg_spectrum
     label: "Average Spectrum"
     description: "Mean power spectrum across all regions"
-    source_observations:
+    source:
       - simulated_psd
     pipeline:
       - callable:
@@ -327,7 +324,7 @@ derived_observations:
   peak_frequencies:
     label: "Peak Frequencies per Region"
     description: "Peak frequency for each brain region from its PSD"
-    source_observations:
+    source:
       - simulated_psd
     pipeline:
       - callable:
@@ -362,7 +359,7 @@ derived_observations:
   peak_frequency:
     label: "Peak Frequency"
     description: "Extract peak frequency from average spectrum"
-    source_observations:
+    source:
       - avg_spectrum
       - simulated_psd
     pipeline:
