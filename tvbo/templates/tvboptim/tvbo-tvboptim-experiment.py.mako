@@ -504,6 +504,9 @@ for expl in exploration_list:
         'n_trials': int(expl.n_trials) if expl.n_trials is not None else 1,
         # average: 'trials' to average over n_trials, None for individual results
         'average': str(expl.average) if expl.average else None,
+        # parallel_mode: vmap | lax_map | pmap | auto. Defaults to auto (=lax_map at codegen).
+        'parallel_mode': str(expl.parallel_mode) if getattr(expl, 'parallel_mode', None) else 'auto',
+        'parallel_batch_size': int(expl.parallel_batch_size) if getattr(expl, 'parallel_batch_size', None) else None,
         'axes': [],
     }
     # Schema: space is a list of ExplorationAxis (optional for trial-only explorations)
@@ -691,9 +694,9 @@ from tvboptim.experimental.network_dynamics.coupling.base import InstantaneousCo
 from tvboptim.experimental.network_dynamics.external_input.base import AbstractExternalInput
 % endif
 % if has_delay:
-from tvboptim.experimental.network_dynamics.graph import DenseDelayGraph
+from tvboptim.experimental.network_dynamics.graph import DenseDelayGraph, SparseDelayGraph
 % else:
-from tvboptim.experimental.network_dynamics.graph import DenseGraph
+from tvboptim.experimental.network_dynamics.graph import DenseGraph, SparseGraph
 % endif
 from tvboptim.experimental.network_dynamics.solvers import ${solver_class}, BoundedSolver
 % if has_noise:
@@ -1786,6 +1789,10 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
 
     _base_trial_observable = observable_fn
 
+<%
+    _pmode_s = str(expl.get('parallel_mode') or 'auto').lower()
+    _pbatch_s = expl.get('parallel_batch_size')
+%>\
     @jax.jit
     def observable_fn(s):
         def _run_trial(${', '.join(f'_tn_{sp}' for sp in _sp_names)}):
@@ -1793,7 +1800,16 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
             s.dynamics._stoch_${_sp_name} = _tn_${_sp_name}
     % endfor
             return _base_trial_observable(s)
+        # See the IC-trial branch for parallel_mode semantics.
+% if _pmode_s == 'vmap':
         trial_results = jax.vmap(_run_trial)(${', '.join(f'_trial_noises_{sp}' for sp in _sp_names)})
+% elif _pmode_s == 'pmap':
+        trial_results = jax.pmap(_run_trial)(${', '.join(f'_trial_noises_{sp}' for sp in _sp_names)})
+% elif len(_sp_names) == 1:
+        trial_results = jax.lax.map(_run_trial, _trial_noises_${_sp_names[0]}, batch_size=${_pbatch_s if _pbatch_s else 1})
+% else:
+        trial_results = jax.lax.map(lambda args: _run_trial(*args), (${', '.join(f'_trial_noises_{sp}' for sp in _sp_names)}), batch_size=${_pbatch_s if _pbatch_s else 1})
+% endif
     % if expl.get('average') == 'trials':
         return jnp.mean(trial_results, axis=0)
     % else:
@@ -1828,12 +1844,27 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
 
     _base_ic_observable = observable_fn
 
+<%
+    _pmode = str(expl.get('parallel_mode') or 'auto').lower()
+    _pbatch = expl.get('parallel_batch_size')
+%>\
     @jax.jit
     def observable_fn(s):
         def _run_trial(ic):
             s.initial_state.dynamics = ic
             return _base_ic_observable(s)
+        # Trial-axis parallelism is picked per the Exploration.parallel_mode
+        # slot. ``vmap`` batches all trials (fast, peak memory n_trials ×
+        # per-trial working set); ``lax_map`` runs them sequentially with
+        # peak memory bounded by one trial. ``auto`` defaults to lax_map
+        # at batch_size=1 — safe for any n_trials × n_nodes.
+% if _pmode == 'vmap':
         trial_results = jax.vmap(_run_trial)(_trial_ics)
+% elif _pmode == 'pmap':
+        trial_results = jax.pmap(_run_trial)(_trial_ics)
+% else:
+        trial_results = jax.lax.map(_run_trial, _trial_ics, batch_size=${_pbatch if _pbatch else 1})
+% endif
     % if expl.get('average') == 'trials':
         return jnp.mean(trial_results, axis=0)
     % else:
