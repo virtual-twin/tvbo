@@ -179,15 +179,22 @@ def _load_source_weights(source: str) -> np.ndarray:
     from tvbo.classes.network import Network
 
     net = Network.from_db(source) if not source.endswith((".yaml", ".yml", ".h5")) else Network.from_file(source)
+    net._resolve()
 
     # Network may expose its primary weights matrix via different attrs depending on
     # how it was loaded; try the common ones.
     for attr in ("weights_matrix", "weights", "weight"):
         m = getattr(net, attr, None)
-        if m is not None:
-            arr = np.asarray(m)
-            if arr.ndim == 2:
-                return arr
+        if m is None:
+            continue
+        if callable(m):
+            try:
+                m = m()
+            except TypeError:
+                continue
+        arr = np.asarray(m)
+        if arr.ndim == 2:
+            return arr
     raise RuntimeError(f"Could not extract 2-D weights matrix from source {source!r}")
 
 
