@@ -387,35 +387,33 @@ class NumContAdapter:
 
             # Parse 'fold:1', 'fold:all', 'fold:-1', 'fold' (default: all)
             spec = src.split(":", 1)[1].strip() if ":" in src else "all"
-            # Gather all matching labels across branches
-            all_labels = []
+            # AUTO addresses special points by ORDINAL (1-based, across all
+            # branches): R_eq("LP1") = first LP found, "LP2" = second, etc.
+            # Count total LPs to size the ordinal range.
+            n_total = 0
             for br in R_eq:
                 lbls = br.labels.by_label.get(label_prefix, {}) or {}
-                for lab_idx in lbls:
-                    try:
-                        all_labels.append(int(lab_idx))
-                    except (TypeError, ValueError):
-                        pass
-            all_labels = sorted(set(all_labels))
+                n_total += len(lbls)
 
-            if not all_labels:
+            if n_total == 0:
                 continue
 
             if spec in ("all", "*", ""):
-                selected = all_labels
+                ordinals = list(range(1, n_total + 1))
             else:
                 try:
                     n = int(spec)
                     if n == -1:
-                        selected = all_labels[-1:]
-                    elif 1 <= n <= len(all_labels):
-                        selected = [all_labels[n - 1]]
+                        ordinals = [n_total]
+                    elif 1 <= n <= n_total:
+                        ordinals = [n]
                     else:
-                        selected = []
+                        ordinals = []
                 except ValueError:
-                    selected = []
+                    ordinals = []
 
-            for lab in selected:
+            for ordinal in ordinals:
+                lab = ordinal  # AUTO ordinal label
                 try:
                     kwargs_c2 = dict(
                         data=R_eq(f"{label_prefix}{lab}"),
