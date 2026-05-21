@@ -23,6 +23,41 @@ exec_globals = {}
 TEMPLATES = templates.root
 
 
+def is_derived(obs: Any, experiment: Any) -> bool:
+    """Return True if ``obs`` derives from other observations in ``experiment``.
+
+    An Observation is derived when any item in its multivalued ``source``
+    slot names another observation in the same experiment. Source entries
+    may be bare strings, objects with a ``name`` attribute, or inlined
+    Observation/StateVariable instances.
+    """
+    obs_names = set((getattr(experiment, "observations", {}) or {}).keys())
+    if not obs_names:
+        return False
+    for s in (getattr(obs, "source", None) or []):
+        name = getattr(s, "name", None) or s
+        if isinstance(name, str) and name in obs_names:
+            return True
+    return False
+
+
+def source_observations(obs: Any, experiment: Any) -> list:
+    """Return the source names of ``obs`` that resolve to other observations.
+
+    A filtered view of ``obs.source`` keeping only entries whose name
+    matches a key in ``experiment.observations``.
+    """
+    obs_names = set((getattr(experiment, "observations", {}) or {}).keys())
+    if not obs_names:
+        return []
+    out = []
+    for s in (getattr(obs, "source", None) or []):
+        name = getattr(s, "name", None) or s
+        if isinstance(name, str) and name in obs_names:
+            out.append(name)
+    return out
+
+
 def format_code(code: str, format: str = "python", use_black: bool = True, **kwargs: Any) -> str:
     """Format code using black for Python variants.
 

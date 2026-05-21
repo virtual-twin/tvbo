@@ -757,6 +757,17 @@ classes:
                 range: Tractogram
                 inlined: true
                 description: "Reference to tractography data"
+            mesh:
+                range: Mesh
+                inlined: true
+                description: >-
+                    Optional triangle mesh geometry. When set, the Network
+                    carries triangle faces (and optionally normals,
+                    curvature) alongside its node coordinates. Used by
+                    surface-based observations (cortical wave detection,
+                    Helmholtz-Hodge decomposition, spectrospatial mode
+                    analysis). Mesh face data lives in the same h5
+                    companion under a ``mesh/`` group.
             transforms:
                 range: Function
                 multivalued: true
@@ -895,6 +906,32 @@ classes:
                 range: string
             extension:
                 range: string
+
+    Reference:
+        class_uri: tvbo:Reference
+        description: >-
+            A small typed pointer to another TVBO entity (Network, Mesh,
+            Observation, …). The ``iri`` identifies the target via the
+            registry; the optional ``field`` is a dotted-path subkey
+            resolved by attribute walk on the loaded target (e.g.
+            ``field: 'weight_alpha'`` picks the ``weight_alpha`` named
+            edge matrix on a Network; ``field: 'mesh.faces'`` picks the
+            mesh face array). Used uniformly anywhere a TVBO entity
+            needs to point at a sub-array of another entity without
+            inlining the data.
+        attributes:
+            iri:
+                range: string
+                required: true
+                description: "CURIE or full IRI of the referenced TVBO entity."
+            field:
+                range: string
+                description: >-
+                    Optional dotted-path subkey into the referenced entity
+                    (e.g. ``weight_alpha`` for a Network's named edge
+                    matrix, ``mesh.faces`` for the face array, or
+                    ``nodes.ef_alpha`` for a per-node scalar field).
+                    Resolved by attribute walk at load time.
 
     Node:
         class_uri: tvbo:Node
@@ -1053,13 +1090,42 @@ classes:
             - environment
             - time_scale
         attributes:
-            # Source specification - what state variable to observe
+            # Source specification - what this observation derives from.
+            # Each entry is either a state-variable name/ref (raw observation
+            # of an integrated trajectory) or another observation's name/ref
+            # (derived observation). An observation is "derived" iff any item
+            # in source names another observation in the same experiment.
             source:
-                range: StateVariable
+                multivalued: true
+                any_of:
+                    - range: StateVariable
+                    - range: Observation
                 description: >-
-                    State variable to observe (e.g., S_e for excitatory activity).
-                    For observations derived from other observations, use DerivedObservation.
+                    Ordered list of inputs this observation derives from.
+                    Each entry is either a StateVariable reference (raw
+                    observation of an integrated trajectory, e.g. ``S_e``)
+                    or an Observation reference (derived observation, e.g.
+                    ``bold``). Codegen checks each source name against
+                    ``experiment.observations``; names matching an existing
+                    observation flag the parent as derived.
                 inlined: false
+
+            # Auxiliary inputs that are NOT state variables (mesh arrays,
+            # empirical reference data, named edge matrices on another
+            # Network, …). Each Reference resolves to a concrete array at
+            # load time via the registry + lazy h5 store; codegen threads
+            # the resolved arrays into pipeline-step argument lists.
+            aux_data:
+                range: Reference
+                multivalued: true
+                inlined: true
+                inlined_as_list: true
+                description: >-
+                    Ordered list of auxiliary inputs the observation
+                    pipeline consumes. Examples: a Surface mesh's faces
+                    array, an empirical FC matrix on a reference Network,
+                    or another Observation's output. Resolved load-time
+                    eagerly; rendered code is self-contained.
 
             # Monitor attributes (for BOLD, EEG, etc.)
             period:
@@ -1122,29 +1188,6 @@ classes:
 
     # ProcessingStep, DataInjection, ArgumentMapping removed
     # Function now handles input -> process -> output flow directly
-
-    DerivedObservation:
-        description: >-
-            Observation derived from one or more other observations.
-            Examples:
-            - fc (from bold) - single source transformation
-            - fc_corr (from fc and fc_target) - multi-source comparison
-            Unlike regular Observations, these don't generate monitor classes
-            but are computed from existing observation values.
-        is_a: Observation
-        class_uri: tvbo:DerivedObservation
-        attributes:
-            source_observations:
-                range: Observation
-                multivalued: true
-                inlined: false
-                required: true
-                minimum_cardinality: 1
-                description: >-
-                    One or more observations to derive from. For transformations
-                    (e.g., fc from bold), use single source. For comparisons
-                    (e.g., fc_corr from fc and fc_target), use multiple sources.
-                    Order may matter for asymmetric operations.
 
     Dynamics:
         class_uri: tvbo:Dynamics
@@ -2758,14 +2801,12 @@ classes:
                 multivalued: true
                 range: Observation
                 inlined: true
-            derived_observations:
-                multivalued: true
-                range: DerivedObservation
-                inlined: true
                 description: >-
-                    Observations derived from combining other observations.
-                    Computed after all regular observations are available.
-                    Examples: fc_corr (from fc, fc_target), rmse, etc.
+                    All observations on this experiment, keyed by name. An
+                    Observation is considered derived (computed from other
+                    observations rather than directly from state variables)
+                    when any item in its multivalued ``source`` slot names
+                    another observation in this same dict.
             functions:
                 multivalued: true
                 range: Function
@@ -2975,6 +3016,19 @@ classes:
 
     Mesh:
         class_uri: tvbo:Mesh
+        description: >-
+            Triangle (or higher-order) mesh geometry. May stand alone (via
+            ``mesh_file`` pointing at an external GIFTI/VTK/MSH file) OR
+            be inlined on a Network as ``Network.mesh``. In the
+            inlined-on-Network case, the vertices are the parent
+            Network's ``nodes/coordinates`` (so ``coordinates`` here may
+            be left empty), the faces live in the same h5 companion
+            under a path given by ``elements`` (default ``mesh/faces``),
+            and optional per-vertex ``normals`` / ``curvature`` live
+            alongside. The optional ``parcel_map_field`` points at the
+            parent Network's per-vertex parcel-id array (default
+            ``nodes/parent_index`` from the hierarchical-Network
+            pattern, see Network.qmd §7.1).
         attributes:
             element_type:
                 range: ElementType
@@ -2983,7 +3037,11 @@ classes:
                 multivalued: true
                 range: Coordinate
             elements:
-                description: "Connectivity (indices) or file reference to topology."
+                description: >-
+                    Topology indices: either a file reference, or (when
+                    inlined on a Network) a dotted path inside the parent
+                    Network's h5 companion to the (M, 3) int triangle
+                    face array. Default convention: ``mesh/faces``.
                 range: string
             coordinate_space:
                 range: CommonCoordinateSpace
@@ -2999,6 +3057,39 @@ classes:
             number_of_elements:
                 description: "Number of elements (triangles, quads, tetrahedra, etc.)."
                 range: integer
+            parcellation:
+                range: Parcellation
+                inlined: true
+                description: >-
+                    Brain parcellation this mesh's parcel_map indexes
+                    into. Inlined to match Network.parcellation's
+                    existing pattern. When the mesh is inlined on a
+                    Network that already declares ``parcellation``, this
+                    slot is optional and defaults to the parent's value.
+            normals:
+                description: >-
+                    Optional path inside the parent Network's h5 (or an
+                    external file) to per-vertex normals (N, 3) float.
+                    Default convention: ``mesh/normals``.
+                range: string
+            curvature:
+                description: >-
+                    Optional path to per-vertex curvature (N,) float.
+                    Default convention: ``mesh/curvature``.
+                range: string
+            vertices_field:
+                description: >-
+                    When the mesh is inlined on a Network, the dotted
+                    path inside the parent's h5 to vertex coordinates.
+                    Default: ``nodes/coordinates``.
+                range: string
+            parcel_map_field:
+                description: >-
+                    When the mesh is inlined on a Network with a
+                    parcellation, the dotted path inside the parent's
+                    h5 to the per-vertex parcel id array. Default:
+                    ``nodes/parent_index``.
+                range: string
         slots:
             - label
             - description

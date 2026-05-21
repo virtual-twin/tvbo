@@ -531,13 +531,12 @@ class Network(tvbo_datamodel.Network):
 
         # Accept either a Network or a (weights, lengths[, node_params]) tuple.
         if isinstance(result, Network):
-            for attr in ("nodes", "edges", "number_of_nodes", "descriptor"):
+            for attr in ("nodes", "edges", "number_of_nodes", "descriptor", "mesh"):
                 val = getattr(result, attr, None)
                 if val is not None:
                     setattr(self, attr, val)
             for cache in ("_cached_weights", "_cached_lengths", "_store",
-                          "_mesh", "_mesh_vertices", "_mesh_elements",
-                          "_mesh_normals"):
+                          "_mesh_vertices", "_mesh_elements", "_mesh_normals"):
                 v = getattr(result, cache, None)
                 if v is not None:
                     setattr(self, cache, v)
@@ -596,7 +595,12 @@ class Network(tvbo_datamodel.Network):
         store = getattr(loaded, "_store", None)
         if store is not None:
             self._store = store
-        for cache in ("_cached_weights", "_cached_lengths", "_mesh",
+        # The Mesh schema slot transfers along with the other LinkML
+        # fields below; only the array caches are copied here.
+        loaded_mesh = getattr(loaded, "mesh", None)
+        if loaded_mesh is not None and getattr(self, "mesh", None) is None:
+            self.mesh = loaded_mesh
+        for cache in ("_cached_weights", "_cached_lengths",
                        "_mesh_vertices", "_mesh_elements", "_mesh_normals"):
             v = getattr(loaded, cache, None)
             if v is not None:
@@ -733,20 +737,19 @@ class Network(tvbo_datamodel.Network):
             "_parent_network_obj",
             "_save_path",
             "_orientations",
-            "_mesh",
+            # _mesh is no longer a private cache — it's the LinkML
+            # Network.mesh slot. Keep the array caches that adapters set.
             "_mesh_vertices",
             "_mesh_elements",
             "_mesh_normals",
         }
     )
 
-    @property
-    def mesh(self):
-        """Mesh metadata object, if assigned via ``from_tvb_surface``."""
-        try:
-            return object.__getattribute__(self, "_mesh")
-        except AttributeError:
-            return None
+    # Network.mesh is now a first-class LinkML slot (range Mesh, inlined)
+    # — no read-only property wrapper needed. Runtime caches of the
+    # underlying arrays (``_mesh_vertices``, ``_mesh_elements``,
+    # ``_mesh_normals``) remain in ``_INTERNAL_ATTRS`` and are populated
+    # by adapters such as ``from_tvb_surface``.
 
     @property
     def parent_network_obj(self) -> Optional["Network"]:

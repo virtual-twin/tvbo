@@ -3400,6 +3400,7 @@ class Parcellation(ConfiguredBaseModel):
          'slot_uri': 'rdfs:label'} })
     iri: Optional[str] = Field(default=None, description="""Optional stable IRI (or compact URI) for this entity in an external ontology or knowledge base. Used to load metadata from an external source; not required when the entity is fully self-contained (equations, parameters, etc. defined in the file itself).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation',
                        'Tractogram',
+                       'Reference',
                        'Dynamics',
                        'Function',
                        'Coupling'],
@@ -3497,6 +3498,7 @@ class Tractogram(ConfiguredBaseModel):
          'slot_uri': 'rdfs:label'} })
     iri: Optional[str] = Field(default=None, description="""Optional stable IRI (or compact URI) for this entity in an external ontology or knowledge base. Used to load metadata from an external source; not required when the entity is fully self-contained (equations, parameters, etc. defined in the file itself).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation',
                        'Tractogram',
+                       'Reference',
                        'Dynamics',
                        'Function',
                        'Coupling'],
@@ -3867,8 +3869,9 @@ class Network(ConfiguredBaseModel):
                        'Network',
                        'SpatialDomain',
                        'Mesh']} })
-    parcellation: Optional[Parcellation] = Field(default=None, description="""Brain parcellation/atlas reference""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
+    parcellation: Optional[Parcellation] = Field(default=None, description="""Brain parcellation/atlas reference""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network', 'Mesh']} })
     tractogram: Optional[Tractogram] = Field(default=None, description="""Reference to tractography data""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
+    mesh: Optional[Mesh] = Field(default=None, description="""Optional triangle mesh geometry. When set, the Network carries triangle faces (and optionally normals, curvature) alongside its node coordinates. Used by surface-based observations (cortical wave detection, Helmholtz-Hodge decomposition, spectrospatial mode analysis). Mesh face data lives in the same h5 companion under a ``mesh/`` group.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network', 'SpatialField', 'FieldStateVariable', 'PDE']} })
     transforms: Optional[list[Function]] = Field(default=None, description="""Ordered list of transforms applied to edge property matrices. Each Function's name identifies the target edge property (e.g. 'weight', 'length'). Supports equation-based (symbolic) or callable-based (software) transforms. Multiple transforms on the same target are applied sequentially.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
     data_file: Optional[str] = Field(default=None, description="""Path to companion data file. Supported extensions: .h5 (HDF5), .zarr/ (Zarr), .csv (legacy single-matrix). Null if no companion data needed.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
     descriptor: Optional[str] = Field(default=None, description="""Short alphanumeric identifier for the BIDS desc- filename entity (e.g., SC, FC, EC, SCFC). Classifies the connectivity modality of the network's edge measures.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
@@ -4110,6 +4113,21 @@ class File(ConfiguredBaseModel):
                        'Algorithm']} })
     path: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['File', 'DataSource']} })
     extension: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['File']} })
+
+
+class Reference(ConfiguredBaseModel):
+    """
+    A small typed pointer to another TVBO entity (Network, Mesh, Observation, …). The ``iri`` identifies the target via the registry; the optional ``field`` is a dotted-path subkey resolved by attribute walk on the loaded target (e.g. ``field: 'weight_alpha'`` picks the ``weight_alpha`` named edge matrix on a Network; ``field: 'mesh.faces'`` picks the mesh face array). Used uniformly anywhere a TVBO entity needs to point at a sub-array of another entity without inlining the data.
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Reference', 'from_schema': 'https://w3id.org/tvbo'})
+
+    iri: str = Field(default=..., description="""CURIE or full IRI of the referenced TVBO entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation',
+                       'Tractogram',
+                       'Reference',
+                       'Dynamics',
+                       'Function',
+                       'Coupling']} })
+    field: Optional[str] = Field(default=None, description="""Optional dotted-path subkey into the referenced entity (e.g. ``weight_alpha`` for a Network's named edge matrix, ``mesh.faces`` for the face array, or ``nodes.ef_alpha`` for a per-node scalar field). Resolved by attribute walk at load time.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Reference', 'PDE']} })
 
 
 class Node(ConfiguredBaseModel):
@@ -4634,202 +4652,9 @@ class Observation(ConfiguredBaseModel):
                        'PDE']} })
     environment: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'SimulationExperiment', 'PDESolver']} })
     time_scale: Optional[UnitEnum] = Field(default=UnitEnum.ms, description="""Time unit for the integration / simulation. Determines the physical time meaning of one model time-step.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'Integrator'], 'ifabsent': 'ms'} })
-    source: Optional[str] = Field(default=None, description="""State variable to observe (e.g., S_e for excitatory activity). For observations derived from other observations, use DerivedObservation.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge', 'Observation', 'Dynamics', 'CouplingInput']} })
-    period: Optional[float] = Field(default=None, description="""Sampling period for monitors (ms). For BOLD: TR in ms.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
-    downsample_period: Optional[float] = Field(default=None, description="""Intermediate downsampling period (ms). For BOLD: typically matches dt.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
-    voi: Optional[int] = Field(default=None, description="""Variable of interest index (which state variable to monitor). Default: 0.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
-    imaging_modality: Optional[ImagingModality] = Field(default=None, description="""Type of imaging modality (BOLD, EEG, MEG, etc.)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
-    warmup_source: Optional[str] = Field(default=None, description="""Reference to transient simulation result for history initialization (e.g., 'result_init').""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'ClassReference']} })
-    data_source: Optional[DataSource] = Field(default=None, description="""Load data from external source (file, database, API). When specified, this observation represents empirical/external data rather than simulated data. Enables unified treatment of all data.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation', 'Tractogram', 'Observation']} })
-    skip_t: Optional[int] = Field(default=None, description="""Number of samples to skip at the start (transient removal). For FC: typically 10-20 TRs.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
-    tail_samples: Optional[int] = Field(default=None, description="""Number of samples from the end to use. Takes the last N samples before aggregation. E.g., tail_samples: 500 means use data[-500:].""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
-    aggregation: Optional[AggregationType] = Field(default=None, description="""How to aggregate over time""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'Coupling']} })
-    window_size: Optional[int] = Field(default=None, description="""Number of samples for windowed aggregation""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
-    pipeline: Optional[list[FunctionCall]] = Field(default=None, description="""Ordered sequence of Functions. Each step has a unique `name` (used to key step outputs) and transforms input -> output. List form preserves execution order.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
-    class_reference: Optional[ClassReference] = Field(default=None, description="""Direct class reference (alternative to pipeline). Use for external library classes like tvboptim.Bold, custom monitors, or any callable class. The class is instantiated with constructor_args and called with call_args. Example: {name: Bold, module: tvboptim.observations.tvb_monitors.bold, constructor_args: [{name: period, value: 1000.0}]}""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
-
-
-class DerivedObservation(Observation):
-    """
-    Observation derived from one or more other observations. Examples: - fc (from bold) - single source transformation - fc_corr (from fc and fc_target) - multi-source comparison Unlike regular Observations, these don't generate monitor classes but are computed from existing observation values.
-    """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:DerivedObservation', 'from_schema': 'https://w3id.org/tvbo'})
-
-    source_observations: list[str] = Field(default=..., description="""One or more observations to derive from. For transformations (e.g., fc from bold), use single source. For comparisons (e.g., fc_corr from fc and fc_target), use multiple sources. Order may matter for asymmetric operations.""", min_length=1, json_schema_extra = { "linkml_meta": {'domain_of': ['DerivedObservation']} })
-    name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
-                       'CommonCoordinateSpace',
-                       'ParcellationEntity',
-                       'DBSProtocol',
-                       'ClinicalScale',
-                       'ClinicalScore',
-                       'SoftwarePackage',
-                       'SoftwareRequirement',
-                       'SoftwareEnvironment',
-                       'Event',
-                       'Tractogram',
-                       'GraphGenerator',
-                       'File',
-                       'StateValue',
-                       'Observation',
-                       'Dynamics',
-                       'StateVariable',
-                       'Distribution',
-                       'Parameter',
-                       'CouplingInput',
-                       'Argument',
-                       'Function',
-                       'FunctionCall',
-                       'Callable',
-                       'DerivedParameter',
-                       'DerivedVariable',
-                       'DataSource',
-                       'OptimizationStage',
-                       'Exploration',
-                       'UpdateRule',
-                       'Algorithm',
-                       'Option',
-                       'BranchSwitch',
-                       'Continuation',
-                       'Coupling'],
-         'slot_uri': 'schema:name'} })
-    acronym: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
-                       'ClinicalScore',
-                       'Observation',
-                       'Function',
-                       'FunctionCall'],
-         'slot_uri': 'skos:notation'} })
-    label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
-                       'Subject',
-                       'Session',
-                       'Dataset',
-                       'Contact',
-                       'SoftwareEnvironment',
-                       'Equation',
-                       'Stimulus',
-                       'Event',
-                       'Parcellation',
-                       'Tractogram',
-                       'Matrix',
-                       'Network',
-                       'Node',
-                       'Edge',
-                       'Observation',
-                       'Dynamics',
-                       'StateVariable',
-                       'Parameter',
-                       'Function',
-                       'FunctionCall',
-                       'DerivedVariable',
-                       'RandomStream',
-                       'DataSource',
-                       'OptimizationStage',
-                       'Exploration',
-                       'ExplorationAxis',
-                       'FreeParameter',
-                       'TuningObjective',
-                       'Continuation',
-                       'Coupling',
-                       'RegionMapping',
-                       'SimulationExperiment',
-                       'SimulationStudy',
-                       'TimeSeries',
-                       'NDArray',
-                       'SpatialDomain',
-                       'Mesh',
-                       'SpatialField',
-                       'FieldStateVariable',
-                       'DifferentialOperator',
-                       'BoundaryCondition',
-                       'PDESolver',
-                       'PDE'],
-         'slot_uri': 'rdfs:label'} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
-                       'ClinicalScore',
-                       'SoftwarePackage',
-                       'SoftwareRequirement',
-                       'SoftwareEnvironment',
-                       'Equation',
-                       'Stimulus',
-                       'Event',
-                       'Tractogram',
-                       'Matrix',
-                       'Network',
-                       'GraphGenerator',
-                       'File',
-                       'Node',
-                       'Edge',
-                       'Observation',
-                       'Dynamics',
-                       'StateVariable',
-                       'Parameter',
-                       'CouplingInput',
-                       'Argument',
-                       'Function',
-                       'FunctionCall',
-                       'Callable',
-                       'DerivedParameter',
-                       'DerivedVariable',
-                       'RandomStream',
-                       'DataSource',
-                       'OptimizationStage',
-                       'Exploration',
-                       'ExplorationAxis',
-                       'FreeParameter',
-                       'UpdateRule',
-                       'TuningObjective',
-                       'Algorithm',
-                       'BranchSwitch',
-                       'Continuation',
-                       'Integrator',
-                       'Coupling',
-                       'RegionMapping',
-                       'SimulationExperiment',
-                       'SimulationStudy',
-                       'TimeSeries',
-                       'NDArray',
-                       'SpatialDomain',
-                       'Mesh',
-                       'SpatialField',
-                       'FieldStateVariable',
-                       'BoundaryCondition',
-                       'PDESolver',
-                       'PDE'],
-         'slot_uri': 'dcterms:description'} })
-    equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
-                       'Event',
-                       'Observation',
-                       'StateVariable',
-                       'Parameter',
-                       'Function',
-                       'FunctionCall',
-                       'Case',
-                       'DerivedParameter',
-                       'DerivedVariable',
-                       'Noise',
-                       'UpdateRule',
-                       'DifferentialOperator'],
-         'slot_uri': 'tvbo:Equation'} })
-    parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
-                       'Stimulus',
-                       'Event',
-                       'TemporalApplicableEquation',
-                       'Network',
-                       'GraphGenerator',
-                       'Node',
-                       'Edge',
-                       'Observation',
-                       'Dynamics',
-                       'Distribution',
-                       'Noise',
-                       'Exploration',
-                       'Discretization',
-                       'BranchSwitch',
-                       'Integrator',
-                       'Coupling',
-                       'PDE']} })
-    environment: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'SimulationExperiment', 'PDESolver']} })
-    time_scale: Optional[UnitEnum] = Field(default=UnitEnum.ms, description="""Time unit for the integration / simulation. Determines the physical time meaning of one model time-step.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation', 'Integrator'], 'ifabsent': 'ms'} })
-    source: Optional[str] = Field(default=None, description="""State variable to observe (e.g., S_e for excitatory activity). For observations derived from other observations, use DerivedObservation.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge', 'Observation', 'Dynamics', 'CouplingInput']} })
+    source: Optional[list[str]] = Field(default=None, description="""Ordered list of inputs this observation derives from. Each entry is either a StateVariable reference (raw observation of an integrated trajectory, e.g. ``S_e``) or an Observation reference (derived observation, e.g. ``bold``). Codegen checks each source name against ``experiment.observations``; names matching an existing observation flag the parent as derived.""", json_schema_extra = { "linkml_meta": {'any_of': [{'range': 'StateVariable'}, {'range': 'Observation'}],
+         'domain_of': ['Edge', 'Observation', 'Dynamics', 'CouplingInput']} })
+    aux_data: Optional[list[Reference]] = Field(default=None, description="""Ordered list of auxiliary inputs the observation pipeline consumes. Examples: a Surface mesh's faces array, an empirical FC matrix on a reference Network, or another Observation's output. Resolved load-time eagerly; rendered code is self-contained.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
     period: Optional[float] = Field(default=None, description="""Sampling period for monitors (ms). For BOLD: TR in ms.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
     downsample_period: Optional[float] = Field(default=None, description="""Intermediate downsampling period (ms). For BOLD: typically matches dt.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
     voi: Optional[int] = Field(default=None, description="""Variable of interest index (which state variable to monitor). Default: 0.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
@@ -4938,6 +4763,7 @@ class Dynamics(ConfiguredBaseModel):
          'slot_uri': 'rdfs:label'} })
     iri: Optional[str] = Field(default=None, description="""Optional stable IRI (or compact URI) for this entity in an external ontology or knowledge base. Used to load metadata from an external source; not required when the entity is fully self-contained (equations, parameters, etc. defined in the file itself).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation',
                        'Tractogram',
+                       'Reference',
                        'Dynamics',
                        'Function',
                        'Coupling'],
@@ -5832,6 +5658,7 @@ class Function(ConfiguredBaseModel):
          'slot_uri': 'rdfs:label'} })
     iri: Optional[str] = Field(default=None, description="""Optional stable IRI (or compact URI) for this entity in an external ontology or knowledge base. Used to load metadata from an external source; not required when the entity is fully self-contained (equations, parameters, etc. defined in the file itself).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation',
                        'Tractogram',
+                       'Reference',
                        'Dynamics',
                        'Function',
                        'Coupling'],
@@ -6031,6 +5858,7 @@ class LossFunction(Function):
          'slot_uri': 'rdfs:label'} })
     iri: Optional[str] = Field(default=None, description="""Optional stable IRI (or compact URI) for this entity in an external ontology or knowledge base. Used to load metadata from an external source; not required when the entity is fully self-contained (equations, parameters, etc. defined in the file itself).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation',
                        'Tractogram',
+                       'Reference',
                        'Dynamics',
                        'Function',
                        'Coupling'],
@@ -8873,6 +8701,7 @@ class Coupling(ConfiguredBaseModel):
          'slot_uri': 'rdfs:label'} })
     iri: Optional[str] = Field(default=None, description="""Optional stable IRI (or compact URI) for this entity in an external ontology or knowledge base. Used to load metadata from an external source; not required when the entity is fully self-contained (equations, parameters, etc. defined in the file itself).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parcellation',
                        'Tractogram',
+                       'Reference',
                        'Dynamics',
                        'Function',
                        'Coupling'],
@@ -9224,8 +9053,7 @@ class SimulationExperiment(ConfiguredBaseModel):
          'domain_of': ['SimulationExperiment']} })
     network: Optional[Network] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Subject', 'Session', 'SimulationExperiment']} })
     coupling: Optional[Coupling] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Network', 'Edge', 'SimulationExperiment']} })
-    observations: Optional[dict[str, Observation]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Algorithm', 'SimulationExperiment']} })
-    derived_observations: Optional[dict[str, DerivedObservation]] = Field(default=None, description="""Observations derived from combining other observations. Computed after all regular observations are available. Examples: fc_corr (from fc, fc_target), rmse, etc.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
+    observations: Optional[dict[str, Observation]] = Field(default=None, description="""All observations on this experiment, raw and derived, keyed by name. Derived status is structural: an Observation is derived iff any item in its multivalued ``source`` slot names another observation in this same dict (see `tvbo.codegen.templater.is_derived`). Legacy ``derived_observations:`` blocks in older YAMLs are accepted by the load-time shim and merged here (Q35).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Algorithm', 'SimulationExperiment']} })
     functions: Optional[dict[str, Function]] = Field(default=None, description="""Reusable function definitions. Referenced by name in observation pipelines. Enables DRY: define compute_fc once, use in both simulated and empirical paths.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Algorithm', 'SimulationExperiment', 'PDE']} })
     stimulation: Optional[Stimulus] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     events: Optional[dict[str, Event]] = Field(default=None, description="""Events that apply at the experiment level. For component-level events, attach them to individual nodes or edges instead.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'Edge', 'Dynamics', 'SimulationExperiment']} })
@@ -9747,6 +9575,9 @@ class SpatialDomain(ConfiguredBaseModel):
 
 
 class Mesh(ConfiguredBaseModel):
+    """
+    Triangle (or higher-order) mesh geometry. May stand alone (via ``mesh_file`` pointing at an external GIFTI/VTK/MSH file) OR be inlined on a Network as ``Network.mesh``. In the inlined-on-Network case, the vertices are the parent Network's ``nodes/coordinates`` (so ``coordinates`` here may be left empty), the faces live in the same h5 companion under a path given by ``elements`` (default ``mesh/faces``), and optional per-vertex ``normals`` / ``curvature`` live alongside. The optional ``parcel_map_field`` points at the parent Network's per-vertex parcel-id array (default ``nodes/parent_index`` from the hierarchical-Network pattern, see Network.qmd §7.1).
+    """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Mesh', 'from_schema': 'https://w3id.org/tvbo'})
 
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
@@ -9859,7 +9690,7 @@ class Mesh(ConfiguredBaseModel):
                        'Mesh']} })
     element_type: Optional[ElementType] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Mesh']} })
     coordinates: Optional[list[Coordinate]] = Field(default=None, description="""Node coordinates (x,y,z) in the given coordinate space.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Mesh']} })
-    elements: Optional[str] = Field(default=None, description="""Connectivity (indices) or file reference to topology.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Mesh']} })
+    elements: Optional[str] = Field(default=None, description="""Topology indices: either a file reference, or (when inlined on a Network) a dotted path inside the parent Network's h5 companion to the (M, 3) int triangle face array. Default convention: ``mesh/faces``.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Mesh']} })
     coordinate_space: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['DBSDataset',
                        'DBSSubject',
                        'Electrode',
@@ -9871,6 +9702,11 @@ class Mesh(ConfiguredBaseModel):
     mesh_format: Optional[str] = Field(default=None, description="""Explicit format override (gifti, freesurfer, meshio, vtk, gmsh). Auto-detected from extension if null.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Mesh']} })
     number_of_vertices: Optional[int] = Field(default=None, description="""Number of vertices in the mesh.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Mesh']} })
     number_of_elements: Optional[int] = Field(default=None, description="""Number of elements (triangles, quads, tetrahedra, etc.).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Mesh']} })
+    parcellation: Optional[Parcellation] = Field(default=None, description="""Brain parcellation this mesh's parcel_map indexes into. Inlined to match Network.parcellation's existing pattern. When the mesh is inlined on a Network that already declares ``parcellation``, this slot is optional and defaults to the parent's value.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network', 'Mesh']} })
+    normals: Optional[str] = Field(default=None, description="""Optional path inside the parent Network's h5 (or an external file) to per-vertex normals (N, 3) float. Default convention: ``mesh/normals``.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Mesh']} })
+    curvature: Optional[str] = Field(default=None, description="""Optional path to per-vertex curvature (N,) float. Default convention: ``mesh/curvature``.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Mesh']} })
+    vertices_field: Optional[str] = Field(default=None, description="""When the mesh is inlined on a Network, the dotted path inside the parent's h5 to vertex coordinates. Default: ``nodes/coordinates``.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Mesh']} })
+    parcel_map_field: Optional[str] = Field(default=None, description="""When the mesh is inlined on a Network with a parcellation, the dotted path inside the parent's h5 to the per-vertex parcel id array. Default: ``nodes/parent_index``.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Mesh']} })
 
 
 class SpatialField(ConfiguredBaseModel):
@@ -9986,7 +9822,7 @@ class SpatialField(ConfiguredBaseModel):
                        'TimeSeries',
                        'NDArray',
                        'SpatialField']} })
-    mesh: Optional[Mesh] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SpatialField', 'FieldStateVariable', 'PDE']} })
+    mesh: Optional[Mesh] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Network', 'SpatialField', 'FieldStateVariable', 'PDE']} })
     values: Optional[NDArray] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Matrix', 'BrainRegionSeries', 'SpatialField']} })
     time_dependent: Optional[bool] = Field(default=False, json_schema_extra = { "linkml_meta": {'domain_of': ['TemporalApplicableEquation',
                        'SpatialField',
@@ -10097,7 +9933,7 @@ class FieldStateVariable(StateVariable):
                        'PDESolver',
                        'PDE'],
          'slot_uri': 'dcterms:description'} })
-    mesh: Optional[Mesh] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SpatialField', 'FieldStateVariable', 'PDE']} })
+    mesh: Optional[Mesh] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Network', 'SpatialField', 'FieldStateVariable', 'PDE']} })
     boundary_conditions: Optional[list[BoundaryCondition]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['FieldStateVariable', 'PDE']} })
     name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
@@ -10623,9 +10459,9 @@ class PDE(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'PDE']} })
-    mesh: Optional[Mesh] = Field(default=None, description="""Shared mesh for all field state variables in this PDE.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SpatialField', 'FieldStateVariable', 'PDE']} })
+    mesh: Optional[Mesh] = Field(default=None, description="""Shared mesh for all field state variables in this PDE.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network', 'SpatialField', 'FieldStateVariable', 'PDE']} })
     state_variables: Optional[list[FieldStateVariable]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'PDE']} })
-    field: Optional[SpatialField] = Field(default=None, description="""Primary field being solved for (deprecated; use state_variables).""", json_schema_extra = { "linkml_meta": {'domain_of': ['PDE']} })
+    field: Optional[SpatialField] = Field(default=None, description="""Primary field being solved for (deprecated; use state_variables).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Reference', 'PDE']} })
     operators: Optional[list[DifferentialOperator]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['PDE']} })
     sources: Optional[list[Equation]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['PDE']} })
     boundary_conditions: Optional[list[BoundaryCondition]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['FieldStateVariable', 'PDE']} })
@@ -10674,11 +10510,11 @@ BidsEntities.model_rebuild()
 Network.model_rebuild()
 GraphGenerator.model_rebuild()
 File.model_rebuild()
+Reference.model_rebuild()
 Node.model_rebuild()
 StateValue.model_rebuild()
 Edge.model_rebuild()
 Observation.model_rebuild()
-DerivedObservation.model_rebuild()
 Dynamics.model_rebuild()
 StateVariable.model_rebuild()
 Distribution.model_rebuild()

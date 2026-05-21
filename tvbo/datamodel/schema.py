@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-05-20T16:41:30
+# Generation date: 2026-05-20T18:53:18
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -114,10 +114,6 @@ class StateValueName(extended_str):
 
 
 class ObservationName(extended_str):
-    pass
-
-
-class DerivedObservationName(ObservationName):
     pass
 
 
@@ -828,6 +824,7 @@ class Network(YAMLRoot):
     coordinate_space: Optional[Union[dict, "CommonCoordinateSpace"]] = None
     parcellation: Optional[Union[dict, Parcellation]] = None
     tractogram: Optional[Union[dict, Tractogram]] = None
+    mesh: Optional[Union[dict, "Mesh"]] = None
     transforms: Optional[Union[dict[Union[str, FunctionName], Union[dict, "Function"]], list[Union[dict, "Function"]]]] = empty_dict()
     data_file: Optional[str] = None
     descriptor: Optional[str] = None
@@ -873,6 +870,9 @@ class Network(YAMLRoot):
 
         if self.tractogram is not None and not isinstance(self.tractogram, Tractogram):
             self.tractogram = Tractogram(**as_dict(self.tractogram))
+
+        if self.mesh is not None and not isinstance(self.mesh, Mesh):
+            self.mesh = Mesh(**as_dict(self.mesh))
 
         self._normalize_inlined_as_list(slot_name="transforms", slot_type=Function, key_name="name", keyed=True)
 
@@ -1003,6 +1003,37 @@ class File(YAMLRoot):
 
         if self.extension is not None and not isinstance(self.extension, str):
             self.extension = str(self.extension)
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
+class Reference(YAMLRoot):
+    """
+    A small typed pointer to another TVBO entity (Network, Mesh, Observation, …). The ``iri`` identifies the target
+    via the registry; the optional ``field`` is a dotted-path subkey resolved by attribute walk on the loaded target
+    (e.g. ``field: 'weight_alpha'`` picks the ``weight_alpha`` named edge matrix on a Network; ``field: 'mesh.faces'``
+    picks the mesh face array). Used uniformly anywhere a TVBO entity needs to point at a sub-array of another entity
+    without inlining the data.
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO["Reference"]
+    class_class_curie: ClassVar[str] = "tvbo:Reference"
+    class_name: ClassVar[str] = "Reference"
+    class_model_uri: ClassVar[URIRef] = TVBO.Reference
+
+    iri: str = None
+    field: Optional[str] = None
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self._is_empty(self.iri):
+            self.MissingRequiredField("iri")
+        if not isinstance(self.iri, str):
+            self.iri = str(self.iri)
+
+        if self.field is not None and not isinstance(self.field, str):
+            self.field = str(self.field)
 
         super().__post_init__(**kwargs)
 
@@ -1209,7 +1240,8 @@ class Observation(YAMLRoot):
     parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
     environment: Optional[Union[str, SoftwareEnvironmentName]] = None
     time_scale: Optional[Union[str, "UnitEnum"]] = 'ms'
-    source: Optional[Union[str, StateVariableName]] = None
+    source: Optional[Union[str, list[str]]] = empty_list()
+    aux_data: Optional[Union[Union[dict, Reference], list[Union[dict, Reference]]]] = empty_list()
     period: Optional[float] = None
     downsample_period: Optional[float] = None
     voi: Optional[int] = None
@@ -1249,8 +1281,11 @@ class Observation(YAMLRoot):
         if self.time_scale is not None and not isinstance(self.time_scale, UnitEnum):
             self.time_scale = UnitEnum(self.time_scale)
 
-        if self.source is not None and not isinstance(self.source, StateVariableName):
-            self.source = StateVariableName(self.source)
+        if not isinstance(self.source, list):
+            self.source = [self.source] if self.source is not None else []
+        self.source = [v if isinstance(v, str) else str(v) for v in self.source]
+
+        self._normalize_inlined_as_list(slot_name="aux_data", slot_type=Reference, key_name="iri", keyed=False)
 
         if self.period is not None and not isinstance(self.period, float):
             self.period = float(self.period)
@@ -1288,38 +1323,6 @@ class Observation(YAMLRoot):
 
         if self.class_reference is not None and not isinstance(self.class_reference, ClassReference):
             self.class_reference = ClassReference(**as_dict(self.class_reference))
-
-        super().__post_init__(**kwargs)
-
-
-@dataclass(repr=False)
-class DerivedObservation(Observation):
-    """
-    Observation derived from one or more other observations. Examples: - fc (from bold) - single source transformation
-    - fc_corr (from fc and fc_target) - multi-source comparison Unlike regular Observations, these don't generate
-    monitor classes but are computed from existing observation values.
-    """
-    _inherited_slots: ClassVar[list[str]] = []
-
-    class_class_uri: ClassVar[URIRef] = TVBO["DerivedObservation"]
-    class_class_curie: ClassVar[str] = "tvbo:DerivedObservation"
-    class_name: ClassVar[str] = "DerivedObservation"
-    class_model_uri: ClassVar[URIRef] = TVBO.DerivedObservation
-
-    name: Union[str, DerivedObservationName] = None
-    source_observations: Union[Union[str, ObservationName], list[Union[str, ObservationName]]] = None
-
-    def __post_init__(self, *_: str, **kwargs: Any):
-        if self._is_empty(self.name):
-            self.MissingRequiredField("name")
-        if not isinstance(self.name, DerivedObservationName):
-            self.name = DerivedObservationName(self.name)
-
-        if self._is_empty(self.source_observations):
-            self.MissingRequiredField("source_observations")
-        if not isinstance(self.source_observations, list):
-            self.source_observations = [self.source_observations] if self.source_observations is not None else []
-        self.source_observations = [v if isinstance(v, ObservationName) else ObservationName(v) for v in self.source_observations]
 
         super().__post_init__(**kwargs)
 
@@ -3416,7 +3419,6 @@ class SimulationExperiment(YAMLRoot):
     network: Optional[Union[dict, Network]] = None
     coupling: Optional[Union[dict, Coupling]] = None
     observations: Optional[Union[dict[Union[str, ObservationName], Union[dict, Observation]], list[Union[dict, Observation]]]] = empty_dict()
-    derived_observations: Optional[Union[dict[Union[str, DerivedObservationName], Union[dict, DerivedObservation]], list[Union[dict, DerivedObservation]]]] = empty_dict()
     functions: Optional[Union[dict[Union[str, FunctionName], Union[dict, Function]], list[Union[dict, Function]]]] = empty_dict()
     stimulation: Optional[Union[dict, Stimulus]] = None
     events: Optional[Union[dict[Union[str, EventName], Union[dict, Event]], list[Union[dict, Event]]]] = empty_dict()
@@ -3466,8 +3468,6 @@ class SimulationExperiment(YAMLRoot):
             self.coupling = Coupling(**as_dict(self.coupling))
 
         self._normalize_inlined_as_dict(slot_name="observations", slot_type=Observation, key_name="name", keyed=True)
-
-        self._normalize_inlined_as_dict(slot_name="derived_observations", slot_type=DerivedObservation, key_name="name", keyed=True)
 
         self._normalize_inlined_as_dict(slot_name="functions", slot_type=Function, key_name="name", keyed=True)
 
@@ -3741,6 +3741,14 @@ class SpatialDomain(YAMLRoot):
 
 @dataclass(repr=False)
 class Mesh(YAMLRoot):
+    """
+    Triangle (or higher-order) mesh geometry. May stand alone (via ``mesh_file`` pointing at an external GIFTI/VTK/MSH
+    file) OR be inlined on a Network as ``Network.mesh``. In the inlined-on-Network case, the vertices are the parent
+    Network's ``nodes/coordinates`` (so ``coordinates`` here may be left empty), the faces live in the same h5
+    companion under a path given by ``elements`` (default ``mesh/faces``), and optional per-vertex ``normals`` /
+    ``curvature`` live alongside. The optional ``parcel_map_field`` points at the parent Network's per-vertex
+    parcel-id array (default ``nodes/parent_index`` from the hierarchical-Network pattern, see Network.qmd §7.1).
+    """
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["Mesh"]
@@ -3759,6 +3767,11 @@ class Mesh(YAMLRoot):
     mesh_format: Optional[str] = None
     number_of_vertices: Optional[int] = None
     number_of_elements: Optional[int] = None
+    parcellation: Optional[Union[dict, Parcellation]] = None
+    normals: Optional[str] = None
+    curvature: Optional[str] = None
+    vertices_field: Optional[str] = None
+    parcel_map_field: Optional[str] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self.label is not None and not isinstance(self.label, str):
@@ -3794,6 +3807,21 @@ class Mesh(YAMLRoot):
 
         if self.number_of_elements is not None and not isinstance(self.number_of_elements, int):
             self.number_of_elements = int(self.number_of_elements)
+
+        if self.parcellation is not None and not isinstance(self.parcellation, Parcellation):
+            self.parcellation = Parcellation(**as_dict(self.parcellation))
+
+        if self.normals is not None and not isinstance(self.normals, str):
+            self.normals = str(self.normals)
+
+        if self.curvature is not None and not isinstance(self.curvature, str):
+            self.curvature = str(self.curvature)
+
+        if self.vertices_field is not None and not isinstance(self.vertices_field, str):
+            self.vertices_field = str(self.vertices_field)
+
+        if self.parcel_map_field is not None and not isinstance(self.parcel_map_field, str):
+            self.parcel_map_field = str(self.parcel_map_field)
 
         super().__post_init__(**kwargs)
 
@@ -6531,6 +6559,9 @@ slots.network__parcellation = Slot(uri=TVBO.parcellation, name="network__parcell
 slots.network__tractogram = Slot(uri=TVBO.tractogram, name="network__tractogram", curie=TVBO.curie('tractogram'),
                    model_uri=TVBO.network__tractogram, domain=None, range=Optional[Union[dict, Tractogram]])
 
+slots.network__mesh = Slot(uri=TVBO.mesh, name="network__mesh", curie=TVBO.curie('mesh'),
+                   model_uri=TVBO.network__mesh, domain=None, range=Optional[Union[dict, Mesh]])
+
 slots.network__transforms = Slot(uri=TVBO.transforms, name="network__transforms", curie=TVBO.curie('transforms'),
                    model_uri=TVBO.network__transforms, domain=None, range=Optional[Union[dict[Union[str, FunctionName], Union[dict, Function]], list[Union[dict, Function]]]])
 
@@ -6596,6 +6627,12 @@ slots.file__path = Slot(uri=TVBO.path, name="file__path", curie=TVBO.curie('path
 
 slots.file__extension = Slot(uri=TVBO.extension, name="file__extension", curie=TVBO.curie('extension'),
                    model_uri=TVBO.file__extension, domain=None, range=Optional[str])
+
+slots.reference__iri = Slot(uri=TVBO.iri, name="reference__iri", curie=TVBO.curie('iri'),
+                   model_uri=TVBO.reference__iri, domain=None, range=str)
+
+slots.reference__field = Slot(uri=TVBO.field, name="reference__field", curie=TVBO.curie('field'),
+                   model_uri=TVBO.reference__field, domain=None, range=Optional[str])
 
 slots.node__id = Slot(uri=DCTERMS.identifier, name="node__id", curie=DCTERMS.curie('identifier'),
                    model_uri=TVBO.node__id, domain=None, range=int)
@@ -6670,7 +6707,10 @@ slots.edge__events = Slot(uri=TVBO.events, name="edge__events", curie=TVBO.curie
                    model_uri=TVBO.edge__events, domain=None, range=Optional[Union[dict[Union[str, EventName], Union[dict, Event]], list[Union[dict, Event]]]])
 
 slots.observation__source = Slot(uri=TVBO.source, name="observation__source", curie=TVBO.curie('source'),
-                   model_uri=TVBO.observation__source, domain=None, range=Optional[Union[str, StateVariableName]])
+                   model_uri=TVBO.observation__source, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.observation__aux_data = Slot(uri=TVBO.aux_data, name="observation__aux_data", curie=TVBO.curie('aux_data'),
+                   model_uri=TVBO.observation__aux_data, domain=None, range=Optional[Union[Union[dict, Reference], list[Union[dict, Reference]]]])
 
 slots.observation__period = Slot(uri=TVBO.period, name="observation__period", curie=TVBO.curie('period'),
                    model_uri=TVBO.observation__period, domain=None, range=Optional[float])
@@ -6707,9 +6747,6 @@ slots.observation__pipeline = Slot(uri=TVBO.pipeline, name="observation__pipelin
 
 slots.observation__class_reference = Slot(uri=TVBO.class_reference, name="observation__class_reference", curie=TVBO.curie('class_reference'),
                    model_uri=TVBO.observation__class_reference, domain=None, range=Optional[Union[dict, ClassReference]])
-
-slots.derivedObservation__source_observations = Slot(uri=TVBO.source_observations, name="derivedObservation__source_observations", curie=TVBO.curie('source_observations'),
-                   model_uri=TVBO.derivedObservation__source_observations, domain=None, range=Union[Union[str, ObservationName], list[Union[str, ObservationName]]])
 
 slots.dynamics__derived_parameters = Slot(uri=TVBO.derived_parameters, name="dynamics__derived_parameters", curie=TVBO.curie('derived_parameters'),
                    model_uri=TVBO.dynamics__derived_parameters, domain=None, range=Optional[Union[dict[Union[str, DerivedParameterName], Union[dict, DerivedParameter]], list[Union[dict, DerivedParameter]]]])
@@ -7440,9 +7477,6 @@ slots.simulationExperiment__coupling = Slot(uri=TVBO.coupling, name="simulationE
 slots.simulationExperiment__observations = Slot(uri=TVBO.observations, name="simulationExperiment__observations", curie=TVBO.curie('observations'),
                    model_uri=TVBO.simulationExperiment__observations, domain=None, range=Optional[Union[dict[Union[str, ObservationName], Union[dict, Observation]], list[Union[dict, Observation]]]])
 
-slots.simulationExperiment__derived_observations = Slot(uri=TVBO.derived_observations, name="simulationExperiment__derived_observations", curie=TVBO.curie('derived_observations'),
-                   model_uri=TVBO.simulationExperiment__derived_observations, domain=None, range=Optional[Union[dict[Union[str, DerivedObservationName], Union[dict, DerivedObservation]], list[Union[dict, DerivedObservation]]]])
-
 slots.simulationExperiment__functions = Slot(uri=TVBO.functions, name="simulationExperiment__functions", curie=TVBO.curie('functions'),
                    model_uri=TVBO.simulationExperiment__functions, domain=None, range=Optional[Union[dict[Union[str, FunctionName], Union[dict, Function]], list[Union[dict, Function]]]])
 
@@ -7601,6 +7635,21 @@ slots.mesh__number_of_vertices = Slot(uri=TVBO.number_of_vertices, name="mesh__n
 
 slots.mesh__number_of_elements = Slot(uri=TVBO.number_of_elements, name="mesh__number_of_elements", curie=TVBO.curie('number_of_elements'),
                    model_uri=TVBO.mesh__number_of_elements, domain=None, range=Optional[int])
+
+slots.mesh__parcellation = Slot(uri=TVBO.parcellation, name="mesh__parcellation", curie=TVBO.curie('parcellation'),
+                   model_uri=TVBO.mesh__parcellation, domain=None, range=Optional[Union[dict, Parcellation]])
+
+slots.mesh__normals = Slot(uri=TVBO.normals, name="mesh__normals", curie=TVBO.curie('normals'),
+                   model_uri=TVBO.mesh__normals, domain=None, range=Optional[str])
+
+slots.mesh__curvature = Slot(uri=TVBO.curvature, name="mesh__curvature", curie=TVBO.curie('curvature'),
+                   model_uri=TVBO.mesh__curvature, domain=None, range=Optional[str])
+
+slots.mesh__vertices_field = Slot(uri=TVBO.vertices_field, name="mesh__vertices_field", curie=TVBO.curie('vertices_field'),
+                   model_uri=TVBO.mesh__vertices_field, domain=None, range=Optional[str])
+
+slots.mesh__parcel_map_field = Slot(uri=TVBO.parcel_map_field, name="mesh__parcel_map_field", curie=TVBO.curie('parcel_map_field'),
+                   model_uri=TVBO.mesh__parcel_map_field, domain=None, range=Optional[str])
 
 slots.spatialField__quantity_kind = Slot(uri=TVBO.quantity_kind, name="spatialField__quantity_kind", curie=TVBO.curie('quantity_kind'),
                    model_uri=TVBO.spatialField__quantity_kind, domain=None, range=Optional[str])

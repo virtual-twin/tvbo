@@ -53,8 +53,17 @@ def _to_dict(obj):
         return {getattr(item, 'name', f'item_{i}'): item for i, item in enumerate(obj)}
     return {}
 
-observations = _to_dict(getattr(exp, 'observations', None))
-derived_observations = _to_dict(getattr(exp, 'derived_observations', None))
+_all_observations = _to_dict(getattr(exp, 'observations', None))
+# Split into raw vs derived for the report layout.
+def _obs_is_derived(o):
+    obs_names = set(_all_observations.keys())
+    for s in (getattr(o, 'source', None) or []):
+        n = getattr(s, 'name', None) or s
+        if isinstance(n, str) and n in obs_names:
+            return True
+    return False
+observations = {n: o for n, o in _all_observations.items() if not _obs_is_derived(o)}
+derived_observations = {n: o for n, o in _all_observations.items() if _obs_is_derived(o)}
 functions = _to_dict(getattr(exp, 'functions', None))
 optimizations = _to_dict(getattr(exp, 'optimizations', None))
 explorations = _to_dict(getattr(exp, 'explorations', None))
@@ -941,8 +950,13 @@ src_str = '$' + str(obs_source) + '$' if obs_source else '—'
 % for doname, dobs in derived_observations.items():
 <%
 dobs_label = _p(dobs, 'label', doname)
-src_obs = _p(dobs, 'source_observations', [])
-src_obs = [src_obs] if isinstance(src_obs, str) else (list(src_obs) if src_obs else [])
+_dobs_sources = _p(dobs, 'source', [])
+_dobs_sources = [_dobs_sources] if isinstance(_dobs_sources, str) else (list(_dobs_sources) if _dobs_sources else [])
+src_obs = []
+for s in _dobs_sources:
+    n = getattr(s, 'name', None) or s
+    if isinstance(n, str) and n in _all_observations:
+        src_obs.append(n)
 d_pipeline = _p(dobs, 'pipeline', [])
 d_sampling = []
 for attr, label in (('aggregation', 'aggregation'), ('skip_t', 'skip'), ('tail_samples', 'tail'), ('window_size', 'window'), ('time_scale', 'scale')):

@@ -108,11 +108,12 @@ def get_all_functions(algo, algorithms_dict):
 
 # Extract observations dict for reference
 _obs_raw = experiment.observations or {}
-observations_dict = dict(_obs_raw.items()) if hasattr(_obs_raw, 'items') else {}
+_all_observations = dict(_obs_raw.items()) if hasattr(_obs_raw, 'items') else {}
 
-# Extract derived_observations dict for reference
-_dobs_raw = experiment.derived_observations or {}
-derived_observations_dict = dict(_dobs_raw.items()) if hasattr(_dobs_raw, 'items') else {}
+# Split observations into raw vs derived views.
+from tvbo.codegen.templater import is_derived as _is_derived
+observations_dict = {n: o for n, o in _all_observations.items() if not _is_derived(o, experiment)}
+derived_observations_dict = {n: o for n, o in _all_observations.items() if _is_derived(o, experiment)}
 
 # State variable names from model
 model = experiment.dynamics
@@ -196,10 +197,13 @@ if network and network.coupling:
     for obs in simulated_observations:
         derived_obs_def = derived_observations_dict.get(obs)
         if derived_obs_def:
-            src_obs_list = derived_obs_def.source_observations or []
-            src_names = [
-                (s.name if hasattr(s, 'name') else str(s)) for s in src_obs_list
-            ]
+            # Filter source entries to names resolving to other observations.
+            src_obs_list = derived_obs_def.source or []
+            src_names = []
+            for s in src_obs_list:
+                _sn = s.name if hasattr(s, 'name') else str(s)
+                if _sn in _all_observations:
+                    src_names.append(_sn)
             dependent_observations[obs] = src_names
             for src_name in src_names:
                 if src_name in observations_dict:
@@ -496,6 +500,12 @@ def run_${algo_name}(
     effective_obs_def = derived_obs_def if derived_obs_def else obs_def
     has_pipeline = effective_obs_def and effective_obs_def.pipeline
     obs_source = obs_def.source if obs_def else None  # Only regular obs have source
+    # `source` is multivalued; for raw observations there is exactly one
+    # entry (a state-variable reference). Take it.
+    if isinstance(obs_source, (list, tuple)):
+        obs_source = obs_source[0] if obs_source else None
+    if obs_source is not None and hasattr(obs_source, 'name'):
+        obs_source = obs_source.name
     obs_aggregation = obs_def.aggregation if obs_def else None
     agg_str = str(obs_aggregation) if obs_aggregation else None
 
@@ -576,6 +586,11 @@ def run_${algo_name}(
     if obs_def:
         # Observable defined in observations - check source and aggregation
         obs_source = obs_def.source
+        # `source` is multivalued; for raw observations there is one entry.
+        if isinstance(obs_source, (list, tuple)):
+            obs_source = obs_source[0] if obs_source else None
+        if obs_source is not None and hasattr(obs_source, 'name'):
+            obs_source = obs_source.name
         obs_aggregation = obs_def.aggregation
         # Convert enum to string for comparison
         agg_str = str(obs_aggregation) if obs_aggregation else None
