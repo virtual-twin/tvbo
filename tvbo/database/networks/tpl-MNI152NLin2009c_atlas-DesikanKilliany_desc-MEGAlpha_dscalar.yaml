@@ -1,4 +1,5 @@
-name: DK68_MEGAlpha
+tvbo_class: tvbo:Network
+schema_version: tvb-datamodel/0.7.0
 label: "Desikan-Killiany 68 cortical parcels with MEG alpha amplitudes per region"
 description: |
   Per-region MEG alpha-band amplitude values aligned with the 68 cortical parcels
@@ -17,18 +18,15 @@ description: |
   dimensionless normalised amplitudes; downstream consumers rescale
   to a task-appropriate range (e.g. omega in Hz).
 
-iri: tvbo:tpl-MNI152NLin2009c_atlas-DesikanKilliany_desc-MEGAlpha_dscalar
-
-coordinate_space:
-  iri: tvbo:MNI152NLin2009c
-
-parcellation:
-  iri: tvbo:tpl-MNI152NLin2009c_atlas-DesikanKilliany_desc-ranked_dseg
-
 descriptor: MEGAlpha
 observational_measures: [megalpha]
 structural_measures: []                            # no edges — this is a dscalar carrier
 number_of_nodes: 68
+
+parcellation:
+  atlas:
+    name: DesikanKilliany
+    coordinateSpace: MNI152NLin2009c
 
 # -----------------------------------------------------------------------------
 # Per-region values. Ordering: all-left-hemisphere then all-right-hemisphere
@@ -113,13 +111,9 @@ nodes:
 
 # -----------------------------------------------------------------------------
 # Provenance
+# Source: tvb-ontology-optim-workshop/notebooks/data/{lh,rh}_megalpha_parc.csv
+# Per-region MEG alpha-band amplitudes averaged across vertices within each
+# DK parcel. LH-source file includes an 'unknown' row (medial wall, value
+# 0.0) which is excluded from this dscalar — the 68 cortical parcels of
+# DK68 are retained.
 # -----------------------------------------------------------------------------
-provenance:
-  source:
-    - "tvb-ontology-optim-workshop/notebooks/data/lh_megalpha_parc.csv"
-    - "tvb-ontology-optim-workshop/notebooks/data/rh_megalpha_parc.csv"
-  notes: |
-    Per-region MEG alpha-band amplitudes averaged across vertices within each
-    DK parcel. LH-source file includes an 'unknown' row (medial wall, value
-    0.0) which is excluded from this dscalar — the 68 cortical parcels of
-    DK68 are retained.

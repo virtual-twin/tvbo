@@ -464,39 +464,94 @@ class Network(tvbo_datamodel.Network):
             self._resolve_from_data_file(source_dir)
         elif getattr(self, "bids_dir", None):
             self._resolve_from_bids_dir(source_dir)
-        elif self._has_graph_generator_builder():
+        elif self._has_graph_generator():
             self._resolve_from_graph_generator(source_dir)
         elif getattr(self, "parcellation", None):
             self._resolve_from_parcellation()
         self._resolved = True
 
-    def _has_graph_generator_builder(self) -> bool:
+    def _has_graph_generator(self) -> bool:
+        """True if this Network has a resolvable GraphGenerator.
+
+        A GraphGenerator is resolvable when *either*:
+        * `graph_generator.builder` is set to an explicit Callable (the
+          user supplied a Python builder inline in their YAML), or
+        * `graph_generator.type` matches a curated database entry under
+          `tvbo/database/graph_generators/<Type>.yaml` whose `bindings:`
+          block declares a `python.callable` (the standard path for
+          built-in generators like RandomReservoir, WeightShuffle, …).
+        """
         gg = getattr(self, "graph_generator", None)
         if gg is None:
             return False
-        return getattr(gg, "builder", None) is not None
+        if getattr(gg, "builder", None) is not None:
+            return True
+        return self._db_python_binding_for(gg) is not None
+
+    @staticmethod
+    def _db_python_binding_for(gg) -> Optional[Dict[str, Any]]:
+        """Look up the python binding (callable + args) for `gg` from the database.
+
+        Returns the binding dict, or None if no matching database entry has a
+        python binding. Returns None silently for unknown types so that
+        templates / codegen-only generators (e.g. Tier-1 library wrappers
+        materialised by Julia/NetworkX, not Python) don't trigger resolver
+        errors at Network load time.
+        """
+        gtype = getattr(gg, "type", None)
+        if not gtype:
+            return None
+        try:
+            import yaml
+
+            from tvbo.data.registry import resolve as registry_resolve
+
+            entry_path = registry_resolve("GraphGenerator", str(gtype))
+        except (FileNotFoundError, ValueError):
+            return None
+        with open(entry_path) as f:
+            entry = yaml.safe_load(f) or {}
+        return ((entry.get("bindings") or {}).get("python")) or None
 
     def _resolve_from_graph_generator(self, source_dir: Optional[Union[str, Path]]) -> None:
-        """Invoke ``graph_generator.builder`` (a Callable) and copy its result onto self.
+        """Invoke a Python materialiser for the GraphGenerator and copy its result onto self.
 
-        The builder is a TVBO ``Callable`` (the same idiom used for monitor
-        class references). Its ``module`` and ``name`` fields locate a
-        Python callable; the ``graph_generator.parameters`` dict is passed
-        as keyword arguments. The callable must return either a ``Network``
-        instance or a tuple ``(weights, lengths)`` / ``(weights, lengths,
-        node_params)``.
+        Two routes (handled uniformly):
+        * Explicit `graph_generator.builder` (user-supplied Callable in the YAML).
+        * Database-resolved python binding for `graph_generator.type` (curated
+          entry's `bindings.python.callable`).
 
-        ``source_dir`` is forwarded so builders that need it (e.g. for
-        loading companion artefacts) can request it as a keyword argument.
+        The materialiser is a Python callable; the GraphGenerator's parameters
+        dict is passed as keyword arguments. It must return either a
+        `Network` instance, a dict with at least a `weights` key, or a tuple
+        `(weights, lengths)` / `(weights, lengths, node_params)`.
+
+        `source_dir` is forwarded so builders that need it (for example to
+        load companion artefacts) can request it as a keyword argument.
         """
         gg = self.graph_generator
-        cb = gg.builder
-        module_name = getattr(cb, "module", None)
-        func_name = getattr(cb, "name", None)
+        cb = getattr(gg, "builder", None)
+        if cb is not None:
+            module_name = getattr(cb, "module", None)
+            func_name = getattr(cb, "name", None)
+        else:
+            binding = self._db_python_binding_for(gg) or {}
+            lib = binding.get("library") or ""
+            callable_name = binding.get("callable")
+            if not callable_name:
+                raise ValueError(
+                    f"GraphGenerator type {gg.type!r} has no `bindings.python.callable` "
+                    f"in its database entry and no inline `builder:` was provided."
+                )
+            # The `library` value is the fully-qualified module path
+            # (e.g. `tvbo.graph_generators.builtins`); fall back to the same
+            # convention if only a short name was given.
+            module_name = lib or f"tvbo.graph_generators.builtins"
+            func_name = callable_name
         if not module_name or not func_name:
             raise ValueError(
-                "graph_generator.builder must have both `module` and `name` "
-                f"set (got module={module_name!r}, name={func_name!r})"
+                "graph_generator builder must resolve to both `module` and `name` "
+                f"(got module={module_name!r}, name={func_name!r})"
             )
 
         import importlib
@@ -532,7 +587,7 @@ class Network(tvbo_datamodel.Network):
                 except ValueError:
                     pass
 
-        # Accept either a Network or a (weights, lengths[, node_params]) tuple.
+        # Accept a Network, a dict, or a (weights, lengths[, node_params]) tuple.
         if isinstance(result, Network):
             for attr in ("nodes", "edges", "number_of_nodes", "descriptor", "mesh"):
                 val = getattr(result, attr, None)
@@ -544,14 +599,26 @@ class Network(tvbo_datamodel.Network):
                 if v is not None:
                     setattr(self, cache, v)
         else:
-            if not isinstance(result, tuple) or len(result) not in (2, 3):
+            # Two shapes accepted: dict with `weights` (and optional `lengths`,
+            # `node_parameters`), or tuple `(weights, lengths[, node_params])`.
+            if isinstance(result, dict):
+                if "weights" not in result:
+                    raise TypeError(
+                        "graph_generator materialiser dict must include a `weights` key."
+                    )
+                weights = np.asarray(result["weights"])
+                lengths = np.asarray(result["lengths"]) if result.get("lengths") is not None else None
+                node_params = result.get("node_parameters") or result.get("node_params") or None
+            elif isinstance(result, tuple) and len(result) in (2, 3):
+                weights = np.asarray(result[0])
+                lengths = np.asarray(result[1]) if result[1] is not None else None
+                node_params = result[2] if len(result) == 3 else None
+            else:
                 raise TypeError(
-                    "graph_generator.builder must return a Network or a "
-                    "(weights, lengths) / (weights, lengths, node_params) tuple."
+                    "graph_generator builder must return a Network, a dict with "
+                    "a `weights` key, or a (weights, lengths) / (weights, lengths, "
+                    "node_params) tuple."
                 )
-            weights = np.asarray(result[0])
-            lengths = np.asarray(result[1]) if result[1] is not None else None
-            node_params = result[2] if len(result) == 3 else None
             n_nodes = weights.shape[0]
             self.number_of_nodes = n_nodes
             self.nodes = [

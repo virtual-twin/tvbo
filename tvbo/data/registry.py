@@ -32,6 +32,7 @@ _CATEGORIES = {
     "Function": "observation_models",
     "BrainAtlas": "atlases",
     "Continuation": "continuations",
+    "GraphGenerator": "graph_generators",
 }
 
 

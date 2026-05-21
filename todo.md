@@ -146,6 +146,67 @@ Backend-in-metadata work is additive on top of that schema.
   - Node.dynamics.parameters or Node.parameters?
 
 
+## Unified `Coupling.function.rhs` with backend pre/post split
+
+**Status:** future enhancement — purely additive, fully back-compatible.
+
+**Motivation.** The current `Coupling` block carries three coupled
+declarations:
+
+- `local_states: [S]` — which source state vars the coupling reads
+- `pre_expression: { rhs: ... }`  — per-source-node transform (pre-synaptic)
+- `post_expression: { rhs: ... }` — post-aggregation transform (post-synaptic)
+
+The pre/post split is **biologically sound** — it mirrors pre-synaptic
+vs. post-synaptic processes (NT release / receptor binding /
+postsynaptic potential), so it stays. But `local_states` is redundant
+given sympy: any expression `parse_expr(rhs)` already exposes its
+`free_symbols`, which the resolver can classify against the existing
+namespace (`coupling.parameters`, `dynamics.state_variables`,
+`network.parameters`, etc.). The `_i` / `_j` index convention (or
+matrix form `W @ S`) distinguishes local vs. incoming nodes natively.
+
+**Proposal.** Add an optional `Coupling.function.rhs` slot that
+expresses the *full* coupling math in one sympy expression. At codegen
+time the backend:
+
+1. Parses the unified rhs (sympy `parse_expr`).
+2. Detects the `Sum(W[i,j] * f(S[j]), (j, 0, n-1))` pattern (or matrix
+   equivalent `W @ f(S)`).
+3. **Auto-derives** `pre_expression = f(S[j])` and
+   `post_expression = g(aggregate)` from the structure, with the
+   aggregation step (matmul / einsum) inserted between them.
+4. Keeps both forms **synchronised**: changes to the unified rhs
+   regenerate pre/post; changes to pre/post can be re-composed into
+   the unified rhs.
+
+The user writes whichever form is more natural:
+
+- Mathematically minded users → unified `function.rhs`, pre/post
+  derived.
+- Biologically minded users → explicit `pre_expression` (pre-synaptic
+  transform) + `post_expression` (post-synaptic transform) +
+  `local_states` (interface declaration).
+
+Both forms produce identical lambdified code; the backend treats them
+as alternate representations of the same coupling.
+
+**Back-compatibility.** Existing experiments that use `local_states` +
+`pre_expression` + `post_expression` continue to work unchanged. New
+experiments may opt into `function.rhs` for conciseness. Coupling
+blocks that set *both* the unified form and pre/post: validate-as-
+equivalent at load time; raise a clear error on mismatch.
+
+**Bonus.** `local_states` becomes optional everywhere — when omitted,
+it is auto-inferred from `pre_expression.rhs` (or `function.rhs`) via
+sympy free-symbol analysis. Same back-compat story.
+
+**Scope.** Two days of schema + codegen work, plus tests on the
+existing experiment YAMLs (RWW, JR, EI-Tuning) to verify zero
+regression. Not blocking the RC paper — flagged here for after that
+schema PR lands.
+
+
 ## Improve Observations
 
 - **Stateful Observations** (BOLD / balloon-Windkessel pattern). Some

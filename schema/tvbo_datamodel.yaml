@@ -281,6 +281,18 @@ enums:
             Star: { description: "Star graph" }
             RandomRegular: { description: "Random regular graph (params: k)" }
             Grid: { description: "Grid/lattice graph (params: dims)" }
+            RandomReservoir:
+                description: >-
+                    Sparse random recurrent adjacency with post-hoc spectral-
+                    radius rescaling. Parameters: n, sparsity, spectral_radius,
+                    weight_distribution, seed. Canonical Echo State Network
+                    substrate (Jaeger 2001) for reservoir computing.
+            WeightShuffle:
+                description: >-
+                    Derived generator: permute the non-zero entries of a source
+                    matrix. Parameters: source (IRI to another Network),
+                    preserve (binary_mask | degree | weight_distribution), seed.
+                    Used for null-model controls (e.g. shuffled SC).
     DimensionType:
         description: "Dimensions along which operations can be applied"
         permissible_values:
@@ -466,6 +478,19 @@ classes:
                 multivalued: true
                 range: float
                 array: {}
+            noise:
+                range: Noise
+                required: false
+                inlined: true
+                description: >-
+                    Optional stochastic contribution to the stimulus. Mirrors
+                    state_variables.noise on the Dynamics side. The stimulus
+                    value at each integration step is the sum of `equation`'s
+                    evaluation (deterministic, if set) and a draw from this
+                    Noise process. When only `noise` is set and `equation`
+                    is absent, the stimulus IS the noise (pure stochastic
+                    source — e.g. iid uniform driver for memory-capacity
+                    benchmarks; signal+noise paradigms for psychophysics).
 
     Event:
         class_uri: tvbo:Event
@@ -747,6 +772,31 @@ classes:
                 range: Dynamics
                 inlined: true
                 description: "Dictionary of dynamics models keyed by name. Nodes reference these by name. For heterogeneous networks with per-node dynamics."
+            node_template:
+                range: Node
+                required: false
+                inlined: true
+                description: >-
+                    Default Node attributes applied to every Node in this
+                    Network. Explicit entries in `nodes:` override the template
+                    field-by-field (shallow replace, same semantics as
+                    `dict.update`). Reserved per-Node slots (id, label,
+                    position, region) come from the data backbone
+                    (Network.iri-loaded parcellation or procedural generator)
+                    and are ignored if set on the template. Lets a homogeneous
+                    Network declare its per-Node configuration once without
+                    enumerating regions.
+            edge_template:
+                range: Edge
+                required: false
+                inlined: true
+                description: >-
+                    Default Edge attributes applied to every Edge in this
+                    Network. Explicit entries in `edges:` override the template
+                    field-by-field. Reserved per-Edge slots (source, target,
+                    weight, delay, distance) come from the data backbone
+                    (loaded matrix or procedural generator) and are ignored if
+                    set on the template.
 
             # Network metadata
             number_of_nodes:
@@ -983,6 +1033,25 @@ classes:
                 range: Event
                 inlined: true
                 description: "Events attached to this node (e.g., threshold-based state changes)."
+            subnetwork:
+                range: Network
+                required: false
+                inlined: true
+                description: >-
+                    Optional finer-scale Network that "lives inside" this Node
+                    (network-of-networks / multi-scale primitive). The
+                    subnetwork's nodes map (one-to-many) to this single parent
+                    Node. Cross-scale signal flow is declared as ordinary Edges
+                    in the subnetwork's `edges` list, using `source_network`
+                    / `target_network` with the `parent` sentinel to traverse
+                    up the hierarchy. The subnetwork may carry its own
+                    `graph_generator` (discrete sub-network — reservoir,
+                    spiking population, jaxley compartments) and/or `mesh`
+                    (continuous surface field) — one unified slot for
+                    reservoirs-per-region, spiking-populations-per-region,
+                    cells-per-region, and surface-mesh-patches-per-region.
+                    Recursive: a subnetwork's Nodes can themselves carry
+                    subnetworks.
 
     StateValue:
         class_uri: tvbo:StateValue
@@ -1049,15 +1118,31 @@ classes:
                 range: boolean
                 ifabsent: false
                 description: "Whether the edge is directed. If false, represents a symmetric/bidirectional connection."
+            source_network:
+                range: string
+                required: false
+                description: >-
+                    Path or name of the Network whose nodes define the source
+                    endpoints of this Edge. Symmetric counterpart to
+                    `target_network`. Together they let an Edge bridge any
+                    two Networks: both unset (within-Network edge), one set
+                    (this Network ↔ the named one), or both set (peer-to-peer
+                    projection between two other Networks). Accepts either an
+                    absolute IRI (peer Network) or the relative-path sentinel
+                    `parent` / `parent/parent` (cross-scale up/down via the
+                    Node.subnetwork hierarchy).
             target_network:
                 range: string
                 required: false
                 description: >-
-                    Path or name of the Network whose nodes define the columns
-                    of a non-square (projection) matrix. For example, a gain
-                    matrix with shape (n_sensors, n_regions) references the
-                    brain parcellation network here.  Row labels come from
-                    the parent Network's own nodes.
+                    Path or name of the Network whose nodes define the target
+                    endpoints (e.g. the columns of a non-square projection
+                    matrix such as a gain matrix region → EEG sensors). Also
+                    accepts the relative-path sentinel `parent` /
+                    `parent/parent` for cross-scale signal flow up the
+                    Node.subnetwork hierarchy. One mechanism handles both
+                    projection matrices (absolute IRI) and multi-scale
+                    boundaries (sentinel).
             dimension_labels:
                 multivalued: true
                 range: string
@@ -1431,6 +1516,28 @@ classes:
                 range: Distribution
                 inlined: true
                 description: "Distribution for heterogeneous per-node parameter sampling. Implies heterogeneous=true."
+            source:
+                range: uriorcurie
+                required: false
+                description: >-
+                    Data source for this parameter's value. When set, the
+                    value is loaded from the referenced entity rather than
+                    being a YAML literal. The referent is typically a Network
+                    with per-node parameters (dscalar pattern) or a flat
+                    dataset (HDF5, TSV). Combine with `measure:` when the
+                    source exposes multiple named measures. Distinct from
+                    the global `iri:` slot, which is reserved for ontology
+                    grounding.
+            measure:
+                range: string
+                required: false
+                description: >-
+                    Selector into the source. When `source` points at a
+                    Network with per-node parameters (or a dscalar with
+                    multiple maps), picks which named measure to load. Aligns
+                    with names listed in Network.structural_measures /
+                    Network.observational_measures. Ignored when the source
+                    resolves to a scalar/array dataset.
             free:
                 range: boolean
             shape:
@@ -1756,6 +1863,18 @@ classes:
                 description: "Optional scalar or vector intensity parameter for noise."
                 range: Parameter
                 inlined: true
+            distribution:
+                range: Distribution
+                required: false
+                inlined: true
+                description: >-
+                    Optional probability distribution from which the noise
+                    draws its samples. When set, takes precedence over the
+                    `noise_type` / `gaussian` flags — any Distribution
+                    family is accepted (Uniform { lo, hi }, Normal
+                    { mean, std }, LogNormal { mu, sigma }, Beta, …).
+                    Reuses the existing Distribution class also used by
+                    Parameter.distribution.
             function:
                 description: "Optional functional form of the noise (callable specification)."
                 range: Function

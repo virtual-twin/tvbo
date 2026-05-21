@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-05-21T15:34:05
+# Generation date: 2026-05-21T17:29:11
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -400,6 +400,7 @@ class Stimulus(YAMLRoot):
     label: Optional[str] = None
     regions: Optional[Union[int, list[int]]] = empty_list()
     weighting: Optional[Union[float, list[float]]] = empty_list()
+    noise: Optional[Union[dict, "Noise"]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self.equation is not None and not isinstance(self.equation, Equation):
@@ -426,6 +427,9 @@ class Stimulus(YAMLRoot):
         if not isinstance(self.weighting, list):
             self.weighting = [self.weighting] if self.weighting is not None else []
         self.weighting = [v if isinstance(v, float) else float(v) for v in self.weighting]
+
+        if self.noise is not None and not isinstance(self.noise, Noise):
+            self.noise = Noise(**as_dict(self.noise))
 
         super().__post_init__(**kwargs)
 
@@ -821,6 +825,8 @@ class Network(YAMLRoot):
     primary_weight: Optional[str] = None
     coupling: Optional[Union[dict[Union[str, CouplingName], Union[dict, "Coupling"]], list[Union[dict, "Coupling"]]]] = empty_dict()
     dynamics: Optional[Union[dict[Union[str, DynamicsName], Union[dict, "Dynamics"]], list[Union[dict, "Dynamics"]]]] = empty_dict()
+    node_template: Optional[Union[dict, "Node"]] = None
+    edge_template: Optional[Union[dict, "Edge"]] = None
     number_of_nodes: Optional[int] = 1
     coordinate_space: Optional[Union[dict, "CommonCoordinateSpace"]] = None
     parcellation: Optional[Union[dict, Parcellation]] = None
@@ -862,6 +868,12 @@ class Network(YAMLRoot):
         self._normalize_inlined_as_dict(slot_name="coupling", slot_type=Coupling, key_name="name", keyed=True)
 
         self._normalize_inlined_as_dict(slot_name="dynamics", slot_type=Dynamics, key_name="name", keyed=True)
+
+        if self.node_template is not None and not isinstance(self.node_template, Node):
+            self.node_template = Node(**as_dict(self.node_template))
+
+        if self.edge_template is not None and not isinstance(self.edge_template, Edge):
+            self.edge_template = Edge(**as_dict(self.edge_template))
 
         if self.number_of_nodes is not None and not isinstance(self.number_of_nodes, int):
             self.number_of_nodes = int(self.number_of_nodes)
@@ -1064,6 +1076,7 @@ class Node(YAMLRoot):
     region: Optional[str] = None
     state: Optional[Union[dict[Union[str, StateValueName], Union[dict, "StateValue"]], list[Union[dict, "StateValue"]]]] = empty_dict()
     events: Optional[Union[dict[Union[str, EventName], Union[dict, Event]], list[Union[dict, Event]]]] = empty_dict()
+    subnetwork: Optional[Union[dict, Network]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.id):
@@ -1094,6 +1107,9 @@ class Node(YAMLRoot):
         self._normalize_inlined_as_dict(slot_name="state", slot_type=StateValue, key_name="name", keyed=True)
 
         self._normalize_inlined_as_dict(slot_name="events", slot_type=Event, key_name="name", keyed=True)
+
+        if self.subnetwork is not None and not isinstance(self.subnetwork, Network):
+            self.subnetwork = Network(**as_dict(self.subnetwork))
 
         super().__post_init__(**kwargs)
 
@@ -1152,6 +1168,7 @@ class Edge(YAMLRoot):
     target_var: Optional[str] = None
     coupling: Optional[Union[str, CouplingName]] = None
     directed: Optional[Union[bool, Bool]] = False
+    source_network: Optional[str] = None
     target_network: Optional[str] = None
     dimension_labels: Optional[Union[str, list[str]]] = empty_list()
     dynamics: Optional[Union[str, DynamicsName]] = None
@@ -1207,6 +1224,9 @@ class Edge(YAMLRoot):
 
         if self.directed is not None and not isinstance(self.directed, Bool):
             self.directed = Bool(self.directed)
+
+        if self.source_network is not None and not isinstance(self.source_network, str):
+            self.source_network = str(self.source_network)
 
         if self.target_network is not None and not isinstance(self.target_network, str):
             self.target_network = str(self.target_network)
@@ -1624,6 +1644,8 @@ class Parameter(YAMLRoot):
     comment: Optional[str] = None
     heterogeneous: Optional[Union[bool, Bool]] = None
     distribution: Optional[Union[dict, Distribution]] = None
+    source: Optional[Union[str, URIorCURIE]] = None
+    measure: Optional[str] = None
     free: Optional[Union[bool, Bool]] = None
     shape: Optional[str] = None
     explored_values: Optional[Union[float, list[float]]] = empty_list()
@@ -1677,6 +1699,12 @@ class Parameter(YAMLRoot):
 
         if self.distribution is not None and not isinstance(self.distribution, Distribution):
             self.distribution = Distribution(**as_dict(self.distribution))
+
+        if self.source is not None and not isinstance(self.source, URIorCURIE):
+            self.source = URIorCURIE(self.source)
+
+        if self.measure is not None and not isinstance(self.measure, str):
+            self.measure = str(self.measure)
 
         if self.free is not None and not isinstance(self.free, Bool):
             self.free = Bool(self.free)
@@ -2191,6 +2219,7 @@ class Noise(YAMLRoot):
     seed: Optional[int] = 42
     random_state: Optional[Union[dict, "RandomStream"]] = None
     intensity: Optional[Union[dict, Parameter]] = None
+    distribution: Optional[Union[dict, Distribution]] = None
     function: Optional[Union[dict, Function]] = None
     pycode: Optional[str] = None
     targets: Optional[Union[dict[Union[str, StateVariableName], Union[dict, StateVariable]], list[Union[dict, StateVariable]]]] = empty_dict()
@@ -2221,6 +2250,9 @@ class Noise(YAMLRoot):
 
         if self.intensity is not None and not isinstance(self.intensity, Parameter):
             self.intensity = Parameter(**as_dict(self.intensity))
+
+        if self.distribution is not None and not isinstance(self.distribution, Distribution):
+            self.distribution = Distribution(**as_dict(self.distribution))
 
         if self.function is not None and not isinstance(self.function, Function):
             self.function = Function(**as_dict(self.function))
@@ -5454,6 +5486,12 @@ class StandardGraphType(EnumDefinitionImpl):
     Grid = PermissibleValue(
         text="Grid",
         description="Grid/lattice graph (params: dims)")
+    RandomReservoir = PermissibleValue(
+        text="RandomReservoir",
+        description="""Sparse random recurrent adjacency with post-hoc spectral- radius rescaling. Parameters: n, sparsity, spectral_radius, weight_distribution, seed. Canonical Echo State Network substrate (Jaeger 2001) for reservoir computing.""")
+    WeightShuffle = PermissibleValue(
+        text="WeightShuffle",
+        description="""Derived generator: permute the non-zero entries of a source matrix. Parameters: source (IRI to another Network), preserve (binary_mask | degree | weight_distribution), seed. Used for null-model controls (e.g. shuffled SC).""")
 
     _defn = EnumDefinition(
         name="StandardGraphType",
@@ -6439,6 +6477,9 @@ slots.stimulus__regions = Slot(uri=TVBO.regions, name="stimulus__regions", curie
 slots.stimulus__weighting = Slot(uri=TVBO.weighting, name="stimulus__weighting", curie=TVBO.curie('weighting'),
                    model_uri=TVBO.stimulus__weighting, domain=None, range=Optional[Union[float, list[float]]])
 
+slots.stimulus__noise = Slot(uri=TVBO.noise, name="stimulus__noise", curie=TVBO.curie('noise'),
+                   model_uri=TVBO.stimulus__noise, domain=None, range=Optional[Union[dict, Noise]])
+
 slots.event__event_type = Slot(uri=TVBO.event_type, name="event__event_type", curie=TVBO.curie('event_type'),
                    model_uri=TVBO.event__event_type, domain=None, range=Optional[Union[str, "EventType"]])
 
@@ -6574,6 +6615,12 @@ slots.network__coupling = Slot(uri=TVBO.coupling, name="network__coupling", curi
 slots.network__dynamics = Slot(uri=TVBO.dynamics, name="network__dynamics", curie=TVBO.curie('dynamics'),
                    model_uri=TVBO.network__dynamics, domain=None, range=Optional[Union[dict[Union[str, DynamicsName], Union[dict, Dynamics]], list[Union[dict, Dynamics]]]])
 
+slots.network__node_template = Slot(uri=TVBO.node_template, name="network__node_template", curie=TVBO.curie('node_template'),
+                   model_uri=TVBO.network__node_template, domain=None, range=Optional[Union[dict, Node]])
+
+slots.network__edge_template = Slot(uri=TVBO.edge_template, name="network__edge_template", curie=TVBO.curie('edge_template'),
+                   model_uri=TVBO.network__edge_template, domain=None, range=Optional[Union[dict, Edge]])
+
 slots.network__number_of_nodes = Slot(uri=TVBO.number_of_nodes, name="network__number_of_nodes", curie=TVBO.curie('number_of_nodes'),
                    model_uri=TVBO.network__number_of_nodes, domain=None, range=Optional[int])
 
@@ -6679,6 +6726,9 @@ slots.node__state = Slot(uri=TVBO.state, name="node__state", curie=TVBO.curie('s
 slots.node__events = Slot(uri=TVBO.events, name="node__events", curie=TVBO.curie('events'),
                    model_uri=TVBO.node__events, domain=None, range=Optional[Union[dict[Union[str, EventName], Union[dict, Event]], list[Union[dict, Event]]]])
 
+slots.node__subnetwork = Slot(uri=TVBO.subnetwork, name="node__subnetwork", curie=TVBO.curie('subnetwork'),
+                   model_uri=TVBO.node__subnetwork, domain=None, range=Optional[Union[dict, Network]])
+
 slots.edge__source = Slot(uri=TVBO.source, name="edge__source", curie=TVBO.curie('source'),
                    model_uri=TVBO.edge__source, domain=None, range=Optional[int])
 
@@ -6720,6 +6770,9 @@ slots.edge__coupling = Slot(uri=TVBO.coupling, name="edge__coupling", curie=TVBO
 
 slots.edge__directed = Slot(uri=TVBO.directed, name="edge__directed", curie=TVBO.curie('directed'),
                    model_uri=TVBO.edge__directed, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.edge__source_network = Slot(uri=TVBO.source_network, name="edge__source_network", curie=TVBO.curie('source_network'),
+                   model_uri=TVBO.edge__source_network, domain=None, range=Optional[str])
 
 slots.edge__target_network = Slot(uri=TVBO.target_network, name="edge__target_network", curie=TVBO.curie('target_network'),
                    model_uri=TVBO.edge__target_network, domain=None, range=Optional[str])
@@ -6886,6 +6939,12 @@ slots.parameter__heterogeneous = Slot(uri=TVBO.heterogeneous, name="parameter__h
 slots.parameter__distribution = Slot(uri=TVBO.distribution, name="parameter__distribution", curie=TVBO.curie('distribution'),
                    model_uri=TVBO.parameter__distribution, domain=None, range=Optional[Union[dict, Distribution]])
 
+slots.parameter__source = Slot(uri=TVBO.source, name="parameter__source", curie=TVBO.curie('source'),
+                   model_uri=TVBO.parameter__source, domain=None, range=Optional[Union[str, URIorCURIE]])
+
+slots.parameter__measure = Slot(uri=TVBO.measure, name="parameter__measure", curie=TVBO.curie('measure'),
+                   model_uri=TVBO.parameter__measure, domain=None, range=Optional[str])
+
 slots.parameter__free = Slot(uri=TVBO.free, name="parameter__free", curie=TVBO.curie('free'),
                    model_uri=TVBO.parameter__free, domain=None, range=Optional[Union[bool, Bool]])
 
@@ -7029,6 +7088,9 @@ slots.noise__random_state = Slot(uri=TVBO.random_state, name="noise__random_stat
 
 slots.noise__intensity = Slot(uri=TVBO.intensity, name="noise__intensity", curie=TVBO.curie('intensity'),
                    model_uri=TVBO.noise__intensity, domain=None, range=Optional[Union[dict, Parameter]])
+
+slots.noise__distribution = Slot(uri=TVBO.distribution, name="noise__distribution", curie=TVBO.curie('distribution'),
+                   model_uri=TVBO.noise__distribution, domain=None, range=Optional[Union[dict, Distribution]])
 
 slots.noise__function = Slot(uri=TVBO.function, name="noise__function", curie=TVBO.curie('function'),
                    model_uri=TVBO.noise__function, domain=None, range=Optional[Union[dict, Function]])
