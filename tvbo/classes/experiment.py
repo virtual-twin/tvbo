@@ -600,6 +600,11 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         # network's declared observational_measures (names only, no data load).
         obj._validate_network_observations()
 
+        # Lower declarative stimulus/stimulation Event fields (target_variable,
+        # target_regions, weight_distribution) into the legacy fields the shared
+        # codegen consumes — resolved here in Python, no template changes.
+        obj._resolve_events()
+
         return obj
 
     @classmethod
@@ -2045,6 +2050,88 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 )
             resolved[name] = available[measure]
         return resolved
+
+    def _resolve_events(self) -> None:
+        """Lower declarative stimulus/stimulation Event fields into the form the
+        (shared) tvboptim codegen already consumes — done in Python at load
+        time, exactly like graph-generator resolution, so no template change is
+        needed and distribution handling stays consistent with
+        ``graph_generators.builtins._resolve_distribution`` (koller2024).
+
+        Per stimulus-type event:
+        - ``event_type: stimulation`` is normalised to ``stimulus`` (synonym),
+          so the codegen's ``'stimulus' in event_type`` filter matches.
+        - ``target_variable`` becomes the event's effective ``name`` — the
+          codegen exposes ``external_input[name]`` as the dfun variable.
+        - ``target_regions: all`` (or labels/indices) is lowered to integer
+          ``regions``; ``weight_distribution`` is sampled (seeded, reproducible)
+          into the ``weighting`` array via the canonical resolver. Both are the
+          legacy fields the codegen reads.
+        - equation-level ``parameters`` are merged onto the event so the
+          stimulus equation's symbols (e.g. ``T_drive``) resolve.
+        """
+        events = self.events
+        if not events:
+            return
+        try:
+            from tvbo.graph_generators.builtins import _resolve_distribution
+        except Exception:
+            _resolve_distribution = None
+
+        n_nodes = (
+            getattr(self.network, "number_of_nodes", None)
+            or getattr(self.network, "number_of_regions", None)
+            or 1
+        )
+        labels = {}
+        try:
+            for i, node in enumerate(getattr(self.network, "nodes", None) or []):
+                labels[str(getattr(node, "label", getattr(node, "id", i)))] = i
+        except Exception:
+            labels = {}
+
+        items = events.items() if hasattr(events, "items") else []
+        for _key, ev in items:
+            et = str(getattr(ev, "event_type", "stimulus") or "stimulus").lower()
+            if "stimul" not in et:
+                continue
+            ev.event_type = "stimulus"  # normalise synonym for the codegen filter
+
+            tv = getattr(ev, "target_variable", None)
+            if tv:
+                ev.name = str(tv)
+
+            # target_regions ('all' | labels | indices) -> integer regions
+            tr = getattr(ev, "target_regions", None) or []
+            if isinstance(tr, str):
+                tr = [tr]
+            tr = [str(x) for x in tr]
+            regions = list(getattr(ev, "regions", None) or [])
+            if tr and not (len(tr) == 1 and tr[0].lower() == "all"):
+                regions = [int(labels.get(x, x)) for x in tr]
+
+            # weight_distribution -> weighting array (canonical, seeded resolver)
+            wd = getattr(ev, "weight_distribution", None)
+            weighting = list(getattr(ev, "weighting", None) or [])
+            if wd is not None and not weighting and _resolve_distribution is not None:
+                n = len(regions) if regions else int(n_nodes)
+                rng = np.random.default_rng(getattr(wd, "seed", None))
+                weighting = [float(x) for x in _resolve_distribution(wd, rng, (n,))]
+                if not regions:
+                    regions = list(range(int(n_nodes)))
+            if regions:
+                ev.regions = regions
+            if weighting:
+                ev.weighting = weighting
+
+            # merge equation-level parameters onto the event (codegen reads ev.parameters)
+            eq = getattr(ev, "equation", None)
+            eq_params = getattr(eq, "parameters", None) if eq is not None else None
+            if eq_params:
+                merged = dict(getattr(ev, "parameters", None) or {})
+                for pk, pv in (eq_params.items() if hasattr(eq_params, "items") else []):
+                    merged.setdefault(pk, pv)
+                ev.parameters = merged
 
     def collect_initial_conditions(self, random=False):
         history = []
