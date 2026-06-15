@@ -339,13 +339,19 @@ def run_${algo_name}(
             obs_class = ''.join(w.capitalize() for w in obs.replace('_', ' ').split())
             pipeline_observations.append((obs, obs_class))
 
-    # For source observations that need buffers, we need their monitors too
+    # For source observations that need sliding-window buffers, we need their
+    # monitors too. EVERY source observation requires a monitor for the warmup
+    # loop, whether it is pipeline-based (e.g. a derived FC) or a raw monitor
+    # observation (e.g. `bold` from a BOLD monitor, which has no pipeline). The
+    # monitor class is the CamelCase of the observation name and is emitted for
+    # all observations, so this is gated only by membership in
+    # source_observations_needed (already filtered to real observations), not by
+    # the presence of a pipeline. (Previously the pipeline gate left raw-source
+    # monitors like `_bold_monitor` undefined -> UnboundLocalError.)
     source_monitors = []
     for src_obs in source_observations_needed:
-        src_def = observations_dict.get(src_obs)
-        if src_def and hasattr(src_def, 'pipeline') and src_def.pipeline:
-            src_class = ''.join(w.capitalize() for w in src_obs.replace('_', ' ').split())
-            source_monitors.append((src_obs, src_class))
+        src_class = ''.join(w.capitalize() for w in src_obs.replace('_', ' ').split())
+        source_monitors.append((src_obs, src_class))
 
     # Note: Derived observations don't have monitor classes - they're computed from other observations
     # So we don't need dependent_monitors anymore
@@ -410,9 +416,10 @@ def run_${algo_name}(
                     _${src_obs}_buffer = _${src_obs}_buffer.at[-1, :, :].set(_warmup_${src_obs}_data[0, :, :])
                 else:
                     _${src_obs}_buffer = _${src_obs}_buffer.at[-1, 0, :].set(_warmup_${src_obs}_data)
-                _new_history = jnp.roll(_${src_obs}_monitor._history, -_warmup_result.data.shape[0], axis=0)
-                _new_history = _new_history.at[-_warmup_result.data.shape[0]:, :, :].set(_warmup_result.data[:, 0:1, :])
-                _${src_obs}_monitor = eqx.tree_at(history_accessor, _${src_obs}_monitor, _new_history)
+                if hasattr(_${src_obs}_monitor, '_history') and _${src_obs}_monitor._history is not None:
+                    _new_history = jnp.roll(_${src_obs}_monitor._history, -_warmup_result.data.shape[0], axis=0)
+                    _new_history = _new_history.at[-_warmup_result.data.shape[0]:, :, :].set(_warmup_result.data[:, 0:1, :])
+                    _${src_obs}_monitor = eqx.tree_at(history_accessor, _${src_obs}_monitor, _new_history)
             _buffer_idx = int(window_size)
             if verbose:
                 print(f"  Warmup complete. Buffer filled with {_buffer_idx} samples.")
@@ -443,9 +450,10 @@ def run_${algo_name}(
             else:
                 _${src_obs}_buffer = _${src_obs}_buffer.at[-1, 0, :].set(_warmup_${src_obs}_data)
 
-            _new_history = jnp.roll(_${src_obs}_monitor._history, -_warmup_result.data.shape[0], axis=0)
-            _new_history = _new_history.at[-_warmup_result.data.shape[0]:, :, :].set(_warmup_result.data[:, 0:1, :])
-            _${src_obs}_monitor = eqx.tree_at(history_accessor, _${src_obs}_monitor, _new_history)
+            if hasattr(_${src_obs}_monitor, '_history') and _${src_obs}_monitor._history is not None:
+                _new_history = jnp.roll(_${src_obs}_monitor._history, -_warmup_result.data.shape[0], axis=0)
+                _new_history = _new_history.at[-_warmup_result.data.shape[0]:, :, :].set(_warmup_result.data[:, 0:1, :])
+                _${src_obs}_monitor = eqx.tree_at(history_accessor, _${src_obs}_monitor, _new_history)
 
         _buffer_idx = int(window_size)
         if verbose:
@@ -479,9 +487,12 @@ def run_${algo_name}(
             _${src_obs}_buffer = _${src_obs}_buffer.at[-1, :, :].set(_${src_obs}_sample_data[0, :, :])
         else:
             _${src_obs}_buffer = _${src_obs}_buffer.at[-1, 0, :].set(_${src_obs}_sample_data)
-        _new_history = jnp.roll(_${src_obs}_monitor._history, -result.data.shape[0], axis=0)
-        _new_history = _new_history.at[-result.data.shape[0]:, :, :].set(result.data[:, 0:1, :])
-        _${src_obs}_monitor = eqx.tree_at(history_accessor, _${src_obs}_monitor, _new_history)
+        # Maintain the monitor's own rolling history only if it carries one.
+        # Stateless monitors (e.g. a BOLD monitor) have no _history buffer.
+        if hasattr(_${src_obs}_monitor, '_history') and _${src_obs}_monitor._history is not None:
+            _new_history = jnp.roll(_${src_obs}_monitor._history, -result.data.shape[0], axis=0)
+            _new_history = _new_history.at[-result.data.shape[0]:, :, :].set(result.data[:, 0:1, :])
+            _${src_obs}_monitor = eqx.tree_at(history_accessor, _${src_obs}_monitor, _new_history)
 % endfor
         _buffer_idx = min(_buffer_idx + 1, int(window_size))
 

@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-05-21T19:37:25
+# Generation date: 2026-06-15T12:49:49
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -465,6 +465,9 @@ class Event(YAMLRoot):
     equation: Optional[Union[dict, Equation]] = None
     regions: Optional[Union[int, list[int]]] = empty_list()
     weighting: Optional[Union[float, list[float]]] = empty_list()
+    weight_distribution: Optional[Union[dict, "Distribution"]] = None
+    target_variable: Optional[str] = None
+    target_regions: Optional[Union[str, list[str]]] = empty_list()
     duration: Optional[float] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -526,6 +529,16 @@ class Event(YAMLRoot):
         if not isinstance(self.weighting, list):
             self.weighting = [self.weighting] if self.weighting is not None else []
         self.weighting = [v if isinstance(v, float) else float(v) for v in self.weighting]
+
+        if self.weight_distribution is not None and not isinstance(self.weight_distribution, Distribution):
+            self.weight_distribution = Distribution(**as_dict(self.weight_distribution))
+
+        if self.target_variable is not None and not isinstance(self.target_variable, str):
+            self.target_variable = str(self.target_variable)
+
+        if not isinstance(self.target_regions, list):
+            self.target_regions = [self.target_regions] if self.target_regions is not None else []
+        self.target_regions = [v if isinstance(v, str) else str(v) for v in self.target_regions]
 
         if self.duration is not None and not isinstance(self.duration, float):
             self.duration = float(self.duration)
@@ -3661,6 +3674,7 @@ class SimulationExperiment(YAMLRoot):
 
     id: Union[int, SimulationExperimentId] = None
     model: Optional[Union[str, DynamicsName]] = None
+    references: Optional[Union[str, list[str]]] = empty_list()
     description: Optional[str] = None
     additional_equations: Optional[Union[Union[dict, Equation], list[Union[dict, Equation]]]] = empty_list()
     label: Optional[str] = None
@@ -3681,7 +3695,6 @@ class SimulationExperiment(YAMLRoot):
     environment: Optional[Union[dict, "SoftwareEnvironment"]] = None
     execution: Optional[Union[dict, ExecutionConfig]] = None
     software: Optional[Union[dict, "SoftwareRequirement"]] = None
-    references: Optional[Union[str, list[str]]] = empty_list()
     dataset: Optional[Union[dict, "Dataset"]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -3692,6 +3705,10 @@ class SimulationExperiment(YAMLRoot):
 
         if self.model is not None and not isinstance(self.model, DynamicsName):
             self.model = DynamicsName(self.model)
+
+        if not isinstance(self.references, list):
+            self.references = [self.references] if self.references is not None else []
+        self.references = [v if isinstance(v, str) else str(v) for v in self.references]
 
         if self.description is not None and not isinstance(self.description, str):
             self.description = str(self.description)
@@ -3747,10 +3764,6 @@ class SimulationExperiment(YAMLRoot):
         if self.software is not None and not isinstance(self.software, SoftwareRequirement):
             self.software = SoftwareRequirement(**as_dict(self.software))
 
-        if not isinstance(self.references, list):
-            self.references = [self.references] if self.references is not None else []
-        self.references = [v if isinstance(v, str) else str(v) for v in self.references]
-
         if self.dataset is not None and not isinstance(self.dataset, Dataset):
             self.dataset = Dataset(**as_dict(self.dataset))
 
@@ -3770,6 +3783,7 @@ class SimulationStudy(YAMLRoot):
     derived_from: Optional[str] = None
     model: Optional[Union[str, DynamicsName]] = None
     description: Optional[str] = None
+    references: Optional[Union[str, list[str]]] = empty_list()
     key: Optional[str] = None
     title: Optional[str] = None
     year: Optional[int] = None
@@ -3789,6 +3803,10 @@ class SimulationStudy(YAMLRoot):
 
         if self.description is not None and not isinstance(self.description, str):
             self.description = str(self.description)
+
+        if not isinstance(self.references, list):
+            self.references = [self.references] if self.references is not None else []
+        self.references = [v if isinstance(v, str) else str(v) for v in self.references]
 
         if self.key is not None and not isinstance(self.key, str):
             self.key = str(self.key)
@@ -5690,6 +5708,9 @@ class EventType(EnumDefinitionImpl):
     stimulus = PermissibleValue(
         text="stimulus",
         description="Continuous time-dependent input signal (e.g., external current). Legacy Stimulus behavior.")
+    stimulation = PermissibleValue(
+        text="stimulation",
+        description="""Synonym of 'stimulus' — a continuous time-dependent input signal injected into a target state variable across target regions. The codegen treats 'stimulation' and 'stimulus' identically.""")
 
     _defn = EnumDefinition(
         name="EventType",
@@ -6687,11 +6708,11 @@ slots.range__explored_values = Slot(uri=TVBO.explored_values, name="range__explo
 slots.range__element = Slot(uri=TVBO.element, name="range__element", curie=TVBO.curie('element'),
                    model_uri=TVBO.range__element, domain=None, range=Optional[int])
 
-slots.equation__lefthandside = Slot(uri=TVBO.lhs, name="equation__lefthandside", curie=TVBO.curie('lhs'),
-                   model_uri=TVBO.equation__lefthandside, domain=None, range=Optional[str])
+slots.equation__lhs = Slot(uri=TVBO.lhs, name="equation__lhs", curie=TVBO.curie('lhs'),
+                   model_uri=TVBO.equation__lhs, domain=None, range=Optional[str])
 
-slots.equation__righthandside = Slot(uri=TVBO.rhs, name="equation__righthandside", curie=TVBO.curie('rhs'),
-                   model_uri=TVBO.equation__righthandside, domain=None, range=Optional[str])
+slots.equation__rhs = Slot(uri=TVBO.rhs, name="equation__rhs", curie=TVBO.curie('rhs'),
+                   model_uri=TVBO.equation__rhs, domain=None, range=Optional[str])
 
 slots.equation__conditionals = Slot(uri=TVBO.conditionals, name="equation__conditionals", curie=TVBO.curie('conditionals'),
                    model_uri=TVBO.equation__conditionals, domain=None, range=Optional[Union[Union[dict, ConditionalBlock], list[Union[dict, ConditionalBlock]]]])
@@ -6758,6 +6779,15 @@ slots.event__regions = Slot(uri=TVBO.regions, name="event__regions", curie=TVBO.
 
 slots.event__weighting = Slot(uri=TVBO.weighting, name="event__weighting", curie=TVBO.curie('weighting'),
                    model_uri=TVBO.event__weighting, domain=None, range=Optional[Union[float, list[float]]])
+
+slots.event__weight_distribution = Slot(uri=TVBO.weight_distribution, name="event__weight_distribution", curie=TVBO.curie('weight_distribution'),
+                   model_uri=TVBO.event__weight_distribution, domain=None, range=Optional[Union[dict, Distribution]])
+
+slots.event__target_variable = Slot(uri=TVBO.target_variable, name="event__target_variable", curie=TVBO.curie('target_variable'),
+                   model_uri=TVBO.event__target_variable, domain=None, range=Optional[str])
+
+slots.event__target_regions = Slot(uri=TVBO.target_regions, name="event__target_regions", curie=TVBO.curie('target_regions'),
+                   model_uri=TVBO.event__target_regions, domain=None, range=Optional[Union[str, list[str]]])
 
 slots.event__duration = Slot(uri=TVBO.duration, name="event__duration", curie=TVBO.curie('duration'),
                    model_uri=TVBO.event__duration, domain=None, range=Optional[float])
@@ -7922,9 +7952,6 @@ slots.simulationExperiment__execution = Slot(uri=TVBO.execution, name="simulatio
 
 slots.simulationExperiment__software = Slot(uri=TVBO.software, name="simulationExperiment__software", curie=TVBO.curie('software'),
                    model_uri=TVBO.simulationExperiment__software, domain=None, range=Optional[Union[dict, SoftwareRequirement]])
-
-slots.simulationExperiment__references = Slot(uri=DCTERMS.references, name="simulationExperiment__references", curie=DCTERMS.curie('references'),
-                   model_uri=TVBO.simulationExperiment__references, domain=None, range=Optional[Union[str, list[str]]])
 
 slots.simulationExperiment__dataset = Slot(uri=TVBO.dataset, name="simulationExperiment__dataset", curie=TVBO.curie('dataset'),
                    model_uri=TVBO.simulationExperiment__dataset, domain=None, range=Optional[Union[dict, Dataset]])

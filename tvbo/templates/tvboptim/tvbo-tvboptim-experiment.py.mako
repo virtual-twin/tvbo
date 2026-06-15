@@ -942,6 +942,37 @@ def _sample_initial_conditions(state, key=None):
     return state
 % endif
 
+% if network_observation_names:
+# ── Network observations (empirical targets carried by the Network) ──────────
+# Declared in YAML via `source: [network.observations.<measure>]`. The name->
+# measure mapping is resolved in Python (SimulationExperiment.
+# network_observation_measures) and passed in as `network_obs_measures`;
+# values are materialized at run_experiment() time from the network (or a
+# `network_observations` override).
+_NETWORK_OBS_MEASURES = {${', '.join("'%s': '%s'" % (k, v) for k, v in network_obs_measures.items())}}
+% for _on in network_observation_names:
+${_on} = None  # network observation <- ${network_obs_measures[_on]}
+% endfor
+
+def _bind_network_observations(network_observations=None):
+    """Materialize module-level network-observation constants from the given
+    dict (keyed by observation name). Mirrors how `weights`/`distances` flow
+    into the experiment; raises a clear error if a declared one is missing."""
+    network_observations = network_observations or {}
+% for _on in network_observation_names:
+    global ${_on}
+    if '${_on}' in network_observations and network_observations['${_on}'] is not None:
+        ${_on} = jnp.asarray(network_observations['${_on}'])
+    if ${_on} is None:
+        raise ValueError(
+            "Network observation '${_on}' (measure '${network_obs_measures[_on]}') "
+            "was not provided. Pass it via "
+            "run_experiment(network_observations={'${_on}': <matrix>}), or ensure "
+            "the network supplies observational_measures=['${network_obs_measures[_on]}']."
+        )
+% endfor
+
+% endif
 def run_simulation(
     network: Network,
     t1: float = ${t1_default},
@@ -1968,11 +1999,19 @@ def run_experiment(
     mode: str = "all",
     stage: str = None,
     state: Bunch = None,
+% if network_observation_names:
+    network_observations: Dict[str, Any] = None,
+% endif
     **kwargs,
 ) -> Dict[str, Any]:
     """Run complete experiment workflow. Mode: simulation, optimization, exploration, algorithms, or all."""
 
     weights = jnp.array(weights)
+% if network_observation_names:
+    # Materialize network-observation constants (empirical targets) from the
+    # supplied matrices, keyed by observation name (e.g. {'fc_target': FC}).
+    _bind_network_observations(network_observations)
+% endif
 
     print("\n" + "=" * 60)
     print("STEP 1: Running simulation...")
@@ -2768,10 +2807,23 @@ if __name__ == "__main__":
 
     # Run the experiment
     # Order: 1) Simulation → 2) Explorations → 3) Algorithms → 4) Optimization
+% if network_observation_names:
+    # Network observations (empirical targets) keyed by observation name,
+    # resolved from the loaded network via the obs->measure mapping.
+    _net_obs = {}
+    if '_network' in dir() and _network is not None:
+        _net_obs_data = _network.observations
+        _net_obs = {name: _net_obs_data[measure]
+                    for name, measure in _NETWORK_OBS_MEASURES.items()
+                    if measure in _net_obs_data}
+% endif
     raw_results = run_experiment(
         weights,
         distances=distances,
         region_labels=region_labels,
+% if network_observation_names:
+        network_observations=_net_obs,
+% endif
         mode="all",
     )
 
