@@ -592,16 +592,32 @@ for expl in exploration_list:
                 assert domain.lo is not None, f"domain.lo required for {axis.parameter}"
                 assert domain.hi is not None, f"domain.hi required for {axis.parameter}"
                 n = _resolve_n(domain)
-                exp_info['axes'].append({
-                    'name': pname,
-                    'lo': float(domain.lo),
-                    'hi': float(domain.hi),
-                    'n': n,
-                    'is_coupling': is_coupling_param,
-                    'coupling_key': source_key if is_coupling_param else None,
-                    'dynamics_key': source_key if not is_coupling_param and source_key else None,
-                    'element_idx': None,
-                })
+                if getattr(domain, 'log_scale', False):
+                    # Honor log_scale: emit explicit log-spaced values (DataAxis).
+                    import numpy as _np
+                    _lo, _hi = float(domain.lo), float(domain.hi)
+                    assert _lo > 0, f"log_scale requires domain.lo > 0 for {axis.parameter}"
+                    _vals = [float(v) for v in _np.logspace(_np.log10(_lo), _np.log10(_hi), n)]
+                    exp_info['axes'].append({
+                        'name': pname,
+                        'values': _vals,
+                        'n': n,
+                        'is_coupling': is_coupling_param,
+                        'coupling_key': source_key if is_coupling_param else None,
+                        'dynamics_key': source_key if not is_coupling_param and source_key else None,
+                        'element_idx': None,
+                    })
+                else:
+                    exp_info['axes'].append({
+                        'name': pname,
+                        'lo': float(domain.lo),
+                        'hi': float(domain.hi),
+                        'n': n,
+                        'is_coupling': is_coupling_param,
+                        'coupling_key': source_key if is_coupling_param else None,
+                        'dynamics_key': source_key if not is_coupling_param and source_key else None,
+                        'element_idx': None,
+                    })
     observable = expl.observable
     if observable:
         # FunctionCall: function attribute references the function
@@ -632,6 +648,26 @@ for expl in exploration_list:
             exp_info['observable_type'] = 'observation'
             exp_info['observable'] = func_name
             exp_info['output_key'] = get_pipeline_output_key(func_name) if func_name else None
+
+    # Algorithms explicitly wired to this exploration (Exploration.algorithms).
+    # Each runs AT EACH sweep point (sequentially) before the observable is
+    # computed — e.g. FIC re-tuning J_i at every E/I ratio. Fully declarative:
+    # name + n_iterations + hyperparameters are read from experiment.algorithms.
+    exp_info['algorithms'] = []
+    _exp_algos = dict(experiment.algorithms.items()) if experiment.algorithms else {}
+    for _alg_name in (list(expl.algorithms) if getattr(expl, 'algorithms', None) else []):
+        _alg = _exp_algos.get(_alg_name) or _exp_algos.get(safe_name(_alg_name))
+        assert _alg is not None, f"exploration '{exp_info['name']}' wires unknown algorithm '{_alg_name}'"
+        _hp = {}
+        for _h in (getattr(_alg, 'hyperparameters', None) or []):
+            _hp[str(_h.name)] = float(_h.value) if getattr(_h, 'value', None) is not None else 0.0
+        _nit = getattr(_alg, 'n_iterations', None)
+        assert _nit is not None, f"algorithm '{_alg_name}' missing n_iterations"
+        exp_info['algorithms'].append({
+            'name': safe_name(_alg_name),
+            'n_iterations': int(_nit),
+            'hyperparams': _hp,
+        })
     explorations.append(exp_info)
 
 has_observations = len(observations) > 0
@@ -711,7 +747,7 @@ from tvboptim.optim.callbacks import MultiCallback, DefaultPrintCallback, Saving
 % endif
 % if has_explorations:
 from tvboptim.types import Space, GridAxis, DataAxis
-from tvboptim.execution import ParallelExecution
+from tvboptim.execution import ParallelExecution, SequentialExecution
 % endif
 % for mod in derived_obs_modules:
 import ${mod}
@@ -1903,12 +1939,42 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
     % endif
 % endif
 
+% if expl['algorithms']:
+    # ── Algorithm-wired exploration (Exploration.algorithms) ─────────────────
+    # The wired algorithm chain runs AT EACH sweep point before the observable.
+    # Algorithms are iterative/stateful (Python loops, e.g. FIC) — NOT vmappable
+    # — so points execute SEQUENTIALLY. Each grid point's state arrives with its
+    # swept params already applied; we run the chain to tune it, then observe.
+    def _algo_point_fn(_pt_state):
+        import copy as _copy
+        _ps = _copy.deepcopy(_pt_state)
+% for _algo in expl['algorithms']:
+        _algo_res_${_algo['name']} = run_${_algo['name']}(
+            _ps, _expl_model_fn, jax.random.key(${random_seed}),
+            n_iterations=${_algo['n_iterations']},
+% for _hp_name, _hp_val in _algo['hyperparams'].items():
+            ${_hp_name}=${_hp_val},
+% endfor
+            history=result_transient, verbose=False,
+        )
+        _ps = _algo_res_${_algo['name']}.state
+% endfor
+        return observable_fn(_ps)
+
+% if has_axes:
+    exec_runner = SequentialExecution(_algo_point_fn, grid)
+    _grid_outputs = list(exec_runner.run())
+% else:
+    _grid_outputs = [_algo_point_fn(_expl_state)]
+% endif
+% else:
 % if has_axes:
     exec_runner = ParallelExecution(observable_fn, grid, n_pmap=n_pmap)
     _grid_outputs = list(exec_runner.run())
 % else:
     # Trial-only exploration — no parameter grid
     _grid_outputs = [observable_fn(_expl_state)]
+% endif
 % endif
     # Tree-aware stack: works for both array returns and pytree returns
     # (e.g. Bunch with data + observations when no observable is specified).
