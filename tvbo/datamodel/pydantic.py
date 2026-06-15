@@ -1254,8 +1254,7 @@ class BrainAtlas(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'slot_uri': 'schema:name'} })
     abbreviation: Optional[str] = Field(default=None, description="""Slot for the abbreviation of a resource.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas', 'CommonCoordinateSpace', 'ParcellationEntity'],
          'slot_uri': 'skos:notation'} })
@@ -1316,8 +1315,7 @@ class CommonCoordinateSpace(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'slot_uri': 'schema:name'} })
     abbreviation: Optional[str] = Field(default=None, description="""Slot for the abbreviation of a resource.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas', 'CommonCoordinateSpace', 'ParcellationEntity'],
          'slot_uri': 'skos:notation'} })
@@ -1401,8 +1399,7 @@ class ParcellationEntity(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'slot_uri': 'schema:name'} })
     ontologyIdentifier: Optional[list[str]] = Field(default=None, description="""Enter the internationalized resource identifier (IRI) to the related ontological terms.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationEntity', 'ParcellationTerminology'],
          'slot_uri': 'atom:atlas/hasIlxId'} })
@@ -2061,8 +2058,7 @@ class DBSProtocol(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'slot_uri': 'schema:name'} })
     electrodes: Optional[list[Electrode]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['DBSProtocol']} })
     settings: Optional[list[StimulationSetting]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['DBSProtocol']} })
@@ -2121,8 +2117,7 @@ class ClinicalScale(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'slot_uri': 'schema:name'} })
     version: Optional[str] = Field(default=None, description="""Version of the instrument (e.g., 3.0)""", json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
                        'SimulationTool',
@@ -2191,8 +2186,7 @@ class ClinicalScore(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'slot_uri': 'schema:name'} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
                        'ClinicalScore',
@@ -2341,8 +2335,7 @@ class SoftwarePackage(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'slot_uri': 'schema:name'} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
                        'ClinicalScore',
@@ -2484,8 +2477,7 @@ class SimulationTool(SoftwarePackage):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'slot_uri': 'schema:name'} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
                        'ClinicalScore',
@@ -2600,8 +2592,7 @@ class SoftwareRequirement(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'slot_uri': 'schema:name'} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
                        'ClinicalScore',
@@ -2737,8 +2728,7 @@ class SoftwareEnvironment(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'slot_uri': 'schema:name'} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Subject',
@@ -3226,8 +3216,7 @@ class Event(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'slot_uri': 'schema:name'} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Subject',
@@ -3629,8 +3618,7 @@ class Tractogram(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'slot_uri': 'schema:name'} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Subject',
@@ -4095,8 +4083,7 @@ class MeasureSpec(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study']} })
+                       'Coupling']} })
     task_iri: Optional[str] = Field(default=None, description="""Cognitive Atlas (``cogat:``) IRI of the assessment instrument / task that produced this measure (e.g. ``cogat:trm_4a3fd79d09cba`` for PMAT24).""", json_schema_extra = { "linkml_meta": {'domain_of': ['MeasureSpec']} })
     concept_iri: Optional[str] = Field(default=None, description="""Cognitive Atlas IRI of the cognitive construct measured (e.g. ``cogat:trm_521ef89ce5e84`` for fluid intelligence).""", json_schema_extra = { "linkml_meta": {'domain_of': ['MeasureSpec']} })
     unit: Optional[str] = Field(default=None, description="""Unit annotation (e.g. 'count', 'ms', 'z-score').""", json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
@@ -4215,8 +4202,7 @@ class NamedArray(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study']} })
+                       'Coupling']} })
     shape: Optional[list[int]] = Field(default=None, description="""Array dimensions.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Matrix', 'NamedArray', 'Parameter', 'FreeParameter', 'NDArray']} })
     dtype: Optional[str] = Field(default="float32", description="""Numpy dtype string.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Matrix', 'NamedArray', 'NDArray'],
          'ifabsent': 'string(float32)'} })
@@ -4521,8 +4507,7 @@ class GraphGenerator(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'slot_uri': 'schema:name'} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
                        'ClinicalScore',
@@ -4669,8 +4654,7 @@ class Binding(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'slot_uri': 'schema:name'} })
     library: Optional[str] = Field(default=None, description="""Native library/module providing the callable.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Binding']} })
     callable: Optional[str] = Field(default=None, description="""Name of the constructor function in the library.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Binding', 'Function', 'FunctionCall']} })
@@ -4731,8 +4715,7 @@ class ProcedureStep(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'slot_uri': 'schema:name'} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
                        'ClinicalScore',
@@ -4847,8 +4830,7 @@ class File(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'slot_uri': 'schema:name'} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
                        'ClinicalScore',
@@ -5120,8 +5102,7 @@ class StateValue(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'slot_uri': 'schema:name'} })
     value: Optional[Any] = Field(default=None, description="""Numeric, string, or boolean value. ScalarValue accepts any literal primitive type, allowing parameters to carry control flags (e.g., booleans) or symbolic placeholders alongside numeric defaults.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateValue',
                        'Parameter',
@@ -5339,8 +5320,7 @@ class Observation(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'slot_uri': 'schema:name'} })
     acronym: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
                        'ClinicalScore',
@@ -5550,8 +5530,7 @@ class Dynamics(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'ifabsent': 'Dynamics',
          'slot_uri': 'schema:name'} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
@@ -5764,8 +5743,7 @@ class StateVariable(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'slot_uri': 'schema:name'} })
     symbol: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable',
                        'Parameter',
@@ -5980,8 +5958,7 @@ class Distribution(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'ifabsent': 'string(Uniform)',
          'slot_uri': 'schema:name'} })
     parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
@@ -6057,8 +6034,7 @@ class Parameter(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'slot_uri': 'schema:name'} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Subject',
@@ -6276,8 +6252,7 @@ class CouplingInput(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'slot_uri': 'schema:name'} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
                        'ClinicalScore',
@@ -6384,8 +6359,7 @@ class Argument(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'slot_uri': 'schema:name'} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
                        'ClinicalScore',
@@ -6508,8 +6482,7 @@ class Function(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'slot_uri': 'schema:name'} })
     acronym: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
                        'ClinicalScore',
@@ -6722,8 +6695,7 @@ class LossFunction(Function):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'slot_uri': 'schema:name'} })
     acronym: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
                        'ClinicalScore',
@@ -7041,8 +7013,7 @@ class FunctionCall(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'slot_uri': 'schema:name'} })
     function: Optional[str] = Field(default=None, description="""Reference to a defined Function (by name)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Distribution', 'FunctionCall', 'Noise']} })
     callable: Optional[Callable] = Field(default=None, description="""Direct callable specification (alternative to function reference)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Binding', 'Function', 'FunctionCall']} })
@@ -7097,8 +7068,7 @@ class Callable(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'slot_uri': 'schema:name'} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
                        'ClinicalScore',
@@ -7207,8 +7177,7 @@ class ClassReference(Callable):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'slot_uri': 'schema:name'} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
                        'ClinicalScore',
@@ -7331,8 +7300,7 @@ class DerivedParameter(Parameter):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'slot_uri': 'schema:name'} })
     symbol: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable',
                        'Parameter',
@@ -7549,8 +7517,7 @@ class DerivedVariable(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'slot_uri': 'schema:name'} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Subject',
@@ -7907,8 +7874,7 @@ class DataSource(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'slot_uri': 'schema:name'} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Subject',
@@ -8063,8 +8029,7 @@ class OptimizationStage(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'slot_uri': 'schema:name'} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Subject',
@@ -8231,8 +8196,7 @@ class Optimization(OptimizationStage):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'slot_uri': 'schema:name'} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Subject',
@@ -8390,8 +8354,7 @@ class Exploration(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'slot_uri': 'schema:name'} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Subject',
@@ -8831,8 +8794,7 @@ class UpdateRule(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'slot_uri': 'schema:name'} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
                        'ClinicalScore',
@@ -9084,8 +9046,7 @@ class Algorithm(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'slot_uri': 'schema:name'} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
                        'ClinicalScore',
@@ -9217,8 +9178,7 @@ class Option(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'slot_uri': 'schema:name'} })
     value: str = Field(default=..., description="""Option value.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateValue',
                        'Parameter',
@@ -9322,8 +9282,7 @@ class BranchSwitch(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'slot_uri': 'schema:name'} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
                        'ClinicalScore',
@@ -9451,8 +9410,7 @@ class Continuation(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'slot_uri': 'schema:name'} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Subject',
@@ -9759,8 +9717,7 @@ class Coupling(ConfiguredBaseModel):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'ifabsent': 'Linear',
          'slot_uri': 'schema:name'} })
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
@@ -10207,57 +10164,8 @@ class Study(ConfiguredBaseModel):
     """
     Bibliographic anchor for a source publication, identified by its citation key (``citekey``).  The full bibliographic record lives in the project BibTeX library (references.bib) and is resolved by citekey; this node carries only identity, display fields and the knowledge-graph hooks (the concepts that cite it).  Specialised by SimulationStudy, which adds the experiments derived from the source.
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Study',
-         'from_schema': 'https://w3id.org/tvbo',
-         'slot_usage': {'name': {'description': 'Optional display name. A study is '
-                                                'identified by its citation key '
-                                                '(``key``/``citekey``) and described '
-                                                'by its ``title`` — a ``name`` is not '
-                                                'required.',
-                                 'name': 'name',
-                                 'required': False}}})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Study', 'from_schema': 'https://w3id.org/tvbo'})
 
-    name: str = Field(default=..., description="""Optional display name. A study is identified by its citation key (``key``/``citekey``) and described by its ``title`` — a ``name`` is not required.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
-                       'CommonCoordinateSpace',
-                       'ParcellationEntity',
-                       'DBSProtocol',
-                       'ClinicalScale',
-                       'ClinicalScore',
-                       'SoftwarePackage',
-                       'SoftwareRequirement',
-                       'SoftwareEnvironment',
-                       'Event',
-                       'Tractogram',
-                       'MeasureSpec',
-                       'NamedArray',
-                       'GraphGenerator',
-                       'Binding',
-                       'ProcedureStep',
-                       'File',
-                       'StateValue',
-                       'Observation',
-                       'Dynamics',
-                       'StateVariable',
-                       'Distribution',
-                       'Parameter',
-                       'CouplingInput',
-                       'Argument',
-                       'Function',
-                       'FunctionCall',
-                       'Callable',
-                       'DerivedParameter',
-                       'DerivedVariable',
-                       'DataSource',
-                       'OptimizationStage',
-                       'Exploration',
-                       'UpdateRule',
-                       'Algorithm',
-                       'Option',
-                       'BranchSwitch',
-                       'Continuation',
-                       'Coupling',
-                       'Study'],
-         'slot_uri': 'schema:name'} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
                        'ClinicalScore',
                        'SoftwarePackage',
@@ -10314,7 +10222,7 @@ class Study(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE'],
          'slot_uri': 'dcterms:description'} })
-    citekey: Optional[str] = Field(default=None, description="""BibTeX citation key; the join key into references.bib for full bibliographic detail.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Study']} })
+    citekey: Optional[str] = Field(default=None, description="""BibTeX citation key; the join key into references.bib for full bibliographic detail. A study is identified by its key/citekey and described by its title — no ``name`` needed.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Study']} })
     type: Optional[str] = Field(default=None, description="""Publication type (article, book, inproceedings, …).""", json_schema_extra = { "linkml_meta": {'domain_of': ['GraphGenerator',
                        'File',
                        'Aggregation',
@@ -10387,47 +10295,6 @@ class SimulationStudy(Study):
     key: Optional[str] = Field(default=None, description="""Deprecated alias of the inherited ``citekey``; retained for back-compatibility with existing tooling.""", json_schema_extra = { "linkml_meta": {'domain_of': ['DataSource', 'SimulationStudy']} })
     sample: Optional[Sample] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationStudy']} })
     experiments: Optional[list[SimulationExperiment]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationStudy']} })
-    name: str = Field(default=..., description="""Optional display name. A study is identified by its citation key (``key``/``citekey``) and described by its ``title`` — a ``name`` is not required.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
-                       'CommonCoordinateSpace',
-                       'ParcellationEntity',
-                       'DBSProtocol',
-                       'ClinicalScale',
-                       'ClinicalScore',
-                       'SoftwarePackage',
-                       'SoftwareRequirement',
-                       'SoftwareEnvironment',
-                       'Event',
-                       'Tractogram',
-                       'MeasureSpec',
-                       'NamedArray',
-                       'GraphGenerator',
-                       'Binding',
-                       'ProcedureStep',
-                       'File',
-                       'StateValue',
-                       'Observation',
-                       'Dynamics',
-                       'StateVariable',
-                       'Distribution',
-                       'Parameter',
-                       'CouplingInput',
-                       'Argument',
-                       'Function',
-                       'FunctionCall',
-                       'Callable',
-                       'DerivedParameter',
-                       'DerivedVariable',
-                       'DataSource',
-                       'OptimizationStage',
-                       'Exploration',
-                       'UpdateRule',
-                       'Algorithm',
-                       'Option',
-                       'BranchSwitch',
-                       'Continuation',
-                       'Coupling',
-                       'Study'],
-         'slot_uri': 'schema:name'} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
                        'ClinicalScore',
                        'SoftwarePackage',
@@ -10484,7 +10351,7 @@ class SimulationStudy(Study):
                        'PDESolver',
                        'PDE'],
          'slot_uri': 'dcterms:description'} })
-    citekey: Optional[str] = Field(default=None, description="""BibTeX citation key; the join key into references.bib for full bibliographic detail.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Study']} })
+    citekey: Optional[str] = Field(default=None, description="""BibTeX citation key; the join key into references.bib for full bibliographic detail. A study is identified by its key/citekey and described by its title — no ``name`` needed.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Study']} })
     type: Optional[str] = Field(default=None, description="""Publication type (article, book, inproceedings, …).""", json_schema_extra = { "linkml_meta": {'domain_of': ['GraphGenerator',
                        'File',
                        'Aggregation',
@@ -11321,8 +11188,7 @@ class FieldStateVariable(StateVariable):
                        'Option',
                        'BranchSwitch',
                        'Continuation',
-                       'Coupling',
-                       'Study'],
+                       'Coupling'],
          'slot_uri': 'schema:name'} })
     symbol: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable',
                        'Parameter',
