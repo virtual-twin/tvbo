@@ -1,6 +1,7 @@
 import importlib
 import inspect
 from types import FunctionType
+from typing import Any
 
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -687,7 +688,7 @@ class ObservationModel:
         )
         return TimeSeries(time, data)
 
-    def get_function_output(self, function_name):
+    def get_function_output(self, function_name) -> Any:
         """
         Get the output of a specific function after execution.
 

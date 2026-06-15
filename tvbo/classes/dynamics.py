@@ -11,6 +11,7 @@ import os
 import re
 import tempfile
 from os.path import basename, dirname, join, splitext
+from typing import Any
 
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -133,7 +134,7 @@ def order_by_equations(derived_variables, dependent_equations):
     return ordered_dict
 
 
-def class2metadata(ontoclass, metadata):
+def class2metadata(ontoclass: Any, metadata: Any):
     """Populate a `Dynamics` metadata object from an owlready2 ontology class.
 
     Fills in description, state variables (with equations, boundaries, and
@@ -541,7 +542,7 @@ def update_equations(model):
     return equations
 
 
-def sort_equations(model, variable_type):
+def sort_equations(model: Any, variable_type: str):
     """Reorder `model[variable_type]` by topological dependency order, in place.
 
     Resolves the model's equation dependency DAG and reorders the variables

@@ -5,13 +5,22 @@
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
 # Licensed under the EUPL-1.2-or-later
 #
+from typing import Any, Optional
+
 from matplotlib import colormaps
 import matplotlib.pyplot as plt
 import numpy as np
 
 
 # TODO: bands, colors params. not used, remove?
-def plot_power_spectrum(frequency, power, bands=None, colors=None, ax=None, label="simulation"):
+def plot_power_spectrum(
+    frequency: np.ndarray,
+    power: np.ndarray,
+    bands: Optional[dict] = None,
+    colors: Any = None,
+    ax: Any = None,
+    label: str = "simulation",
+):
     """Plot a log-log power spectrum with shaded canonical EEG frequency bands.
 
     Args:

@@ -5,6 +5,8 @@
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
 # Licensed under the EUPL-1.2-or-later
 #
+from typing import Any, Optional
+
 import matplotlib.pyplot as plt
 import numpy as np
 import owlready2 as owl
@@ -14,7 +16,7 @@ from tvbo.ontology import owl as ontology, config  # Assuming this module handle
 from tvbo.classes import equation as equations
 
 
-def plot_coupling_function(CF, ax=None):
+def plot_coupling_function(CF: Any, ax: Any = None):
     """Plot a `CouplingFunction`'s response curve over a sensible input range.
 
     Picks the input domain based on the function's name (`±π` for Kuramoto,
@@ -116,7 +118,14 @@ def plot_coupling_function(CF, ax=None):
         return fig
 
 
-def plot_temporal_equation(EQ, t_ms, title="Stimulation pulse sequence", plot_kwargs=None, ax=None, **kwargs):
+def plot_temporal_equation(
+    EQ: Any,
+    t_ms: Any,
+    title: str = "Stimulation pulse sequence",
+    plot_kwargs: Optional[dict] = None,
+    ax: Any = None,
+    **kwargs: Any,
+):
     """Plot a temporal equation (SymPy expression or ontology entity) over a time vector.
 
     Substitutes ontology-curated default parameters (overridable via
