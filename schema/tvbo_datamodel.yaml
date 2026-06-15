@@ -1144,20 +1144,23 @@ classes:
         class_uri: tvbo:GraphGenerator
         description: >
             Backend-agnostic graph generator specification.  Captures the
-            mathematical family (type) and its parameters so that each backend
-            can emit the correct constructor call (Graphs.jl, NetworkX, etc.).
-            The number of nodes is always taken from Network.number_of_nodes.
+            mathematical family and its parameter declarations so that each
+            backend can emit the correct constructor call (Graphs.jl, NetworkX,
+            etc.) via per-backend ``bindings``; derived generators may also
+            carry a symbolic ``procedure``.  The number of nodes is always
+            taken from Network.number_of_nodes.
         slots:
             - name
             - description
+            - iri
         attributes:
             type:
                 range: string
-                required: true
                 description: >
-                    Graph family name.  Use a StandardGraphType value for
-                    automatic backend mapping, or any custom string for
-                    documentation purposes.
+                    Optional graph family name.  Use a StandardGraphType value
+                    for automatic backend mapping, or any custom string for
+                    documentation purposes.  When absent, the backend
+                    ``bindings`` determine construction directly.
             seed:
                 range: integer
                 description: "Random seed for reproducible graph generation."
@@ -1166,12 +1169,29 @@ classes:
                 ifabsent: boolean(false)
                 description: "Whether to generate a directed graph."
             parameters:
-                range: Parameter
+                range: ParameterSpec
                 multivalued: true
                 inlined: true
                 description: >
-                    Generator parameters (e.g. k, p, dims).  Names are
-                    matched by the backend mapping to construct the call.
+                    Declared generator parameters (e.g. n, k, p, seed), keyed
+                    by name.  Each declaration carries its datatype (``range``)
+                    and default; the backend ``bindings`` map names to the
+                    native constructor call.
+            bindings:
+                range: Binding
+                multivalued: true
+                inlined: true
+                description: >
+                    Per-backend construction bindings, keyed by backend id
+                    (e.g. python, julia, networkx).  Each names the native
+                    library, callable and the ordered parameter names to pass.
+            procedure:
+                range: Procedure
+                inlined: true
+                description: >
+                    Optional symbolic procedure for derived generators
+                    (e.g. null-model shuffles): ordered steps and named
+                    outputs, each carrying an Equation.
             builder:
                 range: Callable
                 inlined: true
@@ -1186,6 +1206,81 @@ classes:
                     ``module`` is its dotted module path). Reuses the same
                     idiom as TVB monitor class references; no free
                     ``module:function`` strings.
+
+    ParameterSpec:
+        class_uri: tvbo:ParameterSpec
+        description: >-
+            Declaration of a single generator/procedure parameter: its name,
+            datatype and default.  Distinct from Parameter (which carries a
+            concrete value) — a ParameterSpec describes the input contract.
+        slots:
+            - name
+            - description
+        attributes:
+            range:
+                range: string
+                description: >-
+                    Datatype of the parameter (e.g. integer, string,
+                    uriorcurie, float).
+            required:
+                range: boolean
+                ifabsent: boolean(true)
+                description: "Whether the parameter must be supplied."
+            ifabsent:
+                range: string
+                description: "Default value applied when the parameter is absent."
+
+    Binding:
+        class_uri: tvbo:Binding
+        description: >-
+            Per-backend construction binding for a GraphGenerator: how to build
+            the graph in a specific target library.  Keyed by backend id — the
+            ``name`` is the backend (e.g. python, julia, networkx).
+        slots:
+            - name
+        attributes:
+            library:
+                range: string
+                description: "Native library/module providing the callable."
+            callable:
+                range: string
+                description: "Name of the constructor function in the library."
+            args:
+                range: string
+                multivalued: true
+                description: "Ordered parameter names passed to the callable."
+
+    Procedure:
+        class_uri: tvbo:Procedure
+        description: >-
+            Symbolic procedure: an ordered list of steps producing named
+            outputs.  Documents a derived generator's algorithm independently
+            of any backend binding.
+        attributes:
+            steps:
+                range: ProcedureStep
+                multivalued: true
+                inlined_as_list: true
+                description: "Ordered intermediate steps."
+            output:
+                range: ProcedureStep
+                multivalued: true
+                inlined: true
+                description: "Named outputs (keyed by name), e.g. 'weights'."
+
+    ProcedureStep:
+        class_uri: tvbo:ProcedureStep
+        description: >-
+            A single named step (or output) in a Procedure, carrying the
+            Equation that defines it.
+        slots:
+            - name
+            - description
+        attributes:
+            equation:
+                range: Equation
+                inlined: true
+                description: "The equation defining this step/output."
 
     File:
         class_uri: tvbo:File
@@ -2293,6 +2388,20 @@ classes:
                     Hyper-parameters of the exploration itself (e.g. tolerances,
                     sampler settings, grid-refinement controls). Distinct from
                     `space`, which defines what is being swept.
+            algorithms:
+                multivalued: true
+                range: string
+                description: >-
+                    Names of the experiment's algorithms (keys in
+                    `experiment.algorithms`) to run AT EACH exploration point, in
+                    order, BEFORE computing the observable. Explicitly wires
+                    algorithms into the exploration so per-point tuning / constraints
+                    are applied at every sweep point — e.g. FIC re-tuning J_i at each
+                    E/I ratio. With this set, the sweep evaluates the full
+                    algorithm→observation pipeline per point (executed sequentially),
+                    not a bare simulation. Empty/absent = bare simulation per point.
+                    This is the declarative replacement for any Python per-point
+                    driver: the composition is derived entirely from YAML metadata.
             mode:
                 range: string
                 ifabsent: string(product)
@@ -3253,27 +3362,56 @@ classes:
                     render_workflow() uses dataset.subjects/sessions to generate
                     per-subject parallel jobs.
 
-    SimulationStudy:
-        class_uri: tvbo:SimulationStudy
-        # tree_root: true
+    Study:
+        class_uri: tvbo:Study
+        description: >-
+            Bibliographic anchor for a source publication, identified by its
+            citation key (``citekey``).  The full bibliographic record lives in
+            the project BibTeX library (references.bib) and is resolved by
+            citekey; this node carries only identity, display fields and the
+            knowledge-graph hooks (the concepts that cite it).  Specialised by
+            SimulationStudy, which adds the experiments derived from the source.
         slots:
-            - label
-            - derived_from
-            - model
+            - name
             - description
-            - references
         attributes:
-            key:
+            citekey:
                 range: string
+                description: >-
+                    BibTeX citation key; the join key into references.bib for
+                    full bibliographic detail.
+            type:
+                range: string
+                description: "Publication type (article, book, inproceedings, …)."
             title:
                 range: string
                 slot_uri: dcterms:title
+            authors:
+                range: string
+                multivalued: true
+                description: "Author display strings (full detail in references.bib)."
             year:
                 range: integer
                 slot_uri: dcterms:issued
             doi:
                 range: string
                 slot_uri: bibo:doi
+
+    SimulationStudy:
+        class_uri: tvbo:SimulationStudy
+        is_a: Study
+        # tree_root: true
+        slots:
+            - label
+            - derived_from
+            - model
+            - references
+        attributes:
+            key:
+                range: string
+                description: >-
+                    Deprecated alias of the inherited ``citekey``; retained for
+                    back-compatibility with existing tooling.
             sample:
                 range: Sample
             simulation_experiments:

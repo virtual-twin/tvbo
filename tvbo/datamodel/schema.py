@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-06-15T12:49:49
+# Generation date: 2026-06-15T15:38:23
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -105,6 +105,18 @@ class GraphGeneratorName(extended_str):
     pass
 
 
+class ParameterSpecName(extended_str):
+    pass
+
+
+class BindingName(extended_str):
+    pass
+
+
+class ProcedureStepName(extended_str):
+    pass
+
+
 class FileName(extended_str):
     pass
 
@@ -206,6 +218,14 @@ class CouplingName(extended_str):
 
 
 class SimulationExperimentId(extended_int):
+    pass
+
+
+class StudyName(extended_str):
+    pass
+
+
+class SimulationStudyName(StudyName):
     pass
 
 
@@ -1160,9 +1180,10 @@ class Network(YAMLRoot):
 @dataclass(repr=False)
 class GraphGenerator(YAMLRoot):
     """
-    Backend-agnostic graph generator specification. Captures the mathematical family (type) and its parameters so that
-    each backend can emit the correct constructor call (Graphs.jl, NetworkX, etc.). The number of nodes is always
-    taken from Network.number_of_nodes.
+    Backend-agnostic graph generator specification. Captures the mathematical family and its parameter declarations so
+    that each backend can emit the correct constructor call (Graphs.jl, NetworkX, etc.) via per-backend ``bindings``;
+    derived generators may also carry a symbolic ``procedure``. The number of nodes is always taken from
+    Network.number_of_nodes.
     """
     _inherited_slots: ClassVar[list[str]] = []
 
@@ -1172,11 +1193,14 @@ class GraphGenerator(YAMLRoot):
     class_model_uri: ClassVar[URIRef] = TVBO.GraphGenerator
 
     name: Union[str, GraphGeneratorName] = None
-    type: str = None
     description: Optional[str] = None
+    iri: Optional[Union[str, URIorCURIE]] = None
+    type: Optional[str] = None
     seed: Optional[int] = None
     directed: Optional[Union[bool, Bool]] = False
-    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
+    parameters: Optional[Union[dict[Union[str, ParameterSpecName], Union[dict, "ParameterSpec"]], list[Union[dict, "ParameterSpec"]]]] = empty_dict()
+    bindings: Optional[Union[dict[Union[str, BindingName], Union[dict, "Binding"]], list[Union[dict, "Binding"]]]] = empty_dict()
+    procedure: Optional[Union[dict, "Procedure"]] = None
     builder: Optional[Union[dict, "Callable"]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
@@ -1185,13 +1209,14 @@ class GraphGenerator(YAMLRoot):
         if not isinstance(self.name, GraphGeneratorName):
             self.name = GraphGeneratorName(self.name)
 
-        if self._is_empty(self.type):
-            self.MissingRequiredField("type")
-        if not isinstance(self.type, str):
-            self.type = str(self.type)
-
         if self.description is not None and not isinstance(self.description, str):
             self.description = str(self.description)
+
+        if self.iri is not None and not isinstance(self.iri, URIorCURIE):
+            self.iri = URIorCURIE(self.iri)
+
+        if self.type is not None and not isinstance(self.type, str):
+            self.type = str(self.type)
 
         if self.seed is not None and not isinstance(self.seed, int):
             self.seed = int(self.seed)
@@ -1199,10 +1224,147 @@ class GraphGenerator(YAMLRoot):
         if self.directed is not None and not isinstance(self.directed, Bool):
             self.directed = Bool(self.directed)
 
-        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
+        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=ParameterSpec, key_name="name", keyed=True)
+
+        self._normalize_inlined_as_dict(slot_name="bindings", slot_type=Binding, key_name="name", keyed=True)
+
+        if self.procedure is not None and not isinstance(self.procedure, Procedure):
+            self.procedure = Procedure(**as_dict(self.procedure))
 
         if self.builder is not None and not isinstance(self.builder, Callable):
             self.builder = Callable(**as_dict(self.builder))
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
+class ParameterSpec(YAMLRoot):
+    """
+    Declaration of a single generator/procedure parameter: its name, datatype and default. Distinct from Parameter
+    (which carries a concrete value) — a ParameterSpec describes the input contract.
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO["ParameterSpec"]
+    class_class_curie: ClassVar[str] = "tvbo:ParameterSpec"
+    class_name: ClassVar[str] = "ParameterSpec"
+    class_model_uri: ClassVar[URIRef] = TVBO.ParameterSpec
+
+    name: Union[str, ParameterSpecName] = None
+    description: Optional[str] = None
+    range: Optional[str] = None
+    required: Optional[Union[bool, Bool]] = True
+    ifabsent: Optional[str] = None
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self._is_empty(self.name):
+            self.MissingRequiredField("name")
+        if not isinstance(self.name, ParameterSpecName):
+            self.name = ParameterSpecName(self.name)
+
+        if self.description is not None and not isinstance(self.description, str):
+            self.description = str(self.description)
+
+        if self.range is not None and not isinstance(self.range, str):
+            self.range = str(self.range)
+
+        if self.required is not None and not isinstance(self.required, Bool):
+            self.required = Bool(self.required)
+
+        if self.ifabsent is not None and not isinstance(self.ifabsent, str):
+            self.ifabsent = str(self.ifabsent)
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
+class Binding(YAMLRoot):
+    """
+    Per-backend construction binding for a GraphGenerator: how to build the graph in a specific target library. Keyed
+    by backend id — the ``name`` is the backend (e.g. python, julia, networkx).
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO["Binding"]
+    class_class_curie: ClassVar[str] = "tvbo:Binding"
+    class_name: ClassVar[str] = "Binding"
+    class_model_uri: ClassVar[URIRef] = TVBO.Binding
+
+    name: Union[str, BindingName] = None
+    library: Optional[str] = None
+    callable: Optional[str] = None
+    args: Optional[Union[str, list[str]]] = empty_list()
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self._is_empty(self.name):
+            self.MissingRequiredField("name")
+        if not isinstance(self.name, BindingName):
+            self.name = BindingName(self.name)
+
+        if self.library is not None and not isinstance(self.library, str):
+            self.library = str(self.library)
+
+        if self.callable is not None and not isinstance(self.callable, str):
+            self.callable = str(self.callable)
+
+        if not isinstance(self.args, list):
+            self.args = [self.args] if self.args is not None else []
+        self.args = [v if isinstance(v, str) else str(v) for v in self.args]
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
+class Procedure(YAMLRoot):
+    """
+    Symbolic procedure: an ordered list of steps producing named outputs. Documents a derived generator's algorithm
+    independently of any backend binding.
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO["Procedure"]
+    class_class_curie: ClassVar[str] = "tvbo:Procedure"
+    class_name: ClassVar[str] = "Procedure"
+    class_model_uri: ClassVar[URIRef] = TVBO.Procedure
+
+    steps: Optional[Union[dict[Union[str, ProcedureStepName], Union[dict, "ProcedureStep"]], list[Union[dict, "ProcedureStep"]]]] = empty_dict()
+    output: Optional[Union[dict[Union[str, ProcedureStepName], Union[dict, "ProcedureStep"]], list[Union[dict, "ProcedureStep"]]]] = empty_dict()
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        self._normalize_inlined_as_list(slot_name="steps", slot_type=ProcedureStep, key_name="name", keyed=True)
+
+        self._normalize_inlined_as_dict(slot_name="output", slot_type=ProcedureStep, key_name="name", keyed=True)
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
+class ProcedureStep(YAMLRoot):
+    """
+    A single named step (or output) in a Procedure, carrying the Equation that defines it.
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO["ProcedureStep"]
+    class_class_curie: ClassVar[str] = "tvbo:ProcedureStep"
+    class_name: ClassVar[str] = "ProcedureStep"
+    class_model_uri: ClassVar[URIRef] = TVBO.ProcedureStep
+
+    name: Union[str, ProcedureStepName] = None
+    description: Optional[str] = None
+    equation: Optional[Union[dict, Equation]] = None
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self._is_empty(self.name):
+            self.MissingRequiredField("name")
+        if not isinstance(self.name, ProcedureStepName):
+            self.name = ProcedureStepName(self.name)
+
+        if self.description is not None and not isinstance(self.description, str):
+            self.description = str(self.description)
+
+        if self.equation is not None and not isinstance(self.equation, Equation):
+            self.equation = Equation(**as_dict(self.equation))
 
         super().__post_init__(**kwargs)
 
@@ -2685,6 +2847,7 @@ class Exploration(YAMLRoot):
     execution: Optional[Union[dict, "ExecutionConfig"]] = None
     space: Optional[Union[Union[dict, "ExplorationAxis"], list[Union[dict, "ExplorationAxis"]]]] = empty_list()
     parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
+    algorithms: Optional[Union[str, list[str]]] = empty_list()
     mode: Optional[str] = "product"
     observable: Optional[Union[dict, FunctionCall]] = None
     n_parallel: Optional[int] = 1
@@ -2713,6 +2876,10 @@ class Exploration(YAMLRoot):
         self.space = [v if isinstance(v, ExplorationAxis) else ExplorationAxis(**as_dict(v)) for v in self.space]
 
         self._normalize_inlined_as_list(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
+
+        if not isinstance(self.algorithms, list):
+            self.algorithms = [self.algorithms] if self.algorithms is not None else []
+        self.algorithms = [v if isinstance(v, str) else str(v) for v in self.algorithms]
 
         if self.mode is not None and not isinstance(self.mode, str):
             self.mode = str(self.mode)
@@ -3771,7 +3938,62 @@ class SimulationExperiment(YAMLRoot):
 
 
 @dataclass(repr=False)
-class SimulationStudy(YAMLRoot):
+class Study(YAMLRoot):
+    """
+    Bibliographic anchor for a source publication, identified by its citation key (``citekey``). The full
+    bibliographic record lives in the project BibTeX library (references.bib) and is resolved by citekey; this node
+    carries only identity, display fields and the knowledge-graph hooks (the concepts that cite it). Specialised by
+    SimulationStudy, which adds the experiments derived from the source.
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO["Study"]
+    class_class_curie: ClassVar[str] = "tvbo:Study"
+    class_name: ClassVar[str] = "Study"
+    class_model_uri: ClassVar[URIRef] = TVBO.Study
+
+    name: Union[str, StudyName] = None
+    description: Optional[str] = None
+    citekey: Optional[str] = None
+    type: Optional[str] = None
+    title: Optional[str] = None
+    authors: Optional[Union[str, list[str]]] = empty_list()
+    year: Optional[int] = None
+    doi: Optional[str] = None
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self._is_empty(self.name):
+            self.MissingRequiredField("name")
+        if not isinstance(self.name, StudyName):
+            self.name = StudyName(self.name)
+
+        if self.description is not None and not isinstance(self.description, str):
+            self.description = str(self.description)
+
+        if self.citekey is not None and not isinstance(self.citekey, str):
+            self.citekey = str(self.citekey)
+
+        if self.type is not None and not isinstance(self.type, str):
+            self.type = str(self.type)
+
+        if self.title is not None and not isinstance(self.title, str):
+            self.title = str(self.title)
+
+        if not isinstance(self.authors, list):
+            self.authors = [self.authors] if self.authors is not None else []
+        self.authors = [v if isinstance(v, str) else str(v) for v in self.authors]
+
+        if self.year is not None and not isinstance(self.year, int):
+            self.year = int(self.year)
+
+        if self.doi is not None and not isinstance(self.doi, str):
+            self.doi = str(self.doi)
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
+class SimulationStudy(Study):
     _inherited_slots: ClassVar[list[str]] = []
 
     class_class_uri: ClassVar[URIRef] = TVBO["SimulationStudy"]
@@ -3779,19 +4001,21 @@ class SimulationStudy(YAMLRoot):
     class_name: ClassVar[str] = "SimulationStudy"
     class_model_uri: ClassVar[URIRef] = TVBO.SimulationStudy
 
+    name: Union[str, SimulationStudyName] = None
     label: Optional[str] = None
     derived_from: Optional[str] = None
     model: Optional[Union[str, DynamicsName]] = None
-    description: Optional[str] = None
     references: Optional[Union[str, list[str]]] = empty_list()
     key: Optional[str] = None
-    title: Optional[str] = None
-    year: Optional[int] = None
-    doi: Optional[str] = None
     sample: Optional[Union[dict, Sample]] = None
     experiments: Optional[Union[dict[Union[int, SimulationExperimentId], Union[dict, SimulationExperiment]], list[Union[dict, SimulationExperiment]]]] = empty_dict()
 
     def __post_init__(self, *_: str, **kwargs: Any):
+        if self._is_empty(self.name):
+            self.MissingRequiredField("name")
+        if not isinstance(self.name, SimulationStudyName):
+            self.name = SimulationStudyName(self.name)
+
         if self.label is not None and not isinstance(self.label, str):
             self.label = str(self.label)
 
@@ -3801,24 +4025,12 @@ class SimulationStudy(YAMLRoot):
         if self.model is not None and not isinstance(self.model, DynamicsName):
             self.model = DynamicsName(self.model)
 
-        if self.description is not None and not isinstance(self.description, str):
-            self.description = str(self.description)
-
         if not isinstance(self.references, list):
             self.references = [self.references] if self.references is not None else []
         self.references = [v if isinstance(v, str) else str(v) for v in self.references]
 
         if self.key is not None and not isinstance(self.key, str):
             self.key = str(self.key)
-
-        if self.title is not None and not isinstance(self.title, str):
-            self.title = str(self.title)
-
-        if self.year is not None and not isinstance(self.year, int):
-            self.year = int(self.year)
-
-        if self.doi is not None and not isinstance(self.doi, str):
-            self.doi = str(self.doi)
 
         if self.sample is not None and not isinstance(self.sample, Sample):
             self.sample = Sample(**as_dict(self.sample))
@@ -7027,7 +7239,7 @@ slots.network__graph_generator = Slot(uri=TVBO.graph_generator, name="network__g
                    model_uri=TVBO.network__graph_generator, domain=None, range=Optional[Union[dict, GraphGenerator]])
 
 slots.graphGenerator__type = Slot(uri=TVBO.type, name="graphGenerator__type", curie=TVBO.curie('type'),
-                   model_uri=TVBO.graphGenerator__type, domain=None, range=str)
+                   model_uri=TVBO.graphGenerator__type, domain=None, range=Optional[str])
 
 slots.graphGenerator__seed = Slot(uri=TVBO.seed, name="graphGenerator__seed", curie=TVBO.curie('seed'),
                    model_uri=TVBO.graphGenerator__seed, domain=None, range=Optional[int])
@@ -7036,10 +7248,43 @@ slots.graphGenerator__directed = Slot(uri=TVBO.directed, name="graphGenerator__d
                    model_uri=TVBO.graphGenerator__directed, domain=None, range=Optional[Union[bool, Bool]])
 
 slots.graphGenerator__parameters = Slot(uri=TVBO.parameters, name="graphGenerator__parameters", curie=TVBO.curie('parameters'),
-                   model_uri=TVBO.graphGenerator__parameters, domain=None, range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]])
+                   model_uri=TVBO.graphGenerator__parameters, domain=None, range=Optional[Union[dict[Union[str, ParameterSpecName], Union[dict, ParameterSpec]], list[Union[dict, ParameterSpec]]]])
+
+slots.graphGenerator__bindings = Slot(uri=TVBO.bindings, name="graphGenerator__bindings", curie=TVBO.curie('bindings'),
+                   model_uri=TVBO.graphGenerator__bindings, domain=None, range=Optional[Union[dict[Union[str, BindingName], Union[dict, Binding]], list[Union[dict, Binding]]]])
+
+slots.graphGenerator__procedure = Slot(uri=TVBO.procedure, name="graphGenerator__procedure", curie=TVBO.curie('procedure'),
+                   model_uri=TVBO.graphGenerator__procedure, domain=None, range=Optional[Union[dict, Procedure]])
 
 slots.graphGenerator__builder = Slot(uri=TVBO.builder, name="graphGenerator__builder", curie=TVBO.curie('builder'),
                    model_uri=TVBO.graphGenerator__builder, domain=None, range=Optional[Union[dict, Callable]])
+
+slots.parameterSpec__range = Slot(uri=TVBO.range, name="parameterSpec__range", curie=TVBO.curie('range'),
+                   model_uri=TVBO.parameterSpec__range, domain=None, range=Optional[str])
+
+slots.parameterSpec__required = Slot(uri=TVBO.required, name="parameterSpec__required", curie=TVBO.curie('required'),
+                   model_uri=TVBO.parameterSpec__required, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.parameterSpec__ifabsent = Slot(uri=TVBO.ifabsent, name="parameterSpec__ifabsent", curie=TVBO.curie('ifabsent'),
+                   model_uri=TVBO.parameterSpec__ifabsent, domain=None, range=Optional[str])
+
+slots.binding__library = Slot(uri=TVBO.library, name="binding__library", curie=TVBO.curie('library'),
+                   model_uri=TVBO.binding__library, domain=None, range=Optional[str])
+
+slots.binding__callable = Slot(uri=TVBO.callable, name="binding__callable", curie=TVBO.curie('callable'),
+                   model_uri=TVBO.binding__callable, domain=None, range=Optional[str])
+
+slots.binding__args = Slot(uri=TVBO.args, name="binding__args", curie=TVBO.curie('args'),
+                   model_uri=TVBO.binding__args, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.procedure__steps = Slot(uri=TVBO.steps, name="procedure__steps", curie=TVBO.curie('steps'),
+                   model_uri=TVBO.procedure__steps, domain=None, range=Optional[Union[dict[Union[str, ProcedureStepName], Union[dict, ProcedureStep]], list[Union[dict, ProcedureStep]]]])
+
+slots.procedure__output = Slot(uri=TVBO.output, name="procedure__output", curie=TVBO.curie('output'),
+                   model_uri=TVBO.procedure__output, domain=None, range=Optional[Union[dict[Union[str, ProcedureStepName], Union[dict, ProcedureStep]], list[Union[dict, ProcedureStep]]]])
+
+slots.procedureStep__equation = Slot(uri=TVBO.equation, name="procedureStep__equation", curie=TVBO.curie('equation'),
+                   model_uri=TVBO.procedureStep__equation, domain=None, range=Optional[Union[dict, Equation]])
 
 slots.file__type = Slot(uri=TVBO.type, name="file__type", curie=TVBO.curie('type'),
                    model_uri=TVBO.file__type, domain=None, range=Optional[str])
@@ -7509,6 +7754,9 @@ slots.exploration__space = Slot(uri=TVBO.space, name="exploration__space", curie
 slots.exploration__parameters = Slot(uri=TVBO.parameters, name="exploration__parameters", curie=TVBO.curie('parameters'),
                    model_uri=TVBO.exploration__parameters, domain=None, range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]])
 
+slots.exploration__algorithms = Slot(uri=TVBO.algorithms, name="exploration__algorithms", curie=TVBO.curie('algorithms'),
+                   model_uri=TVBO.exploration__algorithms, domain=None, range=Optional[Union[str, list[str]]])
+
 slots.exploration__mode = Slot(uri=TVBO.mode, name="exploration__mode", curie=TVBO.curie('mode'),
                    model_uri=TVBO.exploration__mode, domain=None, range=Optional[str])
 
@@ -7956,17 +8204,26 @@ slots.simulationExperiment__software = Slot(uri=TVBO.software, name="simulationE
 slots.simulationExperiment__dataset = Slot(uri=TVBO.dataset, name="simulationExperiment__dataset", curie=TVBO.curie('dataset'),
                    model_uri=TVBO.simulationExperiment__dataset, domain=None, range=Optional[Union[dict, Dataset]])
 
+slots.study__citekey = Slot(uri=TVBO.citekey, name="study__citekey", curie=TVBO.curie('citekey'),
+                   model_uri=TVBO.study__citekey, domain=None, range=Optional[str])
+
+slots.study__type = Slot(uri=TVBO.type, name="study__type", curie=TVBO.curie('type'),
+                   model_uri=TVBO.study__type, domain=None, range=Optional[str])
+
+slots.study__title = Slot(uri=DCTERMS.title, name="study__title", curie=DCTERMS.curie('title'),
+                   model_uri=TVBO.study__title, domain=None, range=Optional[str])
+
+slots.study__authors = Slot(uri=TVBO.authors, name="study__authors", curie=TVBO.curie('authors'),
+                   model_uri=TVBO.study__authors, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.study__year = Slot(uri=DCTERMS.issued, name="study__year", curie=DCTERMS.curie('issued'),
+                   model_uri=TVBO.study__year, domain=None, range=Optional[int])
+
+slots.study__doi = Slot(uri=BIBO.doi, name="study__doi", curie=BIBO.curie('doi'),
+                   model_uri=TVBO.study__doi, domain=None, range=Optional[str])
+
 slots.simulationStudy__key = Slot(uri=TVBO.key, name="simulationStudy__key", curie=TVBO.curie('key'),
                    model_uri=TVBO.simulationStudy__key, domain=None, range=Optional[str])
-
-slots.simulationStudy__title = Slot(uri=DCTERMS.title, name="simulationStudy__title", curie=DCTERMS.curie('title'),
-                   model_uri=TVBO.simulationStudy__title, domain=None, range=Optional[str])
-
-slots.simulationStudy__year = Slot(uri=DCTERMS.issued, name="simulationStudy__year", curie=DCTERMS.curie('issued'),
-                   model_uri=TVBO.simulationStudy__year, domain=None, range=Optional[int])
-
-slots.simulationStudy__doi = Slot(uri=BIBO.doi, name="simulationStudy__doi", curie=BIBO.curie('doi'),
-                   model_uri=TVBO.simulationStudy__doi, domain=None, range=Optional[str])
 
 slots.simulationStudy__sample = Slot(uri=TVBO.sample, name="simulationStudy__sample", curie=TVBO.curie('sample'),
                    model_uri=TVBO.simulationStudy__sample, domain=None, range=Optional[Union[dict, Sample]])

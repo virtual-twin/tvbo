@@ -274,20 +274,27 @@ def validate(data: dict, target_class: Union[str, Type[BaseModel], None] = None,
     return target.model_validate(data)
 
 
-def loads(source: str, target_class: Union[str, Type[BaseModel], None] = None, **kwargs: Any) -> BaseModel:
-    """Parse a YAML string (with ``<<:`` / ``!include`` support) and validate it."""
+def loads(source: str, target_class: Union[str, Type[BaseModel], None] = None,
+          *, drop_unknown: bool = False, **kwargs: Any) -> BaseModel:
+    """Parse a YAML string (with ``<<:`` / ``!include`` support) and validate it.
+
+    ``drop_unknown`` is forwarded to :func:`validate` (see its docstring); the
+    remaining ``kwargs`` go to the YAML loader.
+    """
     data = yaml_loader.load_as_dict(source, **kwargs) or {}
-    return validate(data, target_class)
+    return validate(data, target_class, drop_unknown=drop_unknown)
 
 
-def load(source: Any, target_class: Union[str, Type[BaseModel], None] = None, **kwargs: Any) -> BaseModel:
+def load(source: Any, target_class: Union[str, Type[BaseModel], None] = None,
+         *, drop_unknown: bool = False, **kwargs: Any) -> BaseModel:
     """Load YAML from a path / stream / string and validate it.
 
     ``!include`` paths are resolved relative to ``source``'s directory when it is
-    a path, matching :func:`tvbo.utils.yaml_loader.load`.
+    a path, matching :func:`tvbo.utils.yaml_loader.load`. ``drop_unknown`` is
+    forwarded to :func:`validate`; the remaining ``kwargs`` go to the YAML loader.
     """
     data = yaml_loader.load_as_dict(source, **kwargs) or {}
-    return validate(data, target_class)
+    return validate(data, target_class, drop_unknown=drop_unknown)
 
 
 def dump(obj: Union[BaseModel, dict], *, exclude_none: bool = True, sort_keys: bool = False) -> str:
