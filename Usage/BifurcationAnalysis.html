@@ -65,7 +65,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../site_libs/quarto-search/fuse.min.js"></script>
 <script src="../site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="../">
-<link href="../Usage/Visualization.html" rel="next">
+<link href="../Usage/BifurcationTutorial/index.qmd" rel="next">
 <link href="../Usage/ModelFitting.html" rel="prev">
 <link href="../_static/tvbo_python_square.svg" rel="icon" type="image/svg+xml">
 <script src="../site_libs/quarto-html/quarto.js" type="module"></script>
@@ -171,12 +171,20 @@ window.Quarto = {
 <span class="menu-text">Usage</span></a>
   </li>  
   <li class="nav-item">
+    <a class="nav-link" href="../CLI/index.html"> 
+<span class="menu-text">CLI</span></a>
+  </li>  
+  <li class="nav-item">
     <a class="nav-link" href="../datamodel/index.html"> 
 <span class="menu-text">Data Model</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../platform.html"> 
 <span class="menu-text">Platform</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../agents/index.html"> 
+<span class="menu-text">Agents</span></a>
   </li>  
 </ul>
           </div> <!-- /navcollapse -->
@@ -349,6 +357,59 @@ window.Quarto = {
  <span class="menu-text">Bifurcation Analysis</span></a>
   </div>
 </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../Usage/BifurcationTutorial/index.qmd" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Bifurcation Tutorial</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth3 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../Usage/BifurcationTutorial/01-LinearStability.qmd" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">1. Linear Stability</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../Usage/BifurcationTutorial/02-PhasePortrait2D.qmd" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">2. 2D Phase Portraits</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../Usage/BifurcationTutorial/03-SaddleNode.qmd" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">3. Saddle-Node</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../Usage/BifurcationTutorial/04-Pitchfork.qmd" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">4. Pitchfork</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../Usage/BifurcationTutorial/05-Hysteresis.qmd" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">5. Hysteresis</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../Usage/BifurcationTutorial/06-Hopf.qmd" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">6. Hopf</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../Usage/BifurcationTutorial/07-NumericalContinuation.qmd" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">7. Numerical Continuation</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../Usage/Visualization.html" class="sidebar-item-text sidebar-link">
@@ -365,13 +426,19 @@ window.Quarto = {
   </li>
           <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="false">
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="false">
  <span class="menu-text">Simulation Features</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../Usage/InitialConditions.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Initial Conditions &amp; Initial State</span></a>
+  </div>
+</li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../Usage/Events.html" class="sidebar-item-text sidebar-link">
@@ -384,17 +451,23 @@ window.Quarto = {
  <span class="menu-text">Noise &amp; Stochastic Integration</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../Usage/CrossBackendParity.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Cross-Backend Numerical Parity</span></a>
+  </div>
+</li>
       </ul>
   </li>
           <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="false">
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="false">
  <span class="menu-text">Advanced</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-7" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../Usage/CreatingNetworks.html" class="sidebar-item-text sidebar-link">
@@ -431,22 +504,145 @@ window.Quarto = {
   </li>
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a href="../Interoperability/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Interoperability</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="false" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-7" class="collapse list-unstyled sidebar-section depth1 ">  
-          <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a href="../Interoperability/TVB/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">The Virtual Brain (TVB)</span></a>
+            <a href="../CLI/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Command-Line Interface</span></a>
           <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-8" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-8" class="collapse list-unstyled sidebar-section depth1 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../CLI/specs.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Specs and resolution</span></a>
+  </div>
+</li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" role="navigation" aria-expanded="false">
+ <span class="menu-text">Verbs</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-9" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../CLI/run.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tvbo run</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../CLI/export.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tvbo export</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../CLI/save.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tvbo save</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../CLI/import.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tvbo import</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../CLI/info.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tvbo info</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../CLI/formats.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tvbo formats</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../CLI/validate.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tvbo validate</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../CLI/config.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tvbo config</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../CLI/skills.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tvbo skills</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-10" role="navigation" aria-expanded="false">
+ <span class="menu-text">Workflows &amp; HPC</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-10" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-10" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../CLI/workflow.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tvbo workflow</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../CLI/workflow-kits.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Workflow kits anatomy</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../CLI/backends.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Backends</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../CLI/hpc.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">HPC patterns</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../CLI/recipes.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Recipes</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../Interoperability/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Interoperability</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-11" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-11" class="collapse list-unstyled sidebar-section depth1 ">  
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../Interoperability/TVB/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">The Virtual Brain (TVB)</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-12" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-12" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../Interoperability/TVB/Connectome.html" class="sidebar-item-text sidebar-link">
@@ -465,11 +661,11 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../Interoperability/tvboptim/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">tvboptim Backend</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-13" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-9" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-13" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../Interoperability/tvboptim/JR_tvboptim.html" class="sidebar-item-text sidebar-link">
@@ -494,11 +690,11 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../Interoperability/Pyrates/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">PyRates</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-10" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-14" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-10" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-14" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../Interoperability/Pyrates/PyRates.html" class="sidebar-item-text sidebar-link">
@@ -529,11 +725,11 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../Interoperability/NetworkDynamics.jl/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">NetworkDynamics.jl</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-11" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-15" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-11" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-15" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../Interoperability/NetworkDynamics.jl/diffusion.html" class="sidebar-item-text sidebar-link">
@@ -582,11 +778,11 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../Interoperability/BifurcationKit.jl/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">BifurcationKit.jl</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-12" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-16" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-12" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-16" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../Interoperability/BifurcationKit.jl/TMModel.html" class="sidebar-item-text sidebar-link">
@@ -605,11 +801,11 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../Interoperability/ModelingToolkit.jl/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">ModelingToolkit.jl</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-13" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-17" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-13" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-17" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../Interoperability/ModelingToolkit.jl/higher_order.html" class="sidebar-item-text sidebar-link">
@@ -622,11 +818,11 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../Interoperability/NeuroML/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">NeuroML / LEMS</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-14" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-18" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-14" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-18" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../Interoperability/NeuroML/LEMS_Export.html" class="sidebar-item-text sidebar-link">
@@ -643,11 +839,11 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../Interoperability/NeuroML/examples/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">LEMS Examples</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-15" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-19" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-15" class="collapse list-unstyled sidebar-section depth3 ">  
+      <ul id="quarto-sidebar-section-19" class="collapse list-unstyled sidebar-section depth3 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../Interoperability/NeuroML/examples/Ex0_IaF.html" class="sidebar-item-text sidebar-link">
@@ -816,11 +1012,11 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../Interoperability/NeuroML/examples/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">NML2 Documentation</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-16" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-20" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-16" class="collapse list-unstyled sidebar-section depth3 ">  
+      <ul id="quarto-sidebar-section-20" class="collapse list-unstyled sidebar-section depth3 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../Interoperability/NeuroML/examples/NML2_AbstractCells.html" class="sidebar-item-text sidebar-link">
@@ -895,11 +1091,11 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../Interoperability/BIDS/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">BIDS</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-17" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-21" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-17" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-21" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../Interoperability/BIDS/BIDS_Export.html" class="sidebar-item-text sidebar-link">
@@ -916,13 +1112,13 @@ window.Quarto = {
   </li>
           <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-18" role="navigation" aria-expanded="false">
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-22" role="navigation" aria-expanded="false">
  <span class="menu-text">OpenMINDS</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-18" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-22" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-18" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-22" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../Interoperability/OpenMINDS.html" class="sidebar-item-text sidebar-link">
@@ -942,13 +1138,54 @@ window.Quarto = {
 </li>
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a href="../Replication/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Replication Studies</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-19" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <a href="../agents/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Agentic Coding</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-23" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-19" class="collapse list-unstyled sidebar-section depth1 ">  
+      <ul id="quarto-sidebar-section-23" class="collapse list-unstyled sidebar-section depth1 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../agents/beginner.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">For Beginners</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../agents/installing-skills.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Installing &amp; Tuning Skills</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../agents/skills-reference.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Skill Reference</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../agents/agents-md.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">AGENTS.md</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../agents/maintainer-guide.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Maintainer Guide</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../Replication/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Replication Studies</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-24" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-24" class="collapse list-unstyled sidebar-section depth1 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../Replication/Jansen1995/Run_Jansen1995.html" class="sidebar-item-text sidebar-link">
@@ -960,22 +1197,52 @@ window.Quarto = {
         <li class="px-0"><hr class="sidebar-divider hi "></li>
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
+            <a href="../ontology/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Ontology</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-25" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-25" class="collapse list-unstyled sidebar-section depth1 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../ontology/spec/index-en.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Specification (Widoco)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../ontology/spec/webvowl/index.html#ontology" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">WebVOWL visualisation</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="px-0"><hr class="sidebar-divider hi "></li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
             <a href="../datamodel/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Data Model</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-20" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-26" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-20" class="collapse list-unstyled sidebar-section depth1 ">  
+      <ul id="quarto-sidebar-section-26" class="collapse list-unstyled sidebar-section depth1 ">  
           <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-21" role="navigation" aria-expanded="false">
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-27" role="navigation" aria-expanded="false">
  <span class="menu-text">Schemas</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-21" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-27" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-21" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-27" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/schemas/common.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Common</span></a>
+  </div>
+</li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../datamodel/schemas/SANDS.html" class="sidebar-item-text sidebar-link">
@@ -985,44 +1252,50 @@ window.Quarto = {
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../datamodel/schemas/software.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">software</span></a>
+ <span class="menu-text">Software</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../datamodel/schemas/tvb-datamodel.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">tvb-datamodel</span></a>
+ <span class="menu-text">TVB Datamodel</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../datamodel/schemas/tvb_dbs.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">tvb_dbs</span></a>
+ <span class="menu-text">TVB Databases</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../datamodel/schemas/tvbo_study.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">tvbo_study</span></a>
+ <span class="menu-text">TVB-O Study</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/schemas/tvbo_units.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">TVB-O Units</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../datamodel/schemas/types.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">types</span></a>
+ <span class="menu-text">Types</span></a>
   </div>
 </li>
       </ul>
   </li>
           <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-22" role="navigation" aria-expanded="false">
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-28" role="navigation" aria-expanded="false">
  <span class="menu-text">Classes</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-22" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-28" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-22" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-28" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../datamodel/classes/Aggregation.html" class="sidebar-item-text sidebar-link">
@@ -1050,7 +1323,13 @@ window.Quarto = {
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../datamodel/classes/BidsEntities.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Bids Entities</span></a>
+ <span class="menu-text">BIDS Entities</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/classes/Binding.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Binding</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -1271,6 +1550,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/classes/ExplorationAxis.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Exploration Axis</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/classes/FieldStateVariable.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Field State Variable</span></a>
   </div>
@@ -1279,6 +1564,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../datamodel/classes/File.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">File</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/classes/FreeParameter.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Free Parameter</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -1325,8 +1616,20 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/classes/MeasureSpec.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Measure Spec</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/classes/Mesh.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Mesh</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/classes/NamedArray.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Named Array</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -1385,6 +1688,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/classes/ParameterSpec.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Parameter Spec</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/classes/Parcellation.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Parcellation</span></a>
   </div>
@@ -1415,6 +1724,24 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/classes/Phenotype.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Phenotype</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/classes/Procedure.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Procedure</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/classes/ProcedureStep.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Procedure Step</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/classes/Provenance.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Provenance</span></a>
   </div>
@@ -1433,6 +1760,18 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/classes/Reference.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Reference</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/classes/ReferenceFingerprint.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Reference Fingerprint</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/classes/RegionMapping.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Region Mapping</span></a>
   </div>
@@ -1441,6 +1780,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../datamodel/classes/Sample.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Sample</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/classes/ScalarValue.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Scalar Value</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -1529,6 +1874,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/classes/Study.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Study</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/classes/Subject.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Subject</span></a>
   </div>
@@ -1567,13 +1918,13 @@ window.Quarto = {
   </li>
           <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-23" role="navigation" aria-expanded="false">
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-29" role="navigation" aria-expanded="false">
  <span class="menu-text">Slots</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-23" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-29" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-23" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-29" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/abbreviation.html" class="sidebar-item-text sidebar-link">
@@ -1720,6 +2071,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/args.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">args</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/arguments.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">arguments</span></a>
   </div>
@@ -1738,8 +2095,20 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/authors.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">authors</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/autonomous.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">autonomous</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/aux_data.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">aux_data</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -1798,6 +2167,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/bindings.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">bindings</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/bothside.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">bothside</span></a>
   </div>
@@ -1834,6 +2209,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/builder.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">builder</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/call_args.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">call_args</span></a>
   </div>
@@ -1852,6 +2233,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/category.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">category</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/center.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">center</span></a>
   </div>
@@ -1860,6 +2247,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/citation.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">citation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/citekey.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">citekey</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -1908,6 +2301,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/comment.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">comment</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/concept_iri.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">concept_iri</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2062,6 +2461,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/curvature.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">curvature</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/data.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">data</span></a>
   </div>
@@ -2136,6 +2541,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/degree.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">degree</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/delay.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">delay</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2260,6 +2671,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/distance.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">distance</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/distance_unit.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">distance_unit</span></a>
   </div>
@@ -2340,6 +2757,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/edge_matrix_files.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">edge_matrix_files</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/edge_template.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">edge_template</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2470,6 +2893,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/experiment_yaml_hash.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">experiment_yaml_hash</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/explorations.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">explorations</span></a>
   </div>
@@ -2596,6 +3025,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/grounding.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">grounding</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/group.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">group</span></a>
   </div>
@@ -2638,6 +3073,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/hemi.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">hemi</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/hemisphere.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">hemisphere</span></a>
   </div>
@@ -2676,6 +3117,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/id.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">id</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/ifabsent.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">ifabsent</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2724,6 +3171,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/input.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">input</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/inputs.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">inputs</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2842,6 +3295,18 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/lhs.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">lhs</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/library.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">library</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/license.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">license</span></a>
   </div>
@@ -2922,6 +3387,30 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/max_steps.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">max_steps</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/measure.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">measure</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/measure_specs.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">measure_specs</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/measure_type.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">measure_type</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/measures.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">measures</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3034,6 +3523,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/mtime.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">mtime</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/n.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">n</span></a>
   </div>
@@ -3136,6 +3631,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/node_template.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">node_template</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/nodes.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">nodes</span></a>
   </div>
@@ -3156,6 +3657,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/non_negative.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">non_negative</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/normals.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">normals</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3322,8 +3829,32 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/parallel_batch_size.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">parallel_batch_size</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/parallel_mode.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">parallel_mode</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/parameter.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">parameter</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/parameters.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">parameters</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/parcel_map_field.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">parcel_map_field</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3412,6 +3943,18 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/primary_weight.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">primary_weight</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/procedure.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">procedure</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/processing_pipeline.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">processing_pipeline</span></a>
   </div>
@@ -3462,6 +4005,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/random_state.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">random_state</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/range.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">range</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3550,6 +4099,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/required.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">required</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/requirements.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">requirements</span></a>
   </div>
@@ -3558,6 +4113,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/requires.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">requires</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/rhs.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">rhs</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3742,6 +4303,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/source_network.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">source_network</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/source_observations.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">source_observations</span></a>
   </div>
@@ -3768,6 +4335,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/sources.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">sources</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/space.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">space</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3856,6 +4429,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/subnetwork.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">subnetwork</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/symbol.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">symbol</span></a>
   </div>
@@ -3916,6 +4495,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/target_regions.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">target_regions</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/target_structure.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">target_structure</span></a>
   </div>
@@ -3942,6 +4527,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/targets.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">targets</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/task_iri.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">task_iri</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4162,6 +4753,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/vertices_field.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">vertices_field</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/voi.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">voi</span></a>
   </div>
@@ -4188,6 +4785,18 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/warmup_source.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">warmup_source</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/weight.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">weight</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/weight_distribution.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">weight_distribution</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4236,13 +4845,13 @@ window.Quarto = {
   </li>
           <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-24" role="navigation" aria-expanded="false">
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-30" role="navigation" aria-expanded="false">
  <span class="menu-text">Enumerations</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-24" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-30" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-24" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-30" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../datamodel/enums/AggregationType.html" class="sidebar-item-text sidebar-link">
@@ -4353,6 +4962,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/enums/ParallelMode.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Parallel Mode</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/enums/PhysicalDimension.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Physical Dimension</span></a>
   </div>
@@ -4437,20 +5052,20 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../api/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">API Documentation</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-25" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-31" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-25" class="collapse list-unstyled sidebar-section depth1 ">  
+      <ul id="quarto-sidebar-section-31" class="collapse list-unstyled sidebar-section depth1 ">  
           <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
             <a href="../api/adapters/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Adapters</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-26" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-32" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-26" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-32" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../api/adapters/base.html" class="sidebar-item-text sidebar-link">
@@ -4460,19 +5075,19 @@ window.Quarto = {
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../api/adapters/bids.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Bids</span></a>
+ <span class="menu-text">BIDS</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../api/adapters/bifurcationkit.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Bifurcationkit</span></a>
+ <span class="menu-text">BifurcationKit</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../api/adapters/diffeq.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Diffeq</span></a>
+ <span class="menu-text">DiffEq</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4484,49 +5099,55 @@ window.Quarto = {
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../api/adapters/modelingtoolkit.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Modelingtoolkit</span></a>
+ <span class="menu-text">ModelingToolkit</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../api/adapters/networkdynamics.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Networkdynamics</span></a>
+ <span class="menu-text">NetworkDynamics</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../api/adapters/neuroml.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Neuroml</span></a>
+ <span class="menu-text">NeuroML</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/adapters/numcont.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">NumCont</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../api/adapters/openminds.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Openminds</span></a>
+ <span class="menu-text">openMINDS</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../api/adapters/pyrates.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Pyrates</span></a>
+ <span class="menu-text">PyRates</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../api/adapters/pyrates_bifurcation.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Pyrates Bifurcation</span></a>
+ <span class="menu-text">PyRates (Bifurcation)</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../api/adapters/tvb.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Tvb</span></a>
+ <span class="menu-text">TVB</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../api/adapters/tvboptim.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Tvboptim</span></a>
+ <span class="menu-text">tvboptim</span></a>
   </div>
 </li>
       </ul>
@@ -4535,11 +5156,11 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../api/analysis/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Analysis</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-27" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-33" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-27" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-33" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../api/analysis/bifurcation.html" class="sidebar-item-text sidebar-link">
@@ -4552,11 +5173,11 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../api/api/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">API</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-28" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-34" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-28" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-34" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../api/api/direct_ontology_api.html" class="sidebar-item-text sidebar-link">
@@ -4599,11 +5220,11 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../api/classes/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Classes</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-29" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-35" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-29" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-35" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../api/classes/atlas.html" class="sidebar-item-text sidebar-link">
@@ -4632,6 +5253,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../api/classes/equation.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Equation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/classes/event.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Event</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4686,13 +5313,90 @@ window.Quarto = {
   </li>
           <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a href="../api/codegen/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">TVB-O Code Generation</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-30" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <a href="../api/cli/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">See ``dev/tvbo-cli.md`` for the full design. The CLI is Typer-based,</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-36" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-30" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-36" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/cli/config.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Config</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/cli/export.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Export</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/cli/formats.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Formats</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/cli/import_.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Import</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/cli/info.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Info</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/cli/run.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Run</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/cli/save.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Save</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/cli/skills.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Skills</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/cli/validate.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Validate</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/cli/version.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Version</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/cli/workflow.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Workflow</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../api/codegen/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">TVB-O Code Generation</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-37" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-37" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../api/codegen/code.html" class="sidebar-item-text sidebar-link">
@@ -4702,7 +5406,7 @@ window.Quarto = {
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../api/codegen/cuda.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Cuda</span></a>
+ <span class="menu-text">CUDA</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4714,13 +5418,13 @@ window.Quarto = {
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../api/codegen/lems.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Lems</span></a>
+ <span class="menu-text">LEMS</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../api/codegen/pyrates.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Pyrates</span></a>
+ <span class="menu-text">PyRates</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4735,11 +5439,11 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../api/data/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Data</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-31" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-38" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-31" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-38" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../api/data/converters.html" class="sidebar-item-text sidebar-link">
@@ -4776,11 +5480,11 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../api/datamodel/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Data Model</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-32" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-39" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-32" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-39" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../api/datamodel/pydantic.html" class="sidebar-item-text sidebar-link">
@@ -4799,15 +5503,21 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../api/export/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Export</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-33" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-40" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-33" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-40" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../api/export/report.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Report</span></a>
+  <a href="../api/export/formats.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Formats</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/export/registry.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Registry</span></a>
   </div>
 </li>
       </ul>
@@ -4816,11 +5526,11 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../api/jax/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">from tvbo.jax import xarray_pytrees  # noqa: F401 – side effect: registers pytrees</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-34" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-41" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-34" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-41" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../api/jax/xarray_pytrees.html" class="sidebar-item-text sidebar-link">
@@ -4833,11 +5543,11 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../api/ontology/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">TVB-O Ontology</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-35" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-42" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-35" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-42" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../api/ontology/config.html" class="sidebar-item-text sidebar-link">
@@ -4853,7 +5563,7 @@ window.Quarto = {
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../api/ontology/db.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Db</span></a>
+ <span class="menu-text">DB</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4865,7 +5575,7 @@ window.Quarto = {
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../api/ontology/owl.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Owl</span></a>
+ <span class="menu-text">OWL</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4878,11 +5588,11 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../api/ontology/atlas/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Atlas</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-36" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-43" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-36" class="collapse list-unstyled sidebar-section depth3 ">  
+      <ul id="quarto-sidebar-section-43" class="collapse list-unstyled sidebar-section depth3 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../api/ontology/atlas/freesurfer.html" class="sidebar-item-text sidebar-link">
@@ -4895,15 +5605,15 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../api/ontology/semanticweb/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Semantic Web</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-37" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-44" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-37" class="collapse list-unstyled sidebar-section depth3 ">  
+      <ul id="quarto-sidebar-section-44" class="collapse list-unstyled sidebar-section depth3 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../api/ontology/semanticweb/tvbgo.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Tvbgo</span></a>
+ <span class="menu-text">TVB-GO</span></a>
   </div>
 </li>
       </ul>
@@ -4914,11 +5624,11 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../api/parse/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Parse</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-38" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-45" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-38" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-45" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../api/parse/expression.html" class="sidebar-item-text sidebar-link">
@@ -4943,11 +5653,11 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../api/plot/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Plot</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-39" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-46" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-39" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-46" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../api/plot/analysis.html" class="sidebar-item-text sidebar-link">
@@ -4968,8 +5678,32 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../api/plot/dynamics.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Dynamics</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/plot/dynamics_layout.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Dynamics Layout</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/plot/experiment_layout.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Experiment Layout</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../api/plot/functions.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Functions</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/plot/layout_mosaic.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Layout Mosaic</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5014,11 +5748,11 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../api/run/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Run</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-40" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-47" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-40" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-47" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../api/run/compgraph.html" class="sidebar-item-text sidebar-link">
@@ -5041,22 +5775,22 @@ window.Quarto = {
   </li>
           <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-41" role="navigation" aria-expanded="false">
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-48" role="navigation" aria-expanded="false">
  <span class="menu-text">Templates</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-41" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-48" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-41" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-48" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
             <a href="../api/templates/rateml/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">RateML</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-42" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-49" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-42" class="collapse list-unstyled sidebar-section depth3 ">  
+      <ul id="quarto-sidebar-section-49" class="collapse list-unstyled sidebar-section depth3 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../api/templates/rateml/utils.html" class="sidebar-item-text sidebar-link">
@@ -5069,11 +5803,17 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../api/templates/tvboptim/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">tvboptim</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-43" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-50" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-43" class="collapse list-unstyled sidebar-section depth3 ">  
+      <ul id="quarto-sidebar-section-50" class="collapse list-unstyled sidebar-section depth3 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/templates/tvboptim/observations.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Observations</span></a>
+  </div>
+</li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../api/templates/tvboptim/utils.html" class="sidebar-item-text sidebar-link">
@@ -5088,11 +5828,17 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a href="../api/utils/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Utilities</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-44" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-51" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-44" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-51" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/utils/auto.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Auto</span></a>
+  </div>
+</li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../api/utils/report.html" class="sidebar-item-text sidebar-link">
@@ -5170,7 +5916,7 @@ window.Quarto = {
 </ul>
 <section id="quick-start" class="level2">
 <h2 class="anchored" data-anchor-id="quick-start">Quick Start</h2>
-<div id="d281f84e" class="cell" data-execution_count="2">
+<div id="00eb5883" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Markdown</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> Continuation, Dynamics, SimulationExperiment</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -5182,125 +5928,259 @@ window.Quarto = {
 <span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> Dynamics.from_ontology(<span class="st">'Generic2dOscillator'</span>)</span>
 <span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>Markdown(model.generate_report())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display cell-output-markdown" data-execution_count="1">
-<section id="generic2doscillator" class="level2">
-<h2 class="anchored" data-anchor-id="generic2doscillator">Generic2dOscillator</h2>
+<p><strong>Generic2dOscillator</strong></p>
 <p>The Generic 2-Dimensional Oscillator (G2D) is a phenomenological, coupled, nonlinear two-dimensional (i.e., two state-variables (‘V’, ‘W’)) oscillatory, neural mass model. The G2D is a generalization of the well-known FitzHugh-Nagumo model (FitzHugh, 1961; Nagumo et. al, 1962), adapted here for reproducing a wilder class of dynamical configurations of physiological phenomena as observed in neuronal population using phase-portrait method.</p>
-<section id="state-equations" class="level3">
-<h3 class="anchored" data-anchor-id="state-equations">State Equations</h3>
+<p>autonomous: True; modes: 1; state variables: 2; parameters: 12.</p>
+<p><strong>State Equations</strong></p>
 <p><span class="math display">\[
 \dot{V} = d*\tau*\left(I*\gamma + V*g + V*c_{local} + W*\alpha + c_{glob}*\gamma + e*V^{2} - f*V^{3}\right)
 \]</span> <span class="math display">\[
 \dot{W} = \frac{d*\left(a + V*b + c*V^{2} - W*\beta\right)}{\tau}
 \]</span></p>
-</section>
-<section id="parameters" class="level3">
-<h3 class="anchored" data-anchor-id="parameters">Parameters</h3>
+<p><strong>State Variables</strong></p>
 <table class="caption-top table table-sm table-striped small">
 <colgroup>
-<col style="width: 28%">
-<col style="width: 20%">
+<col style="width: 12%">
 <col style="width: 18%">
-<col style="width: 32%">
+<col style="width: 7%">
+<col style="width: 12%">
+<col style="width: 23%">
+<col style="width: 8%">
+<col style="width: 16%">
 </colgroup>
 <thead>
 <tr class="header">
-<th><strong>Parameter</strong></th>
-<th><strong>Value</strong></th>
-<th><strong>Unit</strong></th>
-<th><strong>Description</strong></th>
+<th style="text-align: left;">Variable</th>
+<th style="text-align: left;">Initial Value</th>
+<th style="text-align: left;">Unit</th>
+<th style="text-align: left;">Equation</th>
+<th style="text-align: left;">Domain / Sampling</th>
+<th style="text-align: left;">Flags</th>
+<th style="text-align: left;">Description</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td><span class="math inline">\(I\)</span></td>
-<td>0.0</td>
-<td>N/A</td>
-<td>Baseline shift of the cubic nullcline</td>
+<td style="text-align: left;"><span class="math inline">\(V\)</span></td>
+<td style="text-align: left;">0.1</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">differential (order 1)</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">VOI, coupling, recorded</td>
+<td style="text-align: left;">V_G2D is the first state-variable of the Generic 2-Dimensional Oscillator model, that can be associated with membrane potentials and sodium activation (FitzHugh, 1961)</td>
 </tr>
 <tr class="even">
-<td><span class="math inline">\(a\)</span></td>
-<td>-2.0</td>
-<td>N/A</td>
-<td>Vertical shift of the configurable nullcline</td>
-</tr>
-<tr class="odd">
-<td><span class="math inline">\(\alpha\)</span></td>
-<td>1.0</td>
-<td>N/A</td>
-<td>Constant parameter to scale the rate of feedback from the slow variable to the fast variable.</td>
-</tr>
-<tr class="even">
-<td><span class="math inline">\(b\)</span></td>
-<td>-10.0</td>
-<td>N/A</td>
-<td>Linear slope of the configurable nullcline</td>
-</tr>
-<tr class="odd">
-<td><span class="math inline">\(\beta\)</span></td>
-<td>1.0</td>
-<td>N/A</td>
-<td>Constant parameter to scale the rate of feedback from the slow variable to itself</td>
-</tr>
-<tr class="even">
-<td><span class="math inline">\(c\)</span></td>
-<td>0.0</td>
-<td>N/A</td>
-<td>Parabolic term of the configurable nullcline</td>
-</tr>
-<tr class="odd">
-<td><span class="math inline">\(d\)</span></td>
-<td>0.02</td>
-<td>N/A</td>
-<td>Temporal scale factor</td>
-</tr>
-<tr class="even">
-<td><span class="math inline">\(e\)</span></td>
-<td>3.0</td>
-<td>N/A</td>
-<td>Coefficient of the quadratic term of the cubic nullcline</td>
-</tr>
-<tr class="odd">
-<td><span class="math inline">\(f\)</span></td>
-<td>1.0</td>
-<td>N/A</td>
-<td>Coefficient of the cubic term of the cubic nullcline</td>
-</tr>
-<tr class="even">
-<td><span class="math inline">\(g\)</span></td>
-<td>0.0</td>
-<td>N/A</td>
-<td>Coefficient of the linear term of the cubic nullcline</td>
-</tr>
-<tr class="odd">
-<td><span class="math inline">\(\gamma\)</span></td>
-<td>1.0</td>
-<td>N/A</td>
-<td>Constant parameter to reproduce FHN dynamics where excitatory input currents are negative</td>
-</tr>
-<tr class="even">
-<td><span class="math inline">\(\tau\)</span></td>
-<td>1.0</td>
-<td>N/A</td>
-<td>A time-scale hierarchy can be introduced for the state variables :math:<code>V</code> and :math:<code>W</code></td>
+<td style="text-align: left;"><span class="math inline">\(W\)</span></td>
+<td style="text-align: left;">0.1</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">differential (order 1)</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">VOI, recorded</td>
+<td style="text-align: left;">W_G2D is the second state-variable of the Generic 2-Dimensional Oscillator model, that can be associated with accommodation and refractoriness and considered to represent potassium activation, sodium inactivation, or both (FitzHugh, 1961)</td>
 </tr>
 </tbody>
 </table>
-</section>
-</section>
-<section id="references" class="level2">
-<h2 class="anchored" data-anchor-id="references">References</h2>
-<p>FitzHugh, R. (1961). Impulses and physiological states in theoretical models of nerve membrane. <em>Biophysical Journal</em>, 1(6), 445-466.</p>
+<p><strong>Parameters</strong></p>
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 15%">
+<col style="width: 9%">
+<col style="width: 12%">
+<col style="width: 8%">
+<col style="width: 26%">
+<col style="width: 9%">
+<col style="width: 18%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Parameter</th>
+<th style="text-align: right;">Value</th>
+<th style="text-align: left;">Default</th>
+<th style="text-align: left;">Unit</th>
+<th style="text-align: left;">Domain / Sampling</th>
+<th style="text-align: left;">Flags</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><span class="math inline">\(I\)</span></td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">[-5.0, 5.0], step=0.01</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">Baseline shift of the cubic nullcline</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><span class="math inline">\(a\)</span></td>
+<td style="text-align: right;">-2.0</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">[-5.0, 5.0], step=0.01</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">Vertical shift of the configurable nullcline</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><span class="math inline">\(\alpha\)</span></td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">[-5.0, 5.0], step=0.0001</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">Constant parameter to scale the rate of feedback from the slow variable to the fast variable.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><span class="math inline">\(b\)</span></td>
+<td style="text-align: right;">-10.0</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">[-20.0, 15.0], step=0.01</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">Linear slope of the configurable nullcline</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><span class="math inline">\(\beta\)</span></td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">[-5.0, 5.0], step=0.0001</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">Constant parameter to scale the rate of feedback from the slow variable to itself</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><span class="math inline">\(c\)</span></td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">[-10.0, 10.0], step=0.01</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">Parabolic term of the configurable nullcline</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><span class="math inline">\(d\)</span></td>
+<td style="text-align: right;">0.02</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">[0.0001, 1.0], step=0.0001</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">Temporal scale factor</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><span class="math inline">\(e\)</span></td>
+<td style="text-align: right;">3.0</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">[-5.0, 5.0], step=0.0001</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">Coefficient of the quadratic term of the cubic nullcline</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><span class="math inline">\(f\)</span></td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">[-5.0, 5.0], step=0.0001</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">Coefficient of the cubic term of the cubic nullcline</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><span class="math inline">\(g\)</span></td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">[-5.0, 5.0], step=0.5</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">Coefficient of the linear term of the cubic nullcline</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><span class="math inline">\(\gamma\)</span></td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">[-1.0, 1.0], step=0.1</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">Constant parameter to reproduce FHN dynamics where excitatory input currents are negative</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><span class="math inline">\(\tau\)</span></td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">[1.0, 5.0], step=0.01</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">A time-scale hierarchy can be introduced for the state variables :math:<code>V</code> and :math:<code>W</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Coupling Inputs</strong></p>
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Input</th>
+<th style="text-align: left;">Source</th>
+<th style="text-align: right;">Dimension</th>
+<th style="text-align: left;">Keys</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">c_glob</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;"></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">local_coupling</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;"></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Coupling Terms</strong></p>
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Term</th>
+<th style="text-align: right;">Value</th>
+<th style="text-align: left;">Domain / Sampling</th>
+<th style="text-align: left;">Flags</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><span class="math inline">\(c_{glob}\)</span></td>
+<td style="text-align: right;">None</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;"></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><span class="math inline">\(c_{local}\)</span></td>
+<td style="text-align: right;">None</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;"></td>
+</tr>
+</tbody>
+</table>
+<p><strong>References</strong></p>
 <p>Nagumo, J., Arimoto, S., &amp; Yoshizawa, S. (1962). An active pulse transmission line simulating nerve axon. <em>Proceedings of the IRE</em>, 50(10), 2061-2070.</p>
-</section>
+<p>FitzHugh, R. (1961). Impulses and physiological states in theoretical models of nerve membrane. <em>Biophysical Journal</em>, 1(6), 445-466.</p>
 </div>
 </div>
-<div id="d91486f8" class="cell" data-execution_count="3">
+<div id="a423eb11" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>cont <span class="op">=</span> Continuation.from_string(</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">"""</span><span class="op">\</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="st">name: eq_in_a</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="st">label: "Equilibrium branch in a"</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="st">name: eq_in_I</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="st">label: "Equilibrium branch in I"</span></span>
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="st">description: &gt;-</span></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="st">    Continue the equilibrium branch of the Generic2dOscillator as parameter a is varied. Detect Hopf bifurcations and continue periodic orbits from all Hopf points.</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="st">    Continue the equilibrium branch of the Generic2dOscillator as parameter I is varied. Detect Hopf bifurcations and continue periodic orbits from all Hopf points.</span></span>
 <span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="st">dynamics: Generic2dOscillator</span></span>
 <span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a></span>
@@ -5318,11 +6198,13 @@ window.Quarto = {
 <span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>exp <span class="op">=</span> SimulationExperiment(dynamics<span class="op">=</span>model, continuations<span class="op">=</span>[cont])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+<p>Each <code>exp.run(...)</code> call returns an <code>ExperimentResult</code>. Continuation outputs are stored in <code>result.continuations</code> and keyed by the continuation <code>name</code> from the metadata. For single-continuation experiments, the container still delegates plotting methods to that continuation for convenience.</p>
 <section id="bifurcationkit.jl-backend" class="level3">
 <h3 class="anchored" data-anchor-id="bifurcationkit.jl-backend">BifurcationKit.jl backend</h3>
-<div id="a6f7ffd2" class="cell" data-execution_count="4">
+<div id="65236e84" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>bif_result_jl <span class="op">=</span> exp.run(<span class="st">"bifurcationkit.jl"</span>)</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>bif_result_jl.plot(VOI<span class="op">=</span><span class="st">'V'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>eq_in_I_jl <span class="op">=</span> bif_result_jl.continuations[<span class="st">"eq_in_I"</span>]</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>eq_in_I_jl.plot(VOI<span class="op">=</span><span class="st">"V"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Detected IPython. Loading juliacall extension. See https://juliapy.github.io/PythonCall.jl/stable/compat/#IPython</code></pre>
 </div>
@@ -5337,9 +6219,10 @@ window.Quarto = {
 </section>
 <section id="pyratespycobi-backend-same-specification" class="level3">
 <h3 class="anchored" data-anchor-id="pyratespycobi-backend-same-specification">PyRates/PyCoBi backend (same specification!)</h3>
-<div id="b5b5e97e" class="cell" data-execution_count="5">
+<div id="7a67b1d1" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>bif_result_py <span class="op">=</span> exp.run(<span class="st">"pyrates-bifurcation"</span>)</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>bif_result_py.plot(VOI<span class="op">=</span><span class="st">'V'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>eq_in_I_py <span class="op">=</span> bif_result_py.continuations[<span class="st">"eq_in_I"</span>]</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>eq_in_I_py.plot(VOI<span class="op">=</span><span class="st">"V"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Compilation Progress
 --------------------
@@ -5866,7 +6749,7 @@ Starting tvbo_bif ...
    1    41      503   9.98003E+03   2.20154E-01  -1.88652E-01  -1.13482E-01
    1    61  UZ  504   1.00000E+04   2.20154E-01  -1.88652E-01  -1.13482E-01
 
- Total Time    0.198E+00
+ Total Time    0.195E+00
 tvbo_bif ... done
 Starting tvbo_bif ...
 
@@ -5906,7 +6789,7 @@ Starting tvbo_bif ...
    1   310      537   1.94140E+01   2.34537E+01   2.13563E+00  -2.33563E+01
    1   318  EP  538   2.00059E+01   2.39918E+01   2.18918E+00  -2.38918E+01
 
- Total Time    0.100E-01
+ Total Time    0.987E-02
 tvbo_bif ... done
 Starting tvbo_bif ...
 
@@ -6112,7 +6995,7 @@ Starting tvbo_bif ...
  510  1990      737   1.57701E+01   1.90506E+01   2.49054E+00  -1.61125E+01
  510  2000  EP  738   1.58694E+01   1.92703E+01   2.43268E+00  -1.66599E+01
 
- Total Time    0.803E+01
+ Total Time    0.806E+01
 tvbo_bif ... done
 Starting tvbo_bif ...
 
@@ -6319,7 +7202,7 @@ Starting tvbo_bif ...
  532  1990      738   4.17966E+00   5.31844E+00   1.03411E+00  -2.76230E+00
  532  2000  EP  739   4.08745E+00   5.03937E+00   9.32271E-01  -2.76886E+00
 
- Total Time    0.806E+01
+ Total Time    0.805E+01
 tvbo_bif ... done</code></pre>
 </div>
 <div class="cell-output cell-output-display">
@@ -6337,7 +7220,7 @@ tvbo_bif ... done</code></pre>
 <p>Codim-2 continuation traces how bifurcation points (folds, Hopfs) move in a <strong>two-parameter</strong> plane. This reveals cusp, Bogdanov-Takens (BT), and generalized Hopf (GH) organizing centers.</p>
 <p>Choose parameter pairs that interact <strong>nonlinearly</strong> — e.g.&nbsp;<code>I</code> (nullcline shift) with <code>b</code> (nullcline slope), not two shift parameters like <code>I</code> and <code>a</code> which produce trivially parallel curves.</p>
 <p>Both backends support codim-2 — add a <code>continuation</code> with <code>free_parameters</code> inside a branch:</p>
-<div id="79c818f9" class="cell" data-execution_count="6">
+<div id="ba35467a" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>cont_c2 <span class="op">=</span> Continuation.from_string(</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">"""</span><span class="op">\</span></span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="st">name: eq_I_with_codim2</span></span>
@@ -6371,14 +7254,15 @@ tvbo_bif ... done</code></pre>
 </div>
 <section id="bifurcationkit.jl-codim-2" class="level3">
 <h3 class="anchored" data-anchor-id="bifurcationkit.jl-codim-2">BifurcationKit.jl codim-2</h3>
-<div id="d495db2b" class="cell" data-execution_count="7">
+<div id="1969148b" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>result_c2_jl <span class="op">=</span> exp_c2.run(<span class="st">"bifurcationkit.jl"</span>)</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>result_c2_jl.plot_codim2()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>eq_I_with_codim2_jl <span class="op">=</span> result_c2_jl.continuations[<span class="st">"eq_I_with_codim2"</span>]</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>eq_I_with_codim2_jl.plot()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>┌ Warning: More than one Event was detected bt-bp. We call the continuous event to save data in the branch.
-└ @ BifurcationKit ~/.julia/packages/BifurcationKit/Y3DPO/src/events/EventDetection.jl:351
+└ @ BifurcationKit ~/.julia/packages/BifurcationKit/6sLSa/src/events/EventDetection.jl:351
 ┌ Warning: [Codim 2 Hopf - Finalizer] The Hopf curve seems to be close to a BT point: ω ≈ 1.1908649255648495e-11. Stopping computations at (2.088635599387638, -0.9998555305057149). If the BT point is not detected, try lowering Newton tolerance or dsmax.
-└ @ BifurcationKit ~/.julia/packages/BifurcationKit/Y3DPO/src/codim2/MinAugHopf.jl:477</code></pre>
+└ @ BifurcationKit ~/.julia/packages/BifurcationKit/6sLSa/src/codim2/MinAugHopf.jl:477</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
 <pre><code>┌ Error: Failure to converge with given tolerance = 1.0e-12.
@@ -6386,7 +7270,7 @@ tvbo_bif ... done</code></pre>
 │ You can decrease the tolerance or pass a different norm using the argument `normC`.
 │ We reached the smallest value [dsmin] valid for ds, namely 0.0001.
 │ Stopping continuation at continuation step 112.
-└ @ BifurcationKit ~/.julia/packages/BifurcationKit/Y3DPO/src/continuation/Contbase.jl:73</code></pre>
+└ @ BifurcationKit ~/.julia/packages/BifurcationKit/6sLSa/src/continuation/Contbase.jl:73</code></pre>
 </div>
 <div class="cell-output cell-output-display">
 <div>
@@ -6399,9 +7283,10 @@ tvbo_bif ... done</code></pre>
 </section>
 <section id="pyratespycobi-codim-2" class="level3">
 <h3 class="anchored" data-anchor-id="pyratespycobi-codim-2">PyRates/PyCoBi codim-2</h3>
-<div id="edcae126" class="cell" data-execution_count="8">
+<div id="8b2000bd" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>result_c2_py <span class="op">=</span> exp_c2.run(<span class="st">"pyrates-bifurcation"</span>)</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>result_c2_py.plot_codim2()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>eq_I_with_codim2_py <span class="op">=</span> result_c2_py.continuations[<span class="st">"eq_I_with_codim2"</span>]</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>eq_I_with_codim2_py.plot()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Compilation Progress
 --------------------
@@ -6922,7 +7807,7 @@ Starting tvbo_bif ...
    1    41      503   9.98003E+03   2.20154E-01  -1.88652E-01  -1.13482E-01
    1    61  UZ  504   1.00000E+04   2.20154E-01  -1.88652E-01  -1.13482E-01
 
- Total Time    0.206E+00
+ Total Time    0.193E+00
 tvbo_bif ... done
 Starting tvbo_bif ...
 
@@ -6962,7 +7847,7 @@ Starting tvbo_bif ...
    1   310      537   1.94140E+01   2.34537E+01   2.13563E+00  -2.33563E+01
    1   318  EP  538   2.00059E+01   2.39918E+01   2.18918E+00  -2.38918E+01
 
- Total Time    0.974E-02
+ Total Time    0.102E-01
 tvbo_bif ... done
 Starting tvbo_bif ...
 
@@ -7168,7 +8053,7 @@ Starting tvbo_bif ...
  510  1990      737   1.57701E+01   1.90506E+01   2.49054E+00  -1.61125E+01
  510  2000  EP  738   1.58694E+01   1.92703E+01   2.43268E+00  -1.66599E+01
 
- Total Time    0.788E+01
+ Total Time    0.809E+01
 tvbo_bif ... done
 Starting tvbo_bif ...
 
@@ -7375,7 +8260,7 @@ Starting tvbo_bif ...
  532  1990      738   4.17966E+00   5.31844E+00   1.03411E+00  -2.76230E+00
  532  2000  EP  739   4.08745E+00   5.03937E+00   9.32271E-01  -2.76886E+00
 
- Total Time    0.812E+01
+ Total Time    0.823E+01
 tvbo_bif ... done
 Starting tvbo_bif ...
 
@@ -7431,7 +8316,7 @@ Starting tvbo_bif ...
  510   490      587   1.23832E+01   1.24794E+01   1.83503E-01  -1.24780E+01  -5.70998E+01
  510   500  EP  588   1.25608E+01   1.26570E+01   1.83503E-01  -1.26556E+01  -5.80678E+01
 
- Total Time    0.199E-01
+ Total Time    0.188E-01
 tvbo_bif ... done
 Starting tvbo_bif ...
 
@@ -7447,7 +8332,7 @@ Starting tvbo_bif ...
  510    90      547   2.20201E+00   2.30417E+00   1.83503E-01  -2.29685E+00  -1.61766E+00
  510    97  BT  548   2.08866E+00   2.19120E+00   1.83503E-01  -2.18350E+00  -1.00000E+00
 
- Total Time    0.443E-02
+ Total Time    0.429E-02
 tvbo_bif ... done
 Merge done
 Starting tvbo_bif ...
@@ -7461,7 +8346,7 @@ Starting tvbo_bif ...
  532    60      544   1.99894E+01   2.39635E+01   1.81650E+00  -2.38946E+01  -1.20532E+01
  532    61  EP  545   2.00553E+01   2.40292E+01   1.81650E+00  -2.39605E+01  -1.20895E+01
 
- Total Time    0.354E-02
+ Total Time    0.283E-02
 tvbo_bif ... done
 Starting tvbo_bif ...
 
@@ -7493,7 +8378,7 @@ Starting tvbo_bif ...
  532   250      563   1.02945E-02   4.31630E+00   1.81650E+00  -3.91545E+00  -1.05448E+00
  532   252  BT  564  -8.86621E-02   4.22674E+00   1.81650E+00  -3.81650E+00  -1.00000E+00
 
- Total Time    0.101E-01
+ Total Time    0.960E-02
 tvbo_bif ... done
 Merge done</code></pre>
 </div>
@@ -7509,8 +8394,8 @@ Merge done</code></pre>
 <section id="d-bifurcation-diagram" class="level3">
 <h3 class="anchored" data-anchor-id="d-bifurcation-diagram">3D Bifurcation Diagram</h3>
 <p>The 3D plot shows the equilibrium backbone, periodic orbit tube surfaces (using the second state variable for cross-section shape), and codim-2 curves sweeping through parameter space:</p>
-<div id="288099c2" class="cell" data-execution_count="9">
-<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>result_c2_jl.plot_3d(VOI<span class="op">=</span><span class="st">'V'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="a65fb97c" class="cell" data-execution_count="8">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>eq_I_with_codim2_jl.plot_3d(VOI<span class="op">=</span><span class="st">"V"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
@@ -7524,7 +8409,7 @@ Merge done</code></pre>
 </section>
 <section id="jansen-rit-model" class="level2">
 <h2 class="anchored" data-anchor-id="jansen-rit-model">Jansen-Rit Model</h2>
-<div id="e5237db3" class="cell" data-execution_count="10">
+<div id="22ff9d13" class="cell" data-execution_count="9">
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>cont <span class="op">=</span> Continuation.from_string(</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">"""</span><span class="op">\</span></span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="st">name: jr_mu</span></span>
@@ -7553,11 +8438,15 @@ Merge done</code></pre>
 <span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a>    dynamics<span class="op">=</span>Dynamics.from_ontology(<span class="st">"JansenRit"</span>), continuations<span class="op">=</span>[cont]</span>
 <span id="cb14-27"><a href="#cb14-27" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb14-28"><a href="#cb14-28" aria-hidden="true" tabindex="-1"></a>bif_result2 <span class="op">=</span> exp.run(<span class="st">"bifurcationkit.jl"</span>)</span>
-<span id="cb14-29"><a href="#cb14-29" aria-hidden="true" tabindex="-1"></a>bif_result2.plot(VOI<span class="op">=</span><span class="st">"y0"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb14-29"><a href="#cb14-29" aria-hidden="true" tabindex="-1"></a>bif_result2.continuations[<span class="st">"jr_mu"</span>].plot(VOI<span class="op">=</span><span class="st">"y0"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>/Users/leonmartin_bih/tools/tvbo/tvbo/analysis/bifurcation.py:1041: UserWarning: No artists with labels found to put in legend.  Note that artists whose label start with an underscore are ignored when legend() is called with no argument.
+  ax.legend(framealpha=0.9, edgecolor="none", fontsize=7)</code></pre>
+</div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="BifurcationAnalysis_files/figure-html/cell-10-output-1.png" class="img-fluid figure-img"></p>
+<p><img src="BifurcationAnalysis_files/figure-html/cell-10-output-2.png" class="img-fluid figure-img"></p>
 </figure>
 </div>
 </div>
@@ -7639,7 +8528,7 @@ Merge done</code></pre>
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp('/' + window.location.host + '/');
+        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }
@@ -7973,8 +8862,8 @@ Merge done</code></pre>
       </a>          
   </div>
   <div class="nav-page nav-page-next">
-      <a href="../Usage/Visualization.html" class="pagination-link" aria-label="Visualization">
-        <span class="nav-page-text">Visualization</span> <i class="bi bi-arrow-right-short"></i>
+      <a href="../Usage/BifurcationTutorial/index.qmd" class="pagination-link" aria-label="Bifurcation Tutorial">
+        <span class="nav-page-text">Bifurcation Tutorial</span> <i class="bi bi-arrow-right-short"></i>
       </a>
   </div>
 </nav>
@@ -7985,7 +8874,7 @@ Merge done</code></pre>
       &nbsp;
     </div>   
     <div class="nav-footer-center">
-<p>© 2025 Charité - Universitätsmedizin Berlin</p>
+<p>© Charité - Universitätsmedizin Berlin</p>
 <div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/TVB-Ontology/tvbo-python/edit/main/Usage/BifurcationAnalysis.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/TVB-Ontology/tvbo-python/new/choose" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div>
     <div class="nav-footer-right">
       <ul class="footer-items list-unstyled">

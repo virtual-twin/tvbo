@@ -1,0 +1,124 @@
+---
+title: Bifurcation Tutorial
+sidebar: usage
+---
+
+A self-contained, declarative reproduction of the canonical normal-form
+bifurcation tutorial in [`dev/BifurcationTutorial/`](https://github.com/virtual-twin/tvbo/tree/dev/dev/BifurcationTutorial),
+written entirely with **TVBO** primitives.
+
+The original tutorial is built on hand-written `ContinuationSystem` Python
+classes that wrap AUTO-07p Fortran subroutines (one `model.f90` per system).
+Here we replace **every** Fortran/Python pair with **a single inline YAML
+string** that defines the dynamical system declaratively. TVBO then routes the
+metadata to its bifurcation backends (BifurcationKit.jl or PyRates/PyCoBi)
+through the unified [`Continuation`](../BifurcationAnalysis.qmd) API.
+
+## Goals
+
+1. **Zero hidden state.** No `from_db()`, no `from_ontology()`, no Fortran
+   files, no scratch directories. Every model and every continuation is a
+   self-describing YAML string in the page.
+2. **One backend-agnostic specification.** The same YAML drives BifurcationKit.jl
+   and PyRates (AUTO-07p) -- picked at `exp.run(...)` time.
+3. **Reproduce every figure** from the legacy tutorial using TVBO plotting
+   only (`plot_dynamics` for phase portraits and `BifurcationResult.plot()` /
+   `.plot_3d()` for diagrams).
+
+## Plan
+
+| § | Page | Legacy script | System | Figure(s) reproduced |
+|---|---|---|---|---|
+| 1 | [Linear Stability](01-LinearStability.qmd) | `ExpExample.py` | $\dot x = a\,x$ | `ExpExample0Red.png`, `ExpExamplePert.png` |
+| 2 | [2D Phase Portraits](02-PhasePortrait2D.qmd) | `PhasePortrait2DLinearSystem.py` | $\dot{\vec x} = A\vec x$ — node, saddle, focus, centre | `PhasePortraitSaddle.png` |
+| 3 | [Saddle-Node](03-SaddleNode.qmd) | `SaddleNode.py` | $\dot x = a - x^2$ | `SaddleNode.png` |
+| 4 | [Pitchfork](04-Pitchfork.qmd) | `PitchFork.py` | $\dot x = a x - x^3$ | `PitchFork.png` |
+| 5 | [Hysteresis](05-Hysteresis.qmd) | `DoubleSaddleNode.py` | $\dot x = a + x - x^3$ | `Hysteresis.png` |
+| 6 | [Hopf normal form](06-Hopf.qmd) | `PhasePortraitHopf.py` | $\dot x_1 = (a-r^2)x_1 - w x_2$, $\dot x_2 = (a-r^2)x_2 + w x_1$ | `HopfPhasePortrait_and_BifDiag3D_a=*.png` |
+| 7 | [Numerical Continuation](07-NumericalContinuation.qmd) | — | theory: Newton, pseudo-arclength, branch switching | — |
+
+## Methodology
+
+### Defining the system inline
+
+Every system in the tutorial is a small ODE expressed as a `Dynamics`
+YAML string and loaded with `Dynamics.from_string(...)`:
+
+```yaml
+name: SaddleNode
+parameters:
+  a: { name: a, value: 0.5 }
+state_variables:
+  x:
+    name: x
+    domain: { lo: -2.0, hi: 2.0 }
+    equation:
+      lhs: Derivative(x, t)
+      rhs: a - x**2
+    initial_value: 0.5
+```
+
+### Defining the continuation inline
+
+Continuations are similarly inline. A 1-parameter sweep over `a`:
+
+```yaml
+name: eq_in_a
+dynamics: SaddleNode
+free_parameters:
+  - name: a
+    domain: { lo: -2.0, hi: 2.0 }
+```
+
+For Hopf systems we additionally request continuation of periodic orbits
+from each detected Hopf point via a nested branch
+(`source_point: "hopf:all"`).
+
+### Running
+
+The `Continuation` is attached to a `SimulationExperiment` and dispatched to a
+backend:
+
+```python
+exp = SimulationExperiment(dynamics=dyn, continuations=[cont])
+result = exp.run("bifurcationkit.jl")    # or "pyrates-bifurcation"
+result.continuations["eq_in_a"].plot(VOI="x")
+```
+
+### Phase portraits
+
+For pure phase-portrait figures we use `Dynamics.plot` with
+`kind="vectorfield"` (stream-plot only) or `kind="phaseplane"` (stream-plot
+plus nullclines and detected fixed points):
+
+```python
+dyn.plot("x1", "x2", kind="phaseplane", n_trajectories=3)
+```
+
+Both kinds use the state-variable domains declared in the YAML to set the
+axis limits.
+
+### Animations across a parameter
+
+`Dynamics.animate(parameter, values, *dims, kind=...)` produces a
+`matplotlib.animation.FuncAnimation` by re-running `plot()` for each value
+of the chosen parameter:
+
+```python
+anim = dyn.animate("a", np.linspace(-2, 1.5, 60),
+                   "x1", "x2", kind="phaseplane")
+HTML(anim.to_jshtml())
+```
+
+### 3D Hopf diagram
+
+The 3D figure (equilibrium spine + limit-cycle tube + Hopf point) is produced
+with `BifurcationResult.plot_3d(VOI="x1")` once periodic orbits have been
+continued from the Hopf point.
+
+## What this tutorial does NOT need
+
+* No `model.f90`, no `AUTO_DIR`, no scratch BifurcationData folders.
+* No `ContinuationSystem`, no `ContinuationData`, no `ContinuationPlot`.
+* No global mutation of plot kwargs.
+* No `from_db` / `from_ontology` lookups -- every page is fully portable.

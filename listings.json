@@ -1,8 +1,10 @@
 [
   {
-    "listing": "/Replication/index.html",
+    "listing": "/examples/index.html",
     "items": [
-      "/Replication/Jansen1995/Run_Jansen1995.html"
+      "/examples/dynamics_from_db.html",
+      "/examples/network_from_db.html",
+      "/examples/create_network.html"
     ]
   },
   {
@@ -38,11 +40,9 @@
     ]
   },
   {
-    "listing": "/examples/index.html",
+    "listing": "/Replication/index.html",
     "items": [
-      "/examples/dynamics_from_db.html",
-      "/examples/network_from_db.html",
-      "/examples/create_network.html"
+      "/Replication/Jansen1995/Run_Jansen1995.html"
     ]
   }
 ]

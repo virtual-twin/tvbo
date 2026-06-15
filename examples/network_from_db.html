@@ -141,12 +141,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Usage</span></a>
   </li>  
   <li class="nav-item">
+    <a class="nav-link" href="../CLI/index.html"> 
+<span class="menu-text">CLI</span></a>
+  </li>  
+  <li class="nav-item">
     <a class="nav-link" href="../datamodel/index.html"> 
 <span class="menu-text">Data Model</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../platform.html"> 
 <span class="menu-text">Platform</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../agents/index.html"> 
+<span class="menu-text">Agents</span></a>
   </li>  
 </ul>
           </div> <!-- /navcollapse -->
@@ -299,7 +307,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp('/' + window.location.host + '/');
+        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }
@@ -633,7 +641,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       &nbsp;
     </div>   
     <div class="nav-footer-center">
-<p>© 2025 Charité - Universitätsmedizin Berlin</p>
+<p>© Charité - Universitätsmedizin Berlin</p>
 <div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/TVB-Ontology/tvbo-python/edit/main/examples/network_from_db.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/TVB-Ontology/tvbo-python/new/choose" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div>
     <div class="nav-footer-right">
       <ul class="footer-items list-unstyled">
