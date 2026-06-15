@@ -7,6 +7,7 @@ import copy as _copy
 import os
 from os.path import join
 from pathlib import Path
+from typing import Any
 
 import jax
 import jax.numpy as jnp
@@ -659,7 +660,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         )
 
     @classmethod
-    def from_pydantic(cls, pyd_obj) -> "SimulationExperiment":
+    def from_pydantic(cls, pyd_obj: Any) -> "SimulationExperiment":
         """Create a SimulationExperiment from a Pydantic model instance.
 
         Args:

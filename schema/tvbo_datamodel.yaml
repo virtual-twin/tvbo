@@ -1169,14 +1169,15 @@ classes:
                 ifabsent: boolean(false)
                 description: "Whether to generate a directed graph."
             parameters:
-                range: ParameterSpec
+                range: Parameter
                 multivalued: true
                 inlined: true
                 description: >
-                    Declared generator parameters (e.g. n, k, p, seed), keyed
-                    by name.  Each declaration carries its datatype (``range``)
-                    and default; the backend ``bindings`` map names to the
-                    native constructor call.
+                    Generator parameters (e.g. n, k, p, seed), keyed by name,
+                    each carrying a concrete ``value`` (Parameter). Builder
+                    (Callable) generators receive these as keyword arguments;
+                    declarative library generators may additionally use the
+                    ``bindings`` map to the native constructor call.
             bindings:
                 range: Binding
                 multivalued: true
@@ -1206,29 +1207,6 @@ classes:
                     ``module`` is its dotted module path). Reuses the same
                     idiom as TVB monitor class references; no free
                     ``module:function`` strings.
-
-    ParameterSpec:
-        class_uri: tvbo:ParameterSpec
-        description: >-
-            Declaration of a single generator/procedure parameter: its name,
-            datatype and default.  Distinct from Parameter (which carries a
-            concrete value) — a ParameterSpec describes the input contract.
-        slots:
-            - name
-            - description
-        attributes:
-            range:
-                range: string
-                description: >-
-                    Datatype of the parameter (e.g. integer, string,
-                    uriorcurie, float).
-            required:
-                range: boolean
-                ifabsent: boolean(true)
-                description: "Whether the parameter must be supplied."
-            ifabsent:
-                range: string
-                description: "Default value applied when the parameter is absent."
 
     Binding:
         class_uri: tvbo:Binding
@@ -3374,6 +3352,13 @@ classes:
         slots:
             - name
             - description
+        slot_usage:
+            name:
+                required: false
+                description: >-
+                    Optional display name. A study is identified by its citation
+                    key (``key``/``citekey``) and described by its ``title`` — a
+                    ``name`` is not required.
         attributes:
             citekey:
                 range: string
