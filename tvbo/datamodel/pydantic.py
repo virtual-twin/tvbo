@@ -1001,6 +1001,10 @@ class EventType(str, Enum):
     """
     Continuous time-dependent input signal (e.g., external current). Legacy Stimulus behavior.
     """
+    stimulation = "stimulation"
+    """
+    Synonym of 'stimulus' — a continuous time-dependent input signal injected into a target state variable across target regions. The codegen treats 'stimulation' and 'stimulus' identically.
+    """
 
 
 class StandardGraphType(str, Enum):
@@ -2966,8 +2970,8 @@ class Equation(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE'],
          'slot_uri': 'dcterms:description'} })
-    lhs: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation']} })
-    rhs: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation']} })
+    lhs: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'aliases': ['lefthandside'], 'domain_of': ['Equation']} })
+    rhs: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'aliases': ['righthandside'], 'domain_of': ['Equation']} })
     conditionals: Optional[list[ConditionalBlock]] = Field(default=None, description="""Conditional logic for piecewise equations.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Equation']} })
     engine: Optional[SoftwareRequirement] = Field(default=None, description="""Primary engine (must appear in environment.requirements; migration target replacing deprecated 'software').""", json_schema_extra = { "linkml_meta": {'domain_of': ['Equation']} })
     pycode: Optional[str] = Field(default=None, description="""Python code for the equation.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Equation', 'Noise']} })
@@ -3325,7 +3329,10 @@ class Event(ConfiguredBaseModel):
                        'UpdateRule',
                        'DifferentialOperator']} })
     regions: Optional[AnyShapeArray[int]] = Field(default=None, description="""Target regions for stimulus-type events.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'Event']} })
-    weighting: Optional[AnyShapeArray[float]] = Field(default=None, description="""Per-region weighting for stimulus-type events.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'Event']} })
+    weighting: Optional[AnyShapeArray[float]] = Field(default=None, description="""Per-region weighting for stimulus-type events (explicit values).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'Event']} })
+    weight_distribution: Optional[Distribution] = Field(default=None, description="""Distribution to sample per-region stimulus weights from, as an alternative to the explicit `weighting` array (e.g. Uniform(-1, 1) per node). When set, the codegen samples one weight per target region using the distribution's seed.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Event']} })
+    target_variable: Optional[str] = Field(default=None, description="""State variable that a stimulus-type event drives — the variable its signal is injected into (e.g. 'y_0' for Jansen-Rit, or a named 'stimulus' input exposed to coupling). If absent, the stimulus adds to the model's default external-input variable.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Event', 'TuningObjective']} })
+    target_regions: Optional[list[str]] = Field(default=None, description="""Regions a stimulus-type event targets: 'all' (broadcast to every node) or explicit region labels / indices. More expressive than the integer-only `regions` slot; when both are absent the event applies to all regions.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Event']} })
     duration: Optional[float] = Field(default=None, description="""Duration of stimulus-type events.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'Event', 'InitialState', 'Integrator']} })
 
 
@@ -3462,8 +3469,8 @@ class TemporalApplicableEquation(Equation):
                        'PDESolver',
                        'PDE'],
          'slot_uri': 'dcterms:description'} })
-    lhs: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation']} })
-    rhs: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation']} })
+    lhs: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'aliases': ['lefthandside'], 'domain_of': ['Equation']} })
+    rhs: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'aliases': ['righthandside'], 'domain_of': ['Equation']} })
     conditionals: Optional[list[ConditionalBlock]] = Field(default=None, description="""Conditional logic for piecewise equations.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Equation']} })
     engine: Optional[SoftwareRequirement] = Field(default=None, description="""Primary engine (must appear in environment.requirements; migration target replacing deprecated 'software').""", json_schema_extra = { "linkml_meta": {'domain_of': ['Equation']} })
     pycode: Optional[str] = Field(default=None, description="""Python code for the equation.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Equation', 'Noise']} })
@@ -3836,7 +3843,10 @@ class Provenance(ConfiguredBaseModel):
 
     derived_from: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Provenance', 'SimulationStudy'],
          'slot_uri': 'prov:wasDerivedFrom'} })
-    references: Optional[list[str]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Provenance', 'Dynamics', 'SimulationExperiment'],
+    references: Optional[list[str]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Provenance',
+                       'Dynamics',
+                       'SimulationExperiment',
+                       'SimulationStudy'],
          'slot_uri': 'dcterms:references'} })
     date_created: Optional[str] = Field(default=None, description="""ISO 8601 (prov:generatedAtTime)""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationTool', 'Provenance']} })
     license: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
@@ -5391,7 +5401,10 @@ class Dynamics(ConfiguredBaseModel):
          'slot_uri': 'dcterms:description'} })
     source: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Edge', 'Observation', 'Dynamics', 'Parameter', 'CouplingInput'],
          'slot_uri': 'dcterms:source'} })
-    references: Optional[list[str]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Provenance', 'Dynamics', 'SimulationExperiment'],
+    references: Optional[list[str]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Provenance',
+                       'Dynamics',
+                       'SimulationExperiment',
+                       'SimulationStudy'],
          'slot_uri': 'dcterms:references'} })
     dataLocation: Optional[str] = Field(default=None, description="""Add the location of the data file containing the parcellation terminology.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'SoftwareRequirement',
@@ -8651,7 +8664,7 @@ class TuningObjective(ConfiguredBaseModel):
                        'Aggregation',
                        'TuningObjective',
                        'Algorithm']} })
-    target_variable: Optional[str] = Field(default=None, description="""State variable for activity targets (e.g., S_e)""", json_schema_extra = { "linkml_meta": {'domain_of': ['TuningObjective']} })
+    target_variable: Optional[str] = Field(default=None, description="""State variable for activity targets (e.g., S_e)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Event', 'TuningObjective']} })
     target_value: Optional[float] = Field(default=None, description="""Target value for activity objectives""", json_schema_extra = { "linkml_meta": {'domain_of': ['TuningObjective']} })
     target_data: Optional[str] = Field(default=None, description="""Reference to empirical data observation for matching objectives""", json_schema_extra = { "linkml_meta": {'domain_of': ['TuningObjective']} })
     metric: Optional[Equation] = Field(default=None, description="""Metric equation for matching (e.g., correlation, rmse)""", json_schema_extra = { "linkml_meta": {'domain_of': ['TuningObjective']} })
@@ -9657,6 +9670,11 @@ class SimulationExperiment(ConfiguredBaseModel):
          'tree_root': True})
 
     model: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Electrode', 'SimulationExperiment', 'SimulationStudy']} })
+    references: Optional[list[str]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Provenance',
+                       'Dynamics',
+                       'SimulationExperiment',
+                       'SimulationStudy'],
+         'slot_uri': 'dcterms:references'} })
     id: int = Field(default=..., json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'SimulationExperiment'],
          'slot_uri': 'dcterms:identifier'} })
     description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
@@ -9788,8 +9806,6 @@ class SimulationExperiment(ConfiguredBaseModel):
                        'Continuation',
                        'SimulationExperiment']} })
     software: Optional[SoftwareRequirement] = Field(default=None, description="""(Deprecated) Single software requirement; prefer 'environment' with aggregated requirements.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Callable', 'Continuation', 'SimulationExperiment']} })
-    references: Optional[list[str]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Provenance', 'Dynamics', 'SimulationExperiment'],
-         'slot_uri': 'dcterms:references'} })
     dataset: Optional[Dataset] = Field(default=None, description="""Multi-subject dataset for workflow rendering. When set, render_workflow() uses dataset.subjects/sessions to generate per-subject parallel jobs.""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
 
 
@@ -9900,6 +9916,11 @@ class SimulationStudy(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE'],
          'slot_uri': 'dcterms:description'} })
+    references: Optional[list[str]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Provenance',
+                       'Dynamics',
+                       'SimulationExperiment',
+                       'SimulationStudy'],
+         'slot_uri': 'dcterms:references'} })
     key: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['DataSource', 'SimulationStudy']} })
     title: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationStudy'], 'slot_uri': 'dcterms:title'} })
     year: Optional[int] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationStudy'], 'slot_uri': 'dcterms:issued'} })

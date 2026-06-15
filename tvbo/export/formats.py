@@ -79,6 +79,9 @@ def _render_jax(exp, **kw):
 def _render_tvboptim(exp, **kw):
     from tvbo.classes.experiment import templates, format_code
     template = templates.lookup.get_template("tvboptim/tvbo-tvboptim-experiment.py.mako")
+    # Resolve network-observation source pointers once, in Python, and hand
+    # the {obs_name: measure} mapping to the template (which only emits code).
+    kw.setdefault("network_obs_measures", exp.network_observation_measures)
     return format_code(template.render(experiment=exp, **kw), use_black=False)
 
 

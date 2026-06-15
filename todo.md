@@ -328,6 +328,37 @@ generator yields a `Network` (`weights`, optionally `lengths`,
 optionally per-node parameters). The generator is metadata on
 `Network`, not a parallel concept.
 
+### Execution engine — generic procedure interpreter (decision: locked)
+
+> **Detailed design: [`dev/GenericProcedureEngine.md`](dev/GenericProcedureEngine.md).**
+
+The two tiers below define the **schema** (what a generator spec looks
+like). The **engine** that executes those specs is the piece that
+decides whether `tvbo/graph_generators/builtins.py` survives. Decision
+(reservoir-computing review): a dynamics RHS, a generator `procedure:`,
+and a `Distribution` are all the *same kind of symbolic spec* and must
+be interpreted by **one** engine — the existing sympy → `JaxPrinter` /
+`JuliaPrinter` pipeline in `tvbo/codegen/code.py`, extended with the
+procedural primitives (`sample`, `eigvals`, `pairwise_distance`,
+`stochastic_mask`, `normalize`, …) and a distribution → backend-sampler
+map (vocabulary aligned to numpyro / `Distributions.jl`:
+`Normal`/`Uniform`/`LogNormal`/`Beta`).
+
+- **Stage 1 (now):** per-generator Python in `builtins.py` stays as a
+  *demoted* numpy realisation; the symbolic `procedure:` in each
+  `tvbo/database/graph_generators/<Type>.yaml` is authoritative.
+- **Stage 2:** build the generic procedure-DAG evaluator (eager numpy
+  mode), migrate `RandomReservoir` / `WeightShuffle` to pure-YAML
+  `procedure:`, and **delete `builtins.py`** — new generators become
+  pure YAML. The `bindings.python` / `builder: Callable` path survives
+  only as the rare, explicitly-flagged library-wrapper exception.
+- **Stage 3 (only if needed):** emit procedures into backend source for
+  on-device / per-trial / differentiable generation.
+
+Open question to resolve before Stage 2: cross-backend RNG
+reproducibility contract (numpy PCG64 ≠ jax Threefry ≠ Julia RNG) — see
+the design doc §4.
+
 ### Two tiers of generator
 
 **Tier 1 — named built-in generators (small, finite catalogue).**

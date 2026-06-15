@@ -2,13 +2,23 @@
 
 These are reference implementations called by `Network.resolve()` at YAML
 load time. The symbolic `procedure:` block in each generator's YAML is
-the backend-independent specification; this module is the Python
+the backend-independent specification; this module is the *numpy*
 realisation of that specification.
 
 All materialisers return a dict with at least a ``weights`` key:
 the constructed adjacency matrix as a NumPy array. Optional keys
 (``lengths``, ``node_parameters``) follow the same convention used by
 `Network._resolve_from_graph_generator()` for `builder: Callable`.
+
+⚠️ Stage-1 / transitional. The long-term architecture replaces these
+per-generator Python functions with a single generic procedure engine
+that interprets the symbolic ``procedure:`` blocks for every backend —
+see ``dev/GenericProcedureEngine.md`` and the
+``Backend-independent declarative network construction`` section of
+``todo.md``. New generators should be authored as pure YAML
+``procedure:`` blocks; do not add Python here unless a generator
+genuinely needs a library algorithm that the symbolic primitives can't
+express (the documented escape-hatch).
 """
 
 from __future__ import annotations
@@ -18,41 +28,33 @@ from typing import Any, Optional
 import numpy as np
 
 
-def _resolve_distribution(spec: Optional[Any], rng: np.random.Generator, shape: tuple[int, ...]) -> np.ndarray:
-    """Sample from a Distribution spec.
+def _resolve_distribution(dist: Optional[Any], rng: np.random.Generator, shape: tuple[int, ...]) -> np.ndarray:
+    """Sample ``shape`` values from a canonical TVBO ``Distribution`` (or ``None``).
 
-    Accepts (a) a dict-like ``{'type': 'Normal', 'mean': 0, 'std': 1}`` or
-    similar, (b) the corresponding LinkML-generated Pydantic object, or
-    (c) ``None`` → defaults to standard Normal.
+    Reads the LinkML object directly — ``dist.name`` is the distribution type
+    and ``dist.parameters[k].value`` are its numeric parameters — so no
+    intermediate flattening or format-guessing is needed. ``None`` defaults to
+    a standard Normal.
     """
-    if spec is None:
+    if dist is None:
         return rng.standard_normal(shape)
 
-    # Extract a plain dict regardless of source representation
-    if hasattr(spec, "model_dump"):
-        data = spec.model_dump()
-    elif isinstance(spec, dict):
-        data = spec
-    else:
-        # Pydantic without model_dump or some other object — best-effort attribute read
-        data = {k: getattr(spec, k) for k in ("type", "mean", "std", "lo", "hi") if hasattr(spec, k)}
+    name = (getattr(dist, "name", None) or "Normal").lower()
+    params = getattr(dist, "parameters", None) or {}
 
-    dist_type = (data.get("type") or "Normal").lower()
+    def _p(key: str, default: float) -> float:
+        param = params.get(key)
+        value = getattr(param, "value", None) if param is not None else None
+        return float(value if value is not None else default)
 
-    if dist_type == "normal":
-        mean = float(data.get("mean", 0.0))
-        std = float(data.get("std", 1.0))
-        return rng.normal(loc=mean, scale=std, size=shape)
-    if dist_type == "uniform":
-        lo = float(data.get("lo", 0.0))
-        hi = float(data.get("hi", 1.0))
-        return rng.uniform(low=lo, high=hi, size=shape)
-    if dist_type == "lognormal":
-        mu = float(data.get("mu", data.get("mean", 0.0)))
-        sigma = float(data.get("sigma", data.get("std", 1.0)))
-        return rng.lognormal(mean=mu, sigma=sigma, size=shape)
+    if name == "normal":
+        return rng.normal(loc=_p("mean", 0.0), scale=_p("std", 1.0), size=shape)
+    if name == "uniform":
+        return rng.uniform(low=_p("lo", 0.0), high=_p("hi", 1.0), size=shape)
+    if name == "lognormal":
+        return rng.lognormal(mean=_p("mu", 0.0), sigma=_p("sigma", 1.0), size=shape)
 
-    raise ValueError(f"Unsupported weight_distribution type: {dist_type!r}")
+    raise ValueError(f"Unsupported weight_distribution: {name!r}")
 
 
 def random_reservoir(
@@ -174,11 +176,20 @@ def weight_shuffle(
 
 
 def _load_source_weights(source: str) -> np.ndarray:
-    """Resolve `source` (IRI / path) into a NumPy adjacency matrix."""
+    """Resolve `source` (IRI / path / bare name) into a NumPy adjacency matrix."""
     # Local import to avoid circular dependency with classes.network
     from tvbo.classes.network import Network
 
-    net = Network.from_db(source) if not source.endswith((".yaml", ".yml", ".h5")) else Network.from_file(source)
+    # IRI (e.g. ``tvbo:tpl-…_relmat``) → curated sidecar path, stripping the
+    # prefix the same way the rest of the codebase does. Falls back to a file
+    # path or a bare DB name.
+    resolved = Network._resolve_network_iri(source)
+    if resolved is not None:
+        net = Network.from_file(resolved)
+    elif source.endswith((".yaml", ".yml", ".h5")):
+        net = Network.from_file(source)
+    else:
+        net = Network.from_db(source)
     net._resolve()
 
     # Network may expose its primary weights matrix via different attrs depending on

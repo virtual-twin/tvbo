@@ -596,6 +596,10 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             source_dir = Path(source_file).parent if source_file else None
             net._resolve(source_dir=source_dir)
 
+        # Validate declarative network-observation sources against the
+        # network's declared observational_measures (names only, no data load).
+        obj._validate_network_observations()
+
         return obj
 
     @classmethod
@@ -1557,6 +1561,14 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
             delay_matrix = self.network.calculate_delays() if getattr(self.coupling, "delayed", False) else None
 
+            # Resolve network-sourced observations (e.g. fc_target <- empirical
+            # FC) to matrices and pass them alongside weights/distances. Only
+            # set when present, so experiments without network observations are
+            # unaffected.
+            net_obs = self.resolve_network_observations()
+            if net_obs:
+                kwargs.setdefault("network_observations", net_obs)
+
             # Run the experiment with optional per-step timing
             if benchmark:
                 # Run with detailed timing
@@ -1967,6 +1979,72 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             dt = float(self.integration.step_size)
         md = self.max_delay
         return int(round(md / dt)) + 1 if dt > 0 else 1
+
+    @property
+    def network_observation_measures(self) -> dict:
+        """Map each network-sourced observation to its network measure.
+
+        Resolves the declarative ``source: [network.observations.<measure>]``
+        (or ``network.edges.<measure>``) pointer once, in Python, so neither
+        the codegen template nor the runtime re-parse the string. Returns e.g.
+        ``{'fc_target': 'BoldCorrelation'}``; empty when no observation is
+        network-sourced.
+        """
+        out: dict = {}
+        for name, obs in (self.observations or {}).items():
+            src = getattr(obs, "source", None)
+            if isinstance(src, (list, tuple)):
+                src = src[0] if src else None
+            if src is not None and hasattr(src, "name"):
+                src = src.name
+            s = str(src) if src is not None else ""
+            if s.startswith("network.observations.") or s.startswith("network.edges."):
+                out[name] = s.split(".")[-1]
+        return out
+
+    def _validate_network_observations(self) -> None:
+        """Load-time check: every ``network.observations.<measure>`` an
+        observation references must be declared in the network's
+        ``observational_measures``. Cheap (names only, no data load) and
+        turns a runtime ``NameError`` deep in generated JAX into a clear
+        message at experiment-resolution time."""
+        measures = self.network_observation_measures
+        if not measures or self.network is None:
+            return
+        declared = set(self.network.observational_measures or [])
+        for name, measure in measures.items():
+            if declared and measure not in declared:
+                raise ValueError(
+                    f"Observation '{name}' sources 'network.observations."
+                    f"{measure}', but network '{getattr(self.network, 'label', '?')}' "
+                    f"declares observational_measures={sorted(declared)}. "
+                    f"Add '{measure}' to the network or fix the observation source."
+                )
+
+    def resolve_network_observations(self) -> dict:
+        """Resolve network-sourced observations to their matrices.
+
+        Pairs :attr:`network_observation_measures` with the data the network
+        carries (:attr:`Network.observations`), yielding ``{obs_name: matrix}``
+        ready to pass into the generated
+        ``run_experiment(network_observations=...)``. Raises a clear error if
+        a declared measure's data is absent.
+        """
+        measures = self.network_observation_measures
+        if not measures:
+            return {}
+        available = self.network.observations if self.network is not None else {}
+        resolved: dict = {}
+        for name, measure in measures.items():
+            if measure not in available:
+                raise ValueError(
+                    f"Observation '{name}' sources network measure "
+                    f"'{measure}', but the network provides "
+                    f"{sorted(available) or 'no observational data'}. "
+                    f"Ensure the network's companion file carries '{measure}'."
+                )
+            resolved[name] = available[measure]
+        return resolved
 
     def collect_initial_conditions(self, random=False):
         history = []

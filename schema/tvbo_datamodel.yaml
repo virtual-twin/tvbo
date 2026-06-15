@@ -283,6 +283,11 @@ enums:
                 description: "Triggered at predetermined time points. Maps to PresetTimeCallback / PresetTimeComponentCallback."
             stimulus:
                 description: "Continuous time-dependent input signal (e.g., external current). Legacy Stimulus behavior."
+            stimulation:
+                description: >-
+                    Synonym of 'stimulus' — a continuous time-dependent input signal
+                    injected into a target state variable across target regions. The
+                    codegen treats 'stimulation' and 'stimulus' identically.
 
     StandardGraphType:
         description: >
@@ -444,12 +449,14 @@ classes:
             - parameters
             - description
         attributes:
-            lefthandside:
+            lhs:
                 range: string
-                alias: lhs
-            righthandside:
+                aliases:
+                    - lefthandside
+            rhs:
                 range: string
-                alias: rhs
+                aliases:
+                    - righthandside
             conditionals:
                 description: Conditional logic for piecewise equations.
                 range: ConditionalBlock
@@ -594,7 +601,30 @@ classes:
                 multivalued: true
                 range: float
                 array: {}
-                description: "Per-region weighting for stimulus-type events."
+                description: "Per-region weighting for stimulus-type events (explicit values)."
+            weight_distribution:
+                range: Distribution
+                inlined: true
+                description: >-
+                    Distribution to sample per-region stimulus weights from, as an
+                    alternative to the explicit `weighting` array (e.g. Uniform(-1, 1)
+                    per node). When set, the codegen samples one weight per target
+                    region using the distribution's seed.
+            target_variable:
+                range: string
+                description: >-
+                    State variable that a stimulus-type event drives — the variable
+                    its signal is injected into (e.g. 'y_0' for Jansen-Rit, or a named
+                    'stimulus' input exposed to coupling). If absent, the stimulus adds
+                    to the model's default external-input variable.
+            target_regions:
+                multivalued: true
+                range: string
+                description: >-
+                    Regions a stimulus-type event targets: 'all' (broadcast to every
+                    node) or explicit region labels / indices. More expressive than the
+                    integer-only `regions` slot; when both are absent the event applies
+                    to all regions.
             duration:
                 range: float
                 description: "Duration of stimulus-type events."
