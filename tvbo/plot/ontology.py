@@ -1632,11 +1632,11 @@ def plot_model(
     add_parameter_values=False,
     circle_matches=False,
     ax=None,
-    legend=True,
-    figsize=(10, 6),
-    legend_kwargs={},
-    edge_kwargs={"shrinkA": 15, "shrinkB": 15},
-    node_kwargs={},
+    legend: bool = True,
+    figsize: Tuple[float, float] = (10, 6),
+    legend_kwargs: Dict = {},
+    edge_kwargs: Dict = {"shrinkA": 15, "shrinkB": 15},
+    node_kwargs: Dict = {},
     **kwargs,
 ):
     """Render a `Dynamics` model as a directed graph: parameters → equations → state vars.
