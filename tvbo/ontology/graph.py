@@ -132,7 +132,9 @@ def onto2graph(
         if add_object_properties:
             for prop in props["object_properties"]:
                 p, o = next(iter(prop.items()))
-                if p in ["has_data_type", "has_dependency"] or o.name == "Thing":
+                # skip data-valued properties whose object is a literal/datatype (e.g. a
+                # float or xsd datatype) rather than an ontology entity — these are not graph edges
+                if p in ["has_data_type", "has_dependency"] or not hasattr(o, "name") or o.name == "Thing":
                     continue
                 object_id = o.storid if storid else (o if not object2string else o.label.first())
                 property_id = (
@@ -164,6 +166,24 @@ def onto2graph(
                         class_id,
                         type="is_instance_of",
                     )
+
+        # Connect individuals via their object properties (e.g. a clinical study ->
+        # the clinical domain it applies to and the node-dynamics model it uses).
+        if add_object_properties:
+            for prop in i.get_properties():
+                if isinstance(prop, str):
+                    continue
+                try:
+                    values = list(prop[i])
+                except Exception:
+                    continue
+                for o in values:
+                    if not hasattr(o, "storid") or not hasattr(o, "name") or o.name == "Thing":
+                        continue
+                    target_id = o.storid if storid else (o if not object2string else (o.label.first() or str(o)))
+                    property_id = prop.storid if storid else (prop if not object2string else (prop.label.first() if prop.label else prop.name))
+                    if not edge_exists(nx_graph, individual_id, target_id, edge_type=prop):
+                        nx_graph.add_edge(individual_id, target_id, type=property_id)
 
     return nx_graph
 

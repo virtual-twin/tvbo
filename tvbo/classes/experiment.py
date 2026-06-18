@@ -2107,13 +2107,13 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             if isinstance(tr, str):
                 tr = [tr]
             tr = [str(x) for x in tr]
-            regions = list(getattr(ev, "regions", None) or [])
+            regions = list(getattr(ev, "nodes", None) or getattr(ev, "regions", None) or [])
             if tr and not (len(tr) == 1 and tr[0].lower() == "all"):
                 regions = [int(labels.get(x, x)) for x in tr]
 
-            # weight_distribution -> weighting array (canonical, seeded resolver)
+            # weight_distribution -> weights array (canonical, seeded resolver)
             wd = getattr(ev, "weight_distribution", None)
-            weighting = list(getattr(ev, "weighting", None) or [])
+            weighting = list(getattr(ev, "weights", None) or getattr(ev, "weighting", None) or [])
             if wd is not None and not weighting and _resolve_distribution is not None:
                 n = len(regions) if regions else int(n_nodes)
                 rng = np.random.default_rng(getattr(wd, "seed", None))
@@ -2121,9 +2121,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 if not regions:
                     regions = list(range(int(n_nodes)))
             if regions:
-                ev.regions = regions
+                ev.nodes = regions
             if weighting:
-                ev.weighting = weighting
+                ev.weights = weighting
 
             # merge equation-level parameters onto the event (codegen reads ev.parameters)
             eq = getattr(ev, "equation", None)

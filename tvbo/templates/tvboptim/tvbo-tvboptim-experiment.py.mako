@@ -2305,8 +2305,13 @@ def run_experiment(
         Returns list of (name, value) tuples.
         """
         all_hp = {}
-        # First, add hyperparameters from included algorithms (with argument overrides)
+        # First, add hyperparameters from COMBINED included algorithms (with overrides).
+        # Nested includes are skipped — their hyperparameters are passed inside the
+        # generated run_<outer>() to the inner run_<inner>() call, not on the outer
+        # signature, so exposing them here would pass an unexpected kwarg.
         for inc in (getattr(algo, 'includes', None) or []):
+            if str(getattr(inc, 'mode', 'combined') or 'combined') == 'nested':
+                continue
             inc_name, arg_overrides = get_include_info(inc)
             inc_algo = alg_dict.get(inc_name)
             if inc_algo:
@@ -2374,8 +2379,12 @@ def run_experiment(
                 obs_set.add(str(o))
         elif obs_raw:
             obs_set.add(str(obs_raw))
-        # Included algorithms' observations
+        # Included algorithms' observations (combined-mode only; nested includes
+        # compute their observations inside their own inner loop, and their
+        # external inputs are passed there — not on the outer signature).
         for inc in (getattr(alg, 'includes', None) or []):
+            if str(getattr(inc, 'mode', 'combined') or 'combined') == 'nested':
+                continue
             inc_algo_name = str(inc.algorithm.name) if hasattr(inc, 'algorithm') and hasattr(inc.algorithm, 'name') else str(getattr(inc, 'algorithm', inc))
             inc_algo = algorithms_dict.get(inc_algo_name)
             if inc_algo:
@@ -2471,8 +2480,102 @@ def run_experiment(
                 if src_name in _all_observations:
                     algo_source_obs_needed.add(src_name)
     algo_needs_buffers = algo_has_window_size and len(algo_source_obs_needed) > 0
-%>
 
+    # Multi-stage schedule (Algorithm.stages): resolve per-stage n_iterations +
+    # hyperparameter values (stage overrides fall back to algo defaults).
+    algo_stages = list(getattr(algo, 'stages', None) or [])
+    has_stages = len(algo_stages) > 0
+    stage_defs = []
+    for _st in algo_stages:
+        _over = {}
+        for _arg in (getattr(_st, 'arguments', None) or []):
+            _over[str(_arg.name)] = _arg.value
+        _sd = {'n_iterations': int(_st.n_iterations)}
+        for _hp_name, _hp_val in hyperparams_dict.items():
+            _sd[_hp_name] = _over.get(_hp_name, _hp_val)
+        stage_defs.append(_sd)
+%>
+% if has_stages:
+                # ── Multi-stage schedule ──────────────────────────────────────
+                # Run the algorithm body once per stage, IN ORDER, carrying
+                # trajectory state + FC window buffer + monitors forward so the
+                # stages form ONE continuous online tuning run. Per-stage eta /
+                # window_size from YAML (Schirner 2023: eta halves, window doubles).
+                _stage_defs = [
+% for sd in stage_defs:
+                    ${repr(sd)},
+% endfor
+                ]
+% if algo_needs_buffers:
+% for src_obs in algo_source_obs_needed:
+% if has_deps:
+                _stage_${src_obs}_buffer = (algorithms_results.get('${algo_deps[-1]}', Bunch()).get('${src_obs}_buffer', None) if '${algo_deps[-1]}' in algorithms_results else kwargs.get('${src_obs}_buffer', None))
+% else:
+                _stage_${src_obs}_buffer = kwargs.get('${src_obs}_buffer', None)
+% endif
+% endfor
+% endif
+% if has_deps:
+                _stage_monitors = (algorithms_results.get('${algo_deps[-1]}', Bunch()).get('monitors', None) if '${algo_deps[-1]}' in algorithms_results else kwargs.get('monitors', None))
+% else:
+                _stage_monitors = kwargs.get('monitors', None)
+% endif
+                _stage_state = algo_state
+                algo_result = None
+                _stage_post_fc = []   # per-stage post-tuning FC matrices (r-trajectory)
+                _stage_conv = []      # per-stage convergence Bunch (working-point trajectory)
+                for _si, _sd in enumerate(_stage_defs):
+                    if algo_verbose:
+                        print(f"  [{algorithm_name} stage {_si+1}/{len(_stage_defs)}] {_sd}")
+                    algo_result = run_${algo_name}(
+                        state=_stage_state,
+                        model_fn=algo_model_fn,
+                        key=jax.random.fold_in(algo_key, _si),
+                        n_iterations=_sd['n_iterations'],
+% for hp_name in hyperparams_dict.keys():
+                        ${hp_name}=_sd['${hp_name}'],
+% endfor
+% for inp_name in input_names:
+                        ${inp_name}=kwargs.get('${inp_name}'),
+% endfor
+% for net_obs_name in network_obs_inputs:
+                        ${net_obs_name}=${net_obs_name},  # Module-level constant from BIDS
+% endfor
+                        post_model_fn=post_model_fn,
+                        post_state=post_state,
+                        history=transient,
+% if algo_needs_buffers:
+% for src_obs in algo_source_obs_needed:
+                        ${src_obs}_buffer=_stage_${src_obs}_buffer,
+% endfor
+% endif
+                        monitors=_stage_monitors,
+                        run_post_tuning=True,   # validate after EACH stage (r-trajectory)
+% if observation_ref:
+                        observation_monitor=observations.${observation_ref},
+% endif
+                        verbose=algo_verbose,
+                    )
+                    _stage_state = algo_result.state
+% if algo_needs_buffers:
+% for src_obs in algo_source_obs_needed:
+                    _stage_${src_obs}_buffer = algo_result.get('${src_obs}_buffer', _stage_${src_obs}_buffer)
+% endfor
+% endif
+                    _stage_monitors = algo_result.get('monitors', _stage_monitors)
+                    try:
+                        _pt = algo_result.post_tuning.observations
+                        _stage_post_fc.append(_pt['fc'] if 'fc' in _pt else _pt.get('fc'))
+                    except Exception:
+                        _stage_post_fc.append(None)
+                    try:
+                        _stage_conv.append(dict(algo_result.convergence))
+                    except Exception:
+                        _stage_conv.append(None)
+                if algo_result is not None:
+                    algo_result._extras['stage_post_fc'] = _stage_post_fc
+                    algo_result._extras['stage_conv'] = _stage_conv
+% else:
                 algo_result = run_${algo_name}(
                     state=algo_state,
                     model_fn=algo_model_fn,
@@ -2517,6 +2620,7 @@ def run_experiment(
 % endif
                     verbose=algo_verbose,
                 )
+% endif
 % endfor
 
             # After trying all algorithm blocks, check if one matched and store result
