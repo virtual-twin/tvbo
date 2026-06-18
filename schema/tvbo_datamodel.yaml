@@ -150,6 +150,29 @@ slots:
             Set false to suppress recording.
 
 enums:
+    AlgorithmCompositionMode:
+        description: >-
+            How an included algorithm is composed with the outer algorithm.
+            Determines whether the inner algorithm's update rules are merged
+            into the same loop (combined) or run as a converging inner loop on
+            each outer iteration (nested).
+        permissible_values:
+            combined:
+                description: >-
+                    The included algorithm's update rules are merged into the outer
+                    loop and applied ONCE per outer iteration (1:1). Use when both
+                    algorithms update at the same cadence on the same observations.
+                    This is the default.
+            nested:
+                description: >-
+                    The included algorithm runs as a full inner loop on EACH outer
+                    iteration, re-converging before the outer update rules are applied.
+                    Use when the inner algorithm maintains an invariant the outer one
+                    would otherwise perturb — e.g. FIC holding the E-I working point
+                    (mean S_e = 0.25) while EIB retunes per-edge coupling. The outer
+                    update's validity depends on that invariant, so the inner loop must
+                    re-settle it between every outer step.
+
     ParallelMode:
         description: >-
             How a trial / grid-point axis is realised at JAX codegen time. The
@@ -592,16 +615,24 @@ classes:
                 description: >-
                     Stimulus equation for stimulus-type events.
                     Legacy compatibility with Stimulus class.
-            regions:
+            nodes:
+                aliases:
+                    - regions
                 multivalued: true
                 range: integer
                 array: {}
-                description: "Target regions for stimulus-type events."
-            weighting:
+                description: >-
+                    Network nodes a stimulus-type event is applied to (node ids /
+                    indices). Pairs with `weights`. (Formerly `regions`.)
+            weights:
+                aliases:
+                    - weighting
                 multivalued: true
                 range: float
                 array: {}
-                description: "Per-region weighting for stimulus-type events (explicit values)."
+                description: >-
+                    Per-node stimulus weighting, aligned with `nodes`.
+                    (Formerly `weighting`.)
             weight_distribution:
                 range: Distribution
                 inlined: true
@@ -628,6 +659,25 @@ classes:
             duration:
                 range: float
                 description: "Duration of stimulus-type events."
+            dataLocation:
+                range: string
+                description: >-
+                    Path to a data file (.npy) holding the stimulus waveform of a
+                    *data-driven* stimulus event — the samples are interpolated at
+                    simulation time instead of evaluating `equation`. 1-D arrays are a
+                    single time-series broadcast to the targeted `nodes`; the event's
+                    `name` is still the symbol injected into the dynamics.
+            sampling_rate:
+                range: float
+                ifabsent: float(1.0)
+                description: >-
+                    Sample rate of the `dataLocation` waveform in samples per
+                    millisecond (e.g. 1.0 = 1 kHz). Sample i is placed at time i /
+                    sampling_rate ms.
+            interpolation:
+                range: string
+                ifabsent: string(linear)
+                description: "Interpolation for a data-driven stimulus: 'linear' or 'cubic'."
 
     TemporalApplicableEquation:
         class_uri: tvbo:TemporalApplicableEquation
@@ -2566,6 +2616,51 @@ classes:
                 description: >-
                     Override hyperparameter values for the included algorithm.
                     Maps parameter names to new values.
+            mode:
+                range: AlgorithmCompositionMode
+                ifabsent: "string(combined)"
+                description: >-
+                    How the included algorithm composes with the outer one.
+                    'combined' (default) merges its update rules into the outer loop
+                    (applied once per outer iteration); 'nested' runs it as a
+                    converging inner loop on each outer iteration before the outer
+                    update rules. Use 'nested' when the inner algorithm maintains an
+                    invariant the outer would perturb (e.g. FIC holding the working
+                    point while EIB retunes coupling).
+            inner_iterations:
+                range: integer
+                description: >-
+                    For mode=nested only: number of inner-loop iterations to run per
+                    outer iteration. Defaults to the included algorithm's own
+                    n_iterations. A small value (e.g. 5-10) is usually enough to
+                    correct the drift introduced by one outer step.
+
+    AlgorithmStage:
+        class_uri: tvbo:AlgorithmStage
+        description: >-
+            One stage of a multi-stage tuning schedule. The algorithm body is run
+            once per stage, in order, carrying the trajectory state, FC window
+            buffer, and monitors forward — so the stages form one continuous online
+            tuning run. Each stage overrides n_iterations and selected
+            hyperparameters (e.g. Schirner 2023's 6 stages: eta halves and the FC
+            window doubles per stage, sharpening the per-edge gradient over time).
+        slots:
+            - label
+            - description
+        attributes:
+            n_iterations:
+                range: integer
+                required: true
+                description: Number of outer iterations to run in this stage.
+            arguments:
+                multivalued: true
+                range: Parameter
+                inlined: true
+                inlined_as_list: true
+                description: >-
+                    Hyperparameter overrides for this stage (e.g. eta, window_size).
+                    Names not listed fall back to the algorithm's own hyperparameter
+                    defaults.
 
     TuningObjective:
         class_uri: tvbo:TuningObjective
@@ -2622,6 +2717,18 @@ classes:
                     Include update rules from other algorithms with optional argument overrides.
                     Unlike depends_on (sequential), includes means combined execution.
                     Example: includes: [{algorithm: fic, arguments: [{name: eta, value: 0.1}]}]
+            stages:
+                multivalued: true
+                range: AlgorithmStage
+                inlined: true
+                inlined_as_list: true
+                description: >-
+                    Optional multi-stage schedule. When present, the algorithm body is
+                    run once per stage IN ORDER, carrying trajectory state, FC window
+                    buffer, and monitors forward (one continuous online run). Each stage
+                    overrides n_iterations + selected hyperparameters. Replaces the
+                    top-level n_iterations for execution. Example (Schirner 2023): 6
+                    stages with eta halving and window_size doubling per stage.
             objective:
                 range: TuningObjective
                 inlined: true
