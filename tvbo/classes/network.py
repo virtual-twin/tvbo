@@ -836,6 +836,16 @@ class Network(tvbo_datamodel.Network):
             v = getattr(loaded, cache, None)
             if v is not None:
                 setattr(self, cache, v)
+        # Carry over the parcellation that from_bids inferred from the BIDS
+        # filenames, so the atlas resolves (and centres can be looked up by
+        # label) even when the source YAML named no parcellation.
+        if getattr(self, "parcellation", None) is None:
+            loaded_parc = getattr(loaded, "parcellation", None)
+            if loaded_parc is not None:
+                try:
+                    self.parcellation = loaded_parc
+                except Exception:  # noqa: BLE001
+                    object.__setattr__(self, "parcellation", loaded_parc)
 
     def _resolve_from_parcellation(self) -> None:
         """Populate self from a parcellation + tractogram normative DB lookup."""
@@ -1390,6 +1400,18 @@ class Network(tvbo_datamodel.Network):
         object.__setattr__(instance, "_bids_dir", str(bids_dir))
         object.__setattr__(instance, "_bids_observations", observations)
 
+        # Record the parcellation atlas so get_atlas()/get_centers() can resolve
+        # region centres from the named atlas's entities by label.
+        if atlas and getattr(instance, "parcellation", None) is None:
+            parc = tvbo_datamodel.Parcellation(
+                label=atlas,
+                atlas=tvbo_datamodel.BrainAtlas(name=atlas),
+            )
+            try:
+                instance.parcellation = parc
+            except Exception:  # noqa: BLE001
+                object.__setattr__(instance, "parcellation", parc)
+
         return instance
 
     @property
@@ -1494,6 +1516,20 @@ class Network(tvbo_datamodel.Network):
                     if "label" in df.columns:
                         labels = df["label"].tolist()
                         self.nodes = [tvbo_datamodel.Node(id=i, label=labels[i]) for i in range(n_nodes)]
+
+                # Record the parcellation atlas. BIDS connectomes carry no
+                # parcellation, so get_atlas() would default to "wholebrain";
+                # naming the atlas lets get_centers() resolve region centres from
+                # the atlas's entities (matched to node labels).
+                if atlas and getattr(self, "parcellation", None) is None:
+                    parc = tvbo_datamodel.Parcellation(
+                        label=atlas,
+                        atlas=tvbo_datamodel.BrainAtlas(name=atlas),
+                    )
+                    try:
+                        self.parcellation = parc
+                    except Exception:  # noqa: BLE001
+                        object.__setattr__(self, "parcellation", parc)
 
         # Load observational measures if requested
         if observational_measures:
@@ -3394,53 +3430,65 @@ class Network(tvbo_datamodel.Network):
             except (KeyError, FileNotFoundError):
                 pass
 
-        # --- Source 3: Atlas metadata (fallback) ---
-        labels = []
-        ids = []
-        centers = []
+        # --- Source 3: Atlas metadata ---
         entities = self.get_atlas().terminology.entities
         # Handle both dict and list formats
         if hasattr(entities, "items"):
-            entity_items = entities.items()
+            entity_items = list(entities.items())
         elif isinstance(entities, list):
-            entity_items = enumerate(entities)
+            entity_items = list(enumerate(entities))
         else:
             # Empty or unknown format - return default
             return {0: (0, 0, 0)}
 
-        for region, entity in entity_items:
-            # Handle entity being a dict or object
+        def _entity_coord(entity, region):
             if isinstance(entity, dict):
-                lookup_label = entity.get("lookupLabel", region)
-                center = entity.get("center", {})
+                center = entity.get("center", {}) or {}
                 coord = (center.get("x", 0), center.get("y", 0), center.get("z", 0))
+                return coord, entity.get("lookupLabel", region)
+            center = getattr(entity, "center", None)
+            coord = (center.x, center.y, center.z) if center else (0, 0, 0)
+            return coord, getattr(entity, "lookupLabel", region)
+
+        # Build a coord index keyed by every label an entity is known by
+        # (name + abbreviation + alternateName), plus an ordered list for the
+        # lookupLabel fallback. The alternateName slot carries the abbreviated
+        # region labels that BIDS connectomes use (e.g. "L.BSTS").
+        by_label = {}
+        ordered = []
+        for region, entity in entity_items:
+            coord, lookup_label = _entity_coord(entity, region)
+            ordered.append((lookup_label if isinstance(lookup_label, int) else region, coord))
+            if isinstance(entity, dict):
+                names = [entity.get("name"), entity.get("abbreviation"), *(entity.get("alternateName") or [])]
             else:
-                lookup_label = getattr(entity, "lookupLabel", region)
-                center = getattr(entity, "center", None)
-                if center:
-                    coord = (center.x, center.y, center.z)
-                else:
-                    coord = (0, 0, 0)
-            labels.append(region)
-            ids.append(lookup_label if isinstance(lookup_label, int) else region)
-            centers.append(coord)
+                names = [getattr(entity, "name", None), getattr(entity, "abbreviation", None),
+                         *(getattr(entity, "alternateName", None) or [])]
+            for nm in names:
+                if nm:
+                    by_label[str(nm)] = coord
 
-        if not centers:
+        # (3a) Match this network's node labels to atlas entities by label, so
+        # centres line up with node order regardless of the atlas's own ordering.
+        if nodes and by_label:
+            node_labels = [getattr(node, "label", None) for node in nodes]
+            matched = {i: by_label[str(l)] for i, l in enumerate(node_labels) if l and str(l) in by_label}
+            n_labelled = sum(1 for l in node_labels if l)
+            if matched and len(matched) >= max(1, n_labelled // 2):
+                return matched
+
+        # (3b) Fallback: key centres by the atlas's own lookupLabel order.
+        if not ordered:
             return {0: (0, 0, 0)}
-
-        centers = np.array(centers)
-        # Only sort if ids are numeric
+        ids = [o[0] for o in ordered]
+        centers = np.array([o[1] for o in ordered])
         if all(isinstance(i, (int, float)) for i in ids):
-            sort_idx = np.argsort(ids)
-            centers = centers[sort_idx]
-            labels = np.array(labels)[sort_idx]
-            center_mapping = {int(i) - 1: tuple(center) for i, center in zip(sorted(ids), centers)}
+            order = np.argsort(ids)
+            center_mapping = {int(ids[j]) - 1: tuple(centers[j]) for j in order}
         else:
             center_mapping = {i: tuple(center) for i, center in enumerate(centers)}
 
-        if center_mapping == {}:
-            return {0: (0, 0, 0)}
-        return center_mapping
+        return center_mapping or {0: (0, 0, 0)}
 
     def plot_graph(
         self,

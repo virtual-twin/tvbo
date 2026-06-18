@@ -64,8 +64,12 @@ def get_all_update_rules(algo, algorithms_dict):
     Included algorithm rules come first, then this algorithm's rules.
     """
     all_rules = []
-    # First, add rules from included algorithms with their argument overrides
+    # First, add rules from COMBINED-mode included algorithms with their argument
+    # overrides. nested-mode includes are NOT flattened here — they run as a
+    # converging inner loop (see get_nested_includes) on each outer iteration.
     for inc in as_list(getattr(algo, 'includes', None)):
+        if _include_mode(inc) == 'nested':
+            continue
         inc_name, arg_overrides = get_include_info(inc)
         inc_algo = algorithms_dict.get(inc_name)
         if inc_algo:
@@ -75,6 +79,39 @@ def get_all_update_rules(algo, algorithms_dict):
     for rule in as_list(getattr(algo, 'update_rules', None)):
         all_rules.append((rule, str(algo.name), {}))
     return all_rules
+
+def _include_mode(inc):
+    """Composition mode of an AlgorithmInclude ('combined' default, or 'nested')."""
+    return str(getattr(inc, 'mode', 'combined') or 'combined')
+
+def get_nested_includes(algo, algorithms_dict, obs_dict):
+    """Return nested-mode includes as call-ready descriptors.
+
+    Each entry: {name, inner_iterations, hyperparam_values, external_inputs}.
+    A nested include runs the included algorithm's own generated run_<inner>() as
+    a converging inner loop on each outer iteration, so the inner algorithm's
+    invariant (e.g. FIC's working point) is re-settled before the outer update.
+    """
+    result = []
+    for inc in as_list(getattr(algo, 'includes', None)):
+        if _include_mode(inc) != 'nested':
+            continue
+        inc_name, arg_overrides = get_include_info(inc)
+        inc_algo = algorithms_dict.get(inc_name)
+        if not inc_algo:
+            continue
+        inc_hp = get_hyperparam_dict(inc_algo)
+        ordered_vals = [arg_overrides.get(k, inc_hp[k]) for k in inc_hp.keys()]
+        inner_iters = getattr(inc, 'inner_iterations', None)
+        if inner_iters is None:
+            inner_iters = int(inc_algo.n_iterations)
+        result.append({
+            'name': safe_name(inc_name),
+            'inner_iterations': int(inner_iters),
+            'hyperparam_values': ordered_vals,
+            'external_inputs': get_external_inputs(inc_algo, obs_dict, algorithms_dict),
+        })
+    return result
 
 def get_external_inputs(algo, obs_dict, algorithms_dict=None):
     """Get observations that have external data_source or network.observations source."""
@@ -142,9 +179,12 @@ if network and network.coupling:
     n_iterations = int(algo.n_iterations)
     simulation_period = float(algo.simulation_period)
 
-    # Get all update rules (including from included algorithms)
+    # Get all update rules (combined-mode includes + own rules; nested excluded)
     all_update_rules_with_source = get_all_update_rules(algo, algorithms_dict)
     update_rules = [r for r, src, args in all_update_rules_with_source]  # Just the rules
+
+    # Nested-mode includes: inner algorithms run to convergence per outer iteration
+    nested_includes = get_nested_includes(algo, algorithms_dict, observations_dict)
 
     # Get all observations (including from included algorithms)
     observations = get_all_observations(algo, algorithms_dict)
@@ -225,6 +265,7 @@ def run_${algo_name}(
     post_model_fn: Callable = None,
     post_state: Any = None,
     history: Any = None,
+    run_post_tuning: bool = True,  # set False when called as a nested inner loop
 % if use_sliding_window:
 % for src_obs in source_observations_needed:
     ${src_obs}_buffer: jnp.ndarray = None,  # Optional: passed from previous algorithm
@@ -369,7 +410,7 @@ def run_${algo_name}(
     history_accessor = lambda tree: tree._history
 
 % if use_sliding_window:
-    n_nodes = state.dynamics.${list(model.state_variables.keys())[0] if model.state_variables else 'S_e'}.shape[0] if hasattr(state.dynamics, '${list(model.state_variables.keys())[0] if model.state_variables else 'S_e'}') else history.data.shape[2] if history is not None else 68
+    n_nodes = state.dynamics.${list(model.state_variables.keys())[0] if model.state_variables else 'S_e'}.shape[0] if hasattr(state.dynamics, '${list(model.state_variables.keys())[0] if model.state_variables else 'S_e'}') else history.data.shape[2] if history is not None else N_NODES
 
 % for src_obs in source_observations_needed:
     if ${src_obs}_buffer is not None:
@@ -466,6 +507,25 @@ def run_${algo_name}(
 
     for i in range(n_iterations):
         key, subkey = jax.random.split(key)
+% for ni in nested_includes:
+        # [NESTED INNER LOOP] Re-converge '${ni['name']}' before the outer update.
+        # The outer update rule's validity depends on '${ni['name']}'s invariant
+        # (e.g. FIC holding the E-I working point), which the previous outer step
+        # perturbed. Running its own run_${ni['name']}() to (near-)convergence each
+        # outer iteration re-settles that invariant. run_post_tuning=False skips the
+        # inner post-tuning simulation (we only need the converged state).
+        key, subkey = jax.random.split(key)
+        state = run_${ni['name']}(
+            state, model_fn, subkey, ${ni['inner_iterations']},
+% for hv in ni['hyperparam_values']:
+            ${hv},
+% endfor
+% for ext in ni['external_inputs']:
+            ${ext},
+% endfor
+            history=history, run_post_tuning=False, verbose=False,
+        ).state
+% endfor
         result = model_fn(state)
         state.initial_state.dynamics = result.data[-1][:${len(state_names)}]
         if hasattr(state, '_internal') and hasattr(state._internal, 'noise_samples'):
@@ -763,21 +823,30 @@ def run_${algo_name}(
             raise ValueError("Algorithm must have functions or simulated_observations for progress display")
 % endif
 
-    # Run post-tuning simulation (use full integration setup if provided)
-    if post_model_fn is not None and post_state is not None:
-        import copy
-        _post_state = copy.deepcopy(post_state)
-        _post_state.initial_state.dynamics = state.initial_state.dynamics
-        _post_state.dynamics = state.dynamics
-        _post_state.coupling = state.coupling
-        post_tuning = post_model_fn(_post_state)
-    else:
-        post_tuning = model_fn(state)
+    # Run post-tuning simulation (use full integration setup if provided).
+    # Carry over the TUNED PARAMETERS (dynamics J_i, coupling wLRE/wFFI) but
+    # keep post_state's own settled initial conditions — NOT the tuning loop's
+    # last mid-trajectory state. Seeding from the loop's last state lands a
+    # different attractor in multistable models, corrupting the post-tuning FC
+    # (it made identical-weight post sims score far below the base sim).
+    # Skipped entirely when run as a nested inner loop (only the state is needed).
+    if run_post_tuning:
+        if post_model_fn is not None and post_state is not None:
+            import copy
+            _post_state = copy.deepcopy(post_state)
+            _post_state.dynamics = state.dynamics
+            _post_state.coupling = state.coupling
+            post_tuning = post_model_fn(_post_state)
+        else:
+            post_tuning = model_fn(state)
 
-    # Compute ALL observations from post-tuning simulation (in dependency order)
-    # This uses the experiment-level compute_all_observations function
-    # Pass history as result_transient for BOLD pipeline continuity
-    post_tuning_observations = compute_all_observations(post_tuning, state, history)
+        # Compute ALL observations from post-tuning simulation (in dependency order)
+        # This uses the experiment-level compute_all_observations function
+        # Pass history as result_transient for BOLD pipeline continuity
+        post_tuning_observations = compute_all_observations(post_tuning, state, history)
+    else:
+        post_tuning = None
+        post_tuning_observations = None
 
     # Convert result_history lists to arrays
     for k in list(result_history.keys()):

@@ -1058,13 +1058,29 @@ def get_include_info(inc: Any) -> Tuple[str, Dict]:
     return str(inc), {}
 
 
+def _include_is_nested(inc: Any) -> bool:
+    """True if an AlgorithmInclude uses nested (inner-loop) composition.
+
+    Nested includes run the included algorithm's own run_<inner>() as a
+    converging inner loop per outer iteration, so their rules/observations/
+    hyperparameters belong to the inner call, NOT the flattened outer loop.
+    """
+    return str(getattr(inc, "mode", "combined") or "combined") == "nested"
+
+
 def get_all_observations_from_algo(algo: Any, algorithms_dict: Dict) -> List[str]:
-    """Get all observation names including from included algorithms."""
+    """Get all observation names including from COMBINED included algorithms.
+
+    Nested includes are skipped — their observations are computed inside the
+    inner algorithm's own loop, not the outer one.
+    """
     obs = []
     seen = set()
 
-    # From included algorithms
+    # From included algorithms (combined-mode only)
     for inc in as_list(getattr(algo, "includes", None)):
+        if _include_is_nested(inc):
+            continue
         inc_name, _ = get_include_info(inc)
         inc_algo = algorithms_dict.get(inc_name)
         if inc_algo:
@@ -1085,10 +1101,16 @@ def get_all_observations_from_algo(algo: Any, algorithms_dict: Dict) -> List[str
 
 
 def get_all_hyperparams(algo: Any, algorithms_dict: Dict) -> Dict:
-    """Get all hyperparameters including from included algorithms."""
+    """Get all hyperparameters including from COMBINED included algorithms.
+
+    Nested includes are skipped — their hyperparameters are passed directly to
+    the inner algorithm's run_<inner>() call, not exposed on the outer signature.
+    """
     all_hp = {}
 
     for inc in as_list(getattr(algo, "includes", None)):
+        if _include_is_nested(inc):
+            continue
         inc_name, arg_overrides = get_include_info(inc)
         inc_algo = algorithms_dict.get(inc_name)
         if inc_algo:

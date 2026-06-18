@@ -1072,21 +1072,47 @@ class ${class_name}(AbstractMonitor):
         _is_scalar = _final.ndim == 0 if hasattr(_final, 'ndim') else True
         if _is_scalar:
             _ts = None  # Scalar result has no time dimension
-        elif _time is not None and len(_time) >= len(_final):
-            _ts = _time[:len(_final)]
+            _out_dt = self.dt
+        elif _time is not None and len(_time) == len(_final):
+            _ts = _time
+            _out_dt = self.dt
+<%
+    # Declared output sampling period (e.g. BOLD TR). Used to label a subsampled
+    # time axis at the true period instead of stretching it across the recorded span.
+    _decl_period = obs.get('period')
+    try:
+        _decl_period = float(_decl_period)
+    except (TypeError, ValueError):
+        _decl_period = None
+%>
+% if _decl_period and _decl_period > float(dt):
+        elif _time is not None and len(_time) > len(_final) > 1:
+            # The pipeline subsampled to the declared output period (e.g. BOLD TR):
+            # place samples at that exact period from the recording start, so the
+            # time axis is not stretched across the full integration span.
+            _ts = _time[0] + jnp.arange(len(_final)) * ${_decl_period}
+            _out_dt = ${_decl_period}
+% else:
+        elif _time is not None and len(_time) > len(_final) > 1:
+            # The pipeline subsampled the time series but declares no output period;
+            # spread the outputs uniformly across the recorded span as a fallback.
+            _ts = jnp.linspace(_time[0], _time[-1], len(_final))
+            _out_dt = (_time[-1] - _time[0]) / (len(_final) - 1)
+% endif
         else:
             _ts = jnp.arange(len(_final)) * self.dt
+            _out_dt = self.dt
 % if named_outputs:
         return ObservationResult(
             ts=_ts,
             ys=_final,
-            dt=self.dt,
+            dt=_out_dt,
 % for out_name in named_outputs:
             ${out_name}=_${out_name},
 % endfor
         )
 % else:
-        return NativeSolution(ts=_ts if _ts is not None else jnp.array([0.0]), ys=_final, dt=self.dt)
+        return NativeSolution(ts=_ts if _ts is not None else jnp.array([0.0]), ys=_final, dt=_out_dt)
 % endif
 
 % endif

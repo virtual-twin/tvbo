@@ -807,6 +807,20 @@ class EnvironmentType(str, Enum):
     """
 
 
+class AlgorithmCompositionMode(str, Enum):
+    """
+    How an included algorithm is composed with the outer algorithm. Determines whether the inner algorithm's update rules are merged into the same loop (combined) or run as a converging inner loop on each outer iteration (nested).
+    """
+    combined = "combined"
+    """
+    The included algorithm's update rules are merged into the outer loop and applied ONCE per outer iteration (1:1). Use when both algorithms update at the same cadence on the same observations. This is the default.
+    """
+    nested = "nested"
+    """
+    The included algorithm runs as a full inner loop on EACH outer iteration, re-converging before the outer update rules are applied. Use when the inner algorithm maintains an invariant the outer one would otherwise perturb — e.g. FIC holding the E-I working point (mean S_e = 0.25) while EIB retunes per-edge coupling. The outer update's validity depends on that invariant, so the inner loop must re-settle it between every outer step.
+    """
+
+
 class ParallelMode(str, Enum):
     """
     How a trial / grid-point axis is realised at JAX codegen time. The choice trades peak memory against throughput: vmap batches in parallel (fast, n_trials × working-set memory), lax_map runs sequentially via ``jax.lax.map`` (memory bounded by one trial), pmap shards across devices, auto picks vmap when the estimated batched memory fits and lax_map otherwise.
@@ -1448,6 +1462,7 @@ class ParcellationTerminology(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -1469,6 +1484,7 @@ class ParcellationTerminology(ConfiguredBaseModel):
                        'SoftwareRequirement',
                        'SoftwareEnvironment',
                        'Stimulus',
+                       'Event',
                        'Matrix',
                        'Dynamics',
                        'RandomStream',
@@ -1521,6 +1537,7 @@ class Subject(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -1582,6 +1599,7 @@ class Session(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -1641,6 +1659,7 @@ class Dataset(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -1695,6 +1714,7 @@ class Dataset(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -1766,6 +1786,7 @@ class DBSDataset(Dataset):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -1820,6 +1841,7 @@ class DBSDataset(Dataset):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -1893,6 +1915,7 @@ class DBSSubject(Subject):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -1980,6 +2003,7 @@ class Contact(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -2009,7 +2033,7 @@ class StimulationSetting(ConfiguredBaseModel):
     amplitude: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StimulationSetting']} })
     frequency: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StimulationSetting']} })
     pulse_width: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StimulationSetting']} })
-    mode: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StimulationSetting', 'Exploration']} })
+    mode: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StimulationSetting', 'Exploration', 'AlgorithmInclude']} })
     active_contacts: Optional[list[int]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StimulationSetting']} })
     efield: Optional[EField] = Field(default=None, description="""Metadata about the E-field result for this setting""", json_schema_extra = { "linkml_meta": {'domain_of': ['StimulationSetting']} })
 
@@ -2225,6 +2249,7 @@ class ClinicalScore(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -2374,6 +2399,7 @@ class SoftwarePackage(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -2516,6 +2542,7 @@ class SimulationTool(SoftwarePackage):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -2631,6 +2658,7 @@ class SoftwareRequirement(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -2654,6 +2682,7 @@ class SoftwareRequirement(ConfiguredBaseModel):
                        'SoftwareRequirement',
                        'SoftwareEnvironment',
                        'Stimulus',
+                       'Event',
                        'Matrix',
                        'Dynamics',
                        'RandomStream',
@@ -2759,6 +2788,7 @@ class SoftwareEnvironment(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -2813,6 +2843,7 @@ class SoftwareEnvironment(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -2836,6 +2867,7 @@ class SoftwareEnvironment(ConfiguredBaseModel):
                        'SoftwareRequirement',
                        'SoftwareEnvironment',
                        'Stimulus',
+                       'Event',
                        'Matrix',
                        'Dynamics',
                        'RandomStream',
@@ -2901,6 +2933,7 @@ class Equation(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -2979,6 +3012,7 @@ class Equation(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -3089,6 +3123,7 @@ class Stimulus(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -3112,6 +3147,7 @@ class Stimulus(ConfiguredBaseModel):
                        'SoftwareRequirement',
                        'SoftwareEnvironment',
                        'Stimulus',
+                       'Event',
                        'Matrix',
                        'Dynamics',
                        'RandomStream',
@@ -3150,6 +3186,7 @@ class Stimulus(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -3167,8 +3204,8 @@ class Stimulus(ConfiguredBaseModel):
                        'PDESolver',
                        'PDE'],
          'slot_uri': 'rdfs:label'} })
-    regions: Optional[AnyShapeArray[int]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'Event']} })
-    weighting: Optional[AnyShapeArray[float]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'Event']} })
+    regions: Optional[AnyShapeArray[int]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus']} })
+    weighting: Optional[AnyShapeArray[float]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus']} })
     noise: Optional[Noise] = Field(default=None, description="""Optional stochastic contribution to the stimulus. Mirrors state_variables.noise on the Dynamics side. The stimulus value at each integration step is the sum of `equation`'s evaluation (deterministic, if set) and a draw from this Noise process. When only `noise` is set and `equation` is absent, the stimulus IS the noise (pure stochastic source — e.g. iid uniform driver for memory-capacity benchmarks; signal+noise paradigms for psychophysics).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'StateVariable', 'Integrator']} })
 
 
@@ -3247,6 +3284,7 @@ class Event(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -3301,6 +3339,7 @@ class Event(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -3362,12 +3401,26 @@ class Event(ConfiguredBaseModel):
                        'Noise',
                        'UpdateRule',
                        'DifferentialOperator']} })
-    regions: Optional[AnyShapeArray[int]] = Field(default=None, description="""Target regions for stimulus-type events.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'Event']} })
-    weighting: Optional[AnyShapeArray[float]] = Field(default=None, description="""Per-region weighting for stimulus-type events (explicit values).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'Event']} })
+    nodes: Optional[AnyShapeArray[int]] = Field(default=None, description="""Network nodes a stimulus-type event is applied to (node ids / indices). Pairs with `weights`. (Formerly `regions`.)""", json_schema_extra = { "linkml_meta": {'aliases': ['regions'], 'domain_of': ['Event', 'Network']} })
+    weights: Optional[AnyShapeArray[float]] = Field(default=None, description="""Per-node stimulus weighting, aligned with `nodes`. (Formerly `weighting`.)""", json_schema_extra = { "linkml_meta": {'aliases': ['weighting'], 'domain_of': ['Event']} })
     weight_distribution: Optional[Distribution] = Field(default=None, description="""Distribution to sample per-region stimulus weights from, as an alternative to the explicit `weighting` array (e.g. Uniform(-1, 1) per node). When set, the codegen samples one weight per target region using the distribution's seed.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Event']} })
     target_variable: Optional[str] = Field(default=None, description="""State variable that a stimulus-type event drives — the variable its signal is injected into (e.g. 'y_0' for Jansen-Rit, or a named 'stimulus' input exposed to coupling). If absent, the stimulus adds to the model's default external-input variable.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Event', 'TuningObjective']} })
     target_regions: Optional[list[str]] = Field(default=None, description="""Regions a stimulus-type event targets: 'all' (broadcast to every node) or explicit region labels / indices. More expressive than the integer-only `regions` slot; when both are absent the event applies to all regions.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Event']} })
     duration: Optional[float] = Field(default=None, description="""Duration of stimulus-type events.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'Event', 'InitialState', 'Integrator']} })
+    dataLocation: Optional[str] = Field(default=None, description="""Path to a data file (.npy) holding the stimulus waveform of a *data-driven* stimulus event — the samples are interpolated at simulation time instead of evaluating `equation`. 1-D arrays are a single time-series broadcast to the targeted `nodes`; the event's `name` is still the symbol injected into the dynamics.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
+                       'Stimulus',
+                       'Event',
+                       'Matrix',
+                       'Dynamics',
+                       'RandomStream',
+                       'RegionMapping',
+                       'TimeSeries',
+                       'NDArray',
+                       'Mesh']} })
+    sampling_rate: Optional[float] = Field(default=1.0, description="""Sample rate of the `dataLocation` waveform in samples per millisecond (e.g. 1.0 = 1 kHz). Sample i is placed at time i / sampling_rate ms.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Event', 'TimeSeries'], 'ifabsent': 'float(1.0)'} })
+    interpolation: Optional[str] = Field(default="linear", description="""Interpolation for a data-driven stimulus: 'linear' or 'cubic'.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Event'], 'ifabsent': 'string(linear)'} })
 
 
 class TemporalApplicableEquation(Equation):
@@ -3425,6 +3478,7 @@ class TemporalApplicableEquation(Equation):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -3485,6 +3539,7 @@ class TemporalApplicableEquation(Equation):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -3544,6 +3599,7 @@ class Parcellation(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -3649,6 +3705,7 @@ class Tractogram(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -3712,6 +3769,7 @@ class Tractogram(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -3774,6 +3832,7 @@ class Matrix(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -3828,6 +3887,7 @@ class Matrix(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -3851,6 +3911,7 @@ class Matrix(ConfiguredBaseModel):
                        'SoftwareRequirement',
                        'SoftwareEnvironment',
                        'Stimulus',
+                       'Event',
                        'Matrix',
                        'Dynamics',
                        'RandomStream',
@@ -3956,6 +4017,7 @@ class Phenotype(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -4010,6 +4072,7 @@ class Phenotype(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -4138,6 +4201,7 @@ class MeasureSpec(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -4257,6 +4321,7 @@ class NamedArray(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -4330,6 +4395,7 @@ class Network(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -4384,6 +4450,7 @@ class Network(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -4421,7 +4488,7 @@ class Network(ConfiguredBaseModel):
                        'Integrator',
                        'Coupling',
                        'PDE']} })
-    nodes: Optional[list[Node]] = Field(default=None, description="""List of nodes with individual dynamics (optional, for heterogeneous networks)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
+    nodes: Optional[list[Node]] = Field(default=None, description="""List of nodes with individual dynamics (optional, for heterogeneous networks)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Event', 'Network']} })
     edges: Optional[list[Edge]] = Field(default=None, description="""List of directed edges with coupling references (optional, for explicit edge definition)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
     primary_weight: Optional[str] = Field(default=None, description="""Name of the edge group that should serve as the canonical weights matrix when ``weights_matrix`` is queried. Lets a single Network sidecar bundle several connectivity variants (e.g. band-specific NMF reweightings, distance-modulated SC, shuffled controls) under different edge names while still presenting one of them as the active weight to consumers (simulators, observation pipelines). Defaults to ``weight`` / ``weights`` / ``sc`` lookup when not set.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
     coupling: Optional[dict[str, Coupling]] = Field(default=None, description="""Reusable coupling configurations referenced by edges (e.g., 'instant', 'delayed', 'inhibitory')""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network', 'Edge', 'SimulationExperiment']} })
@@ -4546,6 +4613,7 @@ class GraphGenerator(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -4754,6 +4822,7 @@ class ProcedureStep(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -4869,6 +4938,7 @@ class File(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -4952,6 +5022,7 @@ class Node(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -5006,6 +5077,7 @@ class Node(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -5147,6 +5219,7 @@ class Edge(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -5201,6 +5274,7 @@ class Edge(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -5357,6 +5431,7 @@ class Observation(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -5411,6 +5486,7 @@ class Observation(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -5562,6 +5638,7 @@ class Dynamics(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -5643,6 +5720,7 @@ class Dynamics(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -5673,6 +5751,7 @@ class Dynamics(ConfiguredBaseModel):
                        'SoftwareRequirement',
                        'SoftwareEnvironment',
                        'Stimulus',
+                       'Event',
                        'Matrix',
                        'Dynamics',
                        'RandomStream',
@@ -5778,6 +5857,7 @@ class StateVariable(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -5846,6 +5926,7 @@ class StateVariable(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -6065,6 +6146,7 @@ class Parameter(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -6145,6 +6227,7 @@ class Parameter(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -6291,6 +6374,7 @@ class CouplingInput(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -6398,6 +6482,7 @@ class Argument(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -6519,6 +6604,7 @@ class Function(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -6603,6 +6689,7 @@ class Function(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -6625,7 +6712,10 @@ class Function(ConfiguredBaseModel):
     requirements: Optional[list[str]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareEnvironment', 'Function', 'PDESolver']} })
     input: Optional[str] = Field(default=None, description="""Simple input reference: name of previous function's output in pipeline. For multi-argument functions, use arguments with value references instead.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall']} })
     output: Optional[str] = Field(default=None, description="""Name for this function's output (referenced by subsequent functions)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Procedure', 'Dynamics', 'Function', 'FunctionCall']} })
-    arguments: Optional[list[Argument]] = Field(default=None, description="""Variables consumed by the function (referenced in the equation). Each argument has a name and optional metadata (description, default value, unit).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall', 'AlgorithmInclude']} })
+    arguments: Optional[list[Argument]] = Field(default=None, description="""Variables consumed by the function (referenced in the equation). Each argument has a name and optional metadata (description, default value, unit).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function',
+                       'FunctionCall',
+                       'AlgorithmInclude',
+                       'AlgorithmStage']} })
     output_equation: Optional[Equation] = Field(default=None, description="""Output transformation equation (if equation-based)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function']} })
     source_code: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall']} })
     callable: Optional[Callable] = Field(default=None, description="""Software implementation reference (if software-based)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Binding', 'Function', 'FunctionCall']} })
@@ -6732,6 +6822,7 @@ class LossFunction(Function):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -6816,6 +6907,7 @@ class LossFunction(Function):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -6838,7 +6930,10 @@ class LossFunction(Function):
     requirements: Optional[list[str]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareEnvironment', 'Function', 'PDESolver']} })
     input: Optional[str] = Field(default=None, description="""Simple input reference: name of previous function's output in pipeline. For multi-argument functions, use arguments with value references instead.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall']} })
     output: Optional[str] = Field(default=None, description="""Name for this function's output (referenced by subsequent functions)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Procedure', 'Dynamics', 'Function', 'FunctionCall']} })
-    arguments: Optional[list[Argument]] = Field(default=None, description="""Variables consumed by the function (referenced in the equation). Each argument has a name and optional metadata (description, default value, unit).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall', 'AlgorithmInclude']} })
+    arguments: Optional[list[Argument]] = Field(default=None, description="""Variables consumed by the function (referenced in the equation). Each argument has a name and optional metadata (description, default value, unit).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function',
+                       'FunctionCall',
+                       'AlgorithmInclude',
+                       'AlgorithmStage']} })
     output_equation: Optional[Equation] = Field(default=None, description="""Output transformation equation (if equation-based)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function']} })
     source_code: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall']} })
     callable: Optional[Callable] = Field(default=None, description="""Software implementation reference (if software-based)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Binding', 'Function', 'FunctionCall']} })
@@ -6887,6 +6982,7 @@ class FunctionCall(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -6956,6 +7052,7 @@ class FunctionCall(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -7022,7 +7119,10 @@ class FunctionCall(ConfiguredBaseModel):
     output: Optional[str] = Field(default=None, description="""Name for this step's output (referenced by subsequent functions)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Procedure', 'Dynamics', 'Function', 'FunctionCall']} })
     apply_on_dimension: Optional[DimensionType] = Field(default=None, description="""Dimension to apply function over (generates vmap in code). E.g., 'node' applies per-node.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall']} })
     aggregate: Optional[Aggregation] = Field(default=None, description="""How to aggregate the result across dimensions. Example: aggregate.over=node, aggregate.type=mean applies function per node, then averages. Used in loss functions.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'LossFunction', 'FunctionCall']} })
-    arguments: Optional[list[Argument]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall', 'AlgorithmInclude']} })
+    arguments: Optional[list[Argument]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Function',
+                       'FunctionCall',
+                       'AlgorithmInclude',
+                       'AlgorithmStage']} })
     time_range: Optional[Range] = Field(default=None, description="""Time range for generated TimeSeries (for kernel generators)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall']} })
     source_code: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall']} })
 
@@ -7107,6 +7207,7 @@ class Callable(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -7216,6 +7317,7 @@ class ClassReference(Callable):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -7343,6 +7445,7 @@ class DerivedParameter(Parameter):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -7421,6 +7524,7 @@ class DerivedParameter(Parameter):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -7548,6 +7652,7 @@ class DerivedVariable(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -7606,6 +7711,7 @@ class DerivedVariable(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -7744,6 +7850,7 @@ class RandomStream(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -7798,6 +7905,7 @@ class RandomStream(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -7821,6 +7929,7 @@ class RandomStream(ConfiguredBaseModel):
                        'SoftwareRequirement',
                        'SoftwareEnvironment',
                        'Stimulus',
+                       'Event',
                        'Matrix',
                        'Dynamics',
                        'RandomStream',
@@ -7905,6 +8014,7 @@ class DataSource(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -7959,6 +8069,7 @@ class DataSource(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -8060,6 +8171,7 @@ class OptimizationStage(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -8114,6 +8226,7 @@ class OptimizationStage(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -8156,7 +8269,7 @@ class Optimization(OptimizationStage):
                        'SimulationExperiment']} })
     integration: Optional[Integrator] = Field(default=None, description="""Integration settings for optimization simulations (overrides experiment defaults). If specified, creates a fresh model_fn and state with prepare() before optimization. Can specify different duration, step_size, method than the experiment. If not specified, uses experiment-level integration settings.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization', 'SimulationExperiment']} })
     loss: Optional[FunctionCall] = Field(default=None, description="""Loss function call. Uses FunctionCall to either: 1. Reference existing function: function: rmse 2. Inline callable: callable: {module: ..., name: ...} Arguments specify inputs (simulated_fc, empirical_fc, etc.)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization']} })
-    stages: Optional[list[OptimizationStage]] = Field(default=None, description="""Ordered list of optimization stages. Stages run sequentially. Stage n+1 starts from optimized values of stage n. When defined, inherited single-stage fields are ignored.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization']} })
+    stages: Optional[list[OptimizationStage]] = Field(default=None, description="""Ordered list of optimization stages. Stages run sequentially. Stage n+1 starts from optimized values of stage n. When defined, inherited single-stage fields are ignored.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization', 'Algorithm']} })
     depends_on: Optional[str] = Field(default=None, description="""Algorithm to use as starting point for optimization. If specified, optimization starts from algorithm's result state. If not specified, optimization starts from initial simulation state.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization', 'Algorithm']} })
     name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
                        'CommonCoordinateSpace',
@@ -8227,6 +8340,7 @@ class Optimization(OptimizationStage):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -8281,6 +8395,7 @@ class Optimization(OptimizationStage):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -8385,6 +8500,7 @@ class Exploration(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -8439,6 +8555,7 @@ class Exploration(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -8483,7 +8600,7 @@ class Exploration(ConfiguredBaseModel):
                        'Coupling',
                        'PDE']} })
     algorithms: Optional[list[str]] = Field(default=None, description="""Names of the experiment's algorithms (keys in `experiment.algorithms`) to run AT EACH exploration point, in order, BEFORE computing the observable. Explicitly wires algorithms into the exploration so per-point tuning / constraints are applied at every sweep point — e.g. FIC re-tuning J_i at each E/I ratio. With this set, the sweep evaluates the full algorithm→observation pipeline per point (executed sequentially), not a bare simulation. Empty/absent = bare simulation per point. This is the declarative replacement for any Python per-point driver: the composition is derived entirely from YAML metadata.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Exploration', 'SimulationExperiment']} })
-    mode: Optional[str] = Field(default="product", description="""Combination mode: 'product' (full grid), 'zip' (paired)""", json_schema_extra = { "linkml_meta": {'domain_of': ['StimulationSetting', 'Exploration'],
+    mode: Optional[str] = Field(default="product", description="""Combination mode: 'product' (full grid), 'zip' (paired)""", json_schema_extra = { "linkml_meta": {'domain_of': ['StimulationSetting', 'Exploration', 'AlgorithmInclude'],
          'ifabsent': 'string(product)'} })
     observable: Optional[FunctionCall] = Field(default=None, description="""Observable to compute at each point. Use function: obs_name for simple observation, or function: func_name + arguments for FunctionCall.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Exploration']} })
     n_parallel: Optional[int] = Field(default=1, description="""Parallel evaluations""", json_schema_extra = { "linkml_meta": {'domain_of': ['Exploration'], 'ifabsent': 'integer(1)'} })
@@ -8528,6 +8645,7 @@ class ExplorationAxis(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -8582,6 +8700,7 @@ class ExplorationAxis(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -8663,6 +8782,7 @@ class FreeParameter(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -8717,6 +8837,7 @@ class FreeParameter(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -8833,6 +8954,7 @@ class UpdateRule(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -8879,14 +9001,20 @@ class AlgorithmInclude(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:AlgorithmInclude', 'from_schema': 'https://w3id.org/tvbo'})
 
     algorithm: str = Field(default=..., description="""Reference to the algorithm to include""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'AlgorithmInclude', 'Continuation']} })
-    arguments: Optional[list[Parameter]] = Field(default=None, description="""Override hyperparameter values for the included algorithm. Maps parameter names to new values.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall', 'AlgorithmInclude']} })
+    arguments: Optional[list[Parameter]] = Field(default=None, description="""Override hyperparameter values for the included algorithm. Maps parameter names to new values.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function',
+                       'FunctionCall',
+                       'AlgorithmInclude',
+                       'AlgorithmStage']} })
+    mode: Optional[AlgorithmCompositionMode] = Field(default=AlgorithmCompositionMode.combined, description="""How the included algorithm composes with the outer one. 'combined' (default) merges its update rules into the outer loop (applied once per outer iteration); 'nested' runs it as a converging inner loop on each outer iteration before the outer update rules. Use 'nested' when the inner algorithm maintains an invariant the outer would perturb (e.g. FIC holding the working point while EIB retunes coupling).""", json_schema_extra = { "linkml_meta": {'domain_of': ['StimulationSetting', 'Exploration', 'AlgorithmInclude'],
+         'ifabsent': 'string(combined)'} })
+    inner_iterations: Optional[int] = Field(default=None, description="""For mode=nested only: number of inner-loop iterations to run per outer iteration. Defaults to the included algorithm's own n_iterations. A small value (e.g. 5-10) is usually enough to correct the drift introduced by one outer step.""", json_schema_extra = { "linkml_meta": {'domain_of': ['AlgorithmInclude']} })
 
 
-class TuningObjective(ConfiguredBaseModel):
+class AlgorithmStage(ConfiguredBaseModel):
     """
-    Defines what the tuning algorithm optimizes for. Can be an activity target (FIC) or a connectivity target (EIB).
+    One stage of a multi-stage tuning schedule. The algorithm body is run once per stage, in order, carrying the trajectory state, FC window buffer, and monitors forward — so the stages form one continuous online tuning run. Each stage overrides n_iterations and selected hyperparameters (e.g. Schirner 2023's 6 stages: eta halves and the FC window doubles per stage, sharpening the per-edge gradient over time).
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:TuningObjective', 'from_schema': 'https://w3id.org/tvbo'})
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:AlgorithmStage', 'from_schema': 'https://w3id.org/tvbo'})
 
     label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
                        'Subject',
@@ -8917,6 +9045,7 @@ class TuningObjective(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -8971,6 +9100,124 @@ class TuningObjective(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
+                       'TuningObjective',
+                       'Algorithm',
+                       'BranchSwitch',
+                       'Continuation',
+                       'Integrator',
+                       'Coupling',
+                       'RegionMapping',
+                       'SimulationExperiment',
+                       'Study',
+                       'TimeSeries',
+                       'NDArray',
+                       'SpatialDomain',
+                       'Mesh',
+                       'SpatialField',
+                       'FieldStateVariable',
+                       'BoundaryCondition',
+                       'PDESolver',
+                       'PDE'],
+         'slot_uri': 'dcterms:description'} })
+    n_iterations: int = Field(default=..., description="""Number of outer iterations to run in this stage.""", json_schema_extra = { "linkml_meta": {'domain_of': ['AlgorithmStage', 'Algorithm']} })
+    arguments: Optional[list[Parameter]] = Field(default=None, description="""Hyperparameter overrides for this stage (e.g. eta, window_size). Names not listed fall back to the algorithm's own hyperparameter defaults.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function',
+                       'FunctionCall',
+                       'AlgorithmInclude',
+                       'AlgorithmStage']} })
+
+
+class TuningObjective(ConfiguredBaseModel):
+    """
+    Defines what the tuning algorithm optimizes for. Can be an activity target (FIC) or a connectivity target (EIB).
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:TuningObjective', 'from_schema': 'https://w3id.org/tvbo'})
+
+    label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
+                       'Subject',
+                       'Session',
+                       'Dataset',
+                       'Contact',
+                       'SoftwareEnvironment',
+                       'Equation',
+                       'Stimulus',
+                       'Event',
+                       'Parcellation',
+                       'Tractogram',
+                       'Matrix',
+                       'Phenotype',
+                       'Network',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Parameter',
+                       'Function',
+                       'FunctionCall',
+                       'DerivedVariable',
+                       'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Exploration',
+                       'ExplorationAxis',
+                       'FreeParameter',
+                       'AlgorithmStage',
+                       'TuningObjective',
+                       'Continuation',
+                       'Coupling',
+                       'RegionMapping',
+                       'SimulationExperiment',
+                       'SimulationStudy',
+                       'TimeSeries',
+                       'NDArray',
+                       'SpatialDomain',
+                       'Mesh',
+                       'SpatialField',
+                       'FieldStateVariable',
+                       'DifferentialOperator',
+                       'BoundaryCondition',
+                       'PDESolver',
+                       'PDE'],
+         'slot_uri': 'rdfs:label'} })
+    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
+                       'ClinicalScore',
+                       'SoftwarePackage',
+                       'SoftwareRequirement',
+                       'SoftwareEnvironment',
+                       'Equation',
+                       'Stimulus',
+                       'Event',
+                       'Tractogram',
+                       'Matrix',
+                       'Phenotype',
+                       'MeasureSpec',
+                       'NamedArray',
+                       'Network',
+                       'GraphGenerator',
+                       'ProcedureStep',
+                       'File',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Dynamics',
+                       'StateVariable',
+                       'Parameter',
+                       'CouplingInput',
+                       'Argument',
+                       'Function',
+                       'FunctionCall',
+                       'Callable',
+                       'DerivedParameter',
+                       'DerivedVariable',
+                       'RandomStream',
+                       'DataSource',
+                       'OptimizationStage',
+                       'Exploration',
+                       'ExplorationAxis',
+                       'FreeParameter',
+                       'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -9085,6 +9332,7 @@ class Algorithm(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -9116,13 +9364,14 @@ class Algorithm(ConfiguredBaseModel):
                        'Algorithm',
                        'Study']} })
     includes: Optional[list[AlgorithmInclude]] = Field(default=None, description="""Include update rules from other algorithms with optional argument overrides. Unlike depends_on (sequential), includes means combined execution. Example: includes: [{algorithm: fic, arguments: [{name: eta, value: 0.1}]}]""", json_schema_extra = { "linkml_meta": {'domain_of': ['Algorithm']} })
+    stages: Optional[list[AlgorithmStage]] = Field(default=None, description="""Optional multi-stage schedule. When present, the algorithm body is run once per stage IN ORDER, carrying trajectory state, FC window buffer, and monitors forward (one continuous online run). Each stage overrides n_iterations + selected hyperparameters. Replaces the top-level n_iterations for execution. Example (Schirner 2023): 6 stages with eta halving and window_size doubling per stage.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Optimization', 'Algorithm']} })
     objective: Optional[TuningObjective] = Field(default=None, description="""What the algorithm optimizes for""", json_schema_extra = { "linkml_meta": {'domain_of': ['Algorithm']} })
     observations: Optional[list[str]] = Field(default=None, description="""References to observations defined in the observations section. Includes both simulated observations and external data (via data_source).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Algorithm', 'SimulationExperiment']} })
     update_rules: Optional[list[UpdateRule]] = Field(default=None, description="""How parameters are updated each iteration. When using 'includes', update_rules are inherited from included algorithms.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Algorithm']} })
     hyperparameters: Optional[list[Parameter]] = Field(default=None, description="""Additional algorithm-specific parameters""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Algorithm']} })
     learning_rate: Optional[float] = Field(default=None, description="""Learning rate (eta) for the tuning algorithm""", json_schema_extra = { "linkml_meta": {'domain_of': ['OptimizationStage', 'Algorithm']} })
     learning_rate_warmup: Optional[bool] = Field(default=False, description="""Linear warmup of learning rate from 0 to learning_rate over n_iterations. eta_effective = eta * (i+1) / n_iterations""", json_schema_extra = { "linkml_meta": {'domain_of': ['Algorithm'], 'ifabsent': 'boolean(false)'} })
-    n_iterations: Optional[int] = Field(default=None, description="""Number of iterations to run""", json_schema_extra = { "linkml_meta": {'domain_of': ['Algorithm']} })
+    n_iterations: Optional[int] = Field(default=None, description="""Number of iterations to run""", json_schema_extra = { "linkml_meta": {'domain_of': ['AlgorithmStage', 'Algorithm']} })
     learning_rate_schedule: Optional[str] = Field(default=None, description="""Learning rate schedule: 'constant', 'linear', 'exponential'""", json_schema_extra = { "linkml_meta": {'domain_of': ['Algorithm']} })
     simulation_period: Optional[float] = Field(default=None, description="""Duration of each simulation step (e.g., one BOLD TR)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Algorithm']} })
     apply_every: Optional[int] = Field(default=1, description="""Apply update every N iterations""", json_schema_extra = { "linkml_meta": {'domain_of': ['Algorithm'], 'ifabsent': 'integer(1)'} })
@@ -9321,6 +9570,7 @@ class BranchSwitch(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -9441,6 +9691,7 @@ class Continuation(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -9495,6 +9746,7 @@ class Continuation(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -9637,6 +9889,7 @@ class Integrator(Solver):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -9749,6 +10002,7 @@ class Coupling(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -9830,6 +10084,7 @@ class Coupling(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -9903,6 +10158,7 @@ class RegionMapping(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -9957,6 +10213,7 @@ class RegionMapping(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -9980,6 +10237,7 @@ class RegionMapping(ConfiguredBaseModel):
                        'SoftwareRequirement',
                        'SoftwareEnvironment',
                        'Stimulus',
+                       'Event',
                        'Matrix',
                        'Dynamics',
                        'RandomStream',
@@ -10064,6 +10322,7 @@ class SimulationExperiment(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -10113,6 +10372,7 @@ class SimulationExperiment(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -10203,6 +10463,7 @@ class Study(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -10267,6 +10528,7 @@ class SimulationStudy(Study):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -10332,6 +10594,7 @@ class SimulationStudy(Study):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -10403,6 +10666,7 @@ class TimeSeries(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -10457,6 +10721,7 @@ class TimeSeries(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -10480,6 +10745,7 @@ class TimeSeries(ConfiguredBaseModel):
                        'SoftwareRequirement',
                        'SoftwareEnvironment',
                        'Stimulus',
+                       'Event',
                        'Matrix',
                        'Dynamics',
                        'RandomStream',
@@ -10489,7 +10755,7 @@ class TimeSeries(ConfiguredBaseModel):
                        'Mesh']} })
     data: Optional[Matrix] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['TimeSeries']} })
     time: Optional[Matrix] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['TimeSeries']} })
-    sampling_rate: Optional[float] = Field(default=None, description="""Sampling rate in Hz.""", json_schema_extra = { "linkml_meta": {'domain_of': ['TimeSeries']} })
+    sampling_rate: Optional[float] = Field(default=None, description="""Sampling rate in Hz.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Event', 'TimeSeries']} })
     sampling_period: Optional[float] = Field(default=None, description="""Time between samples (inverse of sampling_rate).""", json_schema_extra = { "linkml_meta": {'domain_of': ['TimeSeries']} })
     sampling_period_unit: Optional[str] = Field(default="ms", description="""Unit of the sampling period (e.g., 'ms', 's').""", json_schema_extra = { "linkml_meta": {'domain_of': ['TimeSeries'], 'ifabsent': 'ms'} })
     unit: Optional[str] = Field(default=None, description="""Physical unit of the time series values.""", json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
@@ -10554,6 +10820,7 @@ class NDArray(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -10608,6 +10875,7 @@ class NDArray(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -10633,6 +10901,7 @@ class NDArray(ConfiguredBaseModel):
                        'SoftwareRequirement',
                        'SoftwareEnvironment',
                        'Stimulus',
+                       'Event',
                        'Matrix',
                        'Dynamics',
                        'RandomStream',
@@ -10688,6 +10957,7 @@ class SpatialDomain(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -10742,6 +11012,7 @@ class SpatialDomain(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -10807,6 +11078,7 @@ class Mesh(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -10861,6 +11133,7 @@ class Mesh(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -10884,6 +11157,7 @@ class Mesh(ConfiguredBaseModel):
                        'SoftwareRequirement',
                        'SoftwareEnvironment',
                        'Stimulus',
+                       'Event',
                        'Matrix',
                        'Dynamics',
                        'RandomStream',
@@ -10944,6 +11218,7 @@ class SpatialField(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -10998,6 +11273,7 @@ class SpatialField(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -11075,6 +11351,7 @@ class FieldStateVariable(StateVariable):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -11129,6 +11406,7 @@ class FieldStateVariable(StateVariable):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -11288,6 +11566,7 @@ class DifferentialOperator(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -11364,6 +11643,7 @@ class BoundaryCondition(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -11418,6 +11698,7 @@ class BoundaryCondition(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -11482,6 +11763,7 @@ class PDESolver(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -11536,6 +11818,7 @@ class PDESolver(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -11599,6 +11882,7 @@ class PDE(ConfiguredBaseModel):
                        'Exploration',
                        'ExplorationAxis',
                        'FreeParameter',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Continuation',
                        'Coupling',
@@ -11653,6 +11937,7 @@ class PDE(ConfiguredBaseModel):
                        'ExplorationAxis',
                        'FreeParameter',
                        'UpdateRule',
+                       'AlgorithmStage',
                        'TuningObjective',
                        'Algorithm',
                        'BranchSwitch',
@@ -11786,6 +12071,7 @@ ExplorationAxis.model_rebuild()
 FreeParameter.model_rebuild()
 UpdateRule.model_rebuild()
 AlgorithmInclude.model_rebuild()
+AlgorithmStage.model_rebuild()
 TuningObjective.model_rebuild()
 Algorithm.model_rebuild()
 Option.model_rebuild()

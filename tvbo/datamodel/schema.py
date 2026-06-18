@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-06-15T16:13:18
+# Generation date: 2026-06-15T22:02:00
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -471,12 +471,15 @@ class Event(YAMLRoot):
     trigger_times: Optional[Union[float, list[float]]] = empty_list()
     target_component: Optional[str] = None
     equation: Optional[Union[dict, Equation]] = None
-    regions: Optional[Union[int, list[int]]] = empty_list()
-    weighting: Optional[Union[float, list[float]]] = empty_list()
+    nodes: Optional[Union[int, list[int]]] = empty_list()
+    weights: Optional[Union[float, list[float]]] = empty_list()
     weight_distribution: Optional[Union[dict, "Distribution"]] = None
     target_variable: Optional[str] = None
     target_regions: Optional[Union[str, list[str]]] = empty_list()
     duration: Optional[float] = None
+    dataLocation: Optional[str] = None
+    sampling_rate: Optional[float] = 1.0
+    interpolation: Optional[str] = "linear"
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
@@ -530,13 +533,13 @@ class Event(YAMLRoot):
         if self.equation is not None and not isinstance(self.equation, Equation):
             self.equation = Equation(**as_dict(self.equation))
 
-        if not isinstance(self.regions, list):
-            self.regions = [self.regions] if self.regions is not None else []
-        self.regions = [v if isinstance(v, int) else int(v) for v in self.regions]
+        if not isinstance(self.nodes, list):
+            self.nodes = [self.nodes] if self.nodes is not None else []
+        self.nodes = [v if isinstance(v, int) else int(v) for v in self.nodes]
 
-        if not isinstance(self.weighting, list):
-            self.weighting = [self.weighting] if self.weighting is not None else []
-        self.weighting = [v if isinstance(v, float) else float(v) for v in self.weighting]
+        if not isinstance(self.weights, list):
+            self.weights = [self.weights] if self.weights is not None else []
+        self.weights = [v if isinstance(v, float) else float(v) for v in self.weights]
 
         if self.weight_distribution is not None and not isinstance(self.weight_distribution, Distribution):
             self.weight_distribution = Distribution(**as_dict(self.weight_distribution))
@@ -550,6 +553,15 @@ class Event(YAMLRoot):
 
         if self.duration is not None and not isinstance(self.duration, float):
             self.duration = float(self.duration)
+
+        if self.dataLocation is not None and not isinstance(self.dataLocation, str):
+            self.dataLocation = str(self.dataLocation)
+
+        if self.sampling_rate is not None and not isinstance(self.sampling_rate, float):
+            self.sampling_rate = float(self.sampling_rate)
+
+        if self.interpolation is not None and not isinstance(self.interpolation, str):
+            self.interpolation = str(self.interpolation)
 
         super().__post_init__(**kwargs)
 
@@ -3018,12 +3030,57 @@ class AlgorithmInclude(YAMLRoot):
 
     algorithm: Union[str, AlgorithmName] = None
     arguments: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
+    mode: Optional[Union[str, "AlgorithmCompositionMode"]] = 'combined'
+    inner_iterations: Optional[int] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.algorithm):
             self.MissingRequiredField("algorithm")
         if not isinstance(self.algorithm, AlgorithmName):
             self.algorithm = AlgorithmName(self.algorithm)
+
+        self._normalize_inlined_as_list(slot_name="arguments", slot_type=Parameter, key_name="name", keyed=True)
+
+        if self.mode is not None and not isinstance(self.mode, AlgorithmCompositionMode):
+            self.mode = AlgorithmCompositionMode(self.mode)
+
+        if self.inner_iterations is not None and not isinstance(self.inner_iterations, int):
+            self.inner_iterations = int(self.inner_iterations)
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
+class AlgorithmStage(YAMLRoot):
+    """
+    One stage of a multi-stage tuning schedule. The algorithm body is run once per stage, in order, carrying the
+    trajectory state, FC window buffer, and monitors forward — so the stages form one continuous online tuning run.
+    Each stage overrides n_iterations and selected hyperparameters (e.g. Schirner 2023's 6 stages: eta halves and the
+    FC window doubles per stage, sharpening the per-edge gradient over time).
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO["AlgorithmStage"]
+    class_class_curie: ClassVar[str] = "tvbo:AlgorithmStage"
+    class_name: ClassVar[str] = "AlgorithmStage"
+    class_model_uri: ClassVar[URIRef] = TVBO.AlgorithmStage
+
+    n_iterations: int = None
+    label: Optional[str] = None
+    description: Optional[str] = None
+    arguments: Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]] = empty_dict()
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self._is_empty(self.n_iterations):
+            self.MissingRequiredField("n_iterations")
+        if not isinstance(self.n_iterations, int):
+            self.n_iterations = int(self.n_iterations)
+
+        if self.label is not None and not isinstance(self.label, str):
+            self.label = str(self.label)
+
+        if self.description is not None and not isinstance(self.description, str):
+            self.description = str(self.description)
 
         self._normalize_inlined_as_list(slot_name="arguments", slot_type=Parameter, key_name="name", keyed=True)
 
@@ -3093,6 +3150,7 @@ class Algorithm(YAMLRoot):
     execution: Optional[Union[dict, "ExecutionConfig"]] = None
     type: Optional[str] = None
     includes: Optional[Union[Union[dict, AlgorithmInclude], list[Union[dict, AlgorithmInclude]]]] = empty_list()
+    stages: Optional[Union[Union[dict, AlgorithmStage], list[Union[dict, AlgorithmStage]]]] = empty_list()
     objective: Optional[Union[dict, TuningObjective]] = None
     observations: Optional[Union[Union[str, ObservationName], list[Union[str, ObservationName]]]] = empty_list()
     update_rules: Optional[Union[dict[Union[str, UpdateRuleName], Union[dict, UpdateRule]], list[Union[dict, UpdateRule]]]] = empty_dict()
@@ -3124,6 +3182,8 @@ class Algorithm(YAMLRoot):
         if not isinstance(self.includes, list):
             self.includes = [self.includes] if self.includes is not None else []
         self.includes = [v if isinstance(v, AlgorithmInclude) else AlgorithmInclude(**as_dict(v)) for v in self.includes]
+
+        self._normalize_inlined_as_list(slot_name="stages", slot_type=AlgorithmStage, key_name="n_iterations", keyed=False)
 
         if self.objective is not None and not isinstance(self.objective, TuningObjective):
             self.objective = TuningObjective(**as_dict(self.objective))
@@ -5646,6 +5706,23 @@ class SoftwareEnvironment(YAMLRoot):
 
 
 # Enumerations
+class AlgorithmCompositionMode(EnumDefinitionImpl):
+    """
+    How an included algorithm is composed with the outer algorithm. Determines whether the inner algorithm's update
+    rules are merged into the same loop (combined) or run as a converging inner loop on each outer iteration (nested).
+    """
+    combined = PermissibleValue(
+        text="combined",
+        description="""The included algorithm's update rules are merged into the outer loop and applied ONCE per outer iteration (1:1). Use when both algorithms update at the same cadence on the same observations. This is the default.""")
+    nested = PermissibleValue(
+        text="nested",
+        description="""The included algorithm runs as a full inner loop on EACH outer iteration, re-converging before the outer update rules are applied. Use when the inner algorithm maintains an invariant the outer one would otherwise perturb — e.g. FIC holding the E-I working point (mean S_e = 0.25) while EIB retunes per-edge coupling. The outer update's validity depends on that invariant, so the inner loop must re-settle it between every outer step.""")
+
+    _defn = EnumDefinition(
+        name="AlgorithmCompositionMode",
+        description="""How an included algorithm is composed with the outer algorithm. Determines whether the inner algorithm's update rules are merged into the same loop (combined) or run as a converging inner loop on each outer iteration (nested).""",
+    )
+
 class ParallelMode(EnumDefinitionImpl):
     """
     How a trial / grid-point axis is realised at JAX codegen time. The choice trades peak memory against throughput:
@@ -6922,11 +6999,11 @@ slots.event__target_component = Slot(uri=TVBO.target_component, name="event__tar
 slots.event__equation = Slot(uri=TVBO.equation, name="event__equation", curie=TVBO.curie('equation'),
                    model_uri=TVBO.event__equation, domain=None, range=Optional[Union[dict, Equation]])
 
-slots.event__regions = Slot(uri=TVBO.regions, name="event__regions", curie=TVBO.curie('regions'),
-                   model_uri=TVBO.event__regions, domain=None, range=Optional[Union[int, list[int]]])
+slots.event__nodes = Slot(uri=TVBO.nodes, name="event__nodes", curie=TVBO.curie('nodes'),
+                   model_uri=TVBO.event__nodes, domain=None, range=Optional[Union[int, list[int]]])
 
-slots.event__weighting = Slot(uri=TVBO.weighting, name="event__weighting", curie=TVBO.curie('weighting'),
-                   model_uri=TVBO.event__weighting, domain=None, range=Optional[Union[float, list[float]]])
+slots.event__weights = Slot(uri=TVBO.weights, name="event__weights", curie=TVBO.curie('weights'),
+                   model_uri=TVBO.event__weights, domain=None, range=Optional[Union[float, list[float]]])
 
 slots.event__weight_distribution = Slot(uri=TVBO.weight_distribution, name="event__weight_distribution", curie=TVBO.curie('weight_distribution'),
                    model_uri=TVBO.event__weight_distribution, domain=None, range=Optional[Union[dict, Distribution]])
@@ -6939,6 +7016,15 @@ slots.event__target_regions = Slot(uri=TVBO.target_regions, name="event__target_
 
 slots.event__duration = Slot(uri=TVBO.duration, name="event__duration", curie=TVBO.curie('duration'),
                    model_uri=TVBO.event__duration, domain=None, range=Optional[float])
+
+slots.event__dataLocation = Slot(uri=TVBO.dataLocation, name="event__dataLocation", curie=TVBO.curie('dataLocation'),
+                   model_uri=TVBO.event__dataLocation, domain=None, range=Optional[str])
+
+slots.event__sampling_rate = Slot(uri=TVBO.sampling_rate, name="event__sampling_rate", curie=TVBO.curie('sampling_rate'),
+                   model_uri=TVBO.event__sampling_rate, domain=None, range=Optional[float])
+
+slots.event__interpolation = Slot(uri=TVBO.interpolation, name="event__interpolation", curie=TVBO.curie('interpolation'),
+                   model_uri=TVBO.event__interpolation, domain=None, range=Optional[str])
 
 slots.temporalApplicableEquation__time_dependent = Slot(uri=TVBO.time_dependent, name="temporalApplicableEquation__time_dependent", curie=TVBO.curie('time_dependent'),
                    model_uri=TVBO.temporalApplicableEquation__time_dependent, domain=None, range=Optional[Union[bool, Bool]])
@@ -7756,6 +7842,18 @@ slots.algorithmInclude__algorithm = Slot(uri=TVBO.algorithm, name="algorithmIncl
 slots.algorithmInclude__arguments = Slot(uri=TVBO.arguments, name="algorithmInclude__arguments", curie=TVBO.curie('arguments'),
                    model_uri=TVBO.algorithmInclude__arguments, domain=None, range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]])
 
+slots.algorithmInclude__mode = Slot(uri=TVBO.mode, name="algorithmInclude__mode", curie=TVBO.curie('mode'),
+                   model_uri=TVBO.algorithmInclude__mode, domain=None, range=Optional[Union[str, "AlgorithmCompositionMode"]])
+
+slots.algorithmInclude__inner_iterations = Slot(uri=TVBO.inner_iterations, name="algorithmInclude__inner_iterations", curie=TVBO.curie('inner_iterations'),
+                   model_uri=TVBO.algorithmInclude__inner_iterations, domain=None, range=Optional[int])
+
+slots.algorithmStage__n_iterations = Slot(uri=TVBO.n_iterations, name="algorithmStage__n_iterations", curie=TVBO.curie('n_iterations'),
+                   model_uri=TVBO.algorithmStage__n_iterations, domain=None, range=int)
+
+slots.algorithmStage__arguments = Slot(uri=TVBO.arguments, name="algorithmStage__arguments", curie=TVBO.curie('arguments'),
+                   model_uri=TVBO.algorithmStage__arguments, domain=None, range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]])
+
 slots.tuningObjective__type = Slot(uri=TVBO.type, name="tuningObjective__type", curie=TVBO.curie('type'),
                    model_uri=TVBO.tuningObjective__type, domain=None, range=Optional[str])
 
@@ -7779,6 +7877,9 @@ slots.algorithm__type = Slot(uri=TVBO.type, name="algorithm__type", curie=TVBO.c
 
 slots.algorithm__includes = Slot(uri=TVBO.includes, name="algorithm__includes", curie=TVBO.curie('includes'),
                    model_uri=TVBO.algorithm__includes, domain=None, range=Optional[Union[Union[dict, AlgorithmInclude], list[Union[dict, AlgorithmInclude]]]])
+
+slots.algorithm__stages = Slot(uri=TVBO.stages, name="algorithm__stages", curie=TVBO.curie('stages'),
+                   model_uri=TVBO.algorithm__stages, domain=None, range=Optional[Union[Union[dict, AlgorithmStage], list[Union[dict, AlgorithmStage]]]])
 
 slots.algorithm__objective = Slot(uri=TVBO.objective, name="algorithm__objective", curie=TVBO.curie('objective'),
                    model_uri=TVBO.algorithm__objective, domain=None, range=Optional[Union[dict, TuningObjective]])
