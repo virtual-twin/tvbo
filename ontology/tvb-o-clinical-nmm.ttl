@@ -1,0 +1,8 @@
+# Connect clinical application studies to the concrete TVB neural-mass model that
+# implements the node dynamics they used, so the clinical knowledge graph reaches
+# runnable (workspace-addable) models. Layered on top of tvb-o-clinical.ttl.
+@prefix tvbo: <https://w3id.org/tvbo/> .
+@prefix tvbc: <https://w3id.org/tvbo/clinical/> .
+
+tvbc:study-Yang2015 tvbc:usesNodeDynamics tvbo:ReducedWongWang .
+tvbc:study-Mana2023 tvbc:usesNodeDynamics tvbo:SupHopf .

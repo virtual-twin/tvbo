@@ -768,3 +768,44 @@ tvbo:KIonEx
     tvbo:hasTimescaleSeparation        true ;
     tvbo:hasModelFeature               tvbo:FastSlowDecomposition .
 
+#
+# ─────────────────────────────────────────────────────────────────
+# §4.5 Observation axioms — hemodynamic warm-up requirement.
+# ─────────────────────────────────────────────────────────────────
+#
+# A BOLD signal is produced by convolving simulated neural activity
+# with a hemodynamic response function (HRF) of finite support. The
+# convolution is causal: BOLD at time t is a weighted sum of neural
+# activity over the preceding kernel window, so the first kernel-length
+# of the recorded signal depends on activity from *before* recording
+# starts. The integrator supplies that pre-roll from the discarded
+# transient (`tvbo:transient_time`). If the transient is shorter than
+# the HRF kernel, the convolution history buffer is under-filled, the
+# valid-mode output is truncated, and its time axis shifts earlier —
+# the BOLD then spuriously *precedes* the stimulus instead of lagging
+# it by the hemodynamic delay. OWL cannot state the numeric inequality;
+# it is documented here as an axiom and enforced in `tvb-o.shacl.ttl`.
+#
+
+tvbo:HemodynamicObservation a owl:Class ;
+    rdfs:subClassOf tvbo:Observation ;
+    rdfs:label "Hemodynamic observation"@en ;
+    rdfs:comment "An observation model that maps neural activity to a haemodynamic / BOLD signal by causal convolution with a finite-support HRF kernel."@en .
+
+<https://w3id.org/tvbo/observation_models/bold_double_exponential> a tvbo:HemodynamicObservation .
+<https://w3id.org/tvbo/observation_models/bold_gamma>              a tvbo:HemodynamicObservation .
+<https://w3id.org/tvbo/observation_models/bold_mixture_of_gammas>  a tvbo:HemodynamicObservation .
+<https://w3id.org/tvbo/observation_models/bold_region_roi>         a tvbo:HemodynamicObservation .
+
+tvbo:hrfKernelDuration a owl:DatatypeProperty ;
+    rdfs:domain tvbo:HemodynamicObservation ;
+    rdfs:range  xsd:decimal ;
+    rdfs:label  "HRF kernel duration (ms)"@en ;
+    rdfs:comment "Temporal support of the HRF convolution kernel, in milliseconds; the lower bound the simulated transient must satisfy."@en .
+
+tvbo:HemodynamicWarmupRequirement a skos:Concept ;
+    skos:prefLabel "Hemodynamic warm-up requirement"@en ;
+    rdfs:comment "Modelling axiom: for any tvbo:HemodynamicObservation, the discarded transient (tvbo:transient_time) MUST be ≥ the observation's HRF kernel duration (tvbo:hrfKernelDuration). Otherwise the causal HRF convolution is under-filled and the BOLD time axis shifts earlier, so the signal spuriously precedes the stimulus rather than lagging it by the hemodynamic delay. Example: the tvboptim BOLD pipeline uses a 20000 ms kernel (5000 samples at dt = 4 ms) via prepend_history + valid-mode convolution, so transient_time ≥ 20000 ms is required."@en ;
+    rdfs:seeAlso tvbo:HemodynamicObservation, tvbo:hrfKernelDuration, tvbo:transient_time ;
+    skos:scopeNote "Observed empirically (TVB-O acoustic-stimulation use-case, 2026): a 15000 ms transient (< 20000 ms kernel) made auditory BOLD precede the loudness by ~1 s with a mislabelled 1043 ms TR; transient ≥ 20000 ms restored a causal hemodynamic lag (≈ +1.5 s) and the correct 1000 ms TR."@en .
+
