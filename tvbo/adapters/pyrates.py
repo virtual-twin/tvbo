@@ -37,17 +37,27 @@ TVBO_TO_PYRATES_SOLVER = {
     "RK4": "scipy",
 }
 
-# Names that must be renamed because they collide with a Python keyword or
-# with PyRates' own generated code (NOT mere SymPy collisions, which are
-# handled by declaring the name + relaxing check_vname — see
-# _patch_pyrates_reserved_names). Must match the repl dict in
-# tvbo-pyrates-model.yaml.mako and _PYRATES_REPL_REVERSE in
+# Names that genuinely collide with a SymPy built-in (the equation renderer's
+# sympify resolves a bare `gamma`/`I`/`S`/… to a function/singleton, not a
+# free symbol → TypeError), or with a Python keyword / PyRates internal, and
+# so MUST be renamed. (Capital `Gamma`/`Beta` auto-symbolize and are handled
+# instead by _patch_pyrates_reserved_names — not renamed here.) Must match the
+# repl dict in tvbo-pyrates-model.yaml.mako and _PYRATES_REPL_REVERSE in
 # tvbo/codegen/pyrates.py.
 PYRATES_REPL = {
+    "I": "I_",
+    "gamma": "gamma_",
+    "beta": "beta_",
+    "zeta": "zeta_",
     "lambda": "lambda_",
+    "E": "E_",
+    "N": "N_",
+    "S": "S_",
+    "O": "O_",
+    "Q": "Q_",
+    "epsilon": "epsilon_",
     "y": "y_",
     "dy": "dy_",
-    "epsilon": "epsilon_",
 }
 
 

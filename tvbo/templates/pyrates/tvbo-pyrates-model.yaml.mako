@@ -16,24 +16,40 @@
 
 <%def name="render_operator(m, op_name=None)">
 <%
-    # Rename ONLY names that collide with a Python keyword or with PyRates'
-    # own generated code — these genuinely cannot survive as-is:
-    # - 'lambda': Python keyword (not a valid identifier at all)
-    # - 'y', 'dy': PyRates' internal state-vector / derivative slots
-    # - 'epsilon': PyRates-internal parsing conflict
-    # SymPy-colliding names (I, E, S, N, O, Q, gamma, beta, zeta, …) are NOT
-    # renamed: they are declared as operator variables and PyRates' parser
-    # resolves a *declared* name to a symbol, overriding the SymPy built-in
-    # (the ``_patch_pyrates_reserved_names`` monkeypatch in
-    # tvbo/adapters/pyrates.py relaxes PyRates' check_vname so the declaration
-    # is accepted). This keeps model parameter names faithful instead of
-    # hardcoding a rename for every SymPy symbol.
+    # Replace reserved names that conflict with SymPy/PyRates built-ins.
+    # These names cannot be used as-is because SymPy's sympify (used by both
+    # tvbo's equation renderer and PyRates) resolves them to built-in objects
+    # instead of free symbols, crashing with e.g. "unsupported operand type(s)
+    # for *: 'FunctionClass' and 'Symbol'" (verified: trimming this map breaks
+    # ~29 models such as Generic2dOscillator / WilsonCowan / ReducedWongWang):
+    # - 'I': imaginary unit
+    # - 'E': Euler's number (exp(1))
+    # - 'S': SymPy's SingletonRegistry (sympify shorthand)
+    # - 'N': SymPy's numerical evaluation function
+    # - 'O': big-O notation class
+    # - 'Q': SymPy's AssumptionKeys object
+    # - 'gamma', 'beta', 'zeta': SymPy special functions
+    # - 'lambda': Python keyword
+    # - 'epsilon': PyRates internal parsing conflict
+    # NOTE: names that PyRates over-reserves but that DON'T actually collide in
+    # sympify (capital 'Gamma'/'Beta', which auto-symbolize) are intentionally
+    # NOT renamed — they flow through raw and are admitted by the
+    # ``_patch_pyrates_reserved_names`` monkeypatch in tvbo/adapters/pyrates.py.
     # Suffix '_' avoids implying the symbol is a parameter (it may be a state var).
     repl = {
+        "I": "I_",
+        "gamma": "gamma_",
+        "beta": "beta_",
+        "zeta": "zeta_",
         "lambda": "lambda_",
+        "E": "E_",
+        "N": "N_",
+        "S": "S_",
+        "O": "O_",
+        "Q": "Q_",
+        "epsilon": "epsilon_",
         "y": "y_",
         "dy": "dy_",
-        "epsilon": "epsilon_",
     }
 
     # Get model name

@@ -62,14 +62,21 @@ if TYPE_CHECKING:
 
 # Reverse mapping: PyRates-safe names back to original TVBO names.
 # Must mirror PYRATES_REPL in tvbo/adapters/pyrates.py and the repl dict
-# in tvbo-pyrates-model.yaml.mako. Only Python-keyword / PyRates-internal
-# collisions are renamed now; SymPy-colliding names are kept verbatim (the
-# parser resolves declared names to symbols), so they need no reversal.
+# in tvbo-pyrates-model.yaml.mako.
 _PYRATES_REPL_REVERSE = {
+    "I_": "I",
+    "gamma_": "gamma",
+    "beta_": "beta",
+    "zeta_": "zeta",
     "lambda_": "lambda",
+    "E_": "E",
+    "N_": "N",
+    "S_": "S",
+    "O_": "O",
+    "Q_": "Q",
+    "epsilon_": "epsilon",
     "y_": "y",
     "dy_": "dy",
-    "epsilon_": "epsilon",
 }
 
 
