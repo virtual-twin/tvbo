@@ -72,6 +72,21 @@ def format_range_or_boundary(sv, attr, default=(NEGINFINITY, INFINITY)):
         lo, hi = default
 
     return f'"{sv.name}": np.array([{lo}, {hi}])'
+
+from tvbo.utils import domain_enforcement
+def clamp_domain(sv):
+    # TVB's state_variable_boundaries == a domain that opts into hard clamping.
+    dom = getattr(sv, 'domain', None)
+    return dom if (dom and domain_enforcement(dom) == 'clamp') else None
+
+def format_clamp(sv, default=(NEGINFINITY, INFINITY)):
+    dom = clamp_domain(sv)
+    if dom:
+        lo = str(dom.lo) if dom.lo is not None else default[0]
+        hi = str(dom.hi) if dom.hi is not None else default[1]
+    else:
+        lo, hi = default
+    return f'"{sv.name}": np.array([{lo}, {hi}])'
 %>
 
     state_variable_range = Final(
@@ -82,11 +97,11 @@ def format_range_or_boundary(sv, attr, default=(NEGINFINITY, INFINITY)):
         doc="""Expected ranges of the state variables for initial condition generation and phase plane setup."""
     )
 
-% if any(sv.boundaries is not None for sv in model.state_variables.values()):
+% if any(clamp_domain(sv) is not None for sv in model.state_variables.values()):
     state_variable_boundaries = Final(
         label="State Variable boundaries [lo, hi]",
         default={
-            ${",\n\t\t\t".join([format_range_or_boundary(sv, 'boundaries') for sv in model.state_variables.values()])}
+            ${",\n\t\t\t".join([format_clamp(sv) for sv in model.state_variables.values() if clamp_domain(sv) is not None])}
         },
         doc="""State variable boundaries for phase plane setup."""
     )

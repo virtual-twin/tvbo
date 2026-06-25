@@ -181,7 +181,7 @@ def class2metadata(ontoclass: Any, metadata: Any):
                             .replace("np.", ""),
                         ),
                         description=ontology.get_def(v),
-                        boundaries=boundaries,
+                        domain=_clamp_domain(boundaries),
                         coupling_variable=v in ontoclass.has_cvar,
                     )
                 }
@@ -195,7 +195,11 @@ def class2metadata(ontoclass: Any, metadata: Any):
                     rhs=td.value.first().replace("numpy.", "").replace("np.", ""),
                 ),
                 "description": state_var.description or ontology.get_def(v),
-                "boundaries": state_var.boundaries or boundaries,
+                # An ontology-declared clamp (stateVariableBoundaries) is the
+                # operative constraint, so it wins over a pre-existing
+                # descriptive (unenforced) domain — consistent with how the
+                # file loader folds boundaries → domain+enforce=clamp.
+                "domain": _clamp_domain(boundaries) or state_var.domain,
                 "coupling_variable": state_var.coupling_variable
                 or (v in ontoclass.has_cvar),
             }
@@ -594,6 +598,47 @@ _DYNAMICS_SLOT_ALIASES = {
 }
 
 
+def _clamp_domain(rng):
+    """Mark a bounds Range as a hard clamp (``enforce='clamp'``) and return it.
+
+    Folds a legacy ``boundaries`` Range into the unified ``domain`` representation:
+    ``boundaries`` always meant "clamp the trajectory to [lo, hi]", which is now
+    expressed as a ``domain`` with ``enforce='clamp'``. Returns None unchanged.
+    """
+    if rng is None:
+        return None
+    try:
+        rng.enforce = "clamp"
+    except (AttributeError, ValueError):
+        pass
+    return rng
+
+
+def _resolve_statevariable_boundaries(d: dict) -> None:
+    """Back-compat: fold a state variable's deprecated ``boundaries`` slot into
+    ``domain`` with ``enforce: clamp``.
+
+    ``boundaries`` was a second Range slot that always meant "hard-clamp the
+    trajectory to [lo, hi]". The schema now carries a single ``domain`` whose
+    ``enforce`` attribute (none/clamp/wrap) says whether/how it is enforced, so
+    ``boundaries: {lo, hi}`` is equivalent to ``domain: {lo, hi, enforce: clamp}``.
+    The clamp range supersedes any looser descriptive ``domain`` that was present
+    (the clamp is what actually constrained integration), preserving exact
+    pre-refactor behaviour. State variables with only a ``domain`` are left
+    untouched and therefore unclamped (``enforce`` defaults to ``none``).
+    """
+    svs = d.get("state_variables")
+    if not isinstance(svs, dict):
+        return
+    for sv in svs.values():
+        if isinstance(sv, dict) and sv.get("boundaries") is not None:
+            bnd = sv.pop("boundaries")
+            if isinstance(bnd, dict):
+                bnd = dict(bnd)
+                bnd.setdefault("enforce", "clamp")
+                sv["domain"] = bnd
+
+
 def _resolve_dynamics_aliases(d: dict) -> dict:
     """Recursively resolve slot aliases in a Dynamics dict tree.
 
@@ -607,6 +652,7 @@ def _resolve_dynamics_aliases(d: dict) -> dict:
                     f"Cannot specify both '{alias}' and '{canonical}' — '{alias}' is an alias for '{canonical}'."
                 )
             d[canonical] = d.pop(alias)
+    _resolve_statevariable_boundaries(d)
     # Recurse into sub-dynamics (modes values may themselves use aliases)
     modes = d.get("modes")
     if isinstance(modes, dict):
@@ -1368,12 +1414,17 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
             if equation is not None
             else None
         )
+        # ``boundaries`` is the legacy name for a hard clamp; fold it into the
+        # unified ``domain`` with enforce='clamp'. An explicit clamp range
+        # supersedes a looser descriptive domain (it is what constrains the run).
+        _domain = self._coerce_range(domain)
+        if boundaries is not None:
+            _domain = _clamp_domain(self._coerce_range(boundaries))
         self.state_variables[str(name)] = tvbo_datamodel.StateVariable(
             name=str(name),
             equation=eq,
             description=description,
-            domain=self._coerce_range(domain),
-            boundaries=self._coerce_range(boundaries),
+            domain=_domain,
             initial_value=initial_value if initial_value is not None else None,
             unit=unit,
             coupling_variable=coupling_variable,
@@ -2315,12 +2366,16 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
                     else:
                         sv_init = np.random.uniform(lo, hi, size=N)
                 elif random:
-                    # Legacy fallback: sample from domain/boundaries
-                    lo = sv.domain.lo if sv.domain else -10
-                    hi = sv.domain.hi if sv.domain else 10
-                    if sv.boundaries:
-                        lo = max(lo, sv.boundaries.lo)
-                        hi = min(hi, sv.boundaries.hi)
+                    # Legacy fallback: sample from the domain range. The domain
+                    # may carry a one-sided clamp (e.g. [0, inf) for a firing
+                    # rate), so guard against non-finite / inverted bounds —
+                    # uniform(0, inf) would yield inf/NaN initial states.
+                    dlo = getattr(sv.domain, "lo", None) if sv.domain else None
+                    dhi = getattr(sv.domain, "hi", None) if sv.domain else None
+                    lo = dlo if (isinstance(dlo, (int, float)) and np.isfinite(dlo)) else -10.0
+                    hi = dhi if (isinstance(dhi, (int, float)) and np.isfinite(dhi)) else 10.0
+                    if hi <= lo:
+                        hi = lo + 1.0
                     sv_init = np.random.uniform(lo, hi, size=N)
                 else:
                     # No distribution, no random flag → use initial_value

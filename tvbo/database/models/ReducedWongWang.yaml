@@ -30,7 +30,7 @@ parameters:
     description: Excitatory recurrence
     unit: nA
     grounding:
-      - GO:0098815
+    - GO:0098815
   a:
     name: a
     definition: 'Slope (or gain) parameter of the sigmoid input-output function H_RWW (Deco et al., 2013).
@@ -102,8 +102,8 @@ description: 'Reduced WongWang (RWW) is a biologically-inspired one-dimensional 
 
   RWW is the dynamical mean-field (DMF) reduction of the Reduced WongWang Exc-Inh model, that consists in disentangling the contribution of the two neuronal populations (excitatory and inhibitory) in order to study the time evolution of just one pool of neurons for each network node (Wong & Wang, 2006). It results that the dynamics of each network node described the temporal evolution of the opening probability of the NMDA channels.'
 references:
-  - Wong2006
-  - Deco2013
+- Wong2006
+- Deco2013
 derived_variables:
   x:
     name: x
@@ -122,7 +122,7 @@ derived_variables:
       latex: false
     conditional: false
     grounding:
-      - GO:0099605
+    - GO:0099605
 coupling_inputs:
   c_pop0:
     name: c_pop0
@@ -134,6 +134,7 @@ state_variables:
     domain:
       lo: 0.0
       hi: 1.0
+      enforce: clamp
     description: State-variable of the Reduced WongWang model, denoting the average, (NMDAR)-mediated synaptic gating, i
     equation:
       lhs: Derivative(S, t)
@@ -141,8 +142,5 @@ state_variables:
       latex: false
     variable_of_interest: true
     coupling_variable: true
-    boundaries:
-      lo: 0.0
-      hi: 1.0
     initial_value: 0.1
 number_of_modes: 1

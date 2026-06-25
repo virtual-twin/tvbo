@@ -75,12 +75,22 @@ def simulator2metadata(sim: Any, experiment_id: Union[int, None] = None, odir: U
 
         ics = getattr(sim, "initial_conditions", None)
 
+        # TVB state_variable_boundaries are hard clamps → fold into the unified
+        # domain with enforce='clamp' (the clamp supersedes the descriptive range).
+        sv_domain = (
+            tvbo_datamodel.Range(lo=float(lo), hi=float(hi))
+            if (lo is not None or hi is not None)
+            else None
+        )
+        if boundaries is not None:
+            boundaries.enforce = "clamp"
+            sv_domain = boundaries
+
         model_metadata.state_variables[sv] = tvbo_datamodel.StateVariable(
             name=sv,
             coupling_variable=bool(i in getattr(sim.model, "cvar", []) or []),
             variable_of_interest=bool(sv in getattr(sim.model, "variables_of_interest", []) or []),
-            domain=(tvbo_datamodel.Range(lo=float(lo), hi=float(hi)) if (lo is not None or hi is not None) else None),
-            boundaries=boundaries,
+            domain=sv_domain,
             initial_value=float(ics[0, i, :, 0].mean()) if ics is not None else None,
         )
 

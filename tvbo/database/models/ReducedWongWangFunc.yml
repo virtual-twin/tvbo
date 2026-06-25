@@ -83,7 +83,7 @@ functions:
     name: H
     definition: Sigmoid input-output function of the synaptic input current that computes the averaged firing rate of the neurons population (Deco et al., 2013).
     arguments:
-      - name: x
+    - name: x
     equation:
       rhs: (a*x - b)/(1 - exp(-d*(a*x - b)))
 derived_variables:
@@ -106,6 +106,7 @@ state_variables:
     domain:
       lo: 0.0
       hi: 1.0
+      enforce: clamp
     description: State-variable of the Reduced WongWang model, denoting the average, (NMDAR)-mediated synaptic gating, i
     equation:
       lhs: Derivative(S, t)
@@ -113,8 +114,5 @@ state_variables:
       latex: false
     variable_of_interest: true
     coupling_variable: true
-    boundaries:
-      lo: 0.0
-      hi: 1.0
     initial_value: 0.1
 number_of_modes: 1

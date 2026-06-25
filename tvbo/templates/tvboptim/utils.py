@@ -492,13 +492,41 @@ def get_state_bounds(model: Any) -> Tuple[List, List, bool]:
     if not model or not getattr(model, "state_variables", None):
         return bounds_lo, bounds_hi, False
 
+    import math
+
     for _sv_name, sv in model.state_variables.items():
         lo, hi = None, None
-        if hasattr(sv, "domain") and sv.domain:
-            lo = getattr(sv.domain, "lo", None)
-            hi = getattr(sv.domain, "hi", None)
-        bounds_lo.append(Float(lo) if lo is not None else -oo)
-        bounds_hi.append(Float(hi) if hi is not None else oo)
+        # A ``domain`` only constrains integration when its ``enforce`` attribute
+        # opts in. ``enforce: clamp`` hard-clips to [lo, hi]; ``none`` (default)
+        # treats the domain as descriptive metadata (expected/plot range,
+        # optimisation hints, IC-sampling support) and never alters the dynamics
+        # — so e.g. a phase θ with domain [0, 2π] and no enforcement is left
+        # unclamped and may evolve past 2π. The legacy ``boundaries`` slot is
+        # folded into ``domain`` with ``enforce: clamp`` by the Dynamics loader.
+        from tvbo.utils import domain_enforcement
+
+        dom = getattr(sv, "domain", None)
+        enforce = domain_enforcement(dom)
+        if enforce == "wrap":
+            raise NotImplementedError(
+                f"State variable '{_sv_name}' uses domain enforce='wrap', which the "
+                f"tvboptim backend does not yet support. Use 'clamp' or 'none'."
+            )
+        if dom is not None and enforce == "clamp":
+            lo = getattr(dom, "lo", None)
+            hi = getattr(dom, "hi", None)
+
+        def _finite(b):
+            # A clamp bound is finite only if it is a real number that is not ±inf.
+            # Range.lo/hi may also be an argument-name string or a sympy symbol
+            # (schema permits both); those are treated as unbounded here.
+            try:
+                return b is not None and math.isfinite(float(b))
+            except (TypeError, ValueError):
+                return False
+
+        bounds_lo.append(Float(lo) if _finite(lo) else -oo)
+        bounds_hi.append(Float(hi) if _finite(hi) else oo)
 
     has_finite = any(v != -oo for v in bounds_lo) or any(v != oo for v in bounds_hi)
     return bounds_lo, bounds_hi, has_finite

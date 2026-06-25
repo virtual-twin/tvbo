@@ -20,4 +20,7 @@ from tvb.simulator.noise import Additive, Multiplicative
 from tvb.simulator.integrators import Integrator, IntegratorStochastic
 from tvb.datatypes.connectivity import Connectivity
 from tvb.datatypes.time_series import TimeSeriesRegion
-from tvb.adapters.datatypes.h5.time_series_h5 import TimeSeriesRegionH5
+try:  # tvb-framework (H5 output only) — optional so in-memory sims run with just tvb-library
+    from tvb.adapters.datatypes.h5.time_series_h5 import TimeSeriesRegionH5
+except ImportError:
+    TimeSeriesRegionH5 = None

@@ -73,6 +73,9 @@ slots:
         range: string
     domain:
         range: Range
+        aliases:
+            - range
+            - boundaries
     iri:
         slot_uri: dcterms:identifier
         range: uriorcurie
@@ -256,6 +259,24 @@ enums:
             Neumann: {}
             Robin: {}
             Periodic: {}
+    DomainEnforcement:
+        description: >-
+            Whether and how a state variable's ``domain`` constrains the
+            trajectory during integration. Default ``none`` means the domain is
+            descriptive metadata only (expected range, plot limits, initial-
+            condition sampling support) and never alters the dynamics — so
+            declaring a domain is side-effect free. ``clamp`` and ``wrap``
+            opt in to active enforcement using the domain's ``lo``/``hi``.
+        permissible_values:
+            none:
+                description: "Metadata only; the trajectory is never constrained (default)."
+            clamp:
+                description: "Hard-clip every integration step to [lo, hi]."
+            wrap:
+                description: >-
+                    Periodic wrap into [lo, hi) — e.g. a phase variable on
+                    [0, 2π). The recorded timeseries stays within the range
+                    while remaining continuous mod (hi - lo)."
     DiscretizationMethod:
         permissible_values:
             FDM: { description: "Finite Difference Method" }
@@ -432,6 +453,13 @@ classes:
         class_uri: tvbo:Range
         description: "Specifies a range for array generation, parameter bounds, or grid exploration."
         attributes:
+            enforce:
+                range: DomainEnforcement
+                ifabsent: "string(none)"
+                description: >-
+                    For a state-variable ``domain``: whether/how to enforce the
+                    range during integration (none/clamp/wrap). Ignored for
+                    parameter, distribution and grid ranges. See DomainEnforcement.
             lo:
                 range: ScalarValue
                 description: "Lower bound or starting value. Can be a number or argument name."
@@ -1799,9 +1827,6 @@ classes:
                 inlined: true
             stimulation_variable:
                 range: boolean
-            boundaries:
-                range: Range
-                inlined: true
             initial_value:
                 range: float
                 ifabsent: float(0.1)
@@ -3231,6 +3256,32 @@ classes:
                 range: boolean
                 ifabsent: true
                 description: "Whether coupling includes transmission delays"
+            interpolate_delays:
+                range: boolean
+                ifabsent: false
+                description: >-
+                    For delayed coupling: read delayed states by linear interpolation
+                    between the two bracketing history time-steps instead of snapping
+                    each delay to the nearest integer step. Removes sub-step
+                    quantisation error and makes the coupling differentiable w.r.t.
+                    the continuous delay — hence w.r.t. conduction speed v (delay =
+                    tract_length / v) — so v can be gradient-optimised. Default false
+                    preserves exact nearest-step behaviour (tvboptim roll strategy).
+            vectorized:
+                range: boolean
+                ifabsent: false
+                description: >-
+                    Opt in to the vectorized matmul fast path for a source-only
+                    coupling — one whose pre_expression depends only on source
+                    states (e.g. the angle-addition decomposition
+                    [sin(theta_j), cos(theta_j)]). The W-reduction then becomes a
+                    single ``pre @ weights`` matmul instead of materialising the
+                    dense per-edge tensor. ONLY valid for INSTANTANEOUS coupling on
+                    a SYMMETRIC connectome (W == Wᵀ): the matmul contracts W while
+                    the per-edge path contracts Wᵀ, so the two agree only when W is
+                    symmetric. Default false keeps the always-correct per-edge
+                    reduction (and delays are inherently per-edge, so this flag is
+                    ignored when delayed=true).
             symmetry:
                 range: string
                 ifabsent: "string(directed)"
@@ -3415,6 +3466,7 @@ classes:
                 multivalued: true
                 range: Optimization
                 inlined: true
+                aliases: [optimization]
                 description: "Parameter optimization configurations"
             explorations:
                 multivalued: true

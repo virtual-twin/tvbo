@@ -12,7 +12,7 @@ parameters:
       step: 0.1
     description: membrane capacitance
     grounding:
-      - GO:0042391
+    - GO:0042391
   Delta:
     name: Delta
     definition: HWHM heterogeneous noise
@@ -32,7 +32,7 @@ parameters:
       step: 0.5
     description: Reversal Potential
     grounding:
-      - GO:0019228
+    - GO:0019228
   J:
     name: J
     definition: Mean Synaptic weight
@@ -43,7 +43,7 @@ parameters:
       step: 0.01
     description: Mean Synaptic weight
     grounding:
-      - GO:0099536
+    - GO:0099536
   K_bath:
     name: K_bath
     definition: Potassium concentration in bath
@@ -54,7 +54,7 @@ parameters:
       step: 0.25
     description: Potassium concentration in bath
     grounding:
-      - GO:0055075
+    - GO:0055075
   R_minus:
     name: R_minus
     definition: curvature left parabola
@@ -366,8 +366,8 @@ parameters:
     unit: um3
 description: "It describes the mean-field activity of a population of Hodgkin-Huxley-type neurons (Depannemaker et al 2022) linking the slow fluctuations of intra- and extra-cellular potassium ion concentrations to the mean membrane potential, and the synaptic input to the population firing rate. \nThe model is derived as the mathematical limit of an infinite number of all-to-all coupled neurons, resulting in 5 state variables:\n    :math:`x` represents a phenomenological variable connected to the firing rate, \n    :math:`V` represent the average membrane potential,\n    :math:`n` represents the gating variable for potassium K, \n    :math:`\\Delta K_{int}` represent the intracellular potassium concentration,\n    :math:`K_g` represents the extracellular potassium buffering by the external bath\n    \"\"\""
 references:
-  - Rabuffo2024
-  - Depannemaecker2023
+- Rabuffo2024
+- Depannemaecker2023
 derived_variables:
   DNa_i:
     name: DNa_i
@@ -455,16 +455,16 @@ derived_variables:
       latex: false
     conditional: true
     cases:
-      - condition: V <= Vstar
-        equation:
-          lhs: xcond
-          rhs: Delta - J*r*x + 2*R_minus*x*(V - c_minus)
-          latex: false
-      - condition: 'True'
-        equation:
-          lhs: xcond
-          rhs: Delta - J*r*x + 2*R_plus*x*(V - c_plus)
-          latex: false
+    - condition: V <= Vstar
+      equation:
+        lhs: xcond
+        rhs: Delta - J*r*x + 2*R_minus*x*(V - c_minus)
+        latex: false
+    - condition: 'True'
+      equation:
+        lhs: xcond
+        rhs: Delta - J*r*x + 2*R_plus*x*(V - c_plus)
+        latex: false
   K_o:
     name: K_o
     equation:
@@ -516,16 +516,16 @@ derived_variables:
       latex: false
     conditional: true
     cases:
-      - condition: V <= Vstar
-        equation:
-          lhs: Vcond
-          rhs: R_minus*c_pop0*(-V + E)/pi - R_minus*x**2 + V_temp + eta
-          latex: false
-      - condition: 'True'
-        equation:
-          lhs: Vcond
-          rhs: R_minus*c_pop0*(-V + E)/pi - R_plus*x**2 + V_temp + eta
-          latex: false
+    - condition: V <= Vstar
+      equation:
+        lhs: Vcond
+        rhs: R_minus*c_pop0*(-V + E)/pi - R_minus*x**2 + V_temp + eta
+        latex: false
+    - condition: 'True'
+      equation:
+        lhs: Vcond
+        rhs: R_minus*c_pop0*(-V + E)/pi - R_plus*x**2 + V_temp + eta
+        latex: false
 coupling_inputs:
   c_pop0:
     name: c_pop0
@@ -533,8 +533,9 @@ state_variables:
   DKi:
     name: DKi
     domain:
-      lo: -10.0
-      hi: 0.0
+      lo: -100.0
+      hi: .inf
+      enforce: clamp
     description: ''
     equation:
       lhs: Derivative(DKi, t)
@@ -542,15 +543,13 @@ state_variables:
       latex: false
     variable_of_interest: true
     coupling_variable: false
-    boundaries:
-      lo: -100.0
-      hi: .inf
     initial_value: 0.1
   Kg:
     name: Kg
     domain:
-      lo: -20.0
-      hi: -5.0
+      lo: -100.0
+      hi: .inf
+      enforce: clamp
     description: ''
     equation:
       lhs: Derivative(Kg, t)
@@ -558,15 +557,13 @@ state_variables:
       latex: false
     variable_of_interest: true
     coupling_variable: false
-    boundaries:
-      lo: -100.0
-      hi: .inf
     initial_value: 0.1
   V:
     name: V
     domain:
-      lo: -90.0
-      hi: 10.0
+      lo: -500.0
+      hi: .inf
+      enforce: clamp
     description: ''
     equation:
       lhs: Derivative(V, t)
@@ -574,15 +571,13 @@ state_variables:
       latex: false
     variable_of_interest: true
     coupling_variable: false
-    boundaries:
-      lo: -500.0
-      hi: .inf
     initial_value: 0.1
   n:
     name: n
     domain:
       lo: 0.0
-      hi: 1.0
+      hi: .inf
+      enforce: clamp
     description: ''
     equation:
       lhs: Derivative(n, t)
@@ -590,15 +585,13 @@ state_variables:
       latex: false
     variable_of_interest: true
     coupling_variable: false
-    boundaries:
-      lo: 0.0
-      hi: .inf
     initial_value: 0.1
   x:
     name: x
     domain:
       lo: 0.0
-      hi: 1.0
+      hi: .inf
+      enforce: clamp
     description: ''
     equation:
       lhs: Derivative(x, t)
@@ -606,8 +599,5 @@ state_variables:
       latex: false
     variable_of_interest: true
     coupling_variable: true
-    boundaries:
-      lo: 0.0
-      hi: .inf
     initial_value: 0.1
 number_of_modes: 1
