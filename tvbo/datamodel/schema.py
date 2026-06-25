@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-06-15T22:02:00
+# Generation date: 2026-06-25T14:52:27
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -808,7 +808,7 @@ class ReferenceFingerprint(YAMLRoot):
     class_name: ClassVar[str] = "ReferenceFingerprint"
     class_model_uri: ClassVar[URIRef] = TVBO.ReferenceFingerprint
 
-    iri: str = None
+    iri: Union[str, URIorCURIE] = None
     field: Optional[str] = None
     mtime: Optional[float] = None
     size: Optional[int] = None
@@ -817,8 +817,8 @@ class ReferenceFingerprint(YAMLRoot):
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.iri):
             self.MissingRequiredField("iri")
-        if not isinstance(self.iri, str):
-            self.iri = str(self.iri)
+        if not isinstance(self.iri, URIorCURIE):
+            self.iri = URIorCURIE(self.iri)
 
         if self.field is not None and not isinstance(self.field, str):
             self.field = str(self.field)
@@ -1381,14 +1381,14 @@ class Reference(YAMLRoot):
     class_name: ClassVar[str] = "Reference"
     class_model_uri: ClassVar[URIRef] = TVBO.Reference
 
-    iri: str = None
+    iri: Union[str, URIorCURIE] = None
     field: Optional[str] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.iri):
             self.MissingRequiredField("iri")
-        if not isinstance(self.iri, str):
-            self.iri = str(self.iri)
+        if not isinstance(self.iri, URIorCURIE):
+            self.iri = URIorCURIE(self.iri)
 
         if self.field is not None and not isinstance(self.field, str):
             self.field = str(self.field)
@@ -4539,7 +4539,6 @@ class PDE(YAMLRoot):
     domain: Optional[Union[dict, SpatialDomain]] = None
     mesh: Optional[Union[dict, Mesh]] = None
     state_variables: Optional[Union[dict[Union[str, FieldStateVariableName], Union[dict, FieldStateVariable]], list[Union[dict, FieldStateVariable]]]] = empty_dict()
-    field: Optional[Union[dict, SpatialField]] = None
     operators: Optional[Union[Union[dict, DifferentialOperator], list[Union[dict, DifferentialOperator]]]] = empty_list()
     sources: Optional[Union[Union[dict, Equation], list[Union[dict, Equation]]]] = empty_list()
     boundary_conditions: Optional[Union[Union[dict, BoundaryCondition], list[Union[dict, BoundaryCondition]]]] = empty_list()
@@ -4564,9 +4563,6 @@ class PDE(YAMLRoot):
             self.mesh = Mesh(**as_dict(self.mesh))
 
         self._normalize_inlined_as_list(slot_name="state_variables", slot_type=FieldStateVariable, key_name="name", keyed=True)
-
-        if self.field is not None and not isinstance(self.field, SpatialField):
-            self.field = SpatialField(**as_dict(self.field))
 
         if not isinstance(self.operators, list):
             self.operators = [self.operators] if self.operators is not None else []
@@ -7087,7 +7083,7 @@ slots.provenance__inputs = Slot(uri=TVBO.inputs, name="provenance__inputs", curi
                    model_uri=TVBO.provenance__inputs, domain=None, range=Optional[Union[Union[dict, ReferenceFingerprint], list[Union[dict, ReferenceFingerprint]]]])
 
 slots.referenceFingerprint__iri = Slot(uri=TVBO.iri, name="referenceFingerprint__iri", curie=TVBO.curie('iri'),
-                   model_uri=TVBO.referenceFingerprint__iri, domain=None, range=str)
+                   model_uri=TVBO.referenceFingerprint__iri, domain=None, range=Union[str, URIorCURIE])
 
 slots.referenceFingerprint__field = Slot(uri=TVBO.field, name="referenceFingerprint__field", curie=TVBO.curie('field'),
                    model_uri=TVBO.referenceFingerprint__field, domain=None, range=Optional[str])
@@ -7309,7 +7305,7 @@ slots.file__extension = Slot(uri=TVBO.extension, name="file__extension", curie=T
                    model_uri=TVBO.file__extension, domain=None, range=Optional[str])
 
 slots.reference__iri = Slot(uri=TVBO.iri, name="reference__iri", curie=TVBO.curie('iri'),
-                   model_uri=TVBO.reference__iri, domain=None, range=str)
+                   model_uri=TVBO.reference__iri, domain=None, range=Union[str, URIorCURIE])
 
 slots.reference__field = Slot(uri=TVBO.field, name="reference__field", curie=TVBO.curie('field'),
                    model_uri=TVBO.reference__field, domain=None, range=Optional[str])
@@ -8450,9 +8446,6 @@ slots.pDE__mesh = Slot(uri=TVBO.mesh, name="pDE__mesh", curie=TVBO.curie('mesh')
 
 slots.pDE__state_variables = Slot(uri=TVBO.state_variables, name="pDE__state_variables", curie=TVBO.curie('state_variables'),
                    model_uri=TVBO.pDE__state_variables, domain=None, range=Optional[Union[dict[Union[str, FieldStateVariableName], Union[dict, FieldStateVariable]], list[Union[dict, FieldStateVariable]]]])
-
-slots.pDE__field = Slot(uri=TVBO.field, name="pDE__field", curie=TVBO.curie('field'),
-                   model_uri=TVBO.pDE__field, domain=None, range=Optional[Union[dict, SpatialField]])
 
 slots.pDE__operators = Slot(uri=TVBO.operators, name="pDE__operators", curie=TVBO.curie('operators'),
                    model_uri=TVBO.pDE__operators, domain=None, range=Optional[Union[Union[dict, DifferentialOperator], list[Union[dict, DifferentialOperator]]]])

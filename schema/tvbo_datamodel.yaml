@@ -824,7 +824,12 @@ classes:
             cached result, falling back to a hash recompute on mismatch.
         attributes:
             iri:
-                range: string
+                # uriorcurie (not string) to match the global `iri` slot's range
+                # (xsd:anyURI). A local `string` range here conflicts with the
+                # global anyURI range on the shared `tvbo:iri` property, making
+                # this class unsatisfiable under OWL-DL (a value can't be both
+                # xsd:string and xsd:anyURI).
+                range: uriorcurie
                 required: true
                 description: "IRI of the referenced artifact (Network, ExperimentResult, BehavioralData, ...)."
             field:
@@ -1336,7 +1341,11 @@ classes:
             inlining the data.
         attributes:
             iri:
-                range: string
+                # uriorcurie (not string) to match the global `iri` slot's range
+                # (xsd:anyURI); a local `string` range conflicts with the global
+                # anyURI range on the shared `tvbo:iri` property and makes this
+                # class unsatisfiable under OWL-DL.
+                range: uriorcurie
                 required: true
                 description: "CURIE or full IRI of the referenced TVBO entity."
             field:
@@ -3803,14 +3812,17 @@ classes:
             mesh:
                 description: "Shared mesh for all field state variables in this PDE."
                 range: Mesh
-            # Prefer state_variables for PDEs; keep single 'field' for backward compatibility
+            # Use state_variables for PDEs (FieldStateVariable list). The old
+            # single object-valued `field: SpatialField` attribute was removed:
+            # it was deprecated and unused, and its name collided with the
+            # string-valued `field` of Reference/ReferenceFingerprint, which the
+            # OWL generator (keying on the slot name) punned as both an Object-
+            # and a Datatype-property — making those classes unsatisfiable under
+            # OWL-DL (HermiT). state_variables fully supersedes it.
             state_variables:
                 multivalued: true
                 inlined_as_list: true
                 range: FieldStateVariable
-            field:
-                description: "Primary field being solved for (deprecated; use state_variables)."
-                range: SpatialField
             operators:
                 multivalued: true
                 range: DifferentialOperator
