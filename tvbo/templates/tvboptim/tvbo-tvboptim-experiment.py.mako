@@ -292,6 +292,19 @@ events_list = list(experiment.events.values()) if experiment.events else []
 stimulus_events = [ev for ev in events_list if 'stimulus' in str(getattr(ev, 'event_type', 'stimulus'))]
 has_stimulus_events = len(stimulus_events) > 0
 
+# A stimulus event whose signal is an iid per-step draw (an event parameter with
+# distribution.axis == 'time') needs the same step-time freeze as stochastic
+# dynamics params: multi-stage solvers (Heun/RK4) must see one sample per step,
+# not advance the step index at the t+dt sub-evaluation.
+def _event_is_stochastic(ev):
+    params = dict(ev.parameters) if getattr(ev, 'parameters', None) else {}
+    for pobj in params.values():
+        dist = getattr(pobj, 'distribution', None)
+        if dist is not None and 'time' in str(getattr(dist, 'axis', 'space')):
+            return True
+    return False
+has_stochastic_stimulus = any(_event_is_stochastic(ev) for ev in stimulus_events)
+
 # === Optimization metadata ===
 # Schema: experiment.optimizations is multivalued dict, opt.stages is inlined_as_list
 optim_list = list(experiment.optimizations.values()) if experiment.optimizations else []
@@ -796,14 +809,16 @@ def _inject_stochastic_trajectories(state, t1, dt, key=None):
 
 % endif
 
-% if stochastic_param_info:
+% if stochastic_param_info or has_stochastic_stimulus:
 def _freeze_step_time(solver):
     """Patch solver to freeze t for all sub-evaluations within a step.
 
     Multi-stage solvers (RK4, Heun) evaluate dynamics at sub-step times
     (t, t+dt/2, t+dt). Time-indexed stochastic inputs (pre-generated arrays
     indexed by t) should be constant per integration step — the input is
-    sampled once per step, not interpolated across sub-steps.
+    sampled once per step, not interpolated across sub-steps. This covers
+    both stochastic dynamics params and iid per-step stimulus events (whose
+    external-input compute also reads the frozen step time).
 
     This patches the solver's step method so all dynamics evaluations within
     a single step see the same time value (the step-start time t), preventing
@@ -832,7 +847,7 @@ def get_solver():
 % else:
     solver = base_solver
 % endif
-% if stochastic_param_info:
+% if stochastic_param_info or has_stochastic_stimulus:
     solver = _freeze_step_time(solver)
 % endif
     return solver
