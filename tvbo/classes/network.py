@@ -548,18 +548,20 @@ class Network(tvbo_datamodel.Network):
     def _has_graph_generator(self) -> bool:
         """True if this Network has a resolvable GraphGenerator.
 
-        A GraphGenerator is resolvable when *either*:
-        * `graph_generator.builder` is set to an explicit Callable (the
-          user supplied a Python builder inline in their YAML), or
-        * `graph_generator.type` matches a curated database entry under
-          `tvbo/database/graph_generators/<Type>.yaml` whose `bindings:`
-          block declares a `python.callable` (the standard path for
-          built-in generators like RandomReservoir, WeightShuffle, …).
+        A GraphGenerator is resolvable when *any* of:
+        * `graph_generator.builder` is an explicit Callable (inline Python builder), or
+        * `graph_generator.type` matches a curated entry whose symbolic
+          `procedure:` block the generic engine can evaluate (the standard path
+          for built-in generators like RandomReservoir, WeightShuffle, …), or
+        * that curated entry declares a `bindings.python.callable` (the legacy /
+          library-wrapper escape hatch).
         """
         gg = getattr(self, "graph_generator", None)
         if gg is None:
             return False
         if getattr(gg, "builder", None) is not None:
+            return True
+        if self._db_procedure_for(gg) is not None:
             return True
         return self._db_python_binding_for(gg) is not None
 
@@ -611,28 +613,26 @@ class Network(tvbo_datamodel.Network):
             # all cases fall back to treating the IRI as a plain reference.
             return None
 
-    # Cache GraphGenerator python bindings by type so `_is_materialized` /
-    # `_resolve` don't re-read+parse the same generator YAML from disk on every
-    # network (a reservoir net resolves one binding per subnetwork). A missing
-    # binding is cached as None to avoid repeat lookups.
-    _GG_BINDING_CACHE: Dict[str, Optional[Dict[str, Any]]] = {}
+    # Cache the curated GraphGenerator YAML entry by type so `_is_materialized`
+    # / `_resolve` don't re-read+parse the same generator from disk on every
+    # network (a reservoir net resolves one per subnetwork). A missing entry is
+    # cached as None to avoid repeat lookups.
+    _GG_ENTRY_CACHE: Dict[str, Optional[Dict[str, Any]]] = {}
 
     @classmethod
-    def _db_python_binding_for(cls, gg) -> Optional[Dict[str, Any]]:
-        """Look up the python binding (callable + args) for `gg` from the database.
+    def _db_generator_entry(cls, gg) -> Optional[Dict[str, Any]]:
+        """Load and memoise the curated GraphGenerator YAML entry for `gg`.
 
-        Returns the binding dict, or None if no matching database entry has a
-        python binding. Returns None silently for unknown types so that
-        templates / codegen-only generators (e.g. Tier-1 library wrappers
-        materialised by Julia/NetworkX, not Python) don't trigger resolver
-        errors at Network load time. Results are memoised by generator type.
+        Returns the raw entry dict (carrying ``procedure``, ``parameters``,
+        ``bindings``, …), or None when the type matches no curated entry — so
+        codegen-only / unknown generators don't trigger resolver errors at load.
         """
         gtype = getattr(gg, "type", None)
         if not gtype:
             return None
         key = str(gtype)
-        if key in cls._GG_BINDING_CACHE:
-            return cls._GG_BINDING_CACHE[key]
+        if key in cls._GG_ENTRY_CACHE:
+            return cls._GG_ENTRY_CACHE[key]
         try:
             import yaml
 
@@ -640,92 +640,132 @@ class Network(tvbo_datamodel.Network):
 
             entry_path = registry_resolve("GraphGenerator", key)
         except (FileNotFoundError, ValueError, RuntimeError):
-            cls._GG_BINDING_CACHE[key] = None
+            cls._GG_ENTRY_CACHE[key] = None
             return None
         with open(entry_path) as f:
             entry = yaml.safe_load(f) or {}
-        binding = ((entry.get("bindings") or {}).get("python")) or None
-        cls._GG_BINDING_CACHE[key] = binding
-        return binding
+        cls._GG_ENTRY_CACHE[key] = entry
+        return entry
+
+    @classmethod
+    def _db_python_binding_for(cls, gg) -> Optional[Dict[str, Any]]:
+        """The `bindings.python` block of `gg`'s curated entry, if any.
+
+        The legacy / escape-hatch path: most generators are now interpreted from
+        their symbolic ``procedure:`` block (see ``_db_procedure_for`` and the
+        generic engine), and only genuine library wrappers keep a python binding.
+        """
+        entry = cls._db_generator_entry(gg) or {}
+        return ((entry.get("bindings") or {}).get("python")) or None
+
+    @classmethod
+    def _db_procedure_for(cls, gg):
+        """The symbolic ``procedure:`` block of `gg`'s curated entry, if any.
+
+        ``procedure`` is not a schema slot on ``GraphGenerator`` (like
+        ``bindings``), so it is read from the raw curated YAML and interpreted by
+        the generic engine in ``tvbo/graph_generators/engine.py``.
+        """
+        entry = cls._db_generator_entry(gg) or {}
+        return entry.get("procedure") or None
 
     def _resolve_from_graph_generator(self, source_dir: Optional[Union[str, Path]]) -> None:
-        """Invoke a Python materialiser for the GraphGenerator and copy its result onto self.
+        """Materialise the GraphGenerator and copy its result onto self.
 
-        Two routes (handled uniformly):
-        * Explicit `graph_generator.builder` (user-supplied Callable in the YAML).
-        * Database-resolved python binding for `graph_generator.type` (curated
-          entry's `bindings.python.callable`).
+        Three routes, in priority order:
+        * **Symbolic `procedure:`** (preferred) — the curated entry's
+          backend-independent procedure block, interpreted by the generic engine
+          in ``tvbo/graph_generators/engine.py`` (numpy/eager mode). No
+          per-generator Python.
+        * **Explicit `graph_generator.builder`** — a user-supplied inline Callable.
+        * **`bindings.python.callable`** — the legacy / library-wrapper escape hatch.
 
-        The materialiser is a Python callable; the GraphGenerator's parameters
-        dict is passed as keyword arguments. It must return either a
-        `Network` instance, a dict with at least a `weights` key, or a tuple
-        `(weights, lengths)` / `(weights, lengths, node_params)`.
-
-        `source_dir` is forwarded so builders that need it (for example to
-        load companion artefacts) can request it as a keyword argument.
+        Each route yields a `Network`, a dict with at least a `weights` key, or a
+        tuple `(weights, lengths)` / `(weights, lengths, node_params)`.
+        `source_dir` is forwarded so Python builders can load companion artefacts.
         """
         gg = self.graph_generator
+
+        # Flatten the GraphGenerator's Parameter list to a plain kwargs dict,
+        # shared by the engine and the Python-callable routes.
+        kwargs: Dict[str, Any] = {}
+        for p in (gg.parameters or {}).values():
+            pname = getattr(p, "name", None)
+            if pname is None:
+                continue
+            val = getattr(p, "value", None)
+            if val is None:
+                # Distribution-valued parameters (e.g. weight_distribution)
+                # carry their spec in the `distribution` slot.
+                val = getattr(p, "distribution", None)
+            kwargs[pname] = val
+        seed = getattr(gg, "seed", None)
+        if seed is not None:
+            kwargs.setdefault("seed", seed)
+
         cb = getattr(gg, "builder", None)
-        if cb is not None:
-            module_name = getattr(cb, "module", None)
-            func_name = getattr(cb, "name", None)
-        else:
-            binding = self._db_python_binding_for(gg) or {}
-            lib = binding.get("library") or ""
-            callable_name = binding.get("callable")
-            if not callable_name:
-                raise ValueError(
-                    f"GraphGenerator type {gg.type!r} has no `bindings.python.callable` "
-                    f"in its database entry and no inline `builder:` was provided."
-                )
-            # The `library` value is the fully-qualified module path
-            # (e.g. `tvbo.graph_generators.builtins`); fall back to the same
-            # convention if only a short name was given.
-            module_name = lib or f"tvbo.graph_generators.builtins"
-            func_name = callable_name
-        if not module_name or not func_name:
-            raise ValueError(
-                "graph_generator builder must resolve to both `module` and `name` "
-                f"(got module={module_name!r}, name={func_name!r})"
+        procedure = None if cb is not None else self._db_procedure_for(gg)
+
+        if procedure is not None:
+            # Preferred path: interpret the symbolic procedure (no per-generator Python).
+            from tvbo.graph_generators.engine import materialize
+
+            entry = self._db_generator_entry(gg) or {}
+            result = materialize(
+                procedure,
+                kwargs,
+                seed=seed,
+                declared_params=(entry.get("parameters") or {}),
             )
+        else:
+            # Escape hatch: inline Callable or curated python binding.
+            if cb is not None:
+                module_name = getattr(cb, "module", None)
+                func_name = getattr(cb, "name", None)
+            else:
+                binding = self._db_python_binding_for(gg) or {}
+                lib = binding.get("library") or ""
+                callable_name = binding.get("callable")
+                if not callable_name:
+                    raise ValueError(
+                        f"GraphGenerator type {gg.type!r} has neither a `procedure:` "
+                        f"block nor a `bindings.python.callable` in its database entry, "
+                        f"and no inline `builder:` was provided."
+                    )
+                if not lib:
+                    raise ValueError(
+                        f"GraphGenerator type {gg.type!r} declares a `bindings.python."
+                        f"callable` but no `library` — a library-wrapper binding must "
+                        f"name its fully-qualified module."
+                    )
+                module_name = lib
+                func_name = callable_name
+            if not module_name or not func_name:
+                raise ValueError(
+                    "graph_generator builder must resolve to both `module` and `name` "
+                    f"(got module={module_name!r}, name={func_name!r})"
+                )
 
-        import importlib
+            import importlib
 
-        # Make the YAML source directory importable so builders can live
-        # next to the study YAML.
-        added_to_path = False
-        if source_dir is not None:
-            src = str(Path(source_dir).resolve())
-            if src not in os.sys.path:
-                os.sys.path.insert(0, src)
-                added_to_path = True
-
-        try:
-            mod = importlib.import_module(module_name)
-            fn = getattr(mod, func_name)
-
-            # Flatten Parameter list to a plain kwargs dict.
-            kwargs: Dict[str, Any] = {}
-            for p in (gg.parameters or {}).values():
-                pname = getattr(p, "name", None)
-                if pname is None:
-                    continue
-                val = getattr(p, "value", None)
-                if val is None:
-                    # Distribution-valued parameters (e.g. weight_distribution)
-                    # carry their spec in the `distribution` slot.
-                    val = getattr(p, "distribution", None)
-                kwargs[pname] = val
-            if getattr(gg, "seed", None) is not None:
-                kwargs.setdefault("seed", gg.seed)
-
-            result = fn(**kwargs)
-        finally:
-            if added_to_path:
-                try:
-                    os.sys.path.remove(src)
-                except ValueError:
-                    pass
+            # Make the YAML source directory importable so builders can live
+            # next to the study YAML.
+            added_to_path = False
+            if source_dir is not None:
+                src = str(Path(source_dir).resolve())
+                if src not in os.sys.path:
+                    os.sys.path.insert(0, src)
+                    added_to_path = True
+            try:
+                mod = importlib.import_module(module_name)
+                fn = getattr(mod, func_name)
+                result = fn(**kwargs)
+            finally:
+                if added_to_path:
+                    try:
+                        os.sys.path.remove(src)
+                    except ValueError:
+                        pass
 
         # Accept a Network, a dict, or a (weights, lengths[, node_params]) tuple.
         if isinstance(result, Network):
@@ -1441,14 +1481,10 @@ class Network(tvbo_datamodel.Network):
 
         return instance
 
-    @property
-    def observations(self) -> Dict[str, np.ndarray]:
-        """Observational data loaded from BIDS (e.g., FC for optimization targets)."""
-        # Use object.__getattribute__ to bypass LinkML and get plain Python dict
-        try:
-            return object.__getattribute__(self, "__dict__").get("_bids_observations", {})
-        except (AttributeError, KeyError):
-            return {}
+    # NOTE: the canonical `observations` property is defined later in this class
+    # (source-agnostic: resolves BIDS-loaded and inline-store data, keyed by
+    # `observational_measures`). A duplicate definition here was dead code
+    # (shadowed by the later one) and has been removed.
 
     def load_from_bids(
         self,
