@@ -457,6 +457,16 @@ class Network(tvbo_datamodel.Network):
             _source_dir = os.path.dirname(_pending)
         self._resolve(source_dir=_source_dir)
 
+        # Runtime default: a Network with no nodes, no declared count, and no
+        # connectome to resolve is still usable as a single-node network. The
+        # serialized schema default is None (number_of_nodes is "derived from
+        # nodes if not set"), so this 1-node fallback lives only on the Python
+        # side — applied AFTER resolution so connectome-backed networks keep
+        # their resolved size rather than being pinned to 1.
+        if not self.nodes and not self.number_of_nodes:
+            self.number_of_nodes = 1
+            self.nodes = [tvbo_datamodel.Node(id=0, label="node_0")]
+
     # -------------------------------------------------------------------- #
     # Canonical resolver                                                   #
     # -------------------------------------------------------------------- #
