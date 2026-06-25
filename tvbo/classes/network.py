@@ -1107,9 +1107,21 @@ class Network(tvbo_datamodel.Network):
             return None
 
     def _items(self):
+        # What the LinkML yaml_dumper / json_dumper / as_dict see. Internal
+        # caches and lazy-store handles (``_cached_weights``, ``_store``,
+        # ``_bids_observations`` …) are runtime bookkeeping, never schema slots —
+        # and LinkML slot names are never underscore-prefixed — so any private
+        # attribute must be hidden from serialization. Excluding *all* leading-
+        # underscore keys (not just a hand-maintained denylist) keeps this robust
+        # as new caches are added: a stray ndarray cache like ``_bids_observations``
+        # would otherwise reach yaml.SafeDumper and raise RepresenterError
+        # ("cannot represent an object", <ndarray>). Bulk arrays belong in the
+        # binary companion (HDF5/zarr) via ``save_network``, referenced from the
+        # spec by ``data_file`` — not inlined here.
         for k, v in super()._items():
-            if k not in self._INTERNAL_ATTRS:
-                yield k, v
+            if k.startswith("_") or k in self._INTERNAL_ATTRS:
+                continue
+            yield k, v
 
     @classmethod
     def from_datamodel(cls, datamodel: tvbo_datamodel.Network) -> "Connectome":
