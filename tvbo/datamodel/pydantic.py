@@ -3975,7 +3975,7 @@ class ReferenceFingerprint(ConfiguredBaseModel):
                        'Dynamics',
                        'Function',
                        'Coupling']} })
-    field: Optional[str] = Field(default=None, description="""Dotted-path subkey within the referenced entity (optional).""", json_schema_extra = { "linkml_meta": {'domain_of': ['ReferenceFingerprint', 'Reference', 'PDE']} })
+    field: Optional[str] = Field(default=None, description="""Dotted-path subkey within the referenced entity (optional).""", json_schema_extra = { "linkml_meta": {'domain_of': ['ReferenceFingerprint', 'Reference']} })
     mtime: Optional[float] = Field(default=None, description="""File modification time at fingerprinting (POSIX timestamp).""", json_schema_extra = { "linkml_meta": {'domain_of': ['ReferenceFingerprint']} })
     size: Optional[int] = Field(default=None, description="""File size in bytes at fingerprinting.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ReferenceFingerprint', 'Sample']} })
     hash: Optional[str] = Field(default=None, description="""SHA-256 hex digest of the file at fingerprinting (recomputed lazily when mtime/size differ).""", json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareRequirement', 'ReferenceFingerprint']} })
@@ -4499,9 +4499,7 @@ class Network(ConfiguredBaseModel):
                        'SimulationExperiment']} })
     node_template: Optional[Node] = Field(default=None, description="""Default Node attributes applied to every Node in this Network. Explicit entries in `nodes:` override the template field-by-field (shallow replace, same semantics as `dict.update`). Reserved per-Node slots (id, label, position, region) come from the data backbone (Network.iri-loaded parcellation or procedural generator) and are ignored if set on the template. Lets a homogeneous Network declare its per-Node configuration once without enumerating regions.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
     edge_template: Optional[Edge] = Field(default=None, description="""Default Edge attributes applied to every Edge in this Network. Explicit entries in `edges:` override the template field-by-field. Reserved per-Edge slots (source, target, weight, delay, distance) come from the data backbone (loaded matrix or procedural generator) and are ignored if set on the template.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network']} })
-    number_of_nodes: Optional[int] = Field(default=None, description="""Number of nodes in the network (derived from nodes if not set)""", json_schema_extra = { "linkml_meta": {'aliases': ['number_of_nodes', 'number_of_regions'],
-         'domain_of': ['Network'],
-         'ifabsent': 'integer(1)'} })
+    number_of_nodes: Optional[int] = Field(default=None, description="""Number of nodes in the network (derived from nodes if not set)""", json_schema_extra = { "linkml_meta": {'aliases': ['number_of_nodes', 'number_of_regions'], 'domain_of': ['Network']} })
     coordinate_space: Optional[CommonCoordinateSpace] = Field(default=None, description="""Coordinate space for node positions (e.g., MNI152NLin2009c). Mirrors BrainAtlas.coordinateSpace so network node positions are unambiguous.""", json_schema_extra = { "linkml_meta": {'domain_of': ['DBSDataset',
                        'DBSSubject',
                        'Electrode',
@@ -4982,7 +4980,7 @@ class Reference(ConfiguredBaseModel):
                        'Dynamics',
                        'Function',
                        'Coupling']} })
-    field: Optional[str] = Field(default=None, description="""Optional dotted-path subkey into the referenced entity (e.g. ``weight_alpha`` for a Network's named edge matrix, ``mesh.faces`` for the face array, or ``nodes.ef_alpha`` for a per-node scalar field). Resolved by attribute walk at load time.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ReferenceFingerprint', 'Reference', 'PDE']} })
+    field: Optional[str] = Field(default=None, description="""Optional dotted-path subkey into the referenced entity (e.g. ``weight_alpha`` for a Network's named edge matrix, ``mesh.faces`` for the face array, or ``nodes.ef_alpha`` for a per-node scalar field). Resolved by attribute walk at load time.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ReferenceFingerprint', 'Reference']} })
 
 
 class Node(ConfiguredBaseModel):
@@ -11985,7 +11983,6 @@ class PDE(ConfiguredBaseModel):
                        'PDE']} })
     mesh: Optional[Mesh] = Field(default=None, description="""Shared mesh for all field state variables in this PDE.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Network', 'SpatialField', 'FieldStateVariable', 'PDE']} })
     state_variables: Optional[list[FieldStateVariable]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'PDE']} })
-    field: Optional[SpatialField] = Field(default=None, description="""Primary field being solved for (deprecated; use state_variables).""", json_schema_extra = { "linkml_meta": {'domain_of': ['ReferenceFingerprint', 'Reference', 'PDE']} })
     operators: Optional[list[DifferentialOperator]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['PDE']} })
     sources: Optional[list[Equation]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['PDE']} })
     boundary_conditions: Optional[list[BoundaryCondition]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['FieldStateVariable', 'PDE']} })
