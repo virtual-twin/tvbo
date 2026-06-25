@@ -1526,8 +1526,13 @@ def import_model(
             "symbol": str(sv.name),
             "stateVariableRange": (f"lo={sv.domain.lo}, hi={sv.domain.hi}" if sv.domain else ""),
         }
-        if sv.boundaries:
-            properties["stateVariableBoundaries"] = f"lo={sv.boundaries.lo}, hi={sv.boundaries.hi}"
+        # A clamped domain (enforce='clamp') is the modern equivalent of the
+        # former dedicated boundaries slot; export it as stateVariableBoundaries.
+        from tvbo.utils import domain_enforcement
+
+        _dom = sv.domain
+        if _dom and domain_enforcement(_dom) == "clamp":
+            properties["stateVariableBoundaries"] = f"lo={_dom.lo}, hi={_dom.hi}"
 
         sv_class = _create_subclass(sv.name + model_suffix, onto.StateVariable, properties, model_class)
         if sv.coupling_variable:

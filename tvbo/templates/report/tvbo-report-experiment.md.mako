@@ -150,11 +150,14 @@ def _distribution_text(distribution):
     return ' '.join(parts)
 
 def _metadata_text(obj):
+    from tvbo.utils import domain_enforcement
     bits = []
-    if _present(_p(obj, 'domain', None)):
-        bits.append(_range_text(_p(obj, 'domain')))
-    if _present(_p(obj, 'boundaries', None)):
-        bits.append('bounds ' + _range_text(_p(obj, 'boundaries')))
+    _dom = _p(obj, 'domain', None)
+    if _present(_dom):
+        bits.append(_range_text(_dom))
+        _enf = domain_enforcement(_dom)   # none / clamp / wrap (boundaries folded into domain)
+        if _enf != 'none':
+            bits.append(f'enforce={_enf}')
     if _present(_p(obj, 'distribution', None)):
         bits.append(_distribution_text(_p(obj, 'distribution')))
     return '; '.join([bit for bit in bits if bit]) or '—'

@@ -21,8 +21,8 @@ parameters:
       step: 0.001
     description: External stimulation parameter for evoked potential simulated activity applied to the excitatory population firing rate IE (Deco et al
     grounding:
-      - GO:0060079
-      - GO:0099605
+    - GO:0060079
+    - GO:0099605
   I_o:
     name: I_o
     definition: Effective external input parameter to the excitatory E and inhibitory I population (Deco et al., 2014).
@@ -34,8 +34,8 @@ parameters:
     description: Effective external input parameter to the excitatory E and inhibitory I population (Deco et al
     unit: nA
     grounding:
-      - GO:0060079
-      - GO:0060080
+    - GO:0060079
+    - GO:0060080
   J_N:
     name: J_N
     definition: Excitatory synaptic coupling parameter (Deco et al., 2014).
@@ -46,7 +46,7 @@ parameters:
       step: 0.001
     description: Excitatory synaptic coupling parameter (Deco et al
     grounding:
-      - GO:0060079
+    - GO:0060079
   J_i:
     name: J_i
     definition: Local feedback inhibitory synaptic coupling to the excitatory population firing rate IE (Deco et al., 2014).
@@ -57,8 +57,8 @@ parameters:
       step: 0.001
     description: Local feedback inhibitory synaptic coupling to the excitatory population firing rate IE (Deco et al
     grounding:
-      - GO:0060080
-      - GO:0099605
+    - GO:0060080
+    - GO:0099605
   W_e:
     name: W_e
     definition: Excitatory population external input scaling weight
@@ -69,8 +69,8 @@ parameters:
       step: 0.01
     description: Excitatory population external input scaling weight
     grounding:
-      - GO:0090394
-      - GO:2000463
+    - GO:0090394
+    - GO:2000463
   W_i:
     name: W_i
     definition: Inhibitory population external input scaling weight
@@ -81,7 +81,7 @@ parameters:
       step: 0.01
     description: Inhibitory population external input scaling weight
     grounding:
-      - GO:0060080
+    - GO:0060080
   a_e:
     name: a_e
     definition: Slope (or gain) parameter of the sigmoid function HE_RWW_EI (Deco et al., 2014).
@@ -152,7 +152,7 @@ parameters:
       step: 1.0e-05
     description: Excitatory population kinetic parameter
     grounding:
-      - GO:0060079
+    - GO:0060079
   gamma_i:
     name: gamma_i
     definition: Inhibitory population kinetic parameter
@@ -163,7 +163,7 @@ parameters:
       step: 1.0e-05
     description: Inhibitory population kinetic parameter
     grounding:
-      - GO:0060080
+    - GO:0060080
   lamda:
     name: lamda
     definition: Inhibitory global coupling scaling
@@ -174,7 +174,7 @@ parameters:
       step: 0.01
     description: Inhibitory global coupling scaling
     grounding:
-      - GO:0060080
+    - GO:0060080
   tau_e:
     name: tau_e
     definition: Kinetic parameter  that represents the decay times for NMDA synapses (Deco et al., 2014). Excitatory population NMDA decay time constant.
@@ -196,7 +196,7 @@ parameters:
     description: Kinetic parameter that represents the decay times for inhibitory GABA synapses (Deco et al
     unit: ms
     grounding:
-      - GO:0016917
+    - GO:0016917
   w_p:
     name: w_p
     definition: Excitatory population recurrence weight
@@ -207,10 +207,10 @@ parameters:
       step: 0.01
     description: Excitatory population recurrence weight
     grounding:
-      - GO:0060079
+    - GO:0060079
 description: Reduced WongWang Exc-Inh (RWW_EI) is a biologically-inspired two-dimensional (i.e., two state-variables ('S_E','S_I')) neural mass model describing the dynamics of a cortical area consisting of local networks of excitatory (AMPA) and inhibitory (GABA-A) populations of spiking neurons interconnected via NMDA synapses. These neurons are organized into an inhibitory population accounting for 20% of the neurons and an excitatory population accounting for 80% of the neurons.
 references:
-  - Deco2014
+- Deco2014
 derived_variables:
   J_N_S_e:
     name: J_N_S_e
@@ -235,7 +235,7 @@ derived_variables:
       latex: false
     conditional: false
     grounding:
-      - GO:0098815
+    - GO:0098815
   x_i:
     name: x_i
     description: Input current to the inhibitory population (Deco et al., 2014).
@@ -245,7 +245,7 @@ derived_variables:
       latex: false
     conditional: false
     grounding:
-      - GO:0060080
+    - GO:0060080
   H_e:
     name: H_e
     description: Sigmoid function that computes the averaged firing rate of the excitatory neuron population IE_RWW_EI (Deco et al., 2014; Abbott & Chance, 2005).
@@ -255,8 +255,8 @@ derived_variables:
       latex: false
     conditional: false
     grounding:
-      - GO:0060079
-      - GO:0099605
+    - GO:0060079
+    - GO:0099605
   H_i:
     name: H_i
     description: Sigmoid function that computes the averaged firing rate of the inhibitory neuron population II_RWW (Deco et al., 2014; Abbott & Chance, 2005).
@@ -266,8 +266,8 @@ derived_variables:
       latex: false
     conditional: false
     grounding:
-      - GO:0060080
-      - GO:0099605
+    - GO:0060080
+    - GO:0099605
 coupling_inputs:
   c_glob:
     name: c_glob
@@ -279,6 +279,7 @@ state_variables:
     domain:
       lo: 0.0
       hi: 1.0
+      enforce: clamp
     description: State-variable of the Reduced WongWang_EI model (Deco et al
     equation:
       lhs: Derivative(S_e, t)
@@ -286,18 +287,16 @@ state_variables:
       latex: false
     variable_of_interest: true
     coupling_variable: true
-    boundaries:
-      lo: 0.0
-      hi: 1.0
     initial_value: 0.1
     grounding:
-      - GO:0060079
-      - GO:0099536
+    - GO:0060079
+    - GO:0099536
   S_i:
     name: S_i
     domain:
       lo: 0.0
       hi: 1.0
+      enforce: clamp
     description: State-variable of the Reduced WongWang_EI model (Deco et al
     equation:
       lhs: Derivative(S_i, t)
@@ -305,11 +304,8 @@ state_variables:
       latex: false
     variable_of_interest: true
     coupling_variable: false
-    boundaries:
-      lo: 0.0
-      hi: 1.0
     initial_value: 0.1
     grounding:
-      - GO:0060080
-      - GO:0099536
+    - GO:0060080
+    - GO:0099536
 number_of_modes: 1

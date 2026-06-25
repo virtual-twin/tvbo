@@ -154,14 +154,75 @@ def parse_list_elements(rhs_str):
                         cvars.append(sv_name)
             incoming_states = cvars if cvars else [pre_rhs.strip()]
 
-    # Vectorized mode: returns local_states from pre() for matmul optimization
+    # Parse pre_expression into one or more terms. A list literal
+    # `[f(source), g(source), ...]` declares several source-only reductions —
+    # the angle-addition decomposition of a phase coupling — each reduced by W
+    # and recombined in post(). `n_pre` is the number of W-reductions, distinct
+    # from `n_output` (the coupling-input dimension the model consumes).
+    _pre_rhs0 = str(pre_expr.rhs).strip() if pre_expr else ''
+    pre_is_list = _pre_rhs0.startswith('[') and _pre_rhs0.endswith(']')
+    pre_terms = parse_list_elements(_pre_rhs0) if pre_is_list else ([_pre_rhs0] if _pre_rhs0 else [])
+    n_pre = len(pre_terms)
+
+    # A pre_expression is "source-only" when it references source states
+    # (incoming, or `{state}_j` aliases) but no target states (local, or
+    # `{state}_i` aliases). Such couplings reduce to a per-node pre() value plus
+    # a single matmul with W, so instantaneous ones take the vectorized fast
+    # path; delayed ones keep the per-edge form (delays are inherently per-edge)
+    # but stay numerically identical.
+    def _refs_target(_rhs):
+        if 'x_i' in _rhs or 'local_states' in _rhs:
+            return True
+        for s in local_states:
+            if f'{s}_i' in _rhs:
+                return True
+            if s not in incoming_states and s in _rhs:
+                return True
+        return False
+    pre_source_only = bool(pre_expr) and not _refs_target(_pre_rhs0)
+
+    # Vectorized mode: pre() returns [n_pre, n_nodes] (per-node) so the base
+    # class reduces with a single matmul `pre @ weights` instead of forming the
+    # dense [.., N, N] per-edge tensor. This matmul is only equivalent to the
+    # per-edge reduction `Σ_k pre·W[:, k]` when the connectome is SYMMETRIC
+    # (the two differ by W vs Wᵀ for directed weights), so it is NOT enabled
+    # automatically for source-only phase couplings. Instead we enable it for:
+    #   (a) the legacy identity case (local states, no incoming) — unchanged
+    #       prior behaviour, and
+    #   (b) an explicit `vectorized: true` opt-in on the coupling (caller asserts
+    #       a symmetric connectome).
+    # The angle-addition decomposition (source-only pre) otherwise takes the
+    # per-edge path below: it stays exact for ANY connectome while still
+    # eliminating the expensive per-edge transcendental evaluations.
     vectorized = getattr(coupling, 'vectorized', False)
     if not vectorized and local_states and not incoming_states:
         vectorized = True
+    vec_states = list(dict.fromkeys(incoming_states + local_states))
 
     # Class name = coupling key (cleaned for Python identifier)
     class_name = coupling_key.replace(' ', '').replace('-', '')
     base_class = 'DelayedCoupling' if has_delay else 'InstantaneousCoupling'
+    # Differentiable (interpolated) delays: OPT-IN only. The kwarg is emitted
+    # solely when the coupling explicitly sets ``interpolate_delays: true`` — it
+    # requires the differentiable-delays tvboptim API. Normal delayed coupling
+    # (the vast majority) emits no kwarg and uses the stock DelayedCoupling, so
+    # it keeps working against released tvboptim. InstantaneousCoupling never
+    # takes the kwarg.
+    _interp_kw = 'interpolate_delays=True, ' if (has_delay and bool(getattr(coupling, "interpolate_delays", False))) else ''
+
+    # Target-state aliases referenced in post_expression (e.g. theta_i), bound
+    # in post() from the per-node local states so the recombination step can
+    # use the post-synaptic state.
+    _post_aliases_i = []
+    post_is_list = False
+    if post_expr:
+        _post_rhs_str = str(post_expr.rhs).strip()
+        post_is_list = _post_rhs_str.startswith('[') and _post_rhs_str.endswith(']')
+        _post_state_list = vec_states if vectorized else local_states
+        for idx, s in enumerate(_post_state_list):
+            si = f'{s}_i'
+            if si in _post_rhs_str:
+                _post_aliases_i.append((si, idx))
 
     # Build state-subscript aliases for mathematical notation in expressions.
     # Enables e.g. pre_expression: sin(theta_j - theta_i) where:
@@ -180,9 +241,13 @@ def parse_list_elements(rhs_str):
             if si in _pre_rhs_str:
                 _state_aliases_i.append((si, idx))
     _alias_symbols = [a[0] for a in _state_aliases_j] + [a[0] for a in _state_aliases_i]
+    # Named reduction components: post_expression refers to gx_0, gx_1, … (one
+    # per pre term) plus the target-state aliases bound in post().
+    _gx_symbols = ['gx_%d' % k for k in range(n_pre)] if n_pre > 1 else []
+    _post_alias_symbols = [a[0] for a in _post_aliases_i]
 
     # JAX code helper
-    all_symbols = param_names + incoming_states + local_states + ['gx', 'G', 'x_i', 'x_j', 'incoming_states', 'local_states'] + _alias_symbols
+    all_symbols = param_names + incoming_states + local_states + ['gx', 'G', 'x_i', 'x_j', 'incoming_states', 'local_states'] + _alias_symbols + _gx_symbols + _post_alias_symbols
     jaxcode = lambda expr: render_expression(expr, format='jax', parameters=all_symbols)
 
     # Description
@@ -205,18 +270,33 @@ class ${class_name}(${base_class}):
 
     def __init__(self, **kwargs):
         % if vectorized:
-        super().__init__(local_states=${local_states}, **kwargs)
+        super().__init__(${_interp_kw}local_states=${vec_states}, **kwargs)
         % elif incoming_states:
-        super().__init__(incoming_states=${incoming_states}${''.join([', local_states=' + str(local_states)] if local_states else [])}, **kwargs)
+        super().__init__(${_interp_kw}incoming_states=${incoming_states}${''.join([', local_states=' + str(local_states)] if local_states else [])}, **kwargs)
         % elif local_states:
-        super().__init__(local_states=${local_states}, **kwargs)
+        super().__init__(${_interp_kw}local_states=${local_states}, **kwargs)
         % else:
-        super().__init__(**kwargs)
+        super().__init__(${_interp_kw}**kwargs)
         % endif
 
-    % if vectorized:
+    % if vectorized and not pre_expr:
     def pre(self, incoming_states, local_states, params):
         return local_states
+    % elif vectorized and pre_expr:
+## Source-only vectorized pre(): evaluate each pre term on the PER-NODE state
+## (local_states holds the union of source+target states, [n_states, n_nodes])
+## and stack to [n_pre, n_nodes] so the base class reduces with a single matmul
+## `pre @ weights`. The W-sum over sources is what turns the per-node sin/cos
+## values into Σⱼ wᵢⱼ·f(stateⱼ).
+    def pre(self, incoming_states, local_states, params):
+        % for name in param_names:
+        ${name} = params.${name}
+        % endfor
+        % for k, s in enumerate(vec_states):
+        ${s} = local_states[${k}]
+        ${s}_j = local_states[${k}]
+        % endfor
+        return jnp.stack([${', '.join(jaxcode(t) for t in pre_terms)}], axis=0)
     % elif pre_expr:
     def pre(self, incoming_states, local_states, params):
         % for name in param_names:
@@ -285,17 +365,22 @@ class ${class_name}(${base_class}):
         incoming_states = incoming_states[0]
         % endif
 <%
-        pre_rhs = str(pre_expr.rhs).strip()
-        is_list = pre_rhs.startswith('[') and pre_rhs.endswith(']')
-        if is_list and n_output > 1:
-            elements = parse_list_elements(pre_rhs)
-            rendered = [jaxcode(e) for e in elements]
+        # A list pre_expression declares n_pre separate reductions (e.g. the
+        # angle-addition decomposition [sin(θⱼ), cos(θⱼ)]). Each term is per-edge
+        # [N_target, N_source]; stacking yields 3D [n_pre, N_target, N_source] so
+        # the base class W-reduces every term in one weighted sum. n_pre is the
+        # reduction count, independent of n_output (the model's input dimension).
+        if pre_is_list:
+            rendered = [jaxcode(e) for e in pre_terms]
             pre_code = 'jnp.stack([' + ', '.join(rendered) + '], axis=0)'
         else:
             pre_code = jaxcode(pre_expr.rhs)
 %>
         coupling_term = ${pre_code}
-        % if incoming_states and local_states:
+        % if pre_is_list:
+## Stacked list pre: already 3D [n_pre, N_target, N_source].
+        return coupling_term
+        % elif incoming_states and local_states:
 ## Per-edge output: ensure 3D [n_output, N_target, N_source] for weighted sum
         return coupling_term[jnp.newaxis, :, :]
         % elif has_delay:
@@ -313,7 +398,30 @@ class ${class_name}(${base_class}):
         G = params.G if hasattr(params, 'G') else 1.0
         % endif
         gx = summed_inputs
-        % if post_expr:
+## Recombination case: n_pre source reductions collapse into a SINGLE coupling
+## output (n_output == 1), e.g. the Kuramoto angle-addition identity. Expose the
+## named components gx_0, gx_1, … so post_expression can recombine them. When
+## n_output > 1 the list pre is a multi-output coupling (each reduction is its
+## own output, e.g. [S_e*wLRE, S_e*wFFI] → c_lre, c_ffi); there gx stays the full
+## [n_output, n_nodes] stack and post passes it through unchanged.
+        % if n_pre > 1 and n_output == 1:
+        % for k in range(n_pre):
+        gx_${k} = summed_inputs[${k}]
+        % endfor
+        % endif
+## Target (post-synaptic) state aliases referenced in post_expression (e.g. θᵢ).
+## Bound whenever present — not only in the recombination case — so any
+## post_expression that uses a `{state}_i` alias resolves it.
+        % for alias_name, idx in _post_aliases_i:
+        ${alias_name} = local_states[${idx}]
+        % endfor
+        % if post_expr and post_is_list:
+        return jnp.stack([${', '.join(jaxcode(e) for e in parse_list_elements(str(post_expr.rhs).strip()))}], axis=0)
+        % elif post_expr and n_pre > 1 and n_output == 1:
+## Scalar recombination of the n_pre reductions → per-node [n_nodes];
+## add leading axis to return [n_output=1, n_nodes].
+        return (${jaxcode(post_expr.rhs)})[jnp.newaxis, :]
+        % elif post_expr:
         return ${jaxcode(post_expr.rhs)}
         % else:
         return G * gx

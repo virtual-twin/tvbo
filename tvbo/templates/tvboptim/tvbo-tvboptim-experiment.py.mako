@@ -126,6 +126,11 @@ _to_ci_key = lambda k: func_to_first_ci.get(k, k) if k else None
 
 # Check if any coupling has delays
 has_delay = any(c.delayed for c in all_couplings.values() if c)
+# Differentiable (interpolated) delays are OPT-IN: only experiments whose
+# coupling sets `interpolate_delays: true` use the decoupled-max_delay graph
+# API (which needs the differentiable-delays tvboptim build). Everything else
+# uses the stock DenseDelayGraph that derives max_delay from the delays.
+interpolate_delays = any(bool(getattr(c, 'interpolate_delays', False)) for c in all_couplings.values() if c)
 
 # Collect all coupling parameters (for optimization)
 all_coupling_params = {}  # (coupling_key, param_name) -> param_obj
@@ -855,6 +860,9 @@ def create_network(
     dynamics_params: dict = None,
     coupling_params: dict = None,
     noise_sigma: float = ${noise_sigma_value},
+    % if interpolate_delays:
+    max_delay: float = None,
+    % endif
 ) -> Network:
 % if has_weight_transforms:
     # Weight transforms
@@ -874,7 +882,14 @@ def create_network(
     % if has_delay:
     if delays is None:
         delays = jnp.zeros_like(weights)
+    % if interpolate_delays:
+    # Differentiable delays (opt-in): max_delay (static history-buffer length) is
+    # decoupled from `delays` so the delays may be JAX tracers (gradient-optimised
+    # conduction speed v); None derives it as usual. Needs differentiable-delays tvboptim.
+    graph = DenseDelayGraph(weights, delays, region_labels=region_labels, max_delay=max_delay)
+    % else:
     graph = DenseDelayGraph(weights, delays, region_labels=region_labels)
+    % endif
     % else:
     graph = DenseGraph(weights, region_labels=region_labels)
     % endif

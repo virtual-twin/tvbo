@@ -21,7 +21,7 @@ parameters:
       step: 0.0001
     description: Constant parameter to scale the rate of feedback from the             firing rate variable to itself
     grounding:
-      - GO:0099605
+    - GO:0099605
   k:
     name: k
     definition: Local coupling strength
@@ -41,10 +41,10 @@ parameters:
       step: 0.01
     description: QIF membrane reversal potential
     grounding:
-      - GO:0042391
+    - GO:0042391
 description: ''
 references:
-  - Byrne2020
+- Byrne2020
 coupling_inputs:
   c_pop0:
     name: c_pop0
@@ -66,7 +66,8 @@ state_variables:
     name: r
     domain:
       lo: 0.0
-      hi: 2.0
+      hi: .inf
+      enforce: clamp
     description: ''
     equation:
       lhs: Derivative(r, t)
@@ -74,8 +75,5 @@ state_variables:
       latex: false
     variable_of_interest: true
     coupling_variable: true
-    boundaries:
-      lo: 0.0
-      hi: .inf
     initial_value: 0.1
 number_of_modes: 1

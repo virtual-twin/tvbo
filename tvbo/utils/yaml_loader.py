@@ -42,6 +42,7 @@ from __future__ import annotations
 
 import io
 import os
+import warnings
 from pathlib import Path
 from typing import Any, Type
 
@@ -171,6 +172,40 @@ def _looks_like_path(source: Any) -> bool:
         return False
 
 
+# Convenience YAML keys folded to their canonical (schema) slot names before
+# LinkML parsing. LinkML ``aliases:`` are metadata only — the runtime loader
+# keys on the canonical slot name — so singular/alternate spellings declared as
+# schema aliases are resolved here. Keep in sync with ``aliases:`` in the schema.
+_SLOT_ALIASES = {
+    "optimization": "optimizations",  # singular convenience for the (multivalued) optimizations slot
+}
+
+
+def _fold_slot_aliases(obj: Any) -> Any:
+    """Recursively rename alias keys (e.g. ``optimization``) to their canonical
+    slot names (``optimizations``) so the LinkML loader accepts them."""
+    if isinstance(obj, dict):
+        folded: dict = {}
+        for k, v in obj.items():
+            canonical = _SLOT_ALIASES.get(k, k) if isinstance(k, str) else k
+            if canonical != k and canonical in obj:
+                # Both the alias (e.g. ``optimization``) and its canonical
+                # (``optimizations``) are present in the same mapping. Keep the
+                # canonical value and drop the alias rather than silently
+                # overwriting one with the other.
+                warnings.warn(
+                    f"YAML mapping has both '{k}' and its canonical alias "
+                    f"target '{canonical}'; ignoring '{k}'.",
+                    stacklevel=2,
+                )
+                continue
+            folded[canonical] = _fold_slot_aliases(v)
+        return folded
+    if isinstance(obj, list):
+        return [_fold_slot_aliases(x) for x in obj]
+    return obj
+
+
 def _preprocess(source: Any, base_dir: Path) -> str:
     """Parse ``source`` with the TVBO loader and re-serialise to plain YAML.
 
@@ -190,6 +225,9 @@ def _preprocess(source: Any, base_dir: Path) -> str:
         data = yaml.load(source, LoaderCls)
     else:
         data = source
+    # Fold convenience slot-aliases (e.g. optimization → optimizations) to
+    # canonical names so the LinkML loader accepts them.
+    data = _fold_slot_aliases(data)
     # Re-serialise using safe_dump so the LinkML loader sees pure data
     # with no remaining anchors/merge keys/!include directives.
     return yaml.safe_dump(data, sort_keys=False)

@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-06-25T14:52:27
+# Generation date: 2026-06-25T17:23:26
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -287,6 +287,7 @@ class Range(YAMLRoot):
     class_name: ClassVar[str] = "Range"
     class_model_uri: ClassVar[URIRef] = TVBO.Range
 
+    enforce: Optional[Union[str, "DomainEnforcement"]] = 'none'
     lo: Optional[Union[dict, ScalarValue]] = None
     hi: Optional[Union[dict, ScalarValue]] = None
     step: Optional[Union[dict, ScalarValue]] = None
@@ -296,6 +297,9 @@ class Range(YAMLRoot):
     element: Optional[int] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
+        if self.enforce is not None and not isinstance(self.enforce, DomainEnforcement):
+            self.enforce = DomainEnforcement(self.enforce)
+
         if self.n is not None and not isinstance(self.n, int):
             self.n = int(self.n)
 
@@ -1837,7 +1841,6 @@ class StateVariable(YAMLRoot):
     equation_order: Optional[int] = 1
     noise: Optional[Union[dict, "Noise"]] = None
     stimulation_variable: Optional[Union[bool, Bool]] = None
-    boundaries: Optional[Union[dict, Range]] = None
     initial_value: Optional[float] = 0.1
     derivative_initial_value: Optional[float] = None
     distribution: Optional[Union[dict, "Distribution"]] = None
@@ -1894,9 +1897,6 @@ class StateVariable(YAMLRoot):
 
         if self.stimulation_variable is not None and not isinstance(self.stimulation_variable, Bool):
             self.stimulation_variable = Bool(self.stimulation_variable)
-
-        if self.boundaries is not None and not isinstance(self.boundaries, Range):
-            self.boundaries = Range(**as_dict(self.boundaries))
 
         if self.initial_value is not None and not isinstance(self.initial_value, float):
             self.initial_value = float(self.initial_value)
@@ -3652,6 +3652,8 @@ class Coupling(YAMLRoot):
     incoming_states: Optional[Union[Union[str, StateVariableName], list[Union[str, StateVariableName]]]] = empty_list()
     local_states: Optional[Union[Union[str, StateVariableName], list[Union[str, StateVariableName]]]] = empty_list()
     delayed: Optional[Union[bool, Bool]] = True
+    interpolate_delays: Optional[Union[bool, Bool]] = False
+    vectorized: Optional[Union[bool, Bool]] = False
     symmetry: Optional[str] = "directed"
     outsym: Optional[Union[str, list[str]]] = empty_list()
     observed: Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, DerivedVariable]], list[Union[dict, DerivedVariable]]]] = empty_dict()
@@ -3700,6 +3702,12 @@ class Coupling(YAMLRoot):
 
         if self.delayed is not None and not isinstance(self.delayed, Bool):
             self.delayed = Bool(self.delayed)
+
+        if self.interpolate_delays is not None and not isinstance(self.interpolate_delays, Bool):
+            self.interpolate_delays = Bool(self.interpolate_delays)
+
+        if self.vectorized is not None and not isinstance(self.vectorized, Bool):
+            self.vectorized = Bool(self.vectorized)
 
         if self.symmetry is not None and not isinstance(self.symmetry, str):
             self.symmetry = str(self.symmetry)
@@ -5822,6 +5830,28 @@ class BoundaryConditionType(EnumDefinitionImpl):
         name="BoundaryConditionType",
     )
 
+class DomainEnforcement(EnumDefinitionImpl):
+    """
+    Whether and how a state variable's ``domain`` constrains the trajectory during integration. Default ``none`` means
+    the domain is descriptive metadata only (expected range, plot limits, initial- condition sampling support) and
+    never alters the dynamics — so declaring a domain is side-effect free. ``clamp`` and ``wrap`` opt in to active
+    enforcement using the domain's ``lo``/``hi``.
+    """
+    none = PermissibleValue(
+        text="none",
+        description="Metadata only; the trajectory is never constrained (default).")
+    clamp = PermissibleValue(
+        text="clamp",
+        description="Hard-clip every integration step to [lo, hi].")
+    wrap = PermissibleValue(
+        text="wrap",
+        description="""Periodic wrap into [lo, hi) — e.g. a phase variable on [0, 2π). The recorded timeseries stays within the range while remaining continuous mod (hi - lo).\"""")
+
+    _defn = EnumDefinition(
+        name="DomainEnforcement",
+        description="""Whether and how a state variable's ``domain`` constrains the trajectory during integration. Default ``none`` means the domain is descriptive metadata only (expected range, plot limits, initial- condition sampling support) and never alters the dynamics — so declaring a domain is side-effect free. ``clamp`` and ``wrap`` opt in to active enforcement using the domain's ``lo``/``hi``.""",
+    )
+
 class DiscretizationMethod(EnumDefinitionImpl):
 
     FDM = PermissibleValue(
@@ -6908,6 +6938,9 @@ slots.subjects = Slot(uri=TVBO_STUDY.subjects, name="subjects", curie=TVBO_STUDY
 slots.id = Slot(uri=DCTERMS.identifier, name="id", curie=DCTERMS.curie('identifier'),
                    model_uri=TVBO.id, domain=None, range=Optional[int])
 
+slots.range__enforce = Slot(uri=TVBO.enforce, name="range__enforce", curie=TVBO.curie('enforce'),
+                   model_uri=TVBO.range__enforce, domain=None, range=Optional[Union[str, "DomainEnforcement"]])
+
 slots.range__lo = Slot(uri=TVBO.lo, name="range__lo", curie=TVBO.curie('lo'),
                    model_uri=TVBO.range__lo, domain=None, range=Optional[Union[dict, ScalarValue]])
 
@@ -7501,9 +7534,6 @@ slots.stateVariable__noise = Slot(uri=TVBO.noise, name="stateVariable__noise", c
 
 slots.stateVariable__stimulation_variable = Slot(uri=TVBO.stimulation_variable, name="stateVariable__stimulation_variable", curie=TVBO.curie('stimulation_variable'),
                    model_uri=TVBO.stateVariable__stimulation_variable, domain=None, range=Optional[Union[bool, Bool]])
-
-slots.stateVariable__boundaries = Slot(uri=TVBO.boundaries, name="stateVariable__boundaries", curie=TVBO.curie('boundaries'),
-                   model_uri=TVBO.stateVariable__boundaries, domain=None, range=Optional[Union[dict, Range]])
 
 slots.stateVariable__initial_value = Slot(uri=TVBO.initial_value, name="stateVariable__initial_value", curie=TVBO.curie('initial_value'),
                    model_uri=TVBO.stateVariable__initial_value, domain=None, range=Optional[float])
@@ -8101,6 +8131,12 @@ slots.coupling__local_states = Slot(uri=TVBO.local_states, name="coupling__local
 
 slots.coupling__delayed = Slot(uri=TVBO.delayed, name="coupling__delayed", curie=TVBO.curie('delayed'),
                    model_uri=TVBO.coupling__delayed, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.coupling__interpolate_delays = Slot(uri=TVBO.interpolate_delays, name="coupling__interpolate_delays", curie=TVBO.curie('interpolate_delays'),
+                   model_uri=TVBO.coupling__interpolate_delays, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.coupling__vectorized = Slot(uri=TVBO.vectorized, name="coupling__vectorized", curie=TVBO.curie('vectorized'),
+                   model_uri=TVBO.coupling__vectorized, domain=None, range=Optional[Union[bool, Bool]])
 
 slots.coupling__symmetry = Slot(uri=TVBO.symmetry, name="coupling__symmetry", curie=TVBO.curie('symmetry'),
                    model_uri=TVBO.coupling__symmetry, domain=None, range=Optional[str])

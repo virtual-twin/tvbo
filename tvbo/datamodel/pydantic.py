@@ -918,6 +918,24 @@ class BoundaryConditionType(str, Enum):
     Periodic = "Periodic"
 
 
+class DomainEnforcement(str, Enum):
+    """
+    Whether and how a state variable's ``domain`` constrains the trajectory during integration. Default ``none`` means the domain is descriptive metadata only (expected range, plot limits, initial- condition sampling support) and never alters the dynamics — so declaring a domain is side-effect free. ``clamp`` and ``wrap`` opt in to active enforcement using the domain's ``lo``/``hi``.
+    """
+    none = "none"
+    """
+    Metadata only; the trajectory is never constrained (default).
+    """
+    clamp = "clamp"
+    """
+    Hard-clip every integration step to [lo, hi].
+    """
+    wrap = "wrap"
+    """
+    Periodic wrap into [lo, hi) — e.g. a phase variable on [0, 2π). The recorded timeseries stays within the range while remaining continuous mod (hi - lo)."
+    """
+
+
 class DiscretizationMethod(str, Enum):
     FDM = "FDM"
     """
@@ -2892,6 +2910,7 @@ class Range(ConfiguredBaseModel):
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Range', 'from_schema': 'https://w3id.org/tvbo'})
 
+    enforce: Optional[DomainEnforcement] = Field(default=DomainEnforcement.none, description="""For a state-variable ``domain``: whether/how to enforce the range during integration (none/clamp/wrap). Ignored for parameter, distribution and grid ranges. See DomainEnforcement.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Range'], 'ifabsent': 'string(none)'} })
     lo: Optional[Any] = Field(default=None, description="""Lower bound or starting value. Can be a number or argument name.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Range']} })
     hi: Optional[Any] = Field(default=None, description="""Upper bound or stopping value. Can be a number or argument name.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Range']} })
     step: Optional[Any] = Field(default=None, description="""Step size. Can be: number, argument name, or expression.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Range']} })
@@ -5879,7 +5898,8 @@ class StateVariable(ConfiguredBaseModel):
                        'Function',
                        'DifferentialOperator'],
          'slot_uri': 'skos:definition'} })
-    domain: Optional[Range] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
+    domain: Optional[Range] = Field(default=None, json_schema_extra = { "linkml_meta": {'aliases': ['range', 'boundaries'],
+         'domain_of': ['ClinicalScale',
                        'ClinicalScore',
                        'StateVariable',
                        'Distribution',
@@ -5983,7 +6003,6 @@ class StateVariable(ConfiguredBaseModel):
     equation_order: Optional[int] = Field(default=1, description="""Order of the time derivative on the LHS. Default 1 means dx/dt = rhs (first-order ODE). Order 2 means d²x/dt² = rhs (second-order ODE), etc. Higher-order ODEs are automatically lowered to coupled first-order systems by backends like ModelingToolkit.jl via mtkcompile.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable'], 'ifabsent': 'int(1)'} })
     noise: Optional[Noise] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'StateVariable', 'Integrator']} })
     stimulation_variable: Optional[bool] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable']} })
-    boundaries: Optional[Range] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable']} })
     initial_value: Optional[float] = Field(default=0.1, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable', 'FreeParameter', 'SpatialField'],
          'ifabsent': 'float(0.1)'} })
     derivative_initial_value: Optional[float] = Field(default=None, description="""Initial value for the first time derivative, used when equation_order > 1. For a second-order ODE d²x/dt² = f, this sets dx/dt(0). Required by ModelingToolkit.jl to fully specify higher-order initial value problems.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable']} })
@@ -6179,7 +6198,8 @@ class Parameter(ConfiguredBaseModel):
                        'BoundaryCondition'],
          'slot_uri': 'schema:value'} })
     default: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter'], 'slot_uri': 'schema:defaultValue'} })
-    domain: Optional[Range] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
+    domain: Optional[Range] = Field(default=None, json_schema_extra = { "linkml_meta": {'aliases': ['range', 'boundaries'],
+         'domain_of': ['ClinicalScale',
                        'ClinicalScore',
                        'StateVariable',
                        'Distribution',
@@ -7553,7 +7573,8 @@ class DerivedParameter(Parameter):
                        'BoundaryCondition'],
          'slot_uri': 'schema:value'} })
     default: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter'], 'slot_uri': 'schema:defaultValue'} })
-    domain: Optional[Range] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
+    domain: Optional[Range] = Field(default=None, json_schema_extra = { "linkml_meta": {'aliases': ['range', 'boundaries'],
+         'domain_of': ['ClinicalScale',
                        'ClinicalScore',
                        'StateVariable',
                        'Distribution',
@@ -10109,6 +10130,8 @@ class Coupling(ConfiguredBaseModel):
     incoming_states: Optional[list[str]] = Field(default=None, description="""References to state variables from connected (source) nodes. Auto-populated from state_variables with coupling_variable=true when omitted. Used by name in pre_expression.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coupling']} })
     local_states: Optional[list[str]] = Field(default=None, description="""References to state variables from the local (target) node. Used by name in pre_expression.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coupling']} })
     delayed: Optional[bool] = Field(default=True, description="""Whether coupling includes transmission delays""", json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator', 'Coupling'], 'ifabsent': 'True'} })
+    interpolate_delays: Optional[bool] = Field(default=False, description="""For delayed coupling: read delayed states by linear interpolation between the two bracketing history time-steps instead of snapping each delay to the nearest integer step. Removes sub-step quantisation error and makes the coupling differentiable w.r.t. the continuous delay — hence w.r.t. conduction speed v (delay = tract_length / v) — so v can be gradient-optimised. Default false preserves exact nearest-step behaviour (tvboptim roll strategy).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coupling'], 'ifabsent': 'False'} })
+    vectorized: Optional[bool] = Field(default=False, description="""Opt in to the vectorized matmul fast path for a source-only coupling — one whose pre_expression depends only on source states (e.g. the angle-addition decomposition [sin(theta_j), cos(theta_j)]). The W-reduction then becomes a single ``pre @ weights`` matmul instead of materialising the dense per-edge tensor. ONLY valid for INSTANTANEOUS coupling on a SYMMETRIC connectome (W == Wᵀ): the matmul contracts W while the per-edge path contracts Wᵀ, so the two agree only when W is symmetric. Default false keeps the always-correct per-edge reduction (and delays are inherently per-edge, so this flag is ignored when delayed=true).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coupling'], 'ifabsent': 'False'} })
     symmetry: Optional[str] = Field(default="directed", description="""Edge symmetry type for NetworkDynamics.jl EdgeModel: 'directed' (default), 'antisymmetric', or 'symmetric'. AntiSymmetric edges flip sign for the reverse direction.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coupling'], 'ifabsent': 'string(directed)'} })
     outsym: Optional[list[str]] = Field(default=None, description="""Output symbol names for the edge model. E.g. ['P'] for a scalar power flow, ['Fx', 'Fy'] for 2D forces. Maps directly to outsym in ND.jl EdgeModel. If not specified, derived from coupling variables of the connected vertex dynamics.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Coupling']} })
     observed: Optional[dict[str, DerivedVariable]] = Field(default=None, description="""Observable functions computed from edge inputs and parameters after simulation. Maps to obsf/obssym in ND.jl EdgeModel. Example: absolute force magnitude computed from force components.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Dynamics', 'Coupling']} })
@@ -10404,7 +10427,7 @@ class SimulationExperiment(ConfiguredBaseModel):
     stimulation: Optional[Stimulus] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     events: Optional[dict[str, Event]] = Field(default=None, description="""Events that apply at the experiment level. For component-level events, attach them to individual nodes or edges instead.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Node', 'Edge', 'Dynamics', 'SimulationExperiment']} })
     field_dynamics: Optional[PDE] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
-    optimizations: Optional[dict[str, Optimization]] = Field(default=None, description="""Parameter optimization configurations""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
+    optimizations: Optional[dict[str, Optimization]] = Field(default=None, description="""Parameter optimization configurations""", json_schema_extra = { "linkml_meta": {'aliases': ['optimization'], 'domain_of': ['SimulationExperiment']} })
     explorations: Optional[dict[str, Exploration]] = Field(default=None, description="""Parameter exploration/grid search specifications""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
     algorithms: Optional[dict[str, Algorithm]] = Field(default=None, description="""Iterative parameter tuning algorithms (FIC, EIB, etc.)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Exploration', 'SimulationExperiment']} })
     continuations: Optional[dict[str, Continuation]] = Field(default=None, description="""Numerical continuation and bifurcation analysis specifications. Each entry defines a continuation experiment (equilibrium branch, codim-2 curve, periodic orbit family, etc.).            # Either reference a full reusable environment (preferred) or, for""", json_schema_extra = { "linkml_meta": {'domain_of': ['SimulationExperiment']} })
@@ -11476,7 +11499,8 @@ class FieldStateVariable(StateVariable):
                        'Function',
                        'DifferentialOperator'],
          'slot_uri': 'skos:definition'} })
-    domain: Optional[Range] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
+    domain: Optional[Range] = Field(default=None, json_schema_extra = { "linkml_meta": {'aliases': ['range', 'boundaries'],
+         'domain_of': ['ClinicalScale',
                        'ClinicalScore',
                        'StateVariable',
                        'Distribution',
@@ -11523,7 +11547,6 @@ class FieldStateVariable(StateVariable):
     equation_order: Optional[int] = Field(default=1, description="""Order of the time derivative on the LHS. Default 1 means dx/dt = rhs (first-order ODE). Order 2 means d²x/dt² = rhs (second-order ODE), etc. Higher-order ODEs are automatically lowered to coupled first-order systems by backends like ModelingToolkit.jl via mtkcompile.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable'], 'ifabsent': 'int(1)'} })
     noise: Optional[Noise] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus', 'StateVariable', 'Integrator']} })
     stimulation_variable: Optional[bool] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable']} })
-    boundaries: Optional[Range] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable']} })
     initial_value: Optional[float] = Field(default=0.1, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable', 'FreeParameter', 'SpatialField'],
          'ifabsent': 'float(0.1)'} })
     derivative_initial_value: Optional[float] = Field(default=None, description="""Initial value for the first time derivative, used when equation_order > 1. For a second-order ODE d²x/dt² = f, this sets dx/dt(0). Required by ModelingToolkit.jl to fully specify higher-order initial value problems.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable']} })

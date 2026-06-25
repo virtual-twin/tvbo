@@ -30,7 +30,7 @@ parameters:
       step: 0.01
     description: Synaptic weight
     grounding:
-      - GO:0099536
+    - GO:0099536
   alpha:
     name: alpha
     definition: adaptation rate
@@ -87,7 +87,7 @@ parameters:
     description: Characteristic time
 description: "4D model describing the Ott-Antonsen reduction of infinite all-to-all \n    coupled QIF neurons (Theta-neurons) with Synaptic Depression adaptation \n    mechanisms [Gastetal_2020]_.\n\n    The two state variables :math:`r` and :math:`V` represent the average firing rate and \n    the average membrane potential of our QIF neurons.\n    :math:`A` and :math:`B` are respectively the adaptation variable and its derivative.\n\n    The equations of the infinite QIF 2D population model read\n    \n    .. math::\n            \\dot{r} &= 1/\\tau (\\Delta/(\\pi \\tau) + 2 V r)\\\\\n            \\dot{V} &= 1/\\tau (V^2 - \\tau^2 \\pi^2 r^2 + \\eta + J \\tau r (1 - A) + I)\\\\ \n            \\dot{A} &= 1/\\tau_A (B)\\\\\n            \\dot{B} &= 1/\\tau_A (-2 B - A + \\alpha  r) \\\\\n\n    .. [Gastetal_2020] Gast, R., Schmidt, H., & Knösche, T. R. (2020). A mean-field description of bursting dynamics in spiking neural networks with short-term adaptation. *Neural Computation*, 32(9), 1615-1634."
 references:
-  - Gast2020
+- Gast2020
 coupling_inputs:
   c_pop0:
     name: c_pop0
@@ -137,7 +137,8 @@ state_variables:
     name: r
     domain:
       lo: 0.0
-      hi: 4.0
+      hi: .inf
+      enforce: clamp
     description: ''
     equation:
       lhs: Derivative(r, t)
@@ -145,8 +146,5 @@ state_variables:
       latex: false
     variable_of_interest: true
     coupling_variable: true
-    boundaries:
-      lo: 0.0
-      hi: .inf
     initial_value: 0.1
 number_of_modes: 1

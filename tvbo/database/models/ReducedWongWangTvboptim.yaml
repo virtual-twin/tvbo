@@ -18,8 +18,8 @@ description: >-
   global coupling strength G (a coupling parameter) scales the structural connectivity
   weights that modulate inter-regional communication.
 references:
-  - Wong2006
-  - Deco2013
+- Wong2006
+- Deco2013
 parameters:
   a:
     name: a
@@ -135,11 +135,11 @@ functions:
       Sigmoid transfer function mapping total synaptic input current to the
       average population firing rate (Deco et al., 2013).
     arguments:
-      - name: x
+    - name: x
     equation:
       rhs: (a*x - b)/(1 - exp(-d*(a*x - b)))
 output:
-  - H_x
+- H_x
 coupling_inputs:
   instant:
     name: instant
@@ -153,6 +153,7 @@ state_variables:
     domain:
       lo: 0.0
       hi: 1.0
+      enforce: clamp
     description: >-
       Average NMDA synaptic gating variable, representing the fraction of open
       NMDA channels at each network node.
@@ -162,8 +163,5 @@ state_variables:
       latex: false
     variable_of_interest: true
     coupling_variable: true
-    boundaries:
-      lo: 0.0
-      hi: 1.0
     initial_value: 0.1
 number_of_modes: 1
