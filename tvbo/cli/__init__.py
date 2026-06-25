@@ -8,6 +8,14 @@ from __future__ import annotations
 
 import typer
 
+# Import the shared helper sub-modules FIRST, before the verb sub-modules
+# below. The verb modules do ``from . import _common`` / ``_workflow`` at import
+# time; if the first such verb triggers the helper while this package is still
+# initialising, Python 3.12 raises "cannot import name '_common' from partially
+# initialized module 'tvbo.cli'" (3.13 is lenient). Importing the helpers up
+# front binds them on the package so the verb imports resolve by attribute.
+from . import _backends, _common, _workflow  # noqa: F401
+
 from . import (
     config as _config_cmd,
     export as _export_cmd,

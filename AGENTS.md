@@ -80,6 +80,7 @@ tvbo skills uninstall          # remove previously installed user skills
 | `linkml-schema` | How to edit the LinkML schema in schema/*.yaml and why tvbo/datamodel/** is generated and must never be hand-edited. | `.claude/skills/linkml-schema/SKILL.md` |
 | `tests-and-backends` | pytest marker conventions for backend-tagged tests in TVBO, the slow/julia markers, and how to run the test suite locally. | `.claude/skills/tests-and-backends/SKILL.md` |
 | `writing-code` | Behavioral guidelines to reduce common LLM coding mistakes: think before coding, simplicity first, surgical changes, goal-driven execution. Use when the user wants to enforce strict coding discipline or review coding approach. | `.claude/skills/writing-code/SKILL.md` |
+| `writing-docstrings` | How to write Python docstrings in TVBO so that quartodoc renders them correctly in the API site. Google style, markdown body, type info on signature (not in the docstring). | `.claude/skills/writing-docstrings/SKILL.md` |
 
 ### User skills (shipped via `pip install tvbo`)
 
