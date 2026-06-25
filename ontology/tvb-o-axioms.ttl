@@ -189,9 +189,12 @@ tvbo:PyRates a tvbo:Backend ;
 tvbo:tvboptim a tvbo:Backend ;
     rdfs:label "tvboptim"@en ;
     tvbo:supportsTask       tvbo:ODEIntegration, tvbo:SDEIntegration,
-                            tvbo:GradientBasedOptimization ;
+                            tvbo:DDEIntegration, tvbo:SDDEIntegration,
+                            tvbo:ParameterExploration, tvbo:GradientBasedOptimization,
+                            tvbo:ConductionSpeedInference ;
     tvbo:providesCapability tvbo:Autodiff, tvbo:JITCompilation, tvbo:StochasticSolver,
-                            tvbo:CodeGeneration .
+                            tvbo:CodeGeneration, tvbo:DelayHistoryBuffer,
+                            tvbo:InterpolatedDelays .
 
 tvbo:NetworkDynamics a tvbo:Backend ;
     rdfs:label "NetworkDynamics.jl"@en ;
@@ -205,6 +208,42 @@ tvbo:BifurcationKit a tvbo:Backend ;
     rdfs:label "BifurcationKit.jl"@en ;
     tvbo:supportsTask       tvbo:NumericalContinuation, tvbo:BifurcationAnalysis ;
     tvbo:providesCapability tvbo:ContinuationSolver, tvbo:JuliaJIT .
+
+#
+# ─────────────────────────────────────────────────────────────────
+# §4.1b Differentiable conduction delays (interpolate_delays gating).
+# ─────────────────────────────────────────────────────────────────
+#
+# Gradient-based inference or exploration of conduction speed
+# (delay = tract_length / speed) is only well-posed when delayed states
+# are read by *linear interpolation* between the two bracketing history
+# steps — the coupling `interpolate_delays: true` slot. Nearest-step
+# (snapped) delays are piecewise-constant in the delay, so the gradient
+# w.r.t. conduction speed is identically zero. This layer makes that
+# requirement explicit and machine-checkable, so a SimulationExperiment
+# configured for conduction-speed inference on a tvboptim backend can
+# *materialise* `interpolate_delays: true` at configure() time instead of
+# requiring the user to set it by hand.
+
+tvbo:requiresCapability a owl:ObjectProperty ;
+    rdfs:domain tvbo:SimulationTask ;
+    rdfs:range  tvbo:BackendCapability ;
+    rdfs:label  "requires capability"@en ;
+    rdfs:comment "The task is only well-posed on a backend that provides the named capability."@en .
+
+tvbo:enabledByCouplingSlot a owl:AnnotationProperty ;
+    rdfs:label   "enabled by coupling slot"@en ;
+    rdfs:comment "Name of the concrete Coupling metadata slot a SimulationExperiment must set to True to realise this capability; read at configure() time to materialise the slot."@en .
+
+tvbo:InterpolatedDelays a tvbo:BackendCapability ;
+    rdfs:label   "Interpolated (differentiable) delays"@en ;
+    rdfs:comment "Delayed states read by linear interpolation between the two bracketing history time-steps instead of snapping to the nearest step, making the coupling differentiable w.r.t. the continuous delay — hence w.r.t. conduction speed (delay = tract_length / speed)."@en ;
+    tvbo:enabledByCouplingSlot "interpolate_delays" .
+
+tvbo:ConductionSpeedInference a tvbo:SimulationTask ;
+    rdfs:label   "Conduction-speed inference"@en ;
+    rdfs:comment "Gradient-based optimisation or parameter exploration of conduction speed / per-edge conduction delays."@en ;
+    tvbo:requiresCapability tvbo:InterpolatedDelays .
 
 #
 # ─────────────────────────────────────────────────────────────────
