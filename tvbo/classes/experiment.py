@@ -1458,6 +1458,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             return Bunch(**namespace)
 
         elif format.lower() in ["autodiff", "jax"]:
+            _return_namespace = kwargs.pop("_return_namespace", False)
             jit = kwargs.get("jit", True)
             code = self.render_code(format=format, **kwargs)
             # Use a fresh namespace each time to avoid JAX tracer leaks
@@ -1468,6 +1469,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             jax_model = namespace["kernel"]
             if jit:
                 jax_model = jax.jit(jax_model)
+            if _return_namespace:
+                return jax_model, namespace
             return jax_model
 
         elif format.lower() in ["pde", "pde-fem", "pde-python"]:
@@ -1614,10 +1617,16 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 jax.config.update("jax_enable_x64", False)
                 state = state.convert_dtype(target_dtype=jnp.float32)
 
-            jax_model = self.execute(format="jax", **kwargs)
+            jax_model, _jax_ns = self.execute(format="jax", _return_namespace=True, **kwargs)
+            _run_fn = _jax_ns.get("run_experiment")
+            if _run_fn is not None:
+                # Template builds ExperimentResult directly (mirrors tvboptim backend).
+                result = _run_fn(state)
+                result.source = self
+                result.name = result.name or self.label
+                return result
+            # Fallback: IC-finding kernel returns a tuple, not an ExperimentResult.
             ts = jax_model(state)
-
-            # Wrap in ExperimentResult for consistent return type
             return ExperimentResult.from_timeseries(ts, source=self, name=self.label)
 
         elif format.lower() == "cuda":
