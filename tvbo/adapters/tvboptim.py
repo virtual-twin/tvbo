@@ -16,11 +16,17 @@ if TYPE_CHECKING:
     from tvbo.classes.network import Network
 
 
-def _build_graph(network: "Network", delays: bool = True):
+def _build_graph(network: "Network", delays: bool = True, max_delay: float | None = None):
     """Build a tvboptim graph from a tvbo Network.
 
     Returns a ``DenseDelayGraph`` when *delays* is True and the network
     has non-zero tract lengths, otherwise a ``DenseGraph``.
+
+    ``max_delay`` is forwarded to ``DenseDelayGraph`` to size the (static)
+    history buffer explicitly. Pass it as a concrete upper bound when the
+    delays are meant to vary differentiably (e.g. ``delays = lengths / speed``
+    with ``speed`` optimised), so the buffer length stays static while the
+    delays may become JAX tracers.
     """
     import jax.numpy as jnp
     from tvboptim.experimental.network_dynamics.graph import DenseGraph
@@ -36,6 +42,7 @@ def _build_graph(network: "Network", delays: bool = True):
             weights=weights,
             delays=delay_matrix,
             region_labels=labels,
+            max_delay=max_delay,
         )
     return DenseGraph(weights=weights, region_labels=labels)
 
@@ -95,6 +102,8 @@ def to_tvboptim(
     dynamics=None,
     coupling=None,
     noise=None,
+    max_delay: float | None = None,
+    interpolate_delays: bool = False,
     **kwargs,
 ):
     """Export a tvbo Network to a tvboptim Network or graph object.
@@ -123,6 +132,17 @@ def to_tvboptim(
         ``network.coupling``.
     noise : AbstractNoise, optional
         tvboptim noise instance. Optional.
+    max_delay : float, optional
+        Concrete upper bound on the delay, forwarded to ``DenseDelayGraph`` to
+        size the static history buffer. Pass it when the delays are meant to
+        vary differentiably (e.g. ``delays = lengths / speed`` with ``speed``
+        optimised) so the buffer length stays static while the delays may be
+        JAX tracers. When ``None``, derived from the concrete delays.
+    interpolate_delays : bool, default=False
+        When True, enable linear interpolation between bracketing history steps
+        on every delayed coupling, making the coupling differentiable w.r.t. the
+        continuous delay (and hence conduction speed). Requires the ``"roll"``
+        buffer strategy (the default).
     **kwargs
         Extra keyword arguments forwarded to the tvboptim ``Network`` constructor.
 
@@ -139,7 +159,7 @@ def to_tvboptim(
                     delays = True
                     break
 
-    graph = _build_graph(network, delays=delays)
+    graph = _build_graph(network, delays=delays, max_delay=max_delay)
 
     if return_type == "graph":
         return graph
@@ -194,6 +214,18 @@ def to_tvboptim(
     # Auto-extract noise from dynamics state variables if not provided
     if noise is None and dyn_obj is not None:
         noise = _extract_noise(dyn_obj)
+
+    # Enable differentiable (interpolated) delays on every delayed coupling.
+    if interpolate_delays:
+        if isinstance(coupling, dict):
+            _coups = coupling.values()
+        elif isinstance(coupling, (list, tuple)):
+            _coups = coupling
+        else:
+            _coups = [coupling]
+        for _c in _coups:
+            if hasattr(_c, "interpolate_delays"):
+                _c.interpolate_delays = True
 
     from tvboptim.experimental.network_dynamics import Network as TvboptimNetwork
 
