@@ -2237,27 +2237,25 @@ class Network(tvbo_datamodel.Network):
         # Parcellation is excluded to prevent reloading data during unflatten
         # Edges are excluded because they contain Parameter objects with non-deterministic
         # string serialization, and the weight/length info is already in the children arrays
-        # Also exclude private cached arrays set by from_matrix()
+        # Exclude (a) any private attribute and (b) the array/loading slots whose
+        # data already rides in `children` or would trigger a reload on unflatten.
+        # The private-attr rule is the SAME one Network._items() applies — the
+        # single source of truth for "internal, never-serialized" state — so a new
+        # cache added there is dropped here too, with no parallel list to keep in
+        # sync. (`meta_dict` comes from as_dict() -> _items(), so private attrs are
+        # already gone; the guard documents and enforces the invariant.)
+        #   - weight/length: the matrices, captured in `children`.
+        #   - edges: contain Parameter objects with non-deterministic string
+        #     serialization; weight/length info is already in `children`.
+        #   - parcellation/data_file/bids_dir: loading specs; including them makes
+        #     tree_unflatten re-resolve from disk (and fail).
+        _ARRAY_OR_LOADING_SLOTS = (
+            "weight", "length", "parcellation", "edges", "data_file", "bids_dir",
+        )
         meta_dict_without_arrays = {
             k: v
             for k, v in meta_dict.items()
-            if k
-            not in (
-                "weight",
-                "length",
-                "parcellation",
-                "edges",
-                "_pytree_data",
-                "_cached_weights",
-                "_cached_lengths",
-                "_bids_dir",
-                "_bids_observations",
-                # data_file / bids_dir are loading specs; the actual arrays are
-                # already captured in `children`.  Including them causes
-                # tree_unflatten to call _resolve_from_data_file() and fail.
-                "data_file",
-                "bids_dir",
-            )
+            if not str(k).startswith("_") and k not in _ARRAY_OR_LOADING_SLOTS
         }
 
         def _strip_none(obj):
