@@ -8,37 +8,24 @@ from __future__ import annotations
 
 import typer
 
-# Bind the shared helper sub-modules on the package FIRST, before the verb
-# sub-modules below. The verb modules do ``from . import _common`` / ``_workflow``
-# at import time; if the first such verb triggers the helper while this package
-# is still initialising, Python 3.12 raises "cannot import name '_common' from
-# partially initialized module 'tvbo.cli'" (3.13 is lenient).
-#
-# We use absolute ``import tvbo.cli._x`` here rather than ``from . import _x``:
-# the ``from package import submodule`` form does a strict attribute lookup that
-# still raises that error if the package is re-entered mid-init (observed on
-# Linux/3.12 CI under editable installs), whereas ``import package.submodule``
-# tolerates a partially-initialised parent and binds the submodule as a package
-# attribute, so the verb modules' ``from . import _common`` then resolve fast.
-import tvbo.cli._backends  # noqa: F401,E402
-import tvbo.cli._common  # noqa: F401,E402
-import tvbo.cli._workflow  # noqa: F401,E402
+# Shared helper sub-modules used by the verb modules below (which do
+# ``from . import _common`` / ``_workflow`` at import time). Importing them here
+# first binds them on the package so those relative imports resolve by attribute.
+from . import _backends, _common, _workflow  # noqa: F401
 
-# Verb sub-modules, likewise via absolute ``import tvbo.cli.x as _x_cmd`` for the
-# same re-entrancy reason as the helpers above. The helpers are already bound as
-# package attributes, so each verb module's ``from . import _common`` resolves by
-# attribute lookup without re-importing.
-import tvbo.cli.config as _config_cmd  # noqa: E402
-import tvbo.cli.export as _export_cmd  # noqa: E402
-import tvbo.cli.formats as _formats_cmd  # noqa: E402
-import tvbo.cli.info as _info_cmd  # noqa: E402
-import tvbo.cli.import_ as _import_cmd  # noqa: E402
-import tvbo.cli.run as _run_cmd  # noqa: E402
-import tvbo.cli.save as _save_cmd  # noqa: E402
-import tvbo.cli.skills as _skills_cmd  # noqa: E402
-import tvbo.cli.validate as _validate_cmd  # noqa: E402
-import tvbo.cli.version as _version_cmd  # noqa: E402
-import tvbo.cli.workflow as _workflow_cmd  # noqa: E402
+from . import (
+    config as _config_cmd,
+    export as _export_cmd,
+    formats as _formats_cmd,
+    info as _info_cmd,
+    import_ as _import_cmd,
+    run as _run_cmd,
+    save as _save_cmd,
+    skills as _skills_cmd,
+    validate as _validate_cmd,
+    version as _version_cmd,
+    workflow as _workflow_cmd,
+)
 
 app = typer.Typer(
     name="tvbo",

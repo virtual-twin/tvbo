@@ -19,6 +19,11 @@ import numpy as np
 
 from tvbo.adapters.base import BaseAdapter
 
+# Single source of truth (forward map + derived reverse) lives in
+# tvbo/codegen/pyrates.py; re-imported here and used by the model template so
+# the rename mapping is defined exactly once. See PYRATES_REPL there.
+from tvbo.codegen.pyrates import PYRATES_REPL  # noqa: F401
+
 if TYPE_CHECKING:
     import pandas as pd
     from tvbo.data.types import ExperimentResult, SimulationResult
@@ -37,28 +42,6 @@ TVBO_TO_PYRATES_SOLVER = {
     "RK4": "scipy",
 }
 
-# Names that genuinely collide with a SymPy built-in (the equation renderer's
-# sympify resolves a bare `gamma`/`I`/`S`/… to a function/singleton, not a
-# free symbol → TypeError), or with a Python keyword / PyRates internal, and
-# so MUST be renamed. (Capital `Gamma`/`Beta` auto-symbolize and are handled
-# instead by _patch_pyrates_reserved_names — not renamed here.) Must match the
-# repl dict in tvbo-pyrates-model.yaml.mako and _PYRATES_REPL_REVERSE in
-# tvbo/codegen/pyrates.py.
-PYRATES_REPL = {
-    "I": "I_",
-    "gamma": "gamma_",
-    "beta": "beta_",
-    "zeta": "zeta_",
-    "lambda": "lambda_",
-    "E": "E_",
-    "N": "N_",
-    "S": "S_",
-    "O": "O_",
-    "Q": "Q_",
-    "epsilon": "epsilon_",
-    "y": "y_",
-    "dy": "dy_",
-}
 
 
 def _patch_pyrates_networkx_backend():
