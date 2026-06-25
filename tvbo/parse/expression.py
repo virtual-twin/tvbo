@@ -81,6 +81,14 @@ ARRAY_FUNCTIONS = {
     "abs": Function("abs"),
     "prod": Function("prod"),
     "concatenate": Function("concatenate"),
+    # Array-manipulation functions that carry Python-specific semantics.
+    # Custom printer methods in tvbo.codegen.code expand these to the correct
+    # JAX / NumPy calls (including .reshape() and keyword args that SymPy
+    # cannot represent natively).
+    "window_mean": Function("window_mean"),  # window_mean(X, w) → jnp.mean(X.reshape(-1, w, *X.shape[1:]), axis=1)
+    "subsample": Function("subsample"),      # subsample(X, step) → X[::step]
+    "global_mean": Function("global_mean"),  # global_mean(X) → jnp.mean(X, axis=-2, keepdims=True)
+    "transpose": Function("transpose"),      # transpose(X) → X.T
 }
 
 

@@ -667,3 +667,35 @@ Do **not** materialise until a concrete bidirectional use case shows up
 in the roadmap. The vbjax BOLD case explicitly does *not* need this —
 it's covered by stateful Observations. Keeping this here so the design
 space stays mapped.
+
+## Harmonize `SimulationResult` with tvboptim's `NativeSolution`
+
+`SimulationResult` (tvbo, `tvbo/data/types.py`) and `NativeSolution`
+(tvboptim, `tvboptim.experimental.network_dynamics.result`) serve the same
+purpose — a single simulation run's output — but differ in interface:
+
+| | `SimulationResult` | `NativeSolution` |
+|---|---|---|
+| Storage | `xr.DataArray` (named dims + coords) | raw arrays `.data`, `.ys`, `.ts` |
+| Time access | `.data.coords["time"]` | `.ts` / `.time` |
+| Variable names | `.data.coords["variable"]` | `.variable_names` |
+| Repr | `SimulationResult(T, V, N)` | `NativeSolution(shape=..., t=[...], variable_names=(...))` |
+| Observations | `.observations` (`Bunch`) | — (returned separately) |
+
+**Goal:** one canonical result type used by all backends.  The JAX backend
+already returns `SimulationResult`; tvboptim returns `NativeSolution`.
+Options:
+
+1. **Extend `SimulationResult`** — add `.ts`, `.variable_names`, `.ys`
+   convenience properties so it is a superset of `NativeSolution`'s
+   interface.  tvboptim template wraps its `NativeSolution` in a
+   `SimulationResult` before returning.
+2. **Absorb into `SimulationResult`** — `SimulationResult` accepts a
+   `result=NativeSolution` kwarg (already supported for backward compat)
+   and tvboptim's `run_experiment` passes `result=` instead of `data=`.
+3. **Deprecate `NativeSolution`** — route it through `SimulationResult`
+   everywhere, keep `NativeSolution` as a thin alias for one release.
+
+Option 2/3 is preferred: `SimulationResult` already handles the
+`result=NativeSolution` constructor path; the tvboptim template just needs
+to use that path and stop exposing raw `NativeSolution` objects to users.

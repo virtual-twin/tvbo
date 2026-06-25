@@ -16,24 +16,31 @@ from tvbo.codegen import render_expression
 %>
 <%def name="generate_function(func, func_name)" filter="trim">
 <%
-    # Collect parameters
-    params = {}
+    # Collect parameters - split into required (no default) and optional (with default)
+    params_required = []  # argument names with no default value
+    params = {}           # argument name -> default value
     if func.arguments:
         args = func.arguments.values() if hasattr(func.arguments, 'values') else func.arguments
         for arg in args:
             # Skip pipeline references (in1, in2, etc.) - these are variable names not parameters
             if arg.name not in ['in1', 'in2', 'in3']:
-                # Quote string values
                 value = arg.value if hasattr(arg, 'value') else None
                 if value is not None:
                     if isinstance(value, str) and not value.replace('.','').replace('-','').isdigit():
                         value = f"'{value}'"
                     params[arg.name] = value
+                else:
+                    # No default: becomes a required positional parameter so the
+                    # symbol is always in scope inside the function body.
+                    params_required.append(arg.name)
     if getattr(func, 'equation', None) and hasattr(func.equation, 'parameters') and func.equation.parameters:
         for name, param in func.equation.parameters.items():
             if hasattr(param, 'value') and param.value is not None:
                 params[name] = param.value
-    param_args = ', '.join([f"{name}={value}" for name, value in params.items()])
+    # Required args first, then keyword args with defaults
+    param_args_parts = list(params_required)
+    param_args_parts += [f"{name}={value}" for name, value in params.items()]
+    param_args = ', '.join(param_args_parts)
 
     # Store callable reference to avoid name collision
     callable_ref = f"_jax_{func.callable.name}" if func.callable else None
@@ -121,16 +128,9 @@ def ${func_name}(ts, ${param_args}):
     return ts.duplicate(time=t, data=data, title='${func_name}')
 % else:
 <%
-    # Check if equation contains array slicing (e.g., X[::stepsize])
     _eq = getattr(func, 'equation', None)
     rhs = _eq.rhs if _eq else ''
-    if '[' in rhs and ']' in rhs:
-        # Direct Python code - use as is
-        jax_code = rhs
-    else:
-        # Symbolic expression - render it
-        jax_code = render_expression(rhs, format='jax') if rhs else '0.0'
-
+    jax_code = render_expression(rhs, format='jax') if rhs else '0.0'
     # Check if transformation applies on time dimension (handle both string and enum)
     apply_on_dim = str(func.apply_on_dimension) if func.apply_on_dimension else None
     has_apply_on_time = apply_on_dim in ['time', 'DimensionType.time']
@@ -139,11 +139,14 @@ def ${func_name}(ts, ${param_args}):
 % if hasattr(func, 'description') and func.description:
     """${func.description}"""
 % endif
-    data = ${jax_code.replace('X', 'ts.data')}
+    X = ts.data
 % if has_apply_on_time:
-    time = ${jax_code.replace('X', 'ts.time')}
+    t_X = ts.time
+    data = ${jax_code}
+    time = ${jax_code.replace('X', 't_X')}
     return ts.duplicate(time=time, data=data, title='${func_name}')
 % else:
+    data = ${jax_code}
     return ts.duplicate(data=data, title='${func_name}')
 % endif
 % endif

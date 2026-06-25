@@ -832,10 +832,12 @@ class Network(tvbo_datamodel.Network):
             val = getattr(loaded, attr, None)
             if val is not None:
                 setattr(self, attr, val)
-        for cache in ("_cached_weights", "_cached_lengths", "_observations", "_store"):
+        # NB: from_bids stores observational matrices under ``_bids_observations``
+        # (consumed by the ``observations`` property), not ``_observations``.
+        for cache in ("_cached_weights", "_cached_lengths", "_bids_observations", "_bids_dir", "_store"):
             v = getattr(loaded, cache, None)
             if v is not None:
-                setattr(self, cache, v)
+                object.__setattr__(self, cache, v)
         # Carry over the parcellation that from_bids inferred from the BIDS
         # filenames, so the atlas resolves (and centres can be looked up by
         # label) even when the source YAML named no parcellation.
@@ -1384,13 +1386,16 @@ class Network(tvbo_datamodel.Network):
         # Create nodes
         nodes = [tvbo_datamodel.Node(id=i, label=labels[i]) for i in range(n_nodes)]
 
-        # Build network
+        # Build network. Declare the observational measures we actually
+        # loaded so the `observations` property (which gates on
+        # ``observational_measures``) can resolve them.
         instance = cls(
             nodes=nodes,
             edges=[],
             number_of_nodes=n_nodes,
             number_of_regions=n_nodes,
             label=atlas or bids_dir.name,
+            observational_measures=list(observations) or None,
             **kwargs,
         )
 
@@ -1540,6 +1545,12 @@ class Network(tvbo_datamodel.Network):
                 if data is not None:
                     obs[measure] = data
             object.__setattr__(self, "_bids_observations", obs)
+            # Declare loaded measures so the `observations` property (which
+            # gates on ``observational_measures``) can resolve them.
+            existing = list(self.observational_measures or [])
+            self.observational_measures = existing + [
+                m for m in obs if m not in existing
+            ]
 
         object.__setattr__(self, "_bids_dir", str(bids_dir))
         return self
@@ -2219,6 +2230,11 @@ class Network(tvbo_datamodel.Network):
                 "_cached_lengths",
                 "_bids_dir",
                 "_bids_observations",
+                # data_file / bids_dir are loading specs; the actual arrays are
+                # already captured in `children`.  Including them causes
+                # tree_unflatten to call _resolve_from_data_file() and fail.
+                "data_file",
+                "bids_dir",
             )
         }
 
