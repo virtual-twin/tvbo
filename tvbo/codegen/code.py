@@ -280,6 +280,24 @@ class JaxPrinter(spn.JaxPrinter):
                 arrays = args
             array_strs = ", ".join(self._print(a) for a in arrays)
             return f"jnp.concatenate([{array_strs}], axis={axis})"
+        if func_name == "window_mean":
+            # window_mean(X, step) -> jnp.mean(X.reshape(-1, step, *X.shape[1:]), axis=1)
+            X_str = self._print(expr.args[0])
+            w_str = self._print(expr.args[1])
+            return f"jnp.mean({X_str}.reshape(-1, {w_str}, *{X_str}.shape[1:]), axis=1)"
+        if func_name == "subsample":
+            # subsample(X, step) -> X[::step]
+            X_str = self._print(expr.args[0])
+            s_str = self._print(expr.args[1])
+            return f"{X_str}[::{s_str}]"
+        if func_name == "global_mean":
+            # global_mean(X) -> jnp.mean(X, axis=-2, keepdims=True)
+            X_str = self._print(expr.args[0])
+            return f"jnp.mean({X_str}, axis=-2, keepdims=True)"
+        if func_name == "transpose":
+            # transpose(X) -> X.T
+            X_str = self._print(expr.args[0])
+            return f"{X_str}.T"
         # Fall back to parent implementation
         return super()._print_Function(expr)
 

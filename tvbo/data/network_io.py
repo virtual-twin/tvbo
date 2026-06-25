@@ -275,6 +275,14 @@ def _write_v07_sidecar(network, sidecar_path: Path, sidecar_format: str, data_fi
 
     meta = yaml_loader.load_as_dict(yaml_dumper.dumps(network))
     meta = _purify(meta)
+    # A data_file-backed connectome is materialised/frozen: its arrays (weights,
+    # lengths, coordinates) live in the companion file. Drop resolution
+    # directives so a reload uses the explicit companion data instead of
+    # re-resolving — otherwise a `parcellation` would re-expand to the full atlas
+    # (e.g. 84 saved nodes → 87 atlas regions) and override the saved node set.
+    if data_file:
+        for _directive in ("parcellation", "bids_dir", "graph_generator", "tractogram"):
+            meta.pop(_directive, None)
     meta = _v07_postprocess(meta)
 
     if sidecar_format == "json":
@@ -324,13 +332,22 @@ def _write_nodes(store, network):
         else:
             _create_ds(store, key, data=data, dtype="int32")
 
-    # Node coordinates from Node.position
+    # Node coordinates: prefer explicit Node.position (only when EVERY node has
+    # one — a partial list would misalign with node order). Otherwise fall back
+    # to network.get_centers(), which resolves centres from the atlas or by
+    # region-label mapping (e.g. DesikanKilliany), so BIDS connectomes without
+    # inline positions still ship coordinates in the companion file.
     nodes = getattr(network, "nodes", None) or []
     coords = []
-    for node in nodes:
-        pos = getattr(node, "position", None)
-        if pos is not None:
-            coords.append([float(pos.x), float(pos.y), float(pos.z)])
+    if nodes and all(getattr(node, "position", None) is not None for node in nodes):
+        coords = [[float(n.position.x), float(n.position.y), float(n.position.z)] for n in nodes]
+    elif nodes:
+        try:
+            centres = network.get_centers()
+        except Exception:  # noqa: BLE001
+            centres = None
+        if centres and len(centres) == len(nodes) and all(i in centres for i in range(len(nodes))):
+            coords = [list(centres[i]) for i in range(len(nodes))]
     if coords:
         import numpy as _np
 

@@ -1,0 +1,48 @@
+name: WeightShuffle
+description: >-
+  Derived generator: load a reference adjacency by IRI and permute its
+  non-zero entries under a chosen preservation mode. Used for null-model
+  controls (e.g. shuffled SC matrices that preserve density / degree
+  sequence / weight distribution while randomising topology).
+iri: tvbo:WeightShuffle
+
+parameters:
+  source:
+    range: uriorcurie
+    description: "IRI of the reference Network whose weights matrix is shuffled."
+  preserve:
+    range: string
+    description: >-
+      Which structural property to preserve under permutation:
+        - binary_mask:        preserve the {0, nonzero} pattern; permute weight values among non-zero positions
+        - degree:             preserve per-node degree (within rounding)
+        - weight_distribution: preserve the multiset of weights (binary topology rerandomised)
+    ifabsent: "binary_mask"
+  seed: { range: integer, required: false }
+
+# Symbolic procedure
+procedure:
+  steps:
+    - name: source_matrix
+      description: "Loaded adjacency matrix from the source IRI"
+      equation:
+        rhs: "load_matrix(source)"
+    - name: nonzero_values
+      equation:
+        rhs: "source_matrix[source_matrix != 0]"
+    - name: permuted_values
+      equation:
+        rhs: "permute(nonzero_values, seed=seed)"
+  output:
+    weights:
+      description: "Permuted matrix, preserving the chosen structural property"
+      equation:
+        # The exact assembly depends on `preserve` — see python materialiser
+        # for the canonical reference implementation.
+        rhs: "scatter(zeros(shape(source_matrix)), nonzero_positions(source_matrix), permuted_values)"
+
+bindings:
+  python:
+    library: tvbo.graph_generators.builtins
+    callable: weight_shuffle
+    args: [source, preserve, seed]

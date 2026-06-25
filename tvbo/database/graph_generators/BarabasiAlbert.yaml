@@ -1,0 +1,23 @@
+name: BarabasiAlbert
+description: >-
+  Barabasi-Albert preferential attachment graph: nodes are added one at a time
+  and connect to k existing nodes with probability proportional to existing
+  node degree. Produces scale-free networks with power-law degree distributions.
+iri: tvbo:BarabasiAlbert
+
+parameters:
+  n: { range: integer,   description: "Number of nodes" }
+  k: { range: integer,   description: "Number of edges per new node" }
+  seed: { range: integer, required: false }
+
+# Per-backend bindings. Keys are backend identifiers; each maps to the
+# native library function. n_nodes is passed first by convention.
+bindings:
+  julia:
+    library: Graphs
+    callable: barabasi_albert
+    args: [n, k]
+  networkx:
+    library: networkx
+    callable: barabasi_albert_graph
+    args: [n, k]

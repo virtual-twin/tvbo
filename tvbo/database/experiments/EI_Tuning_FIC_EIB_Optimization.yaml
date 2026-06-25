@@ -497,7 +497,7 @@ observations:
   bold:
     label: "Simulated BOLD Signal"
     description: "BOLD signal from hemodynamic response function"
-    source: S_e
+    source: [S_e]
     period: 720.0
     pipeline:
             # HRF kernel (precomputed once)
@@ -542,35 +542,31 @@ observations:
   mean_S_e:
     label: "Mean Excitatory Activity"
     description: "Mean S_e over simulation window (for FIC algorithms)"
-    source: S_e
+    source: [S_e]
     aggregation: mean
 
   mean_S_e_final:
     label: "Mean Excitatory Activity (Final 500 Timesteps)"
     description: "Mean S_e over final 500 timesteps (for gradient optimization loss)"
-    source: S_e
+    source: [S_e]
     aggregation: mean
     tail_samples: 500
 
   mean_S_i:
     label: "Mean Inhibitory Activity"
     description: "Mean S_i over simulation window (for FIC)"
-    source: S_i
+    source: [S_i]
     aggregation: mean
 
   fc_target:
     label: "Empirical Functional Connectivity"
     description: "Target FC matrix from network observations (loaded from BIDS)"
-    source: network.observations.BoldCorrelation
-
-# =============================================================================
-# DERIVED OBSERVATIONS: Computed from other observations
-# =============================================================================
-derived_observations:
+    source: [network.observations.BoldCorrelation]
+  # === Derived observations (computed from other observations) ===
   fc:
     label: "Simulated Functional Connectivity (Post-Tuning)"
     description: "Pearson correlation matrix from BOLD time series (skip_t=20 for post-tuning evaluation)"
-    source_observations:
+    source:
       - bold
     pipeline:
       - callable:
@@ -586,7 +582,7 @@ derived_observations:
   fc_inloop:
     label: "Simulated Functional Connectivity (In-Loop)"
     description: "FC computed on sliding window without transient skip (for algorithm in-loop)"
-    source_observations:
+    source:
       - bold
     pipeline:
       - callable:
@@ -602,7 +598,7 @@ derived_observations:
   fc_gradient:
     label: "Simulated FC for Gradient Optimization"
     description: "FC computation for gradient optimization (skip_t=30 as in original)"
-    source_observations:
+    source:
       - bold
     pipeline:
       - callable:
@@ -618,7 +614,7 @@ derived_observations:
   fc_corr:
     label: "FC Correlation with Target"
     description: "Pearson correlation between simulated FC and empirical FC target"
-    source_observations:
+    source:
       - fc
       - fc_target
     pipeline:
@@ -634,7 +630,7 @@ derived_observations:
   fc_rmse:
     label: "FC RMSE with Target"
     description: "Root mean squared error between simulated FC and empirical FC target"
-    source_observations:
+    source:
       - fc
       - fc_target
     pipeline:

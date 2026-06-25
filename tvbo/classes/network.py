@@ -32,18 +32,30 @@ except ImportError:
     available_connectomes = []
 
 
-def _find_network_sidecar(atlas: str, tractogram: str) -> Optional[Path]:
+def _find_network_sidecar(
+    atlas: str,
+    tractogram: str,
+    segmentation: Optional[str] = None,
+    scale: Optional[str] = None,
+) -> Optional[Path]:
     """Find the YAML sidecar for a given atlas + tractogram combination.
 
     Searches tvbo/database/networks/ for files matching the atlas and rec- entities.
-    Falls back to partial matching if exact match fails.
+    When ``segmentation`` / ``scale`` are given, also requires ``seg-<segmentation>``
+    and ``scale-<scale>``. Falls back to partial matching if exact match fails.
     """
     for f in NETWORK_DIR.glob("*.yaml"):
         stem = f.stem
-        if f"atlas-{atlas}" in stem and f"rec-{tractogram}" in stem:
-            # Skip ranked/ordered variants unless explicitly requested
-            if "seg-" not in stem:
-                return f
+        if f"atlas-{atlas}" not in stem or f"rec-{tractogram}" not in stem:
+            continue
+        if segmentation is not None and f"seg-{segmentation}" not in stem:
+            continue
+        if scale is not None and f"scale-{scale}" not in stem:
+            continue
+        # Only skip seg- variants when the caller did NOT request one.
+        if segmentation is None and "seg-" in stem:
+            continue
+        return f
     # Fallback: try with normalized atlas names
     atlas_map = {
         "Schaefer1000": "Schaefer2018",
@@ -55,7 +67,7 @@ def _find_network_sidecar(atlas: str, tractogram: str) -> Optional[Path]:
     }
     mapped = atlas_map.get(atlas, atlas)
     if mapped != atlas:
-        return _find_network_sidecar(mapped, tractogram)
+        return _find_network_sidecar(mapped, tractogram, segmentation, scale)
     return None
 
 
@@ -131,7 +143,12 @@ def _discover_bids_measures(bids_dir) -> list[str]:
     return result or measures
 
 
-def get_normative_connectome_data(atlas: str, tractogram: str = "dTOR") -> Tuple[np.ndarray, Optional[np.ndarray]]:
+def get_normative_connectome_data(
+    atlas: str,
+    tractogram: str = "dTOR",
+    segmentation: Optional[str] = None,
+    scale: Optional[str] = None,
+) -> Tuple[np.ndarray, Optional[np.ndarray]]:
     """Load normative connectivity matrices from tvbo/database/networks/ HDF5 files.
 
     Parameters
@@ -140,6 +157,9 @@ def get_normative_connectome_data(atlas: str, tractogram: str = "dTOR") -> Tuple
         Name of the brain parcellation atlas (e.g., "DesikanKilliany", "Destrieux")
     tractogram : str
         Tractogram/reconstruction pipeline (e.g., "dTOR", "MghUscHcp32", "PPMI85")
+    segmentation, scale : str, optional
+        BIDS ``seg-`` and ``scale-`` entity values used to disambiguate
+        sub-resolutions of the same atlas (e.g. Schaefer2018 7Networks/1000).
 
     Returns
     -------
@@ -152,11 +172,17 @@ def get_normative_connectome_data(atlas: str, tractogram: str = "dTOR") -> Tuple
     --------
     ```python
     weights, lengths = get_normative_connectome_data("DesikanKilliany", "dTOR")
+    weights, lengths = get_normative_connectome_data(
+        "Schaefer2018", "dTOR", segmentation="7Networks", scale="1000"
+    )
     ```
     """
-    sidecar = _find_network_sidecar(atlas, tractogram)
+    sidecar = _find_network_sidecar(atlas, tractogram, segmentation, scale)
     if sidecar is None:
-        raise FileNotFoundError(f"No network found for atlas={atlas}, tractogram={tractogram} in {NETWORK_DIR}")
+        raise FileNotFoundError(
+            f"No network found for atlas={atlas}, tractogram={tractogram}, "
+            f"seg={segmentation}, scale={scale} in {NETWORK_DIR}"
+        )
 
     from tvbo.data.network_io import load_network
 
@@ -207,6 +233,11 @@ def _network_ref_string(net: "Network") -> str:
     )
 
 
+def _iri_local(iri: str) -> str:
+    """Local part of a CURIE/IRI: the text after the first ``prefix:``."""
+    return iri.split(":", 1)[-1] if ":" in iri else iri
+
+
 def _backfill_name_from_iri(obj: Any, nested_key: str | None = None) -> None:
     """If ``obj`` (or ``obj[nested_key]``) is a dict with ``iri`` but no ``name``,
     derive ``name`` from the IRI's local part. Mutates in place."""
@@ -222,7 +253,7 @@ def _backfill_name_from_iri(obj: Any, nested_key: str | None = None) -> None:
     iri = target.get("iri")
     if not iri:
         return
-    target["name"] = iri.split(":", 1)[-1] if ":" in iri else iri
+    target["name"] = _iri_local(iri)
 
 
 @register_pytree_node_class
@@ -261,6 +292,25 @@ class Network(tvbo_datamodel.Network):
         self.number_of_nodes = value
 
     def __init__(self, **kwargs: Any) -> None:
+        # Strip internal-only flags that may leak in from serialised forms.
+        for _internal in ("_resolved",):
+            kwargs.pop(_internal, None)
+
+        # A top-level `iri` is a semantic pointer to a curated network in the
+        # database (e.g. a `*_relmat` structural-connectivity file). The parent
+        # LinkML Network has no `iri` slot, so resolve it here into a
+        # `data_file` reference and let `_resolve_from_data_file` load the
+        # connectivity. Inline-authored slots (transforms, parameters,
+        # coupling, node_template, …) are preserved on self. Skip when the
+        # caller already supplied explicit connectivity.
+        _iri = kwargs.pop("iri", None)
+        if _iri and not any(
+            kwargs.get(k) for k in ("data_file", "nodes", "edges", "edge_matrix_files", "bids_dir")
+        ):
+            _resolved_path = self._resolve_network_iri(_iri)
+            if _resolved_path is not None:
+                kwargs["data_file"] = _resolved_path
+
         # Resolve deprecated number_of_regions -> number_of_nodes
         if "number_of_regions" in kwargs:
             kwargs.setdefault("number_of_nodes", kwargs.pop("number_of_regions"))
@@ -309,74 +359,15 @@ class Network(tvbo_datamodel.Network):
             kwargs["number_of_nodes"] = n_nodes
             has_edges = True
 
-        # Load normative data if parcellation/atlas specified and no explicit connectivity
+        # Normalise an inline string parcellation -> Parcellation dict so the
+        # parent constructor accepts it. Materialisation of normative data
+        # happens later in self._resolve().
         if not has_nodes and not has_edges and not has_edge_files:
-            if kwargs.get("parcellation"):
-                if isinstance(kwargs["parcellation"], str):
-                    kwargs["parcellation"] = tvbo_datamodel.Parcellation(
-                        label=kwargs["parcellation"],
-                        atlas=tvbo_datamodel.BrainAtlas(name=kwargs["parcellation"]),
-                    )._as_dict
-                # Safely get atlas name, handling missing atlas
-                parcellation = kwargs["parcellation"]
-                atlas = parcellation.get("atlas") if isinstance(parcellation, dict) else getattr(parcellation, "atlas", None)
-                atlas_name = atlas.get("name") if isinstance(atlas, dict) else getattr(atlas, "name", None) if atlas else None
-                if not atlas_name and atlas:
-                    atlas_iri = atlas.get("iri") if isinstance(atlas, dict) else getattr(atlas, "iri", None)
-                    if atlas_iri:
-                        atlas_name = atlas_iri.split(":", 1)[-1] if ":" in atlas_iri else atlas_iri
-                if not atlas_name:
-                    # Skip normative data loading if no atlas specified
-                    super().__init__(**kwargs)
-                    return
-                tractogram = kwargs.get("tractogram", "dTOR")
-                if isinstance(tractogram, dict):
-                    tractogram = tractogram.get("name") or (
-                        tractogram.get("iri", "").split(":", 1)[-1] if tractogram.get("iri") else "dTOR"
-                    )
-                elif hasattr(tractogram, "name"):
-                    tractogram = tractogram.name or (
-                        getattr(tractogram, "iri", "").split(":", 1)[-1]
-                        if getattr(tractogram, "iri", None)
-                        else "dTOR"
-                    )
-                w_arr, l_arr = get_normative_connectome_data(atlas_name, tractogram)
-
-                n_nodes = w_arr.shape[0]
-
-                # Handle mismatched weight/length matrix sizes
-                if l_arr is not None and l_arr.shape[0] != n_nodes:
-                    import warnings
-
-                    warnings.warn(
-                        f"Weight matrix ({n_nodes}x{n_nodes}) and length matrix "
-                        f"({l_arr.shape[0]}x{l_arr.shape[1]}) have different sizes. "
-                        f"Using minimum size."
-                    )
-                    n_nodes = min(n_nodes, l_arr.shape[0])
-                    w_arr = w_arr[:n_nodes, :n_nodes]
-                    l_arr = l_arr[:n_nodes, :n_nodes]
-
-                # Store matrices directly (avoid creating explicit edges for large networks)
-                kwargs["number_of_nodes"] = n_nodes
-                kwargs.setdefault(
-                    "nodes",
-                    [tvbo_datamodel.Node(id=i, label=f"region_{i}") for i in range(n_nodes)],
-                )
-                kwargs.setdefault("edges", [])
-
-                super().__init__(**kwargs)
-
-                # Cache matrices for efficient access
-                self._cached_weights = w_arr
-                self._cached_lengths = l_arr
-
-                # Ensure conduction_speed for early return path
-                if "conduction_speed" not in (self.parameters or {}):
-                    self.parameters["conduction_speed"] = tvbo_datamodel.Parameter(
-                        name="conduction_speed", label="v", value=3.0, unit="mm_per_ms"
-                    )
-                return  # Skip rest of __init__ — already called super()
+            if isinstance(kwargs.get("parcellation"), str):
+                kwargs["parcellation"] = tvbo_datamodel.Parcellation(
+                    label=kwargs["parcellation"],
+                    atlas=tvbo_datamodel.BrainAtlas(name=kwargs["parcellation"]),
+                )._as_dict
 
         # Infer n_nodes from nodes if present (authoritative source)
         if "nodes" in kwargs and kwargs["nodes"]:
@@ -394,6 +385,23 @@ class Network(tvbo_datamodel.Network):
             n_nodes = kwargs["number_of_nodes"]
             kwargs["nodes"] = [tvbo_datamodel.Node(id=i, label=f"node_{i}") for i in range(n_nodes)]
 
+        # `node_template` is a partial Node applied to every materialized node
+        # (see _expand_node_template). The parent constructor builds it as a
+        # real `Node`, which requires `id`; inject a sentinel so construction
+        # succeeds. We also stash the raw spec dict (sans sentinel) so template
+        # expansion works from plain dicts rather than re-serialising objects.
+        import copy as _copy
+
+        _nt = kwargs.get("node_template")
+        _nt_spec = None
+        if isinstance(_nt, dict):
+            _nt_spec = _copy.deepcopy(_nt)
+            _nt_spec.pop("id", None)
+            if _nt.get("id") is None:
+                _nt["id"] = -1
+        _et = kwargs.get("edge_template")
+        _et_spec = _copy.deepcopy(_et) if isinstance(_et, dict) else None
+
         # Resolve Dynamics slot aliases (components → modes) in network dynamics
         # so the LinkML loader can construct Dynamics objects correctly.
         _net_dynamics = kwargs.get("dynamics")
@@ -404,7 +412,22 @@ class Network(tvbo_datamodel.Network):
                 if isinstance(_dv, dict):
                     _resolve_dynamics_aliases(_dv)
 
+        # `Edge.coupling` is a name-reference slot at the datamodel level (its
+        # range is the identified `Coupling` class, `inlined: false`), so the
+        # base constructor would stringify an *inline* coupling definition into
+        # a bare `CouplingName`, discarding its coupling_function / parameters.
+        # Detach inline (dict) definitions here so the base constructor doesn't
+        # see them, then reattach as real `Coupling` objects below. Bare-string
+        # references are left untouched and resolve by name as before.
+        _detached_couplings = self._detach_inline_edge_couplings(kwargs.get("edges"))
+
         super().__init__(**kwargs)
+
+        self._reattach_inline_edge_couplings(_detached_couplings)
+
+        # Stash raw template specs (plain dicts) for expansion in _resolve.
+        object.__setattr__(self, "_node_template_spec", _nt_spec)
+        object.__setattr__(self, "_edge_template_spec", _et_spec)
 
         # Sync number_of_nodes from nodes list (authoritative after init)
         if self.nodes:
@@ -420,6 +443,611 @@ class Network(tvbo_datamodel.Network):
             self.parameters["conduction_speed"] = tvbo_datamodel.Parameter(
                 name="conduction_speed", label="v", value=3.0, unit="mm_per_ms"
             )
+
+        # Materialise connectivity from the declarative spec (parcellation,
+        # data_file, bids_dir, graph_generator). Idempotent; safe to call
+        # multiple times. See Network._resolve. Pick up the YAML source
+        # directory from the SimulationExperiment context (set by from_file)
+        # so relative paths resolve correctly even when Network is built as
+        # a kwarg inside SimulationExperiment.__init__.
+        from tvbo.classes.experiment import SimulationExperiment as _SE
+        _source_dir = None
+        _pending = getattr(_SE, "_pending_source_file", None)
+        if _pending:
+            _source_dir = os.path.dirname(_pending)
+        self._resolve(source_dir=_source_dir)
+
+        # Runtime default: a Network with no nodes, no declared count, and no
+        # connectome to resolve is still usable as a single-node network. The
+        # serialized schema default is None (number_of_nodes is "derived from
+        # nodes if not set"), so this 1-node fallback lives only on the Python
+        # side — applied AFTER resolution so connectome-backed networks keep
+        # their resolved size rather than being pinned to 1.
+        if not self.nodes and not self.number_of_nodes:
+            self.number_of_nodes = 1
+            self.nodes = [tvbo_datamodel.Node(id=0, label="node_0")]
+
+    # -------------------------------------------------------------------- #
+    # Canonical resolver                                                   #
+    # -------------------------------------------------------------------- #
+    def _is_materialized(self) -> bool:
+        """Return True when this Network already carries connectivity data.
+
+        A Network is "materialized" if it has cached weight matrices, a lazy
+        array store (h5 companion), or an explicit edges list. Used by
+        ``_resolve`` to short-circuit when no further loading is required.
+        """
+        if getattr(self, "_cached_weights", None) is not None:
+            return True
+        if getattr(self, "_store", None) is not None:
+            return True
+        # A pending graph_generator owns this network's internal connectivity
+        # (e.g. a reservoir's recurrent matrix). Any `edges` present alongside
+        # it are cross-layer / coupling edges, not internal weights — so don't
+        # let them short-circuit generator resolution.
+        if self._has_graph_generator():
+            return False
+        edges = getattr(self, "edges", None)
+        if edges:
+            return True
+        return False
+
+    def _resolve(self, source_dir: Optional[Union[str, Path]] = None) -> None:
+        """Materialise this Network's connectivity from its declarative spec.
+
+        Single source of truth for "given the YAML, populate the matrices".
+        Idempotent: a successful resolution sets ``self._resolved = True``
+        and subsequent calls are no-ops. Safe to call from
+        ``Network.__init__``, ``Network.from_file``, and from
+        ``SimulationExperiment.from_datamodel`` via a one-line hook.
+
+        Resolution order (first match wins):
+
+        1. Already materialised (cached weights / store / explicit edges):
+           mark resolved and return.
+        2. ``data_file`` companion (.h5 / .zarr + .yaml sidecar): load
+           lazily via ``tvbo.data.network_io.attach_lazy_store``.
+        3. ``bids_dir`` BEP017 directory: route through ``from_bids`` and
+           copy matrices onto self.
+        4. ``graph_generator.builder`` Callable: invoke (added in A2).
+        5. ``parcellation`` (+ optional ``tractogram``, ``bids.segmentation``,
+           ``bids.scale``): normative DB load via
+           ``get_normative_connectome_data``.
+        6. None of the above: no-op (Network must have been constructed via
+           explicit ``nodes``/``edges`` or ``Network.from_matrix``).
+
+        Parameters
+        ----------
+        source_dir
+            Directory used to resolve relative paths in ``data_file`` or
+            ``bids_dir``. When ``None``, paths are taken as absolute or
+            resolved against ``cwd``. Callers loading from a YAML file
+            should pass the YAML's parent directory.
+        """
+        if getattr(self, "_resolved", False):
+            return
+        # 1. Macro connectivity: skip when already materialised.
+        if not self._is_materialized():
+            if getattr(self, "data_file", None):
+                self._resolve_from_data_file(source_dir)
+            elif getattr(self, "bids_dir", None):
+                self._resolve_from_bids_dir(source_dir)
+            elif self._has_graph_generator():
+                self._resolve_from_graph_generator(source_dir)
+            elif getattr(self, "parcellation", None):
+                self._resolve_from_parcellation()
+        # 2. Multi-scale resolution (idempotent no-ops when unused). Runs
+        #    whether or not macro connectivity was already materialised so a
+        #    DB-loaded network still gets its node_template / subnetworks /
+        #    sourced parameters expanded.
+        self._expand_node_template()
+        self._resolve_subnetworks(source_dir)
+        self._resolve_parameter_sources(source_dir)
+        self._resolved = True
+
+    def _has_graph_generator(self) -> bool:
+        """True if this Network has a resolvable GraphGenerator.
+
+        A GraphGenerator is resolvable when *either*:
+        * `graph_generator.builder` is set to an explicit Callable (the
+          user supplied a Python builder inline in their YAML), or
+        * `graph_generator.type` matches a curated database entry under
+          `tvbo/database/graph_generators/<Type>.yaml` whose `bindings:`
+          block declares a `python.callable` (the standard path for
+          built-in generators like RandomReservoir, WeightShuffle, …).
+        """
+        gg = getattr(self, "graph_generator", None)
+        if gg is None:
+            return False
+        if getattr(gg, "builder", None) is not None:
+            return True
+        return self._db_python_binding_for(gg) is not None
+
+    @staticmethod
+    def _detach_inline_edge_couplings(edges: Any) -> Dict[int, dict]:
+        """Pop inline (dict) coupling definitions off edge specs before construction.
+
+        Returns ``{edge_index: coupling_dict}`` for every edge spec whose
+        ``coupling`` is a mapping (an inline definition such as a per-edge
+        readout or input projection). Mutates the edge dicts in place, removing
+        the ``coupling`` key so the base ``Edge`` constructor doesn't coerce it
+        into a bare ``CouplingName`` (which would drop coupling_function /
+        parameters). Edge specs whose ``coupling`` is a string (a reference by
+        name) are left untouched.
+        """
+        detached: Dict[int, dict] = {}
+        if not edges:
+            return detached
+        for i, e in enumerate(edges):
+            if isinstance(e, dict) and isinstance(e.get("coupling"), dict):
+                detached[i] = e.pop("coupling")
+        return detached
+
+    def _reattach_inline_edge_couplings(self, detached: Dict[int, dict]) -> None:
+        """Reattach detached inline coupling dicts as real ``Coupling`` objects."""
+        if not detached or not self.edges:
+            return
+        for i, coupling_dict in detached.items():
+            if 0 <= i < len(self.edges):
+                self.edges[i].coupling = tvbo_datamodel.Coupling(**coupling_dict)
+
+    @staticmethod
+    def _resolve_network_iri(iri: str) -> Optional[str]:
+        """Resolve a curated-network IRI to its YAML sidecar path.
+
+        Strips an optional ``tvbo:`` (or any ``prefix:``) and resolves the
+        local name against the network registry. Returns the absolute sidecar
+        path, or ``None`` when the IRI does not match a curated network (so the
+        caller can fall back to treating it as a plain reference string).
+        """
+        local = _iri_local(iri)
+        try:
+            from tvbo.data.registry import resolve as registry_resolve
+
+            return str(registry_resolve("Network", local))
+        except (FileNotFoundError, ValueError, RuntimeError):
+            # FileNotFoundError/ValueError: unknown name. RuntimeError: the
+            # database root could not be located (e.g. a packaging issue). In
+            # all cases fall back to treating the IRI as a plain reference.
+            return None
+
+    # Cache GraphGenerator python bindings by type so `_is_materialized` /
+    # `_resolve` don't re-read+parse the same generator YAML from disk on every
+    # network (a reservoir net resolves one binding per subnetwork). A missing
+    # binding is cached as None to avoid repeat lookups.
+    _GG_BINDING_CACHE: Dict[str, Optional[Dict[str, Any]]] = {}
+
+    @classmethod
+    def _db_python_binding_for(cls, gg) -> Optional[Dict[str, Any]]:
+        """Look up the python binding (callable + args) for `gg` from the database.
+
+        Returns the binding dict, or None if no matching database entry has a
+        python binding. Returns None silently for unknown types so that
+        templates / codegen-only generators (e.g. Tier-1 library wrappers
+        materialised by Julia/NetworkX, not Python) don't trigger resolver
+        errors at Network load time. Results are memoised by generator type.
+        """
+        gtype = getattr(gg, "type", None)
+        if not gtype:
+            return None
+        key = str(gtype)
+        if key in cls._GG_BINDING_CACHE:
+            return cls._GG_BINDING_CACHE[key]
+        try:
+            import yaml
+
+            from tvbo.data.registry import resolve as registry_resolve
+
+            entry_path = registry_resolve("GraphGenerator", key)
+        except (FileNotFoundError, ValueError, RuntimeError):
+            cls._GG_BINDING_CACHE[key] = None
+            return None
+        with open(entry_path) as f:
+            entry = yaml.safe_load(f) or {}
+        binding = ((entry.get("bindings") or {}).get("python")) or None
+        cls._GG_BINDING_CACHE[key] = binding
+        return binding
+
+    def _resolve_from_graph_generator(self, source_dir: Optional[Union[str, Path]]) -> None:
+        """Invoke a Python materialiser for the GraphGenerator and copy its result onto self.
+
+        Two routes (handled uniformly):
+        * Explicit `graph_generator.builder` (user-supplied Callable in the YAML).
+        * Database-resolved python binding for `graph_generator.type` (curated
+          entry's `bindings.python.callable`).
+
+        The materialiser is a Python callable; the GraphGenerator's parameters
+        dict is passed as keyword arguments. It must return either a
+        `Network` instance, a dict with at least a `weights` key, or a tuple
+        `(weights, lengths)` / `(weights, lengths, node_params)`.
+
+        `source_dir` is forwarded so builders that need it (for example to
+        load companion artefacts) can request it as a keyword argument.
+        """
+        gg = self.graph_generator
+        cb = getattr(gg, "builder", None)
+        if cb is not None:
+            module_name = getattr(cb, "module", None)
+            func_name = getattr(cb, "name", None)
+        else:
+            binding = self._db_python_binding_for(gg) or {}
+            lib = binding.get("library") or ""
+            callable_name = binding.get("callable")
+            if not callable_name:
+                raise ValueError(
+                    f"GraphGenerator type {gg.type!r} has no `bindings.python.callable` "
+                    f"in its database entry and no inline `builder:` was provided."
+                )
+            # The `library` value is the fully-qualified module path
+            # (e.g. `tvbo.graph_generators.builtins`); fall back to the same
+            # convention if only a short name was given.
+            module_name = lib or f"tvbo.graph_generators.builtins"
+            func_name = callable_name
+        if not module_name or not func_name:
+            raise ValueError(
+                "graph_generator builder must resolve to both `module` and `name` "
+                f"(got module={module_name!r}, name={func_name!r})"
+            )
+
+        import importlib
+
+        # Make the YAML source directory importable so builders can live
+        # next to the study YAML.
+        added_to_path = False
+        if source_dir is not None:
+            src = str(Path(source_dir).resolve())
+            if src not in os.sys.path:
+                os.sys.path.insert(0, src)
+                added_to_path = True
+
+        try:
+            mod = importlib.import_module(module_name)
+            fn = getattr(mod, func_name)
+
+            # Flatten Parameter list to a plain kwargs dict.
+            kwargs: Dict[str, Any] = {}
+            for p in (gg.parameters or {}).values():
+                pname = getattr(p, "name", None)
+                if pname is None:
+                    continue
+                val = getattr(p, "value", None)
+                if val is None:
+                    # Distribution-valued parameters (e.g. weight_distribution)
+                    # carry their spec in the `distribution` slot.
+                    val = getattr(p, "distribution", None)
+                kwargs[pname] = val
+            if getattr(gg, "seed", None) is not None:
+                kwargs.setdefault("seed", gg.seed)
+
+            result = fn(**kwargs)
+        finally:
+            if added_to_path:
+                try:
+                    os.sys.path.remove(src)
+                except ValueError:
+                    pass
+
+        # Accept a Network, a dict, or a (weights, lengths[, node_params]) tuple.
+        if isinstance(result, Network):
+            for attr in ("nodes", "edges", "number_of_nodes", "descriptor", "mesh"):
+                val = getattr(result, attr, None)
+                if val is not None:
+                    setattr(self, attr, val)
+            for cache in ("_cached_weights", "_cached_lengths", "_store",
+                          "_mesh_vertices", "_mesh_elements", "_mesh_normals"):
+                v = getattr(result, cache, None)
+                if v is not None:
+                    setattr(self, cache, v)
+        else:
+            # Two shapes accepted: dict with `weights` (and optional `lengths`,
+            # `node_parameters`), or tuple `(weights, lengths[, node_params])`.
+            if isinstance(result, dict):
+                if "weights" not in result:
+                    raise TypeError(
+                        "graph_generator materialiser dict must include a `weights` key."
+                    )
+                weights = np.asarray(result["weights"])
+                lengths = np.asarray(result["lengths"]) if result.get("lengths") is not None else None
+                node_params = result.get("node_parameters") or result.get("node_params") or None
+            elif isinstance(result, tuple) and len(result) in (2, 3):
+                weights = np.asarray(result[0])
+                lengths = np.asarray(result[1]) if result[1] is not None else None
+                node_params = result[2] if len(result) == 3 else None
+            else:
+                raise TypeError(
+                    "graph_generator builder must return a Network, a dict with "
+                    "a `weights` key, or a (weights, lengths) / (weights, lengths, "
+                    "node_params) tuple."
+                )
+            n_nodes = weights.shape[0]
+            self.number_of_nodes = n_nodes
+            self.nodes = [
+                tvbo_datamodel.Node(id=i, label=f"node_{i}") for i in range(n_nodes)
+            ]
+            # The generator supplies the internal weight matrix only. Preserve
+            # any declared edges (e.g. cross-layer routing edges on a
+            # subnetwork); only default to empty when none were authored.
+            if not getattr(self, "edges", None):
+                self.edges = []
+            self._cached_weights = weights
+            if lengths is not None:
+                self._cached_lengths = lengths
+            if node_params:
+                # Builder may attach per-node parameters as a dict of
+                # {param_name: array of len n_nodes}. Materialise these
+                # onto each Node so downstream codegen can consume them.
+                for pname, arr in node_params.items():
+                    arr = np.asarray(arr)
+                    for i in range(n_nodes):
+                        if self.nodes[i].parameters is None:
+                            self.nodes[i].parameters = {}
+                        self.nodes[i].parameters[pname] = tvbo_datamodel.Parameter(
+                            name=pname, value=float(arr[i])
+                        )
+
+    def _resolve_from_data_file(self, source_dir: Optional[Union[str, Path]]) -> None:
+        """Populate self from a companion .h5/.zarr sidecar referenced by ``self.data_file``."""
+        data_file = Path(self.data_file)
+        if not data_file.is_absolute():
+            base = Path(source_dir) if source_dir else Path.cwd()
+            data_file = (base / data_file).resolve()
+        sidecar = data_file.with_suffix(".yaml") if data_file.suffix in (".h5", ".zarr") else data_file
+        if not sidecar.exists():
+            raise FileNotFoundError(f"No YAML sidecar found for {data_file}")
+
+        from tvbo.data.network_io import load_network
+
+        loaded = load_network(sidecar)
+        # The sidecar is the authoritative source of connectivity. Replace
+        # connectivity-bearing fields unconditionally. Inline-authored
+        # coupling / transforms / parameters live in slots NOT listed here
+        # and are preserved on self.
+        for attr in ("nodes", "edges", "number_of_nodes", "descriptor"):
+            val = getattr(loaded, attr, None)
+            if val is not None:
+                setattr(self, attr, val)
+        store = getattr(loaded, "_store", None)
+        if store is not None:
+            self._store = store
+        # The Mesh schema slot transfers along with the other LinkML
+        # fields below; only the array caches are copied here.
+        loaded_mesh = getattr(loaded, "mesh", None)
+        if loaded_mesh is not None and getattr(self, "mesh", None) is None:
+            self.mesh = loaded_mesh
+        for cache in ("_cached_weights", "_cached_lengths",
+                       "_mesh_vertices", "_mesh_elements", "_mesh_normals"):
+            v = getattr(loaded, cache, None)
+            if v is not None:
+                setattr(self, cache, v)
+
+    def _resolve_from_bids_dir(self, source_dir: Optional[Union[str, Path]]) -> None:
+        """Populate self from a BEP017 BIDS directory at ``self.bids_dir``."""
+        bids_dir = Path(self.bids_dir)
+        if not bids_dir.is_absolute():
+            base = Path(source_dir) if source_dir else Path.cwd()
+            bids_dir = (base / bids_dir).resolve()
+        # Reuse the from_bids classmethod, then copy its state onto self.
+        atlas = None
+        if self.parcellation:
+            parc = self.parcellation
+            atlas_obj = parc.get("atlas") if isinstance(parc, dict) else getattr(parc, "atlas", None)
+            atlas = atlas_obj.get("name") if isinstance(atlas_obj, dict) else getattr(atlas_obj, "name", None)
+        loaded = type(self).from_bids(
+            bids_dir,
+            atlas=atlas,
+            structural_measures=list(self.structural_measures) if self.structural_measures else None,
+            observational_measures=list(self.observational_measures) if self.observational_measures else None,
+        )
+        for attr in ("nodes", "edges", "number_of_nodes"):
+            val = getattr(loaded, attr, None)
+            if val is not None:
+                setattr(self, attr, val)
+        # NB: from_bids stores observational matrices under ``_bids_observations``
+        # (consumed by the ``observations`` property), not ``_observations``.
+        for cache in ("_cached_weights", "_cached_lengths", "_bids_observations", "_bids_dir", "_store"):
+            v = getattr(loaded, cache, None)
+            if v is not None:
+                object.__setattr__(self, cache, v)
+        # Carry over the parcellation that from_bids inferred from the BIDS
+        # filenames, so the atlas resolves (and centres can be looked up by
+        # label) even when the source YAML named no parcellation.
+        if getattr(self, "parcellation", None) is None:
+            loaded_parc = getattr(loaded, "parcellation", None)
+            if loaded_parc is not None:
+                try:
+                    self.parcellation = loaded_parc
+                except Exception:  # noqa: BLE001
+                    object.__setattr__(self, "parcellation", loaded_parc)
+
+    def _resolve_from_parcellation(self) -> None:
+        """Populate self from a parcellation + tractogram normative DB lookup."""
+        parc = self.parcellation
+        atlas = parc.get("atlas") if isinstance(parc, dict) else getattr(parc, "atlas", None)
+        atlas_name = None
+        if atlas is not None:
+            atlas_name = atlas.get("name") if isinstance(atlas, dict) else getattr(atlas, "name", None)
+            if not atlas_name:
+                iri = atlas.get("iri") if isinstance(atlas, dict) else getattr(atlas, "iri", None)
+                if iri:
+                    atlas_name = iri.split(":", 1)[-1] if ":" in iri else iri
+        if not atlas_name:
+            return  # No atlas → nothing to resolve.
+
+        tractogram = self.tractogram
+        trk_name = None
+        if tractogram is not None:
+            trk_name = tractogram.get("name") if isinstance(tractogram, dict) else getattr(tractogram, "name", None)
+            if not trk_name:
+                iri = tractogram.get("iri") if isinstance(tractogram, dict) else getattr(tractogram, "iri", None)
+                if iri:
+                    trk_name = iri.split(":", 1)[-1] if ":" in iri else iri
+        trk_name = trk_name or "dTOR"
+
+        # Optional BIDS disambiguation (seg-, scale-) when the same atlas is
+        # published at multiple resolutions or segmentations.
+        bids_meta = getattr(self, "bids", None)
+        seg = scale = None
+        if isinstance(bids_meta, dict):
+            seg = bids_meta.get("segmentation")
+            scale = bids_meta.get("scale")
+        elif bids_meta is not None:
+            seg = getattr(bids_meta, "segmentation", None)
+            scale = getattr(bids_meta, "scale", None)
+        if scale is not None:
+            scale = str(scale)
+
+        try:
+            w_arr, l_arr = get_normative_connectome_data(
+                atlas_name, trk_name, segmentation=seg, scale=scale
+            )
+        except FileNotFoundError:
+            return
+
+        n_nodes = w_arr.shape[0]
+        if l_arr is not None and l_arr.shape[0] != n_nodes:
+            import warnings
+
+            warnings.warn(
+                f"Weight matrix ({n_nodes}x{n_nodes}) and length matrix "
+                f"({l_arr.shape[0]}x{l_arr.shape[1]}) have different sizes. "
+                f"Using minimum size."
+            )
+            n_nodes = min(n_nodes, l_arr.shape[0])
+            w_arr = w_arr[:n_nodes, :n_nodes]
+            l_arr = l_arr[:n_nodes, :n_nodes]
+
+        if not self.nodes or len(self.nodes) != n_nodes:
+            self.nodes = [tvbo_datamodel.Node(id=i, label=f"region_{i}") for i in range(n_nodes)]
+        if not self.edges:
+            self.edges = []
+        self.number_of_nodes = n_nodes
+        self._cached_weights = np.asarray(w_arr)
+        if l_arr is not None:
+            self._cached_lengths = np.asarray(l_arr)
+
+    # -------------------------------------------------------------------- #
+    # Multi-scale resolution                                               #
+    # -------------------------------------------------------------------- #
+    def _expand_node_template(self) -> None:
+        """Apply ``node_template`` to every materialized node.
+
+        The template is a partial ``Node`` whose fields (``subnetwork``,
+        ``dynamics``, ``edges``, ``parameters`` …) are copied onto each node
+        that does not already set them — explicit per-node fields always win,
+        so heterogeneous variants can override individual regions. A no-op
+        when no template was authored. Each node receives its own deep copy of
+        the spec so per-node resolution (seeds, overrides) stays independent.
+        """
+        import copy
+
+        spec = getattr(self, "_node_template_spec", None)
+        if not spec or not self.nodes:
+            return
+
+        def _is_unset(v: Any) -> bool:
+            # Treat only None or an empty container as "not set on this node".
+            # Use type/len checks (not `v in (None, [], {}, ())`), which would
+            # raise on array-valued fields and mis-handle scalars like 0/False.
+            if v is None:
+                return True
+            if isinstance(v, (list, tuple, dict)) and len(v) == 0:
+                return True
+            return False
+
+        for node in self.nodes:
+            for field, value in spec.items():
+                if field in ("id", "label"):
+                    continue
+                if _is_unset(getattr(node, field, None)):
+                    setattr(node, field, copy.deepcopy(value))
+
+    def _resolve_subnetworks(self, source_dir: Optional[Union[str, Path]]) -> None:
+        """Materialize each node's ``subnetwork`` into a resolved ``Network``.
+
+        For every node carrying a subnetwork spec (dict or partially built
+        object), construct a `Network` and resolve it — which runs the
+        subnetwork's own ``graph_generator`` (e.g. RandomReservoir → the
+        recurrent matrix W_int). Idempotent: already-resolved Network
+        instances are left untouched.
+        """
+        for node in self.nodes or []:
+            sub = getattr(node, "subnetwork", None)
+            if sub is None:
+                continue
+            if isinstance(sub, Network) and getattr(sub, "_resolved", False):
+                continue
+            if isinstance(sub, Network):
+                sub._resolve(source_dir=source_dir)
+                continue
+            # dict or datamodel Network → build the enhanced subclass, which
+            # resolves its graph_generator during construction.
+            spec = sub if isinstance(sub, dict) else as_dict(sub)
+            node.subnetwork = Network(**spec)
+
+    def _resolve_parameter_sources(self, source_dir: Optional[Union[str, Path]]) -> None:
+        """Populate network ``parameters`` declared via ``source`` + ``measure``.
+
+        A parameter such as ``cortical_gradient`` may point at a curated
+        Network (``source``: an IRI / path) and name a per-node ``measure``
+        carried by that network's nodes (``measure``: e.g. ``megalpha``). This
+        loads the referenced network and gathers the per-node measure values
+        into a 1-D array stored on ``parameter.value``. A no-op for ordinary
+        scalar parameters.
+        """
+        params = getattr(self, "parameters", None)
+        if not params:
+            return
+        for param in params.values():
+            source = getattr(param, "source", None)
+            measure = getattr(param, "measure", None)
+            if not source or not measure:
+                continue
+            if isinstance(getattr(param, "value", None), (list, np.ndarray)):
+                continue  # already materialised
+            values = self._load_measure_from_source(source, measure, source_dir)
+            if values is not None:
+                param.value = values
+
+    @classmethod
+    def _load_measure_from_source(
+        cls,
+        source: str,
+        measure: str,
+        source_dir: Optional[Union[str, Path]] = None,
+    ) -> Optional[np.ndarray]:
+        """Load a per-node ``measure`` array from a referenced network ``source``.
+
+        ``source`` is resolved as (1) a curated-network IRI via the registry,
+        (2) a path relative to ``source_dir``, or (3) an absolute path. The
+        named measure is read from each node's ``parameters[measure]`` value.
+        Returns a 1-D ``ndarray`` (node order preserved), or ``None`` when the
+        source cannot be resolved.
+        """
+        path = cls._resolve_network_iri(source)
+        if path is None:
+            cand = Path(source)
+            if not cand.is_absolute() and source_dir is not None:
+                cand = (Path(source_dir) / cand).resolve()
+            path = str(cand) if cand.exists() else None
+        if path is None:
+            return None
+
+        # from_file → load_network already resolves the network on construction;
+        # the explicit _resolve() is a harmless idempotent guard.
+        net = cls.from_file(path)
+        net._resolve()
+        vals = []
+        for node in net.nodes or []:
+            node_params = getattr(node, "parameters", None) or {}
+            p = node_params.get(measure) if hasattr(node_params, "get") else None
+            # Per the docstring, return None (don't crash) when any node lacks a
+            # usable scalar value for the measure: missing parameter, None value,
+            # or a non-scalar (e.g. vector) value that float() can't accept.
+            val = getattr(p, "value", None) if p is not None else None
+            if not isinstance(val, (int, float)) or isinstance(val, bool):
+                return None
+            vals.append(float(val))
+        return np.asarray(vals) if vals else None
 
     # -- Backward-compat properties: conduction_speed, global_coupling_strength --
     @property
@@ -457,22 +1085,24 @@ class Network(tvbo_datamodel.Network):
             "_pytree_data",
             "_node_mapping_data",
             "_parent_network_obj",
+            "_node_template_spec",
+            "_edge_template_spec",
             "_save_path",
             "_orientations",
-            "_mesh",
+            "_resolved",
+            # _mesh is no longer a private cache — it's the LinkML
+            # Network.mesh slot. Keep the array caches that adapters set.
             "_mesh_vertices",
             "_mesh_elements",
             "_mesh_normals",
         }
     )
 
-    @property
-    def mesh(self):
-        """Mesh metadata object, if assigned via ``from_tvb_surface``."""
-        try:
-            return object.__getattribute__(self, "_mesh")
-        except AttributeError:
-            return None
+    # Network.mesh is now a first-class LinkML slot (range Mesh, inlined)
+    # — no read-only property wrapper needed. Runtime caches of the
+    # underlying arrays (``_mesh_vertices``, ``_mesh_elements``,
+    # ``_mesh_normals``) remain in ``_INTERNAL_ATTRS`` and are populated
+    # by adapters such as ``from_tvb_surface``.
 
     @property
     def parent_network_obj(self) -> Optional["Network"]:
@@ -487,9 +1117,21 @@ class Network(tvbo_datamodel.Network):
             return None
 
     def _items(self):
+        # What the LinkML yaml_dumper / json_dumper / as_dict see. Internal
+        # caches and lazy-store handles (``_cached_weights``, ``_store``,
+        # ``_bids_observations`` …) are runtime bookkeeping, never schema slots —
+        # and LinkML slot names are never underscore-prefixed — so any private
+        # attribute must be hidden from serialization. Excluding *all* leading-
+        # underscore keys (not just a hand-maintained denylist) keeps this robust
+        # as new caches are added: a stray ndarray cache like ``_bids_observations``
+        # would otherwise reach yaml.SafeDumper and raise RepresenterError
+        # ("cannot represent an object", <ndarray>). Bulk arrays belong in the
+        # binary companion (HDF5/zarr) via ``save_network``, referenced from the
+        # spec by ``data_file`` — not inlined here.
         for k, v in super()._items():
-            if k not in self._INTERNAL_ATTRS:
-                yield k, v
+            if k.startswith("_") or k in self._INTERNAL_ATTRS:
+                continue
+            yield k, v
 
     @classmethod
     def from_datamodel(cls, datamodel: tvbo_datamodel.Network) -> "Connectome":
@@ -766,13 +1408,16 @@ class Network(tvbo_datamodel.Network):
         # Create nodes
         nodes = [tvbo_datamodel.Node(id=i, label=labels[i]) for i in range(n_nodes)]
 
-        # Build network
+        # Build network. Declare the observational measures we actually
+        # loaded so the `observations` property (which gates on
+        # ``observational_measures``) can resolve them.
         instance = cls(
             nodes=nodes,
             edges=[],
             number_of_nodes=n_nodes,
             number_of_regions=n_nodes,
             label=atlas or bids_dir.name,
+            observational_measures=list(observations) or None,
             **kwargs,
         )
 
@@ -781,6 +1426,18 @@ class Network(tvbo_datamodel.Network):
         object.__setattr__(instance, "_cached_lengths", lengths)
         object.__setattr__(instance, "_bids_dir", str(bids_dir))
         object.__setattr__(instance, "_bids_observations", observations)
+
+        # Record the parcellation atlas so get_atlas()/get_centers() can resolve
+        # region centres from the named atlas's entities by label.
+        if atlas and getattr(instance, "parcellation", None) is None:
+            parc = tvbo_datamodel.Parcellation(
+                label=atlas,
+                atlas=tvbo_datamodel.BrainAtlas(name=atlas),
+            )
+            try:
+                instance.parcellation = parc
+            except Exception:  # noqa: BLE001
+                object.__setattr__(instance, "parcellation", parc)
 
         return instance
 
@@ -887,6 +1544,20 @@ class Network(tvbo_datamodel.Network):
                         labels = df["label"].tolist()
                         self.nodes = [tvbo_datamodel.Node(id=i, label=labels[i]) for i in range(n_nodes)]
 
+                # Record the parcellation atlas. BIDS connectomes carry no
+                # parcellation, so get_atlas() would default to "wholebrain";
+                # naming the atlas lets get_centers() resolve region centres from
+                # the atlas's entities (matched to node labels).
+                if atlas and getattr(self, "parcellation", None) is None:
+                    parc = tvbo_datamodel.Parcellation(
+                        label=atlas,
+                        atlas=tvbo_datamodel.BrainAtlas(name=atlas),
+                    )
+                    try:
+                        self.parcellation = parc
+                    except Exception:  # noqa: BLE001
+                        object.__setattr__(self, "parcellation", parc)
+
         # Load observational measures if requested
         if observational_measures:
             # Use object.__setattr__ to store as plain Python dict, bypassing LinkML
@@ -896,6 +1567,12 @@ class Network(tvbo_datamodel.Network):
                 if data is not None:
                     obs[measure] = data
             object.__setattr__(self, "_bids_observations", obs)
+            # Declare loaded measures so the `observations` property (which
+            # gates on ``observational_measures``) can resolve them.
+            existing = list(self.observational_measures or [])
+            self.observational_measures = existing + [
+                m for m in obs if m not in existing
+            ]
 
         object.__setattr__(self, "_bids_dir", str(bids_dir))
         return self
@@ -983,7 +1660,7 @@ class Network(tvbo_datamodel.Network):
         print(network.label)
         ```
         """
-        from linkml_runtime.loaders import yaml_loader
+        from tvbo.utils import yaml_loader
 
         return yaml_loader.loads(yaml_string, cls)
 
@@ -1575,6 +2252,11 @@ class Network(tvbo_datamodel.Network):
                 "_cached_lengths",
                 "_bids_dir",
                 "_bids_observations",
+                # data_file / bids_dir are loading specs; the actual arrays are
+                # already captured in `children`.  Including them causes
+                # tree_unflatten to call _resolve_from_data_file() and fail.
+                "data_file",
+                "bids_dir",
             )
         }
 
@@ -1793,9 +2475,19 @@ class Network(tvbo_datamodel.Network):
         if hasattr(self, "_pytree_data") and self._pytree_data is not None:
             return self._pytree_data[0]
 
-        # Check _arrays (set by set_matrix / add_edges)
+        # Check _arrays (set by set_matrix / add_edges). When the sidecar
+        # declares a `primary_weight`, that named edge wins over the default
+        # weight / weights / sc lookup — lets one Network file expose
+        # several variants under named edges and pick the active one.
         _arrs = self._get_arrays()
-        if "weight" in _arrs:
+        _primary = getattr(self, "primary_weight", None)
+        if _primary and _primary in _arrs:
+            from scipy import sparse as _sp
+
+            W = _arrs[_primary]
+            if _sp.issparse(W):
+                W = W.toarray()
+        elif "weight" in _arrs:
             from scipy import sparse as _sp
 
             W = _arrs["weight"]
@@ -1823,7 +2515,10 @@ class Network(tvbo_datamodel.Network):
         elif hasattr(self, "_store") and self._store is not None:
             # Lazy load from companion file (set by load_network)
             arrays = self._store.arrays
-            if "weight" in arrays:
+            if _primary and _primary in arrays:
+                self._cached_weights = arrays[_primary]
+                W = self._cached_weights
+            elif "weight" in arrays:
                 self._cached_weights = arrays["weight"]
                 W = self._cached_weights
             elif "weights" in arrays:
@@ -1919,6 +2614,60 @@ class Network(tvbo_datamodel.Network):
     @property
     def distances(self):
         return self.lengths_matrix
+
+    @property
+    def observations(self) -> Dict[str, np.ndarray]:
+        """Observational-measure matrices carried by the network.
+
+        Returns a ``{measure_name: matrix}`` dict for every entry in
+        ``self.observational_measures`` (e.g. ``BoldCorrelation`` — the
+        empirical FC target). Source-agnostic: resolves data loaded via
+        ``from_bids`` (``_bids_observations``) or from an inline companion
+        file (``_store``), so experiments can consume network observations
+        the same way they consume ``weights``/``distances``.
+
+        Returns
+        -------
+        dict of str to np.ndarray
+            Empty dict when the network declares no observational measures.
+        """
+        from scipy import sparse as _sp
+
+        measures = list(self.observational_measures or [])
+        if not measures:
+            return {}
+
+        def _dense(arr):
+            if arr is None:
+                return None
+            arr = arr.toarray() if _sp.issparse(arr) else np.asarray(arr)
+            return arr
+
+        out: Dict[str, np.ndarray] = {}
+
+        # 1) BIDS-loaded observations (from_bids path)
+        bids_obs = object.__getattribute__(self, "__dict__").get(
+            "_bids_observations", {}
+        ) or {}
+        for name in measures:
+            if name in bids_obs:
+                m = _dense(bids_obs[name])
+                if m is not None:
+                    out[name] = m
+
+        # 2) Companion-file store (inline data_file path)
+        if hasattr(self, "_store") and self._store is not None:
+            try:
+                arrays = self._store.arrays
+            except Exception:
+                arrays = {}
+            for name in measures:
+                if name not in out and name in arrays:
+                    m = _dense(arrays[name])
+                    if m is not None:
+                        out[name] = m
+
+        return out
 
     @property
     def labels(self) -> Dict[str, str]:
@@ -2719,53 +3468,65 @@ class Network(tvbo_datamodel.Network):
             except (KeyError, FileNotFoundError):
                 pass
 
-        # --- Source 3: Atlas metadata (fallback) ---
-        labels = []
-        ids = []
-        centers = []
+        # --- Source 3: Atlas metadata ---
         entities = self.get_atlas().terminology.entities
         # Handle both dict and list formats
         if hasattr(entities, "items"):
-            entity_items = entities.items()
+            entity_items = list(entities.items())
         elif isinstance(entities, list):
-            entity_items = enumerate(entities)
+            entity_items = list(enumerate(entities))
         else:
             # Empty or unknown format - return default
             return {0: (0, 0, 0)}
 
-        for region, entity in entity_items:
-            # Handle entity being a dict or object
+        def _entity_coord(entity, region):
             if isinstance(entity, dict):
-                lookup_label = entity.get("lookupLabel", region)
-                center = entity.get("center", {})
+                center = entity.get("center", {}) or {}
                 coord = (center.get("x", 0), center.get("y", 0), center.get("z", 0))
+                return coord, entity.get("lookupLabel", region)
+            center = getattr(entity, "center", None)
+            coord = (center.x, center.y, center.z) if center else (0, 0, 0)
+            return coord, getattr(entity, "lookupLabel", region)
+
+        # Build a coord index keyed by every label an entity is known by
+        # (name + abbreviation + alternateName), plus an ordered list for the
+        # lookupLabel fallback. The alternateName slot carries the abbreviated
+        # region labels that BIDS connectomes use (e.g. "L.BSTS").
+        by_label = {}
+        ordered = []
+        for region, entity in entity_items:
+            coord, lookup_label = _entity_coord(entity, region)
+            ordered.append((lookup_label if isinstance(lookup_label, int) else region, coord))
+            if isinstance(entity, dict):
+                names = [entity.get("name"), entity.get("abbreviation"), *(entity.get("alternateName") or [])]
             else:
-                lookup_label = getattr(entity, "lookupLabel", region)
-                center = getattr(entity, "center", None)
-                if center:
-                    coord = (center.x, center.y, center.z)
-                else:
-                    coord = (0, 0, 0)
-            labels.append(region)
-            ids.append(lookup_label if isinstance(lookup_label, int) else region)
-            centers.append(coord)
+                names = [getattr(entity, "name", None), getattr(entity, "abbreviation", None),
+                         *(getattr(entity, "alternateName", None) or [])]
+            for nm in names:
+                if nm:
+                    by_label[str(nm)] = coord
 
-        if not centers:
+        # (3a) Match this network's node labels to atlas entities by label, so
+        # centres line up with node order regardless of the atlas's own ordering.
+        if nodes and by_label:
+            node_labels = [getattr(node, "label", None) for node in nodes]
+            matched = {i: by_label[str(l)] for i, l in enumerate(node_labels) if l and str(l) in by_label}
+            n_labelled = sum(1 for l in node_labels if l)
+            if matched and len(matched) >= max(1, n_labelled // 2):
+                return matched
+
+        # (3b) Fallback: key centres by the atlas's own lookupLabel order.
+        if not ordered:
             return {0: (0, 0, 0)}
-
-        centers = np.array(centers)
-        # Only sort if ids are numeric
+        ids = [o[0] for o in ordered]
+        centers = np.array([o[1] for o in ordered])
         if all(isinstance(i, (int, float)) for i in ids):
-            sort_idx = np.argsort(ids)
-            centers = centers[sort_idx]
-            labels = np.array(labels)[sort_idx]
-            center_mapping = {int(i) - 1: tuple(center) for i, center in zip(sorted(ids), centers)}
+            order = np.argsort(ids)
+            center_mapping = {int(ids[j]) - 1: tuple(centers[j]) for j in order}
         else:
             center_mapping = {i: tuple(center) for i, center in enumerate(centers)}
 
-        if center_mapping == {}:
-            return {0: (0, 0, 0)}
-        return center_mapping
+        return center_mapping or {0: (0, 0, 0)}
 
     def plot_graph(
         self,
@@ -3574,10 +4335,24 @@ class Network(tvbo_datamodel.Network):
         c = getattr(func, "callable", None)
         if c is not None:
             import importlib
+            import inspect
 
             mod = importlib.import_module(c.module)
             fn = getattr(mod, c.name)
-            return fn(M)
+            kwargs = {}
+            for arg in (getattr(func, "arguments", None) or []):
+                aname = getattr(arg, "name", None)
+                if aname is not None:
+                    kwargs[aname] = getattr(arg, "value", None)
+            available = {"L": self.lengths_matrix, "network": self}
+            sig = inspect.signature(fn)
+            accepts_var_kw = any(
+                p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values()
+            )
+            for key, val in available.items():
+                if key in sig.parameters or accepts_var_kw:
+                    kwargs.setdefault(key, val)
+            return fn(M, **kwargs)
 
         # Equation-based transform
         eq = getattr(func, "equation", None)
@@ -3585,22 +4360,41 @@ class Network(tvbo_datamodel.Network):
             return M
         from tvbo.codegen.code import parse_eq, render_expression
 
+        # Substitute scalar argument values: prefer Function.arguments, fall
+        # back to Equation.parameters for legacy specs.
+        arg_values: dict = {}
+        for a in (getattr(func, "arguments", None) or []):
+            aname = getattr(a, "name", None)
+            if aname is not None:
+                arg_values[aname] = getattr(a, "value", None)
+        if hasattr(eq, "parameters") and eq.parameters:
+            for pname, pval in eq.parameters.items():
+                arg_values.setdefault(pname, getattr(pval, "value", pval))
+
         exp = parse_eq(eq)
         if exp is not None:
-            subs_map = {}
-            for s in exp.free_symbols:
-                sname = str(s)
-                if hasattr(eq, "parameters") and sname in eq.parameters:
-                    subs_map[s] = eq.parameters[sname].value
+            subs_map = {s: arg_values[str(s)] for s in exp.free_symbols if str(s) in arg_values}
             if subs_map:
                 exp = exp.subs(subs_map)
+
+        # Generic primitives available to any equation transform.
+        # *_safe variants substitute 1 for zero entries so isolated nodes
+        # do not produce NaNs under row/column normalisation.
+        L = self.lengths_matrix
+        _rs = M.sum(axis=1, keepdims=True)
+        _cs = M.sum(axis=0, keepdims=True)
         env = {
             "M": M,
             "W": M,
+            "L": L,
             "M_min": jnp.nanmin(M),
             "W_min": jnp.nanmin(M),
             "M_max": jnp.nanmax(M),
             "W_max": jnp.nanmax(M),
+            "W_rowsum": _rs,
+            "W_colsum": _cs,
+            "W_rowsum_safe": jnp.where(_rs > 0, _rs, 1.0),
+            "W_colsum_safe": jnp.where(_cs > 0, _cs, 1.0),
             "jnp": jnp,
             "np": jnp,
             "jsp": jsp,

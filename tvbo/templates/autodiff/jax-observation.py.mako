@@ -4,7 +4,19 @@ from tvbo.codegen import render_expression
 def get_callable_info(func):
     return func.callable.module, func.callable.name
 
-def get_parameters(func, pipeline_outputs):
+def get_parameters(func, pipeline_outputs, obs_period=None, dt=None):
+    """Return {arg_name: value_str} for arguments that have a resolved value.
+
+    Arguments without an explicit value are skipped — they appear as required
+    positional parameters in the generated function signature (see
+    generate_function in jax-function.py.mako) and must be passed at the call
+    site.
+
+    ``obs_period`` and ``dt`` are used to derive windowing arguments
+    (window_size, window) when the YAML omits an explicit value.
+    """
+    _WINDOW_ARGS = ('window_size', 'window')
+
     params = {}
     args = func.arguments or []
     # Handle dict-keyed arguments (from Function) or list (from FunctionCall)
@@ -13,10 +25,13 @@ def get_parameters(func, pipeline_outputs):
     for arg in args:
         value = getattr(arg, 'value', None)
         if value is None:
+            # Derive windowing parameters from observation period and integration dt
+            if obs_period is not None and dt is not None and arg.name in _WINDOW_ARGS:
+                value = str(int(round(float(obs_period) / float(dt))))
+        if value is None:
             continue
         # Quote string values that aren't numeric or pipeline references
         if isinstance(value, str):
-            # Check if it's a number string or a pipeline reference (no quotes needed)
             is_numeric = value.replace('.','').replace('-','').isdigit()
             is_pipeline_ref = value in pipeline_outputs
             if not is_numeric and not is_pipeline_ref:
@@ -135,8 +150,18 @@ ${jaxfunc.generate_function(func, get_func_name(func))}
 
 % endfor
 
+<%
+    # ``source`` is multivalued; for raw observations there is one entry
+    # (a state-variable reference). Take the first scalar value.
+    _src = getattr(observation, 'source', None)
+    if isinstance(_src, (list, tuple)):
+        _src = _src[0] if _src else None
+    if _src is not None and hasattr(_src, 'name'):
+        _src = _src.name
+    _state_default = "'" + str(_src) + "'" if _src else 'None'
+%>
 # Compose functions into observation pipeline
-def ${observation.name}(ts: TimeSeries, state=${"'" + observation.source + "'" if hasattr(observation, 'source') and observation.source else 'None'}):
+def ${observation.name}(ts: TimeSeries, state=${_state_default}):
     # Extract state variable if specified
     if state is not None:
         ts = ts.get_state(state)
@@ -148,9 +173,14 @@ def ${observation.name}(ts: TimeSeries, state=${"'" + observation.source + "'" i
     _func_input = getattr(func, 'input', None)
 
     if _func_input:
-        # Check if input is from this pipeline's outputs
-        if _func_input in pipeline_outputs or _func_input in func_name_to_output.values():
-            input_name = func_name_to_output.get(_func_input, _func_input)
+        if _func_input in pipeline_outputs:
+            # Direct reference to an output variable name — use as-is.
+            input_name = _func_input
+        elif _func_input in func_name_to_output:
+            # Reference to a *function* name — resolve to its output variable.
+            # e.g. YAML says  input: temporal_average_interim
+            #       → should use  interim_averaged  (that function's output var)
+            input_name = func_name_to_output[_func_input]
         # Check if input matches the observation's source_observation (cross-observation dependency)
         elif hasattr(observation, 'source_observation') and _func_input == observation.source_observation:
             # Need to call the source observation function
@@ -164,7 +194,11 @@ def ${observation.name}(ts: TimeSeries, state=${"'" + observation.source + "'" i
     else:
         input_name = 'ts'
 
-    params_dict = get_parameters(func, pipeline_outputs)
+    params_dict = get_parameters(
+        func, pipeline_outputs,
+        obs_period=getattr(observation, 'period', None),
+        dt=dt,
+    )
     # Build argument list: input + schema arguments
     args = [input_name]
     for arg_name, arg_value in params_dict.items():

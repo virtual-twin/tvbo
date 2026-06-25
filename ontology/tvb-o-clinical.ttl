@@ -1,0 +1,452 @@
+# ─────────────────────────────────────────────────────────────────────────
+# TVB-O — Clinical Applications addon
+# Generated 2026-06-15 from a PubMed-verified survey of
+# whole-brain / TVB dynamical-model applications to disease. Layer on top of
+# tvb-o.owl (like tvb-o-axioms.ttl). Connects studies -> clinical domains
+# (ICD-11 + MeSH) and -> the neural-mass model used.
+# ─────────────────────────────────────────────────────────────────────────
+
+@prefix tvbo:    <https://w3id.org/tvbo/> .
+@prefix tvbc:    <https://w3id.org/tvbo/clinical/> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix fabio:   <http://purl.org/spar/fabio/> .
+@prefix MESH:    <http://purl.bioontology.org/ontology/MESH/> .
+@prefix icd11:   <http://id.who.int/icd/release/11/mms/> .
+
+### Vocabulary -----------------------------------------------------------
+tvbc:ClinicalDomain a owl:Class ; rdfs:subClassOf skos:Concept ;
+  rdfs:label "Clinical domain" ; rdfs:comment "A disease/condition area a model is applied to, cross-referenced to ICD-11 and MeSH." .
+tvbc:ClinicalApplicationStudy a owl:Class ; rdfs:subClassOf bibo:AcademicArticle ;
+  rdfs:label "Clinical application study" ; rdfs:comment "A publication applying a whole-brain / neural-mass model to patient data." .
+tvbc:NodeDynamicsModel a owl:Class ; rdfs:subClassOf tvbo:Dynamics ;
+  rdfs:label "Node dynamical model" ; rdfs:comment "Local node / mesoscale dynamics used in a whole-brain or microcircuit model: neural-mass and mean-field models (most align with tvbo:Dynamics), phenomenological oscillators (Hopf/Stuart-Landau), DCM convolution models, and spiking E/I networks." .
+tvbc:appliesToClinicalDomain a owl:ObjectProperty ; rdfs:domain tvbc:ClinicalApplicationStudy ;
+  rdfs:range tvbc:ClinicalDomain ; rdfs:label "applies to clinical domain" .
+tvbc:hasClinicalApplication a owl:ObjectProperty ; owl:inverseOf tvbc:appliesToClinicalDomain ;
+  rdfs:label "has clinical application" .
+tvbc:usesNodeDynamics a owl:ObjectProperty ; rdfs:domain tvbc:ClinicalApplicationStudy ;
+  rdfs:range tvbc:NodeDynamicsModel ; rdfs:label "uses node dynamical model" .
+tvbc:studyKind a owl:DatatypeProperty ; rdfs:range xsd:string ; rdfs:label "study kind" .
+tvbc:icd11Code a owl:AnnotationProperty ; rdfs:label "ICD-11 code" .
+
+### ICD-11 chapters ------------------------------------------------------
+tvbc:icd11-08 a skos:Concept ; skos:notation "08" ; skos:prefLabel "Diseases of the nervous system"@en .
+tvbc:icd11-02 a skos:Concept ; skos:notation "02" ; skos:prefLabel "Neoplasms"@en .
+tvbc:icd11-06 a skos:Concept ; skos:notation "06" ; skos:prefLabel "Mental, behavioural or neurodevelopmental disorders"@en .
+tvbc:icd11-22 a skos:Concept ; skos:notation "22" ; skos:prefLabel "Injury, poisoning or external causes"@en .
+
+### Node dynamical models ------------------------------------------------
+tvbc:model-Epileptor a tvbc:NodeDynamicsModel ; skos:prefLabel "Epileptor"@en .
+tvbc:model-ReducedWongWang a tvbc:NodeDynamicsModel ; skos:prefLabel "Reduced Wong-Wang / dynamic mean-field (Deco)"@en .
+tvbc:model-JansenRit a tvbc:NodeDynamicsModel ; skos:prefLabel "Jansen-Rit"@en .
+tvbc:model-Wendling a tvbc:NodeDynamicsModel ; skos:prefLabel "Wendling (Jansen-Rit-derived)"@en .
+tvbc:model-StefanescuJirsa3D a tvbc:NodeDynamicsModel ; skos:prefLabel "Stefánescu-Jirsa 3D"@en .
+tvbc:model-DodyNextGen a tvbc:NodeDynamicsModel ; skos:prefLabel "next-generation NMM (Montbrió/Dody, aQIF-derived)"@en .
+tvbc:model-Hopf a tvbc:NodeDynamicsModel ; skos:prefLabel "Hopf / Stuart-Landau oscillator"@en .
+tvbc:model-SpikingEI a tvbc:NodeDynamicsModel ; skos:prefLabel "Spiking E/I network (LIF)"@en .
+tvbc:model-BasalGanglia a tvbc:NodeDynamicsModel ; skos:prefLabel "Basal-ganglia circuit model"@en .
+tvbc:model-DynamicCausalModel a tvbc:NodeDynamicsModel ; skos:prefLabel "DCM canonical microcircuit"@en .
+
+### Clinical domains (disease -> ICD-11 + MeSH) --------------------------
+tvbc:domain-Epilepsy a tvbc:ClinicalDomain ;
+  skos:prefLabel "Epilepsy"@en ;
+  tvbc:icd11Code "8A6Z" ; skos:notation "8A6Z" ;
+  skos:exactMatch MESH:D004827 ;   # Epilepsy
+  skos:broader tvbc:icd11-08 ;
+  skos:scopeNote "12 verified dynamical-model application(s) in TVB-O survey 2026" .
+tvbc:domain-Alzheimer a tvbc:ClinicalDomain ;
+  skos:prefLabel "Alzheimer disease & dementia"@en ;
+  tvbc:icd11Code "8A20" ; skos:notation "8A20" ;
+  skos:exactMatch MESH:D000544 ;   # Alzheimer Disease
+  skos:broader tvbc:icd11-08 ;
+  skos:scopeNote "12 verified dynamical-model application(s) in TVB-O survey 2026" .
+tvbc:domain-Schizophrenia a tvbc:ClinicalDomain ;
+  skos:prefLabel "Schizophrenia"@en ;
+  tvbc:icd11Code "6A20" ; skos:notation "6A20" ;
+  skos:exactMatch MESH:D012559 ;   # Schizophrenia
+  skos:broader tvbc:icd11-06 ;
+  skos:scopeNote "3 verified dynamical-model application(s) in TVB-O survey 2026" .
+tvbc:domain-Parkinson a tvbc:ClinicalDomain ;
+  skos:prefLabel "Parkinson disease"@en ;
+  tvbc:icd11Code "8A00.0" ; skos:notation "8A00.0" ;
+  skos:exactMatch MESH:D010300 ;   # Parkinson Disease
+  skos:broader tvbc:icd11-08 ;
+  skos:scopeNote "4 verified dynamical-model application(s) in TVB-O survey 2026" .
+tvbc:domain-Stroke a tvbc:ClinicalDomain ;
+  skos:prefLabel "Stroke"@en ;
+  tvbc:icd11Code "8B20" ; skos:notation "8B20" ;
+  skos:exactMatch MESH:D020521 ;   # Stroke
+  skos:broader tvbc:icd11-08 ;
+  skos:scopeNote "2 verified dynamical-model application(s) in TVB-O survey 2026" .
+tvbc:domain-Tumour a tvbc:ClinicalDomain ;
+  skos:prefLabel "Brain tumor / glioma"@en ;
+  tvbc:icd11Code "2A00.0" ; skos:notation "2A00.0" ;
+  skos:exactMatch MESH:D005910 ;   # Glioma
+  skos:broader tvbc:icd11-02 ;
+  skos:scopeNote "2 verified dynamical-model application(s) in TVB-O survey 2026" .
+tvbc:domain-MS a tvbc:ClinicalDomain ;
+  skos:prefLabel "Multiple sclerosis"@en ;
+  tvbc:icd11Code "8A40" ; skos:notation "8A40" ;
+  skos:exactMatch MESH:D009103 ;   # Multiple Sclerosis
+  skos:broader tvbc:icd11-08 ;
+  skos:scopeNote "1 verified dynamical-model application(s) in TVB-O survey 2026" .
+tvbc:domain-TBI a tvbc:ClinicalDomain ;
+  skos:prefLabel "Traumatic brain injury"@en ;
+  tvbc:icd11Code "NA07" ; skos:notation "NA07" ;
+  skos:exactMatch MESH:D000070642 ;   # Brain Injuries, Traumatic
+  skos:broader tvbc:icd11-22 ;
+  skos:scopeNote "1 verified dynamical-model application(s) in TVB-O survey 2026" .
+tvbc:domain-DoC a tvbc:ClinicalDomain ;
+  skos:prefLabel "Disorders of consciousness"@en ;
+  tvbc:icd11Code "8E2Z" ; skos:notation "8E2Z" ;
+  skos:exactMatch MESH:D003244 ;   # Consciousness Disorders
+  skos:broader tvbc:icd11-08 ;
+  skos:scopeNote "1 verified dynamical-model application(s) in TVB-O survey 2026" .
+tvbc:domain-Depression a tvbc:ClinicalDomain ;
+  skos:prefLabel "Major depressive disorder"@en ;
+  tvbc:icd11Code "6A70" ; skos:notation "6A70" ;
+  skos:exactMatch MESH:D003865 ;   # Depressive Disorder, Major
+  skos:broader tvbc:icd11-06 ;
+  skos:scopeNote "2 verified dynamical-model application(s) in TVB-O survey 2026" .
+tvbc:domain-OCD a tvbc:ClinicalDomain ;
+  skos:prefLabel "Obsessive-compulsive disorder"@en ;
+  tvbc:icd11Code "6B20" ; skos:notation "6B20" ;
+  skos:exactMatch MESH:D009771 ;   # Obsessive-Compulsive Disorder
+  skos:broader tvbc:icd11-06 ;
+  skos:scopeNote "1 verified dynamical-model application(s) in TVB-O survey 2026" .
+
+### Clinical application studies -----------------------------------------
+tvbc:study-Adams2022 a tvbc:ClinicalApplicationStudy ;
+  dcterms:title "Computational Modeling of Electroencephalography and Functional Magnetic Resonance Imaging Paradigms Indicates a Consistent Loss of Pyramidal Cell Synaptic Gain in Schizophrenia" ;
+  dcterms:date "2022"^^xsd:gYear ;
+  bibo:doi "10.1016/j.biopsych.2021.07.024" ;
+  fabio:hasPubMedId "34598786" ;
+  tvbc:studyKind "patient-application" ;
+  tvbc:usesNodeDynamics tvbc:model-DynamicCausalModel ;
+  tvbc:appliesToClinicalDomain tvbc:domain-Schizophrenia .
+tvbc:study-Aerts2018 a tvbc:ClinicalApplicationStudy ;
+  dcterms:title "Modeling Brain Dynamics in Brain Tumor Patients Using the Virtual Brain" ;
+  dcterms:date "2018"^^xsd:gYear ;
+  bibo:doi "10.1523/eneuro.0083-18.2018" ;
+  fabio:hasPubMedId "29911173" ;
+  tvbc:studyKind "patient-application" ;
+  tvbc:usesNodeDynamics tvbc:model-ReducedWongWang ;
+  tvbc:appliesToClinicalDomain tvbc:domain-Tumour .
+tvbc:study-Aerts2020 a tvbc:ClinicalApplicationStudy ;
+  dcterms:title "Modeling brain dynamics after tumor resection using The Virtual Brain" ;
+  dcterms:date "2020"^^xsd:gYear ;
+  bibo:doi "10.1016/j.neuroimage.2020.116738" ;
+  fabio:hasPubMedId "32194282" ;
+  tvbc:studyKind "patient-application" ;
+  tvbc:usesNodeDynamics tvbc:model-ReducedWongWang ;
+  tvbc:appliesToClinicalDomain tvbc:domain-Tumour .
+tvbc:study-Amato2024 a tvbc:ClinicalApplicationStudy ;
+  dcterms:title "Personalized modeling of Alzheimer’s disease progression estimates neurodegeneration severity from EEG recordings" ;
+  dcterms:date "2024"^^xsd:gYear ;
+  bibo:doi "10.1002/dad2.12526" ;
+  fabio:hasPubMedId "38371358" ;
+  tvbc:studyKind "patient-application" ;
+  tvbc:usesNodeDynamics tvbc:model-JansenRit ;
+  tvbc:appliesToClinicalDomain tvbc:domain-Alzheimer .
+tvbc:study-Amato2025 a tvbc:ClinicalApplicationStudy ;
+  dcterms:title "Digital twins and non-invasive recordings enable early diagnosis of Alzheimer's disease." ;
+  dcterms:date "2025"^^xsd:gYear ;
+  bibo:doi "10.1186/s13195-025-01765-z" ;
+  fabio:hasPubMedId "40450374" ;
+  tvbc:studyKind "patient-application" ;
+  tvbc:usesNodeDynamics tvbc:model-JansenRit ;
+  tvbc:appliesToClinicalDomain tvbc:domain-Alzheimer .
+tvbc:study-An2019 a tvbc:ClinicalApplicationStudy ;
+  dcterms:title "Optimization of surgical intervention outside the epileptogenic zone in the Virtual Epileptic Patient (VEP)" ;
+  dcterms:date "2019"^^xsd:gYear ;
+  bibo:doi "10.1371/journal.pcbi.1007051" ;
+  fabio:hasPubMedId "31242177" ;
+  tvbc:studyKind "patient-application" ;
+  tvbc:usesNodeDynamics tvbc:model-Epileptor ;
+  tvbc:appliesToClinicalDomain tvbc:domain-Epilepsy .
+tvbc:study-An2022 a tvbc:ClinicalApplicationStudy ;
+  dcterms:title "High-resolution virtual brain modeling personalizes deep brain stimulation for treatment-resistant depression: Spatiotemporal response characteristics following stimulation of neural fiber pathways" ;
+  dcterms:date "2022"^^xsd:gYear ;
+  bibo:doi "10.1016/j.neuroimage.2021.118848" ;
+  fabio:hasPubMedId "34954330" ;
+  tvbc:studyKind "patient-application" ;
+  tvbc:usesNodeDynamics tvbc:model-JansenRit ;
+  tvbc:appliesToClinicalDomain tvbc:domain-Depression .
+tvbc:study-Angiolelli2025 a tvbc:ClinicalApplicationStudy ;
+  dcterms:title "The Virtual Parkinsonian patient" ;
+  dcterms:date "2025"^^xsd:gYear ;
+  bibo:doi "10.1038/s41540-025-00516-y" ;
+  fabio:hasPubMedId "40287449" ;
+  tvbc:studyKind "patient-application" ;
+  tvbc:usesNodeDynamics tvbc:model-DodyNextGen ;
+  tvbc:appliesToClinicalDomain tvbc:domain-Parkinson .
+tvbc:study-Arbabyazd2021 a tvbc:ClinicalApplicationStudy ;
+  dcterms:title "Virtual Connectomic Datasets in Alzheimer's Disease and Aging Using Whole-Brain Network Dynamics Modelling." ;
+  dcterms:date "2021"^^xsd:gYear ;
+  bibo:doi "10.1523/eneuro.0475-20.2021" ;
+  fabio:hasPubMedId "34045210" ;
+  tvbc:studyKind "patient-application" ;
+  tvbc:usesNodeDynamics tvbc:model-ReducedWongWang ;
+  tvbc:appliesToClinicalDomain tvbc:domain-Alzheimer .
+tvbc:study-Azilinon2024 a tvbc:ClinicalApplicationStudy ;
+  dcterms:title "Brain sodium MRI-derived priors support the estimation of epileptogenic zones using personalized model-based methods in epilepsy." ;
+  dcterms:date "2024"^^xsd:gYear ;
+  bibo:doi "10.1162/netn_a_00371" ;
+  fabio:hasPubMedId "39355432" ;
+  tvbc:studyKind "patient-application" ;
+  tvbc:usesNodeDynamics tvbc:model-Epileptor ;
+  tvbc:appliesToClinicalDomain tvbc:domain-Epilepsy .
+tvbc:study-CabreraAlvarez2024 a tvbc:ClinicalApplicationStudy ;
+  dcterms:title "A Multiscale Closed-Loop Neurotoxicity Model of Alzheimer’s Disease Progression Explains Functional Connectivity Alterations" ;
+  dcterms:date "2024"^^xsd:gYear ;
+  bibo:doi "10.1523/eneuro.0345-23.2023" ;
+  fabio:hasPubMedId "38565295" ;
+  tvbc:studyKind "patient-application" ;
+  tvbc:usesNodeDynamics tvbc:model-JansenRit ;
+  tvbc:appliesToClinicalDomain tvbc:domain-Alzheimer .
+tvbc:study-Cai2024 a tvbc:ClinicalApplicationStudy ;
+  dcterms:title "Predicting radiofrequency thermocoagulation surgical outcomes in refractory focal epilepsy patients using functional coupled neural mass model." ;
+  dcterms:date "2024"^^xsd:gYear ;
+  bibo:doi "10.3389/fneur.2024.1402004" ;
+  fabio:hasPubMedId "39246608" ;
+  tvbc:studyKind "patient-application" ;
+  tvbc:usesNodeDynamics tvbc:model-Wendling ;
+  tvbc:appliesToClinicalDomain tvbc:domain-Epilepsy .
+tvbc:study-Courtiol2020 a tvbc:ClinicalApplicationStudy ;
+  dcterms:title "Dynamical Mechanisms of Interictal Resting-State Functional Connectivity in Epilepsy" ;
+  dcterms:date "2020"^^xsd:gYear ;
+  bibo:doi "10.1523/jneurosci.0905-19.2020" ;
+  fabio:hasPubMedId "32513827" ;
+  tvbc:studyKind "patient-application" ;
+  tvbc:usesNodeDynamics tvbc:model-Epileptor ;
+  tvbc:appliesToClinicalDomain tvbc:domain-Epilepsy .
+tvbc:study-Dollomaja2023 a tvbc:ClinicalApplicationStudy ;
+  dcterms:title "Personalized whole brain modeling of status epilepticus" ;
+  dcterms:date "2023"^^xsd:gYear ;
+  bibo:doi "10.1016/j.yebeh.2023.109175" ;
+  fabio:hasPubMedId "37003103" ;
+  tvbc:studyKind "patient-application" ;
+  tvbc:usesNodeDynamics tvbc:model-Epileptor ;
+  tvbc:appliesToClinicalDomain tvbc:domain-Epilepsy .
+tvbc:study-Dollomaja2025 a tvbc:ClinicalApplicationStudy ;
+  dcterms:title "Virtual epilepsy patient cohort: Generation and evaluation" ;
+  dcterms:date "2025"^^xsd:gYear ;
+  bibo:doi "10.1371/journal.pcbi.1012911" ;
+  fabio:hasPubMedId "40215461" ;
+  tvbc:studyKind "patient-application" ;
+  tvbc:usesNodeDynamics tvbc:model-Epileptor ;
+  tvbc:appliesToClinicalDomain tvbc:domain-Epilepsy .
+tvbc:study-Falcon2015 a tvbc:ClinicalApplicationStudy ;
+  dcterms:title "The Virtual Brain: Modeling Biological Correlates of Recovery after Chronic Stroke" ;
+  dcterms:date "2015"^^xsd:gYear ;
+  bibo:doi "10.3389/fneur.2015.00228" ;
+  fabio:hasPubMedId "26579071" ;
+  tvbc:studyKind "patient-application" ;
+  tvbc:usesNodeDynamics tvbc:model-StefanescuJirsa3D ;
+  tvbc:appliesToClinicalDomain tvbc:domain-Stroke .
+tvbc:study-Falcon2016a a tvbc:ClinicalApplicationStudy ;
+  dcterms:title "Functional Mechanisms of Recovery after Chronic Stroke: Modeling with the Virtual Brain" ;
+  dcterms:date "2016"^^xsd:gYear ;
+  bibo:doi "10.1523/eneuro.0158-15.2016" ;
+  fabio:hasPubMedId "27088127" ;
+  tvbc:studyKind "patient-application" ;
+  tvbc:usesNodeDynamics tvbc:model-StefanescuJirsa3D ;
+  tvbc:appliesToClinicalDomain tvbc:domain-Stroke .
+tvbc:study-Good2022 a tvbc:ClinicalApplicationStudy ;
+  dcterms:title "Personalized Connectome-Based Modeling in Patients with Semi-Acute Phase TBI: Relationship to Acute Neuroimaging and 6 Month Follow-Up" ;
+  dcterms:date "2022"^^xsd:gYear ;
+  bibo:doi "10.1523/eneuro.0075-21.2022" ;
+  fabio:hasPubMedId "35105657" ;
+  tvbc:studyKind "patient-application" ;
+  tvbc:usesNodeDynamics tvbc:model-ReducedWongWang ;
+  tvbc:appliesToClinicalDomain tvbc:domain-TBI .
+tvbc:study-Hofsaehs2026 a tvbc:ClinicalApplicationStudy ;
+  dcterms:title "The Virtual Brain links transcranial magnetic stimulation evoked potentials and inhibitory neurotransmitter changes in major depressive disorder" ;
+  dcterms:date "2026"^^xsd:gYear ;
+  bibo:doi "10.1162/imag.a.1147" ;
+  fabio:hasPubMedId "41799679" ;
+  tvbc:studyKind "model-development" ;
+  tvbc:usesNodeDynamics tvbc:model-JansenRit ;
+  tvbc:appliesToClinicalDomain tvbc:domain-Depression .
+tvbc:study-Jirsa2017 a tvbc:ClinicalApplicationStudy ;
+  dcterms:title "The Virtual Epileptic Patient: Individualized whole-brain models of epilepsy spread" ;
+  dcterms:date "2017"^^xsd:gYear ;
+  bibo:doi "10.1016/j.neuroimage.2016.04.049" ;
+  fabio:hasPubMedId "27477535" ;
+  tvbc:studyKind "patient-application" ;
+  tvbc:usesNodeDynamics tvbc:model-Epileptor ;
+  tvbc:appliesToClinicalDomain tvbc:domain-Epilepsy .
+tvbc:study-Jung2022 a tvbc:ClinicalApplicationStudy ;
+  dcterms:title "Whole-brain dynamical modelling for classification of Parkinson’s disease" ;
+  dcterms:date "2022"^^xsd:gYear ;
+  bibo:doi "10.1093/braincomms/fcac331" ;
+  fabio:hasPubMedId "36601625" ;
+  tvbc:studyKind "patient-application" ;
+  tvbc:usesNodeDynamics tvbc:model-JansenRit ;
+  tvbc:appliesToClinicalDomain tvbc:domain-Parkinson .
+tvbc:study-Luppi2022a a tvbc:ClinicalApplicationStudy ;
+  dcterms:title "Whole-brain modelling identifies distinct but convergent paths to unconsciousness in anaesthesia and disorders of consciousness." ;
+  dcterms:date "2022"^^xsd:gYear ;
+  bibo:doi "10.1038/s42003-022-03330-y" ;
+  fabio:hasPubMedId "35444252" ;
+  tvbc:studyKind "patient-application" ;
+  tvbc:usesNodeDynamics tvbc:model-ReducedWongWang ;
+  tvbc:appliesToClinicalDomain tvbc:domain-DoC .
+tvbc:study-Maith2020 a tvbc:ClinicalApplicationStudy ;
+  dcterms:title "A computational model‐based analysis of basal ganglia pathway changes in Parkinson’s disease inferred from resting‐state fMRI" ;
+  dcterms:date "2020"^^xsd:gYear ;
+  bibo:doi "10.1111/ejn.14868" ;
+  fabio:hasPubMedId "32558966" ;
+  tvbc:studyKind "patient-application" ;
+  tvbc:usesNodeDynamics tvbc:model-BasalGanglia ;
+  tvbc:appliesToClinicalDomain tvbc:domain-Parkinson .
+tvbc:study-Makhalova2022 a tvbc:ClinicalApplicationStudy ;
+  dcterms:title "Virtual epileptic patient brain modeling: Relationships with seizure onset and surgical outcome." ;
+  dcterms:date "2022"^^xsd:gYear ;
+  bibo:doi "10.1111/epi.17310" ;
+  fabio:hasPubMedId "35604575" ;
+  tvbc:studyKind "patient-application" ;
+  tvbc:usesNodeDynamics tvbc:model-Epileptor ;
+  tvbc:appliesToClinicalDomain tvbc:domain-Epilepsy .
+tvbc:study-Mana2023 a tvbc:ClinicalApplicationStudy ;
+  dcterms:title "Using in silico perturbational approach to identify critical areas in schizophrenia" ;
+  dcterms:date "2023"^^xsd:gYear ;
+  bibo:doi "10.1093/cercor/bhad067" ;
+  fabio:hasPubMedId "36929009" ;
+  tvbc:studyKind "patient-application" ;
+  tvbc:usesNodeDynamics tvbc:model-Hopf ;
+  tvbc:appliesToClinicalDomain tvbc:domain-Schizophrenia .
+tvbc:study-MartiJuan2023 a tvbc:ClinicalApplicationStudy ;
+  dcterms:title "Using The Virtual Brain to study the relationship between structural and functional connectivity in patients with multiple sclerosis: a multicenter study" ;
+  dcterms:date "2023"^^xsd:gYear ;
+  bibo:doi "10.1093/cercor/bhad041" ;
+  fabio:hasPubMedId "36813475" ;
+  tvbc:studyKind "patient-application" ;
+  tvbc:usesNodeDynamics tvbc:model-ReducedWongWang ;
+  tvbc:appliesToClinicalDomain tvbc:domain-MS .
+tvbc:study-MartinezCanada2023 a tvbc:ClinicalApplicationStudy ;
+  dcterms:title "Combining aperiodic 1/f slopes and brain simulation: An EEG/MEG proxy marker of excitation/inhibition imbalance in Alzheimer's disease." ;
+  dcterms:date "2023"^^xsd:gYear ;
+  bibo:doi "10.1002/dad2.12477" ;
+  fabio:hasPubMedId "37662693" ;
+  tvbc:studyKind "patient-application" ;
+  tvbc:usesNodeDynamics tvbc:model-SpikingEI ;
+  tvbc:appliesToClinicalDomain tvbc:domain-Alzheimer .
+tvbc:study-Meier2022 a tvbc:ClinicalApplicationStudy ;
+  dcterms:title "Virtual deep brain stimulation: Multiscale co-simulation of a spiking basal ganglia model and a whole-brain mean-field model with The Virtual Brain" ;
+  dcterms:date "2022"^^xsd:gYear ;
+  bibo:doi "10.1016/j.expneurol.2022.114111" ;
+  fabio:hasPubMedId "35569510" ;
+  tvbc:studyKind "model-development" ;
+  tvbc:usesNodeDynamics tvbc:model-SpikingEI ;
+  tvbc:appliesToClinicalDomain tvbc:domain-Parkinson .
+tvbc:study-Monteverdi2022 a tvbc:ClinicalApplicationStudy ;
+  dcterms:title "Subject-specific features of excitation/inhibition profiles in neurodegenerative diseases" ;
+  dcterms:date "2022"^^xsd:gYear ;
+  bibo:doi "10.3389/fnagi.2022.868342" ;
+  fabio:hasPubMedId "35992607" ;
+  tvbc:studyKind "patient-application" ;
+  tvbc:usesNodeDynamics tvbc:model-ReducedWongWang ;
+  tvbc:appliesToClinicalDomain tvbc:domain-Alzheimer .
+tvbc:study-Monteverdi2023 a tvbc:ClinicalApplicationStudy ;
+  dcterms:title "Virtual brain simulations reveal network-specific parameters in neurodegenerative dementias" ;
+  dcterms:date "2023"^^xsd:gYear ;
+  bibo:doi "10.3389/fnagi.2023.1204134" ;
+  fabio:hasPubMedId "37577354" ;
+  tvbc:studyKind "patient-application" ;
+  tvbc:usesNodeDynamics tvbc:model-ReducedWongWang ;
+  tvbc:appliesToClinicalDomain tvbc:domain-Alzheimer .
+tvbc:study-Naze2025 a tvbc:ClinicalApplicationStudy ;
+  dcterms:title "Mechanisms and interventions promoting healthy frontostriatal dynamics in obsessive-compulsive disorder" ;
+  dcterms:date "2025"^^xsd:gYear ;
+  bibo:doi "10.1038/s41467-025-62190-2" ;
+  fabio:hasPubMedId "40790029" ;
+  tvbc:studyKind "patient-application" ;
+  tvbc:usesNodeDynamics tvbc:model-ReducedWongWang ;
+  tvbc:appliesToClinicalDomain tvbc:domain-OCD .
+tvbc:study-Patow2023 a tvbc:ClinicalApplicationStudy ;
+  dcterms:title "Whole-brain modeling of the differential influences of amyloid-beta and tau in Alzheimer’s disease" ;
+  dcterms:date "2023"^^xsd:gYear ;
+  bibo:doi "10.1186/s13195-023-01349-9" ;
+  fabio:hasPubMedId "38053164" ;
+  tvbc:studyKind "patient-application" ;
+  tvbc:usesNodeDynamics tvbc:model-ReducedWongWang ;
+  tvbc:appliesToClinicalDomain tvbc:domain-Alzheimer .
+tvbc:study-Penny2018 a tvbc:ClinicalApplicationStudy ;
+  dcterms:title "Dynamic Causal Modeling of Preclinical Autosomal-Dominant Alzheimer's Disease." ;
+  dcterms:date "2018"^^xsd:gYear ;
+  bibo:doi "10.3233/jad-170405" ;
+  fabio:hasPubMedId "29562504" ;
+  tvbc:studyKind "patient-application" ;
+  tvbc:usesNodeDynamics tvbc:model-DynamicCausalModel ;
+  tvbc:appliesToClinicalDomain tvbc:domain-Alzheimer .
+tvbc:study-Proix2017 a tvbc:ClinicalApplicationStudy ;
+  dcterms:title "Individual brain structure and modelling predict seizure propagation" ;
+  dcterms:date "2017"^^xsd:gYear ;
+  bibo:doi "10.1093/brain/awx004" ;
+  fabio:hasPubMedId "28364550" ;
+  tvbc:studyKind "patient-application" ;
+  tvbc:usesNodeDynamics tvbc:model-Epileptor ;
+  tvbc:appliesToClinicalDomain tvbc:domain-Epilepsy .
+tvbc:study-Proix2018 a tvbc:ClinicalApplicationStudy ;
+  dcterms:title "Predicting the spatiotemporal diversity of seizure propagation and termination in human focal epilepsy" ;
+  dcterms:date "2018"^^xsd:gYear ;
+  bibo:doi "10.1038/s41467-018-02973-y" ;
+  fabio:hasPubMedId "29540685" ;
+  tvbc:studyKind "patient-application" ;
+  tvbc:usesNodeDynamics tvbc:model-Epileptor ;
+  tvbc:appliesToClinicalDomain tvbc:domain-Epilepsy .
+tvbc:study-Stefanovski2019 a tvbc:ClinicalApplicationStudy ;
+  dcterms:title "Linking Molecular Pathways and Large-Scale Computational Modeling to Assess Candidate Disease Mechanisms and Pharmacodynamics in Alzheimer’s Disease" ;
+  dcterms:date "2019"^^xsd:gYear ;
+  bibo:doi "10.3389/fncom.2019.00054" ;
+  fabio:hasPubMedId "31456676" ;
+  tvbc:studyKind "patient-application" ;
+  tvbc:usesNodeDynamics tvbc:model-JansenRit ;
+  tvbc:appliesToClinicalDomain tvbc:domain-Alzheimer .
+tvbc:study-Triebkorn2022 a tvbc:ClinicalApplicationStudy ;
+  dcterms:title "Brain simulation augments machine‐learning–based classification of dementia" ;
+  dcterms:date "2022"^^xsd:gYear ;
+  bibo:doi "10.1002/trc2.12303" ;
+  fabio:hasPubMedId "35601598" ;
+  tvbc:studyKind "patient-application" ;
+  tvbc:usesNodeDynamics tvbc:model-JansenRit ;
+  tvbc:appliesToClinicalDomain tvbc:domain-Alzheimer .
+tvbc:study-Vattikonda2021 a tvbc:ClinicalApplicationStudy ;
+  dcterms:title "Identifying spatio-temporal seizure propagation patterns in epilepsy using Bayesian inference." ;
+  dcterms:date "2021"^^xsd:gYear ;
+  bibo:doi "10.1038/s42003-021-02751-5" ;
+  fabio:hasPubMedId "34725441" ;
+  tvbc:studyKind "patient-application" ;
+  tvbc:usesNodeDynamics tvbc:model-Epileptor ;
+  tvbc:appliesToClinicalDomain tvbc:domain-Epilepsy .
+tvbc:study-Wang2023 a tvbc:ClinicalApplicationStudy ;
+  dcterms:title "Delineating epileptogenic networks using brain imaging data and personalized modeling in drug-resistant epilepsy" ;
+  dcterms:date "2023"^^xsd:gYear ;
+  bibo:doi "10.1126/scitranslmed.abp8982" ;
+  fabio:hasPubMedId "36696482" ;
+  tvbc:studyKind "patient-application" ;
+  tvbc:usesNodeDynamics tvbc:model-Epileptor ;
+  tvbc:appliesToClinicalDomain tvbc:domain-Epilepsy .
+tvbc:study-Yang2015 a tvbc:ClinicalApplicationStudy ;
+  dcterms:title "Functional hierarchy underlies preferential connectivity disturbances in schizophrenia" ;
+  dcterms:date "2015"^^xsd:gYear ;
+  bibo:doi "10.1073/pnas.1508436113" ;
+  fabio:hasPubMedId "26699491" ;
+  tvbc:studyKind "patient-application" ;
+  tvbc:usesNodeDynamics tvbc:model-ReducedWongWang ;
+  tvbc:appliesToClinicalDomain tvbc:domain-Schizophrenia .
+tvbc:study-Zimmermann2018a a tvbc:ClinicalApplicationStudy ;
+  dcterms:title "Differentiation of Alzheimer’s disease based on local and global parameters in personalized Virtual Brain models" ;
+  dcterms:date "2018"^^xsd:gYear ;
+  bibo:doi "10.1016/j.nicl.2018.04.017" ;
+  fabio:hasPubMedId "30035018" ;
+  tvbc:studyKind "patient-application" ;
+  tvbc:usesNodeDynamics tvbc:model-ReducedWongWang ;
+  tvbc:appliesToClinicalDomain tvbc:domain-Alzheimer .
+

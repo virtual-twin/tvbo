@@ -146,7 +146,7 @@ class Stimulus(tvbo_datamodel.Stimulus):
 
     @classmethod
     def from_file(cls, filepath: os.PathLike):
-        from linkml_runtime.loaders import yaml_loader
+        from tvbo.utils import yaml_loader
 
         return yaml_loader.load(filepath, target_class=cls)
 
@@ -225,12 +225,13 @@ class Stimulus(tvbo_datamodel.Stimulus):
             eq, param = self.get_expression()
             return lambdify([Symbol("t")] + list(param.keys()), eq, modules="jax")
 
-    def get_expression(self):
+    def get_expression(self) -> tuple:
         """
         Generate a sympy expression for the equation using metadata.
 
         Returns:
-            sympy.Expr: The symbolic expression of the equation.
+            tuple: ``(expression, parameters)`` — the symbolic expression of the
+            equation (or ``None``) and the resolved parameter substitution dict.
         """
         # Define symbols dynamically
         t = Symbol("t")

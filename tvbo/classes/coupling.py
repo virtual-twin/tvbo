@@ -275,7 +275,7 @@ class Coupling(tvbo_datamodel.Coupling):
     @classmethod
     def from_file(cls, filepath: str) -> "Coupling":
         """Load a Coupling from a YAML file."""
-        from linkml_runtime.loaders import yaml_loader
+        from tvbo.utils import yaml_loader
 
         return yaml_loader.load(str(filepath), target_class=cls)
 

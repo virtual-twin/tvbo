@@ -23,6 +23,50 @@ exec_globals = {}
 TEMPLATES = templates.root
 
 
+def is_derived(obs: Any, experiment: Any) -> bool:
+    """Return True if ``obs`` derives from other observations in ``experiment``.
+
+    An Observation is derived when any item in its multivalued ``source``
+    slot names ANOTHER observation in the same experiment. Source entries
+    may be bare strings, objects with a ``name`` attribute, or inlined
+    Observation/StateVariable instances.
+
+    A SELF-reference (an observation whose ``source`` names itself — e.g. an
+    observation ``r_A`` with ``source: [r_A]`` that simply observes the model
+    variable ``r_A``) is NOT derived: an observation cannot derive from itself.
+    Without this exclusion such observations are mis-routed to the derived path,
+    where they have no pipeline and are never computed, so the generated
+    ``observations.r_A = _all_obs.r_A`` extraction raises AttributeError.
+    """
+    obs_names = set((getattr(experiment, "observations", {}) or {}).keys())
+    if not obs_names:
+        return False
+    self_name = getattr(obs, "name", None)
+    for s in (getattr(obs, "source", None) or []):
+        name = getattr(s, "name", None) or s
+        if isinstance(name, str) and name in obs_names and name != self_name:
+            return True
+    return False
+
+
+def source_observations(obs: Any, experiment: Any) -> list:
+    """Return the source names of ``obs`` that resolve to other observations.
+
+    A filtered view of ``obs.source`` keeping only entries whose name
+    matches a key in ``experiment.observations``.
+    """
+    obs_names = set((getattr(experiment, "observations", {}) or {}).keys())
+    if not obs_names:
+        return []
+    self_name = getattr(obs, "name", None)
+    out = []
+    for s in (getattr(obs, "source", None) or []):
+        name = getattr(s, "name", None) or s
+        if isinstance(name, str) and name in obs_names and name != self_name:
+            out.append(name)
+    return out
+
+
 def format_code(code: str, format: str = "python", use_black: bool = True, **kwargs: Any) -> str:
     """Format code using black for Python variants.
 

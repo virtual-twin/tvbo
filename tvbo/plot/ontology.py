@@ -264,16 +264,16 @@ def add_arrow(line, ax, position=None, direction="right", color=None, label=""):
 
 
 def plot_curve(
-    ax,
-    start,
-    end,
-    rad,
-    color="black",
-    shrinkA=0,
-    shrinkB=0.03,
-    arrow_size=0.1,
-    arrow_style="->",
-    annotate=None,
+    ax: Any,
+    start: Tuple[float, float],
+    end: Tuple[float, float],
+    rad: float,
+    color: str = "black",
+    shrinkA: float = 0,
+    shrinkB: float = 0.03,
+    arrow_size: float = 0.1,
+    arrow_style: str = "->",
+    annotate: Optional[str] = None,
     **kwargs,
 ):
     """Draw a quadratic Bézier arrow from *start* to *end* on *ax*.
@@ -287,7 +287,8 @@ def plot_curve(
         end: `(x, y)` end coordinate.
         rad: Curvature offset; `0` is a straight line, positive bends right.
         color: Stroke color.
-        shrinkA, shrinkB: Endpoint shrinkage (fraction of segment length).
+        shrinkA: Start-point shrinkage (fraction of segment length).
+        shrinkB: End-point shrinkage (fraction of segment length).
         arrow_size: Head width.
         arrow_style: Matplotlib arrow style (e.g. `"->"`, `"-|>"`).
         annotate: Optional midpoint label string.
@@ -1621,22 +1622,22 @@ def draw_legend(g, ax, params):
 
 
 def plot_model(
-    model,
-    k_factor=1,
-    edge_cmap="viridis",
-    node_cmap="viridis",
-    edge_width=1,
-    font_size=20,
-    node_colors="math_type",
-    add_equations_to_labels=False,
-    add_parameter_values=False,
-    circle_matches=False,
-    ax=None,
-    legend=True,
-    figsize=(10, 6),
-    legend_kwargs={},
-    edge_kwargs={"shrinkA": 15, "shrinkB": 15},
-    node_kwargs={},
+    model: Any,
+    k_factor: float = 1,
+    edge_cmap: str = "viridis",
+    node_cmap: str = "viridis",
+    edge_width: float = 1,
+    font_size: float = 20,
+    node_colors: Any = "math_type",
+    add_equations_to_labels: bool = False,
+    add_parameter_values: bool = False,
+    circle_matches: bool = False,
+    ax: Any = None,
+    legend: bool = True,
+    figsize: Tuple[float, float] = (10, 6),
+    legend_kwargs: Dict = {},
+    edge_kwargs: Dict = {"shrinkA": 15, "shrinkB": 15},
+    node_kwargs: Dict = {},
     **kwargs,
 ):
     """Render a `Dynamics` model as a directed graph: parameters → equations → state vars.

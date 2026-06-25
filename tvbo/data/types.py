@@ -218,7 +218,14 @@ class SimulationResult:
             data = _to_dataarray(data, None, state_names, nodes)
 
         self.data = data
-        self.observations = observations if observations is not None else {}
+        # Normalize observations to Bunch so both JAX and tvboptim results have
+        # dot-access: result.observations.BOLD_TVB  (not just dict indexing).
+        if isinstance(observations, Bunch):
+            self.observations = observations
+        elif observations:
+            self.observations = Bunch(observations)
+        else:
+            self.observations = Bunch()
         self.transient = transient
         self._extras.update(kwargs)
         # Store state_names separately for cases with no data yet

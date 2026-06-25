@@ -1,0 +1,22 @@
+name: WattsStrogatz
+description: >-
+  Watts-Strogatz small-world graph. Starts as a regular ring lattice where
+  each node connects to k nearest neighbours, then rewires each edge with
+  probability p to a uniformly random target.
+iri: tvbo:WattsStrogatz
+
+parameters:
+  n: { range: integer, description: "Number of nodes" }
+  k: { range: integer, description: "Initial ring degree (even)" }
+  p: { range: float,   description: "Rewiring probability in [0, 1]" }
+  seed: { range: integer, required: false }
+
+bindings:
+  julia:
+    library: Graphs
+    callable: watts_strogatz
+    args: [n, k, p]
+  networkx:
+    library: networkx
+    callable: watts_strogatz_graph
+    args: [n, k, p]

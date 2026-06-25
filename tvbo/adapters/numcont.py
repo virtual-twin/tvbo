@@ -52,12 +52,20 @@ def _build_unames(model) -> dict[int, str]:
 
 
 def _schema_initial_values(model) -> np.ndarray:
-    """Initial state from model state-variable defaults (`.value`) or zeros."""
+    """Initial state from model state-variable defaults.
+
+    Reads ``StateVariable.initial_value`` (the canonical schema field, per
+    ``schema/tvbo_datamodel.yaml:1346-1348``) with ``StateVariable.value`` as
+    a legacy fallback for older models. Defaults to 0.0 when neither is set.
+    """
     n = len(model.state_variables)
     x0 = np.zeros(n)
     for i, sv in enumerate(model.state_variables.values()):
-        if getattr(sv, "value", None) is not None:
-            x0[i] = float(sv.value)
+        v = getattr(sv, "initial_value", None)
+        if v is None:
+            v = getattr(sv, "value", None)
+        if v is not None:
+            x0[i] = float(v)
     return x0
 
 
@@ -291,6 +299,15 @@ class NumContAdapter:
                     po_name = f"{cont_name}_HB{k}"
                     auto.sv(R_po, po_name)
                     po_results.append((po_name, R_po))
+
+            # 5. Codim-2 fold (and Hopf, BP) continuation from BranchSwitch specs
+            codim2_results = self._run_codim2_branches(
+                auto=auto,
+                R_eq=R_eq,
+                cont=cont,
+                fp_name=fp_name,
+                kwargs_eq=kwargs_eq,
+            )
         finally:
             os.chdir(cwd0)
 
@@ -301,8 +318,136 @@ class NumContAdapter:
             continuation=cont,
             ICS=fp_name,
             periodic_orbits_raw=po_results,
+            codim2_raw=codim2_results,
             workdir=workdir,
         )
+
+    # ── Codim-2 continuation ──────────────────────────────────────────────
+
+    def _run_codim2_branches(self, *, auto, R_eq, cont, fp_name, kwargs_eq):
+        """Run codim-2 fold/Hopf/BP continuations declared via ``cont.branches``.
+
+        Each :class:`~tvbo.classes.continuation.BranchSwitch` with
+        ``source_point`` of the form ``'fold:N'`` / ``'fold:all'`` /
+        ``'fold:-1'`` (or ``hopf:`` / ``bp:`` analogues) triggers a separate
+        AUTO restart from that special point with ``ISW=2`` (fold/Hopf
+        continuation) and two free parameters drawn from the sub-
+        continuation's ``free_parameters`` slot.
+
+        Returns a list of ``(name, source_type, fp1_name, fp2_name, R_c2)``
+        tuples consumed by :meth:`BifurcationResult.from_auto`.
+        """
+        branches = getattr(cont, "branches", None) or {}
+        if not branches:
+            return []
+        if not isinstance(branches, dict):
+            # Coerce list-of-BranchSwitch → name-keyed dict
+            branches = {
+                getattr(bs, "name", f"branch_{i}"): bs
+                for i, bs in enumerate(branches)
+            }
+
+        out = []
+        for bname, bswitch in branches.items():
+            src = getattr(bswitch, "source_point", None) or ""
+            src_lower = src.lower()
+
+            # Identify which special-point label AUTO uses + ISW value
+            if src_lower.startswith("fold"):
+                label_prefix = "LP"
+                source_type = "fold"
+            elif src_lower.startswith("hopf"):
+                label_prefix = "HB"
+                source_type = "hopf"
+            elif src_lower.startswith("bp"):
+                label_prefix = "BP"
+                source_type = "bp"
+            else:
+                # PO branch from Hopf is handled separately above; ignore here
+                continue
+
+            sub_cont = getattr(bswitch, "continuation", None)
+            if sub_cont is None:
+                continue
+            fps_raw = getattr(sub_cont, "free_parameters", None)
+            fps = (list(fps_raw.values()) if isinstance(fps_raw, dict)
+                   else (list(fps_raw) if fps_raw else []))
+            if len(fps) < 2:
+                continue
+            fp1_name = str(fps[0].name)
+            fp2_name = str(fps[1].name)
+
+            def _dom(fp, default=10.0):
+                dom = getattr(fp, "domain", None)
+                lo = (float(dom.lo) if dom and dom.lo is not None else -default)
+                hi = (float(dom.hi) if dom and dom.hi is not None else  default)
+                return lo, hi
+
+            fp2_lo, fp2_hi = _dom(fps[1])
+
+            # Parse 'fold:1', 'fold:all', 'fold:-1', 'fold' (default: all)
+            spec = src.split(":", 1)[1].strip() if ":" in src else "all"
+            # AUTO addresses special points by ORDINAL (1-based, across all
+            # branches): R_eq("LP1") = first LP found, "LP2" = second, etc.
+            # Count total LPs to size the ordinal range.
+            n_total = 0
+            for br in R_eq:
+                lbls = br.labels.by_label.get(label_prefix, {}) or {}
+                n_total += len(lbls)
+
+            if n_total == 0:
+                continue
+
+            if spec in ("all", "*", ""):
+                ordinals = list(range(1, n_total + 1))
+            else:
+                try:
+                    n = int(spec)
+                    if n == -1:
+                        ordinals = [n_total]
+                    elif 1 <= n <= n_total:
+                        ordinals = [n]
+                    else:
+                        ordinals = []
+                except ValueError:
+                    ordinals = []
+
+            for ordinal in ordinals:
+                lab = ordinal  # AUTO ordinal label
+                try:
+                    kwargs_c2 = dict(
+                        data=R_eq(f"{label_prefix}{lab}"),
+                        EPSL=kwargs_eq["EPSL"],
+                        EPSU=kwargs_eq["EPSU"],
+                        EPSS=kwargs_eq["EPSS"],
+                        IPS=1,
+                        ISP=2,
+                        ISW=2,
+                        ILP=0,
+                        ICP=[fp1_name, fp2_name],
+                        RL0=fp2_lo,
+                        RL1=fp2_hi,
+                        NMX=int(_cont_par(sub_cont, "NMX", 400)),
+                        NPR=1,
+                        DS=float(_cont_par(sub_cont, "DS", 0.01)),
+                        IADS=int(_cont_par(sub_cont, "IADS", 0)),
+                        MXBF=int(_cont_par(sub_cont, "MXBF", 50)),
+                        IID=0,
+                    )
+                    R_c2 = auto.run(**kwargs_c2)
+                    if bool(getattr(sub_cont, "bothside", False)):
+                        R_c2_neg = auto.run(**dict(kwargs_c2, DS=-kwargs_c2["DS"]))
+                        R_c2 = auto.merge(R_c2 + R_c2_neg)
+                    c2_name = f"{bname}_{label_prefix}{lab}"
+                    auto.sv(R_c2, c2_name)
+                    out.append((c2_name, source_type, fp1_name, fp2_name, R_c2))
+                except Exception as e:
+                    import warnings
+                    warnings.warn(
+                        f"Codim-2 continuation '{bname}' from {label_prefix}{lab} "
+                        f"failed: {type(e).__name__}: {e}"
+                    )
+        return out
 
     # ── Cleanup ──────────────────────────────────────────────────────────
 

@@ -1,0 +1,54 @@
+name: vbjax
+description: JAX-based virtual brain library. Provides stochastic Heun integrators
+  for ODE/SDE/DDE/SDDE, canonical neural-mass models (Jansen-Rit, Montbrio-Pazo-Roxin,
+  BVEP, bilinear DCM, Dopa), BOLD/EEG monitors, delay-coupling helpers, a spherical-harmonic
+  neural-field operator, and JAX-native parameter sweeps with gradient-based fitting
+  and MCMC.
+homepage: https://github.com/ins-amu/vbjax
+repository: https://github.com/ins-amu/vbjax
+doi: 10.5281/zenodo.14204250
+license: Apache-2.0
+is_accessible_for_free: true
+ecosystem:
+- pypi
+application_category: simulation
+date_created: '2022-01-01'
+development_status: active
+scale:
+- neural_mass
+- network_system
+- whole_brain
+model_paradigm:
+- neural_mass
+- dynamic_mean_field
+- neural_field
+tool_role:
+- simulator
+- optimization_framework
+programming_language:
+- Python
+runtime_platform:
+- JAX
+interoperates_with:
+- TVB
+- NumPyro
+- sbi
+author:
+- Marmaduke Woodman
+- Paula Sanz-Leon
+- Viktor Jirsa
+maintainer:
+- Institut de Neurosciences des Systèmes (INS), Aix-Marseille Université
+funder:
+- EU Horizon Europe 101147319 (EBRAINS 2.0)
+- EU H2020 945539 (HBP SGA3)
+keywords:
+- JAX
+- automatic differentiation
+- whole-brain simulation
+- neural mass
+- stochastic differential equations
+- delay differential equations
+- neural field
+- GPU
+issue_tracker: https://github.com/ins-amu/vbjax/issues
