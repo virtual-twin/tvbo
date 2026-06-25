@@ -68,7 +68,7 @@ website:
 
     page-footer:
         center: |
-            © 2025 Charité - Universitätsmedizin Berlin
+            © Charité - Universitätsmedizin Berlin
         right:
             - icon: twitter
               href: https://twitter.com/quarto_pub

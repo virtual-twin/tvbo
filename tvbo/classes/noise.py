@@ -137,7 +137,7 @@ class Integrator(tvbo_datamodel.Integrator):
     @classmethod
     def from_file(cls, filepath: str) -> "Integrator":
         """Load an Integrator from a YAML file."""
-        from linkml_runtime.loaders import yaml_loader
+        from tvbo.utils import yaml_loader
 
         return yaml_loader.load(str(filepath), target_class=cls)
 

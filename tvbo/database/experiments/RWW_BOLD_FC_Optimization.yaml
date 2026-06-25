@@ -221,12 +221,11 @@ observations:
   empirical_fc:
     label: "Empirical Functional Connectivity"
     description: "Target FC matrix from network observations (loaded from BIDS)"
-    source: network.observations.BoldCorrelation
-
+    source: [network.observations.BoldCorrelation]
   bold:
     label: "Simulated BOLD Signal"
     description: "BOLD signal from hemodynamic response function (matches tvboptim Bold)"
-    source: S
+    source: [S]
     period: 1000.0
     pipeline:
       - function: hrf_kernel
@@ -279,14 +278,11 @@ observations:
           - name: data
             value: volterra_transform
 
-# =============================================================================
-# DERIVED OBSERVATIONS: Computed from other observations
-# =============================================================================
-derived_observations:
+  # === Derived observations (computed from other observations) ===
   fc:
     label: "Simulated Functional Connectivity"
     description: "Pearson correlation matrix from BOLD time series"
-    source_observations:
+    source:
       - bold
     pipeline:
       - callable:

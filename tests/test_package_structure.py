@@ -185,8 +185,9 @@ class TestDatamodel:
         from tvbo.datamodel import tvbo_datamodel as dm
 
         public = [n for n in dir(dm) if not n.startswith("_")]
-        # Currently ~192; flag if it grows much beyond that
-        assert len(public) < 250, f"tvbo_datamodel has {len(public)} public names — check for namespace pollution"
+        # Currently ~253 after the Algorithm multi-stage / composition-mode
+        # additions; flag if it grows much beyond that (unbounded pollution).
+        assert len(public) < 300, f"tvbo_datamodel has {len(public)} public names — check for namespace pollution"
 
     def test_pydantic_module_importable(self):
         from tvbo.datamodel import tvbopydantic

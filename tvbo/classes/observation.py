@@ -1,6 +1,7 @@
 import importlib
 import inspect
 from types import FunctionType
+from typing import Any
 
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -201,7 +202,7 @@ class Function(tvbo_datamodel.Function):
     @classmethod
     def from_file(cls, filepath: str):
         """Create Function from a file."""
-        from linkml_runtime.loaders import yaml_loader
+        from tvbo.utils import yaml_loader
 
         return yaml_loader.load(filepath, target_class=cls)
 
@@ -687,7 +688,7 @@ class ObservationModel:
         )
         return TimeSeries(time, data)
 
-    def get_function_output(self, function_name):
+    def get_function_output(self, function_name) -> Any:
         """
         Get the output of a specific function after execution.
 
@@ -739,7 +740,7 @@ class Observation(tvbo_datamodel.Observation):
     @classmethod
     def from_file(cls, path: str) -> "Observation":
         """Load an Observation from a YAML file."""
-        from linkml_runtime.loaders import yaml_loader
+        from tvbo.utils import yaml_loader
 
         return yaml_loader.load(str(path), target_class=cls)
 

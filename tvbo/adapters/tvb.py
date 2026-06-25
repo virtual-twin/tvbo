@@ -808,7 +808,9 @@ def from_tvb_surface(connectivity, surface, region_mapping):
         number_of_vertices=n_vertices,
         number_of_elements=n_elements,
     )
-    object.__setattr__(surface_net, "_mesh", mesh)
+    # ``mesh`` is now a first-class schema slot on Network. Set it
+    # directly; runtime array caches stay as private attributes.
+    surface_net.mesh = mesh
     object.__setattr__(surface_net, "_mesh_vertices", vertices)
     object.__setattr__(surface_net, "_mesh_elements", triangles)
     object.__setattr__(surface_net, "_mesh_normals", normals)

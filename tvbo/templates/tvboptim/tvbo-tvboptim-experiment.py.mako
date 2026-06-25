@@ -192,11 +192,12 @@ n_nodes = N_nodes = getattr(network, 'number_of_nodes', None) or getattr(network
 _cs = getattr(network, 'conduction_speed', None)
 conduction_speed = float(_cs.value if hasattr(_cs, 'value') else _cs) if _cs is not None else 1.0
 
-# Transforms (optional)
-_transforms = getattr(network, 'transforms', None) or []
-_weight_transforms = [t for t in _transforms if t.name == 'weight']
-has_weight_transforms = len(_weight_transforms) > 0
-weight_transform_jax = [jaxcode(t.equation.rhs) for t in _weight_transforms] if has_weight_transforms else []
+# Network.transforms is applied once at resolution time by
+# Network._apply_transform, so by the time `weights` reaches the
+# generated `run_experiment` it is already the transformed matrix.
+# No runtime inlining is needed.
+has_weight_transforms = False
+weight_transform_jax = []
 
 # Simulation parameters
 assert integration.duration, "integration.duration required in YAML"
@@ -438,11 +439,13 @@ if has_optimization:
     assert max_steps is not None, "optimization.max_iterations not found (schema default: 100)"
 
 # === Observations metadata ===
-# Schema: experiment.observations is multivalued dict
-observations = dict(experiment.observations) if experiment.observations else {}
-
-# Derived observations from schema (explicit, separate slot) - define early for use in get_pipeline_output_key
-derived_observations_dict = dict(experiment.derived_observations) if experiment.derived_observations else {}
+# Split experiment.observations into raw vs derived views based on
+# whether each Observation's `source` references another observation
+# in the same experiment.
+from tvbo.codegen.templater import is_derived as _is_derived
+_all_observations = dict(experiment.observations) if experiment.observations else {}
+observations = {n: o for n, o in _all_observations.items() if not _is_derived(o, experiment)}
+derived_observations_dict = {n: o for n, o in _all_observations.items() if _is_derived(o, experiment)}
 derived_observation_names = set(derived_observations_dict.keys())
 
 def get_obs(name):
@@ -501,6 +504,9 @@ for expl in exploration_list:
         'n_trials': int(expl.n_trials) if expl.n_trials is not None else 1,
         # average: 'trials' to average over n_trials, None for individual results
         'average': str(expl.average) if expl.average else None,
+        # parallel_mode: vmap | lax_map | pmap | auto. Defaults to auto (=lax_map at codegen).
+        'parallel_mode': str(expl.parallel_mode) if getattr(expl, 'parallel_mode', None) else 'auto',
+        'parallel_batch_size': int(expl.parallel_batch_size) if getattr(expl, 'parallel_batch_size', None) else None,
         'axes': [],
     }
     # Schema: space is a list of ExplorationAxis (optional for trial-only explorations)
@@ -586,16 +592,32 @@ for expl in exploration_list:
                 assert domain.lo is not None, f"domain.lo required for {axis.parameter}"
                 assert domain.hi is not None, f"domain.hi required for {axis.parameter}"
                 n = _resolve_n(domain)
-                exp_info['axes'].append({
-                    'name': pname,
-                    'lo': float(domain.lo),
-                    'hi': float(domain.hi),
-                    'n': n,
-                    'is_coupling': is_coupling_param,
-                    'coupling_key': source_key if is_coupling_param else None,
-                    'dynamics_key': source_key if not is_coupling_param and source_key else None,
-                    'element_idx': None,
-                })
+                if getattr(domain, 'log_scale', False):
+                    # Honor log_scale: emit explicit log-spaced values (DataAxis).
+                    import numpy as _np
+                    _lo, _hi = float(domain.lo), float(domain.hi)
+                    assert _lo > 0, f"log_scale requires domain.lo > 0 for {axis.parameter}"
+                    _vals = [float(v) for v in _np.logspace(_np.log10(_lo), _np.log10(_hi), n)]
+                    exp_info['axes'].append({
+                        'name': pname,
+                        'values': _vals,
+                        'n': n,
+                        'is_coupling': is_coupling_param,
+                        'coupling_key': source_key if is_coupling_param else None,
+                        'dynamics_key': source_key if not is_coupling_param and source_key else None,
+                        'element_idx': None,
+                    })
+                else:
+                    exp_info['axes'].append({
+                        'name': pname,
+                        'lo': float(domain.lo),
+                        'hi': float(domain.hi),
+                        'n': n,
+                        'is_coupling': is_coupling_param,
+                        'coupling_key': source_key if is_coupling_param else None,
+                        'dynamics_key': source_key if not is_coupling_param and source_key else None,
+                        'element_idx': None,
+                    })
     observable = expl.observable
     if observable:
         # FunctionCall: function attribute references the function
@@ -626,18 +648,48 @@ for expl in exploration_list:
             exp_info['observable_type'] = 'observation'
             exp_info['observable'] = func_name
             exp_info['output_key'] = get_pipeline_output_key(func_name) if func_name else None
+
+    # Algorithms explicitly wired to this exploration (Exploration.algorithms).
+    # Each runs AT EACH sweep point (sequentially) before the observable is
+    # computed — e.g. FIC re-tuning J_i at every E/I ratio. Fully declarative:
+    # name + n_iterations + hyperparameters are read from experiment.algorithms.
+    exp_info['algorithms'] = []
+    _exp_algos = dict(experiment.algorithms.items()) if experiment.algorithms else {}
+    for _alg_name in (list(expl.algorithms) if getattr(expl, 'algorithms', None) else []):
+        _alg = _exp_algos.get(_alg_name) or _exp_algos.get(safe_name(_alg_name))
+        assert _alg is not None, f"exploration '{exp_info['name']}' wires unknown algorithm '{_alg_name}'"
+        _hp = {}
+        for _h in (getattr(_alg, 'hyperparameters', None) or []):
+            _hp[str(_h.name)] = float(_h.value) if getattr(_h, 'value', None) is not None else 0.0
+        _nit = getattr(_alg, 'n_iterations', None)
+        assert _nit is not None, f"algorithm '{_alg_name}' missing n_iterations"
+        exp_info['algorithms'].append({
+            'name': safe_name(_alg_name),
+            'n_iterations': int(_nit),
+            'hyperparams': _hp,
+        })
     explorations.append(exp_info)
 
 has_observations = len(observations) > 0
 
 # Parse observations - these only have source (state variable), no derived observations
+def _first_source_name(obs):
+    src = getattr(obs, 'source', None)
+    if not src:
+        return None
+    if isinstance(src, (list, tuple)):
+        src = src[0] if src else None
+    if src is None:
+        return None
+    return src.name if hasattr(src, 'name') and src.name else str(src)
+
 obs_list = []
 for obs_name, obs in observations.items():
     obs_info = {
         'name': obs_name,
         'label': obs.label or '',
         'description': obs.description or '',
-        'source': obs.source.name if obs.source and hasattr(obs.source, 'name') else str(obs.source) if obs.source else None,
+        'source': _first_source_name(obs),
         'equation': obs.equation.rhs if obs.equation else None,
     }
     obs_list.append(obs_info)
@@ -678,9 +730,9 @@ from tvboptim.experimental.network_dynamics.coupling.base import InstantaneousCo
 from tvboptim.experimental.network_dynamics.external_input.base import AbstractExternalInput
 % endif
 % if has_delay:
-from tvboptim.experimental.network_dynamics.graph import DenseDelayGraph
+from tvboptim.experimental.network_dynamics.graph import DenseDelayGraph, SparseDelayGraph
 % else:
-from tvboptim.experimental.network_dynamics.graph import DenseGraph
+from tvboptim.experimental.network_dynamics.graph import DenseGraph, SparseGraph
 % endif
 from tvboptim.experimental.network_dynamics.solvers import ${solver_class}, BoundedSolver
 % if has_noise:
@@ -695,7 +747,7 @@ from tvboptim.optim.callbacks import MultiCallback, DefaultPrintCallback, Saving
 % endif
 % if has_explorations:
 from tvboptim.types import Space, GridAxis, DataAxis
-from tvboptim.execution import ParallelExecution
+from tvboptim.execution import ParallelExecution, SequentialExecution
 % endif
 % for mod in derived_obs_modules:
 import ${mod}
@@ -926,6 +978,37 @@ def _sample_initial_conditions(state, key=None):
     return state
 % endif
 
+% if network_observation_names:
+# ── Network observations (empirical targets carried by the Network) ──────────
+# Declared in YAML via `source: [network.observations.<measure>]`. The name->
+# measure mapping is resolved in Python (SimulationExperiment.
+# network_observation_measures) and passed in as `network_obs_measures`;
+# values are materialized at run_experiment() time from the network (or a
+# `network_observations` override).
+_NETWORK_OBS_MEASURES = {${', '.join("'%s': '%s'" % (k, v) for k, v in network_obs_measures.items())}}
+% for _on in network_observation_names:
+${_on} = None  # network observation <- ${network_obs_measures[_on]}
+% endfor
+
+def _bind_network_observations(network_observations=None):
+    """Materialize module-level network-observation constants from the given
+    dict (keyed by observation name). Mirrors how `weights`/`distances` flow
+    into the experiment; raises a clear error if a declared one is missing."""
+    network_observations = network_observations or {}
+% for _on in network_observation_names:
+    global ${_on}
+    if '${_on}' in network_observations and network_observations['${_on}'] is not None:
+        ${_on} = jnp.asarray(network_observations['${_on}'])
+    if ${_on} is None:
+        raise ValueError(
+            "Network observation '${_on}' (measure '${network_obs_measures[_on]}') "
+            "was not provided. Pass it via "
+            "run_experiment(network_observations={'${_on}': <matrix>}), or ensure "
+            "the network supplies observational_measures=['${network_obs_measures[_on]}']."
+        )
+% endfor
+
+% endif
 def run_simulation(
     network: Network,
     t1: float = ${t1_default},
@@ -961,7 +1044,10 @@ def run_simulation(
         network.update_history(result_transient)
     % endif
 
-    model_fn, state = prepare(network, solver, t0=t0, t1=t1, dt=dt)
+    # Main sim chains onto the transient: solver runs from t=t_transient to
+    # t=t_transient + t1, so its time coord continues where the transient left
+    # off. The caller still passes t1 as the main-sim duration.
+    model_fn, state = prepare(network, solver, t0=t0 + t_transient, t1=t0 + t_transient + t1, dt=dt)
     % if sv_distribution_info:
     # Sample initial conditions from state variable distributions
     state = _sample_initial_conditions(state)
@@ -1119,7 +1205,7 @@ if loss_functions:
         dobs_def = derived_observations_dict.get(dobs_name)
         if dobs_def:
             sources = []
-            for src in (dobs_def.source_observations or []):
+            for src in [_s for _s in (dobs_def.source or []) if (getattr(_s, 'name', None) or _s) in _all_observations]:
                 src_name = str(src) if not hasattr(src, 'name') else str(src.name)
                 sources.append(src_name)
                 if src_name in observation_names and src_name not in network_observation_names and src_name not in derived_observation_names:
@@ -1163,7 +1249,7 @@ def get_observation_dependencies(obs_name, derived_obs_dict):
     deps = set()
     dobs_def = derived_obs_dict.get(obs_name)
     if dobs_def:
-        for src in (dobs_def.source_observations or []):
+        for src in [_s for _s in (dobs_def.source or []) if (getattr(_s, 'name', None) or _s) in _all_observations]:
             src_name = str(src) if not hasattr(src, 'name') else str(src.name)
             deps.add(src_name)
     return deps
@@ -1201,6 +1287,8 @@ def compute_all_observations(result, state, result_transient=None):
 <%
     if obs_name in network_observation_names:
         continue  # Skip network observations, already handled above
+    if obs_name in derived_observation_names:
+        continue  # Derived observations are emitted in the dedicated loop below.
 
     obs_def = observations_dict.get(obs_name)
     has_pipeline = obs_def and obs_def.pipeline if obs_def else False
@@ -1236,10 +1324,13 @@ def compute_all_observations(result, state, result_transient=None):
     # Derived observations (from derived_observations in schema)
 % for dobs_name, dobs in derived_observations_dict.items():
 <%
-    # Get source_observations (multivalued, required)
+    # Source names of this derived observation, filtered to entries that
+    # name another observation in the experiment.
     src_obs_list = []
-    for so in (dobs.source_observations or []):
-        src_obs_list.append(str(so) if not hasattr(so, 'name') else str(so.name))
+    for so in (dobs.source or []):
+        _so_name = str(so) if not hasattr(so, 'name') else str(so.name)
+        if _so_name in _all_observations:
+            src_obs_list.append(_so_name)
 
     # Get pipeline callable
     pipeline_call = None
@@ -1504,12 +1595,14 @@ def run_optimization(
     obs_name = expl.get('observable', '')
     output_key = expl.get('output_key')
     grid_desc = ' x '.join([f"{ax['name']}[{ax['n']}]" for ax in expl['axes']]) if has_axes else f"{expl.get('n_trials', 1)} trials"
-    # When no observable is specified and the schema defines observations,
-    # the exploration computes them per grid point and bundles raw data + observations.
+    # When the YAML declares observations, the JIT'd observable_fn returns
+    # only the reduced observation values (no trajectory). This supersedes
+    # the legacy model-output extraction path (which would have returned a
+    # sliced trajectory) — the model.output declaration is only used for
+    # model-output extraction when no observations are declared.
     bundles_observations = (
         obs_type != 'function_call'
         and not obs_name
-        and not has_model_output
         and bool(observation_names or derived_observation_names)
     )
 %>
@@ -1646,7 +1739,17 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
     if not n_aux and model.derived_variables:
         n_aux = len(model.derived_variables)
 %>
-% if has_model_output and n_aux == 1:
+% if bundles_observations:
+    # Observations declared: observable_fn returns only the reduced
+    # observation values per grid point (no trajectory). Output size is
+    # the sum of declared observation shapes — typically per-node or
+    # per-pair statistics — rather than (T, n_states, n_nodes), so trial
+    # vmaps and grid axes stay tractable.
+    @jax.jit
+    def observable_fn(s):
+        result = _expl_model_fn(s)
+        return compute_all_observations(result, s, result_transient)
+% elif has_model_output and n_aux == 1:
     # Single model output — extract as (T, n_nodes) dropping the variable dimension
     @jax.jit
     def observable_fn(s):
@@ -1659,20 +1762,11 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
         result = _expl_model_fn(s)
         return result.data[:, ${len(state_names)}:, ...]
 % else:
-% if bundles_observations:
-    # No observable specified — return raw data + all schema observations per grid point
-    @jax.jit
-    def observable_fn(s):
-        result = _expl_model_fn(s)
-        _obs = compute_all_observations(result, s, result_transient)
-        return Bunch(data=result.data, ts=result.ts, observations=_obs)
-% else:
     # No observable specified, no model output, no observations — return full simulation data
     @jax.jit
     def observable_fn(s):
         result = _expl_model_fn(s)
         return result.data
-% endif
 % endif
 % elif is_derived_obs:
     # ${obs_name} is a derived observation - use compute_all_observations
@@ -1762,6 +1856,10 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
 
     _base_trial_observable = observable_fn
 
+<%
+    _pmode_s = str(expl.get('parallel_mode') or 'auto').lower()
+    _pbatch_s = expl.get('parallel_batch_size')
+%>\
     @jax.jit
     def observable_fn(s):
         def _run_trial(${', '.join(f'_tn_{sp}' for sp in _sp_names)}):
@@ -1769,7 +1867,16 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
             s.dynamics._stoch_${_sp_name} = _tn_${_sp_name}
     % endfor
             return _base_trial_observable(s)
+        # See the IC-trial branch for parallel_mode semantics.
+% if _pmode_s == 'vmap':
         trial_results = jax.vmap(_run_trial)(${', '.join(f'_trial_noises_{sp}' for sp in _sp_names)})
+% elif _pmode_s == 'pmap':
+        trial_results = jax.pmap(_run_trial)(${', '.join(f'_trial_noises_{sp}' for sp in _sp_names)})
+% elif len(_sp_names) == 1:
+        trial_results = jax.lax.map(_run_trial, _trial_noises_${_sp_names[0]}, batch_size=${_pbatch_s if _pbatch_s else 1})
+% else:
+        trial_results = jax.lax.map(lambda args: _run_trial(*args), (${', '.join(f'_trial_noises_{sp}' for sp in _sp_names)}), batch_size=${_pbatch_s if _pbatch_s else 1})
+% endif
     % if expl.get('average') == 'trials':
         return jnp.mean(trial_results, axis=0)
     % else:
@@ -1804,12 +1911,27 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
 
     _base_ic_observable = observable_fn
 
+<%
+    _pmode = str(expl.get('parallel_mode') or 'auto').lower()
+    _pbatch = expl.get('parallel_batch_size')
+%>\
     @jax.jit
     def observable_fn(s):
         def _run_trial(ic):
             s.initial_state.dynamics = ic
             return _base_ic_observable(s)
+        # Trial-axis parallelism is picked per the Exploration.parallel_mode
+        # slot. ``vmap`` batches all trials (fast, peak memory n_trials ×
+        # per-trial working set); ``lax_map`` runs them sequentially with
+        # peak memory bounded by one trial. ``auto`` defaults to lax_map
+        # at batch_size=1 — safe for any n_trials × n_nodes.
+% if _pmode == 'vmap':
         trial_results = jax.vmap(_run_trial)(_trial_ics)
+% elif _pmode == 'pmap':
+        trial_results = jax.pmap(_run_trial)(_trial_ics)
+% else:
+        trial_results = jax.lax.map(_run_trial, _trial_ics, batch_size=${_pbatch if _pbatch else 1})
+% endif
     % if expl.get('average') == 'trials':
         return jnp.mean(trial_results, axis=0)
     % else:
@@ -1817,12 +1939,42 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
     % endif
 % endif
 
+% if expl['algorithms']:
+    # ── Algorithm-wired exploration (Exploration.algorithms) ─────────────────
+    # The wired algorithm chain runs AT EACH sweep point before the observable.
+    # Algorithms are iterative/stateful (Python loops, e.g. FIC) — NOT vmappable
+    # — so points execute SEQUENTIALLY. Each grid point's state arrives with its
+    # swept params already applied; we run the chain to tune it, then observe.
+    def _algo_point_fn(_pt_state):
+        import copy as _copy
+        _ps = _copy.deepcopy(_pt_state)
+% for _algo in expl['algorithms']:
+        _algo_res_${_algo['name']} = run_${_algo['name']}(
+            _ps, _expl_model_fn, jax.random.key(${random_seed}),
+            n_iterations=${_algo['n_iterations']},
+% for _hp_name, _hp_val in _algo['hyperparams'].items():
+            ${_hp_name}=${_hp_val},
+% endfor
+            history=result_transient, verbose=False,
+        )
+        _ps = _algo_res_${_algo['name']}.state
+% endfor
+        return observable_fn(_ps)
+
+% if has_axes:
+    exec_runner = SequentialExecution(_algo_point_fn, grid)
+    _grid_outputs = list(exec_runner.run())
+% else:
+    _grid_outputs = [_algo_point_fn(_expl_state)]
+% endif
+% else:
 % if has_axes:
     exec_runner = ParallelExecution(observable_fn, grid, n_pmap=n_pmap)
     _grid_outputs = list(exec_runner.run())
 % else:
     # Trial-only exploration — no parameter grid
     _grid_outputs = [observable_fn(_expl_state)]
+% endif
 % endif
     # Tree-aware stack: works for both array returns and pytree returns
     # (e.g. Bunch with data + observations when no observable is specified).
@@ -1857,13 +2009,12 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
     ]
 
 % if bundles_observations:
-    # observable_fn returned Bunch(data, ts, observations). Convert each
-    # observation to an xr.DataArray with grid axes prepended for clean,
-    # metadata-consistent representation.
-    _stacked_results = _stacked.data
-    _stacked_ts = getattr(_stacked, 'ts', None)
+    # observable_fn returned a Bunch of reduced observations.
+    # No raw trajectory to attach; wrap each observation as xr.DataArray.
+    _stacked_results = None
+    _stacked_ts = None
     _observations_xr = {}
-    for _obs_key, _obs_val in _stacked.observations.items():
+    for _obs_key, _obs_val in _stacked.items():
         if str(_obs_key).startswith('_'):
             continue
         _arr = getattr(_obs_val, 'ys', getattr(_obs_val, 'data', _obs_val))
@@ -1914,11 +2065,19 @@ def run_experiment(
     mode: str = "all",
     stage: str = None,
     state: Bunch = None,
+% if network_observation_names:
+    network_observations: Dict[str, Any] = None,
+% endif
     **kwargs,
 ) -> Dict[str, Any]:
     """Run complete experiment workflow. Mode: simulation, optimization, exploration, algorithms, or all."""
 
     weights = jnp.array(weights)
+% if network_observation_names:
+    # Materialize network-observation constants (empirical targets) from the
+    # supplied matrices, keyed by observation name (e.g. {'fc_target': FC}).
+    _bind_network_observations(network_observations)
+% endif
 
     print("\n" + "=" * 60)
     print("STEP 1: Running simulation...")
@@ -1934,7 +2093,7 @@ def run_experiment(
     network = create_network(weights, region_labels=region_labels, noise_sigma=${noise_sigma_value})
     % endif
 
-    # Determine if we need to run main simulation or just transient
+    # Determine if we need to run main simulation or just transient.
     # For algorithm/optimization/exploration modes, we only need transient - main simulation runs after
     run_main = mode in ('simulation', 'all', None)
 
@@ -2146,8 +2305,13 @@ def run_experiment(
         Returns list of (name, value) tuples.
         """
         all_hp = {}
-        # First, add hyperparameters from included algorithms (with argument overrides)
+        # First, add hyperparameters from COMBINED included algorithms (with overrides).
+        # Nested includes are skipped — their hyperparameters are passed inside the
+        # generated run_<outer>() to the inner run_<inner>() call, not on the outer
+        # signature, so exposing them here would pass an unexpected kwarg.
         for inc in (getattr(algo, 'includes', None) or []):
+            if str(getattr(inc, 'mode', 'combined') or 'combined') == 'nested':
+                continue
             inc_name, arg_overrides = get_include_info(inc)
             inc_algo = alg_dict.get(inc_name)
             if inc_algo:
@@ -2215,8 +2379,12 @@ def run_experiment(
                 obs_set.add(str(o))
         elif obs_raw:
             obs_set.add(str(obs_raw))
-        # Included algorithms' observations
+        # Included algorithms' observations (combined-mode only; nested includes
+        # compute their observations inside their own inner loop, and their
+        # external inputs are passed there — not on the outer signature).
         for inc in (getattr(alg, 'includes', None) or []):
+            if str(getattr(inc, 'mode', 'combined') or 'combined') == 'nested':
+                continue
             inc_algo_name = str(inc.algorithm.name) if hasattr(inc, 'algorithm') and hasattr(inc.algorithm, 'name') else str(getattr(inc, 'algorithm', inc))
             inc_algo = algorithms_dict.get(inc_algo_name)
             if inc_algo:
@@ -2236,9 +2404,16 @@ def run_experiment(
             # Check for data_source (external file)
             if hasattr(obs_def, 'data_source') and obs_def.data_source is not None:
                 input_names.append(obs_name)
-            # Check for network observation (from BIDS)
-            elif hasattr(obs_def, 'source') and obs_def.source and str(obs_def.source).startswith('network.observations.'):
-                network_obs_inputs.append(obs_name)
+            else:
+                # Check for network observation (from BIDS). `source` is
+                # multivalued; for raw observations there is exactly one entry.
+                _src = getattr(obs_def, 'source', None)
+                if isinstance(_src, (list, tuple)):
+                    _src = _src[0] if _src else None
+                if _src is not None and hasattr(_src, 'name'):
+                    _src = _src.name
+                if _src and str(_src).startswith('network.observations.'):
+                    network_obs_inputs.append(obs_name)
 
     # Get dependencies for this algorithm
     algo_deps = algorithms_deps.get(algo_name, [])
@@ -2295,19 +2470,112 @@ def run_experiment(
     # Use hyperparams_dict which already includes hyperparams from included algorithms
     algo_has_window_size = 'window_size' in hyperparams_dict
 
-    # Find source observations needed (derived observations depend on source observations)
-    # With DerivedObservation, look in derived_observations_dict for source_observations
+    # Source observations needed for derived ones in this algorithm.
     algo_source_obs_needed = set()
     for obs_name in obs_names:
-        # Check if this is a derived observation
         dobs_def = derived_observations_dict.get(obs_name)
-        if dobs_def and dobs_def.source_observations:
-            for src_obs in dobs_def.source_observations:
+        if dobs_def and dobs_def.source:
+            for src_obs in dobs_def.source:
                 src_name = src_obs.name if hasattr(src_obs, 'name') else str(src_obs)
-                algo_source_obs_needed.add(src_name)
+                if src_name in _all_observations:
+                    algo_source_obs_needed.add(src_name)
     algo_needs_buffers = algo_has_window_size and len(algo_source_obs_needed) > 0
-%>
 
+    # Multi-stage schedule (Algorithm.stages): resolve per-stage n_iterations +
+    # hyperparameter values (stage overrides fall back to algo defaults).
+    algo_stages = list(getattr(algo, 'stages', None) or [])
+    has_stages = len(algo_stages) > 0
+    stage_defs = []
+    for _st in algo_stages:
+        _over = {}
+        for _arg in (getattr(_st, 'arguments', None) or []):
+            _over[str(_arg.name)] = _arg.value
+        _sd = {'n_iterations': int(_st.n_iterations)}
+        for _hp_name, _hp_val in hyperparams_dict.items():
+            _sd[_hp_name] = _over.get(_hp_name, _hp_val)
+        stage_defs.append(_sd)
+%>
+% if has_stages:
+                # ── Multi-stage schedule ──────────────────────────────────────
+                # Run the algorithm body once per stage, IN ORDER, carrying
+                # trajectory state + FC window buffer + monitors forward so the
+                # stages form ONE continuous online tuning run. Per-stage eta /
+                # window_size from YAML (Schirner 2023: eta halves, window doubles).
+                _stage_defs = [
+% for sd in stage_defs:
+                    ${repr(sd)},
+% endfor
+                ]
+% if algo_needs_buffers:
+% for src_obs in algo_source_obs_needed:
+% if has_deps:
+                _stage_${src_obs}_buffer = (algorithms_results.get('${algo_deps[-1]}', Bunch()).get('${src_obs}_buffer', None) if '${algo_deps[-1]}' in algorithms_results else kwargs.get('${src_obs}_buffer', None))
+% else:
+                _stage_${src_obs}_buffer = kwargs.get('${src_obs}_buffer', None)
+% endif
+% endfor
+% endif
+% if has_deps:
+                _stage_monitors = (algorithms_results.get('${algo_deps[-1]}', Bunch()).get('monitors', None) if '${algo_deps[-1]}' in algorithms_results else kwargs.get('monitors', None))
+% else:
+                _stage_monitors = kwargs.get('monitors', None)
+% endif
+                _stage_state = algo_state
+                algo_result = None
+                _stage_post_fc = []   # per-stage post-tuning FC matrices (r-trajectory)
+                _stage_conv = []      # per-stage convergence Bunch (working-point trajectory)
+                for _si, _sd in enumerate(_stage_defs):
+                    if algo_verbose:
+                        print(f"  [{algorithm_name} stage {_si+1}/{len(_stage_defs)}] {_sd}")
+                    algo_result = run_${algo_name}(
+                        state=_stage_state,
+                        model_fn=algo_model_fn,
+                        key=jax.random.fold_in(algo_key, _si),
+                        n_iterations=_sd['n_iterations'],
+% for hp_name in hyperparams_dict.keys():
+                        ${hp_name}=_sd['${hp_name}'],
+% endfor
+% for inp_name in input_names:
+                        ${inp_name}=kwargs.get('${inp_name}'),
+% endfor
+% for net_obs_name in network_obs_inputs:
+                        ${net_obs_name}=${net_obs_name},  # Module-level constant from BIDS
+% endfor
+                        post_model_fn=post_model_fn,
+                        post_state=post_state,
+                        history=transient,
+% if algo_needs_buffers:
+% for src_obs in algo_source_obs_needed:
+                        ${src_obs}_buffer=_stage_${src_obs}_buffer,
+% endfor
+% endif
+                        monitors=_stage_monitors,
+                        run_post_tuning=True,   # validate after EACH stage (r-trajectory)
+% if observation_ref:
+                        observation_monitor=observations.${observation_ref},
+% endif
+                        verbose=algo_verbose,
+                    )
+                    _stage_state = algo_result.state
+% if algo_needs_buffers:
+% for src_obs in algo_source_obs_needed:
+                    _stage_${src_obs}_buffer = algo_result.get('${src_obs}_buffer', _stage_${src_obs}_buffer)
+% endfor
+% endif
+                    _stage_monitors = algo_result.get('monitors', _stage_monitors)
+                    try:
+                        _pt = algo_result.post_tuning.observations
+                        _stage_post_fc.append(_pt['fc'] if 'fc' in _pt else _pt.get('fc'))
+                    except Exception:
+                        _stage_post_fc.append(None)
+                    try:
+                        _stage_conv.append(dict(algo_result.convergence))
+                    except Exception:
+                        _stage_conv.append(None)
+                if algo_result is not None:
+                    algo_result._extras['stage_post_fc'] = _stage_post_fc
+                    algo_result._extras['stage_conv'] = _stage_conv
+% else:
                 algo_result = run_${algo_name}(
                     state=algo_state,
                     model_fn=algo_model_fn,
@@ -2352,6 +2620,7 @@ def run_experiment(
 % endif
                     verbose=algo_verbose,
                 )
+% endif
 % endfor
 
             # After trying all algorithm blocks, check if one matched and store result
@@ -2708,10 +2977,23 @@ if __name__ == "__main__":
 
     # Run the experiment
     # Order: 1) Simulation → 2) Explorations → 3) Algorithms → 4) Optimization
+% if network_observation_names:
+    # Network observations (empirical targets) keyed by observation name,
+    # resolved from the loaded network via the obs->measure mapping.
+    _net_obs = {}
+    if '_network' in dir() and _network is not None:
+        _net_obs_data = _network.observations
+        _net_obs = {name: _net_obs_data[measure]
+                    for name, measure in _NETWORK_OBS_MEASURES.items()
+                    if measure in _net_obs_data}
+% endif
     raw_results = run_experiment(
         weights,
         distances=distances,
         region_labels=region_labels,
+% if network_observation_names:
+        network_observations=_net_obs,
+% endif
         mode="all",
     )
 

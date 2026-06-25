@@ -19,6 +19,11 @@ import numpy as np
 
 from tvbo.adapters.base import BaseAdapter
 
+# Single source of truth (forward map + derived reverse) lives in
+# tvbo/codegen/pyrates.py; re-imported here and used by the model template so
+# the rename mapping is defined exactly once. See PYRATES_REPL there.
+from tvbo.codegen.pyrates import PYRATES_REPL  # noqa: F401
+
 if TYPE_CHECKING:
     import pandas as pd
     from tvbo.data.types import ExperimentResult, SimulationResult
@@ -37,23 +42,6 @@ TVBO_TO_PYRATES_SOLVER = {
     "RK4": "scipy",
 }
 
-# Names that conflict with SymPy/PyRates built-ins and must be renamed.
-# Must match the repl dict in tvbo-pyrates-model.yaml.mako.
-PYRATES_REPL = {
-    "I": "I_",
-    "gamma": "gamma_",
-    "beta": "beta_",
-    "zeta": "zeta_",
-    "lambda": "lambda_",
-    "E": "E_",
-    "N": "N_",
-    "S": "S_",
-    "O": "O_",
-    "Q": "Q_",
-    "epsilon": "epsilon_",
-    "y": "y_",
-    "dy": "dy_",
-}
 
 
 def _patch_pyrates_networkx_backend():
@@ -109,6 +97,54 @@ def _patch_pyrates_replace_in_expr():
         return expr.xreplace(replacements)
 
     _pr_parser.replace_in_expr = _replace_in_expr_fixed
+
+
+def _patch_pyrates_reserved_names():
+    """Relax PyRates' variable-name reservation for SymPy collisions.
+
+    PyRates >=1.2 rejects parameter / state-variable names that collide with
+    a SymPy constant or function — ``Gamma``, ``gamma``, ``beta``, ``exp``,
+    ``pi`` … — because an *undeclared* name of that form would sympify to the
+    function/constant rather than a free symbol (e.g. ``sympify('Gamma*x')``
+    yields the gamma function). See ``check_vname`` in
+    ``pyrates.frontend.template.operator``.
+
+    tvbo declares *every* model parameter and state variable as an explicit
+    PyRates operator variable, so PyRates' own parser resolves the name to a
+    symbol and the collision never occurs — exactly how tvbo's parser lets a
+    declared parameter override the SymPy built-in (see
+    ``tvbo.parse.expression.parse_eq``). We therefore keep only the genuinely
+    PyRates-internal slot names reserved (the state vector ``y``/``dy``, the
+    index slots, and the buffer/history name parts) and allow the rest. This
+    is maximally flexible: a model may use ``Gamma`` as a parameter, or use
+    the SymPy ``Gamma`` function in an equation where it is *not* declared.
+    """
+    import pyrates.frontend.template.operator as _pr_op
+    from pyrates.ir.circuit import PyRatesException
+
+    # Names that collide with PyRates-generated code regardless of declaration.
+    _internal_names = ("y", "dy", "source_idx", "target_idx")
+    _internal_parts = ("_buffer", "_delays", "_maxdelay", "_idx", "_hist")
+
+    def _check_vname_declared_ok(v: str, vtype: str):
+        # 't' is always the integration time state variable (upstream rule).
+        if v == "t" and vtype != "state_var":
+            vtype = "state_var"
+        if v in _internal_names:
+            raise PyRatesException(
+                f"The variable name {v} is reserved for internal variables "
+                f"created by PyRates. Please choose a different variable name."
+            )
+        for dpart in _internal_parts:
+            if dpart in v:
+                raise PyRatesException(
+                    f"The variable name {v} contains the sub-string {dpart} "
+                    f"which is reserved for internal variables created by "
+                    f"PyRates. Please choose a different variable name."
+                )
+        return vtype
+
+    _pr_op.check_vname = _check_vname_declared_ok
 
 
 def _patch_pyrates_missing_funcs():
@@ -245,6 +281,9 @@ class PyRatesAdapter(BaseAdapter):
 
         # Register missing math functions (erfc, erf, fmod)
         _patch_pyrates_missing_funcs()
+
+        # Allow declared params named like SymPy fns (Gamma, beta, exp, …)
+        _patch_pyrates_reserved_names()
 
         exp = self.experiment
         integration = getattr(exp, "integration", None)

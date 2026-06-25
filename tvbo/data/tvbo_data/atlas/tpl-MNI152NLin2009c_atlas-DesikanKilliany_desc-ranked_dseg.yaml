@@ -12,6 +12,8 @@ terminology:
         x: -24.40642428142428
         y: -61.91204150579151
         z: -36.62557646932647
+      alternateName:
+      - L.CER
     left-thalamus:
       name: left-thalamus
       lookupLabel: 2
@@ -20,6 +22,8 @@ terminology:
         x: -11.500183217295714
         y: -18.458226456577506
         z: 7.141168926346651
+      alternateName:
+      - L.TH
     left-caudate:
       name: left-caudate
       lookupLabel: 3
@@ -28,6 +32,8 @@ terminology:
         x: -12.735150095805835
         y: 10.40195869704067
         z: 9.836491377474985
+      alternateName:
+      - L.CA
     left-putamen:
       name: left-putamen
       lookupLabel: 4
@@ -36,6 +42,8 @@ terminology:
         x: -25.96036489462095
         y: 1.3513683548285655
         z: 0.1748977665932614
+      alternateName:
+      - L.PU
     left-pallidum:
       name: left-pallidum
       lookupLabel: 5
@@ -44,6 +52,8 @@ terminology:
         x: -20.477836213373408
         y: -4.457926371149512
         z: -0.817430503380919
+      alternateName:
+      - L.PA
     brain-stem:
       name: brain-stem
       lookupLabel: 6
@@ -60,6 +70,8 @@ terminology:
         x: -25.205718041406513
         y: -21.822543542556687
         z: -13.643608281301354
+      alternateName:
+      - L.HI
     left-amygdala:
       name: left-amygdala
       lookupLabel: 8
@@ -68,6 +80,8 @@ terminology:
         x: -22.85378973105135
         y: -4.4596577017114925
         z: -19.27041564792176
+      alternateName:
+      - L.AM
     left-accumbens-area:
       name: left-accumbens-area
       lookupLabel: 9
@@ -76,6 +90,8 @@ terminology:
         x: -8.33931240657698
         y: 11.461883408071742
         z: -7.768310911808669
+      alternateName:
+      - L.AC
     left-ventraldc:
       name: left-ventraldc
       lookupLabel: 10
@@ -92,6 +108,8 @@ terminology:
         x: 24.792715621526185
         y: -61.53569607009743
         z: -36.70357679984306
+      alternateName:
+      - R.CER
     right-thalamus:
       name: right-thalamus
       lookupLabel: 12
@@ -100,6 +118,8 @@ terminology:
         x: 11.61273313153012
         y: -16.875695732838594
         z: 7.132701884581579
+      alternateName:
+      - R.TH
     right-caudate:
       name: right-caudate
       lookupLabel: 13
@@ -108,6 +128,8 @@ terminology:
         x: 13.286608260325409
         y: 11.799958281184814
         z: 9.694201084689198
+      alternateName:
+      - R.CA
     right-putamen:
       name: right-putamen
       lookupLabel: 14
@@ -116,6 +138,8 @@ terminology:
         x: 26.567430416730744
         y: 3.172689527910194
         z: -0.39351068737505557
+      alternateName:
+      - R.PU
     right-pallidum:
       name: right-pallidum
       lookupLabel: 15
@@ -124,6 +148,8 @@ terminology:
         x: 21.271406127258444
         y: -2.800471327572666
         z: -0.939905734485464
+      alternateName:
+      - R.PA
     right-hippocampus:
       name: right-hippocampus
       lookupLabel: 16
@@ -132,6 +158,8 @@ terminology:
         x: 26.533618477331046
         y: -20.720273738237807
         z: -13.792130025662956
+      alternateName:
+      - R.HI
     right-amygdala:
       name: right-amygdala
       lookupLabel: 17
@@ -140,6 +168,8 @@ terminology:
         x: 23.278780068728523
         y: -3.0472508591065264
         z: -19.627147766323027
+      alternateName:
+      - R.AM
     right-accumbens-area:
       name: right-accumbens-area
       lookupLabel: 18
@@ -148,6 +178,8 @@ terminology:
         x: 8.52184769038702
         y: 12.62921348314606
         z: -7.15106117353308
+      alternateName:
+      - R.AC
     right-ventraldc:
       name: right-ventraldc
       lookupLabel: 19
@@ -164,6 +196,8 @@ terminology:
         x: -53.39756532066508
         y: -45.79423990498812
         z: 8.515142517814724
+      alternateName:
+      - L.BSTS
     ctx-lh-caudalanteriorcingulate:
       name: ctx-lh-caudalanteriorcingulate
       lookupLabel: 21
@@ -172,6 +206,8 @@ terminology:
         x: -4.973120728929388
         y: 21.2359908883827
         z: 27.031890660592254
+      alternateName:
+      - L.CACG
     ctx-lh-caudalmiddlefrontal:
       name: ctx-lh-caudalmiddlefrontal
       lookupLabel: 22
@@ -180,6 +216,8 @@ terminology:
         x: -36.74404027949034
         y: 11.222975750102762
         z: 49.34001233045623
+      alternateName:
+      - L.CMFG
     ctx-lh-cuneus:
       name: ctx-lh-cuneus
       lookupLabel: 23
@@ -188,6 +226,8 @@ terminology:
         x: -6.846679081315955
         y: -78.28739913097455
         z: 21.713842333954062
+      alternateName:
+      - L.CU
     ctx-lh-entorhinal:
       name: ctx-lh-entorhinal
       lookupLabel: 24
@@ -196,6 +236,8 @@ terminology:
         x: -24.201298701298697
         y: -4.779220779220779
         z: -32.824675324675326
+      alternateName:
+      - L.EC
     ctx-lh-fusiform:
       name: ctx-lh-fusiform
       lookupLabel: 25
@@ -204,6 +246,8 @@ terminology:
         x: -34.905548705302095
         y: -44.133497739416356
         z: -20.642005754212903
+      alternateName:
+      - L.FG
     ctx-lh-inferiorparietal:
       name: ctx-lh-inferiorparietal
       lookupLabel: 26
@@ -212,6 +256,8 @@ terminology:
         x: -40.60552268244576
         y: -70.56233421750663
         z: 33.03631911854724
+      alternateName:
+      - L.IPG
     ctx-lh-inferiortemporal:
       name: ctx-lh-inferiortemporal
       lookupLabel: 27
@@ -220,6 +266,8 @@ terminology:
         x: -50.56490037085926
         y: -31.539128795021682
         z: -24.869193538248787
+      alternateName:
+      - L.ITG
     ctx-lh-isthmuscingulate:
       name: ctx-lh-isthmuscingulate
       lookupLabel: 28
@@ -228,6 +276,8 @@ terminology:
         x: -6.529188558085224
         y: -45.38412142440164
         z: 19.773204903677765
+      alternateName:
+      - L.ICG
     ctx-lh-lateraloccipital:
       name: ctx-lh-lateraloccipital
       lookupLabel: 29
@@ -236,6 +286,8 @@ terminology:
         x: -30.96147730557965
         y: -88.63045677941602
         z: 1.6724486845909183
+      alternateName:
+      - L.LOG
     ctx-lh-lateralorbitofrontal:
       name: ctx-lh-lateralorbitofrontal
       lookupLabel: 30
@@ -244,6 +296,8 @@ terminology:
         x: -24.359540971168443
         y: 31.971452959028824
         z: -18.02959028831563
+      alternateName:
+      - L.LOFG
     ctx-lh-lingual:
       name: ctx-lh-lingual
       lookupLabel: 31
@@ -252,6 +306,8 @@ terminology:
         x: -14.154186134612956
         y: -67.35004419749968
         z: -4.748453087511052
+      alternateName:
+      - L.LG
     ctx-lh-medialorbitofrontal:
       name: ctx-lh-medialorbitofrontal
       lookupLabel: 32
@@ -260,6 +316,8 @@ terminology:
         x: -5.935648896068926
         y: 34.539310716208945
         z: -17.127355950457726
+      alternateName:
+      - L.MOFG
     ctx-lh-middletemporal:
       name: ctx-lh-middletemporal
       lookupLabel: 33
@@ -268,6 +326,8 @@ terminology:
         x: -57.95826158826365
         y: -21.837385494868798
         z: -14.932295612645497
+      alternateName:
+      - L.MTG
     ctx-lh-parahippocampal:
       name: ctx-lh-parahippocampal
       lookupLabel: 34
@@ -276,6 +336,8 @@ terminology:
         x: -23.94569839712136
         y: -30.401701014066077
         z: -18.63591756624141
+      alternateName:
+      - L.PHIG
     ctx-lh-paracentral:
       name: ctx-lh-paracentral
       lookupLabel: 35
@@ -284,6 +346,8 @@ terminology:
         x: -6.365271728839232
         y: -28.35845483809885
         z: 58.75932588524901
+      alternateName:
+      - L.PaCG
     ctx-lh-parsopercularis:
       name: ctx-lh-parsopercularis
       lookupLabel: 36
@@ -292,6 +356,8 @@ terminology:
         x: -47.72817428060478
         y: 15.508372622337845
         z: 14.426597301251832
+      alternateName:
+      - L.POP
     ctx-lh-parsorbitalis:
       name: ctx-lh-parsorbitalis
       lookupLabel: 37
@@ -300,6 +366,8 @@ terminology:
         x: -43.20521541950114
         y: 41.39909297052154
         z: -12.979875283446717
+      alternateName:
+      - L.POR
     ctx-lh-parstriangularis:
       name: ctx-lh-parstriangularis
       lookupLabel: 38
@@ -308,6 +376,8 @@ terminology:
         x: -47.245463049579044
         y: 31.71487371375116
         z: 3.1206735266604255
+      alternateName:
+      - L.PTR
     ctx-lh-pericalcarine:
       name: ctx-lh-pericalcarine
       lookupLabel: 39
@@ -316,6 +386,8 @@ terminology:
         x: -12.091287878787881
         y: -80.11666666666667
         z: 6.467045454545456
+      alternateName:
+      - L.PCAL
     ctx-lh-postcentral:
       name: ctx-lh-postcentral
       lookupLabel: 40
@@ -324,6 +396,8 @@ terminology:
         x: -46.6283493218657
         y: -22.266953357591802
         z: 44.24892490903076
+      alternateName:
+      - L.PoCG
     ctx-lh-posteriorcingulate:
       name: ctx-lh-posteriorcingulate
       lookupLabel: 41
@@ -332,6 +406,8 @@ terminology:
         x: -5.396387832699617
         y: -18.092205323193923
         z: 39.02614068441065
+      alternateName:
+      - L.PCG
     ctx-lh-precentral:
       name: ctx-lh-precentral
       lookupLabel: 42
@@ -340,6 +416,8 @@ terminology:
         x: -43.05403462529204
         y: -6.9650751812136775
         z: 42.54927215000299
+      alternateName:
+      - L.PrCG
     ctx-lh-precuneus:
       name: ctx-lh-precuneus
       lookupLabel: 43
@@ -348,6 +426,8 @@ terminology:
         x: -8.467257583861851
         y: -59.011920226178646
         z: 38.991289065484835
+      alternateName:
+      - L.PCU
     ctx-lh-rostralanteriorcingulate:
       name: ctx-lh-rostralanteriorcingulate
       lookupLabel: 44
@@ -356,6 +436,8 @@ terminology:
         x: -4.612650433809122
         y: 36.28575426812202
         z: -0.7903722362160579
+      alternateName:
+      - L.RACG
     ctx-lh-rostralmiddlefrontal:
       name: ctx-lh-rostralmiddlefrontal
       lookupLabel: 45
@@ -364,6 +446,8 @@ terminology:
         x: -33.5027973031129
         y: 46.39257877875005
         z: 17.839477836752266
+      alternateName:
+      - L.RMFG
     ctx-lh-superiorfrontal:
       name: ctx-lh-superiorfrontal
       lookupLabel: 46
@@ -372,6 +456,8 @@ terminology:
         x: -11.28868552412645
         y: 30.465201675368633
         z: 43.95478799701647
+      alternateName:
+      - L.SFG
     ctx-lh-superiorparietal:
       name: ctx-lh-superiorparietal
       lookupLabel: 47
@@ -380,6 +466,8 @@ terminology:
         x: -23.471579751254637
         y: -64.13031856862317
         z: 51.99874536329915
+      alternateName:
+      - L.SPG
     ctx-lh-superiortemporal:
       name: ctx-lh-superiortemporal
       lookupLabel: 48
@@ -388,6 +476,8 @@ terminology:
         x: -53.72980147099486
         y: -11.545484709395566
         z: -3.700215672178288
+      alternateName:
+      - L.STG
     ctx-lh-supramarginal:
       name: ctx-lh-supramarginal
       lookupLabel: 49
@@ -396,6 +486,8 @@ terminology:
         x: -55.0221420142986
         y: -39.35781217463733
         z: 35.114735892274595
+      alternateName:
+      - L.SMG
     ctx-lh-frontalpole:
       name: ctx-lh-frontalpole
       lookupLabel: 50
@@ -404,6 +496,8 @@ terminology:
         x: -7.600335852225015
         y: 67.47607052896726
         z: -10.203190596137702
+      alternateName:
+      - L.FP
     ctx-lh-temporalpole:
       name: ctx-lh-temporalpole
       lookupLabel: 51
@@ -412,6 +506,8 @@ terminology:
         x: -28.46723182262798
         y: 13.661232474731008
         z: -37.038800130420604
+      alternateName:
+      - L.TP
     ctx-lh-transversetemporal:
       name: ctx-lh-transversetemporal
       lookupLabel: 52
@@ -420,6 +516,8 @@ terminology:
         x: -44.806090739589806
         y: -21.555003107520193
         z: 9.389061528899944
+      alternateName:
+      - L.TTG
     ctx-lh-insula:
       name: ctx-lh-insula
       lookupLabel: 53
@@ -428,6 +526,8 @@ terminology:
         x: -36.0443006470881
         y: 0.8967645594823352
         z: -0.4175211548033815
+      alternateName:
+      - L.IN
     ctx-rh-bankssts:
       name: ctx-rh-bankssts
       lookupLabel: 54
@@ -436,6 +536,8 @@ terminology:
         x: 54.35591814159292
         y: -40.31692477876106
         z: 9.907356194690266
+      alternateName:
+      - R.BSTS
     ctx-rh-caudalanteriorcingulate:
       name: ctx-rh-caudalanteriorcingulate
       lookupLabel: 55
@@ -444,6 +546,8 @@ terminology:
         x: 5.119630812921542
         y: 22.472843450479246
         z: 27.414625488107916
+      alternateName:
+      - R.CACG
     ctx-rh-caudalmiddlefrontal:
       name: ctx-rh-caudalmiddlefrontal
       lookupLabel: 56
@@ -452,6 +556,8 @@ terminology:
         x: 36.84884792626727
         y: 14.019662058371722
         z: 49.388940092165896
+      alternateName:
+      - R.CMFG
     ctx-rh-cuneus:
       name: ctx-rh-cuneus
       lookupLabel: 57
@@ -460,6 +566,8 @@ terminology:
         x: 8.293982544786402
         y: -78.26917776757006
         z: 22.761828203950387
+      alternateName:
+      - R.CU
     ctx-rh-entorhinal:
       name: ctx-rh-entorhinal
       lookupLabel: 58
@@ -468,6 +576,8 @@ terminology:
         x: 23.822523881347408
         y: -4.82352941176471
         z: -33.72800402212167
+      alternateName:
+      - R.EC
     ctx-rh-fusiform:
       name: ctx-rh-fusiform
       lookupLabel: 59
@@ -476,6 +586,8 @@ terminology:
         x: 33.99211931192272
         y: -37.66155410558427
         z: -22.865604609778835
+      alternateName:
+      - R.FG
     ctx-rh-inferiorparietal:
       name: ctx-rh-inferiorparietal
       lookupLabel: 60
@@ -484,6 +596,8 @@ terminology:
         x: 46.338160087341265
         y: -63.07378038269263
         z: 32.69166235706487
+      alternateName:
+      - R.IPG
     ctx-rh-inferiortemporal:
       name: ctx-rh-inferiortemporal
       lookupLabel: 61
@@ -492,6 +606,8 @@ terminology:
         x: 50.51963177348489
         y: -27.11786038077969
         z: -27.183834298068206
+      alternateName:
+      - R.ITG
     ctx-rh-isthmuscingulate:
       name: ctx-rh-isthmuscingulate
       lookupLabel: 62
@@ -500,6 +616,8 @@ terminology:
         x: 7.688529244747301
         y: -43.68313458262351
         z: 20.111300397501424
+      alternateName:
+      - R.ICG
     ctx-rh-lateraloccipital:
       name: ctx-rh-lateraloccipital
       lookupLabel: 63
@@ -508,6 +626,8 @@ terminology:
         x: 35.092215077301944
         y: -83.91161581611712
         z: 0.8458065398823322
+      alternateName:
+      - R.LOG
     ctx-rh-lateralorbitofrontal:
       name: ctx-rh-lateralorbitofrontal
       lookupLabel: 64
@@ -516,6 +636,8 @@ terminology:
         x: 23.58775710088149
         y: 32.155827619980414
         z: -18.290401567091088
+      alternateName:
+      - R.LOFG
     ctx-rh-lingual:
       name: ctx-rh-lingual
       lookupLabel: 65
@@ -524,6 +646,8 @@ terminology:
         x: 14.48061104582844
         y: -65.48108108108109
         z: -3.4635722679200995
+      alternateName:
+      - R.LG
     ctx-rh-medialorbitofrontal:
       name: ctx-rh-medialorbitofrontal
       lookupLabel: 66
@@ -532,6 +656,8 @@ terminology:
         x: -1.0
         y: 27.0
         z: -17.0
+      alternateName:
+      - R.MOFG
     ctx-rh-middletemporal:
       name: ctx-rh-middletemporal
       lookupLabel: 67
@@ -540,6 +666,8 @@ terminology:
         x: 57.996066433566426
         y: -19.82498751248751
         z: -15.695179820179817
+      alternateName:
+      - R.MTG
     ctx-rh-parahippocampal:
       name: ctx-rh-parahippocampal
       lookupLabel: 68
@@ -548,6 +676,8 @@ terminology:
         x: 25.07764198418404
         y: -28.98562185478073
         z: -18.8842559309849
+      alternateName:
+      - R.PHIG
     ctx-rh-paracentral:
       name: ctx-rh-paracentral
       lookupLabel: 69
@@ -556,6 +686,8 @@ terminology:
         x: 7.240244969378821
         y: -26.09606299212598
         z: 58.74033245844271
+      alternateName:
+      - R.PaCG
     ctx-rh-parsopercularis:
       name: ctx-rh-parsopercularis
       lookupLabel: 70
@@ -564,6 +696,8 @@ terminology:
         x: 48.45660237388725
         y: 16.0600890207715
         z: 13.343842729970333
+      alternateName:
+      - R.POP
     ctx-rh-parsorbitalis:
       name: ctx-rh-parsorbitalis
       lookupLabel: 71
@@ -572,6 +706,8 @@ terminology:
         x: 43.11352447147408
         y: 42.51752099623516
         z: -13.376773819866784
+      alternateName:
+      - R.POR
     ctx-rh-parstriangularis:
       name: ctx-rh-parstriangularis
       lookupLabel: 72
@@ -580,6 +716,8 @@ terminology:
         x: 49.07252506265664
         y: 32.37045739348372
         z: 4.812030075187977
+      alternateName:
+      - R.PTR
     ctx-rh-pericalcarine:
       name: ctx-rh-pericalcarine
       lookupLabel: 73
@@ -588,6 +726,8 @@ terminology:
         x: 13.270567375886529
         y: -78.05602836879433
         z: 8.123404255319144
+      alternateName:
+      - R.PCAL
     ctx-rh-postcentral:
       name: ctx-rh-postcentral
       lookupLabel: 74
@@ -596,6 +736,8 @@ terminology:
         x: 47.432493177074974
         y: -18.782469096163112
         z: 43.82693851340504
+      alternateName:
+      - R.PoCG
     ctx-rh-posteriorcingulate:
       name: ctx-rh-posteriorcingulate
       lookupLabel: 75
@@ -604,6 +746,8 @@ terminology:
         x: 5.84615384615384
         y: -16.45428156748912
         z: 39.15135807588638
+      alternateName:
+      - R.PCG
     ctx-rh-precentral:
       name: ctx-rh-precentral
       lookupLabel: 76
@@ -612,6 +756,8 @@ terminology:
         x: 44.28920433776045
         y: -4.543986840502015
         z: 42.76501766784452
+      alternateName:
+      - R.PrCG
     ctx-rh-precuneus:
       name: ctx-rh-precuneus
       lookupLabel: 77
@@ -620,6 +766,8 @@ terminology:
         x: 10.294996842326853
         y: -57.70963441162024
         z: 38.6811451827942
+      alternateName:
+      - R.PCU
     ctx-rh-rostralanteriorcingulate:
       name: ctx-rh-rostralanteriorcingulate
       lookupLabel: 78
@@ -628,6 +776,8 @@ terminology:
         x: 4.951359084406292
         y: 37.200286123032896
         z: 1.9409871244635184
+      alternateName:
+      - R.RACG
     ctx-rh-rostralmiddlefrontal:
       name: ctx-rh-rostralmiddlefrontal
       lookupLabel: 79
@@ -636,6 +786,8 @@ terminology:
         x: 34.467899190581306
         y: 47.87601177336276
         z: 16.53233075791023
+      alternateName:
+      - R.RMFG
     ctx-rh-superiorfrontal:
       name: ctx-rh-superiorfrontal
       lookupLabel: 80
@@ -644,6 +796,8 @@ terminology:
         x: 11.909999999999997
         y: 31.74030487804879
         z: 43.47411585365853
+      alternateName:
+      - R.SFG
     ctx-rh-superiorparietal:
       name: ctx-rh-superiorparietal
       lookupLabel: 81
@@ -652,6 +806,8 @@ terminology:
         x: 25.160497364198946
         y: -63.0392505157002
         z: 53.294407517763005
+      alternateName:
+      - R.SPG
     ctx-rh-superiortemporal:
       name: ctx-rh-superiortemporal
       lookupLabel: 82
@@ -660,6 +816,8 @@ terminology:
         x: 54.669730604694195
         y: -6.946583420048555
         z: -5.236963810845182
+      alternateName:
+      - R.STG
     ctx-rh-supramarginal:
       name: ctx-rh-supramarginal
       lookupLabel: 83
@@ -668,6 +826,8 @@ terminology:
         x: 55.918280691299174
         y: -30.966775923718714
         z: 35.97683253873659
+      alternateName:
+      - R.SMG
     ctx-rh-frontalpole:
       name: ctx-rh-frontalpole
       lookupLabel: 84
@@ -676,6 +836,8 @@ terminology:
         x: 8.367959034381855
         y: 67.15727871250914
         z: -13.155084125822967
+      alternateName:
+      - R.FP
     ctx-rh-temporalpole:
       name: ctx-rh-temporalpole
       lookupLabel: 85
@@ -684,6 +846,8 @@ terminology:
         x: 28.28962962962963
         y: 15.050000000000011
         z: -35.056666666666665
+      alternateName:
+      - R.TP
     ctx-rh-transversetemporal:
       name: ctx-rh-transversetemporal
       lookupLabel: 86
@@ -692,6 +856,8 @@ terminology:
         x: 45.68185516680228
         y: -17.853539462978034
         z: 8.748576078112293
+      alternateName:
+      - R.TTG
     ctx-rh-insula:
       name: ctx-rh-insula
       lookupLabel: 87
@@ -700,3 +866,5 @@ terminology:
         x: 34.85538959185615
         y: 3.414898677575877
         z: -2.5362953096755803
+      alternateName:
+      - R.IN

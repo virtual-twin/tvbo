@@ -74,7 +74,7 @@ pipeline:
           module: numpy
           name: corrcoef
       equation:
-          rhs: "corrcoef(X.T)"
+          rhs: "corrcoef(transpose(X))"
       arguments:
           - name: rowvar
             value: false

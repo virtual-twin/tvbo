@@ -16,7 +16,7 @@ pipeline:
     - name: subsample
       output: subsampled
       equation:
-          rhs: "X[::step]"
+          rhs: "subsample(X, step)"
       arguments:
           - name: step
             description: "Decimation factor = period / dt"

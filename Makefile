@@ -72,7 +72,10 @@ OWL_OUT = ontology/tvb-o-struct.owl
 SHACL_OUT = ontology/tvb-o.shacl.ttl
 ABOX_OUT = ontology/tvb-o-data.ttl
 AXIOMS_TTL = ontology/tvb-o-axioms.ttl
+CLINICAL_TTL = ontology/tvb-o-clinical.ttl
+CLINICAL_NMM = ontology/tvb-o-clinical-nmm.ttl
 MERGED_OUT = ontology/tvbo.owl
+RUNTIME_ONTO = tvbo/data/ontology/tvb-o.owl
 WIDOCO_OUT = docs/ontology/spec
 ROBOT ?= robot
 WIDOCO_IMAGE ?= ghcr.io/dgarijo/widoco:v1.4.25
@@ -116,13 +119,28 @@ gen-merged: gen-owl gen-abox
 		--input $(OWL_OUT) \
 		--input $(AXIOMS_TTL) \
 		--input $(ABOX_OUT) \
-		query --update ontology/fix-punning.ru \
+		--input $(CLINICAL_TTL) \
+		--input $(CLINICAL_NMM) \
+		query --update ontology/fix-punning.ru --update ontology/clinical-postmerge.ru \
 		annotate \
 		--ontology-iri "https://w3id.org/tvbo/tvbo.owl" \
 		--version-iri "https://w3id.org/tvbo/$(shell date +%Y-%m-%d)/tvbo.owl" \
 		reason --reasoner ELK \
 		--output $(MERGED_OUT)
 	@echo "✓ Merged ontology written to $(MERGED_OUT)"
+
+# Layer the clinical addon into the ontology artifact that the runtime actually loads
+# (tvbo/ontology/owl.py loads RUNTIME_ONTO, not MERGED_OUT). Idempotent: re-merging the
+# same triples is a no-op and the label INSERTs are guarded.
+gen-runtime-onto:
+	@echo "Merging clinical addon into the runtime ontology artifact ($(RUNTIME_ONTO))..."
+	@$(ROBOT) merge \
+		--input $(RUNTIME_ONTO) \
+		--input $(CLINICAL_TTL) \
+		--input $(CLINICAL_NMM) \
+		query --update ontology/clinical-postmerge.ru \
+		--output $(RUNTIME_ONTO)
+	@echo "✓ Runtime ontology updated: $(RUNTIME_ONTO)"
 
 gen-widoco: gen-merged
 	@echo "Generating Widoco HTML documentation (W3C-style spec + WebVOWL) via Docker..."

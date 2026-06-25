@@ -186,19 +186,10 @@ def _sample_numpy(name, lo, hi, dist, mod="np"):
 
 
 # ── Graph generator utilities ────────────────────────────────────────────────
-# Maps GraphGenerator.type -> backend-specific constructor calls.
-# n_nodes is always passed separately from Network.number_of_nodes.
-
-# { type: (julia_func, networkx_func, arg_order) }
-_GRAPH_MAP = {
-    "BarabasiAlbert": ("barabasi_albert", "barabasi_albert_graph", ["n", "k"]),
-    "WattsStrogatz": ("watts_strogatz", "watts_strogatz_graph", ["n", "k", "p"]),
-    "ErdosRenyi": ("erdos_renyi", "erdos_renyi_graph", ["n", "p"]),
-    "Complete": ("complete_graph", "complete_graph", ["n"]),
-    "Cycle": ("cycle_graph", "cycle_graph", ["n"]),
-    "Star": ("star_graph", "star_graph", ["n"]),
-    "RandomRegular": ("random_regular_graph", "random_regular_graph", ["n", "k"]),
-}
+# Database-driven dispatch: each GraphGenerator type lives as a YAML file in
+# tvbo/database/graph_generators/<Type>.yaml, with its per-backend bindings
+# declared there. No hard-coded Python tables — adding a new generator is a
+# new YAML file, possibly plus a Python materialiser in tvbo.graph_generators.
 
 
 def _get_gen_params(gen):
@@ -217,13 +208,47 @@ def _get_gen_params(gen):
     return result
 
 
+# Cache of generator-type → bindings dict, loaded lazily from the database
+# to avoid YAML parse overhead on every codegen invocation.
+_BINDINGS_CACHE: dict[str, dict] = {}
+
+
+def _load_bindings(gtype: str) -> dict:
+    """Load (and cache) the `bindings:` block of a generator's database entry.
+
+    Returns a dict mapping backend name → {callable, args, ...}. Raises
+    ValueError if the generator type is not found in the database.
+    """
+    if gtype in _BINDINGS_CACHE:
+        return _BINDINGS_CACHE[gtype]
+
+    import yaml
+
+    from tvbo.data.registry import resolve
+
+    try:
+        path = resolve("GraphGenerator", gtype)
+    except (FileNotFoundError, ValueError) as e:
+        raise ValueError(
+            f"Unknown graph generator type {gtype!r}. Add a YAML file under "
+            f"tvbo/database/graph_generators/ to register it."
+        ) from e
+
+    with open(path) as f:
+        entry = yaml.safe_load(f) or {}
+    bindings = entry.get("bindings", {}) or {}
+    _BINDINGS_CACHE[gtype] = bindings
+    return bindings
+
+
 def graph_generator_call(gen, n_nodes, backend="julia"):
     """Generate a graph constructor call string from a GraphGenerator object.
 
     Args:
         gen: GraphGenerator with .type, .parameters, .seed, .directed
         n_nodes: number of nodes (from Network.number_of_nodes)
-        backend: 'julia' or 'networkx'
+        backend: 'julia', 'networkx', 'python', or any other key declared
+                 in the generator's `bindings:` block in the database.
 
     Returns:
         str: constructor call, e.g. 'barabasi_albert(20, 4)'
@@ -232,16 +257,19 @@ def graph_generator_call(gen, n_nodes, backend="julia"):
     params = _get_gen_params(gen)
     params["n"] = n_nodes
 
-    mapping = _GRAPH_MAP.get(gtype)
-    if not mapping:
-        raise ValueError(f"Unknown graph generator type '{gtype}'. Known types: {list(_GRAPH_MAP.keys())}")
+    bindings = _load_bindings(gtype)
+    binding = bindings.get(backend)
+    if not binding:
+        available = sorted(bindings.keys())
+        raise ValueError(
+            f"GraphGenerator {gtype!r} has no binding for backend {backend!r}. "
+            f"Available backends in its database entry: {available}"
+        )
 
-    func = mapping[0] if backend == "julia" else mapping[1]
-    arg_order = mapping[2]
-
-    # NetworkX has different arg order for RandomRegular: (k, n) not (n, k)
-    if backend == "networkx" and gtype == "RandomRegular":
-        arg_order = ["k", "n"]
+    callable_name = binding.get("callable")
+    arg_order = binding.get("args", [])
+    if not callable_name:
+        raise ValueError(f"Binding for {gtype}/{backend} is missing the `callable:` field.")
 
     args = [str(params[a]) for a in arg_order if a in params]
-    return f"{func}({', '.join(args)})"
+    return f"{callable_name}({', '.join(args)})"

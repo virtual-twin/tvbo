@@ -1,4 +1,4 @@
-from linkml_runtime.loaders import yaml_loader
+from tvbo.utils import yaml_loader
 
 from tvbo.datamodel import schema as tvbo_datamodel
 from tvbo.classes import experiment

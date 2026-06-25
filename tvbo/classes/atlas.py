@@ -8,7 +8,7 @@ except ImportError:
 import numpy as np
 from bids.layout import BIDSLayout
 from linkml_runtime.dumpers import yaml_dumper
-from linkml_runtime.loaders import yaml_loader
+from tvbo.utils import yaml_loader
 
 from scipy.ndimage import center_of_mass
 

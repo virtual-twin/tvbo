@@ -1,0 +1,167 @@
+"""Shared helpers for CLI verbs: SPEC resolution, output, error reporting.
+
+Keeps the per-verb modules as thin as possible.
+"""
+from __future__ import annotations
+
+import json as _json
+import sys
+from pathlib import Path
+from typing import Any
+
+import typer
+
+
+# ---------------------------------------------------------------------------
+# SPEC resolution
+# ---------------------------------------------------------------------------
+# A SPEC is one of:
+#   * a path-like (`./foo.yaml`, `/abs/path`, `file://...`)
+#   * a CURIE (`dynamics:JansenRit`, `study:Schirner2023`)
+#   * a bare DB name (`JansenRit`)
+# C0/C1 supports the local cases only; HTTP / platform are added in C2/C3.
+
+_CURIE_TO_CLASS = {
+    "study": "SimulationStudy",
+    "experiment": "SimulationExperiment",
+    "dynamics": "Dynamics",
+    "model": "Dynamics",
+    "network": "Network",
+    "coupling": "Coupling",
+    "integrator": "Integrator",
+    "function": "Function",
+    "observation": "Observation",
+    "atlas": "BrainAtlas",
+    "continuation": "Continuation",
+}
+
+
+def _is_pathlike(spec: str) -> bool:
+    if spec.startswith(("http://", "https://", "file://")):
+        return spec.startswith("file://")
+    return ("/" in spec) or spec.startswith(".") or Path(spec).suffix != ""
+
+
+def resolve_spec(spec: str) -> tuple[str, Any]:
+    """Resolve *spec* to ``(kind, obj)``.
+
+    *kind* is one of ``'study'``, ``'experiment'``, ``'dynamics'``,
+    ``'network'``, … and *obj* is the loaded class instance.
+
+    HTTP and platform transports are not yet implemented (raise a
+    helpful message).
+    """
+    if spec.startswith(("http://", "https://")):
+        raise typer.BadParameter(
+            f"HTTP transport not yet implemented (C2). Pull the file locally first: {spec}"
+        )
+
+    if spec.startswith("file://"):
+        spec = spec[len("file://"):]
+
+    # Path?
+    if _is_pathlike(spec):
+        path = Path(spec).expanduser()
+        if not path.exists():
+            raise typer.BadParameter(f"No such file: {path}")
+        return _load_from_file(path)
+
+    # CURIE? (`prefix:name`)
+    if ":" in spec and not spec.startswith(":"):
+        prefix, _, name = spec.partition(":")
+        cls_name = _CURIE_TO_CLASS.get(prefix.lower())
+        if cls_name is None:
+            raise typer.BadParameter(
+                f"Unknown CURIE prefix {prefix!r}. "
+                f"Known: {', '.join(sorted(_CURIE_TO_CLASS))}"
+            )
+        return _load_from_db(cls_name, name)
+
+    # Bare name — try Study, then Experiment, then Dynamics
+    for cls_name in ("SimulationStudy", "SimulationExperiment", "Dynamics"):
+        try:
+            return _load_from_db(cls_name, spec)
+        except (FileNotFoundError, ValueError):
+            continue
+    raise typer.BadParameter(
+        f"Could not resolve {spec!r}: not a path, CURIE, or known DB entry."
+    )
+
+
+def _load_from_file(path: Path) -> tuple[str, Any]:
+    """Best-effort type detection by reading the YAML's `class:` / shape."""
+    import tvbo
+
+    suffix = path.suffix.lower()
+    if suffix not in {".yaml", ".yml"}:
+        # Try the registry's importer (e.g. *.bidsdir, *.sedml, *.omex)
+        from tvbo.export import resolve_by_extension, load as _load
+        try:
+            fmt = resolve_by_extension(suffix)
+        except ValueError as e:
+            raise typer.BadParameter(str(e)) from e
+        if fmt.importer is None:
+            raise typer.BadParameter(
+                f"Format {fmt.key!r} has no importer; cannot load {path}."
+            )
+        obj = _load(fmt.key, path)
+        return _classify(obj), obj
+
+    # YAML — try Study first (it can contain Experiments), fall back to Experiment.
+    text = path.read_text(encoding="utf-8")
+    looks_like_study = "simulation_experiments" in text or (
+        "experiments:" in text and "title:" in text
+    )
+    if looks_like_study:
+        try:
+            obj = tvbo.SimulationStudy.from_file(str(path))
+            return "study", obj
+        except Exception:
+            pass
+
+    try:
+        obj = tvbo.SimulationExperiment.from_file(str(path))
+        return "experiment", obj
+    except Exception:
+        pass
+
+    obj = tvbo.Dynamics.from_file(str(path))
+    return "dynamics", obj
+
+
+def _load_from_db(cls_name: str, name: str) -> tuple[str, Any]:
+    import tvbo
+
+    cls = getattr(tvbo, cls_name)
+    obj = cls.from_db(name)
+    return _classify(obj), obj
+
+
+def _classify(obj: Any) -> str:
+    cls_name = type(obj).__name__
+    return {
+        "SimulationStudy": "study",
+        "SimulationExperiment": "experiment",
+        "Dynamics": "dynamics",
+        "Network": "network",
+        "Coupling": "coupling",
+    }.get(cls_name, cls_name.lower())
+
+
+# ---------------------------------------------------------------------------
+# Output helpers
+# ---------------------------------------------------------------------------
+
+def emit_json(payload: Any) -> None:
+    """Write a single JSON line to stdout (CLI machine-readable contract)."""
+    typer.echo(_json.dumps(payload, default=str, sort_keys=True))
+
+
+def info(msg: str) -> None:
+    """Human-facing log line — always to stderr."""
+    typer.echo(msg, err=True)
+
+
+def die(msg: str, code: int = 1) -> None:
+    typer.echo(f"error: {msg}", err=True)
+    raise typer.Exit(code)

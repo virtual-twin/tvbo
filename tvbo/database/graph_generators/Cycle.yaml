@@ -1,0 +1,16 @@
+name: Cycle
+description: "Cycle graph C_n — nodes arranged in a ring, each connected to its 2 neighbours."
+iri: tvbo:Cycle
+
+parameters:
+  n: { range: integer, description: "Number of nodes" }
+
+bindings:
+  julia:
+    library: Graphs
+    callable: cycle_graph
+    args: [n]
+  networkx:
+    library: networkx
+    callable: cycle_graph
+    args: [n]

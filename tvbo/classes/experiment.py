@@ -7,6 +7,7 @@ import copy as _copy
 import os
 from os.path import join
 from pathlib import Path
+from typing import Any
 
 import jax
 import jax.numpy as jnp
@@ -174,7 +175,7 @@ def _merge_from_registry(d, category: str):
     local = _iri_local(iri)
     try:
         from tvbo.data.registry import resolve
-        from linkml_runtime.loaders import yaml_loader
+        from tvbo.utils import yaml_loader
 
         loaded = yaml_loader.load_as_dict(str(resolve(category, local)))
         if isinstance(loaded, dict):
@@ -406,11 +407,12 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         # Get source file path if loading from file (set by from_file classmethod)
         self._source_file = getattr(self.__class__, "_pending_source_file", None)
 
-        # Load network from BIDS if bids_dir is specified
-        if hasattr(self.network, "bids_dir") and self.network.bids_dir:
-            self._load_network_from_bids()
-        elif hasattr(self.network, "data_file") and self.network.data_file and not getattr(self.network, "_store", None):
-            self._load_network_from_data_file()
+        # Materialise the network from its declarative spec. All branching
+        # lives in Network._resolve; this hook only supplies the YAML
+        # source directory for relative-path resolution.
+        if self.network is not None and not getattr(self.network, "_resolved", False):
+            source_dir = Path(self._source_file).parent if self._source_file else None
+            self.network._resolve(source_dir=source_dir)
 
         if not getattr(self, "integration", None):
             self.integration = Integrator(method="Heun")
@@ -585,14 +587,24 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         obj.__dict__["_source_file"] = getattr(cls, "_pending_source_file", None)
 
-        # Trigger sidecar load if network references a companion data file.
+        # Materialise the network from its declarative spec (data_file,
+        # bids_dir, parcellation, graph_generator). All branching logic lives
+        # in Network._resolve; this hook only supplies the YAML source
+        # directory for relative-path resolution.
         net = obj.network
-        if (net is not None
-                and getattr(net, "data_file", None)
-                and not getattr(net, "_store", None)):
-            obj._load_network_from_data_file()
-        elif net is not None and getattr(net, "bids_dir", None):
-            obj._load_network_from_bids()
+        if net is not None and not getattr(net, "_resolved", False):
+            source_file = getattr(obj, "_source_file", None)
+            source_dir = Path(source_file).parent if source_file else None
+            net._resolve(source_dir=source_dir)
+
+        # Validate declarative network-observation sources against the
+        # network's declared observational_measures (names only, no data load).
+        obj._validate_network_observations()
+
+        # Lower declarative stimulus/stimulation Event fields (target_variable,
+        # target_regions, weight_distribution) into the legacy fields the shared
+        # codegen consumes — resolved here in Python, no template changes.
+        obj._resolve_events()
 
         return obj
 
@@ -648,7 +660,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         )
 
     @classmethod
-    def from_pydantic(cls, pyd_obj) -> "SimulationExperiment":
+    def from_pydantic(cls, pyd_obj: Any) -> "SimulationExperiment":
         """Create a SimulationExperiment from a Pydantic model instance.
 
         Args:
@@ -673,7 +685,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     @classmethod
     def from_file(cls, filepath: str):
         from pathlib import Path
-        from linkml_runtime.loaders import yaml_loader
+        from tvbo.utils import yaml_loader
         import yaml
 
         # Store source file path BEFORE loading so __init__ can use it
@@ -715,7 +727,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         ...     A: {value: 3.25}
         ... ''')
         """
-        from linkml_runtime.loaders import yaml_loader
+        from tvbo.utils import yaml_loader
         import yaml
 
         data_as_dict = yaml.safe_load(yaml_string) or {}
@@ -1446,6 +1458,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             return Bunch(**namespace)
 
         elif format.lower() in ["autodiff", "jax"]:
+            _return_namespace = kwargs.pop("_return_namespace", False)
             jit = kwargs.get("jit", True)
             code = self.render_code(format=format, **kwargs)
             # Use a fresh namespace each time to avoid JAX tracer leaks
@@ -1456,6 +1469,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             jax_model = namespace["kernel"]
             if jit:
                 jax_model = jax.jit(jax_model)
+            if _return_namespace:
+                return jax_model, namespace
             return jax_model
 
         elif format.lower() in ["pde", "pde-fem", "pde-python"]:
@@ -1555,6 +1570,14 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
             delay_matrix = self.network.calculate_delays() if getattr(self.coupling, "delayed", False) else None
 
+            # Resolve network-sourced observations (e.g. fc_target <- empirical
+            # FC) to matrices and pass them alongside weights/distances. Only
+            # set when present, so experiments without network observations are
+            # unaffected.
+            net_obs = self.resolve_network_observations()
+            if net_obs:
+                kwargs.setdefault("network_observations", net_obs)
+
             # Run the experiment with optional per-step timing
             if benchmark:
                 # Run with detailed timing
@@ -1594,10 +1617,16 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 jax.config.update("jax_enable_x64", False)
                 state = state.convert_dtype(target_dtype=jnp.float32)
 
-            jax_model = self.execute(format="jax", **kwargs)
+            jax_model, _jax_ns = self.execute(format="jax", _return_namespace=True, **kwargs)
+            _run_fn = _jax_ns.get("run_experiment")
+            if _run_fn is not None:
+                # Template builds ExperimentResult directly (mirrors tvboptim backend).
+                result = _run_fn(state)
+                result.source = self
+                result.name = result.name or self.label
+                return result
+            # Fallback: IC-finding kernel returns a tuple, not an ExperimentResult.
             ts = jax_model(state)
-
-            # Wrap in ExperimentResult for consistent return type
             return ExperimentResult.from_timeseries(ts, source=self, name=self.label)
 
         elif format.lower() == "cuda":
@@ -1965,6 +1994,154 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             dt = float(self.integration.step_size)
         md = self.max_delay
         return int(round(md / dt)) + 1 if dt > 0 else 1
+
+    @property
+    def network_observation_measures(self) -> dict:
+        """Map each network-sourced observation to its network measure.
+
+        Resolves the declarative ``source: [network.observations.<measure>]``
+        (or ``network.edges.<measure>``) pointer once, in Python, so neither
+        the codegen template nor the runtime re-parse the string. Returns e.g.
+        ``{'fc_target': 'BoldCorrelation'}``; empty when no observation is
+        network-sourced.
+        """
+        out: dict = {}
+        for name, obs in (self.observations or {}).items():
+            src = getattr(obs, "source", None)
+            if isinstance(src, (list, tuple)):
+                src = src[0] if src else None
+            if src is not None and hasattr(src, "name"):
+                src = src.name
+            s = str(src) if src is not None else ""
+            if s.startswith("network.observations.") or s.startswith("network.edges."):
+                out[name] = s.split(".")[-1]
+        return out
+
+    def _validate_network_observations(self) -> None:
+        """Load-time check: every ``network.observations.<measure>`` an
+        observation references must be declared in the network's
+        ``observational_measures``. Cheap (names only, no data load) and
+        turns a runtime ``NameError`` deep in generated JAX into a clear
+        message at experiment-resolution time."""
+        measures = self.network_observation_measures
+        if not measures or self.network is None:
+            return
+        declared = set(self.network.observational_measures or [])
+        for name, measure in measures.items():
+            if declared and measure not in declared:
+                raise ValueError(
+                    f"Observation '{name}' sources 'network.observations."
+                    f"{measure}', but network '{getattr(self.network, 'label', '?')}' "
+                    f"declares observational_measures={sorted(declared)}. "
+                    f"Add '{measure}' to the network or fix the observation source."
+                )
+
+    def resolve_network_observations(self) -> dict:
+        """Resolve network-sourced observations to their matrices.
+
+        Pairs :attr:`network_observation_measures` with the data the network
+        carries (:attr:`Network.observations`), yielding ``{obs_name: matrix}``
+        ready to pass into the generated
+        ``run_experiment(network_observations=...)``. Raises a clear error if
+        a declared measure's data is absent.
+        """
+        measures = self.network_observation_measures
+        if not measures:
+            return {}
+        available = self.network.observations if self.network is not None else {}
+        resolved: dict = {}
+        for name, measure in measures.items():
+            if measure not in available:
+                raise ValueError(
+                    f"Observation '{name}' sources network measure "
+                    f"'{measure}', but the network provides "
+                    f"{sorted(available) or 'no observational data'}. "
+                    f"Ensure the network's companion file carries '{measure}'."
+                )
+            resolved[name] = available[measure]
+        return resolved
+
+    def _resolve_events(self) -> None:
+        """Lower declarative stimulus/stimulation Event fields into the form the
+        (shared) tvboptim codegen already consumes — done in Python at load
+        time, exactly like graph-generator resolution, so no template change is
+        needed and distribution handling stays consistent with
+        ``graph_generators.builtins._resolve_distribution`` (koller2024).
+
+        Per stimulus-type event:
+        - ``event_type: stimulation`` is normalised to ``stimulus`` (synonym),
+          so the codegen's ``'stimulus' in event_type`` filter matches.
+        - ``target_variable`` becomes the event's effective ``name`` — the
+          codegen exposes ``external_input[name]`` as the dfun variable.
+        - ``target_regions: all`` (or labels/indices) is lowered to integer
+          ``regions``; ``weight_distribution`` is sampled (seeded, reproducible)
+          into the ``weighting`` array via the canonical resolver. Both are the
+          legacy fields the codegen reads.
+        - equation-level ``parameters`` are merged onto the event so the
+          stimulus equation's symbols (e.g. ``T_drive``) resolve.
+        """
+        events = self.events
+        if not events:
+            return
+        try:
+            from tvbo.graph_generators.builtins import _resolve_distribution
+        except Exception:
+            _resolve_distribution = None
+
+        n_nodes = (
+            getattr(self.network, "number_of_nodes", None)
+            or getattr(self.network, "number_of_regions", None)
+            or 1
+        )
+        labels = {}
+        try:
+            for i, node in enumerate(getattr(self.network, "nodes", None) or []):
+                labels[str(getattr(node, "label", getattr(node, "id", i)))] = i
+        except Exception:
+            labels = {}
+
+        items = events.items() if hasattr(events, "items") else []
+        for _key, ev in items:
+            et = str(getattr(ev, "event_type", "stimulus") or "stimulus").lower()
+            if "stimul" not in et:
+                continue
+            ev.event_type = "stimulus"  # normalise synonym for the codegen filter
+
+            tv = getattr(ev, "target_variable", None)
+            if tv:
+                ev.name = str(tv)
+
+            # target_regions ('all' | labels | indices) -> integer regions
+            tr = getattr(ev, "target_regions", None) or []
+            if isinstance(tr, str):
+                tr = [tr]
+            tr = [str(x) for x in tr]
+            regions = list(getattr(ev, "nodes", None) or getattr(ev, "regions", None) or [])
+            if tr and not (len(tr) == 1 and tr[0].lower() == "all"):
+                regions = [int(labels.get(x, x)) for x in tr]
+
+            # weight_distribution -> weights array (canonical, seeded resolver)
+            wd = getattr(ev, "weight_distribution", None)
+            weighting = list(getattr(ev, "weights", None) or getattr(ev, "weighting", None) or [])
+            if wd is not None and not weighting and _resolve_distribution is not None:
+                n = len(regions) if regions else int(n_nodes)
+                rng = np.random.default_rng(getattr(wd, "seed", None))
+                weighting = [float(x) for x in _resolve_distribution(wd, rng, (n,))]
+                if not regions:
+                    regions = list(range(int(n_nodes)))
+            if regions:
+                ev.nodes = regions
+            if weighting:
+                ev.weights = weighting
+
+            # merge equation-level parameters onto the event (codegen reads ev.parameters)
+            eq = getattr(ev, "equation", None)
+            eq_params = getattr(eq, "parameters", None) if eq is not None else None
+            if eq_params:
+                merged = dict(getattr(ev, "parameters", None) or {})
+                for pk, pv in (eq_params.items() if hasattr(eq_params, "items") else []):
+                    merged.setdefault(pk, pv)
+                ev.parameters = merged
 
     def collect_initial_conditions(self, random=False):
         history = []

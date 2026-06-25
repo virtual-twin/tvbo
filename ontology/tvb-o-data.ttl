@@ -1234,13 +1234,6 @@ tvbo:data a owl:Ontology ;
         tvbo:SimulationExperiment ;
     rdfs:label "RateML rwongwang ground truth" .
 
-<https://w3id.org/tvbo/experiments/Schirner2023_MultiscaleBNM_DM> a owl:NamedIndividual,
-        tvbo:SimulationExperiment ;
-    rdfs:label "Multiscale BNM: Decision-Making with E/I Balance Tuning" ;
-    dcterms:description """Multiscale brain network model coupling large-scale structural connectivity with a small-scale frontoparietal circuit for decision-making (DM) and working memory (WM). The large-scale model uses the Reduced Wong-Wang model (Deco et al., 2014, JNeurosci) with explicit excitatory and inhibitory populations. The functional circuit implements winner-take-all DM and persistent-activity WM based on Murray, Jaramillo & Wang (2017, JNeurosci).
-Key innovation: The ratio of long-range excitation (LRE) to feedforward inhibition (FFI) controls functional connectivity between brain regions. This E/I balance tuning enables fitting personalized brain network models to empirical functional connectivity and explains individual differences in cognitive performance (speed-accuracy trade-off in intelligence tests).
-""" .
-
 <https://w3id.org/tvbo/integrators/Dopri5> a owl:NamedIndividual,
         tvbo:Integrator ;
     rdfs:label "Dopri5" .
@@ -1634,6 +1627,27 @@ Key innovation: The ratio of long-range excitation (LRE) to feedforward inhibiti
     rdfs:label "tpl-MNI152NLin2009cAsym_rec-avgMatrix_atlas-Lobar8_desc-SCFC_relmat" ;
     skos:altLabel "Lobar8 (avgMatrix)" ;
     tvbo:hasParameter <https://w3id.org/tvbo/networks/tpl-MNI152NLin2009cAsym_rec-avgMatrix_atlas-Lobar8_desc-SCFC_relmat/parameters/conduction_speed> .
+
+<https://w3id.org/tvbo/networks/tpl-MNI152NLin2009c_atlas-DesikanKilliany_desc-MEGAlpha_dscalar> a owl:NamedIndividual,
+        tvbo:Network ;
+    rdfs:label "tpl-MNI152NLin2009c_atlas-DesikanKilliany_desc-MEGAlpha_dscalar" ;
+    dcterms:description """Per-region MEG alpha-band amplitude values aligned with the 68 cortical parcels
+of the Desikan-Killiany atlas. Sourced from
+tvb-ontology-optim-workshop/notebooks/data/{lh,rh}_megalpha_parc.csv.
+
+The measure exhibits the canonical cortical-hierarchy gradient:
+  - unimodal sensory regions (pericalcarine, cuneus, lateraloccipital,
+    transversetemporal) score high  (~0.40)
+  - transmodal regions       (rostralanteriorcingulate, frontalpole,
+    temporalpole, medialorbitofrontal) score low (~0.15)
+
+Used as a per-region cortical-gradient signal in experiments that need
+to ground a hierarchy (e.g. reservoir-computing frequency-gradient
+targets, JR-MEG peak-frequency optimisation). The values are
+dimensionless normalised amplitudes; downstream consumers rescale
+to a task-appropriate range (e.g. omega in Hz).
+""" ;
+    skos:altLabel "Desikan-Killiany 68 cortical parcels with MEG alpha amplitudes per region" .
 
 <https://w3id.org/tvbo/networks/tpl-fsaverage_acq-EEGstandard1005_atlas-DesikanKilliany_desc-projection_sensors> a owl:NamedIndividual,
         tvbo:Network ;
@@ -2259,6 +2273,24 @@ Key innovation: The ratio of long-range excitation (LRE) to feedforward inhibiti
     dcterms:license "GPL-3.0-only" ;
     schema1:codeRepository "https://github.com/SpiNNakerManchester/sPyNNaker" ;
     schema1:url "https://spinnakermanchester.github.io" .
+
+<https://w3id.org/tvbo/software/vbi> a owl:NamedIndividual,
+        tvbo:SoftwarePackage ;
+    rdfs:label "vbi" ;
+    dcterms:description "Virtual Brain Inference. Probabilistic inference toolkit for whole-brain models — multi-backend simulators (Numba, C++, CuPy, JAX, PyTorch, TVB kernels), a 40+ time-series feature library (statistical, spectral, FC/FCD, complexity, event-detection), and two parallel inference paths (SBI via sbi-toolkit SNPE/SNLE/SNRE with MAF/NSF, and a built-in autograd-based CDE with MDN/MAF estimators). Targets the inverse problem of mapping observed neuroimaging (EEG/MEG/fMRI) onto brain-model parameters." ;
+    dcterms:license "MIT" ;
+    schema1:codeRepository "https://github.com/ins-amu/vbi" ;
+    schema1:identifier "10.5281/zenodo.14795543" ;
+    schema1:url "https://vbi.readthedocs.io" .
+
+<https://w3id.org/tvbo/software/vbjax> a owl:NamedIndividual,
+        tvbo:SoftwarePackage ;
+    rdfs:label "vbjax" ;
+    dcterms:description "JAX-based virtual brain library. Provides stochastic Heun integrators for ODE/SDE/DDE/SDDE, canonical neural-mass models (Jansen-Rit, Montbrio-Pazo-Roxin, BVEP, bilinear DCM, Dopa), BOLD/EEG monitors, delay-coupling helpers, a spherical-harmonic neural-field operator, and JAX-native parameter sweeps with gradient-based fitting and MCMC." ;
+    dcterms:license "Apache-2.0" ;
+    schema1:codeRepository "https://github.com/ins-amu/vbjax" ;
+    schema1:identifier "10.5281/zenodo.14204250" ;
+    schema1:url "https://github.com/ins-amu/vbjax" .
 
 <https://w3id.org/tvbo/studies/Abbott2005> a schema1:Book,
         owl:NamedIndividual ;
