@@ -1083,7 +1083,6 @@ classes:
             # Network metadata
             number_of_nodes:
                 range: integer
-                ifabsent: integer(1)
                 description: "Number of nodes in the network (derived from nodes if not set)"
                 aliases:
                     - number_of_nodes

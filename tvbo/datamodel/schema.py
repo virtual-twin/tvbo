@@ -1067,7 +1067,7 @@ class Network(YAMLRoot):
     dynamics: Optional[Union[dict[Union[str, DynamicsName], Union[dict, "Dynamics"]], list[Union[dict, "Dynamics"]]]] = empty_dict()
     node_template: Optional[Union[dict, "Node"]] = None
     edge_template: Optional[Union[dict, "Edge"]] = None
-    number_of_nodes: Optional[int] = 1
+    number_of_nodes: Optional[int] = None
     coordinate_space: Optional[Union[dict, "CommonCoordinateSpace"]] = None
     parcellation: Optional[Union[dict, Parcellation]] = None
     tractogram: Optional[Union[dict, Tractogram]] = None

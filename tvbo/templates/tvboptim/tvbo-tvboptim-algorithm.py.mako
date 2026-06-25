@@ -444,7 +444,7 @@ def run_${algo_name}(
                 key, subkey = jax.random.split(key)
                 _warmup_result = model_fn(state)
                 state.initial_state.dynamics = _warmup_result.data[-1][:${len(state_names)}]
-                if hasattr(state, '_internal') and hasattr(state._internal, 'noise_samples'):
+                if hasattr(state, '_internal') and getattr(state._internal, 'noise_samples', None) is not None:
                     state._internal.noise_samples = jax.random.normal(
                         key=subkey, shape=state._internal.noise_samples.shape
                     )
@@ -476,7 +476,7 @@ def run_${algo_name}(
             key, subkey = jax.random.split(key)
             _warmup_result = model_fn(state)
             state.initial_state.dynamics = _warmup_result.data[-1][:${len(state_names)}]
-            if hasattr(state, '_internal') and hasattr(state._internal, 'noise_samples'):
+            if hasattr(state, '_internal') and getattr(state._internal, 'noise_samples', None) is not None:
                 state._internal.noise_samples = jax.random.normal(
                     key=subkey, shape=state._internal.noise_samples.shape
                 )
@@ -528,7 +528,7 @@ def run_${algo_name}(
 % endfor
         result = model_fn(state)
         state.initial_state.dynamics = result.data[-1][:${len(state_names)}]
-        if hasattr(state, '_internal') and hasattr(state._internal, 'noise_samples'):
+        if hasattr(state, '_internal') and getattr(state._internal, 'noise_samples', None) is not None:
             state._internal.noise_samples = jax.random.normal(
                 key=subkey, shape=state._internal.noise_samples.shape
             )
