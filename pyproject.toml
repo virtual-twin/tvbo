@@ -73,10 +73,15 @@ knowledge = [
 # Audio/signal processing
 # Note: llvmlite >=0.44 has no macosx_x86_64 wheels for cp312/cp313, so we cap
 # numba/llvmlite on Intel Mac. See https://github.com/virtual-twin/tvbo/issues/7
+# The floors are essential: without them the resolver backtracks to the ancient
+# numba 0.53.1 / llvmlite 0.36.0 (no py3.12/3.13 wheels, fails to build) to
+# satisfy librosa/tvb-library. Intel Mac stays capped to <0.60 / <0.44.
 audio = [
     "librosa>=0.10.2",
-    "numba<0.60;    sys_platform == 'darwin' and platform_machine == 'x86_64'",
-    "llvmlite<0.44; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "numba>=0.59;    sys_platform != 'darwin' or platform_machine != 'x86_64'",
+    "numba<0.60;     sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "llvmlite>=0.42; sys_platform != 'darwin' or platform_machine != 'x86_64'",
+    "llvmlite<0.44;  sys_platform == 'darwin' and platform_machine == 'x86_64'",
 ]
 
 # Documentation & reports
@@ -101,13 +106,16 @@ julia = ["juliacall>=0.9.20"]
 api = ["fastapi>=0.115.0", "uvicorn>=0.30.0", "docker>=7.1.0"]
 
 # TVB integration
-# Same Intel-Mac llvmlite cap as [audio]; tvb-library pulls numba transitively.
+# Same Intel-Mac llvmlite cap + modern floor as [audio]; tvb-library pulls
+# numba transitively and otherwise drags the resolver down to numba 0.53.1.
 tvb = [
     "tvb-library",
     "tvb-framework",
     "tvb-data",
-    "numba<0.60;    sys_platform == 'darwin' and platform_machine == 'x86_64'",
-    "llvmlite<0.44; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "numba>=0.59;    sys_platform != 'darwin' or platform_machine != 'x86_64'",
+    "numba<0.60;     sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "llvmlite>=0.42; sys_platform != 'darwin' or platform_machine != 'x86_64'",
+    "llvmlite<0.44;  sys_platform == 'darwin' and platform_machine == 'x86_64'",
 ]
 
 # TVB optimization (JAX-based simulation & optimization)
