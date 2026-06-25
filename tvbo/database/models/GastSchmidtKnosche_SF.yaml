@@ -3,7 +3,6 @@ iri: tvbo:GastSchmidtKnosche_SF
 model_type: neural_mass
 parameters:
   Delta:
-    name: Delta
     definition: Half-width of heterogeneous noise distribution
     value: 2.0
     domain:
@@ -12,7 +11,6 @@ parameters:
       step: 0.01
     description: Half-width of heterogeneous noise distribution
   I:
-    name: I
     definition: External homogeneous current
     value: 0.0
     domain:
@@ -21,7 +19,6 @@ parameters:
       step: 0.01
     description: External homogeneous current
   J:
-    name: J
     definition: Synaptic weight
     value: 21.2132
     domain:
@@ -32,7 +29,6 @@ parameters:
     grounding:
     - GO:0099536
   alpha:
-    name: alpha
     definition: adaptation rate
     value: 10.0
     domain:
@@ -43,7 +39,6 @@ parameters:
     grounding:
     - GO:0042391
   cr:
-    name: cr
     definition: It is the weight on Coupling through variable r.
     value: 1.0
     domain:
@@ -52,7 +47,6 @@ parameters:
       step: 0.1
     description: It is the weight on Coupling through variable r
   cv:
-    name: cv
     definition: It is the weight on Coupling through variable V.
     value: 0.0
     domain:
@@ -61,7 +55,6 @@ parameters:
       step: 0.1
     description: It is the weight on Coupling through variable V
   eta:
-    name: eta
     definition: Mean of heterogeneous noise distribution
     value: 1.0
     domain:
@@ -70,7 +63,6 @@ parameters:
       step: 0.0001
     description: Mean of heterogeneous noise distribution
   tau_A:
-    name: tau_A
     definition: Adaptation time scale
     value: 10.0
     domain:
@@ -79,7 +71,6 @@ parameters:
       step: 0.01
     description: Adaptation time scale
   tau:
-    name: tau
     definition: Characteristic time
     value: 1.0
     domain:
@@ -91,13 +82,10 @@ description: ''
 references:
 - Gast2020
 coupling_inputs:
-  c_pop0:
-    name: c_pop0
-  c_pop1:
-    name: c_pop1
+  c_pop0: {}
+  c_pop1: {}
 state_variables:
   A:
-    name: A
     domain:
       lo: -1.0
       hi: 1.0
@@ -110,7 +98,6 @@ state_variables:
     coupling_variable: true
     initial_value: 0.1
   B:
-    name: B
     domain:
       lo: -1.0
       hi: 1.0
@@ -123,7 +110,6 @@ state_variables:
     coupling_variable: true
     initial_value: 0.1
   V:
-    name: V
     domain:
       lo: -2.0
       hi: 1.5
@@ -136,7 +122,6 @@ state_variables:
     coupling_variable: true
     initial_value: 0.1
   r:
-    name: r
     domain:
       lo: 0.0
       hi: .inf
@@ -149,4 +134,9 @@ state_variables:
     variable_of_interest: true
     coupling_variable: true
     initial_value: 0.1
+    distribution:
+      name: Uniform
+      domain:
+        lo: 0.0
+        hi: 2.0
 number_of_modes: 1

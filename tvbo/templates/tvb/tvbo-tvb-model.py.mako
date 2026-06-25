@@ -32,6 +32,7 @@ has_local_coupling = bool(local_coupling_inputs)
 % if standalone:
 # Auto-generated standalone model file
 import numpy as np
+import scipy.special
 from tvb.basic.neotraits.api import Attr, Final, List, NArray, Range
 from tvb.simulator.models.base import Model
 
@@ -60,48 +61,37 @@ class ${model.name}(Model):
 % endif
 ########## StateVariable Ranges and Boundaries ##########
 <%
-# Define 1e9 constant for readability
-INFINITY = '1e9'
-NEGINFINITY = '-1e9'
+import math
+from tvbo.adapters.tvb import tvb_state_variable_ranges, tvb_state_variable_boundaries
 
-def format_range_or_boundary(sv, attr, default=(NEGINFINITY, INFINITY)):
-    if getattr(sv, attr):
-        lo = str(getattr(sv, attr).lo) if getattr(sv, attr).lo is not None else default[0]
-        hi = str(getattr(sv, attr).hi) if getattr(sv, attr).hi is not None else default[1]
-    else:
-        lo, hi = default
+def _lit(v):
+    """Render a float as a TVB-code literal, preserving infinities as np.inf."""
+    return ('np.inf' if v > 0 else '-np.inf') if math.isinf(v) else repr(float(v))
 
-    return f'"{sv.name}": np.array([{lo}, {hi}])'
+def _entry(name, bounds):
+    """Render one ``"name": np.array([lo, hi])`` dict entry."""
+    lo, hi = bounds
+    return f'"{name}": np.array([{_lit(lo)}, {_lit(hi)}])'
 
-from tvbo.utils import domain_enforcement
-def clamp_domain(sv):
-    # TVB's state_variable_boundaries == a domain that opts into hard clamping.
-    dom = getattr(sv, 'domain', None)
-    return dom if (dom and domain_enforcement(dom) == 'clamp') else None
-
-def format_clamp(sv, default=(NEGINFINITY, INFINITY)):
-    dom = clamp_domain(sv)
-    if dom:
-        lo = str(dom.lo) if dom.lo is not None else default[0]
-        hi = str(dom.hi) if dom.hi is not None else default[1]
-    else:
-        lo, hi = default
-    return f'"{sv.name}": np.array([{lo}, {hi}])'
+# Resolution (which source feeds the range vs the clamp) lives in the adapter;
+# the template only renders the resulting {name: (lo, hi)} mappings.
+sv_ranges = tvb_state_variable_ranges(model)
+sv_boundaries = tvb_state_variable_boundaries(model)
 %>
 
     state_variable_range = Final(
         label="State Variable ranges [lo, hi]",
         default={
-            ${",\n\t\t\t".join([format_range_or_boundary(sv, 'domain') for sv in model.state_variables.values()])}
+            ${",\n\t\t\t".join([_entry(n, b) for n, b in sv_ranges.items()])}
         },
         doc="""Expected ranges of the state variables for initial condition generation and phase plane setup."""
     )
 
-% if any(clamp_domain(sv) is not None for sv in model.state_variables.values()):
+% if sv_boundaries:
     state_variable_boundaries = Final(
         label="State Variable boundaries [lo, hi]",
         default={
-            ${",\n\t\t\t".join([format_clamp(sv) for sv in model.state_variables.values() if clamp_domain(sv) is not None])}
+            ${",\n\t\t\t".join([_entry(n, b) for n, b in sv_boundaries.items()])}
         },
         doc="""State variable boundaries for phase plane setup."""
     )
@@ -233,8 +223,13 @@ ${indented_fndef}
 
 ## State-Equations
         # Time Derivatives
-        return np.array([
+        # Broadcast every derivative to a common per-node shape so constant
+        # (state-independent) derivatives — e.g. ``duA/dt = cA`` — stack into a
+        # homogeneous array alongside node-shaped ones, matching TVB's own
+        # ``numpy.full_like`` handling of constant drifts.
+        _derivs = np.broadcast_arrays(
     % for sv in model.state_variables.values():
-            ${render(sv)}, # ${sv.name}
+            np.asarray(${render(sv)}), # ${sv.name}
     % endfor
-        ])
+        )
+        return np.array(_derivs)

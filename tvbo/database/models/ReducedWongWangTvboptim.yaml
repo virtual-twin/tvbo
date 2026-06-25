@@ -22,7 +22,6 @@ references:
 - Deco2013
 parameters:
   a:
-    name: a
     definition: Input gain parameter of the sigmoid transfer function H(x).
     value: 0.270
     domain:
@@ -32,7 +31,6 @@ parameters:
     description: Input gain parameter
     unit: per_pC
   b:
-    name: b
     definition: Input shift parameter of the sigmoid transfer function H(x).
     value: 0.108
     domain:
@@ -42,7 +40,6 @@ parameters:
     description: Input shift parameter
     unit: kHz
   d:
-    name: d
     definition: Scaling parameter of the sigmoid transfer function H(x).
     value: 154.0
     domain:
@@ -52,7 +49,6 @@ parameters:
     description: Scaling parameter
     unit: ms
   gamma:
-    name: gamma
     definition: Kinetic parameter governing the rate of NMDA channel dynamics.
     value: 0.641
     domain:
@@ -61,7 +57,6 @@ parameters:
       step: 0.01
     description: Kinetic parameter
   tau_s:
-    name: tau_s
     definition: NMDA decay time constant for the synaptic gating variable S.
     value: 100.0
     domain:
@@ -71,7 +66,6 @@ parameters:
     description: NMDA decay time constant
     unit: ms
   w:
-    name: w
     definition: >-
       Local excitatory recurrence strength. Controls the positive feedback
       within each cortical population. Higher values increase local excitation
@@ -84,7 +78,6 @@ parameters:
     description: Excitatory recurrence strength (local feedback)
     unit: dimensionless
   J_N:
-    name: J_N
     definition: >-
       NMDA synaptic coupling strength. Scales both local recurrence and
       long-range network coupling inputs.
@@ -96,7 +89,6 @@ parameters:
     description: NMDA synaptic coupling strength
     unit: nA
   I_o:
-    name: I_o
     definition: >-
       Effective external input current to each cortical population. Default
       0.34 nA sets the system in bistability (Hansen et al., 2015). Together
@@ -110,7 +102,6 @@ parameters:
     unit: nA
 derived_variables:
   x:
-    name: x
     description: >-
       Total synaptic input current combining local recurrence, external input,
       and network coupling (instant and delayed) scaled by J_N.
@@ -120,7 +111,6 @@ derived_variables:
       latex: false
     conditional: false
   H_x:
-    name: H_x
     description: >-
       Average population firing rate H evaluated at the total synaptic input x.
     equation:
@@ -130,7 +120,6 @@ derived_variables:
     conditional: false
 functions:
   H:
-    name: H
     definition: >-
       Sigmoid transfer function mapping total synaptic input current to the
       average population firing rate (Deco et al., 2013).
@@ -142,14 +131,11 @@ output:
 - H_x
 coupling_inputs:
   instant:
-    name: instant
     description: Instantaneous network coupling input
   delayed:
-    name: delayed
     description: Delayed network coupling input
 state_variables:
   S:
-    name: S
     domain:
       lo: 0.0
       hi: 1.0

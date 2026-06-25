@@ -1,5 +1,5 @@
-name: ReducedWongWangExcInh
-iri: tvbo:ReducedWongWangExcInh
+name: DecoBalancedExcInh
+iri: tvbo:DecoBalancedExcInh
 model_type: mean_field
 parameters:
   G:
@@ -53,6 +53,16 @@ parameters:
     description: Local feedback inhibitory synaptic coupling to the excitatory population firing rate IE (Deco et al
     grounding:
     - GO:0060080
+    - GO:0099605
+  M_i:
+    definition: Effective gain within a region (Deco et al., 2021).
+    value: 1.0
+    domain:
+      lo: 1.0
+      hi: 10.0
+      step: 0.01
+    description: Effective gain within a region. Scales the excitatory and inhibitory input currents derived from the regional transcriptional landscape (Deco et al., 2021).
+    grounding:
     - GO:0099605
   W_e:
     definition: Excitatory population external input scaling weight
@@ -189,9 +199,9 @@ parameters:
     description: Excitatory population recurrence weight
     grounding:
     - GO:0060079
-description: Reduced WongWang Exc-Inh (RWW_EI) is a biologically-inspired two-dimensional (i.e., two state-variables ('S_E','S_I')) neural mass model describing the dynamics of a cortical area consisting of local networks of excitatory (AMPA) and inhibitory (GABA-A) populations of spiking neurons interconnected via NMDA synapses. These neurons are organized into an inhibitory population accounting for 20% of the neurons and an excitatory population accounting for 80% of the neurons.
+description: Deco Balanced Exc-Inh model. It extends the Reduced Wong-Wang Exc-Inh (RWW_EI) dynamic mean-field model with an effective regional gain parameter M_i that scales both the excitatory and inhibitory input currents, capturing the dynamical consequences of regional heterogeneity in the brain's transcriptional landscape (Deco et al., 2021).
 references:
-- Deco2014
+- Deco2021
 derived_variables:
   J_N_S_e:
     equation:
@@ -202,29 +212,47 @@ derived_variables:
   coupling:
     equation:
       lhs: coupling
-      rhs: G*J_N*(S_e*local_coupling + c_glob)
+      rhs: G*J_N*(S_e*local_coupling + c_pop0)
       latex: false
     conditional: false
+  I_e:
+    description: Input current to the excitatory population (Deco et al., 2021).
+    equation:
+      lhs: I_e
+      rhs: I_ext + I_o*W_e + J_N_S_e*w_p - J_i*S_i + coupling
+      latex: false
+    conditional: false
+    grounding:
+    - GO:0098815
+  I_i:
+    description: Input current to the inhibitory population (Deco et al., 2021).
+    equation:
+      lhs: I_i
+      rhs: I_o*W_i + J_N_S_e - S_i + coupling*lamda
+      latex: false
+    conditional: false
+    grounding:
+    - GO:0060080
   x_e:
-    description: Input current to the excitatory population (Deco et al., 2014).
+    description: Gain-scaled input current to the excitatory population (Deco et al., 2021).
     equation:
       lhs: x_e
-      rhs: a_e*(I_ext + I_o*W_e + J_N_S_e*w_p - J_i*S_i + coupling) - b_e
+      rhs: M_i*(a_e*I_e - b_e)
       latex: false
     conditional: false
     grounding:
     - GO:0098815
   x_i:
-    description: Input current to the inhibitory population (Deco et al., 2014).
+    description: Gain-scaled input current to the inhibitory population (Deco et al., 2021).
     equation:
       lhs: x_i
-      rhs: a_i*(I_o*W_i + J_N_S_e - S_i + coupling*lamda) - b_i
+      rhs: M_i*(a_i*I_i - b_i)
       latex: false
     conditional: false
     grounding:
     - GO:0060080
   H_e:
-    description: Sigmoid function that computes the averaged firing rate of the excitatory neuron population IE_RWW_EI (Deco et al., 2014; Abbott & Chance, 2005).
+    description: Sigmoid function that computes the averaged firing rate of the excitatory neuron population (Deco et al., 2021).
     equation:
       lhs: H_e
       rhs: x_e/(1 - exp(-d_e*x_e))
@@ -234,7 +262,7 @@ derived_variables:
     - GO:0060079
     - GO:0099605
   H_i:
-    description: Sigmoid function that computes the averaged firing rate of the inhibitory neuron population II_RWW (Deco et al., 2014; Abbott & Chance, 2005).
+    description: Sigmoid function that computes the averaged firing rate of the inhibitory neuron population (Deco et al., 2021).
     equation:
       lhs: H_i
       rhs: x_i/(1 - exp(-d_i*x_i))
@@ -244,7 +272,7 @@ derived_variables:
     - GO:0060080
     - GO:0099605
 coupling_inputs:
-  c_glob: {}
+  c_pop0: {}
   local_coupling: {}
 state_variables:
   S_e:
@@ -252,7 +280,7 @@ state_variables:
       lo: 0.0
       hi: 1.0
       enforce: clamp
-    description: State-variable of the Reduced WongWang_EI model (Deco et al
+    description: Excitatory population synaptic gating state-variable of the Deco Balanced Exc-Inh model (Deco et al., 2021).
     equation:
       lhs: Derivative(S_e, t)
       rhs: H_e*gamma_e*(1 - S_e) - S_e/tau_e
@@ -268,7 +296,7 @@ state_variables:
       lo: 0.0
       hi: 1.0
       enforce: clamp
-    description: State-variable of the Reduced WongWang_EI model (Deco et al
+    description: Inhibitory population synaptic gating state-variable of the Deco Balanced Exc-Inh model (Deco et al., 2021).
     equation:
       lhs: Derivative(S_i, t)
       rhs: H_i*gamma_i - S_i/tau_i
