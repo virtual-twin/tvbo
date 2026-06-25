@@ -206,6 +206,52 @@ def _fold_slot_aliases(obj: Any) -> Any:
     return obj
 
 
+def _lift_distribution_shortcut(obj: Any) -> Any:
+    """Allow a terse ``distribution: {lo, hi}`` as a shortcut for a Uniform.
+
+    A ``Distribution`` carries its support under ``domain``; a bare
+    ``lo``/``hi``/``step`` on any ``*distribution`` slot is lifted into ``domain``
+    here, before the LinkML loader sees it, and the distribution ``name`` is
+    materialised as ``Uniform`` (so the lifted form is a complete, valid
+    ``{name: Uniform, domain: {lo, hi}}``). Any other keys (seed, axis, …) are
+    preserved; if an explicit ``domain`` is already present the value is left
+    untouched.
+    """
+    if isinstance(obj, dict):
+        out: dict = {}
+        for k, v in obj.items():
+            if (
+                isinstance(k, str)
+                and k.endswith("distribution")
+                and isinstance(v, dict)
+                and "domain" not in v
+                and any(b in v for b in ("lo", "hi", "step"))
+            ):
+                bounds = {b: v[b] for b in ("lo", "hi", "step") if b in v}
+                rest = {kk: vv for kk, vv in v.items() if kk not in ("lo", "hi", "step")}
+                v = {**rest, "domain": bounds}
+                v.setdefault("name", "Uniform")
+            out[k] = _lift_distribution_shortcut(v)
+        return out
+    if isinstance(obj, list):
+        return [_lift_distribution_shortcut(x) for x in obj]
+    return obj
+
+
+def _normalize_loaded(data: Any) -> Any:
+    """Apply the dict-level TVBO conveniences shared by every load path.
+
+    Folds slot aliases to their canonical names and lifts the terse
+    ``distribution: {lo, hi}`` shortcut into ``distribution: {domain: {lo, hi}}``.
+    Both the string path (``load``/``loads`` → LinkML) and the dict path
+    (``load_as_dict`` → ``Dynamics.from_file``/``from_db``) route through here so
+    the two cannot diverge.
+    """
+    data = _fold_slot_aliases(data)
+    data = _lift_distribution_shortcut(data)
+    return data
+
+
 def _preprocess(source: Any, base_dir: Path) -> str:
     """Parse ``source`` with the TVBO loader and re-serialise to plain YAML.
 
@@ -225,9 +271,9 @@ def _preprocess(source: Any, base_dir: Path) -> str:
         data = yaml.load(source, LoaderCls)
     else:
         data = source
-    # Fold convenience slot-aliases (e.g. optimization → optimizations) to
-    # canonical names so the LinkML loader accepts them.
-    data = _fold_slot_aliases(data)
+    # Fold slot aliases + lift the terse distribution shortcut (shared with the
+    # dict path so the two cannot diverge).
+    data = _normalize_loaded(data)
     # Re-serialise using safe_dump so the LinkML loader sees pure data
     # with no remaining anchors/merge keys/!include directives.
     return yaml.safe_dump(data, sort_keys=False)
@@ -265,12 +311,17 @@ def load_as_dict(source: Any, **kwargs: Any) -> dict:
     LoaderCls = _make_loader_class(base_dir)
     if _looks_like_path(source):
         with open(source, "r") as fh:
-            return yaml.load(fh, LoaderCls)
-    if isinstance(source, str):
-        return yaml.load(io.StringIO(source), LoaderCls)
-    if hasattr(source, "read"):
-        return yaml.load(source, LoaderCls)
-    return source
+            data = yaml.load(fh, LoaderCls)
+    elif isinstance(source, str):
+        data = yaml.load(io.StringIO(source), LoaderCls)
+    elif hasattr(source, "read"):
+        data = yaml.load(source, LoaderCls)
+    else:
+        data = source
+    # Route through the same normalisation as the string path (fold slot aliases
+    # + lift the terse `distribution: {lo, hi}` shortcut) so the dict path used by
+    # from_file/from_db cannot diverge from the LinkML string path.
+    return _normalize_loaded(data)
 
 
 def _base_dir_for(source: Any) -> Path:

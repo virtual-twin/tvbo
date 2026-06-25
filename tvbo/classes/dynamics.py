@@ -622,10 +622,15 @@ def _resolve_statevariable_boundaries(d: dict) -> None:
     trajectory to [lo, hi]". The schema now carries a single ``domain`` whose
     ``enforce`` attribute (none/clamp/wrap) says whether/how it is enforced, so
     ``boundaries: {lo, hi}`` is equivalent to ``domain: {lo, hi, enforce: clamp}``.
-    The clamp range supersedes any looser descriptive ``domain`` that was present
-    (the clamp is what actually constrained integration), preserving exact
-    pre-refactor behaviour. State variables with only a ``domain`` are left
-    untouched and therefore unclamped (``enforce`` defaults to ``none``).
+
+    The clamp becomes the ``domain``; a descriptive ``domain`` that co-existed
+    with ``boundaries`` was the (possibly narrower, finite) initial-condition
+    sampling range — TVB's ``state_variable_range`` as distinct from its
+    ``state_variable_boundaries`` — so it is preserved as the sampling
+    ``distribution`` rather than discarded. This keeps a finite sampling range
+    even when the clamp is half-open (e.g. ``[0, inf]``). State variables with
+    only a ``domain`` are left untouched and therefore unclamped (``enforce``
+    defaults to ``none``).
     """
     svs = d.get("state_variables")
     if not isinstance(svs, dict):
@@ -636,6 +641,12 @@ def _resolve_statevariable_boundaries(d: dict) -> None:
             if isinstance(bnd, dict):
                 bnd = dict(bnd)
                 bnd.setdefault("enforce", "clamp")
+                prev = sv.get("domain")
+                # Preserve a co-existing descriptive domain (the IC sampling
+                # range) as the sampling distribution before the clamp takes
+                # over `domain`, so a half-open clamp can't drop a finite range.
+                if isinstance(prev, dict) and sv.get("distribution") is None:
+                    sv["distribution"] = {k: prev[k] for k in ("lo", "hi", "step") if k in prev}
                 sv["domain"] = bnd
 
 

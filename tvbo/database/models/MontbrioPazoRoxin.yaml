@@ -3,7 +3,6 @@ iri: tvbo:MontbrioPazoRoxin
 model_type: mean_field
 parameters:
   Delta:
-    name: Delta
     definition: Mean heterogeneous noise
     value: 1.0
     domain:
@@ -14,7 +13,6 @@ parameters:
     grounding:
     - GO:0061669
   I:
-    name: I
     definition: External Current
     value: 0.0
     domain:
@@ -23,7 +21,6 @@ parameters:
       step: 0.01
     description: External Current
   J:
-    name: J
     definition: Mean Synaptic weight.
     value: 15.0
     domain:
@@ -35,7 +32,6 @@ parameters:
     - GO:0042391
     - GO:0099536
   cr:
-    name: cr
     definition: It is the weight on Coupling through variable r.
     value: 1.0
     domain:
@@ -44,7 +40,6 @@ parameters:
       step: 0.1
     description: It is the weight on Coupling through variable r
   cv:
-    name: cv
     definition: It is the weight on Coupling through variable V.
     value: 0.0
     domain:
@@ -53,7 +48,6 @@ parameters:
       step: 0.1
     description: It is the weight on Coupling through variable V
   eta:
-    name: eta
     definition: Constant parameter to scale the rate of feedback from the firing rate variable to itself
     value: -5.0
     domain:
@@ -64,7 +58,6 @@ parameters:
     grounding:
     - GO:0099605
   tau:
-    name: tau
     definition: Membrane time constant
     value: 1.0
     domain:
@@ -76,13 +69,10 @@ description: ''
 references:
 - Montbrio2015
 coupling_inputs:
-  c_pop0:
-    name: c_pop0
-  c_pop1:
-    name: c_pop1
+  c_pop0: {}
+  c_pop1: {}
 state_variables:
   V:
-    name: V
     domain:
       lo: -2.0
       hi: 1.5
@@ -95,11 +85,15 @@ state_variables:
     coupling_variable: true
     initial_value: 0.1
   r:
-    name: r
     domain:
       lo: 0.0
       hi: .inf
       enforce: clamp
+    distribution:
+      name: Uniform
+      domain:
+        lo: 0.0
+        hi: 2.0
     description: ''
     equation:
       lhs: Derivative(r, t)

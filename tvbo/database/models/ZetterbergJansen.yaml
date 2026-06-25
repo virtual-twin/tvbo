@@ -3,7 +3,6 @@ iri: tvbo:ZetterbergJansen
 model_type: neural_mass
 parameters:
   He:
-    name: He
     definition: Maximum amplitude of EPSP [mV]. Also called average synaptic gain.
     value: 3.25
     domain:
@@ -12,10 +11,9 @@ parameters:
       step: 0.05
     description: Maximum amplitude of EPSP [mV]
     grounding:
-      - GO:0060079
-      - GO:0098815
+    - GO:0060079
+    - GO:0098815
   Hi:
-    name: Hi
     definition: Maximum amplitude of IPSP [mV]. Also called average synaptic gain.
     value: 22.0
     domain:
@@ -24,10 +22,9 @@ parameters:
       step: 0.2
     description: Maximum amplitude of IPSP [mV]
     grounding:
-      - GO:0060080
-      - GO:0098828
+    - GO:0060080
+    - GO:0098828
   P:
-    name: P
     definition: "Maximum firing rate to the pyramidal population [ms^-1].\n        (External stimulus. Constant intensity.Entry point for coupling.)"
     value: 0.12
     domain:
@@ -36,10 +33,9 @@ parameters:
       step: 0.01
     description: Maximum firing rate to the pyramidal population [ms^-1]
     grounding:
-      - CL:0000598
-      - GO:0099605
+    - CL:0000598
+    - GO:0099605
   Q:
-    name: Q
     definition: "Maximum firing rate to the interneurons population [ms^-1].\n        (External stimulus. Constant intensity.Entry point for coupling.)"
     value: 0.12
     domain:
@@ -48,10 +44,9 @@ parameters:
       step: 0.01
     description: Maximum firing rate to the interneurons population [ms^-1]
     grounding:
-      - CL:0000099
-      - GO:0099605
+    - CL:0000099
+    - GO:0099605
   U:
-    name: U
     definition: "Maximum firing rate to the stellate population [ms^-1].\n        (External stimulus. Constant intensity.Entry point for coupling.)"
     value: 0.12
     domain:
@@ -60,9 +55,8 @@ parameters:
       step: 0.01
     description: Maximum firing rate to the stellate population [ms^-1]
     grounding:
-      - GO:0099605
+    - GO:0099605
   e0:
-    name: e0
     definition: Half of the maximum population mean firing rate [ms^-1].
     value: 0.0025
     domain:
@@ -71,9 +65,8 @@ parameters:
       step: 1.0e-05
     description: Half of the maximum population mean firing rate [ms^-1]
     grounding:
-      - GO:0099605
+    - GO:0099605
   gamma_1T:
-    name: gamma_1T
     definition: Coupling factor from the extrinisic input to the spiny stellate population.
     value: 1.0
     domain:
@@ -82,9 +75,8 @@ parameters:
       step: 5.0
     description: Coupling factor from the extrinisic input to the spiny stellate population
     grounding:
-      - GO:0099536
+    - GO:0099536
   gamma_1:
-    name: gamma_1
     definition: Average number of synapses between populations (pyramidal to stellate).
     value: 135.0
     domain:
@@ -93,10 +85,9 @@ parameters:
       step: 5.0
     description: Average number of synapses between populations (pyramidal to stellate)
     grounding:
-      - CL:0000598
-      - GO:0099536
+    - CL:0000598
+    - GO:0099536
   gamma_2T:
-    name: gamma_2T
     definition: Coupling factor from the extrinisic input to the pyramidal population.
     value: 1.0
     domain:
@@ -105,10 +96,9 @@ parameters:
       step: 5.0
     description: Coupling factor from the extrinisic input to the pyramidal population
     grounding:
-      - CL:0000598
-      - GO:0099536
+    - CL:0000598
+    - GO:0099536
   gamma_2:
-    name: gamma_2
     definition: Average number of synapses between populations (stellate to pyramidal).
     value: 108.0
     domain:
@@ -117,9 +107,8 @@ parameters:
       step: 10.0
     description: Average number of synapses between populations (stellate to pyramidal)
     grounding:
-      - GO:0099536
+    - GO:0099536
   gamma_3T:
-    name: gamma_3T
     definition: Coupling factor from the extrinisic input to the inhibitory population.
     value: 1.0
     domain:
@@ -128,9 +117,8 @@ parameters:
       step: 5.0
     description: Coupling factor from the extrinisic input to the inhibitory population
     grounding:
-      - GO:0099536
+    - GO:0099536
   gamma_3:
-    name: gamma_3
     definition: Connectivity constant (pyramidal to interneurons)
     value: 33.75
     domain:
@@ -139,11 +127,10 @@ parameters:
       step: 10.0
     description: Connectivity constant (pyramidal to interneurons)
     grounding:
-      - CL:0000099
-      - CL:0000598
-      - GO:0099536
+    - CL:0000099
+    - CL:0000598
+    - GO:0099536
   gamma_4:
-    name: gamma_4
     definition: Connectivity constant (interneurons to pyramidal)
     value: 33.75
     domain:
@@ -152,10 +139,9 @@ parameters:
       step: 10.0
     description: Connectivity constant (interneurons to pyramidal)
     grounding:
-      - CL:0000099
-      - CL:0000598
+    - CL:0000099
+    - CL:0000598
   gamma_5:
-    name: gamma_5
     definition: Connectivity constant (interneurons to interneurons)
     value: 15.0
     domain:
@@ -164,9 +150,8 @@ parameters:
       step: 10.0
     description: Connectivity constant (interneurons to interneurons)
     grounding:
-      - CL:0000099
+    - CL:0000099
   ke:
-    name: ke
     definition: "Reciprocal of the time constant of passive membrane and all\n        other spatially distributed delays in the dendritic network [ms^-1].\n        Also called average synaptic time constant."
     value: 0.1
     domain:
@@ -175,7 +160,6 @@ parameters:
       step: 0.01
     description: Reciprocal of the time constant of passive membrane and all         other spatially distributed delays in the dendritic network [ms^-1]
   ki:
-    name: ki
     definition: "Reciprocal of the time constant of passive membrane and all\n        other spatially distributed delays in the dendritic network [ms^-1].\n        Also called average synaptic time constant."
     value: 0.05
     domain:
@@ -184,7 +168,6 @@ parameters:
       step: 0.005
     description: Reciprocal of the time constant of passive membrane and all         other spatially distributed delays in the dendritic network [ms^-1]
   rho_1:
-    name: rho_1
     definition: Steepness of the sigmoidal transformation [mV^-1].
     value: 0.56
     domain:
@@ -193,7 +176,6 @@ parameters:
       step: 0.01
     description: Steepness of the sigmoidal transformation [mV^-1]
   rho_2:
-    name: rho_2
     definition: "Firing threshold (PSP) for which a 50% firing rate is achieved.\n        In other words, it is the value of the average membrane potential\n        corresponding to the inflection point of the sigmoid [mV]. Population mean firing threshold."
     value: 6.0
     domain:
@@ -203,17 +185,15 @@ parameters:
     description: Firing threshold (PSP) for which a 50% firing rate is achieved
 description: ''
 references:
-  - Zetterberg1978
+- Zetterberg1978
 derived_variables:
   coupled_input:
-    name: coupled_input
     equation:
       lhs: coupled_input
       rhs: 2*e0/(exp(rho_1*(-c_pop0 - local_coupling*v6 + rho_2)) + 1)
       latex: false
     conditional: false
   sigma_v1:
-    name: sigma_v1
     symbol: sigma_v1
     equation:
       lhs: sigma_v1
@@ -221,18 +201,17 @@ derived_variables:
       latex: false
     conditional: true
     cases:
-      - condition: rho_1*(rho_2 - v1) > 709
-        equation:
-          lhs: sigma_v1
-          rhs: '0'
-          latex: false
-      - condition: 'True'
-        equation:
-          lhs: sigma_v1
-          rhs: 2*e0/(exp(rho_1*(rho_2 - v1)) + 1)
-          latex: false
+    - condition: rho_1*(rho_2 - v1) > 709
+      equation:
+        lhs: sigma_v1
+        rhs: '0'
+        latex: false
+    - condition: 'True'
+      equation:
+        lhs: sigma_v1
+        rhs: 2*e0/(exp(rho_1*(rho_2 - v1)) + 1)
+        latex: false
   sigma_v23:
-    name: sigma_v23
     symbol: sigma_v23
     equation:
       lhs: sigma_v23
@@ -240,18 +219,17 @@ derived_variables:
       latex: false
     conditional: true
     cases:
-      - condition: rho_1*(rho_2 - (v2 - v3)) > 709
-        equation:
-          lhs: sigma_v23
-          rhs: '0'
-          latex: false
-      - condition: 'True'
-        equation:
-          lhs: sigma_v23
-          rhs: 2*e0/(exp(rho_1*(rho_2 - (v2 - v3))) + 1)
-          latex: false
+    - condition: rho_1*(rho_2 - (v2 - v3)) > 709
+      equation:
+        lhs: sigma_v23
+        rhs: '0'
+        latex: false
+    - condition: 'True'
+      equation:
+        lhs: sigma_v23
+        rhs: 2*e0/(exp(rho_1*(rho_2 - (v2 - v3))) + 1)
+        latex: false
   sigma_v45:
-    name: sigma_v45
     symbol: sigma_v45
     equation:
       lhs: sigma_v45
@@ -259,24 +237,21 @@ derived_variables:
       latex: false
     conditional: true
     cases:
-      - condition: rho_1*(rho_2 - (v4 - v5)) > 709
-        equation:
-          lhs: sigma_v45
-          rhs: '0'
-          latex: false
-      - condition: 'True'
-        equation:
-          lhs: sigma_v45
-          rhs: 2*e0/(exp(rho_1*(rho_2 - (v4 - v5))) + 1)
-          latex: false
+    - condition: rho_1*(rho_2 - (v4 - v5)) > 709
+      equation:
+        lhs: sigma_v45
+        rhs: '0'
+        latex: false
+    - condition: 'True'
+      equation:
+        lhs: sigma_v45
+        rhs: 2*e0/(exp(rho_1*(rho_2 - (v4 - v5))) + 1)
+        latex: false
 coupling_inputs:
-  c_pop0:
-    name: c_pop0
-  local_coupling:
-    name: local_coupling
+  c_pop0: {}
+  local_coupling: {}
 state_variables:
   v1:
-    name: v1
     domain:
       lo: -100.0
       hi: 100.0
@@ -289,7 +264,6 @@ state_variables:
     coupling_variable: false
     initial_value: 0.1
   v2:
-    name: v2
     domain:
       lo: -100.0
       hi: 50.0
@@ -302,7 +276,6 @@ state_variables:
     coupling_variable: false
     initial_value: 0.1
   v3:
-    name: v3
     domain:
       lo: -100.0
       hi: 6.0
@@ -315,7 +288,6 @@ state_variables:
     coupling_variable: false
     initial_value: 0.1
   v4:
-    name: v4
     domain:
       lo: -100.0
       hi: 20.0
@@ -328,7 +300,6 @@ state_variables:
     coupling_variable: false
     initial_value: 0.1
   v5:
-    name: v5
     domain:
       lo: -100.0
       hi: 20.0
@@ -341,7 +312,6 @@ state_variables:
     coupling_variable: false
     initial_value: 0.1
   v6:
-    name: v6
     domain:
       lo: -100.0
       hi: 20.0
@@ -354,7 +324,6 @@ state_variables:
     coupling_variable: true
     initial_value: 0.1
   v7:
-    name: v7
     domain:
       lo: -100.0
       hi: 20.0
@@ -367,7 +336,6 @@ state_variables:
     coupling_variable: false
     initial_value: 0.1
   y1:
-    name: y1
     domain:
       lo: -500.0
       hi: 500.0
@@ -380,7 +348,6 @@ state_variables:
     coupling_variable: false
     initial_value: 0.1
   y2:
-    name: y2
     domain:
       lo: -100.0
       hi: 6.0
@@ -393,7 +360,6 @@ state_variables:
     coupling_variable: false
     initial_value: 0.1
   y3:
-    name: y3
     domain:
       lo: -100.0
       hi: 6.0
@@ -406,7 +372,6 @@ state_variables:
     coupling_variable: false
     initial_value: 0.1
   y4:
-    name: y4
     domain:
       lo: -100.0
       hi: 20.0
@@ -419,7 +384,6 @@ state_variables:
     coupling_variable: false
     initial_value: 0.1
   y5:
-    name: y5
     domain:
       lo: -500.0
       hi: 500.0
