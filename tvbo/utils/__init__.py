@@ -47,6 +47,18 @@ def domain_enforcement(domain) -> str:
     return str(enf).rsplit(".", 1)[-1]
 
 
+def is_array_valued(value) -> bool:
+    """Return True if a parameter value is an array constant rather than a scalar.
+
+    Array-valued parameters (e.g. mode-coupling matrices, Gaussian-quadrature
+    vectors) are stored as nested lists/tuples in YAML or as ``np.ndarray`` when
+    set programmatically. Scalar-only call sites (``float(p.value)`` substitution,
+    sympy ``subs``) must skip them. Single source of truth so list/tuple *and*
+    ndarray are treated consistently everywhere.
+    """
+    return isinstance(value, (list, tuple, np.ndarray))
+
+
 # Backward-compatible re-exports (moved to tvbo.plot.utils)
 def __getattr__(name):
     _plot_names = {

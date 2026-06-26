@@ -9,7 +9,7 @@ from tvbo.templates.tvboptim.utils import (
     get_observation_refs, parse_loss_function, parse_free_param, get_domain_bounds,
     parse_exploration, get_param_info, get_node_param_overrides,
     normalize_coupling_aliases,
-    get_node_state_overrides
+    get_node_state_overrides, render_jax_default, get_mode_layout
 )
 import numpy as np
 
@@ -33,8 +33,11 @@ else:
 jaxcode = lambda expr, params=None: render_expression(expr, format='jax', user_functions=user_functions, parameters=params)
 jaxcode_obj = lambda obj: model.render_equation(obj, format='jax')
 
-# Extract key metadata from model
-state_names = list(model.state_variables.keys())
+# Extract key metadata from model. For number_of_modes>1 the per-node mode axis is
+# folded into the state axis: state_names is the solver's flat (variable, mode) slot
+# ordering, while var_names keeps the original variables (used for the result mode dim).
+n_modes, state_names, var_slots = get_mode_layout(model)
+var_names = list(model.state_variables.keys())
 param_names = [p.name for p in model.parameters.values()]
 derived_param_names = [p.name for p in model.derived_parameters.values()] if model.derived_parameters else []
 
@@ -240,8 +243,11 @@ for _np_name in node_param_overrides:
 
 # Per-node initial state overrides from node ``state:`` entries
 # e.g. nodes[0].state = {theta: 0.8} → overrides default initial_value per node
-_default_init = [float(sv.initial_value) if sv.initial_value is not None else 0.0
-                 for sv in model.state_variables.values()]
+_default_init = [
+    (float(sv.initial_value) if sv.initial_value is not None else 0.0)
+    for sv in model.state_variables.values()
+    for _ in range(n_modes)  # one entry per (variable, mode) solver slot
+]
 node_state_overrides = get_node_state_overrides(network, n_nodes, state_names, _default_init)
 
 # Detect parameters with distribution.axis == 'time' — these are stochastic
@@ -286,7 +292,7 @@ for sv_name, sv in model.state_variables.items():
             'dist': str(getattr(dist, 'name', 'Uniform')).lower(),
             'lo': lo,
             'hi': hi,
-            'idx': state_names.index(sv_name),
+            'idx': state_names.index(sv_name if n_modes == 1 else f"{sv_name}__mode0"),
             'seed': int(getattr(dist, 'seed', None) or 42),
         }
 
@@ -903,7 +909,7 @@ def create_network(
         % elif name in dyn_param_shapes:
         '${name}': jnp.full(${dyn_param_shapes[name]}, ${dyn_param_defaults.get(name, 1.0)}),
         % else:
-        '${name}': ${dyn_param_defaults.get(name, 1.0)},
+        '${name}': ${render_jax_default(dyn_param_defaults.get(name, 1.0))},
         % endif
         % endfor
     }
@@ -925,7 +931,7 @@ def create_network(
         % if name in c_param_shapes:
         '${name}': jnp.full(${c_param_shapes[name]}, ${c_param_defaults.get(name, 1.0)}),
         % else:
-        '${name}': ${c_param_defaults.get(name, 1.0)},
+        '${name}': ${render_jax_default(c_param_defaults.get(name, 1.0))},
         % endif
         % endfor
     }

@@ -95,6 +95,58 @@ def get_param_info(parameters: dict) -> Tuple[List[str], Dict[str, float], Dict[
     return param_names, param_defaults, param_shapes
 
 
+def get_mode_layout(model: Any) -> Tuple[int, List[str], Dict[str, List[int]]]:
+    """Compute the folded scalar-state layout for a (possibly multi-mode) model.
+
+    tvboptim's solver carries a 2-D state ``(n_states, n_nodes)`` and its coupling
+    contracts the node axis with a plain matmul, so it has no place for a third
+    per-node mode axis. A model with ``number_of_modes > 1`` (the Stefanescu-Jirsa
+    ReducedSet models) folds that mode axis into the state axis: each state
+    variable ``v`` occupies ``n_modes`` contiguous scalar slots
+    ``v__mode0 .. v__mode{M-1}``. The dfun reconstructs the ``(n_nodes, n_modes)``
+    mode-vector for each variable from its slots, evaluates the mode-aware
+    equations (``mode_dot``/``mode_sum``), and scatters the per-mode derivatives
+    back into those slots; per-mode coupling falls out of the existing 2-D matmul
+    because each ``(var, mode)`` slot couples to the same slot across nodes.
+
+    For a single-mode model this is the identity (one slot per variable), so the
+    generated code is byte-for-byte unchanged.
+
+    Returns ``(n_modes, slot_names, var_slots)`` where ``slot_names`` is the flat
+    solver state ordering (grouped by variable, then mode) and ``var_slots`` maps
+    each variable name to the slot indices of its modes.
+    """
+    var_names = list(model.state_variables.keys()) if model and model.state_variables else []
+    n_modes = int(getattr(model, "number_of_modes", None) or 1)
+    if n_modes <= 1:
+        return 1, list(var_names), {v: [i] for i, v in enumerate(var_names)}
+    slot_names: List[str] = []
+    var_slots: Dict[str, List[int]] = {}
+    for v in var_names:
+        var_slots[v] = []
+        for m in range(n_modes):
+            var_slots[v].append(len(slot_names))
+            slot_names.append(f"{v}__mode{m}")
+    return n_modes, slot_names, var_slots
+
+
+def render_jax_default(value: Any) -> str:
+    """Render a parameter default as a JAX-ready source literal.
+
+    Array-valued constants (mode-coupling matrices, Gaussian-quadrature vectors)
+    must be wrapped in ``jnp.array(...)`` so the generated dfun's arithmetic
+    broadcasts; emitting the bare Python list would make ``scalar * list`` raise
+    ``TypeError`` at runtime. Scalars render as their full-precision ``repr``
+    literal (``str``/``repr`` of a float are equivalent in Python 3, so no
+    precision is lost).
+    """
+    if hasattr(value, "tolist") and not isinstance(value, (str, bytes)):
+        value = value.tolist()
+    if isinstance(value, (list, tuple)):
+        return f"jnp.array({list(value)!r})"
+    return repr(value)
+
+
 def get_recorded_variable_names(model: Any, experiment: Any = None) -> Tuple[List[str], List[str], List[str]]:
     """Compute the variable layout recorded by tvboptim's solver.
 
@@ -114,7 +166,9 @@ def get_recorded_variable_names(model: Any, experiment: Any = None) -> Tuple[Lis
         model: Dynamics object (with state_variables and derived_variables).
         experiment: Optional SimulationExperiment; observations are scanned when present.
     """
-    state_names = list(model.state_variables.keys()) if model and model.state_variables else []
+    # Recorded state channels follow the solver's (possibly mode-folded) layout:
+    # for number_of_modes>1 each variable contributes n_modes scalar slots.
+    _, state_names, _ = get_mode_layout(model) if model and model.state_variables else (1, [], {})
     aux_names = list(model.derived_variables.keys()) if model and getattr(model, "derived_variables", None) else []
 
     output_vars = getattr(model, "output", None) or []

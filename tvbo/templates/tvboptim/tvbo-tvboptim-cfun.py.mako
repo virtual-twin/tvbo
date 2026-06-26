@@ -14,7 +14,7 @@ Output:
 </%doc>
 <%
 from tvbo.codegen import render_expression
-from tvbo.templates.tvboptim.utils import get_param_info, normalize_coupling_aliases
+from tvbo.templates.tvboptim.utils import get_param_info, normalize_coupling_aliases, get_mode_layout
 
 # Two modes: experiment (full pipeline) or standalone (single coupling)
 if 'experiment' in context.keys():
@@ -52,6 +52,12 @@ elif 'coupling' in context.keys():
 
 else:
     assert False, "cfun template requires 'experiment' or 'coupling' in context"
+
+# Mode folding (number_of_modes>1): each coupling-variable carries n_modes per-node
+# slots, folded into the state axis. A coupling that reads such a cvar emits one
+# output per mode (each mode coupled independently across nodes via the existing
+# 2-D matmul), so n_output == n_modes and the cvar resolves to its mode slots.
+n_modes, _mode_slot_names, _var_slots = get_mode_layout(model) if model is not None else (1, [], {})
 
 # Build func_name -> ci_name mapping.
 # Resolution order:
@@ -153,6 +159,16 @@ def parse_list_elements(rhs_str):
                     if getattr(sv_obj, 'coupling_variable', False):
                         cvars.append(sv_name)
             incoming_states = cvars if cvars else [pre_rhs.strip()]
+
+    # Mode fold (number_of_modes>1): a coupling reading a multi-mode cvar emits one
+    # coupled output per mode. Resolve the (single) source cvar to its n_modes
+    # per-node slots and set the output dimension to n_modes; pre() then returns the
+    # gathered slots so each mode is reduced with the connectome independently.
+    mode_coupling = bool(n_modes > 1 and incoming_states and not local_states)
+    if mode_coupling:
+        _src_cvar = incoming_states[0]
+        incoming_states = [f"{_src_cvar}__mode{m}" for m in range(n_modes)]
+        n_output = n_modes
 
     # Parse pre_expression into one or more terms. A list literal
     # `[f(source), g(source), ...]` declares several source-only reductions —
@@ -345,7 +361,13 @@ class ${class_name}(${base_class}):
         % endif
         % endfor
         % if _need_xj and incoming_states:
+        % if mode_coupling:
+        ## Mode fold: keep all n_modes gathered slots (leading axis) so each mode
+        ## is reduced with the connectome independently → per-mode coupling output.
+        x_j = incoming_states
+        % else:
         x_j = incoming_states[0]
+        % endif
         % endif
         % if _need_xi and local_states:
         % if incoming_states:
