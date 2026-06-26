@@ -457,6 +457,15 @@ def symbolic_model_equations(NMM, zero_coupling=False, **kwargs):
 
 def sub_equation(eq, model):
     acr = ontology.get_model_acronym(model)
+    # Coupling inputs are looked up by their bare name (no model-acronym suffix).
+    # Derive them from the model so any coupling naming (c_glob, c_pop, …) works;
+    # the legacy literals are kept as a defensive fallback.
+    coupling_keep = set(ontology.get_model_coupling_terms(model).keys()) | {
+        "local_coupling",
+        "c_pop0",
+        "c_pop1",
+        "c_pop2",
+    }
     sub = {
         "local_coupling": "c_loc",
         "c_pop0": "c_glob0",
@@ -465,7 +474,7 @@ def sub_equation(eq, model):
         "short_range": "c_short",
     }
     for s in eq.free_symbols:
-        name = s.name + "_" + acr if s.name not in ["local_coupling", "c_pop0", "c_pop1"] else s.name
+        name = s.name + "_" + acr if s.name not in coupling_keep else s.name
         # print(name)
         c_rhs = ontology.onto[name]
         if isinstance(c_rhs, type(None)):
@@ -511,6 +520,13 @@ def get_latex_equation(model, func_dict="all", mul_symbol="dot"):
 
     acr = ontology.get_model_acronym(model)
     latex_equations = list()
+    # Coupling inputs are looked up by their bare name (no model-acronym suffix).
+    coupling_keep = set(ontology.get_model_coupling_terms(model).keys()) | {
+        "local_coupling",
+        "c_pop0",
+        "c_pop1",
+        "c_pop2",
+    }
     sub = {
         "local_coupling": "c_loc",
         "c_pop0": "c_glob0",
@@ -541,7 +557,7 @@ def get_latex_equation(model, func_dict="all", mul_symbol="dot"):
         lhs = lhs.subs(sub)
 
         for s in v.free_symbols:
-            name = s.name + "_" + acr if s.name not in ["local_coupling", "c_pop0", "c_pop1"] else s.name
+            name = s.name + "_" + acr if s.name not in coupling_keep else s.name
             # print(name)
             c_rhs = ontology.onto[name]
             if isinstance(c_rhs, type(None)):

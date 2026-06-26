@@ -53,10 +53,10 @@ references:
 - Hopfield1984
 - Hopfield1982
 coupling_inputs:
-  c_pop0:
-    name: c_pop0
-  c_pop1:
-    name: c_pop1
+  c_glob0:
+    name: c_glob0
+  c_glob1:
+    name: c_glob1
 state_variables:
   theta:
     name: theta
@@ -66,7 +66,7 @@ state_variables:
     description: Slow state variable at node i
     equation:
       lhs: Derivative(theta, t)
-      rhs: (c_pop1 - theta)/tauT
+      rhs: (c_glob1 - theta)/tauT
       latex: false
     variable_of_interest: true
     coupling_variable: true
@@ -79,7 +79,7 @@ state_variables:
     description: ''
     equation:
       lhs: Derivative(x, t)
-      rhs: (c_pop0 - x)/taux
+      rhs: (c_glob0 - x)/taux
       latex: false
     variable_of_interest: true
     coupling_variable: true

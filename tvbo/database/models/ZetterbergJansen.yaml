@@ -209,7 +209,7 @@ derived_variables:
     name: coupled_input
     equation:
       lhs: coupled_input
-      rhs: 2*e0/(exp(rho_1*(-c_pop0 - local_coupling*v6 + rho_2)) + 1)
+      rhs: 2*e0/(exp(rho_1*(-c_glob - local_coupling*v6 + rho_2)) + 1)
       latex: false
     conditional: false
   sigma_v1:
@@ -270,8 +270,8 @@ derived_variables:
           rhs: 2*e0/(exp(rho_1*(rho_2 - (v4 - v5))) + 1)
           latex: false
 coupling_inputs:
-  c_pop0:
-    name: c_pop0
+  c_glob:
+    name: c_glob
   local_coupling:
     name: local_coupling
 state_variables:

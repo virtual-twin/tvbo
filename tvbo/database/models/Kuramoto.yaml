@@ -35,12 +35,12 @@ derived_variables:
             the Kuramoto coupling function
         equation:
             lhs: I
-            rhs: c_pop0 + lc_0
+            rhs: c_glob + lc_0
             latex: false
         conditional: false
 coupling_inputs:
-    c_pop0:
-        name: c_pop0
+    c_glob:
+        name: c_glob
     local_coupling:
         name: local_coupling
 state_variables:

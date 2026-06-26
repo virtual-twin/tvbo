@@ -512,23 +512,23 @@ derived_variables:
     symbol: Vcond
     equation:
       lhs: Vcond
-      rhs: Piecewise((R_minus*c_pop0*(-V + E)/pi - R_minus*x**2 + V_temp + eta, V <= Vstar), (R_minus*c_pop0*(-V + E)/pi - R_plus*x**2 + V_temp + eta, True))
+      rhs: Piecewise((R_minus*c_glob*(-V + E)/pi - R_minus*x**2 + V_temp + eta, V <= Vstar), (R_minus*c_glob*(-V + E)/pi - R_plus*x**2 + V_temp + eta, True))
       latex: false
     conditional: true
     cases:
       - condition: V <= Vstar
         equation:
           lhs: Vcond
-          rhs: R_minus*c_pop0*(-V + E)/pi - R_minus*x**2 + V_temp + eta
+          rhs: R_minus*c_glob*(-V + E)/pi - R_minus*x**2 + V_temp + eta
           latex: false
       - condition: 'True'
         equation:
           lhs: Vcond
-          rhs: R_minus*c_pop0*(-V + E)/pi - R_plus*x**2 + V_temp + eta
+          rhs: R_minus*c_glob*(-V + E)/pi - R_plus*x**2 + V_temp + eta
           latex: false
 coupling_inputs:
-  c_pop0:
-    name: c_pop0
+  c_glob:
+    name: c_glob
 state_variables:
   DKi:
     name: DKi
