@@ -255,7 +255,6 @@ state_variables:
     domain:
       lo: -100.0
       hi: 100.0
-    description: ''
     equation:
       lhs: Derivative(v1, t)
       rhs: y1
@@ -266,7 +265,6 @@ state_variables:
     domain:
       lo: -100.0
       hi: 50.0
-    description: ''
     equation:
       lhs: Derivative(v2, t)
       rhs: y2
@@ -277,7 +275,6 @@ state_variables:
     domain:
       lo: -100.0
       hi: 6.0
-    description: ''
     equation:
       lhs: Derivative(v3, t)
       rhs: y3
@@ -288,7 +285,6 @@ state_variables:
     domain:
       lo: -100.0
       hi: 20.0
-    description: ''
     equation:
       lhs: Derivative(v4, t)
       rhs: y4
@@ -299,7 +295,6 @@ state_variables:
     domain:
       lo: -100.0
       hi: 20.0
-    description: ''
     equation:
       lhs: Derivative(v5, t)
       rhs: y5
@@ -310,7 +305,6 @@ state_variables:
     domain:
       lo: -100.0
       hi: 20.0
-    description: ''
     equation:
       lhs: Derivative(v6, t)
       rhs: y2 - y3
@@ -321,7 +315,6 @@ state_variables:
     domain:
       lo: -100.0
       hi: 20.0
-    description: ''
     equation:
       lhs: Derivative(v7, t)
       rhs: y4 - y5
@@ -332,7 +325,6 @@ state_variables:
     domain:
       lo: -500.0
       hi: 500.0
-    description: ''
     equation:
       lhs: Derivative(y1, t)
       rhs: He*ke*(gamma_1*sigma_v23 + gamma_1T*(U + coupled_input)) - ke**2*v1 - 2*ke*y1
@@ -343,7 +335,6 @@ state_variables:
     domain:
       lo: -100.0
       hi: 6.0
-    description: ''
     equation:
       lhs: Derivative(y2, t)
       rhs: He*ke*(gamma_2*sigma_v1 + gamma_2T*(P + coupled_input)) - ke**2*v2 - 2*ke*y2
@@ -354,7 +345,6 @@ state_variables:
     domain:
       lo: -100.0
       hi: 6.0
-    description: ''
     equation:
       lhs: Derivative(y3, t)
       rhs: Hi*gamma_4*ki*sigma_v45 - ki**2*v3 - 2*ki*y3
@@ -365,7 +355,6 @@ state_variables:
     domain:
       lo: -100.0
       hi: 20.0
-    description: ''
     equation:
       lhs: Derivative(y4, t)
       rhs: He*ke*(gamma_3*sigma_v23 + gamma_3T*(Q + coupled_input)) - ke**2*v4 - 2*ke*y4
@@ -376,7 +365,6 @@ state_variables:
     domain:
       lo: -500.0
       hi: 500.0
-    description: ''
     equation:
       lhs: Derivative(y5, t)
       rhs: Hi*gamma_5*ki*sigma_v45 - ke**2*v5 - 2*ki*y5

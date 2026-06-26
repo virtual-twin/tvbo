@@ -89,7 +89,6 @@ state_variables:
     domain:
       lo: -1.0
       hi: 1.0
-    description: ''
     equation:
       lhs: Derivative(A, t)
       rhs: B/tau_A
@@ -100,7 +99,6 @@ state_variables:
     domain:
       lo: -1.0
       hi: 1.0
-    description: ''
     equation:
       lhs: Derivative(B, t)
       rhs: (-A - 2*B + alpha*r)/tau_A
@@ -111,7 +109,6 @@ state_variables:
     domain:
       lo: -2.0
       hi: 1.5
-    description: ''
     equation:
       lhs: Derivative(V, t)
       rhs: (-A + I + J*r*tau + V**2 + c_pop0*cr + c_pop1*cv + eta - pi**2*r**2*tau**2)/tau
@@ -123,7 +120,6 @@ state_variables:
       lo: 0.0
       hi: .inf
       enforce: clamp
-    description: ''
     equation:
       lhs: Derivative(r, t)
       rhs: (Delta/(pi*tau) + 2*V*r)/tau

@@ -3,7 +3,6 @@ iri: tvbo:KuramotoModel2
 model_type: phase_oscillator
 parameters:
   omega:
-    name: omega
     definition: "Sets the base line frequency for the Kuramoto oscillator in [rad/ms]."
     value: 1.0
     domain:
@@ -20,39 +19,32 @@ derived_parameters:
 
 derived_variables:
   lc_0:
-    name: lc_0
     equation:
       lhs: lc_0
       rhs: sin(local_coupling*theta)
     conditional: false
   I:
-    name: I
     description: "`I` is the input via local and long range connectivity, passing first through the Kuramoto coupling function"
     equation:
       lhs: I
       rhs: c_glob+lc_0
     conditional: false
   phase:
-    name: phase
     description: "Normalized phase output"
     equation:
       rhs: theta / (2*pi)
     record: true
   signal:
-    name: signal
     description: "Sinusoidal signal output"
     equation:
       rhs: sin(theta)
 
     record: true
 coupling_inputs:
-  c_glob:
-    name: c_glob
-  local_coupling:
-    name: local_coupling
+  c_glob: {}
+  local_coupling: {}
 state_variables:
   theta:
-    name: theta
     domain:
       lo: 0.0
       hi: 6.283185307179586

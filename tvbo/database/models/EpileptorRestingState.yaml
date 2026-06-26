@@ -279,7 +279,6 @@ state_variables:
     domain:
       lo: -1.0
       hi: 1.0
-    description: ''
     equation:
       lhs: Derivative(g, t)
       rhs: tt*(-0.01*g + 0.001*x1)
@@ -290,7 +289,6 @@ state_variables:
     domain:
       lo: -1.8
       hi: -1.4
-    description: ''
     equation:
       lhs: Derivative(x1, t)
       rhs: tt*(Iext + Kvf*c_pop0 + local_coupling*x1 + x1*x1cond + y1 - z)
@@ -301,7 +299,6 @@ state_variables:
     domain:
       lo: -1.1
       hi: -0.9
-    description: ''
     equation:
       lhs: Derivative(x2, t)
       rhs: tt*(Iext2 + Kf*c_pop1 + bb*g - x2**3 + x2 - y2 - 0.3*z + 1.05)
@@ -312,7 +309,6 @@ state_variables:
     domain:
       lo: -2.0
       hi: 4.0
-    description: ''
     equation:
       lhs: Derivative(x_rs, t)
       rhs: d_rs*tau_rs*(I_rs*gamma_rs + K_rs*c_pop2*gamma_rs + alpha_rs*y_rs + e_rs*x_rs**2 - f_rs*x_rs**3 + lc_1)
@@ -323,7 +319,6 @@ state_variables:
     domain:
       lo: -15.0
       hi: -10.0
-    description: ''
     equation:
       lhs: Derivative(y1, t)
       rhs: tt*(c - d*x1**2 - y1)
@@ -334,7 +329,6 @@ state_variables:
     domain:
       lo: 0.001
       hi: 0.01
-    description: ''
     equation:
       lhs: Derivative(y2, t)
       rhs: tt*(-y2 + y2cond)/tau
@@ -345,7 +339,6 @@ state_variables:
     domain:
       lo: -6.0
       hi: 6.0
-    description: ''
     equation:
       lhs: Derivative(y_rs, t)
       rhs: d_rs*(a_rs + b_rs*x_rs - beta_rs*y_rs)/tau_rs
@@ -356,7 +349,6 @@ state_variables:
     domain:
       lo: 3.6
       hi: 4.0
-    description: ''
     equation:
       lhs: Derivative(z, t)
       rhs: r*tt*(Ks*c_pop0 - 4*x0 + 4*x1 - z + zcond)

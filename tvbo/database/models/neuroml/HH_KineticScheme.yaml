@@ -26,7 +26,6 @@ parameters:
     description: nml:0.005 nA
 components:
   na:
-    name: na
     iri: neuroml:ionChannelHH
     parameters:
       conductance:
@@ -39,14 +38,12 @@ components:
         description: nml:50mV
     components:
       m:
-        name: m
         iri: neuroml:gateHHrates
         parameters:
           instances:
             value: 3
         components:
           forwardRate:
-            name: forwardRate
             iri: neuroml:HHExpLinearRate
             parameters:
               rate:
@@ -59,7 +56,6 @@ components:
                 value: 10
                 description: nml:10mV
           reverseRate:
-            name: reverseRate
             iri: neuroml:HHExpRate
             parameters:
               rate:
@@ -72,14 +68,12 @@ components:
                 value: -18
                 description: nml:-18mV
       h:
-        name: h
         iri: neuroml:gateHHrates
         parameters:
           instances:
             value: 1
         components:
           forwardRate:
-            name: forwardRate
             iri: neuroml:HHExpRate
             parameters:
               rate:
@@ -92,7 +86,6 @@ components:
                 value: -20
                 description: nml:-20mV
           reverseRate:
-            name: reverseRate
             iri: neuroml:HHSigmoidRate
             parameters:
               rate:
@@ -105,7 +98,6 @@ components:
                 value: 10
                 description: nml:10mV
   k_vh:
-    name: k_vh
     iri: neuroml:ionChannelKS
     parameters:
       conductance:
@@ -118,20 +110,16 @@ components:
         description: nml:-77mV
     components:
       n:
-        name: n
         iri: neuroml:gateKS
         parameters:
           instances:
             value: 1
         components:
           c1:
-            name: c1
             iri: neuroml:closedState
           o1:
-            name: o1
             iri: neuroml:openState
           vh1:
-            name: vh1
             iri: neuroml:vHalfTransition
             parameters:
               from:

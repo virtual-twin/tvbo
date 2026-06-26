@@ -54,7 +54,6 @@ state_variables:
     domain:
       lo: -1.0
       hi: 2.0
-    description: ''
     equation:
       lhs: Derivative(x, t)
       rhs: (c_pop0 - x)/taux

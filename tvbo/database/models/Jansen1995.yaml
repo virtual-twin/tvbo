@@ -53,7 +53,6 @@ derived_parameters:
       rhs: 0.25*C
 derived_variables:
   v_pyr:
-    name: v_pyr
     description: "EEG-like output: pyramidal potential difference"
     equation:
       rhs: y1 - y2
