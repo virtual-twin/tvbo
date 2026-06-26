@@ -84,16 +84,10 @@ MATCHED = _matched()
 # Models whose drift cannot currently match TVB for reasons unrelated to this
 # work — documented, pre-existing fidelity gaps. xfail (not skip) so a future fix
 # that closes the gap turns the test green (xpass) and flags the stale entry.
-KNOWN_DFUN_GAPS = {
-    "Hopfield": (
-        "TVB's `dynamic` trait (default 0) is a discrete form-selector that "
-        "switches the theta drift between a static-threshold regime (dynamic=0) "
-        "and an evolving-threshold regime (dynamic=1); tvbo captures dynamic=1, "
-        "TVB's default is dynamic=0. tvbo has no construct for an int/bool trait "
-        "that toggles equation structure (same gap as Epileptor `modification` / "
-        "EpileptorCodim3 `N`). Range/boundary round-trip is unaffected (passes)."
-    ),
-}
+# Discrete/boolean regime traits (Hopfield `dynamic`, Epileptor `modification`,
+# EpileptorCodim3 `N`) are now expressed as a Piecewise on the parameter, so the
+# default regime matches TVB and no model needs an xfail here.
+KNOWN_DFUN_GAPS = {}
 
 
 @pytest.mark.skipif(not MATCHED, reason="TVB not installed / no matched models")

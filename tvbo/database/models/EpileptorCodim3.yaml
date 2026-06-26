@@ -76,6 +76,9 @@ parameters:
     definition: Slow permittivity coupling strength.
     value: 0.0
     description: Slow permittivity coupling strength, the default of zero is no coupling.
+  modification:
+    value: 1.0
+    description: 'Toggle the +0.1*(z-0.5)^7 stabilising term in z_dot: >0 (True, default) includes it, 0 (False) omits it.'
 coupling_inputs:
   c_pop0: {}
 derived_variables:
@@ -194,7 +197,7 @@ state_variables:
     description: Slow subsystem variable z steering the fast subsystem along the great arc.
     equation:
       lhs: Derivative(z, t)
-      rhs: -c*(sqrt((x - xs)**2 + y**2) - dstar + (z - 1/2)**7/10 + Ks*c_pop0)
+      rhs: -c*(sqrt((x - xs)**2 + y**2) - dstar + Piecewise(((z - 1/2)**7/10, modification > 0), (0, True)) + Ks*c_pop0)
       latex: false
     coupling_variable: false
     initial_value: 0.05
