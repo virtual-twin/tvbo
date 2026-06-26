@@ -155,6 +155,14 @@ class NumPyPrinter(spn.NumPyPrinter):
     def _print_Piecewise(self, expr):
         return print_Piecewise(self, expr)
 
+    def _print_Function(self, expr):
+        if expr.func.__name__ == "mode_dot":
+            # mode_dot(X, M) -> contract X's mode axis with matrix M (numpy.dot).
+            X_str = self._print(expr.args[0])
+            M_str = self._print(expr.args[1])
+            return f"{self._module}.dot({X_str}, {M_str})"
+        return super()._print_Function(expr)
+
 
 class JaxPrinter(spn.JaxPrinter):
     def __init__(self, settings=None, module="jnp"):
@@ -298,6 +306,13 @@ class JaxPrinter(spn.JaxPrinter):
             # transpose(X) -> X.T
             X_str = self._print(expr.args[0])
             return f"{X_str}.T"
+        if func_name == "mode_dot":
+            # mode_dot(X, M) -> contract X's mode axis with matrix M.
+            # For X (n_nodes, n_modes) and M (n_modes, n_modes), {module}.dot gives
+            # (n_nodes, n_modes): result[node,k] = sum_j X[node,j] M[j,k] (TVB's numpy.dot(xi, A_ik)).
+            X_str = self._print(expr.args[0])
+            M_str = self._print(expr.args[1])
+            return f"{self._module}.dot({X_str}, {M_str})"
         # Fall back to parent implementation
         return super()._print_Function(expr)
 

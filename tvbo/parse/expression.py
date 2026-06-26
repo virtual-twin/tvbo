@@ -89,6 +89,7 @@ ARRAY_FUNCTIONS = {
     "subsample": Function("subsample"),      # subsample(X, step) → X[::step]
     "global_mean": Function("global_mean"),  # global_mean(X) → jnp.mean(X, axis=-2, keepdims=True)
     "transpose": Function("transpose"),      # transpose(X) → X.T
+    "mode_dot": Function("mode_dot"),        # mode_dot(X, M) → X·M contracted over the mode axis ({np,jnp}.dot)
 }
 
 
