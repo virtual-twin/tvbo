@@ -190,8 +190,8 @@ derived_variables:
       latex: false
     conditional: false
 coupling_inputs:
-  c_pop0:
-    name: c_pop0
+  c_glob:
+    name: c_glob
   local_coupling:
     name: local_coupling
 state_variables:
@@ -267,7 +267,7 @@ state_variables:
     description: Second state-variable of the second excitatory Jansen-Rit population (excitatory EINs)
     equation:
       lhs: Derivative(y4, t)
-      rhs: A*a*(J*a_2*sigma_y0_1 + c_pop0 + local_coupling*(y1 - y2) + mu) - a**2*y1 - 2.0*a*y4
+      rhs: A*a*(J*a_2*sigma_y0_1 + c_glob + local_coupling*(y1 - y2) + mu) - a**2*y1 - 2.0*a*y4
       latex: false
     variable_of_interest: true
     coupling_variable: false

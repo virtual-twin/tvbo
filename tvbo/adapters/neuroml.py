@@ -2802,6 +2802,19 @@ def build_lems_context(experiment):
     events = getattr(dyn, "events", None) or {}
     coupling_inputs = getattr(dyn, "coupling_inputs", None) or []
 
+    # Name of the global coupling output the dynamics consumes.  Use the model's
+    # own global coupling-input name (e.g. c_glob) rather than a hard-coded
+    # literal, so the Coupling ComponentType matches the dynamics ComponentType.
+    _ci_items = coupling_inputs.items() if hasattr(coupling_inputs, "items") else []
+    coupling_output_name = next(
+        (
+            str(name)
+            for name, ci in _ci_items
+            if str(name) != "local_coupling" and not getattr(ci, "local", False)
+        ),
+        "c_pop0",
+    )
+
     # Coupling metadata
     coupling_meta = getattr(experiment, "coupling", None)
     coupling_params = {}
@@ -3002,6 +3015,7 @@ def build_lems_context(experiment):
         dvs=dvs,
         events=events,
         coupling_inputs=coupling_inputs,
+        coupling_output_name=coupling_output_name,
         coupling_meta=coupling_meta,
         coupling_params=coupling_params,
         coupling_pre_rhs=coupling_pre_rhs,

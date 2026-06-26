@@ -225,10 +225,10 @@ derived_variables:
           rhs: zcond + 4*(-x0 + x1)
           latex: false
 coupling_inputs:
-  c_pop0:
-    name: c_pop0
-  c_pop1:
-    name: c_pop1
+  c_glob0:
+    name: c_glob0
+  c_glob1:
+    name: c_glob1
   local_coupling:
     name: local_coupling
 state_variables:
@@ -253,7 +253,7 @@ state_variables:
     description: First state-variable of the first Epileptor5D population (Jirsa et al
     equation:
       lhs: Derivative(x1, t)
-      rhs: tt*(Iext + Kvf*c_pop0 + local_coupling*x1 + x1*x1cond + y1 - z)
+      rhs: tt*(Iext + Kvf*c_glob0 + local_coupling*x1 + x1*x1cond + y1 - z)
       latex: false
     variable_of_interest: true
     coupling_variable: true
@@ -266,7 +266,7 @@ state_variables:
     description: First state-variable of the second Epileptor5D sub-population (Jirsa et al
     equation:
       lhs: Derivative(x2, t)
-      rhs: tt*(Iext2 + Kf*c_pop1 + bb*g - x2**3 + x2 - y2 - 0.3*z + 1.05)
+      rhs: tt*(Iext2 + Kf*c_glob1 + bb*g - x2**3 + x2 - y2 - 0.3*z + 1.05)
       latex: false
     variable_of_interest: true
     coupling_variable: true
@@ -305,7 +305,7 @@ state_variables:
     description: Slow permittivity state-variable of the Epileptor5D (Jirsa et al
     equation:
       lhs: Derivative(z, t)
-      rhs: r*tt*(Ks*c_pop0 + h - z)
+      rhs: r*tt*(Ks*c_glob0 + h - z)
       latex: false
     variable_of_interest: true
     coupling_variable: false

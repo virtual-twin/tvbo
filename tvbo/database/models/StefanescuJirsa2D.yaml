@@ -115,8 +115,8 @@ derived_variables:
     equation: {lhs: n_i, rhs: 'a', latex: false}
     conditional: false
 coupling_inputs:
-  c_pop0:
-    name: c_pop0
+  c_glob:
+    name: c_glob
   local_coupling:
     name: local_coupling
 state_variables:
@@ -127,7 +127,7 @@ state_variables:
     grounding: [GO:0060079]
     equation:
       lhs: Derivative(xi, t)
-      rhs: tau*(xi - e_i*xi**3/3 - eta) + K11*(Aik*xi - xi) - K12*(Bik*alpha - xi) + tau*(IE_i + c_pop0 + local_coupling*xi)
+      rhs: tau*(xi - e_i*xi**3/3 - eta) + K11*(Aik*xi - xi) - K12*(Bik*alpha - xi) + tau*(IE_i + c_glob + local_coupling*xi)
       latex: false
     variable_of_interest: true
     coupling_variable: true
@@ -151,7 +151,7 @@ state_variables:
     grounding: [GO:0060080]
     equation:
       lhs: Derivative(alpha, t)
-      rhs: tau*(alpha - f_i*alpha**3/3 - beta) + K21*(Cik*xi - alpha) + tau*(II_i + c_pop0 + local_coupling*xi)
+      rhs: tau*(alpha - f_i*alpha**3/3 - beta) + K21*(Cik*xi - alpha) + tau*(II_i + c_glob + local_coupling*xi)
       latex: false
     variable_of_interest: true
     coupling_variable: true

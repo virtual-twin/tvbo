@@ -89,10 +89,10 @@ description: "4D model describing the Ott-Antonsen reduction of infinite all-to-
 references:
   - Gast2020
 coupling_inputs:
-  c_pop0:
-    name: c_pop0
-  c_pop1:
-    name: c_pop1
+  c_glob0:
+    name: c_glob0
+  c_glob1:
+    name: c_glob1
 state_variables:
   A:
     name: A
@@ -128,7 +128,7 @@ state_variables:
     description: ''
     equation:
       lhs: Derivative(V, t)
-      rhs: (I + J*r*tau*(1 - A) + V**2 + c_pop0*cr + c_pop1*cv + eta - pi**2*r**2*tau**2)/tau
+      rhs: (I + J*r*tau*(1 - A) + V**2 + c_glob0*cr + c_glob1*cv + eta - pi**2*r**2*tau**2)/tau
       latex: false
     variable_of_interest: true
     coupling_variable: true

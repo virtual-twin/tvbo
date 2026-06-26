@@ -417,8 +417,8 @@ derived_variables:
       latex: false
     conditional: false
 coupling_inputs:
-  c_pop0:
-    name: c_pop0
+  c_glob:
+    name: c_glob
   local_coupling:
     name: local_coupling
 state_variables:
@@ -430,7 +430,7 @@ state_variables:
     description: First state-variable of the Larter-Breakspear (Breakspear et al
     equation:
       lhs: Derivative(V, t)
-      rhs: t_scale*(I_ext*a_ne - Q_Z*Z*a_ie - W*g_K*(V - V_K) - g_L*(V - V_L) + m_Ca*(V - V_Ca)*(-C*a_ee*c_pop0*r_NMDA - a_ee*r_NMDA*(1.0 - C)*(Q_V + lc_0) - g_Ca) - (V - V_Na)*(C*a_ee*c_pop0 + a_ee*(1.0 - C)*(Q_V + lc_0) + g_Na*m_Na))
+      rhs: t_scale*(I_ext*a_ne - Q_Z*Z*a_ie - W*g_K*(V - V_K) - g_L*(V - V_L) + m_Ca*(V - V_Ca)*(-C*a_ee*c_glob*r_NMDA - a_ee*r_NMDA*(1.0 - C)*(Q_V + lc_0) - g_Ca) - (V - V_Na)*(C*a_ee*c_glob + a_ee*(1.0 - C)*(Q_V + lc_0) + g_Na*m_Na))
       latex: false
     variable_of_interest: true
     coupling_variable: true

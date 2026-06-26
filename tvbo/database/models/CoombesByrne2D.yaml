@@ -46,8 +46,8 @@ description: ''
 references:
   - Byrne2020
 coupling_inputs:
-  c_pop0:
-    name: c_pop0
+  c_glob:
+    name: c_glob
 state_variables:
   V:
     name: V
@@ -57,7 +57,7 @@ state_variables:
     description: ''
     equation:
       lhs: Derivative(V, t)
-      rhs: V**2 + c_pop0 + eta + pi*k*r*(-V + v_syn) - pi**2*r**2
+      rhs: V**2 + c_glob + eta + pi*k*r*(-V + v_syn) - pi**2*r**2
       latex: false
     variable_of_interest: true
     coupling_variable: true
