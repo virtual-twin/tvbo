@@ -194,7 +194,7 @@ tvbo:tvboptim a tvbo:Backend ;
                             tvbo:ConductionSpeedInference ;
     tvbo:providesCapability tvbo:Autodiff, tvbo:JITCompilation, tvbo:StochasticSolver,
                             tvbo:CodeGeneration, tvbo:DelayHistoryBuffer,
-                            tvbo:InterpolatedDelays .
+                            tvbo:InterpolatedDelays, tvbo:StaticDelayBuffer .
 
 tvbo:NetworkDynamics a tvbo:Backend ;
     rdfs:label "NetworkDynamics.jl"@en ;
@@ -235,15 +235,29 @@ tvbo:enabledByCouplingSlot a owl:AnnotationProperty ;
     rdfs:label   "enabled by coupling slot"@en ;
     rdfs:comment "Name of the concrete Coupling metadata slot a SimulationExperiment must set to True to realise this capability; read at configure() time to materialise the slot."@en .
 
+tvbo:enabledByGraphParameter a owl:AnnotationProperty ;
+    rdfs:label   "enabled by graph parameter"@en ;
+    rdfs:comment "Name of the concrete graph parameter a SimulationExperiment must set to realise this capability; read at configure() time to materialise the value."@en .
+
+tvbo:boundConstraint a owl:AnnotationProperty ;
+    rdfs:label   "bound constraint"@en ;
+    rdfs:comment "Numerical pre-condition the realised parameter must satisfy for the capability to stay correct."@en .
+
 tvbo:InterpolatedDelays a tvbo:BackendCapability ;
     rdfs:label   "Interpolated (differentiable) delays"@en ;
     rdfs:comment "Delayed states read by linear interpolation between the two bracketing history time-steps instead of snapping to the nearest step, making the coupling differentiable w.r.t. the continuous delay — hence w.r.t. conduction speed (delay = tract_length / speed)."@en ;
     tvbo:enabledByCouplingSlot "interpolate_delays" .
 
+tvbo:StaticDelayBuffer a tvbo:BackendCapability ;
+    rdfs:label   "Static delay history buffer"@en ;
+    rdfs:comment "Fixed-length delay-history buffer (ceil(max_delay/dt) steps) whose size is set by an explicit max_delay bound and decoupled from the (possibly varying / traced) per-edge delays — the prerequisite for varying or differentiating delays under JIT. Delays exceeding max_delay are truncated (saturated at max_delay), so the bound must cover the slowest conduction speed explored."@en ;
+    tvbo:enabledByGraphParameter "max_delay" ;
+    tvbo:boundConstraint "max_delay >= max(tract_length) / min(conduction_speed)" .
+
 tvbo:ConductionSpeedInference a tvbo:SimulationTask ;
     rdfs:label   "Conduction-speed inference"@en ;
     rdfs:comment "Gradient-based optimisation or parameter exploration of conduction speed / per-edge conduction delays."@en ;
-    tvbo:requiresCapability tvbo:InterpolatedDelays .
+    tvbo:requiresCapability tvbo:InterpolatedDelays, tvbo:StaticDelayBuffer .
 
 #
 # ─────────────────────────────────────────────────────────────────
