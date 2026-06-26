@@ -42,7 +42,7 @@ derived_variables:
     record: true
 coupling_inputs:
   c_glob: {}
-  local_coupling: {}
+  local_coupling: {local: true}
 state_variables:
   theta:
     domain:

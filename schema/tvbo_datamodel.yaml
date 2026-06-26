@@ -1977,6 +1977,15 @@ classes:
                 multivalued: true
                 range: string
                 description: "Named keys for multi-dimensional coupling. When dimension > 1, provides symbolic names for each index (e.g., keys: [lre, ffi] for dimension: 2). Used in equations as variable names."
+            local:
+                range: boolean
+                ifabsent: boolean(false)
+                description: >-
+                    Marks this as a LOCAL (surface/local-connectivity) coupling term
+                    rather than a global long-range coupling. Local terms are never
+                    wired to the connectome; they evaluate to 0 unless a local/surface
+                    connectivity is supplied (TVB's ``local_coupling``). Global
+                    coupling inputs (the default) are driven by ``Network.coupling``.
 
     Argument:
         class_uri: tvbo:Argument

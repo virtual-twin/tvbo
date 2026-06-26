@@ -38,6 +38,17 @@ jaxcode_obj = lambda obj: model.render_equation(obj, format='jax')
 # ordering, while var_names keeps the original variables (used for the result mode dim).
 n_modes, state_names, var_slots = get_mode_layout(model)
 var_names = list(model.state_variables.keys())
+if n_modes > 1:
+    import warnings as _warnings
+    _warnings.warn(
+        f"number_of_modes={n_modes} (mode-coupled model '{getattr(model, 'name', '?')}') "
+        "on the tvboptim backend is EXPERIMENTAL: the per-node mode axis is folded into "
+        "the state axis (each variable occupies n_modes scalar slots). Validated against "
+        "TVB to machine precision for the Stefanescu-Jirsa ReducedSet models; other "
+        "multi-mode coupling topologies may not be faithful. Use the tvb backend for "
+        "reference results.",
+        stacklevel=2,
+    )
 param_names = [p.name for p in model.parameters.values()]
 derived_param_names = [p.name for p in model.derived_parameters.values()] if model.derived_parameters else []
 
@@ -124,6 +135,18 @@ if coupling_inputs_dict and all_couplings:
         for ci_name, (_fn, _co) in zip(_unmapped_cis, _unmapped_funcs):
             ci_coupling_map[ci_name] = (_fn, _co)
             func_to_first_ci.setdefault(_fn, ci_name)
+# Drop LOCAL coupling terms (CouplingInput.local=True, e.g. ``local_coupling``) from
+# the network wiring. A local term is TVB's surface/local-connectivity coupling —
+# zero for region-based simulations, which is all tvboptim supports. Reusing the
+# long-range connectome for it (the generic broadcast above would) double-counts
+# coupling and diverges from TVB, where the dfun receives local_coupling=0. Local
+# terms stay in coupling_inputs_dict so the dfun still binds the symbol (to the 0.0
+# fallback); only the connectome mapping is removed. (When surface-based simulation
+# is added, wire the local kernel here instead of the global connectome.)
+for _ci_name, _ci in (model.coupling_inputs.items() if model.coupling_inputs else []):
+    if getattr(_ci, 'local', False):
+        ci_coupling_map.pop(_ci_name, None)
+
 # Translate function-name coupling key to ci name for tvboptim state access
 _to_ci_key = lambda k: func_to_first_ci.get(k, k) if k else None
 

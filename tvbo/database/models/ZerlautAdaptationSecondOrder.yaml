@@ -570,7 +570,7 @@ functions:
       latex: false
 coupling_inputs:
   c_pop0: {}
-  local_coupling: {}
+  local_coupling: {local: true}
 derived_variables:
   E_input_excitatory:
     description: External excitatory input onto the excitatory population (clamped to be non-negative).

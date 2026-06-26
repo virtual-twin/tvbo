@@ -175,7 +175,7 @@ derived_variables:
     conditional: false
 coupling_inputs:
   c_pop0: {}
-  local_coupling: {}
+  local_coupling: {local: true}
 state_variables:
   y0:
     domain:

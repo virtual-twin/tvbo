@@ -12,7 +12,7 @@ parameters:
     description: The damping coefficient specifies how quickly the node's activity relaxes, must be larger than the node's in-degree in order to remain stable.
 coupling_inputs:
   c_pop0: {}
-  local_coupling: {}
+  local_coupling: {local: true}
 state_variables:
   x:
     domain:
