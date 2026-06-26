@@ -412,6 +412,12 @@ def update_parameters(metadata, ontoclass, verbose=0, only_used=True, **kwargs):
                 metadata.parameters[label].value = k.defaultValue.first()
 
 
+# When False (default), authored equation term order is preserved end-to-end
+# (parse unevaluated + stringify order='none'); set True to restore SymPy's
+# canonical Add/Mul re-sorting. Generated dynamics then read like the source.
+REORDER_EQUATIONS = False
+
+
 def update_equations(model):
     """Normalize equation symbols on *model* (in place).
 
@@ -419,12 +425,13 @@ def update_equations(model):
     SymPy form: `*_dot` / `dot*` names become time derivatives, derived
     variables are inlined, and Heaviside / acronym placeholders are resolved.
     """
+    _evaluate = REORDER_EQUATIONS
     substitutions = {}
 
     t = symbols("t")
-    equations = model.get_equations()
+    equations = model.get_equations(evaluate=_evaluate)
 
-    for k, eq in model.get_equations().items():
+    for k, eq in model.get_equations(evaluate=_evaluate).items():
         k_orig = k.replace("_dot", "").replace("dot", "")
 
         if "dot" in k:
@@ -1194,8 +1201,15 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         # Collect all equations (state + derived) and update stored Equation objects
         all_eqs = update_equations(self)
 
+        from sympy.printing import StrPrinter
+
+        _rhs_str = (
+            (lambda e: str(e))
+            if REORDER_EQUATIONS
+            else StrPrinter(settings={"order": "none"}).doprint
+        )
         for v, eq in all_eqs.items():
-            equation = tvbo_datamodel.Equation(lhs=str(eq.lhs), rhs=str(eq.rhs))
+            equation = tvbo_datamodel.Equation(lhs=str(eq.lhs), rhs=_rhs_str(eq.rhs))
             if v in self.state_variables:
                 self.state_variables[v].equation = equation
             elif v in self.derived_variables:
@@ -1632,7 +1646,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
             **kwargs,
         )
 
-    def get_equations(self, format="metadata"):
+    def get_equations(self, format="metadata", evaluate=True):
         # if format == "sympy":
         #     return _equation_mod.symbolic_model_equations(self.ontology)
         # elif format == "latex":
@@ -1646,7 +1660,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         equations["derived-parameters"] = []
         for k, dp in self.derived_parameters.items():
             equations["derived-parameters"].append(
-                Eq(lhs=Symbol(k), rhs=parse_eq(dp.equation, local_dict=scope))
+                Eq(lhs=Symbol(k), rhs=parse_eq(dp.equation, local_dict=scope, evaluate=evaluate))
             )
 
         equations["functions"] = []
@@ -1654,7 +1668,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
             arguments = [Symbol(arg.name) for arg in f.arguments]
             k = Function(k)(*arguments)
             equations["functions"].append(
-                Eq(lhs=k, rhs=parse_eq(f.equation, local_dict=scope))
+                Eq(lhs=k, rhs=parse_eq(f.equation, local_dict=scope, evaluate=evaluate))
             )
 
         equations["derived-variables"] = []
@@ -1666,7 +1680,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
             if getattr(dv, "conditional", False) and has_conditionals:
                 expression = _equation_mod.conditionals2piecewise(dv.equation)
             else:
-                expression = parse_eq(dv.equation, local_dict=scope)
+                expression = parse_eq(dv.equation, local_dict=scope, evaluate=evaluate)
 
             equations["derived-variables"].append(Eq(lhs=Symbol(k), rhs=expression))
 
@@ -1683,7 +1697,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
             if has_conditionals:
                 expression = _equation_mod.conditionals2piecewise(sv.equation)
             else:
-                expression = parse_eq(sv.equation, local_dict=scope)
+                expression = parse_eq(sv.equation, local_dict=scope, evaluate=evaluate)
 
             order = int(getattr(sv, "equation_order", 1) or 1)
             if discrete:
@@ -1714,7 +1728,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
                 equations["output-transformations"].append(
                     Eq(
                         lhs=Symbol(var_name_str),
-                        rhs=parse_eq(dv.equation, local_dict=scope),
+                        rhs=parse_eq(dv.equation, local_dict=scope, evaluate=evaluate),
                     )
                 )
             elif var_name_str in self.state_variables:

@@ -17,6 +17,7 @@ from tvbo.parse.expression import parse_eq
 
 ARRAY_FUNCTION_MAPPINGS = {
     "jax": {
+        # reductions
         "sum": "jnp.sum",
         "mean": "jnp.mean",
         "std": "jnp.std",
@@ -25,7 +26,32 @@ ARRAY_FUNCTION_MAPPINGS = {
         "min": "jnp.min",
         "abs": "jnp.abs",
         "prod": "jnp.prod",
+        "cumsum": "jnp.cumsum",
+        "diff": "jnp.diff",
+        "argmax": "jnp.argmax",
+        "argmin": "jnp.argmin",
+        # shape / construction / manipulation
         "concatenate": "jnp.concatenate",
+        "stack": "jnp.stack",
+        "vstack": "jnp.vstack",
+        "hstack": "jnp.hstack",
+        "pad": "jnp.pad",
+        "roll": "jnp.roll",
+        "flip": "jnp.flip",
+        "reshape": "jnp.reshape",
+        "transpose": "jnp.transpose",
+        "expand_dims": "jnp.expand_dims",
+        "squeeze": "jnp.squeeze",
+        "take": "jnp.take",
+        "tile": "jnp.tile",
+        "repeat": "jnp.repeat",
+        "arange": "jnp.arange",
+        "zeros": "jnp.zeros",
+        "ones": "jnp.ones",
+        "where": "jnp.where",
+        "clip": "jnp.clip",
+        "dot": "jnp.dot",
+        "matmul": "jnp.matmul",
     },
     "numpy": {
         "sum": "np.sum",
@@ -36,7 +62,31 @@ ARRAY_FUNCTION_MAPPINGS = {
         "min": "np.min",
         "abs": "np.abs",
         "prod": "np.prod",
+        "cumsum": "np.cumsum",
+        "diff": "np.diff",
+        "argmax": "np.argmax",
+        "argmin": "np.argmin",
         "concatenate": "np.concatenate",
+        "stack": "np.stack",
+        "vstack": "np.vstack",
+        "hstack": "np.hstack",
+        "pad": "np.pad",
+        "roll": "np.roll",
+        "flip": "np.flip",
+        "reshape": "np.reshape",
+        "transpose": "np.transpose",
+        "expand_dims": "np.expand_dims",
+        "squeeze": "np.squeeze",
+        "take": "np.take",
+        "tile": "np.tile",
+        "repeat": "np.repeat",
+        "arange": "np.arange",
+        "zeros": "np.zeros",
+        "ones": "np.ones",
+        "where": "np.where",
+        "clip": "np.clip",
+        "dot": "np.dot",
+        "matmul": "np.matmul",
     },
     "julia": {
         "sum": "sum",
@@ -47,7 +97,20 @@ ARRAY_FUNCTION_MAPPINGS = {
         "min": "minimum",
         "abs": "abs",
         "prod": "prod",
+        "cumsum": "cumsum",
+        "diff": "diff",
+        "argmax": "argmax",
+        "argmin": "argmin",
         "concatenate": "vcat",
+        "stack": "stack",
+        "vstack": "vcat",
+        "hstack": "hcat",
+        "flip": "reverse",
+        "reshape": "reshape",
+        "transpose": "transpose",
+        "clip": "clamp",
+        "dot": "dot",
+        "matmul": "*",
     },
     "python": {
         "sum": "sum",
@@ -768,9 +831,11 @@ def render_expression(
         so generated code matches reference code operation-for-operation.
     """
     if isinstance(expression, str):
-        # Pass user_functions as functions to parse_eq so they're recognized
-        # This prevents implicit multiplication from breaking function names
-        func_names = list(user_functions.keys()) if user_functions else None
+        # Pass user_functions AND the array-op vocabulary to parse_eq so they're
+        # recognized as functions (else implicit multiplication splits e.g.
+        # pad(x) into pad*x).
+        func_names = list(user_functions.keys()) if user_functions else []
+        func_names += list(ARRAY_FUNCTION_MAPPINGS.get(format, {}).keys())
         # preserve_order: parse unevaluated + print order='none' so SymPy keeps
         # the authored term order (float +/* are non-associative).
         _po = {"evaluate": False} if preserve_order else {}
