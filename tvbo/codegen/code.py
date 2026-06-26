@@ -139,6 +139,58 @@ def print_Piecewise(Printer, expr, verbose=False):
     return result
 
 
+# Array-manipulation primitives that SymPy cannot represent natively. Each entry
+# maps a function name to a handler ``(printer, expr) -> code string`` that emits
+# the right call for the printer's array module (``printer._module``: np / jnp).
+# Shared by NumPyPrinter and JaxPrinter so a new primitive is one dict entry.
+def _afp_concatenate(p, expr):
+    args = list(expr.args)
+    if args and args[-1].is_integer:
+        axis, arrays = int(args[-1]), args[:-1]
+    else:
+        axis, arrays = 0, args
+    return f"{p._module}.concatenate([{', '.join(p._print(a) for a in arrays)}], axis={axis})"
+
+
+def _afp_window_mean(p, expr):
+    X, w = p._print(expr.args[0]), p._print(expr.args[1])
+    return f"{p._module}.mean({X}.reshape(-1, {w}, *{X}.shape[1:]), axis=1)"
+
+
+def _afp_subsample(p, expr):
+    return f"{p._print(expr.args[0])}[::{p._print(expr.args[1])}]"
+
+
+def _afp_global_mean(p, expr):
+    return f"{p._module}.mean({p._print(expr.args[0])}, axis=-2, keepdims=True)"
+
+
+def _afp_transpose(p, expr):
+    return f"{p._print(expr.args[0])}.T"
+
+
+def _afp_mode_dot(p, expr):
+    # Contract X's mode axis with matrix M. For X (n_nodes, n_modes) and
+    # M (n_modes, n_modes): result[node,k] = sum_j X[node,j] M[j,k] (TVB's numpy.dot(xi, A_ik)).
+    return f"{p._module}.dot({p._print(expr.args[0])}, {p._print(expr.args[1])})"
+
+
+def _afp_mode_sum(p, expr):
+    # Sum over the mode axis, broadcasting back (TVB's coupling[0].sum(axis=1)[:, None]).
+    return f"{p._module}.sum({p._print(expr.args[0])}, axis=-1, keepdims=True)"
+
+
+_ARRAY_FUNCTION_PRINTERS = {
+    "concatenate": _afp_concatenate,
+    "window_mean": _afp_window_mean,
+    "subsample": _afp_subsample,
+    "global_mean": _afp_global_mean,
+    "transpose": _afp_transpose,
+    "mode_dot": _afp_mode_dot,
+    "mode_sum": _afp_mode_sum,
+}
+
+
 class NumPyPrinter(spn.NumPyPrinter):
     def __init__(self, settings=None, module="np"):
         self._module = module
@@ -156,11 +208,9 @@ class NumPyPrinter(spn.NumPyPrinter):
         return print_Piecewise(self, expr)
 
     def _print_Function(self, expr):
-        if expr.func.__name__ == "mode_dot":
-            # mode_dot(X, M) -> contract X's mode axis with matrix M (numpy.dot).
-            X_str = self._print(expr.args[0])
-            M_str = self._print(expr.args[1])
-            return f"{self._module}.dot({X_str}, {M_str})"
+        handler = _ARRAY_FUNCTION_PRINTERS.get(expr.func.__name__)
+        if handler is not None:
+            return handler(self, expr)
         return super()._print_Function(expr)
 
 
@@ -275,45 +325,10 @@ class JaxPrinter(spn.JaxPrinter):
         return print_Piecewise(self, expr)
 
     def _print_Function(self, expr):
-        """Handle special array functions like concatenate."""
-        func_name = expr.func.__name__
-        if func_name == "concatenate":
-            # concatenate(a, b, axis) -> jnp.concatenate([a, b], axis=axis)
-            args = list(expr.args)
-            if args and args[-1].is_integer:
-                axis = int(args[-1])
-                arrays = args[:-1]
-            else:
-                axis = 0
-                arrays = args
-            array_strs = ", ".join(self._print(a) for a in arrays)
-            return f"jnp.concatenate([{array_strs}], axis={axis})"
-        if func_name == "window_mean":
-            # window_mean(X, step) -> jnp.mean(X.reshape(-1, step, *X.shape[1:]), axis=1)
-            X_str = self._print(expr.args[0])
-            w_str = self._print(expr.args[1])
-            return f"jnp.mean({X_str}.reshape(-1, {w_str}, *{X_str}.shape[1:]), axis=1)"
-        if func_name == "subsample":
-            # subsample(X, step) -> X[::step]
-            X_str = self._print(expr.args[0])
-            s_str = self._print(expr.args[1])
-            return f"{X_str}[::{s_str}]"
-        if func_name == "global_mean":
-            # global_mean(X) -> jnp.mean(X, axis=-2, keepdims=True)
-            X_str = self._print(expr.args[0])
-            return f"jnp.mean({X_str}, axis=-2, keepdims=True)"
-        if func_name == "transpose":
-            # transpose(X) -> X.T
-            X_str = self._print(expr.args[0])
-            return f"{X_str}.T"
-        if func_name == "mode_dot":
-            # mode_dot(X, M) -> contract X's mode axis with matrix M.
-            # For X (n_nodes, n_modes) and M (n_modes, n_modes), {module}.dot gives
-            # (n_nodes, n_modes): result[node,k] = sum_j X[node,j] M[j,k] (TVB's numpy.dot(xi, A_ik)).
-            X_str = self._print(expr.args[0])
-            M_str = self._print(expr.args[1])
-            return f"{self._module}.dot({X_str}, {M_str})"
-        # Fall back to parent implementation
+        """Emit array primitives (concatenate, mode_dot, …) via the shared table."""
+        handler = _ARRAY_FUNCTION_PRINTERS.get(expr.func.__name__)
+        if handler is not None:
+            return handler(self, expr)
         return super()._print_Function(expr)
 
     def _print_Sum(self, expr):
