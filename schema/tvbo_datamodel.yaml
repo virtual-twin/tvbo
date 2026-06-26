@@ -1724,6 +1724,10 @@ classes:
                 multivalued: true
                 range: string
                 description: "Output variable names to include in simulation results. References to state_variables or derived_variables by name."
+                deprecated: >-
+                    Use 'record: true' on the derived variable (or 'record' on the
+                    state variable) instead. The 'output' list is retained for
+                    backward compatibility.
             derived_from_model:
                 range: Dynamics
             number_of_modes:
@@ -1797,6 +1801,11 @@ classes:
             variable_of_interest:
                 range: boolean
                 ifabsent: true
+                deprecated: >-
+                    Use 'record' instead. A state variable is recorded in the
+                    output when record=true (the default); set record=false to
+                    suppress it. 'variable_of_interest' is retained for backward
+                    compatibility and is ignored by the TVB/jax/rateml codegen.
             coupling_variable:
                 range: boolean
                 ifabsent: false

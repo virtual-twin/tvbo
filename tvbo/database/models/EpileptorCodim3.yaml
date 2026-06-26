@@ -50,9 +50,6 @@ parameters:
   b:
     definition: Unfolding type of the degenerate Takens-Bogdanov bifurcation.
     value: 1.0
-    domain:
-      lo: -2.0
-      hi: 2.0
     description: Unfolding type of the degenerate Takens-Bogdanov bifurcation, default is a focus type.
   R:
     definition: Radius in unfolding.
@@ -78,9 +75,6 @@ parameters:
   Ks:
     definition: Slow permittivity coupling strength.
     value: 0.0
-    domain:
-      lo: -1.0
-      hi: 1.0
     description: Slow permittivity coupling strength, the default of zero is no coupling.
 coupling_inputs:
   c_pop0: {}
@@ -179,7 +173,6 @@ state_variables:
       lhs: Derivative(x, t)
       rhs: -y
       latex: false
-    variable_of_interest: true
     coupling_variable: true
     initial_value: 0.5
   y:
@@ -191,9 +184,9 @@ state_variables:
       lhs: Derivative(y, t)
       rhs: x**3 - mu2*x - mu1 - y*(nu + b*x + x**2)
       latex: false
-    variable_of_interest: false
     coupling_variable: false
     initial_value: 0.0
+    record: false
   z:
     domain:
       lo: 0.0
@@ -203,7 +196,6 @@ state_variables:
       lhs: Derivative(z, t)
       rhs: -c*(sqrt((x - xs)**2 + y**2) - dstar + (z - 1/2)**7/10 + Ks*c_pop0)
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.05
 number_of_modes: 1

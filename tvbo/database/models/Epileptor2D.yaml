@@ -165,7 +165,6 @@ state_variables:
       lhs: Derivative(x1, t)
       rhs: tt*(Iext + Kvf*c_pop0 + c + local_coupling*x1 - x1*x1cond - z)
       latex: false
-    variable_of_interest: true
     coupling_variable: true
     initial_value: 0.1
   z:
@@ -177,7 +176,6 @@ state_variables:
       lhs: Derivative(z, t)
       rhs: r*tt*(Ks*c_pop0 + h - z)
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
 number_of_modes: 1

@@ -129,7 +129,6 @@ state_variables:
       lhs: Derivative(xi, t)
       rhs: tau*(xi - e_i*xi**3/3 - eta) + K11*(Aik*xi - xi) - K12*(Bik*alpha - xi) + tau*(IE_i + c_pop0 + local_coupling*xi)
       latex: false
-    variable_of_interest: true
     coupling_variable: true
     initial_value: 0.1
   eta:
@@ -141,9 +140,9 @@ state_variables:
       lhs: Derivative(eta, t)
       rhs: (xi - b*eta + m_i)/tau
       latex: false
-    variable_of_interest: false
     coupling_variable: false
     initial_value: 0.1
+    record: false
   alpha:
     name: alpha
     domain: {lo: -4.0, hi: 4.0}
@@ -153,7 +152,6 @@ state_variables:
       lhs: Derivative(alpha, t)
       rhs: tau*(alpha - f_i*alpha**3/3 - beta) + K21*(Cik*xi - alpha) + tau*(II_i + c_pop0 + local_coupling*xi)
       latex: false
-    variable_of_interest: true
     coupling_variable: true
     initial_value: 0.1
   beta:
@@ -165,6 +163,6 @@ state_variables:
       lhs: Derivative(beta, t)
       rhs: (alpha - b*beta + n_i)/tau
       latex: false
-    variable_of_interest: false
     coupling_variable: false
     initial_value: 0.1
+    record: false

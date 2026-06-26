@@ -186,7 +186,6 @@ state_variables:
       lhs: Derivative(y0, t)
       rhs: y3
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
     grounding:
@@ -201,7 +200,6 @@ state_variables:
       lhs: Derivative(y1, t)
       rhs: y4
       latex: false
-    variable_of_interest: true
     coupling_variable: true
     initial_value: 0.1
     grounding:
@@ -217,7 +215,6 @@ state_variables:
       lhs: Derivative(y2, t)
       rhs: y5
       latex: false
-    variable_of_interest: true
     coupling_variable: true
     initial_value: 0.1
     grounding:
@@ -232,7 +229,6 @@ state_variables:
       lhs: Derivative(y3, t)
       rhs: A*a*sigma_y1_y2 - a**2*y0 - 2.0*a*y3
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
     grounding:
@@ -246,7 +242,6 @@ state_variables:
       lhs: Derivative(y4, t)
       rhs: A*a*(J*a_2*sigma_y0_1 + c_pop0 + local_coupling*(y1 - y2) + mu) - a**2*y1 - 2.0*a*y4
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
     grounding:
@@ -260,7 +255,6 @@ state_variables:
       lhs: Derivative(y5, t)
       rhs: B*J*a_4*b*sigma_y0_3 - b**2*y2 - 2.0*b*y5
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
     grounding:

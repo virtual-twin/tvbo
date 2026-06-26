@@ -284,7 +284,6 @@ state_variables:
       lhs: Derivative(g, t)
       rhs: tt*(-0.01*g + 0.001*x1)
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
   x1:
@@ -296,7 +295,6 @@ state_variables:
       lhs: Derivative(x1, t)
       rhs: tt*(Iext + Kvf*c_pop0 + local_coupling*x1 + x1*x1cond + y1 - z)
       latex: false
-    variable_of_interest: true
     coupling_variable: true
     initial_value: 0.1
   x2:
@@ -308,7 +306,6 @@ state_variables:
       lhs: Derivative(x2, t)
       rhs: tt*(Iext2 + Kf*c_pop1 + bb*g - x2**3 + x2 - y2 - 0.3*z + 1.05)
       latex: false
-    variable_of_interest: true
     coupling_variable: true
     initial_value: 0.1
   x_rs:
@@ -320,7 +317,6 @@ state_variables:
       lhs: Derivative(x_rs, t)
       rhs: d_rs*tau_rs*(I_rs*gamma_rs + K_rs*c_pop2*gamma_rs + alpha_rs*y_rs + e_rs*x_rs**2 - f_rs*x_rs**3 + lc_1)
       latex: false
-    variable_of_interest: true
     coupling_variable: true
     initial_value: 0.1
   y1:
@@ -332,7 +328,6 @@ state_variables:
       lhs: Derivative(y1, t)
       rhs: tt*(c - d*x1**2 - y1)
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
   y2:
@@ -344,7 +339,6 @@ state_variables:
       lhs: Derivative(y2, t)
       rhs: tt*(-y2 + y2cond)/tau
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
   y_rs:
@@ -356,7 +350,6 @@ state_variables:
       lhs: Derivative(y_rs, t)
       rhs: d_rs*(a_rs + b_rs*x_rs - beta_rs*y_rs)/tau_rs
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
   z:
@@ -368,7 +361,6 @@ state_variables:
       lhs: Derivative(z, t)
       rhs: r*tt*(Ks*c_pop0 - 4*x0 + 4*x1 - z + zcond)
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
 number_of_modes: 1

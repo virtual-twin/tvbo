@@ -81,7 +81,6 @@ state_variables:
       lhs: Derivative(V, t)
       rhs: (I + J*r*tau + V**2 + c_pop0*cr*tau + c_pop1*cv + eta - pi**2*r**2*tau**2)/tau
       latex: false
-    variable_of_interest: true
     coupling_variable: true
     initial_value: 0.1
   r:
@@ -99,7 +98,6 @@ state_variables:
       lhs: Derivative(r, t)
       rhs: (Delta/(pi*tau) + 2*V*r)/tau
       latex: false
-    variable_of_interest: true
     coupling_variable: true
     initial_value: 0.1
 number_of_modes: 1

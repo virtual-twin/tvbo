@@ -282,7 +282,6 @@ state_variables:
       lhs: Derivative(E, t)
       rhs: (-E + s_e*(-E*r_e + k_e))/tau_e
       latex: false
-    variable_of_interest: true
     coupling_variable: true
     initial_value: 0.1
     grounding:
@@ -296,7 +295,6 @@ state_variables:
       lhs: Derivative(I, t)
       rhs: (-I + s_i*(-I*r_i + k_i))/tau_i
       latex: false
-    variable_of_interest: true
     coupling_variable: true
     initial_value: 0.1
     grounding:

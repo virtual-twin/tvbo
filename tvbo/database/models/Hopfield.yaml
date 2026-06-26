@@ -45,7 +45,6 @@ state_variables:
       lhs: Derivative(theta, t)
       rhs: (c_pop1 - theta)/tauT
       latex: false
-    variable_of_interest: true
     coupling_variable: true
     initial_value: 0.1
   x:
@@ -57,7 +56,6 @@ state_variables:
       lhs: Derivative(x, t)
       rhs: (c_pop0 - x)/taux
       latex: false
-    variable_of_interest: true
     coupling_variable: true
     initial_value: 0.1
 number_of_modes: 1

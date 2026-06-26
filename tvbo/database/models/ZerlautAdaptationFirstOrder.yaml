@@ -638,7 +638,6 @@ state_variables:
       lhs: Derivative(E, t)
       rhs: (-E + f_out_e)/T
       latex: false
-    variable_of_interest: true
     coupling_variable: true
     initial_value: 0.1
     distribution:
@@ -656,7 +655,6 @@ state_variables:
       lhs: Derivative(I, t)
       rhs: (-I + f_out_i)/T
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
     distribution:
@@ -673,7 +671,6 @@ state_variables:
       lhs: Derivative(W_e, t)
       rhs: E*b_e - W_e/tau_w_e + a_e*(-E_L_e + mu_V_e)/tau_w_e
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
   W_i:
@@ -685,7 +682,6 @@ state_variables:
       lhs: Derivative(W_i, t)
       rhs: I*b_i - W_i/tau_w_i + a_i*(-E_L_i + mu_V_i)/tau_w_i
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
   ou_drift:
@@ -697,7 +693,6 @@ state_variables:
       lhs: Derivative(ou_drift, t)
       rhs: -ou_drift/tau_OU
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
 number_of_modes: 1

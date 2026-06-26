@@ -260,7 +260,6 @@ state_variables:
       lhs: Derivative(v1, t)
       rhs: y1
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
   v2:
@@ -272,7 +271,6 @@ state_variables:
       lhs: Derivative(v2, t)
       rhs: y2
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
   v3:
@@ -284,7 +282,6 @@ state_variables:
       lhs: Derivative(v3, t)
       rhs: y3
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
   v4:
@@ -296,7 +293,6 @@ state_variables:
       lhs: Derivative(v4, t)
       rhs: y4
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
   v5:
@@ -308,7 +304,6 @@ state_variables:
       lhs: Derivative(v5, t)
       rhs: y5
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
   v6:
@@ -320,7 +315,6 @@ state_variables:
       lhs: Derivative(v6, t)
       rhs: y2 - y3
       latex: false
-    variable_of_interest: true
     coupling_variable: true
     initial_value: 0.1
   v7:
@@ -332,7 +326,6 @@ state_variables:
       lhs: Derivative(v7, t)
       rhs: y4 - y5
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
   y1:
@@ -344,7 +337,6 @@ state_variables:
       lhs: Derivative(y1, t)
       rhs: He*ke*(gamma_1*sigma_v23 + gamma_1T*(U + coupled_input)) - ke**2*v1 - 2*ke*y1
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
   y2:
@@ -356,7 +348,6 @@ state_variables:
       lhs: Derivative(y2, t)
       rhs: He*ke*(gamma_2*sigma_v1 + gamma_2T*(P + coupled_input)) - ke**2*v2 - 2*ke*y2
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
   y3:
@@ -368,7 +359,6 @@ state_variables:
       lhs: Derivative(y3, t)
       rhs: Hi*gamma_4*ki*sigma_v45 - ki**2*v3 - 2*ki*y3
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
   y4:
@@ -380,7 +370,6 @@ state_variables:
       lhs: Derivative(y4, t)
       rhs: He*ke*(gamma_3*sigma_v23 + gamma_3T*(Q + coupled_input)) - ke**2*v4 - 2*ke*y4
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
   y5:
@@ -392,7 +381,6 @@ state_variables:
       lhs: Derivative(y5, t)
       rhs: Hi*gamma_5*ki*sigma_v45 - ke**2*v5 - 2*ki*y5
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
 number_of_modes: 1

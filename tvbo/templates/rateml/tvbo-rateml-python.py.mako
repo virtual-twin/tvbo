@@ -40,7 +40,7 @@ coupling_terms = list(model.coupling_terms.keys()) if model.coupling_terms else 
 svboundaries = has_boundaries(model)
 
 # Variables of interest (exposures)
-exposures = [name for name, sv in state_vars if getattr(sv, 'variable_of_interest', True)]
+exposures = [name for name, sv in state_vars if getattr(sv, 'record', True)]
 %>
 from tvb.simulator.models.base import Model, ModelNumbaDfun
 import numpy
