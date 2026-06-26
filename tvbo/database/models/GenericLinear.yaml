@@ -18,7 +18,7 @@ references:
 - Galan2008
 coupling_inputs:
   c_pop0: {}
-  local_coupling: {}
+  local_coupling: {local: true}
 state_variables:
   x:
     domain:

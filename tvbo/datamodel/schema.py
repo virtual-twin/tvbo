@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-06-26T14:50:15
+# Generation date: 2026-06-26T18:55:02
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -2082,6 +2082,7 @@ class CouplingInput(YAMLRoot):
     source: Optional[str] = None
     dimension: Optional[int] = 1
     keys: Optional[Union[str, list[str]]] = empty_list()
+    local: Optional[Union[bool, Bool]] = False
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
@@ -2101,6 +2102,9 @@ class CouplingInput(YAMLRoot):
         if not isinstance(self.keys, list):
             self.keys = [self.keys] if self.keys is not None else []
         self.keys = [v if isinstance(v, str) else str(v) for v in self.keys]
+
+        if self.local is not None and not isinstance(self.local, Bool):
+            self.local = Bool(self.local)
 
         super().__post_init__(**kwargs)
 
@@ -7597,6 +7601,9 @@ slots.couplingInput__dimension = Slot(uri=TVBO.dimension, name="couplingInput__d
 
 slots.couplingInput__keys = Slot(uri=TVBO.keys, name="couplingInput__keys", curie=TVBO.curie('keys'),
                    model_uri=TVBO.couplingInput__keys, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.couplingInput__local = Slot(uri=TVBO.local, name="couplingInput__local", curie=TVBO.curie('local'),
+                   model_uri=TVBO.couplingInput__local, domain=None, range=Optional[Union[bool, Bool]])
 
 slots.argument__value = Slot(uri=TVBO.value, name="argument__value", curie=TVBO.curie('value'),
                    model_uri=TVBO.argument__value, domain=None, range=Optional[Union[dict, ScalarValue]])

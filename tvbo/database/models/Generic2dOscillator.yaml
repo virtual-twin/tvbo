@@ -109,7 +109,7 @@ references:
 - Fitzhugh1961
 coupling_inputs:
   c_glob: {}
-  local_coupling: {}
+  local_coupling: {local: true}
 state_variables:
   V:
     domain:

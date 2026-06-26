@@ -115,7 +115,7 @@ derived_variables:
     - GO:0099605
 coupling_inputs:
   c_pop0: {}
-  local_coupling: {}
+  local_coupling: {local: true}
 state_variables:
   S:
     domain:

@@ -273,7 +273,7 @@ coupling_inputs:
   c_pop0: {}
   c_pop1: {}
   c_pop2: {}
-  local_coupling: {}
+  local_coupling: {local: true}
 state_variables:
   g:
     domain:
