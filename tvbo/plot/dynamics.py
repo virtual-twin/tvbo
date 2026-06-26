@@ -57,10 +57,12 @@ def _resolve(dim, dynamics):
             break
         expr = new
 
+    from tvbo.utils import is_array_valued
+
     param_subs = {
         sp.Symbol(name): float(p.value)
         for name, p in dynamics.parameters.items()
-        if p.value is not None
+        if p.value is not None and not is_array_valued(p.value)
     }
     for name, dp in (getattr(dynamics, "derived_parameters", {}) or {}).items():
         if getattr(dp, "equation", None) is not None:

@@ -646,7 +646,14 @@ def _resolve_statevariable_boundaries(d: dict) -> None:
                 # range) as the sampling distribution before the clamp takes
                 # over `domain`, so a half-open clamp can't drop a finite range.
                 if isinstance(prev, dict) and sv.get("distribution") is None:
-                    sv["distribution"] = {k: prev[k] for k in ("lo", "hi", "step") if k in prev}
+                    # Emit a complete Distribution (name + domain), not a terse
+                    # {lo, hi} — this runs after yaml_loader's distribution-shortcut
+                    # lift, so nothing else materialises the name and a bare
+                    # {lo, hi} would reach Distribution(**{lo, hi}) and raise.
+                    sv["distribution"] = {
+                        "name": "Uniform",
+                        "domain": {k: prev[k] for k in ("lo", "hi", "step") if k in prev},
+                    }
                 sv["domain"] = bnd
 
 
@@ -1816,35 +1823,31 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         return [eq.subs(sub) for eq in self.get_equations().values()]
 
     def calculate_derived_parameters(self):
-        if self.derived_parameters is not None:
-            for k, dp in self.derived_parameters.items():
-                eq = parse_eq(
-                    dp.equation,
-                    local_dict=self.get_symbolic_elements(),
-                    evaluate=False,
-                ).subs(
-                    {
-                        Symbol(p.name): p.value
-                        for p in self.parameters.values()
-                        if not isinstance(p.value, (list, tuple))
-                    }
-                )
-                try:
-                    sol = eq.evalf()
-                    # Convert SymPy Float to Python float for YAML serialization
-                    self.derived_parameters[k].value = float(sol)
-                except (TypeError, ValueError):
-                    # Array-valued derived parameter (e.g. a mode-coupling
-                    # coefficient built from array constants and μ/σ): there is no
-                    # load-time scalar — it is recomputed at runtime by the
-                    # generated update_derived_parameters.
-                    self.derived_parameters[k].value = None
-
-            return {
-                k: self.derived_parameters[k].value for k in self.derived_parameters
-            }
-        else:
+        if self.derived_parameters is None:
             return None
+        from tvbo.utils import is_array_valued
+
+        # Loop-invariant: build the symbol scope and the scalar-parameter
+        # substitution once. Array-valued parameters (mode-coupling matrices,
+        # quadrature vectors) are excluded — they have no load-time scalar and
+        # would make ``subs`` raise — so the derived parameters that depend on
+        # them stay symbolic and are recomputed at runtime.
+        local_dict = self.get_symbolic_elements()
+        scalar_subs = {
+            Symbol(p.name): p.value
+            for p in self.parameters.values()
+            if not is_array_valued(p.value)
+        }
+        for k, dp in self.derived_parameters.items():
+            try:
+                eq = parse_eq(dp.equation, local_dict=local_dict, evaluate=False).subs(scalar_subs)
+                # Convert SymPy Float to Python float for YAML serialization.
+                self.derived_parameters[k].value = float(eq.evalf())
+            except (TypeError, ValueError):
+                # Array-valued / unresolved derived parameter: no load-time scalar;
+                # recomputed at runtime by the generated update_derived_parameters.
+                self.derived_parameters[k].value = None
+        return {k: self.derived_parameters[k].value for k in self.derived_parameters}
 
     def get_dependency_tree(self, ontomapping=False, include_state_equations=False):
         import sympy
@@ -2380,8 +2383,13 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
                     domain = getattr(dist, "domain", None) or getattr(
                         sv, "domain", None
                     )
-                    lo = float(domain.lo) if domain and domain.lo is not None else -10.0
-                    hi = float(domain.hi) if domain and domain.hi is not None else 10.0
+                    # Guard against non-finite / missing bounds: a distribution
+                    # without its own domain falls back to sv.domain, which may be a
+                    # half-open clamp (e.g. [0, inf)); uniform(0, inf) would overflow.
+                    _dlo = getattr(domain, "lo", None) if domain else None
+                    _dhi = getattr(domain, "hi", None) if domain else None
+                    lo = float(_dlo) if (isinstance(_dlo, (int, float)) and np.isfinite(_dlo)) else -10.0
+                    hi = float(_dhi) if (isinstance(_dhi, (int, float)) and np.isfinite(_dhi)) else 10.0
                     dist_name = str(getattr(dist, "name", "Uniform")).lower()
                     if dist_name in ("gaussian", "normal"):
                         sv_init = np.random.normal(
