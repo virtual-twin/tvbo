@@ -116,11 +116,22 @@ dynamics:
 
     # --- DERIVED VARIABLES ---
   derived_variables:
+        # Shared NMDA-scaled intermediates (kept explicit so the generated dfun
+        # computes J_N*S_e and J_N*c_ffi once, matching the reference association).
+    J_N_S_e:
+      label: "NMDA-scaled excitatory gating"
+      equation:
+        rhs: "J_N * S_e"
+    J_N_c_ffi:
+      label: "NMDA-scaled feedforward inhibition"
+      equation:
+        rhs: "J_N * c_ffi"
+
         # Excitatory population input and transfer function
     x_e_pre:
       label: "Excitatory pre-activation"
       equation:
-        rhs: "w_p * J_N * S_e - J_i * S_i + W_e * I_o + J_N * c_lre + I_ext"
+        rhs: "w_p * J_N_S_e - J_i * S_i + W_e * I_o + J_N * c_lre + I_ext"
     x_e:
       label: "Excitatory activation"
       equation:
@@ -135,7 +146,7 @@ dynamics:
     x_i_pre:
       label: "Inhibitory pre-activation"
       equation:
-        rhs: "J_N * S_e - S_i + W_i * I_o + lamda * J_N * c_ffi"
+        rhs: "J_N_S_e - S_i + W_i * I_o + lamda * J_N_c_ffi"
     x_i:
       label: "Inhibitory activation"
       equation:
