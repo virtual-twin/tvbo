@@ -170,13 +170,16 @@ def _afp_transpose(p, expr):
 
 
 def _afp_mode_dot(p, expr):
-    # Contract X's mode axis with matrix M. For X (n_nodes, n_modes) and
-    # M (n_modes, n_modes): result[node,k] = sum_j X[node,j] M[j,k] (TVB's numpy.dot(xi, A_ik)).
+    """Contract X's mode axis with matrix M (TVB's ``numpy.dot(xi, A_ik)``).
+
+    For X ``(n_nodes, n_modes)`` and M ``(n_modes, n_modes)``:
+    ``result[node, k] = sum_j X[node, j] * M[j, k]``.
+    """
     return f"{p._module}.dot({p._print(expr.args[0])}, {p._print(expr.args[1])})"
 
 
 def _afp_mode_sum(p, expr):
-    # Sum over the mode axis, broadcasting back (TVB's coupling[0].sum(axis=1)[:, None]).
+    """Sum over the mode axis, broadcasting back (TVB's ``coupling[0].sum(axis=1)[:, None]``)."""
     return f"{p._module}.sum({p._print(expr.args[0])}, axis=-1, keepdims=True)"
 
 

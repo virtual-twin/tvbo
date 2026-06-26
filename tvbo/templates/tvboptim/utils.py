@@ -578,9 +578,11 @@ def get_state_bounds(model: Any) -> Tuple[List, List, bool]:
             hi = getattr(dom, "hi", None)
 
         def _finite(b):
-            # A clamp bound is finite only if it is a real number that is not ±inf.
-            # Range.lo/hi may also be an argument-name string or a sympy symbol
-            # (schema permits both); those are treated as unbounded here.
+            """Whether a clamp bound is a finite real number (not None / ±inf).
+
+            Range.lo/hi may also be an argument-name string or a sympy symbol
+            (the schema permits both); those are treated as unbounded.
+            """
             try:
                 return b is not None and math.isfinite(float(b))
             except (TypeError, ValueError):

@@ -138,7 +138,13 @@ def plot_vector_field(
     rhs_y = parse_expr(str(all_svs[ylabel].equation.rhs), local_dict=sym_dict)
 
     # Parameter values
-    param_vals = {pname: float(p.value) for pname, p in all_params.items() if p.value is not None}
+    from tvbo.utils import is_array_valued
+
+    param_vals = {
+        pname: float(p.value)
+        for pname, p in all_params.items()
+        if p.value is not None and not is_array_valued(p.value)
+    }
 
     # Substitute fixed params and non-plotted state variables at their mean
     data = result.data
