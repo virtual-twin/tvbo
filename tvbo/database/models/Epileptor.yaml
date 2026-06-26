@@ -106,6 +106,10 @@ parameters:
       hi: 10.0
       step: 0.001
     description: Time scaling of the whole system.
+  modification:
+    definition: 'Selects the permittivity-drive form: >0 (True) uses the sigmoidal influence on z, default 0 (False) the linear influence.'
+    value: 0.0
+    description: Switch between linear (0/False) and sigmoidal (>0/True) z-drive h.
 description: The Epileptor is a composite neural mass model of six dimensions which has been crafted to model the phenomenology of epileptic seizures. Equations and default parameters are taken from Jirsa et al. (2014).
 references:
 - Jirsaetal_2014
@@ -126,10 +130,10 @@ derived_variables:
       latex: false
     conditional: false
   h:
-    description: Permittivity drive term for the slow variable z (linear influence, modification=False).
+    description: 'Permittivity drive for z: sigmoidal when modification>0, else linear (Piecewise on modification).'
     equation:
       lhs: h
-      rhs: 4*(x1 - x0) + Piecewise((-0.1*z**7, z < 0), (0, True))
+      rhs: Piecewise((x0 + 3/(1 + exp(-(x1 + 0.5)/0.1)), modification > 0), (4*(x1 - x0) + Piecewise((-0.1*z**7, z < 0), (0, True)), True))
       latex: false
     conditional: false
   f2:
