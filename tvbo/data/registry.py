@@ -36,6 +36,7 @@ _CATEGORIES = {
     "BrainAtlas": "atlases",
     "Continuation": "continuations",
     "GraphGenerator": "graph_generators",
+    "SimulationTool": "software",
 }
 
 
