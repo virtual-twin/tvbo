@@ -28,7 +28,7 @@
 
     dt = integration.step_size if integration is not None else 0.1
     cvar = [i for i, sv in enumerate(experiment.dynamics.state_variables.values()) if sv.coupling_variable]
-    vois = [sv.name for sv in experiment.dynamics.state_variables.values() if sv.variable_of_interest]
+    vois = [sv.name for sv in experiment.dynamics.state_variables.values() if getattr(sv, 'record', True)]
 
     svars = list(model.state_variables.keys())
     svars_is_vois = svars == vois

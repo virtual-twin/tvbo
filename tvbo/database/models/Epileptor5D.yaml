@@ -142,11 +142,11 @@ parameters:
       step: 0.1
     description: Epileptogenicity Parameter
     grounding:
-      - GO:0060079
+    - GO:0060079
 description: "Epilepor5D (E5D) is a phenomenological, coupled, nonlinear five-dimensional (i.e., five state-variables ('x1', 'y1', 'z', 'x2', 'y2')) neural mass model able to realistically reproduce the temporal dynamics of epileptic seizures and the alternating sequence of seizures (ictal and interictal state; Jirsa et al.,2014; El Houssaini et al., 2015, 2020).\n\nEpileptor5D comprises three different time scales interacting together and accounting for various electrographic patterns: \n- the fastest and intermediate time scales are two coupled oscillators ((x1, y1) and (x2, y2)), accounting respectively for the low-voltage fast discharges (i.e., very fast oscillations) and spike-and-wave discharges. \n- the slowest time scale is responsible for leading the autonomous switch between interictal and ictal states and is driven by a slow-permittivity variable z. This switching is accompanied by a direct current (DC) shift that has been recorded in vitro and in vivo.\n\nThe main output of the model: -x1+ x2, bears analogy with the field potential, while the precise biophysical equivalent of the z variable is unknown and will be likely complex.\n\nNote: \n------\n- Equations and default parameters are taken from (Jirsa et al.,2014 & El Houssaini et al., 2015),\n- The integral coupling function g(x1) can be rewritten as an ordinary differential equation, which is technically introduced, here, as a sixth state-variable (see Jirsa et al.,2014),\n- The slow permittivity state-variable (z_E5D) can be modified to account for the time difference between the interictal (between seizures) and ictal (during seizure) states (see Proix et al., 2014)."
 references:
-  - Proix2014
-  - Jirsa2014
+- Proix2014
+- Jirsa2014
 derived_variables:
   x1cond:
     name: x1cond
@@ -157,16 +157,16 @@ derived_variables:
       latex: false
     conditional: true
     cases:
-      - condition: x1 < 0
-        equation:
-          lhs: x1cond
-          rhs: (-a)*x1**2 + b*x1
-          latex: false
-      - condition: 'True'
-        equation:
-          lhs: x1cond
-          rhs: slope - x2 + 0.6*(z - 1*4.0)**2
-          latex: false
+    - condition: x1 < 0
+      equation:
+        lhs: x1cond
+        rhs: (-a)*x1**2 + b*x1
+        latex: false
+    - condition: 'True'
+      equation:
+        lhs: x1cond
+        rhs: slope - x2 + 0.6*(z - 1*4.0)**2
+        latex: false
   y2cond:
     name: y2cond
     symbol: y2cond
@@ -176,16 +176,16 @@ derived_variables:
       latex: false
     conditional: true
     cases:
-      - condition: x2 < -0.25
-        equation:
-          lhs: y2cond
-          rhs: '0.0'
-          latex: false
-      - condition: 'True'
-        equation:
-          lhs: y2cond
-          rhs: aa*(x2 + 0.25)
-          latex: false
+    - condition: x2 < -0.25
+      equation:
+        lhs: y2cond
+        rhs: '0.0'
+        latex: false
+    - condition: 'True'
+      equation:
+        lhs: y2cond
+        rhs: aa*(x2 + 0.25)
+        latex: false
   zcond:
     name: zcond
     symbol: zcond
@@ -195,16 +195,16 @@ derived_variables:
       latex: false
     conditional: true
     cases:
-      - condition: z < 0
-        equation:
-          lhs: zcond
-          rhs: -0.1*z**7
-          latex: false
-      - condition: 'True'
-        equation:
-          lhs: zcond
-          rhs: '0.0'
-          latex: false
+    - condition: z < 0
+      equation:
+        lhs: zcond
+        rhs: -0.1*z**7
+        latex: false
+    - condition: 'True'
+      equation:
+        lhs: zcond
+        rhs: '0.0'
+        latex: false
   h:
     name: h
     symbol: h
@@ -214,16 +214,16 @@ derived_variables:
       latex: false
     conditional: true
     cases:
-      - condition: modification > 0
-        equation:
-          lhs: h
-          rhs: x0 + 3/(exp((-x1 - 0.5)/0.1) + 1)
-          latex: false
-      - condition: 'True'
-        equation:
-          lhs: h
-          rhs: zcond + 4*(-x0 + x1)
-          latex: false
+    - condition: modification > 0
+      equation:
+        lhs: h
+        rhs: x0 + 3/(exp((-x1 - 0.5)/0.1) + 1)
+        latex: false
+    - condition: 'True'
+      equation:
+        lhs: h
+        rhs: zcond + 4*(-x0 + x1)
+        latex: false
 coupling_inputs:
   c_pop0:
     name: c_pop0
@@ -242,7 +242,6 @@ state_variables:
       lhs: Derivative(g, t)
       rhs: tt*(-0.01*g + 0.001*x1)
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
   x1:
@@ -255,7 +254,6 @@ state_variables:
       lhs: Derivative(x1, t)
       rhs: tt*(Iext + Kvf*c_pop0 + local_coupling*x1 + x1*x1cond + y1 - z)
       latex: false
-    variable_of_interest: true
     coupling_variable: true
     initial_value: 0.1
   x2:
@@ -268,7 +266,6 @@ state_variables:
       lhs: Derivative(x2, t)
       rhs: tt*(Iext2 + Kf*c_pop1 + bb*g - x2**3 + x2 - y2 - 0.3*z + 1.05)
       latex: false
-    variable_of_interest: true
     coupling_variable: true
     initial_value: 0.1
   y1:
@@ -281,7 +278,6 @@ state_variables:
       lhs: Derivative(y1, t)
       rhs: tt*(c - d*x1**2 - y1)
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
   y2:
@@ -294,7 +290,6 @@ state_variables:
       lhs: Derivative(y2, t)
       rhs: tt*(-y2 + y2cond)/tau
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
   z:
@@ -307,7 +302,6 @@ state_variables:
       lhs: Derivative(z, t)
       rhs: r*tt*(Ks*c_pop0 + h - z)
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
 number_of_modes: 1

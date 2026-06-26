@@ -5,34 +5,18 @@ parameters:
   a:
     definition: Coefficient of the cubic term in the first state variable.
     value: 1.0
-    domain:
-      lo: 0.0
-      hi: 5.0
-      step: 0.1
     description: Coefficient of the cubic term in the first state variable x1.
   b:
     definition: Coefficient of the squared term in the first state variable.
     value: 3.0
-    domain:
-      lo: 0.0
-      hi: 10.0
-      step: 0.1
     description: Coefficient of the squared term in the first state variable x1.
   c:
     definition: Additive coefficient for the second state variable.
     value: 1.0
-    domain:
-      lo: 0.0
-      hi: 5.0
-      step: 0.1
     description: Additive coefficient for the second state variable y1, called y0 in the Jirsa et al. (2014) paper.
   d:
     definition: Coefficient of the squared term in the second state variable.
     value: 5.0
-    domain:
-      lo: 0.0
-      hi: 10.0
-      step: 0.1
     description: Coefficient of the squared term in the second state variable y1.
   r:
     definition: Temporal scaling in the third state variable.
@@ -45,10 +29,6 @@ parameters:
   s:
     definition: Linear coefficient in the third state variable.
     value: 4.0
-    domain:
-      lo: -10.0
-      hi: 10.0
-      step: 0.1
     description: Linear coefficient in the third state variable z.
   x0:
     definition: Epileptogenicity parameter.
@@ -85,26 +65,14 @@ parameters:
   tau:
     definition: Temporal scaling coefficient in the fifth state variable.
     value: 10.0
-    domain:
-      lo: 1.0
-      hi: 100.0
-      step: 1.0
     description: Temporal scaling coefficient in the fifth state variable y2.
   aa:
     definition: Linear coefficient in the fifth state variable.
     value: 6.0
-    domain:
-      lo: 0.0
-      hi: 10.0
-      step: 0.1
     description: Linear coefficient in the fifth state variable y2.
   bb:
     definition: Linear coefficient of lowpass excitatory coupling in the fourth state variable.
     value: 2.0
-    domain:
-      lo: 0.0
-      hi: 10.0
-      step: 0.1
     description: Linear coefficient of lowpass excitatory coupling in the fourth state variable x2.
   Kvf:
     definition: Coupling scaling on a very fast time scale.
@@ -171,6 +139,14 @@ derived_variables:
       rhs: Piecewise((0, x2 < -0.25), (aa*(x2 + 0.25), True))
       latex: false
     conditional: false
+  lfp:
+    description: 'Local field potential proxy: TVB Epileptor observable x2 - x1.'
+    equation:
+      lhs: lfp
+      rhs: x2 - x1
+      latex: false
+    conditional: false
+    record: true
 coupling_inputs:
   c_pop0: {}
   c_pop1: {}
@@ -185,9 +161,9 @@ state_variables:
       lhs: Derivative(x1, t)
       rhs: tt*(y1 - z + Iext_total + Kvf*c_pop0 + f1*x1)
       latex: false
-    variable_of_interest: true
     coupling_variable: true
     initial_value: 0.1
+    record: false
   y1:
     domain:
       lo: -20.0
@@ -197,9 +173,9 @@ state_variables:
       lhs: Derivative(y1, t)
       rhs: tt*(c - d*x1**2 - y1)
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
+    record: false
   z:
     domain:
       lo: 2.0
@@ -209,7 +185,6 @@ state_variables:
       lhs: Derivative(z, t)
       rhs: tt*r*(h - z + Ks*c_pop0)
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 3.0
   x2:
@@ -221,9 +196,9 @@ state_variables:
       lhs: Derivative(x2, t)
       rhs: tt*(-y2 + x2 - x2**3 + Iext2 + bb*g - 0.3*(z - 3.5) + Kf*c_pop1)
       latex: false
-    variable_of_interest: true
     coupling_variable: true
     initial_value: -1.0
+    record: false
   y2:
     domain:
       lo: 0.0
@@ -233,9 +208,9 @@ state_variables:
       lhs: Derivative(y2, t)
       rhs: tt*(-y2 + f2)/tau
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
+    record: false
   g:
     domain:
       lo: -1.0
@@ -245,7 +220,7 @@ state_variables:
       lhs: Derivative(g, t)
       rhs: tt*(-0.01*(g - 0.1*x1))
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.0
+    record: false
 number_of_modes: 1

@@ -98,10 +98,20 @@ sv_boundaries = tvb_state_variable_boundaries(model)
 % endif
 ########## Variables Of Interest ##########
     <%
-    output_keys = tuple(model.output) if isinstance(model.output, list) else tuple(model.output.keys()) if model.output else ()
+    # Recorded outputs. `record` is the canonical selector — state variables
+    # default to record=true, derived variables to record=false — superseding the
+    # deprecated `variable_of_interest` slot and the legacy `output` list.
+    recorded_states = tuple(sv.name for sv in model.state_variables.values() if getattr(sv, 'record', True))
+    recorded_derived = tuple(dv.name for dv in model.derived_variables.values() if getattr(dv, 'record', False))
+    if isinstance(model.output, dict):
+        legacy_output = tuple(model.output.keys())
+    elif model.output:
+        legacy_output = tuple(model.output)
+    else:
+        legacy_output = ()
+    output_keys = recorded_derived + tuple(k for k in legacy_output if k not in recorded_derived)
     choices = tuple(model.state_variables.keys()) + output_keys
-
-    variables_of_interest = tuple(sv.name for sv in model.state_variables.values() if sv.variable_of_interest) + output_keys
+    variables_of_interest = recorded_states + output_keys
     %>
 
     variables_of_interest = List(
@@ -152,20 +162,17 @@ sv_boundaries = tvb_state_variable_boundaries(model)
 % endif
 
 ########## OutputTransforms ##########
-% if model.output:
+% if output_keys:
     def _build_observer(self):
         template = ("def observe(state):\n"
                     "    {svars} = state\n"
-                    % if isinstance(model.output, list):
-                        % for var_name in model.output:
-<%                          dv = model.derived_variables.get(var_name) %>\
-                    "    ${var_name} = ${render(dv) if dv else var_name}\n"
-                        % endfor
-                    % else:
-                        % for ot in model.output.values():
-                    "    ${ot.name} = ${render(ot)}\n"
-                        % endfor
-                    % endif
+                    % for var_name in output_keys:
+<%
+    _dv = model.derived_variables.get(var_name)
+    _ot = model.output.get(var_name) if isinstance(model.output, dict) else None
+%>\
+                    "    ${var_name} = ${render(_dv) if _dv else (render(_ot) if _ot else var_name)}\n"
+                    % endfor
                     "    return numpy.array([{voi_names}])")
         svars = ','.join(self.state_variables)
         if len(self.state_variables) == 1:

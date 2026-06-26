@@ -110,7 +110,7 @@ def _extract_dynamics(sim) -> tvbo_datamodel.Dynamics:
         model_metadata.state_variables[sv] = tvbo_datamodel.StateVariable(
             name=sv,
             coupling_variable=bool(i in cvar),
-            variable_of_interest=bool(sv in voi),
+            record=bool(sv in voi),
             domain=sv_domain,
             distribution=sv_distribution,
             initial_value=(float(ics[0, i, :, 0].mean()) if ics is not None else None),
@@ -152,6 +152,13 @@ def tvb_state_variable_ranges(model, default=(-1e9, 1e9)):
         rng = _sv_ic_range(sv)
         lo = float(rng.lo) if (rng is not None and rng.lo is not None) else default[0]
         hi = float(rng.hi) if (rng is not None and rng.hi is not None) else default[1]
+        # IC sampling support must be finite (TVB draws it with rng.uniform). If a
+        # half-open clamp domain reached here without a finite sampling
+        # distribution, fall back to the default rather than emit inf.
+        if not np.isfinite(lo):
+            lo = default[0]
+        if not np.isfinite(hi):
+            hi = default[1]
         ranges[sv.name] = (lo, hi)
     return ranges
 

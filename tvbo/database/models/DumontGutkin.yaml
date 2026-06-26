@@ -169,7 +169,6 @@ state_variables:
       lhs: Derivative(V_e, t)
       rhs: (I_e + V_e**2 + eta_e - pi**2*r_e**2*tau_e**2 + s_ee*tau_e - s_ei*tau_e)/tau_e
       latex: false
-    variable_of_interest: true
     coupling_variable: true
     initial_value: 0.1
   V_i:
@@ -181,7 +180,6 @@ state_variables:
       lhs: Derivative(V_i, t)
       rhs: (I_i + V_i**2 + eta_i - pi**2*r_i**2*tau_i**2 + s_ie*tau_i - s_ii*tau_i)/tau_i
       latex: false
-    variable_of_interest: true
     coupling_variable: true
     initial_value: 0.1
   r_e:
@@ -194,7 +192,6 @@ state_variables:
       lhs: Derivative(r_e, t)
       rhs: (Delta_e/(pi*tau_e) + 2*V_e*r_e)/tau_e
       latex: false
-    variable_of_interest: true
     coupling_variable: true
     initial_value: 0.1
     distribution:
@@ -212,7 +209,6 @@ state_variables:
       lhs: Derivative(r_i, t)
       rhs: (Delta_i/(pi*tau_i) + 2*V_i*r_i)/tau_i
       latex: false
-    variable_of_interest: true
     coupling_variable: true
     initial_value: 0.1
     distribution:
@@ -229,7 +225,6 @@ state_variables:
       lhs: Derivative(s_ee, t)
       rhs: (J_ee*r_e + c_pop0 - s_ee)/tau_s
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
   s_ei:
@@ -241,7 +236,6 @@ state_variables:
       lhs: Derivative(s_ei, t)
       rhs: (J_ei*r_i - s_ei)/tau_s
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
   s_ie:
@@ -253,7 +247,6 @@ state_variables:
       lhs: Derivative(s_ie, t)
       rhs: (Gamma*c_pop0 + J_ie*r_e - s_ie)/tau_s
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
   s_ii:
@@ -265,7 +258,6 @@ state_variables:
       lhs: Derivative(s_ii, t)
       rhs: (J_ii*r_i - s_ii)/tau_s
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
 number_of_modes: 1

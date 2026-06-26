@@ -42,7 +42,6 @@ state_variables:
       lhs: Derivative(x1, t)
       rhs: N*(x1 - x1**3/3 - z + c_pop0)
       latex: false
-    variable_of_interest: true
     coupling_variable: true
     initial_value: -1.5
   z:
@@ -53,6 +52,6 @@ state_variables:
       lhs: Derivative(z, t)
       rhs: (4*(x1 - x_0) - z)/tau_z
       latex: false
-    variable_of_interest: false
     coupling_variable: false
     initial_value: 3.0
+    record: false

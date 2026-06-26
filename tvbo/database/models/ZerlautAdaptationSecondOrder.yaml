@@ -733,7 +733,6 @@ state_variables:
         + 0.5*C_ei*d2_fife_e
         + 0.5*C_ii*d2_fifi_e)/T
       latex: false
-    variable_of_interest: true
     coupling_variable: true
     initial_value: 0.0
   I:
@@ -756,9 +755,9 @@ state_variables:
         + 0.5*C_ei*d2_fife_i
         + 0.5*C_ii*d2_fifi_i)/T
       latex: false
-    variable_of_interest: false
     coupling_variable: false
     initial_value: 0.0
+    record: false
   C_ee:
     domain:
       lo: 0.0
@@ -773,9 +772,9 @@ state_variables:
         + 2.0*C_ei*dfi_TFe
         - 2.0*C_ee)/T
       latex: false
-    variable_of_interest: false
     coupling_variable: false
     initial_value: 0.0
+    record: false
   C_ei:
     domain:
       lo: -0.0005
@@ -791,9 +790,9 @@ state_variables:
         + C_ii*dfi_TFi
         - 2.0*C_ei)/T
       latex: false
-    variable_of_interest: false
     coupling_variable: false
     initial_value: 0.0
+    record: false
   C_ii:
     domain:
       lo: 0.0
@@ -808,9 +807,9 @@ state_variables:
         + 2.0*C_ei*dfe_TFi
         - 2.0*C_ii)/T
       latex: false
-    variable_of_interest: false
     coupling_variable: false
     initial_value: 0.0
+    record: false
   W_e:
     domain:
       lo: 0.0
@@ -820,9 +819,9 @@ state_variables:
       lhs: Derivative(W_e, t)
       rhs: -W_e/tau_w_e + b_e*E + a_e*(muV_e - E_L_e)/tau_w_e
       latex: false
-    variable_of_interest: false
     coupling_variable: false
     initial_value: 0.0
+    record: false
   W_i:
     domain:
       lo: 0.0
@@ -832,9 +831,9 @@ state_variables:
       lhs: Derivative(W_i, t)
       rhs: -W_i/tau_w_i + b_i*I + a_i*(muV_i - E_L_i)/tau_w_i
       latex: false
-    variable_of_interest: false
     coupling_variable: false
     initial_value: 0.0
+    record: false
   ou_drift:
     domain:
       lo: 0.0
@@ -844,7 +843,7 @@ state_variables:
       lhs: Derivative(ou_drift, t)
       rhs: -ou_drift/tau_OU
       latex: false
-    variable_of_interest: false
     coupling_variable: false
     initial_value: 0.0
+    record: false
 number_of_modes: 1

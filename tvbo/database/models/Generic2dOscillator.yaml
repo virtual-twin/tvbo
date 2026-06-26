@@ -120,7 +120,6 @@ state_variables:
       lhs: Derivative(V, t)
       rhs: d*tau*(I*gamma - V**3*f + V**2*e + V*g + V*local_coupling + W*alpha + c_glob*gamma)
       latex: false
-    variable_of_interest: true
     coupling_variable: true
     initial_value: 0.1
     grounding:
@@ -134,7 +133,6 @@ state_variables:
       lhs: Derivative(W, t)
       rhs: d*(V**2*c + V*b - W*beta + a)/tau
       latex: false
-    variable_of_interest: true
     initial_value: 0.1
     grounding:
     - GO:0005272

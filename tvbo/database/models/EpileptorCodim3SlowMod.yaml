@@ -394,7 +394,6 @@ state_variables:
       lhs: Derivative(x, t)
       rhs: -y
       latex: false
-    variable_of_interest: true
     coupling_variable: true
     initial_value: 0.5
   y:
@@ -406,9 +405,9 @@ state_variables:
       lhs: Derivative(y, t)
       rhs: x**3 - mu2*x - mu1 - y*(nu + b*x + x**2)
       latex: false
-    variable_of_interest: false
     coupling_variable: false
     initial_value: 0.0
+    record: false
   z:
     domain:
       lo: 0.0
@@ -418,7 +417,6 @@ state_variables:
       lhs: Derivative(z, t)
       rhs: -c*(sqrt((x - xs)**2 + y**2) - dstar + (z - 1/2)**7/10 + Ks*c_pop0)
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.05
   uA:
@@ -430,9 +428,9 @@ state_variables:
       lhs: Derivative(uA, t)
       rhs: cA + 0*uA
       latex: false
-    variable_of_interest: false
     coupling_variable: false
     initial_value: 0.0
+    record: false
   uB:
     domain:
       lo: 0.0
@@ -442,7 +440,7 @@ state_variables:
       lhs: Derivative(uB, t)
       rhs: cB + 0*uB
       latex: false
-    variable_of_interest: false
     coupling_variable: false
     initial_value: 0.0
+    record: false
 number_of_modes: 1

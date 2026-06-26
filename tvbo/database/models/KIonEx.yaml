@@ -482,7 +482,6 @@ state_variables:
       lhs: Derivative(DKi, t)
       rhs: -gamma*(I_K - 2.0*I_pump)/w_i
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
     distribution:
@@ -500,7 +499,6 @@ state_variables:
       lhs: Derivative(Kg, t)
       rhs: epsilon*(K_bath - K_o)
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
     distribution:
@@ -518,7 +516,6 @@ state_variables:
       lhs: Derivative(V, t)
       rhs: Vcond
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
     distribution:
@@ -536,7 +533,6 @@ state_variables:
       lhs: Derivative(n, t)
       rhs: (-n + ninf)/tau_n
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
     distribution:
@@ -554,7 +550,6 @@ state_variables:
       lhs: Derivative(x, t)
       rhs: xcond
       latex: false
-    variable_of_interest: true
     coupling_variable: true
     initial_value: 0.1
     distribution:

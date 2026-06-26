@@ -189,7 +189,6 @@ state_variables:
       lhs: Derivative(mu_se, t)
       rhs: (J_EE*r_E + J_EI*r_I + mu_E + c_pop0 - I_A_var/C - mu_se)/tau_se
       latex: false
-    variable_of_interest: true
     coupling_variable: true
     initial_value: 0.0
     unit: mV_per_ms
@@ -201,10 +200,10 @@ state_variables:
       lhs: Derivative(mu_si, t)
       rhs: (J_IE*r_E + J_II*r_I + mu_I - mu_si)/tau_si
       latex: false
-    variable_of_interest: false
     coupling_variable: false
     initial_value: 0.0
     unit: mV_per_ms
+    record: false
   I_A_var:
     name: I_A_var
     domain: {lo: 0.0, hi: 500.0}
@@ -213,7 +212,7 @@ state_variables:
       lhs: Derivative(I_A_var, t)
       rhs: (I_A*(mu_se - E_A) - I_A_var)/tau_A
       latex: false
-    variable_of_interest: false
     coupling_variable: false
     initial_value: 0.0
     unit: pA
+    record: false

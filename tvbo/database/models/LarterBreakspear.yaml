@@ -391,7 +391,6 @@ state_variables:
       lhs: Derivative(V, t)
       rhs: t_scale*(I_ext*a_ne - Q_Z*Z*a_ie - W*g_K*(V - V_K) - g_L*(V - V_L) + m_Ca*(V - V_Ca)*(-C*a_ee*c_pop0*r_NMDA - a_ee*r_NMDA*(1.0 - C)*(Q_V + lc_0) - g_Ca) - (V - V_Na)*(C*a_ee*c_pop0 + a_ee*(1.0 - C)*(Q_V + lc_0) + g_Na*m_Na))
       latex: false
-    variable_of_interest: true
     coupling_variable: true
     initial_value: 0.1
     grounding:
@@ -405,7 +404,6 @@ state_variables:
       lhs: Derivative(W, t)
       rhs: phi*t_scale*(-W + m_K)/tau_K
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
     grounding:
@@ -419,7 +417,6 @@ state_variables:
       lhs: Derivative(Z, t)
       rhs: b*t_scale*(I_ext*a_ni + Q_V*V*a_ei)
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
     grounding:

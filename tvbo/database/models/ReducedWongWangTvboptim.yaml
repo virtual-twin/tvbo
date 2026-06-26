@@ -118,6 +118,7 @@ derived_variables:
       rhs: H(x)
       latex: false
     conditional: false
+    record: true
 functions:
   H:
     definition: >-
@@ -127,8 +128,6 @@ functions:
     - name: x
     equation:
       rhs: (a*x - b)/(1 - exp(-d*(a*x - b)))
-output:
-- H_x
 coupling_inputs:
   instant:
     description: Instantaneous network coupling input
@@ -147,7 +146,6 @@ state_variables:
       lhs: Derivative(S, t)
       rhs: -S/tau_s + (1 - S)*H(x)*gamma
       latex: false
-    variable_of_interest: true
     coupling_variable: true
     initial_value: 0.1
 number_of_modes: 1

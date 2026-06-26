@@ -257,7 +257,6 @@ state_variables:
       lhs: Derivative(S_e, t)
       rhs: H_e*gamma_e*(1 - S_e) - S_e/tau_e
       latex: false
-    variable_of_interest: true
     coupling_variable: true
     initial_value: 0.1
     grounding:
@@ -273,7 +272,6 @@ state_variables:
       lhs: Derivative(S_i, t)
       rhs: H_i*gamma_i - S_i/tau_i
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
     grounding:

@@ -43,7 +43,6 @@ state_variables:
       lhs: Derivative(theta, t)
       rhs: I + omega
       latex: false
-    variable_of_interest: true
     coupling_variable: true
     initial_value: 0.1
 number_of_modes: 1

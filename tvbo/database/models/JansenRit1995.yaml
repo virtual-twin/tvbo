@@ -121,12 +121,13 @@ derived_variables:
 # ---------------------------------------------------------------------------
 # Reusable functions — Eq. 3 (md:L73-75)
 # ---------------------------------------------------------------------------
+    record: true
 functions:
   Sigm:
     name: Sigm
     definition: "Sigmoid potential-to-firing-rate transformation (Eq. 3)"
     arguments:
-      - name: v
+    - name: v
     equation:
       rhs: 2*e0 / (1 + exp(r*(v0 - v)))
 
@@ -193,5 +194,3 @@ state_variables:
 # ---------------------------------------------------------------------------
 # Output — what is plotted/observed
 # ---------------------------------------------------------------------------
-output:
-  - v_pyr
