@@ -3,7 +3,6 @@ iri: tvbo:Epileptor5D
 model_type: phenomenological
 parameters:
   Iext2:
-    name: Iext2
     definition: External input current to the second population
     value: 0.45
     domain:
@@ -12,7 +11,6 @@ parameters:
       step: 0.05
     description: External input current to the second population
   Iext:
-    name: Iext
     definition: External input current to the first sub-population (x1_E5D, y1_E5D) via the state-variable x1_E5D, in Epileptor5D (Jirsa et al.,2014).
     value: 3.1
     domain:
@@ -21,7 +19,6 @@ parameters:
       step: 0.1
     description: External input current to the first sub-population (x1_E5D, y1_E5D) via the state-variable x1_E5D, in Epileptor5D (Jirsa et al
   Kf:
-    name: Kf
     definition: Correspond to the coupling scaling on a fast time scale.
     value: 0.0
     domain:
@@ -30,7 +27,6 @@ parameters:
       step: 0.5
     description: Correspond to the coupling scaling on a fast time scale
   Ks:
-    name: Ks
     definition: 'Permittivity coupling on the slow permittivity state-variable z_E5D in Epileptor5D (Proix et al., 2014).
 
 
@@ -42,7 +38,6 @@ parameters:
       step: 0.1
     description: Permittivity coupling on the slow permittivity state-variable z_E5D in Epileptor5D (Proix et al
   Kvf:
-    name: Kvf
     definition: Coupling scaling on a very fast time scale.
     value: 0.0
     domain:
@@ -51,42 +46,34 @@ parameters:
       step: 0.5
     description: Coupling scaling on a very fast time scale
   a:
-    name: a
     definition: Coefficient of the cubic term in the first state variable
     value: 1.0
     description: Coefficient of the cubic term in the first state variable
   aa:
-    name: aa
     definition: Linear coefficient in fifth state variable
     value: 6.0
     description: Linear coefficient in fifth state variable
   b:
-    name: b
     definition: Coefficient of the squared term in the first state variabel
     value: 3.0
     description: Coefficient of the squared term in the first state variabel
   bb:
-    name: bb
     definition: Linear coefficient of lowpass excitatory coupling in fourth state variable
     value: 2.0
     description: Linear coefficient of lowpass excitatory coupling in fourth state variable
   c:
-    name: c
     definition: Additive coefficient for the second state variable,         called :math:`y_{0}` in Jirsa paper
     value: 1.0
     description: Additive coefficient for the second state variable,         called :math:`y_{0}` in Jirsa paper
   d:
-    name: d
     definition: Coefficient of the squared term in the derivative of the second state-variable y1_E5D in Epileptor5D (Jirsa et al.,2014).
     value: 5.0
     description: Coefficient of the squared term in the derivative of the second state-variable y1_E5D in Epileptor5D (Jirsa et al
   modification:
-    name: modification
     definition: When modification is True, the function h_E5D uses a nonlinear influence on z_E5D. The default value is False, i.e., linear influence on z_E5D.
     value: 0.0
     description: When modification is True, the function h_E5D uses a nonlinear influence on z_E5D
   r:
-    name: r
     definition: Temporal scaling in the third state variable,         called :math:`1/\tau_{0}` in Jirsa paper
     value: 0.00035
     domain:
@@ -95,12 +82,10 @@ parameters:
       step: 5.0e-05
     description: Temporal scaling in the third state variable,         called :math:`1/\tau_{0}` in Jirsa paper
   s:
-    name: s
     definition: Linear coefficient in the slow permittivity state-variable z_E5D in Epileptor5D (Jirsa et al.,2014).
     value: 4.0
     description: Linear coefficient in the slow permittivity state-variable z_E5D in Epileptor5D (Jirsa et al
   slope:
-    name: slope
     definition: Linear coefficient in the first state variable
     value: 0.0
     domain:
@@ -109,12 +94,10 @@ parameters:
       step: 0.1
     description: Linear coefficient in the first state variable
   tau:
-    name: tau
     definition: Temporal scaling coefficient in fifth state variable
     value: 10.0
     description: Temporal scaling coefficient in fifth state variable
   tt:
-    name: tt
     definition: Characteristic time scale of the whole-system Epileptor5D.
     value: 1.0
     domain:
@@ -123,7 +106,6 @@ parameters:
       step: 0.001
     description: Characteristic time scale of the whole-system Epileptor5D
   x0:
-    name: x0
     definition: 'Epileptogenicity Parameter. Degree of excitability or epileptogenicity in Epileptor5D (Jirsa et al.,2014).
 
 
@@ -149,7 +131,6 @@ references:
 - Jirsa2014
 derived_variables:
   x1cond:
-    name: x1cond
     symbol: x1cond
     equation:
       lhs: x1cond
@@ -168,7 +149,6 @@ derived_variables:
         rhs: slope - x2 + 0.6*(z - 1*4.0)**2
         latex: false
   y2cond:
-    name: y2cond
     symbol: y2cond
     equation:
       lhs: y2cond
@@ -187,7 +167,6 @@ derived_variables:
         rhs: aa*(x2 + 0.25)
         latex: false
   zcond:
-    name: zcond
     symbol: zcond
     equation:
       lhs: zcond
@@ -206,7 +185,6 @@ derived_variables:
         rhs: '0.0'
         latex: false
   h:
-    name: h
     symbol: h
     equation:
       lhs: h
@@ -225,15 +203,11 @@ derived_variables:
         rhs: zcond + 4*(-x0 + x1)
         latex: false
 coupling_inputs:
-  c_pop0:
-    name: c_pop0
-  c_pop1:
-    name: c_pop1
-  local_coupling:
-    name: local_coupling
+  c_pop0: {}
+  c_pop1: {}
+  local_coupling: {}
 state_variables:
   g:
-    name: g
     domain:
       lo: -1.0
       hi: 1.0
@@ -245,7 +219,6 @@ state_variables:
     coupling_variable: false
     initial_value: 0.1
   x1:
-    name: x1
     domain:
       lo: -2.0
       hi: 1.0
@@ -257,7 +230,6 @@ state_variables:
     coupling_variable: true
     initial_value: 0.1
   x2:
-    name: x2
     domain:
       lo: -2.0
       hi: 0.0
@@ -269,7 +241,6 @@ state_variables:
     coupling_variable: true
     initial_value: 0.1
   y1:
-    name: y1
     domain:
       lo: -20.0
       hi: 2.0
@@ -281,7 +252,6 @@ state_variables:
     coupling_variable: false
     initial_value: 0.1
   y2:
-    name: y2
     domain:
       lo: 0.0
       hi: 2.0
@@ -293,7 +263,6 @@ state_variables:
     coupling_variable: false
     initial_value: 0.1
   z:
-    name: z
     domain:
       lo: 2.0
       hi: 5.0

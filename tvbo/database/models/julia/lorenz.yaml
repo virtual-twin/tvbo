@@ -5,20 +5,16 @@ references:
 source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl
 parameters:
   sigma:
-    name: sigma
     value: 10.0
     description: Prandtl number (σ) controlling rate of convection.
   rho:
-    name: rho
     value: 28.0
     description: Rayleigh number (ρ) scaled parameter driving convection.
   beta:
-    name: beta
     value: 2.6666666666666665
     description: Geometric factor (β = 8/3) related to aspect ratio.
 state_variables:
   X:
-    name: X
     description: State variable X (convective intensity component).
     equation:
       lhs: Derivative(X, t)
@@ -27,7 +23,6 @@ state_variables:
     initial_value: 0.0
     variable_of_interest: true
   Y:
-    name: Y
     description: State variable Y (temperature difference component 1).
     equation:
       lhs: Derivative(Y, t)
@@ -36,7 +31,6 @@ state_variables:
     initial_value: 10.0
     variable_of_interest: true
   Z:
-    name: Z
     description: State variable Z (temperature difference component 2).
     equation:
       lhs: Derivative(Z, t)

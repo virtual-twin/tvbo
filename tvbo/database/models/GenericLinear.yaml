@@ -3,7 +3,6 @@ iri: tvbo:GenericLinear
 model_type: generic
 parameters:
   gamma:
-    name: gamma
     definition: 'Slope parameter of the state-variable ''x_GL'', representing the inverse of the relaxation time.
 
 
@@ -18,13 +17,10 @@ description: The Generic Linear (GL) is a phenomenological, linear one-dimension
 references:
 - Galan2008
 coupling_inputs:
-  c_pop0:
-    name: c_pop0
-  local_coupling:
-    name: local_coupling
+  c_pop0: {}
+  local_coupling: {}
 state_variables:
   x:
-    name: x
     domain:
       lo: -1.0
       hi: 1.0

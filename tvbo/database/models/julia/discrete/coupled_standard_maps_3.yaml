@@ -6,24 +6,19 @@ source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main
 system_type: discrete
 parameters:
   k0:
-    name: k0
     value: 1.0
     description: Nonlinearity parameter for map 0.
   k1:
-    name: k1
     value: 1.0
     description: Nonlinearity parameter for map 1.
   k2:
-    name: k2
     value: 1.0
     description: Nonlinearity parameter for map 2.
   Gamma:
-    name: Gamma
     value: 1.0
     description: Coupling strength Γ among nearest neighbors on a ring.
 state_variables:
   theta0:
-    name: theta0
     description: Angle variable for map 0 on [0, 2π).
     equation:
       lhs: theta0_next
@@ -31,7 +26,6 @@ state_variables:
       latex: false
     initial_value: 0.001
   p0:
-    name: p0
     description: Momentum variable for map 0 on [0, 2π).
     equation:
       lhs: p0_next
@@ -39,7 +33,6 @@ state_variables:
       latex: false
     initial_value: 0.001
   theta1:
-    name: theta1
     description: Angle variable for map 1 on [0, 2π).
     equation:
       lhs: theta1_next
@@ -47,7 +40,6 @@ state_variables:
       latex: false
     initial_value: 0.002
   p1:
-    name: p1
     description: Momentum variable for map 1 on [0, 2π).
     equation:
       lhs: p1_next
@@ -55,7 +47,6 @@ state_variables:
       latex: false
     initial_value: 0.002
   theta2:
-    name: theta2
     description: Angle variable for map 2 on [0, 2π).
     equation:
       lhs: theta2_next
@@ -63,7 +54,6 @@ state_variables:
       latex: false
     initial_value: 0.003
   p2:
-    name: p2
     description: Momentum variable for map 2 on [0, 2π).
     equation:
       lhs: p2_next

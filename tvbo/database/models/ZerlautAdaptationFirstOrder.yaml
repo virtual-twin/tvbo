@@ -688,7 +688,6 @@ state_variables:
     domain:
       lo: 0.0
       hi: 0.0
-    description: ''
     equation:
       lhs: Derivative(ou_drift, t)
       rhs: -ou_drift/tau_OU

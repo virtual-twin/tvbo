@@ -128,14 +128,12 @@ parameters:
       lo: 0.4
       hi: 0.4
       step: 0.0
-    description: ''
   Ckp:
     value: 5.5
     domain:
       lo: 5.5
       hi: 5.5
       step: 0.0
-    description: ''
     unit: mol_per_m3
   Cl_i0:
     definition: initial concentration of intracellular Cl
@@ -161,7 +159,6 @@ parameters:
       lo: -24.0
       hi: -24.0
       step: 0.0
-    description: ''
     unit: mV
   Cnap:
     value: 21.0
@@ -169,7 +166,6 @@ parameters:
       lo: 21.0
       hi: 21.0
       step: 0.0
-    description: ''
     unit: mol_per_m3
   Cnk:
     value: -19.0
@@ -177,7 +173,6 @@ parameters:
       lo: -19.0
       hi: -19.0
       step: 0.0
-    description: ''
     unit: mV
   DChn:
     value: -8.0
@@ -185,14 +180,12 @@ parameters:
       lo: -8.0
       hi: -8.0
       step: 0.0
-    description: ''
   DCkp:
     value: 1.0
     domain:
       lo: 1.0
       hi: 1.0
       step: 0.0
-    description: ''
     unit: mol_per_m3
   DCmna:
     value: 12.0
@@ -200,7 +193,6 @@ parameters:
       lo: 12.0
       hi: 12.0
       step: 0.0
-    description: ''
     unit: mV
   DCnap:
     value: 2.0
@@ -208,7 +200,6 @@ parameters:
       lo: 2.0
       hi: 2.0
       step: 0.0
-    description: ''
     unit: mol_per_m3
   DCnk:
     value: 18.0
@@ -216,7 +207,6 @@ parameters:
       lo: 18.0
       hi: 18.0
       step: 0.0
-    description: ''
     unit: mV
   K_i0:
     definition: initial concentration of intracellular K
@@ -477,7 +467,6 @@ state_variables:
       lo: -100.0
       hi: .inf
       enforce: clamp
-    description: ''
     equation:
       lhs: Derivative(DKi, t)
       rhs: -gamma*(I_K - 2.0*I_pump)/w_i
@@ -494,7 +483,6 @@ state_variables:
       lo: -100.0
       hi: .inf
       enforce: clamp
-    description: ''
     equation:
       lhs: Derivative(Kg, t)
       rhs: epsilon*(K_bath - K_o)
@@ -511,7 +499,6 @@ state_variables:
       lo: -500.0
       hi: .inf
       enforce: clamp
-    description: ''
     equation:
       lhs: Derivative(V, t)
       rhs: Vcond
@@ -528,7 +515,6 @@ state_variables:
       lo: 0.0
       hi: .inf
       enforce: clamp
-    description: ''
     equation:
       lhs: Derivative(n, t)
       rhs: (-n + ninf)/tau_n
@@ -545,7 +531,6 @@ state_variables:
       lo: 0.0
       hi: .inf
       enforce: clamp
-    description: ''
     equation:
       lhs: Derivative(x, t)
       rhs: xcond

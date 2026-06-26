@@ -61,7 +61,6 @@ state_variables:
     domain:
       lo: -10.0
       hi: 10.0
-    description: ''
     equation:
       lhs: Derivative(V, t)
       rhs: V**2 + c_pop0 + eta + g*(-V + v_syn) - pi**2*r**2
@@ -72,7 +71,6 @@ state_variables:
     domain:
       lo: 1.0
       hi: 2.0
-    description: ''
     equation:
       lhs: Derivative(g, t)
       rhs: alpha*q
@@ -83,7 +81,6 @@ state_variables:
     domain:
       lo: -0.5
       hi: 0.7
-    description: ''
     equation:
       lhs: Derivative(q, t)
       rhs: alpha*(-g + pi*k*r - 2*q)
@@ -95,7 +92,6 @@ state_variables:
       lo: 0.0
       hi: .inf
       enforce: clamp
-    description: ''
     equation:
       lhs: Derivative(r, t)
       rhs: Delta/pi + 2*V*r - g*r

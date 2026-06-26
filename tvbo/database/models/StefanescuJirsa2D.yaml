@@ -16,54 +16,45 @@ references:
 number_of_modes: 3
 parameters:
   tau:
-    name: tau
     definition: Timescale separation between fast (xi, alpha) and slow (eta, beta) variables.
     value: 3.0
     domain: {lo: 1.5, hi: 4.5, step: 0.01}
     description: Timescale separation
   a:
-    name: a
     definition: Heterogeneity scale parameter entering the m_i, n_i offsets.
     value: 0.45
     domain: {lo: 0.0, hi: 1.0, step: 0.01}
   b:
-    name: b
     definition: FitzHugh-Nagumo recovery decay rate.
     value: 0.9
     domain: {lo: 0.0, hi: 1.0, step: 0.01}
   K11:
-    name: K11
     definition: Internal coupling, excitatory to excitatory.
     value: 0.5
     domain: {lo: 0.0, hi: 1.0, step: 0.01}
     grounding: [GO:0060079]
   K12:
-    name: K12
     definition: Internal coupling, inhibitory to excitatory.
     value: 0.15
     domain: {lo: 0.0, hi: 1.0, step: 0.01}
     grounding: [GO:0060079]
   K21:
-    name: K21
     definition: Internal coupling, excitatory to inhibitory.
     value: 0.15
     domain: {lo: 0.0, hi: 1.0, step: 0.01}
     grounding: [GO:0060080]
   sigma:
-    name: sigma
     definition: Standard deviation of the Gaussian heterogeneity distribution.
     value: 0.35
     domain: {lo: 0.0, hi: 1.0, step: 0.01}
     grounding: [GO:0060079]
   mu:
-    name: mu
     definition: Mean of the Gaussian heterogeneity distribution.
     value: 0.0
     domain: {lo: 0.0, hi: 1.0, step: 0.01}
     grounding: [GO:0060079]
 derived_variables:
   Aik:
-    name: Aik
     description: >-
       Excitatory-to-excitatory mode-coupling matrix derived from Gaussian quadrature
       over N(mu, sigma); computed offline at `update_derived_parameters`.
@@ -71,57 +62,46 @@ derived_variables:
     equation: {lhs: Aik, rhs: '0.5', latex: false}
     conditional: false
   Bik:
-    name: Bik
     description: Inhibitory-to-excitatory mode-coupling matrix.
     grounding: [GO:0060079]
     equation: {lhs: Bik, rhs: '0.5', latex: false}
     conditional: false
   Cik:
-    name: Cik
     description: Excitatory-to-inhibitory mode-coupling matrix.
     grounding: [GO:0060080]
     equation: {lhs: Cik, rhs: '0.5', latex: false}
     conditional: false
   e_i:
-    name: e_i
     description: Per-mode cubic-coefficient projection for the excitatory subnetwork.
     equation: {lhs: e_i, rhs: '1.0', latex: false}
     conditional: false
   f_i:
-    name: f_i
     description: Per-mode cubic-coefficient projection for the inhibitory subnetwork.
     equation: {lhs: f_i, rhs: '1.0', latex: false}
     conditional: false
   IE_i:
-    name: IE_i
     description: Per-mode constant excitatory input from the heterogeneity distribution.
     grounding: [GO:0042391]
     equation: {lhs: IE_i, rhs: '0.0', latex: false}
     conditional: false
   II_i:
-    name: II_i
     description: Per-mode constant inhibitory input from the heterogeneity distribution.
     grounding: [GO:0042391]
     equation: {lhs: II_i, rhs: '0.0', latex: false}
     conditional: false
   m_i:
-    name: m_i
     description: Per-mode offset entering the eta dynamics.
     equation: {lhs: m_i, rhs: 'a', latex: false}
     conditional: false
   n_i:
-    name: n_i
     description: Per-mode offset entering the beta dynamics.
     equation: {lhs: n_i, rhs: 'a', latex: false}
     conditional: false
 coupling_inputs:
-  c_pop0:
-    name: c_pop0
-  local_coupling:
-    name: local_coupling
+  c_pop0: {}
+  local_coupling: {}
 state_variables:
   xi:
-    name: xi
     domain: {lo: -4.0, hi: 4.0}
     description: Excitatory fast variable (per mode).
     grounding: [GO:0060079]
@@ -132,7 +112,6 @@ state_variables:
     coupling_variable: true
     initial_value: 0.1
   eta:
-    name: eta
     domain: {lo: -3.0, hi: 3.0}
     description: Excitatory slow recovery variable (per mode).
     grounding: [GO:0060079]
@@ -144,7 +123,6 @@ state_variables:
     initial_value: 0.1
     record: false
   alpha:
-    name: alpha
     domain: {lo: -4.0, hi: 4.0}
     description: Inhibitory fast variable (per mode).
     grounding: [GO:0060080]
@@ -155,7 +133,6 @@ state_variables:
     coupling_variable: true
     initial_value: 0.1
   beta:
-    name: beta
     domain: {lo: -3.0, hi: 3.0}
     description: Inhibitory slow recovery variable (per mode).
     grounding: [GO:0060080]
