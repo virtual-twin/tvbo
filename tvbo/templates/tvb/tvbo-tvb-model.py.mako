@@ -40,6 +40,11 @@ from tvb.simulator.models.base import Model
 class ${model.name}(Model):
 
     % for p in model.parameters.values():
+    % if isinstance(p.value, (list, tuple)):
+    # Array-valued model constant (e.g. mode-coupling matrix); a fixed class
+    # attribute rather than a per-region NArray.
+    ${p.name} = np.array(${list(p.value)})
+    % else:
     ${p.name} = NArray(
         label=r":math:`${p.symbol or p.name}`",
         default=np.array([${p.value}]),
@@ -52,6 +57,7 @@ class ${model.name}(Model):
         doc="""${p.definition[:200].replace('\n', '')}"""
         % endif
     )
+    % endif
     % endfor
 
     _nvar = ${len(model.state_variables)}

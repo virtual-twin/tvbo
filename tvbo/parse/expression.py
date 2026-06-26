@@ -90,6 +90,7 @@ ARRAY_FUNCTIONS = {
     "global_mean": Function("global_mean"),  # global_mean(X) → jnp.mean(X, axis=-2, keepdims=True)
     "transpose": Function("transpose"),      # transpose(X) → X.T
     "mode_dot": Function("mode_dot"),        # mode_dot(X, M) → X·M contracted over the mode axis ({np,jnp}.dot)
+    "mode_sum": Function("mode_sum"),        # mode_sum(X) → sum over the mode axis, keepdims ({np,jnp}.sum(X, axis=-1, keepdims=True))
 }
 
 

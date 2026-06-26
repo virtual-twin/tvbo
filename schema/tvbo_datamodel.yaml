@@ -101,10 +101,15 @@ slots:
     value:
         slot_uri: schema:value
         range: ScalarValue
+        any_of:
+          - range: ScalarValue
+          - array: {}
         description: >-
-            Numeric, string, or boolean value. ScalarValue accepts any literal
-            primitive type, allowing parameters to carry control flags
-            (e.g., booleans) or symbolic placeholders alongside numeric defaults.
+            Numeric, string, or boolean value, OR an array (nested list) for
+            array-valued constants such as mode-coupling coefficient matrices.
+            ScalarValue accepts any literal primitive type, allowing parameters
+            to carry control flags (e.g., booleans) or symbolic placeholders
+            alongside numeric defaults.
     file:
         range: string
     reported_optimum:

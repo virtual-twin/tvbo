@@ -79,7 +79,14 @@ def get_param_info(parameters: dict) -> Tuple[List[str], Dict[str, float], Dict[
     param_shapes = {}
 
     for p in params:
-        val = float(p.value) if p.value is not None else 1.0
+        if isinstance(p.value, (list, tuple)):
+            # Array-valued constant (e.g. a mode-coupling matrix): keep the nested
+            # list; the codegen wraps it as a jnp.array, not a scalar default.
+            val = list(p.value)
+        elif p.value is not None:
+            val = float(p.value)
+        else:
+            val = 1.0
         param_defaults[p.name] = val
         shape = getattr(p, "shape", None)
         if shape:

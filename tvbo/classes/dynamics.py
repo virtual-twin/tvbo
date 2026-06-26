@@ -1822,10 +1822,23 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
                     dp.equation,
                     local_dict=self.get_symbolic_elements(),
                     evaluate=False,
-                ).subs({Symbol(p.name): p.value for p in self.parameters.values()})
-                sol = eq.evalf()
-                # Convert SymPy Float to Python float for YAML serialization
-                self.derived_parameters[k].value = float(sol)
+                ).subs(
+                    {
+                        Symbol(p.name): p.value
+                        for p in self.parameters.values()
+                        if not isinstance(p.value, (list, tuple))
+                    }
+                )
+                try:
+                    sol = eq.evalf()
+                    # Convert SymPy Float to Python float for YAML serialization
+                    self.derived_parameters[k].value = float(sol)
+                except (TypeError, ValueError):
+                    # Array-valued derived parameter (e.g. a mode-coupling
+                    # coefficient built from array constants and μ/σ): there is no
+                    # load-time scalar — it is recomputed at runtime by the
+                    # generated update_derived_parameters.
+                    self.derived_parameters[k].value = None
 
             return {
                 k: self.derived_parameters[k].value for k in self.derived_parameters
