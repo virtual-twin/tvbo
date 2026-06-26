@@ -513,11 +513,14 @@ def update_equations(model):
             # Use model-scoped symbolic elements for parsing instead of global clash
             eq = parse_eq(eq, local_dict=model.get_symbolic_elements(), evaluate=False)
 
-            eq_sub = eq.subs(substitutions)
+            # xreplace + order='none' preserve authored term order (substitutions
+            # is Symbol->Symbol, so this matches subs but does not re-canonicalize)
+            eq_sub = eq.xreplace(substitutions)
             rhs_substitution = pycode(
                 eq_sub,
                 fully_qualified_modules=False,
                 user_functions={k: k for k in model.functions.keys()},
+                order="none",
             )
 
             if "euqation" in metadata_dict[variable_key]:
