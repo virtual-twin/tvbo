@@ -6,10 +6,10 @@ description: >-
 iri: tvbo:WattsStrogatz
 
 parameters:
-  n: { range: integer, description: "Number of nodes" }
-  k: { range: integer, description: "Initial ring degree (even)" }
-  p: { range: float,   description: "Rewiring probability in [0, 1]" }
-  seed: { range: integer, required: false }
+  n: { datatype: integer, description: "Number of nodes" }
+  k: { datatype: integer, description: "Initial ring degree (even)" }
+  p: { datatype: float,   description: "Rewiring probability in [0, 1]" }
+  seed: { datatype: integer, required: false }
 
 bindings:
   julia:
