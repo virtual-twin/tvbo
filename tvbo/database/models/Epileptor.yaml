@@ -1,0 +1,230 @@
+name: Epileptor
+iri: tvbo:Epileptor
+model_type: neural_mass
+parameters:
+  a:
+    definition: Coefficient of the cubic term in the first state variable.
+    value: 1.0
+    description: Coefficient of the cubic term in the first state variable x1.
+  b:
+    definition: Coefficient of the squared term in the first state variable.
+    value: 3.0
+    description: Coefficient of the squared term in the first state variable x1.
+  c:
+    definition: Additive coefficient for the second state variable.
+    value: 1.0
+    description: Additive coefficient for the second state variable y1, called y0 in the Jirsa et al. (2014) paper.
+  d:
+    definition: Coefficient of the squared term in the second state variable.
+    value: 5.0
+    description: Coefficient of the squared term in the second state variable y1.
+  r:
+    definition: Temporal scaling in the third state variable.
+    value: 0.00035
+    domain:
+      lo: 0.0
+      hi: 0.001
+      step: 5.0e-05
+    description: Temporal scaling in the third state variable z, called 1/tau0 in the Jirsa et al. (2014) paper.
+  s:
+    definition: Linear coefficient in the third state variable.
+    value: 4.0
+    description: Linear coefficient in the third state variable z.
+  x0:
+    definition: Epileptogenicity parameter.
+    value: -1.6
+    domain:
+      lo: -3.0
+      hi: -1.0
+      step: 0.1
+    description: Epileptogenicity parameter.
+  Iext:
+    definition: External input current to the first population.
+    value: 3.1
+    domain:
+      lo: 1.5
+      hi: 5.0
+      step: 0.1
+    description: External input current to the first population.
+  slope:
+    definition: Linear coefficient in the first state variable.
+    value: 0.0
+    domain:
+      lo: -16.0
+      hi: 6.0
+      step: 0.1
+    description: Linear coefficient in the first state variable x1.
+  Iext2:
+    definition: External input current to the second population.
+    value: 0.45
+    domain:
+      lo: 0.0
+      hi: 1.0
+      step: 0.05
+    description: External input current to the second population.
+  tau:
+    definition: Temporal scaling coefficient in the fifth state variable.
+    value: 10.0
+    description: Temporal scaling coefficient in the fifth state variable y2.
+  aa:
+    definition: Linear coefficient in the fifth state variable.
+    value: 6.0
+    description: Linear coefficient in the fifth state variable y2.
+  bb:
+    definition: Linear coefficient of lowpass excitatory coupling in the fourth state variable.
+    value: 2.0
+    description: Linear coefficient of lowpass excitatory coupling in the fourth state variable x2.
+  Kvf:
+    definition: Coupling scaling on a very fast time scale.
+    value: 0.0
+    domain:
+      lo: 0.0
+      hi: 4.0
+      step: 0.5
+    description: Coupling scaling on a very fast time scale.
+  Kf:
+    definition: Coupling scaling on a fast time scale.
+    value: 0.0
+    domain:
+      lo: 0.0
+      hi: 4.0
+      step: 0.5
+    description: Coupling scaling on a fast time scale.
+  Ks:
+    definition: Permittivity coupling, from the fast time scale toward the slow time scale.
+    value: 0.0
+    domain:
+      lo: -4.0
+      hi: 4.0
+      step: 0.1
+    description: Permittivity coupling, that is from the fast time scale toward the slow time scale.
+  tt:
+    definition: Time scaling of the whole system.
+    value: 1.0
+    domain:
+      lo: 0.001
+      hi: 10.0
+      step: 0.001
+    description: Time scaling of the whole system.
+  modification:
+    definition: 'Selects the permittivity-drive form: >0 (True) uses the sigmoidal influence on z, default 0 (False) the linear influence.'
+    value: 0.0
+    description: Switch between linear (0/False) and sigmoidal (>0/True) z-drive h.
+description: The Epileptor is a composite neural mass model of six dimensions which has been crafted to model the phenomenology of epileptic seizures. Equations and default parameters are taken from Jirsa et al. (2014).
+references:
+- Jirsaetal_2014
+- Proixetal_2014
+derived_variables:
+  Iext_total:
+    description: External input to the first population including local coupling input on x1.
+    equation:
+      lhs: Iext_total
+      rhs: Iext + local_coupling*x1
+      latex: false
+    conditional: false
+  f1:
+    description: Nonlinear function in the first state variable x1, piecewise on the sign of x1.
+    equation:
+      lhs: f1
+      rhs: Piecewise((-a*x1**2 + b*x1, x1 < 0), (slope - x2 + 0.6*(z - 4.0)**2, True))
+      latex: false
+    conditional: false
+  h:
+    description: 'Permittivity drive for z: sigmoidal when modification>0, else linear (Piecewise on modification).'
+    equation:
+      lhs: h
+      rhs: Piecewise((x0 + 3/(1 + exp(-(x1 + 0.5)/0.1)), modification > 0), (4*(x1 - x0) + Piecewise((-0.1*z**7, z < 0), (0, True)), True))
+      latex: false
+    conditional: false
+  f2:
+    description: Nonlinear function in the fifth state variable y2, piecewise on the value of x2.
+    equation:
+      lhs: f2
+      rhs: Piecewise((0, x2 < -0.25), (aa*(x2 + 0.25), True))
+      latex: false
+    conditional: false
+  lfp:
+    description: 'Local field potential proxy: TVB Epileptor observable x2 - x1.'
+    equation:
+      lhs: lfp
+      rhs: x2 - x1
+      latex: false
+    conditional: false
+    record: true
+coupling_inputs:
+  c_glob0: {}
+  c_glob1: {}
+  local_coupling: {local: true}
+state_variables:
+  x1:
+    domain:
+      lo: -2.0
+      hi: 1.0
+    description: First state variable of the first (fast) population.
+    equation:
+      lhs: Derivative(x1, t)
+      rhs: tt*(y1 - z + Iext_total + Kvf*c_glob0 + f1*x1)
+      latex: false
+    coupling_variable: true
+    initial_value: 0.1
+    record: false
+  y1:
+    domain:
+      lo: -20.0
+      hi: 2.0
+    description: Second state variable of the first (fast) population.
+    equation:
+      lhs: Derivative(y1, t)
+      rhs: tt*(c - d*x1**2 - y1)
+      latex: false
+    coupling_variable: false
+    initial_value: 0.1
+    record: false
+  z:
+    domain:
+      lo: 2.0
+      hi: 5.0
+    description: Slow permittivity (energy) state variable.
+    equation:
+      lhs: Derivative(z, t)
+      rhs: tt*r*(h - z + Ks*c_glob0)
+      latex: false
+    coupling_variable: false
+    initial_value: 3.0
+  x2:
+    domain:
+      lo: -2.0
+      hi: 0.0
+    description: First state variable of the second (slow) population.
+    equation:
+      lhs: Derivative(x2, t)
+      rhs: tt*(-y2 + x2 - x2**3 + Iext2 + bb*g - 0.3*(z - 3.5) + Kf*c_glob1)
+      latex: false
+    coupling_variable: true
+    initial_value: -1.0
+    record: false
+  y2:
+    domain:
+      lo: 0.0
+      hi: 2.0
+    description: Second state variable of the second (slow) population.
+    equation:
+      lhs: Derivative(y2, t)
+      rhs: tt*(-y2 + f2)/tau
+      latex: false
+    coupling_variable: false
+    initial_value: 0.1
+    record: false
+  g:
+    domain:
+      lo: -1.0
+      hi: 1.0
+    description: Lowpass-filtered excitatory coupling variable.
+    equation:
+      lhs: Derivative(g, t)
+      rhs: tt*(-0.01*(g - 0.1*x1))
+      latex: false
+    coupling_variable: false
+    initial_value: 0.0
+    record: false
+number_of_modes: 1

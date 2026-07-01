@@ -53,7 +53,7 @@ if 'experiment' in context.keys() and experiment:
         noisepresent = True
 
 # Variables of interest (exposures)
-exposures = [(name, sv) for name, sv in state_vars if getattr(sv, 'variable_of_interest', True)]
+exposures = [(name, sv) for name, sv in state_vars if getattr(sv, 'record', True)]
 %>
 #include <stdio.h>
 #define PI_2 (2 * M_PI_F)

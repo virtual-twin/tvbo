@@ -241,11 +241,24 @@ def _string_to_cuda(expr_str: str) -> str:
 # =============================================================================
 
 
+def _enforced_clamp(sv):
+    """Return (lo, hi) when a state variable's ``domain`` opts into hard clamping
+    (``enforce == 'clamp'``), else None. The legacy ``boundaries`` slot is folded
+    into ``domain`` with ``enforce: clamp`` by the Dynamics loader; a domain with
+    the default ``enforce: none`` is descriptive metadata and is not clamped."""
+    from tvbo.utils import domain_enforcement
+
+    dom = getattr(sv, "domain", None)
+    if not dom or domain_enforcement(dom) != "clamp":
+        return None
+    return getattr(dom, "lo", None), getattr(dom, "hi", None)
+
+
 def has_boundaries(model) -> bool:
-    """Check if any state variable has boundaries defined."""
+    """Check if any state variable opts into clamping (domain enforce='clamp')."""
     if not hasattr(model, "state_variables") or not model.state_variables:
         return False
-    return any(getattr(sv, "boundaries", None) is not None for sv in model.state_variables.values())
+    return any(_enforced_clamp(sv) is not None for sv in model.state_variables.values())
 
 
 def get_initial_value(sv) -> float:
@@ -273,11 +286,10 @@ def get_domain_str(obj) -> str:
 
 
 def get_boundary_str(sv) -> str:
-    """Get boundaries as 'lo, hi' string for state variable clipping."""
-    boundaries = getattr(sv, "boundaries", None)
-    if boundaries:
-        lo = getattr(boundaries, "lo", None)
-        hi = getattr(boundaries, "hi", None)
+    """Get clamp bounds as 'lo, hi' string for state variable clipping."""
+    rng = _enforced_clamp(sv)
+    if rng:
+        lo, hi = rng
         if lo is not None and hi is not None:
             return f"{lo}, {hi}"
     return ""

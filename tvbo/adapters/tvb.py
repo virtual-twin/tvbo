@@ -88,16 +88,95 @@ def _extract_dynamics(sim) -> tvbo_datamodel.Dynamics:
         if voi is None:
             voi = []
 
+        sv_range = (
+            tvbo_datamodel.Range(lo=float(lo), hi=float(hi))
+            if (lo is not None or hi is not None)
+            else None
+        )
+        # TVB's state_variable_boundaries is a hard clamp → unified domain with
+        # enforce='clamp'. The descriptive state_variable_range is the distinct
+        # (finite) IC-sampling support, so preserve it as the sampling
+        # distribution — but only when it differs from the clamp, else the clamp
+        # already conveys it and a redundant slot would break round-trip identity.
+        sv_distribution = None
+        if boundaries is not None:
+            boundaries.enforce = "clamp"
+            sv_domain = boundaries
+            if sv_range is not None and (sv_range.lo, sv_range.hi) != (boundaries.lo, boundaries.hi):
+                sv_distribution = tvbo_datamodel.Distribution(domain=sv_range)
+        else:
+            sv_domain = sv_range
+
         model_metadata.state_variables[sv] = tvbo_datamodel.StateVariable(
             name=sv,
             coupling_variable=bool(i in cvar),
-            variable_of_interest=bool(sv in voi),
-            domain=(tvbo_datamodel.Range(lo=float(lo), hi=float(hi)) if (lo is not None or hi is not None) else None),
-            boundaries=boundaries,
+            record=bool(sv in voi),
+            domain=sv_domain,
+            distribution=sv_distribution,
             initial_value=(float(ics[0, i, :, 0].mean()) if ics is not None else None),
         )
 
     return model_metadata
+
+
+def _sv_ic_range(sv):
+    """Range a state variable's initial conditions are drawn from (TVB ``state_variable_range``).
+
+    The export inverse of the ingestion in :func:`_extract_dynamics`: prefer the
+    explicit sampling ``distribution`` support (set when the IC range differs
+    from a clamp), else the descriptive ``domain``.
+    """
+    dist = getattr(sv, "distribution", None)
+    dom = getattr(dist, "domain", None) if dist is not None else None
+    return dom if dom is not None else getattr(sv, "domain", None)
+
+
+def _sv_clamp(sv):
+    """Return a state variable's hard-clamp domain (TVB ``state_variable_boundaries``), or None."""
+    from tvbo.utils import domain_enforcement
+
+    dom = getattr(sv, "domain", None)
+    return dom if (dom is not None and domain_enforcement(dom) == "clamp") else None
+
+
+def tvb_state_variable_ranges(model, default=(-1e9, 1e9)):
+    """Build the TVB ``state_variable_range`` mapping ``{name: (lo, hi)}``.
+
+    These are TVB's initial-condition sampling support, drawn with ``rng.uniform``
+    and so always finite — the IC range (sampling distribution, else descriptive
+    domain) is used here, never a half-open clamp. ``default`` fills a bound only
+    when a state variable has neither a distribution nor a domain.
+    """
+    ranges = {}
+    for sv in model.state_variables.values():
+        rng = _sv_ic_range(sv)
+        lo = float(rng.lo) if (rng is not None and rng.lo is not None) else default[0]
+        hi = float(rng.hi) if (rng is not None and rng.hi is not None) else default[1]
+        # IC sampling support must be finite (TVB draws it with rng.uniform). If a
+        # half-open clamp domain reached here without a finite sampling
+        # distribution, fall back to the default rather than emit inf.
+        if not np.isfinite(lo):
+            lo = default[0]
+        if not np.isfinite(hi):
+            hi = default[1]
+        ranges[sv.name] = (lo, hi)
+    return ranges
+
+
+def tvb_state_variable_boundaries(model):
+    """Build the TVB ``state_variable_boundaries`` mapping ``{name: (lo, hi)}``.
+
+    Only state variables whose domain opts into a hard clamp appear. An unset
+    side becomes the corresponding infinity (a one-sided clamp), matching TVB.
+    """
+    boundaries = {}
+    for sv in model.state_variables.values():
+        dom = _sv_clamp(sv)
+        if dom is not None:
+            lo = float(dom.lo) if dom.lo is not None else -np.inf
+            hi = float(dom.hi) if dom.hi is not None else np.inf
+            boundaries[sv.name] = (lo, hi)
+    return boundaries
 
 
 def _extract_coupling(sim) -> tvbo_datamodel.Coupling:

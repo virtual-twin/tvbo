@@ -73,6 +73,9 @@ slots:
         range: string
     domain:
         range: Range
+        aliases:
+            - range
+            - boundaries
     iri:
         slot_uri: dcterms:identifier
         range: uriorcurie
@@ -98,10 +101,15 @@ slots:
     value:
         slot_uri: schema:value
         range: ScalarValue
+        any_of:
+          - range: ScalarValue
+          - array: {}
         description: >-
-            Numeric, string, or boolean value. ScalarValue accepts any literal
-            primitive type, allowing parameters to carry control flags
-            (e.g., booleans) or symbolic placeholders alongside numeric defaults.
+            Numeric, string, or boolean value, OR an array (nested list) for
+            array-valued constants such as mode-coupling coefficient matrices.
+            ScalarValue accepts any literal primitive type, allowing parameters
+            to carry control flags (e.g., booleans) or symbolic placeholders
+            alongside numeric defaults.
     file:
         range: string
     reported_optimum:
@@ -256,6 +264,24 @@ enums:
             Neumann: {}
             Robin: {}
             Periodic: {}
+    DomainEnforcement:
+        description: >-
+            Whether and how a state variable's ``domain`` constrains the
+            trajectory during integration. Default ``none`` means the domain is
+            descriptive metadata only (expected range, plot limits, initial-
+            condition sampling support) and never alters the dynamics — so
+            declaring a domain is side-effect free. ``clamp`` and ``wrap``
+            opt in to active enforcement using the domain's ``lo``/``hi``.
+        permissible_values:
+            none:
+                description: "Metadata only; the trajectory is never constrained (default)."
+            clamp:
+                description: "Hard-clip every integration step to [lo, hi]."
+            wrap:
+                description: >-
+                    Periodic wrap into [lo, hi) — e.g. a phase variable on
+                    [0, 2π). The recorded timeseries stays within the range
+                    while remaining continuous mod (hi - lo)."
     DiscretizationMethod:
         permissible_values:
             FDM: { description: "Finite Difference Method" }
@@ -432,6 +458,13 @@ classes:
         class_uri: tvbo:Range
         description: "Specifies a range for array generation, parameter bounds, or grid exploration."
         attributes:
+            enforce:
+                range: DomainEnforcement
+                ifabsent: "string(none)"
+                description: >-
+                    For a state-variable ``domain``: whether/how to enforce the
+                    range during integration (none/clamp/wrap). Ignored for
+                    parameter, distribution and grid ranges. See DomainEnforcement.
             lo:
                 range: ScalarValue
                 description: "Lower bound or starting value. Can be a number or argument name."
@@ -1227,11 +1260,15 @@ classes:
                 multivalued: true
                 inlined: true
                 description: >
-                    Generator parameters (e.g. n, k, p, seed), keyed by name,
-                    each carrying a concrete ``value`` (Parameter). Builder
-                    (Callable) generators receive these as keyword arguments;
-                    declarative library generators may additionally use the
-                    ``bindings`` map to the native constructor call.
+                    Generator parameters keyed by name (e.g. n, k, p, seed).
+                    A curated entry *declares* each parameter's interface via
+                    the general ``Parameter`` slots — ``datatype`` (its type),
+                    ``default`` (fallback when absent) and ``required`` — while
+                    a concrete experiment supplies the same key by ``value``.
+                    Builder (Callable) generators receive the resolved values as
+                    keyword arguments; declarative library generators pass them
+                    positionally via the per-backend ``bindings`` map. The number
+                    of nodes is always taken from Network.number_of_nodes.
             bindings:
                 range: Binding
                 multivalued: true
@@ -1644,6 +1681,49 @@ classes:
                     constructor_args: [{name: period, value: 1000.0}]}
                 range: ClassReference
                 inlined: true
+            analysis:
+                range: Analysis
+                inlined: true
+                description: >-
+                    Marks this observation as an analysis observable that operates
+                    on the solve/loss rather than a result-data pipeline (autodiff
+                    gradient, finite-difference gradient, or Lyapunov spectrum).
+
+    Analysis:
+        class_uri: tvbo:Analysis
+        description: >-
+            A general analysis observable: a quantity obtained by ANALYZING the model,
+            its solve, or a derived loss, rather than by transforming the recorded
+            trajectory. It is deliberately broad — the same concept covers parameter
+            sensitivities/gradients (autodiff or finite-difference), stability spectra
+            (Lyapunov), bifurcation quantities, identifiability/Fisher-information
+            metrics, and future analyses. `type` names the analysis (extensible);
+            `target` and `wrt` bind it to what is analyzed and with respect to what;
+            `parameters` carries the analysis-specific configuration. Backend-neutral:
+            each backend maps `type` to its own machinery, or emits a comment and
+            skips when it has no equivalent (it does not raise).
+        slots:
+            - parameters
+        attributes:
+            type:
+                range: string
+                description: >-
+                    The analysis kind, e.g. 'gradient', 'finite_difference',
+                    'lyapunov', 'bifurcation', 'identifiability', 'sensitivity'.
+                    Extensible — backends dispatch on it.
+            target:
+                range: string
+                description: >-
+                    What is analyzed: typically an observation or loss name (e.g.
+                    'loss' for a gradient). Omitted when the analysis acts on the
+                    whole solve (e.g. a Lyapunov spectrum).
+            wrt:
+                range: string
+                multivalued: true
+                description: >-
+                    Quantity/quantities the analysis is taken with respect to, e.g.
+                    a parameter 'c_sigmJR.G' for a gradient/sensitivity. Omitted for
+                    analyses that need no explicit differentiation target.
 
     # ProcessingStep, DataInjection, ArgumentMapping removed
     # Function now handles input -> process -> output flow directly
@@ -1696,6 +1776,10 @@ classes:
                 multivalued: true
                 range: string
                 description: "Output variable names to include in simulation results. References to state_variables or derived_variables by name."
+                deprecated: >-
+                    Use 'record: true' on the derived variable (or 'record' on the
+                    state variable) instead. The 'output' list is retained for
+                    backward compatibility.
             derived_from_model:
                 range: Dynamics
             number_of_modes:
@@ -1769,6 +1853,11 @@ classes:
             variable_of_interest:
                 range: boolean
                 ifabsent: true
+                deprecated: >-
+                    Use 'record' instead. A state variable is recorded in the
+                    output when record=true (the default); set record=false to
+                    suppress it. 'variable_of_interest' is retained for backward
+                    compatibility and is ignored by the TVB/jax/rateml codegen.
             coupling_variable:
                 range: boolean
                 ifabsent: false
@@ -1799,9 +1888,6 @@ classes:
                 inlined: true
             stimulation_variable:
                 range: boolean
-            boundaries:
-                range: Range
-                inlined: true
             initial_value:
                 range: float
                 ifabsent: float(0.1)
@@ -1919,6 +2005,22 @@ classes:
                     during exploration auto-expansion. Length must match parameter shape
                     (e.g., n_nodes for shape "(n_nodes,)"). If not set, all elements
                     share the same domain.
+            datatype:
+                range: string
+                description: >-
+                    Declared value type of this parameter, given as a schema
+                    range name — a primitive (``integer``, ``float``,
+                    ``string``, ``uriorcurie``) or a class (e.g.
+                    ``Distribution``). Documents the expected type when the
+                    parameter is a *declaration* carrying no concrete ``value``
+                    (e.g. a GraphGenerator's typed argument interface). Distinct
+                    from ``domain`` (numeric bounds) and ``unit``.
+            required:
+                range: boolean
+                description: >-
+                    Whether a value for this parameter must be supplied.
+                    Optional parameters (e.g. a generator's ``seed``) set this
+                    to false. Declaration metadata; unset means unconstrained.
 
     CouplingInput:
         class_uri: tvbo:CouplingInput
@@ -1938,6 +2040,15 @@ classes:
                 multivalued: true
                 range: string
                 description: "Named keys for multi-dimensional coupling. When dimension > 1, provides symbolic names for each index (e.g., keys: [lre, ffi] for dimension: 2). Used in equations as variable names."
+            local:
+                range: boolean
+                ifabsent: boolean(false)
+                description: >-
+                    Marks this as a LOCAL (surface/local-connectivity) coupling term
+                    rather than a global long-range coupling. Local terms are never
+                    wired to the connectome; they evaluate to 0 unless a local/surface
+                    connectivity is supplied (TVB's ``local_coupling``). Global
+                    coupling inputs (the default) are driven by ``Network.coupling``.
 
     Argument:
         class_uri: tvbo:Argument
@@ -1990,12 +2101,12 @@ classes:
             arguments:
                 description: >-
                     Variables consumed by the function (referenced in the
-                    equation). Each argument has a name and optional metadata
-                    (description, default value, unit).
+                    equation), keyed by argument name. Each value carries the
+                    optional metadata (value, description, unit); the key is the
+                    name (no redundant `name:` inside).
                 multivalued: true
                 range: Argument
                 inlined: true
-                inlined_as_list: true
             output_equation:
                 description: "Output transformation equation (if equation-based)"
                 range: Equation
@@ -2101,9 +2212,10 @@ classes:
                 range: Aggregation
                 inlined: true
             arguments:
+                description: "Function arguments keyed by name (the key is the argument name)."
                 range: Argument
                 multivalued: true
-                inlined_as_list: true
+                inlined: true
             time_range:
                 description: "Time range for generated TimeSeries (for kernel generators)"
                 range: Range
@@ -2446,6 +2558,18 @@ classes:
                 range: FunctionCall
                 inlined: true
                 description: "Observable to compute at each point. Use function: obs_name for simple observation, or function: func_name + arguments for FunctionCall."
+            record:
+                multivalued: true
+                range: string
+                description: >-
+                    Names of observations to compute and record at EACH grid point,
+                    stacked over the sweep into one array per name. Entries may be
+                    derived observations (e.g. `loss`) or `analysis` diagnostics
+                    (e.g. `ad_gradient`, `fd_gradient`, `lyapunov`) — this is how a
+                    sweep of the diagnostics themselves is declared, replacing any
+                    per-point Python driver. Complementary to `observable` (a single
+                    scalar reduction); when both are absent the full observation Bunch
+                    is recorded.
             n_parallel:
                 range: integer
                 ifabsent: integer(1)
@@ -3182,6 +3306,37 @@ classes:
             delayed:
                 range: boolean
                 ifabsent: true
+            differentiation:
+                range: Differentiation
+                inlined: true
+                description: >-
+                    Backend-neutral strategy for propagating gradients through the
+                    temporal integration (e.g. truncated backprop-through-time).
+
+    Differentiation:
+        class_uri: tvbo:Differentiation
+        description: >-
+            Backend-neutral configuration for how gradients are propagated through
+            the temporal integration. Expressed in physical/semantic terms; each
+            backend maps it to its own mechanism (JAX solver grad_horizon /
+            block_size, Julia adjoint sensitivity, ...). Backends without autodiff
+            (e.g. MATLAB) emit a comment noting differentiation is unsupported and
+            proceed with the plain forward integration -- they do not raise.
+        attributes:
+            truncation_window:
+                range: float
+                description: >-
+                    Truncated-BPTT window in milliseconds of simulated time:
+                    gradients flow back at most this far. Omit for full BPTT.
+            checkpoint_interval:
+                range: float
+                description: >-
+                    Gradient-checkpointing interval in milliseconds (backward-pass
+                    memory/time trade-off). Omit for no checkpointing.
+            mode:
+                range: string
+                ifabsent: string(reverse)
+                description: "Autodiff direction: 'reverse' (default) or 'forward'."
 
     Coupling:
         class_uri: tvbo:Coupling
@@ -3231,6 +3386,32 @@ classes:
                 range: boolean
                 ifabsent: true
                 description: "Whether coupling includes transmission delays"
+            interpolate_delays:
+                range: boolean
+                ifabsent: false
+                description: >-
+                    For delayed coupling: read delayed states by linear interpolation
+                    between the two bracketing history time-steps instead of snapping
+                    each delay to the nearest integer step. Removes sub-step
+                    quantisation error and makes the coupling differentiable w.r.t.
+                    the continuous delay — hence w.r.t. conduction speed v (delay =
+                    tract_length / v) — so v can be gradient-optimised. Default false
+                    preserves exact nearest-step behaviour (tvboptim roll strategy).
+            vectorized:
+                range: boolean
+                ifabsent: false
+                description: >-
+                    Opt in to the vectorized matmul fast path for a source-only
+                    coupling — one whose pre_expression depends only on source
+                    states (e.g. the angle-addition decomposition
+                    [sin(theta_j), cos(theta_j)]). The W-reduction then becomes a
+                    single ``pre @ weights`` matmul instead of materialising the
+                    dense per-edge tensor. ONLY valid for INSTANTANEOUS coupling on
+                    a SYMMETRIC connectome (W == Wᵀ): the matmul contracts W while
+                    the per-edge path contracts Wᵀ, so the two agree only when W is
+                    symmetric. Default false keeps the always-correct per-edge
+                    reduction (and delays are inherently per-edge, so this flag is
+                    ignored when delayed=true).
             symmetry:
                 range: string
                 ifabsent: "string(directed)"
@@ -3415,6 +3596,7 @@ classes:
                 multivalued: true
                 range: Optimization
                 inlined: true
+                aliases: [optimization]
                 description: "Parameter optimization configurations"
             explorations:
                 multivalued: true

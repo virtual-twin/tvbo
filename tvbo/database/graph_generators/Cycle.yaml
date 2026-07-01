@@ -3,7 +3,7 @@ description: "Cycle graph C_n — nodes arranged in a ring, each connected to it
 iri: tvbo:Cycle
 
 parameters:
-  n: { range: integer, description: "Number of nodes" }
+  n: { datatype: integer, description: "Number of nodes" }
 
 bindings:
   julia:

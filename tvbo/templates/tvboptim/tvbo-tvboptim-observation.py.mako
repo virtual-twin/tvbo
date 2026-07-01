@@ -155,9 +155,9 @@ elif hasattr(_obs_raw, '__iter__') and not isinstance(_obs_raw, dict):
     _all_observations = {get_attr(o, 'name', f'obs_{i}'): o for i, o in enumerate(_obs_raw)}
 else:
     _all_observations = {}
-# Raw observations only — derived ones are handled by the experiment-level
-# DAG walker, not by per-observation monitor rendering.
-observations = {n: o for n, o in _all_observations.items() if not _is_derived(o, experiment)}
+# Raw observations only — derived ones are handled by the experiment-level DAG
+# walker, and analysis observations (gradient/lyapunov/...) by their own path.
+observations = {n: o for n, o in _all_observations.items() if not _is_derived(o, experiment) and getattr(o, 'analysis', None) is None}
 
 # =============================================================================
 
@@ -206,9 +206,8 @@ def parse_step(func, step_name):
             if hasattr(pobj, 'value'):
                 step['equation_params'][str(pname)] = to_numeric(pobj.value)
 
-    # Parse arguments (these ARE function arguments)
-    for arg in (get_attr(func, 'arguments') or []):
-        name = get_attr(arg, 'name')
+    # Parse arguments (these ARE function arguments), keyed by name (key == arg name).
+    for name, arg in (get_attr(func, 'arguments') or {}).items():
         if name:
             step['arg_names'].append(name)
             val = get_attr(arg, 'value')
@@ -235,9 +234,8 @@ def parse_step(func, step_name):
             if fn_eq:
                 step['equation'] = get_attr(fn_eq, 'rhs')
 
-            # Merge function arguments (step args take precedence)
-            for arg in (get_attr(fn_def, 'arguments') or []):
-                name = get_attr(arg, 'name')
+            # Merge function arguments (step args take precedence), keyed by name.
+            for name, arg in (get_attr(fn_def, 'arguments') or {}).items():
                 if name and name not in step['arg_names']:
                     step['arg_names'].append(name)
                 val = get_attr(arg, 'value')
@@ -513,9 +511,8 @@ for obs_name, obs in observations.items():
             step_name = get_attr(func_call, 'name', 'step')
             step = parse_step(func_call, step_name)
 
-        # Override arguments from FunctionCall if provided
-        for arg in (get_attr(func_call, 'arguments') or []):
-            name = get_attr(arg, 'name')
+        # Override arguments from FunctionCall if provided (keyed by name)
+        for name, arg in (get_attr(func_call, 'arguments') or {}).items():
             val = get_attr(arg, 'value')
             if name and val is not None:
                 step['arguments'][str(name)] = val
@@ -836,10 +833,9 @@ class ${class_name}(AbstractMonitor):
 <%
     step_name = step['name']
     fn_def = functions_by_name.get(step_name)
-    # Build default args from function definition
+    # Build default args from function definition (arguments keyed by name)
     default_args = []
-    for arg in (get_attr(fn_def, 'arguments') or []):
-        arg_name = get_attr(arg, 'name')
+    for arg_name, arg in (get_attr(fn_def, 'arguments') or {}).items():
         arg_val = get_attr(arg, 'value')
         if arg_name and arg_val is not None:
             default_args.append(f"{arg_name}={to_numeric(arg_val)}")

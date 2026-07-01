@@ -5,20 +5,16 @@ references:
 source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl
 parameters:
   a:
-    name: a
     value: 0.2
     description: Linear dissipation parameter in y equation.
   b:
-    name: b
     value: 0.2
     description: Constant drive term in z equation.
   c:
-    name: c
     value: 5.7
     description: Z-scaling parameter setting folding scale.
 state_variables:
   x:
-    name: x
     equation:
       lhs: Derivative(x, t)
       rhs: -y - z
@@ -26,7 +22,6 @@ state_variables:
     initial_value: 1.0
     description: First state variable of the Rössler system.
   y:
-    name: y
     equation:
       lhs: Derivative(y, t)
       rhs: x + a*y
@@ -34,7 +29,6 @@ state_variables:
     initial_value: -2.0
     description: Second state variable.
   z:
-    name: z
     equation:
       lhs: Derivative(z, t)
       rhs: b + z*(x - c)

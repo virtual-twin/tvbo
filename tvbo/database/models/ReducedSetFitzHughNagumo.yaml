@@ -1,0 +1,198 @@
+name: ReducedSetFitzHughNagumo
+iri: tvbo:ReducedSetFitzHughNagumo
+model_type: neural_mass
+description: Reduced set of FitzHugh-Nagumo oscillators (Stefanescu & Jirsa 2008); 3 modes coupled via mode-mixing matrices with Gaussian-quadrature coefficients recomputed from mu/sigma.
+references:
+- StefanescuJirsa2008
+parameters:
+  tau:
+    value: 3.0
+    domain:
+      lo: 1.5
+      hi: 4.5
+  a:
+    value: 0.45
+    domain:
+      lo: 0.0
+      hi: 1.0
+  b:
+    value: 0.9
+    domain:
+      lo: 0.0
+      hi: 1.0
+  K11:
+    value: 0.5
+    domain:
+      lo: 0.0
+      hi: 1.0
+  K12:
+    value: 0.15
+    domain:
+      lo: 0.0
+      hi: 1.0
+  K21:
+    value: 0.15
+    domain:
+      lo: 0.0
+      hi: 1.0
+  mu:
+    value: 0.0
+    domain:
+      lo: 0.0
+      hi: 1.0
+  sigma:
+    value: 0.35
+    domain:
+      lo: 0.0
+      hi: 1.0
+  Aik:
+    value:
+    - - 0.3328165811190223
+      - 0.18525241779532714
+      - 0.3328165811190241
+    - - 0.5984537933538554
+      - 0.3331114447027479
+      - 0.5984537933538587
+    - - 0.33281658111902046
+      - 0.18525241779532614
+      - 0.33281658111902235
+    description: Fixed SJ_2008 quadrature constant (Aik).
+  Bik:
+    value:
+    - - 0.3328165811190223
+      - 0.5984537933538554
+      - 0.33281658111902046
+    - - 0.18525241779532714
+      - 0.3331114447027479
+      - 0.18525241779532614
+    - - 0.3328165811190241
+      - 0.5984537933538587
+      - 0.33281658111902235
+    description: Fixed SJ_2008 quadrature constant (Bik).
+  Cik:
+    value:
+    - - 0.3328165811190223
+      - 0.18525241779532714
+      - 0.3328165811190241
+    - - 0.5984537933538554
+      - 0.3331114447027479
+      - 0.5984537933538587
+    - - 0.33281658111902046
+      - 0.18525241779532614
+      - 0.33281658111902235
+    description: Fixed SJ_2008 quadrature constant (Cik).
+  iV0:
+    value:
+    - 1.6668762461300366
+    - 0.9278169186250886
+    - 1.666876246130046
+    description: Fixed SJ_2008 quadrature constant (iV0).
+  iU0:
+    value:
+    - 1.6668762461300366
+    - 0.9278169186250886
+    - 1.666876246130046
+    description: Fixed SJ_2008 quadrature constant (iU0).
+  iV4:
+    value:
+    - 0.35990947874643836
+    - 1.1616503426964113
+    - 0.3599094787464342
+    description: Fixed SJ_2008 quadrature constant (iV4).
+  iU4:
+    value:
+    - 0.35990947874643836
+    - 1.1616503426964113
+    - 0.3599094787464342
+    description: Fixed SJ_2008 quadrature constant (iU4).
+  iZV:
+    value:
+    - -3.033148827134955
+    - 1.3877787807814457e-17
+    - 3.033148827134998
+    description: Fixed SJ_2008 quadrature constant (iZV).
+  iZU:
+    value:
+    - -3.033148827134955
+    - 1.3877787807814457e-17
+    - 3.033148827134998
+    description: Fixed SJ_2008 quadrature constant (iZU).
+derived_parameters:
+  e_i:
+    equation:
+      lhs: e_i
+      rhs: iV4/sigma
+      latex: false
+  f_i:
+    equation:
+      lhs: f_i
+      rhs: iU4/sigma
+      latex: false
+  IE_i:
+    equation:
+      lhs: IE_i
+      rhs: sqrt(sigma)*(mu*iV0 + sigma*iZV)
+      latex: false
+  II_i:
+    equation:
+      lhs: II_i
+      rhs: sqrt(sigma)*(mu*iU0 + sigma*iZU)
+      latex: false
+  m_i:
+    equation:
+      lhs: m_i
+      rhs: a*sqrt(sigma)*iV0
+      latex: false
+  n_i:
+    equation:
+      lhs: n_i
+      rhs: a*sqrt(sigma)*iU0
+      latex: false
+coupling_inputs:
+  c_glob0: {}
+  c_glob1: {}
+  local_coupling: {local: true}
+state_variables:
+  xi:
+    domain:
+      lo: -4.0
+      hi: 4.0
+    equation:
+      lhs: Derivative(xi, t)
+      rhs: tau*(xi - e_i*xi**3/3 - eta) + K11*(mode_dot(xi, Aik) - xi) - K12*(mode_dot(alpha, Bik) - xi) + tau*(IE_i + mode_sum(c_glob0) + local_coupling*xi)
+      latex: false
+    coupling_variable: true
+    initial_value: 0.1
+  eta:
+    domain:
+      lo: -3.0
+      hi: 3.0
+    equation:
+      lhs: Derivative(eta, t)
+      rhs: (xi - b*eta + m_i)/tau
+      latex: false
+    coupling_variable: false
+    initial_value: 0.1
+    record: false
+  alpha:
+    domain:
+      lo: -4.0
+      hi: 4.0
+    equation:
+      lhs: Derivative(alpha, t)
+      rhs: tau*(alpha - f_i*alpha**3/3 - beta) + K21*(mode_dot(xi, Cik) - alpha) + tau*(II_i + mode_sum(c_glob0) + local_coupling*xi)
+      latex: false
+    coupling_variable: true
+    initial_value: 0.1
+  beta:
+    domain:
+      lo: -3.0
+      hi: 3.0
+    equation:
+      lhs: Derivative(beta, t)
+      rhs: (alpha - b*beta + n_i)/tau
+      latex: false
+    coupling_variable: false
+    initial_value: 0.1
+    record: false
+number_of_modes: 3

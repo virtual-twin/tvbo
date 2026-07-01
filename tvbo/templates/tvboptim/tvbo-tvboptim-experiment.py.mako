@@ -8,8 +8,8 @@ from tvbo.templates.tvboptim.utils import (
     safe_name, as_list, get_attr, is_network_observation, obs_has_all_args,
     get_observation_refs, parse_loss_function, parse_free_param, get_domain_bounds,
     parse_exploration, get_param_info, get_node_param_overrides,
-    normalize_coupling_aliases,
-    get_node_state_overrides
+    normalize_coupling_aliases, resolve_coupling_input_map,
+    get_node_state_overrides, render_jax_default, get_mode_layout
 )
 import numpy as np
 
@@ -33,8 +33,22 @@ else:
 jaxcode = lambda expr, params=None: render_expression(expr, format='jax', user_functions=user_functions, parameters=params)
 jaxcode_obj = lambda obj: model.render_equation(obj, format='jax')
 
-# Extract key metadata from model
-state_names = list(model.state_variables.keys())
+# Extract key metadata from model. For number_of_modes>1 the per-node mode axis is
+# folded into the state axis: state_names is the solver's flat (variable, mode) slot
+# ordering, while var_names keeps the original variables (used for the result mode dim).
+n_modes, state_names, var_slots = get_mode_layout(model)
+var_names = list(model.state_variables.keys())
+if n_modes > 1:
+    import warnings as _warnings
+    _warnings.warn(
+        f"number_of_modes={n_modes} (mode-coupled model '{getattr(model, 'name', '?')}') "
+        "on the tvboptim backend is EXPERIMENTAL: the per-node mode axis is folded into "
+        "the state axis (each variable occupies n_modes scalar slots). Validated against "
+        "TVB to machine precision for the Stefanescu-Jirsa ReducedSet models; other "
+        "multi-mode coupling topologies may not be faithful. Use the tvb backend for "
+        "reference results.",
+        stacklevel=2,
+    )
 param_names = [p.name for p in model.parameters.values()]
 derived_param_names = [p.name for p in model.derived_parameters.values()] if model.derived_parameters else []
 
@@ -82,50 +96,20 @@ if not all_couplings and getattr(experiment, 'coupling', None):
         all_couplings = {_exp_c.name or 'coupling': _exp_c}
 all_couplings = normalize_coupling_aliases(all_couplings, model)
 
-# Map coupling_input names to (func_name, coupling_obj) for tvboptim coupling_dict
-# tvboptim keys coupling by coupling_input name, schema keys by function name
-# Resolution order:
-#   1. Explicit source on CouplingInput (ci.source == func_name)
-#   2. Same name (ci_name == func_name)
-#   3. Single func → broadcast to all coupling inputs
-#   4. Same count → positional zip
-ci_coupling_map = {}  # ci_name -> (func_name, coupling_obj)
-func_to_first_ci = {}  # func_name -> first ci_name (for state access translation)
-if coupling_inputs_dict and all_couplings:
-    funcs = list(all_couplings.items())  # [(name, obj), ...]
-    ci_names = list(coupling_inputs_dict.keys())
+# Coupling-input → coupling-function mapping (+ local-term drop) resolved in the
+# tvboptim Python layer, not here — see resolve_coupling_input_map.
+ci_coupling_map, func_to_first_ci = resolve_coupling_input_map(model, all_couplings, coupling_inputs_dict)
 
-    # 1. Explicit source attribute
-    for ci_name in ci_names:
-        ci_obj = coupling_inputs_dict[ci_name]
-        src = getattr(ci_obj, 'source', None)
-        if src and src in all_couplings:
-            ci_coupling_map[ci_name] = (src, all_couplings[src])
-            func_to_first_ci.setdefault(src, ci_name)
-
-    # 2. Same name match
-    for ci_name in ci_names:
-        if ci_name not in ci_coupling_map and ci_name in all_couplings:
-            ci_coupling_map[ci_name] = (ci_name, all_couplings[ci_name])
-            func_to_first_ci.setdefault(ci_name, ci_name)
-
-    # 3/4. Fallback for remaining unmapped
-    _unmapped_cis = [c for c in ci_names if c not in ci_coupling_map]
-    _unmapped_funcs = [(n, o) for n, o in funcs if n not in func_to_first_ci]
-    if len(_unmapped_funcs) == 1 and _unmapped_cis:
-        # Single unmapped function → broadcast to all remaining CIs
-        for ci_name in _unmapped_cis:
-            ci_coupling_map[ci_name] = _unmapped_funcs[0]
-        func_to_first_ci.setdefault(_unmapped_funcs[0][0], _unmapped_cis[0])
-    elif len(_unmapped_funcs) == len(_unmapped_cis):
-        for ci_name, (_fn, _co) in zip(_unmapped_cis, _unmapped_funcs):
-            ci_coupling_map[ci_name] = (_fn, _co)
-            func_to_first_ci.setdefault(_fn, ci_name)
 # Translate function-name coupling key to ci name for tvboptim state access
 _to_ci_key = lambda k: func_to_first_ci.get(k, k) if k else None
 
 # Check if any coupling has delays
 has_delay = any(c.delayed for c in all_couplings.values() if c)
+# Differentiable (interpolated) delays are OPT-IN: only experiments whose
+# coupling sets `interpolate_delays: true` use the decoupled-max_delay graph
+# API (which needs the differentiable-delays tvboptim build). Everything else
+# uses the stock DenseDelayGraph that derives max_delay from the delays.
+interpolate_delays = any(bool(getattr(c, 'interpolate_delays', False)) for c in all_couplings.values() if c)
 
 # Collect all coupling parameters (for optimization)
 all_coupling_params = {}  # (coupling_key, param_name) -> param_obj
@@ -145,6 +129,12 @@ method = (integration.method or 'euler').lower()
 solver_class = SOLVER_MAP.get(method)
 assert solver_class, f"Unknown solver method: {method}. Valid: {list(SOLVER_MAP.keys())}"
 dt = float(integration.step_size)
+
+# Differentiation strategy -> native-solver kwargs, resolved in the tvboptim Python
+# layer (shared with the solver template) rather than duplicated across mako blocks.
+from tvbo.templates.tvboptim.utils import resolve_solver_kwargs, resolve_optimizer_mode, render_analysis_observations, render_recorded_observable
+solver_kwargs_str = resolve_solver_kwargs(integration, dt)
+opt_mode = resolve_optimizer_mode(integration)
 
 # Noise configuration from state_variables or integration.
 # tvboptim's AdditiveGaussianNoise expects sigma = standard deviation
@@ -214,8 +204,9 @@ accelerator = str(exec_config.accelerator) if exec_config and exec_config.accele
 enable_x64 = precision == 'float64'
 random_seed = int(exec_config.random_seed) if exec_config and exec_config.random_seed else 0
 
-# Build observations dict from experiment.observations
-observations_dict = dict(experiment.observations.items()) if experiment.observations else {}
+# Build observations dict from experiment.observations (analysis observations are
+# handled by their own path, not the raw/network monitor categorisation).
+observations_dict = {n: o for n, o in experiment.observations.items() if getattr(o, 'analysis', None) is None} if experiment.observations else {}
 
 # Categorize observations using utils
 network_observation_names, observation_names = get_observation_refs(observations_dict)
@@ -235,8 +226,11 @@ for _np_name in node_param_overrides:
 
 # Per-node initial state overrides from node ``state:`` entries
 # e.g. nodes[0].state = {theta: 0.8} → overrides default initial_value per node
-_default_init = [float(sv.initial_value) if sv.initial_value is not None else 0.0
-                 for sv in model.state_variables.values()]
+_default_init = [
+    (float(sv.initial_value) if sv.initial_value is not None else 0.0)
+    for sv in model.state_variables.values()
+    for _ in range(n_modes)  # one entry per (variable, mode) solver slot
+]
 node_state_overrides = get_node_state_overrides(network, n_nodes, state_names, _default_init)
 
 # Detect parameters with distribution.axis == 'time' — these are stochastic
@@ -281,7 +275,7 @@ for sv_name, sv in model.state_variables.items():
             'dist': str(getattr(dist, 'name', 'Uniform')).lower(),
             'lo': lo,
             'hi': hi,
-            'idx': state_names.index(sv_name),
+            'idx': state_names.index(sv_name if n_modes == 1 else f"{sv_name}__mode0"),
             'seed': int(getattr(dist, 'seed', None) or 42),
         }
 
@@ -457,8 +451,12 @@ if has_optimization:
 # in the same experiment.
 from tvbo.codegen.templater import is_derived as _is_derived
 _all_observations = dict(experiment.observations) if experiment.observations else {}
-observations = {n: o for n, o in _all_observations.items() if not _is_derived(o, experiment)}
-derived_observations_dict = {n: o for n, o in _all_observations.items() if _is_derived(o, experiment)}
+# Analysis observations operate on the solve/loss (gradient, finite-difference,
+# Lyapunov, ...) — handled by a dedicated path, not the raw/derived pipelines.
+analysis_observations_dict = {n: o for n, o in _all_observations.items() if getattr(o, 'analysis', None) is not None}
+analysis_observation_names = set(analysis_observations_dict.keys())
+observations = {n: o for n, o in _all_observations.items() if not _is_derived(o, experiment) and n not in analysis_observation_names}
+derived_observations_dict = {n: o for n, o in _all_observations.items() if _is_derived(o, experiment) and n not in analysis_observation_names}
 derived_observation_names = set(derived_observations_dict.keys())
 
 def get_obs(name):
@@ -521,6 +519,9 @@ for expl in exploration_list:
         'parallel_mode': str(expl.parallel_mode) if getattr(expl, 'parallel_mode', None) else 'auto',
         'parallel_batch_size': int(expl.parallel_batch_size) if getattr(expl, 'parallel_batch_size', None) else None,
         'axes': [],
+        # Observations to compute + stack per grid point (derived + `analysis` diagnostics).
+        # NOTE: this block duplicates utils.parse_exploration — should be consolidated onto it.
+        'record': [str(r) for r in (getattr(expl, 'record', None) or [])],
     }
     # Schema: space is a list of ExplorationAxis (optional for trial-only explorations)
     axes_list = expl.space or []
@@ -636,15 +637,15 @@ for expl in exploration_list:
         # FunctionCall: function attribute references the function
         func = observable.function
         func_name = func.name if hasattr(func, 'name') else str(func) if func else None
-        args = observable.arguments or []
+        args = observable.arguments or {}
 
         if args:
-            # FunctionCall with arguments (e.g., rmse(fc.data, target))
+            # FunctionCall with arguments (e.g., rmse(fc.data, target)). arguments is a
+            # dict keyed by name; the key IS the argument name.
             exp_info['observable_type'] = 'function_call'
             exp_info['observable_func'] = func_name
             exp_info['observable_args'] = []
-            for arg in args:
-                arg_name = arg.name if hasattr(arg, 'name') else str(arg)
+            for arg_name, arg in args.items():
                 arg_value = arg.value if hasattr(arg, 'value') else None
                 if arg_value:
                     # Value references observation.output (e.g., "fc.data")
@@ -731,6 +732,7 @@ jax.config.update("jax_enable_x64", True)  # Required for stable gradient comput
 % endif
 import jax.numpy as jnp
 import jax.scipy.signal
+import equinox as eqx
 import numpy as np
 from typing import Tuple, Dict, Any, Optional, Callable, List
 
@@ -837,7 +839,7 @@ def _freeze_step_time(solver):
 % endif
 
 def get_solver():
-    base_solver = ${solver_class}()
+    base_solver = ${solver_class}(${solver_kwargs_str})
 % if has_state_bounds:
     solver = BoundedSolver(
         base_solver,
@@ -853,6 +855,13 @@ def get_solver():
     return solver
 
 <%include file="/tvboptim/tvbo-tvboptim-dfun.py.mako" />
+
+## Bind the dynamics class to an alias now, before the coupling classes are
+## defined: a coupling may share the model's name (e.g. TVB's ``Linear`` model
+## and ``Linear`` coupling), and the later ``class Linear(...Coupling)`` would
+## otherwise shadow the model class so ``dynamics = Linear(**model_params)``
+## would wrongly instantiate the coupling.
+_TVBO_DYNAMICS_CLS = ${dynamics_class}
 
 <%include file="tvbo-tvboptim-cfun.py.mako" />
 
@@ -870,6 +879,9 @@ def create_network(
     dynamics_params: dict = None,
     coupling_params: dict = None,
     noise_sigma: float = ${noise_sigma_value},
+    % if interpolate_delays:
+    max_delay: float = None,
+    % endif
 ) -> Network:
 % if has_weight_transforms:
     # Weight transforms
@@ -889,7 +901,14 @@ def create_network(
     % if has_delay:
     if delays is None:
         delays = jnp.zeros_like(weights)
+    % if interpolate_delays:
+    # Differentiable delays (opt-in): max_delay (static history-buffer length) is
+    # decoupled from `delays` so the delays may be JAX tracers (gradient-optimised
+    # conduction speed v); None derives it as usual. Needs differentiable-delays tvboptim.
+    graph = DenseDelayGraph(weights, delays, region_labels=region_labels, max_delay=max_delay)
+    % else:
     graph = DenseDelayGraph(weights, delays, region_labels=region_labels)
+    % endif
     % else:
     graph = DenseGraph(weights, region_labels=region_labels)
     % endif
@@ -903,13 +922,13 @@ def create_network(
         % elif name in dyn_param_shapes:
         '${name}': jnp.full(${dyn_param_shapes[name]}, ${dyn_param_defaults.get(name, 1.0)}),
         % else:
-        '${name}': ${dyn_param_defaults.get(name, 1.0)},
+        '${name}': ${render_jax_default(dyn_param_defaults.get(name, 1.0))},
         % endif
         % endfor
     }
     if dynamics_params:
         _dynamics_params.update(dynamics_params)
-    dynamics = ${dynamics_class}(**_dynamics_params)
+    dynamics = _TVBO_DYNAMICS_CLS(**_dynamics_params)
 
     coupling_dict = {}
 
@@ -925,7 +944,7 @@ def create_network(
         % if name in c_param_shapes:
         '${name}': jnp.full(${c_param_shapes[name]}, ${c_param_defaults.get(name, 1.0)}),
         % else:
-        '${name}': ${c_param_defaults.get(name, 1.0)},
+        '${name}': ${render_jax_default(c_param_defaults.get(name, 1.0))},
         % endif
         % endfor
     }
@@ -1110,6 +1129,12 @@ def run_simulation(
         observations.${obs_name} = _all_obs.${obs_name}
 % endfor
 
+        # Analysis observations (operate on the solve/loss, not result.data)
+% if analysis_observations_dict:
+        for _an_name, _an_val in compute_analysis_observations(state, network, result_transient).items():
+            observations[_an_name] = _an_val
+% endif
+
     return Bunch(
         model_fn=model_fn,
         state=state,
@@ -1236,8 +1261,7 @@ if loss_functions:
                     if call_module and call_name:
                         pipeline_call = f"{call_module}.{call_name}"
                 if hasattr(first_stage, 'arguments') and first_stage.arguments:
-                    for arg in first_stage.arguments:
-                        arg_name = getattr(arg, 'name', None)
+                    for arg_name, arg in first_stage.arguments.items():
                         arg_value = getattr(arg, 'value', None)
                         if arg_name and arg_value is not None:
                             pipeline_args.append((arg_name, arg_value))
@@ -1260,33 +1284,14 @@ else:
 %>
 
 <%
-def get_observation_dependencies(obs_name, derived_obs_dict):
-    deps = set()
-    dobs_def = derived_obs_dict.get(obs_name)
-    if dobs_def:
-        for src in [_s for _s in (dobs_def.source or []) if (getattr(_s, 'name', None) or _s) in _all_observations]:
-            src_name = str(src) if not hasattr(src, 'name') else str(src.name)
-            deps.add(src_name)
-    return deps
-
-def toposort_observations(obs_names, derived_obs_dict):
-    sorted_obs = []
-    visited = set()
-    def visit(name):
-        if name in visited:
-            return
-        visited.add(name)
-        deps = get_observation_dependencies(name, derived_obs_dict)
-        for dep in deps:
-            if dep in obs_names:
-                visit(dep)
-        sorted_obs.append(name)
-    for name in obs_names:
-        visit(name)
-    return sorted_obs
+# Observation dependency ordering lives in the tvboptim adapter (utils), harmonized
+# with the derived-variable/parameter dependency graph — the template only calls it.
+# toposort_observations emits any observation that lists another as a `source` AFTER
+# that source; independents keep their input order.
+from tvbo.templates.tvboptim.utils import toposort_observations
 
 sorted_observation_names = list(observation_names)
-sorted_derived_obs_names = toposort_observations(list(derived_observation_names), derived_observations_dict)
+sorted_derived_obs_names = toposort_observations(list(derived_observation_names), derived_observations_dict, _all_observations)
 %>
 
 def compute_all_observations(result, state, result_transient=None):
@@ -1359,11 +1364,17 @@ def compute_all_observations(result, state, result_transient=None):
             call_name = getattr(c, 'name', None) or getattr(c, 'qualname', None)
             if call_module and call_name:
                 pipeline_call = f"{call_module}.{call_name}"
+        if pipeline_call is None:
+            # function-based derived observation: a YAML-defined function rendered
+            # as a module-level helper. Preferred over library callables — it is
+            # backend-independent (each backend renders the same function).
+            _fn = getattr(first_stage, 'function', None)
+            if _fn is not None:
+                pipeline_call = str(_fn) if not hasattr(_fn, 'name') else str(_fn.name)
         # Extract arguments from pipeline stage
         # Handle explicit argument values with proper observation reference resolution
         if hasattr(first_stage, 'arguments') and first_stage.arguments:
-            for arg in first_stage.arguments:
-                arg_name = getattr(arg, 'name', None)
+            for arg_name, arg in first_stage.arguments.items():
                 arg_value = getattr(arg, 'value', None)
                 # Only include arguments that have explicit values (not just names/descriptions)
                 if arg_name and arg_value is not None:
@@ -1401,6 +1412,20 @@ def compute_all_observations(result, state, result_transient=None):
 % endfor
 
     return obs
+
+
+% if analysis_observations_dict:
+def compute_analysis_observations(state, network, result_transient=None):
+    """Compute the declarative ``analysis`` observations — diagnostics that ANALYZE the
+    solve/loss (Lyapunov spectrum, autodiff and finite-difference gradients) rather than
+    transforming ``result.data``. Factored out so the main run and any exploration that
+    records diagnostics per grid point share one implementation, keeping a G-sweep of the
+    diagnostics fully metadata-derived. Analysis solves use a plain solver — the truncation
+    window is an optimization knob, not part of these diagnostics."""
+    obs = Bunch()
+${render_analysis_observations(analysis_observations_dict, coupling_keys, solver_class, transient_time, t1_default, dt)}
+    return obs
+% endif
 
 
 <%include file="tvbo-tvboptim-algorithm.py.mako" />
@@ -1517,7 +1542,7 @@ def run_stage_${stage_name}(
         learning_rate=learning_rate,
         **opt_kwargs
     )
-    fitted_params, fitting_data = opt.run(marked_state, max_steps=max_steps)
+    fitted_params, fitting_data = opt.run(marked_state, max_steps=max_steps, mode="${opt_mode}")
     return fitted_params, fitting_data
 
 % endfor
@@ -1591,7 +1616,7 @@ def run_optimization(
         max_steps=max_steps, callback=callback, print_every=print_every,
         save_every=save_every, **kwargs
     )
-    fitted_params, fitting_data = opt.run(init_state, max_steps=max_steps)
+    fitted_params, fitting_data = opt.run(init_state, max_steps=max_steps, mode="${opt_mode}")
     return fitted_params, fitting_data
 % endif
 
@@ -1689,7 +1714,14 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
 % endif
 
     # Create observation monitors ONCE with history baked in (optimized pattern)
-% if obs_type == 'function_call':
+% if expl.get('record'):
+    # Record a declared list of observations per grid point (derived via
+    # compute_all_observations, `analysis` diagnostics via compute_analysis_observations),
+    # stacked over the sweep into one array per name.
+    @jax.jit
+    def observable_fn(s):
+${render_recorded_observable(expl['record'], derived_observation_names, network_observation_names, list(analysis_observations_dict.keys()))}
+% elif obs_type == 'function_call':
 <%
     # Collect unique observations used - categorize by type
     obs_used = set(a['obs'] for a in obs_args if a.get('obs'))
@@ -1995,9 +2027,14 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
     # (e.g. Bunch with data + observations when no observable is specified).
     _stacked = jax.tree.map(lambda *xs: jnp.stack(xs), *_grid_outputs)
 
-    # Build axes info for ExplorationResult
+    # Build axes info for ExplorationResult. The point count mirrors the grid's own
+    # ``kwargs.get('n_<axis>', <default>)`` so a runtime n override stays consistent
+    # with the recorded coordinate (otherwise the stacked result and its coord disagree).
     _axes_info = [
 % for ax in expl['axes']:
+<%
+    _nkey = f"n_{ax['name']}_{ax['element_idx']}" if ax.get('element_idx') is not None else f"n_{ax['name']}"
+%>
         Bunch(
 % if ax.get('element_idx') is not None:
             name='${ax['name']}[${ax['element_idx']}]',
@@ -2006,12 +2043,13 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
 % endif
 % if 'values' in ax:
             explored_values=jnp.array(${ax['values']}),
+            n=${ax['n']},
 % else:
             lo=${ax['lo']},
             hi=${ax['hi']},
-            explored_values=jnp.linspace(${ax['lo']}, ${ax['hi']}, ${ax['n']}),
+            explored_values=jnp.linspace(${ax['lo']}, ${ax['hi']}, kwargs.get('${_nkey}', ${ax['n']})),
+            n=kwargs.get('${_nkey}', ${ax['n']}),
 % endif
-            n=${ax['n']},
 % if ax.get('is_coupling'):
             is_coupling=True,
             coupling_key='${ax['coupling_key']}',
@@ -2182,6 +2220,12 @@ def run_experiment(
 % for obs_name in derived_observation_names:
         observations.${obs_name} = _all_obs.${obs_name}
 % endfor
+
+        # Analysis observations (operate on the solve/loss, not result.data)
+% if analysis_observations_dict:
+        for _an_name, _an_val in compute_analysis_observations(state, network, transient).items():
+            observations[_an_name] = _an_val
+% endif
     else:
         observations = None
 
@@ -2190,15 +2234,35 @@ def run_experiment(
     initial_state = copy.deepcopy(state)
 
 <%
-    # Result labels must match what the solver actually records (VARIABLES_OF_INTEREST).
-    # Same logic as the dfun template: states + (auxiliaries listed in model.output OR
-    # referenced by an observation source). Mirrors solution.variable_names produced
-    # by tvboptim >= 0.2.7.
-    from tvbo.templates.tvboptim.utils import get_recorded_variable_names as _grvn
+    # Result labels + record=True output channels are resolved in Python (the
+    # tvboptim utils layer), not here — the template only emits from clean context.
+    # The solver records ALL states (VARIABLES_OF_INTEREST); the user-facing result
+    # presents only sv.record=True states (+ recorded aux), matching the tvb backend.
+    # The full trajectory is kept intact above for observations and the warmup; the
+    # record filter is applied as a channel slice on the presented result only.
+    from tvbo.templates.tvboptim.utils import get_recorded_variable_names as _grvn, get_output_channels
     _, _requested_aux, result_var_names = _grvn(model, experiment)
+    _output_idx, _output_names, _record_subset = get_output_channels(model, experiment)
 %>
+    % if _record_subset:
+    # sv.record filters the presented channels; the full result/transient are kept
+    # intact above for observations and warmup. Rebuild the NativeSolution on the
+    # record=True channels (preserving its time axis), or slice a raw array.
+    _record_idx = ${_output_idx}
+    def _select_channels(_res):
+        if _res is None:
+            return None
+        if hasattr(_res, "ys"):
+            return type(_res)(_res.ts, _res.ys[:, _record_idx], dt=getattr(_res, "dt", None), variable_names=${tuple(_output_names)})
+        return _res[:, _record_idx]
+    _main_sel = _select_channels(result)
+    _transient_sel = _select_channels(transient)
+    transient_result = SimulationResult(result=_transient_sel, state_names=${_output_names}, nodes=region_labels) if _transient_sel is not None else None
+    main_result = SimulationResult(result=_main_sel, observations=observations, state_names=${_output_names}, nodes=region_labels, transient=transient_result) if _main_sel is not None else None
+    % else:
     transient_result = SimulationResult(result=transient, state_names=${result_var_names}, nodes=region_labels) if transient is not None else None
     main_result = SimulationResult(result=result, observations=observations, state_names=${result_var_names}, nodes=region_labels, transient=transient_result) if result is not None else None
+    % endif
 
     results = Bunch(
         # Core simulation infrastructure (always present)
@@ -2737,49 +2801,21 @@ def run_experiment(
 % endif
 
 % if loss_functions:
-            # Loss function with observation monitors
-% for obs_name in _lf_all_simulated:
-<%
-    obs_class = ''.join(word.capitalize() for word in obs_name.split('_'))
-%>
-            _${obs_name}_monitor = ${obs_class}(history=_opt_transient)
-% endfor
-
+            # Loss via the declarative observation pipeline. The objective is built from the
+            # SAME compute_all_observations path as the diagnostics, so it is byte-identical to
+            # the `loss` observation and stays backend-independent (no monitor-class references).
             def loss_fn(state):
-                result = _opt_model_fn(state)
-% for obs_name in _lf_all_simulated:
-                _${obs_name} = _${obs_name}_monitor(result)
-% endfor
-% for dobs_name in _lf_derived_obs:
-<%
-    dinfo = _lf_derived_info.get(dobs_name, {})
-    dcall = dinfo.get('callable')
-    dargs = dinfo.get('args', [])
-    dsources = dinfo.get('sources', [])
-    positional = [f"__{s}" for s in dsources]
-    keywords = [f"{name}={val}" for name, val in dargs if str(val) not in dsources]
-%>
-% if dcall:
-% for src in dsources:
-                __${src} = _${src}.data if hasattr(_${src}, 'data') else _${src}
-% endfor
-                _${dobs_name} = ${dcall}(${', '.join(positional + keywords)})
-% endif
-% endfor
+                _obs = compute_all_observations(_opt_model_fn(state), state, _opt_transient)
 <%
     loss_arg_exprs = []
     for a in _lf_args:
         if a['type'] == 'observation':
             obs_name_arg = a['obs_name']
             if obs_name_arg in network_observation_names:
-                loss_arg_exprs.append(f"kwargs.get('{obs_name_arg}', {obs_name_arg})")
-            elif obs_name_arg in derived_observation_names:
-                loss_arg_exprs.append(f"__{obs_name_arg}" if f"__{obs_name_arg}" in ''.join([f"__{s}" for d in _lf_derived_info.values() for s in d.get('sources', [])]) else f"_{obs_name_arg}")
+                # Empirical target: allow a runtime override, else the loaded constant.
+                loss_arg_exprs.append(f"kwargs.get('{obs_name_arg}', _obs.{obs_name_arg})")
             else:
-                if a.get('output_key'):
-                    loss_arg_exprs.append(f"_{obs_name_arg}.{a['output_key']}")
-                else:
-                    loss_arg_exprs.append(f"_{obs_name_arg}.data")
+                loss_arg_exprs.append(f"_obs.{obs_name_arg}")
         elif a['type'] == 'constant':
             loss_arg_exprs.append(str(a['value']))
         elif a['type'] == 'runtime':

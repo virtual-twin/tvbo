@@ -27,6 +27,38 @@ cm = 1 / 2.54
 ROOT_DIR = abspath(dirname(__file__))
 
 
+def domain_enforcement(domain) -> str:
+    """Normalise a state-variable domain's enforcement mode to a plain string.
+
+    Returns one of ``'none'`` (default — descriptive metadata only), ``'clamp'``
+    (hard-clip to [lo, hi]) or ``'wrap'`` (periodic). Accepts a Range/domain
+    object (reads its ``enforce`` slot), a bare ``DomainEnforcement`` value, or
+    ``None``. Normalises across both generated representations of the enum — the
+    pydantic ``(str, Enum)`` (compare via ``.value``) and the gen-python
+    permissible value (compare via ``str()``) — so callers can simply test
+    ``domain_enforcement(sv.domain) == 'clamp'``.
+    """
+    enf = getattr(domain, "enforce", domain)
+    if enf is None:
+        return "none"
+    val = getattr(enf, "value", None)
+    if isinstance(val, str):
+        return val
+    return str(enf).rsplit(".", 1)[-1]
+
+
+def is_array_valued(value) -> bool:
+    """Return True if a parameter value is an array constant rather than a scalar.
+
+    Array-valued parameters (e.g. mode-coupling matrices, Gaussian-quadrature
+    vectors) are stored as nested lists/tuples in YAML or as ``np.ndarray`` when
+    set programmatically. Scalar-only call sites (``float(p.value)`` substitution,
+    sympy ``subs``) must skip them. Single source of truth so list/tuple *and*
+    ndarray are treated consistently everywhere.
+    """
+    return isinstance(value, (list, tuple, np.ndarray))
+
+
 # Backward-compatible re-exports (moved to tvbo.plot.utils)
 def __getattr__(name):
     _plot_names = {

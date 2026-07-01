@@ -5,24 +5,19 @@ references:
 source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl
 parameters:
   alpha:
-    name: alpha
     value: 1.5
     description: Prey intrinsic growth rate α.
   beta:
-    name: beta
     value: 1.0
     description: Predation interaction coefficient β.
   delta:
-    name: delta
     value: 1.0
     description: Predator growth efficiency δ.
   gamma:
-    name: gamma
     value: 3.0
     description: Predator mortality rate γ.
 state_variables:
   x:
-    name: x
     description: Prey population size.
     equation:
       lhs: Derivative(x, t)
@@ -30,7 +25,6 @@ state_variables:
       latex: false
     initial_value: 10.0
   y:
-    name: y
     description: Predator population size.
     equation:
       lhs: Derivative(y, t)

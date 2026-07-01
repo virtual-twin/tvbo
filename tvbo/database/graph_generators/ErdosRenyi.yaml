@@ -5,11 +5,11 @@ description: >-
 iri: tvbo:ErdosRenyi
 
 parameters:
-  n: { range: integer, description: "Number of nodes" }
-  p: { range: float,   description: "Edge probability in [0, 1]" }
-  seed: { range: integer, required: false }
+  n: { datatype: integer, description: "Number of nodes" }
+  p: { datatype: float,   description: "Edge probability in [0, 1]" }
+  seed: { datatype: integer, required: false }
   density_from:
-    range: uriorcurie
+    datatype: uriorcurie
     required: false
     description: >-
       Optional. When set, the value of p is computed at load time as the

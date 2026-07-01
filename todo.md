@@ -1,5 +1,28 @@
 # TODO
 
+## Migrate runtime ontology: deprecated `tvb-o.owl` → generated `tvbo.owl`
+
+Switch every runtime consumer from the deprecated **class-based**
+`tvbo/data/ontology/tvb-o.owl` (1516 classes / 173 individuals; `JansenRit`
+is an `owl:Class`) to the generated **individual-based** `ontology/tvbo.owl`
+(422 classes / 1236 individuals; `JansenRit` is an `owl:NamedIndividual` with
+explicit `tvbo:hasParameter`/`hasDerivedVariable` edges), built by
+`make gen-merged`. **Preserve** the deprecated file — do not overwrite it; keep
+it as a frozen parity reference.
+
+**Phase A (platform) — ✅ DONE.** The platform's `DirectOntologyAPI` now serves
+the generated ontology from a *dedicated `owlready2.World`* (a global loader
+repoint crashes the tvbo core — base-IRI mismatch + empty class queries — so
+`owl.py`'s global `onto` stays on the deprecated ontology). `make gen-merged`
+packages `tvbo/data/ontology/tvbo.owl`; `query.py` gained optional `onto=`/`world=`
+args; enrichment/search/hierarchy verified; tvbo core untouched.
+
+**Phase B (TODO) — with `owl.py`.** Rewrite `owl.py`'s class-based high-level API
+(`get_models`/`get_model_parameters`/… → `.instances()` + `hasParameter`/…
+object properties), then retire the separate world and load the generated
+ontology globally. Full file-by-file change list, impact map, and verification:
+**see `dev/runtime_ontology_migration.md`**.
+
 ## Harmonize class names with `tvboptim`
 
 Rename `ExplorationAxis` → `Axis` and reshape it so tvbo can declaratively

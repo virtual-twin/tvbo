@@ -17,162 +17,132 @@ references:
 number_of_modes: 3
 parameters:
   r:
-    name: r
     definition: Adaptation parameter (Hindmarsh-Rose r).
     value: 0.006
     domain: {lo: 0.0, hi: 0.1, step: 0.0005}
   a:
-    name: a
     definition: Hindmarsh-Rose dimensionless coefficient a.
     value: 1.0
     domain: {lo: 0.0, hi: 1.0, step: 0.01}
   b:
-    name: b
     definition: Hindmarsh-Rose dimensionless coefficient b.
     value: 3.0
     domain: {lo: 0.0, hi: 3.0, step: 0.01}
   c:
-    name: c
     definition: Hindmarsh-Rose dimensionless coefficient c.
     value: 1.0
     domain: {lo: 0.0, hi: 1.0, step: 0.01}
   d:
-    name: d
     definition: Hindmarsh-Rose dimensionless coefficient d.
     value: 5.0
     domain: {lo: 2.5, hi: 7.5, step: 0.01}
   s:
-    name: s
     definition: Adaptation feedback parameter.
     value: 4.0
     domain: {lo: 2.0, hi: 6.0, step: 0.01}
   x_0:
-    name: x_0
     definition: Leftmost equilibrium point of x in the Hindmarsh-Rose oscillator.
     value: -1.6
     domain: {lo: -2.4, hi: -0.8, step: 0.01}
     grounding: [GO:0042391]
   K_11:
-    name: K_11
     definition: Internal coupling, excitatory to excitatory.
     value: 0.5
     domain: {lo: 0.0, hi: 1.0, step: 0.01}
     grounding: [GO:0060079]
   K_12:
-    name: K_12
     definition: Internal coupling, inhibitory to excitatory.
     value: 0.1
     domain: {lo: 0.0, hi: 1.0, step: 0.01}
     grounding: [GO:0060080]
   K_21:
-    name: K_21
     definition: Internal coupling, excitatory to inhibitory.
     value: 0.15
     domain: {lo: 0.0, hi: 1.0, step: 0.01}
     grounding: [GO:0060079]
   sigma:
-    name: sigma
     definition: Standard deviation of the Gaussian heterogeneity distribution.
     value: 0.3
     domain: {lo: 0.0, hi: 1.0, step: 0.01}
     grounding: [GO:0042391]
   mu:
-    name: mu
     definition: Mean of the Gaussian heterogeneity distribution.
     value: 3.3
     domain: {lo: 1.1, hi: 3.3, step: 0.01}
     grounding: [GO:0060079]
 derived_variables:
   A_ik:
-    name: A_ik
     description: Excitatory-to-excitatory mode-coupling matrix from Gaussian quadrature.
     grounding: [GO:0060079]
     equation: {lhs: A_ik, rhs: '0.5', latex: false}
     conditional: false
   B_ik:
-    name: B_ik
     description: Inhibitory-to-excitatory mode-coupling matrix.
     grounding: [GO:0060080]
     equation: {lhs: B_ik, rhs: '0.5', latex: false}
     conditional: false
   C_ik:
-    name: C_ik
     description: Excitatory-to-inhibitory mode-coupling matrix.
     grounding: [GO:0060079]
     equation: {lhs: C_ik, rhs: '0.5', latex: false}
     conditional: false
   a_i:
-    name: a_i
     description: Per-mode cubic coefficient for the excitatory xi dynamics (a * <V|V^3>).
     equation: {lhs: a_i, rhs: 'a', latex: false}
     conditional: false
   b_i:
-    name: b_i
     description: Per-mode quadratic coefficient for the excitatory xi dynamics.
     equation: {lhs: b_i, rhs: 'b', latex: false}
     conditional: false
   c_i:
-    name: c_i
     description: Per-mode constant for the excitatory eta dynamics.
     equation: {lhs: c_i, rhs: 'c', latex: false}
     conditional: false
   d_i:
-    name: d_i
     description: Per-mode quadratic coefficient for the excitatory eta dynamics.
     grounding: [GO:0060079]
     equation: {lhs: d_i, rhs: 'd', latex: false}
     conditional: false
   e_i:
-    name: e_i
     description: Per-mode cubic coefficient for the inhibitory alpha dynamics.
     equation: {lhs: e_i, rhs: 'a', latex: false}
     conditional: false
   f_i:
-    name: f_i
     description: Per-mode quadratic coefficient for the inhibitory alpha dynamics.
     equation: {lhs: f_i, rhs: 'b', latex: false}
     conditional: false
   h_i:
-    name: h_i
     description: Per-mode constant for the inhibitory beta dynamics.
     equation: {lhs: h_i, rhs: 'c', latex: false}
     conditional: false
   p_i:
-    name: p_i
     description: Per-mode quadratic coefficient for the inhibitory beta dynamics.
     grounding: [GO:0060080]
     equation: {lhs: p_i, rhs: 'd', latex: false}
     conditional: false
   IE_i:
-    name: IE_i
     description: Per-mode constant excitatory input.
     grounding: [GO:0060079]
     equation: {lhs: IE_i, rhs: '0.0', latex: false}
     conditional: false
   II_i:
-    name: II_i
     description: Per-mode constant inhibitory input.
     grounding: [GO:0060080]
     equation: {lhs: II_i, rhs: '0.0', latex: false}
     conditional: false
   m_i:
-    name: m_i
     description: Per-mode adaptation offset entering the tau dynamics.
     equation: {lhs: m_i, rhs: 'r*s*x_0', latex: false}
     conditional: false
   n_i:
-    name: n_i
     description: Per-mode adaptation offset entering the gamma dynamics.
     equation: {lhs: n_i, rhs: 'r*s*x_0', latex: false}
     conditional: false
 coupling_inputs:
-  c_glob:
-    name: c_glob
-  local_coupling:
-    name: local_coupling
+  c_glob: {}
+  local_coupling: {local: true}
 state_variables:
   xi:
-    name: xi
     domain: {lo: -4.0, hi: 4.0}
     description: Excitatory fast variable (per mode).
     grounding: [GO:0042391]
@@ -180,11 +150,9 @@ state_variables:
       lhs: Derivative(xi, t)
       rhs: eta - a_i*xi**3 + b_i*xi**2 - tau + K_11*(A_ik*xi - xi) - K_12*(B_ik*alpha - xi) + IE_i + c_glob + local_coupling*xi
       latex: false
-    variable_of_interest: true
     coupling_variable: true
     initial_value: 0.1
   eta:
-    name: eta
     domain: {lo: -25.0, hi: 20.0}
     description: Excitatory recovery variable (per mode).
     grounding: [GO:0060079]
@@ -192,11 +160,9 @@ state_variables:
       lhs: Derivative(eta, t)
       rhs: c_i - d_i*xi**2 - eta
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
   tau:
-    name: tau
     domain: {lo: 2.0, hi: 10.0}
     description: Excitatory slow adaptation variable (per mode).
     grounding: [GO:0060079]
@@ -204,11 +170,9 @@ state_variables:
       lhs: Derivative(tau, t)
       rhs: r*s*xi - r*tau - m_i
       latex: false
-    variable_of_interest: true
     coupling_variable: false
     initial_value: 0.1
   alpha:
-    name: alpha
     domain: {lo: -4.0, hi: 4.0}
     description: Inhibitory fast variable (per mode).
     grounding: [GO:0060080]
@@ -216,11 +180,10 @@ state_variables:
       lhs: Derivative(alpha, t)
       rhs: beta - e_i*alpha**3 + f_i*alpha**2 - gamma + K_21*(C_ik*xi - alpha) + II_i + c_glob + local_coupling*xi
       latex: false
-    variable_of_interest: false
     coupling_variable: true
     initial_value: 0.1
+    record: false
   beta:
-    name: beta
     domain: {lo: -20.0, hi: 20.0}
     description: Inhibitory recovery variable (per mode).
     grounding: [GO:0042391]
@@ -228,11 +191,10 @@ state_variables:
       lhs: Derivative(beta, t)
       rhs: h_i - p_i*alpha**2 - beta
       latex: false
-    variable_of_interest: false
     coupling_variable: false
     initial_value: 0.1
+    record: false
   gamma:
-    name: gamma
     domain: {lo: 2.0, hi: 10.0}
     description: Inhibitory slow adaptation variable (per mode).
     grounding: [GO:0060080]
@@ -240,6 +202,6 @@ state_variables:
       lhs: Derivative(gamma, t)
       rhs: r*s*alpha - r*gamma - n_i
       latex: false
-    variable_of_interest: false
     coupling_variable: false
     initial_value: 0.1
+    record: false

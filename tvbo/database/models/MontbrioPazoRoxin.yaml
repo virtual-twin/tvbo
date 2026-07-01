@@ -3,7 +3,6 @@ iri: tvbo:MontbrioPazoRoxin
 model_type: mean_field
 parameters:
   Delta:
-    name: Delta
     definition: Mean heterogeneous noise
     value: 1.0
     domain:
@@ -12,9 +11,8 @@ parameters:
       step: 0.01
     description: Mean heterogeneous noise
     grounding:
-      - GO:0061669
+    - GO:0061669
   I:
-    name: I
     definition: External Current
     value: 0.0
     domain:
@@ -23,7 +21,6 @@ parameters:
       step: 0.01
     description: External Current
   J:
-    name: J
     definition: Mean Synaptic weight.
     value: 15.0
     domain:
@@ -32,10 +29,9 @@ parameters:
       step: 0.0001
     description: Mean Synaptic weight
     grounding:
-      - GO:0042391
-      - GO:0099536
+    - GO:0042391
+    - GO:0099536
   cr:
-    name: cr
     definition: It is the weight on Coupling through variable r.
     value: 1.0
     domain:
@@ -44,7 +40,6 @@ parameters:
       step: 0.1
     description: It is the weight on Coupling through variable r
   cv:
-    name: cv
     definition: It is the weight on Coupling through variable V.
     value: 0.0
     domain:
@@ -53,7 +48,6 @@ parameters:
       step: 0.1
     description: It is the weight on Coupling through variable V
   eta:
-    name: eta
     definition: Constant parameter to scale the rate of feedback from the firing rate variable to itself
     value: -5.0
     domain:
@@ -62,9 +56,8 @@ parameters:
       step: 0.0001
     description: Constant parameter to scale the rate of feedback from the firing rate variable to itself
     grounding:
-      - GO:0099605
+    - GO:0099605
   tau:
-    name: tau
     definition: Membrane time constant
     value: 1.0
     domain:
@@ -74,40 +67,35 @@ parameters:
     description: Membrane time constant
 description: ''
 references:
-  - Montbrio2015
+- Montbrio2015
 coupling_inputs:
-  c_glob0:
-    name: c_glob0
-  c_glob1:
-    name: c_glob1
+  c_glob0: {}
+  c_glob1: {}
 state_variables:
   V:
-    name: V
     domain:
       lo: -2.0
       hi: 1.5
-    description: ''
     equation:
       lhs: Derivative(V, t)
       rhs: (I + J*r*tau + V**2 + c_glob0*cr*tau + c_glob1*cv + eta - pi**2*r**2*tau**2)/tau
       latex: false
-    variable_of_interest: true
     coupling_variable: true
     initial_value: 0.1
   r:
-    name: r
     domain:
       lo: 0.0
-      hi: -2.0
-    description: ''
+      hi: .inf
+      enforce: clamp
+    distribution:
+      name: Uniform
+      domain:
+        lo: 0.0
+        hi: 2.0
     equation:
       lhs: Derivative(r, t)
       rhs: (Delta/(pi*tau) + 2*V*r)/tau
       latex: false
-    variable_of_interest: true
     coupling_variable: true
-    boundaries:
-      lo: 0.0
-      hi: .inf
     initial_value: 0.1
 number_of_modes: 1
