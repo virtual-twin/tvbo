@@ -146,18 +146,11 @@ solver_class = SOLVER_MAP.get(method)
 assert solver_class, f"Unknown solver method: {method}. Valid: {list(SOLVER_MAP.keys())}"
 dt = float(integration.step_size)
 
-# Backend-neutral differentiation strategy -> native-solver kwargs. Windows are in
-# ms of simulated time; the JAX solver counts integration steps, so convert with dt.
-_diff = getattr(integration, 'differentiation', None)
-solver_kwargs = []
-if _diff is not None:
-    _tw = getattr(_diff, 'truncation_window', None)
-    if _tw is not None:
-        solver_kwargs.append(f"grad_horizon={int(round(float(_tw) / dt))}")
-    _ci = getattr(_diff, 'checkpoint_interval', None)
-    if _ci is not None:
-        solver_kwargs.append(f"block_size={int(round(float(_ci) / dt))}")
-solver_kwargs_str = ", ".join(solver_kwargs)
+# Differentiation strategy -> native-solver kwargs, resolved in the tvboptim Python
+# layer (shared with the solver template) rather than duplicated across mako blocks.
+from tvbo.templates.tvboptim.utils import resolve_solver_kwargs, resolve_optimizer_mode
+solver_kwargs_str = resolve_solver_kwargs(integration, dt)
+opt_mode = resolve_optimizer_mode(integration)
 
 # Noise configuration from state_variables or integration.
 # tvboptim's AdditiveGaussianNoise expects sigma = standard deviation
@@ -1324,33 +1317,14 @@ else:
 %>
 
 <%
-def get_observation_dependencies(obs_name, derived_obs_dict):
-    deps = set()
-    dobs_def = derived_obs_dict.get(obs_name)
-    if dobs_def:
-        for src in [_s for _s in (dobs_def.source or []) if (getattr(_s, 'name', None) or _s) in _all_observations]:
-            src_name = str(src) if not hasattr(src, 'name') else str(src.name)
-            deps.add(src_name)
-    return deps
-
-def toposort_observations(obs_names, derived_obs_dict):
-    sorted_obs = []
-    visited = set()
-    def visit(name):
-        if name in visited:
-            return
-        visited.add(name)
-        deps = get_observation_dependencies(name, derived_obs_dict)
-        for dep in deps:
-            if dep in obs_names:
-                visit(dep)
-        sorted_obs.append(name)
-    for name in obs_names:
-        visit(name)
-    return sorted_obs
+# Observation dependency ordering lives in the tvboptim adapter (utils), harmonized
+# with the derived-variable/parameter dependency graph — the template only calls it.
+# toposort_observations emits any observation that lists another as a `source` AFTER
+# that source; independents keep their input order.
+from tvbo.templates.tvboptim.utils import toposort_observations
 
 sorted_observation_names = list(observation_names)
-sorted_derived_obs_names = toposort_observations(list(derived_observation_names), derived_observations_dict)
+sorted_derived_obs_names = toposort_observations(list(derived_observation_names), derived_observations_dict, _all_observations)
 %>
 
 def compute_all_observations(result, state, result_transient=None):
@@ -1588,7 +1562,7 @@ def run_stage_${stage_name}(
         learning_rate=learning_rate,
         **opt_kwargs
     )
-    fitted_params, fitting_data = opt.run(marked_state, max_steps=max_steps)
+    fitted_params, fitting_data = opt.run(marked_state, max_steps=max_steps, mode="${opt_mode}")
     return fitted_params, fitting_data
 
 % endfor
@@ -1662,7 +1636,7 @@ def run_optimization(
         max_steps=max_steps, callback=callback, print_every=print_every,
         save_every=save_every, **kwargs
     )
-    fitted_params, fitting_data = opt.run(init_state, max_steps=max_steps)
+    fitted_params, fitting_data = opt.run(init_state, max_steps=max_steps, mode="${opt_mode}")
     return fitted_params, fitting_data
 % endif
 
@@ -2853,49 +2827,21 @@ def run_experiment(
 % endif
 
 % if loss_functions:
-            # Loss function with observation monitors
-% for obs_name in _lf_all_simulated:
-<%
-    obs_class = ''.join(word.capitalize() for word in obs_name.split('_'))
-%>
-            _${obs_name}_monitor = ${obs_class}(history=_opt_transient)
-% endfor
-
+            # Loss via the declarative observation pipeline. The objective is built from the
+            # SAME compute_all_observations path as the diagnostics, so it is byte-identical to
+            # the `loss` observation and stays backend-independent (no monitor-class references).
             def loss_fn(state):
-                result = _opt_model_fn(state)
-% for obs_name in _lf_all_simulated:
-                _${obs_name} = _${obs_name}_monitor(result)
-% endfor
-% for dobs_name in _lf_derived_obs:
-<%
-    dinfo = _lf_derived_info.get(dobs_name, {})
-    dcall = dinfo.get('callable')
-    dargs = dinfo.get('args', [])
-    dsources = dinfo.get('sources', [])
-    positional = [f"__{s}" for s in dsources]
-    keywords = [f"{name}={val}" for name, val in dargs if str(val) not in dsources]
-%>
-% if dcall:
-% for src in dsources:
-                __${src} = _${src}.data if hasattr(_${src}, 'data') else _${src}
-% endfor
-                _${dobs_name} = ${dcall}(${', '.join(positional + keywords)})
-% endif
-% endfor
+                _obs = compute_all_observations(_opt_model_fn(state), state, _opt_transient)
 <%
     loss_arg_exprs = []
     for a in _lf_args:
         if a['type'] == 'observation':
             obs_name_arg = a['obs_name']
             if obs_name_arg in network_observation_names:
-                loss_arg_exprs.append(f"kwargs.get('{obs_name_arg}', {obs_name_arg})")
-            elif obs_name_arg in derived_observation_names:
-                loss_arg_exprs.append(f"__{obs_name_arg}" if f"__{obs_name_arg}" in ''.join([f"__{s}" for d in _lf_derived_info.values() for s in d.get('sources', [])]) else f"_{obs_name_arg}")
+                # Empirical target: allow a runtime override, else the loaded constant.
+                loss_arg_exprs.append(f"kwargs.get('{obs_name_arg}', _obs.{obs_name_arg})")
             else:
-                if a.get('output_key'):
-                    loss_arg_exprs.append(f"_{obs_name_arg}.{a['output_key']}")
-                else:
-                    loss_arg_exprs.append(f"_{obs_name_arg}.data")
+                loss_arg_exprs.append(f"_obs.{obs_name_arg}")
         elif a['type'] == 'constant':
             loss_arg_exprs.append(str(a['value']))
         elif a['type'] == 'runtime':

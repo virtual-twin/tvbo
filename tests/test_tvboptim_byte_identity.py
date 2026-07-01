@@ -409,6 +409,80 @@ def test_tbptt_fd_gradient():
     assert_identical("TBPTT FD gradient", fd_tvbo, np.asarray(fd_ref), atol=1e-10)
 
 
+def test_tbptt_optimization():
+    """Fit G to empirical FC, both descent legs, tvbo vs hand-written run_optim.
+
+    `integration.differentiation` drives the descent: reverse + truncation_window ->
+    `Heun(grad_horizon=W)` + optimizer mode 'rev' (TBPTT); forward + no window ->
+    plain `Heun()` + mode 'fwd' (exact untruncated full AD). Runs under JIT.
+    """
+    import optax
+    import jax.numpy as jnp
+    from tvbo.datamodel.schema import Differentiation
+    from tvboptim.experimental.network_dynamics import prepare
+    from tvboptim.experimental.network_dynamics.solvers import Heun
+    from tvboptim.observations.observation import compute_fc, rmse
+    from tvboptim.observations.tvb_monitors.bold import HRFBold
+    from tvboptim.optim.optax import OptaxOptimizer
+    from tvboptim.types import Parameter
+
+    T1, TRANSIENT, DT, SKIP = 7200.0, 300.0, 1.0, 2
+    LR, MAX_STEPS, G0, W = 1.0, 4, 8.0, 100
+
+    def _leg(diff, ref_solver, mode):
+        exp = SimulationExperiment.from_file(str(EXPERIMENTS_DIR / "TBPTT_JansenRit_FC_Optimization.yaml"))
+        exp.integration.duration = T1
+        exp.integration.transient_time = TRANSIENT
+        exp.integration.differentiation = diff
+        exp.observations["fc"].pipeline[0].arguments[1].value = SKIP
+        exp.optimizations["fit_G"].stages[0].max_iterations = MAX_STEPS
+        for k in ("lyapunov", "ad_gradient", "fd_gradient"):
+            del exp.observations[k]
+        exp.configure()
+
+        Wm = np.asarray(exp.network.weights)
+        labels = [n.label for n in exp.network.nodes]
+        r = exp.run("tvboptim", mode="optimization")
+        g_tvbo = np.asarray(r.optimizations.fit_G.state.coupling.c_sigmJR.G)
+        fc_target = jnp.asarray(np.asarray(r.optimizations.fit_G.simulation.observations.empirical_fc))
+
+        # Warmup forward pass is solver-independent (grad_horizon only changes the
+        # backward pass), so the plain-Heun reference warmup reproduces the history.
+        net, warm_res = _tbptt_reference_network(Wm, labels, TRANSIENT, DT)
+        solve, cfg = prepare(net, ref_solver, t1=T1, dt=DT)
+        bold = HRFBold(period=720.0, voi=0, history=warm_res)
+
+        def loss(state):
+            return rmse(compute_fc(bold(solve(state)), skip_t=SKIP), fc_target)
+
+        cfg.coupling["instant"].G = Parameter(jnp.asarray(G0))
+        opt = OptaxOptimizer(loss, optax.adam(LR), has_aux=False)
+        fitted, _ = opt.run(cfg, max_steps=MAX_STEPS, mode=mode)
+        return g_tvbo, np.asarray(fitted.coupling["instant"].G)
+
+    g_t, g_r = _leg(Differentiation(truncation_window=100.0, mode="reverse"), Heun(grad_horizon=W), "rev")
+    assert_identical("TBPTT optim (rev, grad_horizon=TBPTT)", g_t, g_r, atol=1e-9)
+
+    g_t, g_r = _leg(Differentiation(mode="forward"), Heun(), "fwd")
+    assert_identical("TBPTT optim (fwd, full AD)", g_t, g_r, atol=1e-9)
+
+
+def test_tbptt_gsweep_runs():
+    """G-sweep exploration smoke test. The per-point observable (FC-RMSE via
+    compute_all_observations) is byte-identical to the diagnostics; the full-sweep
+    grid can't be asserted byte-identical (eager pmap times out, JIT drifts per
+    stiff grid point), so this just checks the sweep runs and stays finite."""
+    exp = SimulationExperiment.from_file(str(EXPERIMENTS_DIR / "TBPTT_JansenRit_FC_Optimization.yaml"))
+    exp.integration.duration = 7200.0
+    exp.integration.transient_time = 300.0
+    exp.observations["fc"].pipeline[0].arguments[1].value = 2
+    exp.configure()
+    r = exp.run("tvboptim", mode="exploration", n_G=3, n_pmap=1)
+    grid = np.asarray(r.explorations.G_sweep.results)
+    assert grid.size == 3, f"expected 3-point G sweep, got {grid.shape}"
+    assert np.all(np.isfinite(grid)), "G sweep produced non-finite values"
+
+
 # =============================================================================
 # EI — custom two-population Reduced Wong-Wang with dual-output coupling
 # =============================================================================

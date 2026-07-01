@@ -49,24 +49,14 @@ is_diffrax = solver_class == 'DiffraxSolver'
 dt = float(integration.step_size) if integration and integration.step_size else 0.1
 
 # Extract state variable bounds for BoundedSolver
-from tvbo.templates.tvboptim.utils import get_state_bounds, format_bounds_array
+from tvbo.templates.tvboptim.utils import get_state_bounds, format_bounds_array, resolve_solver_kwargs
 state_bounds_lo, state_bounds_hi, has_state_bounds = get_state_bounds(model)
 state_bounds_lo_str = format_bounds_array(state_bounds_lo, 'jax')
 state_bounds_hi_str = format_bounds_array(state_bounds_hi, 'jax')
 
-# Map the backend-neutral differentiation strategy onto native-solver kwargs.
-# truncation_window / checkpoint_interval are in ms of simulated time; the native
-# JAX solver counts integration steps, so convert with dt.
-diff = getattr(integration, 'differentiation', None) if integration else None
-solver_kwargs = []
-if diff is not None and not is_diffrax:
-    _tw = getattr(diff, 'truncation_window', None)
-    if _tw is not None:
-        solver_kwargs.append(f"grad_horizon={int(round(float(_tw) / dt))}")
-    _ci = getattr(diff, 'checkpoint_interval', None)
-    if _ci is not None:
-        solver_kwargs.append(f"block_size={int(round(float(_ci) / dt))}")
-solver_kwargs_str = ", ".join(solver_kwargs)
+# Differentiation strategy -> native-solver kwargs, resolved in the tvboptim Python
+# layer (shared with the experiment template). Diffrax has no such knobs.
+solver_kwargs_str = resolve_solver_kwargs(integration, dt, is_diffrax=is_diffrax)
 %>
 % if is_diffrax:
 import diffrax
