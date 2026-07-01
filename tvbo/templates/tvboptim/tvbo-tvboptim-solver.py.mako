@@ -53,6 +53,20 @@ from tvbo.templates.tvboptim.utils import get_state_bounds, format_bounds_array
 state_bounds_lo, state_bounds_hi, has_state_bounds = get_state_bounds(model)
 state_bounds_lo_str = format_bounds_array(state_bounds_lo, 'jax')
 state_bounds_hi_str = format_bounds_array(state_bounds_hi, 'jax')
+
+# Map the backend-neutral differentiation strategy onto native-solver kwargs.
+# truncation_window / checkpoint_interval are in ms of simulated time; the native
+# JAX solver counts integration steps, so convert with dt.
+diff = getattr(integration, 'differentiation', None) if integration else None
+solver_kwargs = []
+if diff is not None and not is_diffrax:
+    _tw = getattr(diff, 'truncation_window', None)
+    if _tw is not None:
+        solver_kwargs.append(f"grad_horizon={int(round(float(_tw) / dt))}")
+    _ci = getattr(diff, 'checkpoint_interval', None)
+    if _ci is not None:
+        solver_kwargs.append(f"block_size={int(round(float(_ci) / dt))}")
+solver_kwargs_str = ", ".join(solver_kwargs)
 %>
 % if is_diffrax:
 import diffrax
@@ -82,7 +96,7 @@ def get_solver():
     base_solver = DiffraxSolver(diffrax.Dopri5())
     % endif
 % else:
-    base_solver = ${solver_class}()
+    base_solver = ${solver_class}(${solver_kwargs_str})
 % endif
 % if has_state_bounds:
     # Wrap solver with BoundedSolver to enforce state variable domain constraints

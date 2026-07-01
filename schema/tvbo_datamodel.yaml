@@ -1223,15 +1223,21 @@ classes:
                 ifabsent: boolean(false)
                 description: "Whether to generate a directed graph."
             parameters:
-                range: Parameter
+                range: GeneratorParameter
                 multivalued: true
                 inlined: true
                 description: >
-                    Generator parameters (e.g. n, k, p, seed), keyed by name,
-                    each carrying a concrete ``value`` (Parameter). Builder
-                    (Callable) generators receive these as keyword arguments;
-                    declarative library generators may additionally use the
-                    ``bindings`` map to the native constructor call.
+                    Generator parameters keyed by name (e.g. n, k, p, seed).
+                    Each is a ``GeneratorParameter`` that plays two roles with
+                    one shape: in a curated generator entry it is a typed
+                    *declaration* (a ``range`` type, an optional ``ifabsent``
+                    default and a ``required`` flag, with no value); in a
+                    concrete experiment the same key carries a concrete
+                    ``value`` (the inherited ``Parameter.value`` slot). Builder
+                    (Callable) generators receive the resolved values as keyword
+                    arguments; declarative library generators additionally pass
+                    them positionally via the per-backend ``bindings`` map. The
+                    number of nodes is always taken from Network.number_of_nodes.
             bindings:
                 range: Binding
                 multivalued: true
@@ -1644,6 +1650,49 @@ classes:
                     constructor_args: [{name: period, value: 1000.0}]}
                 range: ClassReference
                 inlined: true
+            analysis:
+                range: Analysis
+                inlined: true
+                description: >-
+                    Marks this observation as an analysis observable that operates
+                    on the solve/loss rather than a result-data pipeline (autodiff
+                    gradient, finite-difference gradient, or Lyapunov spectrum).
+
+    Analysis:
+        class_uri: tvbo:Analysis
+        description: >-
+            A general analysis observable: a quantity obtained by ANALYZING the model,
+            its solve, or a derived loss, rather than by transforming the recorded
+            trajectory. It is deliberately broad — the same concept covers parameter
+            sensitivities/gradients (autodiff or finite-difference), stability spectra
+            (Lyapunov), bifurcation quantities, identifiability/Fisher-information
+            metrics, and future analyses. `type` names the analysis (extensible);
+            `target` and `wrt` bind it to what is analyzed and with respect to what;
+            `parameters` carries the analysis-specific configuration. Backend-neutral:
+            each backend maps `type` to its own machinery, or emits a comment and
+            skips when it has no equivalent (it does not raise).
+        slots:
+            - parameters
+        attributes:
+            type:
+                range: string
+                description: >-
+                    The analysis kind, e.g. 'gradient', 'finite_difference',
+                    'lyapunov', 'bifurcation', 'identifiability', 'sensitivity'.
+                    Extensible — backends dispatch on it.
+            target:
+                range: string
+                description: >-
+                    What is analyzed: typically an observation or loss name (e.g.
+                    'loss' for a gradient). Omitted when the analysis acts on the
+                    whole solve (e.g. a Lyapunov spectrum).
+            wrt:
+                range: string
+                multivalued: true
+                description: >-
+                    Quantity/quantities the analysis is taken with respect to, e.g.
+                    a parameter 'c_sigmJR.G' for a gradient/sensitivity. Omitted for
+                    analyses that need no explicit differentiation target.
 
     # ProcessingStep, DataInjection, ArgumentMapping removed
     # Function now handles input -> process -> output flow directly
@@ -1919,6 +1968,42 @@ classes:
                     during exploration auto-expansion. Length must match parameter shape
                     (e.g., n_nodes for shape "(n_nodes,)"). If not set, all elements
                     share the same domain.
+
+    GeneratorParameter:
+        class_uri: tvbo:GeneratorParameter
+        is_a: Parameter
+        description: >-
+            A GraphGenerator parameter: a valued ``Parameter`` that additionally
+            declares its typed argument interface, so one shape serves both the
+            curated menu and the instantiated experiment. In a curated generator
+            entry each parameter is a *declaration* — a type (``range``), an
+            optional default (``ifabsent``) and a ``required`` flag, carrying no
+            value. In a concrete experiment the same key is supplied *by value*
+            via the inherited ``value`` slot. The number of nodes is never a
+            parameter — it is always taken from ``Network.number_of_nodes``.
+        attributes:
+            range:
+                range: string
+                description: >-
+                    Declared type of the argument — a LinkML range name: a
+                    primitive (``integer``, ``float``, ``string``,
+                    ``uriorcurie``) or a class (e.g. ``Distribution``).
+                    Declaration-only; unused when the parameter carries a
+                    concrete ``value``.
+            required:
+                range: boolean
+                description: >-
+                    Whether this argument must be supplied when instantiating the
+                    generator. Optional arguments (e.g. ``seed``) set this to
+                    false. Declaration-only; ignored for valued parameters.
+            ifabsent:
+                range: string
+                description: >-
+                    Default value applied when the argument is absent (LinkML
+                    ``ifabsent`` semantics, e.g. ``preserve`` → ``binary_mask``).
+                    Read by the procedure engine
+                    (``tvbo/graph_generators/engine.py``) to seed unset
+                    parameters. Declaration-only.
 
     CouplingInput:
         class_uri: tvbo:CouplingInput
@@ -3182,6 +3267,37 @@ classes:
             delayed:
                 range: boolean
                 ifabsent: true
+            differentiation:
+                range: Differentiation
+                inlined: true
+                description: >-
+                    Backend-neutral strategy for propagating gradients through the
+                    temporal integration (e.g. truncated backprop-through-time).
+
+    Differentiation:
+        class_uri: tvbo:Differentiation
+        description: >-
+            Backend-neutral configuration for how gradients are propagated through
+            the temporal integration. Expressed in physical/semantic terms; each
+            backend maps it to its own mechanism (JAX solver grad_horizon /
+            block_size, Julia adjoint sensitivity, ...). Backends without autodiff
+            (e.g. MATLAB) emit a comment noting differentiation is unsupported and
+            proceed with the plain forward integration -- they do not raise.
+        attributes:
+            truncation_window:
+                range: float
+                description: >-
+                    Truncated-BPTT window in milliseconds of simulated time:
+                    gradients flow back at most this far. Omit for full BPTT.
+            checkpoint_interval:
+                range: float
+                description: >-
+                    Gradient-checkpointing interval in milliseconds (backward-pass
+                    memory/time trade-off). Omit for no checkpointing.
+            mode:
+                range: string
+                ifabsent: string(reverse)
+                description: "Autodiff direction: 'reverse' (default) or 'forward'."
 
     Coupling:
         class_uri: tvbo:Coupling
