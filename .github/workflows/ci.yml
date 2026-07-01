@@ -64,8 +64,10 @@ jobs:
                   cache-dependency-glob: |
                       pyproject.toml
                       .github/workflows/ci.yml
-            - name: Install mypy
-              run: uv pip install mypy
+            - name: Install (editable, no-deps → generates datamodel) + mypy
+              # `-e .` fires the hatch build hook, which regenerates the untracked
+              # tvbo/datamodel/{schema,pydantic}.py that mypy needs to see.
+              run: uv pip install -e . --no-deps && uv pip install mypy
             - name: Mypy — type check (non-blocking)
               run: mypy tvbo || true
 
