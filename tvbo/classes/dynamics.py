@@ -168,6 +168,16 @@ def class2metadata(ontoclass: Any, metadata: Any):
         else:
             boundaries = None
 
+        # Preserve the descriptive stateVariableRange (IC-sampling support) as the
+        # sampling distribution when a clamp exists — mirrors the file/adapter paths.
+        # (Previously `range` was computed but dropped, so it was lost on round-trip.)
+        sv_range = (
+            tvbo_datamodel.Range(lo=float(range[0]), hi=float(range[1]))
+            if range and range[0] is not None and range[1] is not None
+            else None
+        )
+        _sv_domain, _sv_distribution = _fold_range_boundaries(sv_range, boundaries)
+
         td = v.has_derivative.first()
         if k not in metadata.state_variables:
             metadata.state_variables.update(
@@ -181,7 +191,8 @@ def class2metadata(ontoclass: Any, metadata: Any):
                             .replace("np.", ""),
                         ),
                         description=ontology.get_def(v),
-                        boundaries=boundaries,
+                        domain=_sv_domain,
+                        distribution=_sv_distribution,
                         coupling_variable=v in ontoclass.has_cvar,
                     )
                 }
@@ -195,7 +206,14 @@ def class2metadata(ontoclass: Any, metadata: Any):
                     rhs=td.value.first().replace("numpy.", "").replace("np.", ""),
                 ),
                 "description": state_var.description or ontology.get_def(v),
-                "boundaries": state_var.boundaries or boundaries,
+                # An ontology-declared clamp (stateVariableBoundaries) is the
+                # operative constraint, so it wins over a pre-existing
+                # descriptive (unenforced) domain — consistent with how the
+                # file loader folds boundaries → domain+enforce=clamp. The
+                # descriptive range is kept as the sampling distribution (a
+                # pre-existing distribution takes precedence).
+                "domain": _sv_domain or state_var.domain,
+                "distribution": state_var.distribution or _sv_distribution,
                 "coupling_variable": state_var.coupling_variable
                 or (v in ontoclass.has_cvar),
             }
@@ -604,25 +622,88 @@ _DYNAMICS_SLOT_ALIASES = {
 }
 
 
-def _resolve_dynamics_aliases(d: dict) -> dict:
-    """Recursively resolve slot aliases in a Dynamics dict tree.
+def _clamp_domain(rng):
+    """Mark a bounds Range as a hard clamp (``enforce='clamp'``) and return it.
 
-    Walks nested dicts that represent sub-Dynamics (modes/components) and
-    replaces alias keys with their canonical names at every level.
+    Folds a legacy ``boundaries`` Range into the unified ``domain`` representation:
+    ``boundaries`` always meant "clamp the trajectory to [lo, hi]", which is now
+    expressed as a ``domain`` with ``enforce='clamp'``. Returns None unchanged.
+    """
+    if rng is None:
+        return None
+    try:
+        rng.enforce = "clamp"
+    except (AttributeError, ValueError):
+        pass
+    return rng
+
+
+def _fold_range_boundaries(rng, boundaries):
+    """Fold a descriptive range + hard-clamp boundaries into ``(domain, distribution)``.
+
+    Mirrors ``adapters.tvb`` so ontology / programmatic imports match file ingestion:
+    the clamp (``boundaries``) becomes the enforced ``domain``; the descriptive range
+    (the IC-sampling support) is preserved as the sampling ``distribution`` — but only
+    when it differs from the clamp, since an identical clamp already conveys it. With no
+    clamp, the descriptive range is the (unenforced) ``domain`` and there is no separate
+    distribution. ``rng``/``boundaries`` are ``Range`` objects or ``None``.
+    """
+    if boundaries is None:
+        return rng, None
+    domain = _clamp_domain(boundaries)
+    distribution = None
+    if rng is not None and (rng.lo, rng.hi) != (boundaries.lo, boundaries.hi):
+        distribution = tvbo_datamodel.Distribution(domain=rng)
+    return domain, distribution
+
+
+def _fold_component_alias(d: dict) -> None:
+    """Recursively rename the Dynamics-only ``components`` → ``modes`` slot alias.
+
+    Kept out of :data:`tvbo.utils.yaml_loader._SLOT_ALIASES` (which is applied to
+    every loaded document) because ``components`` is a ``modes`` alias only inside
+    a Dynamics. Mutates ``d`` in place at every nesting level.
     """
     for alias, canonical in _DYNAMICS_SLOT_ALIASES.items():
         if alias in d:
             if canonical in d:
                 raise ValueError(
-                    f"Cannot specify both '{alias}' and '{canonical}' — '{alias}' is an alias for '{canonical}'."
+                    f"Cannot specify both '{alias}' and '{canonical}' — "
+                    f"'{alias}' is an alias for '{canonical}'."
                 )
             d[canonical] = d.pop(alias)
-    # Recurse into sub-dynamics (modes values may themselves use aliases)
     modes = d.get("modes")
     if isinstance(modes, dict):
         for v in modes.values():
             if isinstance(v, dict):
-                _resolve_dynamics_aliases(v)
+                _fold_component_alias(v)
+
+
+def _resolve_dynamics_aliases(d: dict) -> dict:
+    """Normalize a Dynamics kwargs/metadata dict through the SINGLE shared route.
+
+    Every construction path — ``Dynamics(**dict)``, ``from_file``, ``from_string``,
+    the ``iri`` backfill, and the network/experiment coercion helpers — funnels
+    through here, so they apply identical conveniences and cannot drift:
+
+    * the Dynamics-specific ``components`` → ``modes`` alias (recursively), then
+    * :func:`tvbo.utils.yaml_loader._normalize_loaded` — the one implementation
+      shared with the LinkML ``load``/``loads``/``load_as_dict`` path: global slot
+      aliases, the legacy ``boundaries``/``range`` → ``domain`` fold (``boundaries``
+      gaining ``enforce: clamp``; a co-existing descriptive ``domain`` preserved as
+      the IC-sampling ``distribution``), and the terse ``distribution: {lo, hi}``
+      lift. A bare ``domain`` is left untouched (``enforce`` defaults to ``none``),
+      so clamping stays opt-in.
+
+    ``_normalize_loaded`` rebuilds mappings, so the normalized content is written
+    back into ``d`` in place (``clear`` + ``update``) to honour the in-place
+    contract the coercion callers rely on; ``d`` is also returned for convenience.
+    """
+    _fold_component_alias(d)
+    normalized = yaml_loader._normalize_loaded(d)
+    if normalized is not d:
+        d.clear()
+        d.update(normalized)
     return d
 
 
@@ -1232,9 +1313,15 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
     # -----------------------
     @staticmethod
     def _coerce_range(domain):
-        """Accept None | Range | (lo, hi[, step]) and return tvbo_datamodel.Range."""
+        """Accept None | Range | (lo, hi[, step]) | {lo, hi[, step, enforce]} → Range."""
         if domain is None or isinstance(domain, tvbo_datamodel.Range):
             return domain
+        if isinstance(domain, dict):
+            kw = {k: v for k, v in domain.items() if k in ("lo", "hi", "step", "enforce") and v is not None}
+            for k in ("lo", "hi", "step"):
+                if k in kw:
+                    kw[k] = float(kw[k])
+            return tvbo_datamodel.Range(**kw) if kw else None
         if isinstance(domain, (list, tuple)):
             if len(domain) == 2:
                 lo, hi = domain
@@ -1385,12 +1472,20 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
             if equation is not None
             else None
         )
+        # ``boundaries`` is the legacy name for a hard clamp; fold it into the
+        # unified ``domain`` with enforce='clamp'. When both are given, the clamp
+        # is the operative domain and the descriptive ``domain`` (the IC-sampling
+        # range) is preserved as the sampling ``distribution`` rather than dropped.
+        _domain, _distribution = _fold_range_boundaries(
+            self._coerce_range(domain),
+            self._coerce_range(boundaries) if boundaries is not None else None,
+        )
         self.state_variables[str(name)] = tvbo_datamodel.StateVariable(
             name=str(name),
             equation=eq,
             description=description,
-            domain=self._coerce_range(domain),
-            boundaries=self._coerce_range(boundaries),
+            domain=_domain,
+            distribution=_distribution,
             initial_value=initial_value if initial_value is not None else None,
             unit=unit,
             coupling_variable=coupling_variable,
@@ -1771,22 +1866,31 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         return [eq.subs(sub) for eq in self.get_equations().values()]
 
     def calculate_derived_parameters(self):
-        if self.derived_parameters is not None:
-            for k, dp in self.derived_parameters.items():
-                eq = parse_eq(
-                    dp.equation,
-                    local_dict=self.get_symbolic_elements(),
-                    evaluate=False,
-                ).subs({Symbol(p.name): p.value for p in self.parameters.values()})
-                sol = eq.evalf()
-                # Convert SymPy Float to Python float for YAML serialization
-                self.derived_parameters[k].value = float(sol)
-
-            return {
-                k: self.derived_parameters[k].value for k in self.derived_parameters
-            }
-        else:
+        if self.derived_parameters is None:
             return None
+        from tvbo.utils import is_array_valued
+
+        # Loop-invariant: build the symbol scope and the scalar-parameter
+        # substitution once. Array-valued parameters (mode-coupling matrices,
+        # quadrature vectors) are excluded — they have no load-time scalar and
+        # would make ``subs`` raise — so the derived parameters that depend on
+        # them stay symbolic and are recomputed at runtime.
+        local_dict = self.get_symbolic_elements()
+        scalar_subs = {
+            Symbol(p.name): p.value
+            for p in self.parameters.values()
+            if not is_array_valued(p.value)
+        }
+        for k, dp in self.derived_parameters.items():
+            try:
+                eq = parse_eq(dp.equation, local_dict=local_dict, evaluate=False).subs(scalar_subs)
+                # Convert SymPy Float to Python float for YAML serialization.
+                self.derived_parameters[k].value = float(eq.evalf())
+            except (TypeError, ValueError):
+                # Array-valued / unresolved derived parameter: no load-time scalar;
+                # recomputed at runtime by the generated update_derived_parameters.
+                self.derived_parameters[k].value = None
+        return {k: self.derived_parameters[k].value for k in self.derived_parameters}
 
     def get_dependency_tree(self, ontomapping=False, include_state_equations=False):
         import sympy
@@ -2322,8 +2426,13 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
                     domain = getattr(dist, "domain", None) or getattr(
                         sv, "domain", None
                     )
-                    lo = float(domain.lo) if domain and domain.lo is not None else -10.0
-                    hi = float(domain.hi) if domain and domain.hi is not None else 10.0
+                    # Guard against non-finite / missing bounds: a distribution
+                    # without its own domain falls back to sv.domain, which may be a
+                    # half-open clamp (e.g. [0, inf)); uniform(0, inf) would overflow.
+                    _dlo = getattr(domain, "lo", None) if domain else None
+                    _dhi = getattr(domain, "hi", None) if domain else None
+                    lo = float(_dlo) if (isinstance(_dlo, (int, float)) and np.isfinite(_dlo)) else -10.0
+                    hi = float(_dhi) if (isinstance(_dhi, (int, float)) and np.isfinite(_dhi)) else 10.0
                     dist_name = str(getattr(dist, "name", "Uniform")).lower()
                     if dist_name in ("gaussian", "normal"):
                         sv_init = np.random.normal(
@@ -2332,12 +2441,16 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
                     else:
                         sv_init = np.random.uniform(lo, hi, size=N)
                 elif random:
-                    # Legacy fallback: sample from domain/boundaries
-                    lo = sv.domain.lo if sv.domain else -10
-                    hi = sv.domain.hi if sv.domain else 10
-                    if sv.boundaries:
-                        lo = max(lo, sv.boundaries.lo)
-                        hi = min(hi, sv.boundaries.hi)
+                    # Legacy fallback: sample from the domain range. The domain
+                    # may carry a one-sided clamp (e.g. [0, inf) for a firing
+                    # rate), so guard against non-finite / inverted bounds —
+                    # uniform(0, inf) would yield inf/NaN initial states.
+                    dlo = getattr(sv.domain, "lo", None) if sv.domain else None
+                    dhi = getattr(sv.domain, "hi", None) if sv.domain else None
+                    lo = dlo if (isinstance(dlo, (int, float)) and np.isfinite(dlo)) else -10.0
+                    hi = dhi if (isinstance(dhi, (int, float)) and np.isfinite(dhi)) else 10.0
+                    if hi <= lo:
+                        hi = lo + 1.0
                     sv_init = np.random.uniform(lo, hi, size=N)
                 else:
                     # No distribution, no random flag → use initial_value

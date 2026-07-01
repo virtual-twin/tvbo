@@ -1526,8 +1526,13 @@ def import_model(
             "symbol": str(sv.name),
             "stateVariableRange": (f"lo={sv.domain.lo}, hi={sv.domain.hi}" if sv.domain else ""),
         }
-        if sv.boundaries:
-            properties["stateVariableBoundaries"] = f"lo={sv.boundaries.lo}, hi={sv.boundaries.hi}"
+        # A clamped domain (enforce='clamp') is the modern equivalent of the
+        # former dedicated boundaries slot; export it as stateVariableBoundaries.
+        from tvbo.utils import domain_enforcement
+
+        _dom = sv.domain
+        if _dom and domain_enforcement(_dom) == "clamp":
+            properties["stateVariableBoundaries"] = f"lo={_dom.lo}, hi={_dom.hi}"
 
         sv_class = _create_subclass(sv.name + model_suffix, onto.StateVariable, properties, model_class)
         if sv.coupling_variable:
@@ -1550,12 +1555,16 @@ def import_model(
             model_class.has_state_variable.append(sv_class)
 
     # Parameters
+    from tvbo.utils import is_array_valued
+
     for k, p in model_data.parameters.items():
         properties = {
             "label": k + model_suffix,
             "symbol": getattr(p, "symbol", str(k)),
             "definition": str(p.description),
-            "defaultValue": (float(p.value) if not isinstance(p.value, list) else p.default),
+            # Array-valued constants (list/tuple/ndarray) have no scalar default —
+            # fall back to p.default rather than float()-ing the array.
+            "defaultValue": (p.default if is_array_valued(p.value) else float(p.value)),
             "range": (f"lo={p.domain.lo}, hi={p.domain.hi}, step={p.domain.step}" if p.domain else ""),
         }
         p_class = _create_subclass(k + model_suffix, onto.Parameter, properties, model_class)

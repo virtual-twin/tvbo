@@ -3,28 +3,22 @@ model_type: generic
 source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl
 parameters:
   G:
-    name: G
     value: 10.0
     description: Gravitational acceleration.
   L1:
-    name: L1
     value: 1.0
     description: Length of first rod.
   L2:
-    name: L2
     value: 1.0
     description: Length of second rod.
   M1:
-    name: M1
     value: 1.0
     description: Mass of first bob.
   M2:
-    name: M2
     value: 1.0
     description: Mass of second bob.
 state_variables:
   theta1:
-    name: theta1
     description: Angle of first pendulum (θ₁).
     equation:
       lhs: Derivative(theta1, t)
@@ -32,7 +26,6 @@ state_variables:
       latex: false
     initial_value: 1.5707963267948966
   omega1:
-    name: omega1
     description: Angular velocity of first pendulum (ω₁).
     equation:
       lhs: Derivative(omega1, t)
@@ -40,7 +33,6 @@ state_variables:
       latex: false
     initial_value: 0.0
   theta2:
-    name: theta2
     description: Angle of second pendulum (θ₂).
     equation:
       lhs: Derivative(theta2, t)
@@ -48,7 +40,6 @@ state_variables:
       latex: false
     initial_value: 0.0
   omega2:
-    name: omega2
     description: Angular velocity of second pendulum (ω₂).
     equation:
       lhs: Derivative(omega2, t)
@@ -57,14 +48,12 @@ state_variables:
     initial_value: 0.5
 derived_variables:
   phi:
-    name: phi
     equation:
       lhs: phi
       rhs: theta2 - theta1
       latex: false
     conditional: false
   Delta:
-    name: Delta
     equation:
       lhs: Delta
       rhs: (M1 + M2) - M2*cos(phi)**2

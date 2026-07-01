@@ -16,7 +16,7 @@ Output:
 <%
 import textwrap
 from tvbo.codegen import render_expression
-from tvbo.templates.tvboptim.utils import get_param_info, get_recorded_variable_names
+from tvbo.templates.tvboptim.utils import get_param_info, get_recorded_variable_names, render_jax_default, get_mode_layout
 
 # Get model from context
 if 'experiment' in context.keys():
@@ -44,10 +44,17 @@ if hasattr(_exp_functions, 'items'):
 jaxcode = lambda expr: render_expression(expr, format='jax', user_functions=user_functions, preserve_order=True)
 jaxcode_obj = lambda obj: model.render_equation(obj, format='jax', preserve_order=True)
 
-# Extract metadata
-state_names = list(model.state_variables.keys())
-initial_state = [float(sv.initial_value) if sv.initial_value is not None else 0.0
-                 for sv in model.state_variables.values()]
+# Extract metadata. For number_of_modes>1 the per-node mode axis is folded into
+# the state axis (see get_mode_layout): each variable occupies n_modes scalar
+# slots and the dfun reconstructs the (n_nodes, n_modes) mode-vector per variable.
+# Single-mode models are unchanged (state_names == variable names).
+n_modes, state_names, var_slots = get_mode_layout(model)
+var_names = list(model.state_variables.keys())
+_init_value = {
+    sv_name: (float(sv.initial_value) if sv.initial_value is not None else 0.0)
+    for sv_name, sv in model.state_variables.items()
+}
+initial_state = [_init_value[v] for v in var_names for _ in range(n_modes)]
 
 # Determine auxiliaries to record. Includes:
 #   * derived variables listed in model.output, and
@@ -156,7 +163,7 @@ class ${class_name}(AbstractDynamics):
 
     DEFAULT_PARAMS = Bunch(
         % for name in param_names:
-        ${name}=${param_defaults.get(name, 1.0)},
+        ${name}=${render_jax_default(param_defaults.get(name, 1.0))},
         % endfor
     )
 
@@ -196,12 +203,26 @@ class ${class_name}(AbstractDynamics):
         % endfor
         % endif
 
+        % if n_modes > 1:
+        ## Mode fold: rebuild each variable's (n_nodes, n_modes) mode-vector from
+        ## its per-mode scalar slots so the mode-aware equations (mode_dot/mode_sum)
+        ## see a real mode axis.
+        % for v in var_names:
+        ${v} = jnp.stack([${', '.join('state[%d]' % i for i in var_slots[v])}], axis=-1)
+        % endfor
+        % else:
         % for i, svar in enumerate(state_names):
         ${svar} = state[${i}]
         % endfor
+        % endif
 
         % for ci_name, ci_dim in coupling_inputs_dict.items():
-        % if ci_name in coupling_keys:
+        % if n_modes > 1:
+        ## Mode fold: the coupling emits per-mode output (n_modes, n_nodes); present
+        ## it as (n_nodes, n_modes) so the mode-aware equations (mode_sum over the
+        ## trailing axis) reduce it exactly as TVB's coupling[cvar].sum(over modes).
+        ${ci_name} = jnp.moveaxis(coupling.${ci_name}, 0, -1) if hasattr(coupling, '${ci_name}') else 0.0
+        % elif ci_name in coupling_keys:
         ## Multi-dimensional with named keys: unpack each key
         % for idx, key_name in enumerate(coupling_keys[ci_name]):
         ${key_name} = coupling.${ci_name}[${idx}] if hasattr(coupling, '${ci_name}') else 0.0
@@ -237,6 +258,16 @@ ${_fdef}
         d${sv.name}_dt = ${jaxcode_obj(sv)}
         % endfor
 
+        % if n_modes > 1:
+        # Mode fold-back: split each variable's (n_nodes, n_modes) derivative into
+        # its n_modes scalar slots, in the same (variable, mode) order as STATE_NAMES.
+        _mode_ref = jnp.atleast_2d(d${var_names[0]}_dt)
+        derivatives = jnp.concatenate([
+            % for v in var_names:
+            jnp.moveaxis(jnp.broadcast_to(jnp.atleast_2d(d${v}_dt), _mode_ref.shape), -1, 0),
+            % endfor
+        ], axis=0)
+        % else:
         # Determine per-node shape from the first state variable; broadcast
         # any scalar derivatives or auxiliaries so jnp.stack sees uniform
         # rank-1 arrays.
@@ -247,13 +278,25 @@ ${_fdef}
             jnp.broadcast_to(jnp.atleast_1d(d${sv.name}_dt), _per_node_shape),
             % endfor
         ], axis=0)
+        % endif
 
         % if aux_names:
+        % if n_modes > 1:
+        # Fold auxiliaries per-mode too (same layout as the derivatives), so a
+        # multi-mode model with recorded derived variables produces a valid,
+        # mode-consistent auxiliary array (``_mode_ref`` from the derivative fold).
+        auxiliaries = jnp.concatenate([
+            % for aux in aux_names:
+            jnp.moveaxis(jnp.broadcast_to(jnp.atleast_2d(${aux}), _mode_ref.shape), -1, 0),
+            % endfor
+        ], axis=0)
+        % else:
         auxiliaries = jnp.stack([
             % for aux in aux_names:
             jnp.broadcast_to(jnp.atleast_1d(${aux}), _per_node_shape),
             % endfor
         ], axis=0)
+        % endif
         % else:
         auxiliaries = jnp.array([])
         % endif

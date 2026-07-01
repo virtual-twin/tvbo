@@ -3,7 +3,6 @@ iri: tvbo:CoombesByrne2D
 model_type: mean_field
 parameters:
   Delta:
-    name: Delta
     definition: Half-width of heterogeneous noise distribution
     value: 1.0
     domain:
@@ -12,7 +11,6 @@ parameters:
       step: 0.01
     description: Half-width of heterogeneous noise distribution
   eta:
-    name: eta
     definition: "Constant parameter to scale the rate of feedback from the\n            firing rate variable to itself"
     value: 2.0
     domain:
@@ -21,9 +19,8 @@ parameters:
       step: 0.0001
     description: Constant parameter to scale the rate of feedback from the             firing rate variable to itself
     grounding:
-      - GO:0099605
+    - GO:0099605
   k:
-    name: k
     definition: Local coupling strength
     value: 1.0
     domain:
@@ -32,7 +29,6 @@ parameters:
       step: 0.01
     description: Local coupling strength
   v_syn:
-    name: v_syn
     definition: QIF membrane reversal potential
     value: -4.0
     domain:
@@ -41,41 +37,37 @@ parameters:
       step: 0.01
     description: QIF membrane reversal potential
     grounding:
-      - GO:0042391
+    - GO:0042391
 description: ''
 references:
-  - Byrne2020
+- Byrne2020
 coupling_inputs:
-  c_pop0:
-    name: c_pop0
+  c_pop0: {}
 state_variables:
   V:
-    name: V
     domain:
       lo: -2.0
       hi: 1.5
-    description: ''
     equation:
       lhs: Derivative(V, t)
       rhs: V**2 + c_pop0 + eta + pi*k*r*(-V + v_syn) - pi**2*r**2
       latex: false
-    variable_of_interest: true
     coupling_variable: true
     initial_value: 0.1
   r:
-    name: r
     domain:
       lo: 0.0
-      hi: 2.0
-    description: ''
+      hi: .inf
+      enforce: clamp
     equation:
       lhs: Derivative(r, t)
       rhs: Delta/pi + 2*V*r - pi*k*r**2
       latex: false
-    variable_of_interest: true
     coupling_variable: true
-    boundaries:
-      lo: 0.0
-      hi: .inf
     initial_value: 0.1
+    distribution:
+      name: Uniform
+      domain:
+        lo: 0.0
+        hi: 2.0
 number_of_modes: 1

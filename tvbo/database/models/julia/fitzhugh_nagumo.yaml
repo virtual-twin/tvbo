@@ -5,24 +5,19 @@ references:
 source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl
 parameters:
   a:
-    name: a
     value: 3.0
     description: Excitability scaling parameter a.
   b:
-    name: b
     value: 0.2
     description: Recovery nullcline parameter b.
   epsilon:
-    name: epsilon
     value: 0.01
     description: Time-scale separation ε.
   I:
-    name: I
     value: 0.0
     description: External input current I.
 state_variables:
   v:
-    name: v
     description: Activator / membrane potential proxy.
     equation:
       lhs: Derivative(v, t)
@@ -30,7 +25,6 @@ state_variables:
       latex: false
     initial_value: 0.5
   w:
-    name: w
     description: Recovery variable.
     equation:
       lhs: Derivative(w, t)

@@ -42,6 +42,7 @@ from __future__ import annotations
 
 import io
 import os
+import warnings
 from pathlib import Path
 from typing import Any, Type
 
@@ -171,6 +172,147 @@ def _looks_like_path(source: Any) -> bool:
         return False
 
 
+# Convenience YAML keys folded to their canonical (schema) slot names before
+# LinkML parsing. LinkML ``aliases:`` are metadata only — the runtime loader
+# keys on the canonical slot name — so singular/alternate spellings declared as
+# schema aliases are resolved here. Keep in sync with ``aliases:`` in the schema.
+_SLOT_ALIASES = {
+    "optimization": "optimizations",  # singular convenience for the (multivalued) optimizations slot
+}
+
+
+def _fold_slot_aliases(obj: Any) -> Any:
+    """Recursively rename alias keys (e.g. ``optimization``) to their canonical
+    slot names (``optimizations``) so the LinkML loader accepts them."""
+    if isinstance(obj, dict):
+        folded: dict = {}
+        for k, v in obj.items():
+            canonical = _SLOT_ALIASES.get(k, k) if isinstance(k, str) else k
+            if canonical != k and canonical in obj:
+                # Both the alias (e.g. ``optimization``) and its canonical
+                # (``optimizations``) are present in the same mapping. Keep the
+                # canonical value and drop the alias rather than silently
+                # overwriting one with the other.
+                warnings.warn(
+                    f"YAML mapping has both '{k}' and its canonical alias "
+                    f"target '{canonical}'; ignoring '{k}'.",
+                    stacklevel=2,
+                )
+                continue
+            folded[canonical] = _fold_slot_aliases(v)
+        return folded
+    if isinstance(obj, list):
+        return [_fold_slot_aliases(x) for x in obj]
+    return obj
+
+
+def _lift_distribution_shortcut(obj: Any) -> Any:
+    """Allow a terse ``distribution: {lo, hi}`` as a shortcut for a Uniform.
+
+    A ``Distribution`` carries its support under ``domain``; a bare
+    ``lo``/``hi``/``step`` on any ``*distribution`` slot is lifted into ``domain``
+    here, before the LinkML loader sees it, and the distribution ``name`` is
+    materialised as ``Uniform`` (so the lifted form is a complete, valid
+    ``{name: Uniform, domain: {lo, hi}}``). Any other keys (seed, axis, …) are
+    preserved; if an explicit ``domain`` is already present the value is left
+    untouched.
+    """
+    if isinstance(obj, dict):
+        out: dict = {}
+        for k, v in obj.items():
+            if (
+                isinstance(k, str)
+                and k.endswith("distribution")
+                and isinstance(v, dict)
+                and "domain" not in v
+                and any(b in v for b in ("lo", "hi", "step"))
+            ):
+                bounds = {b: v[b] for b in ("lo", "hi", "step") if b in v}
+                rest = {kk: vv for kk, vv in v.items() if kk not in ("lo", "hi", "step")}
+                v = {**rest, "domain": bounds}
+                v.setdefault("name", "Uniform")
+            out[k] = _lift_distribution_shortcut(v)
+        return out
+    if isinstance(obj, list):
+        return [_lift_distribution_shortcut(x) for x in obj]
+    return obj
+
+
+def _fold_one_state_variable_domain(sv: dict) -> None:
+    """Fold a single state variable's legacy domain slots in place.
+
+    * ``range`` (a ``domain`` alias) → ``domain`` when no explicit ``domain`` is set.
+    * ``boundaries`` (deprecated hard-clamp slot) → ``domain`` with ``enforce: clamp``;
+      a co-existing descriptive ``domain`` is preserved as the sampling ``distribution``
+      (a terse ``{lo, hi}`` that the distribution-lift then completes) so a half-open
+      clamp cannot drop a finite IC-sampling range.
+    """
+    if "range" in sv:
+        if sv.get("domain") is None:
+            sv["domain"] = sv.pop("range")
+        else:
+            warnings.warn(
+                "State variable has both 'range' and its canonical alias 'domain'; "
+                "ignoring 'range'.",
+                stacklevel=2,
+            )
+            sv.pop("range")
+    if sv.get("boundaries") is not None:
+        bnd = sv.pop("boundaries")
+        if isinstance(bnd, dict):
+            bnd = dict(bnd)
+            bnd.setdefault("enforce", "clamp")
+            prev = sv.get("domain")
+            if isinstance(prev, dict) and sv.get("distribution") is None:
+                sv["distribution"] = {k: prev[k] for k in ("lo", "hi", "step") if k in prev}
+            sv["domain"] = bnd
+
+
+def _fold_state_variable_domains(obj: Any) -> Any:
+    """Recursively fold legacy ``boundaries``/``range`` on state variables into
+    ``domain`` (see :func:`_fold_one_state_variable_domain`), at any nesting depth.
+
+    The schema declares ``range``/``boundaries`` as ``domain`` aliases, but LinkML
+    aliases are metadata only (the loader keys on the canonical slot), so — like the
+    slot-alias and distribution-shortcut folds — this is applied before LinkML sees
+    the data. Runs on both load paths so ``yaml_loader.load``/``loads`` matches
+    ``Dynamics.from_file`` for legacy files.
+    """
+    if isinstance(obj, dict):
+        svs = obj.get("state_variables")
+        sv_iter = (
+            svs.values() if isinstance(svs, dict)
+            else svs if isinstance(svs, list)
+            else []
+        )
+        for sv in sv_iter:
+            if isinstance(sv, dict):
+                _fold_one_state_variable_domain(sv)
+        for v in obj.values():
+            _fold_state_variable_domains(v)
+    elif isinstance(obj, list):
+        for x in obj:
+            _fold_state_variable_domains(x)
+    return obj
+
+
+def _normalize_loaded(data: Any) -> Any:
+    """Apply the dict-level TVBO conveniences shared by every load path.
+
+    Folds slot aliases to their canonical names, folds legacy state-variable
+    ``boundaries``/``range`` into ``domain`` (+ ``enforce: clamp`` for boundaries),
+    and lifts the terse ``distribution: {lo, hi}`` shortcut into
+    ``distribution: {domain: {lo, hi}}``. Both the string path (``load``/``loads`` →
+    LinkML) and the dict path (``load_as_dict`` → ``Dynamics.from_file``/``from_db``)
+    route through here so the two cannot diverge. Order matters: the boundaries fold
+    can create a terse ``distribution`` that the following lift then completes.
+    """
+    data = _fold_slot_aliases(data)
+    data = _fold_state_variable_domains(data)
+    data = _lift_distribution_shortcut(data)
+    return data
+
+
 def _preprocess(source: Any, base_dir: Path) -> str:
     """Parse ``source`` with the TVBO loader and re-serialise to plain YAML.
 
@@ -190,6 +332,9 @@ def _preprocess(source: Any, base_dir: Path) -> str:
         data = yaml.load(source, LoaderCls)
     else:
         data = source
+    # Fold slot aliases + lift the terse distribution shortcut (shared with the
+    # dict path so the two cannot diverge).
+    data = _normalize_loaded(data)
     # Re-serialise using safe_dump so the LinkML loader sees pure data
     # with no remaining anchors/merge keys/!include directives.
     return yaml.safe_dump(data, sort_keys=False)
@@ -227,12 +372,17 @@ def load_as_dict(source: Any, **kwargs: Any) -> dict:
     LoaderCls = _make_loader_class(base_dir)
     if _looks_like_path(source):
         with open(source, "r") as fh:
-            return yaml.load(fh, LoaderCls)
-    if isinstance(source, str):
-        return yaml.load(io.StringIO(source), LoaderCls)
-    if hasattr(source, "read"):
-        return yaml.load(source, LoaderCls)
-    return source
+            data = yaml.load(fh, LoaderCls)
+    elif isinstance(source, str):
+        data = yaml.load(io.StringIO(source), LoaderCls)
+    elif hasattr(source, "read"):
+        data = yaml.load(source, LoaderCls)
+    else:
+        data = source
+    # Route through the same normalisation as the string path (fold slot aliases
+    # + lift the terse `distribution: {lo, hi}` shortcut) so the dict path used by
+    # from_file/from_db cannot diverge from the LinkML string path.
+    return _normalize_loaded(data)
 
 
 def _base_dir_for(source: Any) -> Path:

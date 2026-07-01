@@ -150,11 +150,14 @@ def _distribution_text(distribution):
     return ' '.join(parts)
 
 def _metadata_text(obj):
+    from tvbo.utils import domain_enforcement
     bits = []
-    if _present(_p(obj, 'domain', None)):
-        bits.append(_range_text(_p(obj, 'domain')))
-    if _present(_p(obj, 'boundaries', None)):
-        bits.append('bounds ' + _range_text(_p(obj, 'boundaries')))
+    _dom = _p(obj, 'domain', None)
+    if _present(_dom):
+        bits.append(_range_text(_dom))
+        _enf = domain_enforcement(_dom)   # none / clamp / wrap (boundaries folded into domain)
+        if _enf != 'none':
+            bits.append(f'enforce={_enf}')
     if _present(_p(obj, 'distribution', None)):
         bits.append(_distribution_text(_p(obj, 'distribution')))
     return '; '.join([bit for bit in bits if bit]) or '—'
@@ -411,7 +414,7 @@ $$${fname}(${', '.join(arg_names)}) = ${safe_latex(func_rhs, arg_names)}$$
 | Variable | Initial Value | Unit | Equation | Domain / Sampling | Flags | Description |
 |:---------|:--------------|:-----|:---------|:------------------|:------|:------------|
 % for name, svar in svars.items():
-| $${latex(Symbol(name))}$ | ${_p(svar, 'initial_value', '—')} | ${_unit_text(_p(svar, 'unit', None))} | ${_p(svar, 'equation_type', 'differential')} (order ${_p(svar, 'equation_order', 1)}) | ${_metadata_text(svar)} | ${_flag_text(svar, [('variable_of_interest', 'VOI'), ('coupling_variable', 'coupling'), ('stimulation_variable', 'stimulation'), ('record', 'recorded')])} | ${_p(svar, 'description', '') or _p(svar, 'definition', '') or ''} |
+| $${latex(Symbol(name))}$ | ${_p(svar, 'initial_value', '—')} | ${_unit_text(_p(svar, 'unit', None))} | ${_p(svar, 'equation_type', 'differential')} (order ${_p(svar, 'equation_order', 1)}) | ${_metadata_text(svar)} | ${_flag_text(svar, [('coupling_variable', 'coupling'), ('stimulation_variable', 'stimulation'), ('record', 'recorded')])} | ${_p(svar, 'description', '') or _p(svar, 'definition', '') or ''} |
 % endfor
 
 % endif

@@ -24,7 +24,7 @@ state_vars = list(model.state_variables.items())
 n_states = len(state_vars)
 
 # Exposures
-exposures = [name for name, sv in state_vars if getattr(sv, 'variable_of_interest', True)]
+exposures = [name for name, sv in state_vars if getattr(sv, 'record', True)]
 n_exposures = len(exposures)
 
 # Swept parameters
