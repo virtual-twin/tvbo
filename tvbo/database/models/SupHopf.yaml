@@ -3,7 +3,6 @@ iri: tvbo:SupHopf
 model_type: generic
 parameters:
   a:
-    name: a
     definition: Local bifurcation parameter.
     value: -0.5
     domain:
@@ -12,7 +11,6 @@ parameters:
       step: 0.01
     description: Local bifurcation parameter
   omega:
-    name: omega
     definition: Angular frequency.
     value: 1.0
     domain:
@@ -20,33 +18,22 @@ parameters:
       hi: 630.0
       step: 0.01
     description: Angular frequency
-description: "Supercritical Hopf (SUPH) is an oscillatory/excitable neural mass model\
-  \ that describe the normal form of a supercritical Hopf bifurcation in Cartesian\
-  \ coordinates (Kuznetsov, 2013; Deco et al., 2017). \n\nThis normal form has a supercritical\
-  \ bifurcation at 'a=0' with 'a' the bifurcation parameter in the model. So for 'a\
-  \ < 0', the local dynamics has a stable fixed point and the system corresponds to\
-  \ a damped oscillatory state, whereas for 'a > 0', the local dynamics enters in\
-  \ a stable limit cycle and the system switches to an oscillatory state."
+description: "Supercritical Hopf (SUPH) is an oscillatory/excitable neural mass model that describe the normal form of a supercritical Hopf bifurcation in Cartesian coordinates (Kuznetsov, 2013; Deco et al., 2017). \n\nThis normal form has a supercritical bifurcation at 'a=0' with 'a' the bifurcation parameter in the model. So for 'a < 0', the local dynamics has a stable fixed point and the system corresponds to a damped oscillatory state, whereas for 'a > 0', the local dynamics enters in a stable limit cycle and the system switches to an oscillatory state."
 references:
 - Deco2017
 derived_variables:
   lc_0:
-    name: lc_0
     equation:
       lhs: lc_0
       rhs: local_coupling*x
       latex: false
     conditional: false
 coupling_inputs:
-  c_glob0:
-    name: c_glob0
-  c_glob1:
-    name: c_glob1
-  local_coupling:
-    name: local_coupling
+  c_glob0: {}
+  c_glob1: {}
+  local_coupling: {local: true}
 state_variables:
   x:
-    name: x
     domain:
       lo: -5.0
       hi: 5.0
@@ -55,11 +42,9 @@ state_variables:
       lhs: Derivative(x, t)
       rhs: c_glob0 + lc_0 - omega*y + x*(a - x**2 - y**2)
       latex: false
-    variable_of_interest: true
     coupling_variable: true
     initial_value: 0.1
   y:
-    name: y
     domain:
       lo: -5.0
       hi: 5.0
@@ -68,7 +53,6 @@ state_variables:
       lhs: Derivative(y, t)
       rhs: c_glob1 + omega*x + y*(a - x**2 - y**2)
       latex: false
-    variable_of_interest: true
     coupling_variable: true
     initial_value: 0.1
 number_of_modes: 1

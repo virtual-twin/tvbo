@@ -3,8 +3,10 @@
     from tvbo.codegen import render_expression
     from tvbo.classes.equation import _clash1
 
-    # Generic pycode - pass parameters on each call
-    pycode = lambda expr, parameters=None: render_expression(expr, format='python', parameters=parameters)
+    # Generic pycode - pass parameters on each call. Use the 'numpy' format: TVB coupling
+    # pre/post operate on ARRAYS (history states), so functions must be numpy (np.sin), not
+    # scalar `math.sin` — the 'python' format emitted math.* which NameError'd / failed on arrays.
+    pycode = lambda expr, parameters=None: render_expression(expr, format='numpy', parameters=parameters)
 %>
 <%
 if 'experiment' in context.keys():
@@ -61,6 +63,19 @@ class ${coupling.name}(${base_class}):
         """
         % for param in coupling.parameters:
         ${param} = self.${param}
+        % endfor
+<%
+    _loc = getattr(coupling, 'local_states', None) or []
+    _loc = [_loc] if isinstance(_loc, str) else list(_loc)
+    _inc = getattr(coupling, 'incoming_states', None) or []
+    _inc = [_inc] if isinstance(_inc, str) else list(_inc)
+%>\
+        ## Bind state-variable symbols (e.g. theta_i/theta_j) to TVB's generic x_i (local) / x_j (incoming)
+        % for st in _loc:
+        ${st}_i = x_i
+        % endfor
+        % for st in _inc:
+        ${st}_j = x_j
         % endfor
 
         pre = ${pre_expr}

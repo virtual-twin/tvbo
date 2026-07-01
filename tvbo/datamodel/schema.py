@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-06-25T14:52:27
+# Generation date: 2026-07-01T18:26:27
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -287,6 +287,7 @@ class Range(YAMLRoot):
     class_name: ClassVar[str] = "Range"
     class_model_uri: ClassVar[URIRef] = TVBO.Range
 
+    enforce: Optional[Union[str, "DomainEnforcement"]] = 'none'
     lo: Optional[Union[dict, ScalarValue]] = None
     hi: Optional[Union[dict, ScalarValue]] = None
     step: Optional[Union[dict, ScalarValue]] = None
@@ -296,6 +297,9 @@ class Range(YAMLRoot):
     element: Optional[int] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
+        if self.enforce is not None and not isinstance(self.enforce, DomainEnforcement):
+            self.enforce = DomainEnforcement(self.enforce)
+
         if self.n is not None and not isinstance(self.n, int):
             self.n = int(self.n)
 
@@ -1620,6 +1624,7 @@ class Observation(YAMLRoot):
     window_size: Optional[int] = None
     pipeline: Optional[Union[Union[dict, "FunctionCall"], list[Union[dict, "FunctionCall"]]]] = empty_list()
     class_reference: Optional[Union[dict, "ClassReference"]] = None
+    analysis: Optional[Union[dict, "Analysis"]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
@@ -1689,6 +1694,48 @@ class Observation(YAMLRoot):
 
         if self.class_reference is not None and not isinstance(self.class_reference, ClassReference):
             self.class_reference = ClassReference(**as_dict(self.class_reference))
+
+        if self.analysis is not None and not isinstance(self.analysis, Analysis):
+            self.analysis = Analysis(**as_dict(self.analysis))
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
+class Analysis(YAMLRoot):
+    """
+    A general analysis observable: a quantity obtained by ANALYZING the model, its solve, or a derived loss, rather
+    than by transforming the recorded trajectory. It is deliberately broad — the same concept covers parameter
+    sensitivities/gradients (autodiff or finite-difference), stability spectra (Lyapunov), bifurcation quantities,
+    identifiability/Fisher-information metrics, and future analyses. `type` names the analysis (extensible); `target`
+    and `wrt` bind it to what is analyzed and with respect to what; `parameters` carries the analysis-specific
+    configuration. Backend-neutral: each backend maps `type` to its own machinery, or emits a comment and skips when
+    it has no equivalent (it does not raise).
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO["Analysis"]
+    class_class_curie: ClassVar[str] = "tvbo:Analysis"
+    class_name: ClassVar[str] = "Analysis"
+    class_model_uri: ClassVar[URIRef] = TVBO.Analysis
+
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
+    type: Optional[str] = None
+    target: Optional[str] = None
+    wrt: Optional[Union[str, list[str]]] = empty_list()
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
+
+        if self.type is not None and not isinstance(self.type, str):
+            self.type = str(self.type)
+
+        if self.target is not None and not isinstance(self.target, str):
+            self.target = str(self.target)
+
+        if not isinstance(self.wrt, list):
+            self.wrt = [self.wrt] if self.wrt is not None else []
+        self.wrt = [v if isinstance(v, str) else str(v) for v in self.wrt]
 
         super().__post_init__(**kwargs)
 
@@ -1837,7 +1884,6 @@ class StateVariable(YAMLRoot):
     equation_order: Optional[int] = 1
     noise: Optional[Union[dict, "Noise"]] = None
     stimulation_variable: Optional[Union[bool, Bool]] = None
-    boundaries: Optional[Union[dict, Range]] = None
     initial_value: Optional[float] = 0.1
     derivative_initial_value: Optional[float] = None
     distribution: Optional[Union[dict, "Distribution"]] = None
@@ -1894,9 +1940,6 @@ class StateVariable(YAMLRoot):
 
         if self.stimulation_variable is not None and not isinstance(self.stimulation_variable, Bool):
             self.stimulation_variable = Bool(self.stimulation_variable)
-
-        if self.boundaries is not None and not isinstance(self.boundaries, Range):
-            self.boundaries = Range(**as_dict(self.boundaries))
 
         if self.initial_value is not None and not isinstance(self.initial_value, float):
             self.initial_value = float(self.initial_value)
@@ -1992,6 +2035,8 @@ class Parameter(YAMLRoot):
     shape: Optional[str] = None
     explored_values: Optional[Union[float, list[float]]] = empty_list()
     element_domains: Optional[Union[Union[dict, Range], list[Union[dict, Range]]]] = empty_list()
+    datatype: Optional[str] = None
+    required: Optional[Union[bool, Bool]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
@@ -2062,6 +2107,12 @@ class Parameter(YAMLRoot):
             self.element_domains = [self.element_domains] if self.element_domains is not None else []
         self.element_domains = [v if isinstance(v, Range) else Range(**as_dict(v)) for v in self.element_domains]
 
+        if self.datatype is not None and not isinstance(self.datatype, str):
+            self.datatype = str(self.datatype)
+
+        if self.required is not None and not isinstance(self.required, Bool):
+            self.required = Bool(self.required)
+
         super().__post_init__(**kwargs)
 
 
@@ -2082,6 +2133,7 @@ class CouplingInput(YAMLRoot):
     source: Optional[str] = None
     dimension: Optional[int] = 1
     keys: Optional[Union[str, list[str]]] = empty_list()
+    local: Optional[Union[bool, Bool]] = False
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
@@ -2101,6 +2153,9 @@ class CouplingInput(YAMLRoot):
         if not isinstance(self.keys, list):
             self.keys = [self.keys] if self.keys is not None else []
         self.keys = [v if isinstance(v, str) else str(v) for v in self.keys]
+
+        if self.local is not None and not isinstance(self.local, Bool):
+            self.local = Bool(self.local)
 
         super().__post_init__(**kwargs)
 
@@ -2203,7 +2258,7 @@ class Function(YAMLRoot):
         if self.output is not None and not isinstance(self.output, str):
             self.output = str(self.output)
 
-        self._normalize_inlined_as_list(slot_name="arguments", slot_type=Argument, key_name="name", keyed=True)
+        self._normalize_inlined_as_dict(slot_name="arguments", slot_type=Argument, key_name="name", keyed=True)
 
         if self.output_equation is not None and not isinstance(self.output_equation, Equation):
             self.output_equation = Equation(**as_dict(self.output_equation))
@@ -2349,7 +2404,7 @@ class FunctionCall(YAMLRoot):
         if self.aggregate is not None and not isinstance(self.aggregate, Aggregation):
             self.aggregate = Aggregation(**as_dict(self.aggregate))
 
-        self._normalize_inlined_as_list(slot_name="arguments", slot_type=Argument, key_name="name", keyed=True)
+        self._normalize_inlined_as_dict(slot_name="arguments", slot_type=Argument, key_name="name", keyed=True)
 
         if self.time_range is not None and not isinstance(self.time_range, Range):
             self.time_range = Range(**as_dict(self.time_range))
@@ -2810,6 +2865,7 @@ class Exploration(YAMLRoot):
     algorithms: Optional[Union[str, list[str]]] = empty_list()
     mode: Optional[str] = "product"
     observable: Optional[Union[dict, FunctionCall]] = None
+    record: Optional[Union[str, list[str]]] = empty_list()
     n_parallel: Optional[int] = 1
     n_trials: Optional[int] = 1
     average: Optional[str] = None
@@ -2846,6 +2902,10 @@ class Exploration(YAMLRoot):
 
         if self.observable is not None and not isinstance(self.observable, FunctionCall):
             self.observable = FunctionCall(**as_dict(self.observable))
+
+        if not isinstance(self.record, list):
+            self.record = [self.record] if self.record is not None else []
+        self.record = [v if isinstance(v, str) else str(v) for v in self.record]
 
         if self.n_parallel is not None and not isinstance(self.n_parallel, int):
             self.n_parallel = int(self.n_parallel)
@@ -3579,6 +3639,7 @@ class Integrator(Solver):
     intermediate_expressions: Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, DerivedVariable]], list[Union[dict, DerivedVariable]]]] = empty_dict()
     update_expression: Optional[Union[dict, DerivedVariable]] = None
     delayed: Optional[Union[bool, Bool]] = True
+    differentiation: Optional[Union[dict, "Differentiation"]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self.time_scale is not None and not isinstance(self.time_scale, UnitEnum):
@@ -3628,6 +3689,41 @@ class Integrator(Solver):
         if self.delayed is not None and not isinstance(self.delayed, Bool):
             self.delayed = Bool(self.delayed)
 
+        if self.differentiation is not None and not isinstance(self.differentiation, Differentiation):
+            self.differentiation = Differentiation(**as_dict(self.differentiation))
+
+        super().__post_init__(**kwargs)
+
+
+@dataclass(repr=False)
+class Differentiation(YAMLRoot):
+    """
+    Backend-neutral configuration for how gradients are propagated through the temporal integration. Expressed in
+    physical/semantic terms; each backend maps it to its own mechanism (JAX solver grad_horizon / block_size, Julia
+    adjoint sensitivity, ...). Backends without autodiff (e.g. MATLAB) emit a comment noting differentiation is
+    unsupported and proceed with the plain forward integration -- they do not raise.
+    """
+    _inherited_slots: ClassVar[list[str]] = []
+
+    class_class_uri: ClassVar[URIRef] = TVBO["Differentiation"]
+    class_class_curie: ClassVar[str] = "tvbo:Differentiation"
+    class_name: ClassVar[str] = "Differentiation"
+    class_model_uri: ClassVar[URIRef] = TVBO.Differentiation
+
+    truncation_window: Optional[float] = None
+    checkpoint_interval: Optional[float] = None
+    mode: Optional[str] = "reverse"
+
+    def __post_init__(self, *_: str, **kwargs: Any):
+        if self.truncation_window is not None and not isinstance(self.truncation_window, float):
+            self.truncation_window = float(self.truncation_window)
+
+        if self.checkpoint_interval is not None and not isinstance(self.checkpoint_interval, float):
+            self.checkpoint_interval = float(self.checkpoint_interval)
+
+        if self.mode is not None and not isinstance(self.mode, str):
+            self.mode = str(self.mode)
+
         super().__post_init__(**kwargs)
 
 
@@ -3652,6 +3748,8 @@ class Coupling(YAMLRoot):
     incoming_states: Optional[Union[Union[str, StateVariableName], list[Union[str, StateVariableName]]]] = empty_list()
     local_states: Optional[Union[Union[str, StateVariableName], list[Union[str, StateVariableName]]]] = empty_list()
     delayed: Optional[Union[bool, Bool]] = True
+    interpolate_delays: Optional[Union[bool, Bool]] = False
+    vectorized: Optional[Union[bool, Bool]] = False
     symmetry: Optional[str] = "directed"
     outsym: Optional[Union[str, list[str]]] = empty_list()
     observed: Optional[Union[dict[Union[str, DerivedVariableName], Union[dict, DerivedVariable]], list[Union[dict, DerivedVariable]]]] = empty_dict()
@@ -3700,6 +3798,12 @@ class Coupling(YAMLRoot):
 
         if self.delayed is not None and not isinstance(self.delayed, Bool):
             self.delayed = Bool(self.delayed)
+
+        if self.interpolate_delays is not None and not isinstance(self.interpolate_delays, Bool):
+            self.interpolate_delays = Bool(self.interpolate_delays)
+
+        if self.vectorized is not None and not isinstance(self.vectorized, Bool):
+            self.vectorized = Bool(self.vectorized)
 
         if self.symmetry is not None and not isinstance(self.symmetry, str):
             self.symmetry = str(self.symmetry)
@@ -5822,6 +5926,28 @@ class BoundaryConditionType(EnumDefinitionImpl):
         name="BoundaryConditionType",
     )
 
+class DomainEnforcement(EnumDefinitionImpl):
+    """
+    Whether and how a state variable's ``domain`` constrains the trajectory during integration. Default ``none`` means
+    the domain is descriptive metadata only (expected range, plot limits, initial- condition sampling support) and
+    never alters the dynamics — so declaring a domain is side-effect free. ``clamp`` and ``wrap`` opt in to active
+    enforcement using the domain's ``lo``/``hi``.
+    """
+    none = PermissibleValue(
+        text="none",
+        description="Metadata only; the trajectory is never constrained (default).")
+    clamp = PermissibleValue(
+        text="clamp",
+        description="Hard-clip every integration step to [lo, hi].")
+    wrap = PermissibleValue(
+        text="wrap",
+        description="""Periodic wrap into [lo, hi) — e.g. a phase variable on [0, 2π). The recorded timeseries stays within the range while remaining continuous mod (hi - lo).\"""")
+
+    _defn = EnumDefinition(
+        name="DomainEnforcement",
+        description="""Whether and how a state variable's ``domain`` constrains the trajectory during integration. Default ``none`` means the domain is descriptive metadata only (expected range, plot limits, initial- condition sampling support) and never alters the dynamics — so declaring a domain is side-effect free. ``clamp`` and ``wrap`` opt in to active enforcement using the domain's ``lo``/``hi``.""",
+    )
+
 class DiscretizationMethod(EnumDefinitionImpl):
 
     FDM = PermissibleValue(
@@ -6908,6 +7034,9 @@ slots.subjects = Slot(uri=TVBO_STUDY.subjects, name="subjects", curie=TVBO_STUDY
 slots.id = Slot(uri=DCTERMS.identifier, name="id", curie=DCTERMS.curie('identifier'),
                    model_uri=TVBO.id, domain=None, range=Optional[int])
 
+slots.range__enforce = Slot(uri=TVBO.enforce, name="range__enforce", curie=TVBO.curie('enforce'),
+                   model_uri=TVBO.range__enforce, domain=None, range=Optional[Union[str, "DomainEnforcement"]])
+
 slots.range__lo = Slot(uri=TVBO.lo, name="range__lo", curie=TVBO.curie('lo'),
                    model_uri=TVBO.range__lo, domain=None, range=Optional[Union[dict, ScalarValue]])
 
@@ -7430,6 +7559,18 @@ slots.observation__pipeline = Slot(uri=TVBO.pipeline, name="observation__pipelin
 slots.observation__class_reference = Slot(uri=TVBO.class_reference, name="observation__class_reference", curie=TVBO.curie('class_reference'),
                    model_uri=TVBO.observation__class_reference, domain=None, range=Optional[Union[dict, ClassReference]])
 
+slots.observation__analysis = Slot(uri=TVBO.analysis, name="observation__analysis", curie=TVBO.curie('analysis'),
+                   model_uri=TVBO.observation__analysis, domain=None, range=Optional[Union[dict, Analysis]])
+
+slots.analysis__type = Slot(uri=TVBO.type, name="analysis__type", curie=TVBO.curie('type'),
+                   model_uri=TVBO.analysis__type, domain=None, range=Optional[str])
+
+slots.analysis__target = Slot(uri=TVBO.target, name="analysis__target", curie=TVBO.curie('target'),
+                   model_uri=TVBO.analysis__target, domain=None, range=Optional[str])
+
+slots.analysis__wrt = Slot(uri=TVBO.wrt, name="analysis__wrt", curie=TVBO.curie('wrt'),
+                   model_uri=TVBO.analysis__wrt, domain=None, range=Optional[Union[str, list[str]]])
+
 slots.dynamics__derived_parameters = Slot(uri=TVBO.derived_parameters, name="dynamics__derived_parameters", curie=TVBO.curie('derived_parameters'),
                    model_uri=TVBO.dynamics__derived_parameters, domain=None, range=Optional[Union[dict[Union[str, DerivedParameterName], Union[dict, DerivedParameter]], list[Union[dict, DerivedParameter]]]])
 
@@ -7502,9 +7643,6 @@ slots.stateVariable__noise = Slot(uri=TVBO.noise, name="stateVariable__noise", c
 slots.stateVariable__stimulation_variable = Slot(uri=TVBO.stimulation_variable, name="stateVariable__stimulation_variable", curie=TVBO.curie('stimulation_variable'),
                    model_uri=TVBO.stateVariable__stimulation_variable, domain=None, range=Optional[Union[bool, Bool]])
 
-slots.stateVariable__boundaries = Slot(uri=TVBO.boundaries, name="stateVariable__boundaries", curie=TVBO.curie('boundaries'),
-                   model_uri=TVBO.stateVariable__boundaries, domain=None, range=Optional[Union[dict, Range]])
-
 slots.stateVariable__initial_value = Slot(uri=TVBO.initial_value, name="stateVariable__initial_value", curie=TVBO.curie('initial_value'),
                    model_uri=TVBO.stateVariable__initial_value, domain=None, range=Optional[float])
 
@@ -7559,6 +7697,12 @@ slots.parameter__explored_values = Slot(uri=TVBO.explored_values, name="paramete
 slots.parameter__element_domains = Slot(uri=TVBO.element_domains, name="parameter__element_domains", curie=TVBO.curie('element_domains'),
                    model_uri=TVBO.parameter__element_domains, domain=None, range=Optional[Union[Union[dict, Range], list[Union[dict, Range]]]])
 
+slots.parameter__datatype = Slot(uri=TVBO.datatype, name="parameter__datatype", curie=TVBO.curie('datatype'),
+                   model_uri=TVBO.parameter__datatype, domain=None, range=Optional[str])
+
+slots.parameter__required = Slot(uri=TVBO.required, name="parameter__required", curie=TVBO.curie('required'),
+                   model_uri=TVBO.parameter__required, domain=None, range=Optional[Union[bool, Bool]])
+
 slots.couplingInput__source = Slot(uri=TVBO.source, name="couplingInput__source", curie=TVBO.curie('source'),
                    model_uri=TVBO.couplingInput__source, domain=None, range=Optional[str])
 
@@ -7567,6 +7711,9 @@ slots.couplingInput__dimension = Slot(uri=TVBO.dimension, name="couplingInput__d
 
 slots.couplingInput__keys = Slot(uri=TVBO.keys, name="couplingInput__keys", curie=TVBO.curie('keys'),
                    model_uri=TVBO.couplingInput__keys, domain=None, range=Optional[Union[str, list[str]]])
+
+slots.couplingInput__local = Slot(uri=TVBO.local, name="couplingInput__local", curie=TVBO.curie('local'),
+                   model_uri=TVBO.couplingInput__local, domain=None, range=Optional[Union[bool, Bool]])
 
 slots.argument__value = Slot(uri=TVBO.value, name="argument__value", curie=TVBO.curie('value'),
                    model_uri=TVBO.argument__value, domain=None, range=Optional[Union[dict, ScalarValue]])
@@ -7771,6 +7918,9 @@ slots.exploration__mode = Slot(uri=TVBO.mode, name="exploration__mode", curie=TV
 
 slots.exploration__observable = Slot(uri=TVBO.observable, name="exploration__observable", curie=TVBO.curie('observable'),
                    model_uri=TVBO.exploration__observable, domain=None, range=Optional[Union[dict, FunctionCall]])
+
+slots.exploration__record = Slot(uri=TVBO.record, name="exploration__record", curie=TVBO.curie('record'),
+                   model_uri=TVBO.exploration__record, domain=None, range=Optional[Union[str, list[str]]])
 
 slots.exploration__n_parallel = Slot(uri=TVBO.n_parallel, name="exploration__n_parallel", curie=TVBO.curie('n_parallel'),
                    model_uri=TVBO.exploration__n_parallel, domain=None, range=Optional[int])
@@ -8081,6 +8231,18 @@ slots.integrator__update_expression = Slot(uri=TVBO.update_expression, name="int
 slots.integrator__delayed = Slot(uri=TVBO.delayed, name="integrator__delayed", curie=TVBO.curie('delayed'),
                    model_uri=TVBO.integrator__delayed, domain=None, range=Optional[Union[bool, Bool]])
 
+slots.integrator__differentiation = Slot(uri=TVBO.differentiation, name="integrator__differentiation", curie=TVBO.curie('differentiation'),
+                   model_uri=TVBO.integrator__differentiation, domain=None, range=Optional[Union[dict, Differentiation]])
+
+slots.differentiation__truncation_window = Slot(uri=TVBO.truncation_window, name="differentiation__truncation_window", curie=TVBO.curie('truncation_window'),
+                   model_uri=TVBO.differentiation__truncation_window, domain=None, range=Optional[float])
+
+slots.differentiation__checkpoint_interval = Slot(uri=TVBO.checkpoint_interval, name="differentiation__checkpoint_interval", curie=TVBO.curie('checkpoint_interval'),
+                   model_uri=TVBO.differentiation__checkpoint_interval, domain=None, range=Optional[float])
+
+slots.differentiation__mode = Slot(uri=TVBO.mode, name="differentiation__mode", curie=TVBO.curie('mode'),
+                   model_uri=TVBO.differentiation__mode, domain=None, range=Optional[str])
+
 slots.coupling__coupling_function = Slot(uri=TVBO.coupling_function, name="coupling__coupling_function", curie=TVBO.curie('coupling_function'),
                    model_uri=TVBO.coupling__coupling_function, domain=None, range=Optional[Union[dict, Equation]])
 
@@ -8101,6 +8263,12 @@ slots.coupling__local_states = Slot(uri=TVBO.local_states, name="coupling__local
 
 slots.coupling__delayed = Slot(uri=TVBO.delayed, name="coupling__delayed", curie=TVBO.curie('delayed'),
                    model_uri=TVBO.coupling__delayed, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.coupling__interpolate_delays = Slot(uri=TVBO.interpolate_delays, name="coupling__interpolate_delays", curie=TVBO.curie('interpolate_delays'),
+                   model_uri=TVBO.coupling__interpolate_delays, domain=None, range=Optional[Union[bool, Bool]])
+
+slots.coupling__vectorized = Slot(uri=TVBO.vectorized, name="coupling__vectorized", curie=TVBO.curie('vectorized'),
+                   model_uri=TVBO.coupling__vectorized, domain=None, range=Optional[Union[bool, Bool]])
 
 slots.coupling__symmetry = Slot(uri=TVBO.symmetry, name="coupling__symmetry", curie=TVBO.curie('symmetry'),
                    model_uri=TVBO.coupling__symmetry, domain=None, range=Optional[str])

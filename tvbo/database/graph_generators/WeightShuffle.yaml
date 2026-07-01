@@ -8,17 +8,17 @@ iri: tvbo:WeightShuffle
 
 parameters:
   source:
-    range: uriorcurie
+    datatype: uriorcurie
     description: "IRI of the reference Network whose weights matrix is shuffled."
   preserve:
-    range: string
+    datatype: string
     description: >-
       Which structural property to preserve under permutation:
         - binary_mask:        preserve the {0, nonzero} pattern; permute weight values among non-zero positions
         - degree:             preserve per-node degree (within rounding)
         - weight_distribution: preserve the multiset of weights (binary topology rerandomised)
-    ifabsent: "binary_mask"
-  seed: { range: integer, required: false }
+    default: "binary_mask"
+  seed: { datatype: integer, required: false }
 
 # Symbolic procedure. The assembly below implements `preserve: binary_mask`
 # (keep the {0, nonzero} pattern; permute the non-zero values among their

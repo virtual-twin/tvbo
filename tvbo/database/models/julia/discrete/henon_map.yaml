@@ -6,23 +6,19 @@ source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main
 system_type: discrete
 parameters:
   a:
-    name: a
     value: 1.4
     description: Quadratic nonlinearity coefficient a.
   b:
-    name: b
     value: 0.3
     description: Linear contraction coefficient b.
 state_variables:
   x:
-    name: x
     equation:
       lhs: x_next
       rhs: 1 - a*x**2 + y
       latex: false
     initial_value: 0.0
   y:
-    name: y
     equation:
       lhs: y_next
       rhs: b*x

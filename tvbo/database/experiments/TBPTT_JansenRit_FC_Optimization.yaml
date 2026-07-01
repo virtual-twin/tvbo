@@ -1,0 +1,340 @@
+# =============================================================================
+# TBPTT: Truncated Backprop-Through-Time for whole-brain gradient fitting
+# =============================================================================
+# 1:1 with tvboptim docs/workflows/TBPTT.qmd. Jansen-Rit in the chaotic regime;
+# the exact reverse-mode gradient of the FC-RMSE loss w.r.t. global coupling G
+# breaks past the bifurcation. A truncated-BPTT window (integration.differentiation
+# .truncation_window -> Heun(grad_horizon)) restores a usable descent direction.
+# Diagnostics (AD gradient, seed-averaged finite-difference gradient, top Lyapunov
+# exponent) are declared as analysis observations.
+# =============================================================================
+
+id: 7
+label: "TBPTT Jansen-Rit FC Fitting"
+description: >
+  Truncated backprop-through-time for a chaotic Jansen-Rit network. Fits global
+  coupling G to empirical FC; contrasts full-BPTT vs windowed (grad_horizon)
+  gradients. Based on tvboptim TBPTT.qmd.
+
+dynamics:
+  name: JansenRit
+  label: "Jansen-Rit Neural Mass Model"
+  description: >
+    Three-population neural mass model; chaotic-regime parameters (a=0.1, mu=0.08).
+  parameters:
+    A: {value: 3.25, unit: mV}
+    B: {value: 22.0, unit: mV}
+    a: {value: 0.1, unit: per_ms}
+    b: {value: 0.05, unit: per_ms}
+    v0: {value: 5.52, unit: mV}
+    nu_max: {value: 0.0025, unit: per_ms}
+    r: {value: 0.56, unit: per_mV}
+    J: {value: 135.0}
+    a_1: {value: 1.0}
+    a_2: {value: 0.8}
+    a_3: {value: 0.25}
+    a_4: {value: 0.25}
+    mu: {value: 0.08}
+
+  derived_variables:
+    sigm_y1_y2:
+      equation:
+        rhs: "2.0 * nu_max / (1.0 + exp(r * (v0 - (y1 - y2))))"
+    sigm_y0_1:
+      equation:
+        rhs: "2.0 * nu_max / (1.0 + exp(r * (v0 - (a_1 * J * y0))))"
+    sigm_y0_3:
+      equation:
+        rhs: "2.0 * nu_max / (1.0 + exp(r * (v0 - (a_3 * J * y0))))"
+
+  state_variables:
+    y0:
+      equation: {rhs: "y3"}
+      initial_value: 0.0
+    y1:
+      equation: {rhs: "y4"}
+      initial_value: 5.0
+    y2:
+      equation: {rhs: "y5"}
+      initial_value: 5.0
+    y3:
+      equation:
+        rhs: "A * a * sigm_y1_y2 - 2.0 * a * y3 - a**2 * y0"
+      initial_value: 0.0
+    y4:
+      equation:
+        rhs: "A * a * (mu + a_2 * J * sigm_y0_1 + c_sigmJR) - 2.0 * a * y4 - a**2 * y1"
+      initial_value: 0.0
+      coupling_variable: true
+      noise:
+        additive: true
+        parameters:
+          sigma:
+            value: 0.0316
+            description: "Noise intensity on y4 (chaos-regime drive)"
+    y5:
+      equation:
+        rhs: "B * b * (a_4 * J * sigm_y0_3) - 2.0 * b * y5 - b**2 * y2"
+      initial_value: 0.0
+
+  coupling_inputs:
+    c_sigmJR:
+      dimension: 1
+
+network:
+  label: "Desikan-Killiany"
+  description: "Structural connectivity from dk_average dataset"
+  bids_dir: "../networks/bids/dk_average"
+  structural_measures: [streamlineCount, tractLength]
+  observational_measures: [BoldCorrelation]
+  transforms:
+    - name: weight
+      equation:
+        rhs: "W / max(W)"
+
+  coupling:
+    c_sigmJR:
+      label: "Sigmoidal Jansen-Rit Coupling (instantaneous)"
+      description: "Instantaneous sigmoidal Jansen-Rit coupling"
+      delayed: false
+      parameters:
+        G:
+          value: 8.0
+          description: "Global coupling strength"
+          free: true
+        cmin: {value: 0.0}
+        cmax: {value: 0.005}
+        midpoint: {value: 6.0}
+        r: {value: 0.56}
+      incoming_states: [y1, y2]
+      pre_expression:
+        rhs: "cmin + (cmax - cmin) / (1.0 + exp(r * (midpoint - (y1 - y2))))"
+      post_expression:
+        rhs: "G * gx"
+
+integration:
+  method: Heun
+  step_size: 1.0
+  duration: 60000
+  transient_time: 20000
+  differentiation:
+    truncation_window: 100.0   # ms; TBPTT window -> Heun(grad_horizon=100)
+    mode: reverse
+
+# =============================================================================
+# FUNCTIONS (BOLD pipeline — matches tvboptim HRFBold)
+# =============================================================================
+functions:
+  hrf_kernel:
+    description: "First-order Volterra HRF kernel"
+    time_range: {lo: 0, hi: duration, n: 5000}
+    equation:
+      rhs: "(1/3)*exp(-0.5*(t/1000)/tau_s)*sin(sqrt(1/tau_f - 1/(4*tau_s**2))*(t/1000))/sqrt(1/tau_f - 1/(4*tau_s**2))"
+      parameters:
+        tau_s: {value: 0.8}
+        tau_f: {value: 0.4}
+    arguments:
+      - {name: duration, value: 20000.0}
+
+  temporal_average:
+    description: "Centered window-average downsample (reproduces HRFBold TemporalAverage)"
+    source_code: "jax.vmap(lambda _i: jnp.mean(jax.lax.dynamic_slice(data, (_i,) + (0,) * (data.ndim - 1), (period_samples,) + data.shape[1:]), axis=0))((jnp.arange(data.shape[0]) + 1)[::period_samples])[: jnp.arange((period_samples - 2) // 2, data.shape[0], period_samples).shape[0]]"
+    arguments:
+      - {name: data}
+      - {name: period_samples, value: 4}   # round(downsample_period 4 / dt 1)
+
+  prepend_history:
+    description: "Zero-pad transient history to one kernel length and prepend"
+    source_code: "jnp.concatenate([(jnp.vstack([jnp.zeros((kernel_samples - history.shape[0],) + history.shape[1:], history.dtype), history]) if history.shape[0] < kernel_samples else history[-kernel_samples:]), data], axis=0)"
+    arguments:
+      - {name: data}
+      - {name: history}
+      - {name: kernel_samples, value: 5000}   # ceil(20000 / 4)
+
+  volterra_transform:
+    description: "Volterra BOLD nonlinearity"
+    equation:
+      rhs: "k_1 * V_0 * (data - 1.0)"
+      parameters:
+        k_1: {value: 5.6}
+        V_0: {value: 0.02}
+    arguments:
+      - {name: data}
+
+  subsample_bold:
+    description: "Sample at end of each BOLD TR (anchored, uncapped)"
+    source_code: "data[step::step]"
+    arguments:
+      - {name: data}
+      - {name: step, value: 180}   # round(TR 720 / downsample_period 4)
+
+  rmse:
+    description: "Root mean squared error"
+    equation:
+      rhs: "sqrt(mean((x - y)**2))"
+    arguments:
+      - {name: x}
+      - {name: y}
+
+# =============================================================================
+# OBSERVATIONS
+# =============================================================================
+observations:
+  empirical_fc:
+    label: "Empirical Functional Connectivity"
+    source: [network.observations.BoldCorrelation]
+
+  bold:
+    label: "Simulated BOLD Signal"
+    source: [y0]
+    period: 720.0
+    pipeline:
+      - function: hrf_kernel
+      - output: downsampled_data
+        function: temporal_average
+        arguments:
+          - {name: data, value: integration.result}
+          - {name: period_samples, value: 4}
+      - output: downsampled_history
+        function: temporal_average
+        arguments:
+          - {name: data, value: integration.transient}
+          - {name: period_samples, value: 4}
+      - function: prepend_history
+        arguments:
+          - {name: data, value: downsampled_data}
+          - {name: history, value: downsampled_history}
+          - {name: kernel_samples, value: 5000}
+      - output: bold_convolve
+        callable: {module: jax.scipy.signal, name: fftconvolve}
+        apply_on_dimension: node
+        arguments:
+          - {name: in1, value: prepend_history}
+          - {name: in2, value: hrf_kernel}
+          - {name: mode, value: valid}
+      - function: volterra_transform
+        arguments:
+          - {name: data, value: bold_convolve}
+      - function: subsample_bold
+        arguments:
+          - {name: data, value: volterra_transform}
+
+  fc:
+    label: "Simulated Functional Connectivity"
+    source: [bold]
+    pipeline:
+      - callable: {name: compute_fc, module: tvboptim.observations.observation}
+        arguments:
+          - {name: timeseries, value: bold}
+          - {name: skip_t, value: 25}
+
+  loss:
+    label: "FC-RMSE loss"
+    description: "RMSE between simulated and empirical FC (the optimization/diagnostic objective)"
+    source: [fc, empirical_fc]
+    pipeline:
+      - function: rmse
+        arguments:
+          - {name: x, value: fc}
+          - {name: y, value: empirical_fc}
+
+  lyapunov:
+    label: "Top Lyapunov exponent"
+    description: "Largest Lyapunov exponent on a short segment (marks the chaos onset)"
+    analysis:
+      type: lyapunov
+      wrt: [c_sigmJR.G]                  # evaluate lambda_max at the current G (for sweeps)
+      parameters:
+        segment_time: {value: 1000.0}   # ms
+        n: {value: 5}                    # rescaling steps
+        k: {value: 1}                    # top-1 exponent
+
+  ad_gradient:
+    label: "AD gradient of loss w.r.t. G"
+    description: "Reverse-mode autodiff gradient of the FC-RMSE loss w.r.t. global coupling G"
+    analysis:
+      type: gradient
+      target: loss
+      wrt: [c_sigmJR.G]
+      parameters:
+        mode: {value: reverse}
+
+  fd_gradient:
+    label: "Finite-difference gradient of loss w.r.t. G"
+    description: >
+      Seed-averaged central finite-difference gradient of the FC-RMSE loss w.r.t. G.
+      Common random numbers per seed (shared noise key at +/-delta); the tape-free
+      ground-truth reference for the AD gradient in the chaotic band.
+    analysis:
+      type: finite_difference
+      target: loss
+      wrt: [c_sigmJR.G]
+      parameters:
+        delta: {value: 0.3}
+        seeds: {value: 8}
+        seed_base: {value: 0}
+
+# =============================================================================
+# OPTIMIZATION: fit G to empirical FC (the payoff — full-AD vs TBPTT)
+# =============================================================================
+# integration.differentiation drives the descent: {truncation_window: 100,
+# mode: reverse} -> Heun(grad_horizon=100) + reverse-mode == the TBPTT run;
+# {mode: forward} with no window -> the exact untruncated full-AD run (forward-mode
+# AD == full reverse-mode BPTT for a scalar parameter).
+optimizations:
+  fit_G:
+    label: "Fit global coupling G to empirical FC"
+    description: >
+      Minimize FC-RMSE w.r.t. global coupling G with Adam. The differentiation mode
+      (reverse=TBPTT / forward=full AD) is taken from integration.differentiation.
+    loss:
+      function: rmse
+      arguments:
+        - {name: x, value: observations.fc.data}
+        - {name: y, value: observations.empirical_fc.data}
+    stages:
+      - name: fit
+        label: "Fit G"
+        description: "Descend FC-RMSE on the single global-coupling scalar G"
+        free_parameters:
+          - parameter: c_sigmJR.G
+        algorithm: adam
+        learning_rate: 1.0
+        max_iterations: 100
+
+# =============================================================================
+# EXPLORATION: G sweep of the FC-RMSE landscape (the motivation sweep)
+# =============================================================================
+explorations:
+  G_sweep:
+    label: "G sweep of the FC-RMSE landscape"
+    description: >
+      Sweep global coupling G from quiescence through synchronized oscillation into
+      chaos, tracing the FC-RMSE landscape the optimizer must descend.
+    space:
+      - parameter: c_sigmJR.G
+        domain: {lo: 0.0, hi: 40.0, n: 80}
+    mode: product
+    observable:
+      function: rmse
+      arguments:
+        - {name: x, value: fc.data}
+        - {name: y, value: empirical_fc.data}
+
+  motivation_sweep:
+    label: "Diagnostics vs G (the motivation sweep)"
+    description: >
+      Sweep global coupling G and record the FC-RMSE loss together with the three
+      diagnostics — the AD gradient, the seed-averaged finite-difference gradient, and
+      the top Lyapunov exponent — at each G. This is the declarative form of the
+      original run_motivation probe: the exact reverse-mode gradient tracks the FD
+      ground truth until the Lyapunov exponent crosses zero (chaos onset), where it
+      breaks. Recorded per grid point; no Python driver.
+    space:
+      - parameter: c_sigmJR.G
+        domain: {lo: 0.0, hi: 40.0, n: 80}
+    mode: product
+    record: [loss, ad_gradient, fd_gradient, lyapunov]
+
+references:
+  - "tvboptim TBPTT.qmd - truncated backprop-through-time"

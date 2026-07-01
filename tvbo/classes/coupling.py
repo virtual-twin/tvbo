@@ -581,4 +581,8 @@ def get_global_coupling_functions():
     return list(CouplingFunctions)
 
 
-available_coupling_functions = set(get_global_coupling_functions())
+# NOTE: do NOT eagerly compute an ``available_coupling_functions`` set at import
+# time. It has no consumers, and traversing ``onto.Coupling.subclasses()`` forces
+# the (metadata-only) owlready2 ontology to fully load on every ``import tvbo`` —
+# including JAX/codegen processes that never query the ontology. Call
+# ``get_global_coupling_functions()`` on demand instead.

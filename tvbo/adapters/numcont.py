@@ -102,9 +102,11 @@ def _initial_state_dict(model, cont) -> dict[int, float]:
 
 def _param_values(model) -> dict[str, float]:
     """Default parameter values keyed by name (skips None)."""
+    from tvbo.utils import is_array_valued
+
     out = {}
     for p in model.parameters.values():
-        if p.value is not None:
+        if p.value is not None and not is_array_valued(p.value):
             out[p.name] = float(p.value)
     return out
 

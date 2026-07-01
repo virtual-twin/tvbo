@@ -39,7 +39,7 @@ def get_func_args(func_call):
     """Get arguments from FunctionCall as dict {name: value}."""
     if not func_call.arguments:
         return {}
-    return {str(arg.name): arg.value for arg in func_call.arguments}
+    return {str(name): arg.value for name, arg in func_call.arguments.items()}
 
 def get_target_name(rule):
     """Get target parameter name from UpdateRule."""
@@ -444,7 +444,13 @@ def run_${algo_name}(
                 key, subkey = jax.random.split(key)
                 _warmup_result = model_fn(state)
                 state.initial_state.dynamics = _warmup_result.data[-1][:${len(state_names)}]
-                if hasattr(state, '_internal') and getattr(state._internal, 'noise_samples', None) is not None:
+                if getattr(state, 'noise', None) is not None and getattr(state.noise, 'key', None) is not None:
+                    # Resample the in-scan noise by swapping the PRNG key — the
+                    # live randomness source. _internal.noise_samples is an
+                    # optional injection slot that defaults to None. Matches the
+                    # reference EI_Tuning workflow (state.noise.key = subkey).
+                    state.noise.key = subkey
+                elif hasattr(state, '_internal') and getattr(state._internal, 'noise_samples', None) is not None:
                     state._internal.noise_samples = jax.random.normal(
                         key=subkey, shape=state._internal.noise_samples.shape
                     )
@@ -476,7 +482,11 @@ def run_${algo_name}(
             key, subkey = jax.random.split(key)
             _warmup_result = model_fn(state)
             state.initial_state.dynamics = _warmup_result.data[-1][:${len(state_names)}]
-            if hasattr(state, '_internal') and getattr(state._internal, 'noise_samples', None) is not None:
+            if getattr(state, 'noise', None) is not None and getattr(state.noise, 'key', None) is not None:
+                # Resample the in-scan noise by swapping the PRNG key (live
+                # randomness source); _internal.noise_samples defaults to None.
+                state.noise.key = subkey
+            elif hasattr(state, '_internal') and getattr(state._internal, 'noise_samples', None) is not None:
                 state._internal.noise_samples = jax.random.normal(
                     key=subkey, shape=state._internal.noise_samples.shape
                 )
@@ -528,7 +538,11 @@ def run_${algo_name}(
 % endfor
         result = model_fn(state)
         state.initial_state.dynamics = result.data[-1][:${len(state_names)}]
-        if hasattr(state, '_internal') and getattr(state._internal, 'noise_samples', None) is not None:
+        if getattr(state, 'noise', None) is not None and getattr(state.noise, 'key', None) is not None:
+            # Resample the in-scan noise by swapping the PRNG key (live
+            # randomness source); _internal.noise_samples defaults to None.
+            state.noise.key = subkey
+        elif hasattr(state, '_internal') and getattr(state._internal, 'noise_samples', None) is not None:
             state._internal.noise_samples = jax.random.normal(
                 key=subkey, shape=state._internal.noise_samples.shape
             )
@@ -605,8 +619,7 @@ def run_${algo_name}(
                     direct_call = f"{callable_module}.{callable_name}"
                     # Extract additional arguments from pipeline (e.g., skip_t=20)
                     if hasattr(first_step, 'arguments') and first_step.arguments:
-                        for arg in first_step.arguments:
-                            arg_name = getattr(arg, 'name', None)
+                        for arg_name, arg in first_step.arguments.items():
                             arg_value = getattr(arg, 'value', None)
                             # Skip the source observation argument (that's passed as the buffer)
                             if arg_name and arg_value is not None:

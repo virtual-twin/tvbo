@@ -41,8 +41,18 @@ Adapters wrap *external* simulators (TVB, Julia, NeuroML, PyRates, BifurcationKi
 4. Wire dispatch in `tvbo/codegen/templater.py`.
 5. Ensure the optional dependency lives in `pyproject.toml` under `[project.optional-dependencies]`.
 
+## Slim templates — logic lives in the adapter
+
+**Templates fill in values; they do NOT process.** All logic — resolution, parsing, AND generating code fragments — belongs in the Python adapter layer (`tvbo/adapters/<backend>.py` `prepare_context()`, or a helper it owns such as `tvbo/templates/tvboptim/utils.py`). The adapter returns ready-to-emit strings/context; the template just interpolates `${...}`.
+
+- If a `<% %>` block branches over metadata to emit different code bodies (e.g. per-type `% if/elif` building a function body), move it to a Python `render_*()` helper and interpolate the result. A verbatim function body with heavy `% if/for` branching inside a template is the smell.
+- **Why:** the adapter can dedup, reduce redundancy, and harmonize; it also surfaces which generator functions can be **reused across adapters** (jax/julia/matlab). Logic locked in one backend's mako can't be shared. Python helpers are also testable in isolation.
+- Good pattern: `resolve_solver_kwargs` / `resolve_optimizer_mode` in `utils.py` — pure functions returning strings, called once from the template.
+- This also covers resolution/parsing: stringly-typed pointers (`source: [network.observations.X]`) get resolved ONCE at load into typed data, not re-parsed in template + utils + runtime.
+
 ## Common pitfalls
 
 - **Don't mix Mako and Jinja2** in the same template tree — pick the one the sibling uses.
 - **Don't hard-code paths** inside templates; pass them through the templater.
+- **Don't cram processing into `<% %>` blocks** — see "Slim templates" above.
 - Generated code must round-trip through `black` cleanly (Python backends).

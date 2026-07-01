@@ -49,10 +49,14 @@ is_diffrax = solver_class == 'DiffraxSolver'
 dt = float(integration.step_size) if integration and integration.step_size else 0.1
 
 # Extract state variable bounds for BoundedSolver
-from tvbo.templates.tvboptim.utils import get_state_bounds, format_bounds_array
+from tvbo.templates.tvboptim.utils import get_state_bounds, format_bounds_array, resolve_solver_kwargs
 state_bounds_lo, state_bounds_hi, has_state_bounds = get_state_bounds(model)
 state_bounds_lo_str = format_bounds_array(state_bounds_lo, 'jax')
 state_bounds_hi_str = format_bounds_array(state_bounds_hi, 'jax')
+
+# Differentiation strategy -> native-solver kwargs, resolved in the tvboptim Python
+# layer (shared with the experiment template). Diffrax has no such knobs.
+solver_kwargs_str = resolve_solver_kwargs(integration, dt, is_diffrax=is_diffrax)
 %>
 % if is_diffrax:
 import diffrax
@@ -82,7 +86,7 @@ def get_solver():
     base_solver = DiffraxSolver(diffrax.Dopri5())
     % endif
 % else:
-    base_solver = ${solver_class}()
+    base_solver = ${solver_class}(${solver_kwargs_str})
 % endif
 % if has_state_bounds:
     # Wrap solver with BoundedSolver to enforce state variable domain constraints

@@ -17,6 +17,7 @@ from tvbo.parse.expression import parse_eq
 
 ARRAY_FUNCTION_MAPPINGS = {
     "jax": {
+        # reductions
         "sum": "jnp.sum",
         "mean": "jnp.mean",
         "std": "jnp.std",
@@ -25,7 +26,32 @@ ARRAY_FUNCTION_MAPPINGS = {
         "min": "jnp.min",
         "abs": "jnp.abs",
         "prod": "jnp.prod",
+        "cumsum": "jnp.cumsum",
+        "diff": "jnp.diff",
+        "argmax": "jnp.argmax",
+        "argmin": "jnp.argmin",
+        # shape / construction / manipulation
         "concatenate": "jnp.concatenate",
+        "stack": "jnp.stack",
+        "vstack": "jnp.vstack",
+        "hstack": "jnp.hstack",
+        "pad": "jnp.pad",
+        "roll": "jnp.roll",
+        "flip": "jnp.flip",
+        "reshape": "jnp.reshape",
+        "transpose": "jnp.transpose",
+        "expand_dims": "jnp.expand_dims",
+        "squeeze": "jnp.squeeze",
+        "take": "jnp.take",
+        "tile": "jnp.tile",
+        "repeat": "jnp.repeat",
+        "arange": "jnp.arange",
+        "zeros": "jnp.zeros",
+        "ones": "jnp.ones",
+        "where": "jnp.where",
+        "clip": "jnp.clip",
+        "dot": "jnp.dot",
+        "matmul": "jnp.matmul",
     },
     "numpy": {
         "sum": "np.sum",
@@ -36,7 +62,31 @@ ARRAY_FUNCTION_MAPPINGS = {
         "min": "np.min",
         "abs": "np.abs",
         "prod": "np.prod",
+        "cumsum": "np.cumsum",
+        "diff": "np.diff",
+        "argmax": "np.argmax",
+        "argmin": "np.argmin",
         "concatenate": "np.concatenate",
+        "stack": "np.stack",
+        "vstack": "np.vstack",
+        "hstack": "np.hstack",
+        "pad": "np.pad",
+        "roll": "np.roll",
+        "flip": "np.flip",
+        "reshape": "np.reshape",
+        "transpose": "np.transpose",
+        "expand_dims": "np.expand_dims",
+        "squeeze": "np.squeeze",
+        "take": "np.take",
+        "tile": "np.tile",
+        "repeat": "np.repeat",
+        "arange": "np.arange",
+        "zeros": "np.zeros",
+        "ones": "np.ones",
+        "where": "np.where",
+        "clip": "np.clip",
+        "dot": "np.dot",
+        "matmul": "np.matmul",
     },
     "julia": {
         "sum": "sum",
@@ -47,7 +97,20 @@ ARRAY_FUNCTION_MAPPINGS = {
         "min": "minimum",
         "abs": "abs",
         "prod": "prod",
+        "cumsum": "cumsum",
+        "diff": "diff",
+        "argmax": "argmax",
+        "argmin": "argmin",
         "concatenate": "vcat",
+        "stack": "stack",
+        "vstack": "vcat",
+        "hstack": "hcat",
+        "flip": "reverse",
+        "reshape": "reshape",
+        "transpose": "transpose",
+        "clip": "clamp",
+        "dot": "dot",
+        "matmul": "*",
     },
     "python": {
         "sum": "sum",
@@ -139,7 +202,81 @@ def print_Piecewise(Printer, expr, verbose=False):
     return result
 
 
-class NumPyPrinter(spn.NumPyPrinter):
+# Array-manipulation primitives that SymPy cannot represent natively. Each entry
+# maps a function name to a handler ``(printer, expr) -> code string`` that emits
+# the right call for the printer's array module (``printer._module``: np / jnp).
+# Shared by NumPyPrinter and JaxPrinter so a new primitive is one dict entry.
+def _afp_concatenate(p, expr):
+    args = list(expr.args)
+    if args and args[-1].is_integer:
+        axis, arrays = int(args[-1]), args[:-1]
+    else:
+        axis, arrays = 0, args
+    return f"{p._module}.concatenate([{', '.join(p._print(a) for a in arrays)}], axis={axis})"
+
+
+def _afp_window_mean(p, expr):
+    X, w = p._print(expr.args[0]), p._print(expr.args[1])
+    return f"{p._module}.mean({X}.reshape(-1, {w}, *{X}.shape[1:]), axis=1)"
+
+
+def _afp_subsample(p, expr):
+    return f"{p._print(expr.args[0])}[::{p._print(expr.args[1])}]"
+
+
+def _afp_global_mean(p, expr):
+    return f"{p._module}.mean({p._print(expr.args[0])}, axis=-2, keepdims=True)"
+
+
+def _afp_transpose(p, expr):
+    return f"{p._print(expr.args[0])}.T"
+
+
+def _afp_mode_dot(p, expr):
+    """Contract X's mode axis with matrix M (TVB's ``numpy.dot(xi, A_ik)``).
+
+    For X ``(n_nodes, n_modes)`` and M ``(n_modes, n_modes)``:
+    ``result[node, k] = sum_j X[node, j] * M[j, k]``.
+    """
+    return f"{p._module}.dot({p._print(expr.args[0])}, {p._print(expr.args[1])})"
+
+
+def _afp_mode_sum(p, expr):
+    """Sum over the mode axis, broadcasting back (TVB's ``coupling[0].sum(axis=1)[:, None]``)."""
+    return f"{p._module}.sum({p._print(expr.args[0])}, axis=-1, keepdims=True)"
+
+
+_ARRAY_FUNCTION_PRINTERS = {
+    "concatenate": _afp_concatenate,
+    "window_mean": _afp_window_mean,
+    "subsample": _afp_subsample,
+    "global_mean": _afp_global_mean,
+    "transpose": _afp_transpose,
+    "mode_dot": _afp_mode_dot,
+    "mode_sum": _afp_mode_sum,
+}
+
+
+class _ArrayFunctionPrinterMixin:
+    """Shared printer hooks for the numpy/jax backends.
+
+    Routes array primitives (``concatenate``, ``mode_dot``, ``mode_sum``, …) through
+    the ``_ARRAY_FUNCTION_PRINTERS`` table and ``Piecewise`` through
+    ``print_Piecewise``, deferring to the parent printer otherwise. Kept as a mixin
+    listed first in the MRO so ``super()`` resolves to the concrete SymPy printer base.
+    """
+
+    def _print_Piecewise(self, expr):
+        return print_Piecewise(self, expr)
+
+    def _print_Function(self, expr):
+        handler = _ARRAY_FUNCTION_PRINTERS.get(expr.func.__name__)
+        if handler is not None:
+            return handler(self, expr)
+        return super()._print_Function(expr)
+
+
+class NumPyPrinter(_ArrayFunctionPrinterMixin, spn.NumPyPrinter):
     def __init__(self, settings=None, module="np"):
         self._module = module
         m = module + "."
@@ -152,11 +289,8 @@ class NumPyPrinter(spn.NumPyPrinter):
         # Add array function mappings
         self.known_functions.update(ARRAY_FUNCTION_MAPPINGS["numpy"])
 
-    def _print_Piecewise(self, expr):
-        return print_Piecewise(self, expr)
 
-
-class JaxPrinter(spn.JaxPrinter):
+class JaxPrinter(_ArrayFunctionPrinterMixin, spn.JaxPrinter):
     def __init__(self, settings=None, module="jnp"):
         self._module = module
         m = module + "."
@@ -262,44 +396,6 @@ class JaxPrinter(spn.JaxPrinter):
                 slices.append("None")
 
         return f"{base_name}[{', '.join(slices)}]"
-
-    def _print_Piecewise(self, expr):
-        return print_Piecewise(self, expr)
-
-    def _print_Function(self, expr):
-        """Handle special array functions like concatenate."""
-        func_name = expr.func.__name__
-        if func_name == "concatenate":
-            # concatenate(a, b, axis) -> jnp.concatenate([a, b], axis=axis)
-            args = list(expr.args)
-            if args and args[-1].is_integer:
-                axis = int(args[-1])
-                arrays = args[:-1]
-            else:
-                axis = 0
-                arrays = args
-            array_strs = ", ".join(self._print(a) for a in arrays)
-            return f"jnp.concatenate([{array_strs}], axis={axis})"
-        if func_name == "window_mean":
-            # window_mean(X, step) -> jnp.mean(X.reshape(-1, step, *X.shape[1:]), axis=1)
-            X_str = self._print(expr.args[0])
-            w_str = self._print(expr.args[1])
-            return f"jnp.mean({X_str}.reshape(-1, {w_str}, *{X_str}.shape[1:]), axis=1)"
-        if func_name == "subsample":
-            # subsample(X, step) -> X[::step]
-            X_str = self._print(expr.args[0])
-            s_str = self._print(expr.args[1])
-            return f"{X_str}[::{s_str}]"
-        if func_name == "global_mean":
-            # global_mean(X) -> jnp.mean(X, axis=-2, keepdims=True)
-            X_str = self._print(expr.args[0])
-            return f"jnp.mean({X_str}, axis=-2, keepdims=True)"
-        if func_name == "transpose":
-            # transpose(X) -> X.T
-            X_str = self._print(expr.args[0])
-            return f"{X_str}.T"
-        # Fall back to parent implementation
-        return super()._print_Function(expr)
 
     def _print_Sum(self, expr):
         """Convert SymPy Sum to jnp.sum for array operations.
@@ -711,24 +807,26 @@ class PythonCodePrinter(_PythonCodePrinter):
         return f"(1 if {arg} > 0 else (-1 if {arg} < 0 else 0))"
 
 
-def get_printer(format, parameters=None):
+def get_printer(format, parameters=None, order=None):
+    # order='none' preserves source term order; default keeps prior behaviour.
+    extra = {} if order is None else {"order": order}
 
     if format == "numpy":
-        return NumPyPrinter()
+        return NumPyPrinter(settings=extra) if extra else NumPyPrinter()
     elif format == "jax":
-        return JaxPrinter()
+        return JaxPrinter(settings=extra) if extra else JaxPrinter()
     elif format == "julia":
-        return JuliaPrinter()
+        return JuliaPrinter(settings=extra) if extra else JuliaPrinter()
     elif format == "mtk":
-        return MTKPrinter()
+        return MTKPrinter(settings=extra) if extra else MTKPrinter()
     elif format == "fortran":
-        return FortranPrinter()
+        return FortranPrinter(settings=extra) if extra else FortranPrinter()
     elif format == "python":
-        return PythonCodePrinter()
+        return PythonCodePrinter(settings=extra) if extra else PythonCodePrinter()
     elif format == "lems":
-        return LEMSPrinter(settings={"parameters": parameters or []})
+        return LEMSPrinter(settings={"parameters": parameters or [], **extra})
     elif format in ["sympy", "symbolic", "pyrates"]:
-        return StrPrinter()
+        return StrPrinter(settings=extra) if extra else StrPrinter()
     else:
         raise ValueError(f"Unsupported format: {format}")
 
@@ -739,6 +837,7 @@ def render_expression(
     user_functions={},
     parameters=None,
     infer_broadcasting=False,
+    preserve_order=False,
 ):
     """Render a SymPy expression or string to target format code.
 
@@ -760,14 +859,22 @@ def render_expression(
         If True, analyze indexed expressions and automatically add broadcasting
         dimensions (e.g., rmse[i] -> rmse[:, None] when used with a[i,j]).
         This enables mathematically correct notation to generate correct array code.
+    preserve_order : bool
+        If True, keep the source term order (no SymPy Add/Mul canonicalization)
+        so generated code matches reference code operation-for-operation.
     """
     if isinstance(expression, str):
-        # Pass user_functions as functions to parse_eq so they're recognized
-        # This prevents implicit multiplication from breaking function names
-        func_names = list(user_functions.keys()) if user_functions else None
-        expression = parse_eq(expression, parameters=parameters, functions=func_names)
+        # Pass user_functions AND the array-op vocabulary to parse_eq so they're
+        # recognized as functions (else implicit multiplication splits e.g.
+        # pad(x) into pad*x).
+        func_names = list(user_functions.keys()) if user_functions else []
+        func_names += list(ARRAY_FUNCTION_MAPPINGS.get(format, {}).keys())
+        # preserve_order: parse unevaluated + print order='none' so SymPy keeps
+        # the authored term order (float +/* are non-associative).
+        _po = {"evaluate": False} if preserve_order else {}
+        expression = parse_eq(expression, parameters=parameters, functions=func_names, **_po)
 
-    printer = get_printer(format, parameters=parameters)
+    printer = get_printer(format, parameters=parameters, order="none" if preserve_order else None)
     # User functions extend built-in mappings (don't override if already mapped)
     if user_functions:
         for name, target in user_functions.items():
@@ -789,6 +896,7 @@ def render_equation(
     replace=None,
     remove=None,
     inline_funcs=None,
+    preserve_order=False,
     **kwargs,
 ):
     """
@@ -812,6 +920,8 @@ def render_equation(
         Dictionary mapping function name -> (arg_names, body_expr) for inlining
         custom functions. The body_expr should be a sympy expression.
         Example: {'Sigm': (['v'], 2*e0/(1 + exp(r*(v0 - v))))}
+    preserve_order : bool
+        If True, keep the source term order (no SymPy canonicalization).
     **kwargs
         Additional arguments passed to parse_eq.
 
@@ -821,6 +931,8 @@ def render_equation(
         The rendered equation string.
     """
     # Ensure parsing knows about symbols and undefined functions from the model scope
+    if preserve_order:  # keep authored term order (see render_expression)
+        kwargs.setdefault("evaluate", False)
     expr = parse_eq(equation, local_dict=local_dict, **kwargs)
 
     if format == "latex":
@@ -847,7 +959,7 @@ def render_equation(
             if getattr(obj, "is_Function", False) and name not in uf:
                 uf[str(name)] = str(name)
 
-    printer = get_printer(format)
+    printer = get_printer(format, order="none" if preserve_order else None)
     # User functions take precedence over built-in mappings
     if uf:
         try:
