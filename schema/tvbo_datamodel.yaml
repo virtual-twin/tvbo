@@ -1223,21 +1223,19 @@ classes:
                 ifabsent: boolean(false)
                 description: "Whether to generate a directed graph."
             parameters:
-                range: GeneratorParameter
+                range: Parameter
                 multivalued: true
                 inlined: true
                 description: >
                     Generator parameters keyed by name (e.g. n, k, p, seed).
-                    Each is a ``GeneratorParameter`` that plays two roles with
-                    one shape: in a curated generator entry it is a typed
-                    *declaration* (a ``range`` type, an optional ``ifabsent``
-                    default and a ``required`` flag, with no value); in a
-                    concrete experiment the same key carries a concrete
-                    ``value`` (the inherited ``Parameter.value`` slot). Builder
-                    (Callable) generators receive the resolved values as keyword
-                    arguments; declarative library generators additionally pass
-                    them positionally via the per-backend ``bindings`` map. The
-                    number of nodes is always taken from Network.number_of_nodes.
+                    A curated entry *declares* each parameter's interface via
+                    the general ``Parameter`` slots — ``datatype`` (its type),
+                    ``default`` (fallback when absent) and ``required`` — while
+                    a concrete experiment supplies the same key by ``value``.
+                    Builder (Callable) generators receive the resolved values as
+                    keyword arguments; declarative library generators pass them
+                    positionally via the per-backend ``bindings`` map. The number
+                    of nodes is always taken from Network.number_of_nodes.
             bindings:
                 range: Binding
                 multivalued: true
@@ -1968,42 +1966,22 @@ classes:
                     during exploration auto-expansion. Length must match parameter shape
                     (e.g., n_nodes for shape "(n_nodes,)"). If not set, all elements
                     share the same domain.
-
-    GeneratorParameter:
-        class_uri: tvbo:GeneratorParameter
-        is_a: Parameter
-        description: >-
-            A GraphGenerator parameter: a valued ``Parameter`` that additionally
-            declares its typed argument interface, so one shape serves both the
-            curated menu and the instantiated experiment. In a curated generator
-            entry each parameter is a *declaration* — a type (``range``), an
-            optional default (``ifabsent``) and a ``required`` flag, carrying no
-            value. In a concrete experiment the same key is supplied *by value*
-            via the inherited ``value`` slot. The number of nodes is never a
-            parameter — it is always taken from ``Network.number_of_nodes``.
-        attributes:
-            range:
+            datatype:
                 range: string
                 description: >-
-                    Declared type of the argument — a LinkML range name: a
-                    primitive (``integer``, ``float``, ``string``,
-                    ``uriorcurie``) or a class (e.g. ``Distribution``).
-                    Declaration-only; unused when the parameter carries a
-                    concrete ``value``.
+                    Declared value type of this parameter, given as a schema
+                    range name — a primitive (``integer``, ``float``,
+                    ``string``, ``uriorcurie``) or a class (e.g.
+                    ``Distribution``). Documents the expected type when the
+                    parameter is a *declaration* carrying no concrete ``value``
+                    (e.g. a GraphGenerator's typed argument interface). Distinct
+                    from ``domain`` (numeric bounds) and ``unit``.
             required:
                 range: boolean
                 description: >-
-                    Whether this argument must be supplied when instantiating the
-                    generator. Optional arguments (e.g. ``seed``) set this to
-                    false. Declaration-only; ignored for valued parameters.
-            ifabsent:
-                range: string
-                description: >-
-                    Default value applied when the argument is absent (LinkML
-                    ``ifabsent`` semantics, e.g. ``preserve`` → ``binary_mask``).
-                    Read by the procedure engine
-                    (``tvbo/graph_generators/engine.py``) to seed unset
-                    parameters. Declaration-only.
+                    Whether a value for this parameter must be supplied.
+                    Optional parameters (e.g. a generator's ``seed``) set this
+                    to false. Declaration metadata; unset means unconstrained.
 
     CouplingInput:
         class_uri: tvbo:CouplingInput

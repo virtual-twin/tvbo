@@ -29,10 +29,6 @@ from typing import (
     TypeVar,
     Union
 )
-from typing import (
-    TypeVar,
-    Union
-)
 
 from pydantic import (
     BaseModel,
@@ -44,11 +40,6 @@ from pydantic import (
     field_validator,
     model_serializer
 )
-
-if sys.version_info.minor >= 12:
-    from typing import TypeAliasType
-else:
-    from typing_extensions import TypeAliasType
 
 if sys.version_info.minor >= 12:
     from typing import TypeAliasType
@@ -4667,7 +4658,7 @@ class GraphGenerator(ConfiguredBaseModel):
                        'Study']} })
     seed: Optional[int] = Field(default=None, description="""Random seed for reproducible graph generation.""", json_schema_extra = { "linkml_meta": {'domain_of': ['GraphGenerator', 'Distribution', 'Noise']} })
     directed: Optional[bool] = Field(default=False, description="""Whether to generate a directed graph.""", json_schema_extra = { "linkml_meta": {'domain_of': ['GraphGenerator', 'Edge'], 'ifabsent': 'boolean(false)'} })
-    parameters: Optional[dict[str, GeneratorParameter]] = Field(default=None, description="""Generator parameters keyed by name (e.g. n, k, p, seed). Each is a ``GeneratorParameter`` that plays two roles with one shape: in a curated generator entry it is a typed *declaration* (a ``range`` type, an optional ``ifabsent`` default and a ``required`` flag, with no value); in a concrete experiment the same key carries a concrete ``value`` (the inherited ``Parameter.value`` slot). Builder (Callable) generators receive the resolved values as keyword arguments; declarative library generators additionally pass them positionally via the per-backend ``bindings`` map. The number of nodes is always taken from Network.number_of_nodes.
+    parameters: Optional[dict[str, Parameter]] = Field(default=None, description="""Generator parameters keyed by name (e.g. n, k, p, seed). A curated entry *declares* each parameter's interface via the general ``Parameter`` slots — ``datatype`` (its type), ``default`` (fallback when absent) and ``required`` — while a concrete experiment supplies the same key by ``value``. Builder (Callable) generators receive the resolved values as keyword arguments; declarative library generators pass them positionally via the per-backend ``bindings`` map. The number of nodes is always taken from Network.number_of_nodes.
 """, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
                        'Stimulus',
                        'Event',
@@ -6349,229 +6340,8 @@ class Parameter(ConfiguredBaseModel):
     shape: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Matrix', 'NamedArray', 'Parameter', 'FreeParameter', 'NDArray']} })
     explored_values: Optional[AnyShapeArray[float]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Range', 'Parameter', 'ExplorationAxis']} })
     element_domains: Optional[list[Range]] = Field(default=None, description="""Per-element domain overrides for heterogeneous parameters. When specified, element_domains[i] overrides domain for element i during exploration auto-expansion. Length must match parameter shape (e.g., n_nodes for shape \"(n_nodes,)\"). If not set, all elements share the same domain.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter', 'ExplorationAxis']} })
-
-
-class GeneratorParameter(Parameter):
-    """
-    A GraphGenerator parameter: a valued ``Parameter`` that additionally declares its typed argument interface, so one shape serves both the curated menu and the instantiated experiment. In a curated generator entry each parameter is a *declaration* — a type (``range``), an optional default (``ifabsent``) and a ``required`` flag, carrying no value. In a concrete experiment the same key is supplied *by value* via the inherited ``value`` slot. The number of nodes is never a parameter — it is always taken from ``Network.number_of_nodes``.
-    """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:GeneratorParameter', 'from_schema': 'https://w3id.org/tvbo'})
-
-    range: Optional[str] = Field(default=None, description="""Declared type of the argument — a LinkML range name: a primitive (``integer``, ``float``, ``string``, ``uriorcurie``) or a class (e.g. ``Distribution``). Declaration-only; unused when the parameter carries a concrete ``value``.""", json_schema_extra = { "linkml_meta": {'domain_of': ['GeneratorParameter']} })
-    required: Optional[bool] = Field(default=None, description="""Whether this argument must be supplied when instantiating the generator. Optional arguments (e.g. ``seed``) set this to false. Declaration-only; ignored for valued parameters.""", json_schema_extra = { "linkml_meta": {'domain_of': ['GeneratorParameter']} })
-    ifabsent: Optional[str] = Field(default=None, description="""Default value applied when the argument is absent (LinkML ``ifabsent`` semantics, e.g. ``preserve`` → ``binary_mask``). Read by the procedure engine (``tvbo/graph_generators/engine.py``) to seed unset parameters. Declaration-only.""", json_schema_extra = { "linkml_meta": {'domain_of': ['GeneratorParameter']} })
-    name: str = Field(default=..., description="""Globally unique identifier for the entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['BrainAtlas',
-                       'CommonCoordinateSpace',
-                       'ParcellationEntity',
-                       'DBSProtocol',
-                       'ClinicalScale',
-                       'ClinicalScore',
-                       'SoftwarePackage',
-                       'SoftwareRequirement',
-                       'SoftwareEnvironment',
-                       'Event',
-                       'Tractogram',
-                       'MeasureSpec',
-                       'NamedArray',
-                       'GraphGenerator',
-                       'Binding',
-                       'ProcedureStep',
-                       'File',
-                       'StateValue',
-                       'Observation',
-                       'Dynamics',
-                       'StateVariable',
-                       'Distribution',
-                       'Parameter',
-                       'CouplingInput',
-                       'Argument',
-                       'Function',
-                       'FunctionCall',
-                       'Callable',
-                       'DerivedParameter',
-                       'DerivedVariable',
-                       'DataSource',
-                       'OptimizationStage',
-                       'Exploration',
-                       'UpdateRule',
-                       'Algorithm',
-                       'Option',
-                       'BranchSwitch',
-                       'Continuation',
-                       'Coupling'],
-         'slot_uri': 'schema:name'} })
-    label: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationTerminology',
-                       'Subject',
-                       'Session',
-                       'Dataset',
-                       'Contact',
-                       'SoftwareEnvironment',
-                       'Equation',
-                       'Stimulus',
-                       'Event',
-                       'Parcellation',
-                       'Tractogram',
-                       'Matrix',
-                       'Phenotype',
-                       'Network',
-                       'Node',
-                       'Edge',
-                       'Observation',
-                       'Dynamics',
-                       'StateVariable',
-                       'Parameter',
-                       'Function',
-                       'FunctionCall',
-                       'DerivedVariable',
-                       'RandomStream',
-                       'DataSource',
-                       'OptimizationStage',
-                       'Exploration',
-                       'ExplorationAxis',
-                       'FreeParameter',
-                       'AlgorithmStage',
-                       'TuningObjective',
-                       'Continuation',
-                       'Coupling',
-                       'RegionMapping',
-                       'SimulationExperiment',
-                       'SimulationStudy',
-                       'TimeSeries',
-                       'NDArray',
-                       'SpatialDomain',
-                       'Mesh',
-                       'SpatialField',
-                       'FieldStateVariable',
-                       'DifferentialOperator',
-                       'BoundaryCondition',
-                       'PDESolver',
-                       'PDE'],
-         'slot_uri': 'rdfs:label'} })
-    symbol: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable',
-                       'Parameter',
-                       'DerivedParameter',
-                       'DerivedVariable']} })
-    definition: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
-                       'StateVariable',
-                       'Parameter',
-                       'Function',
-                       'DifferentialOperator'],
-         'slot_uri': 'skos:definition'} })
-    value: Optional[Any] = Field(default=None, description="""Numeric, string, or boolean value. ScalarValue accepts any literal primitive type, allowing parameters to carry control flags (e.g., booleans) or symbolic placeholders alongside numeric defaults.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateValue',
-                       'Parameter',
-                       'Argument',
-                       'Option',
-                       'BoundaryCondition'],
-         'slot_uri': 'schema:value'} })
-    default: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter'], 'slot_uri': 'schema:defaultValue'} })
-    domain: Optional[Range] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['ClinicalScale',
-                       'ClinicalScore',
-                       'StateVariable',
-                       'Distribution',
-                       'Parameter',
-                       'ExplorationAxis',
-                       'FreeParameter',
-                       'PDE']} })
-    reported_optimum: Optional[float] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
-    description: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Dataset',
-                       'ClinicalScore',
-                       'SoftwarePackage',
-                       'SoftwareRequirement',
-                       'SoftwareEnvironment',
-                       'Equation',
-                       'Stimulus',
-                       'Event',
-                       'Tractogram',
-                       'Matrix',
-                       'Phenotype',
-                       'MeasureSpec',
-                       'NamedArray',
-                       'Network',
-                       'GraphGenerator',
-                       'ProcedureStep',
-                       'File',
-                       'Node',
-                       'Edge',
-                       'Observation',
-                       'Dynamics',
-                       'StateVariable',
-                       'Parameter',
-                       'CouplingInput',
-                       'Argument',
-                       'Function',
-                       'FunctionCall',
-                       'Callable',
-                       'DerivedParameter',
-                       'DerivedVariable',
-                       'RandomStream',
-                       'DataSource',
-                       'OptimizationStage',
-                       'Exploration',
-                       'ExplorationAxis',
-                       'FreeParameter',
-                       'UpdateRule',
-                       'AlgorithmStage',
-                       'TuningObjective',
-                       'Algorithm',
-                       'BranchSwitch',
-                       'Continuation',
-                       'Integrator',
-                       'Coupling',
-                       'RegionMapping',
-                       'SimulationExperiment',
-                       'Study',
-                       'TimeSeries',
-                       'NDArray',
-                       'SpatialDomain',
-                       'Mesh',
-                       'SpatialField',
-                       'FieldStateVariable',
-                       'BoundaryCondition',
-                       'PDESolver',
-                       'PDE'],
-         'slot_uri': 'dcterms:description'} })
-    equation: Optional[Equation] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Stimulus',
-                       'Event',
-                       'ProcedureStep',
-                       'Observation',
-                       'StateVariable',
-                       'Parameter',
-                       'Function',
-                       'FunctionCall',
-                       'Case',
-                       'DerivedParameter',
-                       'DerivedVariable',
-                       'Noise',
-                       'UpdateRule',
-                       'DifferentialOperator'],
-         'slot_uri': 'tvbo:Equation'} })
-    unit: Optional[UnitEnum] = Field(default=None, description="""Physical unit of measurement. Values are drawn from the QUDT ontology (http://qudt.org/vocab/unit/) with UO cross-references where available.""", json_schema_extra = { "linkml_meta": {'domain_of': ['CommonCoordinateSpace',
-                       'MeasureSpec',
-                       'NamedArray',
-                       'Edge',
-                       'StateVariable',
-                       'Parameter',
-                       'Argument',
-                       'DerivedParameter',
-                       'DerivedVariable',
-                       'ExplorationAxis',
-                       'Integrator',
-                       'TimeSeries',
-                       'NDArray',
-                       'SpatialField'],
-         'slot_uri': 'qudt:unit'} })
-    dataset_path: Optional[str] = Field(default=None, description="""Dataset path for array-valued parameters. When set, the parameter value is stored in the binary companion file (HDF5 or Zarr) at this path. The value slot is omitted.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
-    grounding: Optional[list[str]] = Field(default=None, description="""External ontology IRIs (typically GO, ChEBI, UBERON, CL, MeSH) that this entity is a surrogate / abstraction / model of. Replaces the legacy OWL pattern `tvbo:surrogate_of` by carrying the link inline with the YAML data instance. Multiple IRIs allowed: a single parameter may abstract several biological processes (e.g. a synaptic conductance grounding both GO:0060079 (excitatory PSP) and GO:0007268 (chemical synaptic transmission)).""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable', 'Parameter', 'DerivedVariable'],
-         'slot_uri': 'oboInOwl:hasDbXref'} })
-    comment: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter'], 'slot_uri': 'rdfs:comment'} })
-    heterogeneous: Optional[bool] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter', 'FreeParameter']} })
-    distribution: Optional[Distribution] = Field(default=None, description="""Distribution for heterogeneous per-node parameter sampling. Implies heterogeneous=true.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StateVariable', 'Parameter', 'Noise', 'Coupling']} })
-    source: Optional[str] = Field(default=None, description="""Data source for this parameter's value. When set, the value is loaded from the referenced entity rather than being a YAML literal. The referent is typically a Network with per-node parameters (dscalar pattern) or a flat dataset (HDF5, TSV). Combine with `measure:` when the source exposes multiple named measures. Distinct from the global `iri:` slot, which is reserved for ontology grounding.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge', 'Observation', 'Dynamics', 'Parameter', 'CouplingInput']} })
-    measure: Optional[str] = Field(default=None, description="""Selector into the source. When `source` points at a Network with per-node parameters (or a dscalar with multiple maps), picks which named measure to load. Aligns with names listed in Network.structural_measures / Network.observational_measures. Ignored when the source resolves to a scalar/array dataset.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
-    free: Optional[bool] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
-    shape: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Matrix', 'NamedArray', 'Parameter', 'FreeParameter', 'NDArray']} })
-    explored_values: Optional[AnyShapeArray[float]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Range', 'Parameter', 'ExplorationAxis']} })
-    element_domains: Optional[list[Range]] = Field(default=None, description="""Per-element domain overrides for heterogeneous parameters. When specified, element_domains[i] overrides domain for element i during exploration auto-expansion. Length must match parameter shape (e.g., n_nodes for shape \"(n_nodes,)\"). If not set, all elements share the same domain.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter', 'ExplorationAxis']} })
+    datatype: Optional[str] = Field(default=None, description="""Declared value type of this parameter, given as a schema range name — a primitive (``integer``, ``float``, ``string``, ``uriorcurie``) or a class (e.g. ``Distribution``). Documents the expected type when the parameter is a *declaration* carrying no concrete ``value`` (e.g. a GraphGenerator's typed argument interface). Distinct from ``domain`` (numeric bounds) and ``unit``.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
+    required: Optional[bool] = Field(default=None, description="""Whether a value for this parameter must be supplied. Optional parameters (e.g. a generator's ``seed``) set this to false. Declaration metadata; unset means unconstrained.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
 
 
 class CouplingInput(ConfiguredBaseModel):
@@ -7860,6 +7630,8 @@ class DerivedParameter(Parameter):
     shape: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Matrix', 'NamedArray', 'Parameter', 'FreeParameter', 'NDArray']} })
     explored_values: Optional[AnyShapeArray[float]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Range', 'Parameter', 'ExplorationAxis']} })
     element_domains: Optional[list[Range]] = Field(default=None, description="""Per-element domain overrides for heterogeneous parameters. When specified, element_domains[i] overrides domain for element i during exploration auto-expansion. Length must match parameter shape (e.g., n_nodes for shape \"(n_nodes,)\"). If not set, all elements share the same domain.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter', 'ExplorationAxis']} })
+    datatype: Optional[str] = Field(default=None, description="""Declared value type of this parameter, given as a schema range name — a primitive (``integer``, ``float``, ``string``, ``uriorcurie``) or a class (e.g. ``Distribution``). Documents the expected type when the parameter is a *declaration* carrying no concrete ``value`` (e.g. a GraphGenerator's typed argument interface). Distinct from ``domain`` (numeric bounds) and ``unit``.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
+    required: Optional[bool] = Field(default=None, description="""Whether a value for this parameter must be supplied. Optional parameters (e.g. a generator's ``seed``) set this to false. Declaration metadata; unset means unconstrained.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
 
 
 class DerivedVariable(ConfiguredBaseModel):
@@ -12367,7 +12139,6 @@ Dynamics.model_rebuild()
 StateVariable.model_rebuild()
 Distribution.model_rebuild()
 Parameter.model_rebuild()
-GeneratorParameter.model_rebuild()
 CouplingInput.model_rebuild()
 Argument.model_rebuild()
 Function.model_rebuild()

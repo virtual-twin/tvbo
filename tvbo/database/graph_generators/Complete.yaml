@@ -3,7 +3,7 @@ description: "Complete graph K_n — every node connected to every other node."
 iri: tvbo:Complete
 
 parameters:
-  n: { range: integer, description: "Number of nodes" }
+  n: { datatype: integer, description: "Number of nodes" }
 
 bindings:
   julia:

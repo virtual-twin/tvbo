@@ -259,14 +259,19 @@ def materialize(
     declared_params : Mapping[str, dict] | Iterable[str] | None
         The generator's declared parameters. Any not present in ``params`` are
         bound so the procedure resolves them to a default rather than NameError:
-        to the parameter's ``ifabsent`` value when ``declared_params`` is a
+        to the parameter's ``default`` value when ``declared_params`` is a
         mapping of specs (e.g. ``preserve`` → ``binary_mask``), otherwise to
         ``None`` (e.g. an optional ``weight_distribution`` → standard Normal).
     """
     env = _primitive_namespace()
     if isinstance(declared_params, dict):
         for name, spec in declared_params.items():
-            default = spec.get("ifabsent") if isinstance(spec, dict) else None
+            # ``default`` is the Parameter slot; tolerate the legacy ``ifabsent``
+            # key for any generator YAML not yet migrated.
+            default = (
+                spec.get("default", spec.get("ifabsent"))
+                if isinstance(spec, dict) else None
+            )
             env.setdefault(name, default)
     else:
         for name in (declared_params or []):

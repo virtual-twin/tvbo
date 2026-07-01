@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-07-01T14:15:52
+# Generation date: 2026-07-01T16:55:43
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -138,10 +138,6 @@ class DistributionName(extended_str):
 
 
 class ParameterName(extended_str):
-    pass
-
-
-class GeneratorParameterName(ParameterName):
     pass
 
 
@@ -1202,7 +1198,7 @@ class GraphGenerator(YAMLRoot):
     type: Optional[str] = None
     seed: Optional[int] = None
     directed: Optional[Union[bool, Bool]] = False
-    parameters: Optional[Union[dict[Union[str, GeneratorParameterName], Union[dict, "GeneratorParameter"]], list[Union[dict, "GeneratorParameter"]]]] = empty_dict()
+    parameters: Optional[Union[dict[Union[str, ParameterName], Union[dict, "Parameter"]], list[Union[dict, "Parameter"]]]] = empty_dict()
     bindings: Optional[Union[dict[Union[str, BindingName], Union[dict, "Binding"]], list[Union[dict, "Binding"]]]] = empty_dict()
     procedure: Optional[Union[dict, "Procedure"]] = None
     builder: Optional[Union[dict, "Callable"]] = None
@@ -1228,7 +1224,7 @@ class GraphGenerator(YAMLRoot):
         if self.directed is not None and not isinstance(self.directed, Bool):
             self.directed = Bool(self.directed)
 
-        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=GeneratorParameter, key_name="name", keyed=True)
+        self._normalize_inlined_as_dict(slot_name="parameters", slot_type=Parameter, key_name="name", keyed=True)
 
         self._normalize_inlined_as_dict(slot_name="bindings", slot_type=Binding, key_name="name", keyed=True)
 
@@ -2039,6 +2035,8 @@ class Parameter(YAMLRoot):
     shape: Optional[str] = None
     explored_values: Optional[Union[float, list[float]]] = empty_list()
     element_domains: Optional[Union[Union[dict, Range], list[Union[dict, Range]]]] = empty_list()
+    datatype: Optional[str] = None
+    required: Optional[Union[bool, Bool]] = None
 
     def __post_init__(self, *_: str, **kwargs: Any):
         if self._is_empty(self.name):
@@ -2109,44 +2107,11 @@ class Parameter(YAMLRoot):
             self.element_domains = [self.element_domains] if self.element_domains is not None else []
         self.element_domains = [v if isinstance(v, Range) else Range(**as_dict(v)) for v in self.element_domains]
 
-        super().__post_init__(**kwargs)
-
-
-@dataclass(repr=False)
-class GeneratorParameter(Parameter):
-    """
-    A GraphGenerator parameter: a valued ``Parameter`` that additionally declares its typed argument interface, so one
-    shape serves both the curated menu and the instantiated experiment. In a curated generator entry each parameter is
-    a *declaration* — a type (``range``), an optional default (``ifabsent``) and a ``required`` flag, carrying no
-    value. In a concrete experiment the same key is supplied *by value* via the inherited ``value`` slot. The number
-    of nodes is never a parameter — it is always taken from ``Network.number_of_nodes``.
-    """
-    _inherited_slots: ClassVar[list[str]] = []
-
-    class_class_uri: ClassVar[URIRef] = TVBO["GeneratorParameter"]
-    class_class_curie: ClassVar[str] = "tvbo:GeneratorParameter"
-    class_name: ClassVar[str] = "GeneratorParameter"
-    class_model_uri: ClassVar[URIRef] = TVBO.GeneratorParameter
-
-    name: Union[str, GeneratorParameterName] = None
-    range: Optional[str] = None
-    required: Optional[Union[bool, Bool]] = None
-    ifabsent: Optional[str] = None
-
-    def __post_init__(self, *_: str, **kwargs: Any):
-        if self._is_empty(self.name):
-            self.MissingRequiredField("name")
-        if not isinstance(self.name, GeneratorParameterName):
-            self.name = GeneratorParameterName(self.name)
-
-        if self.range is not None and not isinstance(self.range, str):
-            self.range = str(self.range)
+        if self.datatype is not None and not isinstance(self.datatype, str):
+            self.datatype = str(self.datatype)
 
         if self.required is not None and not isinstance(self.required, Bool):
             self.required = Bool(self.required)
-
-        if self.ifabsent is not None and not isinstance(self.ifabsent, str):
-            self.ifabsent = str(self.ifabsent)
 
         super().__post_init__(**kwargs)
 
@@ -7388,7 +7353,7 @@ slots.graphGenerator__directed = Slot(uri=TVBO.directed, name="graphGenerator__d
                    model_uri=TVBO.graphGenerator__directed, domain=None, range=Optional[Union[bool, Bool]])
 
 slots.graphGenerator__parameters = Slot(uri=TVBO.parameters, name="graphGenerator__parameters", curie=TVBO.curie('parameters'),
-                   model_uri=TVBO.graphGenerator__parameters, domain=None, range=Optional[Union[dict[Union[str, GeneratorParameterName], Union[dict, GeneratorParameter]], list[Union[dict, GeneratorParameter]]]])
+                   model_uri=TVBO.graphGenerator__parameters, domain=None, range=Optional[Union[dict[Union[str, ParameterName], Union[dict, Parameter]], list[Union[dict, Parameter]]]])
 
 slots.graphGenerator__bindings = Slot(uri=TVBO.bindings, name="graphGenerator__bindings", curie=TVBO.curie('bindings'),
                    model_uri=TVBO.graphGenerator__bindings, domain=None, range=Optional[Union[dict[Union[str, BindingName], Union[dict, Binding]], list[Union[dict, Binding]]]])
@@ -7693,14 +7658,11 @@ slots.parameter__explored_values = Slot(uri=TVBO.explored_values, name="paramete
 slots.parameter__element_domains = Slot(uri=TVBO.element_domains, name="parameter__element_domains", curie=TVBO.curie('element_domains'),
                    model_uri=TVBO.parameter__element_domains, domain=None, range=Optional[Union[Union[dict, Range], list[Union[dict, Range]]]])
 
-slots.generatorParameter__range = Slot(uri=TVBO.range, name="generatorParameter__range", curie=TVBO.curie('range'),
-                   model_uri=TVBO.generatorParameter__range, domain=None, range=Optional[str])
+slots.parameter__datatype = Slot(uri=TVBO.datatype, name="parameter__datatype", curie=TVBO.curie('datatype'),
+                   model_uri=TVBO.parameter__datatype, domain=None, range=Optional[str])
 
-slots.generatorParameter__required = Slot(uri=TVBO.required, name="generatorParameter__required", curie=TVBO.curie('required'),
-                   model_uri=TVBO.generatorParameter__required, domain=None, range=Optional[Union[bool, Bool]])
-
-slots.generatorParameter__ifabsent = Slot(uri=TVBO.ifabsent, name="generatorParameter__ifabsent", curie=TVBO.curie('ifabsent'),
-                   model_uri=TVBO.generatorParameter__ifabsent, domain=None, range=Optional[str])
+slots.parameter__required = Slot(uri=TVBO.required, name="parameter__required", curie=TVBO.curie('required'),
+                   model_uri=TVBO.parameter__required, domain=None, range=Optional[Union[bool, Bool]])
 
 slots.couplingInput__source = Slot(uri=TVBO.source, name="couplingInput__source", curie=TVBO.curie('source'),
                    model_uri=TVBO.couplingInput__source, domain=None, range=Optional[str])
