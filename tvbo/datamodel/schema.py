@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-07-01T17:27:09
+# Generation date: 2026-07-01T17:43:11
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -2865,6 +2865,7 @@ class Exploration(YAMLRoot):
     algorithms: Optional[Union[str, list[str]]] = empty_list()
     mode: Optional[str] = "product"
     observable: Optional[Union[dict, FunctionCall]] = None
+    record: Optional[Union[str, list[str]]] = empty_list()
     n_parallel: Optional[int] = 1
     n_trials: Optional[int] = 1
     average: Optional[str] = None
@@ -2901,6 +2902,10 @@ class Exploration(YAMLRoot):
 
         if self.observable is not None and not isinstance(self.observable, FunctionCall):
             self.observable = FunctionCall(**as_dict(self.observable))
+
+        if not isinstance(self.record, list):
+            self.record = [self.record] if self.record is not None else []
+        self.record = [v if isinstance(v, str) else str(v) for v in self.record]
 
         if self.n_parallel is not None and not isinstance(self.n_parallel, int):
             self.n_parallel = int(self.n_parallel)
@@ -7913,6 +7918,9 @@ slots.exploration__mode = Slot(uri=TVBO.mode, name="exploration__mode", curie=TV
 
 slots.exploration__observable = Slot(uri=TVBO.observable, name="exploration__observable", curie=TVBO.curie('observable'),
                    model_uri=TVBO.exploration__observable, domain=None, range=Optional[Union[dict, FunctionCall]])
+
+slots.exploration__record = Slot(uri=TVBO.record, name="exploration__record", curie=TVBO.curie('record'),
+                   model_uri=TVBO.exploration__record, domain=None, range=Optional[Union[str, list[str]]])
 
 slots.exploration__n_parallel = Slot(uri=TVBO.n_parallel, name="exploration__n_parallel", curie=TVBO.curie('n_parallel'),
                    model_uri=TVBO.exploration__n_parallel, domain=None, range=Optional[int])

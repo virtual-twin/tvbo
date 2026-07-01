@@ -824,6 +824,132 @@ def resolve_optimizer_mode(integration: Any) -> str:
     return {"forward": "fwd", "reverse": "rev"}.get(str(mode), str(mode))
 
 
+def _analysis_wrt_access(wrt: List[str], coupling_keys: Set[str]) -> Optional[str]:
+    """Dotted state path for the parameter an analysis differentiates w.r.t.
+
+    ``c_sigmJR.G`` -> ``coupling.c_sigmJR.G`` when the prefix is a coupling key,
+    else ``dynamics.<param>``. Bare names map to ``dynamics.<name>``.
+    """
+    wp = wrt[0].split(".") if wrt else []
+    if len(wp) == 2 and wp[0] in coupling_keys:
+        return f"coupling.{wp[0]}.{wp[1]}"
+    if wp:
+        return f"dynamics.{wp[-1]}"
+    return None
+
+
+def render_analysis_observations(
+    analysis_obs: Dict[str, Any],
+    coupling_keys: Set[str],
+    solver_class: str,
+    transient_time: float,
+    t1_default: float,
+    dt: float,
+) -> str:
+    """Render the body of the generated ``compute_analysis_observations()`` function.
+
+    Analysis observations ANALYZE the solve/loss (Lyapunov spectrum, autodiff and
+    finite-difference gradients) rather than transforming ``result.data``. Each is
+    emitted from its declarative ``analysis`` metadata (type + target + wrt +
+    parameters). This lives in the adapter/Python layer — NOT the mako template —
+    so the per-type branching can be deduped/harmonized and reused across backends;
+    the template only interpolates the returned block. Analysis solves use a plain
+    ``solver_class()`` (the truncation window is an optimization knob, not part of
+    these diagnostics). Returns a string whose lines are indented for a function body
+    (4 spaces), empty string if there are no analysis observations.
+    """
+    window = f"t0=0.0 + {transient_time}, t1={transient_time} + {t1_default}, dt={dt}"
+    lines: List[str] = []
+    for name, aobs in analysis_obs.items():
+        an = aobs.analysis
+        atype = str(getattr(an, "type", "") or "")
+        params = {
+            str(k): (v.value if hasattr(v, "value") else v)
+            for k, v in (getattr(an, "parameters", None) or {}).items()
+        }
+        target = str(getattr(an, "target", None) or "loss")
+        wrt = [str(w) for w in (getattr(an, "wrt", None) or [])]
+        access = _analysis_wrt_access(wrt, coupling_keys)
+        if atype == "lyapunov":
+            seg = float(params["segment_time"])
+            n = int(params.get("n", 10))
+            k = int(params["k"]) if "k" in params else None
+            lines += [
+                "from tvboptim.experimental.network_dynamics.analysis.lyapunov import _lyapunov_spectrum_jvp",
+                f"# {name}: Lyapunov spectrum on a short segment solve at the current parameters",
+                f"_le_solve, _le_cfg = prepare(network, {solver_class}(), t0=0.0, t1={seg}, dt={dt})",
+            ]
+            # Evaluate at the current operating point: sync `wrt` (e.g. the swept coupling)
+            # into the segment config so a G-sweep reports lambda_max(G), not lambda_max at
+            # the network's fixed parameters. Optional — omit `wrt` for a static Lyapunov.
+            if access:
+                lines.append(f"_le_cfg = eqx.tree_at(lambda _c: _c.{access}, _le_cfg, state.{access})")
+            lines.append(f"obs.{name} = _lyapunov_spectrum_jvp(_le_solve, _le_cfg, t={seg}, n={n}, k={k})")
+        elif atype == "gradient":
+            mode = params.get("mode", "reverse")
+            lines += [
+                f"# {name}: full (untruncated) {mode}-mode gradient of '{target}' wrt {wrt[0]}",
+                f"_asolve_{name}, _ = prepare(network, {solver_class}(), {window})",
+                f"def _grad_of_{name}(_p):",
+                f"    _gs = eqx.tree_at(lambda _s: _s.{access}, state, _p)",
+                f"    return compute_all_observations(_asolve_{name}(_gs), _gs, result_transient).{target}",
+                f"_, obs.{name} = jax.value_and_grad(_grad_of_{name})(state.{access})",
+            ]
+        elif atype == "finite_difference":
+            delta = float(params.get("delta", 0.3))
+            seeds = int(params.get("seeds", 8))
+            seed_base = int(params.get("seed_base", 0))
+            lines += [
+                f"# {name}: seed-averaged central finite-difference gradient of '{target}' wrt {wrt[0]}",
+                f"_asolve_{name}, _ = prepare(network, {solver_class}(), {window})",
+                f"_delta_{name} = {delta}",
+                f"_keys_{name} = jax.random.split(jax.random.key({seed_base}), {seeds})",
+                f"_g0_{name} = state.{access}",
+                f"def _fd_{name}(_key):",
+                f"    _cs = eqx.tree_at(lambda _s: _s.noise.key, state, _key)",
+                f"    _loss_at = lambda _g: compute_all_observations(_asolve_{name}(eqx.tree_at(lambda _s: _s.{access}, _cs, _g)), _cs, result_transient).{target}",
+                f"    return (_loss_at(_g0_{name} + _delta_{name}) - _loss_at(_g0_{name} - _delta_{name})) / (2.0 * _delta_{name})",
+                f"obs.{name} = jnp.mean(jax.lax.map(_fd_{name}, _keys_{name}))",
+            ]
+        else:
+            lines.append(f"# {name}: analysis type '{atype}' not yet lowered for this backend — skipped.")
+    return "\n".join(f"    {ln}" for ln in lines)
+
+
+def render_recorded_observable(
+    record_names: List[str],
+    derived_names: List[str],
+    network_obs_names: List[str],
+    analysis_names: List[str],
+) -> str:
+    """Render the body of an exploration ``observable_fn`` that records a `record:` list.
+
+    Each recorded name resolves to ``compute_all_observations`` (derived / network /
+    simulated observations) or ``compute_analysis_observations`` (the `analysis`
+    diagnostics — Lyapunov, gradients). The observable returns a ``Bunch`` of the named
+    values, which the exploration stacks over the grid into one array per name. Kept in
+    the adapter (not the template) so the same routing serves any backend. Returns the
+    function-body string (8-space indented for ``def observable_fn(s):`` inside the
+    exploration function).
+    """
+    analysis_set = set(analysis_names)
+    lines = ["result = _expl_model_fn(s)"]
+    if any(n not in analysis_set for n in record_names):
+        lines.append("_all_obs = compute_all_observations(result, s, result_transient)")
+    if any(n in analysis_set for n in record_names):
+        lines.append("_an_obs = compute_analysis_observations(s, _network, result_transient)")
+    entries = []
+    for n in record_names:
+        if n in analysis_set:
+            entries.append(f"{n}=_an_obs.{n}")
+        else:
+            entries.append(
+                f"{n}=getattr(_all_obs, '{n}').data if hasattr(getattr(_all_obs, '{n}', None), 'data') else getattr(_all_obs, '{n}')"
+            )
+    lines.append(f"return Bunch({', '.join(entries)})")
+    return "\n".join(f"        {ln}" for ln in lines)
+
+
 # =============================================================================
 # State Variable Bounds
 # =============================================================================
@@ -1401,6 +1527,9 @@ def parse_exploration(expl: Any, all_couplings: Dict, get_pipeline_output_key_fn
         "mode": getattr(expl, "mode", None) or "product",
         "n_parallel": int(getattr(expl, "n_parallel", 1) or 1),
         "axes": [],
+        # Named observations to compute + stack per grid point (e.g. `loss`, or the
+        # `analysis` diagnostics). Declarative alternative to a single scalar observable.
+        "record": [str(r) for r in (getattr(expl, "record", None) or [])],
     }
 
     # Parse exploration axes (schema: `space` is a list of ExplorationAxis)
