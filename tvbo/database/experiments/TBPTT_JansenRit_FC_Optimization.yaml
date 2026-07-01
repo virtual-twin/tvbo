@@ -273,5 +273,52 @@ observations:
         seeds: {value: 8}
         seed_base: {value: 0}
 
+# =============================================================================
+# OPTIMIZATION: fit G to empirical FC (the payoff — full-AD vs TBPTT)
+# =============================================================================
+# integration.differentiation drives the descent: {truncation_window: 100,
+# mode: reverse} -> Heun(grad_horizon=100) + reverse-mode == the TBPTT run;
+# {mode: forward} with no window -> the exact untruncated full-AD run (forward-mode
+# AD == full reverse-mode BPTT for a scalar parameter).
+optimizations:
+  fit_G:
+    label: "Fit global coupling G to empirical FC"
+    description: >
+      Minimize FC-RMSE w.r.t. global coupling G with Adam. The differentiation mode
+      (reverse=TBPTT / forward=full AD) is taken from integration.differentiation.
+    loss:
+      function: rmse
+      arguments:
+        - {name: x, value: observations.fc.data}
+        - {name: y, value: observations.empirical_fc.data}
+    stages:
+      - name: fit
+        label: "Fit G"
+        description: "Descend FC-RMSE on the single global-coupling scalar G"
+        free_parameters:
+          - parameter: c_sigmJR.G
+        algorithm: adam
+        learning_rate: 1.0
+        max_iterations: 100
+
+# =============================================================================
+# EXPLORATION: G sweep of the FC-RMSE landscape (the motivation sweep)
+# =============================================================================
+explorations:
+  G_sweep:
+    label: "G sweep of the FC-RMSE landscape"
+    description: >
+      Sweep global coupling G from quiescence through synchronized oscillation into
+      chaos, tracing the FC-RMSE landscape the optimizer must descend.
+    space:
+      - parameter: c_sigmJR.G
+        domain: {lo: 0.0, hi: 40.0, n: 80}
+    mode: product
+    observable:
+      function: rmse
+      arguments:
+        - {name: x, value: fc.data}
+        - {name: y, value: empirical_fc.data}
+
 references:
   - "tvboptim TBPTT.qmd - truncated backprop-through-time"

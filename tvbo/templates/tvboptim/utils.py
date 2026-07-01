@@ -464,6 +464,51 @@ def _adapt_tvb_bold_reference(class_info: Dict[str, Any], obs: Any, dt: float) -
 
 
 # =============================================================================
+# Solver / differentiation kwargs
+# =============================================================================
+
+
+def resolve_solver_kwargs(integration: Any, dt: float, is_diffrax: bool = False) -> str:
+    """Map the backend-neutral ``integration.differentiation`` strategy onto
+    native-solver kwargs, returned as a ready-to-emit string (e.g.
+    ``"grad_horizon=100, block_size=50"``).
+
+    ``truncation_window`` / ``checkpoint_interval`` are in ms of simulated time;
+    the native JAX solver counts integration steps, so they are converted with
+    ``dt``. Diffrax has no such knobs, so ``is_diffrax=True`` yields ``""``.
+    Shared by the experiment and solver templates so the mapping lives in one
+    place rather than being duplicated in both mako blocks.
+    """
+    diff = getattr(integration, "differentiation", None) if integration else None
+    if diff is None or is_diffrax:
+        return ""
+    kwargs = []
+    tw = getattr(diff, "truncation_window", None)
+    if tw is not None:
+        kwargs.append(f"grad_horizon={int(round(float(tw) / dt))}")
+    ci = getattr(diff, "checkpoint_interval", None)
+    if ci is not None:
+        kwargs.append(f"block_size={int(round(float(ci) / dt))}")
+    return ", ".join(kwargs)
+
+
+def resolve_optimizer_mode(integration: Any) -> str:
+    """Map the backend-neutral ``integration.differentiation.mode`` onto the native
+    optimizer differentiation mode.
+
+    ``reverse`` -> ``"rev"`` (reverse-mode BPTT; pairs with a ``grad_horizon`` window
+    for truncated BPTT); ``forward`` -> ``"fwd"`` (forward-mode AD, the exact
+    untruncated gradient for a scalar parameter). Defaults to ``"rev"`` when no
+    differentiation strategy is declared.
+    """
+    diff = getattr(integration, "differentiation", None) if integration else None
+    mode = getattr(diff, "mode", None) if diff is not None else None
+    if mode is None:
+        return "rev"
+    return {"forward": "fwd", "reverse": "rev"}.get(str(mode), str(mode))
+
+
+# =============================================================================
 # State Variable Bounds
 # =============================================================================
 
@@ -604,6 +649,48 @@ def get_observation_refs(observations_dict: Dict[str, Any]) -> Tuple[Set[str], L
             valid_obs.append(name)
 
     return network_obs, valid_obs
+
+
+def get_observation_dependencies(obs_name: str, derived_obs_dict: Dict[str, Any], all_observations: Any) -> Set[str]:
+    """Observations that ``obs_name`` derives from — its ``source`` entries that are
+    themselves observations (edges in the observation dependency graph).
+
+    ``all_observations`` is the full observation collection (its membership test
+    filters sources down to observation references, ignoring result/state sources).
+    """
+    deps: Set[str] = set()
+    dobs_def = derived_obs_dict.get(obs_name)
+    if dobs_def:
+        for src in (dobs_def.source or []):
+            key = getattr(src, "name", None) or src
+            if key in all_observations:
+                deps.add(str(src.name) if hasattr(src, "name") else str(src))
+    return deps
+
+
+def toposort_observations(obs_names: List[str], derived_obs_dict: Dict[str, Any], all_observations: Any) -> List[str]:
+    """Dependency-order observations so any that lists another as a ``source`` is
+    emitted AFTER that source — the same dependency-graph principle used for derived
+    variables/parameters (see ``tvbo.classes.equation``). Independent observations
+    keep their input order (stable / deterministic). Lives in the tvboptim adapter so
+    the mako templates only call it rather than redefining the sort inline.
+    """
+    sorted_obs: List[str] = []
+    visited: Set[str] = set()
+    obs_set = set(obs_names)
+
+    def visit(name):
+        if name in visited:
+            return
+        visited.add(name)
+        for dep in get_observation_dependencies(name, derived_obs_dict, all_observations):
+            if dep in obs_set:
+                visit(dep)
+        sorted_obs.append(name)
+
+    for name in obs_names:
+        visit(name)
+    return sorted_obs
 
 
 # =============================================================================
