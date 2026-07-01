@@ -14,7 +14,7 @@ Output:
 </%doc>
 <%
 from tvbo.codegen import render_expression
-from tvbo.templates.tvboptim.utils import get_param_info, normalize_coupling_aliases, get_mode_layout
+from tvbo.templates.tvboptim.utils import get_param_info, normalize_coupling_aliases, get_mode_layout, resolve_coupling_spec, parse_list_elements
 
 # Two modes: experiment (full pipeline) or standalone (single coupling)
 if 'experiment' in context.keys():
@@ -90,167 +90,37 @@ if coupling_inputs_info and all_couplings:
     elif len(_unmapped_funcs) == len(_unmapped_cis):
         for _ci, _fn in zip(_unmapped_cis, _unmapped_funcs):
             _func_to_ci.setdefault(_fn, _ci)
-
-def parse_list_elements(rhs_str):
-    """Parse a list literal string into elements, respecting nesting."""
-    inner = rhs_str[1:-1]  # Remove [ and ]
-    elements = []
-    depth = 0
-    current = []
-    for c in inner:
-        if c in '([{':
-            depth += 1
-        elif c in ')]}':
-            depth -= 1
-        elif c == ',' and depth == 0:
-            elements.append(''.join(current).strip())
-            current = []
-            continue
-        current.append(c)
-    if current:
-        elements.append(''.join(current).strip())
-    return elements
 %>
 % for coupling_key, coupling in all_couplings.items():
 <%
-    # Get dimension from coupling_inputs — translate function name to ci name
-    _ci_key = _func_to_ci.get(coupling_key, coupling_key)
-    ci_info = coupling_inputs_info.get(_ci_key, {'dimension': 1, 'keys': None})
-    n_output = ci_info['dimension']
-
-    # Coupling metadata
-    has_delay = getattr(coupling, 'delayed', False)
-
-    # Extract parameter info using shared utility
-    param_names, param_defaults, param_shapes = get_param_info(coupling.parameters if hasattr(coupling, 'parameters') else None)
-
-    incoming_states = getattr(coupling, 'incoming_states', None) or []
-    if isinstance(incoming_states, str):
-        incoming_states = [incoming_states]
-    incoming_states = list(incoming_states) if incoming_states else []
-
-    local_states = getattr(coupling, 'local_states', None) or []
-    if isinstance(local_states, str):
-        local_states = [local_states]
-    local_states = list(local_states) if local_states else []
-
-    pre_expr = coupling.pre_expression if hasattr(coupling, 'pre_expression') and coupling.pre_expression else None
-    post_expr = coupling.post_expression if hasattr(coupling, 'post_expression') and coupling.post_expression else None
-
-    # Infer incoming_states from pre_expression if not explicitly given
-    # Match state variable names referenced in the expression against model svars
-    if not incoming_states and not local_states and pre_expr:
-        svar_names = set()
-        if model and hasattr(model, 'state_variables') and model.state_variables:
-            svar_names = {sv if isinstance(sv, str) else getattr(sv, 'name', str(sv))
-                          for sv in (model.state_variables.keys()
-                                     if hasattr(model.state_variables, 'keys')
-                                     else model.state_variables)}
-        pre_rhs = str(pre_expr.rhs) if pre_expr else ''
-        for sv in svar_names:
-            if sv in pre_rhs:
-                incoming_states.append(sv)
-        if not incoming_states:
-            # pre_expression uses generic placeholders (e.g. x_j) —
-            # resolve to the coupling_variable state(s) from the model
-            cvars = []
-            if model and hasattr(model, 'state_variables') and model.state_variables:
-                for sv_name, sv_obj in model.state_variables.items():
-                    if getattr(sv_obj, 'coupling_variable', False):
-                        cvars.append(sv_name)
-            incoming_states = cvars if cvars else [pre_rhs.strip()]
-
-    # Mode fold (number_of_modes>1): a coupling reading a multi-mode cvar emits one
-    # coupled output per mode. Resolve the (single) source cvar to its n_modes
-    # per-node slots and set the output dimension to n_modes; pre() then returns the
-    # gathered slots so each mode is reduced with the connectome independently.
-    mode_coupling = bool(n_modes > 1 and incoming_states and not local_states)
-    if mode_coupling:
-        _src_cvar = incoming_states[0]
-        incoming_states = [f"{_src_cvar}__mode{m}" for m in range(n_modes)]
-        n_output = n_modes
-
-    # Parse pre_expression into one or more terms. A list literal
-    # `[f(source), g(source), ...]` declares several source-only reductions —
-    # the angle-addition decomposition of a phase coupling — each reduced by W
-    # and recombined in post(). `n_pre` is the number of W-reductions, distinct
-    # from `n_output` (the coupling-input dimension the model consumes).
-    _pre_rhs0 = str(pre_expr.rhs).strip() if pre_expr else ''
-    pre_is_list = _pre_rhs0.startswith('[') and _pre_rhs0.endswith(']')
-    pre_terms = parse_list_elements(_pre_rhs0) if pre_is_list else ([_pre_rhs0] if _pre_rhs0 else [])
-    n_pre = len(pre_terms)
-
-    # Vectorized mode: pre() returns [n_pre, n_nodes] (per-node) so the base
-    # class reduces with a single matmul `pre @ weights` instead of forming the
-    # dense [.., N, N] per-edge tensor. This matmul is only equivalent to the
-    # per-edge reduction `Σ_k pre·W[:, k]` when the connectome is SYMMETRIC
-    # (the two differ by W vs Wᵀ for directed weights), so it is NOT enabled
-    # automatically for source-only phase couplings. Instead we enable it for:
-    #   (a) the legacy identity case (local states, no incoming) — unchanged
-    #       prior behaviour, and
-    #   (b) an explicit `vectorized: true` opt-in on the coupling (caller asserts
-    #       a symmetric connectome).
-    # The angle-addition decomposition (source-only pre) otherwise takes the
-    # per-edge path below: it stays exact for ANY connectome while still
-    # eliminating the expensive per-edge transcendental evaluations.
-    vectorized = getattr(coupling, 'vectorized', False)
-    if not vectorized and local_states and not incoming_states:
-        vectorized = True
-    vec_states = list(dict.fromkeys(incoming_states + local_states))
-
-    # Class name = coupling key (cleaned for Python identifier)
-    class_name = coupling_key.replace(' ', '').replace('-', '')
-    base_class = 'DelayedCoupling' if has_delay else 'InstantaneousCoupling'
-    # Differentiable (interpolated) delays: OPT-IN only. The kwarg is emitted
-    # solely when the coupling explicitly sets ``interpolate_delays: true`` — it
-    # requires the differentiable-delays tvboptim API. Normal delayed coupling
-    # (the vast majority) emits no kwarg and uses the stock DelayedCoupling, so
-    # it keeps working against released tvboptim. InstantaneousCoupling never
-    # takes the kwarg.
-    _interp_kw = 'interpolate_delays=True, ' if (has_delay and bool(getattr(coupling, "interpolate_delays", False))) else ''
-
-    # Target-state aliases referenced in post_expression (e.g. theta_i), bound
-    # in post() from the per-node local states so the recombination step can
-    # use the post-synaptic state.
-    _post_aliases_i = []
-    post_is_list = False
-    if post_expr:
-        _post_rhs_str = str(post_expr.rhs).strip()
-        post_is_list = _post_rhs_str.startswith('[') and _post_rhs_str.endswith(']')
-        _post_state_list = vec_states if vectorized else local_states
-        for idx, s in enumerate(_post_state_list):
-            si = f'{s}_i'
-            if si in _post_rhs_str:
-                _post_aliases_i.append((si, idx))
-
-    # Build state-subscript aliases for mathematical notation in expressions.
-    # Enables e.g. pre_expression: sin(theta_j - theta_i) where:
-    #   {state}_j -> incoming_states[idx]  (source / pre-synaptic state)
-    #   {state}_i -> local_states[idx]     (target / post-synaptic state, reshaped)
-    _state_aliases_j = []  # (alias_name, index)
-    _state_aliases_i = []
-    if pre_expr:
-        _pre_rhs_str = str(pre_expr.rhs)
-        for idx, s in enumerate(incoming_states):
-            sj = f'{s}_j'
-            if sj in _pre_rhs_str:
-                _state_aliases_j.append((sj, idx))
-        for idx, s in enumerate(local_states):
-            si = f'{s}_i'
-            if si in _pre_rhs_str:
-                _state_aliases_i.append((si, idx))
-    _alias_symbols = [a[0] for a in _state_aliases_j] + [a[0] for a in _state_aliases_i]
-    # Named reduction components: post_expression refers to gx_0, gx_1, … (one
-    # per pre term) plus the target-state aliases bound in post().
-    _gx_symbols = ['gx_%d' % k for k in range(n_pre)] if n_pre > 1 else []
-    _post_alias_symbols = [a[0] for a in _post_aliases_i]
-
-    # JAX code helper
-    all_symbols = param_names + incoming_states + local_states + ['gx', 'G', 'x_i', 'x_j', 'incoming_states', 'local_states'] + _alias_symbols + _gx_symbols + _post_alias_symbols
+    # Coupling resolution lives in the tvboptim Python layer (resolve_coupling_spec);
+    # this template only emits. Unpack the spec to the local names the emission below
+    # already uses. Expression rendering (jaxcode) stays here — it needs the printer.
+    spec = resolve_coupling_spec(coupling, coupling_key, model, coupling_inputs_info, _func_to_ci, n_modes)
+    n_output = spec['n_output']
+    has_delay = spec['has_delay']
+    param_names, param_defaults, param_shapes = spec['param_names'], spec['param_defaults'], spec['param_shapes']
+    incoming_states = spec['incoming_states']
+    local_states = spec['local_states']
+    pre_expr = spec['pre_expr']
+    post_expr = spec['post_expr']
+    mode_coupling = spec['mode_coupling']
+    pre_is_list = spec['pre_is_list']
+    pre_terms = spec['pre_terms']
+    n_pre = spec['n_pre']
+    vectorized = spec['vectorized']
+    vec_states = spec['vec_states']
+    class_name = spec['class_name']
+    base_class = spec['base_class']
+    _interp_kw = spec['interp_kw']
+    _post_aliases_i = spec['post_aliases_i']
+    post_is_list = spec['post_is_list']
+    _state_aliases_j = spec['state_aliases_j']
+    _state_aliases_i = spec['state_aliases_i']
+    _gx_symbols = spec['gx_symbols']
+    all_symbols = spec['all_symbols']
+    description = spec['description']
     jaxcode = lambda expr: render_expression(expr, format='jax', parameters=all_symbols)
-
-    # Description
-    description = coupling.description if hasattr(coupling, 'description') and coupling.description else 'Auto-generated coupling function.'
 %>
 
 class ${class_name}(${base_class}):

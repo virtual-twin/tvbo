@@ -168,6 +168,16 @@ def class2metadata(ontoclass: Any, metadata: Any):
         else:
             boundaries = None
 
+        # Preserve the descriptive stateVariableRange (IC-sampling support) as the
+        # sampling distribution when a clamp exists — mirrors the file/adapter paths.
+        # (Previously `range` was computed but dropped, so it was lost on round-trip.)
+        sv_range = (
+            tvbo_datamodel.Range(lo=float(range[0]), hi=float(range[1]))
+            if range and range[0] is not None and range[1] is not None
+            else None
+        )
+        _sv_domain, _sv_distribution = _fold_range_boundaries(sv_range, boundaries)
+
         td = v.has_derivative.first()
         if k not in metadata.state_variables:
             metadata.state_variables.update(
@@ -181,7 +191,8 @@ def class2metadata(ontoclass: Any, metadata: Any):
                             .replace("np.", ""),
                         ),
                         description=ontology.get_def(v),
-                        domain=_clamp_domain(boundaries),
+                        domain=_sv_domain,
+                        distribution=_sv_distribution,
                         coupling_variable=v in ontoclass.has_cvar,
                     )
                 }
@@ -198,8 +209,11 @@ def class2metadata(ontoclass: Any, metadata: Any):
                 # An ontology-declared clamp (stateVariableBoundaries) is the
                 # operative constraint, so it wins over a pre-existing
                 # descriptive (unenforced) domain — consistent with how the
-                # file loader folds boundaries → domain+enforce=clamp.
-                "domain": _clamp_domain(boundaries) or state_var.domain,
+                # file loader folds boundaries → domain+enforce=clamp. The
+                # descriptive range is kept as the sampling distribution (a
+                # pre-existing distribution takes precedence).
+                "domain": _sv_domain or state_var.domain,
+                "distribution": state_var.distribution or _sv_distribution,
                 "coupling_variable": state_var.coupling_variable
                 or (v in ontoclass.has_cvar),
             }
@@ -612,6 +626,25 @@ def _clamp_domain(rng):
     except (AttributeError, ValueError):
         pass
     return rng
+
+
+def _fold_range_boundaries(rng, boundaries):
+    """Fold a descriptive range + hard-clamp boundaries into ``(domain, distribution)``.
+
+    Mirrors ``adapters.tvb`` so ontology / programmatic imports match file ingestion:
+    the clamp (``boundaries``) becomes the enforced ``domain``; the descriptive range
+    (the IC-sampling support) is preserved as the sampling ``distribution`` — but only
+    when it differs from the clamp, since an identical clamp already conveys it. With no
+    clamp, the descriptive range is the (unenforced) ``domain`` and there is no separate
+    distribution. ``rng``/``boundaries`` are ``Range`` objects or ``None``.
+    """
+    if boundaries is None:
+        return rng, None
+    domain = _clamp_domain(boundaries)
+    distribution = None
+    if rng is not None and (rng.lo, rng.hi) != (boundaries.lo, boundaries.hi):
+        distribution = tvbo_datamodel.Distribution(domain=rng)
+    return domain, distribution
 
 
 def _resolve_statevariable_boundaries(d: dict) -> None:
@@ -1279,9 +1312,15 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
     # -----------------------
     @staticmethod
     def _coerce_range(domain):
-        """Accept None | Range | (lo, hi[, step]) and return tvbo_datamodel.Range."""
+        """Accept None | Range | (lo, hi[, step]) | {lo, hi[, step, enforce]} → Range."""
         if domain is None or isinstance(domain, tvbo_datamodel.Range):
             return domain
+        if isinstance(domain, dict):
+            kw = {k: v for k, v in domain.items() if k in ("lo", "hi", "step", "enforce") and v is not None}
+            for k in ("lo", "hi", "step"):
+                if k in kw:
+                    kw[k] = float(kw[k])
+            return tvbo_datamodel.Range(**kw) if kw else None
         if isinstance(domain, (list, tuple)):
             if len(domain) == 2:
                 lo, hi = domain
@@ -1433,16 +1472,19 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
             else None
         )
         # ``boundaries`` is the legacy name for a hard clamp; fold it into the
-        # unified ``domain`` with enforce='clamp'. An explicit clamp range
-        # supersedes a looser descriptive domain (it is what constrains the run).
-        _domain = self._coerce_range(domain)
-        if boundaries is not None:
-            _domain = _clamp_domain(self._coerce_range(boundaries))
+        # unified ``domain`` with enforce='clamp'. When both are given, the clamp
+        # is the operative domain and the descriptive ``domain`` (the IC-sampling
+        # range) is preserved as the sampling ``distribution`` rather than dropped.
+        _domain, _distribution = _fold_range_boundaries(
+            self._coerce_range(domain),
+            self._coerce_range(boundaries) if boundaries is not None else None,
+        )
         self.state_variables[str(name)] = tvbo_datamodel.StateVariable(
             name=str(name),
             equation=eq,
             description=description,
             domain=_domain,
+            distribution=_distribution,
             initial_value=initial_value if initial_value is not None else None,
             unit=unit,
             coupling_variable=coupling_variable,

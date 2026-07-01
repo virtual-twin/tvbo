@@ -238,16 +238,77 @@ def _lift_distribution_shortcut(obj: Any) -> Any:
     return obj
 
 
+def _fold_one_state_variable_domain(sv: dict) -> None:
+    """Fold a single state variable's legacy domain slots in place.
+
+    * ``range`` (a ``domain`` alias) → ``domain`` when no explicit ``domain`` is set.
+    * ``boundaries`` (deprecated hard-clamp slot) → ``domain`` with ``enforce: clamp``;
+      a co-existing descriptive ``domain`` is preserved as the sampling ``distribution``
+      (a terse ``{lo, hi}`` that the distribution-lift then completes) so a half-open
+      clamp cannot drop a finite IC-sampling range.
+    """
+    if "range" in sv:
+        if sv.get("domain") is None:
+            sv["domain"] = sv.pop("range")
+        else:
+            warnings.warn(
+                "State variable has both 'range' and its canonical alias 'domain'; "
+                "ignoring 'range'.",
+                stacklevel=2,
+            )
+            sv.pop("range")
+    if sv.get("boundaries") is not None:
+        bnd = sv.pop("boundaries")
+        if isinstance(bnd, dict):
+            bnd = dict(bnd)
+            bnd.setdefault("enforce", "clamp")
+            prev = sv.get("domain")
+            if isinstance(prev, dict) and sv.get("distribution") is None:
+                sv["distribution"] = {k: prev[k] for k in ("lo", "hi", "step") if k in prev}
+            sv["domain"] = bnd
+
+
+def _fold_state_variable_domains(obj: Any) -> Any:
+    """Recursively fold legacy ``boundaries``/``range`` on state variables into
+    ``domain`` (see :func:`_fold_one_state_variable_domain`), at any nesting depth.
+
+    The schema declares ``range``/``boundaries`` as ``domain`` aliases, but LinkML
+    aliases are metadata only (the loader keys on the canonical slot), so — like the
+    slot-alias and distribution-shortcut folds — this is applied before LinkML sees
+    the data. Runs on both load paths so ``yaml_loader.load``/``loads`` matches
+    ``Dynamics.from_file`` for legacy files.
+    """
+    if isinstance(obj, dict):
+        svs = obj.get("state_variables")
+        sv_iter = (
+            svs.values() if isinstance(svs, dict)
+            else svs if isinstance(svs, list)
+            else []
+        )
+        for sv in sv_iter:
+            if isinstance(sv, dict):
+                _fold_one_state_variable_domain(sv)
+        for v in obj.values():
+            _fold_state_variable_domains(v)
+    elif isinstance(obj, list):
+        for x in obj:
+            _fold_state_variable_domains(x)
+    return obj
+
+
 def _normalize_loaded(data: Any) -> Any:
     """Apply the dict-level TVBO conveniences shared by every load path.
 
-    Folds slot aliases to their canonical names and lifts the terse
-    ``distribution: {lo, hi}`` shortcut into ``distribution: {domain: {lo, hi}}``.
-    Both the string path (``load``/``loads`` → LinkML) and the dict path
-    (``load_as_dict`` → ``Dynamics.from_file``/``from_db``) route through here so
-    the two cannot diverge.
+    Folds slot aliases to their canonical names, folds legacy state-variable
+    ``boundaries``/``range`` into ``domain`` (+ ``enforce: clamp`` for boundaries),
+    and lifts the terse ``distribution: {lo, hi}`` shortcut into
+    ``distribution: {domain: {lo, hi}}``. Both the string path (``load``/``loads`` →
+    LinkML) and the dict path (``load_as_dict`` → ``Dynamics.from_file``/``from_db``)
+    route through here so the two cannot diverge. Order matters: the boundaries fold
+    can create a terse ``distribution`` that the following lift then completes.
     """
     data = _fold_slot_aliases(data)
+    data = _fold_state_variable_domains(data)
     data = _lift_distribution_shortcut(data)
     return data
 

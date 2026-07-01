@@ -224,7 +224,7 @@ ${'\n'.join([f"$$\n{latex_equation(eq, mul_symbol='*')}\n$$" for eq in functions
 
 | Variable | Initial Value | Unit | Equation | Domain / Sampling | Flags | Description |
 |:---------|:--------------|:-----|:---------|:------------------|:------|:------------|
-${'\n'.join([f"| ${latex(Symbol(sv.name))}$ | {sv.initial_value if sv.initial_value is not None else '—'} | {_unit_text(sv.unit)} | {sv.equation_type or 'differential'} (order {sv.equation_order or 1}) | {_metadata_text(sv)} | {_flag_text(sv, [('variable_of_interest', 'VOI'), ('coupling_variable', 'coupling'), ('stimulation_variable', 'stimulation'), ('record', 'recorded')])} | {sv.description or sv.definition or ''} |" for sv in model.state_variables.values()])}
+${'\n'.join([f"| ${latex(Symbol(sv.name))}$ | {sv.initial_value if sv.initial_value is not None else '—'} | {_unit_text(sv.unit)} | {sv.equation_type or 'differential'} (order {sv.equation_order or 1}) | {_metadata_text(sv)} | {_flag_text(sv, [('coupling_variable', 'coupling'), ('stimulation_variable', 'stimulation'), ('record', 'recorded')])} | {sv.description or sv.definition or ''} |" for sv in model.state_variables.values()])}
 
 % endif
 % if model.parameters:
