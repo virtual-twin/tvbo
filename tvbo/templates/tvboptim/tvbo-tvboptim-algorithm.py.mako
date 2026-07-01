@@ -39,7 +39,7 @@ def get_func_args(func_call):
     """Get arguments from FunctionCall as dict {name: value}."""
     if not func_call.arguments:
         return {}
-    return {str(arg.name): arg.value for arg in func_call.arguments}
+    return {str(name): arg.value for name, arg in func_call.arguments.items()}
 
 def get_target_name(rule):
     """Get target parameter name from UpdateRule."""
@@ -619,8 +619,7 @@ def run_${algo_name}(
                     direct_call = f"{callable_module}.{callable_name}"
                     # Extract additional arguments from pipeline (e.g., skip_t=20)
                     if hasattr(first_step, 'arguments') and first_step.arguments:
-                        for arg in first_step.arguments:
-                            arg_name = getattr(arg, 'name', None)
+                        for arg_name, arg in first_step.arguments.items():
                             arg_value = getattr(arg, 'value', None)
                             # Skip the source observation argument (that's passed as the buffer)
                             if arg_name and arg_value is not None:

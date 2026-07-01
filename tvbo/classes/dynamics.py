@@ -1160,8 +1160,8 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
             scope[str(name)] = Function(str(name))(t)
         for fname, f in getattr(self, "functions", {}).items():
             scope[str(fname)] = Function(str(fname))
-            for arg in getattr(f, "arguments", []):
-                scope[str(arg.name)] = Symbol(str(arg.name))
+            for name in f.arguments:  # arguments is a dict keyed by name
+                scope[str(name)] = Symbol(str(name))
         scope["t"] = t
         if "e" not in scope:
             scope["e"] = sp.E
@@ -1203,7 +1203,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
             # Function definitions: Eq(Sigm(v), 2*e0/(1+exp(r*(v0-v))))
             func_eqs = []
             for fname, f in getattr(self, "functions", {}).items():
-                arguments = [Symbol(str(arg.name)) for arg in f.arguments]
+                arguments = [Symbol(str(name)) for name in f.arguments]
                 lhs = Function(str(fname))(*arguments)
                 rhs = parse_eq(f.equation, local_dict=scope)
                 func_eqs.append(sp.Eq(lhs, rhs))
@@ -1262,8 +1262,8 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         # Functions: undefined function heads; also add their argument symbols
         for fname, f in getattr(self, "functions", {}).items():
             scope[str(fname)] = Function(str(fname))
-            for arg in getattr(f, "arguments", []):
-                scope[str(arg.name)] = Symbol(str(arg.name))
+            for name in f.arguments:  # arguments is a dict keyed by name
+                scope[str(name)] = Symbol(str(name))
 
         if "e" not in scope:
             from sympy import E
@@ -1415,7 +1415,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         nonparam_known |= set(map(str, self.output))  # output is list of strings
         nonparam_known |= set(map(str, self.derived_parameters.keys()))
         for f in self.functions.values():
-            nonparam_known |= {str(arg.name) for arg in f.arguments}
+            nonparam_known |= {str(name) for name in f.arguments}
         nonparam_known.add("t")
 
         # If any existing parameters clash with known entities, remove them (they were falsely inferred earlier)

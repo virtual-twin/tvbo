@@ -75,6 +75,11 @@ AXIOMS_TTL = ontology/tvb-o-axioms.ttl
 CLINICAL_TTL = ontology/tvb-o-clinical.ttl
 CLINICAL_NMM = ontology/tvb-o-clinical-nmm.ttl
 MERGED_OUT = ontology/tvbo.owl
+# Packaged copy of the generated ontology that the runtime actually loads
+# (tvbo/ontology/owl.py). Shipped in the wheel via MANIFEST.in.
+RUNTIME_GEN = tvbo/data/ontology/tvbo.owl
+# Deprecated class-based ontology — preserved as a parity reference, no longer
+# loaded. See dev/runtime_ontology_migration.md.
 RUNTIME_ONTO = tvbo/data/ontology/tvb-o.owl
 WIDOCO_OUT = docs/ontology/spec
 ROBOT ?= robot
@@ -127,7 +132,8 @@ gen-merged: gen-owl gen-abox
 		--version-iri "https://w3id.org/tvbo/$(shell date +%Y-%m-%d)/tvbo.owl" \
 		reason --reasoner ELK \
 		--output $(MERGED_OUT)
-	@echo "✓ Merged ontology written to $(MERGED_OUT)"
+	@cp $(MERGED_OUT) $(RUNTIME_GEN)
+	@echo "✓ Merged ontology written to $(MERGED_OUT) and packaged to $(RUNTIME_GEN)"
 
 # Layer the clinical addon into the ontology artifact that the runtime actually loads
 # (tvbo/ontology/owl.py loads RUNTIME_ONTO, not MERGED_OUT). Idempotent: re-merging the
