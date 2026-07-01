@@ -1,5 +1,5 @@
 # Auto generated from tvbo_datamodel.yaml by pythongen.py version: 0.0.1
-# Generation date: 2026-07-01T17:43:11
+# Generation date: 2026-07-01T18:26:27
 # Schema: tvb-datamodel
 #
 # id: https://w3id.org/tvbo
@@ -2258,7 +2258,7 @@ class Function(YAMLRoot):
         if self.output is not None and not isinstance(self.output, str):
             self.output = str(self.output)
 
-        self._normalize_inlined_as_list(slot_name="arguments", slot_type=Argument, key_name="name", keyed=True)
+        self._normalize_inlined_as_dict(slot_name="arguments", slot_type=Argument, key_name="name", keyed=True)
 
         if self.output_equation is not None and not isinstance(self.output_equation, Equation):
             self.output_equation = Equation(**as_dict(self.output_equation))
@@ -2404,7 +2404,7 @@ class FunctionCall(YAMLRoot):
         if self.aggregate is not None and not isinstance(self.aggregate, Aggregation):
             self.aggregate = Aggregation(**as_dict(self.aggregate))
 
-        self._normalize_inlined_as_list(slot_name="arguments", slot_type=Argument, key_name="name", keyed=True)
+        self._normalize_inlined_as_dict(slot_name="arguments", slot_type=Argument, key_name="name", keyed=True)
 
         if self.time_range is not None and not isinstance(self.time_range, Range):
             self.time_range = Range(**as_dict(self.time_range))

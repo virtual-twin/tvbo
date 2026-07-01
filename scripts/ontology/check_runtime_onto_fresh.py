@@ -22,7 +22,7 @@ import os
 import subprocess
 import sys
 
-RUNTIME = "tvbo/data/ontology/tvb-o.owl"
+RUNTIME = "tvbo/data/ontology/tvbo.owl"
 SOURCES = [
     "ontology/tvb-o-struct.owl",       # gen-owl  (LinkML T-box)
     "ontology/tvb-o-axioms.ttl",       # hand-authored OWL axioms

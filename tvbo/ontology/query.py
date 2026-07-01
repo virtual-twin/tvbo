@@ -108,7 +108,12 @@ def flatten_list(nested_list: List[Any]) -> List[Any]:
 
 
 def sparql_query(query_string: str, flatten_result: bool = True) -> List[Any]:
-    res: List[Any] = list(ontology.onto.world.sparql(query_string))
+    # error_on_undefined_entities=False: optional clauses may reference
+    # annotation properties (e.g. tvbo:synonym) that are absent from the
+    # generated ontology; treat those as matching nothing rather than raising.
+    res: List[Any] = list(
+        ontology.onto.world.sparql(query_string, error_on_undefined_entities=False)
+    )
     return flatten_list(res) if flatten_result else res
 
 

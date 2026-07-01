@@ -52,9 +52,20 @@ def _get_symbol(entity) -> str:
 
 
 def _get_type(entity) -> str:
-    """Get primary type/class."""
+    """Get primary type/class label. Works for classes and individuals.
+
+    In the generated (individual-based) ontology a domain entity's asserted
+    class lives in ``is_a`` as a ThingClass, so prefer that; fall back to the
+    class-based resolver for class nodes, guarding against a ``None`` result.
+    """
+    for parent in getattr(entity, "is_a", []) or []:
+        if isinstance(parent, owl.ThingClass) and parent.name != "Thing":
+            return (parent.label.first() if parent.label else None) or parent.name
+
     type_entity = ontology.get_type(entity)
-    if hasattr(type_entity, "label") and type_entity.label:
+    if type_entity is None:
+        return "Thing"
+    if getattr(type_entity, "label", None):
         return type_entity.label.first() or type_entity.name
     return type_entity.name
 
@@ -111,7 +122,26 @@ class DirectOntologyAPI:
             include=["synonym", "acronym", "symbol", "tvbSourceVariable"],
             exact_match=["symbol", "acronym"] if not exact_match else "all",
         )
-        return [_serialize_entity(r) for r in results[:limit]]
+        serialized = [_serialize_entity(r) for r in results]
+
+        # label_search returns an unordered set; rank so the queried entity
+        # surfaces first (exact label > prefix > substring). Necessary now that
+        # the individual-based ontology adds many sub-entities (a model's
+        # parameters/state variables) that also match a model-name search.
+        t = term.strip().lower()
+
+        def _rank(item):
+            label = (item.get("label") or "").lower()
+            if label == t:
+                return 0
+            if label.startswith(t):
+                return 1
+            if t in label:
+                return 2
+            return 3
+
+        serialized.sort(key=_rank)
+        return serialized[:limit]
 
     def get_by_storid(self, storid: int) -> Dict[str, Any]:
         """Get entity by storage ID."""
@@ -188,27 +218,36 @@ class DirectOntologyAPI:
         return {"nodes": nodes, "links": links, "center": center}
 
     def get_class_hierarchy(self) -> Dict[str, Any]:
-        """Get full ontology class hierarchy for graph visualization."""
+        """Get the full ontology graph for visualization.
+
+        Includes both classes (the system scaffold: Dynamics, Coupling,
+        Parameter, …) and individuals (the domain entities: JansenRit, its
+        parameters, …), since the generated ontology models domain entities as
+        individuals. ``is_a`` links a node to its superclass (for a class) or
+        its asserted type (for an individual) — both are ThingClasses. Deeper
+        object-property edges (hasParameter, …) are surfaced on demand via
+        ``get_children`` / ``get_parents`` rather than inlined here.
+        """
         nodes, links = [], []
         seen = set()
 
-        # Get all classes in the ontology
-        for cls in onto.classes():
-            if cls.storid not in seen:
-                seen.add(cls.storid)
-                nodes.append(_serialize_entity(cls))
+        for entity in list(onto.classes()) + list(onto.individuals()):
+            if entity.storid in seen:
+                continue
+            seen.add(entity.storid)
+            nodes.append(_serialize_entity(entity))
 
-                # Add is_a links to parents
-                for parent in cls.is_a:
-                    if isinstance(parent, owl.ThingClass) and parent.name != "Thing":
-                        links.append(
-                            {
-                                "source": cls.storid,
-                                "target": parent.storid,
-                                "type": "is_a",
-                                "label": "is_a",
-                            }
-                        )
+            # is_a links: superclasses (classes) or asserted types (individuals)
+            for parent in getattr(entity, "is_a", []) or []:
+                if isinstance(parent, owl.ThingClass) and parent.name != "Thing":
+                    links.append(
+                        {
+                            "source": entity.storid,
+                            "target": parent.storid,
+                            "type": "is_a",
+                            "label": "is_a",
+                        }
+                    )
 
         return {"nodes": nodes, "links": links}
 

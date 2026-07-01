@@ -6798,7 +6798,7 @@ class Function(ConfiguredBaseModel):
     requirements: Optional[list[str]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareEnvironment', 'Function', 'PDESolver']} })
     input: Optional[str] = Field(default=None, description="""Simple input reference: name of previous function's output in pipeline. For multi-argument functions, use arguments with value references instead.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall']} })
     output: Optional[str] = Field(default=None, description="""Name for this function's output (referenced by subsequent functions)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Procedure', 'Dynamics', 'Function', 'FunctionCall']} })
-    arguments: Optional[list[Argument]] = Field(default=None, description="""Variables consumed by the function (referenced in the equation). Each argument has a name and optional metadata (description, default value, unit).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function',
+    arguments: Optional[dict[str, Argument]] = Field(default=None, description="""Variables consumed by the function (referenced in the equation), keyed by argument name. Each value carries the optional metadata (value, description, unit); the key is the name (no redundant `name:` inside).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function',
                        'FunctionCall',
                        'AlgorithmInclude',
                        'AlgorithmStage']} })
@@ -7017,7 +7017,7 @@ class LossFunction(Function):
     requirements: Optional[list[str]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['SoftwareEnvironment', 'Function', 'PDESolver']} })
     input: Optional[str] = Field(default=None, description="""Simple input reference: name of previous function's output in pipeline. For multi-argument functions, use arguments with value references instead.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall']} })
     output: Optional[str] = Field(default=None, description="""Name for this function's output (referenced by subsequent functions)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Procedure', 'Dynamics', 'Function', 'FunctionCall']} })
-    arguments: Optional[list[Argument]] = Field(default=None, description="""Variables consumed by the function (referenced in the equation). Each argument has a name and optional metadata (description, default value, unit).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function',
+    arguments: Optional[dict[str, Argument]] = Field(default=None, description="""Variables consumed by the function (referenced in the equation), keyed by argument name. Each value carries the optional metadata (value, description, unit); the key is the name (no redundant `name:` inside).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function',
                        'FunctionCall',
                        'AlgorithmInclude',
                        'AlgorithmStage']} })
@@ -7206,7 +7206,7 @@ class FunctionCall(ConfiguredBaseModel):
     output: Optional[str] = Field(default=None, description="""Name for this step's output (referenced by subsequent functions)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Procedure', 'Dynamics', 'Function', 'FunctionCall']} })
     apply_on_dimension: Optional[DimensionType] = Field(default=None, description="""Dimension to apply function over (generates vmap in code). E.g., 'node' applies per-node.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'FunctionCall']} })
     aggregate: Optional[Aggregation] = Field(default=None, description="""How to aggregate the result across dimensions. Example: aggregate.over=node, aggregate.type=mean applies function per node, then averages. Used in loss functions.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function', 'LossFunction', 'FunctionCall']} })
-    arguments: Optional[list[Argument]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Function',
+    arguments: Optional[dict[str, Argument]] = Field(default=None, description="""Function arguments keyed by name (the key is the argument name).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Function',
                        'FunctionCall',
                        'AlgorithmInclude',
                        'AlgorithmStage']} })

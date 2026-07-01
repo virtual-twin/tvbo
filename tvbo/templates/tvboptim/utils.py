@@ -650,11 +650,11 @@ def pipeline_equation_parameters(pipeline: Any) -> Dict[str, Any]:
 
 
 def pipeline_argument(pipeline: Any, name: str) -> Any:
-    """Return the first named pipeline argument object."""
+    """Return the named pipeline argument object (arguments are keyed by name)."""
     for step in pipeline or []:
-        for argument in getattr(step, "arguments", None) or []:
-            if getattr(argument, "name", None) == name:
-                return argument
+        args = getattr(step, "arguments", None) or {}
+        if name in args:
+            return args[name]
     return None
 
 
