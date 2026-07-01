@@ -180,23 +180,6 @@ def parse_list_elements(rhs_str):
     pre_terms = parse_list_elements(_pre_rhs0) if pre_is_list else ([_pre_rhs0] if _pre_rhs0 else [])
     n_pre = len(pre_terms)
 
-    # A pre_expression is "source-only" when it references source states
-    # (incoming, or `{state}_j` aliases) but no target states (local, or
-    # `{state}_i` aliases). Such couplings reduce to a per-node pre() value plus
-    # a single matmul with W, so instantaneous ones take the vectorized fast
-    # path; delayed ones keep the per-edge form (delays are inherently per-edge)
-    # but stay numerically identical.
-    def _refs_target(_rhs):
-        if 'x_i' in _rhs or 'local_states' in _rhs:
-            return True
-        for s in local_states:
-            if f'{s}_i' in _rhs:
-                return True
-            if s not in incoming_states and s in _rhs:
-                return True
-        return False
-    pre_source_only = bool(pre_expr) and not _refs_target(_pre_rhs0)
-
     # Vectorized mode: pre() returns [n_pre, n_nodes] (per-node) so the base
     # class reduces with a single matmul `pre @ weights` instead of forming the
     # dense [.., N, N] per-edge tensor. This matmul is only equivalent to the

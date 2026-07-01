@@ -554,18 +554,27 @@ def get_state_bounds(model: Any) -> Tuple[List, List, bool]:
         return bounds_lo, bounds_hi, False
 
     import math
+    from tvbo.utils import domain_enforcement
 
+    def _finite(b):
+        """Whether a clamp bound is a finite real number (not None / ±inf).
+
+        Range.lo/hi may also be an argument-name string or a sympy symbol
+        (the schema permits both); those are treated as unbounded.
+        """
+        try:
+            return b is not None and math.isfinite(float(b))
+        except (TypeError, ValueError):
+            return False
+
+    # A ``domain`` only constrains integration when its ``enforce`` attribute opts
+    # in. ``enforce: clamp`` hard-clips to [lo, hi]; ``none`` (default) treats the
+    # domain as descriptive metadata (expected/plot range, optimisation hints,
+    # IC-sampling support) and never alters the dynamics — so e.g. a phase θ with
+    # domain [0, 2π] and no enforcement is left unclamped. The legacy ``boundaries``
+    # slot is folded into ``domain`` with ``enforce: clamp`` by the Dynamics loader.
     for _sv_name, sv in model.state_variables.items():
         lo, hi = None, None
-        # A ``domain`` only constrains integration when its ``enforce`` attribute
-        # opts in. ``enforce: clamp`` hard-clips to [lo, hi]; ``none`` (default)
-        # treats the domain as descriptive metadata (expected/plot range,
-        # optimisation hints, IC-sampling support) and never alters the dynamics
-        # — so e.g. a phase θ with domain [0, 2π] and no enforcement is left
-        # unclamped and may evolve past 2π. The legacy ``boundaries`` slot is
-        # folded into ``domain`` with ``enforce: clamp`` by the Dynamics loader.
-        from tvbo.utils import domain_enforcement
-
         dom = getattr(sv, "domain", None)
         enforce = domain_enforcement(dom)
         if enforce == "wrap":
@@ -576,18 +585,6 @@ def get_state_bounds(model: Any) -> Tuple[List, List, bool]:
         if dom is not None and enforce == "clamp":
             lo = getattr(dom, "lo", None)
             hi = getattr(dom, "hi", None)
-
-        def _finite(b):
-            """Whether a clamp bound is a finite real number (not None / ±inf).
-
-            Range.lo/hi may also be an argument-name string or a sympy symbol
-            (the schema permits both); those are treated as unbounded.
-            """
-            try:
-                return b is not None and math.isfinite(float(b))
-            except (TypeError, ValueError):
-                return False
-
         bounds_lo.append(Float(lo) if _finite(lo) else -oo)
         bounds_hi.append(Float(hi) if _finite(hi) else oo)
 

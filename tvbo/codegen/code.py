@@ -194,7 +194,26 @@ _ARRAY_FUNCTION_PRINTERS = {
 }
 
 
-class NumPyPrinter(spn.NumPyPrinter):
+class _ArrayFunctionPrinterMixin:
+    """Shared printer hooks for the numpy/jax backends.
+
+    Routes array primitives (``concatenate``, ``mode_dot``, ``mode_sum``, …) through
+    the ``_ARRAY_FUNCTION_PRINTERS`` table and ``Piecewise`` through
+    ``print_Piecewise``, deferring to the parent printer otherwise. Kept as a mixin
+    listed first in the MRO so ``super()`` resolves to the concrete SymPy printer base.
+    """
+
+    def _print_Piecewise(self, expr):
+        return print_Piecewise(self, expr)
+
+    def _print_Function(self, expr):
+        handler = _ARRAY_FUNCTION_PRINTERS.get(expr.func.__name__)
+        if handler is not None:
+            return handler(self, expr)
+        return super()._print_Function(expr)
+
+
+class NumPyPrinter(_ArrayFunctionPrinterMixin, spn.NumPyPrinter):
     def __init__(self, settings=None, module="np"):
         self._module = module
         m = module + "."
@@ -207,17 +226,8 @@ class NumPyPrinter(spn.NumPyPrinter):
         # Add array function mappings
         self.known_functions.update(ARRAY_FUNCTION_MAPPINGS["numpy"])
 
-    def _print_Piecewise(self, expr):
-        return print_Piecewise(self, expr)
 
-    def _print_Function(self, expr):
-        handler = _ARRAY_FUNCTION_PRINTERS.get(expr.func.__name__)
-        if handler is not None:
-            return handler(self, expr)
-        return super()._print_Function(expr)
-
-
-class JaxPrinter(spn.JaxPrinter):
+class JaxPrinter(_ArrayFunctionPrinterMixin, spn.JaxPrinter):
     def __init__(self, settings=None, module="jnp"):
         self._module = module
         m = module + "."
@@ -323,16 +333,6 @@ class JaxPrinter(spn.JaxPrinter):
                 slices.append("None")
 
         return f"{base_name}[{', '.join(slices)}]"
-
-    def _print_Piecewise(self, expr):
-        return print_Piecewise(self, expr)
-
-    def _print_Function(self, expr):
-        """Emit array primitives (concatenate, mode_dot, …) via the shared table."""
-        handler = _ARRAY_FUNCTION_PRINTERS.get(expr.func.__name__)
-        if handler is not None:
-            return handler(self, expr)
-        return super()._print_Function(expr)
 
     def _print_Sum(self, expr):
         """Convert SymPy Sum to jnp.sum for array operations.
