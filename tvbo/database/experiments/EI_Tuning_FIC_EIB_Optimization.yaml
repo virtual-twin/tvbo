@@ -116,11 +116,22 @@ dynamics:
 
     # --- DERIVED VARIABLES ---
   derived_variables:
+        # Shared NMDA-scaled intermediates (kept explicit so the generated dfun
+        # computes J_N*S_e and J_N*c_ffi once, matching the reference association).
+    J_N_S_e:
+      label: "NMDA-scaled excitatory gating"
+      equation:
+        rhs: "J_N * S_e"
+    J_N_c_ffi:
+      label: "NMDA-scaled feedforward inhibition"
+      equation:
+        rhs: "J_N * c_ffi"
+
         # Excitatory population input and transfer function
     x_e_pre:
       label: "Excitatory pre-activation"
       equation:
-        rhs: "w_p * J_N * S_e - J_i * S_i + W_e * I_o + J_N * c_lre + I_ext"
+        rhs: "w_p * J_N_S_e - J_i * S_i + W_e * I_o + J_N * c_lre + I_ext"
     x_e:
       label: "Excitatory activation"
       equation:
@@ -135,7 +146,7 @@ dynamics:
     x_i_pre:
       label: "Inhibitory pre-activation"
       equation:
-        rhs: "J_N * S_e - S_i + W_i * I_o + lamda * J_N * c_ffi"
+        rhs: "J_N_S_e - S_i + W_i * I_o + lamda * J_N_c_ffi"
     x_i:
       label: "Inhibitory activation"
       equation:
@@ -278,18 +289,32 @@ functions:
         value: 20000.0
         description: "HRF kernel duration in ms"
 
-  prepend_history:
-    description: |
-      Prepend transient history to data for convolution warmup.
-      Concatenates last K samples of history before data along axis 0.
-    equation:
-      rhs: concatenate(history, data, 0)
-      description: "output = concat([history[-K:], data], axis=0)"
+  temporal_average:
+    description: >
+      Downsample by averaging over non-overlapping windows of `period_samples`
+      samples (centered indices, t0-independent) — reproduces tvboptim
+      TemporalAverage exactly.
+    source_code: "jax.vmap(lambda _i: jnp.mean(jax.lax.dynamic_slice(data, (_i,) + (0,) * (data.ndim - 1), (period_samples,) + data.shape[1:]), axis=0))((jnp.arange(data.shape[0]) + 1)[::period_samples])[: jnp.arange((period_samples - 2) // 2, data.shape[0], period_samples).shape[0]]"
     arguments:
       - name: data
-        description: "Input time series (T_d x n)"
+        description: "Input time series (time, nodes)"
+      - name: period_samples
+        value: 1
+        description: "Samples per window = round(downsample_period / dt)"
+
+  prepend_history:
+    description: >
+      Fit the (downsampled) transient history to one kernel length and prepend it,
+      zero-padding at the front when shorter — matches HRFBold._process_history.
+    source_code: "jnp.concatenate([(jnp.vstack([jnp.zeros((kernel_samples - history.shape[0],) + history.shape[1:], history.dtype), history]) if history.shape[0] < kernel_samples else history[-kernel_samples:]), data], axis=0)"
+    arguments:
+      - name: data
+        description: "Downsampled input time series"
       - name: history
-        description: "Transient history data, already sliced to last K samples"
+        description: "Downsampled transient history data"
+      - name: kernel_samples
+        value: 5000
+        description: "Kernel support = ceil(kernel_duration / downsample_period)"
 
   volterra_transform:
     description: |
@@ -310,15 +335,16 @@ functions:
         description: "Input neural activity data"
 
   subsample_bold:
-    description: |
-      Subsample time series to match BOLD TR.
-      Selects every s-th sample from input.
-    source_code: "data[::s]"
+    description: >
+      Sample at the end of each BOLD TR: indices arange(s, N, s), anchored at the
+      first full TR (index 0, the zero-padded warm-up, is skipped), uncapped.
+    source_code: "data[s::s]"
     arguments:
       - name: data
         description: "Input time series (T x n)"
       - name: s
         value: 180
+        description: "Subsample factor = round(TR / downsample_period) = 720/4 = 180"
         description: "Subsample factor (TR/dt = 720/4 = 180)"
 
   rmse:
@@ -505,14 +531,31 @@ observations:
             # HRF kernel (precomputed once)
       - function: hrf_kernel
 
-            # Prepend transient history for convolution warm-up
-            # Original: jnp.vstack([history[-kernel_samples:], ys_downsampled])
-      - function: prepend_history
+            # Downsample neural activity (and transient history) to BOLD grid
+      - output: downsampled_data
+        function: temporal_average
         arguments:
           - name: data
             value: integration.result
-          - name: history
+          - name: period_samples
+            value: 1
+      - output: downsampled_history
+        function: temporal_average
+        arguments:
+          - name: data
             value: integration.transient
+          - name: period_samples
+            value: 1
+
+            # Prepend transient history (zero-padded to one kernel length)
+      - function: prepend_history
+        arguments:
+          - name: data
+            value: downsampled_data
+          - name: history
+            value: downsampled_history
+          - name: kernel_samples
+            value: 5000
 
             # Convolve with HRF kernel
             # Original: jax.vmap(jax.vmap(fftconvolve))(ys_with_history)

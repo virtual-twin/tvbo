@@ -8,21 +8,29 @@ iri: tvbo:WeightShuffle
 
 parameters:
   source:
-    range: uriorcurie
+    datatype: uriorcurie
     description: "IRI of the reference Network whose weights matrix is shuffled."
   preserve:
-    range: string
+    datatype: string
     description: >-
       Which structural property to preserve under permutation:
         - binary_mask:        preserve the {0, nonzero} pattern; permute weight values among non-zero positions
         - degree:             preserve per-node degree (within rounding)
         - weight_distribution: preserve the multiset of weights (binary topology rerandomised)
-    ifabsent: "binary_mask"
-  seed: { range: integer, required: false }
+    default: "binary_mask"
+  seed: { datatype: integer, required: false }
 
-# Symbolic procedure
+# Symbolic procedure. The assembly below implements `preserve: binary_mask`
+# (keep the {0, nonzero} pattern; permute the non-zero values among their
+# positions) — the default and only mode exercised by the reservoir
+# experiments. The guard makes the supported mode explicit; `degree`
+# (maslov_sneppen primitive) and `weight_distribution` modes are future
+# procedure variants over the same primitive set.
 procedure:
   steps:
+    - name: mode_guard
+      equation:
+        rhs: "require(preserve == 'binary_mask', \"WeightShuffle procedure implements preserve='binary_mask'; other modes need a procedure variant.\")"
     - name: source_matrix
       description: "Loaded adjacency matrix from the source IRI"
       equation:
@@ -35,14 +43,9 @@ procedure:
         rhs: "permute(nonzero_values, seed=seed)"
   output:
     weights:
-      description: "Permuted matrix, preserving the chosen structural property"
+      description: "Permuted matrix (binary_mask): same {0, nonzero} pattern, values shuffled."
       equation:
-        # The exact assembly depends on `preserve` — see python materialiser
-        # for the canonical reference implementation.
         rhs: "scatter(zeros(shape(source_matrix)), nonzero_positions(source_matrix), permuted_values)"
 
-bindings:
-  python:
-    library: tvbo.graph_generators.builtins
-    callable: weight_shuffle
-    args: [source, preserve, seed]
+# No `bindings:` block — materialised from the `procedure:` above by the generic
+# engine (tvbo/graph_generators/engine.py). See RandomReservoir.yaml.

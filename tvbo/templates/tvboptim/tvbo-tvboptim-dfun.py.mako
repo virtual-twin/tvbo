@@ -39,8 +39,10 @@ if hasattr(_model_functions, 'keys'):
 if hasattr(_exp_functions, 'items'):
     user_functions.update({str(fname): str(fname) for fname in _exp_functions.keys()})
 
-jaxcode = lambda expr: render_expression(expr, format='jax', user_functions=user_functions)
-jaxcode_obj = lambda obj: model.render_equation(obj, format='jax')
+## preserve_order: keep authored term order so generated dynamics match
+## hand-written reference dynamics operation-for-operation (float byte-identity).
+jaxcode = lambda expr: render_expression(expr, format='jax', user_functions=user_functions, preserve_order=True)
+jaxcode_obj = lambda obj: model.render_equation(obj, format='jax', preserve_order=True)
 
 # Extract metadata. For number_of_modes>1 the per-node mode axis is folded into
 # the state axis (see get_mode_layout): each variable occupies n_modes scalar

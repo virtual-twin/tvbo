@@ -130,14 +130,19 @@ integration:
 # =============================================================================
 functions:
   temporal_average:
-    description: "Temporal average downsampling"
-    source_code: "jnp.mean(data.reshape(-1, period_samples, *data.shape[1:]), axis=1)"
+    description: >
+      Downsample by averaging over non-overlapping windows of `period_samples`
+      samples. Reproduces tvboptim TemporalAverage exactly: window starts are
+      the centered indices (arange(T)+1)[::period_samples] (t0-independent — the
+      simulation start does not shift the result), each window is averaged with a
+      clamped dynamic slice, and the output is trimmed to the centered-index count.
+    source_code: "jax.vmap(lambda _i: jnp.mean(jax.lax.dynamic_slice(data, (_i,) + (0,) * (data.ndim - 1), (period_samples,) + data.shape[1:]), axis=0))((jnp.arange(data.shape[0]) + 1)[::period_samples])[: jnp.arange((period_samples - 2) // 2, data.shape[0], period_samples).shape[0]]"
     arguments:
       - name: data
         description: "Input time series (time, nodes)"
       - name: period_samples
         value: 1
-        description: "Samples per averaging window"
+        description: "Samples per averaging window = round(downsample_period / dt)"
 
   hrf_kernel:
     description: "Hemodynamic response function kernel (Lotka-Volterra)"
@@ -160,16 +165,20 @@ functions:
         description: "HRF kernel duration in ms"
 
   prepend_history:
-    description: "Prepend transient history to data for convolution"
-    source_code: "jnp.concatenate([history[-kernel_samples:], data], axis=0)"
+    description: >
+      Fit the (downsampled) transient history to exactly one kernel length and
+      prepend it. Zero-pads at the front when the transient is shorter than the
+      kernel support, otherwise keeps the last `kernel_samples` — matching
+      tvboptim HRFBold._process_history so a 'valid' convolution loses no samples.
+    source_code: "jnp.concatenate([(jnp.vstack([jnp.zeros((kernel_samples - history.shape[0],) + history.shape[1:], history.dtype), history]) if history.shape[0] < kernel_samples else history[-kernel_samples:]), data], axis=0)"
     arguments:
       - name: data
         description: "Input time series (time, nodes)"
       - name: history
-        description: "Transient history data"
+        description: "Downsampled transient history data"
       - name: kernel_samples
         value: 5000
-        description: "Number of samples to prepend from history"
+        description: "Kernel support = ceil(kernel_duration / downsample_period)"
 
   volterra_transform:
     description: "Volterra nonlinear BOLD transformation"
@@ -187,17 +196,19 @@ functions:
         description: "Input data from previous step"
 
   subsample_bold:
-    description: "Subsample to BOLD TR (final_period / downsample_period)"
-    source_code: "data[::step][:n_samples]"
+    description: >
+      Sample the convolved signal at the end of each BOLD TR. Takes indices
+      arange(step, N, step) — anchored at the first full TR (index 0, the
+      zero-padded warm-up, is skipped) and uncapped, so the output length follows
+      the data length (no baked sample count). Matches tvboptim HRFBold's final
+      downsampling.
+    source_code: "data[step::step]"
     arguments:
       - name: data
         description: "Input time series"
       - name: step
         value: 250
-        description: "Subsample factor (TR/downsample_period = 1000/4 = 250)"
-      - name: n_samples
-        value: 120
-        description: "Number of output samples (simulation_time / TR = 120000 / 1000 = 120)"
+        description: "Subsample factor = round(TR / downsample_period) = 1000/4 = 250"
 
   rmse:
     description: "Root mean squared error"
