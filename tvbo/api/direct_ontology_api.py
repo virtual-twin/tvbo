@@ -8,6 +8,7 @@ Enables schema ↔ ontology interlinking via class URIs.
 No fallbacks - fails fast on unexpected data.
 """
 
+import os
 from typing import Any, Dict, List, Optional
 
 import owlready2 as owl
@@ -15,19 +16,33 @@ from sympy import latex, symbols
 
 from tvbo.ontology import owl as ontology, query
 
-onto = ontology.onto
+# The platform serves the generated, individual-based ontology
+# (tvbo/data/ontology/tvbo.owl). It is loaded into a DEDICATED owlready2 World,
+# isolated from owl.py's global class-based `onto` that the tvbo core depends on
+# (see dev/runtime_ontology_migration.md). owl.py's class-based high-level API
+# stays on the deprecated ontology until the Phase B rewrite.
+_GENERATED_ONTO_PATH = os.path.join(ontology.ONTO_DIR, "tvbo.owl")
 
-# Type mapping: database types → ontology classes
+
+def _load_generated_ontology():
+    """Load the generated ontology into its own World (no reasoning; ROBOT
+    already materialised the ELK inferences at build time)."""
+    world = owl.World()
+    return world.get_ontology("file://" + _GENERATED_ONTO_PATH).load()
+
+
+# Type mapping: database types → generated-ontology class names (the LinkML
+# schema classes; the generated ontology types domain entities against these).
 TYPE_MAPPING = {
-    "dynamics": "NeuralMassModel",
+    "dynamics": "Dynamics",
     "network": "Network",
-    "integrator": "IntegrationMethod",
+    "integrator": "Integrator",
     "coupling": "Coupling",
     "experiment": "SimulationExperiment",
     "study": "SimulationStudy",
-    "observation": "ObservationModel",
-    "atlas": "BrainAtlas",
-    "software": "Software",
+    "observation": "Observation",
+    "atlas": "Parcellation",
+    "software": "SoftwarePackage",
 }
 
 CURIE_PREFIXES = {
@@ -52,22 +67,16 @@ def _get_symbol(entity) -> str:
 
 
 def _get_type(entity) -> str:
-    """Get primary type/class label. Works for classes and individuals.
+    """Primary type/class label. Entity-local so it is world-agnostic.
 
-    In the generated (individual-based) ontology a domain entity's asserted
-    class lives in ``is_a`` as a ThingClass, so prefer that; fall back to the
-    class-based resolver for class nodes, guarding against a ``None`` result.
+    A domain individual's asserted class and a class's superclass both live in
+    ``is_a`` as a ThingClass, so the first non-``Thing`` entry is the natural
+    type for both. Returns ``"Thing"`` when none is present.
     """
     for parent in getattr(entity, "is_a", []) or []:
         if isinstance(parent, owl.ThingClass) and parent.name != "Thing":
             return (parent.label.first() if parent.label else None) or parent.name
-
-    type_entity = ontology.get_type(entity)
-    if type_entity is None:
-        return "Thing"
-    if getattr(type_entity, "label", None):
-        return type_entity.label.first() or type_entity.name
-    return type_entity.name
+    return "Thing"
 
 
 def _serialize_entity(entity) -> Dict[str, Any]:
@@ -110,7 +119,8 @@ class DirectOntologyAPI:
     """Direct RDF/SPARQL-based ontology API."""
 
     def __init__(self):
-        self.onto = onto
+        self.onto = _load_generated_ontology()
+        self.world = self.onto.world
 
     def search(self, term: str, limit: int = 100, exact_match: bool = False) -> List[Dict[str, Any]]:
         """Search ontology via SPARQL."""
@@ -121,6 +131,7 @@ class DirectOntologyAPI:
             term,
             include=["synonym", "acronym", "symbol", "tvbSourceVariable"],
             exact_match=["symbol", "acronym"] if not exact_match else "all",
+            onto=self.onto,
         )
         serialized = [_serialize_entity(r) for r in results]
 
@@ -145,12 +156,12 @@ class DirectOntologyAPI:
 
     def get_by_storid(self, storid: int) -> Dict[str, Any]:
         """Get entity by storage ID."""
-        entity = onto.world._get_by_storid(storid)
+        entity = self.world._get_by_storid(storid)
         return _serialize_entity(entity)
 
     def get_by_iri(self, iri: str) -> Optional[Dict[str, Any]]:
         """Get entity by IRI. Returns None if not found."""
-        entity = onto.search_one(iri=iri)
+        entity = self.onto.search_one(iri=iri)
         return _serialize_entity(entity) if entity else None
 
     def get_by_curie(self, curie: str) -> Optional[Dict[str, Any]]:
@@ -162,11 +173,11 @@ class DirectOntologyAPI:
 
     def get_children(self, storid: int) -> Dict[str, Any]:
         """Get child classes/instances via direct RDF access."""
-        entity = onto.world._get_by_storid(storid)
+        entity = self.world._get_by_storid(storid)
         nodes, links = [], []
         seen = set()
 
-        for predicate, child in query.get_children(entity):
+        for predicate, child in query.get_children(entity, onto=self.onto):
             if child and child.storid not in seen:
                 seen.add(child.storid)
                 nodes.append(_serialize_entity(child))
@@ -183,11 +194,11 @@ class DirectOntologyAPI:
 
     def get_parents(self, storid: int) -> Dict[str, Any]:
         """Get parent classes via direct RDF access."""
-        entity = onto.world._get_by_storid(storid)
+        entity = self.world._get_by_storid(storid)
         nodes, links = [], []
         seen = set()
 
-        for predicate, parent in query.get_parents(entity):
+        for predicate, parent in query.get_parents(entity, onto=self.onto):
             if parent and parent.storid not in seen:
                 seen.add(parent.storid)
                 nodes.append(_serialize_entity(parent))
@@ -203,7 +214,7 @@ class DirectOntologyAPI:
 
     def get_relationships(self, storid: int) -> Dict[str, Any]:
         """Get all relationships (both directions)."""
-        entity = onto.world._get_by_storid(storid)
+        entity = self.world._get_by_storid(storid)
         center = _serialize_entity(entity)
         nodes, links = [center], []
         seen = {storid}
@@ -231,7 +242,7 @@ class DirectOntologyAPI:
         nodes, links = [], []
         seen = set()
 
-        for entity in list(onto.classes()) + list(onto.individuals()):
+        for entity in list(self.onto.classes()) + list(self.onto.individuals()):
             if entity.storid in seen:
                 continue
             seen.add(entity.storid)
@@ -275,8 +286,8 @@ class DirectOntologyAPI:
         return item
 
     def sparql(self, query_string: str, flatten: bool = True) -> List[Any]:
-        """Execute SPARQL query."""
-        return query.sparql_query(query_string, flatten_result=flatten)
+        """Execute SPARQL query against the generated ontology world."""
+        return query.sparql_query(query_string, flatten_result=flatten, world=self.world)
 
 
 # Singleton

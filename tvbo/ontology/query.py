@@ -107,12 +107,16 @@ def flatten_list(nested_list: List[Any]) -> List[Any]:
     return flat_list
 
 
-def sparql_query(query_string: str, flatten_result: bool = True) -> List[Any]:
+def sparql_query(query_string: str, flatten_result: bool = True, world: Any = None) -> List[Any]:
+    # ``world`` lets callers query an ontology other than the global default
+    # (e.g. the platform's generated individual-based ontology loaded in its
+    # own owlready2 World); defaults to the class-based runtime ontology.
     # error_on_undefined_entities=False: optional clauses may reference
     # annotation properties (e.g. tvbo:synonym) that are absent from the
     # generated ontology; treat those as matching nothing rather than raising.
+    world = world if world is not None else ontology.onto.world
     res: List[Any] = list(
-        ontology.onto.world.sparql(query_string, error_on_undefined_entities=False)
+        world.sparql(query_string, error_on_undefined_entities=False)
     )
     return flatten_list(res) if flatten_result else res
 
@@ -236,6 +240,7 @@ def label_search(
     greek_to_latin: bool = True,
     ignore_underscore: bool = False,
     types: List[str] = ["owl:Class", "owl:NamedIndividual"],
+    onto: Any = None,
 ) -> List[owlready2.ThingClass]:
     if greek_to_latin:
         label = convert_greek_to_latin(label)
@@ -289,57 +294,61 @@ WHERE {{
     )
 }}
     """
-    results = list(set(sparql_query(sparql_string)))
+    onto = onto if onto is not None else ontology.onto
+    results = list(set(sparql_query(sparql_string, world=onto.world)))
     if root_class:
         if isinstance(root_class, str):
-            root_class = ontology.onto.search_one(label=root_class)
+            root_class = onto.search_one(label=root_class)
         results = ontology.intersection(results, root_class.descendants(include_self=False))
     return results
 
 
-def get_children(cl: Any) -> List[Tuple[str, Any]]:
+def get_children(cl: Any, onto: Any = None) -> List[Tuple[str, Any]]:
+    onto = onto if onto is not None else ontology.onto
+    world = onto.world
     if isinstance(cl, str):
-        cl = ontology.onto.search_one(label=cl)
+        cl = onto.search_one(label=cl)
     if isinstance(cl, int):
-        cl = ontology.onto.search_one(identifier=str(cl).zfill(6))
+        cl = onto.search_one(identifier=str(cl).zfill(6))
 
     storid = cl.storid
 
-    predicates = ontology.onto.world._get_obj_triples_o_p(storid)
-    [ontology.onto.world._unabbreviate(p) for p in ontology.onto.world._get_obj_triples_o_p(storid)]
+    predicates = world._get_obj_triples_o_p(storid)
     edges = []
     for p in predicates:
         if p < 0:
             continue
-        for o in ontology.onto.world._get_obj_triples_po_s(p=p, o=storid):
+        for o in world._get_obj_triples_po_s(p=p, o=storid):
             if o < 0:
                 continue
             edges.append(
                 (
-                    iri2prefix(ontology.onto.world._unabbreviate(p)),
-                    ontology.onto.search_one(iri=ontology.onto.world._unabbreviate(o)),
+                    iri2prefix(world._unabbreviate(p)),
+                    onto.search_one(iri=world._unabbreviate(o)),
                 )
             )
     return edges
 
 
-def get_parents(cl: Any) -> List[Tuple[str, Any]]:
+def get_parents(cl: Any, onto: Any = None) -> List[Tuple[str, Any]]:
+    onto = onto if onto is not None else ontology.onto
+    world = onto.world
     if isinstance(cl, str):
-        cl = ontology.onto.search_one(label=cl)
+        cl = onto.search_one(label=cl)
     if isinstance(cl, int):
-        cl = ontology.onto.search_one(identifier=str(cl).zfill(6))
+        cl = onto.search_one(identifier=str(cl).zfill(6))
 
     storid = cl.storid
 
     edges = []
-    for p, o in ontology.onto.world._get_obj_triples_s_po(s=storid):
+    for p, o in world._get_obj_triples_s_po(s=storid):
         if o < 0 or p < 0:
             continue
-        onto_class = ontology.onto.search_one(iri=ontology.onto.world._unabbreviate(o))
+        onto_class = onto.search_one(iri=world._unabbreviate(o))
         if onto_class:
             edges.append(
                 (
-                    iri2prefix(ontology.onto.world._unabbreviate(p)),
+                    iri2prefix(world._unabbreviate(p)),
                     onto_class,
                 )
             )
