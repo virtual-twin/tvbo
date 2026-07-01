@@ -155,9 +155,9 @@ elif hasattr(_obs_raw, '__iter__') and not isinstance(_obs_raw, dict):
     _all_observations = {get_attr(o, 'name', f'obs_{i}'): o for i, o in enumerate(_obs_raw)}
 else:
     _all_observations = {}
-# Raw observations only — derived ones are handled by the experiment-level
-# DAG walker, not by per-observation monitor rendering.
-observations = {n: o for n, o in _all_observations.items() if not _is_derived(o, experiment)}
+# Raw observations only — derived ones are handled by the experiment-level DAG
+# walker, and analysis observations (gradient/lyapunov/...) by their own path.
+observations = {n: o for n, o in _all_observations.items() if not _is_derived(o, experiment) and getattr(o, 'analysis', None) is None}
 
 # =============================================================================
 

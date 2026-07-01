@@ -3,9 +3,9 @@ description: "Random k-regular graph — every node has exactly degree k."
 iri: tvbo:RandomRegular
 
 parameters:
-  n: { range: integer, description: "Number of nodes" }
-  k: { range: integer, description: "Degree of every node (n*k must be even)" }
-  seed: { range: integer, required: false }
+  n: { datatype: integer, description: "Number of nodes" }
+  k: { datatype: integer, description: "Degree of every node (n*k must be even)" }
+  seed: { datatype: integer, required: false }
 
 bindings:
   julia:

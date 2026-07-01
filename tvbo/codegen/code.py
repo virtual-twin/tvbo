@@ -17,6 +17,7 @@ from tvbo.parse.expression import parse_eq
 
 ARRAY_FUNCTION_MAPPINGS = {
     "jax": {
+        # reductions
         "sum": "jnp.sum",
         "mean": "jnp.mean",
         "std": "jnp.std",
@@ -25,7 +26,32 @@ ARRAY_FUNCTION_MAPPINGS = {
         "min": "jnp.min",
         "abs": "jnp.abs",
         "prod": "jnp.prod",
+        "cumsum": "jnp.cumsum",
+        "diff": "jnp.diff",
+        "argmax": "jnp.argmax",
+        "argmin": "jnp.argmin",
+        # shape / construction / manipulation
         "concatenate": "jnp.concatenate",
+        "stack": "jnp.stack",
+        "vstack": "jnp.vstack",
+        "hstack": "jnp.hstack",
+        "pad": "jnp.pad",
+        "roll": "jnp.roll",
+        "flip": "jnp.flip",
+        "reshape": "jnp.reshape",
+        "transpose": "jnp.transpose",
+        "expand_dims": "jnp.expand_dims",
+        "squeeze": "jnp.squeeze",
+        "take": "jnp.take",
+        "tile": "jnp.tile",
+        "repeat": "jnp.repeat",
+        "arange": "jnp.arange",
+        "zeros": "jnp.zeros",
+        "ones": "jnp.ones",
+        "where": "jnp.where",
+        "clip": "jnp.clip",
+        "dot": "jnp.dot",
+        "matmul": "jnp.matmul",
     },
     "numpy": {
         "sum": "np.sum",
@@ -36,7 +62,31 @@ ARRAY_FUNCTION_MAPPINGS = {
         "min": "np.min",
         "abs": "np.abs",
         "prod": "np.prod",
+        "cumsum": "np.cumsum",
+        "diff": "np.diff",
+        "argmax": "np.argmax",
+        "argmin": "np.argmin",
         "concatenate": "np.concatenate",
+        "stack": "np.stack",
+        "vstack": "np.vstack",
+        "hstack": "np.hstack",
+        "pad": "np.pad",
+        "roll": "np.roll",
+        "flip": "np.flip",
+        "reshape": "np.reshape",
+        "transpose": "np.transpose",
+        "expand_dims": "np.expand_dims",
+        "squeeze": "np.squeeze",
+        "take": "np.take",
+        "tile": "np.tile",
+        "repeat": "np.repeat",
+        "arange": "np.arange",
+        "zeros": "np.zeros",
+        "ones": "np.ones",
+        "where": "np.where",
+        "clip": "np.clip",
+        "dot": "np.dot",
+        "matmul": "np.matmul",
     },
     "julia": {
         "sum": "sum",
@@ -47,7 +97,20 @@ ARRAY_FUNCTION_MAPPINGS = {
         "min": "minimum",
         "abs": "abs",
         "prod": "prod",
+        "cumsum": "cumsum",
+        "diff": "diff",
+        "argmax": "argmax",
+        "argmin": "argmin",
         "concatenate": "vcat",
+        "stack": "stack",
+        "vstack": "vcat",
+        "hstack": "hcat",
+        "flip": "reverse",
+        "reshape": "reshape",
+        "transpose": "transpose",
+        "clip": "clamp",
+        "dot": "dot",
+        "matmul": "*",
     },
     "python": {
         "sum": "sum",
@@ -744,24 +807,26 @@ class PythonCodePrinter(_PythonCodePrinter):
         return f"(1 if {arg} > 0 else (-1 if {arg} < 0 else 0))"
 
 
-def get_printer(format, parameters=None):
+def get_printer(format, parameters=None, order=None):
+    # order='none' preserves source term order; default keeps prior behaviour.
+    extra = {} if order is None else {"order": order}
 
     if format == "numpy":
-        return NumPyPrinter()
+        return NumPyPrinter(settings=extra) if extra else NumPyPrinter()
     elif format == "jax":
-        return JaxPrinter()
+        return JaxPrinter(settings=extra) if extra else JaxPrinter()
     elif format == "julia":
-        return JuliaPrinter()
+        return JuliaPrinter(settings=extra) if extra else JuliaPrinter()
     elif format == "mtk":
-        return MTKPrinter()
+        return MTKPrinter(settings=extra) if extra else MTKPrinter()
     elif format == "fortran":
-        return FortranPrinter()
+        return FortranPrinter(settings=extra) if extra else FortranPrinter()
     elif format == "python":
-        return PythonCodePrinter()
+        return PythonCodePrinter(settings=extra) if extra else PythonCodePrinter()
     elif format == "lems":
-        return LEMSPrinter(settings={"parameters": parameters or []})
+        return LEMSPrinter(settings={"parameters": parameters or [], **extra})
     elif format in ["sympy", "symbolic", "pyrates"]:
-        return StrPrinter()
+        return StrPrinter(settings=extra) if extra else StrPrinter()
     else:
         raise ValueError(f"Unsupported format: {format}")
 
@@ -772,6 +837,7 @@ def render_expression(
     user_functions={},
     parameters=None,
     infer_broadcasting=False,
+    preserve_order=False,
 ):
     """Render a SymPy expression or string to target format code.
 
@@ -793,14 +859,22 @@ def render_expression(
         If True, analyze indexed expressions and automatically add broadcasting
         dimensions (e.g., rmse[i] -> rmse[:, None] when used with a[i,j]).
         This enables mathematically correct notation to generate correct array code.
+    preserve_order : bool
+        If True, keep the source term order (no SymPy Add/Mul canonicalization)
+        so generated code matches reference code operation-for-operation.
     """
     if isinstance(expression, str):
-        # Pass user_functions as functions to parse_eq so they're recognized
-        # This prevents implicit multiplication from breaking function names
-        func_names = list(user_functions.keys()) if user_functions else None
-        expression = parse_eq(expression, parameters=parameters, functions=func_names)
+        # Pass user_functions AND the array-op vocabulary to parse_eq so they're
+        # recognized as functions (else implicit multiplication splits e.g.
+        # pad(x) into pad*x).
+        func_names = list(user_functions.keys()) if user_functions else []
+        func_names += list(ARRAY_FUNCTION_MAPPINGS.get(format, {}).keys())
+        # preserve_order: parse unevaluated + print order='none' so SymPy keeps
+        # the authored term order (float +/* are non-associative).
+        _po = {"evaluate": False} if preserve_order else {}
+        expression = parse_eq(expression, parameters=parameters, functions=func_names, **_po)
 
-    printer = get_printer(format, parameters=parameters)
+    printer = get_printer(format, parameters=parameters, order="none" if preserve_order else None)
     # User functions extend built-in mappings (don't override if already mapped)
     if user_functions:
         for name, target in user_functions.items():
@@ -822,6 +896,7 @@ def render_equation(
     replace=None,
     remove=None,
     inline_funcs=None,
+    preserve_order=False,
     **kwargs,
 ):
     """
@@ -845,6 +920,8 @@ def render_equation(
         Dictionary mapping function name -> (arg_names, body_expr) for inlining
         custom functions. The body_expr should be a sympy expression.
         Example: {'Sigm': (['v'], 2*e0/(1 + exp(r*(v0 - v))))}
+    preserve_order : bool
+        If True, keep the source term order (no SymPy canonicalization).
     **kwargs
         Additional arguments passed to parse_eq.
 
@@ -854,6 +931,8 @@ def render_equation(
         The rendered equation string.
     """
     # Ensure parsing knows about symbols and undefined functions from the model scope
+    if preserve_order:  # keep authored term order (see render_expression)
+        kwargs.setdefault("evaluate", False)
     expr = parse_eq(equation, local_dict=local_dict, **kwargs)
 
     if format == "latex":
@@ -880,7 +959,7 @@ def render_equation(
             if getattr(obj, "is_Function", False) and name not in uf:
                 uf[str(name)] = str(name)
 
-    printer = get_printer(format)
+    printer = get_printer(format, order="none" if preserve_order else None)
     # User functions take precedence over built-in mappings
     if uf:
         try:

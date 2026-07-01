@@ -2051,7 +2051,10 @@ class StimulationSetting(ConfiguredBaseModel):
     amplitude: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StimulationSetting']} })
     frequency: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StimulationSetting']} })
     pulse_width: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StimulationSetting']} })
-    mode: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StimulationSetting', 'Exploration', 'AlgorithmInclude']} })
+    mode: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StimulationSetting',
+                       'Exploration',
+                       'AlgorithmInclude',
+                       'Differentiation']} })
     active_contacts: Optional[list[int]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['StimulationSetting']} })
     efield: Optional[EField] = Field(default=None, description="""Metadata about the E-field result for this setting""", json_schema_extra = { "linkml_meta": {'domain_of': ['StimulationSetting']} })
 
@@ -2985,6 +2988,7 @@ class Equation(ConfiguredBaseModel):
                        'Node',
                        'Edge',
                        'Observation',
+                       'Analysis',
                        'Dynamics',
                        'Distribution',
                        'Noise',
@@ -3096,6 +3100,7 @@ class Stimulus(ConfiguredBaseModel):
                        'Node',
                        'Edge',
                        'Observation',
+                       'Analysis',
                        'Dynamics',
                        'Distribution',
                        'Noise',
@@ -3387,6 +3392,7 @@ class Event(ConfiguredBaseModel):
                        'Node',
                        'Edge',
                        'Observation',
+                       'Analysis',
                        'Dynamics',
                        'Distribution',
                        'Noise',
@@ -3455,6 +3461,7 @@ class TemporalApplicableEquation(Equation):
                        'Node',
                        'Edge',
                        'Observation',
+                       'Analysis',
                        'Dynamics',
                        'Distribution',
                        'Noise',
@@ -4498,6 +4505,7 @@ class Network(ConfiguredBaseModel):
                        'Node',
                        'Edge',
                        'Observation',
+                       'Analysis',
                        'Dynamics',
                        'Distribution',
                        'Noise',
@@ -4662,13 +4670,14 @@ class GraphGenerator(ConfiguredBaseModel):
     type: Optional[str] = Field(default=None, description="""Optional graph family name.  Use a StandardGraphType value for automatic backend mapping, or any custom string for documentation purposes.  When absent, the backend ``bindings`` determine construction directly.
 """, json_schema_extra = { "linkml_meta": {'domain_of': ['GraphGenerator',
                        'File',
+                       'Analysis',
                        'Aggregation',
                        'TuningObjective',
                        'Algorithm',
                        'Study']} })
     seed: Optional[int] = Field(default=None, description="""Random seed for reproducible graph generation.""", json_schema_extra = { "linkml_meta": {'domain_of': ['GraphGenerator', 'Distribution', 'Noise']} })
     directed: Optional[bool] = Field(default=False, description="""Whether to generate a directed graph.""", json_schema_extra = { "linkml_meta": {'domain_of': ['GraphGenerator', 'Edge'], 'ifabsent': 'boolean(false)'} })
-    parameters: Optional[dict[str, Parameter]] = Field(default=None, description="""Generator parameters (e.g. n, k, p, seed), keyed by name, each carrying a concrete ``value`` (Parameter). Builder (Callable) generators receive these as keyword arguments; declarative library generators may additionally use the ``bindings`` map to the native constructor call.
+    parameters: Optional[dict[str, Parameter]] = Field(default=None, description="""Generator parameters keyed by name (e.g. n, k, p, seed). A curated entry *declares* each parameter's interface via the general ``Parameter`` slots — ``datatype`` (its type), ``default`` (fallback when absent) and ``required`` — while a concrete experiment supplies the same key by ``value``. Builder (Callable) generators receive the resolved values as keyword arguments; declarative library generators pass them positionally via the per-backend ``bindings`` map. The number of nodes is always taken from Network.number_of_nodes.
 """, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
                        'Stimulus',
                        'Event',
@@ -4678,6 +4687,7 @@ class GraphGenerator(ConfiguredBaseModel):
                        'Node',
                        'Edge',
                        'Observation',
+                       'Analysis',
                        'Dynamics',
                        'Distribution',
                        'Noise',
@@ -4977,6 +4987,7 @@ class File(ConfiguredBaseModel):
          'slot_uri': 'dcterms:description'} })
     type: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['GraphGenerator',
                        'File',
+                       'Analysis',
                        'Aggregation',
                        'TuningObjective',
                        'Algorithm',
@@ -5123,6 +5134,7 @@ class Node(ConfiguredBaseModel):
                        'Node',
                        'Edge',
                        'Observation',
+                       'Analysis',
                        'Dynamics',
                        'Distribution',
                        'Noise',
@@ -5321,6 +5333,7 @@ class Edge(ConfiguredBaseModel):
                        'Node',
                        'Edge',
                        'Observation',
+                       'Analysis',
                        'Dynamics',
                        'Distribution',
                        'Noise',
@@ -5331,7 +5344,7 @@ class Edge(ConfiguredBaseModel):
                        'Coupling',
                        'PDE']} })
     source: Optional[int] = Field(default=None, description="""Source node ID (set for explicit edges, absent for template edges)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge', 'Observation', 'Dynamics', 'Parameter', 'CouplingInput']} })
-    target: Optional[int] = Field(default=None, description="""Target node ID (set for explicit edges, absent for template edges)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
+    target: Optional[int] = Field(default=None, description="""Target node ID (set for explicit edges, absent for template edges)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge', 'Analysis']} })
     weight: Optional[float] = Field(default=None, description="""Connection weight (explicit edges)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
     delay: Optional[float] = Field(default=None, description="""Conduction delay (explicit edges, ms)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
     distance: Optional[float] = Field(default=None, description="""Edge length / tract distance (explicit edges, mm)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge']} })
@@ -5548,6 +5561,7 @@ class Observation(ConfiguredBaseModel):
                        'Node',
                        'Edge',
                        'Observation',
+                       'Analysis',
                        'Dynamics',
                        'Distribution',
                        'Noise',
@@ -5574,6 +5588,43 @@ class Observation(ConfiguredBaseModel):
     window_size: Optional[int] = Field(default=None, description="""Number of samples for windowed aggregation""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
     pipeline: Optional[list[FunctionCall]] = Field(default=None, description="""Ordered sequence of Functions. Each step has a unique `name` (used to key step outputs) and transforms input -> output. List form preserves execution order.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
     class_reference: Optional[ClassReference] = Field(default=None, description="""Direct class reference (alternative to pipeline). Use for external library classes like tvboptim.Bold, custom monitors, or any callable class. The class is instantiated with constructor_args and called with call_args. Example: {name: Bold, module: tvboptim.observations.tvb_monitors.bold, constructor_args: [{name: period, value: 1000.0}]}""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
+    analysis: Optional[Analysis] = Field(default=None, description="""Marks this observation as an analysis observable that operates on the solve/loss rather than a result-data pipeline (autodiff gradient, finite-difference gradient, or Lyapunov spectrum).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Observation']} })
+
+
+class Analysis(ConfiguredBaseModel):
+    """
+    A general analysis observable: a quantity obtained by ANALYZING the model, its solve, or a derived loss, rather than by transforming the recorded trajectory. It is deliberately broad — the same concept covers parameter sensitivities/gradients (autodiff or finite-difference), stability spectra (Lyapunov), bifurcation quantities, identifiability/Fisher-information metrics, and future analyses. `type` names the analysis (extensible); `target` and `wrt` bind it to what is analyzed and with respect to what; `parameters` carries the analysis-specific configuration. Backend-neutral: each backend maps `type` to its own machinery, or emits a comment and skips when it has no equivalent (it does not raise).
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Analysis', 'from_schema': 'https://w3id.org/tvbo'})
+
+    parameters: Optional[dict[str, Parameter]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Equation',
+                       'Stimulus',
+                       'Event',
+                       'TemporalApplicableEquation',
+                       'Network',
+                       'GraphGenerator',
+                       'Node',
+                       'Edge',
+                       'Observation',
+                       'Analysis',
+                       'Dynamics',
+                       'Distribution',
+                       'Noise',
+                       'Exploration',
+                       'Discretization',
+                       'BranchSwitch',
+                       'Integrator',
+                       'Coupling',
+                       'PDE']} })
+    type: Optional[str] = Field(default=None, description="""The analysis kind, e.g. 'gradient', 'finite_difference', 'lyapunov', 'bifurcation', 'identifiability', 'sensitivity'. Extensible — backends dispatch on it.""", json_schema_extra = { "linkml_meta": {'domain_of': ['GraphGenerator',
+                       'File',
+                       'Analysis',
+                       'Aggregation',
+                       'TuningObjective',
+                       'Algorithm',
+                       'Study']} })
+    target: Optional[str] = Field(default=None, description="""What is analyzed: typically an observation or loss name (e.g. 'loss' for a gradient). Omitted when the analysis acts on the whole solve (e.g. a Lyapunov spectrum).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Edge', 'Analysis']} })
+    wrt: Optional[list[str]] = Field(default=None, description="""Quantity/quantities the analysis is taken with respect to, e.g. a parameter 'c_sigmJR.G' for a gradient/sensitivity. Omitted for analyses that need no explicit differentiation target.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Analysis']} })
 
 
 class Dynamics(ConfiguredBaseModel):
@@ -5692,6 +5743,7 @@ class Dynamics(ConfiguredBaseModel):
                        'Node',
                        'Edge',
                        'Observation',
+                       'Analysis',
                        'Dynamics',
                        'Distribution',
                        'Noise',
@@ -6077,6 +6129,7 @@ class Distribution(ConfiguredBaseModel):
                        'Node',
                        'Edge',
                        'Observation',
+                       'Analysis',
                        'Dynamics',
                        'Distribution',
                        'Noise',
@@ -6317,6 +6370,8 @@ class Parameter(ConfiguredBaseModel):
     shape: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Matrix', 'NamedArray', 'Parameter', 'FreeParameter', 'NDArray']} })
     explored_values: Optional[AnyShapeArray[float]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Range', 'Parameter', 'ExplorationAxis']} })
     element_domains: Optional[list[Range]] = Field(default=None, description="""Per-element domain overrides for heterogeneous parameters. When specified, element_domains[i] overrides domain for element i during exploration auto-expansion. Length must match parameter shape (e.g., n_nodes for shape \"(n_nodes,)\"). If not set, all elements share the same domain.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter', 'ExplorationAxis']} })
+    datatype: Optional[str] = Field(default=None, description="""Declared value type of this parameter, given as a schema range name — a primitive (``integer``, ``float``, ``string``, ``uriorcurie``) or a class (e.g. ``Distribution``). Documents the expected type when the parameter is a *declaration* carrying no concrete ``value`` (e.g. a GraphGenerator's typed argument interface). Distinct from ``domain`` (numeric bounds) and ``unit``.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
+    required: Optional[bool] = Field(default=None, description="""Whether a value for this parameter must be supplied. Optional parameters (e.g. a generator's ``seed``) set this to false. Declaration metadata; unset means unconstrained.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
 
 
 class CouplingInput(ConfiguredBaseModel):
@@ -6762,6 +6817,7 @@ class Aggregation(ConfiguredBaseModel):
     over: Optional[DimensionType] = Field(default=None, description="""Dimension to aggregate over (e.g., node, time, state)""", json_schema_extra = { "linkml_meta": {'domain_of': ['Aggregation']} })
     type: Optional[ReductionType] = Field(default=ReductionType.mean, description="""Aggregation operation (mean, sum, max, min, none)""", json_schema_extra = { "linkml_meta": {'domain_of': ['GraphGenerator',
                        'File',
+                       'Analysis',
                        'Aggregation',
                        'TuningObjective',
                        'Algorithm',
@@ -7607,6 +7663,8 @@ class DerivedParameter(Parameter):
     shape: Optional[str] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Matrix', 'NamedArray', 'Parameter', 'FreeParameter', 'NDArray']} })
     explored_values: Optional[AnyShapeArray[float]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Range', 'Parameter', 'ExplorationAxis']} })
     element_domains: Optional[list[Range]] = Field(default=None, description="""Per-element domain overrides for heterogeneous parameters. When specified, element_domains[i] overrides domain for element i during exploration auto-expansion. Length must match parameter shape (e.g., n_nodes for shape \"(n_nodes,)\"). If not set, all elements share the same domain.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter', 'ExplorationAxis']} })
+    datatype: Optional[str] = Field(default=None, description="""Declared value type of this parameter, given as a schema range name — a primitive (``integer``, ``float``, ``string``, ``uriorcurie``) or a class (e.g. ``Distribution``). Documents the expected type when the parameter is a *declaration* carrying no concrete ``value`` (e.g. a GraphGenerator's typed argument interface). Distinct from ``domain`` (numeric bounds) and ``unit``.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
+    required: Optional[bool] = Field(default=None, description="""Whether a value for this parameter must be supplied. Optional parameters (e.g. a generator's ``seed``) set this to false. Declaration metadata; unset means unconstrained.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Parameter']} })
 
 
 class DerivedVariable(ConfiguredBaseModel):
@@ -7811,6 +7869,7 @@ class Noise(ConfiguredBaseModel):
                        'Node',
                        'Edge',
                        'Observation',
+                       'Analysis',
                        'Dynamics',
                        'Distribution',
                        'Noise',
@@ -8621,6 +8680,7 @@ class Exploration(ConfiguredBaseModel):
                        'Node',
                        'Edge',
                        'Observation',
+                       'Analysis',
                        'Dynamics',
                        'Distribution',
                        'Noise',
@@ -8631,7 +8691,10 @@ class Exploration(ConfiguredBaseModel):
                        'Coupling',
                        'PDE']} })
     algorithms: Optional[list[str]] = Field(default=None, description="""Names of the experiment's algorithms (keys in `experiment.algorithms`) to run AT EACH exploration point, in order, BEFORE computing the observable. Explicitly wires algorithms into the exploration so per-point tuning / constraints are applied at every sweep point — e.g. FIC re-tuning J_i at each E/I ratio. With this set, the sweep evaluates the full algorithm→observation pipeline per point (executed sequentially), not a bare simulation. Empty/absent = bare simulation per point. This is the declarative replacement for any Python per-point driver: the composition is derived entirely from YAML metadata.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Exploration', 'SimulationExperiment']} })
-    mode: Optional[str] = Field(default="product", description="""Combination mode: 'product' (full grid), 'zip' (paired)""", json_schema_extra = { "linkml_meta": {'domain_of': ['StimulationSetting', 'Exploration', 'AlgorithmInclude'],
+    mode: Optional[str] = Field(default="product", description="""Combination mode: 'product' (full grid), 'zip' (paired)""", json_schema_extra = { "linkml_meta": {'domain_of': ['StimulationSetting',
+                       'Exploration',
+                       'AlgorithmInclude',
+                       'Differentiation'],
          'ifabsent': 'string(product)'} })
     observable: Optional[FunctionCall] = Field(default=None, description="""Observable to compute at each point. Use function: obs_name for simple observation, or function: func_name + arguments for FunctionCall.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Exploration']} })
     n_parallel: Optional[int] = Field(default=1, description="""Parallel evaluations""", json_schema_extra = { "linkml_meta": {'domain_of': ['Exploration'], 'ifabsent': 'integer(1)'} })
@@ -9036,7 +9099,10 @@ class AlgorithmInclude(ConfiguredBaseModel):
                        'FunctionCall',
                        'AlgorithmInclude',
                        'AlgorithmStage']} })
-    mode: Optional[AlgorithmCompositionMode] = Field(default=AlgorithmCompositionMode.combined, description="""How the included algorithm composes with the outer one. 'combined' (default) merges its update rules into the outer loop (applied once per outer iteration); 'nested' runs it as a converging inner loop on each outer iteration before the outer update rules. Use 'nested' when the inner algorithm maintains an invariant the outer would perturb (e.g. FIC holding the working point while EIB retunes coupling).""", json_schema_extra = { "linkml_meta": {'domain_of': ['StimulationSetting', 'Exploration', 'AlgorithmInclude'],
+    mode: Optional[AlgorithmCompositionMode] = Field(default=AlgorithmCompositionMode.combined, description="""How the included algorithm composes with the outer one. 'combined' (default) merges its update rules into the outer loop (applied once per outer iteration); 'nested' runs it as a converging inner loop on each outer iteration before the outer update rules. Use 'nested' when the inner algorithm maintains an invariant the outer would perturb (e.g. FIC holding the working point while EIB retunes coupling).""", json_schema_extra = { "linkml_meta": {'domain_of': ['StimulationSetting',
+                       'Exploration',
+                       'AlgorithmInclude',
+                       'Differentiation'],
          'ifabsent': 'string(combined)'} })
     inner_iterations: Optional[int] = Field(default=None, description="""For mode=nested only: number of inner-loop iterations to run per outer iteration. Defaults to the included algorithm's own n_iterations. A small value (e.g. 5-10) is usually enough to correct the drift introduced by one outer step.""", json_schema_extra = { "linkml_meta": {'domain_of': ['AlgorithmInclude']} })
 
@@ -9270,6 +9336,7 @@ class TuningObjective(ConfiguredBaseModel):
          'slot_uri': 'dcterms:description'} })
     type: Optional[str] = Field(default=None, description="""Type of objective: 'activity_target', 'fc_matching', 'custom'""", json_schema_extra = { "linkml_meta": {'domain_of': ['GraphGenerator',
                        'File',
+                       'Analysis',
                        'Aggregation',
                        'TuningObjective',
                        'Algorithm',
@@ -9390,6 +9457,7 @@ class Algorithm(ConfiguredBaseModel):
                        'SimulationExperiment']} })
     type: Optional[str] = Field(default=None, description="""Algorithm type: 'fic', 'eib', 'homeostatic', 'custom'""", json_schema_extra = { "linkml_meta": {'domain_of': ['GraphGenerator',
                        'File',
+                       'Analysis',
                        'Aggregation',
                        'TuningObjective',
                        'Algorithm',
@@ -9482,6 +9550,7 @@ class Discretization(ConfiguredBaseModel):
                        'Node',
                        'Edge',
                        'Observation',
+                       'Analysis',
                        'Dynamics',
                        'Distribution',
                        'Noise',
@@ -9630,6 +9699,7 @@ class BranchSwitch(ConfiguredBaseModel):
                        'Node',
                        'Edge',
                        'Observation',
+                       'Analysis',
                        'Dynamics',
                        'Distribution',
                        'Noise',
@@ -9872,6 +9942,7 @@ class Integrator(Solver):
                        'Node',
                        'Edge',
                        'Observation',
+                       'Analysis',
                        'Dynamics',
                        'Distribution',
                        'Noise',
@@ -9954,8 +10025,24 @@ class Integrator(Solver):
     intermediate_expressions: Optional[dict[str, DerivedVariable]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator']} })
     update_expression: Optional[DerivedVariable] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator']} })
     delayed: Optional[bool] = Field(default=True, json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator', 'Coupling'], 'ifabsent': 'True'} })
+    differentiation: Optional[Differentiation] = Field(default=None, description="""Backend-neutral strategy for propagating gradients through the temporal integration (e.g. truncated backprop-through-time).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Integrator']} })
     abs_tol: Optional[float] = Field(default=1e-10, description="""Absolute tolerance for adaptive solvers.""", json_schema_extra = { "linkml_meta": {'domain_of': ['InitialState', 'Solver'], 'ifabsent': 'float(1e-10)'} })
     rel_tol: Optional[float] = Field(default=1e-10, description="""Relative tolerance for adaptive solvers.""", json_schema_extra = { "linkml_meta": {'domain_of': ['InitialState', 'Solver'], 'ifabsent': 'float(1e-10)'} })
+
+
+class Differentiation(ConfiguredBaseModel):
+    """
+    Backend-neutral configuration for how gradients are propagated through the temporal integration. Expressed in physical/semantic terms; each backend maps it to its own mechanism (JAX solver grad_horizon / block_size, Julia adjoint sensitivity, ...). Backends without autodiff (e.g. MATLAB) emit a comment noting differentiation is unsupported and proceed with the plain forward integration -- they do not raise.
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'class_uri': 'tvbo:Differentiation', 'from_schema': 'https://w3id.org/tvbo'})
+
+    truncation_window: Optional[float] = Field(default=None, description="""Truncated-BPTT window in milliseconds of simulated time: gradients flow back at most this far. Omit for full BPTT.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Differentiation']} })
+    checkpoint_interval: Optional[float] = Field(default=None, description="""Gradient-checkpointing interval in milliseconds (backward-pass memory/time trade-off). Omit for no checkpointing.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Differentiation']} })
+    mode: Optional[str] = Field(default="reverse", description="""Autodiff direction: 'reverse' (default) or 'forward'.""", json_schema_extra = { "linkml_meta": {'domain_of': ['StimulationSetting',
+                       'Exploration',
+                       'AlgorithmInclude',
+                       'Differentiation'],
+         'ifabsent': 'string(reverse)'} })
 
 
 class Coupling(ConfiguredBaseModel):
@@ -10069,6 +10156,7 @@ class Coupling(ConfiguredBaseModel):
                        'Node',
                        'Edge',
                        'Observation',
+                       'Analysis',
                        'Dynamics',
                        'Distribution',
                        'Noise',
@@ -10519,6 +10607,7 @@ class Study(ConfiguredBaseModel):
     citekey: Optional[str] = Field(default=None, description="""BibTeX citation key; the join key into references.bib for full bibliographic detail. A study is identified by its key/citekey and described by its title — no ``name`` needed.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Study']} })
     type: Optional[str] = Field(default=None, description="""Publication type (article, book, inproceedings, …).""", json_schema_extra = { "linkml_meta": {'domain_of': ['GraphGenerator',
                        'File',
+                       'Analysis',
                        'Aggregation',
                        'TuningObjective',
                        'Algorithm',
@@ -10650,6 +10739,7 @@ class SimulationStudy(Study):
     citekey: Optional[str] = Field(default=None, description="""BibTeX citation key; the join key into references.bib for full bibliographic detail. A study is identified by its key/citekey and described by its title — no ``name`` needed.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Study']} })
     type: Optional[str] = Field(default=None, description="""Publication type (article, book, inproceedings, …).""", json_schema_extra = { "linkml_meta": {'domain_of': ['GraphGenerator',
                        'File',
+                       'Analysis',
                        'Aggregation',
                        'TuningObjective',
                        'Algorithm',
@@ -12004,6 +12094,7 @@ class PDE(ConfiguredBaseModel):
                        'Node',
                        'Edge',
                        'Observation',
+                       'Analysis',
                        'Dynamics',
                        'Distribution',
                        'Noise',
@@ -12083,6 +12174,7 @@ Node.model_rebuild()
 StateValue.model_rebuild()
 Edge.model_rebuild()
 Observation.model_rebuild()
+Analysis.model_rebuild()
 Dynamics.model_rebuild()
 StateVariable.model_rebuild()
 Distribution.model_rebuild()
@@ -12118,6 +12210,7 @@ BranchSwitch.model_rebuild()
 Continuation.model_rebuild()
 Solver.model_rebuild()
 Integrator.model_rebuild()
+Differentiation.model_rebuild()
 Coupling.model_rebuild()
 RegionMapping.model_rebuild()
 Sample.model_rebuild()
