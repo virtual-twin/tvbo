@@ -11,49 +11,57 @@ from . import _common
 app = typer.Typer(name="validate", no_args_is_help=True)
 
 
-@app.command("schema", help="LinkML structural validation of a YAML file.")
+@app.command("schema", help="Structural JSON Schema validation of a YAML file.")
 def schema(
     path: Path = typer.Argument(..., exists=True, readable=True, help="YAML file."),
     target_class: str = typer.Option(
         None, "--class",
-        help="LinkML target class (auto-detected from `class:` key when omitted).",
+        help="Target class (auto-detected from `class:` key when omitted).",
     ),
 ) -> None:
-    """Validate *path* against the LinkML schema; auto-detects target class from `class:` key."""
-    from linkml_runtime.loaders import yaml_loader
-    from linkml.validator import Validator
-    from linkml.validator.plugins import JsonschemaValidationPlugin
+    """Validate *path* against the shipped JSON Schema; auto-detects the target class.
 
-    # Locate the shipped schema
+    Uses the lightweight ``jsonschema`` library against the pre-generated
+    ``tvbo/datamodel/tvbo_datamodel.schema.json`` (produced from the LinkML schema at
+    build time), so validation needs no runtime ``linkml``. The file is parsed with
+    TVBO's loader so ``!include``/merge-key extensions and slot aliases resolve exactly
+    as they do when the model is loaded.
+    """
+    import json
+
+    import jsonschema
+
     import tvbo
-    schema_path = Path(tvbo.__file__).parent.parent / "schema" / "tvbo_datamodel.yaml"
-    if not schema_path.exists():
-        # Fall back to the installed copy under tvbo/datamodel
-        schema_path = Path(tvbo.__file__).parent / "datamodel" / "tvbo_datamodel.yaml"
-    if not schema_path.exists():
-        _common.die("Cannot locate tvbo_datamodel.yaml schema file.")
+    from tvbo.utils import yaml_loader
+
+    schema_json = Path(tvbo.__file__).parent / "datamodel" / "tvbo_datamodel.schema.json"
+    if not schema_json.exists():
+        _common.die(
+            f"Cannot locate the generated JSON Schema at {schema_json}. "
+            "Run `make gen-linkml` (or reinstall) to regenerate the datamodel."
+        )
+    full = json.loads(schema_json.read_text(encoding="utf-8"))
+    data = yaml_loader.load_as_dict(str(path))
 
     if target_class is None:
-        text = path.read_text(encoding="utf-8")
-        # Extremely lightweight detection — accept either explicit `class:`
-        # or fall back to common roots.
-        for line in text.splitlines():
-            stripped = line.strip()
-            if stripped.startswith("class:"):
-                target_class = stripped.split(":", 1)[1].strip()
-                break
-        if target_class is None:
-            target_class = "SimulationExperiment"
+        target_class = (data.get("class") if isinstance(data, dict) else None) or "SimulationExperiment"
 
-    validator = Validator(
-        schema=str(schema_path),
-        validation_plugins=[JsonschemaValidationPlugin(closed=False)],
+    defs = full.get("$defs", {})
+    if target_class not in defs:
+        _common.die(f"Unknown target class '{target_class}' (not in the schema's $defs).")
+
+    # Validate the document as an instance of `target_class` via a $ref into $defs.
+    class_schema = {"$schema": full.get("$schema"), "$defs": defs, "$ref": f"#/$defs/{target_class}"}
+    validator_cls = jsonschema.validators.validator_for(class_schema)
+    errors = sorted(
+        validator_cls(class_schema).iter_errors(data),
+        key=lambda e: list(e.absolute_path),
     )
-    report = validator.validate_file(str(path), target_class=target_class)
-    if report.results:
-        for r in report.results:
-            typer.echo(f"  {r.severity}: {r.message}", err=True)
-        _common.die(f"{len(report.results)} validation issue(s) in {path}.")
+    if errors:
+        for e in errors:
+            loc = "/".join(str(p) for p in e.absolute_path) or "<root>"
+            typer.echo(f"  ERROR at {loc}: {e.message}", err=True)
+        _common.die(f"{len(errors)} validation issue(s) in {path}.")
     typer.echo(f"OK — {path} is a valid {target_class}.")
 
 
