@@ -543,13 +543,14 @@ def _sync_model_from_yaml(name) -> None:
     Resolving a model by name destroys any baked instance classes for it and
     re-imports them from the YAML database, so edits to the database (renamed
     coupling terms, new parameters, …) are reflected at runtime without
-    regenerating ``tvb-o.owl``.  Cached per process and limited to the curated
-    ``functional_models`` (all known to load); a no-op under
-    ``TVBO_TRUST_BAKED_ONTO=1``.
+    regenerating ``tvb-o.owl``.  Applies to every database model; cached per
+    process; a no-op under ``TVBO_TRUST_BAKED_ONTO=1``.  A model with no YAML
+    entry keeps its baked instances; a model whose YAML cannot be imported is
+    dropped (such models are non-functional and cannot be simulated anyway).
     """
     if _TRUST_BAKED_ONTO or not isinstance(name, str):
         return
-    if name in _yaml_synced_models or name not in functional_models:
+    if name in _yaml_synced_models:
         return
     _yaml_synced_models.add(name)  # mark first so re-entrant lookups are no-ops
     try:
