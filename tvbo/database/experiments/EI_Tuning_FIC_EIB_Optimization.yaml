@@ -156,6 +156,7 @@ dynamics:
       domain:
         lo: 0.0
         hi: 1.0
+        enforce: clamp
       description: "Fraction of open NMDA channels (excitatory)"
       coupling_variable: true
       noise:
@@ -172,6 +173,7 @@ dynamics:
       domain:
         lo: 0.0
         hi: 1.0
+        enforce: clamp
       description: "Fraction of open NMDA channels (inhibitory)"
 
     # --- COUPLING INPUTS ---

@@ -647,69 +647,53 @@ def _fold_range_boundaries(rng, boundaries):
     return domain, distribution
 
 
-def _resolve_statevariable_boundaries(d: dict) -> None:
-    """Back-compat: fold a state variable's deprecated ``boundaries`` slot into
-    ``domain`` with ``enforce: clamp``.
+def _fold_component_alias(d: dict) -> None:
+    """Recursively rename the Dynamics-only ``components`` → ``modes`` slot alias.
 
-    ``boundaries`` was a second Range slot that always meant "hard-clamp the
-    trajectory to [lo, hi]". The schema now carries a single ``domain`` whose
-    ``enforce`` attribute (none/clamp/wrap) says whether/how it is enforced, so
-    ``boundaries: {lo, hi}`` is equivalent to ``domain: {lo, hi, enforce: clamp}``.
-
-    The clamp becomes the ``domain``; a descriptive ``domain`` that co-existed
-    with ``boundaries`` was the (possibly narrower, finite) initial-condition
-    sampling range — TVB's ``state_variable_range`` as distinct from its
-    ``state_variable_boundaries`` — so it is preserved as the sampling
-    ``distribution`` rather than discarded. This keeps a finite sampling range
-    even when the clamp is half-open (e.g. ``[0, inf]``). State variables with
-    only a ``domain`` are left untouched and therefore unclamped (``enforce``
-    defaults to ``none``).
-    """
-    svs = d.get("state_variables")
-    if not isinstance(svs, dict):
-        return
-    for sv in svs.values():
-        if isinstance(sv, dict) and sv.get("boundaries") is not None:
-            bnd = sv.pop("boundaries")
-            if isinstance(bnd, dict):
-                bnd = dict(bnd)
-                bnd.setdefault("enforce", "clamp")
-                prev = sv.get("domain")
-                # Preserve a co-existing descriptive domain (the IC sampling
-                # range) as the sampling distribution before the clamp takes
-                # over `domain`, so a half-open clamp can't drop a finite range.
-                if isinstance(prev, dict) and sv.get("distribution") is None:
-                    # Emit a complete Distribution (name + domain), not a terse
-                    # {lo, hi} — this runs after yaml_loader's distribution-shortcut
-                    # lift, so nothing else materialises the name and a bare
-                    # {lo, hi} would reach Distribution(**{lo, hi}) and raise.
-                    sv["distribution"] = {
-                        "name": "Uniform",
-                        "domain": {k: prev[k] for k in ("lo", "hi", "step") if k in prev},
-                    }
-                sv["domain"] = bnd
-
-
-def _resolve_dynamics_aliases(d: dict) -> dict:
-    """Recursively resolve slot aliases in a Dynamics dict tree.
-
-    Walks nested dicts that represent sub-Dynamics (modes/components) and
-    replaces alias keys with their canonical names at every level.
+    Kept out of :data:`tvbo.utils.yaml_loader._SLOT_ALIASES` (which is applied to
+    every loaded document) because ``components`` is a ``modes`` alias only inside
+    a Dynamics. Mutates ``d`` in place at every nesting level.
     """
     for alias, canonical in _DYNAMICS_SLOT_ALIASES.items():
         if alias in d:
             if canonical in d:
                 raise ValueError(
-                    f"Cannot specify both '{alias}' and '{canonical}' — '{alias}' is an alias for '{canonical}'."
+                    f"Cannot specify both '{alias}' and '{canonical}' — "
+                    f"'{alias}' is an alias for '{canonical}'."
                 )
             d[canonical] = d.pop(alias)
-    _resolve_statevariable_boundaries(d)
-    # Recurse into sub-dynamics (modes values may themselves use aliases)
     modes = d.get("modes")
     if isinstance(modes, dict):
         for v in modes.values():
             if isinstance(v, dict):
-                _resolve_dynamics_aliases(v)
+                _fold_component_alias(v)
+
+
+def _resolve_dynamics_aliases(d: dict) -> dict:
+    """Normalize a Dynamics kwargs/metadata dict through the SINGLE shared route.
+
+    Every construction path — ``Dynamics(**dict)``, ``from_file``, ``from_string``,
+    the ``iri`` backfill, and the network/experiment coercion helpers — funnels
+    through here, so they apply identical conveniences and cannot drift:
+
+    * the Dynamics-specific ``components`` → ``modes`` alias (recursively), then
+    * :func:`tvbo.utils.yaml_loader._normalize_loaded` — the one implementation
+      shared with the LinkML ``load``/``loads``/``load_as_dict`` path: global slot
+      aliases, the legacy ``boundaries``/``range`` → ``domain`` fold (``boundaries``
+      gaining ``enforce: clamp``; a co-existing descriptive ``domain`` preserved as
+      the IC-sampling ``distribution``), and the terse ``distribution: {lo, hi}``
+      lift. A bare ``domain`` is left untouched (``enforce`` defaults to ``none``),
+      so clamping stays opt-in.
+
+    ``_normalize_loaded`` rebuilds mappings, so the normalized content is written
+    back into ``d`` in place (``clear`` + ``update``) to honour the in-place
+    contract the coercion callers rely on; ``d`` is also returned for convenience.
+    """
+    _fold_component_alias(d)
+    normalized = yaml_loader._normalize_loaded(d)
+    if normalized is not d:
+        d.clear()
+        d.update(normalized)
     return d
 
 
