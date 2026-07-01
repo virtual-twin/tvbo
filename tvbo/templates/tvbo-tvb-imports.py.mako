@@ -3,7 +3,7 @@
 # Auto-generated file
 
 import argparse
-import scipy
+import scipy.special  # submodule import (also binds `scipy`); transfer-function models use scipy.special.erf/erfc
 import numpy as np
 import pandas as pd
 from numba import float64

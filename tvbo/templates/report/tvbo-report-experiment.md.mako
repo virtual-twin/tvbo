@@ -414,7 +414,7 @@ $$${fname}(${', '.join(arg_names)}) = ${safe_latex(func_rhs, arg_names)}$$
 | Variable | Initial Value | Unit | Equation | Domain / Sampling | Flags | Description |
 |:---------|:--------------|:-----|:---------|:------------------|:------|:------------|
 % for name, svar in svars.items():
-| $${latex(Symbol(name))}$ | ${_p(svar, 'initial_value', '—')} | ${_unit_text(_p(svar, 'unit', None))} | ${_p(svar, 'equation_type', 'differential')} (order ${_p(svar, 'equation_order', 1)}) | ${_metadata_text(svar)} | ${_flag_text(svar, [('variable_of_interest', 'VOI'), ('coupling_variable', 'coupling'), ('stimulation_variable', 'stimulation'), ('record', 'recorded')])} | ${_p(svar, 'description', '') or _p(svar, 'definition', '') or ''} |
+| $${latex(Symbol(name))}$ | ${_p(svar, 'initial_value', '—')} | ${_unit_text(_p(svar, 'unit', None))} | ${_p(svar, 'equation_type', 'differential')} (order ${_p(svar, 'equation_order', 1)}) | ${_metadata_text(svar)} | ${_flag_text(svar, [('coupling_variable', 'coupling'), ('stimulation_variable', 'stimulation'), ('record', 'recorded')])} | ${_p(svar, 'description', '') or _p(svar, 'definition', '') or ''} |
 % endfor
 
 % endif

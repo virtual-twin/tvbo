@@ -279,11 +279,22 @@ ${_fdef}
         % endif
 
         % if aux_names:
+        % if n_modes > 1:
+        # Fold auxiliaries per-mode too (same layout as the derivatives), so a
+        # multi-mode model with recorded derived variables produces a valid,
+        # mode-consistent auxiliary array (``_mode_ref`` from the derivative fold).
+        auxiliaries = jnp.concatenate([
+            % for aux in aux_names:
+            jnp.moveaxis(jnp.broadcast_to(jnp.atleast_2d(${aux}), _mode_ref.shape), -1, 0),
+            % endfor
+        ], axis=0)
+        % else:
         auxiliaries = jnp.stack([
             % for aux in aux_names:
             jnp.broadcast_to(jnp.atleast_1d(${aux}), _per_node_shape),
             % endfor
         ], axis=0)
+        % endif
         % else:
         auxiliaries = jnp.array([])
         % endif
