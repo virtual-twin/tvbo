@@ -24,9 +24,19 @@ _NONDETERMINISTIC_PREFIX = "# Generation date:"
 
 
 def generate_datamodel(root: str | Path) -> None:
-    """Write ``tvbo/datamodel/{schema,pydantic}.py`` from ``schema/tvbo_datamodel.yaml``."""
+    """Write the generated datamodel from ``schema/tvbo_datamodel.yaml``:
+
+    * ``tvbo/datamodel/schema.py``                  — LinkML Python dataclasses,
+    * ``tvbo/datamodel/pydantic.py``                — Pydantic models,
+    * ``tvbo/datamodel/tvbo_datamodel.schema.json`` — JSON Schema for the
+      ``tvbo validate`` CLI (checked with the lightweight ``jsonschema`` lib, so
+      validation needs no runtime ``linkml``).
+    """
     # Imported lazily so this module is importable without `linkml` (the heavy,
     # build-time-only generator) — e.g. when hatchling merely inspects the hook.
+    import json
+
+    from linkml.generators.jsonschemagen import JsonSchemaGenerator
     from linkml.generators.pydanticgen import PydanticGenerator
     from linkml.generators.pythongen import PythonGenerator
 
@@ -41,6 +51,27 @@ def generate_datamodel(root: str | Path) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     _write(out_dir / "schema.py", PythonGenerator(str(schema)).serialize())
     _write(out_dir / "pydantic.py", PydanticGenerator(str(schema)).serialize())
+
+    # JSON Schema — relax `additionalProperties: false → true` everywhere so
+    # validation stays lenient, mirroring the previous
+    # `JsonschemaValidationPlugin(closed=False)`. `sort_keys` keeps it reproducible.
+    js = json.loads(JsonSchemaGenerator(str(schema)).serialize())
+    _relax_additional_properties(js)
+    (out_dir / "tvbo_datamodel.schema.json").write_text(
+        json.dumps(js, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+
+
+def _relax_additional_properties(node) -> None:
+    """Recursively rewrite ``additionalProperties: false`` → ``true`` (open validation)."""
+    if isinstance(node, dict):
+        if node.get("additionalProperties") is False:
+            node["additionalProperties"] = True
+        for value in node.values():
+            _relax_additional_properties(value)
+    elif isinstance(node, list):
+        for value in node:
+            _relax_additional_properties(value)
 
 
 def _write(target: Path, code: str) -> None:
