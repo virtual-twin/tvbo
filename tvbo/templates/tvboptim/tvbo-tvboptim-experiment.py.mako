@@ -132,7 +132,7 @@ dt = float(integration.step_size)
 
 # Differentiation strategy -> native-solver kwargs, resolved in the tvboptim Python
 # layer (shared with the solver template) rather than duplicated across mako blocks.
-from tvbo.templates.tvboptim.utils import resolve_solver_kwargs, resolve_optimizer_mode
+from tvbo.templates.tvboptim.utils import resolve_solver_kwargs, resolve_optimizer_mode, render_analysis_observations, render_recorded_observable
 solver_kwargs_str = resolve_solver_kwargs(integration, dt)
 opt_mode = resolve_optimizer_mode(integration)
 
@@ -519,6 +519,9 @@ for expl in exploration_list:
         'parallel_mode': str(expl.parallel_mode) if getattr(expl, 'parallel_mode', None) else 'auto',
         'parallel_batch_size': int(expl.parallel_batch_size) if getattr(expl, 'parallel_batch_size', None) else None,
         'axes': [],
+        # Observations to compute + stack per grid point (derived + `analysis` diagnostics).
+        # NOTE: this block duplicates utils.parse_exploration — should be consolidated onto it.
+        'record': [str(r) for r in (getattr(expl, 'record', None) or [])],
     }
     # Schema: space is a list of ExplorationAxis (optional for trial-only explorations)
     axes_list = expl.space or []
@@ -1127,49 +1130,10 @@ def run_simulation(
 % endfor
 
         # Analysis observations (operate on the solve/loss, not result.data)
-% for aobs_name, aobs in analysis_observations_dict.items():
-<%
-    _an = aobs.analysis
-    _atype = str(_an.type or '')
-    _ap = {str(k): (v.value if hasattr(v, 'value') else v) for k, v in (_an.parameters or {}).items()}
-    _target = str(_an.target or 'loss')
-    _wrt = [str(w) for w in (_an.wrt or [])]
-    _wp = _wrt[0].split('.') if _wrt else []
-    _wrt_access = (f"coupling.{_wp[0]}.{_wp[1]}" if len(_wp) == 2 and _wp[0] in coupling_keys
-                   else (f"dynamics.{_wp[-1]}" if _wp else None))
-%>
-% if _atype == 'lyapunov':
-        from tvboptim.experimental.network_dynamics.analysis.lyapunov import _lyapunov_spectrum_jvp
-        # ${aobs_name}: Lyapunov spectrum on a short segment solve at the current parameters
-        _le_solve, _le_cfg = prepare(network, ${solver_class}(), t0=0.0, t1=${float(_ap["segment_time"])}, dt=${dt})
-        observations.${aobs_name} = _lyapunov_spectrum_jvp(_le_solve, _le_cfg, t=${float(_ap['segment_time'])}, n=${int(_ap.get('n', 10))}, k=${int(_ap['k']) if 'k' in _ap else None})
-% elif _atype == 'gradient':
-        # ${aobs_name}: full (untruncated) ${_ap.get('mode', 'reverse')}-mode gradient of
-        # '${_target}' wrt ${_wrt[0]}. Uses a plain solver — the truncation window is an
-        # optimization knob, not part of this diagnostic (the forward pass is identical, so
-        # the value matches the main solve; only the backward pass sees the full horizon).
-        _asolve_${aobs_name}, _ = prepare(network, ${solver_class}(), t0=t0 + t_transient, t1=t0 + t_transient + t1, dt=dt)
-        def _grad_of_${aobs_name}(_p):
-            _gs = eqx.tree_at(lambda _s: _s.${_wrt_access}, state, _p)
-            return compute_all_observations(_asolve_${aobs_name}(_gs), _gs, result_transient).${_target}
-        _, observations.${aobs_name} = jax.value_and_grad(_grad_of_${aobs_name})(state.${_wrt_access})
-% elif _atype == 'finite_difference':
-        # ${aobs_name}: seed-averaged central finite-difference gradient of '${_target}' wrt
-        # ${_wrt[0]}. Common random numbers per seed (same noise key at +/-delta) and forward-
-        # only solves — the honest, tape-free reference for the AD gradient in the chaotic band.
-        _asolve_${aobs_name}, _ = prepare(network, ${solver_class}(), t0=t0 + t_transient, t1=t0 + t_transient + t1, dt=dt)
-        _delta_${aobs_name} = ${float(_ap.get('delta', 0.3))}
-        _keys_${aobs_name} = jax.random.split(jax.random.key(${int(_ap.get('seed_base', 0))}), ${int(_ap.get('seeds', 8))})
-        _g0_${aobs_name} = state.${_wrt_access}
-        def _fd_${aobs_name}(_key):
-            _cs = eqx.tree_at(lambda _s: _s.noise.key, state, _key)
-            _loss_at = lambda _g: compute_all_observations(_asolve_${aobs_name}(eqx.tree_at(lambda _s: _s.${_wrt_access}, _cs, _g)), _cs, result_transient).${_target}
-            return (_loss_at(_g0_${aobs_name} + _delta_${aobs_name}) - _loss_at(_g0_${aobs_name} - _delta_${aobs_name})) / (2.0 * _delta_${aobs_name})
-        observations.${aobs_name} = jnp.mean(jax.lax.map(_fd_${aobs_name}, _keys_${aobs_name}))
-% else:
-        # ${aobs_name}: analysis type '${_atype}' not yet lowered for this backend — skipped.
+% if analysis_observations_dict:
+        for _an_name, _an_val in compute_analysis_observations(state, network, result_transient).items():
+            observations[_an_name] = _an_val
 % endif
-% endfor
 
     return Bunch(
         model_fn=model_fn,
@@ -1450,6 +1414,20 @@ def compute_all_observations(result, state, result_transient=None):
 % endfor
 
     return obs
+
+
+% if analysis_observations_dict:
+def compute_analysis_observations(state, network, result_transient=None):
+    """Compute the declarative ``analysis`` observations — diagnostics that ANALYZE the
+    solve/loss (Lyapunov spectrum, autodiff and finite-difference gradients) rather than
+    transforming ``result.data``. Factored out so the main run and any exploration that
+    records diagnostics per grid point share one implementation, keeping a G-sweep of the
+    diagnostics fully metadata-derived. Analysis solves use a plain solver — the truncation
+    window is an optimization knob, not part of these diagnostics."""
+    obs = Bunch()
+${render_analysis_observations(analysis_observations_dict, coupling_keys, solver_class, transient_time, t1_default, dt)}
+    return obs
+% endif
 
 
 <%include file="tvbo-tvboptim-algorithm.py.mako" />
@@ -1738,7 +1716,14 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
 % endif
 
     # Create observation monitors ONCE with history baked in (optimized pattern)
-% if obs_type == 'function_call':
+% if expl.get('record'):
+    # Record a declared list of observations per grid point (derived via
+    # compute_all_observations, `analysis` diagnostics via compute_analysis_observations),
+    # stacked over the sweep into one array per name.
+    @jax.jit
+    def observable_fn(s):
+${render_recorded_observable(expl['record'], derived_observation_names, network_observation_names, list(analysis_observations_dict.keys()))}
+% elif obs_type == 'function_call':
 <%
     # Collect unique observations used - categorize by type
     obs_used = set(a['obs'] for a in obs_args if a.get('obs'))
@@ -2044,9 +2029,14 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
     # (e.g. Bunch with data + observations when no observable is specified).
     _stacked = jax.tree.map(lambda *xs: jnp.stack(xs), *_grid_outputs)
 
-    # Build axes info for ExplorationResult
+    # Build axes info for ExplorationResult. The point count mirrors the grid's own
+    # ``kwargs.get('n_<axis>', <default>)`` so a runtime n override stays consistent
+    # with the recorded coordinate (otherwise the stacked result and its coord disagree).
     _axes_info = [
 % for ax in expl['axes']:
+<%
+    _nkey = f"n_{ax['name']}_{ax['element_idx']}" if ax.get('element_idx') is not None else f"n_{ax['name']}"
+%>
         Bunch(
 % if ax.get('element_idx') is not None:
             name='${ax['name']}[${ax['element_idx']}]',
@@ -2055,12 +2045,13 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
 % endif
 % if 'values' in ax:
             explored_values=jnp.array(${ax['values']}),
+            n=${ax['n']},
 % else:
             lo=${ax['lo']},
             hi=${ax['hi']},
-            explored_values=jnp.linspace(${ax['lo']}, ${ax['hi']}, ${ax['n']}),
+            explored_values=jnp.linspace(${ax['lo']}, ${ax['hi']}, kwargs.get('${_nkey}', ${ax['n']})),
+            n=kwargs.get('${_nkey}', ${ax['n']}),
 % endif
-            n=${ax['n']},
 % if ax.get('is_coupling'):
             is_coupling=True,
             coupling_key='${ax['coupling_key']}',
@@ -2233,49 +2224,10 @@ def run_experiment(
 % endfor
 
         # Analysis observations (operate on the solve/loss, not result.data)
-% for aobs_name, aobs in analysis_observations_dict.items():
-<%
-    _an = aobs.analysis
-    _atype = str(_an.type or '')
-    _ap = {str(k): (v.value if hasattr(v, 'value') else v) for k, v in (_an.parameters or {}).items()}
-    _target = str(_an.target or 'loss')
-    _wrt = [str(w) for w in (_an.wrt or [])]
-    _wp = _wrt[0].split('.') if _wrt else []
-    _wrt_access = (f"coupling.{_wp[0]}.{_wp[1]}" if len(_wp) == 2 and _wp[0] in coupling_keys
-                   else (f"dynamics.{_wp[-1]}" if _wp else None))
-%>
-% if _atype == 'lyapunov':
-        from tvboptim.experimental.network_dynamics.analysis.lyapunov import _lyapunov_spectrum_jvp
-        # ${aobs_name}: Lyapunov spectrum on a short segment solve at the current parameters
-        _le_solve_x, _le_cfg_x = prepare(network, ${solver_class}(), t0=0.0, t1=${float(_ap["segment_time"])}, dt=${dt})
-        observations.${aobs_name} = _lyapunov_spectrum_jvp(_le_solve_x, _le_cfg_x, t=${float(_ap['segment_time'])}, n=${int(_ap.get('n', 10))}, k=${int(_ap['k']) if 'k' in _ap else None})
-% elif _atype == 'gradient':
-        # ${aobs_name}: full (untruncated) ${_ap.get('mode', 'reverse')}-mode gradient of
-        # '${_target}' wrt ${_wrt[0]}. Uses a plain solver — the truncation window is an
-        # optimization knob, not part of this diagnostic (the forward pass is identical, so
-        # the value matches the main solve; only the backward pass sees the full horizon).
-        _asolve_${aobs_name}, _ = prepare(network, ${solver_class}(), t0=0.0 + ${transient_time}, t1=${transient_time} + ${t1_default}, dt=${dt})
-        def _grad_of_${aobs_name}(_p):
-            _gs = eqx.tree_at(lambda _s: _s.${_wrt_access}, state, _p)
-            return compute_all_observations(_asolve_${aobs_name}(_gs), _gs, transient).${_target}
-        _, observations.${aobs_name} = jax.value_and_grad(_grad_of_${aobs_name})(state.${_wrt_access})
-% elif _atype == 'finite_difference':
-        # ${aobs_name}: seed-averaged central finite-difference gradient of '${_target}' wrt
-        # ${_wrt[0]}. Common random numbers per seed (same noise key at +/-delta) and forward-
-        # only solves — the honest, tape-free reference for the AD gradient in the chaotic band.
-        _asolve_${aobs_name}, _ = prepare(network, ${solver_class}(), t0=0.0 + ${transient_time}, t1=${transient_time} + ${t1_default}, dt=${dt})
-        _delta_${aobs_name} = ${float(_ap.get('delta', 0.3))}
-        _keys_${aobs_name} = jax.random.split(jax.random.key(${int(_ap.get('seed_base', 0))}), ${int(_ap.get('seeds', 8))})
-        _g0_${aobs_name} = state.${_wrt_access}
-        def _fd_${aobs_name}(_key):
-            _cs = eqx.tree_at(lambda _s: _s.noise.key, state, _key)
-            _loss_at = lambda _g: compute_all_observations(_asolve_${aobs_name}(eqx.tree_at(lambda _s: _s.${_wrt_access}, _cs, _g)), _cs, transient).${_target}
-            return (_loss_at(_g0_${aobs_name} + _delta_${aobs_name}) - _loss_at(_g0_${aobs_name} - _delta_${aobs_name})) / (2.0 * _delta_${aobs_name})
-        observations.${aobs_name} = jnp.mean(jax.lax.map(_fd_${aobs_name}, _keys_${aobs_name}))
-% else:
-        # ${aobs_name}: analysis type '${_atype}' not yet lowered for this backend — skipped.
+% if analysis_observations_dict:
+        for _an_name, _an_val in compute_analysis_observations(state, network, transient).items():
+            observations[_an_name] = _an_val
 % endif
-% endfor
     else:
         observations = None
 

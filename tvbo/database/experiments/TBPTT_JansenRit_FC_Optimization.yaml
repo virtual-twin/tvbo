@@ -243,6 +243,7 @@ observations:
     description: "Largest Lyapunov exponent on a short segment (marks the chaos onset)"
     analysis:
       type: lyapunov
+      wrt: [c_sigmJR.G]                  # evaluate lambda_max at the current G (for sweeps)
       parameters:
         segment_time: {value: 1000.0}   # ms
         n: {value: 5}                    # rescaling steps
@@ -319,6 +320,21 @@ explorations:
       arguments:
         - {name: x, value: fc.data}
         - {name: y, value: empirical_fc.data}
+
+  motivation_sweep:
+    label: "Diagnostics vs G (the motivation sweep)"
+    description: >
+      Sweep global coupling G and record the FC-RMSE loss together with the three
+      diagnostics — the AD gradient, the seed-averaged finite-difference gradient, and
+      the top Lyapunov exponent — at each G. This is the declarative form of the
+      original run_motivation probe: the exact reverse-mode gradient tracks the FD
+      ground truth until the Lyapunov exponent crosses zero (chaos onset), where it
+      breaks. Recorded per grid point; no Python driver.
+    space:
+      - parameter: c_sigmJR.G
+        domain: {lo: 0.0, hi: 40.0, n: 80}
+    mode: product
+    record: [loss, ad_gradient, fd_gradient, lyapunov]
 
 references:
   - "tvboptim TBPTT.qmd - truncated backprop-through-time"
