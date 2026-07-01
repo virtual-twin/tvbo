@@ -833,10 +833,9 @@ class ${class_name}(AbstractMonitor):
 <%
     step_name = step['name']
     fn_def = functions_by_name.get(step_name)
-    # Build default args from function definition
+    # Build default args from function definition (arguments keyed by name)
     default_args = []
-    for arg in (get_attr(fn_def, 'arguments') or []):
-        arg_name = get_attr(arg, 'name')
+    for arg_name, arg in (get_attr(fn_def, 'arguments') or {}).items():
         arg_val = get_attr(arg, 'value')
         if arg_name and arg_val is not None:
             default_args.append(f"{arg_name}={to_numeric(arg_val)}")

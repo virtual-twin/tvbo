@@ -1175,12 +1175,11 @@ def parse_loss_arguments(loss_call: Any) -> Tuple[List[Dict], Set[str]]:
         - parsed_args: list of dicts with 'name', 'type', and type-specific keys
         - obs_refs: set of observation names referenced
     """
-    loss_args = getattr(loss_call, "arguments", None) or []
+    loss_args = getattr(loss_call, "arguments", None) or {}  # keyed by name
     parsed_args = []
     obs_refs = set()
 
-    for arg in loss_args:
-        arg_name = getattr(arg, "name", None)
+    for arg_name, arg in loss_args.items():
         arg_value = getattr(arg, "value", None)
 
         if not arg_name:

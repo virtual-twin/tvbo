@@ -180,10 +180,11 @@ def _load_landscape(t1, transient):
     for axis in exp.explorations["parameter_landscape"].space:
         axis.domain.n = 2
     # a short run has too few BOLD TRs for skip_t=20; keep FC non-degenerate
+    # (arguments are keyed by name).
     for step in exp.observations["fc"].pipeline:
-        for a in (getattr(step, "arguments", None) or []):
-            if getattr(a, "name", None) == "skip_t":
-                a.value = 0
+        args = getattr(step, "arguments", None) or {}
+        if "skip_t" in args:
+            args["skip_t"].value = 0
     return exp
 
 
