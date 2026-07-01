@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from tvbo.adapters.base import BaseAdapter
+from tvbo.utils import is_array_valued
 
 # Single source of truth (forward map + derived reverse) lives in
 # tvbo/codegen/pyrates.py; re-imported here and used by the model template so
@@ -897,7 +898,7 @@ class PyRatesAdapter(BaseAdapter):
                     subs[sym] = result[col_name].values
                 elif dyn.parameters and sym_name in dyn.parameters:
                     param = dyn.parameters[sym_name]
-                    if param.value is not None:
+                    if param.value is not None and not is_array_valued(param.value):
                         subs[sym] = float(param.value)
                 elif safe_label in edge_map and sym_name in edge_map[safe_label]:
                     src_col = edge_map[safe_label][sym_name]
@@ -933,7 +934,7 @@ class PyRatesAdapter(BaseAdapter):
                     subs[sym] = result[sym.name].values
                 elif dyn.parameters and sym.name in dyn.parameters:
                     param = dyn.parameters[sym.name]
-                    if param.value is not None:
+                    if param.value is not None and not is_array_valued(param.value):
                         subs[sym] = float(param.value)
 
             if len(subs) == len(expr.free_symbols):

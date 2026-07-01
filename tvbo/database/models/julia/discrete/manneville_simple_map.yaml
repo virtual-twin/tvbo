@@ -6,12 +6,10 @@ source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main
 system_type: discrete
 parameters:
   epsilon:
-    name: epsilon
     value: 0.1
     description: Intermittency control ε.
 state_variables:
   x:
-    name: x
     equation:
       lhs: x_next
       rhs: ((1 + epsilon)*x + (1 - epsilon)*x**2) % 1

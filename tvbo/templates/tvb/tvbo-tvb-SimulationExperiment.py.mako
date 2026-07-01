@@ -3,6 +3,11 @@ import numpy as np
 %>
 <%include file="/tvbo-tvb-imports.py.mako" />
 <%include file="/tvbo-tvb-model.py.mako" />
+# Stable alias for the model class, bound before any later class can shadow it
+# at module scope — a coupling may share the model's name (e.g. TVB has both a
+# ``Linear`` model and a ``Linear`` coupling), and the later ``class Linear(Coupling)``
+# would otherwise rebind the name used to construct the model.
+_TVBO_MODEL_CLS = ${context['experiment'].dynamics.name}
 <%include file="/tvbo-tvb-coupling.py.mako" />
 <%include file="/tvbo-tvb-integration.py.mako" />
 <%include file="/tvbo-tvb-noise.py.mako" />
@@ -38,7 +43,7 @@ def define_simulation(connectivity, simulation_length=${experiment.integration.d
     %endif
 %endif
     simulator = Simulator(
-        model=${experiment.dynamics.name}(**model_kwargs),
+        model=_TVBO_MODEL_CLS(**model_kwargs),
         connectivity=connectivity,
         coupling=${'%s(**coupling_kwargs)' % experiment.coupling.name if experiment.coupling else 'Linear(**coupling_kwargs)'},
         conduction_speed=${experiment.network.conduction_speed.value},

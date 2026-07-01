@@ -32,6 +32,7 @@ has_local_coupling = bool(local_coupling_inputs)
 % if standalone:
 # Auto-generated standalone model file
 import numpy as np
+import scipy.special
 from tvb.basic.neotraits.api import Attr, Final, List, NArray, Range
 from tvb.simulator.models.base import Model
 
@@ -39,6 +40,11 @@ from tvb.simulator.models.base import Model
 class ${model.name}(Model):
 
     % for p in model.parameters.values():
+    % if isinstance(p.value, (list, tuple)):
+    # Array-valued model constant (e.g. mode-coupling matrix); a fixed class
+    # attribute rather than a per-region NArray.
+    ${p.name} = np.array(${list(p.value)})
+    % else:
     ${p.name} = NArray(
         label=r":math:`${p.symbol or p.name}`",
         default=np.array([${p.value}]),
@@ -51,6 +57,7 @@ class ${model.name}(Model):
         doc="""${p.definition[:200].replace('\n', '')}"""
         % endif
     )
+    % endif
     % endfor
 
     _nvar = ${len(model.state_variables)}
@@ -60,43 +67,57 @@ class ${model.name}(Model):
 % endif
 ########## StateVariable Ranges and Boundaries ##########
 <%
-# Define 1e9 constant for readability
-INFINITY = '1e9'
-NEGINFINITY = '-1e9'
+import math
+from tvbo.adapters.tvb import tvb_state_variable_ranges, tvb_state_variable_boundaries
 
-def format_range_or_boundary(sv, attr, default=(NEGINFINITY, INFINITY)):
-    if getattr(sv, attr):
-        lo = str(getattr(sv, attr).lo) if getattr(sv, attr).lo is not None else default[0]
-        hi = str(getattr(sv, attr).hi) if getattr(sv, attr).hi is not None else default[1]
-    else:
-        lo, hi = default
+def _lit(v):
+    """Render a float as a TVB-code literal, preserving infinities as np.inf."""
+    return ('np.inf' if v > 0 else '-np.inf') if math.isinf(v) else repr(float(v))
 
-    return f'"{sv.name}": np.array([{lo}, {hi}])'
+def _entry(name, bounds):
+    """Render one ``"name": np.array([lo, hi])`` dict entry."""
+    lo, hi = bounds
+    return f'"{name}": np.array([{_lit(lo)}, {_lit(hi)}])'
+
+# Resolution (which source feeds the range vs the clamp) lives in the adapter;
+# the template only renders the resulting {name: (lo, hi)} mappings.
+sv_ranges = tvb_state_variable_ranges(model)
+sv_boundaries = tvb_state_variable_boundaries(model)
 %>
 
     state_variable_range = Final(
         label="State Variable ranges [lo, hi]",
         default={
-            ${",\n\t\t\t".join([format_range_or_boundary(sv, 'domain') for sv in model.state_variables.values()])}
+            ${",\n\t\t\t".join([_entry(n, b) for n, b in sv_ranges.items()])}
         },
         doc="""Expected ranges of the state variables for initial condition generation and phase plane setup."""
     )
 
-% if any(sv.boundaries is not None for sv in model.state_variables.values()):
+% if sv_boundaries:
     state_variable_boundaries = Final(
         label="State Variable boundaries [lo, hi]",
         default={
-            ${",\n\t\t\t".join([format_range_or_boundary(sv, 'boundaries') for sv in model.state_variables.values()])}
+            ${",\n\t\t\t".join([_entry(n, b) for n, b in sv_boundaries.items()])}
         },
         doc="""State variable boundaries for phase plane setup."""
     )
 % endif
 ########## Variables Of Interest ##########
     <%
-    output_keys = tuple(model.output) if isinstance(model.output, list) else tuple(model.output.keys()) if model.output else ()
+    # Recorded outputs. `record` is the canonical selector — state variables
+    # default to record=true, derived variables to record=false — superseding the
+    # deprecated `variable_of_interest` slot and the legacy `output` list.
+    recorded_states = tuple(sv.name for sv in model.state_variables.values() if getattr(sv, 'record', True))
+    recorded_derived = tuple(dv.name for dv in model.derived_variables.values() if getattr(dv, 'record', False))
+    if isinstance(model.output, dict):
+        legacy_output = tuple(model.output.keys())
+    elif model.output:
+        legacy_output = tuple(model.output)
+    else:
+        legacy_output = ()
+    output_keys = recorded_derived + tuple(k for k in legacy_output if k not in recorded_derived)
     choices = tuple(model.state_variables.keys()) + output_keys
-
-    variables_of_interest = tuple(sv.name for sv in model.state_variables.values() if sv.variable_of_interest) + output_keys
+    variables_of_interest = recorded_states + output_keys
     %>
 
     variables_of_interest = List(
@@ -147,20 +168,17 @@ def format_range_or_boundary(sv, attr, default=(NEGINFINITY, INFINITY)):
 % endif
 
 ########## OutputTransforms ##########
-% if model.output:
+% if output_keys:
     def _build_observer(self):
         template = ("def observe(state):\n"
                     "    {svars} = state\n"
-                    % if isinstance(model.output, list):
-                        % for var_name in model.output:
-<%                          dv = model.derived_variables.get(var_name) %>\
-                    "    ${var_name} = ${render(dv) if dv else var_name}\n"
-                        % endfor
-                    % else:
-                        % for ot in model.output.values():
-                    "    ${ot.name} = ${render(ot)}\n"
-                        % endfor
-                    % endif
+                    % for var_name in output_keys:
+<%
+    _dv = model.derived_variables.get(var_name)
+    _ot = model.output.get(var_name) if isinstance(model.output, dict) else None
+%>\
+                    "    ${var_name} = ${render(_dv) if _dv else (render(_ot) if _ot else var_name)}\n"
+                    % endfor
                     "    return numpy.array([{voi_names}])")
         svars = ','.join(self.state_variables)
         if len(self.state_variables) == 1:
@@ -218,8 +236,13 @@ ${indented_fndef}
 
 ## State-Equations
         # Time Derivatives
-        return np.array([
+        # Broadcast every derivative to a common per-node shape so constant
+        # (state-independent) derivatives — e.g. ``duA/dt = cA`` — stack into a
+        # homogeneous array alongside node-shaped ones, matching TVB's own
+        # ``numpy.full_like`` handling of constant drifts.
+        _derivs = np.broadcast_arrays(
     % for sv in model.state_variables.values():
-            ${render(sv)}, # ${sv.name}
+            np.asarray(${render(sv)}), # ${sv.name}
     % endfor
-        ])
+        )
+        return np.array(_derivs)

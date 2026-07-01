@@ -3,7 +3,7 @@
 # Auto-generated file
 
 import argparse
-import scipy
+import scipy.special  # submodule import (also binds `scipy`); transfer-function models use scipy.special.erf/erfc
 import numpy as np
 import pandas as pd
 from numba import float64
@@ -20,4 +20,7 @@ from tvb.simulator.noise import Additive, Multiplicative
 from tvb.simulator.integrators import Integrator, IntegratorStochastic
 from tvb.datatypes.connectivity import Connectivity
 from tvb.datatypes.time_series import TimeSeriesRegion
-from tvb.adapters.datatypes.h5.time_series_h5 import TimeSeriesRegionH5
+try:  # tvb-framework (H5 output only) — optional so in-memory sims run with just tvb-library
+    from tvb.adapters.datatypes.h5.time_series_h5 import TimeSeriesRegionH5
+except ImportError:
+    TimeSeriesRegionH5 = None

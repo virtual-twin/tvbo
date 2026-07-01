@@ -46,6 +46,8 @@ elif hasattr(model, 'coupling_terms') and model.coupling_terms:
 
 # Coupling metadata
 has_delay = hasattr(coupling, 'delayed') and coupling.delayed
+# Differentiable (interpolated) delays — opt-in only (see experiment template).
+interpolate_delays = bool(getattr(coupling, 'interpolate_delays', False))
 coupling_class = coupling.name.replace(' ', '').replace('-', '') if hasattr(coupling, 'name') and coupling.name else 'GeneratedCoupling'
 coupling_param_names = [p.name for p in coupling.parameters.values()] if hasattr(coupling, 'parameters') and coupling.parameters else []
 coupling_param_defaults = {p.name: float(p.value) if p.value is not None else 1.0 for p in coupling.parameters.values()} if hasattr(coupling, 'parameters') and coupling.parameters else {}
@@ -167,12 +169,26 @@ def create_network(
     dynamics_params: dict = None,
     coupling_params: dict = None,
     noise_sigma: float = ${noise_sigma[0]},
+    % if interpolate_delays:
+    max_delay: float = None,
+    % endif
 ) -> Network:
-    """Create configured Network instance."""
+    """Create configured Network instance.
+
+    ``max_delay`` (delayed coupling only) sets a static history-buffer length,
+    decoupled from the ``delays`` values. Pass it when ``delays`` are JAX tracers
+    (e.g. ``delays = tract_lengths / v`` with conduction speed ``v`` optimised by
+    gradient): the buffer stays a fixed shape while per-edge delays vary
+    differentiably. When None it is derived from ``delays`` (concrete) as usual.
+    """
     % if has_delay:
     if delays is None:
         delays = jnp.zeros_like(weights)
+    % if interpolate_delays:
+    graph = DenseDelayGraph(weights, delays, region_labels=region_labels, max_delay=max_delay)
+    % else:
     graph = DenseDelayGraph(weights, delays, region_labels=region_labels)
+    % endif
     % else:
     graph = DenseGraph(weights, region_labels=region_labels)
     % endif

@@ -14,7 +14,7 @@ Output:
 </%doc>
 <%
 from tvbo.codegen import render_expression
-from tvbo.templates.tvboptim.utils import get_param_info, normalize_coupling_aliases
+from tvbo.templates.tvboptim.utils import get_param_info, normalize_coupling_aliases, get_mode_layout, resolve_coupling_spec, parse_list_elements
 
 # Two modes: experiment (full pipeline) or standalone (single coupling)
 if 'experiment' in context.keys():
@@ -53,6 +53,12 @@ elif 'coupling' in context.keys():
 else:
     assert False, "cfun template requires 'experiment' or 'coupling' in context"
 
+# Mode folding (number_of_modes>1): each coupling-variable carries n_modes per-node
+# slots, folded into the state axis. A coupling that reads such a cvar emits one
+# output per mode (each mode coupled independently across nodes via the existing
+# 2-D matmul), so n_output == n_modes and the cvar resolves to its mode slots.
+n_modes, _mode_slot_names, _var_slots = get_mode_layout(model) if model is not None else (1, [], {})
+
 # Build func_name -> ci_name mapping.
 # Resolution order:
 #   1. Explicit source on CouplingInput (ci.source == func_name)
@@ -84,109 +90,37 @@ if coupling_inputs_info and all_couplings:
     elif len(_unmapped_funcs) == len(_unmapped_cis):
         for _ci, _fn in zip(_unmapped_cis, _unmapped_funcs):
             _func_to_ci.setdefault(_fn, _ci)
-
-def parse_list_elements(rhs_str):
-    """Parse a list literal string into elements, respecting nesting."""
-    inner = rhs_str[1:-1]  # Remove [ and ]
-    elements = []
-    depth = 0
-    current = []
-    for c in inner:
-        if c in '([{':
-            depth += 1
-        elif c in ')]}':
-            depth -= 1
-        elif c == ',' and depth == 0:
-            elements.append(''.join(current).strip())
-            current = []
-            continue
-        current.append(c)
-    if current:
-        elements.append(''.join(current).strip())
-    return elements
 %>
 % for coupling_key, coupling in all_couplings.items():
 <%
-    # Get dimension from coupling_inputs — translate function name to ci name
-    _ci_key = _func_to_ci.get(coupling_key, coupling_key)
-    ci_info = coupling_inputs_info.get(_ci_key, {'dimension': 1, 'keys': None})
-    n_output = ci_info['dimension']
-
-    # Coupling metadata
-    has_delay = getattr(coupling, 'delayed', False)
-
-    # Extract parameter info using shared utility
-    param_names, param_defaults, param_shapes = get_param_info(coupling.parameters if hasattr(coupling, 'parameters') else None)
-
-    incoming_states = getattr(coupling, 'incoming_states', None) or []
-    if isinstance(incoming_states, str):
-        incoming_states = [incoming_states]
-    incoming_states = list(incoming_states) if incoming_states else []
-
-    local_states = getattr(coupling, 'local_states', None) or []
-    if isinstance(local_states, str):
-        local_states = [local_states]
-    local_states = list(local_states) if local_states else []
-
-    pre_expr = coupling.pre_expression if hasattr(coupling, 'pre_expression') and coupling.pre_expression else None
-    post_expr = coupling.post_expression if hasattr(coupling, 'post_expression') and coupling.post_expression else None
-
-    # Infer incoming_states from pre_expression if not explicitly given
-    # Match state variable names referenced in the expression against model svars
-    if not incoming_states and not local_states and pre_expr:
-        svar_names = set()
-        if model and hasattr(model, 'state_variables') and model.state_variables:
-            svar_names = {sv if isinstance(sv, str) else getattr(sv, 'name', str(sv))
-                          for sv in (model.state_variables.keys()
-                                     if hasattr(model.state_variables, 'keys')
-                                     else model.state_variables)}
-        pre_rhs = str(pre_expr.rhs) if pre_expr else ''
-        for sv in svar_names:
-            if sv in pre_rhs:
-                incoming_states.append(sv)
-        if not incoming_states:
-            # pre_expression uses generic placeholders (e.g. x_j) —
-            # resolve to the coupling_variable state(s) from the model
-            cvars = []
-            if model and hasattr(model, 'state_variables') and model.state_variables:
-                for sv_name, sv_obj in model.state_variables.items():
-                    if getattr(sv_obj, 'coupling_variable', False):
-                        cvars.append(sv_name)
-            incoming_states = cvars if cvars else [pre_rhs.strip()]
-
-    # Vectorized mode: returns local_states from pre() for matmul optimization
-    vectorized = getattr(coupling, 'vectorized', False)
-    if not vectorized and local_states and not incoming_states:
-        vectorized = True
-
-    # Class name = coupling key (cleaned for Python identifier)
-    class_name = coupling_key.replace(' ', '').replace('-', '')
-    base_class = 'DelayedCoupling' if has_delay else 'InstantaneousCoupling'
-
-    # Build state-subscript aliases for mathematical notation in expressions.
-    # Enables e.g. pre_expression: sin(theta_j - theta_i) where:
-    #   {state}_j -> incoming_states[idx]  (source / pre-synaptic state)
-    #   {state}_i -> local_states[idx]     (target / post-synaptic state, reshaped)
-    _state_aliases_j = []  # (alias_name, index)
-    _state_aliases_i = []
-    if pre_expr:
-        _pre_rhs_str = str(pre_expr.rhs)
-        for idx, s in enumerate(incoming_states):
-            sj = f'{s}_j'
-            if sj in _pre_rhs_str:
-                _state_aliases_j.append((sj, idx))
-        for idx, s in enumerate(local_states):
-            si = f'{s}_i'
-            if si in _pre_rhs_str:
-                _state_aliases_i.append((si, idx))
-    _alias_symbols = [a[0] for a in _state_aliases_j] + [a[0] for a in _state_aliases_i]
-
-    # JAX code helper
-    all_symbols = param_names + incoming_states + local_states + ['gx', 'G', 'x_i', 'x_j', 'incoming_states', 'local_states'] + _alias_symbols
+    # Coupling resolution lives in the tvboptim Python layer (resolve_coupling_spec);
+    # this template only emits. Unpack the spec to the local names the emission below
+    # already uses. Expression rendering (jaxcode) stays here — it needs the printer.
+    spec = resolve_coupling_spec(coupling, coupling_key, model, coupling_inputs_info, _func_to_ci, n_modes)
+    n_output = spec['n_output']
+    has_delay = spec['has_delay']
+    param_names, param_defaults, param_shapes = spec['param_names'], spec['param_defaults'], spec['param_shapes']
+    incoming_states = spec['incoming_states']
+    local_states = spec['local_states']
+    pre_expr = spec['pre_expr']
+    post_expr = spec['post_expr']
+    mode_coupling = spec['mode_coupling']
+    pre_is_list = spec['pre_is_list']
+    pre_terms = spec['pre_terms']
+    n_pre = spec['n_pre']
+    vectorized = spec['vectorized']
+    vec_states = spec['vec_states']
+    class_name = spec['class_name']
+    base_class = spec['base_class']
+    _interp_kw = spec['interp_kw']
+    _post_aliases_i = spec['post_aliases_i']
+    post_is_list = spec['post_is_list']
+    _state_aliases_j = spec['state_aliases_j']
+    _state_aliases_i = spec['state_aliases_i']
+    _gx_symbols = spec['gx_symbols']
+    all_symbols = spec['all_symbols']
+    description = spec['description']
     jaxcode = lambda expr: render_expression(expr, format='jax', parameters=all_symbols)
-
-    # Description
-    description = coupling.description if hasattr(coupling, 'description') and coupling.description else 'Auto-generated coupling function.'
 %>
 
 class ${class_name}(${base_class}):
@@ -205,18 +139,33 @@ class ${class_name}(${base_class}):
 
     def __init__(self, **kwargs):
         % if vectorized:
-        super().__init__(local_states=${local_states}, **kwargs)
+        super().__init__(${_interp_kw}local_states=${vec_states}, **kwargs)
         % elif incoming_states:
-        super().__init__(incoming_states=${incoming_states}${''.join([', local_states=' + str(local_states)] if local_states else [])}, **kwargs)
+        super().__init__(${_interp_kw}incoming_states=${incoming_states}${''.join([', local_states=' + str(local_states)] if local_states else [])}, **kwargs)
         % elif local_states:
-        super().__init__(local_states=${local_states}, **kwargs)
+        super().__init__(${_interp_kw}local_states=${local_states}, **kwargs)
         % else:
-        super().__init__(**kwargs)
+        super().__init__(${_interp_kw}**kwargs)
         % endif
 
-    % if vectorized:
+    % if vectorized and not pre_expr:
     def pre(self, incoming_states, local_states, params):
         return local_states
+    % elif vectorized and pre_expr:
+## Source-only vectorized pre(): evaluate each pre term on the PER-NODE state
+## (local_states holds the union of source+target states, [n_states, n_nodes])
+## and stack to [n_pre, n_nodes] so the base class reduces with a single matmul
+## `pre @ weights`. The W-sum over sources is what turns the per-node sin/cos
+## values into Σⱼ wᵢⱼ·f(stateⱼ).
+    def pre(self, incoming_states, local_states, params):
+        % for name in param_names:
+        ${name} = params.${name}
+        % endfor
+        % for k, s in enumerate(vec_states):
+        ${s} = local_states[${k}]
+        ${s}_j = local_states[${k}]
+        % endfor
+        return jnp.stack([${', '.join(jaxcode(t) for t in pre_terms)}], axis=0)
     % elif pre_expr:
     def pre(self, incoming_states, local_states, params):
         % for name in param_names:
@@ -265,7 +214,13 @@ class ${class_name}(${base_class}):
         % endif
         % endfor
         % if _need_xj and incoming_states:
+        % if mode_coupling:
+        ## Mode fold: keep all n_modes gathered slots (leading axis) so each mode
+        ## is reduced with the connectome independently → per-mode coupling output.
+        x_j = incoming_states
+        % else:
         x_j = incoming_states[0]
+        % endif
         % endif
         % if _need_xi and local_states:
         % if incoming_states:
@@ -285,17 +240,22 @@ class ${class_name}(${base_class}):
         incoming_states = incoming_states[0]
         % endif
 <%
-        pre_rhs = str(pre_expr.rhs).strip()
-        is_list = pre_rhs.startswith('[') and pre_rhs.endswith(']')
-        if is_list and n_output > 1:
-            elements = parse_list_elements(pre_rhs)
-            rendered = [jaxcode(e) for e in elements]
+        # A list pre_expression declares n_pre separate reductions (e.g. the
+        # angle-addition decomposition [sin(θⱼ), cos(θⱼ)]). Each term is per-edge
+        # [N_target, N_source]; stacking yields 3D [n_pre, N_target, N_source] so
+        # the base class W-reduces every term in one weighted sum. n_pre is the
+        # reduction count, independent of n_output (the model's input dimension).
+        if pre_is_list:
+            rendered = [jaxcode(e) for e in pre_terms]
             pre_code = 'jnp.stack([' + ', '.join(rendered) + '], axis=0)'
         else:
             pre_code = jaxcode(pre_expr.rhs)
 %>
         coupling_term = ${pre_code}
-        % if incoming_states and local_states:
+        % if pre_is_list:
+## Stacked list pre: already 3D [n_pre, N_target, N_source].
+        return coupling_term
+        % elif incoming_states and local_states:
 ## Per-edge output: ensure 3D [n_output, N_target, N_source] for weighted sum
         return coupling_term[jnp.newaxis, :, :]
         % elif has_delay:
@@ -313,7 +273,30 @@ class ${class_name}(${base_class}):
         G = params.G if hasattr(params, 'G') else 1.0
         % endif
         gx = summed_inputs
-        % if post_expr:
+## Recombination case: n_pre source reductions collapse into a SINGLE coupling
+## output (n_output == 1), e.g. the Kuramoto angle-addition identity. Expose the
+## named components gx_0, gx_1, … so post_expression can recombine them. When
+## n_output > 1 the list pre is a multi-output coupling (each reduction is its
+## own output, e.g. [S_e*wLRE, S_e*wFFI] → c_lre, c_ffi); there gx stays the full
+## [n_output, n_nodes] stack and post passes it through unchanged.
+        % if n_pre > 1 and n_output == 1:
+        % for k in range(n_pre):
+        gx_${k} = summed_inputs[${k}]
+        % endfor
+        % endif
+## Target (post-synaptic) state aliases referenced in post_expression (e.g. θᵢ).
+## Bound whenever present — not only in the recombination case — so any
+## post_expression that uses a `{state}_i` alias resolves it.
+        % for alias_name, idx in _post_aliases_i:
+        ${alias_name} = local_states[${idx}]
+        % endfor
+        % if post_expr and post_is_list:
+        return jnp.stack([${', '.join(jaxcode(e) for e in parse_list_elements(str(post_expr.rhs).strip()))}], axis=0)
+        % elif post_expr and n_pre > 1 and n_output == 1:
+## Scalar recombination of the n_pre reductions → per-node [n_nodes];
+## add leading axis to return [n_output=1, n_nodes].
+        return (${jaxcode(post_expr.rhs)})[jnp.newaxis, :]
+        % elif post_expr:
         return ${jaxcode(post_expr.rhs)}
         % else:
         return G * gx

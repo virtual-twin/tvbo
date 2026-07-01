@@ -8,8 +8,8 @@ from tvbo.templates.tvboptim.utils import (
     safe_name, as_list, get_attr, is_network_observation, obs_has_all_args,
     get_observation_refs, parse_loss_function, parse_free_param, get_domain_bounds,
     parse_exploration, get_param_info, get_node_param_overrides,
-    normalize_coupling_aliases,
-    get_node_state_overrides
+    normalize_coupling_aliases, resolve_coupling_input_map,
+    get_node_state_overrides, render_jax_default, get_mode_layout
 )
 import numpy as np
 
@@ -33,8 +33,22 @@ else:
 jaxcode = lambda expr, params=None: render_expression(expr, format='jax', user_functions=user_functions, parameters=params)
 jaxcode_obj = lambda obj: model.render_equation(obj, format='jax')
 
-# Extract key metadata from model
-state_names = list(model.state_variables.keys())
+# Extract key metadata from model. For number_of_modes>1 the per-node mode axis is
+# folded into the state axis: state_names is the solver's flat (variable, mode) slot
+# ordering, while var_names keeps the original variables (used for the result mode dim).
+n_modes, state_names, var_slots = get_mode_layout(model)
+var_names = list(model.state_variables.keys())
+if n_modes > 1:
+    import warnings as _warnings
+    _warnings.warn(
+        f"number_of_modes={n_modes} (mode-coupled model '{getattr(model, 'name', '?')}') "
+        "on the tvboptim backend is EXPERIMENTAL: the per-node mode axis is folded into "
+        "the state axis (each variable occupies n_modes scalar slots). Validated against "
+        "TVB to machine precision for the Stefanescu-Jirsa ReducedSet models; other "
+        "multi-mode coupling topologies may not be faithful. Use the tvb backend for "
+        "reference results.",
+        stacklevel=2,
+    )
 param_names = [p.name for p in model.parameters.values()]
 derived_param_names = [p.name for p in model.derived_parameters.values()] if model.derived_parameters else []
 
@@ -82,50 +96,20 @@ if not all_couplings and getattr(experiment, 'coupling', None):
         all_couplings = {_exp_c.name or 'coupling': _exp_c}
 all_couplings = normalize_coupling_aliases(all_couplings, model)
 
-# Map coupling_input names to (func_name, coupling_obj) for tvboptim coupling_dict
-# tvboptim keys coupling by coupling_input name, schema keys by function name
-# Resolution order:
-#   1. Explicit source on CouplingInput (ci.source == func_name)
-#   2. Same name (ci_name == func_name)
-#   3. Single func → broadcast to all coupling inputs
-#   4. Same count → positional zip
-ci_coupling_map = {}  # ci_name -> (func_name, coupling_obj)
-func_to_first_ci = {}  # func_name -> first ci_name (for state access translation)
-if coupling_inputs_dict and all_couplings:
-    funcs = list(all_couplings.items())  # [(name, obj), ...]
-    ci_names = list(coupling_inputs_dict.keys())
+# Coupling-input → coupling-function mapping (+ local-term drop) resolved in the
+# tvboptim Python layer, not here — see resolve_coupling_input_map.
+ci_coupling_map, func_to_first_ci = resolve_coupling_input_map(model, all_couplings, coupling_inputs_dict)
 
-    # 1. Explicit source attribute
-    for ci_name in ci_names:
-        ci_obj = coupling_inputs_dict[ci_name]
-        src = getattr(ci_obj, 'source', None)
-        if src and src in all_couplings:
-            ci_coupling_map[ci_name] = (src, all_couplings[src])
-            func_to_first_ci.setdefault(src, ci_name)
-
-    # 2. Same name match
-    for ci_name in ci_names:
-        if ci_name not in ci_coupling_map and ci_name in all_couplings:
-            ci_coupling_map[ci_name] = (ci_name, all_couplings[ci_name])
-            func_to_first_ci.setdefault(ci_name, ci_name)
-
-    # 3/4. Fallback for remaining unmapped
-    _unmapped_cis = [c for c in ci_names if c not in ci_coupling_map]
-    _unmapped_funcs = [(n, o) for n, o in funcs if n not in func_to_first_ci]
-    if len(_unmapped_funcs) == 1 and _unmapped_cis:
-        # Single unmapped function → broadcast to all remaining CIs
-        for ci_name in _unmapped_cis:
-            ci_coupling_map[ci_name] = _unmapped_funcs[0]
-        func_to_first_ci.setdefault(_unmapped_funcs[0][0], _unmapped_cis[0])
-    elif len(_unmapped_funcs) == len(_unmapped_cis):
-        for ci_name, (_fn, _co) in zip(_unmapped_cis, _unmapped_funcs):
-            ci_coupling_map[ci_name] = (_fn, _co)
-            func_to_first_ci.setdefault(_fn, ci_name)
 # Translate function-name coupling key to ci name for tvboptim state access
 _to_ci_key = lambda k: func_to_first_ci.get(k, k) if k else None
 
 # Check if any coupling has delays
 has_delay = any(c.delayed for c in all_couplings.values() if c)
+# Differentiable (interpolated) delays are OPT-IN: only experiments whose
+# coupling sets `interpolate_delays: true` use the decoupled-max_delay graph
+# API (which needs the differentiable-delays tvboptim build). Everything else
+# uses the stock DenseDelayGraph that derives max_delay from the delays.
+interpolate_delays = any(bool(getattr(c, 'interpolate_delays', False)) for c in all_couplings.values() if c)
 
 # Collect all coupling parameters (for optimization)
 all_coupling_params = {}  # (coupling_key, param_name) -> param_obj
@@ -242,8 +226,11 @@ for _np_name in node_param_overrides:
 
 # Per-node initial state overrides from node ``state:`` entries
 # e.g. nodes[0].state = {theta: 0.8} → overrides default initial_value per node
-_default_init = [float(sv.initial_value) if sv.initial_value is not None else 0.0
-                 for sv in model.state_variables.values()]
+_default_init = [
+    (float(sv.initial_value) if sv.initial_value is not None else 0.0)
+    for sv in model.state_variables.values()
+    for _ in range(n_modes)  # one entry per (variable, mode) solver slot
+]
 node_state_overrides = get_node_state_overrides(network, n_nodes, state_names, _default_init)
 
 # Detect parameters with distribution.axis == 'time' — these are stochastic
@@ -288,7 +275,7 @@ for sv_name, sv in model.state_variables.items():
             'dist': str(getattr(dist, 'name', 'Uniform')).lower(),
             'lo': lo,
             'hi': hi,
-            'idx': state_names.index(sv_name),
+            'idx': state_names.index(sv_name if n_modes == 1 else f"{sv_name}__mode0"),
             'seed': int(getattr(dist, 'seed', None) or 42),
         }
 
@@ -866,6 +853,13 @@ def get_solver():
 
 <%include file="/tvboptim/tvbo-tvboptim-dfun.py.mako" />
 
+## Bind the dynamics class to an alias now, before the coupling classes are
+## defined: a coupling may share the model's name (e.g. TVB's ``Linear`` model
+## and ``Linear`` coupling), and the later ``class Linear(...Coupling)`` would
+## otherwise shadow the model class so ``dynamics = Linear(**model_params)``
+## would wrongly instantiate the coupling.
+_TVBO_DYNAMICS_CLS = ${dynamics_class}
+
 <%include file="tvbo-tvboptim-cfun.py.mako" />
 
 % if has_stimulus_events:
@@ -882,6 +876,9 @@ def create_network(
     dynamics_params: dict = None,
     coupling_params: dict = None,
     noise_sigma: float = ${noise_sigma_value},
+    % if interpolate_delays:
+    max_delay: float = None,
+    % endif
 ) -> Network:
 % if has_weight_transforms:
     # Weight transforms
@@ -901,7 +898,14 @@ def create_network(
     % if has_delay:
     if delays is None:
         delays = jnp.zeros_like(weights)
+    % if interpolate_delays:
+    # Differentiable delays (opt-in): max_delay (static history-buffer length) is
+    # decoupled from `delays` so the delays may be JAX tracers (gradient-optimised
+    # conduction speed v); None derives it as usual. Needs differentiable-delays tvboptim.
+    graph = DenseDelayGraph(weights, delays, region_labels=region_labels, max_delay=max_delay)
+    % else:
     graph = DenseDelayGraph(weights, delays, region_labels=region_labels)
+    % endif
     % else:
     graph = DenseGraph(weights, region_labels=region_labels)
     % endif
@@ -915,13 +919,13 @@ def create_network(
         % elif name in dyn_param_shapes:
         '${name}': jnp.full(${dyn_param_shapes[name]}, ${dyn_param_defaults.get(name, 1.0)}),
         % else:
-        '${name}': ${dyn_param_defaults.get(name, 1.0)},
+        '${name}': ${render_jax_default(dyn_param_defaults.get(name, 1.0))},
         % endif
         % endfor
     }
     if dynamics_params:
         _dynamics_params.update(dynamics_params)
-    dynamics = ${dynamics_class}(**_dynamics_params)
+    dynamics = _TVBO_DYNAMICS_CLS(**_dynamics_params)
 
     coupling_dict = {}
 
@@ -937,7 +941,7 @@ def create_network(
         % if name in c_param_shapes:
         '${name}': jnp.full(${c_param_shapes[name]}, ${c_param_defaults.get(name, 1.0)}),
         % else:
-        '${name}': ${c_param_defaults.get(name, 1.0)},
+        '${name}': ${render_jax_default(c_param_defaults.get(name, 1.0))},
         % endif
         % endfor
     }
@@ -2280,15 +2284,35 @@ def run_experiment(
     initial_state = copy.deepcopy(state)
 
 <%
-    # Result labels must match what the solver actually records (VARIABLES_OF_INTEREST).
-    # Same logic as the dfun template: states + (auxiliaries listed in model.output OR
-    # referenced by an observation source). Mirrors solution.variable_names produced
-    # by tvboptim >= 0.2.7.
-    from tvbo.templates.tvboptim.utils import get_recorded_variable_names as _grvn
+    # Result labels + record=True output channels are resolved in Python (the
+    # tvboptim utils layer), not here — the template only emits from clean context.
+    # The solver records ALL states (VARIABLES_OF_INTEREST); the user-facing result
+    # presents only sv.record=True states (+ recorded aux), matching the tvb backend.
+    # The full trajectory is kept intact above for observations and the warmup; the
+    # record filter is applied as a channel slice on the presented result only.
+    from tvbo.templates.tvboptim.utils import get_recorded_variable_names as _grvn, get_output_channels
     _, _requested_aux, result_var_names = _grvn(model, experiment)
+    _output_idx, _output_names, _record_subset = get_output_channels(model, experiment)
 %>
+    % if _record_subset:
+    # sv.record filters the presented channels; the full result/transient are kept
+    # intact above for observations and warmup. Rebuild the NativeSolution on the
+    # record=True channels (preserving its time axis), or slice a raw array.
+    _record_idx = ${_output_idx}
+    def _select_channels(_res):
+        if _res is None:
+            return None
+        if hasattr(_res, "ys"):
+            return type(_res)(_res.ts, _res.ys[:, _record_idx], dt=getattr(_res, "dt", None), variable_names=${tuple(_output_names)})
+        return _res[:, _record_idx]
+    _main_sel = _select_channels(result)
+    _transient_sel = _select_channels(transient)
+    transient_result = SimulationResult(result=_transient_sel, state_names=${_output_names}, nodes=region_labels) if _transient_sel is not None else None
+    main_result = SimulationResult(result=_main_sel, observations=observations, state_names=${_output_names}, nodes=region_labels, transient=transient_result) if _main_sel is not None else None
+    % else:
     transient_result = SimulationResult(result=transient, state_names=${result_var_names}, nodes=region_labels) if transient is not None else None
     main_result = SimulationResult(result=result, observations=observations, state_names=${result_var_names}, nodes=region_labels, transient=transient_result) if result is not None else None
+    % endif
 
     results = Bunch(
         # Core simulation infrastructure (always present)
