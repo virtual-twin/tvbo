@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """Flag when the runtime ontology is stale relative to its sources.
 
-`tvbo/data/ontology/tvb-o.owl` is the file the platform KG actually loads
+`tvbo/data/ontology/tvbo.owl` is the file the platform KG actually loads
 (via `tvbo/ontology/owl.py`, which does NOT run a reasoner — it relies on the
-asserted axioms in this file). `make gen-merged` rebuilds `ontology/tvbo.owl`
-from the sources, but NOTHING rebuilds the runtime `tvb-o.owl` from them —
-`gen-runtime-onto` only re-layers the clinical addon onto the existing file.
-So an edit to `tvb-o-axioms.ttl` / `tvb-o-struct.owl` / the A-box silently never
-reaches the deployed KG, and "is the deployed ontology current?" is unanswerable.
+asserted axioms baked in by ROBOT's ELK pass). `make gen-merged` rebuilds it
+from the sources below and packages it here (a copy of `ontology/tvbo.owl`).
+This check catches the case where a source (`tvb-o-axioms.ttl` /
+`tvb-o-struct.owl` / the A-box / clinical) was committed after the runtime owl,
+so the packaged copy silently lags the sources and the deployed KG is stale.
+(The deprecated class-based `tvb-o.owl` is preserved but no longer loaded.)
 
 This makes it answerable. It compares git COMMIT timestamps (stable across
 checkouts and CI, unlike filesystem mtime): if any source was committed AFTER the
@@ -70,10 +71,9 @@ def main():
         print("✗ runtime ontology is STALE — committed after %s:" % RUNTIME)
         for s in stale_committed:
             print("    %s" % s)
-        print("  Rebuild the runtime owl from sources and commit it. NOTE: the Makefile's")
-        print("  gen-runtime-onto only re-layers the clinical addon onto the existing file;")
-        print("  the struct/axioms/abox refresh into tvb-o.owl is not yet wired, so this")
-        print("  currently needs a manual rebuild (e.g. derive from `make gen-merged`).")
+        print("  Rebuild and re-commit the runtime owl: `make gen-merged` regenerates")
+        print("  ontology/tvbo.owl from the sources and packages it to")
+        print("  tvbo/data/ontology/tvbo.owl (the file the runtime loads).")
         return 1
 
     if rt_commit is None:

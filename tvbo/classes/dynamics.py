@@ -1713,7 +1713,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         if inline_functions and hasattr(self, "functions") and self.functions:
             inline_funcs = {}
             for fname, fdef in self.functions.items():
-                arg_names = [str(arg.name) for arg in fdef.arguments]
+                arg_names = [str(name) for name in fdef.arguments]
                 body = tvbo_sympify(fdef.equation.rhs)
                 inline_funcs[fname] = (arg_names, body)
             # Don't emit function names as user_functions if we're inlining them
@@ -1760,7 +1760,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
 
         equations["functions"] = []
         for k, f in self.functions.items():
-            arguments = [Symbol(arg.name) for arg in f.arguments]
+            arguments = [Symbol(name) for name in f.arguments]
             k = Function(k)(*arguments)
             equations["functions"].append(
                 Eq(lhs=k, rhs=parse_eq(f.equation, local_dict=scope, evaluate=evaluate))

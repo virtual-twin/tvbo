@@ -128,12 +128,9 @@ DATA_DIR = realpath(join(ROOT_DIR, "data"))
 ONTO_DIR = join(DATA_DIR, "ontology")
 # %% Load Ontology
 
-# Load the generated, ELK-reasoned ontology (entities as individuals). The
-# deprecated class-based `tvb-o.owl` is preserved alongside as a parity
-# reference but no longer loaded. See dev/runtime_ontology_migration.md.
 original_path = join(
     ONTO_DIR,
-    "tvbo.owl",
+    "tvb-o.owl",
 )
 
 with open(original_path, "r", encoding="utf-8") as f:

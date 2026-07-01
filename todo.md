@@ -10,15 +10,18 @@ explicit `tvbo:hasParameter`/`hasDerivedVariable` edges), built by
 `make gen-merged`. **Preserve** the deprecated file — do not overwrite it; keep
 it as a frozen parity reference.
 
-Single load point is `tvbo/ontology/owl.py:131-149` (everything reuses
-`owl.onto`). Phase A (platform, low risk): package the generated owl under
-`tvbo/data/ontology/tvbo.owl`, repoint the loader, and teach
-`DirectOntologyAPI.get_class_hierarchy()` + `query.py` to include
-`owl:NamedIndividual`. Phase B (larger): rewrite `owl.py`'s class-based
-high-level API (`get_models`/`get_model_parameters`/… → `.instances()` +
-`hasParameter`/… object properties). **With `owl.py`** and the full
-file-by-file change list, impact map, and verification: **see
-`dev/runtime_ontology_migration.md`**.
+**Phase A (platform) — ✅ DONE.** The platform's `DirectOntologyAPI` now serves
+the generated ontology from a *dedicated `owlready2.World`* (a global loader
+repoint crashes the tvbo core — base-IRI mismatch + empty class queries — so
+`owl.py`'s global `onto` stays on the deprecated ontology). `make gen-merged`
+packages `tvbo/data/ontology/tvbo.owl`; `query.py` gained optional `onto=`/`world=`
+args; enrichment/search/hierarchy verified; tvbo core untouched.
+
+**Phase B (TODO) — with `owl.py`.** Rewrite `owl.py`'s class-based high-level API
+(`get_models`/`get_model_parameters`/… → `.instances()` + `hasParameter`/…
+object properties), then retire the separate world and load the generated
+ontology globally. Full file-by-file change list, impact map, and verification:
+**see `dev/runtime_ontology_migration.md`**.
 
 ## Harmonize class names with `tvboptim`
 

@@ -28,7 +28,7 @@ exp = SimulationExperiment.from_db("TBPTT_JansenRit_FC_Optimization")
 # and both descent legs are still computed entirely by exp.run.
 exp.integration.duration = 6000.0
 exp.integration.transient_time = 1000.0
-exp.observations["fc"].pipeline[0].arguments[1].value = 4  # BOLD samples skipped before FC
+exp.observations["fc"].pipeline[0].arguments["skip_t"].value = 4  # BOLD samples skipped before FC
 exp.optimizations["fit_G"].stages[0].max_iterations = 40
 
 # TBPTT leg: the YAML declares differentiation = {truncation_window: 100, mode: reverse},
