@@ -159,6 +159,8 @@ website:
                         href: Interoperability/tvboptim/RWW_tvboptim.qmd
                       - text: "EI Tuning"
                         href: Interoperability/tvboptim/EI_Tuning_tvboptim.qmd
+                      - text: "TBPTT"
+                        href: Interoperability/tvboptim/TBPTT_tvboptim.qmd
                   - section: "PyRates"
                     href: Interoperability/Pyrates/index.qmd
                     contents:
@@ -368,6 +370,10 @@ website:
                         href: datamodel/classes/Algorithm.qmd
                       - text: "Algorithm Include"
                         href: datamodel/classes/AlgorithmInclude.qmd
+                      - text: "Algorithm Stage"
+                        href: datamodel/classes/AlgorithmStage.qmd
+                      - text: "Analysis"
+                        href: datamodel/classes/Analysis.qmd
                       - text: "Argument"
                         href: datamodel/classes/Argument.qmd
                       - text: "BIDS Entities"
@@ -426,6 +432,8 @@ website:
                         href: datamodel/classes/DerivedVariable.qmd
                       - text: "Differential Operator"
                         href: datamodel/classes/DifferentialOperator.qmd
+                      - text: "Differentiation"
+                        href: datamodel/classes/Differentiation.qmd
                       - text: "Discretization"
                         href: datamodel/classes/Discretization.qmd
                       - text: "Distribution"
@@ -610,6 +618,8 @@ website:
                         href: datamodel/slots/alternateName.qmd
                       - text: "amplitude"
                         href: datamodel/slots/amplitude.qmd
+                      - text: "analysis"
+                        href: datamodel/slots/analysis.qmd
                       - text: "anatomical Axes Orientation"
                         href: datamodel/slots/anatomicalAxesOrientation.qmd
                       - text: "application_category"
@@ -676,6 +686,8 @@ website:
                         href: datamodel/slots/category.qmd
                       - text: "center"
                         href: datamodel/slots/center.qmd
+                      - text: "checkpoint_interval"
+                        href: datamodel/slots/checkpoint_interval.qmd
                       - text: "citation"
                         href: datamodel/slots/citation.qmd
                       - text: "citekey"
@@ -764,6 +776,8 @@ website:
                         href: datamodel/slots/dataset_id.qmd
                       - text: "dataset_path"
                         href: datamodel/slots/dataset_path.qmd
+                      - text: "datatype"
+                        href: datamodel/slots/datatype.qmd
                       - text: "date_created"
                         href: datamodel/slots/date_created.qmd
                       - text: "date_modified"
@@ -808,6 +822,8 @@ website:
                         href: datamodel/slots/development_status.qmd
                       - text: "diagnosis"
                         href: datamodel/slots/diagnosis.qmd
+                      - text: "differentiation"
+                        href: datamodel/slots/differentiation.qmd
                       - text: "digital Identifier"
                         href: datamodel/slots/digitalIdentifier.qmd
                       - text: "dimension"
@@ -870,6 +886,8 @@ website:
                         href: datamodel/slots/elements.qmd
                       - text: "empirical_data"
                         href: datamodel/slots/empirical_data.qmd
+                      - text: "enforce"
+                        href: datamodel/slots/enforce.qmd
                       - text: "engine"
                         href: datamodel/slots/engine.qmd
                       - text: "entities"
@@ -984,6 +1002,8 @@ website:
                         href: datamodel/slots/initial_value.qmd
                       - text: "inner_coupling"
                         href: datamodel/slots/inner_coupling.qmd
+                      - text: "inner_iterations"
+                        href: datamodel/slots/inner_iterations.qmd
                       - text: "input"
                         href: datamodel/slots/input.qmd
                       - text: "inputs"
@@ -996,6 +1016,10 @@ website:
                         href: datamodel/slots/intermediate_expressions.qmd
                       - text: "interoperates_with"
                         href: datamodel/slots/interoperates_with.qmd
+                      - text: "interpolate_delays"
+                        href: datamodel/slots/interpolate_delays.qmd
+                      - text: "interpolation"
+                        href: datamodel/slots/interpolation.qmd
                       - text: "iri"
                         href: datamodel/slots/iri.qmd
                       - text: "is_accessible_for_free"
@@ -1038,6 +1062,8 @@ website:
                         href: datamodel/slots/lo.qmd
                       - text: "loader"
                         href: datamodel/slots/loader.qmd
+                      - text: "local"
+                        href: datamodel/slots/local.qmd
                       - text: "local_coupling_term"
                         href: datamodel/slots/local_coupling_term.qmd
                       - text: "local_states"
@@ -1486,6 +1512,8 @@ website:
                         href: datamodel/slots/transient_time.qmd
                       - text: "trigger_times"
                         href: datamodel/slots/trigger_times.qmd
+                      - text: "truncation_window"
+                        href: datamodel/slots/truncation_window.qmd
                       - text: "type"
                         href: datamodel/slots/type.qmd
                       - text: "unit"
@@ -1504,6 +1532,8 @@ website:
                         href: datamodel/slots/values.qmd
                       - text: "variable_of_interest"
                         href: datamodel/slots/variable_of_interest.qmd
+                      - text: "vectorized"
+                        href: datamodel/slots/vectorized.qmd
                       - text: "version"
                         href: datamodel/slots/version.qmd
                       - text: "version_spec"
@@ -1532,8 +1562,12 @@ website:
                         href: datamodel/slots/weighted.qmd
                       - text: "weighting"
                         href: datamodel/slots/weighting.qmd
+                      - text: "weights"
+                        href: datamodel/slots/weights.qmd
                       - text: "window_size"
                         href: datamodel/slots/window_size.qmd
+                      - text: "wrt"
+                        href: datamodel/slots/wrt.qmd
                       - text: "x"
                         href: datamodel/slots/x.qmd
                       - text: "y"
@@ -1546,6 +1580,8 @@ website:
                     contents:
                       - text: "Aggregation Type"
                         href: datamodel/enums/AggregationType.qmd
+                      - text: "Algorithm Composition Mode"
+                        href: datamodel/enums/AlgorithmCompositionMode.qmd
                       - text: "Boundary Condition Type"
                         href: datamodel/enums/BoundaryConditionType.qmd
                       - text: "Continuation Algorithm"
@@ -1556,6 +1592,8 @@ website:
                         href: datamodel/enums/DimensionType.qmd
                       - text: "Discretization Method"
                         href: datamodel/enums/DiscretizationMethod.qmd
+                      - text: "Domain Enforcement"
+                        href: datamodel/enums/DomainEnforcement.qmd
                       - text: "Ecosystem Enum"
                         href: datamodel/enums/EcosystemEnum.qmd
                       - text: "Element Type"
@@ -1615,257 +1653,8 @@ website:
               - section: "API Documentation"
                 href: api/index.qmd
                 contents:
-                  - section: "Adapters"
-                    href: api/adapters/index.qmd
-                    contents:
-                      - text: "Base"
-                        href: api/adapters/base.qmd
-                      - text: "BIDS"
-                        href: api/adapters/bids.qmd
-                      - text: "BifurcationKit"
-                        href: api/adapters/bifurcationkit.qmd
-                      - text: "DiffEq"
-                        href: api/adapters/diffeq.qmd
-                      - text: "Julia"
-                        href: api/adapters/julia.qmd
-                      - text: "ModelingToolkit"
-                        href: api/adapters/modelingtoolkit.qmd
-                      - text: "NetworkDynamics"
-                        href: api/adapters/networkdynamics.qmd
-                      - text: "NeuroML"
-                        href: api/adapters/neuroml.qmd
-                      - text: "NumCont"
-                        href: api/adapters/numcont.qmd
-                      - text: "openMINDS"
-                        href: api/adapters/openminds.qmd
-                      - text: "PyRates"
-                        href: api/adapters/pyrates.qmd
-                      - text: "PyRates (Bifurcation)"
-                        href: api/adapters/pyrates_bifurcation.qmd
-                      - text: "TVB"
-                        href: api/adapters/tvb.qmd
-                      - text: "tvboptim"
-                        href: api/adapters/tvboptim.qmd
-                  - section: "Analysis"
-                    href: api/analysis/index.qmd
-                    contents:
-                      - text: "Bifurcation"
-                        href: api/analysis/bifurcation.qmd
-                  - section: "API"
-                    href: api/api/index.qmd
-                    contents:
-                      - text: "Direct Ontology Api"
-                        href: api/api/direct_ontology_api.qmd
-                      - text: "Dynamics Api"
-                        href: api/api/dynamics_api.qmd
-                      - text: "Experiment Api"
-                        href: api/api/experiment_api.qmd
-                      - text: "Main"
-                        href: api/api/main.qmd
-                      - text: "Network Api"
-                        href: api/api/network_api.qmd
-                      - text: "Ontology Api"
-                        href: api/api/ontology_api.qmd
-                  - section: "Classes"
-                    href: api/classes/index.qmd
-                    contents:
-                      - text: "Atlas"
-                        href: api/classes/atlas.qmd
-                      - text: "Continuation"
-                        href: api/classes/continuation.qmd
-                      - text: "Coupling"
-                        href: api/classes/coupling.qmd
-                      - text: "Dynamics"
-                        href: api/classes/dynamics.qmd
-                      - text: "Equation"
-                        href: api/classes/equation.qmd
-                      - text: "Event"
-                        href: api/classes/event.qmd
-                      - text: "Experiment"
-                        href: api/classes/experiment.qmd
-                      - text: "Function"
-                        href: api/classes/function.qmd
-                      - text: "Network"
-                        href: api/classes/network.qmd
-                      - text: "Noise"
-                        href: api/classes/noise.qmd
-                      - text: "Observation"
-                        href: api/classes/observation.qmd
-                      - text: "Parcellation"
-                        href: api/classes/parcellation.qmd
-                      - text: "Perturbation"
-                        href: api/classes/perturbation.qmd
-                      - text: "Study"
-                        href: api/classes/study.qmd
-                  - section: "See ``dev/tvbo-cli.md`` for the full design. The CLI is Typer-based,"
-                    href: api/cli/index.qmd
-                    contents:
-                      - text: "Config"
-                        href: api/cli/config.qmd
-                      - text: "Export"
-                        href: api/cli/export.qmd
-                      - text: "Formats"
-                        href: api/cli/formats.qmd
-                      - text: "Import"
-                        href: api/cli/import_.qmd
-                      - text: "Info"
-                        href: api/cli/info.qmd
-                      - text: "Run"
-                        href: api/cli/run.qmd
-                      - text: "Save"
-                        href: api/cli/save.qmd
-                      - text: "Skills"
-                        href: api/cli/skills.qmd
-                      - text: "Validate"
-                        href: api/cli/validate.qmd
-                      - text: "Version"
-                        href: api/cli/version.qmd
-                      - text: "Workflow"
-                        href: api/cli/workflow.qmd
-                  - section: "TVB-O Code Generation"
-                    href: api/codegen/index.qmd
-                    contents:
-                      - text: "Code"
-                        href: api/codegen/code.qmd
-                      - text: "CUDA"
-                        href: api/codegen/cuda.qmd
-                      - text: "Functions"
-                        href: api/codegen/functions.qmd
-                      - text: "LEMS"
-                        href: api/codegen/lems.qmd
-                      - text: "PyRates"
-                        href: api/codegen/pyrates.qmd
-                      - text: "Templater"
-                        href: api/codegen/templater.qmd
-                  - section: "Data"
-                    href: api/data/index.qmd
-                    contents:
-                      - text: "Converters"
-                        href: api/data/converters.qmd
-                      - text: "Matrix Io"
-                        href: api/data/matrix_io.qmd
-                      - text: "Network Io"
-                        href: api/data/network_io.qmd
-                      - text: "Registry"
-                        href: api/data/registry.qmd
-                      - text: "Types"
-                        href: api/data/types.qmd
-                  - section: "Data Model"
-                    href: api/datamodel/index.qmd
-                    contents:
-                      - text: "Pydantic"
-                        href: api/datamodel/pydantic.qmd
-                      - text: "Schema"
-                        href: api/datamodel/schema.qmd
-                  - section: "Export"
-                    href: api/export/index.qmd
-                    contents:
-                      - text: "Formats"
-                        href: api/export/formats.qmd
-                      - text: "Registry"
-                        href: api/export/registry.qmd
-                  - section: "from tvbo.jax import xarray_pytrees  # noqa: F401 – side effect: registers pytrees"
-                    href: api/jax/index.qmd
-                    contents:
-                      - text: "Xarray Pytrees"
-                        href: api/jax/xarray_pytrees.qmd
-                  - section: "TVB-O Ontology"
-                    href: api/ontology/index.qmd
-                    contents:
-                      - text: "Config"
-                        href: api/ontology/config.qmd
-                      - text: "Constants"
-                        href: api/ontology/constants.qmd
-                      - text: "DB"
-                        href: api/ontology/db.qmd
-                      - text: "Graph"
-                        href: api/ontology/graph.qmd
-                      - text: "OWL"
-                        href: api/ontology/owl.qmd
-                      - text: "Query"
-                        href: api/ontology/query.qmd
-                      - section: "Atlas"
-                        href: api/ontology/atlas/index.qmd
-                        contents:
-                          - text: "Freesurfer"
-                            href: api/ontology/atlas/freesurfer.qmd
-                      - section: "Semantic Web"
-                        href: api/ontology/semanticweb/index.qmd
-                        contents:
-                          - text: "TVB-GO"
-                            href: api/ontology/semanticweb/tvbgo.qmd
-                  - section: "Parse"
-                    href: api/parse/index.qmd
-                    contents:
-                      - text: "Expression"
-                        href: api/parse/expression.qmd
-                      - text: "Lems Loader"
-                        href: api/parse/lems_loader.qmd
-                      - text: "Tvb Converter"
-                        href: api/parse/tvb_converter.qmd
-                  - section: "Plot"
-                    href: api/plot/index.qmd
-                    contents:
-                      - text: "Analysis"
-                        href: api/plot/analysis.qmd
-                      - text: "Animate"
-                        href: api/plot/animate.qmd
-                      - text: "Bifurcation Diagram"
-                        href: api/plot/bifurcation_diagram.qmd
-                      - text: "Dynamics"
-                        href: api/plot/dynamics.qmd
-                      - text: "Dynamics Layout"
-                        href: api/plot/dynamics_layout.qmd
-                      - text: "Experiment Layout"
-                        href: api/plot/experiment_layout.qmd
-                      - text: "Functions"
-                        href: api/plot/functions.qmd
-                      - text: "Layout Mosaic"
-                        href: api/plot/layout_mosaic.qmd
-                      - text: "Network"
-                        href: api/plot/network.qmd
-                      - text: "Network Graph"
-                        href: api/plot/network_graph.qmd
-                      - text: "Ontology"
-                        href: api/plot/ontology.qmd
-                      - text: "Phase"
-                        href: api/plot/phase.qmd
-                      - text: "Timeseries"
-                        href: api/plot/timeseries.qmd
-                      - text: "Utils"
-                        href: api/plot/utils.qmd
-                  - section: "Run"
-                    href: api/run/index.qmd
-                    contents:
-                      - text: "Compgraph"
-                        href: api/run/compgraph.qmd
-                      - text: "Graph"
-                        href: api/run/graph.qmd
-                      - text: "Julia"
-                        href: api/run/julia.qmd
-                  - section: "Templates"
-                    contents:
-                      - section: "RateML"
-                        href: api/templates/rateml/index.qmd
-                        contents:
-                          - text: "Utils"
-                            href: api/templates/rateml/utils.qmd
-                      - section: "tvboptim"
-                        href: api/templates/tvboptim/index.qmd
-                        contents:
-                          - text: "Observations"
-                            href: api/templates/tvboptim/observations.qmd
-                          - text: "Utils"
-                            href: api/templates/tvboptim/utils.qmd
-                  - section: "Utilities"
-                    href: api/utils/index.qmd
-                    contents:
-                      - text: "Auto"
-                        href: api/utils/auto.qmd
-                      - text: "Report"
-                        href: api/utils/report.qmd
-                      - text: "Units"
-                        href: api/utils/units.qmd
+                  - text: "Platform"
+                    href: api/platform.qmd
 # END:api-autogen
               - text: "Developer"
                 href: Developer/contributing.md

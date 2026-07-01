@@ -483,6 +483,29 @@ def test_tbptt_gsweep_runs():
     assert np.all(np.isfinite(grid)), "G sweep produced non-finite values"
 
 
+def test_tbptt_motivation_sweep_records_diagnostics():
+    """`record:` exploration that sweeps the diagnostics themselves (loss + AD/FD
+    gradient + Lyapunov) per G — the declarative run_motivation probe. Smoke test:
+    each recorded diagnostic comes back as a finite length-n_G array, and the two
+    signature phenomena hold (the exact AD gradient blows up somewhere the FD ground
+    truth stays bounded; the Lyapunov exponent crosses zero into chaos)."""
+    exp = SimulationExperiment.from_file(str(EXPERIMENTS_DIR / "TBPTT_JansenRit_FC_Optimization.yaml"))
+    exp.integration.duration = 3600.0
+    exp.integration.transient_time = 300.0
+    exp.observations["fc"].pipeline[0].arguments[1].value = 2
+    exp.configure()
+    r = exp.run("tvboptim", mode="exploration", n_G=5, n_pmap=1)
+    obs = r.explorations.motivation_sweep.observations
+    diag = {k: np.asarray(obs[k]).ravel() for k in ("loss", "ad_gradient", "fd_gradient", "lyapunov")}
+    for k, v in diag.items():
+        assert v.shape == (5,), f"{k}: expected 5-point sweep, got {v.shape}"
+        assert np.all(np.isfinite(v)), f"{k}: non-finite over the sweep"
+    # AD gradient blows up in the chaotic band; the FD ground truth stays bounded.
+    assert np.max(np.abs(diag["ad_gradient"])) > 100 * np.max(np.abs(diag["fd_gradient"]))
+    # Lyapunov exponent spans the chaos onset (negative at low G, positive in chaos).
+    assert diag["lyapunov"].min() < 0 < diag["lyapunov"].max()
+
+
 # =============================================================================
 # EI — custom two-population Reduced Wong-Wang with dual-output coupling
 # =============================================================================

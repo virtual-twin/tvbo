@@ -2557,6 +2557,18 @@ classes:
                 range: FunctionCall
                 inlined: true
                 description: "Observable to compute at each point. Use function: obs_name for simple observation, or function: func_name + arguments for FunctionCall."
+            record:
+                multivalued: true
+                range: string
+                description: >-
+                    Names of observations to compute and record at EACH grid point,
+                    stacked over the sweep into one array per name. Entries may be
+                    derived observations (e.g. `loss`) or `analysis` diagnostics
+                    (e.g. `ad_gradient`, `fd_gradient`, `lyapunov`) — this is how a
+                    sweep of the diagnostics themselves is declared, replacing any
+                    per-point Python driver. Complementary to `observable` (a single
+                    scalar reduction); when both are absent the full observation Bunch
+                    is recorded.
             n_parallel:
                 range: integer
                 ifabsent: integer(1)
