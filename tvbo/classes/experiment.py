@@ -1384,6 +1384,12 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         )
         # Expand coupling parameters with shape annotations like "(N, N)" or "(N,)"
         self._expand_coupling_parameter_shapes(parameters)
+        # Wrap array-valued (per-mode) parameters as ndarrays so the JAX backend
+        # receives jnp arrays. Bare Python lists would survive convert_dtype's
+        # tree_map (which descends into the list and only converts the scalar
+        # elements, leaving a list[Array]) and then break `scalar * param`
+        # arithmetic in the generated dfun. Mirrors render_jax_default (tvboptim).
+        self._arrayify_parameter_values(parameters)
 
         state = SimulationState(
             initial_conditions=(initial_conditions if initial_conditions is not None else self.collect_initial_conditions()),
@@ -1434,6 +1440,32 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 # Expand scalar to N-vector
                 if np.isscalar(current_value) or (hasattr(current_value, "shape") and current_value.shape == ()):
                     coupling_params[param_name] = np.full((N,), float(current_value))
+
+    def _arrayify_parameter_values(self, parameters: Bunch) -> None:
+        """Convert list/tuple-valued parameters in the collection to ``np.array``.
+
+        Array-valued constants (e.g. the Stefanescu-Jirsa per-mode coupling
+        vectors/matrices) arrive as nested Python lists from the metadata. The
+        JAX backend evaluates the dfun with these values as ``_p`` leaves, and
+        ``scalar * list`` raises ``TypeError`` under JAX. Wrapping them as
+        ndarrays makes ``SimulationState.convert_dtype`` emit real ``jnp`` arrays
+        (an ndarray is a single pytree leaf, whereas a list is traversed
+        element-wise). Recurses through the nested ``dynamics``/``coupling``
+        Bunches; scalars and existing arrays are left untouched.
+        """
+        from tvbo.utils import is_array_valued
+
+        def _walk(container):
+            for key, value in list(container.items()):
+                if isinstance(value, dict):
+                    _walk(value)
+                elif is_array_valued(value) and not isinstance(value, np.ndarray):
+                    try:
+                        container[key] = np.asarray(value)
+                    except (TypeError, ValueError):
+                        pass
+
+        _walk(parameters)
 
     def execute(self, format="tvb", **kwargs):
         # Ensure coupling resolution / delay flags are normalized before any
