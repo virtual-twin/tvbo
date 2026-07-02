@@ -74,9 +74,9 @@ def ${func_name}(${func_signature}):
 % if callable_ts_args:
     # Secondary inputs (e.g., kernels) - extract 1D data
     kernel_data = ${callable_ts_args[0]}.data.squeeze()  # Assume 1D kernel
-    # Apply callable with vmap over spatial dimensions only (nodes, state_vars, samples)
-    # The kernel stays 1D and is broadcast
-    _apply_1d = lambda x: ${callable_ref}(x, kernel_data${', ' + call_kwargs if call_kwargs else ''})
+    # Causal convolution: 'full' then keep the leading len(x) samples (matches
+    # TVB's stock-buffer BOLD; 'same' would sample the kernel's decayed tail).
+    _apply_1d = lambda x: ${callable_ref}(x, kernel_data, mode='full')[:x.shape[0]]
     _apply_nodes = lambda x: jax.vmap(_apply_1d, in_axes=1, out_axes=1)(x)
     _apply_svars = lambda x: jax.vmap(_apply_nodes, in_axes=1, out_axes=1)(x)
     data = jax.vmap(_apply_svars, in_axes=3, out_axes=3)(signal_ts.data)
