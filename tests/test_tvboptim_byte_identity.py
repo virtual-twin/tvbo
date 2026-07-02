@@ -764,3 +764,49 @@ def test_hopf_ga_pareto_and_refine():
         assert_identical("Hopf refine G", np.asarray(tr.G_final), np.asarray(rr["G"]), atol=1e-10)
         assert_identical("Hopf refine a", np.asarray(tr.a_final), np.asarray(rr["a"]), atol=1e-10)
         assert_identical("Hopf refine omega", np.asarray(tr.omega_final), np.asarray(rr["om"]), atol=1e-10)
+
+
+# =============================================================================
+# EI_Tuning — the gradient optimization must RUN (not just the trajectory).
+# Guards a wrapping crash class the byte-identity trajectory tests don't cover:
+# an aggregated observable (mean_activity — time axis collapsed to a per-node
+# value) must reach the loss as a plain array, not a re-wrapped NativeSolution
+# (`mean_activity + target` would raise "unsupported operand ... 'NativeSolution'").
+# Fixed two ways, complementary: the observation template returns raw for a
+# collapsed aggregation (producer, root cause), and the loss-builder unwraps
+# `.data` (consumer). This test passes on either fix and pins the class.
+# =============================================================================
+def test_ei_optimization_runs():
+    exp = SimulationExperiment.from_file(
+        str(EXPERIMENTS_DIR / "EI_Tuning_FIC_EIB_Optimization.yaml")
+    )
+    exp.integration.duration = 2000.0
+    exp.integration.transient_time = 2000.0
+    for _o in exp.optimizations.values():
+        if hasattr(_o, "max_iterations"):
+            _o.max_iterations = 2
+        for _st in (getattr(_o, "stages", None) or []):
+            _st.max_iterations = 2
+    exp.configure()
+
+    # The crash was an exception at loss evaluation, so completing is the guard.
+    r = exp.run("tvboptim", mode="optimization")
+
+    # Additionally assert the objective is a finite scalar (not NaN / not an object).
+    def _final_loss(res):
+        opts = getattr(res, "optimizations", None)
+        for _v in (opts.values() if opts else []):
+            for _attr in ("loss", "final_loss", "loss_history"):
+                _val = getattr(_v, _attr, None)
+                if _val is None:
+                    continue
+                try:
+                    arr = np.asarray(_val, dtype=float).ravel()
+                except (TypeError, ValueError):
+                    continue  # e.g. a history dict — not a numeric loss
+                if arr.size:
+                    return float(arr[-1])
+        return None
+
+    lv = _final_loss(r)
+    assert lv is None or np.isfinite(lv), f"EI optimization loss not finite: {lv}"
