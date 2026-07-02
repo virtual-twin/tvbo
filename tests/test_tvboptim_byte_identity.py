@@ -592,3 +592,221 @@ def test_ei_trajectory(eager):
     n = min(sim_tvbo.shape[1], sim_ref.shape[1])
     assert_identical("EI trajectory", sim_tvbo[:, :n, :], sim_ref[:, :n, :])
     assert_identical("EI bold", bold_tvbo, bold_ref)
+
+
+# =============================================================================
+# Hopf Pareto — SupHopf, NSGA-II multi-objective (FC vs frequency gradient)
+# + per-Pareto-seed parallel gradient refinement. Replicates tvboptim
+# Hopf_Pareto_ParallelOpt. The GA/refine run under ParallelExecution (pmap), so
+# those are asserted under JIT (eager pmap is intractable); the trajectory and
+# frequency observations are eager like the other workflows.
+# =============================================================================
+import copy as _copy
+
+
+def _load_hopf(t1, num_gen=2, pop=4, refine_iter=2):
+    exp = SimulationExperiment.from_file(str(EXPERIMENTS_DIR / "Hopf_Pareto_ParallelOpt.yaml"))
+    exp.integration.duration = float(t1)
+    exp.integration.transient_time = float(t1)
+    for _p in exp.explorations["ga_presearch"].parameters:
+        if _p.name == "num_generations":
+            _p.value = num_gen
+        elif _p.name == "population_size":
+            _p.value = pop
+    exp.optimizations["refine"].max_iterations = refine_iter
+    exp.configure()
+    return exp
+
+
+def _hopf_ref(exp, t1):
+    """Hand-written tvboptim reference matching the Hopf YAML (shared warm-up)."""
+    from tvboptim.experimental.network_dynamics import Network, prepare
+    from tvboptim.experimental.network_dynamics.dynamics.tvb import SupHopf
+    from tvboptim.experimental.network_dynamics.coupling import FastLinearCoupling
+    from tvboptim.experimental.network_dynamics.graph import DenseGraph
+    from tvboptim.experimental.network_dynamics.solvers import Heun
+    from tvboptim.experimental.network_dynamics.noise import AdditiveNoise
+    import jax.numpy as jnp
+
+    W = np.asarray(exp.network.weights)
+    omega = np.asarray(list(exp.dynamics.parameters["omega"].value))
+    net = Network(
+        dynamics=SupHopf(a=0.01, omega=jnp.asarray(omega), INITIAL_STATE=(0.1, 0.0)),
+        coupling={"instant": FastLinearCoupling(local_states=["x"], G=0.025)},
+        graph=DenseGraph(W),
+        noise=AdditiveNoise(sigma=0.01, apply_to=["x", "y"], key=jax.random.key(0)),
+    )
+    mi, si = prepare(net, Heun(), t1=float(t1), dt=1.0)
+    ri = mi(si)
+    net.update_history(ri)
+    mm, sm = prepare(net, Heun(), t1=float(t1), dt=1.0)
+    return net, ri, mm, sm, omega
+
+
+def test_hopf_trajectory_and_frequency(eager):
+    exp = _load_hopf(2000.0)
+    r = exp.run("tvboptim", mode="simulation")
+    sim_tvbo = np.asarray(r.integration.data)
+    psd_tvbo = np.asarray(getattr(r.observations.psd, "psd", getattr(r.observations.psd, "data")))
+    peaks_tvbo = np.asarray(getattr(r.observations.fitted_peaks, "data", r.observations.fitted_peaks))
+
+    _net, _ri, mm, sm, _omega = _hopf_ref(exp, 2000.0)
+    rm = mm(sm)
+    sim_ref = np.asarray(rm.data)
+    x_sub = sim_ref[::10, 0, :]
+    _, psd_ref = jax.scipy.signal.welch(x_sub.T, fs=100.0, nperseg=512, nfft=2048)
+    psd_ref = np.asarray(psd_ref)
+    f = np.linspace(0, 50.0, psd_ref.shape[1])
+    pt, ft = psd_ref[:, 3:], f[3:]
+    w = jax.nn.softmax(150.0 * (pt / (np.max(pt, axis=1, keepdims=True) + 1e-12)), axis=1)
+    peaks_ref = np.asarray(jax.numpy.sum(w * ft[None, :], axis=1))
+
+    assert_identical("Hopf trajectory", sim_tvbo, sim_ref)
+    assert_identical("Hopf psd", np.squeeze(psd_tvbo), np.squeeze(psd_ref))
+    assert_identical("Hopf fitted_peaks", np.squeeze(peaks_tvbo), np.squeeze(peaks_ref))
+
+
+def test_hopf_bold_and_fc():
+    from tvboptim.observations.tvb_monitors.bold import HRFBold
+    from tvboptim.observations.observation import compute_fc
+
+    T = 30000.0
+    exp = _load_hopf(T)
+    r = exp.run("tvboptim", mode="simulation")
+    bold_tvbo = np.asarray(getattr(r.observations.bold, "data", r.observations.bold))
+    fc_tvbo = np.asarray(getattr(r.observations.fc, "data", r.observations.fc))
+
+    _net, ri, mm, sm, _omega = _hopf_ref(exp, T)
+    rm = mm(sm)
+    bm = HRFBold(period=1000.0, downsample_period=1.0, voi=0, history=ri)(rm)
+    assert_identical("Hopf bold", np.squeeze(bold_tvbo), np.squeeze(np.asarray(bm.data)))
+    assert_identical("Hopf fc", np.squeeze(fc_tvbo), np.squeeze(np.asarray(compute_fc(bm, skip_t=20))))
+
+
+def test_hopf_ga_pareto_and_refine():
+    """Stage 0 (NSGA-II front) + Stage 1 (per-seed refine) byte-identical to the reference."""
+    import jax.numpy as jnp
+    import optax
+    from tvboptim.observations.tvb_monitors.bold import HRFBold
+    from tvboptim.observations.observation import compute_fc, fc_corr
+    from tvboptim.types import DataAxis, Parameter, BoundedParameter
+    from tvboptim.types.spaces import Space
+    from tvboptim.execution import ParallelExecution
+    from tvboptim.optim.optax import OptaxOptimizer
+    from pymoo.core.problem import Problem
+    from pymoo.algorithms.moo.nsga2 import NSGA2
+    from pymoo.optimize import minimize as pymoo_minimize
+
+    N, T = 4, 30000.0
+    exp = _load_hopf(T, num_gen=2, pop=4, refine_iter=2)
+    res = exp.run("tvboptim", mode="all")
+    ga = res.explorations.ga_presearch
+    refine = res.optimizations.refine
+    ga_X, ga_F = np.atleast_2d(np.asarray(ga.pareto_X)), np.atleast_2d(np.asarray(ga.pareto_F))
+    emp = np.asarray(getattr(res.observations.empirical_fc, "data", res.observations.empirical_fc))
+    pft = np.asarray([p for p in exp.functions["freq_grad_corr_fn"].arguments["target"].value])
+
+    net, ri, mB, base_state = _hopf_ref(exp, T)[0:4]
+    base_state = _copy.deepcopy(base_state)
+    bold_mon = HRFBold(period=1000.0, downsample_period=1.0, voi=0, history=ri)
+    nn = np.asarray(exp.network.weights).shape[0]
+
+    def _metrics(s):
+        rr = mB(s)
+        x_sub = rr.data[::10, 0, :]
+        _, psd = jax.scipy.signal.welch(x_sub.T, fs=100.0, nperseg=512, nfft=2048)
+        f = jnp.linspace(0, 50.0, psd.shape[1])
+        pt, ft = psd[:, 3:], f[3:]
+        w = jax.nn.softmax(150.0 * (pt / (jnp.max(pt, axis=1, keepdims=True) + 1e-12)), axis=1)
+        peaks = jnp.sum(w * ft[None, :], axis=1)
+        fcv = fc_corr(compute_fc(bold_mon(rr), skip_t=20), jnp.asarray(emp))
+        fgc = jnp.corrcoef(peaks, jnp.asarray(pft))[0, 1]
+        return jnp.mean(jnp.abs(peaks - 9.0)), 1.0 - fcv, fcv, fgc
+
+    def _ga_eval(s):
+        mae, omf, _, _ = _metrics(s)
+        return {"psd_mae": mae, "one_minus_fc": omf}
+
+    class _P(Problem):
+        def __init__(self):
+            super().__init__(n_var=3, n_obj=2, xl=np.array([0.001, -0.1, -2.0]), xu=np.array([0.15, 0.01, -0.5]))
+
+        def _evaluate(self, X, out, *a, **k):
+            b = _copy.deepcopy(base_state)
+            b.coupling.instant.G = DataAxis(jnp.asarray(X[:, 0]))
+            b.dynamics.a = DataAxis(jnp.asarray(X[:, 1]))
+            b.noise.sigma = DataAxis(jnp.asarray(10.0 ** X[:, 2]))
+            rs = list(ParallelExecution(_ga_eval, Space(b, mode="zip"), n_pmap=N).run())
+            F = np.array([[float(np.asarray(r["psd_mae"])), float(np.asarray(r["one_minus_fc"]))] for r in rs])
+            out["F"] = np.nan_to_num(F, nan=1e6, posinf=1e6, neginf=1e6)
+
+    _res = pymoo_minimize(_P(), NSGA2(pop_size=4), ("n_gen", 2), seed=42, verbose=False)
+    assert_identical("Hopf GA pareto_X", ga_X, np.atleast_2d(np.asarray(_res.X)))
+    assert_identical("Hopf GA pareto_F", ga_F, np.atleast_2d(np.asarray(_res.F)))
+
+    # Stage 1: refine each Pareto seed (mirrors optimize_from_seed).
+    opt = OptaxOptimizer(lambda s: (lambda m: -m[2] - m[3])(_metrics(s)), optax.adam(0.001))
+
+    def _refine_seed(s):
+        s.coupling.instant.G = Parameter(jnp.asarray(s.coupling.instant.G))
+        s.dynamics.a = Parameter(jnp.asarray(s.dynamics.a) * jnp.ones(nn))
+        s.dynamics.omega = BoundedParameter(jnp.asarray(s.dynamics.omega), 0.0, jnp.inf)
+        fin, _ = opt.run(s, max_steps=2, chunk_size=2)
+        return {"G": jnp.asarray(fin.coupling.instant.G), "a": jnp.asarray(fin.dynamics.a),
+                "om": jnp.asarray(fin.dynamics.omega)}
+
+    seed = _copy.deepcopy(base_state)
+    seed.coupling.instant.G = DataAxis(jnp.asarray(ga_X[:, 0]))
+    seed.dynamics.a = DataAxis(jnp.asarray(ga_X[:, 1]))
+    seed.noise.sigma = DataAxis(jnp.asarray(10.0 ** ga_X[:, 2]))
+    rows = list(ParallelExecution(_refine_seed, Space(seed, mode="zip"), n_pmap=N).run())
+    for tr, rr in zip(refine.seeds, rows):
+        assert_identical("Hopf refine G", np.asarray(tr.G_final), np.asarray(rr["G"]), atol=1e-10)
+        assert_identical("Hopf refine a", np.asarray(tr.a_final), np.asarray(rr["a"]), atol=1e-10)
+        assert_identical("Hopf refine omega", np.asarray(tr.omega_final), np.asarray(rr["om"]), atol=1e-10)
+
+
+# =============================================================================
+# EI_Tuning — the gradient optimization must RUN (not just the trajectory).
+# Guards a wrapping crash class the byte-identity trajectory tests don't cover:
+# an aggregated observable (mean_activity — time axis collapsed to a per-node
+# value) must reach the loss as a plain array, not a re-wrapped NativeSolution
+# (`mean_activity + target` would raise "unsupported operand ... 'NativeSolution'").
+# Fixed two ways, complementary: the observation template returns raw for a
+# collapsed aggregation (producer, root cause), and the loss-builder unwraps
+# `.data` (consumer). This test passes on either fix and pins the class.
+# =============================================================================
+def test_ei_optimization_runs():
+    exp = SimulationExperiment.from_file(
+        str(EXPERIMENTS_DIR / "EI_Tuning_FIC_EIB_Optimization.yaml")
+    )
+    exp.integration.duration = 2000.0
+    exp.integration.transient_time = 2000.0
+    for _o in exp.optimizations.values():
+        if hasattr(_o, "max_iterations"):
+            _o.max_iterations = 2
+        for _st in (getattr(_o, "stages", None) or []):
+            _st.max_iterations = 2
+    exp.configure()
+
+    # The crash was an exception at loss evaluation, so completing is the guard.
+    r = exp.run("tvboptim", mode="optimization")
+
+    # Additionally assert the objective is a finite scalar (not NaN / not an object).
+    def _final_loss(res):
+        opts = getattr(res, "optimizations", None)
+        for _v in (opts.values() if opts else []):
+            for _attr in ("loss", "final_loss", "loss_history"):
+                _val = getattr(_v, _attr, None)
+                if _val is None:
+                    continue
+                try:
+                    arr = np.asarray(_val, dtype=float).ravel()
+                except (TypeError, ValueError):
+                    continue  # e.g. a history dict — not a numeric loss
+                if arr.size:
+                    return float(arr[-1])
+        return None
+
+    lv = _final_loss(r)
+    assert lv is None or np.isfinite(lv), f"EI optimization loss not finite: {lv}"
