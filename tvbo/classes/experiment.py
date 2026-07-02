@@ -3,6 +3,16 @@
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
 # Licensed under the EUPL-1.2-or-later
 #
+"""The `SimulationExperiment` host object that ties a whole simulation together.
+
+A `SimulationExperiment` binds local [`Dynamics`](../classes/dynamics.qmd), a
+[`Network`](../classes/network.qmd), coupling, integration settings, monitors,
+and stimulation into a single, YAML-round-trippable object. It is the entry
+point for constructing an experiment (from YAML, a file, the platform, or a TVB
+simulator), configuring and resolving its coupling/delay metadata, rendering
+backend code, and running it on any of the supported backends (`tvb`,
+`tvboptim`, `jax`, `pde`, `cuda`, `python`).
+"""
 import copy as _copy
 import os
 from os.path import join
@@ -693,10 +703,33 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
     @classmethod
     def from_tvb_simulator(cls, tvb_simulator):
+        """Build a `SimulationExperiment` from a configured TVB `Simulator`.
+
+        Delegates to the [TVB adapter](../adapters/tvb.qmd) to capture the
+        simulator's model, connectivity, coupling, integrator, and monitors,
+        then constructs an equivalent experiment from that datamodel.
+
+        Args:
+            tvb_simulator: A configured `tvb.simulator.simulator.Simulator`.
+
+        Returns:
+            A new `SimulationExperiment` mirroring the TVB simulator.
+        """
         return cls.from_datamodel(_from_tvb_simulator(tvb_simulator))
 
     @classmethod
     def from_file(cls, filepath: str):
+        """Load a `SimulationExperiment` from a YAML file on disk.
+
+        The resolved source path is recorded on the instance (as
+        `_source_file`) so later serialization can reference its origin.
+
+        Args:
+            filepath: Path to a YAML file defining the experiment.
+
+        Returns:
+            A new `SimulationExperiment` populated from the file.
+        """
         from pathlib import Path
         from tvbo.utils import yaml_loader
         import yaml
@@ -1038,6 +1071,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
     @property
     def metadata(self):
+        """The experiment itself, exposed as its own metadata container."""
         return self
 
     def symbolic(self, integrate=False, indexed=False, delays=False):
@@ -1341,6 +1375,14 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             self.monitors = meta_list
 
     def configure(self):
+        """Resolve coupling declarations and normalize delay flags.
+
+        Runs at the execution boundary and is backend-agnostic and idempotent:
+        the resolved state persists on the experiment so YAML re-serialization
+        and metadata export reflect what was actually executed. Delayed
+        integration/coupling is disabled when the connectome has no path
+        lengths or the conduction speed is infinite (all delays zero).
+        """
         # Reconcile experiment / network / dynamics coupling declarations.
         # Runs at the execution boundary — backend-agnostic, idempotent, and
         # the resolved state persists on the experiment so YAML re-serialization
@@ -1377,6 +1419,13 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             warnings.warn(f"Could not configure delays: {e}")
 
     def add_stimulus(self, stimulus):
+        """Attach a stimulus to the experiment.
+
+        Args:
+            stimulus: Either a `Stimulus` instance, or a name/ontology class
+                (`str` or `owlready2.ThingClass`) resolved to a `Stimulus`
+                via `Stimulus.from_ontology`.
+        """
         import owlready2 as owl
 
         from tvbo.classes import perturbation
@@ -1387,6 +1436,22 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             self.stimulation = perturbation.Stimulus.from_ontology(stimulus)
 
     def collect_state(self, initial_conditions: TimeSeries | None = None):
+        """Assemble a `SimulationState` pytree for the JAX-style backends.
+
+        Gathers the parameter collection (expanding coupling parameters with
+        shape annotations and wrapping array-valued parameters as ndarrays so
+        the JAX backend receives real arrays), the network, integration
+        step/step-count, and the noise wrapper into a single state object.
+
+        Args:
+            initial_conditions: History to seed the state with. When omitted,
+                initial conditions are collected from the experiment via
+                `collect_initial_conditions`.
+
+        Returns:
+            A `SimulationState` carrying initial conditions, network, `dt`,
+            step count, noise, and parameters.
+        """
         _ = self.noise_sigma_array
         parameters = self.get_parameters_collection(
             keys_to_exclude=[
@@ -1481,6 +1546,31 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         _walk(parameters)
 
     def execute(self, format="tvb", **kwargs):
+        """Render and build the executable object for a backend without running it.
+
+        Calls `configure` to normalize coupling/delay metadata, renders the
+        backend code, and executes it to produce a ready-to-run artefact. The
+        return type depends on `format`:
+
+        - `"tvb"`: a configured `tvb` `Simulator`.
+        - `"tvboptim"` / `"tvb-optim"`: a `Bunch` namespace of the generated
+          functions.
+        - `"autodiff"` / `"jax"`: the JAX `kernel` callable (JIT-compiled
+          unless `jit=False`).
+        - `"pde"` / `"pde-fem"` / `"pde-python"`: the generated namespace.
+
+        Args:
+            format: Backend identifier selecting what to build.
+            **kwargs: Backend-specific options. Forwarded to the TVB simulator
+                factory, to `render_code`, or interpreted as JAX flags
+                (`jit`, `_return_namespace`) depending on `format`.
+
+        Returns:
+            The backend-specific executable object described above.
+
+        Raises:
+            ValueError: If `format` is not one of the supported backends.
+        """
         # Ensure coupling resolution / delay flags are normalized before any
         # backend code generation. Idempotent — safe if called twice via run().
         self.configure()
@@ -1528,6 +1618,26 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             raise ValueError(f"Format {format} not supported. Valid formats: tvb, tvboptim, jax.")
 
     def run(self, format="tvboptim", initial_conditions=None, **kwargs):
+        """Configure, build, and run the experiment on a backend.
+
+        Dispatches on `format` to the corresponding backend (`tvb`, `tvboptim`,
+        `jax`/`autodiff`, `cuda`, `python`, or `pde`), executes the simulation,
+        and wraps the output in an [`ExperimentResult`](../data/types.qmd).
+
+        Args:
+            format: Backend identifier selecting how to run the experiment.
+            initial_conditions: Optional history to seed the simulation
+                (used by the JAX backend); defaults to conditions collected
+                from the experiment.
+            **kwargs: Backend-specific run options. A `duration` value is
+                applied to the integration settings before running; other
+                keys (e.g. `benchmark`, `mode`) are passed through to the
+                backend runner.
+
+        Returns:
+            An `ExperimentResult` holding the integrated time series and any
+            observations, with `source` set to this experiment.
+        """
         if "duration" in kwargs:
             self.integration.duration = kwargs.pop("duration")
 
@@ -2019,6 +2129,13 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         return result.plot(**kwargs)
 
     def get_experiment_file_prefix(self):
+        """Build a BIDS-style filename prefix for this experiment.
+
+        Returns:
+            A string of the form `ses-<id>_desc-<label>`, where the
+            description falls back to the dynamics label, name, or
+            `"simulation"`.
+        """
         desc = self.dynamics.label or self.dynamics.name or "simulation"
         return f"ses-{self.id}_desc-{desc}"
 
@@ -2189,6 +2306,21 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 ev.parameters = merged
 
     def collect_initial_conditions(self, random=False):
+        """Build the initial-history `TimeSeries` for the simulation.
+
+        Constructs a history buffer of shape `(horizon, n_state_vars, n_nodes,
+        n_modes)` spanning the delay window `[-max_delay, 0]`. Values are drawn
+        from each state variable's `distribution` when one is set (or when
+        `random` is requested), otherwise from its scalar `initial_value`.
+
+        Args:
+            random: Deprecated. Force randomized initial values instead of
+                relying on per-state-variable distributions.
+
+        Returns:
+            A `TimeSeries` whose time axis is the history window and whose data
+            is the seeded initial state.
+        """
         history = []
         n_modes = getattr(self.dynamics, "number_of_modes", 1) or 1
         n_nodes = getattr(self.network, "number_of_nodes", None) or 1
@@ -2351,6 +2483,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 local_comp.set_parameter("out_file", file_name)
 
             def ensure_ms(x):
+                """Return the value as a string with a trailing `ms` unit."""
                 s = str(x).strip()
                 return s if s.endswith("ms") else f"{s}ms"
 
@@ -2471,12 +2604,37 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         return str(path)
 
     def save_code(self, dir, file_name=None):
+        """Render the experiment as TVB Python code and write it to disk.
+
+        Args:
+            dir: Target directory (or full path when combined with a BIDS-style
+                auto-generated filename).
+            file_name: Optional filename to write inside `dir`; when omitted,
+                the path is derived from `get_experiment_file_prefix`.
+
+        Returns:
+            The path of the written file, as a string.
+        """
         if file_name is not None:
             from pathlib import Path as _Path
             return self.save(_Path(dir) / file_name, format="tvb")
         return self.save(dir, format="tvb")
 
     def get_parameters_collection(self, **kwargs):
+        """Collect all experiment parameters into a nested `Bunch`.
+
+        Traverses the experiment metadata, gathering parameters from the
+        dynamics, coupling, network, and integration into a single container
+        keyed by component.
+
+        Args:
+            **kwargs: Traversal options. `keys_to_exclude` is a list of keys to
+                skip; `connectivity` and `coupling_inputs` are always excluded
+                when any exclusions are given.
+
+        Returns:
+            A `Bunch` mapping component names to their parameter values.
+        """
         if keys_to_exclude := kwargs.get("keys_to_exclude", []):
             keys_to_exclude = keys_to_exclude + ["connectivity", "coupling_inputs"]
         parameters = Bunch()
@@ -2489,6 +2647,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
     @property
     def parameters(self):
+        """The full collection of experiment parameters as a nested `Bunch`."""
         return self.get_parameters_collection()
 
     # ---- Reporting utilities (paralleling Dynamics) ----

@@ -5,6 +5,14 @@
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
 # Licensed under the EUPL-1.2-or-later
 #
+"""Plotting helpers for coupling functions and temporal equations.
+
+Renders TVBO ontology entities and SymPy expressions as matplotlib figures:
+`plot_coupling_function` draws a `CouplingFunction`'s response curve (2-D or
+3-D depending on the number of free symbols), and `plot_temporal_equation`
+draws a temporal equation over a time vector. Both substitute the curated
+default parameters from the ontology before evaluating.
+"""
 from typing import Any, Optional
 
 import matplotlib.pyplot as plt
