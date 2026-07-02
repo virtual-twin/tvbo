@@ -161,6 +161,8 @@ website:
                         href: Interoperability/tvboptim/EI_Tuning_tvboptim.qmd
                       - text: "TBPTT"
                         href: Interoperability/tvboptim/TBPTT_tvboptim.qmd
+                      - text: "Hopf Pareto"
+                        href: Interoperability/tvboptim/Hopf_Pareto_tvboptim.qmd
                   - section: "PyRates"
                     href: Interoperability/Pyrates/index.qmd
                     contents:
