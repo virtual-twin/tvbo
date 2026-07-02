@@ -179,6 +179,16 @@ def inline_model_functions(expr, dynamics, all_names):
     from tvbo.parse.expression import parse_eq
 
     functions = getattr(dynamics, "functions", None) or {}
+    if not functions:
+        return expr
+
+    # All model-function names, so that a call to one function inside another's
+    # body (e.g. ``muV(...)`` inside ``sigmaV``'s body) parses as a function
+    # application rather than ``Symbol('muV') * (fe, fi, ...)``.
+    fn_names = list(functions.keys())
+
+    # Pre-parse every function body once, registering the model function names.
+    bodies = {}
     for fname, fn_obj in functions.items():
         arguments = getattr(fn_obj, "arguments", None) or {}
         # Function arguments are keyed by name (dict); tolerate a legacy list too.
@@ -188,11 +198,24 @@ def inline_model_functions(expr, dynamics, all_names):
         if not rhs_str or not arg_names:
             continue
         arg_syms = [Symbol(n) for n in arg_names]
-        body = parse_eq(str(rhs_str), parameters=list(all_names) + arg_names)
-        fn_cls = Function(fname)
-        expr = expr.replace(
-            fn_cls, lambda *actual_args, _body=body, _syms=arg_syms: _body.xreplace(dict(zip(_syms, actual_args)))
-        )
+        body = parse_eq(str(rhs_str), parameters=list(all_names) + arg_names, functions=fn_names)
+        bodies[fname] = (arg_syms, body)
+
+    # Inline to a fixpoint: substituting one body can introduce calls to
+    # functions already visited (the call graph is a DAG, e.g. TF_e → sigmaV →
+    # muV), so repeat until no model-function calls remain.
+    for _ in range(len(bodies) + 1):
+        replaced = False
+        for fname, (arg_syms, body) in bodies.items():
+            fn_cls = Function(fname)
+            if expr.has(fn_cls):
+                expr = expr.replace(
+                    fn_cls,
+                    lambda *actual, _body=body, _syms=arg_syms: _body.xreplace(dict(zip(_syms, actual))),
+                )
+                replaced = True
+        if not replaced:
+            break
     return expr
 
 
