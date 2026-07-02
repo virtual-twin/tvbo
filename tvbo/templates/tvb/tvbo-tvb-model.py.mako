@@ -13,19 +13,13 @@ else:
 render = lambda obj: model.render_equation(obj, format='numpy')
 
 # In TVB, local_coupling is a separate dfun argument, not part of the coupling array.
-# Use the ontology to identify which coupling inputs are global (part of coupling array)
-# vs local (passed as separate dfun argument). This correctly handles models like SupHopf
-# that have named local coupling terms (e.g. lc_0) beyond just 'local_coupling'.
-from tvbo.ontology import owl as _onto
-try:
-    _global_names = set(_onto.get_model_coupling_terms(model.name, only_global=True).keys())
-    global_coupling_inputs = {k: v for k, v in model.coupling_inputs.items() if k in _global_names}
-except Exception:
-    # Model not in ontology — filter by naming convention:
-    # 'local_coupling' and 'lc_*' prefixed terms are local coupling
-    def _is_local(name):
-        return name == 'local_coupling' or name.startswith('lc_')
-    global_coupling_inputs = {k: v for k, v in model.coupling_inputs.items() if not _is_local(k)}
+# Coupling inputs are sourced from the YAML Dynamics (the ground truth), NOT the
+# ontology. A coupling input is local if flagged (local: true) or named by
+# convention ('local_coupling' or an 'lc_*' prefix, e.g. SupHopf's lc_0); every
+# other coupling input is a global term that enters the coupling array.
+def _is_local(name, ci):
+    return getattr(ci, 'local', False) or name == 'local_coupling' or name.startswith('lc_')
+global_coupling_inputs = {k: v for k, v in model.coupling_inputs.items() if not _is_local(k, v)}
 local_coupling_inputs = {k: v for k, v in model.coupling_inputs.items() if k not in global_coupling_inputs}
 has_local_coupling = bool(local_coupling_inputs)
 %>
