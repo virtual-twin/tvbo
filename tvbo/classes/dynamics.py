@@ -760,15 +760,19 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         **kwargs,
     ):
         iri = kwargs.get("iri")
-        if iri and (name is None or name == "Dynamics") and "parameters" not in kwargs:
-            local = iri.split(":", 1)[-1] if ":" in iri else iri
+        if iri and (name is None or name == "Dynamics"):
+            from tvbo.data.registry import resolve, local_name
+            from tvbo.utils import deep_merge
+
+            local = local_name(iri)
             try:
-                from tvbo.data.registry import resolve
-                yaml_path = resolve("Dynamics", local)
-                loaded = yaml_loader.load_as_dict(str(yaml_path))
+                loaded = yaml_loader.load_as_dict(str(resolve("Dynamics", local)))
                 _resolve_dynamics_aliases(loaded)
-                for key, value in loaded.items():
-                    kwargs.setdefault(key, value)
+                # Registry entry is the base; inline kwargs override at the leaf
+                # (e.g. parameters.a.value wins, siblings kept from the entry).
+                merged = deep_merge(loaded, kwargs)
+                kwargs.clear()
+                kwargs.update(merged)
                 name = kwargs.pop("name", local)
                 _skip_ontology = True
             except (FileNotFoundError, RuntimeError):
@@ -1733,6 +1737,46 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
                 eq_to_render = SimpleNamespace(rhs=str(pw))
 
         return render_equation(
+            eq_to_render,
+            local_dict=scope,
+            format=format,
+            user_functions=uf,
+            inline_funcs=inline_funcs,
+            **kwargs,
+        )
+
+    def render_equation_cse(self, obj, format="numpy", inline_functions=False, **kwargs):
+        """Common-subexpression-eliminated variant of :meth:`render_equation`.
+
+        Returns ``(setup, final)`` — a list of ``(name, expr)`` assignments plus the
+        return expression — so interpreted backends (TVB / numpy) evaluate each
+        shared subexpression (notably repeated model-function calls) once instead of
+        per occurrence. Builds the same symbolic scope / user-function set as
+        :meth:`render_equation`; see :func:`tvbo.codegen.code.render_equation_cse`.
+        """
+        from tvbo.classes.equation import sympify as tvbo_sympify
+        from tvbo.codegen.code import render_equation_cse
+
+        scope = self.get_symbolic_elements()
+        uf = {str(name): str(name) for name in getattr(self, "functions", {}).keys()}
+
+        inline_funcs = None
+        if inline_functions and getattr(self, "functions", None):
+            inline_funcs = {}
+            for fname, fdef in self.functions.items():
+                arg_names = [str(name) for name in fdef.arguments]
+                inline_funcs[fname] = (arg_names, tvbo_sympify(fdef.equation.rhs))
+            uf = {}
+
+        eq_to_render = obj.equation
+        if getattr(obj, "conditional", False) and getattr(obj.equation, "conditionals", None):
+            if "Piecewise" not in (str(obj.equation.rhs) if obj.equation.rhs else ""):
+                from types import SimpleNamespace
+
+                pw = _equation_mod.conditionals2piecewise(obj.equation)
+                eq_to_render = SimpleNamespace(rhs=str(pw))
+
+        return render_equation_cse(
             eq_to_render,
             local_dict=scope,
             format=format,

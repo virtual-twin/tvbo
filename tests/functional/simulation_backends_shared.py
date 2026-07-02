@@ -63,10 +63,20 @@ def _tvb_compatible(model_file):
     return True
 
 
-MODEL_FILES = get_model_files()
+# Models skipped on the non-TVB backends but kept on TVB. The second-order
+# Zerlaut model's erfc/quadrature transfer functions produce enormous expressions
+# that compile very slowly under JAX/XLA (and the other backends), exceeding the
+# CI per-test timeout. TVB has the erfc + compilation path for it, so it stays
+# covered there.
+_SKIP_NON_TVB = {"ZerlautAdaptationSecondOrder"}
+
+_ALL_MODEL_FILES = get_model_files()
+
+MODEL_FILES = [filepath for filepath in _ALL_MODEL_FILES if filepath.stem not in _SKIP_NON_TVB]
 MODEL_IDS = [filepath.stem for filepath in MODEL_FILES]
 
-TVB_MODEL_FILES = [filepath for filepath in MODEL_FILES if _tvb_compatible(filepath)]
+# Built from the full list so TVB still covers the _SKIP_NON_TVB models.
+TVB_MODEL_FILES = [filepath for filepath in _ALL_MODEL_FILES if _tvb_compatible(filepath)]
 TVB_MODEL_IDS = [filepath.stem for filepath in TVB_MODEL_FILES]
 
 
