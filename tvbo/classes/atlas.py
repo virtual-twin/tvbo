@@ -25,18 +25,7 @@ try:
 except ImportError:
 
     def tqdm(x, **kwargs):
-        """Return the iterable unchanged as a no-op fallback for `tqdm`.
-
-        Used when the `tqdm` package is not installed, so progress-bar calls
-        degrade gracefully to plain iteration.
-
-        Args:
-            x: Iterable to return unchanged.
-            **kwargs: Accepted for API compatibility with `tqdm` and ignored.
-
-        Returns:
-            The `x` argument, unmodified.
-        """
+        """No-op ``tqdm`` fallback used when the package is unavailable."""
         return x  # No-op if tqdm not available
 
 
@@ -327,7 +316,8 @@ def create_atlas_metadata(fname_atlas, labels="freesurfer"):
 
     Args:
         fname_atlas: Path to the parcellation NIfTI file to derive metadata from.
-        labels: Labelling scheme to use, or `"freesurfer"` for the FreeSurfer lookup.
+        labels: Reserved for a labelling scheme; currently unused (region labels
+            are read directly from the parcellation volume).
     """
     entities = atlas_data.parse_file_entities(fname_atlas)
     atlas_metadata = tvbo_datamodel.BrainAtlas(
@@ -341,11 +331,11 @@ def create_atlas_metadata(fname_atlas, labels="freesurfer"):
 
     parcellation_data = nib.load(fname_atlas).get_fdata()
     # Get unique labels in the parcellation
-    labels = np.unique(parcellation_data)
+    unique_labels = np.unique(parcellation_data)
 
     # Compute center of mass for each label
     centers_of_mass = {}
-    for label in labels:
+    for label in unique_labels:
         if label == 0:  # Skip background if it's labeled as 0
             continue
         region = parcellation_data == label
@@ -384,7 +374,6 @@ def rank_atlas(fname_atlas, labels="freesurfer", desc="ranked", gm_only=True):
     )
     atlas_metadata.terminology.entities = []
     atlas = nib.load(fname_atlas)
-    labels = "freesurfer"
 
     atlas_ranked = np.zeros(atlas.shape)
     i = 1

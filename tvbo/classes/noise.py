@@ -40,16 +40,9 @@ class Noise(tvbo_datamodel.Noise):
 
     # JAX pytree: carry no array children; aux holds serializable kwargs
     def tree_flatten(self):
-        """Split the noise into JAX pytree children and auxiliary data.
+        """Flatten into JAX pytree (children, aux).
 
-        The serializable keyword arguments are placed in the auxiliary tuple (with the
-        transient `sigma_vec` removed), while a present `sigma_vec` is exposed as the
-        single array child so it can participate in `vmap` batching.
-
-        Returns:
-            A `(children, aux)` pair where `children` is the (possibly empty) tuple of
-            array leaves and `aux` is a one-element tuple holding the reconstruction
-            kwargs.
+        A present `sigma_vec` is exposed as the single array child so it can participate in `vmap` batching; the reconstruction kwargs go in aux.
         """
         aux = getattr(self, "_as_dict", None)
         if callable(aux):
@@ -66,18 +59,7 @@ class Noise(tvbo_datamodel.Noise):
 
     @classmethod
     def tree_unflatten(cls, aux_data, children):
-        """Reconstruct a noise instance from JAX pytree auxiliary data and children.
-
-        Args:
-            aux_data:
-                The auxiliary tuple produced by `tree_flatten`, whose first element holds
-                the reconstruction kwargs.
-            children:
-                The tuple of array leaves; a single element is reattached as `sigma_vec`.
-
-        Returns:
-            A rebuilt `Noise` instance.
-        """
+        """Reconstruct a `Noise` instance from JAX pytree aux_data and children."""
         kwargs = aux_data[0] if (isinstance(aux_data, tuple) and len(aux_data) > 0) else {}
         if not isinstance(kwargs, dict):
             kwargs = {}

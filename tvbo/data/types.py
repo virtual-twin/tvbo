@@ -1864,16 +1864,9 @@ class TimeSeries:
     """
 
     def tree_flatten(self):
-        """Flatten the time series into JAX pytree children and auxiliary data.
+        """Flatten into JAX pytree (children, aux_data).
 
-        `time`, `data`, `network`, and `sample_period` are returned as children
-        so they participate in JAX transforms; `sample_period` in particular must
-        be a child because it may hold a JAX tracer (e.g. `state.dt` inside `jit`).
-        The title, dimension labels, and units are returned as static auxiliary
-        data.
-
-        Returns:
-            A `(children, aux_data)` tuple as expected by JAX pytree flattening.
+        `sample_period` is a child (not aux) because it may hold a JAX tracer such as `state.dt` inside `jit`.
         """
         # Keep network as a child (not metadata) to avoid non-hashable/array metadata.
         # sample_period must also be a child because it can be a JAX-traced value
@@ -1889,17 +1882,7 @@ class TimeSeries:
 
     @classmethod
     def tree_unflatten(cls, aux_data, children):
-        """Reconstruct a `TimeSeries` from JAX pytree children and auxiliary data.
-
-        Args:
-            aux_data: The static auxiliary data `(title, labels_dimensions, units)`
-                produced by `tree_flatten`.
-            children: The dynamic children `(time, data, network, sample_period)`
-                produced by `tree_flatten`.
-
-        Returns:
-            A `TimeSeries` rebuilt from the flattened pytree contents.
-        """
+        """Reconstruct a `TimeSeries` from JAX pytree children and aux_data."""
         time, data, network, sample_period = children
         title, labels_dimensions, units = aux_data
         return cls(
@@ -3637,14 +3620,9 @@ class SimulationState:
         self.nt = nt
 
     def tree_flatten(self):
-        """Flatten the state into JAX pytree children and auxiliary data.
+        """Flatten into JAX pytree (children, aux_data).
 
-        All fields except `nt` are returned as dynamic children so values like
-        the noise `sigma_vec` can be batched under `vmap`; `nt` is kept as static
-        auxiliary data because it is used in shape and length contexts.
-
-        Returns:
-            A `(children, aux_data)` tuple as expected by JAX pytree flattening.
+        `nt` is kept as static aux_data so it stays concrete in shape/length contexts under jit/vmap.
         """
         # Make `noise` a child so fields like sigma_vec can participate in vmap batching.
         # Keep `nt` static (aux) to ensure it remains a concrete value under jit/vmap
@@ -3663,17 +3641,7 @@ class SimulationState:
 
     @classmethod
     def tree_unflatten(cls, aux_data, children):
-        """Reconstruct a `SimulationState` from pytree children and auxiliary data.
-
-        Args:
-            aux_data: The static auxiliary data holding `nt`.
-            children: The dynamic children in `__init__` order (initial
-                conditions, network, dt, noise, parameters, stimulus, monitor
-                parameters).
-
-        Returns:
-            A `SimulationState` rebuilt from the flattened pytree contents.
-        """
+        """Reconstruct a `SimulationState` from JAX pytree children and aux_data."""
         # Reconstruct in the original __init__ order
         (
             initial_conditions,

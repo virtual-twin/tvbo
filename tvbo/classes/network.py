@@ -1450,14 +1450,7 @@ class Network(tvbo_datamodel.Network):
 
         # Helper to load a measure
         def load_measure(measure: str) -> Optional[np.ndarray]:
-            """Load a single BEP017 measure matrix by name from the BIDS directory.
-
-            Args:
-                measure: BIDS `meas-<measure>` label to glob for among the `_relmat` TSV files.
-
-            Returns:
-                The matrix from the first matching TSV, or `None` if no file matches.
-            """
+            """Load a single BEP017 measure matrix by name, or None if absent."""
             pattern = f"*meas-{measure}_relmat*.tsv"
             matches = list(bids_dir.glob(pattern))
             if not matches:
@@ -1594,14 +1587,7 @@ class Network(tvbo_datamodel.Network):
 
         # Helper to load a measure
         def load_measure(measure: str) -> Optional[np.ndarray]:
-            """Load a single BEP017 measure matrix by name from the BIDS directory.
-
-            Args:
-                measure: BIDS `meas-<measure>` label to glob for among the `_relmat` TSV files.
-
-            Returns:
-                The matrix from the first matching TSV, or `None` if no file matches.
-            """
+            """Load a single BEP017 measure matrix by name, or None if absent."""
             pattern = f"*meas-{measure}_relmat*.tsv"
             matches = list(bids_dir.glob(pattern))
             if not matches:
@@ -2248,10 +2234,9 @@ class Network(tvbo_datamodel.Network):
 
     # ---- JAX pytree: flatten/unflatten ----
     def tree_flatten(self) -> Tuple[Tuple[JaxArray, JaxArray], Tuple[str]]:
-        """Return children and auxiliary data for JAX pytree support.
+        """Flatten into JAX pytree children `(weights, lengths)` plus metadata aux data.
 
-        Children: (weights, lengths) so JAX can map/transform numerical payloads.
-        Aux data: metadata dict WITHOUT the array data to avoid duplication.
+        Metadata is stored without the array data to avoid duplicating the leaves.
         """
         # Convert metadata to a JSON string for stable equality in JAX
         import json as _json
@@ -2366,21 +2351,9 @@ class Network(tvbo_datamodel.Network):
 
     @classmethod
     def tree_unflatten(cls, aux_data: Tuple[str], children: Tuple[JaxArray, JaxArray]) -> "Connectome":
-        """Reconstruct a `Connectome` from JAX pytree children and auxiliary metadata.
+        """Rebuild a `Connectome` from JAX pytree children and metadata (inverse of `tree_flatten`).
 
-        Inverse of `tree_flatten`: rebuilds the object from its serialized
-        metadata (the non-array slots) and re-attaches the weight and length
-        arrays as `_pytree_data`, which the `weights_matrix`/`lengths_matrix`
-        properties read. The arrays are not converted back into `Matrix`
-        objects, so this stays valid under JAX tracing.
-
-        Args:
-            aux_data: One-tuple holding the JSON-encoded metadata dict.
-            children: The `(weights, lengths)` arrays carried as pytree leaves.
-
-        Returns:
-            A `Connectome` rebuilt from the metadata, with its arrays exposed
-            through `_pytree_data`.
+        Arrays are re-attached as `_pytree_data` rather than `Matrix` objects, so it stays valid under JAX tracing.
         """
         import json as _json
 
@@ -2721,7 +2694,7 @@ class Network(tvbo_datamodel.Network):
 
     @property
     def distances(self):
-        """Tract-length matrix in millimetres (alias for `lengths_matrix`)."""
+        """Tract-length matrix in millimetres (alias of `lengths`)."""
         return self.lengths_matrix
 
     @property
