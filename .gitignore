@@ -140,6 +140,7 @@ graphify-out
 # on merges or drifts from schema/tvbo_datamodel.yaml.
 tvbo/datamodel/schema.py
 tvbo/datamodel/pydantic.py
+tvbo/datamodel/tvbo_datamodel.schema.json
 
 # Build artifacts
 dist/
