@@ -187,9 +187,9 @@ functions:
     description: "Downsample array by step factor"
     source_code: "data[::step]"
     arguments:
-      - name: data
+      data:
         description: "Input array"
-      - name: step
+      step:
         value: 10
         description: "Downsample factor (1ms * 10 = 10ms period = 100 Hz)"
 
@@ -198,9 +198,9 @@ functions:
     description: "Index into array at given position"
     source_code: "arr[idx]"
     arguments:
-      - name: arr
+      arr:
         description: "Input array"
-      - name: idx
+      idx:
         description: "Index position"
 
     # Mathematical functions (equation-based)
@@ -211,12 +211,12 @@ functions:
       rhs: "f_max - (f_max - f_min) * (d - min(d)) / (max(d) - min(d))"
       definition: "Linear mapping from distance to frequency: f_max at visual cortex, f_min at maximum distance"
     arguments:
-      - name: d
+      d:
         description: "Distance array from visual cortex for each region"
-      - name: f_min
+      f_min:
         value: 7.0
         description: "Minimum frequency at max distance [Hz]"
-      - name: f_max
+      f_max:
         value: 11.0
         description: "Maximum frequency at visual cortex [Hz]"
 
@@ -227,11 +227,11 @@ functions:
       rhs: "1 / (pi * gamma * (1 + ((x - x0) / gamma)**2))"
       definition: "Cauchy-Lorentz distribution centered at x0 with scale gamma"
     arguments:
-      - name: x
+      x:
         description: "Input values (frequency axis)"
-      - name: x0
+      x0:
         description: "Peak location for each region (target frequencies)"
-      - name: gamma
+      gamma:
         value: 1.0
         description: "Scale parameter (half-width at half-maximum)"
 
@@ -242,9 +242,9 @@ functions:
       rhs: "Sum((x[i] - mean(x)) * (y[i] - mean(y)), (i, 0, n-1)) / sqrt(Sum((x[i] - mean(x))**2, (i, 0, n-1)) * Sum((y[i] - mean(y))**2, (i, 0, n-1)))"
       definition: "Pearson product-moment correlation coefficient"
     arguments:
-      - name: x
+      x:
         description: "First array"
-      - name: y
+      y:
         description: "Second array"
 
   spectral_loss:
@@ -253,9 +253,9 @@ functions:
     equation:
       rhs: "1 - correlation(simulated, target)"
     arguments:
-      - name: simulated
+      simulated:
         description: "Simulated power spectrum for one region"
-      - name: target
+      target:
         description: "Target power spectrum for one region"
 
 # =============================================================================
@@ -273,7 +273,7 @@ observations:
     pipeline:
       - function: subsample
         arguments:
-          - name: data
+          data:
             value: integration.result
             description: "Input time series from simulation"
       - callable:
@@ -281,7 +281,7 @@ observations:
           name: transpose
         output: transposed
         arguments:
-          - name: a
+          a:
             value: subsample
             description: "Subsampled time series"
       - callable:
@@ -289,13 +289,13 @@ observations:
           name: welch
         output: frequencies, psd
         arguments:
-          - name: x
+          x:
             value: transposed
             description: "Transposed time series (nodes, time)"
-          - name: fs
+          fs:
             value: 100.0
             description: "Sampling frequency (Hz)"
-          - name: nperseg
+          nperseg:
             value: 256
             description: "Segment length for Welch"
 
@@ -313,10 +313,10 @@ observations:
           name: mean
         output: avg_psd
         arguments:
-          - name: a
+          a:
             value: simulated_psd.psd
             description: "Power spectrum from simulated_psd observation"
-          - name: axis
+          axis:
             value: 0
             description: "Average over regions dimension"
 
@@ -332,10 +332,10 @@ observations:
           name: argmax
         output: peak_indices
         arguments:
-          - name: a
+          a:
             value: simulated_psd.psd
             description: "PSD array (regions, 1, frequencies)"
-          - name: axis
+          axis:
             value: -1
             description: "Find max along frequency axis"
       - callable:
@@ -343,15 +343,15 @@ observations:
           name: squeeze
         output: peak_indices_squeezed
         arguments:
-          - name: a
+          a:
             value: peak_indices
       - function: index_at
         output: peak_frequencies
         arguments:
-          - name: arr
+          arr:
             value: simulated_psd.frequencies
             description: "Frequency array from PSD"
-          - name: idx
+          idx:
             value: peak_indices_squeezed
             description: "Indices of peak frequencies per region"
 
@@ -368,15 +368,15 @@ observations:
           name: argmax
         output: peak_idx
         arguments:
-          - name: a
+          a:
             value: avg_spectrum
             description: "Average power spectrum (output of jnp.mean)"
       - function: index_at
         arguments:
-          - name: arr
+          arr:
             value: simulated_psd.frequencies
             description: "Frequency array from PSD"
-          - name: idx
+          idx:
             value: peak_idx
             description: "Index of peak frequency"
 
@@ -407,10 +407,10 @@ optimizations:
         over: node
         type: mean
       arguments:
-        - name: simulated
+        simulated:
           value: observations.simulated_psd.psd
           description: "Simulated power spectrum from observation (n_regions, n_freqs)"
-        - name: target
+        target:
           description: "Target power spectrum (passed to optimizer at runtime)"
 
       # Optimizer configuration

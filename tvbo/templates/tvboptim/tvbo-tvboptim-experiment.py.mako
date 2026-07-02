@@ -2,6 +2,7 @@
 <%doc>TVB-Optim Experiment Template. Context: experiment (SimulationExperiment).</%doc>
 <%namespace name="fn" file="/base/function-def.mako"/>
 <%namespace name="const" file="/base/constants.mako"/>
+<%namespace name="search" file="tvbo-tvboptim-search.py.mako"/>
 <%
 from tvbo.codegen import render_expression
 from tvbo.templates.tvboptim.utils import (
@@ -690,7 +691,108 @@ for expl in exploration_list:
             'n_iterations': int(_nit),
             'hyperparams': _hp,
         })
+
+    # Search strategy: 'grid' (default, exhaustive) or 'nsga2' (pymoo multi-objective).
+    exp_info['strategy'] = str(getattr(expl, 'strategy', None) or 'grid')
+    exp_info['objectives'] = [str(o) for o in (getattr(expl, 'objectives', None) or [])]
+    if exp_info['strategy'] == 'nsga2':
+        assert exp_info['objectives'], f"nsga2 exploration '{exp_info['name']}' requires objectives"
+        # Resolve each decision axis to a tvboptim state path (+ optional log10 decode).
+        _nsga_axes = []
+        for _axis in axes_list:
+            _apn = str(_axis.parameter); _apref = None
+            if '.' in _apn:
+                _apref, _apn = _apn.rsplit('.', 1)
+            _adom = _axis.domain
+            assert _adom is not None and _adom.lo is not None and _adom.hi is not None, \
+                f"nsga2 axis '{_axis.parameter}' requires domain lo/hi"
+            if _apref and _apref in all_couplings:
+                _apath = f"coupling.{_to_ci_key(_apref)}.{_apn}"
+            elif _apref in ('noise', 'AdditiveNoise', 'Noise'):
+                _apath = f"noise.{_apn}"
+            else:
+                _apath = f"dynamics.{_apn}"
+            _nsga_axes.append({
+                'path': _apath, 'lo': float(_adom.lo), 'hi': float(_adom.hi),
+                'transform': str(getattr(_axis, 'transform', None) or 'none'),
+            })
+        exp_info['nsga2_axes'] = _nsga_axes
+        # GA hyperparameters from Exploration.parameters (name/value pairs).
+        _default_pop = n_workers if 'n_workers' in dir() else 8
+        _ga = {'population_size': _default_pop, 'num_generations': 40, 'seed': 42,
+               'reference_point': [1.0e6] * len(exp_info['objectives'])}
+        for _gp in (expl.parameters or []):
+            _gpn = str(_gp.name); _gpv = getattr(_gp, 'value', None)
+            if _gpv is None:
+                continue
+            if _gpn == 'reference_point':
+                _ga['reference_point'] = [float(v) for v in _gpv]
+            elif _gpn in ('population_size', 'num_generations', 'seed'):
+                _ga[_gpn] = int(_gpv)
+            else:
+                _ga[_gpn] = float(_gpv)
+        exp_info['ga'] = _ga
     explorations.append(exp_info)
+
+# Optimizations that depend on an Exploration front → per-seed parallel refinement.
+# Build the refine metadata (seed axes from the exploration, free-param paths from the
+# optimization) so render_refine can emit the ParallelExecution-over-the-front body.
+import math as _math
+refine_infos = {}
+_expl_by_name = {e['name']: e for e in explorations}
+for _opt in optim_list:
+    _do = getattr(_opt, 'depends_on', None)
+    _do_name = safe_name(str(_do)) if _do else None
+    _expl = _expl_by_name.get(_do_name) if _do_name else None
+    if not _expl or _expl.get('strategy') != 'nsga2':
+        continue
+    _seed_axes = [{'path': ax['path'], 'transform': ax['transform'], 'col': _i}
+                  for _i, ax in enumerate(_expl['nsga2_axes'])]
+    _seed_paths = set(ax['path'] for ax in _seed_axes)
+    _fps = []
+    for _fp in (_opt.free_parameters or []):
+        _fpn = str(_fp.parameter); _fpref = None
+        if '.' in _fpn:
+            _fpref, _fpn = _fpn.rsplit('.', 1)
+        if _fpref and _fpref in all_couplings:
+            _fpath = f"coupling.{_to_ci_key(_fpref)}.{_fpn}"
+        elif _fpref in ('noise', 'AdditiveNoise', 'Noise'):
+            _fpath = f"noise.{_fpn}"
+        else:
+            _fpath = f"dynamics.{_fpn}"
+        _dom = getattr(_fp, 'domain', None)
+        def _bnd(v):
+            if v is None:
+                return None
+            fv = float(v)
+            return 'jnp.inf' if _math.isinf(fv) and fv > 0 else ('-jnp.inf' if _math.isinf(fv) else fv)
+        _fps.append({
+            'name': _fpn, 'path': _fpath,
+            'hetero': bool(getattr(_fp, 'heterogeneous', False)),
+            'lo': _bnd(_dom.lo) if _dom else None,
+            'hi': _bnd(_dom.hi) if _dom else None,
+            'seeded': _fpath in _seed_paths,
+        })
+    # Metric observations from the loss arguments (fc-correlation and freq-gradient terms).
+    _loss_obs = [str(k) for k in ((getattr(_opt, 'loss', None) and _opt.loss.arguments) or {}).keys()]
+    _fc_obs = next((o for o in _loss_obs if 'fc' in o.lower()), _loss_obs[0] if _loss_obs else 'fc_corr_val')
+    _freq_obs = next((o for o in _loss_obs if 'freq' in o.lower() or 'grad' in o.lower()),
+                     _loss_obs[-1] if _loss_obs else 'freq_grad_corr')
+    refine_infos[safe_name(_opt.name)] = {
+        'name': safe_name(_opt.name), 'exploration': _expl['name'],
+        'seed_axes': _seed_axes, 'free_params': _fps, 'objectives': list(_expl['objectives']),
+        'optimizer': optimization_stages[0]['algorithm'] if optimization_stages else 'adam',
+        'learning_rate': optimization_stages[0]['learning_rate'] if optimization_stages else 0.001,
+        'max_steps': optimization_stages[0]['max_iterations'] if optimization_stages else 200,
+        'opt_mode': opt_mode, 'n_nodes': n_nodes, 'n_workers': n_workers,
+        'fc_obs': _fc_obs, 'freq_obs': _freq_obs,
+    }
+# Search-family codegen flags. `has_nsga2` gates the pymoo import + the nsga2 partial;
+# a refine optimization (depends_on an Exploration front) replaces the standard
+# single-state stage loop with a per-seed parallel sweep over the Pareto front.
+has_nsga2 = any(e.get('strategy') == 'nsga2' for e in explorations)
+has_refine = len(refine_infos) > 0
+refine_info = list(refine_infos.values())[0] if refine_infos else None
 
 has_observations = len(observations) > 0
 
@@ -771,6 +873,14 @@ from tvboptim.optim.callbacks import MultiCallback, DefaultPrintCallback, Saving
 % if has_explorations:
 from tvboptim.types import Space, GridAxis, DataAxis
 from tvboptim.execution import ParallelExecution, SequentialExecution
+% endif
+% if has_nsga2:
+# Multi-objective search (Exploration.strategy == 'nsga2') + Pareto-seeded refinement.
+import numpy as _np
+from pymoo.core.problem import Problem as _Problem
+from pymoo.algorithms.moo.nsga2 import NSGA2 as _NSGA2
+from pymoo.optimize import minimize as _pymoo_minimize
+from pymoo.indicators.hv import HV as _HV
 % endif
 % for mod in derived_obs_modules:
 import ${mod}
@@ -1698,6 +1808,9 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
     else:
         _expl_model_fn = model_fn
         _expl_state = state
+% if expl['strategy'] == 'nsga2':
+${search.nsga2_body(expl)}\
+% else:
 % if has_axes:
     grid_state = copy.deepcopy(_expl_state)
     % for ax in expl['axes']:
@@ -2114,6 +2227,7 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
 % endif
 % endif
     )
+% endif
 
 
 % endfor
@@ -2767,6 +2881,12 @@ def run_experiment(
             # Stage results storage (use Bunch for dot-notation access)
             stage_results = Bunch()
 
+% if has_refine:
+            # Refine reuses the shared base warm-up (model_fn/state/transient) — the same
+            # settled state Stage 0 evaluated from — so the loss is byte-identical.
+            _opt_model_fn = model_fn
+            _opt_transient = transient
+% else:
 % if opt_has_custom_integration:
             # Prepare fresh model_fn and state for optimization
             # Optimization has custom integration settings: ${opt_solver_class} dt=${opt_dt} t1=${opt_t1}
@@ -2804,6 +2924,7 @@ def run_experiment(
             current_state = initial_state
             _opt_transient = transient
 % endif
+% endif
 
 % if runtime_kwargs_needed:
 % for kwarg_name in sorted(runtime_kwargs_needed):
@@ -2824,11 +2945,16 @@ def run_experiment(
     for a in _lf_args:
         if a['type'] == 'observation':
             obs_name_arg = a['obs_name']
+            # Unwrap `.data` when the observation is an ObservationResult (derived
+            # pipelines), else use the bare value — evaluates identically for the
+            # bare case, so existing loss functions stay byte-identical.
+            _acc = (f"(getattr(_obs, '{obs_name_arg}').data if hasattr(getattr(_obs, "
+                    f"'{obs_name_arg}', None), 'data') else getattr(_obs, '{obs_name_arg}'))")
             if obs_name_arg in network_observation_names:
                 # Empirical target: allow a runtime override, else the loaded constant.
-                loss_arg_exprs.append(f"kwargs.get('{obs_name_arg}', _obs.{obs_name_arg})")
+                loss_arg_exprs.append(f"kwargs.get('{obs_name_arg}', {_acc})")
             else:
-                loss_arg_exprs.append(f"_obs.{obs_name_arg}")
+                loss_arg_exprs.append(_acc)
         elif a['type'] == 'constant':
             loss_arg_exprs.append(str(a['value']))
         elif a['type'] == 'runtime':
@@ -2845,6 +2971,14 @@ def run_experiment(
                 raise ValueError("No loss functions defined in optimization metadata.")
 % endif
 
+% if has_refine:
+${search.refine_body(refine_info)}\
+            results['optimizations'] = stage_results
+            for _rk in list(stage_results.keys()):
+                if not str(_rk).startswith('_'):
+                    results[_rk] = stage_results[_rk]
+            print(f"  Refinement complete: {list(stage_results.keys())}")
+% else:
 % if len(optimization_stages) > 1:
             # Multi-stage optimization with optional stage filtering
             all_stage_names = [${', '.join(f"'{s['name']}'" for s in optimization_stages)}]
@@ -2968,6 +3102,7 @@ stage_lr = stage['learning_rate']
             results['optimizations'] = Bunch(**{_opt_name: _opt_result})
             results[_opt_name] = _opt_result  # Also at top level for convenience
             print("  Optimization complete.")
+% endif
 % endif
     % endif
 

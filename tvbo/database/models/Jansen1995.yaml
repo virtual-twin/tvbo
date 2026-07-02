@@ -14,12 +14,12 @@ parameters:
   C:
     value: 135
     explored_values:
-    - 68
-    - 128
-    - 135
-    - 270
-    - 675
-    - 1350
+      - 68
+      - 128
+      - 135
+      - 270
+      - 675
+      - 1350
   a:
     value: 0.1
     unit: per_ms
@@ -62,7 +62,7 @@ functions:
   Sigm:
     definition: "JR sigmoid transformation"
     arguments:
-    - name: v
+      v: {}
     equation:
       rhs: 2*e0 / (1 + exp(r*(v0 - v)))
 coupling_inputs:

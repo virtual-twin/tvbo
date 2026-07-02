@@ -134,3 +134,14 @@ docs/ontology/spec
 .claude/settings.local.json
 .claude/settings.json
 graphify-out
+
+# Generated LinkML datamodel — produced at build time by hatch_build.py (and by
+# `make gen-linkml` for a from-source checkout). Not tracked so it never conflicts
+# on merges or drifts from schema/tvbo_datamodel.yaml.
+tvbo/datamodel/schema.py
+tvbo/datamodel/pydantic.py
+tvbo/datamodel/tvbo_datamodel.schema.json
+
+# Build artifacts
+dist/
+*.egg-info/

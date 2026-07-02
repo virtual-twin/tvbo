@@ -18,8 +18,8 @@ description: >-
   global coupling strength G (a coupling parameter) scales the structural connectivity
   weights that modulate inter-regional communication.
 references:
-- Wong2006
-- Deco2013
+  - Wong2006
+  - Deco2013
 parameters:
   a:
     definition: Input gain parameter of the sigmoid transfer function H(x).
@@ -125,7 +125,7 @@ functions:
       Sigmoid transfer function mapping total synaptic input current to the
       average population firing rate (Deco et al., 2013).
     arguments:
-    - name: x
+      x: {}
     equation:
       rhs: (a*x - b)/(1 - exp(-d*(a*x - b)))
 coupling_inputs:

@@ -18,6 +18,6 @@ pipeline:
       equation:
           rhs: "subsample(X, step)"
       arguments:
-          - name: step
-            description: "Decimation factor = period / dt"
+          step:
+              description: "Decimation factor = period / dt"
       apply_on_dimension: time

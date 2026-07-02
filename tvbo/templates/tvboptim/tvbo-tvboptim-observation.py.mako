@@ -1046,13 +1046,21 @@ class ${class_name}(AbstractMonitor):
 % if tail_samples:
         ${decl_input} = ${decl_input}[-${tail_samples}:]
 % endif
+% if aggregation:
+        # Track whether a collapsing aggregation removed the time axis. A future
+        # aggregation only needs to set this flag to be handled correctly below.
+        _aggregated = False
+% endif
 % if str(aggregation) == 'mean':
         # Declarative: mean over time axis (aggregation: mean)
         ${decl_input} = jnp.mean(${decl_input}, axis=0)
+        _aggregated = True
 % elif str(aggregation) == 'last':
         ${decl_input} = ${decl_input}[-1]
+        _aggregated = True
 % elif str(aggregation) == 'first':
         ${decl_input} = ${decl_input}[0]
+        _aggregated = True
 % endif
 % endif
 
@@ -1064,6 +1072,16 @@ class ${class_name}(AbstractMonitor):
         _final = _${primary_output}
         if isinstance(_final, NativeSolution):
             return _final
+% if aggregation:
+        if _aggregated:
+            # A collapsing aggregation removed the time axis: the result is a
+            # plain per-node value (or scalar), so return it directly instead of
+            # re-wrapping it in a NativeSolution — downstream loss / algorithm
+            # arithmetic needs an array, not a solution object (else e.g.
+            # `mean_activity + target` raises "unsupported operand type(s) for
+            # +: 'float' and 'NativeSolution'").
+            return _final
+% endif
 
         _is_scalar = _final.ndim == 0 if hasattr(_final, 'ndim') else True
         if _is_scalar:
