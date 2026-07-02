@@ -28,8 +28,8 @@ pipeline:
       equation:
           rhs: "spatial_mean @ X"
       arguments:
-          - name: spatial_mean
-            description: >-
-                Region averaging matrix (n_regions, n_nodes). M[r, j] = 1/n_r
-                if node j belongs to region r, else 0.
+          spatial_mean:
+              description: >-
+                  Region averaging matrix (n_regions, n_nodes). M[r, j] = 1/n_r
+                  if node j belongs to region r, else 0.
       apply_on_dimension: node

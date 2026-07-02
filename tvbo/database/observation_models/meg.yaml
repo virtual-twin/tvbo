@@ -42,22 +42,22 @@ pipeline:
                   value: 1.25663706e-6
                   unit: H_per_m
       arguments:
-          - name: Q
-            description: "Source dipole orientations (n_sources, 3)"
-          - name: r_0
-            description: "Source dipole positions (n_sources, 3)"
-          - name: r_s
-            description: "Sensor positions (n_sensors, 3)"
+          Q:
+              description: "Source dipole orientations (n_sources, 3)"
+          r_0:
+              description: "Source dipole positions (n_sources, 3)"
+          r_s:
+              description: "Sensor positions (n_sensors, 3)"
 
     - name: lead_field_projection
       output: projected
       equation:
           rhs: "gain @ sum(X, axis=-1) / period_steps"
       arguments:
-          - name: gain
-            description: "Lead field matrix (n_sensors, n_sources)"
-          - name: period_steps
-            description: "Number of integration steps per sampling period"
+          gain:
+              description: "Lead field matrix (n_sensors, n_sources)"
+          period_steps:
+              description: "Number of integration steps per sampling period"
       apply_on_dimension: node
 
     - name: add_noise
@@ -66,5 +66,5 @@ pipeline:
       equation:
           rhs: "X + noise"
       arguments:
-          - name: noise
-            description: "Observation noise (n_sensors, 1)"
+          noise:
+              description: "Observation noise (n_sensors, 1)"
