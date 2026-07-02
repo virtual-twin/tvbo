@@ -2064,9 +2064,14 @@ classes:
                 description: >-
                     Argument value. Can be:
                     - Literal: 1.0, "string", boolean, etc.
+                    - Array (nested list): an array-valued constant such as a
+                      per-node target vector consumed by the function.
                     - Input reference: "input.frequencies" (from source_observation outputs)
                     - Cross-observation: "target_frequencies.peak_freqs" (from another observation)
                 range: ScalarValue
+                any_of:
+                  - range: ScalarValue
+                  - array: {}
             unit:
                 range: string
 
