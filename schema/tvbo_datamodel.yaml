@@ -1832,6 +1832,28 @@ classes:
                     such as threshold-triggered resets in spiking neuron models.
                     Unlike experiment-level events (stimulation, perturbation),
                     these define the model's own discontinuous behavior.
+            cse:
+                range: boolean
+                ifabsent: false
+                description: >-
+                    Code-generation hint (opt-in, backend-independent): eliminate
+                    common subexpressions. When true, the generator evaluates each
+                    repeated subexpression — including repeated calls to
+                    model-defined functions — once and reuses the result instead of
+                    re-emitting it at every occurrence. Purely a performance hint:
+                    results are numerically identical. A backend whose compiler
+                    already performs this elimination may honour it as a no-op. Off
+                    by default (expressions are emitted in flat form).
+            compile:
+                range: boolean
+                ifabsent: false
+                description: >-
+                    Code-generation hint (opt-in, backend-independent): request that
+                    the generated dynamics be compiled to machine code rather than
+                    interpreted, where the target backend supports it. Purely a
+                    performance hint with no effect on results; a backend that is
+                    inherently compiled (or cannot compile) honours it as a no-op.
+                    Off by default. Independent of, and composable with, ``cse``.
 
     StateVariable:
         class_uri: tvbo:StateVariable

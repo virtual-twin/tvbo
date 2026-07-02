@@ -1745,6 +1745,46 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
             **kwargs,
         )
 
+    def render_equation_cse(self, obj, format="numpy", inline_functions=False, **kwargs):
+        """Common-subexpression-eliminated variant of :meth:`render_equation`.
+
+        Returns ``(setup, final)`` — a list of ``(name, expr)`` assignments plus the
+        return expression — so interpreted backends (TVB / numpy) evaluate each
+        shared subexpression (notably repeated model-function calls) once instead of
+        per occurrence. Builds the same symbolic scope / user-function set as
+        :meth:`render_equation`; see :func:`tvbo.codegen.code.render_equation_cse`.
+        """
+        from tvbo.classes.equation import sympify as tvbo_sympify
+        from tvbo.codegen.code import render_equation_cse
+
+        scope = self.get_symbolic_elements()
+        uf = {str(name): str(name) for name in getattr(self, "functions", {}).keys()}
+
+        inline_funcs = None
+        if inline_functions and getattr(self, "functions", None):
+            inline_funcs = {}
+            for fname, fdef in self.functions.items():
+                arg_names = [str(name) for name in fdef.arguments]
+                inline_funcs[fname] = (arg_names, tvbo_sympify(fdef.equation.rhs))
+            uf = {}
+
+        eq_to_render = obj.equation
+        if getattr(obj, "conditional", False) and getattr(obj.equation, "conditionals", None):
+            if "Piecewise" not in (str(obj.equation.rhs) if obj.equation.rhs else ""):
+                from types import SimpleNamespace
+
+                pw = _equation_mod.conditionals2piecewise(obj.equation)
+                eq_to_render = SimpleNamespace(rhs=str(pw))
+
+        return render_equation_cse(
+            eq_to_render,
+            local_dict=scope,
+            format=format,
+            user_functions=uf,
+            inline_funcs=inline_funcs,
+            **kwargs,
+        )
+
     def get_equations(self, format="metadata", evaluate=True):
         # if format == "sympy":
         #     return _equation_mod.symbolic_model_equations(self.ontology)
