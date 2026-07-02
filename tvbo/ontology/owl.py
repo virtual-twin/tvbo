@@ -528,50 +528,6 @@ def get_superclasses(tvbo_class) -> List[owlready2.ThingClass]:
     return onto.get_parents_of(tvbo_class)
 
 
-# The YAML model database (tvbo/database/models) is the ground truth for model
-# *instances* (state variables, parameters, coupling terms).  The baked runtime
-# ontology (tvb-o.owl) is only a domain description; its embedded model A-box is
-# treated as a stale cache.  Set TVBO_TRUST_BAKED_ONTO=1 to keep the baked
-# instances instead of rebuilding from YAML.
-_TRUST_BAKED_ONTO = os.environ.get("TVBO_TRUST_BAKED_ONTO", "0") == "1"
-_yaml_synced_models: set = set()
-
-
-def _sync_model_from_yaml(name) -> None:
-    """Rebuild a model's ontology instances from its YAML definition.
-
-    Resolving a model by name destroys any baked instance classes for it and
-    re-imports them from the YAML database, so edits to the database (renamed
-    coupling terms, new parameters, …) are reflected at runtime without
-    regenerating ``tvb-o.owl``.  Applies to every database model; cached per
-    process; a no-op under ``TVBO_TRUST_BAKED_ONTO=1``.  A model with no YAML
-    entry keeps its baked instances; a model whose YAML cannot be imported is
-    dropped (such models are non-functional and cannot be simulated anyway).
-    """
-    if _TRUST_BAKED_ONTO or not isinstance(name, str):
-        return
-    if name in _yaml_synced_models:
-        return
-    _yaml_synced_models.add(name)  # mark first so re-entrant lookups are no-ops
-    try:
-        from tvbo.classes.dynamics import Dynamics
-
-        model_data = Dynamics.from_db(name)
-    except Exception:
-        return  # no YAML / unparseable → fall back to the baked instances
-    existing = onto.search_one(label=name)
-    if existing is not None:
-        for cls in list(existing.descendants()):
-            try:
-                owlready2.destroy_entity(cls)
-            except Exception:
-                pass
-    try:
-        import_model(model_data)
-    except Exception:
-        pass
-
-
 def get_models(model_type="NMM", from_df=False) -> Dict[str, owlready2.ThingClass]:
     """
     Retrieves all TVB-O models of a given type.
@@ -615,7 +571,6 @@ def get_model(label: str = "JansenRit", model_type="NMM", verbose=False) -> owlr
     if isinstance(label, owlready2.ThingClass):
         return label
 
-    _sync_model_from_yaml(label)
     models = get_models(model_type=model_type)
     synonyms = dict()
     for k, model in models.items():
