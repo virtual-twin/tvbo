@@ -37,6 +37,38 @@ overrides a value present in the YAML). The load side already honours this
 (default `use_ontology=False`); TODO: verify `enrich_from_ontology` /
 `_populate_from_ontology` are strictly gap-fill and never clobber YAML.
 
+Concrete route-3 example — a component referenced by `iri` draws its spec from
+the ontology, with inline metadata overriding on top (YAML supervenes):
+
+    SimulationExperiment = {
+      network: { dynamics: { g2d: {
+        iri: "tvbo:Generic2dOscillator",
+        parameters: { a: { value: 1 } },
+      }}}
+    }
+
+`iri` pulls Generic2dOscillator's equations + full parameter set + defaults from
+the ontology; the inline `a: {value: 1}` overrides *only* the default for `a`,
+while every other parameter and the equations are fetched from the ontology. The
+same applies to any IRI-sourced component (coupling, …). Enrichment here is
+still opt-in (triggered by the presence of `iri`), and inline values always win.
+
+**Generalize to every concept/entity.** These three routes are not Dynamics-
+specific — they should be the *uniform* resolution contract for every component a
+`SimulationExperiment` references (coupling, network / atlas / parcellation /
+tractogram, integration, observation, study, …). Pieces already exist
+generically: `registry.resolve(cls, name)`, CURIE stripping (`registry.local_name`),
+and the `iri`→registry-YAML backfill in `experiment.py`; the `iri` prefix already
+selects the source (`tvbo:` → ontology/DB, `neuroml:` → NeuroML, …). But today the
+routes are re-implemented per class (`from_db`/`from_ontology`/`use_ontology` on
+coupling, dynamics, network, observation, noise, study, perturbation, continuation,
+experiment) and enrichment is coarse — collection-level fill-if-absent (e.g.
+`experiment.py` injects `parameters` only when none are given), not field-level.
+Standardize to a single generic resolver every component passes through, doing a
+**recursive (leaf-level) merge** so inline values win at the field (the
+`a: {value: 1}` example overrides only `a`, keeping every other ontology-sourced
+parameter and the equations). One code path replaces the per-class duplication.
+
 The remaining violation is **codegen**. The live path is the export registry →
 `Dynamics.render_code` rendering `tvbo-tvb-model.py.mako` (dynamics.py:2043),
 which is passed the YAML `Dynamics` but still derives coupling names via
