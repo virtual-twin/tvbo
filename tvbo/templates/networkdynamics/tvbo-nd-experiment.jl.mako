@@ -63,6 +63,20 @@ using OrdinaryDiffEqSDIRK
 using DelimitedFiles
 using SimpleWeightedGraphs
 % endif
+<%
+# Piecewise branches are evaluated eagerly; the Julia printer routes domain-restricted
+# powers in them through NaNMath (NaN instead of DomainError, matching numpy/JAX).
+_needs_nanmath = any(
+    'Piecewise' in ' '.join(
+        [str(sv.equation.rhs) for sv in dyn.state_variables.values()]
+        + [str(dv.equation.rhs) for dv in (dyn.derived_variables or {}).values()]
+    )
+    for dyn in dynamics_dict.values()
+)
+%>
+% if _needs_nanmath:
+import NaNMath
+% endif
 
 ## ── Vertex models (node dynamics) ───────────────────────────────────────────
 % for dyn_name, dyn in dynamics_dict.items():

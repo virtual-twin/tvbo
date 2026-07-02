@@ -604,6 +604,12 @@ class JuliaPrinter(_ArrayFunctionPrinterMixin, spj.JuliaCodePrinter):
         super().__init__(settings=settings)
         # Add array function mappings
         self.known_functions.update(ARRAY_FUNCTION_MAPPINGS["julia"])
+        # SymPy's Julia printer still emits the pre-0.7 name ``atan2``; modern Julia
+        # spells the two-argument arctangent ``atan(y, x)`` (same arg order/semantics).
+        self.known_functions["atan2"] = "atan"
+        # Set while printing Piecewise branch bodies so domain-restricted powers are
+        # routed through NaNMath (see _print_Pow / _print_Piecewise).
+        self._in_piecewise = False
 
     # Route only the ops with a clean Julia form (slice/stride family + shape) through the
     # shared handlers — which then call the Julia-overridden primitives below. Everything else
@@ -615,6 +621,45 @@ class JuliaPrinter(_ArrayFunctionPrinterMixin, spj.JuliaCodePrinter):
         if name in _JULIA_HANDLED_OPS:
             return _ARRAY_FUNCTION_PRINTERS[name](self, expr)
         return spj.JuliaCodePrinter._print_Function(self, expr)
+
+    def _print_Piecewise(self, expr):
+        """Print a Piecewise, flagging its branch bodies as domain-unsafe.
+
+        numpy/JAX evaluate every ``where`` branch and let out-of-domain ops yield
+        NaN (harmlessly discarded by the select). Julia's ``ifelse`` is also eager,
+        but its ``sqrt``/``^`` *throw* ``DomainError`` on a negative argument instead
+        of returning NaN — so a dead branch (e.g. ``sqrt`` of a momentarily-negative
+        discriminant) aborts the whole solve. Flag the bodies so ``_print_Pow`` routes
+        domain-restricted powers through NaNMath and restores the numpy contract.
+        """
+        prev = self._in_piecewise
+        self._in_piecewise = True
+        try:
+            return print_Piecewise(self, expr)
+        finally:
+            self._in_piecewise = prev
+
+    def _print_Pow(self, expr):
+        """Route domain-restricted powers inside Piecewise branches through NaNMath.
+
+        Only fractional exponents are affected (``sqrt`` = exp 1/2, ``x^(1/3)`` …),
+        and only within a Piecewise body; integer powers and every non-Piecewise
+        expression keep SymPy's default Julia rendering, so non-branching models are
+        byte-for-byte unchanged. NaNMath results equal ``Base`` results for in-domain
+        inputs, so this never alters valid numerics.
+        """
+        from sympy.core.numbers import equal_valued
+
+        if self._in_piecewise:
+            exp = expr.exp
+            if equal_valued(exp, 0.5):
+                return "NaNMath.sqrt(%s)" % self._print(expr.base)
+            if expr.is_commutative and equal_valued(exp, -0.5):
+                sym = "/" if expr.base.is_number else "./"
+                return "1 %s NaNMath.sqrt(%s)" % (sym, self._print(expr.base))
+            if getattr(exp, "is_number", False) and not exp.is_integer:
+                return "NaNMath.pow(%s, %s)" % (self._print(expr.base), self._print(exp))
+        return spj.JuliaCodePrinter._print_Pow(self, expr)
 
     # SymPy's JuliaCodePrinter does not implement IndexedBase by default; our templates
     # occasionally introduce placeholder IndexedBase symbols (e.g. x_i, x_j) for clarity.
@@ -643,9 +688,11 @@ class JuliaPrinter(_ArrayFunctionPrinterMixin, spj.JuliaCodePrinter):
         return f"size({base}, {axis + 1})"
 
     def _mat_dot(self, a, b):
-        # Multi-mode contraction ``numpy.dot(X, M)`` where M is stored as a
-        # Vector{Vector} of rows: sum_i X[i] * M[i] == sum(X .* M) in Julia.
-        return f"sum({a} .* {b})"
+        # Multi-mode contraction ``numpy.dot(X, M)``: X is a length-n_modes vector and
+        # M a Vector{Vector} of rows, so numpy's result[j] = sum_i X[i]*M[i][j].
+        # ``reduce(hcat, M)`` stacks the rows as columns (== Mᵀ), so
+        # ``reduce(hcat, M) * X`` reproduces that contraction as a mode vector.
+        return f"(reduce(hcat, {b}) * {a})"
 
     def _reduce_axis(self, fn, base, axis, keepdims=False):
         # Mode-axis reduction (``mode_sum``) over a per-node mode vector reduces
@@ -720,6 +767,11 @@ class MTKPrinter(JuliaPrinter):
         # Scalar-symbolic: plain +/- (base CodePrinter behaviour, bypassing
         # JuliaPrinter's element-wise .+/.- override).
         return spj.JuliaCodePrinter._print_Add(self, expr, order=order)
+
+    def _print_Pow(self, expr):
+        # MTK builds Symbolics.jl expressions, which can't trace NaNMath.* calls;
+        # keep the plain symbolic ``^`` (bypassing JuliaPrinter's NaNMath routing).
+        return spj.JuliaCodePrinter._print_Pow(self, expr)
 
     def _print_Mul(self, expr):
         from sympy import S, Mul, Pow, Rational
