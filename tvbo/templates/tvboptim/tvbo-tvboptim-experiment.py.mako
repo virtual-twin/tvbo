@@ -132,7 +132,7 @@ dt = float(integration.step_size)
 
 # Differentiation strategy -> native-solver kwargs, resolved in the tvboptim Python
 # layer (shared with the solver template) rather than duplicated across mako blocks.
-from tvbo.templates.tvboptim.utils import resolve_solver_kwargs, resolve_optimizer_mode, render_analysis_observations, render_recorded_observable
+from tvbo.templates.tvboptim.utils import resolve_solver_kwargs, resolve_optimizer_mode, render_analysis_observations, render_recorded_observable, render_inference
 solver_kwargs_str = resolve_solver_kwargs(integration, dt)
 opt_mode = resolve_optimizer_mode(integration)
 
@@ -299,10 +299,18 @@ def _event_is_stochastic(ev):
     return False
 has_stochastic_stimulus = any(_event_is_stochastic(ev) for ev in stimulus_events)
 
+# External-input scope keys (stimulus event names) for the shared dotted-ref resolver:
+# `<event>.<param>` -> `external.<event>.<param>` (e.g. stimulus.amplitude).
+external_input_keys = {str(ev.name) for ev in stimulus_events}
+
 # === Optimization metadata ===
 # Schema: experiment.optimizations is multivalued dict, opt.stages is inlined_as_list
 optim_list = list(experiment.optimizations.values()) if experiment.optimizations else []
 has_optimization = len(optim_list) > 0
+
+# === Bayesian inference metadata ===
+inference_list = list(experiment.inferences.values()) if getattr(experiment, 'inferences', None) else []
+has_inference = len(inference_list) > 0
 
 # === Algorithm metadata (FIC, etc.) ===
 # Schema: experiment.algorithms is multivalued dict
@@ -770,6 +778,11 @@ import ${mod}
 
 # Result classes from tvbo
 from tvbo.data.types import SimulationResult, AlgorithmResult, OptimizationResult, ExplorationResult
+% if has_inference:
+from tvbo.data.types import InferenceResult
+import numpyro
+import numpyro.distributions as dist
+% endif
 % if has_explorations:
 from tvbo.data.types import _stacked_to_dataarray as _stacked_to_dataarray
 % endif
@@ -2956,6 +2969,17 @@ stage_lr = stage['learning_rate']
             results[_opt_name] = _opt_result  # Also at top level for convenience
             print("  Optimization complete.")
 % endif
+    % endif
+
+    % if has_inference:
+    if mode in ('inference', 'all'):
+        print("\n" + "=" * 60)
+        print("STEP 5: Running Bayesian inference (MCMC)...")
+        print("=" * 60)
+% for _inf in inference_list:
+${render_inference(_inf, coupling_keys, external_input_keys, set(derived_observation_names), set(network_observation_names))}
+% endfor
+        print(f"  Inference complete. Posteriors: {list(results.get('inferences', Bunch()).keys())}")
     % endif
 
     print("\n" + "=" * 60)

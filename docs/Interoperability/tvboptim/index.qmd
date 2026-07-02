@@ -19,6 +19,8 @@ The **tvboptim** backend provides high-performance simulation and optimization c
 | [Jansen-Rit](JR_tvboptim.qmd) | Jansen-Rit | MEG frequency optimization |
 | [Reduced Wong-Wang](RWW_tvboptim.qmd) | RWW | Functional connectivity fitting |
 | [EI Tuning](EI_Tuning_tvboptim.qmd) | RWW | Excitation-Inhibition balance tuning |
+| [TBPTT](TBPTT_tvboptim.qmd) | Jansen-Rit | Truncated backprop-through-time; gradient diagnostics |
+| [Bayesian Inference](Bayesian_tvboptim.qmd) | Generic2dOscillator | numpyro MCMC; recover stimulus + excitability |
 
 ## Quick Start
 
