@@ -152,8 +152,8 @@ derived_variables:
     conditional: false
     record: true
 coupling_inputs:
-  c_pop0: {}
-  c_pop1: {}
+  c_glob0: {}
+  c_glob1: {}
   local_coupling: {local: true}
 state_variables:
   x1:
@@ -163,7 +163,7 @@ state_variables:
     description: First state variable of the first (fast) population.
     equation:
       lhs: Derivative(x1, t)
-      rhs: tt*(y1 - z + Iext_total + Kvf*c_pop0 + f1*x1)
+      rhs: tt*(y1 - z + Iext_total + Kvf*c_glob0 + f1*x1)
       latex: false
     coupling_variable: true
     initial_value: 0.1
@@ -187,7 +187,7 @@ state_variables:
     description: Slow permittivity (energy) state variable.
     equation:
       lhs: Derivative(z, t)
-      rhs: tt*r*(h - z + Ks*c_pop0)
+      rhs: tt*r*(h - z + Ks*c_glob0)
       latex: false
     coupling_variable: false
     initial_value: 3.0
@@ -198,7 +198,7 @@ state_variables:
     description: First state variable of the second (slow) population.
     equation:
       lhs: Derivative(x2, t)
-      rhs: tt*(-y2 + x2 - x2**3 + Iext2 + bb*g - 0.3*(z - 3.5) + Kf*c_pop1)
+      rhs: tt*(-y2 + x2 - x2**3 + Iext2 + bb*g - 0.3*(z - 3.5) + Kf*c_glob1)
       latex: false
     coupling_variable: true
     initial_value: -1.0

@@ -204,7 +204,7 @@ derived_parameters:
       rhs: (-mu1_Bin*(mu1_Bend*nu_Bin - mu1_Bin*nu_Bend) - mu2_Bin*(mu2_Bend*nu_Bin - mu2_Bin*nu_Bend))/sqrt((mu1_Bin*(-mu1_Bend*mu2_Bin + mu1_Bin*mu2_Bend) + nu_Bin*(mu2_Bend*nu_Bin - mu2_Bin*nu_Bend))**2 + (-mu1_Bin*(mu1_Bend*nu_Bin - mu1_Bin*nu_Bend) - mu2_Bin*(mu2_Bend*nu_Bin - mu2_Bin*nu_Bend))**2 + (mu2_Bin*(-mu1_Bend*mu2_Bin + mu1_Bin*mu2_Bend) - nu_Bin*(mu1_Bend*nu_Bin - mu1_Bin*nu_Bend))**2)
       latex: false
 coupling_inputs:
-  c_pop0: {}
+  c_glob: {}
 derived_variables:
   A0:
     equation:
@@ -418,7 +418,7 @@ state_variables:
     description: Slow-subsystem permittivity variable z.
     equation:
       lhs: Derivative(z, t)
-      rhs: -c*(sqrt((x - xs)**2 + y**2) - dstar + Piecewise(((z - 1/2)**7/10, modification > 0), (0, True)) + Ks*c_pop0)
+      rhs: -c*(sqrt((x - xs)**2 + y**2) - dstar + Piecewise(((z - 1/2)**7/10, modification > 0), (0, True)) + Ks*c_glob)
       latex: false
     coupling_variable: false
     initial_value: 0.05

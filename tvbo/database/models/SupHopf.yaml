@@ -29,8 +29,8 @@ derived_variables:
       latex: false
     conditional: false
 coupling_inputs:
-  c_pop0: {}
-  c_pop1: {}
+  c_glob0: {}
+  c_glob1: {}
   local_coupling: {local: true}
 state_variables:
   x:
@@ -40,7 +40,7 @@ state_variables:
     description: First state-variable of the Supercritical Hopf model
     equation:
       lhs: Derivative(x, t)
-      rhs: c_pop0 + lc_0 - omega*y + x*(a - x**2 - y**2)
+      rhs: c_glob0 + lc_0 - omega*y + x*(a - x**2 - y**2)
       latex: false
     coupling_variable: true
     initial_value: 0.1
@@ -51,7 +51,7 @@ state_variables:
     description: Second state-variable of the Supercritical Hopf model
     equation:
       lhs: Derivative(y, t)
-      rhs: c_pop1 + omega*x + y*(a - x**2 - y**2)
+      rhs: c_glob1 + omega*x + y*(a - x**2 - y**2)
       latex: false
     coupling_variable: true
     initial_value: 0.1

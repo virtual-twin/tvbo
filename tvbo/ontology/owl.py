@@ -981,8 +981,15 @@ def get_model_cvars(NMM, return_as_dict=True) -> Union[Dict[str, owlready2.Thing
     if isinstance(NMM, str):
         NMM = get_model(NMM)
     cvars = NMM.has_cvar
+    # A state variable is a coupling variable if its derivative consumes a
+    # global coupling term.  Match the model's actual coupling-term names
+    # rather than a hard-coded prefix, so any naming (c_glob, c_pop, …) works.
+    global_coupling_names = [
+        c for c in get_model_coupling_terms(NMM, return_as_dict=True).keys() if c != "local_coupling"
+    ]
     for k, v in get_model_derivatives(NMM).items():
-        if "c_pop" in v.value.first():
+        rhs = v.value.first() or ""
+        if any(cn in rhs for cn in global_coupling_names):
             for isa in v.is_a:
                 if onto.StateVariable in isa.is_a:
                     cvars.append(isa)
@@ -991,7 +998,7 @@ def get_model_cvars(NMM, return_as_dict=True) -> Union[Dict[str, owlready2.Thing
     if return_as_dict:
         cvars = get_sorted_dict(cvars)
     if NMM == onto.JansenRit:
-        cvars.pop("y4_JR")
+        cvars.pop("y4_JR", None)
     return {replace_suffix(k): p for k, p in cvars.items()}
 
 
@@ -1013,6 +1020,9 @@ def get_default_values(NMM, tvb_name=False, class_as_key=False) -> Dict[str, Uni
     values = dict()
     parameters = get_model_parameters(NMM)
     parameters.update(get_model_constants(NMM))
+    # Coupling inputs default to zero (single-node / uncoupled evaluation).
+    # Derive their names from the model so any naming works.
+    coupling_input_names = list(get_model_coupling_terms(NMM, return_as_dict=True).keys())
     for k, v in parameters.items():
         if tvb_name:
             k = v.tvbSourceVariable.first()
@@ -1030,8 +1040,8 @@ def get_default_values(NMM, tvb_name=False, class_as_key=False) -> Dict[str, Uni
 
         if onto.NeuralMassModel in v.is_a:
             values["local_coupling"] = 0
-            values["c_pop0"] = 0
-            values["c_pop1"] = 0
+            for cn in coupling_input_names:
+                values[cn] = 0
 
     return values
 
@@ -1540,7 +1550,7 @@ def import_model(
 
         if sv.equation.rhs:
             td_name = sv.name + "_dot" + model_suffix
-            _create_subclass(
+            td_class = _create_subclass(
                 td_name,
                 onto.TimeDerivative,
                 {
@@ -1550,6 +1560,10 @@ def import_model(
                 },
                 sv_class,
             )
+            # Link the state variable to its time derivative so consumers that
+            # read sv.has_derivative (e.g. class2metadata / from_ontology) work.
+            with onto:
+                sv_class.has_derivative.append(td_class)
 
         with onto:
             model_class.has_state_variable.append(sv_class)

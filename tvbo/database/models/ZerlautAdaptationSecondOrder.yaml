@@ -575,21 +575,21 @@ functions:
         ) / (2.0*T_V(fe, fi, fe_ext, fi_ext, W, E_L_i))
       latex: false
 coupling_inputs:
-  c_pop0: {}
+  c_glob: {}
   local_coupling: {local: true}
 derived_variables:
   E_input_excitatory:
     description: External excitatory input onto the excitatory population (clamped to be non-negative).
     equation:
       lhs: E_input_excitatory
-      rhs: Piecewise((0.0, c_pop0 + local_coupling*E + external_input_ex_ex + weight_noise*ou_drift < 0), (c_pop0 + local_coupling*E + external_input_ex_ex + weight_noise*ou_drift, True))
+      rhs: Piecewise((0.0, c_glob + local_coupling*E + external_input_ex_ex + weight_noise*ou_drift < 0), (c_glob + local_coupling*E + external_input_ex_ex + weight_noise*ou_drift, True))
       latex: false
     conditional: false
   E_input_inhibitory:
     description: External excitatory input onto the inhibitory population (clamped to be non-negative).
     equation:
       lhs: E_input_inhibitory
-      rhs: Piecewise((0.0, S_i*c_pop0 + local_coupling*E + external_input_in_ex + weight_noise*ou_drift < 0), (S_i*c_pop0 + local_coupling*E + external_input_in_ex + weight_noise*ou_drift, True))
+      rhs: Piecewise((0.0, S_i*c_glob + local_coupling*E + external_input_in_ex + weight_noise*ou_drift < 0), (S_i*c_glob + local_coupling*E + external_input_in_ex + weight_noise*ou_drift, True))
       latex: false
     conditional: false
   I_input_excitatory:
