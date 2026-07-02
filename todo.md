@@ -764,3 +764,40 @@ Options:
 Option 2/3 is preferred: `SimulationResult` already handles the
 `result=NativeSolution` constructor path; the tvboptim template just needs
 to use that path and stop exposing raw `NativeSolution` objects to users.
+
+## Julia backend: mode-axis state layout for multi-mode models
+
+The 4 multi-mode models (`number_of_modes > 1`) — `ReducedSetHindmarshRose`,
+`ReducedSetFitzHughNagumo`, `StefanescuJirsa2D`, `StefanescuJirsa3D` — do **not**
+run on any Julia backend (DifferentialEquations.jl / NetworkDynamics.jl /
+ModelingToolkit.jl). They are currently `xfail`'d in
+`tests/functional/test_simulation_backends_julia.py` (`_JULIA_MODE_UNSUPPORTED`),
+mirroring `_PYRATES_UNSUPPORTED`.
+
+**Root cause.** Each state variable of a ReducedSet/SJ model is a per-mode
+*vector* (length `number_of_modes`, here 3). `mode_dot`/`mode_sum` now render on
+Julia (PR #56 → `_mat_dot`/`_reduce_axis` in `codegen/code.py`), and the
+array-valued params (`iV0`, `iZV`, `A_ik`, …) make the whole RHS mode-vector-
+valued. But the Julia templates lay out state as **flat scalars**:
+`tvbo-julia-ODEProblem.jl.mako` builds `u0 = [sv.initial_value for sv in svars]`
+(one scalar per state variable) and `tvbo-julia-model.jl.mako` unpacks
+`xi, eta, … = x` as scalars, emitting `dx[i] = <rhs>`. So a length-3 mode vector
+is written into a scalar `dx[i]` slot →
+`MethodError: Cannot convert Vector{Float64} to Float64`
+(`setindex!(::Vector{Float64}, ::Vector{Float64}, ::Int)`). Single-mode models
+(Epileptor2D/5D, …) are unaffected and pass.
+
+**Fix (real work, deferred).** Give the Julia state a mode axis so each state
+variable holds a length-`n_modes` vector: `u0`/`dx` become per-mode vectors
+(Vector-of-Vectors, or an `n_svars × n_modes` matrix with row-unpack), the state
+unpack in `tvbo-julia-model.jl.mako` yields mode vectors, and the solution
+extraction (`solution_to_dataarray` in `tvbo/run/julia.py`, today assuming
+scalar state / `n_nodes = 1`) learns the mode dimension. Gate on
+`number_of_modes > 1` so single-mode models keep the flat-scalar layout.
+Validate against tvb/tvboptim/jax, which already run these faithfully (== TVB to
+~1e-16). Then drop the four entries from `_JULIA_MODE_UNSUPPORTED`.
+
+Iterating requires a local Julia runtime (`uv pip install -e '.[julia]'` + the
+first-import juliapkg bootstrap + DiffEq precompile); the default dev venv has no
+Julia, which is why this was deferred behind the xfail rather than coded blind
+against CI.
