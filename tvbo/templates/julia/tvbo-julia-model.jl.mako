@@ -18,6 +18,10 @@ all_symbols = sv_names + param_names + ct_names + dv_names + dp_names
 func_names = {str(fname): str(fname) for fname in (getattr(model, 'functions', None) or {}).keys()}
 juliacode = lambda expr: render_expression(expr, format='julia', parameters=all_symbols, user_functions=func_names)
 n_sv = len(sv_names)
+# Mode axis: multi-mode models (ReducedSet*, StefanescuJirsa*) carry each state
+# variable as a length-n_modes block in the flat state vector, so the dfun operates
+# on per-mode vectors (mode_dot/mode_sum + broadcasting) and writes vector slices.
+n_modes = getattr(model, 'number_of_modes', 1) or 1
 
 # Detect if any equation uses special functions (erfc, erf, etc.)
 _all_rhs = []
@@ -29,12 +33,18 @@ for dp in (model.derived_parameters or {}).values():
     _all_rhs.append(str(dp.equation.rhs))
 _all_rhs_str = ' '.join(_all_rhs)
 _needs_special = any(re.search(rf'\b{fn}\s*\(', _all_rhs_str) for fn in _SPECIAL_FUNCS)
+# Piecewise branches are evaluated eagerly; the Julia printer routes domain-restricted
+# powers in them through NaNMath (NaN instead of DomainError, matching numpy/JAX).
+_needs_nanmath = 'Piecewise' in _all_rhs_str
 
 # Rename function argument 'x' if any state variable is named 'x'
 _arg_x = '_x' if 'x' in sv_names else 'x'
 %>
 % if _needs_special:
 using SpecialFunctions
+% endif
+% if _needs_nanmath:
+import NaNMath
 % endif
 
 <%
@@ -45,7 +55,12 @@ function ${model.name}!(dx, ${_arg_x}, p, t = 0)
 
     (;${_pnames_str}) = p
 
-% if n_sv == 1:
+% if n_modes > 1:
+    ## Each state variable is a length-n_modes block (the mode axis).
+    % for i, name in enumerate(sv_names):
+    ${name} = @view ${_arg_x}[${i * n_modes + 1}:${(i + 1) * n_modes}]
+    % endfor
+% elif n_sv == 1:
     ${sv_names[0]} = ${_arg_x}[1]
 % else:
     ${", ".join(sv_names)} = ${_arg_x}
@@ -93,7 +108,11 @@ function ${model.name}!(dx, ${_arg_x}, p, t = 0)
 
     ## State variable derivatives
     % for i, sv in enumerate(model.state_variables.values()):
+    % if n_modes > 1:
+    dx[${i * n_modes + 1}:${(i + 1) * n_modes}] .= ${juliacode(sv.equation.rhs)}
+    % else:
     dx[${i+1}] = ${juliacode(sv.equation.rhs)}
+    % endif
     % endfor
     dx
 end
