@@ -11,7 +11,7 @@ parameters:
       step: 1.0
     description: The damping coefficient specifies how quickly the node's activity relaxes, must be larger than the node's in-degree in order to remain stable.
 coupling_inputs:
-  c_pop0: {}
+  c_glob: {}
   local_coupling: {local: true}
 state_variables:
   x:
@@ -21,7 +21,7 @@ state_variables:
     description: The Linear model has a single state variable.
     equation:
       lhs: Derivative(x, t)
-      rhs: gamma*x + c_pop0 + local_coupling*x
+      rhs: gamma*x + c_glob + local_coupling*x
       latex: false
     coupling_variable: true
     initial_value: 0.1

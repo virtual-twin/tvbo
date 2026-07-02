@@ -211,8 +211,8 @@ derived_parameters:
       rhs: r*s*xo*sqrt(sigma)*iU0
       latex: false
 coupling_inputs:
-  c_pop0: {}
-  c_pop1: {}
+  c_glob0: {}
+  c_glob1: {}
   local_coupling: {local: true}
 state_variables:
   xi:
@@ -221,7 +221,7 @@ state_variables:
       hi: 4.0
     equation:
       lhs: Derivative(xi, t)
-      rhs: eta - a_i*xi**3 + b_i*xi**2 - tau + K11*(mode_dot(xi, A_ik) - xi) - K12*(mode_dot(alpha, B_ik) - xi) + IE_i + mode_sum(c_pop0) + local_coupling*xi
+      rhs: eta - a_i*xi**3 + b_i*xi**2 - tau + K11*(mode_dot(xi, A_ik) - xi) - K12*(mode_dot(alpha, B_ik) - xi) + IE_i + mode_sum(c_glob0) + local_coupling*xi
       latex: false
     coupling_variable: true
     initial_value: 0.1
@@ -251,7 +251,7 @@ state_variables:
       hi: 4.0
     equation:
       lhs: Derivative(alpha, t)
-      rhs: beta - e_i*alpha**3 + f_i*alpha**2 - gamma + K21*(mode_dot(xi, C_ik) - alpha) + II_i + mode_sum(c_pop0) + local_coupling*xi
+      rhs: beta - e_i*alpha**3 + f_i*alpha**2 - gamma + K21*(mode_dot(xi, C_ik) - alpha) + II_i + mode_sum(c_glob0) + local_coupling*xi
       latex: false
     coupling_variable: true
     initial_value: 0.1

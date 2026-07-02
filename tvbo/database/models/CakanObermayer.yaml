@@ -156,14 +156,14 @@ derived_variables:
       latex: false
     conditional: false
 coupling_inputs:
-  c_pop0: {}
+  c_glob: {}
 state_variables:
   mu_se:
     domain: {lo: -5.0, hi: 5.0}
     description: Filtered mean synaptic input current to the excitatory population.
     equation:
       lhs: Derivative(mu_se, t)
-      rhs: (J_EE*r_E + J_EI*r_I + mu_E + c_pop0 - I_A_var/C - mu_se)/tau_se
+      rhs: (J_EE*r_E + J_EI*r_I + mu_E + c_glob - I_A_var/C - mu_se)/tau_se
       latex: false
     coupling_variable: true
     initial_value: 0.0

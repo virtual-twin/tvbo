@@ -35,6 +35,84 @@ statements**, then retire the isolated world (inverting the Phase-A
 `api.world is not owl.onto.world` invariant). Full file-by-file spec, impact map,
 and verification: **see `dev/runtime_ontology_migration.md` §3.0–§5**.
 
+**Design principle: three explicit load routes; YAML supervenes (from PR #43).**
+A model / experiment / class spec can be obtained three ways, all supported:
+1. **From ontology** — explicit (`Dynamics.from_ontology`).
+2. **From YAML / string / metadata** — the default
+   (`from_file`/`from_string`/`from_datamodel`/`from_db`, `use_ontology=False`).
+3. **From YAML enriched by ontology** — explicit opt-in (`use_ontology=True` /
+   `enrich_from_ontology()`).
+
+Rules: **YAML supervenes** — by default the ontology is not touched; **enrichment
+is NOT the default** and, when requested, only **fills missing pieces** (never
+overrides a value present in the YAML). The load side already honours this
+(default `use_ontology=False`); TODO: verify `enrich_from_ontology` /
+`_populate_from_ontology` are strictly gap-fill and never clobber YAML.
+
+Concrete route-3 example — a component referenced by `iri` draws its spec from
+the ontology, with inline metadata overriding on top (YAML supervenes):
+
+    SimulationExperiment = {
+      network: { dynamics: { g2d: {
+        iri: "tvbo:Generic2dOscillator",
+        parameters: { a: { value: 1 } },
+      }}}
+    }
+
+`iri` pulls Generic2dOscillator's equations + full parameter set + defaults from
+the ontology; the inline `a: {value: 1}` overrides *only* the default for `a`,
+while every other parameter and the equations are fetched from the ontology. The
+same applies to any IRI-sourced component (coupling, …). Enrichment here is
+still opt-in (triggered by the presence of `iri`), and inline values always win.
+
+**Generalize to every concept/entity.** These three routes are not Dynamics-
+specific — they should be the *uniform* resolution contract for every component a
+`SimulationExperiment` references (coupling, network / atlas / parcellation /
+tractogram, integration, observation, study, …). Pieces already exist
+generically: `registry.resolve(cls, name)`, CURIE stripping (`registry.local_name`),
+and the `iri`→registry-YAML backfill in `experiment.py`; the `iri` prefix already
+selects the source (`tvbo:` → ontology/DB, `neuroml:` → NeuroML, …). But today the
+routes are re-implemented per class (`from_db`/`from_ontology`/`use_ontology` on
+coupling, dynamics, network, observation, noise, study, perturbation, continuation,
+experiment) and enrichment is coarse — collection-level fill-if-absent (e.g.
+`experiment.py` injects `parameters` only when none are given), not field-level.
+Standardize to a single generic resolver every component passes through, doing a
+**recursive (leaf-level) merge** so inline values win at the field (the
+`a: {value: 1}` example overrides only `a`, keeping every other ontology-sourced
+parameter and the equations). One code path replaces the per-class duplication.
+
+The remaining violation is **codegen**. The live path is the export registry →
+`Dynamics.render_code` rendering `tvbo-tvb-model.py.mako` (dynamics.py:2043),
+which is passed the YAML `Dynamics` but still derives coupling names via
+`_onto.get_model_coupling_terms(model.name)` (route 1). Route-2 fix (localized to
+that template): derive global coupling inputs from `model.coupling_inputs`
+(filter `local`/`local_coupling`) instead — then TVB emits `c_glob` consistently
+instead of mixing YAML equations (`c_glob`) with stale ontology coupling terms
+(`c_pop0` → empty `coupling_terms`, undefined coupling symbol).
+
+**Retire dead codegen:** `tvbo/codegen/templater.py`'s model-render path is dead
+(0 callers): `model2class`, `get_model_info`, `get_statevariable_equations`,
+`get_param_info`, `get_sv_info`, `equation2class`, `coupling2class`,
+`integrator2class`, plus `tvbo/templates/_tvbo-tvb-model_old.py.mako`. Remove
+these; keep/relocate the still-used helpers `format_code`, `exec_globals`,
+`source_observations`, `is_derived`, `get_integrator_info`.
+
+PR #43 added a stopgap, `owl._sync_model_from_yaml` (rebuild a model's ontology
+classes from YAML on every `get_model`). The review confirmed it is the wrong
+layer and buggy — do NOT keep it; Phase B replaces it:
+- `import_model` names coupling-term classes without a model suffix, so a bare
+  `c_glob`/`c_glob0` is a single shared owlready2 object across models; the
+  runtime re-import re-parents/destroys it and silently strips an earlier
+  model's global coupling (`get_model_coupling_terms('JansenRit')` →
+  `['local_coupling']` after resolving `Generic2dOscillator`).
+- Rebuilt classes aren't in the frozen `available_neural_mass_models` snapshot,
+  so `Dynamics.ontology` returns `None` → `model.ontology`-based export paths
+  (dynamics.py:2285/2334) can crash.
+- Destroy-before-import + `except Exception: pass` can permanently drop a model;
+  synonym lookups (`from_db` miss) keep stale baked instances but mark the name
+  synced.
+Also switch the runtime load off the deprecated `tvb-o.owl` (see this section).
+
 ## Harmonize class names with `tvboptim`
 
 Rename `ExplorationAxis` → `Axis` and reshape it so tvbo can declaratively

@@ -215,8 +215,8 @@ All template variables are injected by the calling template's render context
   <!-- ════════════════════════════════════════════════════════════════
        Coupling ComponentType
        Provides pre/post expressions + global coupling parameter.
-       The DerivedParameter c_pop0 is the coupling input consumed by
-       the dynamics ComponentType's coupling_inputs.
+       The DerivedVariable ${coupling_output_name} is the coupling input consumed
+       by the dynamics ComponentType's coupling_inputs.
        ════════════════════════════════════════════════════════════════ -->
   <ComponentType name="Coupling">
     <Parameter name="global_coupling" dimension="none"/>
@@ -230,7 +230,7 @@ All template variables are injected by the calling template's render context
       <DerivedVariable name="pre"  dimension="none" value="${lems_expr(coupling_pre_rhs)}"/>
       <DerivedVariable name="gx"   dimension="none" value="global_coupling * pre"/>
       <DerivedVariable name="post" dimension="none" value="${lems_expr(coupling_post_rhs) if coupling_post_rhs != 'global_coupling * pre' else 'gx'}"/>
-      <DerivedVariable name="c_pop0" dimension="none" value="post"/>
+      <DerivedVariable name="${coupling_output_name}" dimension="none" value="post"/>
     </Dynamics>
   </ComponentType>
 % endif

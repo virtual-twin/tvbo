@@ -153,7 +153,7 @@ derived_variables:
         rhs: zcond + 4*(-x0 + x1)
         latex: false
 coupling_inputs:
-  c_pop0: {}
+  c_glob: {}
   local_coupling: {local: true}
 state_variables:
   x1:
@@ -163,7 +163,7 @@ state_variables:
     description: First state-variable in the Epileptor2D (Proix et al
     equation:
       lhs: Derivative(x1, t)
-      rhs: tt*(Iext + Kvf*c_pop0 + c + local_coupling*x1 - x1*x1cond - z)
+      rhs: tt*(Iext + Kvf*c_glob + c + local_coupling*x1 - x1*x1cond - z)
       latex: false
     coupling_variable: true
     initial_value: 0.1
@@ -174,7 +174,7 @@ state_variables:
     description: Slow permittivity state-variable of the Epileptor2D (Proix et al
     equation:
       lhs: Derivative(z, t)
-      rhs: r*tt*(Ks*c_pop0 + h - z)
+      rhs: r*tt*(Ks*c_glob + h - z)
       latex: false
     coupling_variable: false
     initial_value: 0.1

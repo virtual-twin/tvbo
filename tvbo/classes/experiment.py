@@ -2315,7 +2315,16 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 dimension="none",
             )
         )
-        coupling_ct.add(lems.DerivedParameter(name="c_pop0", value="post"))
+        _ci = getattr(self.dynamics, "coupling_inputs", {}) or {}
+        coupling_out_name = next(
+            (
+                str(name)
+                for name, ci in _ci.items()
+                if str(name) != "local_coupling" and not getattr(ci, "local", False)
+            ),
+            "c_pop0",
+        )
+        coupling_ct.add(lems.DerivedParameter(name=coupling_out_name, value="post"))
         model.add(coupling_ct)
 
         comp_id = local_comp.id if local_comp is not None else (local_ct.name if local_ct is not None else None)

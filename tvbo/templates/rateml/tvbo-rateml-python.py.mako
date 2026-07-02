@@ -34,7 +34,7 @@ params = list(model.parameters.items()) if model.parameters else []
 derived_vars = list(model.derived_variables.items()) if model.derived_variables else []
 
 # Coupling terms
-coupling_terms = list(model.coupling_terms.keys()) if model.coupling_terms else ['c_pop0']
+coupling_terms = list(model.coupling_terms.keys()) if model.coupling_terms else ['c_glob']
 
 # Check for state variable boundaries
 svboundaries = has_boundaries(model)

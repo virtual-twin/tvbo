@@ -9,7 +9,7 @@
 id: 1
 label: "RateML rwongwang ground truth"
 
-# Linear coupling: c_pop0 = sum(wij * V_j) * global_coupling
+# Linear coupling: c_glob = sum(wij * V_j) * global_coupling
 coupling:
   name: LinearCoupling
   parameters: {}
@@ -162,7 +162,7 @@ dynamics:
   derived_variables:
     tmp_I_E:
       equation:
-        rhs: "a_E * ((w_E * I_0) + (w_plus * J_NMDA) * V + c_pop0 - JI*W) - b_E"
+        rhs: "a_E * ((w_E * I_0) + (w_plus * J_NMDA) * V + c_glob - JI*W) - b_E"
     tmp_H_E:
       equation:
         rhs: "tmp_I_E / (1.0 - exp((-1.0 * d_E) * tmp_I_E))"
@@ -194,7 +194,7 @@ dynamics:
         hi: 1.0
         enforce: clamp
   coupling_inputs:
-    c_pop0: {}
+    c_glob: {}
 
 observations:
   bold:
