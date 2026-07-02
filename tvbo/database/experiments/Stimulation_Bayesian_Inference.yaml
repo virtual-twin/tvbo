@@ -13,6 +13,7 @@ description: >
   posterior along the amplitude/excitability degeneracy ridge. Replicates tvboptim.
 
 dynamics:
+  name: Generic2dOscillator
   iri: tvbo:Generic2dOscillator
   label: "Generic 2D Oscillator (quiescent regime)"
   # Reference DYNAMICS_PARAMS = {a:-1.5, b:-15, c:0, d:0.015, e:3, f:1, tau:4}, I=0.1
@@ -71,8 +72,8 @@ events:
       amplitude: {value: 0.4, description: "True pulse amplitude (inferred)"}
       onset: {value: 10.0, unit: ms}
       duration: {value: 1.0, unit: ms}
-    regions: [0]
-    weighting: [1.0]
+    nodes: [0]
+    weights: [1.0]
 
 functions:
   subsample_ts:
