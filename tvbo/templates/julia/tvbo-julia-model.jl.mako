@@ -54,7 +54,7 @@ function ${model.name}!(dx, ${_arg_x}, p, t = 0)
     ## Model function definitions (e.g. Sigm)
     % for fname, fdef in (model.functions or {}).items():
 <%
-    fargs = [str(arg.name) for arg in fdef.arguments]
+    fargs = [str(name) for name in fdef.arguments]  # arguments keyed by name
     fbody = juliacode(fdef.equation.rhs)
 %>\
     ${fname}(${", ".join(fargs)}) = ${fbody}

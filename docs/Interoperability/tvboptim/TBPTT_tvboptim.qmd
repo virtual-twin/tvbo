@@ -28,7 +28,7 @@ exp = SimulationExperiment.from_db("TBPTT_JansenRit_FC_Optimization")
 # and both descent legs are still computed entirely by exp.run.
 exp.integration.duration = 6000.0
 exp.integration.transient_time = 1000.0
-exp.observations["fc"].pipeline[0].arguments[1].value = 4  # BOLD samples skipped before FC
+exp.observations["fc"].pipeline[0].arguments["skip_t"].value = 4  # BOLD samples skipped before FC
 exp.optimizations["fit_G"].stages[0].max_iterations = 40
 
 # TBPTT leg: the YAML declares differentiation = {truncation_window: 100, mode: reverse},
@@ -46,6 +46,7 @@ ad = exp.run("tvboptim", mode="optimization")
 
 ```{python}
 # | label: fig-tbptt
+# | warning: false
 # | fig-cap: "**TBPTT for whole-brain gradient fitting.** (L) FC-RMSE loss (blue) and top Lyapunov exponent (red) vs global coupling G; λ_max crosses zero at the chaos onset. (R) The exact reverse-mode AD gradient (symlog) tracks the seed-averaged finite-difference ground truth until chaos, where it blows up by orders of magnitude. (T) Fitting G by gradient descent: full AD (red) is thrown off by the corrupted gradient, while the windowed TBPTT run (green) descends cleanly; the grey profile is the RMSE(G) landscape. (S) grad_horizon tiles the rollout — every window contributes ∂L_k/∂G but the carried-state gradient is cut at each boundary. (A–C) Simulated FC at the fitted G vs the empirical target."
 
 import numpy as np
@@ -106,8 +107,10 @@ if _chaos.size:
 
 # --- R: AD gradient vs FD ground truth (magnitude, log) ------------------------
 a = ax["R"]
-a.plot(G, np.abs(fd_G) + 1e-12, "x--", color=INK, lw=1.5, ms=5, label="Finite difference (ground truth)")
-a.plot(G, np.abs(ad_G) + 1e-12, "o", color=ACCENT, ms=5, label="Autodiff  |dL/dG|")
+_absfd = np.where(np.abs(fd_G) > 0, np.abs(fd_G), np.nan)
+_absad = np.where(np.abs(ad_G) > 0, np.abs(ad_G), np.nan)
+a.plot(G, _absfd, "x--", color=INK, lw=1.5, ms=5, label="Finite difference (ground truth)")
+a.plot(G, _absad, "o", color=ACCENT, ms=5, label="Autodiff  |dL/dG|")
 a.set_yscale("log")
 a.yaxis.set_major_formatter(_plain)
 a.yaxis.set_minor_formatter(mticker.NullFormatter())

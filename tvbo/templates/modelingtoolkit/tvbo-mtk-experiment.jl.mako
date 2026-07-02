@@ -52,7 +52,7 @@ func_extra_params = {}
 for fname, f in (getattr(model, 'functions', None) or {}).items():
     try:
         body_expr = _parse_expr(str(f.equation.rhs))
-        arg_names = {a.name for a in f.arguments}
+        arg_names = {name for name in f.arguments}  # arguments keyed by name
         free = {str(s) for s in body_expr.free_symbols}
         extra = sorted(free - arg_names)  # sorted for deterministic output
         if extra:

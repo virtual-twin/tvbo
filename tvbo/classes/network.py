@@ -4374,10 +4374,8 @@ class Network(tvbo_datamodel.Network):
             mod = importlib.import_module(c.module)
             fn = getattr(mod, c.name)
             kwargs = {}
-            for arg in (getattr(func, "arguments", None) or []):
-                aname = getattr(arg, "name", None)
-                if aname is not None:
-                    kwargs[aname] = getattr(arg, "value", None)
+            for name, arg in func.arguments.items():  # arguments keyed by name
+                kwargs[name] = getattr(arg, "value", None)
             available = {"L": self.lengths_matrix, "network": self}
             sig = inspect.signature(fn)
             accepts_var_kw = any(
@@ -4397,10 +4395,8 @@ class Network(tvbo_datamodel.Network):
         # Substitute scalar argument values: prefer Function.arguments, fall
         # back to Equation.parameters for legacy specs.
         arg_values: dict = {}
-        for a in (getattr(func, "arguments", None) or []):
-            aname = getattr(a, "name", None)
-            if aname is not None:
-                arg_values[aname] = getattr(a, "value", None)
+        for name, a in func.arguments.items():  # arguments keyed by name
+            arg_values[name] = getattr(a, "value", None)
         if hasattr(eq, "parameters") and eq.parameters:
             for pname, pval in eq.parameters.items():
                 arg_values.setdefault(pname, getattr(pval, "value", pval))

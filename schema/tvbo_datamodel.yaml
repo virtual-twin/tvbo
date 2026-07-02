@@ -2101,12 +2101,12 @@ classes:
             arguments:
                 description: >-
                     Variables consumed by the function (referenced in the
-                    equation). Each argument has a name and optional metadata
-                    (description, default value, unit).
+                    equation), keyed by argument name. Each value carries the
+                    optional metadata (value, description, unit); the key is the
+                    name (no redundant `name:` inside).
                 multivalued: true
                 range: Argument
                 inlined: true
-                inlined_as_list: true
             output_equation:
                 description: "Output transformation equation (if equation-based)"
                 range: Equation
@@ -2212,9 +2212,10 @@ classes:
                 range: Aggregation
                 inlined: true
             arguments:
+                description: "Function arguments keyed by name (the key is the argument name)."
                 range: Argument
                 multivalued: true
-                inlined_as_list: true
+                inlined: true
             time_range:
                 description: "Time range for generated TimeSeries (for kernel generators)"
                 range: Range
