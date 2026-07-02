@@ -180,10 +180,11 @@ def _load_landscape(t1, transient):
     for axis in exp.explorations["parameter_landscape"].space:
         axis.domain.n = 2
     # a short run has too few BOLD TRs for skip_t=20; keep FC non-degenerate
+    # (arguments are keyed by name).
     for step in exp.observations["fc"].pipeline:
-        for a in (getattr(step, "arguments", None) or []):
-            if getattr(a, "name", None) == "skip_t":
-                a.value = 0
+        args = getattr(step, "arguments", None) or {}
+        if "skip_t" in args:
+            args["skip_t"].value = 0
     return exp
 
 
@@ -338,7 +339,7 @@ def test_tbptt_ad_gradient():
     exp = SimulationExperiment.from_file(str(EXPERIMENTS_DIR / "TBPTT_JansenRit_FC_Optimization.yaml"))
     exp.integration.duration = T1
     exp.integration.transient_time = TRANSIENT
-    exp.observations["fc"].pipeline[0].arguments[1].value = SKIP  # shrink BOLD skip
+    exp.observations["fc"].pipeline[0].arguments["skip_t"].value = SKIP  # shrink BOLD skip
     del exp.observations["lyapunov"]  # isolate the gradient diagnostic
     exp.configure()
 
@@ -378,7 +379,7 @@ def test_tbptt_fd_gradient():
     exp = SimulationExperiment.from_file(str(EXPERIMENTS_DIR / "TBPTT_JansenRit_FC_Optimization.yaml"))
     exp.integration.duration = T1
     exp.integration.transient_time = TRANSIENT
-    exp.observations["fc"].pipeline[0].arguments[1].value = SKIP
+    exp.observations["fc"].pipeline[0].arguments["skip_t"].value = SKIP
     del exp.observations["lyapunov"]
     del exp.observations["ad_gradient"]
     exp.configure()
@@ -434,7 +435,7 @@ def test_tbptt_optimization():
         exp.integration.duration = T1
         exp.integration.transient_time = TRANSIENT
         exp.integration.differentiation = diff
-        exp.observations["fc"].pipeline[0].arguments[1].value = SKIP
+        exp.observations["fc"].pipeline[0].arguments["skip_t"].value = SKIP
         exp.optimizations["fit_G"].stages[0].max_iterations = MAX_STEPS
         for k in ("lyapunov", "ad_gradient", "fd_gradient"):
             del exp.observations[k]
@@ -475,7 +476,7 @@ def test_tbptt_gsweep_runs():
     exp = SimulationExperiment.from_file(str(EXPERIMENTS_DIR / "TBPTT_JansenRit_FC_Optimization.yaml"))
     exp.integration.duration = 7200.0
     exp.integration.transient_time = 300.0
-    exp.observations["fc"].pipeline[0].arguments[1].value = 2
+    exp.observations["fc"].pipeline[0].arguments["skip_t"].value = 2
     exp.configure()
     r = exp.run("tvboptim", mode="exploration", n_G=3, n_pmap=1)
     grid = np.asarray(r.explorations.G_sweep.results)
@@ -492,7 +493,7 @@ def test_tbptt_motivation_sweep_records_diagnostics():
     exp = SimulationExperiment.from_file(str(EXPERIMENTS_DIR / "TBPTT_JansenRit_FC_Optimization.yaml"))
     exp.integration.duration = 3600.0
     exp.integration.transient_time = 300.0
-    exp.observations["fc"].pipeline[0].arguments[1].value = 2
+    exp.observations["fc"].pipeline[0].arguments["skip_t"].value = 2
     exp.configure()
     r = exp.run("tvboptim", mode="exploration", n_G=5, n_pmap=1)
     obs = r.explorations.motivation_sweep.observations

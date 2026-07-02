@@ -650,11 +650,11 @@ def pipeline_equation_parameters(pipeline: Any) -> Dict[str, Any]:
 
 
 def pipeline_argument(pipeline: Any, name: str) -> Any:
-    """Return the first named pipeline argument object."""
+    """Return the named pipeline argument object (arguments are keyed by name)."""
     for step in pipeline or []:
-        for argument in getattr(step, "arguments", None) or []:
-            if getattr(argument, "name", None) == name:
-                return argument
+        args = getattr(step, "arguments", None) or {}
+        if name in args:
+            return args[name]
     return None
 
 
@@ -1175,12 +1175,11 @@ def parse_loss_arguments(loss_call: Any) -> Tuple[List[Dict], Set[str]]:
         - parsed_args: list of dicts with 'name', 'type', and type-specific keys
         - obs_refs: set of observation names referenced
     """
-    loss_args = getattr(loss_call, "arguments", None) or []
+    loss_args = getattr(loss_call, "arguments", None) or {}  # keyed by name
     parsed_args = []
     obs_refs = set()
 
-    for arg in loss_args:
-        arg_name = getattr(arg, "name", None)
+    for arg_name, arg in loss_args.items():
         arg_value = getattr(arg, "value", None)
 
         if not arg_name:

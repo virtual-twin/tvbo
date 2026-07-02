@@ -637,15 +637,15 @@ for expl in exploration_list:
         # FunctionCall: function attribute references the function
         func = observable.function
         func_name = func.name if hasattr(func, 'name') else str(func) if func else None
-        args = observable.arguments or []
+        args = observable.arguments or {}
 
         if args:
-            # FunctionCall with arguments (e.g., rmse(fc.data, target))
+            # FunctionCall with arguments (e.g., rmse(fc.data, target)). arguments is a
+            # dict keyed by name; the key IS the argument name.
             exp_info['observable_type'] = 'function_call'
             exp_info['observable_func'] = func_name
             exp_info['observable_args'] = []
-            for arg in args:
-                arg_name = arg.name if hasattr(arg, 'name') else str(arg)
+            for arg_name, arg in args.items():
                 arg_value = arg.value if hasattr(arg, 'value') else None
                 if arg_value:
                     # Value references observation.output (e.g., "fc.data")
@@ -1261,8 +1261,7 @@ if loss_functions:
                     if call_module and call_name:
                         pipeline_call = f"{call_module}.{call_name}"
                 if hasattr(first_stage, 'arguments') and first_stage.arguments:
-                    for arg in first_stage.arguments:
-                        arg_name = getattr(arg, 'name', None)
+                    for arg_name, arg in first_stage.arguments.items():
                         arg_value = getattr(arg, 'value', None)
                         if arg_name and arg_value is not None:
                             pipeline_args.append((arg_name, arg_value))
@@ -1375,8 +1374,7 @@ def compute_all_observations(result, state, result_transient=None):
         # Extract arguments from pipeline stage
         # Handle explicit argument values with proper observation reference resolution
         if hasattr(first_stage, 'arguments') and first_stage.arguments:
-            for arg in first_stage.arguments:
-                arg_name = getattr(arg, 'name', None)
+            for arg_name, arg in first_stage.arguments.items():
                 arg_value = getattr(arg, 'value', None)
                 # Only include arguments that have explicit values (not just names/descriptions)
                 if arg_name and arg_value is not None:
