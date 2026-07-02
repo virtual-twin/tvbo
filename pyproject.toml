@@ -20,10 +20,13 @@ dependencies = [
     "numpy>=2.0.0",
     "pandas>=2.2.3",
     "xarray>=2025.0",
-    # `linkml-runtime` is needed to *use* the generated datamodel at runtime. The
-    # heavy `linkml` generator toolkit is build-time only (see [build-system].requires);
-    # the `validate` CLI still needs it, hence the `validate` extra below.
+    # `linkml-runtime` is needed to *use* the generated datamodel at runtime; the
+    # heavy `linkml` generator toolkit is build-time only (see [build-system].requires).
     "linkml-runtime>=1.11.0",
+    # `jsonschema` backs `tvbo validate schema` (validates against the shipped JSON
+    # Schema — no runtime linkml). Also pulled transitively by linkml-runtime; declared
+    # explicitly because we import it directly.
+    "jsonschema>=4.0.0",
     "h5py>=3.12.1",
 
     # Ontologies
@@ -56,12 +59,6 @@ dependencies = [
 tvbo = "tvbo.cli:app"
 
 [project.optional-dependencies]
-# Structural YAML validation CLI (`tvbo validate schema`). It currently drives the
-# full `linkml` validator toolkit at runtime. TEMPORARY: this extra is removed once
-# `validate.py` validates against the shipped JSON Schema via the lightweight
-# `jsonschema` lib (follow-up PR), leaving `linkml` build-time only.
-validate = ["linkml>=1.11.0"]
-
 # NeuroML/LEMS support (pyNeuroML + LEMS engine)
 neuroml = ["PyLEMS>=0.6.7", "pyNeuroML>=0.7.0"]
 
@@ -161,7 +158,11 @@ include = ["tvbo/**"]
 # The generated datamodel is .gitignore'd, so hatchling's VCS-based file selection
 # would exclude it from the build. `artifacts` force-includes these build outputs
 # (produced by the hook above) into the wheel/sdist.
-artifacts = ["tvbo/datamodel/schema.py", "tvbo/datamodel/pydantic.py"]
+artifacts = [
+    "tvbo/datamodel/schema.py",
+    "tvbo/datamodel/pydantic.py",
+    "tvbo/datamodel/tvbo_datamodel.schema.json",
+]
 exclude = [
     "tvbo/database/networks/*.h5",
     "tvbo/data/tvbo_data/atlas/**/*.nii.gz",
