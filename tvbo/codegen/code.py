@@ -193,8 +193,9 @@ def print_Piecewise(Printer, expr, verbose=False):
             print("value:", value)
         condition_str = Printer._print(condition)
         value_str = Printer._print(value)
-        # Build the nested np.where
-        result = f"{Printer._module}.where({condition_str}, {value_str}, {result})"
+        # Build the nested conditional via the printer's backend-abstracted primitive
+        # (numpy/jax -> ``<mod>.where(...)``; julia -> ``ifelse(...)``).
+        result = Printer._where3(condition_str, value_str, result)
 
     if verbose:
         print("result:", result)
@@ -206,66 +207,108 @@ def print_Piecewise(Printer, expr, verbose=False):
 # maps a function name to a handler ``(printer, expr) -> code string`` that emits
 # the right call for the printer's array module (``printer._module``: np / jnp).
 # Shared by NumPyPrinter and JaxPrinter so a new primitive is one dict entry.
+# Handlers stay backend-agnostic: they call the printer's rendering *primitives*
+# (``_cat``, ``_render_index``, ``_slice_axis``, ``_transpose``, ``_reduce_axis``,
+# ``_shape``, …), which each printer implements for its own conventions (numpy/jax:
+# Python 0-based slicing; Julia: 1-based ``end``-relative). Adding an op is one handler
+# plus, where a backend's syntax differs, one primitive override — never per-backend
+# string-building duplicated across printers.
 def _afp_concatenate(p, expr):
     args = list(expr.args)
     if args and args[-1].is_integer:
         axis, arrays = int(args[-1]), args[:-1]
     else:
         axis, arrays = 0, args
-    return f"{p._module}.concatenate([{', '.join(p._print(a) for a in arrays)}], axis={axis})"
+    return p._cat([p._print(a) for a in arrays], axis)
 
 
 def _afp_window_mean(p, expr):
-    X, w = p._print(expr.args[0]), p._print(expr.args[1])
-    return f"{p._module}.mean({X}.reshape(-1, {w}, *{X}.shape[1:]), axis=1)"
+    return p._window_mean(p._print(expr.args[0]), p._print(expr.args[1]))
 
 
 def _afp_subsample(p, expr):
-    return f"{p._print(expr.args[0])}[::{p._print(expr.args[1])}]"
+    """Strided slice of the leading (time) axis.
+
+    ``subsample(x, step)``        -> ``x[::step]``
+    ``subsample(x, start, step)`` -> ``x[start::step]``
+    The 3-arg form lets a strided downsample (e.g. tvboptim BOLD TR sampling
+    ``data[step::step]``) be authored as a declarative equation, not ``source_code``.
+    """
+    a = expr.args
+    if len(a) >= 3:
+        return p._render_index(a[0], [(a[1], None, a[2])])
+    return p._render_index(a[0], [(None, None, a[1])])
+
+
+def _afp_slice_axis(p, expr):
+    """``slice_axis(x, axis, start, stop[, step])`` -> bounded slice of one axis (keeps ndim)."""
+    a = expr.args
+    step = a[4] if len(a) > 4 else None
+    return p._slice_axis(p._print(a[0]), int(a[1]), a[2], a[3], step)
+
+
+def _afp_slice_from(p, expr):
+    """``slice_from(x, axis, start)`` -> open-ended slice of one axis (to the end)."""
+    a = expr.args
+    return p._slice_from(p._print(a[0]), int(a[1]), a[2])
+
+
+def _afp_shape(p, expr):
+    """``shape(x, axis)`` -> length of ``x`` along ``axis`` (for open-ended slices etc.)."""
+    return p._shape(p._print(expr.args[0]), int(expr.args[1]))
 
 
 def _afp_global_mean(p, expr):
-    return f"{p._module}.mean({p._print(expr.args[0])}, axis=-2, keepdims=True)"
+    return p._reduce_axis("mean", p._print(expr.args[0]), -2, keepdims=True)
 
 
 def _afp_transpose(p, expr):
-    return f"{p._print(expr.args[0])}.T"
+    return p._transpose(p._print(expr.args[0]))
 
 
 def _afp_mode_dot(p, expr):
-    """Contract X's mode axis with matrix M (TVB's ``numpy.dot(xi, A_ik)``).
-
-    For X ``(n_nodes, n_modes)`` and M ``(n_modes, n_modes)``:
-    ``result[node, k] = sum_j X[node, j] * M[j, k]``.
-    """
-    return f"{p._module}.dot({p._print(expr.args[0])}, {p._print(expr.args[1])})"
+    """Contract X's mode axis with matrix M (TVB's ``numpy.dot(xi, A_ik)``)."""
+    return p._mat_dot(p._print(expr.args[0]), p._print(expr.args[1]))
 
 
 def _afp_mode_sum(p, expr):
     """Sum over the mode axis, broadcasting back (TVB's ``coupling[0].sum(axis=1)[:, None]``)."""
-    return f"{p._module}.sum({p._print(expr.args[0])}, axis=-1, keepdims=True)"
+    return p._reduce_axis("sum", p._print(expr.args[0]), -1, keepdims=True)
 
 
 _ARRAY_FUNCTION_PRINTERS = {
     "concatenate": _afp_concatenate,
     "window_mean": _afp_window_mean,
     "subsample": _afp_subsample,
+    "slice_axis": _afp_slice_axis,
+    "slice_from": _afp_slice_from,
+    "shape": _afp_shape,
     "global_mean": _afp_global_mean,
     "transpose": _afp_transpose,
     "mode_dot": _afp_mode_dot,
     "mode_sum": _afp_mode_sum,
 }
 
+# Ops Julia renders natively (slice/stride family + shape); the rest defer to Julia's
+# name-mappings (vcat/transpose/…) or graceful-degrade, so Julia output never regresses.
+_JULIA_HANDLED_OPS = {"subsample", "slice_axis", "slice_from", "shape"}
+
 
 class _ArrayFunctionPrinterMixin:
-    """Shared printer hooks for the numpy/jax backends.
+    """Shared printer hooks + backend-abstracted array primitives.
 
-    Routes array primitives (``concatenate``, ``mode_dot``, ``mode_sum``, …) through
-    the ``_ARRAY_FUNCTION_PRINTERS`` table and ``Piecewise`` through
-    ``print_Piecewise``, deferring to the parent printer otherwise. Kept as a mixin
-    listed first in the MRO so ``super()`` resolves to the concrete SymPy printer base.
+    Routes array primitives (``concatenate``, ``subsample``, ``mode_dot``, …) through
+    ``_ARRAY_FUNCTION_PRINTERS`` and ``Piecewise`` through ``print_Piecewise``,
+    deferring to the parent printer otherwise. Kept as a mixin listed first in the MRO
+    so ``super()`` resolves to the concrete SymPy printer base.
+
+    The ``_*`` primitive methods below emit the **numpy/jax** forms (Python, 0-based
+    slicing). ``JuliaPrinter`` overrides the ones whose syntax differs (1-based,
+    ``end``-relative indexing), so each array op is defined once as a backend-agnostic
+    handler and only its differing syntax is overridden per backend.
     """
 
+    # --- routing ---
     def _print_Piecewise(self, expr):
         return print_Piecewise(self, expr)
 
@@ -274,6 +317,56 @@ class _ArrayFunctionPrinterMixin:
         if handler is not None:
             return handler(self, expr)
         return super()._print_Function(expr)
+
+    # --- backend-abstracted array primitives (numpy/jax defaults) ---
+    def _afn(self, name):
+        """Module-qualify an array function, e.g. ``jnp.take``."""
+        return f"{self._module}.{name}"
+
+    def _where3(self, cond, a, b):
+        return f"{self._afn('where')}({cond}, {a}, {b})"
+
+    def _cat(self, arrays, axis):
+        return f"{self._afn('concatenate')}([{', '.join(arrays)}], axis={axis})"
+
+    def _transpose(self, base):
+        return f"{base}.T"
+
+    def _mat_dot(self, a, b):
+        return f"{self._afn('dot')}({a}, {b})"
+
+    def _reduce_axis(self, fn, base, axis, keepdims=False):
+        kw = ", keepdims=True" if keepdims else ""
+        return f"{self._afn(fn)}({base}, axis={axis}{kw})"
+
+    def _window_mean(self, X, w):
+        return f"{self._afn('mean')}({X}.reshape(-1, {w}, *{X}.shape[1:]), axis=1)"
+
+    def _shape(self, base, axis):
+        return f"{base}.shape[{axis}]"
+
+    def _render_index(self, base, specs):
+        """Render ``base[...]`` with Python 0-based slices. ``specs`` is a per-axis list;
+        each entry is ``None`` (full ``:``) or ``(start, stop, step)`` with ``None`` parts."""
+        parts = []
+        for s in specs:
+            if s is None:
+                parts.append(":")
+                continue
+            start, stop, step = s
+            lo = "" if start is None else self._print(start)
+            hi = "" if stop is None else self._print(stop)
+            parts.append(f"{lo}:{hi}" if step is None else f"{lo}:{hi}:{self._print(step)}")
+        return f"{self._print(base)}[{', '.join(parts)}]"
+
+    def _slice_axis(self, base, axis, start, stop, step=None):
+        rng = f"{self._afn('arange')}({self._print(start)}, {self._print(stop)}"
+        rng += f", {self._print(step)})" if step is not None else ")"
+        return f"{self._afn('take')}({base}, {rng}, axis={axis})"
+
+    def _slice_from(self, base, axis, start):
+        rng = f"{self._afn('arange')}({self._print(start)}, {self._shape(base, axis)})"
+        return f"{self._afn('take')}({base}, {rng}, axis={axis})"
 
 
 class NumPyPrinter(_ArrayFunctionPrinterMixin, spn.NumPyPrinter):
@@ -499,7 +592,10 @@ class JaxPrinter(_ArrayFunctionPrinterMixin, spn.JaxPrinter):
             return f"{self._module}.sum({self._print(result)}, axis={axes_tuple})"
 
 
-class JuliaPrinter(spj.JuliaCodePrinter):
+class JuliaPrinter(_ArrayFunctionPrinterMixin, spj.JuliaCodePrinter):
+    # Julia array functions are bare names (resolved via known_functions), not module-qualified.
+    _module = ""
+
     def __init__(self, settings=None):
         settings = settings or {}
         # Be tolerant: allow partial printing instead of raising for unknown constructs.
@@ -507,6 +603,17 @@ class JuliaPrinter(spj.JuliaCodePrinter):
         super().__init__(settings=settings)
         # Add array function mappings
         self.known_functions.update(ARRAY_FUNCTION_MAPPINGS["julia"])
+
+    # Route only the ops with a clean Julia form (slice/stride family + shape) through the
+    # shared handlers — which then call the Julia-overridden primitives below. Everything else
+    # (concatenate->vcat, transpose, reductions) defers to Julia's name-mappings, so existing
+    # Julia output never regresses. NOTE: bypass the mixin's catch-all _print_Function (which
+    # would route *every* registered op) by dispatching to the SymPy base directly.
+    def _print_Function(self, expr):
+        name = expr.func.__name__
+        if name in _JULIA_HANDLED_OPS:
+            return _ARRAY_FUNCTION_PRINTERS[name](self, expr)
+        return spj.JuliaCodePrinter._print_Function(self, expr)
 
     # SymPy's JuliaCodePrinter does not implement IndexedBase by default; our templates
     # occasionally introduce placeholder IndexedBase symbols (e.g. x_i, x_j) for clarity.
@@ -525,17 +632,35 @@ class JuliaPrinter(spj.JuliaCodePrinter):
         except Exception:
             return str(expr)
 
-    # Provide a basic Piecewise -> nested ifelse translation if needed later; keep simple now.
-    def _print_Piecewise(self, expr):
-        # Fallback: replicate numpy-style nesting using ifelse(cond, val, else_expr)
-        args = expr.args
-        default = self._print(args[-1][0])
-        out = default
-        for val, cond in reversed(args[:-1]):
-            cond_s = self._print(cond)
-            val_s = self._print(val)
-            out = f"ifelse({cond_s}, {val_s}, {out})"
-        return out
+    # --- Julia primitive overrides: 1-based, ``end``-relative, column-major indexing ---
+    # ``Piecewise`` reuses the shared ``print_Piecewise`` via this ``_where3`` override
+    # (numpy/jax -> ``<mod>.where``; Julia -> ``ifelse``), so no dedicated Julia Piecewise.
+    def _where3(self, cond, a, b):
+        return f"ifelse({cond}, {a}, {b})"
+
+    def _shape(self, base, axis):
+        return f"size({base}, {axis + 1})"
+
+    def _render_index(self, base, specs):
+        parts = []
+        for s in specs:
+            if s is None:
+                parts.append(":")
+                continue
+            start, stop, step = s
+            lo = "1" if start is None else f"{self._print(start)} + 1"
+            hi = "end" if stop is None else self._print(stop)
+            parts.append(f"{lo}:{hi}" if step is None else f"{lo}:{self._print(step)}:{hi}")
+        return f"{self._print(base)}[{', '.join(parts)}]"
+
+    def _slice_axis(self, base, axis, start, stop, step=None):
+        lo = f"{self._print(start)} + 1"
+        hi = self._print(stop)
+        rng = f"{lo}:{hi}" if step is None else f"{lo}:{self._print(step)}:{hi}"
+        return f"selectdim({base}, {axis + 1}, {rng})"
+
+    def _slice_from(self, base, axis, start):
+        return f"selectdim({base}, {axis + 1}, {self._print(start)} + 1:{self._shape(base, axis)})"
 
     def _print_Add(self, expr, order=None):
         """Element-wise addition/subtraction (``.+`` / ``.-``).
