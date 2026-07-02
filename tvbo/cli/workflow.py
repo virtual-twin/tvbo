@@ -103,16 +103,7 @@ def _build_plan(spec: str, *, engine: str, backend: str,
     return plan, exp
 
 
-def _deep_merge(a: dict, b: dict) -> dict:
-    if not b:
-        return dict(a)
-    out = dict(a)
-    for k, v in b.items():
-        if isinstance(v, dict) and isinstance(out.get(k), dict):
-            out[k] = _deep_merge(out[k], v)
-        else:
-            out[k] = v
-    return out
+from tvbo.utils import deep_merge as _deep_merge  # noqa: E402  (shared recursive merge)
 
 
 def _render_template(rel: str, **ctx) -> str:

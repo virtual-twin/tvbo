@@ -160,10 +160,18 @@ class Coupling(tvbo_datamodel.Coupling):
     def __init__(self, **kwargs):
         # Legacy: accept and ignore use_ontology kwarg
         kwargs.pop("use_ontology", None)
+        _explicit_name = kwargs.get("name")
         super().__init__(**kwargs)
-        # Auto-populate from ontology if iri is set and expressions are missing
+        # Auto-populate from the registry/ontology if iri is set and expressions
+        # are missing. Resolve by the iri's CURIE local name (not the default
+        # self.name), and adopt it as the name when none was given explicitly.
         if getattr(self, "iri", None) and not getattr(self, "pre_expression", None):
-            self._populate_from_ontology()
+            from tvbo.data.registry import local_name
+
+            _local = local_name(self.iri)
+            if not _explicit_name:
+                self.name = _local
+            self._populate_from_ontology(lookup_name=_local)
 
     def _populate_from_ontology(self, lookup_name=None):
         """Fill missing metadata fields from ontology/database.

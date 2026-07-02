@@ -41,14 +41,53 @@ Adapters wrap *external* simulators (TVB, Julia, NeuroML, PyRates, BifurcationKi
 4. Wire dispatch in `tvbo/codegen/templater.py`.
 5. Ensure the optional dependency lives in `pyproject.toml` under `[project.optional-dependencies]`.
 
-## Slim templates — logic lives in the adapter
+## Slim templates — resolution in the adapter, code *structure* in Mako
 
-**Templates fill in values; they do NOT process.** All logic — resolution, parsing, AND generating code fragments — belongs in the Python adapter layer (`tvbo/adapters/<backend>.py` `prepare_context()`, or a helper it owns such as `tvbo/templates/tvboptim/utils.py`). The adapter returns ready-to-emit strings/context; the template just interpolates `${...}`.
+Two separate concerns, two separate homes — don't merge them:
 
-- If a `<% %>` block branches over metadata to emit different code bodies (e.g. per-type `% if/elif` building a function body), move it to a Python `render_*()` helper and interpolate the result. A verbatim function body with heavy `% if/for` branching inside a template is the smell.
-- **Why:** the adapter can dedup, reduce redundancy, and harmonize; it also surfaces which generator functions can be **reused across adapters** (jax/julia/matlab). Logic locked in one backend's mako can't be shared. Python helpers are also testable in isolation.
-- Good pattern: `resolve_solver_kwargs` / `resolve_optimizer_mode` in `utils.py` — pure functions returning strings, called once from the template.
-- This also covers resolution/parsing: stringly-typed pointers (`source: [network.observations.X]`) get resolved ONCE at load into typed data, not re-parsed in template + utils + runtime.
+**1. Resolution / parsing → the Python adapter layer** (`tvbo/adapters/<backend>.py`
+`prepare_context()`, or a helper it owns such as `tvbo/templates/tvboptim/utils.py`).
+Turn stringly-typed metadata into clean, typed context ONCE: resolve dotted refs to
+state paths, decode transforms, compute bounds, look up observation names. `source:
+[network.observations.X]` is resolved at load into typed data, not re-parsed in
+template + utils + runtime. Pure functions returning small strings/dicts (e.g.
+`resolve_solver_kwargs`, `resolve_optimizer_mode`) are ideal — testable in isolation.
+
+**2. Code structure / layout → a Mako `<%def>` partial, NOT Python string-building.**
+The *shape* of generated code (a whole function body, a class, a branching block) is laid
+out with Mako `% for` / `${...}` over the clean context — never assembled by a Python
+helper doing `emit()`/`"".join()`/string concatenation. Building a 30–60-line body in
+Python is the anti-pattern (fragile indentation, unreadable, un-diffable). Reserve Python
+helpers for resolution and *small* one-line fragments; move anything structural to Mako.
+
+**Modular partials** — for non-trivial or conditional codegen, factor it out of the
+monolithic experiment template into its own partial and insert it conditionally (keeps the
+big template readable and the feature self-contained):
+
+```mako
+## top of the experiment template
+<%namespace name="search" file="tvbo-tvboptim-search.py.mako"/>
+## imports at module scope, gated by a has_<feature> flag
+% if has_nsga2:
+import numpy as _np
+from pymoo.optimize import minimize as _pymoo_minimize
+% endif
+## conditional insertion where the code belongs
+% if expl['strategy'] == 'nsga2':
+${search.nsga2_body(expl)}
+% endif
+```
+
+The partial holds parameterized `<%def name="nsga2_body(expl)">…</%def>` blocks that lay
+out the code from `expl` (already resolved: `expl['nsga2_axes']` with `path`/`transform`,
+etc.). Reference implementation: `tvbo/templates/tvboptim/tvbo-tvboptim-search.py.mako`
+(NSGA-II + Pareto-seed refinement). Heavy imports gated by `has_<feature>` at the module
+top — never `import` inside a generated function body.
+
+**Why:** the adapter can dedup/harmonize and its resolution reuses across backends
+(jax/julia/matlab); the Mako partial keeps codegen readable and maintainable. A verbatim
+function body with heavy `% if/for` branching buried in the 3000-line experiment template,
+*or* a Python routine string-building that same body, are both smells — split them.
 
 ## Common pitfalls
 

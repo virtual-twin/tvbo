@@ -97,7 +97,10 @@ np = np_module(fmt)
 d${sv.name}_dt = ${render(sv)}${(' + ' + stim) if stim and getattr(sv, 'stimulation_variable', False) else ''}
 % endfor
 
-derivatives = ${np}.array([${', '.join('d' + sv.name + '_dt' for sv in svars)}])
+## broadcast_arrays so state-independent derivatives (e.g. `duA_dt = cA`, a bare
+## constant/param → scalar shape) stack cleanly with state-/coupling-dependent
+## ones (broadcast to the node/mode shape). No-op when all shapes already match.
+derivatives = ${np}.array(${np}.broadcast_arrays(${', '.join('d' + sv.name + '_dt' for sv in svars)}))
 % if return_aux and dvars:
 auxiliaries = ${np}.array([${', '.join(dvars)}])
 

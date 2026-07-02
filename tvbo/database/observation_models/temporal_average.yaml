@@ -18,6 +18,6 @@ pipeline:
       equation:
           rhs: "window_mean(X, window_size)"
       arguments:
-          - name: window_size
-            description: "Number of integration steps per averaging window = period / dt"
+          window_size:
+              description: "Number of integration steps per averaging window = period / dt"
       apply_on_dimension: time

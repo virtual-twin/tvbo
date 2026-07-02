@@ -1210,11 +1210,14 @@ def obs_has_all_args(obs: Any) -> bool:
 
     for step_idx, func in enumerate(pipeline):
         is_first_step = step_idx == 0
-        args = getattr(func, "arguments", None) or []
-        for arg in args:
-            if getattr(arg, "name", None) and getattr(arg, "value", None) is None:
+        # Function arguments are keyed by name (dict); tolerate a legacy list too.
+        args = getattr(func, "arguments", None) or {}
+        arg_items = args.items() if hasattr(args, "items") else [(getattr(a, "name", None), a) for a in args]
+        for arg_name, arg in arg_items:
+            arg_name = arg_name or getattr(arg, "name", None)
+            if arg_name and getattr(arg, "value", None) is None:
                 # First step's data-like args are satisfied by source
-                if is_first_step and has_source and arg.name in ("data", "X", "x", "input", "timeseries", "a"):
+                if is_first_step and has_source and arg_name in ("data", "X", "x", "input", "timeseries", "a"):
                     continue
                 return False
     return True
@@ -1683,14 +1686,16 @@ def parse_exploration(expl: Any, all_couplings: Dict, get_pipeline_output_key_fn
     if observable:
         func = getattr(observable, "function", None)
         func_name = getattr(func, "name", None) if hasattr(func, "name") else str(func) if func else None
-        args = getattr(observable, "arguments", None) or []
+        # FunctionCall arguments are keyed by name (dict); tolerate a legacy list too.
+        args = getattr(observable, "arguments", None) or {}
 
         if args:
             exp_info["observable_type"] = "function_call"
             exp_info["observable_func"] = func_name
             exp_info["observable_args"] = []
-            for arg in args:
-                arg_name = getattr(arg, "name", None) or str(arg)
+            arg_items = args.items() if hasattr(args, "items") else [(getattr(a, "name", None), a) for a in args]
+            for arg_name, arg in arg_items:
+                arg_name = arg_name or getattr(arg, "name", None) or str(arg)
                 arg_value = getattr(arg, "value", None)
                 if arg_value:
                     val_str = str(arg_value)

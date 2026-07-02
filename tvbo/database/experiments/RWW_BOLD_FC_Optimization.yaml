@@ -138,9 +138,9 @@ functions:
       clamped dynamic slice, and the output is trimmed to the centered-index count.
     source_code: "jax.vmap(lambda _i: jnp.mean(jax.lax.dynamic_slice(data, (_i,) + (0,) * (data.ndim - 1), (period_samples,) + data.shape[1:]), axis=0))((jnp.arange(data.shape[0]) + 1)[::period_samples])[: jnp.arange((period_samples - 2) // 2, data.shape[0], period_samples).shape[0]]"
     arguments:
-      - name: data
+      data:
         description: "Input time series (time, nodes)"
-      - name: period_samples
+      period_samples:
         value: 1
         description: "Samples per averaging window = round(downsample_period / dt)"
 
@@ -160,7 +160,7 @@ functions:
           value: 0.4
           description: "Feedback time constant (seconds)"
     arguments:
-      - name: duration
+      duration:
         value: 20000.0
         description: "HRF kernel duration in ms"
 
@@ -172,11 +172,11 @@ functions:
       tvboptim HRFBold._process_history so a 'valid' convolution loses no samples.
     source_code: "jnp.concatenate([(jnp.vstack([jnp.zeros((kernel_samples - history.shape[0],) + history.shape[1:], history.dtype), history]) if history.shape[0] < kernel_samples else history[-kernel_samples:]), data], axis=0)"
     arguments:
-      - name: data
+      data:
         description: "Input time series (time, nodes)"
-      - name: history
+      history:
         description: "Downsampled transient history data"
-      - name: kernel_samples
+      kernel_samples:
         value: 5000
         description: "Kernel support = ceil(kernel_duration / downsample_period)"
 
@@ -192,7 +192,7 @@ functions:
           value: 0.02
           description: "Resting blood volume fraction"
     arguments:
-      - name: data
+      data:
         description: "Input data from previous step"
 
   subsample_bold:
@@ -204,9 +204,9 @@ functions:
       downsampling.
     source_code: "data[step::step]"
     arguments:
-      - name: data
+      data:
         description: "Input time series"
-      - name: step
+      step:
         value: 250
         description: "Subsample factor = round(TR / downsample_period) = 1000/4 = 250"
 
@@ -215,9 +215,9 @@ functions:
     equation:
       rhs: "sqrt(mean((x - y)**2))"
     arguments:
-      - name: x
+      x:
         description: "First array (simulated)"
-      - name: y
+      y:
         description: "Second array (target)"
 
   fc_corr:
@@ -245,26 +245,26 @@ observations:
       - output: downsampled_data
         function: temporal_average
         arguments:
-          - name: data
+          data:
             value: integration.result
-          - name: period_samples
+          period_samples:
             value: 1
 
       - output: downsampled_history
         function: temporal_average
         arguments:
-          - name: data
+          data:
             value: integration.transient
-          - name: period_samples
+          period_samples:
             value: 1
 
       - function: prepend_history
         arguments:
-          - name: data
+          data:
             value: downsampled_data
-          - name: history
+          history:
             value: downsampled_history
-          - name: kernel_samples
+          kernel_samples:
             value: 5000
 
       - output: bold_convolve
@@ -273,21 +273,21 @@ observations:
           name: fftconvolve
         apply_on_dimension: node
         arguments:
-          - name: in1
+          in1:
             value: prepend_history
-          - name: in2
+          in2:
             value: hrf_kernel
-          - name: mode
+          mode:
             value: valid
 
       - function: volterra_transform
         arguments:
-          - name: data
+          data:
             value: bold_convolve
 
       - function: subsample_bold
         arguments:
-          - name: data
+          data:
             value: volterra_transform
 
   # === Derived observations (computed from other observations) ===
@@ -301,9 +301,9 @@ observations:
           name: compute_fc
           module: tvboptim.observations.observation
         arguments:
-          - name: timeseries
+          timeseries:
             value: bold
-          - name: skip_t
+          skip_t:
             value: 20
             description: "Skip first 20 TRs to avoid transient effects"
 
@@ -321,10 +321,10 @@ optimizations:
     loss:
       function: rmse
       arguments:
-        - name: simulated_fc
+        simulated_fc:
           value: observations.fc.data
           description: "Simulated functional connectivity matrix from fc observation"
-        - name: empirical_fc
+        empirical_fc:
           value: observations.empirical_fc.data
           description: "Empirical functional connectivity matrix (target, passed at runtime)"
 
@@ -389,9 +389,9 @@ explorations:
     observable:
       function: rmse
       arguments:
-        - name: simulated_fc
+        simulated_fc:
           value: fc.data
-        - name: empirical_fc
+        empirical_fc:
           value: empirical_fc.data
           description: "Target FC (passed at runtime)"
 

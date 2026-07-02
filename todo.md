@@ -17,11 +17,23 @@ repoint crashes the tvbo core — base-IRI mismatch + empty class queries — so
 packages `tvbo/data/ontology/tvbo.owl`; `query.py` gained optional `onto=`/`world=`
 args; enrichment/search/hierarchy verified; tvbo core untouched.
 
-**Phase B (TODO) — with `owl.py`.** Rewrite `owl.py`'s class-based high-level API
-(`get_models`/`get_model_parameters`/… → `.instances()` + `hasParameter`/…
-object properties), then retire the separate world and load the generated
-ontology globally. Full file-by-file change list, impact map, and verification:
-**see `dev/runtime_ontology_migration.md`**.
+**Phase B (TODO) — with `owl.py`. Bigger than first scoped.** A 2026-07-01 code
+audit found the generated ontology diverges from the deprecated one far beyond
+"classes → individuals": **no `NeuralMassModel` class** (models are `Dynamics`
+individuals; the `functional_models` allow-list drives the 22 — NOT
+`model_type=='neural_mass'`, which yields only 14); scaffold vocabulary
+renamed/deleted (`IntegrationMethod`→`Integrator`, `Constant`/`TimeDerivative`/
+`CouplingTerm`/… gone → import-time crashes); the has* traversal edges are
+**AnnotationProperties** (SPARQL-as-relation fails); properties missing/renamed
+(`symbol`→`skos:notation`, equation→`tvbo:rhs`/`lhs`, `synonym`→`skos:altLabel`,
+no `range`/`VOIs`/`has_cvar`); **verbose labels** (key on `skos:notation`;
+`_<ACR>` suffix scheme dead); derivatives inline on StateVariable; references
+→`dcterms:references`/`studies/`; ~40 punned props silently coerced. Scope: **43
+class-based owl.py functions + the writer (`import_model`) + ~20 downstream
+consumers (main codegen path `codegen/templater.py`) + 4 import-time
+statements**, then retire the isolated world (inverting the Phase-A
+`api.world is not owl.onto.world` invariant). Full file-by-file spec, impact map,
+and verification: **see `dev/runtime_ontology_migration.md` §3.0–§5**.
 
 ## Harmonize class names with `tvboptim`
 
@@ -33,6 +45,36 @@ specify any `Space` configuration that tvboptim supports
 
 Full design, rationale, file-by-file impact, and step-by-step
 implementation plan: **see `dev/tvboptim_harmonization.md`**.
+
+## Unify Exploration / Optimization / Pareto / Inference under one `Search` concept
+
+**Status:** design north-star; Hopf_Pareto PR ships only the forward-compatible
+surgical subset (`Exploration.strategy` + `objectives` + `ExplorationAxis.transform`
++ widened `Optimization.depends_on`).
+
+Grid sweep, gradient optimization, NSGA-II, and Bayesian MCMC are the *same
+shape* — *search a parameter space with a `strategy`, score candidates against
+goal(s), execute with parallelism, optionally seeded by an upstream via
+`depends_on`*. They differ only along: `strategy`
+(`grid|random|adam|nsga2|nuts|…`), goal-type (**0** goals = sweep · **1**
+objective = minimize · **≥2** objectives = Pareto · a **likelihood** = infer),
+axis payload (`domain`/`values`/`distribution`), and output shape
+(evaluated-set/point/front/posterior — derivable from goal-type).
+
+**Bayesian folds in and *simplifies*:** a `Prior` *is* an `Axis` with a
+`distribution:` (the `NumPyroAxis` from `dev/tvboptim_harmonization.md`), so the
+standalone `Prior` class **disappears**; `Inference` becomes a `Search` with
+`strategy: nuts` + a `likelihood` goal. The one principled discriminator:
+`objectives:` (optimize/Pareto) **xor** `likelihood:` (infer).
+
+Composes with the SED-ML **Task hierarchy** (`dev/Interoperability/SedML/plan.md`
+§4.2.1) and **depends on** the Axis harmonization above (supplies `Axis` +
+`NumPyroAxis`). Follow-up PR migrates all workflows one-at-a-time behind
+read-aliases with per-workflow byte-identity re-verification (×6).
+
+Full design, the strategy/goal taxonomy, the Inference-under-Search analysis,
+the surgical-now vs. unified-later split, migration path, and risks:
+**see `dev/unified_search.md`**.
 
 ## Backend-in-Metadata + Per-Task Backend Dispatch
 
