@@ -113,7 +113,7 @@ def monitor_raw(time_steps, trace, params, t_offset = 0):
 
 ## Observations
 % if hasattr(experiment, 'observations') and experiment.observations:
-${obs.create_all_observations(experiment)}
+${obs.create_all_observations(experiment, obs_sampling=context.get('obs_sampling'))}
 % endif
 
 ## Transformation for derived parameters

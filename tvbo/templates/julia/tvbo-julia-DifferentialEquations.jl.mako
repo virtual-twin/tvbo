@@ -1,4 +1,7 @@
 ## -*- coding: utf-8 -*-
+<%!
+from tvbo.adapters.julia_model import build_model_context
+%>
 <%
 if 'experiment' in context.keys():
     model = context['experiment'].dynamics
@@ -13,6 +16,9 @@ if 'dt' not in context.keys():
     dt = 0.01
 plot = context.get('plot', False)
 fout = context.get('fout', False)
+
+# All metadata→Julia translation is prepared here; the includes only emit syntax.
+mc = build_model_context(model)
 %>
 
 ## Decide problem type (ODE vs SDE) based on presence of any state variable noise intensity > 0
@@ -30,10 +36,10 @@ def has_noise(model):
     return False
 %>
 % if has_noise(model):
-<%include file="/tvbo-julia-SDEProblem.jl.mako" args="model=model, duration=duration" />
+<%include file="/tvbo-julia-SDEProblem.jl.mako" args="model=model, mc=mc, duration=duration" />
 % else:
-<%include file="/tvbo-julia-model.jl.mako" args="model=model" />
-<%include file="/tvbo-julia-ODEProblem.jl.mako" args="model=model, duration=duration" />
+<%include file="/tvbo-julia-model.jl.mako" args="mc=mc" />
+<%include file="/tvbo-julia-ODEProblem.jl.mako" args="mc=mc, duration=duration" />
 % endif
 
 # Solve

@@ -4,7 +4,7 @@ from tvbo.codegen import render_expression
 def get_callable_info(func):
     return func.callable.module, func.callable.name
 
-def get_parameters(func, pipeline_outputs, obs_period=None, dt=None):
+def get_parameters(func, pipeline_outputs, obs_period=None, dt=None, sampling_overrides=None):
     """Return {arg_name: value_str} for arguments that have a resolved value.
 
     Arguments without an explicit value are skipped — they appear as required
@@ -14,8 +14,15 @@ def get_parameters(func, pipeline_outputs, obs_period=None, dt=None):
 
     ``obs_period`` and ``dt`` are used to derive windowing arguments
     (window_size, window) when the YAML omits an explicit value.
+
+    ``sampling_overrides`` maps ``arg_name -> resolved integer`` for temporal
+    sampling steps (interim window / subsample count). These are resolved once,
+    backend-independently, by :func:`tvbo.adapters.observation_sampling.
+    resolve_observation_sampling` (injected via the render adapter) and take
+    precedence over any YAML literal so the template only emits resolved values.
     """
     _WINDOW_ARGS = ('window_size', 'window')
+    sampling_overrides = sampling_overrides or {}
 
     params = {}
     args = func.arguments or []
@@ -23,6 +30,10 @@ def get_parameters(func, pipeline_outputs, obs_period=None, dt=None):
     if hasattr(args, 'values'):
         args = args.values()
     for arg in args:
+        # Backend-shared resolved sampling counts win over the YAML literal.
+        if arg.name in sampling_overrides:
+            params[arg.name] = str(int(sampling_overrides[arg.name]))
+            continue
         value = getattr(arg, 'value', None)
         if value is None:
             # Derive windowing parameters from observation period and integration dt
@@ -41,6 +52,75 @@ def get_parameters(func, pipeline_outputs, obs_period=None, dt=None):
 
 def get_equation_rhs(func):
     return func.equation.rhs
+
+# Argument names that carry a temporal-sampling step count.
+_SAMPLING_ARG_NAMES = ('stepsize', 'step', 'window_size', 'window')
+
+
+def _sampling_kind(func):
+    """Classify a pipeline step as a temporal-sampling stage.
+
+    Returns ``'window'`` for an averaging window (``window_mean``),
+    ``'subsample'`` for a decimation (``subsample``), else ``None``.
+    """
+    equation = getattr(func, 'equation', None)
+    rhs = str(getattr(equation, 'rhs', '') or '')
+    if 'window_mean(' in rhs:
+        return 'window'
+    if 'subsample(' in rhs:
+        return 'subsample'
+    return None
+
+
+def _sampling_arg_names(func):
+    """Names of the step-size arguments on a sampling step."""
+    args = getattr(func, 'arguments', None) or {}
+    names = list(args.keys()) if hasattr(args, 'keys') else [getattr(a, 'name', None) for a in args]
+    return [n for n in names if n in _SAMPLING_ARG_NAMES]
+
+
+def build_sampling_overrides(resolved_pipeline, sampling):
+    """Resolve sampling-step arguments to integer step counts.
+
+    Uses the backend-shared :class:`ObservationSampling` (``sampling``) so the
+    jax pipeline downsamples by exactly the same counts as tvboptim/tvb. The
+    mapping from stage to count is derived from the pipeline structure, not from
+    any raw-grid YAML literal:
+
+      * two-stage (interim ``window_mean`` then ``subsample``, e.g. BOLD):
+        window -> ``interim_istep``, subsample -> ``output_interim_count``
+        (net factor = ``output_istep``);
+      * single ``window_mean`` (e.g. TemporalAverage) -> ``output_istep``;
+      * single ``subsample`` (e.g. SubSample)        -> ``output_istep``.
+
+    Returns ``{id(func): {arg_name: int}}``. Empty when no sampling info.
+    """
+    if sampling is None:
+        return {}
+
+    stages = [(func, _sampling_kind(func)) for func in resolved_pipeline]
+    stages = [(func, kind) for func, kind in stages if kind is not None]
+    has_window = any(kind == 'window' for _, kind in stages)
+    has_subsample = any(kind == 'subsample' for _, kind in stages)
+    two_stage = has_window and has_subsample
+
+    overrides = {}
+    for func, kind in stages:
+        if two_stage:
+            count = sampling.interim_istep if kind == 'window' else sampling.output_interim_count
+        else:
+            count = sampling.output_istep
+        arg_map = {name: int(count) for name in _sampling_arg_names(func)}
+        # TVB emits the first subsample at step % istep == 0 (1-indexed), i.e.
+        # array index istep - 1. Honour an explicit ``start`` argument so the jax
+        # subsample aligns with tvboptim/tvb instead of starting at index 0.
+        arg_names = getattr(func, 'arguments', None) or {}
+        arg_names = list(arg_names.keys()) if hasattr(arg_names, 'keys') else [getattr(a, 'name', None) for a in arg_names]
+        if kind == 'subsample' and 'start' in arg_names:
+            arg_map['start'] = int(count) - 1
+        if arg_map:
+            overrides[id(func)] = arg_map
+    return overrides
 
 JAX_MODULE_MAP = {
     'scipy.signal': 'jax.scipy.signal',
@@ -91,7 +171,7 @@ from tvbo.data.types import TimeSeries
 from ${jax_module} import ${name} as ${name}
 % endfor
 <%namespace name="jaxfunc" file="jax-function.py.mako"/>
-<%def name="create_observation_pipeline(observation, dt, functions=None)" filter="trim">
+<%def name="create_observation_pipeline(observation, dt, functions=None, obs_sampling=None)" filter="trim">
 <%
     # Helper to get function name from FunctionCall or resolved Function
     def get_func_name(func):
@@ -123,6 +203,8 @@ from ${jax_module} import ${name} as ${name}
             resolved_pipeline.append(fc)
 
     func_name_to_output = {get_func_name(func): func.output for func in resolved_pipeline if get_func_name(func)}
+    # Resolve temporal-sampling step counts once, backend-independently.
+    sampling_overrides_map = build_sampling_overrides(resolved_pipeline, obs_sampling)
     # Collect imports for this observation
     obs_imports = set()
     for func in resolved_pipeline:
@@ -198,6 +280,7 @@ def ${observation.name}(ts: TimeSeries, state=${_state_default}):
         func, pipeline_outputs,
         obs_period=getattr(observation, 'period', None),
         dt=dt,
+        sampling_overrides=sampling_overrides_map.get(id(func)),
     )
     # Build argument list: input + schema arguments
     args = [input_name]
@@ -211,17 +294,18 @@ def ${observation.name}(ts: TimeSeries, state=${_state_default}):
 </%def>
 
 % if 'observation' in context.keys():
-${create_observation_pipeline(observation, dt if 'dt' in context.keys() else 0.1)}
+${create_observation_pipeline(observation, dt if 'dt' in context.keys() else 0.1, obs_sampling=context.get('obs_sampling', {}).get(observation.name) if hasattr(context.get('obs_sampling', {}), 'get') else None)}
 % endif
 
-<%def name="create_all_observations(experiment)" filter="trim">
+<%def name="create_all_observations(experiment, obs_sampling=None)" filter="trim">
 <%
     dt = experiment.integration.step_size
     exp_functions = getattr(experiment, 'functions', None) or {}
+    obs_sampling = obs_sampling or {}
 %>
 % for name, obs in experiment.observations.items():
 
-${create_observation_pipeline(obs, dt, functions=exp_functions)}
+${create_observation_pipeline(obs, dt, functions=exp_functions, obs_sampling=obs_sampling.get(name))}
 
 % endfor
 
