@@ -537,13 +537,52 @@ class JuliaPrinter(spj.JuliaCodePrinter):
             out = f"ifelse({cond_s}, {val_s}, {out})"
         return out
 
+    def _print_Add(self, expr, order=None):
+        """Element-wise addition/subtraction (``.+`` / ``.-``).
+
+        Unlike ``*``/``/``/``^`` (which the base Julia printer already emits as
+        ``.*``/``./``/``.^``), scalar+array ``+``/``-`` is NOT auto-broadcast in
+        Julia — ``[1,2] + 1`` raises ``MethodError``. Array-valued models
+        (mode-coupling, quadrature vectors) mix scalar and vector terms, so we
+        emit the dotted forms, which work uniformly for scalars and arrays.
+        Mirrors the base printer's term ordering and sign handling.
+        """
+        from sympy.printing.precedence import precedence
+
+        terms = self._as_ordered_terms(expr, order=order)
+        prec = precedence(expr)
+        parts = []
+        for term in terms:
+            t = self._print(term)
+            if t.startswith("-") and not term.is_Add:
+                sign = ".-"
+                t = t[1:]
+            else:
+                sign = ".+"
+            if precedence(term) < prec or term.is_Add:
+                parts.extend([sign, "(%s)" % t])
+            else:
+                parts.extend([sign, t])
+        sign = parts.pop(0)
+        if sign == ".+":
+            sign = ""
+        elif sign == ".-":
+            sign = "-"  # leading unary negation broadcasts fine in Julia
+        return sign + " ".join(parts)
+
 
 class MTKPrinter(JuliaPrinter):
     """Printer for ModelingToolkit.jl @mtkmodel equations.
 
-    MTK equations are scalar symbolic, so we use plain ``*``, ``/``, ``^``
-    instead of Julia's element-wise ``.*``, ``./``, ``.^``.
+    MTK equations are scalar symbolic, so we use plain ``+``, ``-``, ``*``,
+    ``/``, ``^`` instead of Julia's element-wise ``.+``, ``.-``, ``.*``, ``./``,
+    ``.^``.
     """
+
+    def _print_Add(self, expr, order=None):
+        # Scalar-symbolic: plain +/- (base CodePrinter behaviour, bypassing
+        # JuliaPrinter's element-wise .+/.- override).
+        return spj.JuliaCodePrinter._print_Add(self, expr, order=order)
 
     def _print_Mul(self, expr):
         from sympy import S, Mul, Pow, Rational
