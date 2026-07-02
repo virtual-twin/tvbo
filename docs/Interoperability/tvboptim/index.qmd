@@ -119,3 +119,5 @@ for state in trajectory:
 - [Jansen-Rit Workflow](JR_tvboptim.qmd): Complete MEG optimization example
 - [RWW Workflow](RWW_tvboptim.qmd): Functional connectivity fitting
 - [EI Tuning](EI_Tuning_tvboptim.qmd): E/I balance optimization
+- [TBPTT](TBPTT_tvboptim.qmd): Truncated backprop-through-time + gradient diagnostics
+- [Hopf Pareto](Hopf_Pareto_tvboptim.qmd): NSGA-II multi-objective + parallel refinement
