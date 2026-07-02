@@ -17,7 +17,7 @@ description: The Generic Linear (GL) is a phenomenological, linear one-dimension
 references:
 - Galan2008
 coupling_inputs:
-  c_pop0: {}
+  c_glob: {}
   local_coupling: {local: true}
 state_variables:
   x:
@@ -27,7 +27,7 @@ state_variables:
     description: State-variable of the Generic Linear model
     equation:
       lhs: Derivative(x, t)
-      rhs: c_pop0 + gamma*x + local_coupling*x
+      rhs: c_glob + gamma*x + local_coupling*x
       latex: false
     coupling_variable: true
     initial_value: 0.1
