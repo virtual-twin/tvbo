@@ -472,10 +472,14 @@ website:
                         href: datamodel/classes/FunctionCall.qmd
                       - text: "Graph Generator"
                         href: datamodel/classes/GraphGenerator.qmd
+                      - text: "Inference"
+                        href: datamodel/classes/Inference.qmd
                       - text: "Initial State"
                         href: datamodel/classes/InitialState.qmd
                       - text: "Integrator"
                         href: datamodel/classes/Integrator.qmd
+                      - text: "Likelihood"
+                        href: datamodel/classes/Likelihood.qmd
                       - text: "Loss Function"
                         href: datamodel/classes/LossFunction.qmd
                       - text: "Matrix"
@@ -518,6 +522,8 @@ website:
                         href: datamodel/classes/PDESolver.qmd
                       - text: "Phenotype"
                         href: datamodel/classes/Phenotype.qmd
+                      - text: "Prior"
+                        href: datamodel/classes/Prior.qmd
                       - text: "Procedure"
                         href: datamodel/classes/Procedure.qmd
                       - text: "Procedure Step"
@@ -712,6 +718,8 @@ website:
                         href: datamodel/slots/color.qmd
                       - text: "comment"
                         href: datamodel/slots/comment.qmd
+                      - text: "compile"
+                        href: datamodel/slots/compile.qmd
                       - text: "concept_iri"
                         href: datamodel/slots/concept_iri.qmd
                       - text: "condition"
@@ -764,6 +772,8 @@ website:
                         href: datamodel/slots/coupling_terms.qmd
                       - text: "coupling_variable"
                         href: datamodel/slots/coupling_variable.qmd
+                      - text: "cse"
+                        href: datamodel/slots/cse.qmd
                       - text: "curvature"
                         href: datamodel/slots/curvature.qmd
                       - text: "data"
@@ -998,6 +1008,8 @@ website:
                         href: datamodel/slots/includes.qmd
                       - text: "incoming_states"
                         href: datamodel/slots/incoming_states.qmd
+                      - text: "inferences"
+                        href: datamodel/slots/inferences.qmd
                       - text: "initial_expression"
                         href: datamodel/slots/initial_expression.qmd
                       - text: "initial_state"
@@ -1060,6 +1072,8 @@ website:
                         href: datamodel/slots/library.qmd
                       - text: "license"
                         href: datamodel/slots/license.qmd
+                      - text: "likelihood"
+                        href: datamodel/slots/likelihood.qmd
                       - text: "linear_solver"
                         href: datamodel/slots/linear_solver.qmd
                       - text: "lo"
@@ -1182,6 +1196,12 @@ website:
                         href: datamodel/slots/normals.qmd
                       - text: "notes"
                         href: datamodel/slots/notes.qmd
+                      - text: "num_chains"
+                        href: datamodel/slots/num_chains.qmd
+                      - text: "num_samples"
+                        href: datamodel/slots/num_samples.qmd
+                      - text: "num_warmup"
+                        href: datamodel/slots/num_warmup.qmd
                       - text: "number_of_elements"
                         href: datamodel/slots/number_of_elements.qmd
                       - text: "number_of_modes"
@@ -1196,6 +1216,8 @@ website:
                         href: datamodel/slots/number_of_vertices.qmd
                       - text: "objective"
                         href: datamodel/slots/objective.qmd
+                      - text: "objectives"
+                        href: datamodel/slots/objectives.qmd
                       - text: "observable"
                         href: datamodel/slots/observable.qmd
                       - text: "observational_measures"
@@ -1274,6 +1296,8 @@ website:
                         href: datamodel/slots/preprocessing.qmd
                       - text: "primary_weight"
                         href: datamodel/slots/primary_weight.qmd
+                      - text: "priors"
+                        href: datamodel/slots/priors.qmd
                       - text: "procedure"
                         href: datamodel/slots/procedure.qmd
                       - text: "processing_pipeline"
@@ -1344,6 +1368,8 @@ website:
                         href: datamodel/slots/same_as.qmd
                       - text: "sample"
                         href: datamodel/slots/sample.qmd
+                      - text: "sampler"
+                        href: datamodel/slots/sampler.qmd
                       - text: "sampling_period"
                         href: datamodel/slots/sampling_period.qmd
                       - text: "sampling_period_unit"
@@ -1370,6 +1396,8 @@ website:
                         href: datamodel/slots/sex.qmd
                       - text: "shape"
                         href: datamodel/slots/shape.qmd
+                      - text: "sigma"
+                        href: datamodel/slots/sigma.qmd
                       - text: "simulation_experiments"
                         href: datamodel/slots/simulation_experiments.qmd
                       - text: "simulation_period"
@@ -1428,6 +1456,8 @@ website:
                         href: datamodel/slots/stimulation_variable.qmd
                       - text: "stimulus"
                         href: datamodel/slots/stimulus.qmd
+                      - text: "strategy"
+                        href: datamodel/slots/strategy.qmd
                       - text: "structural_measures"
                         href: datamodel/slots/structural_measures.qmd
                       - text: "subject_id"
@@ -1510,6 +1540,8 @@ website:
                         href: datamodel/slots/tractogram.qmd
                       - text: "trajectory"
                         href: datamodel/slots/trajectory.qmd
+                      - text: "transform"
+                        href: datamodel/slots/transform.qmd
                       - text: "transforms"
                         href: datamodel/slots/transforms.qmd
                       - text: "transient_time"
