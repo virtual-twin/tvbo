@@ -760,15 +760,19 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         **kwargs,
     ):
         iri = kwargs.get("iri")
-        if iri and (name is None or name == "Dynamics") and "parameters" not in kwargs:
-            local = iri.split(":", 1)[-1] if ":" in iri else iri
+        if iri and (name is None or name == "Dynamics"):
+            from tvbo.data.registry import resolve, local_name
+            from tvbo.utils import deep_merge
+
+            local = local_name(iri)
             try:
-                from tvbo.data.registry import resolve
-                yaml_path = resolve("Dynamics", local)
-                loaded = yaml_loader.load_as_dict(str(yaml_path))
+                loaded = yaml_loader.load_as_dict(str(resolve("Dynamics", local)))
                 _resolve_dynamics_aliases(loaded)
-                for key, value in loaded.items():
-                    kwargs.setdefault(key, value)
+                # Registry entry is the base; inline kwargs override at the leaf
+                # (e.g. parameters.a.value wins, siblings kept from the entry).
+                merged = deep_merge(loaded, kwargs)
+                kwargs.clear()
+                kwargs.update(merged)
                 name = kwargs.pop("name", local)
                 _skip_ontology = True
             except (FileNotFoundError, RuntimeError):
