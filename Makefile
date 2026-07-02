@@ -58,9 +58,10 @@ OPENMINDS_DIR = schema/openMINDS_tvbo
 
 gen-linkml:
 	@echo "Generating Python datamodel from LinkML schema..."
-	@mkdir -p $(DATAMODEL_DIR)
-	@gen-pydantic $(SCHEMA_PATH) > $(DATAMODEL_DIR)/pydantic.py
-	@gen-python $(SCHEMA_PATH) > $(DATAMODEL_DIR)/schema.py
+	@# Single source of truth shared with the hatch build hook: hatch_build.py
+	@# generates + strips the nondeterministic header, so from-source (`make`) and
+	@# build-time (wheel/sdist/editable) codegen produce byte-identical output.
+	@python hatch_build.py
 	@echo "✓ LinkML datamodel generated in $(DATAMODEL_DIR)/"
 
 gen-openminds:
