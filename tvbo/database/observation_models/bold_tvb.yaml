@@ -32,8 +32,10 @@ pipeline:
           rhs: "window_mean(X, stepsize)"
       arguments:
           stepsize:
-              value: 1
-              description: "Interim averaging window (1 = no averaging)"
+              description: >-
+                  Interim averaging window in integration steps. Resolved from the
+                  integration dt (= stock_dt / dt), not a raw-grid literal, so every
+                  backend downsamples the neural trace onto the same stock grid.
       apply_on_dimension: time
 
     - name: hemodynamic_response
@@ -76,11 +78,18 @@ pipeline:
       input: convolve
       output: subsampled
       equation:
-          rhs: "subsample(X, stepsize)"
+          rhs: "subsample(X, start, stepsize)"
       arguments:
+          start:
+              description: >-
+                  Index of the first output sample. Resolved to stepsize - 1 so
+                  the first sample lands at the same interim step TVB emits at
+                  (step % istep == 0, 1-indexed), matching tvboptim/tvb.
           stepsize:
-              value: 180
-              description: "TR / dt"
+              description: >-
+                  Number of interim (stock-grid) samples per output sample. Resolved
+                  from the integration dt (= (TR / dt) / interim_istep), not a
+                  raw-grid literal, so all backends emit the same number of samples.
       apply_on_dimension: time
 
     - name: volterra_transform

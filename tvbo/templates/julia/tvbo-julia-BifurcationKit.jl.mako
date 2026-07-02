@@ -1,12 +1,16 @@
 using BifurcationKit
 using OrdinaryDiffEq
+<%!
+from tvbo.adapters.julia_model import build_model_context
+%>
 <%
 ## All variables are pre-computed by BifurcationKitAdapter._prepare_context()
 ## Template only places values — no processing.
 svs = list(model.state_variables.values())
+mc = build_model_context(model)
 %>
 ##
-<%include file="/tvbo-julia-model.jl.mako" args="model=model" />
+<%include file="/tvbo-julia-model.jl.mako" args="mc=mc" />
 ##
 # Override continuation parameter to start within [p_min, p_max]
 p = merge(p, (${ICS} = ${float(p_start)},))

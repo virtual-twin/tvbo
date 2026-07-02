@@ -29,7 +29,9 @@ pipeline:
           rhs: "window_mean(X, stepsize)"
       arguments:
           stepsize:
-              value: 1
+              description: >-
+                  Interim averaging window in integration steps. Resolved from the
+                  integration dt (= stock_dt / dt), not a raw-grid literal.
       apply_on_dimension: time
 
     - name: hemodynamic_response
@@ -76,8 +78,14 @@ pipeline:
       input: convolve
       output: Bold
       equation:
-          rhs: "subsample(X, stepsize)"
+          rhs: "subsample(X, start, stepsize)"
       arguments:
+          start:
+              description: >-
+                  Index of first output sample (resolved to stepsize - 1) so the
+                  first sample aligns with TVB's step % istep == 0 emission.
           stepsize:
-              description: "TR / dt"
+              description: >-
+                  Interim samples per output sample. Resolved from the integration
+                  dt (= (TR / dt) / interim_istep), not a raw-grid literal.
       apply_on_dimension: time

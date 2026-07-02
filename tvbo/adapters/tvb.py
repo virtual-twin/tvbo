@@ -924,11 +924,22 @@ def to_tvb(network):
     cs_param = getattr(network, "conduction_speed", None)
     cs_value = cs_param.value if cs_param and hasattr(cs_param, "value") else 3.0
     _speed = np.asarray([cs_value], dtype=float)
+
+    # Region labels for THIS connectome come from its own nodes (they align with
+    # the weights matrix). Only fall back to the parcellation atlas for networks
+    # with no per-node labels; the atlas may lack terminology (-> nii volume
+    # lookup that raises for label-only parcellations like Lobar8) or hold the
+    # full parcellation (87 DK entities vs an 84-node connectome subset).
+    _labels = network.node_labels
+    if not _labels or len(_labels) != _weights.shape[0]:
+        _labels = list(network.atlas.region_labels)
+    _region_labels = np.asarray(_labels)
+
     tvb_conn = Connectivity(
         weights=_weights,
         tract_lengths=_lengths,
         centres=_centres,
-        region_labels=network.atlas.region_labels,
+        region_labels=_region_labels,
         speed=_speed,
     )
     tvb_conn.configure()

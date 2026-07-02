@@ -22,6 +22,9 @@ tstops, \
 <%!
 from tvbo.codegen import render_expression
 from sympy.parsing.sympy_parser import parse_expr as _parse_expr
+from tvbo.adapters.julia_model import (
+    julia_ode_package, build_ifelse, needs_special_functions, symbol_names,
+)
 %>
 <%
 # Check if any parameter or state variable has units
@@ -38,11 +41,8 @@ for sv_name, sv in (model.state_variables or {}).items():
         has_units = True
         unit_map[sv_name] = str(u)
 
-# Prepare expression renderer
-param_names = list((model.parameters or {}).keys())
-ct_names = list((model.coupling_terms or {}).keys()) if model.coupling_terms else []
-dv_names = list((model.derived_variables or {}).keys()) if getattr(model, 'derived_variables', None) else []
-dp_names = list((model.derived_parameters or {}).keys()) if getattr(model, 'derived_parameters', None) else []
+# Prepare expression renderer (symbol lists shared with the other Julia backends)
+_sv, param_names, ct_names, dv_names, dp_names = symbol_names(model)
 all_symbols = sv_names + param_names + ct_names + dv_names + dp_names
 func_names = {str(fname): str(fname) for fname in (getattr(model, 'functions', None) or {}).keys()}
 
@@ -103,15 +103,8 @@ for sv_name, sv in model.state_variables.items():
         higher_order_svs[sv_name] = int(order)
 has_higher_order = len(higher_order_svs) > 0
 
-# Detect if any equation uses special functions (erfc, erf, etc.)
-_all_rhs = ''
-for sv in model.state_variables.values():
-    _all_rhs += str(sv.equation.rhs) + ' '
-for dv in (getattr(model, 'derived_variables', None) or {}).values():
-    _all_rhs += str(dv.equation.rhs) + ' '
-for dp in (getattr(model, 'derived_parameters', None) or {}).values():
-    _all_rhs += str(dp.equation.rhs) + ' '
-needs_special_functions = any(fn in _all_rhs for fn in ('erfc', 'erf(', 'besselj', 'besseli', 'gamma('))
+# Detect if any equation uses special functions (shared across Julia backends)
+model_needs_special = needs_special_functions(model)
 
 # Helper: escape backslashes in Julia strings to avoid parse errors
 def jl_escape(s):
@@ -131,28 +124,12 @@ using ModelingToolkit: t_nounits as t, D_nounits as Dt
 % if is_stochastic:
 using StochasticDiffEq
 % else:
-<%
-# Map solver names to their OrdinaryDiffEq sub-packages
-_SOLVER_PKG = {
-    'Tsit5': 'OrdinaryDiffEqTsit5',
-    'Heun': 'OrdinaryDiffEqLowOrderRK',
-    'Euler': 'OrdinaryDiffEqLowOrderRK',
-    'Midpoint': 'OrdinaryDiffEqLowOrderRK',
-    'RK4': 'OrdinaryDiffEqLowOrderRK',
-    'DP5': 'OrdinaryDiffEqTsit5',
-    'BS3': 'OrdinaryDiffEqLowOrderRK',
-    'Vern7': 'OrdinaryDiffEqVerner',
-    'Rodas5': 'OrdinaryDiffEqRosenbrock',
-    'TRBDF2': 'OrdinaryDiffEqSDIRK',
-}
-_ode_pkg = _SOLVER_PKG.get(str(solver_method), 'OrdinaryDiffEq')
-%>\
-using ${_ode_pkg}
+using ${julia_ode_package(solver_method)}
 % endif
 % if needs_stiff:
 using OrdinaryDiffEqSDIRK
 % endif
-% if needs_special_functions:
+% if model_needs_special:
 using SpecialFunctions
 % endif
 
@@ -234,18 +211,7 @@ end
 %>\
 % if is_conditional:
 <%
-    cases = list(dv.cases)
-    def build_ifelse(cases):
-        if len(cases) == 1:
-            return juliacode(cases[0].equation.rhs)
-        c = cases[0]
-        cond = str(c.condition).strip()
-        if cond.lower() == 'true':
-            return juliacode(c.equation.rhs)
-        expr = juliacode(c.equation.rhs)
-        rest = build_ifelse(cases[1:])
-        return f'ifelse({cond}, {expr}, {rest})'
-    ifelse_expr = build_ifelse(cases)
+    ifelse_expr = build_ifelse(list(dv.cases), juliacode)
 %>\
         ${dv.name} ~ ${ifelse_expr},
 % else:
