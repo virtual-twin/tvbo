@@ -55,7 +55,7 @@ parameters:
 references:
 - Byrne2020
 coupling_inputs:
-  c_pop0: {}
+  c_glob: {}
 state_variables:
   V:
     domain:
@@ -63,7 +63,7 @@ state_variables:
       hi: 10.0
     equation:
       lhs: Derivative(V, t)
-      rhs: V**2 + c_pop0 + eta + g*(-V + v_syn) - pi**2*r**2
+      rhs: V**2 + c_glob + eta + g*(-V + v_syn) - pi**2*r**2
       latex: false
     coupling_variable: true
     initial_value: 0.1

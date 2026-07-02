@@ -69,8 +69,8 @@ description: ''
 references:
 - Montbrio2015
 coupling_inputs:
-  c_pop0: {}
-  c_pop1: {}
+  c_glob0: {}
+  c_glob1: {}
 state_variables:
   V:
     domain:
@@ -78,7 +78,7 @@ state_variables:
       hi: 1.5
     equation:
       lhs: Derivative(V, t)
-      rhs: (I + J*r*tau + V**2 + c_pop0*cr*tau + c_pop1*cv + eta - pi**2*r**2*tau**2)/tau
+      rhs: (I + J*r*tau + V**2 + c_glob0*cr*tau + c_glob1*cv + eta - pi**2*r**2*tau**2)/tau
       latex: false
     coupling_variable: true
     initial_value: 0.1

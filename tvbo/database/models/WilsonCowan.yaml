@@ -243,7 +243,7 @@ derived_variables:
     description: Average level of excitation in excitatory neuron at time t. Can be interpreted as membrane potential (Sanz-Leon et al., 2015).
     equation:
       lhs: x_e
-      rhs: alpha_e*(-I*c_ei + P + c_ee*E + c_pop0 + lc_0 + lc_1 - theta_e)
+      rhs: alpha_e*(-I*c_ei + P + c_ee*E + c_glob + lc_0 + lc_1 - theta_e)
       latex: false
     conditional: false
     grounding:
@@ -270,7 +270,7 @@ derived_variables:
       latex: false
     conditional: false
 coupling_inputs:
-  c_pop0: {}
+  c_glob: {}
   local_coupling: {local: true}
 state_variables:
   E:

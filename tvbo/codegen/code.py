@@ -289,9 +289,10 @@ _ARRAY_FUNCTION_PRINTERS = {
     "mode_sum": _afp_mode_sum,
 }
 
-# Ops Julia renders natively (slice/stride family + shape); the rest defer to Julia's
+# Ops Julia renders natively (slice/stride family + shape, plus the mode-axis
+# contractions used by multi-mode models); the rest defer to Julia's
 # name-mappings (vcat/transpose/…) or graceful-degrade, so Julia output never regresses.
-_JULIA_HANDLED_OPS = {"subsample", "slice_axis", "slice_from", "shape"}
+_JULIA_HANDLED_OPS = {"subsample", "slice_axis", "slice_from", "shape", "mode_dot", "mode_sum"}
 
 
 class _ArrayFunctionPrinterMixin:
@@ -640,6 +641,17 @@ class JuliaPrinter(_ArrayFunctionPrinterMixin, spj.JuliaCodePrinter):
 
     def _shape(self, base, axis):
         return f"size({base}, {axis + 1})"
+
+    def _mat_dot(self, a, b):
+        # Multi-mode contraction ``numpy.dot(X, M)`` where M is stored as a
+        # Vector{Vector} of rows: sum_i X[i] * M[i] == sum(X .* M) in Julia.
+        return f"sum({a} .* {b})"
+
+    def _reduce_axis(self, fn, base, axis, keepdims=False):
+        # Mode-axis reduction (``mode_sum``) over a per-node mode vector reduces
+        # the whole vector to a scalar that broadcasts back through ``.+``/``.-``.
+        jl_fn = {"sum": "sum", "mean": "Statistics.mean"}.get(fn, fn)
+        return f"{jl_fn}({base})"
 
     def _render_index(self, base, specs):
         parts = []

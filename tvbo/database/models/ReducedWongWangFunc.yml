@@ -82,11 +82,11 @@ derived_variables:
     description: (NMDAR)-mediated synaptic input current to the neurons population (Deco et al., 2013).
     equation:
       lhs: x
-      rhs: I_o + J_N*S*local_coupling + J_N*S*w + J_N*c_pop0
+      rhs: I_o + J_N*S*local_coupling + J_N*S*w + J_N*c_glob
       latex: false
     conditional: false
 coupling_inputs:
-  c_pop0: {}
+  c_glob: {}
   local_coupling: {}
 state_variables:
   S:

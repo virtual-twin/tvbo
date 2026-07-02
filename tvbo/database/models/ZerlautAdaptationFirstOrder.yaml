@@ -411,11 +411,11 @@ derived_variables:
     symbol: Fe_ext
     equation:
       lhs: Fe_ext
-      rhs: Piecewise((0, K_ext_e*(c_pop0 + lc_E + ou_drift*weight_noise) < 0), (c_pop0 + lc_E + ou_drift*weight_noise, True))
+      rhs: Piecewise((0, K_ext_e*(c_glob + lc_E + ou_drift*weight_noise) < 0), (c_glob + lc_E + ou_drift*weight_noise, True))
       latex: false
     conditional: true
     cases:
-    - condition: K_ext_e*(c_pop0 + lc_E + ou_drift*weight_noise) < 0
+    - condition: K_ext_e*(c_glob + lc_E + ou_drift*weight_noise) < 0
       equation:
         lhs: Fe_ext
         rhs: '0'
@@ -423,7 +423,7 @@ derived_variables:
     - condition: 'True'
       equation:
         lhs: Fe_ext
-        rhs: c_pop0 + lc_E + ou_drift*weight_noise
+        rhs: c_glob + lc_E + ou_drift*weight_noise
         latex: false
   Fi_ext:
     equation:
@@ -625,7 +625,7 @@ derived_variables:
       latex: false
     conditional: false
 coupling_inputs:
-  c_pop0: {}
+  c_glob: {}
   local_coupling: {local: true}
 state_variables:
   E:

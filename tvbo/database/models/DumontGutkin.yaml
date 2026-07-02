@@ -158,7 +158,7 @@ description: ''
 references:
 - Dumont2019
 coupling_inputs:
-  c_pop0: {}
+  c_glob: {}
 state_variables:
   V_e:
     domain:
@@ -218,7 +218,7 @@ state_variables:
       hi: 1.0
     equation:
       lhs: Derivative(s_ee, t)
-      rhs: (J_ee*r_e + c_pop0 - s_ee)/tau_s
+      rhs: (J_ee*r_e + c_glob - s_ee)/tau_s
       latex: false
     coupling_variable: false
     initial_value: 0.1
@@ -238,7 +238,7 @@ state_variables:
       hi: 1.0
     equation:
       lhs: Derivative(s_ie, t)
-      rhs: (Gamma*c_pop0 + J_ie*r_e - s_ie)/tau_s
+      rhs: (Gamma*c_glob + J_ie*r_e - s_ie)/tau_s
       latex: false
     coupling_variable: false
     initial_value: 0.1

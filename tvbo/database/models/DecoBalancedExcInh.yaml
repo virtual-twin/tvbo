@@ -212,7 +212,7 @@ derived_variables:
   coupling:
     equation:
       lhs: coupling
-      rhs: G*J_N*(S_e*local_coupling + c_pop0)
+      rhs: G*J_N*(S_e*local_coupling + c_glob)
       latex: false
     conditional: false
   I_e:
@@ -272,7 +272,7 @@ derived_variables:
     - GO:0060080
     - GO:0099605
 coupling_inputs:
-  c_pop0: {}
+  c_glob: {}
   local_coupling: {local: true}
 state_variables:
   S_e:

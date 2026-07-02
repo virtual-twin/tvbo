@@ -2323,7 +2323,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
                 )
             )
 
-        # No extra network input channel; coupling terms (e.g., c_pop0) are already in metadata
+        # No extra network input channel; coupling terms (e.g., c_glob) are already in metadata
 
         # Coupling parameters as exposed Parameters
         cterms = _ontology.get_model_coupling_terms(self.ontology)
@@ -2399,7 +2399,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
             )
             # Base derivative from ontology
             base_expr = str(_equation_mod.sympify_value(deriv)).replace("**", "^")
-            # Do not inject extra inputs here; global coupling is represented via coupling_inputs (e.g., c_pop0)
+            # Do not inject extra inputs here; global coupling is represented via coupling_inputs (e.g., c_glob)
 
             local_ct.dynamics.add(
                 lems.TimeDerivative(

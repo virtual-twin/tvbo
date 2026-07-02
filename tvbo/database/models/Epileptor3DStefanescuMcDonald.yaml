@@ -28,14 +28,14 @@ parameters:
     domain: {lo: 100.0, hi: 10000.0, step: 1.0}
     unit: ms
 coupling_inputs:
-  c_pop0: {}
+  c_glob: {}
 state_variables:
   x1:
     domain: {lo: -2.0, hi: 2.0}
     description: Fast excitable variable (placeholder Epileptor-like dynamics).
     equation:
       lhs: Derivative(x1, t)
-      rhs: N*(x1 - x1**3/3 - z + c_pop0)
+      rhs: N*(x1 - x1**3/3 - z + c_glob)
       latex: false
     coupling_variable: true
     initial_value: -1.5
