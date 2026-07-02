@@ -86,7 +86,12 @@ ARRAY_FUNCTIONS = {
     # JAX / NumPy calls (including .reshape() and keyword args that SymPy
     # cannot represent natively).
     "window_mean": Function("window_mean"),  # window_mean(X, w) → jnp.mean(X.reshape(-1, w, *X.shape[1:]), axis=1)
-    "subsample": Function("subsample"),      # subsample(X, step) → X[::step]
+    "subsample": Function("subsample"),      # subsample(X, step[, start]) → X[start::step]
+    # Structural slice/shape ops — let an observation pipeline that selects a voi, trims a
+    # transient, or downsamples be authored as declarative equations instead of source_code.
+    "slice_axis": Function("slice_axis"),    # slice_axis(X, axis, start, stop[, step]) → bounded slice of one axis (keeps ndim)
+    "slice_from": Function("slice_from"),    # slice_from(X, axis, start)               → open-ended slice of one axis (to the end)
+    "shape": Function("shape"),              # shape(X, axis)                           → length of X along axis
     "global_mean": Function("global_mean"),  # global_mean(X) → jnp.mean(X, axis=-2, keepdims=True)
     "transpose": Function("transpose"),      # transpose(X) → X.T
     "mode_dot": Function("mode_dot"),        # mode_dot(X, M) → X·M contracted over the mode axis ({np,jnp}.dot)
