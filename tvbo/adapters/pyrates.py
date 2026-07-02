@@ -214,8 +214,10 @@ def _inline_model_functions(expr, dyn):
         func_eq = getattr(func_def, "equation", None)
         if not func_eq or not func_eq.rhs:
             continue
-        args = getattr(func_def, "arguments", None) or []
-        arg_names = [str(getattr(a, "name", a)) for a in args]
+        args = getattr(func_def, "arguments", None) or {}
+        # Function arguments are keyed by name (dict); tolerate a legacy list too.
+        arg_iter = args.values() if hasattr(args, "values") else args
+        arg_names = [str(getattr(a, "name", a)) for a in arg_iter]
         sym_func = sp.Function(func_name)
         for match in expr.atoms(sp.Function(func_name)):
             if match.func == sym_func:

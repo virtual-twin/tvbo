@@ -180,8 +180,10 @@ def inline_model_functions(expr, dynamics, all_names):
 
     functions = getattr(dynamics, "functions", None) or {}
     for fname, fn_obj in functions.items():
-        arguments = getattr(fn_obj, "arguments", None) or []
-        arg_names = [getattr(a, "name", str(a)) for a in arguments]
+        arguments = getattr(fn_obj, "arguments", None) or {}
+        # Function arguments are keyed by name (dict); tolerate a legacy list too.
+        arg_iter = arguments.values() if hasattr(arguments, "values") else arguments
+        arg_names = [getattr(a, "name", str(a)) for a in arg_iter]
         rhs_str = getattr(getattr(fn_obj, "equation", None), "rhs", None)
         if not rhs_str or not arg_names:
             continue
