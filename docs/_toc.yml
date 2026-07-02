@@ -163,6 +163,8 @@ website:
                         href: Interoperability/tvboptim/TBPTT_tvboptim.qmd
                       - text: "Hopf Pareto"
                         href: Interoperability/tvboptim/Hopf_Pareto_tvboptim.qmd
+                      - text: "Bayesian Inference"
+                        href: Interoperability/tvboptim/Bayesian_tvboptim.qmd
                   - section: "PyRates"
                     href: Interoperability/Pyrates/index.qmd
                     contents:

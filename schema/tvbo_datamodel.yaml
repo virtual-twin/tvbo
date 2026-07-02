@@ -2759,6 +2759,118 @@ classes:
                 description: "Optional bounds (lo, hi) for constrained optimization."
 
     # =============================================================================
+    # Bayesian Inference
+    # =============================================================================
+    Inference:
+        class_uri: tvbo:Inference
+        description: >-
+            Bayesian inference of model parameters from an observation, via MCMC. A
+            standalone, first-class concept (NOT an Optimization): it produces a
+            POSTERIOR, not a point estimate, using priors + a likelihood + a sampler
+            instead of a loss + optimizer. It runs the SAME differentiable forward
+            model, wrapped in a probabilistic model (sample priors -> forward ->
+            likelihood).
+        slots:
+            - name
+            - label
+            - description
+        attributes:
+            priors:
+                multivalued: true
+                range: Prior
+                inlined: true
+                description: >-
+                    Priors over the inferred parameters, keyed by each parameter's
+                    dotted name (e.g. "Generic2dOscillator.eta" or
+                    "PulseInput.amplitude"). The KEYS are the inferred parameters —
+                    there is no separate free-parameter list.
+            likelihood:
+                range: Likelihood
+                inlined: true
+                required: true
+                description: "Observation model p(data | sim(theta))."
+            sampler:
+                range: string
+                ifabsent: string(nuts)
+                description: "MCMC sampler ('nuts'). Each backend maps its own way."
+            num_samples:
+                range: integer
+                ifabsent: integer(1000)
+                description: "Posterior samples to draw."
+            num_warmup:
+                range: integer
+                ifabsent: integer(1000)
+                description: "Warmup/adaptation steps before sampling."
+            num_chains:
+                range: integer
+                ifabsent: integer(1)
+                description: "Independent MCMC chains."
+            seed:
+                range: integer
+                ifabsent: integer(0)
+                description: "PRNG seed for reproducible sampling."
+            execution:
+                range: ExecutionConfig
+                inlined: true
+                description: "Per-inference execution config (overrides experiment defaults)."
+            integration:
+                range: Integrator
+                inlined: true
+                description: "Forward-model integration settings (overrides experiment defaults)."
+            depends_on:
+                range: Algorithm
+                inlined: false
+                description: "Optional algorithm whose result state seeds the inference."
+
+    Prior:
+        class_uri: tvbo:Prior
+        description: >-
+            Prior belief over one inferred parameter. In `Inference.priors` the
+            collection KEY is the parameter's dotted name; the value wraps a
+            `Distribution` as the belief (reusing the standard distribution vocabulary
+            rather than inventing a new one). Distinct from `Parameter.distribution`,
+            which specifies per-node SAMPLING, not a prior.
+        slots:
+            - name
+            - description
+        attributes:
+            distribution:
+                range: Distribution
+                inlined: true
+                required: true
+                description: >-
+                    The prior distribution: e.g. {name: Normal, parameters: {mean, std}}
+                    or {name: Uniform, domain: {lo, hi}}.
+
+    Likelihood:
+        class_uri: tvbo:Likelihood
+        description: >-
+            Observation model for Bayesian inference: p(data | sim(theta)). Points at
+            the observation holding the data and specifies the noise family + scale.
+            `name` is the noise family (default Normal); `source` uses the same
+            referencing as `Observation.source`, so the observed data can come from
+            this experiment's integration, an empirical network measure, or a
+            runtime-bound array — one flexible hook, no data-loading path of its own.
+        slots:
+            - name
+            - description
+        slot_usage:
+            name:
+                ifabsent: string(Normal)
+        attributes:
+            source:
+                multivalued: true
+                range: string
+                required: true
+                description: "Observation(s) providing the observed data."
+            sigma:
+                range: float
+                description: >-
+                    Observation-noise scale of the likelihood. May deliberately differ
+                    from the data's generative noise — it sets how tightly the
+                    likelihood constrains the (possibly degenerate) parameter ridge.
+
+    # =============================================================================
     # Iterative Tuning Algorithms (FIC, EIB, etc.)
     # =============================================================================
 
@@ -3672,6 +3784,14 @@ classes:
                 range: Exploration
                 inlined: true
                 description: "Parameter exploration/grid search specifications"
+            inferences:
+                multivalued: true
+                range: Inference
+                inlined: true
+                aliases: [inference]
+                description: >-
+                    Bayesian inference configurations (posterior over parameters given
+                    an observation, via MCMC). Keyed by name, like optimizations.
             algorithms:
                 multivalued: true
                 range: Algorithm

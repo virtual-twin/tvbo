@@ -21,6 +21,7 @@ The **tvboptim** backend provides high-performance simulation and optimization c
 | [EI Tuning](EI_Tuning_tvboptim.qmd) | RWW | Excitation-Inhibition balance tuning |
 | [TBPTT](TBPTT_tvboptim.qmd) | Jansen-Rit | Truncated backprop-through-time; gradient diagnostics |
 | [Hopf Pareto](Hopf_Pareto_tvboptim.qmd) | SupHopf | NSGA-II multi-objective (FC vs frequency gradient) + parallel refinement |
+| [Bayesian Inference](Bayesian_tvboptim.qmd) | Generic2dOscillator | numpyro MCMC; recover stimulus + excitability |
 
 ## Quick Start
 

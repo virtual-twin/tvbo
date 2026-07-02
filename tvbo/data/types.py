@@ -888,6 +888,43 @@ class OptimizationResult:
         return fig
 
 
+class InferenceResult:
+    """Result of Bayesian inference (MCMC posterior over parameters).
+
+    Attributes
+    ----------
+    name : str
+        Inference name (the ``inferences:`` key).
+    posterior : dict
+        Posterior samples keyed by parameter dotted-name (the ``priors`` keys),
+        each an array of length ``num_samples`` (× ``num_chains``).
+    diagnostics : dict
+        Sampler diagnostics (per-parameter ``mean``/``std``/``r_hat``/``n_eff`` etc.,
+        as returned by ``numpyro.diagnostics.summary``).
+    """
+
+    def __init__(self, name=None, posterior=None, diagnostics=None, **kwargs):
+        self.name = name
+        self.posterior = posterior or {}
+        self.diagnostics = diagnostics or {}
+        self._extras = kwargs
+
+    def mean(self):
+        """Posterior mean per parameter."""
+        import numpy as _np
+
+        return {k: float(_np.asarray(v).mean()) for k, v in self.posterior.items()}
+
+    def std(self):
+        """Posterior standard deviation per parameter."""
+        import numpy as _np
+
+        return {k: float(_np.asarray(v).std()) for k, v in self.posterior.items()}
+
+    def __repr__(self):
+        return f"InferenceResult(name={self.name!r}, params={list(self.posterior)})"
+
+
 class ExplorationResult(Bunch):
     """Result of parameter exploration (grid search).
 
