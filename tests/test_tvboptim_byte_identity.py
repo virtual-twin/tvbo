@@ -592,3 +592,61 @@ def test_ei_trajectory(eager):
     n = min(sim_tvbo.shape[1], sim_ref.shape[1])
     assert_identical("EI trajectory", sim_tvbo[:, :n, :], sim_ref[:, :n, :])
     assert_identical("EI bold", bold_tvbo, bold_ref)
+
+
+# =============================================================================
+# Bayesian inference — Stimulation_with_Bayesian_Inference (numpyro NUTS).
+# The forward model is byte-identical to a hand-built tvboptim reference; since the
+# observed data, likelihood, priors, and NUTS setup all match, the posterior is too.
+# =============================================================================
+def _bayesian_reference_forward():
+    """tvboptim-native forward at the true (declared) params -> recorded_ts."""
+    import jax.numpy as jnp
+    from tvboptim.experimental.network_dynamics import Network, prepare
+    from tvboptim.experimental.network_dynamics.dynamics.tvb import Generic2dOscillator
+    from tvboptim.experimental.network_dynamics.coupling import LinearCoupling
+    from tvboptim.experimental.network_dynamics.graph import DenseGraph
+    from tvboptim.experimental.network_dynamics.solvers import Heun
+    from tvboptim.experimental.network_dynamics.external_input import PulseInput
+
+    net = Network(
+        dynamics=Generic2dOscillator(a=-1.5, b=-15.0, c=0.0, d=0.015, e=3.0, f=1.0,
+                                      tau=4.0, I=0.1, VARIABLES_OF_INTEREST=("V",)),
+        coupling={"instant": LinearCoupling(incoming_states="V", G=0.0)},
+        graph=DenseGraph(jnp.zeros((1, 1))),
+        external_input={"stimulus": PulseInput(onset=10.0, duration=1.0, amplitude=0.4)},
+    )
+    sf, cfg = prepare(net, Heun(), t0=0.0, t1=150.0, dt=0.2)
+    return np.asarray(sf(cfg).ys[::15, 0, 0]).ravel()
+
+
+def test_bayesian_forward_byte_identity(eager):
+    exp = SimulationExperiment.from_file(str(EXPERIMENTS_DIR / "Stimulation_Bayesian_Inference.yaml"))
+    exp.configure()
+    rec_tvbo = np.asarray(exp.run("tvboptim", mode="simulation").observations.recorded_ts.data).ravel()
+    rec_ref = _bayesian_reference_forward()
+    n = min(len(rec_tvbo), len(rec_ref))
+    assert_identical("Bayesian forward recorded_ts", rec_tvbo[:n], rec_ref[:n])
+
+
+def test_bayesian_inference_recovers_and_steers():
+    """MCMC smoke (reduced samples): both params recovered near truth, the amplitude/I
+    degeneracy ridge (negative correlation), and prior-steering across scenarios."""
+    import jax
+    exp = SimulationExperiment.from_file(str(EXPERIMENTS_DIR / "Stimulation_Bayesian_Inference.yaml"))
+    for inf in exp.inferences.values():
+        inf.num_warmup, inf.num_samples = 200, 400
+    exp.configure()
+    rec = np.asarray(exp.run("tvboptim", mode="simulation").observations.recorded_ts.data).ravel()
+    observed = rec + 0.1 * np.asarray(jax.random.normal(jax.random.key(42), (rec.shape[0],)))
+    r = exp.run("tvboptim", mode="inference", recorded_ts=observed)
+
+    post = {k: (np.asarray(r.inferences[k].posterior["stimulus.amplitude"]),
+                np.asarray(r.inferences[k].posterior["Generic2dOscillator.I"])) for k in r.inferences}
+    a_A, i_A = post["scenario_A"]
+    assert abs(a_A.mean() - 0.4) < 0.15, f"amplitude not recovered: {a_A.mean():.3f}"
+    assert abs(i_A.mean() - 0.1) < 0.15, f"I not recovered: {i_A.mean():.3f}"
+    assert np.corrcoef(a_A, i_A)[0, 1] < -0.5, "expected amplitude/I degeneracy ridge"
+    # prior-steering: the tight-excitability prior (C) clearly narrows the I posterior
+    # vs the wide prior (A) — the robust steering signal at reduced sample counts.
+    assert post["scenario_C"][1].std() < post["scenario_A"][1].std(), "prior-steering (I) not observed"

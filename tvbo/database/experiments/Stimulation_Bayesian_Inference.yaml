@@ -1,0 +1,127 @@
+# =============================================================================
+# Bayesian inference: recover parameters from a noisy recording via MCMC.
+# 1:1 with tvboptim Stimulation_with_Bayesian_Inference.qmd. A 1 ms pulse drives a
+# single-node Generic2dOscillator in the QUIESCENT regime; from one noisy recording
+# of V we recover BOTH the stimulus amplitude and the excitability I (they trade off
+# — a degenerate ridge), and priors steer the posterior (scenarios A/B/C).
+# =============================================================================
+id: 8
+label: "Bayesian Inference (Stimulation)"
+description: >
+  Recover stimulus amplitude and excitability I of a pulse-driven Generic2dOscillator
+  from one noisy recording, via numpyro NUTS/MCMC. Three prior scenarios steer the
+  posterior along the amplitude/excitability degeneracy ridge. Replicates tvboptim.
+
+dynamics:
+  iri: tvbo:Generic2dOscillator
+  label: "Generic 2D Oscillator (quiescent regime)"
+  # Reference DYNAMICS_PARAMS = {a:-1.5, b:-15, c:0, d:0.015, e:3, f:1, tau:4}, I=0.1
+  # (g/alpha/beta/gamma left at TVB defaults). Override replaces the set, so all listed.
+  parameters:
+    a: {value: -1.5}
+    alpha: {value: 1.0}
+    b: {value: -15.0}
+    beta: {value: 1.0}
+    c: {value: 0.0}
+    d: {value: 0.015}
+    e: {value: 3.0}
+    f: {value: 1.0}
+    g: {value: 0.0}
+    gamma: {value: 1.0}
+    tau: {value: 4.0}
+    I: {value: 0.1}          # true excitability (recording generated here)
+  state_variables:
+    V:
+      equation:
+        rhs: "d*tau*(I*gamma - V**3*f + V**2*e + V*g + V*local_coupling + W*alpha + c_glob*gamma) + stimulus"
+      coupling_variable: true
+      initial_value: 0.0
+    W:
+      equation:
+        rhs: "d*(V**2*c + V*b - W*beta + a)/tau"
+      initial_value: 0.0
+
+network:
+  label: "Single node"
+  description: "Single-region model — stimulus and excitability trade off here."
+  number_of_nodes: 1
+  coupling:
+    c_lin:
+      label: "Linear coupling"
+      iri: tvbo:Linear
+      delayed: false
+      parameters:
+        G: {value: 0.0, description: "No inter-node coupling (single node)"}
+      incoming_states: [V]
+
+integration:
+  method: Heun
+  step_size: 0.2
+  duration: 150.0
+  transient_time: 0.0
+
+events:
+  stimulus:
+    label: "Pulse stimulus"
+    description: "1 ms rectangular pulse of amplitude A at onset=10 ms, driving V."
+    event_type: stimulus
+    equation:
+      rhs: "Piecewise((amplitude, (t >= onset) & (t < onset + duration)), (0.0, True))"
+    parameters:
+      amplitude: {value: 0.4, description: "True pulse amplitude (inferred)"}
+      onset: {value: 10.0, unit: ms}
+      duration: {value: 1.0, unit: ms}
+    regions: [0]
+    weighting: [1.0]
+
+functions:
+  subsample_ts:
+    description: "Subsample the recording every 15 steps (reference obs_idx)."
+    source_code: "data[::15, 0, 0]"
+    arguments:
+      data: {}
+
+observations:
+  recorded_ts:
+    label: "Recorded fast variable V (subsampled)"
+    description: "The observed time series: V at node 0, subsampled every 15 steps."
+    source: [V]
+    pipeline:
+      - function: subsample_ts
+
+inferences:
+  scenario_A:
+    label: "A — no hypothesis (wide priors)"
+    priors:
+      stimulus.amplitude:    {distribution: {name: Normal, parameters: {mean: {value: 0.2}, std: {value: 0.20}}}}
+      Generic2dOscillator.I: {distribution: {name: Normal, parameters: {mean: {value: 0.0}, std: {value: 0.10}}}}
+    likelihood: {source: [recorded_ts], name: Normal, sigma: 0.2}
+    sampler: nuts
+    num_warmup: 500
+    num_samples: 2000
+    seed: 0
+
+  scenario_B:
+    label: "B — H1: higher excitability (tight amplitude prior)"
+    priors:
+      stimulus.amplitude:    {distribution: {name: Normal, parameters: {mean: {value: 0.2}, std: {value: 0.10}}}}
+      Generic2dOscillator.I: {distribution: {name: Normal, parameters: {mean: {value: 0.0}, std: {value: 0.10}}}}
+    likelihood: {source: [recorded_ts], name: Normal, sigma: 0.2}
+    sampler: nuts
+    num_warmup: 500
+    num_samples: 2000
+    seed: 0
+
+  scenario_C:
+    label: "C — H2: stronger stimulus (tight excitability prior)"
+    priors:
+      stimulus.amplitude:    {distribution: {name: Normal, parameters: {mean: {value: 0.2}, std: {value: 0.20}}}}
+      Generic2dOscillator.I: {distribution: {name: Normal, parameters: {mean: {value: 0.0}, std: {value: 0.05}}}}
+    likelihood: {source: [recorded_ts], name: Normal, sigma: 0.2}
+    sampler: nuts
+    num_warmup: 500
+    num_samples: 2000
+    seed: 0
+
+references:
+  - "tvboptim Stimulation_with_Bayesian_Inference.qmd"

@@ -824,18 +824,32 @@ def resolve_optimizer_mode(integration: Any) -> str:
     return {"forward": "fwd", "reverse": "rev"}.get(str(mode), str(mode))
 
 
-def _analysis_wrt_access(wrt: List[str], coupling_keys: Set[str]) -> Optional[str]:
-    """Dotted state path for the parameter an analysis differentiates w.r.t.
+def resolve_config_access(dotted: str, coupling_keys: Set[str], external_keys: Set[str] = frozenset()) -> Optional[str]:
+    """Dotted state-config path for a `<scope>.<param>` parameter reference.
 
-    ``c_sigmJR.G`` -> ``coupling.c_sigmJR.G`` when the prefix is a coupling key,
-    else ``dynamics.<param>``. Bare names map to ``dynamics.<name>``.
+    One addressing grammar, shared by optimization ``free_parameters``, analysis
+    ``wrt``, and inference ``priors`` — so "which knob" reads the same everywhere:
+
+    - ``<coupling_key>.<param>``  -> ``coupling.<key>.<param>``  (prefix ∈ coupling_keys)
+    - ``<event_name>.<param>``    -> ``external.<name>.<param>`` (prefix ∈ external_keys)
+    - ``<Dynamics>.<param>`` or bare ``<param>`` -> ``dynamics.<param>`` (default scope)
+
+    ``external_keys`` are stimulus/external-input event names (the keys of the
+    network's ``external_input`` dict, e.g. ``stimulus``).
     """
-    wp = wrt[0].split(".") if wrt else []
+    wp = dotted.split(".") if dotted else []
     if len(wp) == 2 and wp[0] in coupling_keys:
         return f"coupling.{wp[0]}.{wp[1]}"
+    if len(wp) == 2 and wp[0] in external_keys:
+        return f"external.{wp[0]}.{wp[1]}"
     if wp:
         return f"dynamics.{wp[-1]}"
     return None
+
+
+def _analysis_wrt_access(wrt: List[str], coupling_keys: Set[str]) -> Optional[str]:
+    """Resolve an analysis ``wrt`` reference to a config path (coupling/dynamics)."""
+    return resolve_config_access(wrt[0], coupling_keys) if wrt else None
 
 
 def render_analysis_observations(
@@ -948,6 +962,110 @@ def render_recorded_observable(
             )
     lines.append(f"return Bunch({', '.join(entries)})")
     return "\n".join(f"        {ln}" for ln in lines)
+
+
+def _dist_params(dist_obj: Any) -> Dict[str, float]:
+    """Numeric parameters of a Distribution, tolerant of the value/label gotcha.
+
+    A bare scalar in a keyed ``Parameter`` collection lands in ``.label`` (str),
+    not ``.value``; accept either so YAML can write ``std: 2.0`` or
+    ``std: {value: 2.0}``.
+    """
+    out: Dict[str, float] = {}
+    for k, p in (getattr(dist_obj, "parameters", None) or {}).items():
+        v = getattr(p, "value", None)
+        if v is None:
+            v = getattr(p, "label", None)
+        if v is not None:
+            out[str(k)] = float(v)
+    return out
+
+
+def dist_expr(dist_obj: Any) -> str:
+    """Render a Distribution as a numpyro ``dist.*`` constructor string.
+
+    ``Normal`` -> ``dist.Normal(mean, std)``; ``Uniform`` -> ``dist.Uniform(lo, hi)``
+    (from ``parameters`` or ``domain``). Reuses the standard Distribution vocabulary
+    (name + parameters/domain) as both prior and likelihood-noise family.
+    """
+    name = str(getattr(dist_obj, "name", None) or "Normal")
+    p = _dist_params(dist_obj)
+    dom = getattr(dist_obj, "domain", None)
+    if name in ("Normal", "Gaussian"):
+        return f"dist.Normal({p.get('mean', 0.0)}, {p.get('std', p.get('sigma', 1.0))})"
+    if name == "Uniform":
+        lo = p.get("lo", float(getattr(dom, "lo", 0.0)) if dom else 0.0)
+        hi = p.get("hi", float(getattr(dom, "hi", 1.0)) if dom else 1.0)
+        return f"dist.Uniform({lo}, {hi})"
+    if name in ("LogNormal", "HalfNormal"):
+        args = ", ".join(str(v) for v in p.values())
+        return f"dist.{name}({args})"
+    # Fallback: pass parameters positionally.
+    return f"dist.{name}({', '.join(str(v) for v in p.values())})"
+
+
+def render_inference(inf: Any, coupling_keys: Set[str], external_keys: Set[str],
+                     derived_names: Set[str], network_obs_names: Set[str]) -> str:
+    """Render the body of one Bayesian inference (numpyro NUTS/MCMC), 8-space indented.
+
+    Mirrors the tvboptim workflow's ``make_model`` + ``MCMC(NUTS(...)).run``: sample
+    each prior, inject it into the forward config at its resolved path, run the SAME
+    differentiable ``model_fn``, score the observed observable under the likelihood.
+    Config injection uses ``eqx.tree_at`` (functionally identical to the reference's
+    in-place mutation). The observed data comes from the ``likelihood.source``
+    observation — a runtime binding or a loaded network measure — so synthetic
+    ground-truth generation stays out of the schema.
+    """
+    name = str(getattr(inf, "name", "inference"))
+    lik = getattr(inf, "likelihood", None)
+    source = str((getattr(lik, "source", None) or ["recorded_ts"])[0])
+    sigma = getattr(lik, "sigma", None)
+    noise = dist_expr(lik) if lik is not None else "dist.Normal"  # family (name), scale applied below
+    noise_family = str(getattr(lik, "name", None) or "Normal")
+    sampler = str(getattr(inf, "sampler", None) or "nuts")
+    n_warmup = int(getattr(inf, "num_warmup", None) or 1000)
+    n_samples = int(getattr(inf, "num_samples", None) or 1000)
+    n_chains = int(getattr(inf, "num_chains", None) or 1)
+    seed = int(getattr(inf, "seed", None) or 0)
+
+    def _var(dotted: str) -> str:
+        return "_p_" + "".join(c if c.isalnum() else "_" for c in dotted)
+
+    def _pred_stmts(cfg: str, target: str, indent: str) -> List[str]:
+        """Statements computing the observed/predicted observable into ``target``,
+        hoisting the compute_all_observations call to a single temp."""
+        if source in network_obs_names:
+            return [f"{indent}{target} = {source}"]
+        tmp = f"_oa{target}"
+        acc = f"compute_all_observations(model_fn({cfg}), {cfg}, transient).{source}"
+        if source in derived_names:
+            return [f"{indent}{target} = {acc}"]
+        return [f"{indent}{tmp} = {acc}",
+                f"{indent}{target} = {tmp}.data if hasattr({tmp}, 'data') else {tmp}"]
+
+    model = [f"def _bayes_model_{name}(v_obs):", "    _cfg = state"]
+    for key, prior in (getattr(inf, "priors", None) or {}).items():
+        access = resolve_config_access(str(key), coupling_keys, external_keys)
+        model += [
+            f'    {_var(str(key))} = numpyro.sample("{key}", {dist_expr(getattr(prior, "distribution", None))})',
+            f"    _cfg = eqx.tree_at(lambda _s: _s.{access}, _cfg, {_var(str(key))})",
+        ]
+    model += _pred_stmts("_cfg", "_pred", "    ")
+    model += [f'    numpyro.sample("obs", dist.{noise_family}(_pred, {sigma}), obs=v_obs)']
+
+    runner = [
+        f"# Observed data for '{name}': the likelihood.source observation (runtime-bound or loaded).",
+        *_pred_stmts("state", f"_v_obs_{name}", ""),
+        f"_v_obs_{name} = kwargs.get('{source}', _v_obs_{name})",
+        f"_nuts_{name} = numpyro.infer.NUTS(_bayes_model_{name}, dense_mass=True)",
+        f"_mcmc_{name} = numpyro.infer.MCMC(_nuts_{name}, num_warmup={n_warmup}, num_samples={n_samples}, num_chains={n_chains}, progress_bar=False)",
+        f"_mcmc_{name}.run(jax.random.key({seed}), _v_obs_{name})",
+        f"_post_{name} = _mcmc_{name}.get_samples()",
+        f"results.setdefault('inferences', Bunch())['{name}'] = InferenceResult("
+        f"name='{name}', posterior=_post_{name}, "
+        f"diagnostics=numpyro.diagnostics.summary(_mcmc_{name}.get_samples(group_by_chain=True)))",
+    ]
+    return "\n".join(f"        {ln}" for ln in (model + [""] + runner))
 
 
 # =============================================================================
