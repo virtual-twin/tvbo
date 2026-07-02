@@ -166,21 +166,27 @@ def _backfill_name_from_iri(d):
 
 
 def _merge_from_registry(d, category: str):
-    """If d is a dict with iri but no parameters, load the registry YAML and
-    merge (user-provided keys win). Falls back to name-only backfill if the
-    iri does not resolve to a DB entry."""
+    """Enrich an ``iri``-referenced spec from the registry, inline values winning.
+
+    If ``d`` is a dict carrying an ``iri`` CURIE, load the registry entry it
+    points to and deep-merge the inline dict on top: inline values supervene at
+    the *leaf* (e.g. ``parameters: {a: {value: 1}}`` overrides only ``a.value``
+    and keeps every other parameter from the registry entry), while the entry
+    fills everything ``d`` did not specify. Mutates ``d`` in place. Falls back to
+    a name-only backfill if the ``iri`` does not resolve to a DB entry.
+    """
     if not isinstance(d, dict) or not d.get("iri"):
         return
-    iri = d["iri"]
-    local = _iri_local(iri)
+    local = _iri_local(d["iri"])
     try:
         from tvbo.data.registry import resolve
-        from tvbo.utils import yaml_loader
+        from tvbo.utils import yaml_loader, deep_merge
 
         loaded = yaml_loader.load_as_dict(str(resolve(category, local)))
         if isinstance(loaded, dict):
-            for k, v in loaded.items():
-                d.setdefault(k, v)
+            merged = deep_merge(loaded, d)  # registry = base, inline `d` overrides
+            d.clear()
+            d.update(merged)
             return
     except (FileNotFoundError, RuntimeError, ValueError):
         pass
@@ -278,16 +284,23 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
             _resolve_dynamics_aliases(dyn_kw)
 
-        # Also resolve aliases in network.dynamics entries
+        # Also resolve aliases and iri-source the keyed network.dynamics entries
+        # (per-node dynamics), symmetrically with the top-level `dynamics` slot.
         net_kw = kwargs.get("network")
         if isinstance(net_kw, dict):
             net_dyn = net_kw.get("dynamics")
             if isinstance(net_dyn, dict):
                 from tvbo.classes.dynamics import _resolve_dynamics_aliases
 
-                for _dv in net_dyn.values():
+                for _key, _dv in net_dyn.items():
                     if isinstance(_dv, dict):
                         _resolve_dynamics_aliases(_dv)
+                        if _dv.get("iri"):
+                            _merge_from_registry(_dv, "Dynamics")
+                            # Keyed collection: the population key is the
+                            # identifier, so it stays the `name` (model identity
+                            # is carried on `iri`).
+                            _dv["name"] = _key
 
         # Resolve iri-only refs by loading from the registry (full population
         # for dynamics/coupling) or backfilling name (for parcellation/tractogram).

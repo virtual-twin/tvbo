@@ -280,13 +280,4 @@ def _as_plain_dict(obj) -> dict[str, Any]:
     return {}
 
 
-def _deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
-    if not override:
-        return dict(base)
-    out = dict(base)
-    for k, v in override.items():
-        if isinstance(v, dict) and isinstance(out.get(k), dict):
-            out[k] = _deep_merge(out[k], v)
-        else:
-            out[k] = v
-    return out
+from tvbo.utils import deep_merge as _deep_merge  # noqa: E402  (shared recursive merge)
