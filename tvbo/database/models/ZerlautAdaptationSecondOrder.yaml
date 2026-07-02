@@ -16,8 +16,8 @@ description: >-
   stencil (df = 1e-7) used in the original TVB implementation, so the drift is
   reproduced bit-for-bit.
 references:
-- Zerlaut2018
-- DiVolo2018
+  - Zerlaut2018
+  - DiVolo2018
 parameters:
   g_L:
     definition: Leak conductance.
@@ -446,12 +446,12 @@ functions:
       given pre-synaptic excitatory/inhibitory rates (fe, fi), external drives
       (fe_ext, fi_ext), adaptation W and leak reversal E_leak.
     arguments:
-    - name: fe
-    - name: fi
-    - name: fe_ext
-    - name: fi_ext
-    - name: W
-    - name: E_leak
+      fe: {}
+      fi: {}
+      fe_ext: {}
+      fi_ext: {}
+      W: {}
+      E_leak: {}
     equation:
       lhs: muV
       rhs: >-
@@ -467,12 +467,12 @@ functions:
       Standard deviation of the membrane-potential fluctuations (Eqn 8 in
       di Volo 2018).
     arguments:
-    - name: fe
-    - name: fi
-    - name: fe_ext
-    - name: fi_ext
-    - name: W
-    - name: E_leak
+      fe: {}
+      fi: {}
+      fe_ext: {}
+      fi_ext: {}
+      W: {}
+      E_leak: {}
     equation:
       lhs: sigmaV
       rhs: >-
@@ -492,12 +492,12 @@ functions:
       Autocorrelation time of the membrane-potential fluctuations (Eqn 9 in
       di Volo 2018).
     arguments:
-    - name: fe
-    - name: fi
-    - name: fe_ext
-    - name: fi_ext
-    - name: W
-    - name: E_leak
+      fe: {}
+      fi: {}
+      fe_ext: {}
+      fi_ext: {}
+      W: {}
+      E_leak: {}
     equation:
       lhs: T_V
       rhs: >-
@@ -516,11 +516,11 @@ functions:
       semi-analytic firing-rate output given the fluctuation regime and the
       excitatory phenomenological voltage threshold.
     arguments:
-    - name: fe
-    - name: fi
-    - name: fe_ext
-    - name: fi_ext
-    - name: W
+      fe: {}
+      fi: {}
+      fe_ext: {}
+      fi_ext: {}
+      W: {}
     equation:
       lhs: TF_e
       rhs: >-
@@ -545,11 +545,11 @@ functions:
       semi-analytic firing-rate output given the fluctuation regime and the
       inhibitory phenomenological voltage threshold.
     arguments:
-    - name: fe
-    - name: fi
-    - name: fe_ext
-    - name: fi_ext
-    - name: W
+      fe: {}
+      fi: {}
+      fe_ext: {}
+      fi_ext: {}
+      W: {}
     equation:
       lhs: TF_i
       rhs: >-

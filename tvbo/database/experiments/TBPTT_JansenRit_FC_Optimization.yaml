@@ -134,23 +134,20 @@ functions:
         tau_s: {value: 0.8}
         tau_f: {value: 0.4}
     arguments:
-      - {name: duration, value: 20000.0}
-
+      duration: {value: 20000.0}
   temporal_average:
     description: "Centered window-average downsample (reproduces HRFBold TemporalAverage)"
     source_code: "jax.vmap(lambda _i: jnp.mean(jax.lax.dynamic_slice(data, (_i,) + (0,) * (data.ndim - 1), (period_samples,) + data.shape[1:]), axis=0))((jnp.arange(data.shape[0]) + 1)[::period_samples])[: jnp.arange((period_samples - 2) // 2, data.shape[0], period_samples).shape[0]]"
     arguments:
-      - {name: data}
-      - {name: period_samples, value: 4}   # round(downsample_period 4 / dt 1)
-
+      data: {}
+      period_samples: {value: 4}
   prepend_history:
     description: "Zero-pad transient history to one kernel length and prepend"
     source_code: "jnp.concatenate([(jnp.vstack([jnp.zeros((kernel_samples - history.shape[0],) + history.shape[1:], history.dtype), history]) if history.shape[0] < kernel_samples else history[-kernel_samples:]), data], axis=0)"
     arguments:
-      - {name: data}
-      - {name: history}
-      - {name: kernel_samples, value: 5000}   # ceil(20000 / 4)
-
+      data: {}
+      history: {}
+      kernel_samples: {value: 5000}
   volterra_transform:
     description: "Volterra BOLD nonlinearity"
     equation:
@@ -159,26 +156,20 @@ functions:
         k_1: {value: 5.6}
         V_0: {value: 0.02}
     arguments:
-      - {name: data}
-
+      data: {}
   subsample_bold:
     description: "Sample at end of each BOLD TR (anchored, uncapped)"
     source_code: "data[step::step]"
     arguments:
-      - {name: data}
-      - {name: step, value: 180}   # round(TR 720 / downsample_period 4)
-
+      data: {}
+      step: {value: 180}
   rmse:
     description: "Root mean squared error"
     equation:
       rhs: "sqrt(mean((x - y)**2))"
     arguments:
-      - {name: x}
-      - {name: y}
-
-# =============================================================================
-# OBSERVATIONS
-# =============================================================================
+      x: {}
+      y: {}
 observations:
   empirical_fc:
     label: "Empirical Functional Connectivity"
@@ -193,41 +184,39 @@ observations:
       - output: downsampled_data
         function: temporal_average
         arguments:
-          - {name: data, value: integration.result}
-          - {name: period_samples, value: 4}
+          data: {value: integration.result}
+          period_samples: {value: 4}
       - output: downsampled_history
         function: temporal_average
         arguments:
-          - {name: data, value: integration.transient}
-          - {name: period_samples, value: 4}
+          data: {value: integration.transient}
+          period_samples: {value: 4}
       - function: prepend_history
         arguments:
-          - {name: data, value: downsampled_data}
-          - {name: history, value: downsampled_history}
-          - {name: kernel_samples, value: 5000}
+          data: {value: downsampled_data}
+          history: {value: downsampled_history}
+          kernel_samples: {value: 5000}
       - output: bold_convolve
         callable: {module: jax.scipy.signal, name: fftconvolve}
         apply_on_dimension: node
         arguments:
-          - {name: in1, value: prepend_history}
-          - {name: in2, value: hrf_kernel}
-          - {name: mode, value: valid}
+          in1: {value: prepend_history}
+          in2: {value: hrf_kernel}
+          mode: {value: valid}
       - function: volterra_transform
         arguments:
-          - {name: data, value: bold_convolve}
+          data: {value: bold_convolve}
       - function: subsample_bold
         arguments:
-          - {name: data, value: volterra_transform}
-
+          data: {value: volterra_transform}
   fc:
     label: "Simulated Functional Connectivity"
     source: [bold]
     pipeline:
       - callable: {name: compute_fc, module: tvboptim.observations.observation}
         arguments:
-          - {name: timeseries, value: bold}
-          - {name: skip_t, value: 25}
-
+          timeseries: {value: bold}
+          skip_t: {value: 25}
   loss:
     label: "FC-RMSE loss"
     description: "RMSE between simulated and empirical FC (the optimization/diagnostic objective)"
@@ -235,9 +224,8 @@ observations:
     pipeline:
       - function: rmse
         arguments:
-          - {name: x, value: fc}
-          - {name: y, value: empirical_fc}
-
+          x: {value: fc}
+          y: {value: empirical_fc}
   lyapunov:
     label: "Top Lyapunov exponent"
     description: "Largest Lyapunov exponent on a short segment (marks the chaos onset)"
@@ -290,8 +278,8 @@ optimizations:
     loss:
       function: rmse
       arguments:
-        - {name: x, value: observations.fc.data}
-        - {name: y, value: observations.empirical_fc.data}
+        x: {value: observations.fc.data}
+        y: {value: observations.empirical_fc.data}
     stages:
       - name: fit
         label: "Fit G"
@@ -318,9 +306,8 @@ explorations:
     observable:
       function: rmse
       arguments:
-        - {name: x, value: fc.data}
-        - {name: y, value: empirical_fc.data}
-
+        x: {value: fc.data}
+        y: {value: empirical_fc.data}
   motivation_sweep:
     label: "Diagnostics vs G (the motivation sweep)"
     description: >
