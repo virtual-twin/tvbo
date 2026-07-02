@@ -29,8 +29,8 @@ pipeline:
       equation:
           rhs: "window_mean(X, stepsize)"
       arguments:
-          - name: stepsize
-            value: 1
+          stepsize:
+              value: 1
       apply_on_dimension: time
 
     - name: hemodynamic_response
@@ -59,12 +59,12 @@ pipeline:
               d2:
                   value: 16.0
       arguments:
-          - name: duration
-            value: 20
-            unit: s
-          - name: stock_dt
-            value: 0.004
-            unit: s
+          duration:
+              value: 20
+              unit: s
+          stock_dt:
+              value: 0.004
+              unit: s
 
     - name: convolve
       input: temporal_average_interim
@@ -73,10 +73,10 @@ pipeline:
           module: scipy.signal
           name: fftconvolve
       arguments:
-          - name: in2
-            value: hrf_kernel
-          - name: mode
-            value: same
+          in2:
+              value: hrf_kernel
+          mode:
+              value: same
 
     - name: subsample_to_period
       input: convolve
@@ -84,6 +84,6 @@ pipeline:
       equation:
           rhs: "subsample(X, stepsize)"
       arguments:
-          - name: stepsize
-            description: "TR / dt"
+          stepsize:
+              description: "TR / dt"
       apply_on_dimension: time

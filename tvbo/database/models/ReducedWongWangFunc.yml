@@ -74,7 +74,7 @@ functions:
   H:
     definition: Sigmoid input-output function of the synaptic input current that computes the averaged firing rate of the neurons population (Deco et al., 2013).
     arguments:
-    - name: x
+      x: {}
     equation:
       rhs: (a*x - b)/(1 - exp(-d*(a*x - b)))
 derived_variables:
