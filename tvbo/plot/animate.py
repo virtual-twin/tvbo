@@ -234,6 +234,14 @@ def animate_network(result, state=None, interval=50, cmap="viridis", node_size=1
     n_frames = len(slices[0][2])
 
     def update(i):
+        """Recolor nodes and extend per-node traces for frame `i`.
+
+        Args:
+            i: Frame index into the downsampled time axis.
+
+        Returns:
+            The updated scatter and line artists to redraw.
+        """
         arts = []
         for sc, lines, vals, time, ax_g, vn in all_artists:
             sc.set_array(vals[i])
@@ -319,6 +327,14 @@ def animate_timeseries(result, state=None, interval=50, cmap=None, figsize=None)
     n_frames = len(slices[0][2])
 
     def update(i):
+        """Update each panel's title and traces for frame `i`.
+
+        Args:
+            i: Frame index into the downsampled time axis.
+
+        Returns:
+            The updated line artists to redraw.
+        """
         arts = []
         for lines, vals, time, ax in all_artists:
             ax.set_title(f"t = {time[i]:.2f}")
@@ -370,6 +386,14 @@ def animate_phase(result, x_var=None, y_var=None, region=0, mode=0, interval=50,
     frames = list(range(0, len(time), step))
 
     def update(frame):
+        """Redraw the trailing tail and current point for `frame`.
+
+        Args:
+            frame: Index into the time axis for the current animation step.
+
+        Returns:
+            The trail line and current-position marker artists.
+        """
         lo = max(0, frame - trail)
         line.set_data(x[lo : frame + 1], y[lo : frame + 1])
         point.set_data([x[frame]], [y[frame]])
@@ -558,6 +582,14 @@ def animate_multi(result, panels, interval=50, figsize=None, max_points=200, sav
         n_frames = min(n_frames, nf) if n_frames is not None else nf
 
     def update(i):
+        """Advance every composed panel to frame `i` and gather their artists.
+
+        Args:
+            i: Frame index shared across all panels.
+
+        Returns:
+            The combined list of artists from every panel updater.
+        """
         arts = []
         for fn in updaters:
             arts.extend(fn(i))

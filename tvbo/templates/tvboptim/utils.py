@@ -577,6 +577,20 @@ def normalize_coupling_aliases(all_couplings: Dict[str, Any], model: Any = None)
                 explicit_sources.add(str(source))
 
     def rank(key: str, coupling: Any) -> tuple[int, int, str]:
+        """Rank an alias `key` for `coupling` so the preferred name sorts first.
+
+        Builds a sort key ordering candidate aliases by preference: an explicit
+        `CouplingInput.source` (0), a coupling-input key (1), the coupling's own
+        `name` (2), then anything else (3). Ties break by key length and then the
+        key string, so shorter, stable names win.
+
+        Args:
+            key: Candidate alias under which the coupling is exposed.
+            coupling: The coupling object the alias points to.
+
+        Returns:
+            A `(priority, key_length, key)` tuple; lower compares as preferred.
+        """
         key = str(key)
         coupling_name = str(getattr(coupling, "name", "") or "")
         if key in explicit_sources:
@@ -1270,6 +1284,15 @@ def toposort_observations(obs_names: List[str], derived_obs_dict: Dict[str, Any]
     obs_set = set(obs_names)
 
     def visit(name):
+        """Depth-first visit `name`, emitting its in-scope dependencies first.
+
+        Recurses into each dependency that is itself part of `obs_names`, then
+        appends `name` to `sorted_obs`, so every source lands before the
+        observation that derives from it.
+
+        Args:
+            name: Observation to place after every observation it derives from.
+        """
         if name in visited:
             return
         visited.add(name)
@@ -1428,6 +1451,15 @@ def get_domain_bounds(param_name: str, model: Any, all_couplings: Dict) -> Tuple
     """
 
     def extract_bounds(param):
+        """Read `(lo, hi)` domain bounds from a parameter as floats.
+
+        Args:
+            param: A schema parameter whose optional `domain` carries `lo`/`hi`.
+
+        Returns:
+            A `(lo, hi)` tuple of floats; either is `None` when unset or when the
+            bound is not numeric.
+        """
         domain = getattr(param, "domain", None)
         if domain:
             lo = getattr(domain, "lo", None)

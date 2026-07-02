@@ -95,10 +95,24 @@ def list_format_dicts() -> list[dict[str, Any]]:
 
 
 def has(key: str) -> bool:
+    """Report whether a format is registered under the given key or alias.
+
+    Args:
+        key: Canonical key or alias to check (matched case-insensitively).
+
+    Returns:
+        `True` if a format is registered under `key`, otherwise `False`.
+    """
     return key.lower() in _REGISTRY
 
 
 def keys() -> Iterable[str]:
+    """Return a view of every registered key and alias.
+
+    Returns:
+        A view over all lookup keys, including canonical keys and aliases
+        (all lowercased). The same format may appear under several keys.
+    """
     return _REGISTRY.keys()
 
 

@@ -1,3 +1,13 @@
+"""Observation models that transform simulation output into observables.
+
+This module provides [`Function`](#tvbo.classes.observation.Function), a named
+symbolic transformation, and
+[`ObservationModel`](#tvbo.classes.observation.ObservationModel), a directed
+graph that chains such functions (e.g. BOLD HRF, filtering, functional
+connectivity) into an observation pipeline. Helper routines convert Python
+callables and curated ontology instances into the underlying datamodel shape.
+"""
+
 import importlib
 import inspect
 from types import FunctionType
@@ -127,6 +137,21 @@ def functioninstance2metadata(function_instance, **kwargs):
 
 
 def instance2metadata(instance, **kwargs):
+    """Normalize an ontology transformation instance into datamodel kwargs.
+
+    Maps the instance's name, arguments, equation, parameters and acronym onto
+    the keyword arguments used to construct a datamodel object, nesting the
+    argument and equation metadata under a `transformation` key.
+
+    Args:
+        instance: Ontology instance exposing `name`, `has_argument`,
+            `equation`, `has_parameter` and `acronym` accessors.
+        **kwargs: Extra keyword arguments merged into the result; keys produced
+            here take precedence over same-named incoming keys.
+
+    Returns:
+        The merged keyword-argument mapping describing the transformation.
+    """
     kwargs = {
         **kwargs,  # TODO: remember dict unpacking prioritizes keys from unpacked dict over keys defined later in the same dict!
         "transformation": {
@@ -312,10 +337,28 @@ class Function(tvbo_datamodel.Function):
         return self
 
     def get_parameters(self, key_as_symbol=False):
+        """Return the equation's parameters as a name-to-value mapping.
+
+        Args:
+            key_as_symbol: When `True`, use SymPy `Symbol` objects as keys
+                instead of plain parameter-name strings.
+
+        Returns:
+            Mapping from each parameter name (or `Symbol`) to its value.
+        """
         parameters = {Symbol(k) if key_as_symbol else k: v.value for k, v in self.equation.parameters.items()}
         return parameters
 
     def get_equation(self):
+        """Build the function as a SymPy equation.
+
+        Parses the stored right-hand-side string into an expression, treats the
+        function's arguments as `IndexedBase` symbols, and returns an equality
+        whose left-hand side is the named function applied to its arguments.
+
+        Returns:
+            A SymPy `Eq` relating the function call to its parsed expression.
+        """
         parameters = self.get_parameters(key_as_symbol=True)
         clash = {str(p): p for p in parameters.keys()}
         clash.update({str(a): IndexedBase(a) for a in self.arguments})
@@ -324,11 +367,37 @@ class Function(tvbo_datamodel.Function):
         return Eq(function, expression)
 
     def get_symbolic_function(self):
+        """Return the function as a callable SymPy `Lambda`.
+
+        Returns:
+            A SymPy `Lambda` mapping the function's arguments to its equation.
+        """
         equation = self.get_equation()
         self.get_parameters()
         return Lambda(equation.lhs.args, equation)
 
     def execute(self, format="python", fill_in_parameters=True, parameters={}, **kwargs):
+        """Compile the function into an executable callable.
+
+        Returns the recorded Python callable when one is available; otherwise
+        lambdifies the symbolic equation for the requested backend. Supplied
+        parameters that do not appear in the equation are discarded, and the
+        function's stored parameter values can optionally be substituted in
+        before compilation.
+
+        Args:
+            format: Target backend for `lambdify` (e.g. `"python"`/`"numpy"`,
+                `"jax"`); also selects the module used for numeric evaluation.
+            fill_in_parameters: When `True`, substitute the function's stored
+                parameter values into the expression before compiling.
+            parameters: Extra parameter values to substitute; entries whose
+                symbol is absent from the equation are ignored.
+            **kwargs: Backend options; for `format="jax"`, `jit=True` wraps the
+                result in `jax.jit` with `stepsize` treated as static.
+
+        Returns:
+            A callable evaluating the function over its arguments.
+        """
         if self.function:
             return self.function
 
@@ -363,12 +432,41 @@ class Function(tvbo_datamodel.Function):
         return function
 
     def apply(self, **kwargs):
+        """Execute the function and call it with the given arguments.
+
+        Args:
+            **kwargs: Argument values passed to the compiled callable.
+
+        Returns:
+            The result of evaluating the function.
+        """
         return self.execute()(**kwargs)
 
     def render_code(self, format="python", **kwargs):
+        """Render the function's equation as backend source code.
+
+        Args:
+            format: Target backend passed to the expression renderer.
+            **kwargs: Additional options forwarded to the renderer.
+
+        Returns:
+            The rendered code for the equation's right-hand side.
+        """
         return render_expression(self.get_equation().rhs, format=format, **kwargs)
 
     def plot(self, format="python", plotting_kwargs={}, **kwargs):
+        """Plot the function's output against its input.
+
+        For a single-argument function, the input array (supplied via `kwargs`
+        under the argument name) is plotted against the evaluated output; for
+        multi-argument functions the output is plotted directly using the
+        stored parameter values.
+
+        Args:
+            format: Backend used to compile the function for evaluation.
+            plotting_kwargs: Keyword arguments forwarded to `matplotlib`.
+            **kwargs: Input values keyed by argument name.
+        """
         function = self.execute(format=format)
         args = self.arguments
         if len(args) == 1:
@@ -380,6 +478,23 @@ class Function(tvbo_datamodel.Function):
         pass
 
     def plot_metadata_graph(self, ax=None, node_kwargs={}, edge_kwargs={}, edge_labels=True):
+        """Draw a graph of the function's metadata.
+
+        Builds a directed graph linking the function node to its equation,
+        software requirements and arguments, then renders it with a radial
+        layout.
+
+        Args:
+            ax: Matplotlib axes to draw into; a new figure is created and
+                returned when omitted.
+            node_kwargs: Keyword arguments forwarded to the node renderer.
+            edge_kwargs: Keyword arguments reserved for edge styling.
+            edge_labels: When `True`, annotate edges with their relation
+                labels; otherwise fold the relation into the node labels.
+
+        Returns:
+            The created figure when `ax` is not provided, otherwise `None`.
+        """
         if ax is None:
             fig, ax = plt.subplots()
             return_fig = True
@@ -469,6 +584,16 @@ class ObservationModel:
         self.last_function_name = None
 
     def add_data(self, node, data):
+        """Attach a data array to a graph node.
+
+        Accepts a `TimeSeries` (whose values and time axis are extracted) or a
+        raw array (for which an integer time axis is generated). Creates the
+        node when it does not yet exist, otherwise updates its stored data.
+
+        Args:
+            node: Name of the graph node to attach the data to.
+            data: A `TimeSeries` or array-like providing the node's values.
+        """
         if isinstance(data, TimeSeries):
             data = data.data
             time = data.time
@@ -493,6 +618,28 @@ class ObservationModel:
         alt_name=None,
         **kwargs,
     ):
+        """Add a `Function` node to the pipeline graph.
+
+        Registers the function as a graph node, records its execution options,
+        overrides parameter values from `kwargs`, and wires edges from the nodes
+        named in `argument_mapping` to this node. Unless the function is a
+        derivative, it becomes the new tail feeding the `Output` node.
+
+        Args:
+            function: The `Function` to add as a node.
+            argument_mapping: Mapping from each function argument name to the
+                graph node supplying that argument.
+            function_type: Role of the function (e.g. `"derivative"`,
+                `"projection"`); non-derivatives are chained into `Output`.
+            select_state: Optional state-variable index sliced from inputs.
+            select_region: Optional region selection applied to inputs.
+            select_mode: Mode index selected from inputs.
+            ensure_4d: When `True`, expand inputs to four dimensions.
+            apply_on_time: When `True`, apply the function to the time axis.
+            alt_name: Alternative name/acronym used for the node.
+            **kwargs: Parameter values; entries matching equation parameters
+                override the function's stored values.
+        """
         if alt_name:
             function.acronym = alt_name
 
@@ -526,6 +673,18 @@ class ObservationModel:
             self.graph.add_edge(func_name, "Output")
 
     def add_derivative(self, function, argument_mapping={}, **kwargs):
+        """Add a derivative `Function` node to the pipeline.
+
+        Convenience wrapper around
+        [`add_function`](#tvbo.classes.observation.ObservationModel.add_function)
+        with `function_type="derivative"`, so the node is computed as a side
+        branch rather than chained into `Output`.
+
+        Args:
+            function: The `Function` to add as a derivative node.
+            argument_mapping: Mapping from argument names to source nodes.
+            **kwargs: Additional options forwarded to `add_function`.
+        """
         self.add_function(
             function,
             argument_mapping=argument_mapping,
@@ -534,6 +693,17 @@ class ObservationModel:
         )
 
     def add_projection_model(self, function, argument_mapping={}, **kwargs):
+        """Add a projection `Function` node to the pipeline.
+
+        Convenience wrapper around
+        [`add_function`](#tvbo.classes.observation.ObservationModel.add_function)
+        with `function_type="projection"`.
+
+        Args:
+            function: The `Function` to add as a projection node.
+            argument_mapping: Mapping from argument names to source nodes.
+            **kwargs: Additional options forwarded to `add_function`.
+        """
         self.add_function(
             function,
             argument_mapping=argument_mapping,
@@ -544,6 +714,23 @@ class ObservationModel:
         pass
 
     def plot_graph(self, ax=None, plot_edge_labels=True, node_kwargs={}, edge_kwargs={}):
+        """Draw the pipeline graph, including `Input` and `Output` nodes.
+
+        Lays out the directed graph (falling back to a spring layout when
+        Graphviz is unavailable) and annotates edges with their argument names
+        and any selected state index.
+
+        Args:
+            ax: Matplotlib axes to draw into; a new figure is created and
+                returned when omitted.
+            plot_edge_labels: When `True`, draw argument/state labels on edges.
+            node_kwargs: Keyword arguments forwarded to the node renderer.
+            edge_kwargs: Keyword arguments forwarded to the edge renderer;
+                `font_size` controls the edge-label size.
+
+        Returns:
+            The created figure when `ax` is not provided, otherwise `None`.
+        """
         try:
             pos = nx.nx_pydot.graphviz_layout(self.graph, prog="dot")  # Layout for graph visualization
         except Exception:
@@ -610,6 +797,20 @@ class ObservationModel:
         return result
 
     def apply(self, timeseries, mode=0):
+        """Run the pipeline on a time series and return the observable.
+
+        Feeds the input into the `Input` node, evaluates every node in
+        topological order, propagates each function's output to its successors,
+        and trims the final `Output` back to the input's shape.
+
+        Args:
+            timeseries: A `TimeSeries` or array-like of simulation output; a raw
+                array is wrapped in a `TimeSeries` with an integer time axis.
+            mode: Mode index (currently unused in slicing).
+
+        Returns:
+            A `TimeSeries` holding the pipeline's output data and time axis.
+        """
         if isinstance(timeseries, TimeSeries):
             self.data = timeseries.data  # [:, :, :, mode]
             self.time = timeseries.time
@@ -681,6 +882,15 @@ class ObservationModel:
         return ts
 
     def get_node_data(self, node):
+        """Return a node's stored data as a `TimeSeries`.
+
+        Args:
+            node: Name of the graph node to read.
+
+        Returns:
+            A `TimeSeries` pairing the node's data with its time axis (a
+            generated integer axis is used when none was stored).
+        """
         data = self.graph.nodes[node].get("data", None)
         time = self.graph.nodes[node].get(
             "time",
@@ -701,12 +911,30 @@ class ObservationModel:
         return self.results.get(function_name, None)
 
     def plot_node_data(self, node, ax):
+        """Plot a single node's data onto the given axes.
+
+        Args:
+            node: Name of the graph node to plot.
+            ax: Matplotlib axes to draw into.
+        """
         data = self.get_node_data(node)
         ax.plot(data, label=node)
         # plt.title(node)
         # plt.show()
 
     def plot_graph_data(self, ax=None):
+        """Plot the data stored at every pipeline node.
+
+        Iterates the nodes in topological order (skipping the raw input nodes)
+        and overlays each node's time series, highlighting the `Output` trace.
+
+        Args:
+            ax: Matplotlib axes to draw into; a new figure is created and
+                returned when omitted.
+
+        Returns:
+            The created figure when `ax` is not provided, otherwise `None`.
+        """
         if ax is None:
             fig, ax = plt.subplots()
             return_fig = True

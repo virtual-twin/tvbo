@@ -1,3 +1,11 @@
+"""Runtime helpers for brain atlases and parcellation volumes.
+
+Provides the `Atlas` wrapper around the LinkML `BrainAtlas` datamodel, exposing
+lazy, computed access to the parcellation volume, SANDS terminology, region
+labels, and region centers. Also defines helpers to build atlas metadata and to
+produce ranked (relabelled) parcellation volumes from FreeSurfer segmentations.
+"""
+
 import os
 
 try:
@@ -17,6 +25,18 @@ try:
 except ImportError:
 
     def tqdm(x, **kwargs):
+        """Return the iterable unchanged as a no-op fallback for `tqdm`.
+
+        Used when the `tqdm` package is not installed, so progress-bar calls
+        degrade gracefully to plain iteration.
+
+        Args:
+            x: Iterable to return unchanged.
+            **kwargs: Accepted for API compatibility with `tqdm` and ignored.
+
+        Returns:
+            The `x` argument, unmodified.
+        """
         return x  # No-op if tqdm not available
 
 
@@ -84,6 +104,7 @@ class Atlas(tvbo_datamodel.BrainAtlas):
     # Align to other wrappers
     @property
     def metadata(self):
+        """Return this atlas itself as its LinkML metadata object."""
         return self
 
     def _find_volume_path(self):
@@ -109,6 +130,15 @@ class Atlas(tvbo_datamodel.BrainAtlas):
 
     @property
     def volume(self):
+        """NIfTI image of the atlas parcellation volume.
+
+        Returns an empty 256³ placeholder image for the `wholebrain` atlas.
+        Otherwise loads the parcellation volume from disk, or `None` when no
+        volume file is found.
+
+        Raises:
+            ImportError: If nibabel is not installed.
+        """
         if nib is None:
             raise ImportError("nibabel is required for neuroimaging data. Install with: pip install nibabel")
         if self.name == "wholebrain":
@@ -118,6 +148,7 @@ class Atlas(tvbo_datamodel.BrainAtlas):
 
     @property
     def volume_file(self):
+        """Filesystem path to the atlas parcellation volume, or `None` if not found."""
         return self._find_volume_path()
 
     def _load_metadata(self):
@@ -160,6 +191,7 @@ class Atlas(tvbo_datamodel.BrainAtlas):
 
     @property
     def metadata_file(self):
+        """Filesystem path to the atlas `_dseg.yaml` metadata file, or `None` if not uniquely found."""
         files = atlas_data.get(
             atlas=self.name,
             suffix="dseg",
@@ -257,6 +289,14 @@ class Atlas(tvbo_datamodel.BrainAtlas):
             return np.array(centers_list)
 
     def get_label_by_lookup(self, lookup_id):
+        """Return the region name for a given SANDS lookup label.
+
+        Args:
+            lookup_id: The `lookupLabel` value to match against the terminology entities.
+
+        Returns:
+            The matching entity name, or `None` if no entity has that lookup label.
+        """
         self._load_metadata()
         ents = getattr(getattr(self, "terminology", None), "entities", None) or {}
         for e in ents.values():
@@ -265,12 +305,30 @@ class Atlas(tvbo_datamodel.BrainAtlas):
         return None
 
     def to_yaml(self, fname=None):
+        """Serialise the atlas to YAML.
+
+        Args:
+            fname: Optional path to write the YAML to; if omitted, the YAML is returned as a string.
+
+        Returns:
+            The written file path when `fname` is given, otherwise the YAML string.
+        """
         from tvbo.utils import to_yaml as _to_yaml
 
         return _to_yaml(self, fname)
 
 
 def create_atlas_metadata(fname_atlas, labels="freesurfer"):
+    """Build `BrainAtlas` metadata and region centers of mass from a parcellation file.
+
+    Parses BIDS entities from the file name to seed a `BrainAtlas` with its
+    coordinate space and terminology, then computes the center of mass of each
+    non-background label in the parcellation volume.
+
+    Args:
+        fname_atlas: Path to the parcellation NIfTI file to derive metadata from.
+        labels: Labelling scheme to use, or `"freesurfer"` for the FreeSurfer lookup.
+    """
     entities = atlas_data.parse_file_entities(fname_atlas)
     atlas_metadata = tvbo_datamodel.BrainAtlas(
         name=entities["atlas"],
@@ -298,6 +356,24 @@ def create_atlas_metadata(fname_atlas, labels="freesurfer"):
 
 
 def rank_atlas(fname_atlas, labels="freesurfer", desc="ranked", gm_only=True):
+    """Relabel a parcellation with contiguous rank IDs and write the ranked volume and metadata.
+
+    Remaps each original label to a consecutive integer (1, 2, 3, ...), records
+    the mapping as `ParcellationEntity` metadata (keeping the original lookup
+    label), then saves the ranked NIfTI volume alongside its `.yaml` metadata
+    using a BIDS-style path with the given `desc`.
+
+    Args:
+        fname_atlas: Path to the source parcellation NIfTI file.
+        labels: Labelling scheme; `"freesurfer"` maps indices to region names via
+            the FreeSurfer lookup, otherwise `labels` is indexed by label id.
+        desc: BIDS `desc` entity used when building the output file path.
+        gm_only: When using FreeSurfer labels, keep only cortical (`ctx`) and
+            grey-matter subcortical regions, skipping all others.
+
+    Returns:
+        The ranked parcellation as a NIfTI image.
+    """
     entities = atlas_data.parse_file_entities(fname_atlas)
     atlas_metadata = tvbo_datamodel.BrainAtlas(
         name=entities["atlas"],

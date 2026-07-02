@@ -138,15 +138,41 @@ class Bunch(dict):
         return f"{type(self).__name__}({items})"
 
     def copy(self):
+        """Return a shallow copy as a new `Bunch`.
+
+        Returns:
+            A `Bunch` containing the same key/value pairs as this instance.
+        """
         return Bunch(self)
 
     def tree_flatten(self):
+        """Flatten the `Bunch` into JAX PyTree children and auxiliary data.
+
+        Keys are sorted so that traversal order is deterministic across calls.
+
+        Returns:
+            A tuple `(values, keys)` where `values` are the leaf children (the
+            values in sorted-key order) and `keys` is the auxiliary data used to
+            reconstruct the mapping in [`tree_unflatten`](#tree_unflatten).
+        """
         keys = tuple(sorted(self.keys()))
         values = tuple(self[k] for k in keys)
         return values, keys
 
     @classmethod
     def tree_unflatten(cls, aux_data, children):
+        """Rebuild a `Bunch` from JAX PyTree auxiliary data and children.
+
+        Inverse of [`tree_flatten`](#tree_flatten): pairs each key with its leaf
+        value to reconstruct the mapping.
+
+        Args:
+            aux_data: The keys returned by `tree_flatten`, in sorted order.
+            children: The leaf values corresponding to `aux_data`.
+
+        Returns:
+            A `Bunch` mapping each key in `aux_data` to its value in `children`.
+        """
         return cls(zip(aux_data, children))
 
 
@@ -159,6 +185,14 @@ except ImportError:
 
 
 def numbered_print(text):
+    """Print `text` with each line prefixed by a zero-padded line number.
+
+    Line numbers start at 1 and are padded to the width of the largest number
+    so the printed numbers stay aligned.
+
+    Args:
+        text: The multi-line string to print.
+    """
     lines = text.splitlines()
     max_line_num = len(str(len(lines)))
     for i, line in enumerate(lines, start=1):
