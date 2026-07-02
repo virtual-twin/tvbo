@@ -7,6 +7,21 @@ from tvbo.classes.dynamics import Dynamics
 from tests.functional.simulation_backends_shared import MODEL_FILES, MODEL_IDS, _HAVE_PYRATES
 
 
+# Models the PyRates backend cannot represent, xfail'd (not failed) as out-of-scope:
+#  * multi-mode models — PyRates has no mode axis, so per-mode matrix params
+#    (A_ik/B_ik/C_ik) can't be represented (they're used in the equations);
+#  * Piecewise regime traits / symbolic forms from the richer TVB model capture
+#    that PyRates' sympy parser can't handle.
+# Full support for these lives in the tvb / tvboptim / jax backends.
+_PYRATES_UNSUPPORTED = {
+    "ReducedSetHindmarshRose": "mode-axis model: PyRates has no mode axis (per-mode matrix params)",
+    "ReducedSetFitzHughNagumo": "mode-axis model: PyRates has no mode axis (per-mode matrix params)",
+    "EpileptorCodim3": "Piecewise regime traits unsupported by the PyRates sympy parser",
+    "EpileptorCodim3SlowMod": "Piecewise regime traits unsupported by the PyRates sympy parser",
+    "ZerlautAdaptationSecondOrder": "symbolic form unsupported by PyRates codegen",
+}
+
+
 @pytest.mark.backend_pyrates
 @pytest.mark.skipif(not _HAVE_PYRATES, reason="pyrates not installed")
 class TestPyRatesBackend:
@@ -15,6 +30,9 @@ class TestPyRatesBackend:
     @pytest.mark.parametrize("model_file", MODEL_FILES, ids=MODEL_IDS)
     def test_run_pyrates(self, model_file):
         """Run single-node simulation with PyRates backend."""
+        reason = _PYRATES_UNSUPPORTED.get(model_file.stem)
+        if reason:
+            pytest.xfail(reason)
         model = Dynamics.from_file(model_file)
         exp = SimulationExperiment(dynamics=model)
         result = exp.run("pyrates")

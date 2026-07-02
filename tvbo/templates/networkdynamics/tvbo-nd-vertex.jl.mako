@@ -116,7 +116,8 @@ function ${model.name}_f!(dx, ${arg_x}, esum, p, t)
     % endfor
     % for fname, fdef in (model.functions or {}).items():
 <%
-    fargs = [str(arg.name) for arg in fdef.arguments]
+    _fargs = fdef.arguments or {}
+    fargs = [str(getattr(arg, "name", arg)) for arg in (_fargs.values() if hasattr(_fargs, "values") else _fargs)]
     fbody = juliacode(fdef.equation.rhs)
 %>
     ${fname}(${", ".join(fargs)}) = ${fbody}
