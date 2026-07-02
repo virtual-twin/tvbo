@@ -22,6 +22,31 @@ from tvbo.datamodel import schema as tvbo_datamodel
 # HDF5+YAML network files — resolved via registry (works for pip & editable installs)
 NETWORK_DIR = database_dir("Network")
 
+
+def graph_laplacian(M):
+    """Combinatorial graph Laplacian ``L = W - diag(rowsum(W))`` of a weight matrix.
+
+    A standard network primitive (diffusive coupling operator): every row of ``L``
+    sums to zero. Referenced declaratively from a `Network.transforms` entry via
+    ``callable: {module: tvbo.classes.network, name: graph_laplacian}`` — e.g. for a
+    delay/diffusion-coupled Hopf network whose coupling matrix is the Laplacian of the
+    (normalised) connectome. Cannot be expressed in the elementwise symbolic transform
+    path because it needs a diagonal built from the row sums.
+    """
+    return M - jnp.diag(M.sum(axis=1))
+
+
+def normalized_graph_laplacian(M):
+    """Graph Laplacian of the max-normalised weight matrix: ``L(W / max(W))``.
+
+    The coupling operator for a diffusion-coupled network whose global coupling
+    strength ``G`` is expressed in the max-normalised connectome scale (so ``G`` stays
+    O(0.01–0.1) regardless of the raw streamline-count magnitude). Referenced via
+    ``callable: {module: tvbo.classes.network, name: normalized_graph_laplacian}``.
+    Equivalent to the reference two-liner ``W = W / W.max(); L = W - diag(W.sum(1))``.
+    """
+    return graph_laplacian(M / jnp.max(M))
+
 try:
     from bids.layout import BIDSLayout  # noqa: F401  # optional dep probe
 

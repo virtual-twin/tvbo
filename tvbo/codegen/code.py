@@ -662,13 +662,52 @@ class JuliaPrinter(_ArrayFunctionPrinterMixin, spj.JuliaCodePrinter):
     def _slice_from(self, base, axis, start):
         return f"selectdim({base}, {axis + 1}, {self._print(start)} + 1:{self._shape(base, axis)})"
 
+    def _print_Add(self, expr, order=None):
+        """Element-wise addition/subtraction (``.+`` / ``.-``).
+
+        Unlike ``*``/``/``/``^`` (which the base Julia printer already emits as
+        ``.*``/``./``/``.^``), scalar+array ``+``/``-`` is NOT auto-broadcast in
+        Julia — ``[1,2] + 1`` raises ``MethodError``. Array-valued models
+        (mode-coupling, quadrature vectors) mix scalar and vector terms, so we
+        emit the dotted forms, which work uniformly for scalars and arrays.
+        Mirrors the base printer's term ordering and sign handling.
+        """
+        from sympy.printing.precedence import precedence
+
+        terms = self._as_ordered_terms(expr, order=order)
+        prec = precedence(expr)
+        parts = []
+        for term in terms:
+            t = self._print(term)
+            if t.startswith("-") and not term.is_Add:
+                sign = ".-"
+                t = t[1:]
+            else:
+                sign = ".+"
+            if precedence(term) < prec or term.is_Add:
+                parts.extend([sign, "(%s)" % t])
+            else:
+                parts.extend([sign, t])
+        sign = parts.pop(0)
+        if sign == ".+":
+            sign = ""
+        elif sign == ".-":
+            sign = "-"  # leading unary negation broadcasts fine in Julia
+        return sign + " ".join(parts)
+
 
 class MTKPrinter(JuliaPrinter):
     """Printer for ModelingToolkit.jl @mtkmodel equations.
 
-    MTK equations are scalar symbolic, so we use plain ``*``, ``/``, ``^``
-    instead of Julia's element-wise ``.*``, ``./``, ``.^``.
+    MTK equations are scalar symbolic, so we use plain ``+``, ``-``, ``*``,
+    ``/``, ``^`` instead of Julia's element-wise ``.+``, ``.-``, ``.*``, ``./``,
+    ``.^``.
     """
+
+    def _print_Add(self, expr, order=None):
+        # Scalar-symbolic: plain +/- (base CodePrinter behaviour, bypassing
+        # JuliaPrinter's element-wise .+/.- override).
+        return spj.JuliaCodePrinter._print_Add(self, expr, order=order)
 
     def _print_Mul(self, expr):
         from sympy import S, Mul, Pow, Rational
@@ -1055,41 +1094,89 @@ def render_equation(
     str
         The rendered equation string.
     """
-    # Ensure parsing knows about symbols and undefined functions from the model scope
+    # latex prints the raw parsed expression (before replace/remove), so it keeps
+    # its own short path; every other format shares the route below.
+    if format == "latex":
+        if preserve_order:  # keep authored term order (see render_expression)
+            kwargs.setdefault("evaluate", False)
+        return latex(parse_eq(equation, local_dict=local_dict, **kwargs))
+
+    expr, uf = _prepare_expr(
+        equation, local_dict, user_functions, replace, remove, inline_funcs, preserve_order, kwargs
+    )
+    return _printer_for(format, uf, preserve_order).doprint(expr)
+
+
+def _prepare_expr(
+    equation, local_dict, user_functions, replace, remove, inline_funcs, preserve_order, kwargs
+):
+    """Parse ``equation`` and resolve its model-function set for printing.
+
+    Shared by :func:`render_equation` and :func:`render_equation_cse` so both take
+    one identical parse -> replace -> remove -> inline route (no drift). Returns
+    ``(expr, uf)`` where ``uf`` maps model-defined function names for the printer.
+    """
     if preserve_order:  # keep authored term order (see render_expression)
         kwargs.setdefault("evaluate", False)
     expr = parse_eq(equation, local_dict=local_dict, **kwargs)
 
-    if format == "latex":
-        return latex(expr)
-
     if replace:
-        symbol_map = {Symbol(k): Symbol(v) for k, v in replace.items()}
-        expr = expr.xreplace(symbol_map)
-
+        expr = expr.xreplace({Symbol(k): Symbol(v) for k, v in replace.items()})
     if remove:
         expr = expr.xreplace({Symbol(k): S.Zero for k in remove})
-
-    # Inline custom functions if provided
     if inline_funcs:
         expr = inline_functions(expr, inline_funcs)
 
-    # Build user_functions mapping for model-defined symbolic functions
-    # Printers already have ARRAY_FUNCTION_MAPPINGS built-in
+    # Model-defined functions must be registered so the printer emits ``f(x)``;
+    # printers already know ARRAY_FUNCTION_MAPPINGS.
     uf = dict(user_functions) if isinstance(user_functions, dict) else {}
-
-    # Auto-detect model-defined functions from local_dict
     if isinstance(local_dict, dict) and local_dict:
         for name, obj in local_dict.items():
             if getattr(obj, "is_Function", False) and name not in uf:
                 uf[str(name)] = str(name)
+    return expr, uf
 
+
+def _printer_for(format, uf, preserve_order):
+    """Build a printer for ``format`` with model-defined functions registered."""
     printer = get_printer(format, order="none" if preserve_order else None)
-    # User functions take precedence over built-in mappings
     if uf:
         try:
             printer.known_functions.update(uf)
         except AttributeError:
             pass  # Some printers don't have known_functions
+    return printer
 
-    return printer.doprint(expr)
+
+def render_equation_cse(
+    equation: Equation,
+    format="numpy",
+    local_dict={},
+    user_functions={},
+    replace=None,
+    remove=None,
+    inline_funcs=None,
+    preserve_order=False,
+    symbol_prefix="_cse",
+    **kwargs,
+):
+    """Render ``equation`` as ``(setup, final)`` with common subexpressions hoisted.
+
+    ``setup`` is a list of ``(name, expr_str)`` assignments (dependency order) and
+    ``final`` is the return-expression string. Repeated subexpressions — notably
+    repeated model-function calls such as ``muV(fe, fi, ...)`` — are computed once
+    via :func:`sympy.cse`. Interpreted backends (numpy / TVB) would otherwise
+    re-evaluate every occurrence; the jax path keeps the flat ``render_equation``
+    form and leans on XLA's JIT-time CSE. ``setup`` is empty when nothing is shared.
+    """
+    from sympy import cse, numbered_symbols
+
+    expr, uf = _prepare_expr(
+        equation, local_dict, user_functions, replace, remove, inline_funcs, preserve_order, kwargs
+    )
+    printer = _printer_for(format, uf, preserve_order)
+
+    replacements, reduced = cse(expr, symbols=numbered_symbols(symbol_prefix))
+    setup = [(printer.doprint(sym), printer.doprint(sub)) for sym, sub in replacements]
+    final = printer.doprint(reduced[0] if reduced else expr)
+    return setup, final
