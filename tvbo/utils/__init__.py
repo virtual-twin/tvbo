@@ -146,14 +146,9 @@ class Bunch(dict):
         return Bunch(self)
 
     def tree_flatten(self):
-        """Flatten the `Bunch` into JAX PyTree children and auxiliary data.
+        """Flatten the `Bunch` into JAX pytree (children, aux_data).
 
-        Keys are sorted so that traversal order is deterministic across calls.
-
-        Returns:
-            A tuple `(values, keys)` where `values` are the leaf children (the
-            values in sorted-key order) and `keys` is the auxiliary data used to
-            reconstruct the mapping in [`tree_unflatten`](#tree_unflatten).
+        Keys are sorted so traversal order is deterministic across calls.
         """
         keys = tuple(sorted(self.keys()))
         values = tuple(self[k] for k in keys)
@@ -161,18 +156,7 @@ class Bunch(dict):
 
     @classmethod
     def tree_unflatten(cls, aux_data, children):
-        """Rebuild a `Bunch` from JAX PyTree auxiliary data and children.
-
-        Inverse of [`tree_flatten`](#tree_flatten): pairs each key with its leaf
-        value to reconstruct the mapping.
-
-        Args:
-            aux_data: The keys returned by `tree_flatten`, in sorted order.
-            children: The leaf values corresponding to `aux_data`.
-
-        Returns:
-            A `Bunch` mapping each key in `aux_data` to its value in `children`.
-        """
+        """Reconstruct a `Bunch` from JAX pytree aux_data and children."""
         return cls(zip(aux_data, children))
 
 

@@ -384,7 +384,7 @@ class Coupling(tvbo_datamodel.Coupling):
         Raises:
             ValueError: If `format` is not a supported backend.
         """
-        if format == "tvb":
+        if format.lower() == "tvb":
             rendered_code = templates.lookup.get_template("tvbo-tvb-coupling.py.mako").render(coupling=self)
 
         elif format.lower() in ["autodiff", "jax"]:
@@ -451,7 +451,7 @@ class Coupling(tvbo_datamodel.Coupling):
             The instantiated backend coupling object, or a callable for the
             `"python"` format.
         """
-        if format == "tvb":
+        if format.lower() == "tvb":
             local_vars = {}
             exec(
                 self.render_code(alt_label=alt_label),
@@ -613,8 +613,9 @@ class Coupling(tvbo_datamodel.Coupling):
         Args:
             weights: Connectivity weight matrix. If omitted, a random 3x3
                 matrix with a zeroed diagonal is used.
-            node_idx: If not `None`, the plot is produced; the first input
-                component (index 0) is the one swept.
+            node_idx: Plotting gate only. When not `None` (the default is `0`)
+                the plot is drawn; the value is not otherwise used, as the swept
+                component is always index 0. Pass `None` to skip plotting.
             xs: Values to sweep the selected state component over. Defaults
                 to 100 points on the interval `[-2, 2]`.
             ax: Matplotlib axes to draw on. If omitted, a new figure is
@@ -622,8 +623,8 @@ class Coupling(tvbo_datamodel.Coupling):
             **kwargs: Accepted for signature flexibility; currently unused.
 
         Returns:
-            The created Matplotlib figure when `ax` is not provided;
-            otherwise nothing (the plot is drawn on the supplied axes).
+            The created Matplotlib figure when `ax` is omitted and `node_idx`
+            is not `None`; otherwise `None`.
         """
         import matplotlib.pyplot as plt
         import sympy as sp

@@ -1751,7 +1751,8 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         Args:
             name: Coupling-input name (also its dict key).
             description: Human-readable description.
-            unit: Physical unit.
+            unit: Accepted for backward compatibility; not currently stored on
+                the coupling input.
             dimension: Number of components the input carries.
             keys: Optional sub-keys addressed by the coupling input.
 
@@ -2126,9 +2127,10 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
     def fill_in_equations(self, **kwargs):
         """Substitute parameter values (and any overrides) into every equation.
 
-        Parameter symbols are replaced with their numeric values, all coupling
-        inputs are set to `0` (for fixed-point / equilibrium analysis), and
-        extra keyword substitutions override the defaults.
+        Parameter symbols are replaced with their numeric values, then any
+        `**kwargs` overrides are applied, and finally all coupling inputs are
+        forced to `0` (for fixed-point / equilibrium analysis) — so a `kwargs`
+        entry named after a coupling input is overridden by that `0`.
 
         Args:
             **kwargs: Additional symbol-name to value substitutions.
@@ -2185,9 +2187,9 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
     def get_dependency_tree(self, ontomapping=False, include_state_equations=False):
         """Build the equation dependency graph for this model.
 
-        Nodes are the model's symbols; edges point from each quantity to the
-        symbols its equation depends on. State equations are excluded by
-        default to avoid cycles in discrete systems.
+        Nodes are the model's symbols; each edge points from a dependency to
+        the quantity whose equation uses it (dependencies → dependents). State
+        equations are excluded by default to avoid cycles in discrete systems.
 
         Args:
             ontomapping: If `True`, also build an ontology-class version of
@@ -2797,7 +2799,9 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
             **kwargs: Ignored extra arguments.
 
         Returns:
-            A NumPy array of initial values, one row per state variable.
+            A NumPy array of initial values. When sampling from a distribution
+            (or `random=True`) the shape is `(n_state_variables, N)`; otherwise
+            it is 1-D with one entry per state variable.
         """
         if random:
             import warnings
@@ -3079,8 +3083,12 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         ) and not any(
             ["stim_t" in sv.equation.rhs for sv in self.state_variables.values()]
         ):
-            print(
-                "CAUTION! No state variable with attribute `stimulation_variable=True` set.\nStimulation will have no effect."
+            import warnings
+
+            warnings.warn(
+                "No state variable with attribute `stimulation_variable=True` set. "
+                "Stimulation will have no effect.",
+                stacklevel=2,
             )
         if isinstance(stimulus, Stimulus) and not as_derived_variable:
             self.stimulus = stimulus
@@ -3297,15 +3305,12 @@ from tvb.basic.neotraits.api import NArray, List, Range, Final""")
         Args:
             opath: Directory the report file is written to (as
                 `<name>.<ext>`).
-            format: Report format; selects the file extension
-                (`markdown`→`md`, `latex`→`tex`, otherwise the format
-                string).
+            format: Report format passed to `generate_report` — `"markdown"`
+                (written as `.md`) or `"pdf"`.
         """
         self.report_path = opath
-        if format == "markdown":
+        if format in ("markdown", "md"):
             extension = "md"
-        elif format == "latex":
-            extension = "tex"
         else:
             extension = format
 

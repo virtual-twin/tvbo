@@ -15,19 +15,7 @@ try:
 except ImportError:
 
     def tqdm(x, **kwargs):
-        """Return the iterable unchanged as a no-op progress-bar fallback.
-
-        Used when the optional `tqdm` package is not installed, so callers can
-        wrap iterables in `tqdm(...)` without gaining a progress display.
-
-        Args:
-            x: The iterable to pass through untouched.
-            **kwargs: Progress-bar options accepted for API compatibility and
-                ignored.
-
-        Returns:
-            The `x` argument, returned as-is.
-        """
+        """No-op ``tqdm`` fallback used when the package is unavailable."""
         return x  # No-op if tqdm not available
 
 

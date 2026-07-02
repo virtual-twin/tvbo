@@ -1461,14 +1461,16 @@ def get_domain_bounds(param_name: str, model: Any, all_couplings: Dict) -> Tuple
             bound is not numeric.
         """
         domain = getattr(param, "domain", None)
-        if domain:
-            lo = getattr(domain, "lo", None)
-            hi = getattr(domain, "hi", None)
+        if not domain:
+            return (None, None)
+        bounds = []
+        for attr in ("lo", "hi"):
+            value = getattr(domain, attr, None)
             try:
-                return (float(lo) if lo is not None else None, float(hi) if hi is not None else None)
+                bounds.append(float(value) if value is not None else None)
             except (TypeError, ValueError):
-                pass
-        return (None, None)
+                bounds.append(None)
+        return (bounds[0], bounds[1])
 
     # Check dynamics parameters
     if model and hasattr(model, "parameters") and param_name in model.parameters:

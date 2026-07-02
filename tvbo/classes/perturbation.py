@@ -44,9 +44,9 @@ def class2metadata(ontoclass):
     """Build `Stimulus` metadata from an ontology stimulus class.
 
     Reads the class's defining equation and, if it uses `where`, rewrites it
-    into sympy form. The class label and definition become the stimulus label
-    and description, and every descendant `Parameter` is added with its default
-    value and definition.
+    into sympy form. The class name (identifier) and definition become the
+    stimulus label and description, and every descendant `Parameter` is added
+    with its default value and definition.
 
     Args:
         ontoclass: An owlready2 stimulus class whose `value`, `definition` and
@@ -280,8 +280,8 @@ class Stimulus(tvbo_datamodel.Stimulus):
             format: Target backend: `"tvb"`, `"python"`, or `"jax"`.
             connectivity: Connectivity for the TVB `StimuliRegion`; a one-region
                 connectivity is created when omitted.
-            region_indices: Indices of the stimulated regions; chosen at random
-                when omitted and no explicit weighting is set.
+            region_indices: Indices of the stimulated regions; when omitted, a
+                random permutation of all regions is used.
             weighting: Per-region weights; defaults to 1 on `region_indices` and
                 0 elsewhere.
             **kwargs: Extra values forwarded to code rendering or audio loading

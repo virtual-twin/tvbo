@@ -471,7 +471,7 @@ class Function(tvbo_datamodel.Function):
         args = self.arguments
         if len(args) == 1:
             fin = kwargs.get(next(iter(args.values())).name)
-            plt.plot(fin, function(fin, **plotting_kwargs))
+            plt.plot(fin, function(fin), **plotting_kwargs)
             plt.xlabel(next(iter(self.arguments.values())).unit)
         else:
             plt.plot(function(**{**kwargs, **self.get_parameters()}), **plotting_kwargs)
@@ -595,8 +595,8 @@ class ObservationModel:
             data: A `TimeSeries` or array-like providing the node's values.
         """
         if isinstance(data, TimeSeries):
-            data = data.data
             time = data.time
+            data = data.data
         else:
             time = np.arange(data.shape[0])
         if node not in self.graph.nodes:
