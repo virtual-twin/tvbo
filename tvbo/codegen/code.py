@@ -969,41 +969,89 @@ def render_equation(
     str
         The rendered equation string.
     """
-    # Ensure parsing knows about symbols and undefined functions from the model scope
+    # latex prints the raw parsed expression (before replace/remove), so it keeps
+    # its own short path; every other format shares the route below.
+    if format == "latex":
+        if preserve_order:  # keep authored term order (see render_expression)
+            kwargs.setdefault("evaluate", False)
+        return latex(parse_eq(equation, local_dict=local_dict, **kwargs))
+
+    expr, uf = _prepare_expr(
+        equation, local_dict, user_functions, replace, remove, inline_funcs, preserve_order, kwargs
+    )
+    return _printer_for(format, uf, preserve_order).doprint(expr)
+
+
+def _prepare_expr(
+    equation, local_dict, user_functions, replace, remove, inline_funcs, preserve_order, kwargs
+):
+    """Parse ``equation`` and resolve its model-function set for printing.
+
+    Shared by :func:`render_equation` and :func:`render_equation_cse` so both take
+    one identical parse -> replace -> remove -> inline route (no drift). Returns
+    ``(expr, uf)`` where ``uf`` maps model-defined function names for the printer.
+    """
     if preserve_order:  # keep authored term order (see render_expression)
         kwargs.setdefault("evaluate", False)
     expr = parse_eq(equation, local_dict=local_dict, **kwargs)
 
-    if format == "latex":
-        return latex(expr)
-
     if replace:
-        symbol_map = {Symbol(k): Symbol(v) for k, v in replace.items()}
-        expr = expr.xreplace(symbol_map)
-
+        expr = expr.xreplace({Symbol(k): Symbol(v) for k, v in replace.items()})
     if remove:
         expr = expr.xreplace({Symbol(k): S.Zero for k in remove})
-
-    # Inline custom functions if provided
     if inline_funcs:
         expr = inline_functions(expr, inline_funcs)
 
-    # Build user_functions mapping for model-defined symbolic functions
-    # Printers already have ARRAY_FUNCTION_MAPPINGS built-in
+    # Model-defined functions must be registered so the printer emits ``f(x)``;
+    # printers already know ARRAY_FUNCTION_MAPPINGS.
     uf = dict(user_functions) if isinstance(user_functions, dict) else {}
-
-    # Auto-detect model-defined functions from local_dict
     if isinstance(local_dict, dict) and local_dict:
         for name, obj in local_dict.items():
             if getattr(obj, "is_Function", False) and name not in uf:
                 uf[str(name)] = str(name)
+    return expr, uf
 
+
+def _printer_for(format, uf, preserve_order):
+    """Build a printer for ``format`` with model-defined functions registered."""
     printer = get_printer(format, order="none" if preserve_order else None)
-    # User functions take precedence over built-in mappings
     if uf:
         try:
             printer.known_functions.update(uf)
         except AttributeError:
             pass  # Some printers don't have known_functions
+    return printer
 
-    return printer.doprint(expr)
+
+def render_equation_cse(
+    equation: Equation,
+    format="numpy",
+    local_dict={},
+    user_functions={},
+    replace=None,
+    remove=None,
+    inline_funcs=None,
+    preserve_order=False,
+    symbol_prefix="_cse",
+    **kwargs,
+):
+    """Render ``equation`` as ``(setup, final)`` with common subexpressions hoisted.
+
+    ``setup`` is a list of ``(name, expr_str)`` assignments (dependency order) and
+    ``final`` is the return-expression string. Repeated subexpressions — notably
+    repeated model-function calls such as ``muV(fe, fi, ...)`` — are computed once
+    via :func:`sympy.cse`. Interpreted backends (numpy / TVB) would otherwise
+    re-evaluate every occurrence; the jax path keeps the flat ``render_equation``
+    form and leans on XLA's JIT-time CSE. ``setup`` is empty when nothing is shared.
+    """
+    from sympy import cse, numbered_symbols
+
+    expr, uf = _prepare_expr(
+        equation, local_dict, user_functions, replace, remove, inline_funcs, preserve_order, kwargs
+    )
+    printer = _printer_for(format, uf, preserve_order)
+
+    replacements, reduced = cse(expr, symbols=numbered_symbols(symbol_prefix))
+    setup = [(printer.doprint(sym), printer.doprint(sub)) for sym, sub in replacements]
+    final = printer.doprint(reduced[0] if reduced else expr)
+    return setup, final

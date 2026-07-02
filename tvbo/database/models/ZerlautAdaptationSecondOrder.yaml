@@ -1,6 +1,12 @@
 name: ZerlautAdaptationSecondOrder
 iri: tvbo:ZerlautAdaptationSecondOrder
 model_type: mean_field
+# The transfer function references the fluctuation moments (mu_V, sigma_V, T_V)
+# many times, and its 2nd-order dfun evaluates it ~34x via finite differences.
+# On the interpreted TVB/numpy backend that recomputes each moment repeatedly
+# (jax/XLA already fold these). cse=true hoists them so each is computed once,
+# recovering ~native-TVB dfun cost (numerically identical).
+cse: true
 description: >-
   Second-order mean-field model of a conductance-based network of adaptive
   exponential integrate-and-fire (AdEx) excitatory and inhibitory neurons

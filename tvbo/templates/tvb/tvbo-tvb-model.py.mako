@@ -11,6 +11,10 @@ else:
     model = context['model']
     standalone = True
 render = lambda obj: model.render_equation(obj, format='numpy')
+## Opt-in (model.cse): hoist repeated subexpressions — e.g. repeated muV/sigmaV/T_V
+## calls in transfer functions — so the interpreted TVB dfun evaluates each once.
+## When off, render_func_cse is None and function_def emits the flat form.
+render_cse = (lambda obj: model.render_equation_cse(obj, format='numpy')) if getattr(model, 'cse', False) else None
 
 # In TVB, local_coupling is a separate dfun argument, not part of the coupling array.
 # Use the ontology to identify which coupling inputs are global (part of coupling array)
@@ -211,7 +215,7 @@ sv_boundaries = tvb_state_variable_boundaries(model)
         # Functions
 % for f in model.functions.values():
 <%
-    fndef = capture(fn.function_def, f, format='numpy', render_func=render).strip()
+    fndef = capture(fn.function_def, f, format='numpy', render_func=render, render_func_cse=render_cse).strip()
     indented_fndef = '\n'.join('        ' + line if line.strip() else '' for line in fndef.split('\n'))
 %>
 ${indented_fndef}
