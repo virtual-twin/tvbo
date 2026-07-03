@@ -1,3 +1,14 @@
+"""SymPy expression printers that render symbolic model math to backend source code.
+
+Each printer subclasses a SymPy code printer and layers on TVBO's array-function
+vocabulary (defined in `tvbo.parse.expression`), the backend-abstracted array
+primitives from `_ArrayFunctionPrinterMixin` (slicing, reductions, broadcasting),
+and per-backend syntax fixes. `get_printer` selects a printer by target format
+(`numpy`, `jax`, `julia`, `mtk`, `fortran`, `python`, `lems`, `sympy`), and
+`render_expression` is the high-level entry point that parses a string or SymPy
+expression and prints it for the chosen backend.
+"""
+
 import sympy.printing.julia as spj
 import sympy.printing.numpy as spn
 import sympy.printing.fortran as spf
@@ -371,6 +382,19 @@ class _ArrayFunctionPrinterMixin:
 
 
 class NumPyPrinter(_ArrayFunctionPrinterMixin, spn.NumPyPrinter):
+    """NumPy code printer for TVBO symbolic expressions.
+
+    Extends SymPy's `NumPyPrinter` with the array-function vocabulary from
+    `ARRAY_FUNCTION_MAPPINGS["numpy"]` and the backend-abstracted array
+    primitives supplied by `_ArrayFunctionPrinterMixin`. Known functions and
+    constants are module-qualified with `module`, and `erf`/`erfc` are routed to
+    `scipy.special`.
+
+    Args:
+        settings: Printer settings forwarded to the SymPy base printer.
+        module: Module prefix used to qualify NumPy names (e.g. `np`).
+    """
+
     def __init__(self, settings=None, module="np"):
         self._module = module
         m = module + "."
@@ -385,6 +409,19 @@ class NumPyPrinter(_ArrayFunctionPrinterMixin, spn.NumPyPrinter):
 
 
 class JaxPrinter(_ArrayFunctionPrinterMixin, spn.JaxPrinter):
+    """JAX code printer for TVBO symbolic expressions.
+
+    Extends SymPy's `JaxPrinter` with the array-function vocabulary from
+    `ARRAY_FUNCTION_MAPPINGS["jax"]` and the mixin's array primitives, routing
+    `erf`/`erfc` to `jsp.special`. When broadcasting inference is enabled it
+    analyzes the index usage of indexed subexpressions to insert explicit axes so
+    that `jnp` operations broadcast correctly.
+
+    Args:
+        settings: Printer settings forwarded to the SymPy base printer.
+        module: Module prefix used to qualify JAX names (e.g. `jnp`).
+    """
+
     def __init__(self, settings=None, module="jnp"):
         self._module = module
         m = module + "."
@@ -594,6 +631,20 @@ class JaxPrinter(_ArrayFunctionPrinterMixin, spn.JaxPrinter):
 
 
 class JuliaPrinter(_ArrayFunctionPrinterMixin, spj.JuliaCodePrinter):
+    """Julia code printer for TVBO symbolic expressions.
+
+    Extends SymPy's `JuliaCodePrinter` with the `ARRAY_FUNCTION_MAPPINGS["julia"]`
+    vocabulary and Julia-specific overrides of the mixin's array primitives, which
+    use 1-based, `end`-relative indexing. Runs non-strict so unknown constructs
+    print partially rather than raising, maps the legacy `atan2` name onto Julia's
+    two-argument `atan`, and routes domain-restricted powers inside `Piecewise`
+    branches through NaNMath.
+
+    Args:
+        settings: Printer settings forwarded to the SymPy base printer; `strict`
+            defaults to `False`.
+    """
+
     # Julia array functions are bare names (resolved via known_functions), not module-qualified.
     _module = ""
 
@@ -849,6 +900,18 @@ class MTKPrinter(JuliaPrinter):
 
 
 class FortranPrinter(spf.FCodePrinter):
+    """Fortran code printer for TVBO symbolic expressions.
+
+    Extends SymPy's `FCodePrinter` with free-form source, the Fortran 2003
+    standard, and array contraction disabled. Symbolic constants (`pi`, `E`, …)
+    are emitted as plain double-precision literals instead of `parameter`
+    declarations, which would be invalid in an expression context.
+
+    Args:
+        settings: Printer settings forwarded to the SymPy base printer;
+            `source_format`, `standard`, and `contract` are defaulted.
+    """
+
     def __init__(self, settings=None):
         settings = settings or {}
         settings.setdefault("source_format", "free")
@@ -1000,6 +1063,19 @@ class LEMSPrinter(StrPrinter):
 
 
 class PythonCodePrinter(_PythonCodePrinter):
+    """Plain-Python code printer for TVBO symbolic expressions.
+
+    Extends SymPy's `PythonCodePrinter` to run non-strict (partial printing of
+    unknown constructs) and adds `ceil`, `sign`, and the
+    `ARRAY_FUNCTION_MAPPINGS["python"]` vocabulary. `Piecewise` is rendered as
+    nested conditional expressions and `sign(x)` as an inline comparison, so the
+    output depends only on `math` and the standard library.
+
+    Args:
+        settings: Printer settings forwarded to the SymPy base printer; `strict`
+            defaults to `False`.
+    """
+
     def __init__(self, settings=None):
         settings = settings or {}
         # Be lenient: allow partial printing for unknown constructs
@@ -1036,6 +1112,22 @@ class PythonCodePrinter(_PythonCodePrinter):
 
 
 def get_printer(format, parameters=None, order=None):
+    """Return a code printer instance for the given target format.
+
+    Args:
+        format: Target output format. One of `numpy`, `jax`, `julia`, `mtk`,
+            `fortran`, `python`, `lems`, or `sympy`/`symbolic`/`pyrates`.
+        parameters: Parameter names passed to `LEMSPrinter`; used only for the
+            `lems` format.
+        order: Term ordering passed to the printer; `none` preserves source term
+            order. When omitted the printer's default ordering is used.
+
+    Returns:
+        A configured printer instance for `format`.
+
+    Raises:
+        ValueError: If `format` is not a supported output format.
+    """
     # order='none' preserves source term order; default keeps prior behaviour.
     extra = {} if order is None else {"order": order}
 

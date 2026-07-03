@@ -37,6 +37,13 @@ app = typer.Typer(name="skills", no_args_is_help=True)
 
 
 class Target(str, Enum):
+    """Output format a skill is rendered to.
+
+    Selects which assistant-specific artifact `install` or `sync` produces:
+    Claude Code skill files, GitHub Copilot instructions, Cursor rules, the
+    `AGENTS.md` index, a plain prompt on stdout, or `all` of them at once.
+    """
+
     claude_code = "claude-code"
     copilot = "copilot"
     cursor = "cursor"
@@ -46,12 +53,26 @@ class Target(str, Enum):
 
 
 class Audience(str, Enum):
+    """Intended reader of a skill, used to filter which skills apply.
+
+    A skill declares an `audience` of `user`, `maintainer`, or `both`;
+    this enum selects the subset to act on, where `all` keeps every skill
+    regardless of its declared audience.
+    """
+
     user = "user"
     maintainer = "maintainer"
     all = "all"
 
 
 class Scope(str, Enum):
+    """Install location for rendered skill files.
+
+    `user` writes to the per-user config directory (e.g. `~/.claude/skills`),
+    while `project` writes to the current working directory (e.g.
+    `./.claude/skills`).
+    """
+
     user = "user"
     project = "project"
 

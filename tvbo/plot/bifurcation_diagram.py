@@ -1,3 +1,11 @@
+"""Plot bifurcation diagrams from continuation results.
+
+Provides helpers to draw equilibrium branches (coloured by stability with
+special bifurcation points marked) and periodic-orbit envelopes onto a
+Matplotlib axis, deriving the plotted variable of interest from continuation
+DataFrames.
+"""
+
 import matplotlib.pyplot as plt
 from sympy import parse_expr, pycode, symbols
 from tvbo.classes import equation as equations
@@ -44,6 +52,22 @@ def compute_voi(df, VOI, prefix="", state_var_index=None):
 
 
 def plot_equilibrium_branch(df, ax, ICS=None, VOI=None, **kwargs):
+    """Plot an equilibrium branch coloured by stability with special points marked.
+
+    The branch is split into contiguous segments wherever the `stable` flag
+    changes, drawing stable segments as solid lines and unstable ones as
+    dashed, then overlaying scatter markers for each special bifurcation point
+    (excluding `endpoint`) coloured after the Julia BifurcationKit palette.
+
+    Args:
+        df: Continuation DataFrame with `param`, `stable`, and `specialpoint`
+            columns (plus the variable(s) referenced by `VOI`).
+        ax: Matplotlib axis to draw on.
+        ICS: Unused; accepted for interface compatibility.
+        VOI: Variable-of-interest expression to plot on the y-axis; defaults to
+            the first column of `df` when `None`.
+        **kwargs: Ignored; accepted for interface compatibility.
+    """
     color_cycle = plt.rcParams["axes.prop_cycle"].by_key()["color"]
     stable_color = color_cycle[0]  # First color for stable
     unstable_color = color_cycle[0]  # Second color for unstable
@@ -116,6 +140,23 @@ def plot_equilibrium_branch(df, ax, ICS=None, VOI=None, **kwargs):
 
 
 def plot_periodic_orbit(df_po, VOI, ax, color_cycle_index=1, **kwargs):
+    """Plot the min/max envelope of a periodic-orbit branch.
+
+    Draws two lines in a shared colour tracing the minimum and maximum of the
+    variable of interest along the branch (using the `min_`/`max_` column
+    prefixes), labelling only the first so the legend gains a single
+    `Periodic orbit` entry.
+
+    Args:
+        df_po: Periodic-orbit DataFrame with a `param` column and `min_`/`max_`
+            prefixed columns for the variable of interest.
+        VOI: Variable-of-interest name; when `None`, inferred from the first
+            column of `df_po` with any `min_`/`max_` prefix stripped.
+        ax: Matplotlib axis to draw on.
+        color_cycle_index: Index into the current axis colour cycle used for
+            both envelope lines.
+        **kwargs: Ignored; accepted for interface compatibility.
+    """
     color_cycle = plt.rcParams["axes.prop_cycle"].by_key()["color"]
     periodic_color = color_cycle[color_cycle_index]  # Third color for periodic orbit
 

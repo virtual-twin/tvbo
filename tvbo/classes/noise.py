@@ -1,3 +1,11 @@
+"""Runtime `Noise` and `Integrator` wrappers around the TVBO datamodel classes.
+
+These subclasses add computed properties (sigma/nsig, ontology-derived integrator
+metadata), JAX pytree registration, and code-generation/execution helpers on top of
+the plain serializable datamodel definitions, without introducing runtime caches or
+mutating stored parameters.
+"""
+
 import numpy as np
 import owlready2
 import sympy as sp
@@ -32,6 +40,10 @@ class Noise(tvbo_datamodel.Noise):
 
     # JAX pytree: carry no array children; aux holds serializable kwargs
     def tree_flatten(self):
+        """Flatten into JAX pytree (children, aux).
+
+        A present `sigma_vec` is exposed as the single array child so it can participate in `vmap` batching; the reconstruction kwargs go in aux.
+        """
         aux = getattr(self, "_as_dict", None)
         if callable(aux):
             aux = aux()
@@ -47,6 +59,7 @@ class Noise(tvbo_datamodel.Noise):
 
     @classmethod
     def tree_unflatten(cls, aux_data, children):
+        """Reconstruct a `Noise` instance from JAX pytree aux_data and children."""
         kwargs = aux_data[0] if (isinstance(aux_data, tuple) and len(aux_data) > 0) else {}
         if not isinstance(kwargs, dict):
             kwargs = {}
@@ -58,12 +71,17 @@ class Noise(tvbo_datamodel.Noise):
 
     @property
     def parameters_dict(self):
+        """The noise parameters normalized to a dict-like view (empty dict if unset)."""
         # Normalize parameters to a dict-like view
         params = getattr(self, "parameters", None)
         return params if isinstance(params, dict) else (params or {})
 
     @property
     def symbolic(self):
+        """The symbolic noise term $\\sqrt{dt}\\,\\sigma\\,\\xi$ for gaussian/white noise.
+
+        Returns `None` for noise types other than `gaussian`/`white`.
+        """
         dt = sp.symbols("dt", real=True, positive=True)
         sigma_sym = sp.symbols("sigma", real=True, positive=True)
         xi = sp.symbols("xi", real=True)
@@ -75,6 +93,11 @@ class Noise(tvbo_datamodel.Noise):
 
     @property
     def nsig(self):
+        """The noise dispersion `nsig`, derived from `sigma` as $0.5\\,\\sigma^2$ if needed.
+
+        Prefers an explicit `nsig` parameter; otherwise computes it from `sigma`. Returns
+        `None` when neither is available.
+        """
         p = self.parameters_dict
         if "nsig" in p and p["nsig"] is not None:
             v = p["nsig"]
@@ -88,6 +111,11 @@ class Noise(tvbo_datamodel.Noise):
 
     @property
     def sigma(self):
+        """The noise standard deviation `sigma`, derived from `nsig` as $\\sqrt{2\\,nsig}$ if needed.
+
+        Prefers an explicit `sigma` parameter; otherwise computes it from `nsig`. Returns
+        `None` when neither is available.
+        """
         p = self.parameters_dict
         if "sigma" in p and p["sigma"] is not None:
             s = p["sigma"]
@@ -100,6 +128,16 @@ class Noise(tvbo_datamodel.Noise):
         return None
 
     def render_code(self, format="tvb"):
+        """Render the noise as source code for the requested backend.
+
+        Args:
+            format:
+                Target backend; `"tvb"` selects the TVB template, while `"autodiff"` or
+                `"jax"` selects the JAX template.
+
+        Returns:
+            The rendered source code as a string.
+        """
         if format == "tvb":
             template = templates.lookup.get_template("tvbo-tvb-noise.py.mako")
 
@@ -111,6 +149,18 @@ class Noise(tvbo_datamodel.Noise):
         return rendered_code
 
     def execute(self, format="tvb"):
+        """Render, execute, and instantiate the noise backend object.
+
+        The rendered code is executed to obtain the `Noise` class, which is stored on
+        `self.tvb` and returned.
+
+        Args:
+            format:
+                Target backend passed through to code generation.
+
+        Returns:
+            The executed backend noise object.
+        """
         local_vars = {}
         exec(self.render_code(), templater.exec_globals, local_vars)
         self.tvb = local_vars["Noise"]
@@ -158,11 +208,17 @@ class Integrator(tvbo_datamodel.Integrator):
     # Back-compat: expose  pointing to self
     @property
     def metadata(self):
+        """The integrator itself, exposed for backward compatibility."""
         return self
 
     # Runtime properties (no stored attributes)
     @property
     def ontoclass(self):
+        """The ontology class for this integrator, resolved from `method`.
+
+        Resolves a string `method` via the ontology, passes through an existing ontology
+        `ThingClass`, and yields `None` otherwise.
+        """
         return (
             ontology.get_integrator(self.method)
             if isinstance(getattr(self, "method", None), str)
@@ -171,19 +227,27 @@ class Integrator(tvbo_datamodel.Integrator):
 
     @property
     def info(self):
+        """The code-generation metadata dict for this integrator's ontology class."""
         return templater.get_integrator_info(self.ontoclass)
 
     @property
     def class_name(self):
+        """The generated integrator class name, suffixed with `Stochastic` when noisy."""
         base = self.info.get("class_name", "Integrator")
         return base + ("Stochastic" if self.stochastic else "")
 
     @property
     def stochastic(self):
+        """Whether the integrator is stochastic, i.e. has a noise component."""
         return bool(getattr(self, "noise", None))
 
     @property
     def noise_wrapper(self):
+        """The noise as a runtime `Noise` wrapper, or `None` when non-stochastic.
+
+        A plain datamodel `Noise` is upgraded to the runtime `Noise` subclass so it gains
+        the computed properties and code-generation helpers.
+        """
         if not self.stochastic:
             return None
         n = getattr(self, "noise", None)
@@ -198,6 +262,7 @@ class Integrator(tvbo_datamodel.Integrator):
 
     @property
     def current_step(self):
+        """The current integration step, a stateless default of `0`."""
         # Stateless default; templates can use this without mutating state
         return 0
 
@@ -232,6 +297,21 @@ class Integrator(tvbo_datamodel.Integrator):
             self.update_expression = DerivedVariable(name="dX", equation=Equation(lhs="X_{t+1}", rhs=info["dX_expr"]))
 
     def render_code(self, format="tvb", **kwargs):
+        """Render the integrator as source code for the requested backend.
+
+        Args:
+            format:
+                Target backend; `"tvb"` selects the TVB template, while `"autodiff"` or
+                `"jax"` selects the JAX template.
+            **kwargs:
+                Extra values forwarded to the JAX template render context.
+
+        Returns:
+            The rendered source code as a string.
+
+        Raises:
+            ValueError: If `format` is not a recognized backend.
+        """
         if format == "tvb":
             self.template = templates.lookup.get_template("tvbo-tvb-integration.py.mako")
             rendered_code = self.template.render(integrator=self)
@@ -243,6 +323,19 @@ class Integrator(tvbo_datamodel.Integrator):
         return rendered_code
 
     def execute(self, format="tvb"):
+        """Render, execute, and instantiate the integrator backend object.
+
+        For the `tvb` backend the integrator class is instantiated (wiring in an executed
+        noise object when stochastic) and stored on `self.tvb`; for other backends the
+        generated class is returned directly.
+
+        Args:
+            format:
+                Target backend passed through to code generation.
+
+        Returns:
+            The executed backend integrator object or class.
+        """
         local_vars = {}
         exec(self.render_code(format=format), templater.exec_globals, local_vars)
 
@@ -256,6 +349,15 @@ class Integrator(tvbo_datamodel.Integrator):
             return local_vars[self.class_name]
 
     def to_yaml(self, filepath: str | None = None):
+        """Serialize the integrator to YAML, optionally writing it to a file.
+
+        Args:
+            filepath:
+                Destination path to write to; when `None`, the YAML is returned instead.
+
+        Returns:
+            The YAML string, or the result of writing to `filepath`.
+        """
         from tvbo.utils import to_yaml as _to_yaml
 
         return _to_yaml(self, filepath)

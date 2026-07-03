@@ -5,6 +5,13 @@
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
 # Licensed under the EUPL-1.2-or-later
 #
+"""Plotting helpers for TVB-O figures.
+
+Provides the shared matplotlib style, the TVB brand color palette derived from the
+TVB logo SVG, colormap and color-conversion utilities, and a multi-view brain
+surface renderer.
+"""
+
 from os.path import join, abspath, dirname
 from xml.etree import ElementTree as ET
 
@@ -18,6 +25,7 @@ ROOT = abspath(dirname(__file__))
 
 
 def use_tvbo_style():
+    """Activate the bundled TVB-O matplotlib style sheet."""
     plt.style.use(join(ROOT, "tvbo.mplstyle"))
 
 
@@ -42,6 +50,11 @@ def extract_svg_colors(svg_path):
 
     # Helper function to extract color values from a style string
     def add_color_from_style(style_str):
+        """Parse `fill:` and `stroke:` colors from a CSS style string into `color_values`.
+
+        Args:
+            style_str: Value of an SVG element's `style` attribute.
+        """
         color_attrs = ["fill:", "stroke:"]
         for attr in color_attrs:
             start = style_str.find(attr)
@@ -69,6 +82,15 @@ def extract_svg_colors(svg_path):
 
 # Convert hex to RGB, then RGB to HSV, and return a sortable representation
 def hex_to_sortable_hsv(hex_color):
+    """Convert a hex color to a sortable HSV tuple.
+
+    Args:
+        hex_color: Hexadecimal color string (e.g. `"#2E9795"`).
+
+    Returns:
+        The `(hue, saturation, value)` components as a tuple, suitable as a
+        sort key for ordering colors by hue.
+    """
     # Convert hex color to RGB and then to HSV
     rgb_color = mcolors.hex2color(hex_color)
     hsv_color = mcolors.rgb_to_hsv(np.array([rgb_color]))
@@ -204,6 +226,22 @@ def multiview(data, cortex, suptitle="", figsize=(15, 10), **kwds):
     def plotview(
         i, j, k, viewkey, z=None, zlim=None, zthresh=None, suptitle="", shaded=True, cmap=plt.cm.coolwarm, viewlabel=False
     ):
+        """Draw a single brain surface view into subplot `(i, j, k)`.
+
+        Args:
+            i: Number of subplot rows.
+            j: Number of subplot columns.
+            k: Index of the subplot to draw into.
+            viewkey: Key selecting the triangulation from `views`.
+            z: Per-vertex scalar values to color the surface; random values are
+                used when omitted.
+            zlim: Symmetric color limit; sets the colormap range to `[-zlim, zlim]`.
+            zthresh: Threshold below which `z` magnitudes are zeroed out.
+            suptitle: Title drawn above this subplot.
+            shaded: If `True`, use gouraud shading; otherwise draw mesh edges.
+            cmap: Matplotlib colormap for the surface.
+            viewlabel: If `True`, keep the axes and label them with `viewkey`.
+        """
         v = views[viewkey]
         ax = plt.subplot(i, j, k)
         if z is None:

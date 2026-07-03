@@ -5,6 +5,12 @@
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
 # Licensed under the EUPL-1.2-or-later
 #
+"""Plotting helpers for analysing simulation output.
+
+This module provides Matplotlib-based plotting utilities for visualising
+derived signal analyses, such as power spectra with shaded canonical EEG
+frequency bands.
+"""
 from typing import Any, Optional
 
 from matplotlib import colormaps

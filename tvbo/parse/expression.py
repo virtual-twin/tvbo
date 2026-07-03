@@ -1,3 +1,12 @@
+"""Parse TVBO equation strings into SymPy expressions.
+
+Provides [`parse_eq`](expression.qmd#parse_eq) for turning an `Equation` (or a raw
+string) into a SymPy expression, along with the custom aggregation symbols and the
+`ARRAY_FUNCTIONS` registry of array reduction/manipulation functions (`sum`, `mean`,
+`slice_axis`, `mode_dot`, …) that the code printers in `tvbo.codegen.code` lower to
+backend-specific calls.
+"""
+
 from sympy import parse_expr, Symbol, Function, IndexedBase, Sum, Product, sqrt
 from sympy.parsing.sympy_parser import (
     standard_transformations,
@@ -42,7 +51,21 @@ class Mean(Function):
 
     @classmethod
     def eval(cls, *args):
-        # Don't auto-evaluate; let the printer handle code generation
+        """Suppress automatic simplification so the symbol survives to codegen.
+
+        SymPy calls this classmethod when a `Mean(...)` is constructed. Returning
+        `None` signals that no closed-form evaluation should be performed, keeping
+        the expression as an unevaluated `Mean` node that the code printers in
+        [`tvbo.codegen.code`](../codegen/code.qmd) translate into the backend's
+        mean/reduction call.
+
+        Args:
+            *args: The positional arguments the `Mean` was called with (the inner
+                expression and index limit tuple). Left unused.
+
+        Returns:
+            Always `None`, leaving the `Mean` application unevaluated.
+        """
         return None
 
 
