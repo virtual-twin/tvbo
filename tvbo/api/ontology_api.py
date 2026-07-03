@@ -47,6 +47,20 @@ def uid2int(uid):
 
 
 def label2symbol(node, delimiter=""):
+    """Render an ontology node's symbol as LaTeX, falling back to its label.
+
+    If the node carries a non-empty `symbol` annotation, it is parsed with
+    SymPy and rendered as LaTeX, optionally wrapped in `delimiter` on either
+    side. Otherwise the node's suffix-stripped label is returned.
+
+    Args:
+        node: Ontology class or individual to render.
+        delimiter: String placed on both sides of the LaTeX symbol, e.g. `"$"`
+            to produce inline math. Ignored when falling back to the label.
+
+    Returns:
+        The LaTeX symbol (wrapped in `delimiter`) or the node's label.
+    """
     return (
         rf"{delimiter}{latex(symbols(node.symbol.first()))}{delimiter}"
         if hasattr(node, "symbol") and node.symbol.first()
@@ -115,6 +129,19 @@ def ontoclass2dict(ontoclass):
 
 
 class OntologyAPI:
+    """Query the ontology and build graph data for the front end.
+
+    Wraps the module-level ontology graph and exposes methods to search for
+    terms and to expand a node's children or parents, accumulating the visited
+    nodes and edges into a `{"nodes", "links"}` structure suitable for
+    serialisation to a UI.
+
+    Attributes:
+        edges: Set of `(source, target, type)` triplets between node storids.
+        nodes: Mapping of storid to a node dictionary (see `ontoclass2dict`).
+        graph: Latest assembled graph with `"nodes"` and `"links"` lists.
+    """
+
     def __init__(self):
         self.edges = set()
         self.nodes = dict()
@@ -158,6 +185,12 @@ class OntologyAPI:
         # return graph
 
     def print_triplets(self):
+        """Print each accumulated edge as a subject-predicate-object triplet.
+
+        Resolves the source and target storids of every edge in `self.edges`
+        back to their ontology entities and prints them alongside the edge
+        type. Intended for interactive debugging.
+        """
         for e in self.edges:
             print(
                 ontology.onto.world._get_by_storid(e["source"]),
@@ -219,6 +252,13 @@ class OntologyAPI:
     #     self.update_graph()
 
     def update_interrelationships(self):
+        """Add edges among the currently held nodes from the ontology graph.
+
+        Takes the subgraph of the ontology graph induced by the storids in
+        `self.nodes` and merges its `(source, target, type)` edges into
+        `self.edges`, capturing every relationship between nodes already present
+        in the graph.
+        """
         self.edges.update(set(G.subgraph(self.nodes.keys()).edges(data="type")))
 
         # self.edges.update(
@@ -249,6 +289,15 @@ class OntologyAPI:
         #     )
 
     def update_graph(self):
+        """Rebuild the serialisable graph from the current nodes and edges.
+
+        Refreshes interrelationships via `update_interrelationships`, then
+        assembles `self.graph` with a `"nodes"` list of node dictionaries and a
+        `"links"` list of `{"source", "target", "type"}` edge dictionaries.
+
+        Returns:
+            The assembled graph dictionary.
+        """
         self.update_interrelationships()
         # edges = self.edges
         # edges = {
@@ -269,6 +318,16 @@ class OntologyAPI:
         return self.graph
 
     def add_children(self, node_id):
+        """Add a node's children and required nodes, then refresh the graph.
+
+        Inserts every successor of `node_id` in the ontology graph into
+        `self.nodes`, and adds each entity referenced by the node's `requires`
+        property together with a `"requires"` edge. Finally rebuilds the graph
+        via `update_graph`.
+
+        Args:
+            node_id: Storid of the node whose children to add.
+        """
         self.nodes.update({s_id: ontoclass2dict(onto.world._get_by_storid(s_id)) for s_id in G.successors(node_id)})
 
         for r in onto.world._get_by_storid(node_id).requires:
@@ -292,6 +351,14 @@ class OntologyAPI:
         self.update_graph()
 
     def add_parents(self, node_id):
+        """Add a node's parent nodes, then refresh the graph.
+
+        Inserts every predecessor of `node_id` in the ontology graph into
+        `self.nodes` and rebuilds the graph via `update_graph`.
+
+        Args:
+            node_id: Storid of the node whose parents to add.
+        """
 
         for s_id in G.predecessors(node_id):
             self.nodes.update({s_id: ontoclass2dict(onto.world._get_by_storid(s_id))})

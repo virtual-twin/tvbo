@@ -86,6 +86,18 @@ def _load_coupling_from_database(name, coupling):
 
 
 def get_parameters(CF):
+    """Extract parameter metadata from a coupling function ontology class.
+
+    Args:
+        CF: A coupling function name or an owlready2 ontology class. If a
+            string is given, it is first resolved to the corresponding
+            ontology class via the ontology registry.
+
+    Returns:
+        A mapping from each ontology parameter to a dict of its properties:
+        `domain` (with `lo`, `hi`, and `step`), `value`, `definition`,
+        `label`, and `name`.
+    """
     if isinstance(CF, str):
         CF = ontology.get_coupling_function(CF)
 
@@ -304,6 +316,7 @@ class Coupling(tvbo_datamodel.Coupling):
     # Back-compat: expose  pointing to self
     @property
     def metadata(self):
+        """The coupling's own metadata, i.e. this object itself (back-compat accessor)."""
         return self
 
     # def __str__(self):
@@ -316,11 +329,35 @@ class Coupling(tvbo_datamodel.Coupling):
     #     return self.__str__()
 
     def to_yaml(self, filepath: str | None = None):
+        """Serialize this coupling to YAML.
+
+        Args:
+            filepath: Optional path to write the YAML to. If omitted, the
+                YAML is only returned.
+
+        Returns:
+            The YAML representation of the coupling as a string.
+        """
         from tvbo.utils import to_yaml as _to_yaml
 
         return _to_yaml(self, filepath)
 
     def render(self, format="yaml", **kwargs) -> str:
+        """Render this coupling in the requested output format.
+
+        Dispatches to `to_yaml`, `report`, or `render_code` depending on
+        `format`.
+
+        Args:
+            format: Output format. `"yaml"` serializes to YAML; `"report"`,
+                `"markdown"`, `"md"`, or `"pdf"` produce a human-readable
+                report; any other value is forwarded to `render_code` to
+                generate backend code.
+            **kwargs: Forwarded to the underlying renderer (e.g. `filepath`).
+
+        Returns:
+            The rendered output as a string.
+        """
         fmt = format.lower()
         if fmt == "yaml":
             return self.to_yaml(filepath=kwargs.get("filepath"))
@@ -330,7 +367,24 @@ class Coupling(tvbo_datamodel.Coupling):
         return self.render_code(format=format, **kwargs)
 
     def render_code(self, format="tvb", model=None, alt_label=None, **kwargs):
-        if format == "tvb":
+        """Generate backend-specific code for this coupling.
+
+        Args:
+            format: Target backend (case-insensitive). One of `"tvb"`,
+                `"autodiff"`/`"jax"`, `"tvboptim"`/`"tvb-optim"`, or
+                `"python"`.
+            model: Model context passed to the JAX template when relevant.
+            alt_label: Alternative label accepted for signature
+                compatibility; not used directly by this method.
+            **kwargs: Additional arguments forwarded to the selected template.
+
+        Returns:
+            The formatted, backend-specific source code as a string.
+
+        Raises:
+            ValueError: If `format` is not a supported backend.
+        """
+        if format.lower() == "tvb":
             rendered_code = templates.lookup.get_template("tvbo-tvb-coupling.py.mako").render(coupling=self)
 
         elif format.lower() in ["autodiff", "jax"]:
@@ -378,7 +432,26 @@ class Coupling(tvbo_datamodel.Coupling):
         return self.report(format=format, outputfile=outputfile)
 
     def execute(self, format="tvb", alt_label=None, **kwargs):
-        if format == "tvb":
+        """Render, execute, and instantiate this coupling for a backend.
+
+        Renders the coupling code via `render_code`, executes it, and returns
+        the resulting runtime object.
+
+        Args:
+            format: Target backend. `"tvb"` returns an instantiated TVB
+                coupling object; `"tvboptim"`/`"tvb-optim"` returns an
+                instantiated tvboptim coupling class; `"python"` returns a
+                `sympy.lambdify`-based callable for the coupling equation.
+            alt_label: Alternative name to instantiate the coupling under
+                (TVB backend only).
+            **kwargs: Constructor arguments forwarded to the instantiated
+                coupling object.
+
+        Returns:
+            The instantiated backend coupling object, or a callable for the
+            `"python"` format.
+        """
+        if format.lower() == "tvb":
             local_vars = {}
             exec(
                 self.render_code(alt_label=alt_label),
@@ -405,6 +478,7 @@ class Coupling(tvbo_datamodel.Coupling):
     # ---- Runtime properties (no extra attributes) ----
     @property
     def ontoclass(self):
+        """The ontology `Coupling` class matching this coupling's name, or `None` if not found."""
         try:
             hits = query.label_search(self.name, root_class="Coupling") if getattr(self, "name", None) else []
             return hits[0] if hits else None
@@ -413,14 +487,17 @@ class Coupling(tvbo_datamodel.Coupling):
 
     @property
     def pre(self):
+        """The parsed pre-summation expression of the coupling function."""
         return parse_eq(self.pre_expression)
 
     @property
     def post(self):
+        """The parsed post-summation expression of the coupling function."""
         return parse_eq(self.post_expression)
 
     @property
     def equation(self):
+        """The full assembled global coupling equation (pre and post combined), or `None` if it cannot be built."""
         try:
             pre = self.pre
             post = self.post
@@ -527,6 +604,28 @@ class Coupling(tvbo_datamodel.Coupling):
         return post_expr.subs({gx: gx_sum})
 
     def plot(self, weights=None, node_idx=0, xs=None, ax=None, **kwargs):
+        """Plot the coupling output against a single input state component.
+
+        Lambdifies the assembled coupling `equation` and evaluates it while
+        sweeping one node's state over `xs`, holding the other components
+        fixed.
+
+        Args:
+            weights: Connectivity weight matrix. If omitted, a random 3x3
+                matrix with a zeroed diagonal is used.
+            node_idx: Plotting gate only. When not `None` (the default is `0`)
+                the plot is drawn; the value is not otherwise used, as the swept
+                component is always index 0. Pass `None` to skip plotting.
+            xs: Values to sweep the selected state component over. Defaults
+                to 100 points on the interval `[-2, 2]`.
+            ax: Matplotlib axes to draw on. If omitted, a new figure is
+                created and returned.
+            **kwargs: Accepted for signature flexibility; currently unused.
+
+        Returns:
+            The created Matplotlib figure when `ax` is omitted and `node_idx`
+            is not `None`; otherwise `None`.
+        """
         import matplotlib.pyplot as plt
         import sympy as sp
 
@@ -581,6 +680,14 @@ class Coupling(tvbo_datamodel.Coupling):
 
 
 def get_global_coupling_functions():
+    """Return all coupling function classes defined in the ontology.
+
+    Loads the ontology on demand and collects the subclasses of its
+    `Coupling` class.
+
+    Returns:
+        A list of the ontology's `Coupling` subclasses.
+    """
     onto = ontology.get_onto()
     CouplingFunctions = onto.Coupling.subclasses()
 

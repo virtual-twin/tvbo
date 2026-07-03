@@ -227,6 +227,15 @@ def get_citation(citation_key) -> str:
 
 
 def to_pdf(render, outputfile):
+    """Convert Markdown text to a PDF file via pandoc.
+
+    Uses `pypandoc` with the `xelatex` PDF engine and a 3.5 cm page margin to
+    render the given Markdown source and write the result to disk.
+
+    Args:
+        render: Markdown-formatted source text to convert.
+        outputfile: Path where the generated PDF is written.
+    """
     import pypandoc
 
     pypandoc.convert_text(
