@@ -44,7 +44,7 @@ help: ## Show this help
 	@echo ""
 	@echo "Release:"
 	@echo "  make pypi-release       Build and upload to PyPI"
-	@echo "  make release            Create GitHub release + trigger PyPI publish"
+	@echo "  make release [VERSION=x.y.z]  Set version (optional), create GitHub release + trigger PyPI publish"
 	@echo ""
 	@echo "Shortcuts:"
 	@echo "  make all                Build + save Docker image"
@@ -350,10 +350,19 @@ docs-test-to-debug:
 	echo "========================================"
 
 
+# Optionally set the version first: `make release VERSION=0.5.1`.
+# With no VERSION, releases whatever is in tvbo/__init__.py (previous behaviour).
 release:
+	@if [ -n "$(VERSION)" ]; then \
+		echo "$(VERSION)" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+([.-]?(a|b|rc|dev|post)[0-9]+)?$$' || \
+			{ echo "✗ Invalid VERSION '$(VERSION)' (expected e.g. 0.5.1)"; exit 1; }; \
+		sed -i.bak 's/^__version__ = .*/__version__ = "$(VERSION)"/' tvbo/__init__.py && rm -f tvbo/__init__.py.bak; \
+		grep -q '^__version__ = "$(VERSION)"' tvbo/__init__.py || { echo "✗ Failed to set version in tvbo/__init__.py"; exit 1; }; \
+		echo "✓ Set version to $(VERSION)"; \
+	fi
 	@echo "Creating GitHub release..."
 	@VERSION=$$(grep '^__version__' tvbo/__init__.py | cut -d'"' -f2); \
-	echo "Current version: $$VERSION"; \
+	echo "Releasing version: $$VERSION"; \
 	git add -A; \
 	git commit -m "Release v$$VERSION" || true; \
 	git push; \
