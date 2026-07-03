@@ -1,6 +1,19 @@
 #!/bin/bash
 set -e
 
+# Honour an explicit command. `docker run <image> <cmd...>` passes <cmd...> here
+# as "$@"; run it verbatim instead of the built-in service. Two shipped features
+# rely on this: the docs-render pipeline (`bash -euxc '...'`, see
+# .github/workflows/docs-deploy.yml) and `tvbo run --container`, which re-execs
+# `tvbo <argv>` inside the image (tvbo/cli/run.py). Falling through to the MODE
+# launcher for these would (a) ignore the requested command and (b) start uvicorn,
+# importing tvbo from the mounted /work checkout — whose generated
+# tvbo/datamodel/schema.py is untracked and absent, hence ModuleNotFoundError.
+# With no command, "$@" is empty and we fall through to the default service.
+if [ "$#" -gt 0 ]; then
+    exec "$@"
+fi
+
 MODE=${MODE:-api}
 echo "Starting TVBO container in $MODE mode..."
 

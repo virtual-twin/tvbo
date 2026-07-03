@@ -1972,15 +1972,24 @@ def _extract_pycobi_df(ode, cont_name, state_var_names, icp):
     if branch_data is None or n_steps == 0:
         return _empty_df()
 
+    # PyRates-generated branches key columns by the variable NAME (V, W, I_);
+    # hand-written fortran keys them by U(i)/PAR(i). Accept whichever is present.
+    par_name = ode._var_map_inv.get(par_col)
+    par_key = next((k for k in (par_name, par_col) if k and k in branch_data), None)
+    sv_keys = {}
+    if state_var_names:
+        for i, sv_name in enumerate(state_var_names):
+            sv_keys[sv_name] = next(
+                (k for k in (sv_name, f"U({i + 1})") if k in branch_data), None
+            )
+
     rows = []
     for step in range(n_steps):
         row = {}
-        if state_var_names:
-            for i, sv_name in enumerate(state_var_names):
-                auto_col = f"U({i + 1})"
-                if auto_col in branch_data:
-                    row[sv_name] = float(branch_data[auto_col][step])
-        row["param"] = float(branch_data[par_col][step]) if par_col in branch_data else np.nan
+        for sv_name, key in sv_keys.items():
+            if key is not None:
+                row[sv_name] = float(branch_data[key][step])
+        row["param"] = float(branch_data[par_key][step]) if par_key else np.nan
         row["stable"] = True
         row["step"] = step
         row["specialpoint"] = None
