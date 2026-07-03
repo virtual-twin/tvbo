@@ -148,17 +148,19 @@ circuit.get_run_func(
 )
 clear(circuit)
 
-# Create PyCoBi ODESystem and populate parameter mapping from .f90
+# Create PyCoBi ODESystem. PyRates emits parnames/unames, so PyCoBi keys
+# solutions by variable name — populate only the inverse map, plus a
+# name->PAR-index dict for numeric ICP resolution.
 ode = ODESystem(eq_file="tvbo_bif", working_dir=None, init_cont=False)
+param_idx = {{}}
 with open("tvbo_bif.f90") as _f90:
     for m in re.finditer(r"args\\((\\d+)\\)\\s*=\\s*[^!]*!\\s*(\\S+)", _f90.read()):
         idx, name = int(m.group(1)), m.group(2)
-        ode._var_map[name] = {{"cont": idx, "plot": f"PAR({{idx}})"}}
-        ode._var_map_inv[idx] = name
+        param_idx[name] = idx
         ode._var_map_inv[f"PAR({{idx}})"] = name
 
 # Look up numeric ICP
-icp = ode._var_map["{pyrates_fp_name}"]["cont"]
+icp = param_idx["{pyrates_fp_name}"]
 
 # Time continuation to find equilibrium
 t_sols, t_cont = ode.run(
@@ -182,7 +184,7 @@ fig, axes = plt.subplots(1, {len(sv_names)}, figsize=({5 * len(sv_names)}, 5))
 if {len(sv_names)} == 1:
     axes = [axes]
 for i, sv in enumerate({sv_names!r}):
-    ode.plot_continuation("PAR({{icp}})", f"U({{i+1}})", cont="param", ax=axes[i])
+    ode.plot_continuation(f"PAR({{icp}})", sv, cont="param", ax=axes[i])
     axes[i].set_xlabel("{fp_name}")
     axes[i].set_ylabel(sv)
     axes[i].set_title(f"Bifurcation: {{sv}} vs {fp_name}")
@@ -234,7 +236,7 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
             # when constructed via eq_file= without params=)
             ode = ODESystem(eq_file=eq_file, working_dir=None, init_cont=False)
             state_var_names = list(model.state_variables.keys())
-            self._populate_var_map(ode, eq_file, state_var_names)
+            param_idx = self._populate_var_map(ode, eq_file, state_var_names)
 
             # Guard: PyCoBi's _create_summary() crashes on NDIM=1 systems
             # (KeyError: 'U(1)'). PyRates + AUTO-07p both handle 1-D scalar
@@ -251,8 +253,8 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
                     f"'bifurcationkit.jl' backend instead."
                 )
 
-            # Now PyCoBi knows the correct PAR index for each parameter
-            icp = ode._var_map[pyrates_fp_name]["cont"]
+            # Numeric PAR index for the free parameter (for DataFrame extraction).
+            icp = param_idx.get(pyrates_fp_name, pyrates_fp_name)
 
             # Step 1: Time continuation to find equilibrium
             # PAR(14) = time in model units (AUTO has no unit system)
@@ -302,6 +304,7 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
                             state_var_names=state_var_names,
                             icp=icp,
                             fp_name=fp_name,
+                            param_idx=param_idx,
                         )
                         codim2_results.extend(c2_res)
                     else:
@@ -411,6 +414,7 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
         state_var_names=None,
         icp=1,
         fp_name="param",
+        param_idx=None,
     ):
         """Run a codim-2 continuation branch (fold or Hopf curve in 2-param space).
 
@@ -499,7 +503,7 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
                 c2_res._cont_name = c2_name
 
                 # Extract second parameter values
-                icp2 = ode._var_map.get(pyrates_fp2_name, {}).get("cont")
+                icp2 = (param_idx or {}).get(pyrates_fp2_name)
                 if icp2 is not None:
                     c2_res._icp2 = icp2
                     c2_res._fp2_pyrates = pyrates_fp2_name
@@ -579,17 +583,26 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
 
     @staticmethod
     def _populate_var_map(ode, eq_file, state_var_names):
-        """Parse the generated .f90 to populate PyCoBi's _var_map.
+        """Recover the parameter name→PAR-index map from the generated .f90.
 
-        PyCoBi only populates _var_map when constructed via ``from_template``
-        or when ``params=`` is passed to __init__. When using ``eq_file=``
-        alone, only ``t→PAR(14)`` is set. This method parses the Fortran
-        ``stpnt`` subroutine's ``args(N) = value  ! name`` lines to recover
-        the full mapping.
+        Our systems are PyRates-generated, so AUTO-07p's c.* file carries
+        ``parnames``/``unames`` and PyCoBi keys solutions by the variable *name*
+        (``V``, ``I_``, …), not by ``U(i)``/``PAR(i)``. Populating the forward
+        ``_var_map`` (name → ``("U", i)`` / ``("P", i)``) is therefore harmful:
+        ``ODESystem.run`` maps every solution key through ``_map_var(…, "plot")``
+        and would rewrite those names to ``U(i)``/``PAR(i)``, which then miss in
+        the name-keyed solution (``KeyError: 'U(1)'``). We only populate the
+        *inverse* map (used by the result extractor to translate a ``PAR(i)`` /
+        ``U(i)`` reference back to a name) and return ``{param_name: PAR_index}``
+        for numeric ICP resolution.
+
+        Parses the Fortran ``stpnt`` subroutine's ``args(N) = value  ! name``
+        lines.
         """
+        param_idx = {}
         f90_path = eq_file + ".f90"
         if not os.path.exists(f90_path):
-            return
+            return param_idx
 
         with open(f90_path) as f:
             src = f.read()
@@ -599,15 +612,15 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
         for m in pat.finditer(src):
             idx = int(m.group(1))
             name = m.group(2)
-            ode._var_map[name] = {"cont": idx, "plot": f"PAR({idx})"}
-            ode._var_map_inv[idx] = name
+            param_idx[name] = idx
             ode._var_map_inv[f"PAR({idx})"] = name
 
         # State variables: U(1), U(2), ...
         if state_var_names:
             for i, sv in enumerate(state_var_names):
-                ode._var_map[sv] = {"cont": i + 1, "plot": f"U({i + 1})"}
                 ode._var_map_inv[f"U({i + 1})"] = sv
+
+        return param_idx
 
     def _cont_to_auto_kwargs(self, cont, icp_name, p_min, p_max, is_po=False):
         """Convert Continuation schema fields to AUTO-07p keyword arguments.

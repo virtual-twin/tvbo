@@ -879,3 +879,69 @@ Iterating requires a local Julia runtime (`uv pip install -e '.[julia]'` + the
 first-import juliapkg bootstrap + DiffEq precompile); the default dev venv has no
 Julia, which is why this was deferred behind the xfail rather than coded blind
 against CI.
+
+## Cross-backend divergence on delayed networks (dynamics, not the monitor)
+
+The BOLD observation *monitor* is now consistent across jax/tvboptim/tvb (the
+sampling resolver + the causal-convolution fix in
+`tvbo/templates/autodiff/jax-function.py.mako`, `mode='full'[:len(x)]`; verified
+pointwise-identical on zero-delay networks to ~1e-3). But on *delayed* networks
+the backends diverge in the **underlying dynamics**, visible before any HRF
+processing (compared via `TemporalAverage` on Lobar8/avgMatrix, RWW):
+
+- `jax` ≈ `tvb` (corr 0.994, mean|Δ| 3e-5), but `tvboptim` **decorrelates** from
+  both after the transient (corr ~0.002, mean|Δ| 0.08) despite matching jax to
+  1e-3 with delays OFF. So the divergence is delay-specific.
+- Time-axis conventions differ: jax `t0≈0.5ms`, tvb `t0≈134.5ms` (history/offset).
+- Root cause is per-backend **delay discretization + history initialization**;
+  for a nonlinear delayed system this amplifies (sensitive dependence), so
+  pointwise identity may be unachievable unless the delay rounding is bit-identical.
+
+**Shipped into 0.5.0 as a silent known-limitation** — delayed-network runs give
+backend-dependent results. Open questions: (a) is pointwise cross-backend
+identity under delays a goal, or is statistical agreement (FC/spectra) the bar?
+(b) unify the time-axis/`t0` convention; (c) investigate why `tvboptim`'s delay
+path diverges from both `jax` and `tvb`.
+
+Related, resolved: under delays TVB's native Bold monitor emits **one BOLD
+sample past the sim end** (t=10080ms > 10000ms duration; `floor(dur/TR)=13`,
+tvb=14). Triple-verified as caused by the delay horizon (max idelay 671 steps ≈
+67ms; delays OFF → tvb=13). Accepted as TVB-native boundary behaviour; the
+consistency tests neutralise it (zero-delay network + `_align`).
+
+## `ExecutionConfig.compile` / jit toggle (backend-independent)
+
+Make jit/compilation an opt-out, resolved in the adapter, backend-independent.
+Do NOT add a jax-specific `jit` field — reuse the existing `compile` *intent*
+(today on `Dynamics`, schema ~L1847, `ifabsent: false`, "compile to machine code
+where the backend supports it; inherently-compiled backends no-op"). Each backend
+maps the intent: jax/tvboptim → `@jax.jit`, numba → `@njit`, MTK → `mtkcompile`,
+julia → no-op.
+
+Reconcile the **default-direction mismatch**: `Dynamics.compile` is opt-in accel
+(default false — numpy→njit), but jax jit is the *default* execution mode (you
+disable only to debug). Fix by making it a **tristate `Optional[bool]`**: unset =
+backend's natural default (jax jitted, numpy interpreted), `true` = force
+compile, `false` = force interpreted/eager. Home = **`ExecutionConfig`** (an
+execution concern, alongside `precision`/`accelerator`), NOT `Integration`
+(that's the numerical scheme). Add `run(compile=…)` (jax alias `jit=`) as a
+non-persisted runtime override. Template only emits the resolved decision (gate
+the `@jax.jit` decorator; no arithmetic in Mako).
+
+Decision still open: **A** = `ExecutionConfig.compile` default + optional
+per-model `Dynamics.compile` override (needs precedence rules); **B** = single
+`ExecutionConfig.compile`, leave `Dynamics.compile` as its existing narrow hint
+(recommended — one name, one meaning). CAVEAT for docs: disabling jit is a
+**debugging** aid (concrete values/print/pdb inside dynamics), NOT a single-run
+speedup — eager `lax.scan` is slower than paying the compile.
+
+## jit performance defaults (single-run latency)
+
+`run("tvboptim")`/`run("jax")` jit by default, so a one-off run pays full XLA
+compile for a single execution (amortised only over sweeps/optimization). Two
+cheap wins: (1) enable jax **persistent compilation cache**
+(`jax_compilation_cache_dir`) so the first-run compile is one-time across
+*sessions*, not per-run; (2) make the default backend **workload-aware** —
+single/interactive run → a non-compiling backend (tvb/numpy), sweep/optimization
+→ jax/tvboptim. Disabling jit is NOT the fix (eager scan is slower); backend
+choice + compile cache are.
