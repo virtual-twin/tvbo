@@ -14,7 +14,12 @@ workflow through the tvbo declarative pipeline.
 ```{python}
 import os
 
-device_count = os.environ.get("TVBO_XLA_DEVICE_COUNT", "8")
+# Shard the G-sweep across a few host devices (matches the reference N_DEVICES=4). Each
+# device runs one heavy reverse-mode AD diagnostic at a time, so keep this modest — 4 is
+# a safe, fast point on a ~32 GB machine (~1-1.5 GB live tape per device); oversubscribing
+# risks the kernel. Override with TVBO_XLA_DEVICE_COUNT if you have more/less RAM.
+device_count = os.environ.get("TVBO_XLA_DEVICE_COUNT", "4")
+N_PMAP = int(device_count)  # sweep parallelism = device count
 os.environ["XLA_FLAGS"] = f"--xla_force_host_platform_device_count={device_count}"
 
 import jax
@@ -36,7 +41,7 @@ exp = SimulationExperiment.from_db("TBPTT_JansenRit_FC_Optimization")
 # TBPTT leg: the YAML declares differentiation = {truncation_window: 100, mode: reverse},
 # so this run uses Heun(grad_horizon=100) + reverse-mode == truncated BPTT. It also
 # computes the adiabatic bifurcation scan and the motivation sweep (diagnostics vs G).
-tbptt = exp.run("tvboptim")
+tbptt = exp.run("tvboptim", n_pmap=N_PMAP)
 
 # Full-AD leg: identical YAML, forward-mode, no truncation window (forward-mode AD
 # equals full reverse-mode BPTT for the scalar G — the exact, untruncated gradient).
