@@ -86,6 +86,18 @@ jobs:
                           git config --global url."https://${PRIVATE_REPO_TOKEN}@github.com/".insteadOf "https://github.com/"
                           git config --global --add safe.directory /work
                           uv pip install --system -e . --no-deps
+                          # Fail loudly if the editable install did not regenerate the
+                          # (git-untracked) datamodel. tvbo/datamodel/schema.py is produced
+                          # by the hatch build hook (hatch_build.py) during the install above;
+                          # without it every downstream `import tvbo` dies with an opaque
+                          # ModuleNotFoundError deep in a traceback (see the v0.5.0 docs build).
+                          if ! python -c "import tvbo.datamodel.schema"; then
+                              echo "FATAL: tvbo.datamodel.schema did not import after the editable install."
+                              echo "The hatch build hook (hatch_build.py) should have regenerated it under /work/tvbo/datamodel/. Contents:"
+                              ls -la /work/tvbo/datamodel/ || true
+                              echo "Verify build isolation installed linkml (see [build-system].requires in pyproject.toml) so the generator can run."
+                              exit 1
+                          fi
                           if ! command -v quarto >/dev/null 2>&1; then
                               apt-get update
                               apt-get install -y --no-install-recommends curl jq wget libcairo2-dev
