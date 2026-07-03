@@ -414,6 +414,7 @@ jobs:
               if: steps.venv-cache.outputs.cache-hit == 'true'
               run: uv pip install -e . --no-deps
             - name: Cache Julia depot (Julia + precompiled packages)
+              id: cache-julia-depot
               uses: actions/cache@v5
               with:
                   path: ${{ env.JULIA_DEPOT_PATH }}
@@ -425,6 +426,16 @@ jobs:
               # install/precompile the stack into JULIA_DEPOT_PATH. On a cache hit
               # this is a fast no-op; on a miss it populates the depot we cache.
               run: |
+                  # When juliapkg.json changes, the exact depot key misses and the
+                  # restore-keys fallback restores a depot resolved for the *previous*
+                  # juliapkg.json. juliacall's implicit resolve can't reconcile that
+                  # partial restore (PythonCall.jl ends up "not installed"), so on any
+                  # non-exact-hit force a clean re-resolve first — this instantiates
+                  # every declared package (incl. PythonCall) via a Julia subprocess,
+                  # independent of loading PythonCall.jl.
+                  if [ "${{ steps.cache-julia-depot.outputs.cache-hit }}" != "true" ]; then
+                      python -c "import juliapkg; juliapkg.resolve(force=True)"
+                  fi
                   python -c "import tvbo, juliacall; juliacall.Main.seval('using NetworkDynamics, OrdinaryDiffEq'); print('Julia depot ready')"
             - name: Run Julia backend tests
               run: |
