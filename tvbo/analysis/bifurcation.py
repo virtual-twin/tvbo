@@ -704,6 +704,23 @@ class BifurcationResult:
                     clabels.append(lab)
 
     def plot_branch(self, ax, ICS=None, VOI=None, **kwargs):
+        """Draw the continuation branch as stability-coded line segments.
+
+        Splits the branch into contiguous stable/unstable runs (and, when a
+        `branch_id` column is present, per branch) and plots each segment with
+        the style from the central registry — `SFP`/`UFP` for equilibria or
+        `SLC`/`ULC` for periodic orbits. Does nothing when the branch is empty.
+
+        Args:
+            ax: Matplotlib axes to draw on.
+            ICS: Free (continuation) parameter name; accepted for parity with
+                the other plot methods and not used here.
+            VOI: Variable of interest plotted on the y-axis; resolved to a
+                default branch column when `None`.
+            **kwargs: Line-style overrides forwarded to `matplotlib` (e.g.
+                `linewidth`/`lw`, `color`, `linestyle`); continuation-config
+                keys are filtered out before plotting.
+        """
         VOI = self._resolve_voi(VOI)
         if self.df.empty:
             return
@@ -775,6 +792,20 @@ class BifurcationResult:
         return ax.legend(handles=handles, **lgd_kwargs)
 
     def plot_equilibrium_branch(self, ax, ICS=None, VOI=None, **kwargs):
+        """Draw the equilibrium branch and overlay its special points.
+
+        Convenience wrapper that calls `plot_branch` and then
+        `plot_special_points` on the same axes.
+
+        Args:
+            ax: Matplotlib axes to draw on.
+            ICS: Free (continuation) parameter name, passed through to the
+                underlying calls.
+            VOI: Variable of interest plotted on the y-axis; resolved to a
+                default branch column when `None`.
+            **kwargs: Style overrides forwarded to `plot_branch` and
+                `plot_special_points`.
+        """
         VOI = self._resolve_voi(VOI)
         self.plot_branch(ax, ICS=ICS, VOI=VOI, **kwargs)
         self.plot_special_points(VOI=VOI, ax=ax, **kwargs)
@@ -923,6 +954,28 @@ class BifurcationResult:
             return []
 
     def plot(self, ax=None, ICS=None, VOI=None, save=None, **kwargs):
+        """Render the full bifurcation diagram for this branch.
+
+        Draws the equilibrium branch, its special points and any periodic-orbit
+        envelopes (a filled min/max region, or a `max` line when only maxima are
+        available), labels the axes, adds a legend and applies publication
+        styling. When nested continuation produced codim-2 curves, dispatches to
+        the codim-2 renderer instead.
+
+        Args:
+            ax: Existing axes to draw on; a new figure is created when `None`.
+            ICS: Label for the x-axis (the free/continuation parameter);
+                defaults to `self.ICS` or `"param"`.
+            VOI: Variable of interest plotted on the y-axis; resolved to a
+                default branch column when `None`.
+            save: File path to write the figure to (at 500 dpi); skipped when
+                `None`.
+            **kwargs: Style overrides forwarded to `plot_branch` and
+                `plot_special_points`.
+
+        Returns:
+            The matplotlib axes the diagram was drawn on.
+        """
         # Auto-dispatch to codim-2 rendering when nested continuation produced codim-2 curves.
         if getattr(self, "codim2_curves", None):
             return self._plot_codim2(ax=ax, ICS=ICS, save=save, **kwargs)
@@ -2189,6 +2242,11 @@ class CurvePicker:
             print(f"[CurvePicker] callback failed: {exc}")
 
     def disconnect(self):
+        """Detach the pick-event handler so clicks are no longer captured.
+
+        Safe to call more than once; the connection id is cleared after the
+        first disconnect.
+        """
         if self.cid is not None:
             self.fig.canvas.mpl_disconnect(self.cid)
             self.cid = None

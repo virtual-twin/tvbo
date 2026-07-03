@@ -5,6 +5,12 @@
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
 # Licensed under the EUPL-1.2-or-later
 #
+"""Generate TVBO Python classes from ontology definitions via Mako templates.
+
+Provides helpers that read model, parameter, state-variable, equation,
+coupling and integrator metadata from the ontology and render it into
+executable TVBO/TVB source using the templates in `tvbo.templates`.
+"""
 import re
 from os.path import join
 from typing import Any
@@ -83,6 +89,19 @@ def format_code(code: str, format: str = "python", use_black: bool = True, **kwa
 
 
 def get_statevariable_equations(model):
+    """Map each state variable to its symbolic time-derivative equation.
+
+    For every state variable of `model`, look up the matching `TimeDerivative`
+    expression among the model's symbolic differential equations, keyed by the
+    derivative's label with the model acronym suffix stripped.
+
+    Args:
+        model: An ontology model class, or a model name to resolve.
+
+    Returns:
+        A dict mapping state-variable name to its differential-equation
+        expression.
+    """
     acr = ontology.get_model_suffix(model)
     diff_eqs = equations.symbolic_differential_equations(model)
     state_variable_dfuns = {
@@ -101,6 +120,22 @@ def get_statevariable_equations(model):
 
 
 def get_model_info(model):
+    """Collect the codegen-relevant metadata for a model into a dict.
+
+    Resolve `model` from the ontology if given as a name, then gather its
+    parameters and constants, coupling-variable indices, coupling terms,
+    non-integrated variables (functions and conditionals) with their
+    dependency-sorted symbolic expressions, state variables, state-variable
+    differential equations, and variables of interest.
+
+    Args:
+        model: An ontology model class, or a model name to resolve.
+
+    Returns:
+        A dict with keys `parameters`, `cvars`, `coupling_terms`,
+        `non_integrated_variables`, `ninvar_dfuns`, `state_variables`,
+        `state_variable_dfuns` and `vois`.
+    """
     if isinstance(model, str):
         model = ontology.get_model(model)
 
@@ -138,6 +173,17 @@ def get_model_info(model):
 
 
 def get_param_info(param_class):
+    """Extract label, symbol, default, range, definition and dependencies of a parameter.
+
+    Fall back from the ontology `defaultValue` to `value` when no default is
+    set.
+
+    Args:
+        param_class: Ontology parameter class to read metadata from.
+
+    Returns:
+        A dict describing the parameter.
+    """
     return dict(
         label=param_class.label.first(),
         symbol=param_class.symbol.first(),
@@ -153,6 +199,18 @@ def get_param_info(param_class):
 
 
 def get_sv_info(sv_class):
+    """Extract label, symbol, default, range, boundaries and definition of a state variable.
+
+    Parse the ontology `stateVariableRange` and `stateVariableBoundaries`
+    strings, defaulting to an effectively unbounded range and open boundaries
+    when unset.
+
+    Args:
+        sv_class: Ontology state-variable class to read metadata from.
+
+    Returns:
+        A dict describing the state variable.
+    """
     range = sv_class.stateVariableRange.first().split(",") if sv_class.stateVariableRange else [-1e100, 1e100]
 
     if sv_class.stateVariableBoundaries:
@@ -172,10 +230,38 @@ def get_sv_info(sv_class):
 
 
 def boolean2bitwise(code_str):
+    """Rewrite Python boolean operators as their bitwise equivalents.
+
+    Replace `and`/`or`/`not` with `&`/`|`/`~` so element-wise array
+    expressions evaluate correctly.
+
+    Args:
+        code_str: Source expression using boolean keywords.
+
+    Returns:
+        The expression with boolean operators replaced by bitwise operators.
+    """
     return code_str.replace("and", "&").replace("or", "|").replace("not", "~")
 
 
 def equation2class(EQ, fout=None, print_source=False, **kwargs):
+    """Generate a TVBO equation class from an ontology equation.
+
+    Sympify the equation, render it (with its Python and LaTeX forms and
+    default parameter values) through the `_tvbo-tvb-equation.py.mako`
+    template, then either write the source, print it, or execute it and return
+    an instantiated equation object.
+
+    Args:
+        EQ: Ontology equation class to convert.
+        fout: Optional path; when given, write the rendered source there instead
+            of instantiating.
+        print_source: When True, print the rendered source with line numbers.
+        **kwargs: Overrides for the equation's default parameter values.
+
+    Returns:
+        The instantiated equation object, or `None` when `fout` is given.
+    """
     var = sp.symbols("var")
     eq_name = EQ.label.first()
     definition = EQ.definition.first()
@@ -217,6 +303,25 @@ def equation2class(EQ, fout=None, print_source=False, **kwargs):
 
 
 def coupling2class(CF, fout=None, print_source=False, **kwargs):
+    """Generate a TVBO coupling class from an ontology coupling function.
+
+    Resolve `CF` from the ontology if given as a name, build the pre- and
+    post-summation expressions and parameters, and render them through the
+    `_tvbo-tvb-coupling.py.mako` template. Then either write the source, print
+    it, or execute it and return an instantiated coupling object. Keyword
+    arguments matching coupling attributes are passed as array-coerced
+    constructor values.
+
+    Args:
+        CF: Ontology coupling-function class, or a name to resolve.
+        fout: Optional path; when given, write the rendered source there instead
+            of instantiating.
+        print_source: When True, print the rendered source with line numbers.
+        **kwargs: Constructor overrides for recognised coupling attributes.
+
+    Returns:
+        The instantiated coupling object, or `None` when `fout` is given.
+    """
     from tvbo.datamodel import schema as tvbo_datamodel
 
     if isinstance(CF, str):
@@ -259,6 +364,17 @@ def coupling2class(CF, fout=None, print_source=False, **kwargs):
 
 
 def formulate_dependency_imports(dependencies):
+    """Yield `from ... import ...` statements for dotted dependency paths.
+
+    Only dependencies containing a dotted path produce an import; the final
+    segment is imported from the preceding module path.
+
+    Args:
+        dependencies: Iterable of dependency strings (e.g. `"pkg.mod.name"`).
+
+    Yields:
+        An import statement for each dotted dependency.
+    """
     for d in dependencies:
         if len(d.split(".")) > 1:
             yield f"from {'.'.join(d.split('.')[0:-1])} import {d.split('.')[-1]}"
@@ -274,6 +390,34 @@ def model2class(
     bifmodel=False,
     **kwargs,
 ):
+    """Generate a TVBO model class from an ontology model.
+
+    Resolve `model` from the ontology if given as a name, assemble its state
+    variables, differential equations, non-integrated variables, parameters and
+    dependency imports via `get_model_info`, and render them through the
+    `_tvbo-tvb-model_old.py.mako` template. Then either write the source, print
+    it, or execute it and return the model class or an instance.
+
+    Args:
+        model: An ontology model class, or a model name to resolve.
+        fout: Optional path; when given, write the rendered source there instead
+            of instantiating.
+        print_source: When True, print the rendered source with line numbers.
+        split_nonintegrated_variables: When True, treat non-integrated variables
+            as additional state variables (forced off when `sub_ninvars` is set).
+        return_instance: When True, return an instance; otherwise return the
+            class.
+        sub_ninvars: When True, substitute non-integrated function expressions
+            into the state equations instead of splitting them out.
+        bifmodel: Reserved flag (currently unused in rendering).
+        **kwargs: Constructor overrides for recognised model attributes.
+
+    Returns:
+        The instantiated model, the model class, or `None` when `fout` is given.
+
+    Raises:
+        ValueError: If a model name cannot be resolved in the ontology.
+    """
     if isinstance(model, str):
         model = ontology.get_model(model)
 
@@ -354,6 +498,16 @@ def model2class(
 
 ### Integrator ###
 def get_integrator_info(integrator):
+    """Collect scheme metadata for an integrator into a dict.
+
+    Args:
+        integrator: Ontology integrator class describing the scheme.
+
+    Returns:
+        A dict with the integrator `class_name`, the number of derivative stages
+        `n_dx`, its `intermediate_steps`, and the `dX_expr` update expression
+        (`None` when unset).
+    """
     n_dx = len(integrator.intermediate_steps) + 1
     intermediade_steps = integrator.intermediate_steps if n_dx > 1 else []
     dX = integrator.dX.first() if integrator.dX else None
@@ -368,6 +522,22 @@ def get_integrator_info(integrator):
 
 
 def integrator2class(integrator, return_instance=True, **kwargs):
+    """Resolve an ontology integrator to a TVB integrator class or instance.
+
+    Look up the matching `tvb.simulator.integrators` class, selecting the
+    stochastic variant when a `noise` keyword is supplied and the deterministic
+    variant otherwise.
+
+    Args:
+        integrator: Ontology integrator class, or a name to search for.
+        return_instance: When True, return an instance built from `kwargs`;
+            otherwise return the class.
+        **kwargs: Integrator constructor arguments; a `noise` entry selects the
+            stochastic variant.
+
+    Returns:
+        The TVB integrator instance or class.
+    """
     from tvb.simulator import integrators
 
     if isinstance(integrator, str):

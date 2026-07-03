@@ -100,6 +100,32 @@ def _plot_parameter_sweep_timeseries(dynamics, panel, ax, cache):
 
 
 def render_dynamics_panel(dynamics, panel, ax, cache):
+    """Render a single dynamics panel onto an axes according to its kind.
+
+    Dispatches on `panel["kind"]` (default `"timeseries"`): standard plot
+    kinds are drawn with `plot_dynamics`, `"bifurcation"`/`"continuation"`
+    run a continuation and plot the result, and `"parameter_sweep_timeseries"`
+    (or `"timeseries_parameter_sweep"`) overlays trajectories across a
+    parameter range.
+
+    Args:
+        dynamics: The `Dynamics` model to render; copied before running so the
+            original is left unmodified.
+        panel: Panel specification mapping. Recognized keys include `kind`,
+            `dims`/`VOI`, `run`, `plot`, and `format`, plus kind-specific keys
+            such as `parameter`, `values`, and `from_panel` for parameter
+            sweeps.
+        ax: The Matplotlib axes to draw the panel on.
+        cache: Mapping of previously rendered panel names to their results,
+            used to resolve continuation parameters referenced via `from_panel`.
+
+    Returns:
+        The continuation/bifurcation result object for those kinds (so later
+        panels can reference it), or `None` for plot and parameter-sweep kinds.
+
+    Raises:
+        ValueError: If `kind` is not one of the supported panel kinds.
+    """
     from tvbo.plot.dynamics import _KINDS, plot_dynamics
 
     kind = panel.get("kind", "timeseries")
