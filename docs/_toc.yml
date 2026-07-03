@@ -1689,6 +1689,8 @@ website:
               - section: "API Documentation"
                 href: api/index.qmd
                 contents:
+                  - text: "Multiscale"
+                    href: api/multiscale.qmd
                   - text: "Platform"
                     href: api/platform.qmd
 # END:api-autogen

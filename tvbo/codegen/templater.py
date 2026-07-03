@@ -364,7 +364,7 @@ def coupling2class(CF, fout=None, print_source=False, **kwargs):
 
 
 def formulate_dependency_imports(dependencies):
-    """Yield `from ... import ...` statements for dotted dependency paths.
+    """Build `from ... import ...` statements for dotted dependency paths.
 
     Only dependencies containing a dotted path produce an import; the final
     segment is imported from the preceding module path.
@@ -372,8 +372,8 @@ def formulate_dependency_imports(dependencies):
     Args:
         dependencies: Iterable of dependency strings (e.g. `"pkg.mod.name"`).
 
-    Yields:
-        An import statement for each dotted dependency.
+    Returns:
+        A generator of import statements, one per dotted dependency.
     """
     for d in dependencies:
         if len(d.split(".")) > 1:
