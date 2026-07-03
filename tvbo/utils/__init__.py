@@ -138,15 +138,25 @@ class Bunch(dict):
         return f"{type(self).__name__}({items})"
 
     def copy(self):
+        """Return a shallow copy as a new `Bunch`.
+
+        Returns:
+            A `Bunch` containing the same key/value pairs as this instance.
+        """
         return Bunch(self)
 
     def tree_flatten(self):
+        """Flatten the `Bunch` into JAX pytree (children, aux_data).
+
+        Keys are sorted so traversal order is deterministic across calls.
+        """
         keys = tuple(sorted(self.keys()))
         values = tuple(self[k] for k in keys)
         return values, keys
 
     @classmethod
     def tree_unflatten(cls, aux_data, children):
+        """Reconstruct a `Bunch` from JAX pytree aux_data and children."""
         return cls(zip(aux_data, children))
 
 
@@ -159,6 +169,14 @@ except ImportError:
 
 
 def numbered_print(text):
+    """Print `text` with each line prefixed by a zero-padded line number.
+
+    Line numbers start at 1 and are padded to the width of the largest number
+    so the printed numbers stay aligned.
+
+    Args:
+        text: The multi-line string to print.
+    """
     lines = text.splitlines()
     max_line_num = len(str(len(lines)))
     for i, line in enumerate(lines, start=1):

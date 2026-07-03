@@ -350,6 +350,18 @@ def configure_model(tvb_model, config_key):
 
 
 def get_coupling_parameters(CF):
+    """Collect the default parameters of a coupling function.
+
+    Args:
+        CF: The coupling function, either as an ontology coupling-function
+            object or as a string identifier that is resolved via the ontology.
+
+    Returns:
+        A dictionary mapping each parameter name to its default value. The
+        coupling-function acronym suffix (`_<acronym>`) is stripped from each
+        parameter label, and parameters without a default value fall back to
+        `1`.
+    """
     if isinstance(CF, str):
         CF = ontology.get_coupling_function(CF)
     acr = CF.acronym.first()
@@ -360,6 +372,16 @@ def get_coupling_parameters(CF):
 
 
 def get_model_configurations(model):
+    """List the configuration instances available for a model.
+
+    Args:
+        model: The Neural Mass Model, either as an ontology model object or as
+            a string identifier that is resolved via the ontology.
+
+    Returns:
+        A list of unique `ModelConfiguration` instances that declare the given
+        model among their classes.
+    """
     if isinstance(model, str):
         model = ontology.get_model(model)
 

@@ -91,6 +91,25 @@ def get_sidecar(experiment_id: str, format: str = Query("yaml")):
 # ---------------------------------------------------------------------------
 
 class RenderExperimentRequest(BaseModel):
+    """Request body for rendering or saving an experiment from an inline payload.
+
+    Describes a [`SimulationExperiment`](../classes/experiment.qmd) to render (or
+    persist) via the `POST /api/v1/experiments/render` endpoint. The experiment is
+    supplied inline as a mapping rather than referenced by stored id.
+
+    Args:
+        experiment: Mapping of `SimulationExperiment` constructor keyword arguments
+            used to build the experiment to render.
+        format: Export format key or alias to render into (e.g. `"yaml"`).
+        filename: Suggested download filename; falls back to a default derived from
+            the format's extension when omitted.
+        save_path: Destination path to persist the rendered experiment to. When set,
+            the experiment is saved there instead of being returned as a download.
+        metadata_only: Whether to render only the experiment metadata rather than the
+            fully expanded definition when saving.
+        render_kwargs: Extra keyword arguments forwarded to the render or save call.
+    """
+
     experiment: dict
     format: str = "yaml"
     filename: Optional[str] = None

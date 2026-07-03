@@ -55,6 +55,12 @@ __license__ = "EUPL-1.2-or-later"
 
 
 def clean_temp():
+    """Remove and recreate the TVBO temporary working directory.
+
+    Deletes the entire `tvbo` scratch directory under the system temp
+    location (ignoring errors if it is missing) and recreates it empty,
+    clearing any cached or generated artifacts from previous runs.
+    """
     shutil.rmtree(tempdir, ignore_errors=True)
     os.makedirs(tempdir)
 
