@@ -888,6 +888,28 @@ def render_analysis_observations(
     """
     window = f"t0=0.0 + {transient_time}, t1={transient_time} + {t1_default}, dt={dt}"
     lines: List[str] = []
+
+    # Finite-difference observations that share the exact same per-seed computation
+    # (same target, wrt, delta, seeds, seed_base) reuse ONE ``jax.lax.map`` — matching the
+    # reference, which derives fd_mean and fd_sem from a single map — rather than
+    # recomputing the seeds once per reduction. Assign a shared group id per signature.
+    def _fd_signature(aobs):
+        an = aobs.analysis
+        p = {str(k): (v.value if hasattr(v, "value") else v)
+             for k, v in (getattr(an, "parameters", None) or {}).items()}
+        wrt = [str(w) for w in (getattr(an, "wrt", None) or [])]
+        return (
+            str(getattr(an, "target", None) or "loss"),
+            _analysis_wrt_access(wrt, coupling_keys),
+            float(p.get("delta", 0.3)), int(p.get("seeds", 8)), int(p.get("seed_base", 0)),
+        )
+
+    fd_group = {}  # signature -> group id
+    for aobs in analysis_obs.values():
+        if str(getattr(aobs.analysis, "type", "") or "") == "finite_difference":
+            fd_group.setdefault(_fd_signature(aobs), f"fdgrp{len(fd_group)}")
+    fd_emitted: Set[tuple] = set()
+
     for name, aobs in analysis_obs.items():
         an = aobs.analysis
         atype = str(getattr(an, "type", "") or "")
@@ -927,20 +949,104 @@ def render_analysis_observations(
             delta = float(params.get("delta", 0.3))
             seeds = int(params.get("seeds", 8))
             seed_base = int(params.get("seed_base", 0))
+            # `stat` selects the reduction over the per-seed central differences: 'mean'
+            # (default) = the seed-averaged gradient estimate; 'sem' = its standard error
+            # (std / sqrt(seeds)). A mean/sem pair on the same settings shares the single
+            # per-seed map below, so the seeds are computed once (as in the reference).
+            stat = str(params.get("stat", "mean"))
+            sig = _fd_signature(aobs)
+            gid = fd_group[sig]
+            arr = f"_fds_{gid}"
+            if sig not in fd_emitted:
+                lines += [
+                    f"# per-seed central differences of '{target}' wrt {wrt[0]} (shared across its reductions)",
+                    f"_asolve_{gid}, _ = prepare(network, {solver_class}(), {window})",
+                    f"_delta_{gid} = {delta}",
+                    f"_keys_{gid} = jax.random.split(jax.random.key({seed_base}), {seeds})",
+                    f"_g0_{gid} = state.{access}",
+                    f"def _fd_{gid}(_key):",
+                    f"    _cs = eqx.tree_at(lambda _s: _s.noise.key, state, _key)",
+                    f"    _loss_at = lambda _g: compute_all_observations(_asolve_{gid}(eqx.tree_at(lambda _s: _s.{access}, _cs, _g)), _cs, result_transient).{target}",
+                    f"    return (_loss_at(_g0_{gid} + _delta_{gid}) - _loss_at(_g0_{gid} - _delta_{gid})) / (2.0 * _delta_{gid})",
+                    f"{arr} = jax.lax.map(_fd_{gid}, _keys_{gid})",
+                ]
+                fd_emitted.add(sig)
+            reduce = f"jnp.std({arr}) / jnp.sqrt({seeds})" if stat == "sem" else f"jnp.mean({arr})"
             lines += [
-                f"# {name}: seed-averaged central finite-difference gradient of '{target}' wrt {wrt[0]}",
-                f"_asolve_{name}, _ = prepare(network, {solver_class}(), {window})",
-                f"_delta_{name} = {delta}",
-                f"_keys_{name} = jax.random.split(jax.random.key({seed_base}), {seeds})",
-                f"_g0_{name} = state.{access}",
-                f"def _fd_{name}(_key):",
-                f"    _cs = eqx.tree_at(lambda _s: _s.noise.key, state, _key)",
-                f"    _loss_at = lambda _g: compute_all_observations(_asolve_{name}(eqx.tree_at(lambda _s: _s.{access}, _cs, _g)), _cs, result_transient).{target}",
-                f"    return (_loss_at(_g0_{name} + _delta_{name}) - _loss_at(_g0_{name} - _delta_{name})) / (2.0 * _delta_{name})",
-                f"obs.{name} = jnp.mean(jax.lax.map(_fd_{name}, _keys_{name}))",
+                f"# {name}: seed-averaged central finite-difference {stat} of '{target}' wrt {wrt[0]}",
+                f"obs.{name} = {reduce}",
             ]
         else:
             lines.append(f"# {name}: analysis type '{atype}' not yet lowered for this backend — skipped.")
+    return "\n".join(f"    {ln}" for ln in lines)
+
+
+def render_adiabatic_signal(signal_expr: str, var_names: List[str]) -> str:
+    """Render an envelope-signal expression over recorded variables as an ``observe`` body.
+
+    Each recorded-variable name in ``signal_expr`` (e.g. ``"y1 - y2"``) is replaced by its
+    slice ``_r.ys[:, <index>, :]`` (a ``[n_time, n_nodes]`` view). ``<index>`` is the
+    variable's position in the solver's recorded ordering (:func:`get_recorded_variable_names`).
+    The replacement is a single alternation pass (longest names first, so a name is not
+    matched where it is a prefix of another like ``y1`` in ``y12``); a single pass — not
+    iterated ``re.sub`` per name — also guarantees the emitted slice text (which itself
+    contains ``ys``/``r``) is never re-scanned and re-substituted. Lets the adiabatic-scan
+    exploration observe an arbitrary state/derived signal declaratively, without a driver.
+    """
+    import re
+
+    if not var_names:
+        return str(signal_expr)
+    index = {nm: i for i, nm in enumerate(var_names)}
+    alt = "|".join(re.escape(nm) for nm in sorted(var_names, key=len, reverse=True))
+    pattern = re.compile(rf"\b({alt})\b")
+    return pattern.sub(lambda m: f"_r.ys[:, {index[m.group(0)]}, :]", str(signal_expr))
+
+
+def render_adiabatic_scan_body(expl: Dict[str, Any], solver_class: str, dt: float) -> str:
+    """Render the body of an ``adiabatic_scan`` exploration (``strategy == 'adiabatic_scan'``).
+
+    Delegates to tvboptim's ``adiabatic_scan``: ramp the single swept parameter up then back
+    down, carrying the settled state between values, and record the oscillation envelope of an
+    observed signal (per-node temporal min/max averaged across the network, plus the mean) at
+    each value. The up/down branches expose hysteresis. Emitted as a Python string — like the
+    analysis diagnostics — so the per-strategy layout lives in one place; the result is an
+    ``ExplorationResult`` with one swept axis, ``env_lo``/``env_hi``/``env_mean`` observations
+    (the signal-agnostic envelope), and ``n_up`` (the up-branch length) so a consumer can split
+    the up/down branches. The swept-axis point count honours the same
+    ``kwargs.get('n_<axis>', ...)`` runtime override as a grid sweep. Returns 4-space-indented
+    lines (an exploration-function body).
+    """
+    a = expl["adiabatic"]
+    axis = a["axis"]
+    name = axis["name"]
+    path = f"coupling.{axis['coupling_key']}.{name}" if axis.get("is_coupling") else f"dynamics.{name}"
+    lines = [
+        "# -- Adiabatic bifurcation scan (delegates to tvboptim adiabatic_scan) --",
+        "# Ramp the swept parameter up then back down, carrying the settled state; record the",
+        "# oscillation envelope (per-node temporal min/max averaged across nodes, plus the mean)",
+        "# of the observed signal at each value. The up/down branches expose any hysteresis.",
+        "def _adia_observe(_r):",
+        f"    return {a['signal_code']}",
+        '_adia_stats = {"mean": lambda _a: _a.mean(), "lo": lambda _a: _a.min(axis=0).mean(), '
+        '"hi": lambda _a: _a.max(axis=0).mean()}',
+        "_adia_res = _adiabatic_scan(",
+        f"    _network, {solver_class}(),",
+        f"    accessor=lambda _c: _c.{path},",
+        f"    low={axis['lo']}, high={axis['hi']}, n=kwargs.get('n_{name}', {axis['n']}),",
+        f"    t={a['segment_time']}, skip={a['skip']}, dt={dt}, bothways={a['bothways']},",
+        "    observe=_adia_observe, statistics=_adia_stats,",
+        ")",
+        "_adia_p = jnp.asarray(_adia_res.p)",
+        "return ExplorationResult(",
+        f"    name='{expl['name']}',",
+        f"    axes=[Bunch(name='{name}', explored_values=_adia_p, n=int(_adia_p.shape[0]), "
+        f"is_coupling={bool(axis.get('is_coupling'))}, coupling_key={axis.get('coupling_key')!r})],",
+        "    observations={'env_lo': jnp.asarray(_adia_res.stats['lo']), "
+        "'env_hi': jnp.asarray(_adia_res.stats['hi']), 'env_mean': jnp.asarray(_adia_res.stats['mean'])},",
+        f"    observable='adiabatic', dt={dt}, n_up=int(_adia_res.n_up), strategy='adiabatic_scan',",
+        ")",
+    ]
     return "\n".join(f"    {ln}" for ln in lines)
 
 
@@ -1529,6 +1635,15 @@ def parse_free_param(fp: Any, coupling_keys: Set[str], model: Any = None, all_co
                     result["upper_bound"] = float(hi)
                 except (TypeError, ValueError):
                     pass
+        # Optional optimizer start value (overrides the referenced Parameter's value),
+        # so the descent can begin from a declared point without mutating the base config.
+        iv = getattr(fp, "initial_value", None)
+        if iv is not None:
+            iv = getattr(iv, "value", iv)
+            try:
+                result["initial_value"] = float(iv)
+            except (TypeError, ValueError):
+                pass
 
     elif isinstance(fp, str):
         stripped = fp.strip()
