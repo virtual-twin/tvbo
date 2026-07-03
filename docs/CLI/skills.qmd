@@ -1,0 +1,175 @@
+---
+title: "tvbo skills"
+---
+
+Render TVBO's AI-assistant skills (Claude Code, Cursor, Copilot, `AGENTS.md`,
+or a raw-API system prompt) and install them onto your machine. After
+installation, an AI assistant in your editor automatically loads the relevant
+TVBO context — what TVBO is, how to write a `Dynamics`, how to pick a backend,
+how to use the platform — without you pasting a system prompt every session.
+
+::: {.callout-tip}
+For a narrative walkthrough (with screenshots and example conversations), see
+the [Agentic Coding](../agents/index.qmd) section. This page is the
+**verb reference** with every flag.
+:::
+
+## Synopsis
+
+```text
+tvbo skills install   [OPTIONS]
+tvbo skills uninstall [OPTIONS]
+tvbo skills sync      [OPTIONS]   # maintainer-only
+```
+
+## Quick start
+
+```bash
+pip install tvbo
+tvbo skills install --target claude-code     # default: Claude Code, user scope
+```
+
+That writes four files under `~/.claude/skills/tvbo-*/SKILL.md`:
+
+| Skill | What it teaches the AI |
+|---|---|
+| `tvbo-overview` | The three pillars (LinkML datamodel, ontology, Python package) |
+| `tvbo-writing-models` | How to specify a `Dynamics` in YAML or Python |
+| `tvbo-running-simulations` | How to run an experiment, choose a backend |
+| `tvbo-platform` | How to use [tvbo.charite.de](https://tvbo.charite.de) |
+
+Skills load **on demand** — they cost nothing when you're not working with TVBO.
+
+## `tvbo skills install`
+
+```text
+tvbo skills install
+    --target {claude-code,copilot,cursor,agents-md,prompt,all}   # default: claude-code
+    --audience {user,maintainer,all}                              # default: user
+    --scope {user,project}                                        # default: user
+    --skill <name>        # filter; repeatable
+    --out <path>          # override install dir / output file
+    --force               # overwrite files not marked managed-by: tvbo
+    --dry-run             # show what would happen, write nothing
+    --strict              # exit non-zero if any skill is refused
+```
+
+### Targets
+
+| Target | Produces | Default location |
+|---|---|---|
+| `claude-code` | `<dest>/tvbo-<name>/SKILL.md` | `~/.claude/skills/` (user) or `./.claude/skills/` (project) |
+| `cursor` | `<dest>/tvbo-<name>.mdc` | `~/.cursor/rules/` or `./.cursor/rules/` |
+| `copilot` | `<dest>/<name>.instructions.md` | `.github/instructions/` (repo-only; maintainer) |
+| `agents-md` | Updates the skills-index region of `AGENTS.md` | `./AGENTS.md` |
+| `prompt` | Concatenated markdown system prompt | stdout (or `--out path`) |
+| `all` | Every applicable target | as above |
+
+### Audiences
+
+By default only the four **user-audience** skills are installed (the ones in
+the table above). The **maintainer** skills (`git`, `writing-code`,
+`linkml-schema`, `codegen-templates`, `tests-and-backends`, `grill-me`) are
+relevant only when working inside a clone of the `tvbo` repository. Opt in
+explicitly:
+
+```bash
+tvbo skills install --audience maintainer
+tvbo skills install --audience all
+```
+
+### Scope
+
+```bash
+tvbo skills install --scope user      # ~/.claude/skills/...     (default)
+tvbo skills install --scope project   # ./.claude/skills/...     (committed alongside a notebook repo)
+```
+
+Use `project` when you want a tutorial repo to "ship" with the skills so a
+co-author sees the same AI behaviour after cloning.
+
+### Filtering
+
+```bash
+tvbo skills install --skill overview --skill writing-models
+```
+
+Names match either the canonical name (`writing-models`) or the installed
+name (`tvbo-writing-models`).
+
+### Raw-API / local-model usage
+
+Need a single system prompt for Anthropic / OpenAI / Mistral SDK calls or for a
+local Ollama / vLLM / llama.cpp setup?
+
+```bash
+tvbo skills install --target prompt > tvbo-system-prompt.md
+tvbo skills install --target prompt --skill overview --skill writing-models
+```
+
+Then feed `tvbo-system-prompt.md` as the system prompt in your script.
+
+### Upgrade / overwrite policy
+
+TVBO stamps `managed-by: tvbo` into every file it writes. On subsequent
+installs:
+
+- File **doesn't exist** → install it.
+- File **exists, `managed-by: tvbo`** → overwrite (it's ours).
+- File **exists, no marker** → **refused**. You customised it, or another tool
+  wrote it. Pass `--force`, or move it out of the way first.
+
+```bash
+tvbo skills install --dry-run    # see what would happen
+tvbo skills install --force      # overwrite anyway
+tvbo skills install --strict     # exit 1 if anything was refused (for CI)
+```
+
+### Reporting
+
+Every install prints:
+
+```
+skills install: installed=4 updated=0 refused=0 skipped=0
+```
+
+| Counter | Meaning |
+|---|---|
+| `installed` | New file written |
+| `updated` | Existing managed file overwritten |
+| `refused` | Existing file, not managed-by tvbo, no `--force` |
+| `skipped` | Skill filtered out by `--audience` / `--skill` |
+
+## `tvbo skills uninstall`
+
+```bash
+tvbo skills uninstall --target claude-code        # ~/.claude/skills/tvbo-*
+tvbo skills uninstall --target cursor             # ~/.cursor/rules/tvbo-*.mdc
+tvbo skills uninstall --target all                # both
+tvbo skills uninstall --dry-run                   # show, don't delete
+```
+
+Only files carrying the `managed-by: tvbo` marker are removed. Other skills in
+the same directory — including ones you wrote yourself — are untouched.
+
+## `tvbo skills sync` (maintainer)
+
+Regenerates the adapter files inside this repository (`.claude/skills/`,
+`.github/instructions/`, the skills-index region of `AGENTS.md`) from the
+canonical sources in `skills/`. CI runs `tvbo skills sync --check` to prevent
+canonical-vs-adapter drift.
+
+```bash
+tvbo skills sync                       # regenerate
+tvbo skills sync --check               # exit non-zero if anything would change
+tvbo skills sync --repo-root /path/to/clone
+```
+
+End-users of the published `tvbo` wheel never need this command.
+
+## See also
+
+- [Agentic Coding overview](../agents/index.qmd) — why the skill system exists
+- [Beginner walkthrough](../agents/beginner.qmd) — first conversation, first model
+- [Skill reference](../agents/skills-reference.qmd) — what each skill teaches
+- [`AGENTS.md` explainer](../agents/agents-md.qmd) — repo-level 1-minute briefing

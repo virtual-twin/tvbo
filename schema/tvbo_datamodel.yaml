@@ -73,6 +73,9 @@ slots:
         range: string
     domain:
         range: Range
+        aliases:
+            - range
+            - boundaries
     iri:
         slot_uri: dcterms:identifier
         range: uriorcurie
@@ -98,10 +101,15 @@ slots:
     value:
         slot_uri: schema:value
         range: ScalarValue
+        any_of:
+          - range: ScalarValue
+          - array: {}
         description: >-
-            Numeric, string, or boolean value. ScalarValue accepts any literal
-            primitive type, allowing parameters to carry control flags
-            (e.g., booleans) or symbolic placeholders alongside numeric defaults.
+            Numeric, string, or boolean value, OR an array (nested list) for
+            array-valued constants such as mode-coupling coefficient matrices.
+            ScalarValue accepts any literal primitive type, allowing parameters
+            to carry control flags (e.g., booleans) or symbolic placeholders
+            alongside numeric defaults.
     file:
         range: string
     reported_optimum:
@@ -150,6 +158,47 @@ slots:
             Set false to suppress recording.
 
 enums:
+    AlgorithmCompositionMode:
+        description: >-
+            How an included algorithm is composed with the outer algorithm.
+            Determines whether the inner algorithm's update rules are merged
+            into the same loop (combined) or run as a converging inner loop on
+            each outer iteration (nested).
+        permissible_values:
+            combined:
+                description: >-
+                    The included algorithm's update rules are merged into the outer
+                    loop and applied ONCE per outer iteration (1:1). Use when both
+                    algorithms update at the same cadence on the same observations.
+                    This is the default.
+            nested:
+                description: >-
+                    The included algorithm runs as a full inner loop on EACH outer
+                    iteration, re-converging before the outer update rules are applied.
+                    Use when the inner algorithm maintains an invariant the outer one
+                    would otherwise perturb — e.g. FIC holding the E-I working point
+                    (mean S_e = 0.25) while EIB retunes per-edge coupling. The outer
+                    update's validity depends on that invariant, so the inner loop must
+                    re-settle it between every outer step.
+
+    ParallelMode:
+        description: >-
+            How a trial / grid-point axis is realised at JAX codegen time. The
+            choice trades peak memory against throughput: vmap batches in
+            parallel (fast, n_trials × working-set memory), lax_map runs
+            sequentially via ``jax.lax.map`` (memory bounded by one trial),
+            pmap shards across devices, auto picks vmap when the estimated
+            batched memory fits and lax_map otherwise.
+        permissible_values:
+            auto:
+                description: "Pick vmap when memory permits, lax_map otherwise."
+            vmap:
+                description: "Parallel batched execution (jax.vmap). Fast; high peak memory."
+            lax_map:
+                description: "Sequential execution via jax.lax.map. Slower; bounded memory."
+            pmap:
+                description: "Cross-device parallel execution (jax.pmap). For multi-GPU/TPU."
+
     ImagingModality:
         permissible_values:
             BOLD:
@@ -215,6 +264,24 @@ enums:
             Neumann: {}
             Robin: {}
             Periodic: {}
+    DomainEnforcement:
+        description: >-
+            Whether and how a state variable's ``domain`` constrains the
+            trajectory during integration. Default ``none`` means the domain is
+            descriptive metadata only (expected range, plot limits, initial-
+            condition sampling support) and never alters the dynamics — so
+            declaring a domain is side-effect free. ``clamp`` and ``wrap``
+            opt in to active enforcement using the domain's ``lo``/``hi``.
+        permissible_values:
+            none:
+                description: "Metadata only; the trajectory is never constrained (default)."
+            clamp:
+                description: "Hard-clip every integration step to [lo, hi]."
+            wrap:
+                description: >-
+                    Periodic wrap into [lo, hi) — e.g. a phase variable on
+                    [0, 2π). The recorded timeseries stays within the range
+                    while remaining continuous mod (hi - lo)."
     DiscretizationMethod:
         permissible_values:
             FDM: { description: "Finite Difference Method" }
@@ -265,6 +332,11 @@ enums:
                 description: "Triggered at predetermined time points. Maps to PresetTimeCallback / PresetTimeComponentCallback."
             stimulus:
                 description: "Continuous time-dependent input signal (e.g., external current). Legacy Stimulus behavior."
+            stimulation:
+                description: >-
+                    Synonym of 'stimulus' — a continuous time-dependent input signal
+                    injected into a target state variable across target regions. The
+                    codegen treats 'stimulation' and 'stimulus' identically.
 
     StandardGraphType:
         description: >
@@ -281,6 +353,18 @@ enums:
             Star: { description: "Star graph" }
             RandomRegular: { description: "Random regular graph (params: k)" }
             Grid: { description: "Grid/lattice graph (params: dims)" }
+            RandomReservoir:
+                description: >-
+                    Sparse random recurrent adjacency with post-hoc spectral-
+                    radius rescaling. Parameters: n, sparsity, spectral_radius,
+                    weight_distribution, seed. Canonical Echo State Network
+                    substrate (Jaeger 2001) for reservoir computing.
+            WeightShuffle:
+                description: >-
+                    Derived generator: permute the non-zero entries of a source
+                    matrix. Parameters: source (IRI to another Network),
+                    preserve (binary_mask | degree | weight_distribution), seed.
+                    Used for null-model controls (e.g. shuffled SC).
     DimensionType:
         description: "Dimensions along which operations can be applied"
         permissible_values:
@@ -374,6 +458,13 @@ classes:
         class_uri: tvbo:Range
         description: "Specifies a range for array generation, parameter bounds, or grid exploration."
         attributes:
+            enforce:
+                range: DomainEnforcement
+                ifabsent: "string(none)"
+                description: >-
+                    For a state-variable ``domain``: whether/how to enforce the
+                    range during integration (none/clamp/wrap). Ignored for
+                    parameter, distribution and grid ranges. See DomainEnforcement.
             lo:
                 range: ScalarValue
                 description: "Lower bound or starting value. Can be a number or argument name."
@@ -414,12 +505,14 @@ classes:
             - parameters
             - description
         attributes:
-            lefthandside:
+            lhs:
                 range: string
-                alias: lhs
-            righthandside:
+                aliases:
+                    - lefthandside
+            rhs:
                 range: string
-                alias: rhs
+                aliases:
+                    - righthandside
             conditionals:
                 description: Conditional logic for piecewise equations.
                 range: ConditionalBlock
@@ -466,6 +559,19 @@ classes:
                 multivalued: true
                 range: float
                 array: {}
+            noise:
+                range: Noise
+                required: false
+                inlined: true
+                description: >-
+                    Optional stochastic contribution to the stimulus. Mirrors
+                    state_variables.noise on the Dynamics side. The stimulus
+                    value at each integration step is the sum of `equation`'s
+                    evaluation (deterministic, if set) and a draw from this
+                    Noise process. When only `noise` is set and `equation`
+                    is absent, the stimulus IS the noise (pure stochastic
+                    source — e.g. iid uniform driver for memory-capacity
+                    benchmarks; signal+noise paradigms for psychophysics).
 
     Event:
         class_uri: tvbo:Event
@@ -542,19 +648,69 @@ classes:
                 description: >-
                     Stimulus equation for stimulus-type events.
                     Legacy compatibility with Stimulus class.
-            regions:
+            nodes:
+                aliases:
+                    - regions
                 multivalued: true
                 range: integer
                 array: {}
-                description: "Target regions for stimulus-type events."
-            weighting:
+                description: >-
+                    Network nodes a stimulus-type event is applied to (node ids /
+                    indices). Pairs with `weights`. (Formerly `regions`.)
+            weights:
+                aliases:
+                    - weighting
                 multivalued: true
                 range: float
                 array: {}
-                description: "Per-region weighting for stimulus-type events."
+                description: >-
+                    Per-node stimulus weighting, aligned with `nodes`.
+                    (Formerly `weighting`.)
+            weight_distribution:
+                range: Distribution
+                inlined: true
+                description: >-
+                    Distribution to sample per-region stimulus weights from, as an
+                    alternative to the explicit `weighting` array (e.g. Uniform(-1, 1)
+                    per node). When set, the codegen samples one weight per target
+                    region using the distribution's seed.
+            target_variable:
+                range: string
+                description: >-
+                    State variable that a stimulus-type event drives — the variable
+                    its signal is injected into (e.g. 'y_0' for Jansen-Rit, or a named
+                    'stimulus' input exposed to coupling). If absent, the stimulus adds
+                    to the model's default external-input variable.
+            target_regions:
+                multivalued: true
+                range: string
+                description: >-
+                    Regions a stimulus-type event targets: 'all' (broadcast to every
+                    node) or explicit region labels / indices. More expressive than the
+                    integer-only `regions` slot; when both are absent the event applies
+                    to all regions.
             duration:
                 range: float
                 description: "Duration of stimulus-type events."
+            dataLocation:
+                range: string
+                description: >-
+                    Path to a data file (.npy) holding the stimulus waveform of a
+                    *data-driven* stimulus event — the samples are interpolated at
+                    simulation time instead of evaluating `equation`. 1-D arrays are a
+                    single time-series broadcast to the targeted `nodes`; the event's
+                    `name` is still the symbol injected into the dynamics.
+            sampling_rate:
+                range: float
+                ifabsent: float(1.0)
+                description: >-
+                    Sample rate of the `dataLocation` waveform in samples per
+                    millisecond (e.g. 1.0 = 1 kHz). Sample i is placed at time i /
+                    sampling_rate ms.
+            interpolation:
+                range: string
+                ifabsent: string(linear)
+                description: "Interpolation for a data-driven stimulus: 'linear' or 'cubic'."
 
     TemporalApplicableEquation:
         class_uri: tvbo:TemporalApplicableEquation
@@ -570,11 +726,11 @@ classes:
         class_uri: tvbo:Parcellation
         slots:
             - label
+            - iri
         attributes:
             data_source:
                 range: string
             atlas:
-                required: true
                 range: BrainAtlas
                 inlined: true
 
@@ -584,6 +740,7 @@ classes:
         slots:
             - name
             - label
+            - iri
             - description
         attributes:
             data_source:
@@ -668,6 +825,195 @@ classes:
             generated_by:
                 range: string
                 description: "Software/agent identifier (prov:wasGeneratedBy)"
+            experiment_yaml_hash:
+                range: string
+                description: >-
+                    SHA-256 hex digest of the normalised experiment YAML
+                    that produced this artifact. Used by the cross-experiment
+                    cache (see :class:`SimulationStudy.from_file`) to detect
+                    when a cached upstream result has gone stale because the
+                    experiment's spec was edited. Computed as
+                    ``hashlib.sha256(yaml.safe_dump(normalized_yaml).encode()).hexdigest()``
+                    over the fully resolved (post-``!include``) experiment
+                    block.
+            inputs:
+                multivalued: true
+                range: ReferenceFingerprint
+                inlined_as_list: true
+                description: >-
+                    Per-input fingerprints for cache invalidation. Each
+                    entry records the IRI + dotted-field path of an
+                    ``aux_data`` reference plus the (mtime, size, sha256)
+                    of the underlying file at the time the artifact was
+                    produced. A downstream cache hit requires every
+                    fingerprint to match the current file state.
+
+    ReferenceFingerprint:
+        class_uri: tvbo:ReferenceFingerprint
+        description: >-
+            Cache-invalidation fingerprint for one ``aux_data`` reference.
+            Captures enough about the upstream artifact that a downstream
+            cache can decide cheaply (via mtime + size) whether to trust the
+            cached result, falling back to a hash recompute on mismatch.
+        attributes:
+            iri:
+                # uriorcurie (not string) to match the global `iri` slot's range
+                # (xsd:anyURI). A local `string` range here conflicts with the
+                # global anyURI range on the shared `tvbo:iri` property, making
+                # this class unsatisfiable under OWL-DL (a value can't be both
+                # xsd:string and xsd:anyURI).
+                range: uriorcurie
+                required: true
+                description: "IRI of the referenced artifact (Network, ExperimentResult, BehavioralData, ...)."
+            field:
+                range: string
+                description: "Dotted-path subkey within the referenced entity (optional)."
+            mtime:
+                range: float
+                description: "File modification time at fingerprinting (POSIX timestamp)."
+            size:
+                range: integer
+                description: "File size in bytes at fingerprinting."
+            hash:
+                range: string
+                description: "SHA-256 hex digest of the file at fingerprinting (recomputed lazily when mtime/size differ)."
+
+    Phenotype:
+        class_uri: tvbo:Phenotype
+        description: >-
+            Per-subject phenotype table (BIDS ``phenotype/`` directory
+            convention). Carries cognitive scores, clinical scales,
+            demographic variables, behavioral task outputs, physiological
+            measures, or any other per-subject numeric measurement bundle
+            for a cohort. Sidecar companion to per-subject Network sidecars
+            in multi-subject studies that correlate simulated quantities
+            with empirical scores (e.g. PMAT24_A, g-factor, CardSort,
+            ProcSpeed for Schirner 2023). The yaml carries metadata + the
+            measure list; the h5 carries ``measures/<name>`` 1-D float
+            arrays of length ``len(subjects)``.
+
+            Aligns with the BIDS phenotype standard
+            (https://bids-specification.readthedocs.io/en/stable/modality-agnostic-files/phenotypic-and-assessment-data.html)
+            and with NIDM's ``nidm:Phenotype`` concept. Per-measure
+            metadata can optionally carry Cognitive Atlas
+            (https://www.cognitiveatlas.org/) ``cogat:Task`` and
+            ``cogat:Concept`` IRIs via ``measure_specs``.
+        slots:
+            - label
+            - description
+        attributes:
+            dataset_id:
+                range: string
+                required: true
+                description: "Unique identifier for this phenotype bundle."
+                slot_uri: dcterms:identifier
+            subjects:
+                multivalued: true
+                range: string
+                required: true
+                description: >-
+                    Ordered list of subject IDs (e.g. HCP-YA 6-digit IDs).
+                    Each ``measures/<name>`` array in the h5 companion is
+                    indexed by this order.
+            measures:
+                multivalued: true
+                range: string
+                description: >-
+                    Names of the measures present in the h5 companion
+                    (one ``measures/<name>`` dataset per name). Example:
+                    ``[g_factor, PMAT24_A_CR, PMAT24_A_RTCR,
+                    CardSort_Unadj, ProcSpeed_Unadj]``.
+            measure_specs:
+                multivalued: true
+                range: MeasureSpec
+                inlined_as_list: true
+                description: >-
+                    Optional per-measure metadata (Cognitive Atlas IRIs,
+                    units, description). When present, each entry's ``name``
+                    must match an entry in ``measures``.
+            category:
+                range: string
+                ifabsent: string(cognitive)
+                description: >-
+                    Coarse classification of the phenotype bundle, used
+                    for filtering in larger study libraries. Canonical
+                    values: ``cognitive`` (intelligence / memory /
+                    attention scores), ``clinical`` (UPDRS, MMSE, …),
+                    ``behavioral`` (raw task outputs), ``demographic``,
+                    ``physiological``, ``derived`` (composite scores
+                    like g-factor or brain-age). Free string — extend
+                    as needed.
+            data_file:
+                range: string
+                required: true
+                description: "Path to the h5 companion (relative to the yaml)."
+            cohort:
+                range: string
+                description: "Cohort label (e.g. 'HCPYA', 'PPMI')."
+            provenance:
+                range: Provenance
+                inlined: true
+                description: "W3C PROV-O metadata for the source of these scores."
+
+    MeasureSpec:
+        class_uri: tvbo:MeasureSpec
+        description: >-
+            Metadata for one phenotype measure. Optional per-measure
+            entry on ``Phenotype.measure_specs``.
+        attributes:
+            name:
+                range: string
+                required: true
+                description: "Must match the measure name in ``Phenotype.measures``."
+            task_iri:
+                range: string
+                description: >-
+                    Cognitive Atlas (``cogat:``) IRI of the assessment
+                    instrument / task that produced this measure
+                    (e.g. ``cogat:trm_4a3fd79d09cba`` for PMAT24).
+            concept_iri:
+                range: string
+                description: >-
+                    Cognitive Atlas IRI of the cognitive construct measured
+                    (e.g. ``cogat:trm_521ef89ce5e84`` for fluid intelligence).
+            unit:
+                range: string
+                description: "Unit annotation (e.g. 'count', 'ms', 'z-score')."
+            measure_type:
+                range: string
+                description: >-
+                    Sub-type within the phenotype (e.g. 'raw', 'unadjusted',
+                    'age-corrected', 'derived', 'RT', 'accuracy').
+            description:
+                range: string
+
+    NamedArray:
+        class_uri: tvbo:NamedArray
+        description: >-
+            A named numeric array. Used as a sidecar slot value where a
+            schema-typed object (e.g. ``ExperimentResult.parameters``) holds
+            multiple arrays addressable by name (``w_LRE``, ``w_FFI``,
+            ``J_i``, ...). The actual numeric data lives in the companion
+            ``.h5`` at ``parameters/<name>``; the YAML carries only the
+            descriptor.
+        attributes:
+            name:
+                range: string
+                required: true
+                description: "Field name; matches the h5 dataset path under ``parameters/``."
+            shape:
+                multivalued: true
+                range: integer
+                description: "Array dimensions."
+            dtype:
+                range: string
+                ifabsent: string(float32)
+                description: "Numpy dtype string."
+            unit:
+                range: string
+                description: "Optional unit annotation (e.g. 'nA')."
+            description:
+                range: string
 
     BidsEntities:
         class_uri: tvbo:BidsEntities
@@ -725,6 +1071,17 @@ classes:
                 range: Edge
                 inlined_as_list: true
                 description: "List of directed edges with coupling references (optional, for explicit edge definition)"
+            primary_weight:
+                range: string
+                description: >-
+                    Name of the edge group that should serve as the canonical
+                    weights matrix when ``weights_matrix`` is queried. Lets a
+                    single Network sidecar bundle several connectivity variants
+                    (e.g. band-specific NMF reweightings, distance-modulated SC,
+                    shuffled controls) under different edge names while still
+                    presenting one of them as the active weight to consumers
+                    (simulators, observation pipelines). Defaults to ``weight``
+                    / ``weights`` / ``sc`` lookup when not set.
             coupling:
                 multivalued: true
                 range: Coupling
@@ -735,11 +1092,35 @@ classes:
                 range: Dynamics
                 inlined: true
                 description: "Dictionary of dynamics models keyed by name. Nodes reference these by name. For heterogeneous networks with per-node dynamics."
+            node_template:
+                range: Node
+                required: false
+                inlined: true
+                description: >-
+                    Default Node attributes applied to every Node in this
+                    Network. Explicit entries in `nodes:` override the template
+                    field-by-field (shallow replace, same semantics as
+                    `dict.update`). Reserved per-Node slots (id, label,
+                    position, region) come from the data backbone
+                    (Network.iri-loaded parcellation or procedural generator)
+                    and are ignored if set on the template. Lets a homogeneous
+                    Network declare its per-Node configuration once without
+                    enumerating regions.
+            edge_template:
+                range: Edge
+                required: false
+                inlined: true
+                description: >-
+                    Default Edge attributes applied to every Edge in this
+                    Network. Explicit entries in `edges:` override the template
+                    field-by-field. Reserved per-Edge slots (source, target,
+                    weight, delay, distance) come from the data backbone
+                    (loaded matrix or procedural generator) and are ignored if
+                    set on the template.
 
             # Network metadata
             number_of_nodes:
                 range: integer
-                ifabsent: integer(1)
                 description: "Number of nodes in the network (derived from nodes if not set)"
                 aliases:
                     - number_of_nodes
@@ -756,6 +1137,17 @@ classes:
                 range: Tractogram
                 inlined: true
                 description: "Reference to tractography data"
+            mesh:
+                range: Mesh
+                inlined: true
+                description: >-
+                    Optional triangle mesh geometry. When set, the Network
+                    carries triangle faces (and optionally normals,
+                    curvature) alongside its node coordinates. Used by
+                    surface-based observations (cortical wave detection,
+                    Helmholtz-Hodge decomposition, spectrospatial mode
+                    analysis). Mesh face data lives in the same h5
+                    companion under a ``mesh/`` group.
             transforms:
                 range: Function
                 multivalued: true
@@ -839,20 +1231,23 @@ classes:
         class_uri: tvbo:GraphGenerator
         description: >
             Backend-agnostic graph generator specification.  Captures the
-            mathematical family (type) and its parameters so that each backend
-            can emit the correct constructor call (Graphs.jl, NetworkX, etc.).
-            The number of nodes is always taken from Network.number_of_nodes.
+            mathematical family and its parameter declarations so that each
+            backend can emit the correct constructor call (Graphs.jl, NetworkX,
+            etc.) via per-backend ``bindings``; derived generators may also
+            carry a symbolic ``procedure``.  The number of nodes is always
+            taken from Network.number_of_nodes.
         slots:
             - name
             - description
+            - iri
         attributes:
             type:
                 range: string
-                required: true
                 description: >
-                    Graph family name.  Use a StandardGraphType value for
-                    automatic backend mapping, or any custom string for
-                    documentation purposes.
+                    Optional graph family name.  Use a StandardGraphType value
+                    for automatic backend mapping, or any custom string for
+                    documentation purposes.  When absent, the backend
+                    ``bindings`` determine construction directly.
             seed:
                 range: integer
                 description: "Random seed for reproducible graph generation."
@@ -865,8 +1260,96 @@ classes:
                 multivalued: true
                 inlined: true
                 description: >
-                    Generator parameters (e.g. k, p, dims).  Names are
-                    matched by the backend mapping to construct the call.
+                    Generator parameters keyed by name (e.g. n, k, p, seed).
+                    A curated entry *declares* each parameter's interface via
+                    the general ``Parameter`` slots — ``datatype`` (its type),
+                    ``default`` (fallback when absent) and ``required`` — while
+                    a concrete experiment supplies the same key by ``value``.
+                    Builder (Callable) generators receive the resolved values as
+                    keyword arguments; declarative library generators pass them
+                    positionally via the per-backend ``bindings`` map. The number
+                    of nodes is always taken from Network.number_of_nodes.
+            bindings:
+                range: Binding
+                multivalued: true
+                inlined: true
+                description: >
+                    Per-backend construction bindings, keyed by backend id
+                    (e.g. python, julia, networkx).  Each names the native
+                    library, callable and the ordered parameter names to pass.
+            procedure:
+                range: Procedure
+                inlined: true
+                description: >
+                    Optional symbolic procedure for derived generators
+                    (e.g. null-model shuffles): ordered steps and named
+                    outputs, each carrying an Equation.
+            builder:
+                range: Callable
+                inlined: true
+                description: >
+                    Optional Python callable that builds the network at YAML
+                    load time. When set, ``Network._resolve`` imports
+                    ``<module>.<name>`` and invokes it with the
+                    ``parameters`` block as keyword arguments. The callable
+                    must return either a ``Network`` instance or a tuple
+                    ``(weights, lengths, node_params)``. Use the existing
+                    ``Callable`` slots (``name`` is the function name,
+                    ``module`` is its dotted module path). Reuses the same
+                    idiom as TVB monitor class references; no free
+                    ``module:function`` strings.
+
+    Binding:
+        class_uri: tvbo:Binding
+        description: >-
+            Per-backend construction binding for a GraphGenerator: how to build
+            the graph in a specific target library.  Keyed by backend id — the
+            ``name`` is the backend (e.g. python, julia, networkx).
+        slots:
+            - name
+        attributes:
+            library:
+                range: string
+                description: "Native library/module providing the callable."
+            callable:
+                range: string
+                description: "Name of the constructor function in the library."
+            args:
+                range: string
+                multivalued: true
+                description: "Ordered parameter names passed to the callable."
+
+    Procedure:
+        class_uri: tvbo:Procedure
+        description: >-
+            Symbolic procedure: an ordered list of steps producing named
+            outputs.  Documents a derived generator's algorithm independently
+            of any backend binding.
+        attributes:
+            steps:
+                range: ProcedureStep
+                multivalued: true
+                inlined_as_list: true
+                description: "Ordered intermediate steps."
+            output:
+                range: ProcedureStep
+                multivalued: true
+                inlined: true
+                description: "Named outputs (keyed by name), e.g. 'weights'."
+
+    ProcedureStep:
+        class_uri: tvbo:ProcedureStep
+        description: >-
+            A single named step (or output) in a Procedure, carrying the
+            Equation that defines it.
+        slots:
+            - name
+            - description
+        attributes:
+            equation:
+                range: Equation
+                inlined: true
+                description: "The equation defining this step/output."
 
     File:
         class_uri: tvbo:File
@@ -880,6 +1363,36 @@ classes:
                 range: string
             extension:
                 range: string
+
+    Reference:
+        class_uri: tvbo:Reference
+        description: >-
+            A small typed pointer to another TVBO entity (Network, Mesh,
+            Observation, …). The ``iri`` identifies the target via the
+            registry; the optional ``field`` is a dotted-path subkey
+            resolved by attribute walk on the loaded target (e.g.
+            ``field: 'weight_alpha'`` picks the ``weight_alpha`` named
+            edge matrix on a Network; ``field: 'mesh.faces'`` picks the
+            mesh face array). Used uniformly anywhere a TVBO entity
+            needs to point at a sub-array of another entity without
+            inlining the data.
+        attributes:
+            iri:
+                # uriorcurie (not string) to match the global `iri` slot's range
+                # (xsd:anyURI); a local `string` range conflicts with the global
+                # anyURI range on the shared `tvbo:iri` property and makes this
+                # class unsatisfiable under OWL-DL.
+                range: uriorcurie
+                required: true
+                description: "CURIE or full IRI of the referenced TVBO entity."
+            field:
+                range: string
+                description: >-
+                    Optional dotted-path subkey into the referenced entity
+                    (e.g. ``weight_alpha`` for a Network's named edge
+                    matrix, ``mesh.faces`` for the face array, or
+                    ``nodes.ef_alpha`` for a per-node scalar field).
+                    Resolved by attribute walk at load time.
 
     Node:
         class_uri: tvbo:Node
@@ -920,6 +1433,25 @@ classes:
                 range: Event
                 inlined: true
                 description: "Events attached to this node (e.g., threshold-based state changes)."
+            subnetwork:
+                range: Network
+                required: false
+                inlined: true
+                description: >-
+                    Optional finer-scale Network that "lives inside" this Node
+                    (network-of-networks / multi-scale primitive). The
+                    subnetwork's nodes map (one-to-many) to this single parent
+                    Node. Cross-scale signal flow is declared as ordinary Edges
+                    in the subnetwork's `edges` list, using `source_network`
+                    / `target_network` with the `parent` sentinel to traverse
+                    up the hierarchy. The subnetwork may carry its own
+                    `graph_generator` (discrete sub-network — reservoir,
+                    spiking population, jaxley compartments) and/or `mesh`
+                    (continuous surface field) — one unified slot for
+                    reservoirs-per-region, spiking-populations-per-region,
+                    cells-per-region, and surface-mesh-patches-per-region.
+                    Recursive: a subnetwork's Nodes can themselves carry
+                    subnetworks.
 
     StateValue:
         class_uri: tvbo:StateValue
@@ -986,15 +1518,31 @@ classes:
                 range: boolean
                 ifabsent: false
                 description: "Whether the edge is directed. If false, represents a symmetric/bidirectional connection."
+            source_network:
+                range: string
+                required: false
+                description: >-
+                    Path or name of the Network whose nodes define the source
+                    endpoints of this Edge. Symmetric counterpart to
+                    `target_network`. Together they let an Edge bridge any
+                    two Networks: both unset (within-Network edge), one set
+                    (this Network ↔ the named one), or both set (peer-to-peer
+                    projection between two other Networks). Accepts either an
+                    absolute IRI (peer Network) or the relative-path sentinel
+                    `parent` / `parent/parent` (cross-scale up/down via the
+                    Node.subnetwork hierarchy).
             target_network:
                 range: string
                 required: false
                 description: >-
-                    Path or name of the Network whose nodes define the columns
-                    of a non-square (projection) matrix. For example, a gain
-                    matrix with shape (n_sensors, n_regions) references the
-                    brain parcellation network here.  Row labels come from
-                    the parent Network's own nodes.
+                    Path or name of the Network whose nodes define the target
+                    endpoints (e.g. the columns of a non-square projection
+                    matrix such as a gain matrix region → EEG sensors). Also
+                    accepts the relative-path sentinel `parent` /
+                    `parent/parent` for cross-scale signal flow up the
+                    Node.subnetwork hierarchy. One mechanism handles both
+                    projection matrices (absolute IRI) and multi-scale
+                    boundaries (sentinel).
             dimension_labels:
                 multivalued: true
                 range: string
@@ -1038,13 +1586,42 @@ classes:
             - environment
             - time_scale
         attributes:
-            # Source specification - what state variable to observe
+            # Source specification - what this observation derives from.
+            # Each entry is either a state-variable name/ref (raw observation
+            # of an integrated trajectory) or another observation's name/ref
+            # (derived observation). An observation is "derived" iff any item
+            # in source names another observation in the same experiment.
             source:
-                range: StateVariable
+                multivalued: true
+                any_of:
+                    - range: StateVariable
+                    - range: Observation
                 description: >-
-                    State variable to observe (e.g., S_e for excitatory activity).
-                    For observations derived from other observations, use DerivedObservation.
+                    Ordered list of inputs this observation derives from.
+                    Each entry is either a StateVariable reference (raw
+                    observation of an integrated trajectory, e.g. ``S_e``)
+                    or an Observation reference (derived observation, e.g.
+                    ``bold``). Codegen checks each source name against
+                    ``experiment.observations``; names matching an existing
+                    observation flag the parent as derived.
                 inlined: false
+
+            # Auxiliary inputs that are NOT state variables (mesh arrays,
+            # empirical reference data, named edge matrices on another
+            # Network, …). Each Reference resolves to a concrete array at
+            # load time via the registry + lazy h5 store; codegen threads
+            # the resolved arrays into pipeline-step argument lists.
+            aux_data:
+                range: Reference
+                multivalued: true
+                inlined: true
+                inlined_as_list: true
+                description: >-
+                    Ordered list of auxiliary inputs the observation
+                    pipeline consumes. Examples: a Surface mesh's faces
+                    array, an empirical FC matrix on a reference Network,
+                    or another Observation's output. Resolved load-time
+                    eagerly; rendered code is self-contained.
 
             # Monitor attributes (for BOLD, EEG, etc.)
             period:
@@ -1104,32 +1681,52 @@ classes:
                     constructor_args: [{name: period, value: 1000.0}]}
                 range: ClassReference
                 inlined: true
+            analysis:
+                range: Analysis
+                inlined: true
+                description: >-
+                    Marks this observation as an analysis observable that operates
+                    on the solve/loss rather than a result-data pipeline (autodiff
+                    gradient, finite-difference gradient, or Lyapunov spectrum).
+
+    Analysis:
+        class_uri: tvbo:Analysis
+        description: >-
+            A general analysis observable: a quantity obtained by ANALYZING the model,
+            its solve, or a derived loss, rather than by transforming the recorded
+            trajectory. It is deliberately broad — the same concept covers parameter
+            sensitivities/gradients (autodiff or finite-difference), stability spectra
+            (Lyapunov), bifurcation quantities, identifiability/Fisher-information
+            metrics, and future analyses. `type` names the analysis (extensible);
+            `target` and `wrt` bind it to what is analyzed and with respect to what;
+            `parameters` carries the analysis-specific configuration. Backend-neutral:
+            each backend maps `type` to its own machinery, or emits a comment and
+            skips when it has no equivalent (it does not raise).
+        slots:
+            - parameters
+        attributes:
+            type:
+                range: string
+                description: >-
+                    The analysis kind, e.g. 'gradient', 'finite_difference',
+                    'lyapunov', 'bifurcation', 'identifiability', 'sensitivity'.
+                    Extensible — backends dispatch on it.
+            target:
+                range: string
+                description: >-
+                    What is analyzed: typically an observation or loss name (e.g.
+                    'loss' for a gradient). Omitted when the analysis acts on the
+                    whole solve (e.g. a Lyapunov spectrum).
+            wrt:
+                range: string
+                multivalued: true
+                description: >-
+                    Quantity/quantities the analysis is taken with respect to, e.g.
+                    a parameter 'c_sigmJR.G' for a gradient/sensitivity. Omitted for
+                    analyses that need no explicit differentiation target.
 
     # ProcessingStep, DataInjection, ArgumentMapping removed
     # Function now handles input -> process -> output flow directly
-
-    DerivedObservation:
-        description: >-
-            Observation derived from one or more other observations.
-            Examples:
-            - fc (from bold) - single source transformation
-            - fc_corr (from fc and fc_target) - multi-source comparison
-            Unlike regular Observations, these don't generate monitor classes
-            but are computed from existing observation values.
-        is_a: Observation
-        class_uri: tvbo:DerivedObservation
-        attributes:
-            source_observations:
-                range: Observation
-                multivalued: true
-                inlined: false
-                required: true
-                minimum_cardinality: 1
-                description: >-
-                    One or more observations to derive from. For transformations
-                    (e.g., fc from bold), use single source. For comparisons
-                    (e.g., fc_corr from fc and fc_target), use multiple sources.
-                    Order may matter for asymmetric operations.
 
     Dynamics:
         class_uri: tvbo:Dynamics
@@ -1149,7 +1746,7 @@ classes:
             - dataLocation
         slot_usage:
             name:
-                ifabsent: "Generic2dOscillator"
+                ifabsent: "Dynamics"
             system_type:
                 ifabsent: "continuous"
         attributes:
@@ -1179,6 +1776,10 @@ classes:
                 multivalued: true
                 range: string
                 description: "Output variable names to include in simulation results. References to state_variables or derived_variables by name."
+                deprecated: >-
+                    Use 'record: true' on the derived variable (or 'record' on the
+                    state variable) instead. The 'output' list is retained for
+                    backward compatibility.
             derived_from_model:
                 range: Dynamics
             number_of_modes:
@@ -1231,6 +1832,28 @@ classes:
                     such as threshold-triggered resets in spiking neuron models.
                     Unlike experiment-level events (stimulation, perturbation),
                     these define the model's own discontinuous behavior.
+            cse:
+                range: boolean
+                ifabsent: false
+                description: >-
+                    Code-generation hint (opt-in, backend-independent): eliminate
+                    common subexpressions. When true, the generator evaluates each
+                    repeated subexpression — including repeated calls to
+                    model-defined functions — once and reuses the result instead of
+                    re-emitting it at every occurrence. Purely a performance hint:
+                    results are numerically identical. A backend whose compiler
+                    already performs this elimination may honour it as a no-op. Off
+                    by default (expressions are emitted in flat form).
+            compile:
+                range: boolean
+                ifabsent: false
+                description: >-
+                    Code-generation hint (opt-in, backend-independent): request that
+                    the generated dynamics be compiled to machine code rather than
+                    interpreted, where the target backend supports it. Purely a
+                    performance hint with no effect on results; a backend that is
+                    inherently compiled (or cannot compile) honours it as a no-op.
+                    Off by default. Independent of, and composable with, ``cse``.
 
     StateVariable:
         class_uri: tvbo:StateVariable
@@ -1252,6 +1875,11 @@ classes:
             variable_of_interest:
                 range: boolean
                 ifabsent: true
+                deprecated: >-
+                    Use 'record' instead. A state variable is recorded in the
+                    output when record=true (the default); set record=false to
+                    suppress it. 'variable_of_interest' is retained for backward
+                    compatibility and is ignored by the TVB/jax/rateml codegen.
             coupling_variable:
                 range: boolean
                 ifabsent: false
@@ -1282,9 +1910,6 @@ classes:
                 inlined: true
             stimulation_variable:
                 range: boolean
-            boundaries:
-                range: Range
-                inlined: true
             initial_value:
                 range: float
                 ifabsent: float(0.1)
@@ -1362,6 +1987,28 @@ classes:
                 range: Distribution
                 inlined: true
                 description: "Distribution for heterogeneous per-node parameter sampling. Implies heterogeneous=true."
+            source:
+                range: uriorcurie
+                required: false
+                description: >-
+                    Data source for this parameter's value. When set, the
+                    value is loaded from the referenced entity rather than
+                    being a YAML literal. The referent is typically a Network
+                    with per-node parameters (dscalar pattern) or a flat
+                    dataset (HDF5, TSV). Combine with `measure:` when the
+                    source exposes multiple named measures. Distinct from
+                    the global `iri:` slot, which is reserved for ontology
+                    grounding.
+            measure:
+                range: string
+                required: false
+                description: >-
+                    Selector into the source. When `source` points at a
+                    Network with per-node parameters (or a dscalar with
+                    multiple maps), picks which named measure to load. Aligns
+                    with names listed in Network.structural_measures /
+                    Network.observational_measures. Ignored when the source
+                    resolves to a scalar/array dataset.
             free:
                 range: boolean
             shape:
@@ -1380,6 +2027,22 @@ classes:
                     during exploration auto-expansion. Length must match parameter shape
                     (e.g., n_nodes for shape "(n_nodes,)"). If not set, all elements
                     share the same domain.
+            datatype:
+                range: string
+                description: >-
+                    Declared value type of this parameter, given as a schema
+                    range name — a primitive (``integer``, ``float``,
+                    ``string``, ``uriorcurie``) or a class (e.g.
+                    ``Distribution``). Documents the expected type when the
+                    parameter is a *declaration* carrying no concrete ``value``
+                    (e.g. a GraphGenerator's typed argument interface). Distinct
+                    from ``domain`` (numeric bounds) and ``unit``.
+            required:
+                range: boolean
+                description: >-
+                    Whether a value for this parameter must be supplied.
+                    Optional parameters (e.g. a generator's ``seed``) set this
+                    to false. Declaration metadata; unset means unconstrained.
 
     CouplingInput:
         class_uri: tvbo:CouplingInput
@@ -1399,6 +2062,15 @@ classes:
                 multivalued: true
                 range: string
                 description: "Named keys for multi-dimensional coupling. When dimension > 1, provides symbolic names for each index (e.g., keys: [lre, ffi] for dimension: 2). Used in equations as variable names."
+            local:
+                range: boolean
+                ifabsent: boolean(false)
+                description: >-
+                    Marks this as a LOCAL (surface/local-connectivity) coupling term
+                    rather than a global long-range coupling. Local terms are never
+                    wired to the connectome; they evaluate to 0 unless a local/surface
+                    connectivity is supplied (TVB's ``local_coupling``). Global
+                    coupling inputs (the default) are driven by ``Network.coupling``.
 
     Argument:
         class_uri: tvbo:Argument
@@ -1414,9 +2086,14 @@ classes:
                 description: >-
                     Argument value. Can be:
                     - Literal: 1.0, "string", boolean, etc.
+                    - Array (nested list): an array-valued constant such as a
+                      per-node target vector consumed by the function.
                     - Input reference: "input.frequencies" (from source_observation outputs)
                     - Cross-observation: "target_frequencies.peak_freqs" (from another observation)
                 range: ScalarValue
+                any_of:
+                  - range: ScalarValue
+                  - array: {}
             unit:
                 range: string
 
@@ -1451,12 +2128,12 @@ classes:
             arguments:
                 description: >-
                     Variables consumed by the function (referenced in the
-                    equation). Each argument has a name and optional metadata
-                    (description, default value, unit).
+                    equation), keyed by argument name. Each value carries the
+                    optional metadata (value, description, unit); the key is the
+                    name (no redundant `name:` inside).
                 multivalued: true
                 range: Argument
                 inlined: true
-                inlined_as_list: true
             output_equation:
                 description: "Output transformation equation (if equation-based)"
                 range: Equation
@@ -1562,9 +2239,10 @@ classes:
                 range: Aggregation
                 inlined: true
             arguments:
+                description: "Function arguments keyed by name (the key is the argument name)."
                 range: Argument
                 multivalued: true
-                inlined_as_list: true
+                inlined: true
             time_range:
                 description: "Time range for generated TimeSeries (for kernel generators)"
                 range: Range
@@ -1687,6 +2365,18 @@ classes:
                 description: "Optional scalar or vector intensity parameter for noise."
                 range: Parameter
                 inlined: true
+            distribution:
+                range: Distribution
+                required: false
+                inlined: true
+                description: >-
+                    Optional probability distribution from which the noise
+                    draws its samples. When set, takes precedence over the
+                    `noise_type` / `gaussian` flags — any Distribution
+                    family is accepted (Uniform { lo, hi }, Normal
+                    { mean, std }, LogNormal { mu, sigma }, Beta, …).
+                    Reuses the existing Distribution class also used by
+                    Parameter.distribution.
             function:
                 description: "Optional functional form of the noise (callable specification)."
                 range: Function
@@ -1827,14 +2517,21 @@ classes:
                     Stage n+1 starts from optimized values of stage n.
                     When defined, inherited single-stage fields are ignored.
 
-            # Dependency on algorithm (use algorithm's result state as starting point)
+            # Dependency on an upstream task (use its result state as starting point)
             depends_on:
-                range: Algorithm
                 inlined: false
+                any_of:
+                    - range: Algorithm
+                    - range: Exploration
                 description: >-
-                    Algorithm to use as starting point for optimization.
-                    If specified, optimization starts from algorithm's result state.
-                    If not specified, optimization starts from initial simulation state.
+                    Upstream task whose result seeds this optimization. An
+                    `Algorithm` supplies a single tuned state (start from it). An
+                    `Exploration` with an adaptive `strategy` (e.g. nsga2) supplies
+                    a *front* of N non-dominated solutions: the optimization then
+                    runs batched-parallel — one gradient refinement per Pareto seed —
+                    reusing `parallel_mode`/`n_parallel`. If absent, optimization
+                    starts from the initial simulation state. Forward-compatible with
+                    the unified `Search.depends_on` (see dev/unified_search.md).
 
     # =============================================================================
     # Parameter Exploration
@@ -1873,14 +2570,64 @@ classes:
                     Hyper-parameters of the exploration itself (e.g. tolerances,
                     sampler settings, grid-refinement controls). Distinct from
                     `space`, which defines what is being swept.
+            algorithms:
+                multivalued: true
+                range: string
+                description: >-
+                    Names of the experiment's algorithms (keys in
+                    `experiment.algorithms`) to run AT EACH exploration point, in
+                    order, BEFORE computing the observable. Explicitly wires
+                    algorithms into the exploration so per-point tuning / constraints
+                    are applied at every sweep point — e.g. FIC re-tuning J_i at each
+                    E/I ratio. With this set, the sweep evaluates the full
+                    algorithm→observation pipeline per point (executed sequentially),
+                    not a bare simulation. Empty/absent = bare simulation per point.
+                    This is the declarative replacement for any Python per-point
+                    driver: the composition is derived entirely from YAML metadata.
             mode:
                 range: string
                 ifabsent: string(product)
                 description: "Combination mode: 'product' (full grid), 'zip' (paired)"
+            strategy:
+                range: string
+                ifabsent: string(grid)
+                description: >-
+                    Search strategy over the decision space (the `space` axes).
+                    'grid' (default) exhaustively evaluates the Cartesian/zip grid
+                    of axis points — today's behaviour. 'nsga2' runs an adaptive
+                    multi-objective genetic search (pymoo NSGA-II) that returns the
+                    non-dominated Pareto front over `objectives`; axes then supply
+                    only decision-variable bounds (domain lo/hi), and per-strategy
+                    hyper-parameters (population_size, num_generations, seed,
+                    reference_point) live in `parameters`. Extensible later to
+                    'random' / 'sobol' / 'cmaes'. Forward-compatible with the
+                    planned unified `Search.strategy` (see dev/unified_search.md).
+            objectives:
+                multivalued: true
+                range: string
+                description: >-
+                    Names of observations minimised by an adaptive `strategy`
+                    (e.g. 'nsga2'). Each entry references an existing observation
+                    already framed lower-is-better (e.g. `one_minus_fc`, `psd_mae`).
+                    Count sets the semantics: 0 → pure sweep (use `record`), 1 →
+                    single-objective, ≥2 → multi-objective / Pareto. Ignored when
+                    strategy is 'grid'. Forward-compatible with `Search.objectives`.
             observable:
                 range: FunctionCall
                 inlined: true
                 description: "Observable to compute at each point. Use function: obs_name for simple observation, or function: func_name + arguments for FunctionCall."
+            record:
+                multivalued: true
+                range: string
+                description: >-
+                    Names of observations to compute and record at EACH grid point,
+                    stacked over the sweep into one array per name. Entries may be
+                    derived observations (e.g. `loss`) or `analysis` diagnostics
+                    (e.g. `ad_gradient`, `fd_gradient`, `lyapunov`) — this is how a
+                    sweep of the diagnostics themselves is declared, replacing any
+                    per-point Python driver. Complementary to `observable` (a single
+                    scalar reduction); when both are absent the full observation Bunch
+                    is recorded.
             n_parallel:
                 range: integer
                 ifabsent: integer(1)
@@ -1897,6 +2644,24 @@ classes:
                 description: >-
                     Averaging mode across trials. 'trials' = average over n_trials
                     independent runs (evoked potential paradigm). None = return all trials.
+            parallel_mode:
+                range: ParallelMode
+                description: >-
+                    How trial-axis parallelism is realised at codegen time.
+                    ``vmap`` batches all trials in parallel (fast, peak memory
+                    ~n_trials × per-trial working set). ``lax_map`` runs them
+                    sequentially via ``jax.lax.map`` (slower, peak memory
+                    bounded by one trial). ``pmap`` shards across devices for
+                    multi-GPU. ``auto`` (default) picks ``vmap`` when the
+                    estimated batched memory fits, ``lax_map`` otherwise.
+            parallel_batch_size:
+                range: integer
+                description: >-
+                    Chunk size for ``lax_map`` and chunked-``vmap`` modes.
+                    ``1`` = strictly sequential (minimum memory). Larger
+                    values amortise compile overhead across trials at the
+                    cost of memory. Ignored when parallel_mode is ``vmap``
+                    (which always uses the full n_trials axis).
 
     ExplorationAxis:
         class_uri: tvbo:ExplorationAxis
@@ -1924,6 +2689,17 @@ classes:
                 range: Range
                 inlined: true
                 description: "Sweep range for this axis (lo, hi, n, step, log_scale)."
+            transform:
+                range: string
+                ifabsent: string(none)
+                description: >-
+                    Optional decode applied to this axis's value before it is bound
+                    to the referenced Parameter: 'none' (default) or 'log10' (the
+                    parameter is set to 10 ** value, so an adaptive strategy searches
+                    the raw bounds in log10 units — e.g. sigma searched over
+                    domain {lo: -2.0, hi: -0.5}). Distinct from a logarithmic grid
+                    *spacing*; this is an evaluation-time decode. Forward-compatible
+                    with the harmonised `Axis` (see dev/tvboptim_harmonization.md).
             explored_values:
                 multivalued: true
                 range: float
@@ -1981,6 +2757,118 @@ classes:
                 range: Range
                 inlined: true
                 description: "Optional bounds (lo, hi) for constrained optimization."
+
+    # =============================================================================
+    # Bayesian Inference
+    # =============================================================================
+    Inference:
+        class_uri: tvbo:Inference
+        description: >-
+            Bayesian inference of model parameters from an observation, via MCMC. A
+            standalone, first-class concept (NOT an Optimization): it produces a
+            POSTERIOR, not a point estimate, using priors + a likelihood + a sampler
+            instead of a loss + optimizer. It runs the SAME differentiable forward
+            model, wrapped in a probabilistic model (sample priors -> forward ->
+            likelihood).
+        slots:
+            - name
+            - label
+            - description
+        attributes:
+            priors:
+                multivalued: true
+                range: Prior
+                inlined: true
+                description: >-
+                    Priors over the inferred parameters, keyed by each parameter's
+                    dotted name (e.g. "Generic2dOscillator.eta" or
+                    "PulseInput.amplitude"). The KEYS are the inferred parameters —
+                    there is no separate free-parameter list.
+            likelihood:
+                range: Likelihood
+                inlined: true
+                required: true
+                description: "Observation model p(data | sim(theta))."
+            sampler:
+                range: string
+                ifabsent: string(nuts)
+                description: "MCMC sampler ('nuts'). Each backend maps its own way."
+            num_samples:
+                range: integer
+                ifabsent: integer(1000)
+                description: "Posterior samples to draw."
+            num_warmup:
+                range: integer
+                ifabsent: integer(1000)
+                description: "Warmup/adaptation steps before sampling."
+            num_chains:
+                range: integer
+                ifabsent: integer(1)
+                description: "Independent MCMC chains."
+            seed:
+                range: integer
+                ifabsent: integer(0)
+                description: "PRNG seed for reproducible sampling."
+            execution:
+                range: ExecutionConfig
+                inlined: true
+                description: "Per-inference execution config (overrides experiment defaults)."
+            integration:
+                range: Integrator
+                inlined: true
+                description: "Forward-model integration settings (overrides experiment defaults)."
+            depends_on:
+                range: Algorithm
+                inlined: false
+                description: "Optional algorithm whose result state seeds the inference."
+
+    Prior:
+        class_uri: tvbo:Prior
+        description: >-
+            Prior belief over one inferred parameter. In `Inference.priors` the
+            collection KEY is the parameter's dotted name; the value wraps a
+            `Distribution` as the belief (reusing the standard distribution vocabulary
+            rather than inventing a new one). Distinct from `Parameter.distribution`,
+            which specifies per-node SAMPLING, not a prior.
+        slots:
+            - name
+            - description
+        attributes:
+            distribution:
+                range: Distribution
+                inlined: true
+                required: true
+                description: >-
+                    The prior distribution: e.g. {name: Normal, parameters: {mean, std}}
+                    or {name: Uniform, domain: {lo, hi}}.
+
+    Likelihood:
+        class_uri: tvbo:Likelihood
+        description: >-
+            Observation model for Bayesian inference: p(data | sim(theta)). Points at
+            the observation holding the data and specifies the noise family + scale.
+            `name` is the noise family (default Normal); `source` uses the same
+            referencing as `Observation.source`, so the observed data can come from
+            this experiment's integration, an empirical network measure, or a
+            runtime-bound array — one flexible hook, no data-loading path of its own.
+        slots:
+            - name
+            - description
+        slot_usage:
+            name:
+                ifabsent: string(Normal)
+        attributes:
+            source:
+                multivalued: true
+                range: string
+                required: true
+                description: "Observation(s) providing the observed data."
+            sigma:
+                range: float
+                description: >-
+                    Observation-noise scale of the likelihood. May deliberately differ
+                    from the data's generative noise — it sets how tightly the
+                    likelihood constrains the (possibly degenerate) parameter ridge.
 
     # =============================================================================
     # Iterative Tuning Algorithms (FIC, EIB, etc.)
@@ -2041,6 +2929,51 @@ classes:
                 description: >-
                     Override hyperparameter values for the included algorithm.
                     Maps parameter names to new values.
+            mode:
+                range: AlgorithmCompositionMode
+                ifabsent: "string(combined)"
+                description: >-
+                    How the included algorithm composes with the outer one.
+                    'combined' (default) merges its update rules into the outer loop
+                    (applied once per outer iteration); 'nested' runs it as a
+                    converging inner loop on each outer iteration before the outer
+                    update rules. Use 'nested' when the inner algorithm maintains an
+                    invariant the outer would perturb (e.g. FIC holding the working
+                    point while EIB retunes coupling).
+            inner_iterations:
+                range: integer
+                description: >-
+                    For mode=nested only: number of inner-loop iterations to run per
+                    outer iteration. Defaults to the included algorithm's own
+                    n_iterations. A small value (e.g. 5-10) is usually enough to
+                    correct the drift introduced by one outer step.
+
+    AlgorithmStage:
+        class_uri: tvbo:AlgorithmStage
+        description: >-
+            One stage of a multi-stage tuning schedule. The algorithm body is run
+            once per stage, in order, carrying the trajectory state, FC window
+            buffer, and monitors forward — so the stages form one continuous online
+            tuning run. Each stage overrides n_iterations and selected
+            hyperparameters (e.g. Schirner 2023's 6 stages: eta halves and the FC
+            window doubles per stage, sharpening the per-edge gradient over time).
+        slots:
+            - label
+            - description
+        attributes:
+            n_iterations:
+                range: integer
+                required: true
+                description: Number of outer iterations to run in this stage.
+            arguments:
+                multivalued: true
+                range: Parameter
+                inlined: true
+                inlined_as_list: true
+                description: >-
+                    Hyperparameter overrides for this stage (e.g. eta, window_size).
+                    Names not listed fall back to the algorithm's own hyperparameter
+                    defaults.
 
     TuningObjective:
         class_uri: tvbo:TuningObjective
@@ -2097,6 +3030,18 @@ classes:
                     Include update rules from other algorithms with optional argument overrides.
                     Unlike depends_on (sequential), includes means combined execution.
                     Example: includes: [{algorithm: fic, arguments: [{name: eta, value: 0.1}]}]
+            stages:
+                multivalued: true
+                range: AlgorithmStage
+                inlined: true
+                inlined_as_list: true
+                description: >-
+                    Optional multi-stage schedule. When present, the algorithm body is
+                    run once per stage IN ORDER, carrying trajectory state, FC window
+                    buffer, and monitors forward (one continuous online run). Each stage
+                    overrides n_iterations + selected hyperparameters. Replaces the
+                    top-level n_iterations for execution. Example (Schirner 2023): 6
+                    stages with eta halving and window_size doubling per stage.
             objective:
                 range: TuningObjective
                 inlined: true
@@ -2542,6 +3487,37 @@ classes:
             delayed:
                 range: boolean
                 ifabsent: true
+            differentiation:
+                range: Differentiation
+                inlined: true
+                description: >-
+                    Backend-neutral strategy for propagating gradients through the
+                    temporal integration (e.g. truncated backprop-through-time).
+
+    Differentiation:
+        class_uri: tvbo:Differentiation
+        description: >-
+            Backend-neutral configuration for how gradients are propagated through
+            the temporal integration. Expressed in physical/semantic terms; each
+            backend maps it to its own mechanism (JAX solver grad_horizon /
+            block_size, Julia adjoint sensitivity, ...). Backends without autodiff
+            (e.g. MATLAB) emit a comment noting differentiation is unsupported and
+            proceed with the plain forward integration -- they do not raise.
+        attributes:
+            truncation_window:
+                range: float
+                description: >-
+                    Truncated-BPTT window in milliseconds of simulated time:
+                    gradients flow back at most this far. Omit for full BPTT.
+            checkpoint_interval:
+                range: float
+                description: >-
+                    Gradient-checkpointing interval in milliseconds (backward-pass
+                    memory/time trade-off). Omit for no checkpointing.
+            mode:
+                range: string
+                ifabsent: string(reverse)
+                description: "Autodiff direction: 'reverse' (default) or 'forward'."
 
     Coupling:
         class_uri: tvbo:Coupling
@@ -2591,6 +3567,32 @@ classes:
                 range: boolean
                 ifabsent: true
                 description: "Whether coupling includes transmission delays"
+            interpolate_delays:
+                range: boolean
+                ifabsent: false
+                description: >-
+                    For delayed coupling: read delayed states by linear interpolation
+                    between the two bracketing history time-steps instead of snapping
+                    each delay to the nearest integer step. Removes sub-step
+                    quantisation error and makes the coupling differentiable w.r.t.
+                    the continuous delay — hence w.r.t. conduction speed v (delay =
+                    tract_length / v) — so v can be gradient-optimised. Default false
+                    preserves exact nearest-step behaviour (tvboptim roll strategy).
+            vectorized:
+                range: boolean
+                ifabsent: false
+                description: >-
+                    Opt in to the vectorized matmul fast path for a source-only
+                    coupling — one whose pre_expression depends only on source
+                    states (e.g. the angle-addition decomposition
+                    [sin(theta_j), cos(theta_j)]). The W-reduction then becomes a
+                    single ``pre @ weights`` matmul instead of materialising the
+                    dense per-edge tensor. ONLY valid for INSTANTANEOUS coupling on
+                    a SYMMETRIC connectome (W == Wᵀ): the matmul contracts W while
+                    the per-edge path contracts Wᵀ, so the two agree only when W is
+                    symmetric. Default false keeps the always-correct per-edge
+                    reduction (and delays are inherently per-edge, so this flag is
+                    ignored when delayed=true).
             symmetry:
                 range: string
                 ifabsent: "string(directed)"
@@ -2708,6 +3710,7 @@ classes:
         class_uri: tvbo:Simulation
         slots:
             - model
+            - references
         attributes:
             id:
                 identifier: true
@@ -2743,14 +3746,12 @@ classes:
                 multivalued: true
                 range: Observation
                 inlined: true
-            derived_observations:
-                multivalued: true
-                range: DerivedObservation
-                inlined: true
                 description: >-
-                    Observations derived from combining other observations.
-                    Computed after all regular observations are available.
-                    Examples: fc_corr (from fc, fc_target), rmse, etc.
+                    All observations on this experiment, keyed by name. An
+                    Observation is considered derived (computed from other
+                    observations rather than directly from state variables)
+                    when any item in its multivalued ``source`` slot names
+                    another observation in this same dict.
             functions:
                 multivalued: true
                 range: Function
@@ -2776,12 +3777,21 @@ classes:
                 multivalued: true
                 range: Optimization
                 inlined: true
+                aliases: [optimization]
                 description: "Parameter optimization configurations"
             explorations:
                 multivalued: true
                 range: Exploration
                 inlined: true
                 description: "Parameter exploration/grid search specifications"
+            inferences:
+                multivalued: true
+                range: Inference
+                inlined: true
+                aliases: [inference]
+                description: >-
+                    Bayesian inference configurations (posterior over parameters given
+                    an observation, via MCMC). Keyed by name, like optimizations.
             algorithms:
                 multivalued: true
                 range: Algorithm
@@ -2808,10 +3818,6 @@ classes:
                 range: SoftwareRequirement
                 description: "(Deprecated) Single software requirement; prefer 'environment' with aggregated requirements."
                 inlined: true
-            references:
-                multivalued: true
-                range: string
-                slot_uri: dcterms:references
             dataset:
                 range: Dataset
                 inlined: true
@@ -2820,26 +3826,56 @@ classes:
                     render_workflow() uses dataset.subjects/sessions to generate
                     per-subject parallel jobs.
 
-    SimulationStudy:
-        class_uri: tvbo:SimulationStudy
-        # tree_root: true
+    Study:
+        class_uri: tvbo:Study
+        description: >-
+            Bibliographic anchor for a source publication, identified by its
+            citation key (``citekey``).  The full bibliographic record lives in
+            the project BibTeX library (references.bib) and is resolved by
+            citekey; this node carries only identity, display fields and the
+            knowledge-graph hooks (the concepts that cite it).  Specialised by
+            SimulationStudy, which adds the experiments derived from the source.
         slots:
-            - label
-            - derived_from
-            - model
             - description
         attributes:
-            key:
+            citekey:
                 range: string
+                description: >-
+                    BibTeX citation key; the join key into references.bib for
+                    full bibliographic detail. A study is identified by its
+                    key/citekey and described by its title — no ``name`` needed.
+            type:
+                range: string
+                description: "Publication type (article, book, inproceedings, …)."
             title:
                 range: string
                 slot_uri: dcterms:title
+            authors:
+                range: string
+                multivalued: true
+                description: "Author display strings (full detail in references.bib)."
             year:
                 range: integer
                 slot_uri: dcterms:issued
             doi:
                 range: string
                 slot_uri: bibo:doi
+
+    SimulationStudy:
+        class_uri: tvbo:SimulationStudy
+        is_a: Study
+        # tree_root: true
+        slots:
+            - label
+            - derived_from
+            - model
+            - references
+        attributes:
+            key:
+                range: string
+                description: >-
+                    Deprecated alias of the inherited ``citekey``; retained for
+                    back-compatibility with existing tooling.
             sample:
                 range: Sample
             simulation_experiments:
@@ -2960,6 +3996,19 @@ classes:
 
     Mesh:
         class_uri: tvbo:Mesh
+        description: >-
+            Triangle (or higher-order) mesh geometry. May stand alone (via
+            ``mesh_file`` pointing at an external GIFTI/VTK/MSH file) OR
+            be inlined on a Network as ``Network.mesh``. In the
+            inlined-on-Network case, the vertices are the parent
+            Network's ``nodes/coordinates`` (so ``coordinates`` here may
+            be left empty), the faces live in the same h5 companion
+            under a path given by ``elements`` (default ``mesh/faces``),
+            and optional per-vertex ``normals`` / ``curvature`` live
+            alongside. The optional ``parcel_map_field`` points at the
+            parent Network's per-vertex parcel-id array (default
+            ``nodes/parent_index`` from the hierarchical-Network
+            pattern, see Network.qmd §7.1).
         attributes:
             element_type:
                 range: ElementType
@@ -2968,7 +4017,11 @@ classes:
                 multivalued: true
                 range: Coordinate
             elements:
-                description: "Connectivity (indices) or file reference to topology."
+                description: >-
+                    Topology indices: either a file reference, or (when
+                    inlined on a Network) a dotted path inside the parent
+                    Network's h5 companion to the (M, 3) int triangle
+                    face array. Default convention: ``mesh/faces``.
                 range: string
             coordinate_space:
                 range: CommonCoordinateSpace
@@ -2984,6 +4037,39 @@ classes:
             number_of_elements:
                 description: "Number of elements (triangles, quads, tetrahedra, etc.)."
                 range: integer
+            parcellation:
+                range: Parcellation
+                inlined: true
+                description: >-
+                    Brain parcellation this mesh's parcel_map indexes
+                    into. Inlined to match Network.parcellation's
+                    existing pattern. When the mesh is inlined on a
+                    Network that already declares ``parcellation``, this
+                    slot is optional and defaults to the parent's value.
+            normals:
+                description: >-
+                    Optional path inside the parent Network's h5 (or an
+                    external file) to per-vertex normals (N, 3) float.
+                    Default convention: ``mesh/normals``.
+                range: string
+            curvature:
+                description: >-
+                    Optional path to per-vertex curvature (N,) float.
+                    Default convention: ``mesh/curvature``.
+                range: string
+            vertices_field:
+                description: >-
+                    When the mesh is inlined on a Network, the dotted
+                    path inside the parent's h5 to vertex coordinates.
+                    Default: ``nodes/coordinates``.
+                range: string
+            parcel_map_field:
+                description: >-
+                    When the mesh is inlined on a Network with a
+                    parcellation, the dotted path inside the parent's
+                    h5 to the per-vertex parcel id array. Default:
+                    ``nodes/parent_index``.
+                range: string
         slots:
             - label
             - description
@@ -3097,14 +4183,17 @@ classes:
             mesh:
                 description: "Shared mesh for all field state variables in this PDE."
                 range: Mesh
-            # Prefer state_variables for PDEs; keep single 'field' for backward compatibility
+            # Use state_variables for PDEs (FieldStateVariable list). The old
+            # single object-valued `field: SpatialField` attribute was removed:
+            # it was deprecated and unused, and its name collided with the
+            # string-valued `field` of Reference/ReferenceFingerprint, which the
+            # OWL generator (keying on the slot name) punned as both an Object-
+            # and a Datatype-property — making those classes unsatisfiable under
+            # OWL-DL (HermiT). state_variables fully supersedes it.
             state_variables:
                 multivalued: true
                 inlined_as_list: true
                 range: FieldStateVariable
-            field:
-                description: "Primary field being solved for (deprecated; use state_variables)."
-                range: SpatialField
             operators:
                 multivalued: true
                 range: DifferentialOperator

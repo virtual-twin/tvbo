@@ -9,13 +9,13 @@
 id: 1
 label: "RateML rwongwang ground truth"
 
-# Linear coupling: c_pop0 = sum(wij * V_j) * global_coupling
+# Linear coupling: c_glob = sum(wij * V_j) * global_coupling
 coupling:
   name: LinearCoupling
   parameters: {}
   incoming_states: [V]
-  pre_expression: { rhs: "V_j" }
-  post_expression: { rhs: "1" }
+  pre_expression: {rhs: "V_j"}
+  post_expression: {rhs: "1"}
 
 # Network (small test network)
 network:
@@ -58,21 +58,21 @@ network:
           description: "Slope of intravascular relaxation rate [Hz]"
       derived_parameters:
         recip_tau_s:
-          equation: { rhs: "1.0 / tau_s" }
+          equation: {rhs: "1.0 / tau_s"}
         recip_tau_f:
-          equation: { rhs: "1.0 / tau_f" }
+          equation: {rhs: "1.0 / tau_f"}
         recip_tau_o:
-          equation: { rhs: "1.0 / tau_o" }
+          equation: {rhs: "1.0 / tau_o"}
         recip_alpha:
-          equation: { rhs: "1.0 / alpha" }
+          equation: {rhs: "1.0 / alpha"}
         recip_E0:
-          equation: { rhs: "1.0 / E0" }
+          equation: {rhs: "1.0 / E0"}
         k1:
-          equation: { rhs: "4.3 * nu_0 * E0 * TE" }
+          equation: {rhs: "4.3 * nu_0 * E0 * TE"}
         k2:
-          equation: { rhs: "epsilon * r_0 * E0 * TE" }
+          equation: {rhs: "epsilon * r_0 * E0 * TE"}
         k3:
-          equation: { rhs: "1.0 - epsilon" }
+          equation: {rhs: "1.0 - epsilon"}
       state_variables:
         s:
           initial_value: 0.0
@@ -162,7 +162,7 @@ dynamics:
   derived_variables:
     tmp_I_E:
       equation:
-        rhs: "a_E * ((w_E * I_0) + (w_plus * J_NMDA) * V + c_pop0 - JI*W) - b_E"
+        rhs: "a_E * ((w_E * I_0) + (w_plus * J_NMDA) * V + c_glob - JI*W) - b_E"
     tmp_H_E:
       equation:
         rhs: "tmp_I_E / (1.0 - exp((-1.0 * d_E) * tmp_I_E))"
@@ -175,20 +175,26 @@ dynamics:
   state_variables:
     V:
       initial_value: 0.998307465821013
-      boundaries: { lo: 0.0, hi: 1.0 }
       equation:
         rhs: "((-1.0 / tau_E) * V) + (tmp_H_E * (1 - V) * gamma_E)"
       variable_of_interest: true
       coupling_variable: true
+      domain:
+        lo: 0.0
+        hi: 1.0
+        enforce: clamp
     W:
       initial_value: 0.12069886682928
-      boundaries: { lo: 0.0, hi: 1.0 }
       equation:
         rhs: "((-1.0 / tau_I) * W) + (tmp_H_I * gamma_I)"
       variable_of_interest: true
       coupling_variable: false
+      domain:
+        lo: 0.0
+        hi: 1.0
+        enforce: clamp
   coupling_inputs:
-    c_pop0: {}
+    c_glob: {}
 
 observations:
   bold:

@@ -158,6 +158,11 @@ df_tvbo = pd.read_csv(join(DATA_DIR, "_tvb-o.csv"), sep=";")
 
 
 def get_onto() -> owlready2.namespace.Ontology:
+    """Return the loaded TVB-O ontology object.
+
+    Returns:
+        The loaded `owlready2` ontology backing this module.
+    """
     return onto
 
 
@@ -259,6 +264,7 @@ def wrap_text(text, line_length=100, line_breaks="\n") -> str:
     """
 
     def wrap_line(line):
+        """Wrap a single line to `line_length`, inserting `line_breaks` between words."""
         words = line.split()
         wrapped_line = ""
         current_length = 0
@@ -293,6 +299,15 @@ def hangident(text, indent=4) -> str:
 
 
 def get_info(cls) -> str:
+    """Build a formatted text summary of an ontology class with its definition and references.
+
+    Args:
+        cls: The ontology class, or its label string to look up in the ontology.
+
+    Returns:
+        A multi-line string with the class label as a heading, its wrapped
+        definition, and a formatted references section when references exist.
+    """
     from tvbo.utils.report import render_citation
 
     if isinstance(cls, str):
@@ -311,6 +326,18 @@ def get_info(cls) -> str:
 
 
 def ontology_info(print_info=True, return_info=False, return_df=False):
+    """Summarize the contents of the TVB-O ontology as component counts.
+
+    Args:
+        print_info: If True, print the base IRI and a count of each component group.
+        return_info: If True, return the collected components as a `Bunch`.
+        return_df: If True, return the component counts as a `pandas.DataFrame`.
+
+    Returns:
+        A `Bunch` of component lists when `return_info` is set, or a count
+        `DataFrame` indexed by component name when `return_df` is set; otherwise
+        nothing is returned.
+    """
     info = Bunch(
         classes=list(onto.classes()),
         tvb_classes=list(onto.TheVirtualBrain.descendants()),
@@ -365,6 +392,18 @@ def search_class(
 def search_in_model(
     search_str, model: owlready2.ThingClass, wildcards=True
 ) -> Optional[Union[owlready2.ThingClass, List[owlready2.ThingClass]]]:
+    """Search a model's descendant classes by label or definition for a search string.
+
+    Args:
+        search_str: The text to search for.
+        model: The TVB model to search within, or its label string.
+        wildcards: If True, wrap `search_str` in `*` wildcards; otherwise append
+            the model's suffix to the search string.
+
+    Returns:
+        The single matching class when exactly one is found, `None` when none
+        match, or the list of matching classes otherwise.
+    """
     if isinstance(model, str):
         model = get_model(model)
     if wildcards:
@@ -590,6 +629,15 @@ def get_model(label: str = "JansenRit", model_type="NMM", verbose=False) -> owlr
 
 
 def get_integrator(integration_method="Heun") -> owlready2.ThingClass:
+    """Retrieve the ontology class for a named integration method.
+
+    Args:
+        integration_method: The label of the integration method to look up.
+
+    Returns:
+        The matching integration-method class, or `None` if none is found. When
+        several match, the first is returned (with a message printed).
+    """
     search_res = _query_mod.label_search(integration_method)
 
     available_integrators = onto.IntegrationMethod.descendants(include_self=False)
@@ -606,10 +654,25 @@ def get_integrator(integration_method="Heun") -> owlready2.ThingClass:
 
 
 def get_coupling_functions() -> Dict[str, owlready2.ThingClass]:
+    """Return all coupling-function classes keyed by their label.
+
+    Returns:
+        A dictionary mapping each coupling function's label to its ontology class.
+    """
     return {CF.label.first(): CF for CF in onto.Coupling.subclasses()}
 
 
 def get_coupling_function(label="Linear", verbose=True) -> Optional[owlready2.ThingClass]:
+    """Retrieve a coupling-function class by its label or a synonym.
+
+    Args:
+        label: The label (or synonym) of the coupling function to retrieve.
+        verbose: If True, print the valid coupling functions when the label is
+            not found.
+
+    Returns:
+        The matching coupling-function class, or `None` if it is not found.
+    """
     coupling_functions = get_coupling_functions()
     synonyms = dict()
     for k, cf in coupling_functions.items():
@@ -663,6 +726,18 @@ def get_model_suffix(NMM) -> str:
 
 
 def replace_suffix(cls) -> str:
+    """Strip the model-specific suffix from an ontology class's label.
+
+    The suffix is derived from the acronyms of the class's neural-mass-model,
+    coupling, or data-type ancestors.
+
+    Args:
+        cls: The ontology class, or its label string to look up in the ontology.
+
+    Returns:
+        The class label with any matching ancestor suffix removed. The original
+        label (or string) is returned when no suffix matches.
+    """
     if isinstance(cls, str):
         clsearch = onto.search(label=cls).first()
         if isinstance(clsearch, type(None)):
@@ -826,6 +901,17 @@ def get_model_coupling_terms(
 
 
 def get_model_constants(NMM, return_as_dict=True) -> Union[Dict[str, owlready2.ThingClass], List[owlready2.ThingClass]]:
+    """Retrieve the constants for a given TVB model.
+
+    Args:
+        NMM: The TVB model to retrieve the constants for, or its label string.
+        return_as_dict: If True, sort and key the constants by their label before
+            suffix stripping.
+
+    Returns:
+        A dictionary mapping each suffix-stripped constant label to its ontology
+        class object.
+    """
     if isinstance(NMM, str):
         NMM = get_model(NMM)
 
@@ -859,6 +945,15 @@ def get_model_coefficients(NMM) -> Dict[str, owlready2.ThingClass]:
 
 
 def get_model_conditionals(NMM) -> Dict[str, owlready2.ThingClass]:
+    """Retrieve the conditional derived variables for a given TVB model.
+
+    Args:
+        NMM: The TVB model to retrieve the conditionals for, or its label string.
+
+    Returns:
+        A dictionary mapping each suffix-stripped conditional label to its
+        ontology class object.
+    """
     if isinstance(NMM, str):
         NMM = get_model(NMM)
 
@@ -981,8 +1076,15 @@ def get_model_cvars(NMM, return_as_dict=True) -> Union[Dict[str, owlready2.Thing
     if isinstance(NMM, str):
         NMM = get_model(NMM)
     cvars = NMM.has_cvar
+    # A state variable is a coupling variable if its derivative consumes a
+    # global coupling term.  Match the model's actual coupling-term names
+    # rather than a hard-coded prefix, so any naming (c_glob, c_pop, …) works.
+    global_coupling_names = [
+        c for c in get_model_coupling_terms(NMM, return_as_dict=True).keys() if c != "local_coupling"
+    ]
     for k, v in get_model_derivatives(NMM).items():
-        if "c_pop" in v.value.first():
+        rhs = v.value.first() or ""
+        if any(cn in rhs for cn in global_coupling_names):
             for isa in v.is_a:
                 if onto.StateVariable in isa.is_a:
                     cvars.append(isa)
@@ -991,7 +1093,7 @@ def get_model_cvars(NMM, return_as_dict=True) -> Union[Dict[str, owlready2.Thing
     if return_as_dict:
         cvars = get_sorted_dict(cvars)
     if NMM == onto.JansenRit:
-        cvars.pop("y4_JR")
+        cvars.pop("y4_JR", None)
     return {replace_suffix(k): p for k, p in cvars.items()}
 
 
@@ -1013,6 +1115,9 @@ def get_default_values(NMM, tvb_name=False, class_as_key=False) -> Dict[str, Uni
     values = dict()
     parameters = get_model_parameters(NMM)
     parameters.update(get_model_constants(NMM))
+    # Coupling inputs default to zero (single-node / uncoupled evaluation).
+    # Derive their names from the model so any naming works.
+    coupling_input_names = list(get_model_coupling_terms(NMM, return_as_dict=True).keys())
     for k, v in parameters.items():
         if tvb_name:
             k = v.tvbSourceVariable.first()
@@ -1030,18 +1135,35 @@ def get_default_values(NMM, tvb_name=False, class_as_key=False) -> Dict[str, Uni
 
         if onto.NeuralMassModel in v.is_a:
             values["local_coupling"] = 0
-            values["c_pop0"] = 0
-            values["c_pop1"] = 0
+            for cn in coupling_input_names:
+                values[cn] = 0
 
     return values
 
 
 def contains_math_char(s) -> bool:
+    """Check whether a string contains a mathematical operator character.
+
+    Args:
+        s: The string to inspect.
+
+    Returns:
+        True if `s` contains any of `+`, `-`, `*`, `/`, `=`, or `^`.
+    """
     math_chars = ["+", "-", "*", "/", "=", "^"]
     return any(char in s for char in math_chars)
 
 
 def add_spaces_around_math_chars(s) -> str:
+    """Insert spaces around mathematical operator characters in a string.
+
+    Args:
+        s: The string to reformat.
+
+    Returns:
+        The string with a space added on each side of every `+`, `-`, `*`, `/`,
+        or `=` that is not already surrounded by whitespace.
+    """
     # Define the pattern: any math character not already surrounded by spaces
     # Math characters included here are +, -, *, /, and =
     # You can add more characters if needed
@@ -1049,6 +1171,7 @@ def add_spaces_around_math_chars(s) -> str:
 
     # Replacement function: add spaces around the math character
     def repl(match):
+        """Return the matched operator padded with a space on each side."""
         return f" {match.group(1)} "
 
     # Perform the substitution
@@ -1056,7 +1179,18 @@ def add_spaces_around_math_chars(s) -> str:
 
 
 def get_model_vois(model) -> Tuple[str]:
+    """Retrieve the variables of interest (VOIs) for a given TVB model.
 
+    Combines the model's default VOIs with any extra VOIs listed on the model,
+    spacing out operator-based expressions.
+
+    Args:
+        model: The TVB model to retrieve the VOIs for, or its label string.
+
+    Returns:
+        A sorted tuple of unique VOI names, falling back to the model's state
+        variables when no VOIs are defined.
+    """
     if isinstance(model, str):
         model = get_model(model)
     suffix = get_model_suffix(model)
@@ -1134,6 +1268,17 @@ def get_parameters_by_catalogue(NMM: owlready2.ThingClass, param_key: str) -> pd
 # Class Properties #
 ####################
 def get_object_properties(ontology_class, include_restriction=True):
+    """Collect the object-property relationships of an ontology class.
+
+    Args:
+        ontology_class: The ontology class to inspect.
+        include_restriction: If True, include `owl:someValuesFrom`-style
+            restriction relationships.
+
+    Returns:
+        A list of single-key dictionaries mapping each property name (or
+        `"is_a"`) to its target value.
+    """
     object_properties = []
     for p, o in _query_mod.get_class_relationships(ontology_class):
         if isinstance(o, owlready2.class_construct.Restriction):
@@ -1149,6 +1294,15 @@ def get_object_properties(ontology_class, include_restriction=True):
 
 
 def get_class_properties(cls):
+    """Collect the label, identifier, annotation, and object properties of a class.
+
+    Args:
+        cls: The ontology class, or its label string to look up in the ontology.
+
+    Returns:
+        A dictionary with the class's `label`, `identifier`,
+        `annotation_properties`, and `object_properties`.
+    """
     if isinstance(cls, str):
         cls = _query_mod.search_by_label(str(cls))[0]
 
@@ -1173,14 +1327,38 @@ def get_class_properties(cls):
 
 
 def get_class_annotation_properties(cls):
+    """Return the annotation properties of an ontology class.
+
+    Args:
+        cls: The ontology class, or its label string to look up in the ontology.
+
+    Returns:
+        The `annotation_properties` mapping for the class.
+    """
     return get_class_properties(cls)["annotation_properties"]
 
 
 def get_class_object_properties(cls):
+    """Return the object properties of an ontology class.
+
+    Args:
+        cls: The ontology class, or its label string to look up in the ontology.
+
+    Returns:
+        The list of object-property relationships for the class.
+    """
     return get_class_properties(cls)["object_properties"]
 
 
 def get_class_data_properties(cls):
+    """Return the data properties of an ontology class.
+
+    Args:
+        cls: The ontology class, or its label string to look up in the ontology.
+
+    Returns:
+        The `data_properties` entry for the class.
+    """
     return get_class_properties(cls)["data_properties"]
 
 
@@ -1188,6 +1366,14 @@ def get_class_data_properties(cls):
 # Model Comparison #
 ####################
 def join_set(a):
+    """Join the unique elements of an iterable into a comma-separated string.
+
+    Args:
+        a: The iterable of strings whose distinct values are joined.
+
+    Returns:
+        A comma-separated string of the distinct elements.
+    """
     return ", ".join(list(set(a)))
 
 
@@ -1373,6 +1559,14 @@ def find_variables(var, model, type="all", include_synonyms=False, find_best_mat
 
 
 def get_all_annotations(prop) -> List[str]:
+    """Collect all distinct values of an annotation property across every class.
+
+    Args:
+        prop: The name of the annotation property to gather.
+
+    Returns:
+        A list of the unique annotation values found across all ontology classes.
+    """
     proplist = []
     for c in onto.classes():
         if c.name == "Thing":
@@ -1382,6 +1576,17 @@ def get_all_annotations(prop) -> List[str]:
 
 
 def create_acronym(text) -> str:
+    """Generate a unique upper-case acronym from a camel-case name.
+
+    Letters are taken from each capitalised word, extending the acronym until it
+    no longer collides with an existing acronym in the ontology.
+
+    Args:
+        text: The camel-case text (e.g. a model name) to build an acronym from.
+
+    Returns:
+        An upper-case acronym that is unique among existing ontology acronyms.
+    """
     existing_acronyms = get_all_annotations("acronym")
     # Split the text into words based on uppercase letters
     words = re.findall(r"[A-Z][^A-Z]*", text)
@@ -1404,6 +1609,14 @@ def create_acronym(text) -> str:
 
 
 def extract_most_common(searches) -> Optional[owlready2.ThingClass]:
+    """Return the most frequently occurring item across several result lists.
+
+    Args:
+        searches: An iterable of result lists to flatten and tally.
+
+    Returns:
+        The single most common item, or `None` if the combined results are empty.
+    """
     from collections import Counter
 
     # Flatten the list of lists
@@ -1421,6 +1634,18 @@ def extract_most_common(searches) -> Optional[owlready2.ThingClass]:
 
 
 def search_all(search_term, from_class=None, case_sensitive=False) -> Optional[owlready2.ThingClass]:
+    """Search the ontology by label, synonym, and symbol and return the best match.
+
+    Args:
+        search_term: The prefix to search for.
+        from_class: Restrict the search to this class's descendants; if `None`,
+            search all ontology classes.
+        case_sensitive: If True, perform a case-sensitive search.
+
+    Returns:
+        The class matching across the most search dimensions, or `None` if
+        nothing matches.
+    """
     if from_class is None:
         tree = list(onto.classes())
     else:
@@ -1526,8 +1751,13 @@ def import_model(
             "symbol": str(sv.name),
             "stateVariableRange": (f"lo={sv.domain.lo}, hi={sv.domain.hi}" if sv.domain else ""),
         }
-        if sv.boundaries:
-            properties["stateVariableBoundaries"] = f"lo={sv.boundaries.lo}, hi={sv.boundaries.hi}"
+        # A clamped domain (enforce='clamp') is the modern equivalent of the
+        # former dedicated boundaries slot; export it as stateVariableBoundaries.
+        from tvbo.utils import domain_enforcement
+
+        _dom = sv.domain
+        if _dom and domain_enforcement(_dom) == "clamp":
+            properties["stateVariableBoundaries"] = f"lo={_dom.lo}, hi={_dom.hi}"
 
         sv_class = _create_subclass(sv.name + model_suffix, onto.StateVariable, properties, model_class)
         if sv.coupling_variable:
@@ -1535,7 +1765,7 @@ def import_model(
 
         if sv.equation.rhs:
             td_name = sv.name + "_dot" + model_suffix
-            _create_subclass(
+            td_class = _create_subclass(
                 td_name,
                 onto.TimeDerivative,
                 {
@@ -1545,17 +1775,25 @@ def import_model(
                 },
                 sv_class,
             )
+            # Link the state variable to its time derivative so consumers that
+            # read sv.has_derivative (e.g. class2metadata / from_ontology) work.
+            with onto:
+                sv_class.has_derivative.append(td_class)
 
         with onto:
             model_class.has_state_variable.append(sv_class)
 
     # Parameters
+    from tvbo.utils import is_array_valued
+
     for k, p in model_data.parameters.items():
         properties = {
             "label": k + model_suffix,
             "symbol": getattr(p, "symbol", str(k)),
             "definition": str(p.description),
-            "defaultValue": (float(p.value) if not isinstance(p.value, list) else p.default),
+            # Array-valued constants (list/tuple/ndarray) have no scalar default —
+            # fall back to p.default rather than float()-ing the array.
+            "defaultValue": (p.default if is_array_valued(p.value) else float(p.value)),
             "range": (f"lo={p.domain.lo}, hi={p.domain.hi}, step={p.domain.step}" if p.domain else ""),
         }
         p_class = _create_subclass(k + model_suffix, onto.Parameter, properties, model_class)

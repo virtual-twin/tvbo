@@ -61,6 +61,21 @@ kw_clust["time_scaling"] = [i.lower().strip().replace('"', "") for i in df_clust
 
 
 def bel2label(node):
+    """Build a `namespace:name` string label for a PyBEL node.
+
+    Composite nodes are flattened into a single ` AND `-joined label:
+    `ComplexAbundance` and `CompositeAbundance` join their members, while a
+    `Reaction` joins its reactants followed by its products. Any other node is
+    labelled directly from its own entity namespace and name.
+
+    Args:
+        node: A PyBEL DSL node whose entity (or members/reactants/products)
+            carries a `namespace` and `name`.
+
+    Returns:
+        The node label, e.g. `"HGNC:GRIN1"`, with member entities joined by
+        `" AND "` for complex, composite, and reaction nodes.
+    """
     if isinstance(node, pybel.dsl.node_classes.ComplexAbundance) or isinstance(
         node, pybel.dsl.node_classes.CompositeAbundance
     ):

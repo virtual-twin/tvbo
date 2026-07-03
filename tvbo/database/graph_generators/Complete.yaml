@@ -1,0 +1,16 @@
+name: Complete
+description: "Complete graph K_n — every node connected to every other node."
+iri: tvbo:Complete
+
+parameters:
+  n: { datatype: integer, description: "Number of nodes" }
+
+bindings:
+  julia:
+    library: Graphs
+    callable: complete_graph
+    args: [n]
+  networkx:
+    library: networkx
+    callable: complete_graph
+    args: [n]

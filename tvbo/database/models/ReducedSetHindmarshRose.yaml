@@ -1,0 +1,281 @@
+name: ReducedSetHindmarshRose
+iri: tvbo:ReducedSetHindmarshRose
+model_type: neural_mass
+description: Reduced set of Hindmarsh-Rose oscillators (Stefanescu & Jirsa 2008); 3 modes coupled via mode-mixing matrices with Gaussian-quadrature coefficients recomputed from mu/sigma.
+references:
+- StefanescuJirsa2008
+parameters:
+  a:
+    value: 1.0
+    domain:
+      lo: 0.0
+      hi: 1.0
+  b:
+    value: 3.0
+    domain:
+      lo: 0.0
+      hi: 3.0
+  c:
+    value: 1.0
+    domain:
+      lo: 0.0
+      hi: 1.0
+  d:
+    value: 5.0
+    domain:
+      lo: 2.5
+      hi: 7.5
+  r:
+    value: 0.006
+    domain:
+      lo: 0.0
+      hi: 0.1
+  s:
+    value: 4.0
+    domain:
+      lo: 2.0
+      hi: 6.0
+  xo:
+    value: -1.6
+    domain:
+      lo: -2.4
+      hi: -0.8
+  K11:
+    value: 0.5
+    domain:
+      lo: 0.0
+      hi: 1.0
+  K12:
+    value: 0.1
+    domain:
+      lo: 0.0
+      hi: 1.0
+  K21:
+    value: 0.15
+    domain:
+      lo: 0.0
+      hi: 1.0
+  mu:
+    value: 3.3
+    domain:
+      lo: 1.1
+      hi: 3.3
+  sigma:
+    value: 0.3
+    domain:
+      lo: 0.0
+      hi: 1.0
+  A_ik:
+    value:
+    - - 0.3328165811190223
+      - 0.18525241779532714
+      - 0.3328165811190241
+    - - 0.5984537933538554
+      - 0.3331114447027479
+      - 0.5984537933538587
+    - - 0.33281658111902046
+      - 0.18525241779532614
+      - 0.33281658111902235
+    description: Fixed SJ_2008 quadrature constant (A_ik).
+  B_ik:
+    value:
+    - - 0.3328165811190223
+      - 0.5984537933538554
+      - 0.33281658111902046
+    - - 0.18525241779532714
+      - 0.3331114447027479
+      - 0.18525241779532614
+    - - 0.3328165811190241
+      - 0.5984537933538587
+      - 0.33281658111902235
+    description: Fixed SJ_2008 quadrature constant (B_ik).
+  C_ik:
+    value:
+    - - 0.3328165811190223
+      - 0.18525241779532714
+      - 0.3328165811190241
+    - - 0.5984537933538554
+      - 0.3331114447027479
+      - 0.5984537933538587
+    - - 0.33281658111902046
+      - 0.18525241779532614
+      - 0.33281658111902235
+    description: Fixed SJ_2008 quadrature constant (C_ik).
+  iV0:
+    value:
+    - 1.6668762461300366
+    - 0.9278169186250886
+    - 1.666876246130046
+    description: Fixed SJ_2008 quadrature constant (iV0).
+  iU0:
+    value:
+    - 1.6668762461300366
+    - 0.9278169186250886
+    - 1.666876246130046
+    description: Fixed SJ_2008 quadrature constant (iU0).
+  iV3:
+    value:
+    - 0.5999245608794813
+    - 1.0777988414803623
+    - 0.5999245608794778
+    description: Fixed SJ_2008 quadrature constant (iV3).
+  iU3:
+    value:
+    - 0.5999245608794813
+    - 1.0777988414803623
+    - 0.5999245608794778
+    description: Fixed SJ_2008 quadrature constant (iU3).
+  iV4:
+    value:
+    - 0.35990947874643836
+    - 1.1616503426964113
+    - 0.3599094787464342
+    description: Fixed SJ_2008 quadrature constant (iV4).
+  iU4:
+    value:
+    - 0.35990947874643836
+    - 1.1616503426964113
+    - 0.3599094787464342
+    description: Fixed SJ_2008 quadrature constant (iU4).
+  iZV:
+    value:
+    - -3.033148827134955
+    - 1.3877787807814457e-17
+    - 3.033148827134998
+    description: Fixed SJ_2008 quadrature constant (iZV).
+  iZU:
+    value:
+    - -3.033148827134955
+    - 1.3877787807814457e-17
+    - 3.033148827134998
+    description: Fixed SJ_2008 quadrature constant (iZU).
+derived_parameters:
+  a_i:
+    equation:
+      lhs: a_i
+      rhs: a*iV4/sigma
+      latex: false
+  e_i:
+    equation:
+      lhs: e_i
+      rhs: a*iU4/sigma
+      latex: false
+  b_i:
+    equation:
+      lhs: b_i
+      rhs: b*iV3/sqrt(sigma)
+      latex: false
+  f_i:
+    equation:
+      lhs: f_i
+      rhs: b*iU3/sqrt(sigma)
+      latex: false
+  c_i:
+    equation:
+      lhs: c_i
+      rhs: c*sqrt(sigma)*iV0
+      latex: false
+  h_i:
+    equation:
+      lhs: h_i
+      rhs: c*sqrt(sigma)*iU0
+      latex: false
+  IE_i:
+    equation:
+      lhs: IE_i
+      rhs: sqrt(sigma)*(mu*iV0 + sigma*iZV)
+      latex: false
+  II_i:
+    equation:
+      lhs: II_i
+      rhs: sqrt(sigma)*(mu*iU0 + sigma*iZU)
+      latex: false
+  d_i:
+    equation:
+      lhs: d_i
+      rhs: d*iV3/sqrt(sigma)
+      latex: false
+  p_i:
+    equation:
+      lhs: p_i
+      rhs: d*iU3/sqrt(sigma)
+      latex: false
+  m_i:
+    equation:
+      lhs: m_i
+      rhs: r*s*xo*sqrt(sigma)*iV0
+      latex: false
+  n_i:
+    equation:
+      lhs: n_i
+      rhs: r*s*xo*sqrt(sigma)*iU0
+      latex: false
+coupling_inputs:
+  c_glob0: {}
+  c_glob1: {}
+  local_coupling: {local: true}
+state_variables:
+  xi:
+    domain:
+      lo: -4.0
+      hi: 4.0
+    equation:
+      lhs: Derivative(xi, t)
+      rhs: eta - a_i*xi**3 + b_i*xi**2 - tau + K11*(mode_dot(xi, A_ik) - xi) - K12*(mode_dot(alpha, B_ik) - xi) + IE_i + mode_sum(c_glob0) + local_coupling*xi
+      latex: false
+    coupling_variable: true
+    initial_value: 0.1
+  eta:
+    domain:
+      lo: -25.0
+      hi: 20.0
+    equation:
+      lhs: Derivative(eta, t)
+      rhs: c_i - d_i*xi**2 - eta
+      latex: false
+    coupling_variable: false
+    initial_value: 0.1
+  tau:
+    domain:
+      lo: 2.0
+      hi: 10.0
+    equation:
+      lhs: Derivative(tau, t)
+      rhs: r*s*xi - r*tau - m_i
+      latex: false
+    coupling_variable: false
+    initial_value: 3.0
+  alpha:
+    domain:
+      lo: -4.0
+      hi: 4.0
+    equation:
+      lhs: Derivative(alpha, t)
+      rhs: beta - e_i*alpha**3 + f_i*alpha**2 - gamma + K21*(mode_dot(xi, C_ik) - alpha) + II_i + mode_sum(c_glob0) + local_coupling*xi
+      latex: false
+    coupling_variable: true
+    initial_value: 0.1
+    record: false
+  beta:
+    domain:
+      lo: -20.0
+      hi: 20.0
+    equation:
+      lhs: Derivative(beta, t)
+      rhs: h_i - p_i*alpha**2 - beta
+      latex: false
+    coupling_variable: false
+    initial_value: 0.1
+    record: false
+  gamma:
+    domain:
+      lo: 2.0
+      hi: 10.0
+    equation:
+      lhs: Derivative(gamma, t)
+      rhs: r*s*alpha - r*gamma - n_i
+      latex: false
+    coupling_variable: false
+    initial_value: 3.0
+    record: false
+number_of_modes: 3

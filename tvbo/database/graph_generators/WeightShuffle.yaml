@@ -1,0 +1,51 @@
+name: WeightShuffle
+description: >-
+  Derived generator: load a reference adjacency by IRI and permute its
+  non-zero entries under a chosen preservation mode. Used for null-model
+  controls (e.g. shuffled SC matrices that preserve density / degree
+  sequence / weight distribution while randomising topology).
+iri: tvbo:WeightShuffle
+
+parameters:
+  source:
+    datatype: uriorcurie
+    description: "IRI of the reference Network whose weights matrix is shuffled."
+  preserve:
+    datatype: string
+    description: >-
+      Which structural property to preserve under permutation:
+        - binary_mask:        preserve the {0, nonzero} pattern; permute weight values among non-zero positions
+        - degree:             preserve per-node degree (within rounding)
+        - weight_distribution: preserve the multiset of weights (binary topology rerandomised)
+    default: "binary_mask"
+  seed: { datatype: integer, required: false }
+
+# Symbolic procedure. The assembly below implements `preserve: binary_mask`
+# (keep the {0, nonzero} pattern; permute the non-zero values among their
+# positions) — the default and only mode exercised by the reservoir
+# experiments. The guard makes the supported mode explicit; `degree`
+# (maslov_sneppen primitive) and `weight_distribution` modes are future
+# procedure variants over the same primitive set.
+procedure:
+  steps:
+    - name: mode_guard
+      equation:
+        rhs: "require(preserve == 'binary_mask', \"WeightShuffle procedure implements preserve='binary_mask'; other modes need a procedure variant.\")"
+    - name: source_matrix
+      description: "Loaded adjacency matrix from the source IRI"
+      equation:
+        rhs: "load_matrix(source)"
+    - name: nonzero_values
+      equation:
+        rhs: "source_matrix[source_matrix != 0]"
+    - name: permuted_values
+      equation:
+        rhs: "permute(nonzero_values, seed=seed)"
+  output:
+    weights:
+      description: "Permuted matrix (binary_mask): same {0, nonzero} pattern, values shuffled."
+      equation:
+        rhs: "scatter(zeros(shape(source_matrix)), nonzero_positions(source_matrix), permuted_values)"
+
+# No `bindings:` block — materialised from the `procedure:` above by the generic
+# engine (tvbo/graph_generators/engine.py). See RandomReservoir.yaml.

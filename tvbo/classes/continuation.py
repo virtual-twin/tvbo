@@ -31,7 +31,7 @@ from __future__ import annotations
 import os
 from typing import TYPE_CHECKING
 
-from linkml_runtime.loaders import yaml_loader
+from tvbo.utils import yaml_loader
 
 from tvbo.datamodel import schema as tvbo_datamodel
 

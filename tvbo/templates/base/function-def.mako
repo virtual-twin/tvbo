@@ -159,7 +159,7 @@ def render_body(func, format='jax', user_functions=None, render_func=None):
 def ${func.name}(${signature}):\
 </%def>
 
-<%def name="function_def(func, format='jax', user_functions=None, render_func=None, docstring=None)">
+<%def name="function_def(func, format='jax', user_functions=None, render_func=None, render_func_cse=None, docstring=None)">
 <%
     """Generate a complete function definition.
 
@@ -208,16 +208,22 @@ def ${func.name}(${signature}):\
         if not apply_on_node and not params and str(func.name) == callable_name:
             is_simple_callable = True
 
-    # Compute body for equation-based functions
+    # Compute body for equation-based functions. When a CSE renderer is provided
+    # (interpreted backends), hoist repeated subexpressions — including repeated
+    # model-function calls — into locals so each is evaluated once; otherwise emit a
+    # single flat return expression (jax leans on XLA's JIT-time CSE instead).
     body = None
+    cse_setup = None
+    cse_final = None
     if rhs and not source and not has_time_range and not has_callable:
-        if render_func is not None:
+        is_slicing = '[' in rhs and ('::' in rhs or ':' in rhs)
+        if render_func_cse is not None and not is_slicing:
+            cse_setup, cse_final = render_func_cse(func)
+        elif render_func is not None:
             body = render_func(func)
-        elif '[' in rhs and ('::' in rhs or ':' in rhs):
-            # Likely raw Python slicing - use as-is
-            body = rhs
+        elif is_slicing:
+            body = rhs  # raw Python slicing - use as-is
         else:
-            # Parse and render symbolic expression
             body = render_expression(rhs, format=format, user_functions=user_functions or {}, parameters=all_param_names)
 %>\
 % if source:
@@ -257,7 +263,14 @@ def ${func.name}(${signature}):
 % if doc:
     """${doc}"""
 % endif
+% if cse_setup is not None:
+% for _cse_name, _cse_expr in cse_setup:
+    ${_cse_name} = ${_cse_expr}
+% endfor
+    return ${cse_final}
+% else:
     return ${body}
+% endif
 % else:
 ## Fallback - empty function
 def ${func.name}(${signature}):

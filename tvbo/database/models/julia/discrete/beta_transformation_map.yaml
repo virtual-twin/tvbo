@@ -6,12 +6,10 @@ source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main
 system_type: discrete
 parameters:
   beta:
-    name: beta
     value: 2.0
     description: Expansion factor β; Lyapunov exponent ln(β).
 state_variables:
   x:
-    name: x
     equation:
       lhs: x_next
       rhs: (beta*x) % 1

@@ -19,7 +19,8 @@ tvbo
 ├── version     Print the tvbo version
 ├── validate    [schema | bids | sedml | omex]
 ├── config      [path | show]
-└── workflow    [plan | slurm | snakemake | nextflow | backends]
+├── workflow    [plan | slurm | snakemake | nextflow | backends]
+└── skills      [install | uninstall | sync]
 ```
 
 ## What is a SPEC?
@@ -52,6 +53,7 @@ Each page below documents one verb (or sub-tree) with all flags, exit codes, and
 - [`tvbo validate`](validate.qmd) — schema, BIDS, SED-ML, OMEX validation
 - [`tvbo config`](config.qmd) — view CLI configuration
 - [`tvbo workflow`](workflow.qmd) — emit Slurm / Snakemake / Nextflow kits
+- [`tvbo skills`](skills.qmd) — install AI-assistant skills for Claude Code, Cursor, Copilot
 - [Workflow kits anatomy](workflow-kits.qmd) — what a generated kit contains
 - [Backends](backends.qmd) — capability table, vectorize-vs-fanout
 - [HPC patterns](hpc.qmd) — containers, sharding, engine dispatch

@@ -53,6 +53,9 @@ enums:
             network_system:
                 description: "Whole-brain or large-scale network of regions."
                 meaning: wd:Q1073340
+            whole_brain:
+                description: "Whole-brain models targeting cortex-wide dynamics."
+                meaning: wd:Q239456
 
     ToolRole:
         description: >-
@@ -86,6 +89,12 @@ enums:
             continuation_tool:
                 description: "Numerical continuation / bifurcation analysis."
                 meaning: wd:Q858926
+            inference_framework:
+                description: "Probabilistic / Bayesian inference toolkit for model parameters."
+                meaning: wd:Q3508889
+            feature_extraction:
+                description: "Feature library or pipeline for derived signal descriptors."
+                meaning: wd:Q1392628
 
     ModelParadigm:
         description: >-
@@ -125,6 +134,9 @@ enums:
                 meaning: wd:Q1948412
             dynamic_mean_field:
                 description: "Dynamic mean-field approximation (e.g., Deco et al.)."
+            neural_field:
+                description: "Continuous neural field equations (Amari, Wilson-Cowan field)."
+                meaning: wd:Q7003015
             data_standard:
                 description: "Data format or exchange standard."
                 meaning: wd:Q317623
@@ -179,6 +191,9 @@ enums:
             maven:
                 description: "Maven Central Repository (Java)."
                 meaning: wd:Q6795527
+            docker:
+                description: "Docker container registry / image distribution."
+                meaning: wd:Q15206305
 
     ProgrammingLanguageEnum:
         description: >-

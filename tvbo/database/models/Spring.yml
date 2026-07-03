@@ -5,19 +5,16 @@ description: |
 
 parameters:
   k:
-    name: k
     value: 0.0001
     description: Spring stiffness constant
     unit: N_per_m
   m:
-    name: m
     value: 1.0
     description: Mass of the oscillating body
     unit: kg
 
 derived_parameters:
   omega:
-    name: omega
     description: Natural frequency of oscillation
     equation:
       lhs: omega
@@ -26,7 +23,6 @@ derived_parameters:
 
 state_variables:
   x:
-    name: x
     description: Displacement from equilibrium
     equation:
       lhs: Derivative(x, t)
@@ -36,7 +32,6 @@ state_variables:
     equation_order: 1
     initial_value: 2.0
   v:
-    name: v
     description: Velocity
     equation:
       lhs: Derivative(v, t)

@@ -16,34 +16,13 @@
 
 <%def name="render_operator(m, op_name=None)">
 <%
-    # Replace reserved names that conflict with SymPy/PyRates built-ins.
-    # These names cannot be used as-is because SymPy's sympify (used by PyRates
-    # internally) resolves them to built-in objects instead of symbols:
-    # - 'I': imaginary unit
-    # - 'E': Euler's number (exp(1))
-    # - 'S': SymPy's SingletonRegistry (sympify shorthand)
-    # - 'N': SymPy's numerical evaluation function
-    # - 'O': big-O notation class
-    # - 'Q': SymPy's AssumptionKeys object
-    # - 'gamma', 'beta', 'zeta': SymPy special functions
-    # - 'lambda': Python keyword
-    # - 'epsilon': PyRates internal parsing conflict
-    # Suffix '_' avoids implying the symbol is a parameter (it may be a state var).
-    repl = {
-        "I": "I_",
-        "gamma": "gamma_",
-        "beta": "beta_",
-        "zeta": "zeta_",
-        "lambda": "lambda_",
-        "E": "E_",
-        "N": "N_",
-        "S": "S_",
-        "O": "O_",
-        "Q": "Q_",
-        "epsilon": "epsilon_",
-        "y": "y_",
-        "dy": "dy_",
-    }
+    # Reserved-name renaming map (PyRates-safe suffixes for names that SymPy's
+    # sympify would otherwise resolve to functions/singletons, plus the Python
+    # keyword `lambda` and PyRates' internal `y`/`dy`/`epsilon` slots). Single
+    # source of truth — imported, not redefined — so it can't drift from the
+    # adapter / reverse map. See PYRATES_REPL in tvbo/codegen/pyrates.py for the
+    # full rationale (and why capital `Gamma`/`Beta` are intentionally absent).
+    from tvbo.codegen.pyrates import PYRATES_REPL as repl
 
     # Get model name
     name = m.name or "tvbo_model"

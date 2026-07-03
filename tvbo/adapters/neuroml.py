@@ -122,6 +122,19 @@ _ALIASES = {
 
 
 def normalize_unit(unit_str):
+    """Normalize a unit string to its canonical TVBO form.
+
+    Strips surrounding whitespace and resolves known aliases (for example
+    `"millisecond"` to `"ms"` or `"µm"` to `"um"`) via the `_ALIASES` table.
+    Strings without an alias are returned unchanged.
+
+    Args:
+        unit_str: The raw unit label; any value is coerced to `str`. A falsy
+            value (such as `None` or `""`) yields `None`.
+
+    Returns:
+        The canonical unit string, or `None` when `unit_str` is empty.
+    """
     if not unit_str:
         return None
     s = str(unit_str).strip()
@@ -129,6 +142,18 @@ def normalize_unit(unit_str):
 
 
 def unit_to_dimension(unit_str):
+    """Return the physical dimension name for a unit string.
+
+    Normalizes the unit and looks it up in the `UNITS` table, returning its
+    dimension label (for example `"voltage"`, `"current"`, `"conductance"`).
+    Unknown or empty units map to `"none"`.
+
+    Args:
+        unit_str: The unit label to resolve; aliases are normalized first.
+
+    Returns:
+        The dimension name, or `"none"` if the unit is missing or unrecognized.
+    """
     norm = normalize_unit(unit_str)
     if norm is None:
         return "none"
@@ -179,18 +204,43 @@ def inline_model_functions(expr, dynamics, all_names):
     from tvbo.parse.expression import parse_eq
 
     functions = getattr(dynamics, "functions", None) or {}
+    if not functions:
+        return expr
+
+    # All model-function names, so that a call to one function inside another's
+    # body (e.g. ``muV(...)`` inside ``sigmaV``'s body) parses as a function
+    # application rather than ``Symbol('muV') * (fe, fi, ...)``.
+    fn_names = list(functions.keys())
+
+    # Pre-parse every function body once, registering the model function names.
+    bodies = {}
     for fname, fn_obj in functions.items():
-        arguments = getattr(fn_obj, "arguments", None) or []
-        arg_names = [getattr(a, "name", str(a)) for a in arguments]
+        arguments = getattr(fn_obj, "arguments", None) or {}
+        # Function arguments are keyed by name (dict); tolerate a legacy list too.
+        arg_iter = arguments.values() if hasattr(arguments, "values") else arguments
+        arg_names = [getattr(a, "name", str(a)) for a in arg_iter]
         rhs_str = getattr(getattr(fn_obj, "equation", None), "rhs", None)
         if not rhs_str or not arg_names:
             continue
         arg_syms = [Symbol(n) for n in arg_names]
-        body = parse_eq(str(rhs_str), parameters=list(all_names) + arg_names)
-        fn_cls = Function(fname)
-        expr = expr.replace(
-            fn_cls, lambda *actual_args, _body=body, _syms=arg_syms: _body.xreplace(dict(zip(_syms, actual_args)))
-        )
+        body = parse_eq(str(rhs_str), parameters=list(all_names) + arg_names, functions=fn_names)
+        bodies[fname] = (arg_syms, body)
+
+    # Inline to a fixpoint: substituting one body can introduce calls to
+    # functions already visited (the call graph is a DAG, e.g. TF_e → sigmaV →
+    # muV), so repeat until no model-function calls remain.
+    for _ in range(len(bodies) + 1):
+        replaced = False
+        for fname, (arg_syms, body) in bodies.items():
+            fn_cls = Function(fname)
+            if expr.has(fn_cls):
+                expr = expr.replace(
+                    fn_cls,
+                    lambda *actual, _body=body, _syms=arg_syms: _body.xreplace(dict(zip(_syms, actual))),
+                )
+                replaced = True
+        if not replaced:
+            break
     return expr
 
 
@@ -2802,6 +2852,19 @@ def build_lems_context(experiment):
     events = getattr(dyn, "events", None) or {}
     coupling_inputs = getattr(dyn, "coupling_inputs", None) or []
 
+    # Name of the global coupling output the dynamics consumes.  Use the model's
+    # own global coupling-input name (e.g. c_glob) rather than a hard-coded
+    # literal, so the Coupling ComponentType matches the dynamics ComponentType.
+    _ci_items = coupling_inputs.items() if hasattr(coupling_inputs, "items") else []
+    coupling_output_name = next(
+        (
+            str(name)
+            for name, ci in _ci_items
+            if str(name) != "local_coupling" and not getattr(ci, "local", False)
+        ),
+        "c_pop0",
+    )
+
     # Coupling metadata
     coupling_meta = getattr(experiment, "coupling", None)
     coupling_params = {}
@@ -3002,6 +3065,7 @@ def build_lems_context(experiment):
         dvs=dvs,
         events=events,
         coupling_inputs=coupling_inputs,
+        coupling_output_name=coupling_output_name,
         coupling_meta=coupling_meta,
         coupling_params=coupling_params,
         coupling_pre_rhs=coupling_pre_rhs,
@@ -3101,9 +3165,11 @@ def build_lems_context(experiment):
             ct_needs_sec = ct_time_scale != "s"
 
             def ct_lems_dim(u):
+                """Return the LEMS dimension name for a cell ComponentType unit."""
                 return unit_to_lems_dimension(u)
 
             def ct_lems_sym_fn(u):
+                """Return the LEMS unit symbol for a cell ComponentType value."""
                 return unit_to_lems_symbol(u)
 
             cell_contexts[ct_name] = {
@@ -3163,9 +3229,11 @@ def build_lems_context(experiment):
                 syn_needs_sec = True  # synapse CTs always need SEC
 
                 def syn_lems_dim(u):
+                    """Return the LEMS dimension name for a synapse ComponentType unit."""
                     return unit_to_lems_dimension(u)
 
                 def syn_lems_sym_fn(u):
+                    """Return the LEMS unit symbol for a synapse ComponentType value."""
                     return unit_to_lems_symbol(u)
 
                 cell_contexts[ct_name] = {

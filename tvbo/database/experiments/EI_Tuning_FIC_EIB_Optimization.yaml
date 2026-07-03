@@ -116,11 +116,22 @@ dynamics:
 
     # --- DERIVED VARIABLES ---
   derived_variables:
+        # Shared NMDA-scaled intermediates (kept explicit so the generated dfun
+        # computes J_N*S_e and J_N*c_ffi once, matching the reference association).
+    J_N_S_e:
+      label: "NMDA-scaled excitatory gating"
+      equation:
+        rhs: "J_N * S_e"
+    J_N_c_ffi:
+      label: "NMDA-scaled feedforward inhibition"
+      equation:
+        rhs: "J_N * c_ffi"
+
         # Excitatory population input and transfer function
     x_e_pre:
       label: "Excitatory pre-activation"
       equation:
-        rhs: "w_p * J_N * S_e - J_i * S_i + W_e * I_o + J_N * c_lre + I_ext"
+        rhs: "w_p * J_N_S_e - J_i * S_i + W_e * I_o + J_N * c_lre + I_ext"
     x_e:
       label: "Excitatory activation"
       equation:
@@ -135,7 +146,7 @@ dynamics:
     x_i_pre:
       label: "Inhibitory pre-activation"
       equation:
-        rhs: "J_N * S_e - S_i + W_i * I_o + lamda * J_N * c_ffi"
+        rhs: "J_N_S_e - S_i + W_i * I_o + lamda * J_N_c_ffi"
     x_i:
       label: "Inhibitory activation"
       equation:
@@ -156,6 +167,7 @@ dynamics:
       domain:
         lo: 0.0
         hi: 1.0
+        enforce: clamp
       description: "Fraction of open NMDA channels (excitatory)"
       coupling_variable: true
       noise:
@@ -172,6 +184,7 @@ dynamics:
       domain:
         lo: 0.0
         hi: 1.0
+        enforce: clamp
       description: "Fraction of open NMDA channels (inhibitory)"
 
     # --- COUPLING INPUTS ---
@@ -272,22 +285,36 @@ functions:
           value: 0.4
           description: "Feedback time constant (seconds)"
     arguments:
-      - name: duration
+      duration:
         value: 20000.0
         description: "HRF kernel duration in ms"
 
-  prepend_history:
-    description: |
-      Prepend transient history to data for convolution warmup.
-      Concatenates last K samples of history before data along axis 0.
-    equation:
-      rhs: concatenate(history, data, 0)
-      description: "output = concat([history[-K:], data], axis=0)"
+  temporal_average:
+    description: >
+      Downsample by averaging over non-overlapping windows of `period_samples`
+      samples (centered indices, t0-independent) — reproduces tvboptim
+      TemporalAverage exactly.
+    source_code: "jax.vmap(lambda _i: jnp.mean(jax.lax.dynamic_slice(data, (_i,) + (0,) * (data.ndim - 1), (period_samples,) + data.shape[1:]), axis=0))((jnp.arange(data.shape[0]) + 1)[::period_samples])[: jnp.arange((period_samples - 2) // 2, data.shape[0], period_samples).shape[0]]"
     arguments:
-      - name: data
-        description: "Input time series (T_d x n)"
-      - name: history
-        description: "Transient history data, already sliced to last K samples"
+      data:
+        description: "Input time series (time, nodes)"
+      period_samples:
+        value: 1
+        description: "Samples per window = round(downsample_period / dt)"
+
+  prepend_history:
+    description: >
+      Fit the (downsampled) transient history to one kernel length and prepend it,
+      zero-padding at the front when shorter — matches HRFBold._process_history.
+    source_code: "jnp.concatenate([(jnp.vstack([jnp.zeros((kernel_samples - history.shape[0],) + history.shape[1:], history.dtype), history]) if history.shape[0] < kernel_samples else history[-kernel_samples:]), data], axis=0)"
+    arguments:
+      data:
+        description: "Downsampled input time series"
+      history:
+        description: "Downsampled transient history data"
+      kernel_samples:
+        value: 5000
+        description: "Kernel support = ceil(kernel_duration / downsample_period)"
 
   volterra_transform:
     description: |
@@ -304,18 +331,18 @@ functions:
           value: 0.02
           description: "Resting blood volume fraction"
     arguments:
-      - name: data
+      data:
         description: "Input neural activity data"
 
   subsample_bold:
-    description: |
-      Subsample time series to match BOLD TR.
-      Selects every s-th sample from input.
-    source_code: "data[::s]"
+    description: >
+      Sample at the end of each BOLD TR: indices arange(s, N, s), anchored at the
+      first full TR (index 0, the zero-padded warm-up, is skipped), uncapped.
+    source_code: "data[s::s]"
     arguments:
-      - name: data
+      data:
         description: "Input time series (T x n)"
-      - name: s
+      s:
         value: 180
         description: "Subsample factor (TR/dt = 720/4 = 180)"
 
@@ -329,11 +356,11 @@ functions:
       rhs: sqrt(Sum((a[i,j] - b[i,j])**2, (j, 0, m-1)) / m)
       description: "RMSE_i = sqrt(1/m * sum_j((a_ij - b_ij)^2))"
     arguments:
-      - name: a
+      a:
         description: "First matrix (n x m)"
-      - name: b
+      b:
         description: "Second matrix (n x m)"
-      - name: m
+      m:
         description: "Number of columns (for normalization)"
 
   correlation:
@@ -344,11 +371,11 @@ functions:
       rhs: Sum((x[t] - mean(x))*(y[t] - mean(y)), (t, 0, T-1)) / (sqrt(Sum((x[t] - mean(x))**2, (t, 0, T-1))) * sqrt(Sum((y[t] - mean(y))**2, (t, 0, T-1))))
       description: "ρ = Σ_t(x_t - x̄)(y_t - ȳ) / (σ_x * σ_y)"
     arguments:
-      - name: x
+      x:
         description: "First vector (length T)"
-      - name: y
+      y:
         description: "Second vector (length T)"
-      - name: T
+      T:
         description: "Vector length"
 
   fc_corr:
@@ -356,13 +383,12 @@ functions:
       Correlation between two FC matrices (flattened).
       Measures similarity between predicted and target functional connectivity.
     equation:
-      rhs: Sum((A[i,j] - mean(A))*(B[i,j] - mean(B)), (i, 0, N_nodes-1), (j, 0, N_nodes-1)) / (sqrt(Sum((A[i,j] - mean(A))**2, (i, 0, N_nodes-1), (j, 0, N_nodes-1))) * sqrt(Sum((B[i,j] - mean(B))**2,
-        (i, 0, N_nodes-1), (j, 0, N_nodes-1))))
+      rhs: Sum((A[i,j] - mean(A))*(B[i,j] - mean(B)), (i, 0, N_nodes-1), (j, 0, N_nodes-1)) / (sqrt(Sum((A[i,j] - mean(A))**2, (i, 0, N_nodes-1), (j, 0, N_nodes-1))) * sqrt(Sum((B[i,j] - mean(B))**2, (i, 0, N_nodes-1), (j, 0, N_nodes-1))))
       description: "ρ(A, B) = correlation between flattened matrices"
     arguments:
-      - name: A
+      A:
         description: "First FC matrix (N_nodes x N_nodes)"
-      - name: B
+      B:
         description: "Second FC matrix (N_nodes x N_nodes)"
 
   fc_rmse:
@@ -373,9 +399,9 @@ functions:
       rhs: sqrt(Sum((A[i,j] - B[i,j])**2, (i, 0, N_nodes-1), (j, 0, N_nodes-1)) / (N_nodes*N_nodes))
       description: "RMSE(A, B) = sqrt(mean((A - B)^2))"
     arguments:
-      - name: A
+      A:
         description: "First FC matrix (N_nodes x N_nodes)"
-      - name: B
+      B:
         description: "Second FC matrix (N_nodes x N_nodes)"
 
   compute_fc:
@@ -387,13 +413,13 @@ functions:
       rhs: Sum((X[t,i] - mean_i)*(X[t,j] - mean_j), (t, 0, T-1)) / (sqrt(Sum((X[t,i] - mean_i)**2, (t, 0, T-1))) * sqrt(Sum((X[t,j] - mean_j)**2, (t, 0, T-1))))
       description: "FC[i,j] = ρ(X[:,i], X[:,j]) with FC[i,i] = 0"
     arguments:
-      - name: X
+      X:
         description: "Time series matrix (T x n) - time by nodes"
-      - name: T
+      T:
         description: "Number of time points"
-      - name: mean_i
+      mean_i:
         description: "Mean of time series at node i: (1/T)*Σ_t X[t,i]"
-      - name: mean_j
+      mean_j:
         description: "Mean of time series at node j: (1/T)*Σ_t X[t,j]"
 
   mean_activity:
@@ -404,9 +430,9 @@ functions:
       rhs: Sum(X[t,i], (t, 0, T-1)) / T
       description: "mean_i = (1/T) * Σ_t X[t,i]"
     arguments:
-      - name: X
+      X:
         description: "Time series data (T x n) for one state variable"
-      - name: T
+      T:
         description: "Number of time points"
 
   FIC_update_rule:
@@ -419,16 +445,16 @@ functions:
       rhs: J_i[k] + eta * mean_S_i[k] * (mean_S_e[k] - target)
       description: "J_i[k] += η * S_i[k] * (S_e[k] - target)"
     arguments:
-      - name: J_i
+      J_i:
         description: "Current inhibitory weights (per node)"
-      - name: mean_S_e
+      mean_S_e:
         description: "Mean excitatory activity (per node)"
-      - name: mean_S_i
+      mean_S_i:
         description: "Mean inhibitory activity (per node)"
-      - name: eta
+      eta:
         value: 0.1
         description: "FIC learning rate"
-      - name: target
+      target:
         value: 0.25
         description: "Target excitatory activity"
 
@@ -441,13 +467,13 @@ functions:
       rhs: wLRE[i,k] + eta * (fc_target[i,k] - fc[i,k]) * sqrt(Sum((fc_target[i,j] - fc[i,j])**2, (j, 0, N_nodes-1)) / N_nodes)
       description: "wLRE[i,k] += η * (T[i,k] - P[i,k]) * RMSE_i"
     arguments:
-      - name: wLRE
+      wLRE:
         description: "Current LRE weights matrix (N_nodes x N_nodes)"
-      - name: fc_target
+      fc_target:
         description: "Target FC matrix (N_nodes x N_nodes)"
-      - name: fc
+      fc:
         description: "Predicted FC matrix (N_nodes x N_nodes)"
-      - name: eta
+      eta:
         value: 0.005
         description: "EIB learning rate"
 
@@ -460,13 +486,13 @@ functions:
       rhs: wFFI[i,k] - eta * (fc_target[i,k] - fc[i,k]) * sqrt(Sum((fc_target[i,j] - fc[i,j])**2, (j, 0, N_nodes-1)) / N_nodes)
       description: "wFFI[i,k] -= η * (T[i,k] - P[i,k]) * RMSE_i"
     arguments:
-      - name: wFFI
+      wFFI:
         description: "Current FFI weights matrix (N_nodes x N_nodes)"
-      - name: fc_target
+      fc_target:
         description: "Target FC matrix (N_nodes x N_nodes)"
-      - name: fc
+      fc:
         description: "Predicted FC matrix (N_nodes x N_nodes)"
-      - name: eta
+      eta:
         value: 0.005
         description: "EIB learning rate"
 
@@ -480,13 +506,13 @@ functions:
       rhs: sqrt(Sum((fc_pred[i,j] - fc_target[i,j])**2, (i, 0, N_nodes-1), (j, 0, N_nodes-1)) / (N_nodes*N_nodes)) + Sum((mean_activity[k] - target_activity)**2, (k, 0, N_nodes-1)) / N_nodes
       description: "L = RMSE(FC) + MSE(activity deviation)"
     arguments:
-      - name: fc_pred
+      fc_pred:
         description: "Predicted FC matrix (N_nodes x N_nodes)"
-      - name: fc_target
+      fc_target:
         description: "Target empirical FC matrix (N_nodes x N_nodes)"
-      - name: mean_activity
+      mean_activity:
         description: "Mean excitatory activity per region (N_nodes,)"
-      - name: target_activity
+      target_activity:
         value: 0.25
         description: "Target excitatory activity for FIC"
 
@@ -497,20 +523,37 @@ observations:
   bold:
     label: "Simulated BOLD Signal"
     description: "BOLD signal from hemodynamic response function"
-    source: S_e
+    source: [S_e]
     period: 720.0
     pipeline:
             # HRF kernel (precomputed once)
       - function: hrf_kernel
 
-            # Prepend transient history for convolution warm-up
-            # Original: jnp.vstack([history[-kernel_samples:], ys_downsampled])
+            # Downsample neural activity (and transient history) to BOLD grid
+      - output: downsampled_data
+        function: temporal_average
+        arguments:
+          data:
+            value: integration.result
+          period_samples:
+            value: 1
+      - output: downsampled_history
+        function: temporal_average
+        arguments:
+          data:
+            value: integration.transient
+          period_samples:
+            value: 1
+
+            # Prepend transient history (zero-padded to one kernel length)
       - function: prepend_history
         arguments:
-          - name: data
-            value: integration.result
-          - name: history
-            value: integration.transient
+          data:
+            value: downsampled_data
+          history:
+            value: downsampled_history
+          kernel_samples:
+            value: 5000
 
             # Convolve with HRF kernel
             # Original: jax.vmap(jax.vmap(fftconvolve))(ys_with_history)
@@ -520,105 +563,101 @@ observations:
           name: fftconvolve
         apply_on_dimension: node
         arguments:
-          - name: in1
+          in1:
             value: prepend_history
-          - name: in2
+          in2:
             value: hrf_kernel
-          - name: mode
+          mode:
             value: valid
 
             # Volterra transform: k_1 * V_0 * (bold - 1.0)
       - function: volterra_transform
         arguments:
-          - name: data
+          data:
             value: bold_convolve
 
             # Subsample to BOLD TR (720ms / 4ms = 180)
       - function: subsample_bold
         arguments:
-          - name: data
+          data:
             value: volterra_transform
 
   mean_S_e:
     label: "Mean Excitatory Activity"
     description: "Mean S_e over simulation window (for FIC algorithms)"
-    source: S_e
+    source: [S_e]
     aggregation: mean
 
   mean_S_e_final:
     label: "Mean Excitatory Activity (Final 500 Timesteps)"
     description: "Mean S_e over final 500 timesteps (for gradient optimization loss)"
-    source: S_e
+    source: [S_e]
     aggregation: mean
     tail_samples: 500
 
   mean_S_i:
     label: "Mean Inhibitory Activity"
     description: "Mean S_i over simulation window (for FIC)"
-    source: S_i
+    source: [S_i]
     aggregation: mean
 
   fc_target:
     label: "Empirical Functional Connectivity"
     description: "Target FC matrix from network observations (loaded from BIDS)"
-    source: network.observations.BoldCorrelation
-
-# =============================================================================
-# DERIVED OBSERVATIONS: Computed from other observations
-# =============================================================================
-derived_observations:
+    source: [network.observations.BoldCorrelation]
+  # === Derived observations (computed from other observations) ===
   fc:
     label: "Simulated Functional Connectivity (Post-Tuning)"
     description: "Pearson correlation matrix from BOLD time series (skip_t=20 for post-tuning evaluation)"
-    source_observations:
+    source:
       - bold
     pipeline:
       - callable:
           name: compute_fc
           module: tvboptim.observations.observation
         arguments:
-          - name: timeseries
+          timeseries:
             value: bold
-          - name: skip_t
+          skip_t:
             value: 20
             description: "Skip first 20 TRs for transient removal in post-tuning"
 
   fc_inloop:
     label: "Simulated Functional Connectivity (In-Loop)"
     description: "FC computed on sliding window without transient skip (for algorithm in-loop)"
-    source_observations:
+    source:
       - bold
     pipeline:
       - callable:
           name: compute_fc
           module: tvboptim.observations.observation
         arguments:
-          - name: timeseries
+          timeseries:
             value: bold
-          - name: skip_t
+          skip_t:
             value: 0
             description: "No skip for in-loop FC (sliding window already handles transient)"
 
   fc_gradient:
     label: "Simulated FC for Gradient Optimization"
     description: "FC computation for gradient optimization (skip_t=30 as in original)"
-    source_observations:
+    source:
       - bold
     pipeline:
       - callable:
           name: compute_fc
           module: tvboptim.observations.observation
         arguments:
-          - name: timeseries
+          timeseries:
             value: bold
-          - name: skip_t
+          skip_t:
             value: 30
             description: "Skip first 30 TRs as in original gradient optimization"
 
   fc_corr:
     label: "FC Correlation with Target"
     description: "Pearson correlation between simulated FC and empirical FC target"
-    source_observations:
+    source:
       - fc
       - fc_target
     pipeline:
@@ -626,15 +665,15 @@ derived_observations:
           name: fc_corr
           module: tvboptim.observations.observation
         arguments:
-          - name: A
+          A:
             value: fc
-          - name: B
+          B:
             value: fc_target
 
   fc_rmse:
     label: "FC RMSE with Target"
     description: "Root mean squared error between simulated FC and empirical FC target"
-    source_observations:
+    source:
       - fc
       - fc_target
     pipeline:
@@ -642,9 +681,9 @@ derived_observations:
           name: rmse
           module: tvboptim.observations.observation
         arguments:
-          - name: A
+          A:
             value: fc
-          - name: B
+          B:
             value: fc_target
 
 # =============================================================================
@@ -733,15 +772,15 @@ algorithms:
     functions:
       - function: fc_corr
         arguments:
-          - name: A
+          A:
             value: fc_inloop
-          - name: B
+          B:
             value: fc_target
       - function: fc_rmse
         arguments:
-          - name: A
+          A:
             value: fc_inloop
-          - name: B
+          B:
             value: fc_target
     hyperparameters:
       - name: eta
@@ -772,29 +811,29 @@ optimizations:
     loss:
       function: combined_loss
       arguments:
-        - name: fc_pred
+        fc_pred:
           value: observations.fc_gradient.data
           description: "Predicted functional connectivity from simulation (skip_t=30)"
-        - name: fc_target
+        fc_target:
           value: observations.fc_target.data
           description: "Empirical functional connectivity matrix from network observations"
-        - name: mean_activity
+        mean_activity:
           value: observations.mean_S_e_final.data
           description: "Mean excitatory activity over final 500 timesteps"
-        - name: target_activity
+        target_activity:
           value: 0.25
           description: "Target excitatory activity for FIC"
 
     free_parameters:
-          - parameter: ReducedWongWangEIB.J_i
-            heterogeneous: true
-            shape: "(n_nodes,)"
-          - parameter: ReducedWongWangEIB.wLRE
-            heterogeneous: true
-            shape: "(n_nodes, n_nodes)"
-          - parameter: ReducedWongWangEIB.wFFI
-            heterogeneous: true
-            shape: "(n_nodes, n_nodes)"
+      - parameter: ReducedWongWangEIB.J_i
+        heterogeneous: true
+        shape: "(n_nodes,)"
+      - parameter: ReducedWongWangEIB.wLRE
+        heterogeneous: true
+        shape: "(n_nodes, n_nodes)"
+      - parameter: ReducedWongWangEIB.wFFI
+        heterogeneous: true
+        shape: "(n_nodes, n_nodes)"
 
     algorithm: adamaxw
     learning_rate: 0.033
@@ -814,5 +853,4 @@ execution:
 references:
   - "Schirner, M., Deco, G., & Ritter, P. (2023). Learning how network structure shapes decision-making for bio-inspired computing. Nature Communications, 14(1), Article 1."
   - "Wong, K.-F., & Wang, X.-J. (2006). A recurrent network mechanism of time integration in perceptual decisions. J Neurosci, 26:1314-1328."
-  - "Deco, G., Ponce-Alvarez, A., Mantini, D., Romani, G.L., Hagmann, P., & Corbetta, M. (2013). Resting-state functional connectivity emerges from structurally and dynamically shaped slow linear fluctuations.
-    J Neurosci, 33(27):11239-11252."
+  - "Deco, G., Ponce-Alvarez, A., Mantini, D., Romani, G.L., Hagmann, P., & Corbetta, M. (2013). Resting-state functional connectivity emerges from structurally and dynamically shaped slow linear fluctuations. J Neurosci, 33(27):11239-11252."

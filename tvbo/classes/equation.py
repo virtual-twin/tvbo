@@ -58,6 +58,17 @@ E = sp.symbols("E")  # TODO: not used
 
 
 def add_spaces_around_operators(expression):
+    """Insert surrounding spaces around binary arithmetic operators in a string.
+
+    Wraps each `+`, `-`, `*`, `/` or `%` operator in single spaces so the
+    expression parses cleanly, while leaving the `**` power operator untouched.
+
+    Args:
+        expression: The equation string to normalise.
+
+    Returns:
+        The expression with spaces added around single-character operators.
+    """
     # Pattern explanation:
     # (?<!\*) : Negative lookbehind to ensure there's no * before the current character
     # [\+\-\*/%] : Matches any of the operators +, -, *, /, %
@@ -67,6 +78,22 @@ def add_spaces_around_operators(expression):
 
 
 def unify_coupling_terms(eq_string):
+    """Rewrite TVB-style coupling terms to the legacy `c_pop*` naming.
+
+    Replaces indexed `coupling[i]` references and `local_range_coupling` with
+    the legacy `c_pop0` / `c_pop1` / `local_coupling` names used elsewhere in the
+    equation pipeline.
+
+    Args:
+        eq_string: The equation string to normalise.
+
+    Returns:
+        The equation string with coupling terms renamed.
+    """
+    # TODO: normalises TVB-imported equations (coupling[i]) to the legacy
+    # c_pop0/c_pop1 names. The model database now uses c_glob/c_glob0/…, so this
+    # should eventually emit c_glob* (the single-vs-indexed choice needs the
+    # model's coupling arity, not available at this string-rewrite stage).
     repl_dict = {
         "coupling[0]": "c_pop0",
         "coupling[0, :]": "c_pop0",
@@ -174,6 +201,26 @@ def convert_numpy_where_to_sympy(python_string):
 
 
 def sympify_value(v, acronym="", evaluate=False):
+    """Parse a metadata equation's value into a SymPy expression.
+
+    Collects the equation's referenced functions, parameters and state variables
+    as symbols (stripping `acronym` from their labels), normalises NumPy prefixes
+    and coupling terms, adds operator spacing and parses the result. A
+    `where(...)` value is converted to a SymPy `Piecewise` instead.
+
+    Args:
+        v: A metadata equation individual exposing `has_function`,
+            `has_parameter`, `has_state_variable`, `value` and `label`.
+        acronym: Model acronym to strip from the collected symbol names.
+        evaluate: Accepted for API symmetry; the expression is always parsed
+            unevaluated.
+
+    Returns:
+        The parsed SymPy expression.
+
+    Raises:
+        ValueError: If the equation string cannot be parsed.
+    """
     eq_parameters = v.has_function + v.has_parameter + v.has_state_variable
     # if len(eq_parameters) == 0:
     # print('No parameters found for "{}"'.format(v.label.first()))
@@ -223,6 +270,17 @@ def sympify_value(v, acronym="", evaluate=False):
 
 
 def replace_H(eq_dict):
+    """Rename the `H` symbol to `h_uc` across a dictionary of equations.
+
+    Avoids clashes with SymPy's built-in `H` by substituting the uppercase `H`
+    symbol (and any `"H"` dictionary key) with `h_uc`.
+
+    Args:
+        eq_dict: Mapping of equation names to SymPy expressions.
+
+    Returns:
+        A new mapping with `H` replaced by `h_uc` in both keys and expressions.
+    """
     hack_functions = {}
     H, h_uc = symbols("H h_uc")
     for k, v in eq_dict.items():
@@ -234,6 +292,21 @@ def replace_H(eq_dict):
 
 
 def rename_uppercase_variables(input_equation):
+    """Rename free symbols that start with an uppercase letter to a `*_uc` form.
+
+    Each symbol whose name begins with an uppercase letter is replaced by its
+    lowercased name suffixed with `_uc`; other symbols are left unchanged. A
+    string input is first parsed via `sympify_value`.
+
+    Args:
+        input_equation: A SymPy expression, or a string to be parsed.
+
+    Returns:
+        The expression with uppercase-leading symbols renamed.
+
+    Raises:
+        ValueError: If a string input cannot be converted to a SymPy expression.
+    """
     if not isinstance(input_equation, Basic):
         try:
             sympy_equation = sympify_value(input_equation)
@@ -268,6 +341,20 @@ def set_specific_symbols_to_zero(
     equation_str,
     symbols_to_zero=coupling_variables,
 ):
+    """Substitute the given symbols with zero in an equation string.
+
+    Parses `equation_str` and replaces every symbol named in `symbols_to_zero`
+    with `0`, for example to drop coupling contributions for isolated-node
+    dynamics.
+
+    Args:
+        equation_str: The equation to parse and modify.
+        symbols_to_zero: Names of the symbols to set to zero; defaults to the
+            module-level coupling variable names.
+
+    Returns:
+        The SymPy expression with the listed symbols replaced by zero.
+    """
     # Convert the equation string to a SymPy expression
     equation = parse_expr(equation_str, evaluate=False)
 
@@ -284,6 +371,18 @@ def set_specific_symbols_to_zero(
 
 
 def dependency_tree(equations):
+    """Build a directed dependency graph from a list of equations.
+
+    For each equation, the right-hand-side free symbols are treated as
+    dependencies of the left-hand side, producing a `networkx.DiGraph` with an
+    edge from each source symbol to its target.
+
+    Args:
+        equations: An iterable of SymPy equations exposing `lhs` and `rhs`.
+
+    Returns:
+        A `networkx.DiGraph` whose edges point from dependencies to dependents.
+    """
     import networkx as nx
 
     dependencies = {}
@@ -349,6 +448,17 @@ def topological_sort(graph):
 
 
 def sort_equations_by_dependencies(equations):
+    """Return equations ordered so each is defined before it is used.
+
+    Builds a dependency graph over the equation names, topologically sorts it and
+    returns a new dictionary in dependency-respecting order.
+
+    Args:
+        equations: Mapping of variable names to their expression strings.
+
+    Returns:
+        A new dictionary with the same items ordered by dependency.
+    """
     graph = build_dependency_graph(equations)
     sorted_vars = topological_sort(graph)
     sorted_vars.reverse()
@@ -359,6 +469,18 @@ def sort_equations_by_dependencies(equations):
 
 
 def replace_acronyms(key, cls):
+    """Strip model-acronym suffixes from a key.
+
+    Removes the `_<acronym>` suffix contributed by each neural-mass-model
+    ancestor of `cls`, yielding the bare variable name.
+
+    Args:
+        key: The name to strip acronym suffixes from.
+        cls: The ontology class whose model ancestors provide the acronyms.
+
+    Returns:
+        The key with matching `_<acronym>` suffixes removed.
+    """
     for c in ontology.intersection(
         list(ontology.onto.NeuralMassModel.descendants()),
         list(cls.ancestors()),
@@ -371,6 +493,21 @@ def replace_acronyms(key, cls):
 
 
 def symbolic_model_functions(NMM, zero_coupling=False, **kwargs):
+    """Return the model's auxiliary functions as SymPy expressions.
+
+    Sympifies each non-derivative model function (skipping `numpy.exp`),
+    optionally zeroing coupling terms, strips the acronym and model-suffix
+    decorations from the names, and orders the result by inter-equation
+    dependency.
+
+    Args:
+        NMM: The neural-mass model identifier or ontology individual.
+        zero_coupling: If true, set coupling symbols to zero in each function.
+        **kwargs: Forwarded to `sympify_value` (e.g. `acronym`).
+
+    Returns:
+        A dependency-ordered mapping of function names to SymPy expressions.
+    """
     func_dict = dict()
     suffix = ontology.get_model_suffix(NMM)
     for k, v in ontology.get_model_functions(NMM).items():
@@ -391,6 +528,20 @@ def symbolic_model_functions(NMM, zero_coupling=False, **kwargs):
 
 
 def symbolic_differential_equations(NMM, zero_coupling=False, **kwargs):
+    """Return the model's time-derivative equations as SymPy expressions.
+
+    Selects the model derivatives whose name contains `dot`, sympifies each
+    right-hand side, optionally zeroing coupling terms, and strips the model
+    suffix from the keys.
+
+    Args:
+        NMM: The neural-mass model identifier or ontology individual.
+        zero_coupling: If true, set coupling symbols to zero in each equation.
+        **kwargs: Forwarded to `sympify_value` (e.g. `acronym`).
+
+    Returns:
+        A mapping of derivative names to SymPy expressions.
+    """
     td_dict = dict()
     suffix = ontology.get_model_suffix(NMM)
     for k, v in ontology.get_model_derivatives(NMM).items():
@@ -405,6 +556,19 @@ def symbolic_differential_equations(NMM, zero_coupling=False, **kwargs):
 
 
 def symbolic_conditions(NMM, zero_coupling=False, **kwargs):
+    """Return the model's conditional expressions as SymPy expressions.
+
+    Sympifies each model conditional, optionally zeroing coupling terms, and
+    strips the acronym and model-suffix decorations from the names.
+
+    Args:
+        NMM: The neural-mass model identifier or ontology individual.
+        zero_coupling: If true, set coupling symbols to zero in each expression.
+        **kwargs: Forwarded to `sympify_value` (e.g. `acronym`).
+
+    Returns:
+        A mapping of conditional names to SymPy expressions.
+    """
     cond_dict = dict()
     suffix = ontology.get_model_suffix(NMM)
 
@@ -419,6 +583,20 @@ def symbolic_conditions(NMM, zero_coupling=False, **kwargs):
 
 
 def symbolic_topological_sort(equations):
+    """Order equation names so dependencies precede the equations that use them.
+
+    Builds a dependency graph from each expression's free symbols that also
+    appear as equation keys, then performs a Kahn topological sort.
+
+    Args:
+        equations: Mapping of variable names to SymPy expressions.
+
+    Returns:
+        A list of equation names in dependency-respecting order.
+
+    Raises:
+        ValueError: If the equations contain a circular dependency.
+    """
     graph = {k: set() for k in equations}
     for eq, expr in equations.items():
         for symbol in expr.free_symbols:
@@ -449,6 +627,19 @@ def symbolic_topological_sort(equations):
 
 
 def symbolic_model_equations(NMM, zero_coupling=False, **kwargs):
+    """Return all symbolic equations for a model in one mapping.
+
+    Merges the model's auxiliary functions, time-derivative equations and
+    conditionals into a single dictionary.
+
+    Args:
+        NMM: The neural-mass model identifier or ontology individual.
+        zero_coupling: If true, set coupling symbols to zero throughout.
+        **kwargs: Forwarded to `sympify_value` (e.g. `acronym`).
+
+    Returns:
+        A combined mapping of names to SymPy expressions.
+    """
     func_dict = symbolic_model_functions(NMM, zero_coupling=zero_coupling, **kwargs)
     td_dict = symbolic_differential_equations(NMM, zero_coupling=zero_coupling, **kwargs)
     cond_dict = symbolic_conditions(NMM, zero_coupling=zero_coupling, **kwargs)
@@ -456,7 +647,33 @@ def symbolic_model_equations(NMM, zero_coupling=False, **kwargs):
 
 
 def sub_equation(eq, model):
+    """Substitute an equation's symbols with their ontology display symbols.
+
+    For each free symbol, looks up the corresponding model variable in the
+    ontology (keeping coupling terms by their bare name) and replaces it with the
+    variable's declared symbol, also applying the canonical coupling and
+    conditional renamings.
+
+    Args:
+        eq: The SymPy expression to rewrite.
+        model: The model identifier used to resolve variable symbols.
+
+    Returns:
+        The expression with symbols substituted for their display symbols.
+
+    Raises:
+        ValueError: If a symbol cannot be resolved to a model variable.
+    """
     acr = ontology.get_model_acronym(model)
+    # Coupling inputs are looked up by their bare name (no model-acronym suffix).
+    # Derive them from the model so any coupling naming (c_glob, c_pop, …) works;
+    # the legacy literals are kept as a defensive fallback.
+    coupling_keep = set(ontology.get_model_coupling_terms(model).keys()) | {
+        "local_coupling",
+        "c_pop0",
+        "c_pop1",
+        "c_pop2",
+    }
     sub = {
         "local_coupling": "c_loc",
         "c_pop0": "c_glob0",
@@ -465,7 +682,7 @@ def sub_equation(eq, model):
         "short_range": "c_short",
     }
     for s in eq.free_symbols:
-        name = s.name + "_" + acr if s.name not in ["local_coupling", "c_pop0", "c_pop1"] else s.name
+        name = s.name + "_" + acr if s.name not in coupling_keep else s.name
         # print(name)
         c_rhs = ontology.onto[name]
         if isinstance(c_rhs, type(None)):
@@ -488,6 +705,19 @@ def sub_equation(eq, model):
 
 
 def substitute_function_in_state_equations(sv_eqs, funcs):
+    """Inline auxiliary function definitions into state-variable equations.
+
+    For each state-variable equation, replaces any function symbol that appears
+    in it with the function's defining expression.
+
+    Args:
+        sv_eqs: Mapping of state-variable names to SymPy expressions; mutated in
+            place.
+        funcs: Mapping of function names to their defining SymPy expressions.
+
+    Returns:
+        The updated `sv_eqs` mapping with functions inlined.
+    """
     for sv, sv_eq in sv_eqs.items():
         subs = dict()
         for f, f_eq in funcs.items():
@@ -504,6 +734,25 @@ def substitute_function_in_state_equations(sv_eqs, funcs):
 # Latex equations   #
 ######################
 def get_latex_equation(model, func_dict="all", mul_symbol="dot"):
+    """Render a model's equations as a list of LaTeX strings.
+
+    Resolves the left- and right-hand-side display symbols for each equation from
+    the ontology, applies the canonical coupling and conditional renamings, and
+    formats `lhs = rhs` in LaTeX in topological order.
+
+    Args:
+        model: The model identifier whose equations are rendered.
+        func_dict: The equations to render. Pass the string `"all"` to derive
+            them from the model, or a mapping of names to SymPy expressions.
+        mul_symbol: Multiplication symbol passed to SymPy's `latex` renderer.
+
+    Returns:
+        A list of LaTeX equation strings.
+
+    Raises:
+        ValueError: If a left- or right-hand-side variable cannot be found in the
+            model.
+    """
     if func_dict == "all":
         func_dict = symbolic_model_equations(model)
     sorting = symbolic_topological_sort(func_dict)
@@ -511,6 +760,13 @@ def get_latex_equation(model, func_dict="all", mul_symbol="dot"):
 
     acr = ontology.get_model_acronym(model)
     latex_equations = list()
+    # Coupling inputs are looked up by their bare name (no model-acronym suffix).
+    coupling_keep = set(ontology.get_model_coupling_terms(model).keys()) | {
+        "local_coupling",
+        "c_pop0",
+        "c_pop1",
+        "c_pop2",
+    }
     sub = {
         "local_coupling": "c_loc",
         "c_pop0": "c_glob0",
@@ -541,7 +797,7 @@ def get_latex_equation(model, func_dict="all", mul_symbol="dot"):
         lhs = lhs.subs(sub)
 
         for s in v.free_symbols:
-            name = s.name + "_" + acr if s.name not in ["local_coupling", "c_pop0", "c_pop1"] else s.name
+            name = s.name + "_" + acr if s.name not in coupling_keep else s.name
             # print(name)
             c_rhs = ontology.onto[name]
             if isinstance(c_rhs, type(None)):
@@ -578,6 +834,27 @@ def render_latex_equations(
     markdown=False,
     subs=None,
 ):
+    """Render a model's full set of equations as a single LaTeX/Markdown string.
+
+    For a neural-mass model, renders the differential equations together with the
+    auxiliary functions and conditions, joined by `separator`. For a coupling
+    function, renders the global coupling expression instead.
+
+    Args:
+        model: The model or coupling-function identifier to render.
+        odes_first: If true, place the differential equations before the
+            auxiliary block.
+        evaluate: Passed through when sympifying the differential equations.
+        separator: LaTeX/Markdown text inserted between the ODEs and the
+            auxiliary block.
+        markdown: If true, join lines with blank lines instead of a LaTeX line
+            break.
+        subs: Optional substitutions applied to the auxiliary equations before
+            rendering.
+
+    Returns:
+        The rendered LaTeX (or Markdown) string for the model.
+    """
     NMM = ontology.get_model(model, verbose=False)
     CF = ontology.get_coupling_function(model, verbose=False)
     # print(NMM, CF)
@@ -619,6 +896,16 @@ def render_latex_equations(
 
 
 def update_mathematical_relationships(model):
+    """Refresh the ontology relationships implied by a model's equations.
+
+    Walks every symbolic equation of the model and, for each free symbol, records
+    the parameter / state-variable / derivative relationship between the symbol's
+    class and the equation's class in the ontology. Equations that are `None` or
+    not valid SymPy expressions are skipped with a message.
+
+    Args:
+        model: The model identifier whose relationships are updated.
+    """
     for k, v in symbolic_model_equations(model).items():
         k_cls = ontology.find_variables(k, model)
         if k_cls is None:
@@ -643,6 +930,18 @@ def update_mathematical_relationships(model):
 
 
 def update_class_relationships(s_cls, k_cls):
+    """Append the ontology `is_a` relations linking a variable to its equation.
+
+    Within the ontology world, adds `is_parameter_in` / `is_state_variable_of` /
+    `has_derivative` / `is_derivative_of` axioms between the source variable class
+    and the equation class where they do not already exist, then de-duplicates
+    each class's `is_a` list.
+
+    Args:
+        s_cls: The ontology class of the source variable (parameter, function,
+            state variable, and similar).
+        k_cls: The ontology class of the equation the variable appears in.
+    """
     with ontology.onto:
         # Append relationships if they don't already exist
         if (
@@ -732,6 +1031,23 @@ def generate_global_coupling_function(pre_expr, post_expr, j_index_start=0):
 
 
 def topological_sort_equations(variable_dict, dependency_tree):
+    """Sort equations topologically according to a dependency graph.
+
+    Verifies the dependency graph is acyclic (raising with the offending cycle
+    when it is not) and returns the equations reordered so each variable follows
+    the variables it depends on.
+
+    Args:
+        variable_dict: Mapping of variable names to their equations.
+        dependency_tree: A `networkx.DiGraph` of variable dependencies; must be a
+            directed acyclic graph.
+
+    Returns:
+        A new dictionary of equations in topological order.
+
+    Raises:
+        ValueError: If the dependency graph contains a cycle.
+    """
     from networkx import (
         topological_sort,
         is_directed_acyclic_graph,
@@ -788,6 +1104,19 @@ def topological_sort_equations(variable_dict, dependency_tree):
 # Piecewise     #
 #################
 def conditionals2piecewise(metadata_equation):
+    """Convert a metadata equation's conditionals into a SymPy `Piecewise`.
+
+    Parses each conditional's expression and condition into `(expr, cond)` pairs
+    and appends a default branch using the equation's `rhs` (or `0` when absent)
+    guarded by `True`.
+
+    Args:
+        metadata_equation: A metadata equation exposing `conditionals` (each with
+            `expression` and `condition`) and an optional `rhs`.
+
+    Returns:
+        A SymPy `Piecewise` expression representing the conditional map.
+    """
 
     return Piecewise(
         *[

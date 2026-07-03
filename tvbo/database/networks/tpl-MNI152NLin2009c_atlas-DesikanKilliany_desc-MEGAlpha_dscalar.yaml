@@ -1,0 +1,125 @@
+tvbo_class: tvbo:Network
+schema_version: tvb-datamodel/0.7.0
+label: "Desikan-Killiany 68 cortical parcels with MEG alpha amplitudes per region"
+description: |
+  Per-region MEG alpha-band amplitude values aligned with the 68 cortical parcels
+  of the Desikan-Killiany atlas. Sourced from
+  tvb-ontology-optim-workshop/notebooks/data/{lh,rh}_megalpha_parc.csv.
+
+  The measure exhibits the canonical cortical-hierarchy gradient:
+    - unimodal sensory regions (pericalcarine, cuneus, lateraloccipital,
+      transversetemporal) score high  (~0.40)
+    - transmodal regions       (rostralanteriorcingulate, frontalpole,
+      temporalpole, medialorbitofrontal) score low (~0.15)
+
+  Used as a per-region cortical-gradient signal in experiments that need
+  to ground a hierarchy (e.g. reservoir-computing frequency-gradient
+  targets, JR-MEG peak-frequency optimisation). The values are
+  dimensionless normalised amplitudes; downstream consumers rescale
+  to a task-appropriate range (e.g. omega in Hz).
+
+descriptor: MEGAlpha
+observational_measures: [megalpha]
+structural_measures: []                            # no edges — this is a dscalar carrier
+number_of_nodes: 68
+distance_unit: mm
+time_unit: ms
+
+# Parcellation reference kept as a comment for grounding. We do NOT inline
+# `parcellation:` here because that would trigger atlas-based node generation
+# (87 entries including subcortical), and this dscalar carries values only
+# for the 68 cortical parcels. The atlas alignment is by node label
+# (`ctx-{lh,rh}-<region>`) and verified by the consumer.
+#
+# parcellation:
+#   atlas: { name: DesikanKilliany, coordinateSpace: MNI152NLin2009c }
+
+# -----------------------------------------------------------------------------
+# Per-region values. Ordering: all-left-hemisphere then all-right-hemisphere
+# (mirrors the DK atlas dseg.yaml convention; alphabetical within each hemi).
+# -----------------------------------------------------------------------------
+nodes:
+  # ---------------------------------------------------------------------------
+  # Left hemisphere (34 regions) — ids 0..33
+  # ---------------------------------------------------------------------------
+  - { id:  0, label: ctx-lh-bankssts,                  region: bankssts,                  parameters: { megalpha: { value: 0.33940002,  unit: dimensionless } } }
+  - { id:  1, label: ctx-lh-caudalanteriorcingulate,   region: caudalanteriorcingulate,   parameters: { megalpha: { value: 0.17210498,  unit: dimensionless } } }
+  - { id:  2, label: ctx-lh-caudalmiddlefrontal,       region: caudalmiddlefrontal,       parameters: { megalpha: { value: 0.21096417,  unit: dimensionless } } }
+  - { id:  3, label: ctx-lh-cuneus,                    region: cuneus,                    parameters: { megalpha: { value: 0.42327237,  unit: dimensionless } } }
+  - { id:  4, label: ctx-lh-entorhinal,                region: entorhinal,                parameters: { megalpha: { value: 0.20268749,  unit: dimensionless } } }
+  - { id:  5, label: ctx-lh-fusiform,                  region: fusiform,                  parameters: { megalpha: { value: 0.3271923,   unit: dimensionless } } }
+  - { id:  6, label: ctx-lh-inferiorparietal,          region: inferiorparietal,          parameters: { megalpha: { value: 0.36409962,  unit: dimensionless } } }
+  - { id:  7, label: ctx-lh-inferiortemporal,          region: inferiortemporal,          parameters: { megalpha: { value: 0.30679196,  unit: dimensionless } } }
+  - { id:  8, label: ctx-lh-isthmuscingulate,          region: isthmuscingulate,          parameters: { megalpha: { value: 0.26500952,  unit: dimensionless } } }
+  - { id:  9, label: ctx-lh-lateraloccipital,          region: lateraloccipital,          parameters: { megalpha: { value: 0.3838526,   unit: dimensionless } } }
+  - { id: 10, label: ctx-lh-lateralorbitofrontal,      region: lateralorbitofrontal,      parameters: { megalpha: { value: 0.21757728,  unit: dimensionless } } }
+  - { id: 11, label: ctx-lh-lingual,                   region: lingual,                   parameters: { megalpha: { value: 0.35500178,  unit: dimensionless } } }
+  - { id: 12, label: ctx-lh-medialorbitofrontal,       region: medialorbitofrontal,       parameters: { megalpha: { value: 0.1857318,   unit: dimensionless } } }
+  - { id: 13, label: ctx-lh-middletemporal,            region: middletemporal,            parameters: { megalpha: { value: 0.30817792,  unit: dimensionless } } }
+  - { id: 14, label: ctx-lh-parahippocampal,           region: parahippocampal,           parameters: { megalpha: { value: 0.318048,    unit: dimensionless } } }
+  - { id: 15, label: ctx-lh-paracentral,               region: paracentral,               parameters: { megalpha: { value: 0.29057974,  unit: dimensionless } } }
+  - { id: 16, label: ctx-lh-parsopercularis,           region: parsopercularis,           parameters: { megalpha: { value: 0.22726226,  unit: dimensionless } } }
+  - { id: 17, label: ctx-lh-parsorbitalis,             region: parsorbitalis,             parameters: { megalpha: { value: 0.205437,    unit: dimensionless } } }
+  - { id: 18, label: ctx-lh-parstriangularis,          region: parstriangularis,          parameters: { megalpha: { value: 0.21461688,  unit: dimensionless } } }
+  - { id: 19, label: ctx-lh-pericalcarine,             region: pericalcarine,             parameters: { megalpha: { value: 0.40054607,  unit: dimensionless } } }
+  - { id: 20, label: ctx-lh-postcentral,               region: postcentral,               parameters: { megalpha: { value: 0.31032804,  unit: dimensionless } } }
+  - { id: 21, label: ctx-lh-posteriorcingulate,        region: posteriorcingulate,        parameters: { megalpha: { value: 0.23263463,  unit: dimensionless } } }
+  - { id: 22, label: ctx-lh-precentral,                region: precentral,                parameters: { megalpha: { value: 0.26747593,  unit: dimensionless } } }
+  - { id: 23, label: ctx-lh-precuneus,                 region: precuneus,                 parameters: { megalpha: { value: 0.36445525,  unit: dimensionless } } }
+  - { id: 24, label: ctx-lh-rostralanteriorcingulate,  region: rostralanteriorcingulate,  parameters: { megalpha: { value: 0.14805126,  unit: dimensionless } } }
+  - { id: 25, label: ctx-lh-rostralmiddlefrontal,      region: rostralmiddlefrontal,      parameters: { megalpha: { value: 0.19185714,  unit: dimensionless } } }
+  - { id: 26, label: ctx-lh-superiorfrontal,           region: superiorfrontal,           parameters: { megalpha: { value: 0.20464197,  unit: dimensionless } } }
+  - { id: 27, label: ctx-lh-superiorparietal,          region: superiorparietal,          parameters: { megalpha: { value: 0.37183717,  unit: dimensionless } } }
+  - { id: 28, label: ctx-lh-superiortemporal,          region: superiortemporal,          parameters: { megalpha: { value: 0.30095902,  unit: dimensionless } } }
+  - { id: 29, label: ctx-lh-supramarginal,             region: supramarginal,             parameters: { megalpha: { value: 0.32715484,  unit: dimensionless } } }
+  - { id: 30, label: ctx-lh-frontalpole,               region: frontalpole,               parameters: { megalpha: { value: 0.18128875,  unit: dimensionless } } }
+  - { id: 31, label: ctx-lh-temporalpole,              region: temporalpole,              parameters: { megalpha: { value: 0.16658704,  unit: dimensionless } } }
+  - { id: 32, label: ctx-lh-transversetemporal,        region: transversetemporal,        parameters: { megalpha: { value: 0.3251972,   unit: dimensionless } } }
+  - { id: 33, label: ctx-lh-insula,                    region: insula,                    parameters: { megalpha: { value: 0.2672371,   unit: dimensionless } } }
+
+  # ---------------------------------------------------------------------------
+  # Right hemisphere (34 regions) — ids 34..67
+  # ---------------------------------------------------------------------------
+  - { id: 34, label: ctx-rh-bankssts,                  region: bankssts,                  parameters: { megalpha: { value: 0.33860522990398284, unit: dimensionless } } }
+  - { id: 35, label: ctx-rh-caudalanteriorcingulate,   region: caudalanteriorcingulate,   parameters: { megalpha: { value: 0.217242867362926,   unit: dimensionless } } }
+  - { id: 36, label: ctx-rh-caudalmiddlefrontal,       region: caudalmiddlefrontal,       parameters: { megalpha: { value: 0.20915781550053944,  unit: dimensionless } } }
+  - { id: 37, label: ctx-rh-cuneus,                    region: cuneus,                    parameters: { megalpha: { value: 0.4268686648944941,   unit: dimensionless } } }
+  - { id: 38, label: ctx-rh-entorhinal,                region: entorhinal,                parameters: { megalpha: { value: 0.27110407865443037,  unit: dimensionless } } }
+  - { id: 39, label: ctx-rh-fusiform,                  region: fusiform,                  parameters: { megalpha: { value: 0.32955605155458473,  unit: dimensionless } } }
+  - { id: 40, label: ctx-rh-inferiorparietal,          region: inferiorparietal,          parameters: { megalpha: { value: 0.363210433183154,    unit: dimensionless } } }
+  - { id: 41, label: ctx-rh-inferiortemporal,          region: inferiortemporal,          parameters: { megalpha: { value: 0.30750624252294234,  unit: dimensionless } } }
+  - { id: 42, label: ctx-rh-isthmuscingulate,          region: isthmuscingulate,          parameters: { megalpha: { value: 0.3056429551155288,   unit: dimensionless } } }
+  - { id: 43, label: ctx-rh-lateraloccipital,          region: lateraloccipital,          parameters: { megalpha: { value: 0.3848565261965327,   unit: dimensionless } } }
+  - { id: 44, label: ctx-rh-lateralorbitofrontal,      region: lateralorbitofrontal,      parameters: { megalpha: { value: 0.21821242002442845,  unit: dimensionless } } }
+  - { id: 45, label: ctx-rh-lingual,                   region: lingual,                   parameters: { megalpha: { value: 0.3570348219836009,   unit: dimensionless } } }
+  - { id: 46, label: ctx-rh-medialorbitofrontal,       region: medialorbitofrontal,       parameters: { megalpha: { value: 0.2020377229909042,   unit: dimensionless } } }
+  - { id: 47, label: ctx-rh-middletemporal,            region: middletemporal,            parameters: { megalpha: { value: 0.31117835396336124,  unit: dimensionless } } }
+  - { id: 48, label: ctx-rh-parahippocampal,           region: parahippocampal,           parameters: { megalpha: { value: 0.3186995072117082,   unit: dimensionless } } }
+  - { id: 49, label: ctx-rh-paracentral,               region: paracentral,               parameters: { megalpha: { value: 0.2911795764593629,   unit: dimensionless } } }
+  - { id: 50, label: ctx-rh-parsopercularis,           region: parsopercularis,           parameters: { megalpha: { value: 0.2271188454563853,   unit: dimensionless } } }
+  - { id: 51, label: ctx-rh-parsorbitalis,             region: parsorbitalis,             parameters: { megalpha: { value: 0.20493463463057424,  unit: dimensionless } } }
+  - { id: 52, label: ctx-rh-parstriangularis,          region: parstriangularis,          parameters: { megalpha: { value: 0.21444314467180678,  unit: dimensionless } } }
+  - { id: 53, label: ctx-rh-pericalcarine,             region: pericalcarine,             parameters: { megalpha: { value: 0.4031539820768123,   unit: dimensionless } } }
+  - { id: 54, label: ctx-rh-postcentral,               region: postcentral,               parameters: { megalpha: { value: 0.3090034087316347,   unit: dimensionless } } }
+  - { id: 55, label: ctx-rh-posteriorcingulate,        region: posteriorcingulate,        parameters: { megalpha: { value: 0.2643216004694747,   unit: dimensionless } } }
+  - { id: 56, label: ctx-rh-precentral,                region: precentral,                parameters: { megalpha: { value: 0.2664495160943267,   unit: dimensionless } } }
+  - { id: 57, label: ctx-rh-precuneus,                 region: precuneus,                 parameters: { megalpha: { value: 0.3632469338346798,   unit: dimensionless } } }
+  - { id: 58, label: ctx-rh-rostralanteriorcingulate,  region: rostralanteriorcingulate,  parameters: { megalpha: { value: 0.19281715125413115,  unit: dimensionless } } }
+  - { id: 59, label: ctx-rh-rostralmiddlefrontal,      region: rostralmiddlefrontal,      parameters: { megalpha: { value: 0.19215582453457228,  unit: dimensionless } } }
+  - { id: 60, label: ctx-rh-superiorfrontal,           region: superiorfrontal,           parameters: { megalpha: { value: 0.20166881908860987,  unit: dimensionless } } }
+  - { id: 61, label: ctx-rh-superiorparietal,          region: superiorparietal,          parameters: { megalpha: { value: 0.3732693064786571,   unit: dimensionless } } }
+  - { id: 62, label: ctx-rh-superiortemporal,          region: superiortemporal,          parameters: { megalpha: { value: 0.30611147850147324,  unit: dimensionless } } }
+  - { id: 63, label: ctx-rh-supramarginal,             region: supramarginal,             parameters: { megalpha: { value: 0.32571767454498385,  unit: dimensionless } } }
+  - { id: 64, label: ctx-rh-frontalpole,               region: frontalpole,               parameters: { megalpha: { value: 0.18247603110181607,  unit: dimensionless } } }
+  - { id: 65, label: ctx-rh-temporalpole,              region: temporalpole,              parameters: { megalpha: { value: 0.2265698696522512,   unit: dimensionless } } }
+  - { id: 66, label: ctx-rh-transversetemporal,        region: transversetemporal,        parameters: { megalpha: { value: 0.3250967701098067,   unit: dimensionless } } }
+  - { id: 67, label: ctx-rh-insula,                    region: insula,                    parameters: { megalpha: { value: 0.2762052267403877,   unit: dimensionless } } }
+
+# -----------------------------------------------------------------------------
+# Provenance
+# Source: tvb-ontology-optim-workshop/notebooks/data/{lh,rh}_megalpha_parc.csv
+# Per-region MEG alpha-band amplitudes averaged across vertices within each
+# DK parcel. LH-source file includes an 'unknown' row (medial wall, value
+# 0.0) which is excluded from this dscalar — the 68 cortical parcels of
+# DK68 are retained.
+# -----------------------------------------------------------------------------

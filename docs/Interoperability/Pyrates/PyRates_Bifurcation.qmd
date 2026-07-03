@@ -130,7 +130,7 @@ t_sols, t_cont = qif_auto.run(
 )
 
 # Plot time evolution
-qif_auto.plot_continuation('PAR(14)', 'U(1)', cont='time')
+qif_auto.plot_continuation('PAR(14)', 'r', cont='time')
 plt.xlabel('Time')
 plt.ylabel('r (firing rate)')
 plt.title('Time Evolution to Equilibrium')
@@ -146,7 +146,7 @@ Key parameters explained:
 - `UZR={14: 4.0}`: Create user marker when parameter 14 (time) reaches 4.0
 - `STOP={'UZ1'}`: Stop at first user marker
 
-The values for `U(1)` and `U(2)` converged to certain values, representing $r$ and $v$ at equilibrium.
+The values for `r` and `v` converged to certain values, representing the firing rate $r$ and membrane potential $v$ at equilibrium.
 
 ### Step 2: Continuation of $\bar\eta$
 
@@ -194,14 +194,14 @@ fig, axes = plt.subplots(1, 2, layout="compressed", figsize=(10, 5))
 
 # Firing rate vs eta
 ax = axes[0]
-qif_auto.plot_continuation("PAR(4)", "U(1)", cont="eta", ax=ax)
+qif_auto.plot_continuation("eta", "r", cont="eta", ax=ax)
 ax.set_xlabel("η (Background drive)")
 ax.set_ylabel("Firing rate r")
 ax.set_title("QIF Bifurcation Diagram: Firing Rate")
 
 # Membrane potential vs eta
 ax = axes[1]
-qif_auto.plot_continuation("PAR(4)", "U(2)", cont="eta", ax=ax)
+qif_auto.plot_continuation("eta", "v", cont="eta", ax=ax)
 ax.set_xlabel("η (Background drive)")
 ax.set_ylabel("Membrane potential v")
 ax.set_title("QIF Bifurcation Diagram: Voltage")

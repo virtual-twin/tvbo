@@ -48,10 +48,17 @@ if all_integrate_derived_vars:
     subG = G.subgraph([Symbol(n) for n in all_integrate_derived_vars if Symbol(n) in G.nodes()])
     all_integrate_derived_vars = [str(s) for s in nx.topological_sort(subG) if str(s) in all_integrate_derived_vars]
 
-# Boundaries
-boundaries = [(sv.boundaries.lo, sv.boundaries.hi) for sv in model.state_variables.values() if sv.boundaries]
-get_lower_bound = lambda sv: float(sv.boundaries.lo) if sv.boundaries and sv.boundaries.lo is not None else float('-inf')
-get_upper_bound = lambda sv: float(sv.boundaries.hi) if sv.boundaries and sv.boundaries.hi is not None else float('inf')
+# Boundaries: a state variable is clamped only when its ``domain`` opts in via
+# enforce == 'clamp' (the legacy ``boundaries`` slot is folded into ``domain``
+# with enforce: clamp by the Dynamics loader). enforce 'none' (default) leaves
+# the trajectory unconstrained, so a domain is pure metadata unless enforced.
+from tvbo.utils import domain_enforcement
+def _clamp_enforced(sv):
+    dom = getattr(sv, "domain", None)
+    return dom is not None and domain_enforcement(dom) == "clamp"
+boundaries = [(sv.domain.lo, sv.domain.hi) for sv in model.state_variables.values() if _clamp_enforced(sv)]
+get_lower_bound = lambda sv: float(sv.domain.lo) if _clamp_enforced(sv) and sv.domain.lo is not None else float('-inf')
+get_upper_bound = lambda sv: float(sv.domain.hi) if _clamp_enforced(sv) and sv.domain.hi is not None else float('inf')
 %>
 
 ## Helper that converts a array into a string that can be read as array again

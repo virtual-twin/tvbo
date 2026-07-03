@@ -144,11 +144,13 @@ class TestNetworkExport:
         ]
 
         W = network.weights_matrix
+        # Matrices follow the target-by-source convention used by backends:
+        # an edge source -> target is stored at [target, source].
         expected = np.array(
             [
-                [0.0, 0.5, 0.0],
-                [0.0, 0.0, 0.8],
-                [0.2, 0.0, 0.0],
+                [0.0, 0.0, 0.2],
+                [0.5, 0.0, 0.0],
+                [0.0, 0.8, 0.0],
             ]
         )
 

@@ -1,0 +1,115 @@
+---
+title: "For Beginners"
+subtitle: "Use your AI assistant as a guided tour through TVBO"
+---
+
+## The 60-second setup
+
+You'll need:
+
+- Python 3.11+
+- Any AI coding assistant that reads skill files. Most common:
+  - [Claude Code](https://claude.com/claude-code) (recommended)
+  - [Cursor](https://cursor.com)
+  - GitHub Copilot in VS Code
+
+Install:
+
+```bash
+pip install tvbo
+tvbo skills install --target claude-code
+```
+
+(Replace `claude-code` with `cursor` if you use Cursor.)
+
+That writes four small files under `~/.claude/skills/` (or `~/.cursor/rules/`):
+
+- `tvbo-overview` — what TVBO is, the three pillars
+- `tvbo-writing-models` — how to specify a `Dynamics` in YAML or Python
+- `tvbo-running-simulations` — how to run an experiment, pick a backend
+- `tvbo-platform` — how to use [tvbo.charite.de](https://tvbo.charite.de)
+
+These do **not** auto-fire on every prompt. Claude Code (for instance) loads a
+skill *on demand* when a question seems related — so they cost nothing when
+you're not working with TVBO.
+
+## Your first conversation
+
+Open your AI assistant in any directory and try something like:
+
+> *"What is TVBO and when should I use it instead of writing a simulation by hand?"*
+
+The assistant will pull in `tvbo-overview` and give you the three-pillar
+explanation. You'll learn:
+
+- Pillar 1: the **LinkML datamodel** — structured metadata for models
+- Pillar 2: the **ontology** — axioms about SimulationExperiments, Networks, etc.
+- Pillar 3: the **Python package** — specifies, loads, generates code, runs
+
+## Your first model
+
+```
+"Help me write a Lorenz attractor as a tvbo Dynamics and run it for 1000 ms
+with the JAX backend."
+```
+
+The assistant will pull in `tvbo-writing-models` and `tvbo-running-simulations`,
+and produce something like:
+
+```python
+from tvbo import Dynamics, SimulationExperiment
+
+lorenz = Dynamics(
+    parameters={
+        "sigma": {"value": 10.0},
+        "rho": {"value": 28.0},
+        "beta": {"value": 8 / 3},
+    },
+    state_variables={
+        "X": {"equation": {"rhs": "sigma * (Y - X)"}},
+        "Y": {"equation": {"rhs": "X * (rho - Z) - Y"}},
+        "Z": {"equation": {"rhs": "X * Y - beta * Z"}},
+    },
+)
+
+SimulationExperiment(dynamics=lorenz).run(duration=1000).plot()
+```
+
+If it makes a mistake (e.g. tries to put a `value` on a state variable), the
+skill body explicitly warns about that — so the assistant catches itself.
+
+## Sharing a model on the platform
+
+The fourth skill, `tvbo-platform`, teaches the assistant about
+[tvbo.charite.de](https://tvbo.charite.de) — the Odoo-based management layer
+where you can publish your `SimulationExperiment`s. Ask:
+
+> *"How do I save this Lorenz experiment to the TVBO platform so my colleague can load it?"*
+
+You'll get a walkthrough of the REST API in `tvbo.api` (install with
+`pip install tvbo[api]`).
+
+## What if my assistant ignores the skills?
+
+Most assistants need the skill *description* to match the question. If the
+assistant doesn't seem to be using the TVBO skills:
+
+1. Be explicit: *"Use the tvbo-overview skill and explain..."*
+2. Check the install worked: `ls ~/.claude/skills/tvbo-*` (or `~/.cursor/rules/tvbo-*.mdc`)
+3. If you upgraded `tvbo` and want fresh skills: `tvbo skills install --force`
+
+## Removing the skills
+
+```bash
+tvbo skills uninstall
+```
+
+This removes only the files TVBO put there (recognised by their
+`managed-by: tvbo` frontmatter marker) — your own custom skills are left
+alone.
+
+## Next steps
+
+- [Skill reference](skills-reference.qmd) — what each user skill teaches
+- [Installing & tuning](installing-skills.qmd) — flags, scopes, multiple tools
+- [What is `AGENTS.md`?](agents-md.qmd) — for when you start contributing

@@ -39,7 +39,7 @@ derived_params = list(model.derived_parameters.items()) if model.derived_paramet
 derived_vars = list(model.derived_variables.items()) if model.derived_variables else []
 
 # Coupling terms
-coupling_terms = list(model.coupling_terms.keys()) if model.coupling_terms else ['c_pop0']
+coupling_terms = list(model.coupling_terms.keys()) if model.coupling_terms else ['c_glob']
 
 # Swept parameters (for parameter space exploration)
 if 'swept_params' not in context.keys():
@@ -53,7 +53,7 @@ if 'experiment' in context.keys() and experiment:
         noisepresent = True
 
 # Variables of interest (exposures)
-exposures = [(name, sv) for name, sv in state_vars if getattr(sv, 'variable_of_interest', True)]
+exposures = [(name, sv) for name, sv in state_vars if getattr(sv, 'record', True)]
 %>
 #include <stdio.h>
 #define PI_2 (2 * M_PI_F)

@@ -19,23 +19,30 @@ def resolve_var_index(source, label: str) -> int:
     """Resolve an observation source to its column in result.data / solution.ys.
 
     Returns the index of ``source`` within the recorded variable layout
-    (states + auxiliaries-in-VOI). Network/edge/class-reference sources and
-    missing sources fall back to ``0`` to preserve prior behavior for the
-    external-monitor and BIDS paths. Raises only for unknown plain names —
-    this catches typos and aux observations whose source was not wired into
-    VARIABLES_OF_INTEREST.
+    (states + auxiliaries-in-VOI). ``source`` may be a single name (legacy
+    scalar form) or a list of names (multivalued); for lists the first
+    state-variable-shaped entry wins. Network/edge/class-reference sources
+    and missing sources fall back to ``0`` to preserve prior behavior for
+    the external-monitor and BIDS paths.
     """
     if not source:
         return 0
-    src = str(source)
-    if src.startswith('network.'):
+    candidates = source if isinstance(source, (list, tuple)) else [source]
+    plain_names = []
+    for item in candidates:
+        s = item.name if hasattr(item, 'name') else item
+        s = str(s)
+        if s.startswith('network.'):
+            return 0
+        if s in var_names:
+            return var_names.index(s)
+        plain_names.append(s)
+    if not plain_names:
         return 0
-    if src in var_names:
-        return var_names.index(src)
     raise ValueError(
-        f"Observation '{label}' source '{src}' not in recorded variables "
-        f"{var_names}. Add it to model.output or reference it from an "
-        f"observation so the solver records it."
+        f"Observation '{label}' source '{plain_names}' not in recorded "
+        f"variables {var_names}. Add it to model.output or reference it "
+        f"from an observation so the solver records it."
     )
 
 def is_numeric_string(s):
@@ -140,13 +147,17 @@ else:
 # User-defined function names for expression rendering
 user_functions = {name: name for name in functions_by_name.keys()}
 jaxcode = lambda expr, params=None: render_expression(expr, format='jax', user_functions=user_functions, parameters=params)
+from tvbo.codegen.templater import is_derived as _is_derived
 _obs_raw = get_attr(experiment, 'observations', {})
 if hasattr(_obs_raw, 'items'):
-    observations = dict(_obs_raw.items())
+    _all_observations = dict(_obs_raw.items())
 elif hasattr(_obs_raw, '__iter__') and not isinstance(_obs_raw, dict):
-    observations = {get_attr(o, 'name', f'obs_{i}'): o for i, o in enumerate(_obs_raw)}
+    _all_observations = {get_attr(o, 'name', f'obs_{i}'): o for i, o in enumerate(_obs_raw)}
 else:
-    observations = {}
+    _all_observations = {}
+# Raw observations only — derived ones are handled by the experiment-level DAG
+# walker, and analysis observations (gradient/lyapunov/...) by their own path.
+observations = {n: o for n, o in _all_observations.items() if not _is_derived(o, experiment) and getattr(o, 'analysis', None) is None}
 
 # =============================================================================
 
@@ -195,9 +206,8 @@ def parse_step(func, step_name):
             if hasattr(pobj, 'value'):
                 step['equation_params'][str(pname)] = to_numeric(pobj.value)
 
-    # Parse arguments (these ARE function arguments)
-    for arg in (get_attr(func, 'arguments') or []):
-        name = get_attr(arg, 'name')
+    # Parse arguments (these ARE function arguments), keyed by name (key == arg name).
+    for name, arg in (get_attr(func, 'arguments') or {}).items():
         if name:
             step['arg_names'].append(name)
             val = get_attr(arg, 'value')
@@ -224,9 +234,8 @@ def parse_step(func, step_name):
             if fn_eq:
                 step['equation'] = get_attr(fn_eq, 'rhs')
 
-            # Merge function arguments (step args take precedence)
-            for arg in (get_attr(fn_def, 'arguments') or []):
-                name = get_attr(arg, 'name')
+            # Merge function arguments (step args take precedence), keyed by name.
+            for name, arg in (get_attr(fn_def, 'arguments') or {}).items():
                 if name and name not in step['arg_names']:
                     step['arg_names'].append(name)
                 val = get_attr(arg, 'value')
@@ -461,8 +470,13 @@ for obs_name, obs in observations.items():
             for extra_module, extra_name in info['class_reference'].get('extra_imports', []):
                 class_ref_imports.setdefault(extra_module, set()).add(extra_name)
 
-    # Source state variable (what this observation monitors from simulation)
+    # Source for this observation. The slot is multivalued; for raw
+    # observations (the path this template handles) there is exactly one
+    # entry, a state-variable or `network.*` reference. Take the first
+    # entry verbatim.
     src = get_attr(obs, 'source')
+    if isinstance(src, (list, tuple)):
+        src = src[0] if src else None
     if src:
         info['source'] = get_attr(src, 'name', str(src)) if hasattr(src, 'name') else str(src)
 
@@ -497,9 +511,8 @@ for obs_name, obs in observations.items():
             step_name = get_attr(func_call, 'name', 'step')
             step = parse_step(func_call, step_name)
 
-        # Override arguments from FunctionCall if provided
-        for arg in (get_attr(func_call, 'arguments') or []):
-            name = get_attr(arg, 'name')
+        # Override arguments from FunctionCall if provided (keyed by name)
+        for name, arg in (get_attr(func_call, 'arguments') or {}).items():
             val = get_attr(arg, 'value')
             if name and val is not None:
                 step['arguments'][str(name)] = val
@@ -820,10 +833,9 @@ class ${class_name}(AbstractMonitor):
 <%
     step_name = step['name']
     fn_def = functions_by_name.get(step_name)
-    # Build default args from function definition
+    # Build default args from function definition (arguments keyed by name)
     default_args = []
-    for arg in (get_attr(fn_def, 'arguments') or []):
-        arg_name = get_attr(arg, 'name')
+    for arg_name, arg in (get_attr(fn_def, 'arguments') or {}).items():
         arg_val = get_attr(arg, 'value')
         if arg_name and arg_val is not None:
             default_args.append(f"{arg_name}={to_numeric(arg_val)}")
@@ -1034,13 +1046,21 @@ class ${class_name}(AbstractMonitor):
 % if tail_samples:
         ${decl_input} = ${decl_input}[-${tail_samples}:]
 % endif
+% if aggregation:
+        # Track whether a collapsing aggregation removed the time axis. A future
+        # aggregation only needs to set this flag to be handled correctly below.
+        _aggregated = False
+% endif
 % if str(aggregation) == 'mean':
         # Declarative: mean over time axis (aggregation: mean)
         ${decl_input} = jnp.mean(${decl_input}, axis=0)
+        _aggregated = True
 % elif str(aggregation) == 'last':
         ${decl_input} = ${decl_input}[-1]
+        _aggregated = True
 % elif str(aggregation) == 'first':
         ${decl_input} = ${decl_input}[0]
+        _aggregated = True
 % endif
 % endif
 
@@ -1052,25 +1072,61 @@ class ${class_name}(AbstractMonitor):
         _final = _${primary_output}
         if isinstance(_final, NativeSolution):
             return _final
+% if aggregation:
+        if _aggregated:
+            # A collapsing aggregation removed the time axis: the result is a
+            # plain per-node value (or scalar), so return it directly instead of
+            # re-wrapping it in a NativeSolution — downstream loss / algorithm
+            # arithmetic needs an array, not a solution object (else e.g.
+            # `mean_activity + target` raises "unsupported operand type(s) for
+            # +: 'float' and 'NativeSolution'").
+            return _final
+% endif
 
         _is_scalar = _final.ndim == 0 if hasattr(_final, 'ndim') else True
         if _is_scalar:
             _ts = None  # Scalar result has no time dimension
-        elif _time is not None and len(_time) >= len(_final):
-            _ts = _time[:len(_final)]
+            _out_dt = self.dt
+        elif _time is not None and len(_time) == len(_final):
+            _ts = _time
+            _out_dt = self.dt
+<%
+    # Declared output sampling period (e.g. BOLD TR). Used to label a subsampled
+    # time axis at the true period instead of stretching it across the recorded span.
+    _decl_period = obs.get('period')
+    try:
+        _decl_period = float(_decl_period)
+    except (TypeError, ValueError):
+        _decl_period = None
+%>
+% if _decl_period and _decl_period > float(dt):
+        elif _time is not None and len(_time) > len(_final) > 1:
+            # The pipeline subsampled to the declared output period (e.g. BOLD TR):
+            # place samples at that exact period from the recording start, so the
+            # time axis is not stretched across the full integration span.
+            _ts = _time[0] + jnp.arange(len(_final)) * ${_decl_period}
+            _out_dt = ${_decl_period}
+% else:
+        elif _time is not None and len(_time) > len(_final) > 1:
+            # The pipeline subsampled the time series but declares no output period;
+            # spread the outputs uniformly across the recorded span as a fallback.
+            _ts = jnp.linspace(_time[0], _time[-1], len(_final))
+            _out_dt = (_time[-1] - _time[0]) / (len(_final) - 1)
+% endif
         else:
             _ts = jnp.arange(len(_final)) * self.dt
+            _out_dt = self.dt
 % if named_outputs:
         return ObservationResult(
             ts=_ts,
             ys=_final,
-            dt=self.dt,
+            dt=_out_dt,
 % for out_name in named_outputs:
             ${out_name}=_${out_name},
 % endfor
         )
 % else:
-        return NativeSolution(ts=_ts if _ts is not None else jnp.array([0.0]), ys=_final, dt=self.dt)
+        return NativeSolution(ts=_ts if _ts is not None else jnp.array([0.0]), ys=_final, dt=_out_dt)
 % endif
 
 % endif

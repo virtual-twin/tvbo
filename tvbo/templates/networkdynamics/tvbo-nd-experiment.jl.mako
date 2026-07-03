@@ -30,31 +30,19 @@ weight_matrix, weight_sym, \
 dist_info, needs_random, dist_seed, \
 all_events, has_events, coupling_observed, find_fixpoint, \
 is_static, parse_node_parameters, get_noise_sigmas, graph_generator_call"/>
+<%!
+from tvbo.adapters.julia_model import (
+    julia_ode_package, needs_nanmath, needs_special_functions,
+)
+%>
 
 ## ── Packages ────────────────────────────────────────────────────────────────
 using Graphs
 using NetworkDynamics
-<%
-# Map solver names to their OrdinaryDiffEq sub-packages
-_SOLVER_PKG = {
-    'Tsit5': 'OrdinaryDiffEqTsit5',
-    'AutoTsit5': 'OrdinaryDiffEqTsit5',
-    'Heun': 'OrdinaryDiffEqLowOrderRK',
-    'Euler': 'OrdinaryDiffEqLowOrderRK',
-    'Midpoint': 'OrdinaryDiffEqLowOrderRK',
-    'RK4': 'OrdinaryDiffEqLowOrderRK',
-    'DP5': 'OrdinaryDiffEqTsit5',
-    'BS3': 'OrdinaryDiffEqLowOrderRK',
-    'Vern7': 'OrdinaryDiffEqVerner',
-    'Rodas5': 'OrdinaryDiffEqRosenbrock',
-    'TRBDF2': 'OrdinaryDiffEqSDIRK',
-}
-_ode_pkg = _SOLVER_PKG.get(str(solver_method), 'OrdinaryDiffEq')
-%>
 % if is_stochastic:
 using StochasticDiffEq
 % else:
-using ${_ode_pkg}
+using ${julia_ode_package(solver_method)}
 % endif
 % if needs_stiff:
 using OrdinaryDiffEqSDIRK
@@ -62,6 +50,18 @@ using OrdinaryDiffEqSDIRK
 % if needs_weighted:
 using DelimitedFiles
 using SimpleWeightedGraphs
+% endif
+<%
+# Optional Julia packages, gated per dynamics (shared detection with the other backends):
+#  - SpecialFunctions for erf/erfc/…; NaNMath for domain-restricted powers in Piecewise.
+_needs_special = any(needs_special_functions(dyn) for dyn in dynamics_dict.values())
+_needs_nanmath = any(needs_nanmath(dyn) for dyn in dynamics_dict.values())
+%>
+% if _needs_special:
+using SpecialFunctions
+% endif
+% if _needs_nanmath:
+import NaNMath
 % endif
 
 ## ── Vertex models (node dynamics) ───────────────────────────────────────────

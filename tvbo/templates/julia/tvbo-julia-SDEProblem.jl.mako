@@ -1,14 +1,15 @@
 ## -*- coding: utf-8 -*-
-## SDEProblem setup (additive diagonal noise)
-<%page args="model, duration"/>
+## SDEProblem setup (additive diagonal noise). ``mc`` = build_model_context(model);
+## ``model`` is still needed for the per-state noise intensities below.
+<%page args="model, mc, duration"/>
 using StochasticDiffEq
-<%include file="/tvbo-julia-model.jl.mako" args="model=model" />
+<%include file="/tvbo-julia-model.jl.mako" args="mc=mc" />
 
-# Initial conditions (scalar state vector)
+# Initial conditions (flat state vector)
 u0 = [
-        % for sv in model.state_variables.values():
-        ${sv.initial_value}, # Initial value for ${sv.name}
-        % endfor
+    % for val in mc['u0']:
+        ${val},
+    % endfor
     ]
 
 # Define time span

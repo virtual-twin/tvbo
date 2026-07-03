@@ -88,31 +88,50 @@ def solution_to_dataarray(
     u: np.ndarray,
     sv_names: list[str],
     n_nodes: int,
+    n_modes: int = 1,
 ):
     """Build an ``xr.DataArray`` from a flat Julia ODE solution.
 
     Reshapes ``u`` from flat ``(n_states, n_t)`` into dims
-    ``(time, variable, node)`` with named coordinates.
+    ``(time, variable, node)`` — plus a trailing ``mode`` axis when
+    ``n_modes > 1`` — with named coordinates.
 
     Parameters
     ----------
     t : np.ndarray
         Time array, shape ``(n_t,)``.
     u : np.ndarray
-        Raw solution, shape ``(n_nodes * n_sv, n_t)``.
+        Raw solution, shape ``(n_nodes * n_sv * n_modes, n_t)``. Multi-mode state
+        variables are laid out as contiguous length-``n_modes`` blocks (see the
+        Julia model template), so the flat index is ``sv * n_modes + mode``.
     sv_names : list[str]
         State variable names (length determines n_sv).
     n_nodes : int
         Number of nodes.
+    n_modes : int
+        Number of modes (mode axis). ``1`` collapses to the plain 3-D container.
 
     Returns
     -------
     xr.DataArray
-        Dims ``(time, variable, node)`` with coords.
+        Dims ``(time, variable, node[, mode])`` with coords.
     """
     import xarray as xr
 
     n_sv = len(sv_names)
+    if n_modes > 1:
+        # Flat (node, sv, mode) blocks -> (time, variable, node, mode).
+        data = u.T.reshape(len(t), n_nodes, n_sv, n_modes).transpose(0, 2, 1, 3)
+        return xr.DataArray(
+            data=data,
+            dims=["time", "variable", "node", "mode"],
+            coords={
+                "time": np.asarray(t),
+                "variable": list(sv_names),
+                "node": [str(i) for i in range(n_nodes)],
+                "mode": list(range(n_modes)),
+            },
+        )
     data = u.T.reshape(len(t), n_nodes, n_sv).transpose(0, 2, 1)
     return xr.DataArray(
         data=data,

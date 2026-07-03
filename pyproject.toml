@@ -1,6 +1,9 @@
 # Copyright © Charité Universitätsmedizin Berlin. This software is licensed under the terms of the European Union Public Licence (EUPL) version 1.2 or later.
 [build-system]
-requires = ["hatchling"]
+# `linkml` is pinned here (build-time only) so `hatch_build.py` regenerates the
+# datamodel deterministically. It is intentionally NOT a runtime dependency — only
+# the lightweight `linkml-runtime` is needed to import the generated classes.
+requires = ["hatchling", "linkml==1.11.1"]
 build-backend = "hatchling.build"
 
 [project]
@@ -17,13 +20,13 @@ dependencies = [
     "numpy>=2.0.0",
     "pandas>=2.2.3",
     "xarray>=2025.0",
-
-    # Data models & schema (pydantic, pyyaml, rdflib are transitive via linkml-runtime)
-    # NOTE: requires linkml/linkml-runtime >= 1.11 for SimpleDict-shorthand fixes
-    # in _normalize_inlined and the jsonschema generator. Until 1.11.0 is on PyPI
-    # we install from the v1.11.0-rc1 tag via [tool.uv.sources] below.
-    "linkml-runtime>=1.8.5",
-    "linkml>=1.8.5",
+    # `linkml-runtime` is needed to *use* the generated datamodel at runtime; the
+    # heavy `linkml` generator toolkit is build-time only (see [build-system].requires).
+    "linkml-runtime>=1.11.0",
+    # `jsonschema` backs `tvbo validate schema` (validates against the shipped JSON
+    # Schema — no runtime linkml). Also pulled transitively by linkml-runtime; declared
+    # explicitly because we import it directly.
+    "jsonschema>=4.0.0",
     "h5py>=3.12.1",
 
     # Ontologies
@@ -78,10 +81,15 @@ knowledge = [
 # Audio/signal processing
 # Note: llvmlite >=0.44 has no macosx_x86_64 wheels for cp312/cp313, so we cap
 # numba/llvmlite on Intel Mac. See https://github.com/virtual-twin/tvbo/issues/7
+# The floors are essential: without them the resolver backtracks to the ancient
+# numba 0.53.1 / llvmlite 0.36.0 (no py3.12/3.13 wheels, fails to build) to
+# satisfy librosa/tvb-library. Intel Mac stays capped to <0.60 / <0.44.
 audio = [
     "librosa>=0.10.2",
-    "numba<0.60;    sys_platform == 'darwin' and platform_machine == 'x86_64'",
-    "llvmlite<0.44; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "numba>=0.59;    sys_platform != 'darwin' or platform_machine != 'x86_64'",
+    "numba<0.60;     sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "llvmlite>=0.42; sys_platform != 'darwin' or platform_machine != 'x86_64'",
+    "llvmlite<0.44;  sys_platform == 'darwin' and platform_machine == 'x86_64'",
 ]
 
 # Documentation & reports
@@ -106,13 +114,16 @@ julia = ["juliacall>=0.9.20"]
 api = ["fastapi>=0.115.0", "uvicorn>=0.30.0", "docker>=7.1.0"]
 
 # TVB integration
-# Same Intel-Mac llvmlite cap as [audio]; tvb-library pulls numba transitively.
+# Same Intel-Mac llvmlite cap + modern floor as [audio]; tvb-library pulls
+# numba transitively and otherwise drags the resolver down to numba 0.53.1.
 tvb = [
     "tvb-library",
     "tvb-framework",
     "tvb-data",
-    "numba<0.60;    sys_platform == 'darwin' and platform_machine == 'x86_64'",
-    "llvmlite<0.44; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "numba>=0.59;    sys_platform != 'darwin' or platform_machine != 'x86_64'",
+    "numba<0.60;     sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "llvmlite>=0.42; sys_platform != 'darwin' or platform_machine != 'x86_64'",
+    "llvmlite<0.44;  sys_platform == 'darwin' and platform_machine == 'x86_64'",
 ]
 
 # TVB optimization (JAX-based simulation & optimization)
@@ -122,7 +133,7 @@ tvboptim = ["tvboptim"]
 all = ["tvbo[neuroml,neuron,data,knowledge,audio,api,tvb,tvboptim,docs,pyrates,julia]"]
 
 [project.urls]
-homepage = "https://virtual-twin.github.io/tvbo/"
+homepage = "https://tvbo.charite.de"
 documentation = "https://virtual-twin.github.io/tvbo/"
 repository = "https://github.com/virtual-twin/tvbo"
 bug-tracker = "https://github.com/virtual-twin/tvbo/issues"
@@ -130,21 +141,28 @@ bug-tracker = "https://github.com/virtual-twin/tvbo/issues"
 [tool.hatch.metadata]
 allow-direct-references = true
 
-# uv source overrides: install linkml + linkml-runtime from the v1.11.0-rc1 tag
-# until 1.11.0 is published to PyPI. Required for SimpleDict shorthand fixes
-# in _normalize_inlined and the jsonschema generator.
-[tool.uv.sources]
-linkml = { git = "https://github.com/linkml/linkml.git", tag = "v1.11.0-rc1", subdirectory = "packages/linkml" }
-linkml-runtime = { git = "https://github.com/linkml/linkml.git", tag = "v1.11.0-rc1", subdirectory = "packages/linkml_runtime" }
-
 [tool.hatch.build.targets.wheel]
 packages = ["tvbo"]
 
 [tool.hatch.build.targets.sdist]
-include = ["tvbo/**", "README.md", "pyproject.toml", "LICENSE"]
+# `schema/**` and `hatch_build.py` must ship in the sdist so a wheel built *from the
+# sdist* can regenerate the datamodel (the generated .py files are not tracked).
+include = ["tvbo/**", "schema/**", "hatch_build.py", "README.md", "pyproject.toml", "LICENSE"]
+
+# Generate tvbo/datamodel/{schema,pydantic}.py from the LinkML schema before every
+# build (wheel, sdist, editable). See hatch_build.py.
+[tool.hatch.build.hooks.custom]
 
 [tool.hatch.build]
 include = ["tvbo/**"]
+# The generated datamodel is .gitignore'd, so hatchling's VCS-based file selection
+# would exclude it from the build. `artifacts` force-includes these build outputs
+# (produced by the hook above) into the wheel/sdist.
+artifacts = [
+    "tvbo/datamodel/schema.py",
+    "tvbo/datamodel/pydantic.py",
+    "tvbo/datamodel/tvbo_datamodel.schema.json",
+]
 exclude = [
     "tvbo/database/networks/*.h5",
     "tvbo/data/tvbo_data/atlas/**/*.nii.gz",

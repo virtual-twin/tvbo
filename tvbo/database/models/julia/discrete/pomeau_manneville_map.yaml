@@ -7,22 +7,20 @@ source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main
 system_type: discrete
 parameters:
   z:
-    name: z
     value: 2.5
     description: Intermittency exponent z.
 state_variables:
   x:
-    name: x
     equation:
       lhs: x_next
       latex: false
       conditionals:
-        - condition: x > 0.5
-          expression: -4*x + 3
-        - condition: x < -0.5
-          expression: -4*x - 3
-        - condition: abs(x) <= 0.5
-          expression: x*(1 + abs(2*x)**(z - 1))
+      - condition: x > 0.5
+        expression: -4*x + 3
+      - condition: x < -0.5
+        expression: -4*x - 3
+      - condition: abs(x) <= 0.5
+        expression: x*(1 + abs(2*x)**(z - 1))
     initial_value: 0.2
 description: |-
   Intermittent map with laminar phases and chaotic bursts; here given in the symmetric

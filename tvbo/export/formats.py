@@ -72,13 +72,27 @@ def _render_tvb(exp, **kw):
 
 def _render_jax(exp, **kw):
     from tvbo.classes.experiment import templates, format_code
+    from tvbo.adapters.observation_sampling import resolve_observation_sampling
     template = templates.lookup.get_template("autodiff/tvbo-jax-sim.py.mako")
+    # Resolve observation sampling step counts once, in Python, and hand the
+    # {obs_name: ObservationSampling} mapping to the template (which only emits
+    # the resolved integers). This is the same backend-shared resolver the
+    # tvboptim runtime uses, so all Python backends emit identical sample counts.
+    observations = getattr(exp, "observations", None) or {}
+    dt = exp.integration.step_size
+    kw.setdefault(
+        "obs_sampling",
+        {name: resolve_observation_sampling(obs, dt) for name, obs in observations.items()},
+    )
     return format_code(template.render(experiment=exp, **kw), use_black=False)
 
 
 def _render_tvboptim(exp, **kw):
     from tvbo.classes.experiment import templates, format_code
     template = templates.lookup.get_template("tvboptim/tvbo-tvboptim-experiment.py.mako")
+    # Resolve network-observation source pointers once, in Python, and hand
+    # the {obs_name: measure} mapping to the template (which only emits code).
+    kw.setdefault("network_obs_measures", exp.network_observation_measures)
     return format_code(template.render(experiment=exp, **kw), use_black=False)
 
 

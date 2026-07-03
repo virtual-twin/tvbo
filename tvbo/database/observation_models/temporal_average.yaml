@@ -16,8 +16,8 @@ pipeline:
     - name: temporal_average
       output: averaged
       equation:
-          rhs: "mean(X.reshape(-1, window_size, *X.shape[1:]), axis=1)"
+          rhs: "window_mean(X, window_size)"
       arguments:
-          - name: window_size
-            description: "Number of integration steps per averaging window = period / dt"
+          window_size:
+              description: "Number of integration steps per averaging window = period / dt"
       apply_on_dimension: time
