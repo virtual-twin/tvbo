@@ -97,11 +97,14 @@ def _distribution_text(distribution):
     return ' '.join(parts)
 
 def _metadata_text(obj):
+    from tvbo.utils import domain_enforcement
     bits = []
-    if _present(_slot(obj, 'domain', None)):
-        bits.append(_range_text(_slot(obj, 'domain')))
-    if _present(_slot(obj, 'boundaries', None)):
-        bits.append('bounds ' + _range_text(_slot(obj, 'boundaries')))
+    _dom = _slot(obj, 'domain', None)
+    if _present(_dom):
+        bits.append(_range_text(_dom))
+        _enf = domain_enforcement(_dom)   # none / clamp / wrap (boundaries folded into domain)
+        if _enf != 'none':
+            bits.append(f'enforce={_enf}')
     if _present(_slot(obj, 'distribution', None)):
         bits.append(_distribution_text(_slot(obj, 'distribution')))
     return '; '.join([b for b in bits if b]) or '—'
@@ -221,7 +224,7 @@ ${'\n'.join([f"$$\n{latex_equation(eq, mul_symbol='*')}\n$$" for eq in functions
 
 | Variable | Initial Value | Unit | Equation | Domain / Sampling | Flags | Description |
 |:---------|:--------------|:-----|:---------|:------------------|:------|:------------|
-${'\n'.join([f"| ${latex(Symbol(sv.name))}$ | {sv.initial_value if sv.initial_value is not None else '—'} | {_unit_text(sv.unit)} | {sv.equation_type or 'differential'} (order {sv.equation_order or 1}) | {_metadata_text(sv)} | {_flag_text(sv, [('variable_of_interest', 'VOI'), ('coupling_variable', 'coupling'), ('stimulation_variable', 'stimulation'), ('record', 'recorded')])} | {sv.description or sv.definition or ''} |" for sv in model.state_variables.values()])}
+${'\n'.join([f"| ${latex(Symbol(sv.name))}$ | {sv.initial_value if sv.initial_value is not None else '—'} | {_unit_text(sv.unit)} | {sv.equation_type or 'differential'} (order {sv.equation_order or 1}) | {_metadata_text(sv)} | {_flag_text(sv, [('coupling_variable', 'coupling'), ('stimulation_variable', 'stimulation'), ('record', 'recorded')])} | {sv.description or sv.definition or ''} |" for sv in model.state_variables.values()])}
 
 % endif
 % if model.parameters:

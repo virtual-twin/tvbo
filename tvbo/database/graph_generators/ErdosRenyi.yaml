@@ -1,0 +1,27 @@
+name: ErdosRenyi
+description: >-
+  Erdos-Renyi random graph G(n, p). Each of the n*(n-1)/2 possible undirected
+  edges is independently included with probability p.
+iri: tvbo:ErdosRenyi
+
+parameters:
+  n: { datatype: integer, description: "Number of nodes" }
+  p: { datatype: float,   description: "Edge probability in [0, 1]" }
+  seed: { datatype: integer, required: false }
+  density_from:
+    datatype: uriorcurie
+    required: false
+    description: >-
+      Optional. When set, the value of p is computed at load time as the
+      density of the referenced source matrix (a Network IRI), so that the
+      generated null model matches the source's connection density.
+
+bindings:
+  julia:
+    library: Graphs
+    callable: erdos_renyi
+    args: [n, p]
+  networkx:
+    library: networkx
+    callable: erdos_renyi_graph
+    args: [n, p]

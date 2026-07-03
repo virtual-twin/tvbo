@@ -100,9 +100,10 @@ class DiffEqAdapter:
         # 4. Extract solution
         t, u, sol = extract_ode_solution()
 
-        # 5. Build xr.DataArray directly — dims (time, variable, node)
+        # 5. Build xr.DataArray directly — dims (time, variable, node[, mode])
         sv_names = list(model.state_variables.keys())
-        da = solution_to_dataarray(t, u, sv_names, 1)
+        n_modes = getattr(model, "number_of_modes", 1) or 1
+        da = solution_to_dataarray(t, u, sv_names, 1, n_modes)
 
         sim = SimulationResult(data=da)
         return ExperimentResult(

@@ -1,3 +1,11 @@
+"""Runtime data types for TVBO simulations.
+
+Provides `TimeSeries`, a JAX-pytree-aware, xarray-backed time-series container
+with domain-specific analysis and visualization helpers, and `SimulationState`,
+the bundled simulation state (initial conditions, network, noise, parameters,
+stimulus, and monitor settings) handed to the integration backends.
+"""
+
 from copy import deepcopy
 
 import matplotlib.pyplot as plt
@@ -218,7 +226,14 @@ class SimulationResult:
             data = _to_dataarray(data, None, state_names, nodes)
 
         self.data = data
-        self.observations = observations if observations is not None else {}
+        # Normalize observations to Bunch so both JAX and tvboptim results have
+        # dot-access: result.observations.BOLD_TVB  (not just dict indexing).
+        if isinstance(observations, Bunch):
+            self.observations = observations
+        elif observations:
+            self.observations = Bunch(observations)
+        else:
+            self.observations = Bunch()
         self.transient = transient
         self._extras.update(kwargs)
         # Store state_names separately for cases with no data yet
@@ -879,6 +894,43 @@ class OptimizationResult:
         fig.tight_layout()
         plt.close(fig)
         return fig
+
+
+class InferenceResult:
+    """Result of Bayesian inference (MCMC posterior over parameters).
+
+    Attributes
+    ----------
+    name : str
+        Inference name (the ``inferences:`` key).
+    posterior : dict
+        Posterior samples keyed by parameter dotted-name (the ``priors`` keys),
+        each an array of length ``num_samples`` (× ``num_chains``).
+    diagnostics : dict
+        Sampler diagnostics (per-parameter ``mean``/``std``/``r_hat``/``n_eff`` etc.,
+        as returned by ``numpyro.diagnostics.summary``).
+    """
+
+    def __init__(self, name=None, posterior=None, diagnostics=None, **kwargs):
+        self.name = name
+        self.posterior = posterior or {}
+        self.diagnostics = diagnostics or {}
+        self._extras = kwargs
+
+    def mean(self):
+        """Posterior mean per parameter."""
+        import numpy as _np
+
+        return {k: float(_np.asarray(v).mean()) for k, v in self.posterior.items()}
+
+    def std(self):
+        """Posterior standard deviation per parameter."""
+        import numpy as _np
+
+        return {k: float(_np.asarray(v).std()) for k, v in self.posterior.items()}
+
+    def __repr__(self):
+        return f"InferenceResult(name={self.name!r}, params={list(self.posterior)})"
 
 
 class ExplorationResult(Bunch):
@@ -1812,6 +1864,10 @@ class TimeSeries:
     """
 
     def tree_flatten(self):
+        """Flatten into JAX pytree (children, aux_data).
+
+        `sample_period` is a child (not aux) because it may hold a JAX tracer such as `state.dt` inside `jit`.
+        """
         # Keep network as a child (not metadata) to avoid non-hashable/array metadata.
         # sample_period must also be a child because it can be a JAX-traced value
         # (e.g. state.dt inside jit); putting tracers in aux_data causes
@@ -1826,6 +1882,7 @@ class TimeSeries:
 
     @classmethod
     def tree_unflatten(cls, aux_data, children):
+        """Reconstruct a `TimeSeries` from JAX pytree children and aux_data."""
         time, data, network, sample_period = children
         title, labels_dimensions, units = aux_data
         return cls(
@@ -1878,10 +1935,12 @@ class TimeSeries:
 
     @property
     def ndim(self):
+        """Number of dimensions of the underlying data array."""
         return self.data.ndim
 
     @property
     def shape(self):
+        """Shape of the underlying data array."""
         return self.data.shape
 
     def __repr__(self):
@@ -1889,10 +1948,17 @@ class TimeSeries:
 
     @property
     def time_unit(self):
+        """Unit of the sample period (e.g. `"ms"`)."""
         return self.sample_period_unit
 
     @property
     def space_labels(self):
+        """Labels for the spatial (region) axis as a NumPy array.
+
+        Reads the canonical `"Space"` entry of `labels_dimensions`, falling back
+        to a legacy `"Region"` key, and returns an empty array when neither is
+        present. Scalar or string values are coerced to a one-element array.
+        """
         # Robustly handle legacy keys and bad types
         ld = self.labels_dimensions if isinstance(self.labels_dimensions, dict) else {}
         # Prefer canonical "Space" key; fall back to "Region" if present
@@ -1908,6 +1974,11 @@ class TimeSeries:
 
     @property
     def variables_labels(self):
+        """Labels for the state-variable axis as a NumPy array.
+
+        Returns an empty array when no state-variable labels are stored; scalar
+        or string values are coerced to a one-element array.
+        """
         ld = self.labels_dimensions if isinstance(self.labels_dimensions, dict) else {}
         vals = ld.get(self.labels_ordering[1], [])
         if isinstance(vals, (str, bytes)):
@@ -1941,6 +2012,12 @@ class TimeSeries:
             raise ValueError(f"{self.sample_period_unit} is not a recognized time unit")
 
     def get_dt(self):
+        """Return the sampling interval.
+
+        Returns:
+            The stored `dt` when available, otherwise the mean spacing between
+            successive time points.
+        """
         return np.mean(np.diff(self.time)) if self.dt is None else self.dt
 
     def summary_info(self):
@@ -1966,6 +2043,16 @@ class TimeSeries:
         return sv_index
 
     def get_state(self, sv_label):
+        """Extract one or more state variables by label.
+
+        Args:
+            sv_label: A single state-variable label, or a list/tuple/array of
+                labels to select several at once.
+
+        Returns:
+            A new `TimeSeries` restricted to the selected state variable(s), with
+            its state-variable labels updated accordingly.
+        """
         if isinstance(sv_label, (list, tuple, np.ndarray)):
             indices = [self._get_index_of_state_variable(s) for s in sv_label]
             sv_data = self.data[:, indices, :, :]
@@ -1994,6 +2081,19 @@ class TimeSeries:
                 raise IndexError(f"Space index {idx} out of range [0, {n_space})")
 
     def get_subspace_by_index(self, list_of_index, **kwargs):
+        """Extract a spatial subset by region index.
+
+        Args:
+            list_of_index: Indices along the spatial (region) axis to keep.
+            **kwargs: Additional keyword arguments forwarded to `duplicate`.
+
+        Returns:
+            A new `TimeSeries` containing only the selected regions, with its
+            spatial labels updated accordingly.
+
+        Raises:
+            IndexError: If any index is outside the valid region range.
+        """
         self._check_space_indices(list_of_index)
         subspace_data = self.data[:, :, list_of_index, :]
         subspace_labels_dimensions = deepcopy(self.labels_dimensions)
@@ -2003,6 +2103,15 @@ class TimeSeries:
         return self.duplicate(data=subspace_data, labels_dimensions=subspace_labels_dimensions, **kwargs)
 
     def get_subspace_by_labels(self, list_of_labels):
+        """Extract a spatial subset by region label.
+
+        Args:
+            list_of_labels: Region labels to keep.
+
+        Returns:
+            A new `TimeSeries` containing only the regions matching the given
+            labels.
+        """
         list_of_indices_for_labels = self._get_indices_for_labels(list_of_labels)
         return self.get_subspace_by_index(list_of_indices_for_labels)
 
@@ -2112,6 +2221,21 @@ class TimeSeries:
     # ── Domain-specific methods (analysis, visualization) ─────────────
 
     def get_state_variable(self, sv_label):
+        """Evaluate a state variable or a symbolic expression of state variables.
+
+        When `sv_label` is a list/tuple/array it behaves like `get_state`. When
+        it is a string it is parsed as a symbolic expression whose free symbols
+        are matched against existing state variables, allowing derived
+        quantities such as `"E - I"` to be computed.
+
+        Args:
+            sv_label: A state-variable label, a collection of labels, or a
+                symbolic expression string combining state-variable names.
+
+        Returns:
+            A new `TimeSeries` holding the evaluated state variable or
+            expression, labelled with `sv_label`.
+        """
         if isinstance(sv_label, (list, tuple, np.ndarray)):
             return self.get_state(sv_label)
         import math
@@ -2131,6 +2255,31 @@ class TimeSeries:
         return self.duplicate(data=sv_data, labels_dimensions=subspace_labels_dimensions)
 
     def plot(self, ax=None, axis_labels=False, legend=True, title=None, **kwargs):
+        """Plot the time series, or a state-space trajectory of its variables.
+
+        By default each state variable is drawn against time. Passing
+        `type="statespace"` (or an equivalent alias such as `"phase"` or
+        `"trajectory"`) instead plots one state variable against another for a
+        chosen region and mode.
+
+        Args:
+            ax: Existing Matplotlib axes to draw on. When omitted, a new figure
+                and axes are created and the figure is returned.
+            axis_labels: Whether to label the x-axis with the time unit.
+            legend: Whether to draw a legend (ignored for single-variable plots).
+            title: Optional axes title.
+            **kwargs: Additional options forwarded to Matplotlib's `plot`, plus
+                recognised keys such as `type`, `region`, `mode`,
+                `state_variables`, `labels`, and `label`.
+
+        Returns:
+            The created Matplotlib figure when `ax` was not supplied, otherwise
+            `None`.
+
+        Raises:
+            ValueError: If a state-space plot is requested with fewer than two
+                state variables, or the data shape is unsupported.
+        """
         plot_type = kwargs.pop("type", "timeseries")
         if not ax:
             fig, ax = plt.subplots()
@@ -2360,6 +2509,7 @@ class TimeSeries:
         frames = list(range(0, len(self.time), step))
 
         def update(frame):
+            """Render a single animation frame at the given time index."""
             sc.set_array(vals[frame])
             ax_graph.set_title(f"t = {self.time[frame]:.2f}")
             for i, ln in enumerate(lines):
@@ -2507,6 +2657,15 @@ class TimeSeries:
             return fig
 
     def cut_transient(self, start_time):
+        """Drop the initial transient before a given time.
+
+        Args:
+            start_time: Time value; all samples strictly before it are removed.
+
+        Returns:
+            A new `TimeSeries` starting at the first sample at or after
+            `start_time`.
+        """
         start_index = jnp.searchsorted(self.time, start_time, side="left")
 
         # Avoid deepcopy to prevent JAX tracer leaks - manually construct new instance
@@ -2522,6 +2681,15 @@ class TimeSeries:
         return ts_cut
 
     def subset(self, start, end):
+        """Restrict the time series to a `[start, end]` time window.
+
+        Args:
+            start: Start time of the window (inclusive).
+            end: End time of the window (inclusive).
+
+        Returns:
+            A new `TimeSeries` covering only samples within the window.
+        """
         start_index = np.searchsorted(self.time, start, side="left")
         end_index = np.searchsorted(self.time, end, side="right")
 
@@ -2531,6 +2699,15 @@ class TimeSeries:
         return ts_subset
 
     def exclude_region(self, region):
+        """Return a copy with one region removed.
+
+        Args:
+            region: The region to drop, given either as an integer index along
+                the spatial axis or as a region label.
+
+        Returns:
+            A new `TimeSeries` without the specified region.
+        """
         if isinstance(region, int):
             region_index = region
         else:
@@ -2541,7 +2718,7 @@ class TimeSeries:
             labels_dimensions["Region"].remove(region)
         return self.duplicate(data=data, labels_dimensions=labels_dimensions)
 
-    def calculate_frequency(self, state_variable=None, region=0, mode=0):
+    def calculate_frequency(self, state_variable=None, region=0, mode=0) -> float:
         """
         Calculate the dominant frequency of the time series data using FFT.
 
@@ -2619,6 +2796,11 @@ class TimeSeries:
         return frequency, power
 
     def compute_dt(self):
+        """Recompute `sample_period` from the mean spacing of the time axis.
+
+        Prints a warning and updates `sample_period` in place when it disagrees
+        with the mean of `diff(time)`.
+        """
         dt = np.diff(self.time)
         mean_dt = np.mean(dt)
         if self.sample_period != mean_dt:
@@ -2721,6 +2903,17 @@ class TimeSeries:
             return fig
 
     def check_identity(self, other, select_state_variable=None):
+        """Test whether this series' data matches another array or time series.
+
+        Args:
+            other: A NumPy array or another `TimeSeries` to compare against.
+            select_state_variable: Optional state-variable label (or expression)
+                to compare instead of the full data array.
+
+        Returns:
+            `True` if the flattened values are element-wise close (`atol=1e-8`),
+            else `False`.
+        """
         if isinstance(other, np.ndarray):
             data = other
         elif isinstance(other, TimeSeries):
@@ -2737,9 +2930,25 @@ class TimeSeries:
         )
 
     def get_region_index(self, region_label):
+        """Return the spatial-axis index of a region given its label.
+
+        Args:
+            region_label: The region label to look up.
+
+        Returns:
+            The integer index of the region within the `"Region"` labels.
+        """
         return list(self.labels_dimensions["Region"]).index(region_label)
 
     def get_region(self, region_label):
+        """Extract a single region by label.
+
+        Args:
+            region_label: The label of the region to keep.
+
+        Returns:
+            A new `TimeSeries` containing only the selected region.
+        """
         region_index = self.get_region_index(region_label)
         roi_data = self.data[:, :, region_index : region_index + 1, :]
 
@@ -3371,6 +3580,25 @@ class TimeSeries:
 
 @register_pytree_node_class
 class SimulationState:
+    """Bundled state passed to the integration backends for one simulation.
+
+    Groups everything a backend needs to advance a run: the initial conditions,
+    the `Network`, the integration step, the noise configuration, model
+    parameters, stimulus, monitor settings, and the number of time steps.
+    Registered as a JAX pytree so it can flow through `jit`/`vmap`; `nt` is kept
+    static while the remaining fields are dynamic children.
+
+    Args:
+        initial_conditions: Initial state as a `TimeSeries` (history buffer).
+        network: The `Network` (connectivity and coupling) to simulate.
+        dt: Integration time step.
+        noise: Noise configuration, including per-state-variable sigma.
+        parameters: Model parameter pytree.
+        stimulus: Stimulus specification applied during integration.
+        monitor_parameters: Settings controlling recorded outputs.
+        nt: Number of integration steps to run.
+    """
+
     def __init__(
         self,
         initial_conditions: TimeSeries,
@@ -3392,6 +3620,10 @@ class SimulationState:
         self.nt = nt
 
     def tree_flatten(self):
+        """Flatten into JAX pytree (children, aux_data).
+
+        `nt` is kept as static aux_data so it stays concrete in shape/length contexts under jit/vmap.
+        """
         # Make `noise` a child so fields like sigma_vec can participate in vmap batching.
         # Keep `nt` static (aux) to ensure it remains a concrete value under jit/vmap
         # because we use it in shape/length contexts like jnp.arange(0, nt).
@@ -3409,6 +3641,7 @@ class SimulationState:
 
     @classmethod
     def tree_unflatten(cls, aux_data, children):
+        """Reconstruct a `SimulationState` from JAX pytree children and aux_data."""
         # Reconstruct in the original __init__ order
         (
             initial_conditions,
@@ -3441,6 +3674,7 @@ class SimulationState:
     # ---------------- Convenience: noise sigma helpers ----------------
     @property
     def n_state_variables(self) -> int:
+        """Number of state variables inferred from the initial conditions."""
         try:
             # initial_conditions: (H, S, R, M) or (T, S, R, M)
             return int(self.initial_conditions.data.shape[1])
@@ -3449,6 +3683,12 @@ class SimulationState:
 
     @property
     def state_variable_names(self):
+        """State-variable names, falling back to positional indices as strings.
+
+        Returns the `"State Variable"` labels from the initial conditions when
+        they are present and match the number of state variables, otherwise a
+        list of stringified indices.
+        """
 
         ld = getattr(self.initial_conditions, "labels_dimensions", {}) or {}
         names = ld.get("State Variable", None)
@@ -3472,6 +3712,15 @@ class SimulationState:
         return self.noise
 
     def get_state_variable_index(self, name_or_index) -> int:
+        """Resolve a state variable to its integer index.
+
+        Args:
+            name_or_index: A state-variable name or an integer index. Integers
+                are returned unchanged; unknown names fall back to `0`.
+
+        Returns:
+            The integer index of the state variable.
+        """
         if isinstance(name_or_index, int):
             return int(name_or_index)
         names = self.state_variable_names
@@ -3481,6 +3730,23 @@ class SimulationState:
             return 0
 
     def set_sigma_for(self, name_or_index, value):
+        """Set the noise sigma for one state variable (or all at once).
+
+        Rebuilds `noise.sigma_vec` rather than mutating it in place, so it is
+        safe to call before `jit`/`vmap`.
+
+        Args:
+            name_or_index: The state variable to target, by name or index.
+            value: A scalar sigma for the selected variable, or a list/tuple
+                giving sigma for every state variable at once.
+
+        Returns:
+            `self`, to allow method chaining.
+
+        Raises:
+            ValueError: If a list/tuple `value` does not match the number of
+                state variables.
+        """
         import jax.numpy as jnp
 
         idx = self.get_state_variable_index(name_or_index)
@@ -3581,11 +3847,13 @@ class SimulationState:
         """
 
         def get_int_dtype(float_dtype):
+            """Return the integer dtype paired with the given float dtype."""
             return jnp.int32 if float_dtype == jnp.float32 else jnp.int64
 
         int_dtype = get_int_dtype(target_dtype)
 
         def convert_leaf(x):
+            """Cast a single pytree leaf to the target float or integer dtype."""
             if isinstance(x, (jax.Array, np.ndarray)):
                 if np.issubdtype(x.dtype, np.integer):
                     return jnp.array(x, dtype=int_dtype)

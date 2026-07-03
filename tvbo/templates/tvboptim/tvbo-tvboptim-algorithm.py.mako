@@ -39,7 +39,7 @@ def get_func_args(func_call):
     """Get arguments from FunctionCall as dict {name: value}."""
     if not func_call.arguments:
         return {}
-    return {str(arg.name): arg.value for arg in func_call.arguments}
+    return {str(name): arg.value for name, arg in func_call.arguments.items()}
 
 def get_target_name(rule):
     """Get target parameter name from UpdateRule."""
@@ -64,8 +64,12 @@ def get_all_update_rules(algo, algorithms_dict):
     Included algorithm rules come first, then this algorithm's rules.
     """
     all_rules = []
-    # First, add rules from included algorithms with their argument overrides
+    # First, add rules from COMBINED-mode included algorithms with their argument
+    # overrides. nested-mode includes are NOT flattened here — they run as a
+    # converging inner loop (see get_nested_includes) on each outer iteration.
     for inc in as_list(getattr(algo, 'includes', None)):
+        if _include_mode(inc) == 'nested':
+            continue
         inc_name, arg_overrides = get_include_info(inc)
         inc_algo = algorithms_dict.get(inc_name)
         if inc_algo:
@@ -75,6 +79,39 @@ def get_all_update_rules(algo, algorithms_dict):
     for rule in as_list(getattr(algo, 'update_rules', None)):
         all_rules.append((rule, str(algo.name), {}))
     return all_rules
+
+def _include_mode(inc):
+    """Composition mode of an AlgorithmInclude ('combined' default, or 'nested')."""
+    return str(getattr(inc, 'mode', 'combined') or 'combined')
+
+def get_nested_includes(algo, algorithms_dict, obs_dict):
+    """Return nested-mode includes as call-ready descriptors.
+
+    Each entry: {name, inner_iterations, hyperparam_values, external_inputs}.
+    A nested include runs the included algorithm's own generated run_<inner>() as
+    a converging inner loop on each outer iteration, so the inner algorithm's
+    invariant (e.g. FIC's working point) is re-settled before the outer update.
+    """
+    result = []
+    for inc in as_list(getattr(algo, 'includes', None)):
+        if _include_mode(inc) != 'nested':
+            continue
+        inc_name, arg_overrides = get_include_info(inc)
+        inc_algo = algorithms_dict.get(inc_name)
+        if not inc_algo:
+            continue
+        inc_hp = get_hyperparam_dict(inc_algo)
+        ordered_vals = [arg_overrides.get(k, inc_hp[k]) for k in inc_hp.keys()]
+        inner_iters = getattr(inc, 'inner_iterations', None)
+        if inner_iters is None:
+            inner_iters = int(inc_algo.n_iterations)
+        result.append({
+            'name': safe_name(inc_name),
+            'inner_iterations': int(inner_iters),
+            'hyperparam_values': ordered_vals,
+            'external_inputs': get_external_inputs(inc_algo, obs_dict, algorithms_dict),
+        })
+    return result
 
 def get_external_inputs(algo, obs_dict, algorithms_dict=None):
     """Get observations that have external data_source or network.observations source."""
@@ -108,11 +145,12 @@ def get_all_functions(algo, algorithms_dict):
 
 # Extract observations dict for reference
 _obs_raw = experiment.observations or {}
-observations_dict = dict(_obs_raw.items()) if hasattr(_obs_raw, 'items') else {}
+_all_observations = dict(_obs_raw.items()) if hasattr(_obs_raw, 'items') else {}
 
-# Extract derived_observations dict for reference
-_dobs_raw = experiment.derived_observations or {}
-derived_observations_dict = dict(_dobs_raw.items()) if hasattr(_dobs_raw, 'items') else {}
+# Split observations into raw vs derived views.
+from tvbo.codegen.templater import is_derived as _is_derived
+observations_dict = {n: o for n, o in _all_observations.items() if not _is_derived(o, experiment)}
+derived_observations_dict = {n: o for n, o in _all_observations.items() if _is_derived(o, experiment)}
 
 # State variable names from model
 model = experiment.dynamics
@@ -141,9 +179,12 @@ if network and network.coupling:
     n_iterations = int(algo.n_iterations)
     simulation_period = float(algo.simulation_period)
 
-    # Get all update rules (including from included algorithms)
+    # Get all update rules (combined-mode includes + own rules; nested excluded)
     all_update_rules_with_source = get_all_update_rules(algo, algorithms_dict)
     update_rules = [r for r, src, args in all_update_rules_with_source]  # Just the rules
+
+    # Nested-mode includes: inner algorithms run to convergence per outer iteration
+    nested_includes = get_nested_includes(algo, algorithms_dict, observations_dict)
 
     # Get all observations (including from included algorithms)
     observations = get_all_observations(algo, algorithms_dict)
@@ -196,10 +237,13 @@ if network and network.coupling:
     for obs in simulated_observations:
         derived_obs_def = derived_observations_dict.get(obs)
         if derived_obs_def:
-            src_obs_list = derived_obs_def.source_observations or []
-            src_names = [
-                (s.name if hasattr(s, 'name') else str(s)) for s in src_obs_list
-            ]
+            # Filter source entries to names resolving to other observations.
+            src_obs_list = derived_obs_def.source or []
+            src_names = []
+            for s in src_obs_list:
+                _sn = s.name if hasattr(s, 'name') else str(s)
+                if _sn in _all_observations:
+                    src_names.append(_sn)
             dependent_observations[obs] = src_names
             for src_name in src_names:
                 if src_name in observations_dict:
@@ -221,6 +265,7 @@ def run_${algo_name}(
     post_model_fn: Callable = None,
     post_state: Any = None,
     history: Any = None,
+    run_post_tuning: bool = True,  # set False when called as a nested inner loop
 % if use_sliding_window:
 % for src_obs in source_observations_needed:
     ${src_obs}_buffer: jnp.ndarray = None,  # Optional: passed from previous algorithm
@@ -335,13 +380,19 @@ def run_${algo_name}(
             obs_class = ''.join(w.capitalize() for w in obs.replace('_', ' ').split())
             pipeline_observations.append((obs, obs_class))
 
-    # For source observations that need buffers, we need their monitors too
+    # For source observations that need sliding-window buffers, we need their
+    # monitors too. EVERY source observation requires a monitor for the warmup
+    # loop, whether it is pipeline-based (e.g. a derived FC) or a raw monitor
+    # observation (e.g. `bold` from a BOLD monitor, which has no pipeline). The
+    # monitor class is the CamelCase of the observation name and is emitted for
+    # all observations, so this is gated only by membership in
+    # source_observations_needed (already filtered to real observations), not by
+    # the presence of a pipeline. (Previously the pipeline gate left raw-source
+    # monitors like `_bold_monitor` undefined -> UnboundLocalError.)
     source_monitors = []
     for src_obs in source_observations_needed:
-        src_def = observations_dict.get(src_obs)
-        if src_def and hasattr(src_def, 'pipeline') and src_def.pipeline:
-            src_class = ''.join(w.capitalize() for w in src_obs.replace('_', ' ').split())
-            source_monitors.append((src_obs, src_class))
+        src_class = ''.join(w.capitalize() for w in src_obs.replace('_', ' ').split())
+        source_monitors.append((src_obs, src_class))
 
     # Note: Derived observations don't have monitor classes - they're computed from other observations
     # So we don't need dependent_monitors anymore
@@ -359,7 +410,7 @@ def run_${algo_name}(
     history_accessor = lambda tree: tree._history
 
 % if use_sliding_window:
-    n_nodes = state.dynamics.${list(model.state_variables.keys())[0] if model.state_variables else 'S_e'}.shape[0] if hasattr(state.dynamics, '${list(model.state_variables.keys())[0] if model.state_variables else 'S_e'}') else history.data.shape[2] if history is not None else 68
+    n_nodes = state.dynamics.${list(model.state_variables.keys())[0] if model.state_variables else 'S_e'}.shape[0] if hasattr(state.dynamics, '${list(model.state_variables.keys())[0] if model.state_variables else 'S_e'}') else history.data.shape[2] if history is not None else N_NODES
 
 % for src_obs in source_observations_needed:
     if ${src_obs}_buffer is not None:
@@ -393,7 +444,13 @@ def run_${algo_name}(
                 key, subkey = jax.random.split(key)
                 _warmup_result = model_fn(state)
                 state.initial_state.dynamics = _warmup_result.data[-1][:${len(state_names)}]
-                if hasattr(state, '_internal') and hasattr(state._internal, 'noise_samples'):
+                if getattr(state, 'noise', None) is not None and getattr(state.noise, 'key', None) is not None:
+                    # Resample the in-scan noise by swapping the PRNG key — the
+                    # live randomness source. _internal.noise_samples is an
+                    # optional injection slot that defaults to None. Matches the
+                    # reference EI_Tuning workflow (state.noise.key = subkey).
+                    state.noise.key = subkey
+                elif hasattr(state, '_internal') and getattr(state._internal, 'noise_samples', None) is not None:
                     state._internal.noise_samples = jax.random.normal(
                         key=subkey, shape=state._internal.noise_samples.shape
                     )
@@ -406,9 +463,10 @@ def run_${algo_name}(
                     _${src_obs}_buffer = _${src_obs}_buffer.at[-1, :, :].set(_warmup_${src_obs}_data[0, :, :])
                 else:
                     _${src_obs}_buffer = _${src_obs}_buffer.at[-1, 0, :].set(_warmup_${src_obs}_data)
-                _new_history = jnp.roll(_${src_obs}_monitor._history, -_warmup_result.data.shape[0], axis=0)
-                _new_history = _new_history.at[-_warmup_result.data.shape[0]:, :, :].set(_warmup_result.data[:, 0:1, :])
-                _${src_obs}_monitor = eqx.tree_at(history_accessor, _${src_obs}_monitor, _new_history)
+                if hasattr(_${src_obs}_monitor, '_history') and _${src_obs}_monitor._history is not None:
+                    _new_history = jnp.roll(_${src_obs}_monitor._history, -_warmup_result.data.shape[0], axis=0)
+                    _new_history = _new_history.at[-_warmup_result.data.shape[0]:, :, :].set(_warmup_result.data[:, 0:1, :])
+                    _${src_obs}_monitor = eqx.tree_at(history_accessor, _${src_obs}_monitor, _new_history)
             _buffer_idx = int(window_size)
             if verbose:
                 print(f"  Warmup complete. Buffer filled with {_buffer_idx} samples.")
@@ -424,7 +482,11 @@ def run_${algo_name}(
             key, subkey = jax.random.split(key)
             _warmup_result = model_fn(state)
             state.initial_state.dynamics = _warmup_result.data[-1][:${len(state_names)}]
-            if hasattr(state, '_internal') and hasattr(state._internal, 'noise_samples'):
+            if getattr(state, 'noise', None) is not None and getattr(state.noise, 'key', None) is not None:
+                # Resample the in-scan noise by swapping the PRNG key (live
+                # randomness source); _internal.noise_samples defaults to None.
+                state.noise.key = subkey
+            elif hasattr(state, '_internal') and getattr(state._internal, 'noise_samples', None) is not None:
                 state._internal.noise_samples = jax.random.normal(
                     key=subkey, shape=state._internal.noise_samples.shape
                 )
@@ -439,9 +501,10 @@ def run_${algo_name}(
             else:
                 _${src_obs}_buffer = _${src_obs}_buffer.at[-1, 0, :].set(_warmup_${src_obs}_data)
 
-            _new_history = jnp.roll(_${src_obs}_monitor._history, -_warmup_result.data.shape[0], axis=0)
-            _new_history = _new_history.at[-_warmup_result.data.shape[0]:, :, :].set(_warmup_result.data[:, 0:1, :])
-            _${src_obs}_monitor = eqx.tree_at(history_accessor, _${src_obs}_monitor, _new_history)
+            if hasattr(_${src_obs}_monitor, '_history') and _${src_obs}_monitor._history is not None:
+                _new_history = jnp.roll(_${src_obs}_monitor._history, -_warmup_result.data.shape[0], axis=0)
+                _new_history = _new_history.at[-_warmup_result.data.shape[0]:, :, :].set(_warmup_result.data[:, 0:1, :])
+                _${src_obs}_monitor = eqx.tree_at(history_accessor, _${src_obs}_monitor, _new_history)
 
         _buffer_idx = int(window_size)
         if verbose:
@@ -454,9 +517,32 @@ def run_${algo_name}(
 
     for i in range(n_iterations):
         key, subkey = jax.random.split(key)
+% for ni in nested_includes:
+        # [NESTED INNER LOOP] Re-converge '${ni['name']}' before the outer update.
+        # The outer update rule's validity depends on '${ni['name']}'s invariant
+        # (e.g. FIC holding the E-I working point), which the previous outer step
+        # perturbed. Running its own run_${ni['name']}() to (near-)convergence each
+        # outer iteration re-settles that invariant. run_post_tuning=False skips the
+        # inner post-tuning simulation (we only need the converged state).
+        key, subkey = jax.random.split(key)
+        state = run_${ni['name']}(
+            state, model_fn, subkey, ${ni['inner_iterations']},
+% for hv in ni['hyperparam_values']:
+            ${hv},
+% endfor
+% for ext in ni['external_inputs']:
+            ${ext},
+% endfor
+            history=history, run_post_tuning=False, verbose=False,
+        ).state
+% endfor
         result = model_fn(state)
         state.initial_state.dynamics = result.data[-1][:${len(state_names)}]
-        if hasattr(state, '_internal') and hasattr(state._internal, 'noise_samples'):
+        if getattr(state, 'noise', None) is not None and getattr(state.noise, 'key', None) is not None:
+            # Resample the in-scan noise by swapping the PRNG key (live
+            # randomness source); _internal.noise_samples defaults to None.
+            state.noise.key = subkey
+        elif hasattr(state, '_internal') and getattr(state._internal, 'noise_samples', None) is not None:
             state._internal.noise_samples = jax.random.normal(
                 key=subkey, shape=state._internal.noise_samples.shape
             )
@@ -475,9 +561,12 @@ def run_${algo_name}(
             _${src_obs}_buffer = _${src_obs}_buffer.at[-1, :, :].set(_${src_obs}_sample_data[0, :, :])
         else:
             _${src_obs}_buffer = _${src_obs}_buffer.at[-1, 0, :].set(_${src_obs}_sample_data)
-        _new_history = jnp.roll(_${src_obs}_monitor._history, -result.data.shape[0], axis=0)
-        _new_history = _new_history.at[-result.data.shape[0]:, :, :].set(result.data[:, 0:1, :])
-        _${src_obs}_monitor = eqx.tree_at(history_accessor, _${src_obs}_monitor, _new_history)
+        # Maintain the monitor's own rolling history only if it carries one.
+        # Stateless monitors (e.g. a BOLD monitor) have no _history buffer.
+        if hasattr(_${src_obs}_monitor, '_history') and _${src_obs}_monitor._history is not None:
+            _new_history = jnp.roll(_${src_obs}_monitor._history, -result.data.shape[0], axis=0)
+            _new_history = _new_history.at[-result.data.shape[0]:, :, :].set(result.data[:, 0:1, :])
+            _${src_obs}_monitor = eqx.tree_at(history_accessor, _${src_obs}_monitor, _new_history)
 % endfor
         _buffer_idx = min(_buffer_idx + 1, int(window_size))
 
@@ -496,6 +585,12 @@ def run_${algo_name}(
     effective_obs_def = derived_obs_def if derived_obs_def else obs_def
     has_pipeline = effective_obs_def and effective_obs_def.pipeline
     obs_source = obs_def.source if obs_def else None  # Only regular obs have source
+    # `source` is multivalued; for raw observations there is exactly one
+    # entry (a state-variable reference). Take it.
+    if isinstance(obs_source, (list, tuple)):
+        obs_source = obs_source[0] if obs_source else None
+    if obs_source is not None and hasattr(obs_source, 'name'):
+        obs_source = obs_source.name
     obs_aggregation = obs_def.aggregation if obs_def else None
     agg_str = str(obs_aggregation) if obs_aggregation else None
 
@@ -524,8 +619,7 @@ def run_${algo_name}(
                     direct_call = f"{callable_module}.{callable_name}"
                     # Extract additional arguments from pipeline (e.g., skip_t=20)
                     if hasattr(first_step, 'arguments') and first_step.arguments:
-                        for arg in first_step.arguments:
-                            arg_name = getattr(arg, 'name', None)
+                        for arg_name, arg in first_step.arguments.items():
                             arg_value = getattr(arg, 'value', None)
                             # Skip the source observation argument (that's passed as the buffer)
                             if arg_name and arg_value is not None:
@@ -576,6 +670,11 @@ def run_${algo_name}(
     if obs_def:
         # Observable defined in observations - check source and aggregation
         obs_source = obs_def.source
+        # `source` is multivalued; for raw observations there is one entry.
+        if isinstance(obs_source, (list, tuple)):
+            obs_source = obs_source[0] if obs_source else None
+        if obs_source is not None and hasattr(obs_source, 'name'):
+            obs_source = obs_source.name
         obs_aggregation = obs_def.aggregation
         # Convert enum to string for comparison
         agg_str = str(obs_aggregation) if obs_aggregation else None
@@ -737,21 +836,30 @@ def run_${algo_name}(
             raise ValueError("Algorithm must have functions or simulated_observations for progress display")
 % endif
 
-    # Run post-tuning simulation (use full integration setup if provided)
-    if post_model_fn is not None and post_state is not None:
-        import copy
-        _post_state = copy.deepcopy(post_state)
-        _post_state.initial_state.dynamics = state.initial_state.dynamics
-        _post_state.dynamics = state.dynamics
-        _post_state.coupling = state.coupling
-        post_tuning = post_model_fn(_post_state)
-    else:
-        post_tuning = model_fn(state)
+    # Run post-tuning simulation (use full integration setup if provided).
+    # Carry over the TUNED PARAMETERS (dynamics J_i, coupling wLRE/wFFI) but
+    # keep post_state's own settled initial conditions — NOT the tuning loop's
+    # last mid-trajectory state. Seeding from the loop's last state lands a
+    # different attractor in multistable models, corrupting the post-tuning FC
+    # (it made identical-weight post sims score far below the base sim).
+    # Skipped entirely when run as a nested inner loop (only the state is needed).
+    if run_post_tuning:
+        if post_model_fn is not None and post_state is not None:
+            import copy
+            _post_state = copy.deepcopy(post_state)
+            _post_state.dynamics = state.dynamics
+            _post_state.coupling = state.coupling
+            post_tuning = post_model_fn(_post_state)
+        else:
+            post_tuning = model_fn(state)
 
-    # Compute ALL observations from post-tuning simulation (in dependency order)
-    # This uses the experiment-level compute_all_observations function
-    # Pass history as result_transient for BOLD pipeline continuity
-    post_tuning_observations = compute_all_observations(post_tuning, state, history)
+        # Compute ALL observations from post-tuning simulation (in dependency order)
+        # This uses the experiment-level compute_all_observations function
+        # Pass history as result_transient for BOLD pipeline continuity
+        post_tuning_observations = compute_all_observations(post_tuning, state, history)
+    else:
+        post_tuning = None
+        post_tuning_observations = None
 
     # Convert result_history lists to arrays
     for k in list(result_history.keys()):

@@ -10,6 +10,7 @@ def info(
     spec: str = typer.Argument(..., help="Path, CURIE, or DB name."),
     json: bool = typer.Option(False, "--json", help="Emit machine-readable JSON."),
 ) -> None:
+    """Print a one-screen summary of a SPEC (kind, name, key parameters) without running it."""
     kind, obj = _common.resolve_spec(spec)
     payload = _summarize(kind, obj)
     if json:

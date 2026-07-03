@@ -28,54 +28,45 @@ description: >-
 # md:L181-188 — standard values (Eq. 17 and surrounding text)
 parameters:
   A:
-    name: A
     value: 3.25
     unit: mV
     description: "Maximum amplitude of excitatory PSP (EPSP)"
     # md:L181 — "A = 3.25 mV (van Rotterdam et al. 1982)"
   B:
-    name: B
     value: 22
     unit: mV
     description: "Maximum amplitude of inhibitory PSP (IPSP)"
     # md:L181 — "B = 22 mV (van Rotterdam et al. 1982)"
   C:
-    name: C
     value: 135
     description: "Lumped connectivity constant (C = C1)"
     # md:L194 — "alpha-like activity at C = 135"
   a:
-    name: a
     value: 100
     unit: per_s
     description: "Reciprocal of EPSP time constant"
     # md:L183 — "a = 100 s⁻¹"
   b:
-    name: b
     value: 50
     unit: per_s
     description: "Reciprocal of IPSP time constant"
     # md:L183 — "b = 50 s⁻¹"
   v0:
-    name: v0
     value: 6
     unit: mV
     description: "PSP for 50% firing rate (sigmoid midpoint)"
     # md:L185 — "v0 = 6 mV (Freeman 1987)"
   e0:
-    name: e0
     value: 2.5
     unit: per_s
     description: "Half of maximum firing rate (2*e0 = max rate)"
     # md:L186 — "e0 = 2.5 s⁻¹"
   r:
-    name: r
     value: 0.56
     unit: per_mV
     description: "Steepness of sigmoid transformation"
     # md:L186 — "r = 0.56 mV⁻¹"
   p:
-    name: p
     value: 220
     unit: per_s
     description: "Mean external input (afferent pulse density)"
@@ -87,22 +78,18 @@ parameters:
 # ---------------------------------------------------------------------------
 derived_parameters:
   C1:
-    name: C1
     equation:
       rhs: C
     description: "Pyramidal → excitatory interneuron connectivity"
   C2:
-    name: C2
     equation:
       rhs: 0.8*C
     description: "Excitatory interneuron → pyramidal connectivity (Eq. 14)"
   C3:
-    name: C3
     equation:
       rhs: 0.25*C
     description: "Pyramidal → inhibitory interneuron connectivity (Eq. 16)"
   C4:
-    name: C4
     equation:
       rhs: 0.25*C
     description: "Inhibitory interneuron → pyramidal connectivity (Eq. 15)"
@@ -112,7 +99,6 @@ derived_parameters:
 # ---------------------------------------------------------------------------
 derived_variables:
   v_pyr:
-    name: v_pyr
     description: "Aggregate pyramidal PSP (EEG-like output)"
     equation:
       rhs: y1 - y2
@@ -121,12 +107,12 @@ derived_variables:
 # ---------------------------------------------------------------------------
 # Reusable functions — Eq. 3 (md:L73-75)
 # ---------------------------------------------------------------------------
+    record: true
 functions:
   Sigm:
-    name: Sigm
     definition: "Sigmoid potential-to-firing-rate transformation (Eq. 3)"
     arguments:
-      - name: v
+      v: {}
     equation:
       rhs: 2*e0 / (1 + exp(r*(v0 - v)))
 
@@ -135,7 +121,6 @@ functions:
 # ---------------------------------------------------------------------------
 coupling_inputs:
   c_intercolumn:
-    name: c_intercolumn
     description: >-
       Inter-column coupling input to the excitatory (pyramidal) population.
       Evaluates to zero for single-column experiments (no network active).
@@ -147,28 +132,24 @@ coupling_inputs:
 # ---------------------------------------------------------------------------
 state_variables:
   y0:
-    name: y0
     label: "Pyramidal membrane potential (position)"
     equation:
       rhs: y3
     unit: mV
     # md:L96 — ẏ₀ = y₃
   y3:
-    name: y3
     label: "Pyramidal EPSP drive (velocity)"
     equation:
       rhs: A*a*Sigm(y1 - y2) - 2*a*y3 - a**2*y0
     unit: mV_per_s
     # md:L97 — ẏ₃ = Aa·Sigm[y₁-y₂] - 2a·y₃ - a²·y₀
   y1:
-    name: y1
     label: "Excitatory interneuron membrane potential (position)"
     equation:
       rhs: y4
     unit: mV
     # md:L98 — ẏ₁ = y₄
   y4:
-    name: y4
     label: "Excitatory EPSP drive (velocity) with coupling input"
     equation:
       rhs: A*a*(p + C2*Sigm(C1*y0) + c_intercolumn) - 2*a*y4 - a**2*y1
@@ -176,14 +157,12 @@ state_variables:
     coupling_variable: true
     # md:L99-100 — ẏ₄ = Aa{p(t) + C₂·Sigm[C₁·y₀(t)] + coupling} - 2a·y₄ - a²·y₁
   y2:
-    name: y2
     label: "Inhibitory interneuron membrane potential (position)"
     equation:
       rhs: y5
     unit: mV
     # md:L101 — ẏ₂ = y₅
   y5:
-    name: y5
     label: "Inhibitory IPSP drive (velocity)"
     equation:
       rhs: B*b*(C4*Sigm(C3*y0)) - 2*b*y5 - b**2*y2
@@ -193,5 +172,3 @@ state_variables:
 # ---------------------------------------------------------------------------
 # Output — what is plotted/observed
 # ---------------------------------------------------------------------------
-output:
-  - v_pyr

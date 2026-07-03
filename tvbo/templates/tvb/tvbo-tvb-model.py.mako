@@ -11,27 +11,26 @@ else:
     model = context['model']
     standalone = True
 render = lambda obj: model.render_equation(obj, format='numpy')
+## Opt-in (model.cse): hoist repeated subexpressions — e.g. repeated muV/sigmaV/T_V
+## calls in transfer functions — so the interpreted TVB dfun evaluates each once.
+## When off, render_func_cse is None and function_def emits the flat form.
+render_cse = (lambda obj: model.render_equation_cse(obj, format='numpy')) if getattr(model, 'cse', False) else None
 
 # In TVB, local_coupling is a separate dfun argument, not part of the coupling array.
-# Use the ontology to identify which coupling inputs are global (part of coupling array)
-# vs local (passed as separate dfun argument). This correctly handles models like SupHopf
-# that have named local coupling terms (e.g. lc_0) beyond just 'local_coupling'.
-from tvbo.ontology import owl as _onto
-try:
-    _global_names = set(_onto.get_model_coupling_terms(model.name, only_global=True).keys())
-    global_coupling_inputs = {k: v for k, v in model.coupling_inputs.items() if k in _global_names}
-except Exception:
-    # Model not in ontology — filter by naming convention:
-    # 'local_coupling' and 'lc_*' prefixed terms are local coupling
-    def _is_local(name):
-        return name == 'local_coupling' or name.startswith('lc_')
-    global_coupling_inputs = {k: v for k, v in model.coupling_inputs.items() if not _is_local(k)}
+# Coupling inputs are sourced from the YAML Dynamics (the ground truth), NOT the
+# ontology. A coupling input is local if flagged (local: true) or named by
+# convention ('local_coupling' or an 'lc_*' prefix, e.g. SupHopf's lc_0); every
+# other coupling input is a global term that enters the coupling array.
+def _is_local(name, ci):
+    return getattr(ci, 'local', False) or name == 'local_coupling' or name.startswith('lc_')
+global_coupling_inputs = {k: v for k, v in model.coupling_inputs.items() if not _is_local(k, v)}
 local_coupling_inputs = {k: v for k, v in model.coupling_inputs.items() if k not in global_coupling_inputs}
 has_local_coupling = bool(local_coupling_inputs)
 %>
 % if standalone:
 # Auto-generated standalone model file
 import numpy as np
+import scipy.special
 from tvb.basic.neotraits.api import Attr, Final, List, NArray, Range
 from tvb.simulator.models.base import Model
 
@@ -39,6 +38,11 @@ from tvb.simulator.models.base import Model
 class ${model.name}(Model):
 
     % for p in model.parameters.values():
+    % if isinstance(p.value, (list, tuple)):
+    # Array-valued model constant (e.g. mode-coupling matrix); a fixed class
+    # attribute rather than a per-region NArray.
+    ${p.name} = np.array(${list(p.value)})
+    % else:
     ${p.name} = NArray(
         label=r":math:`${p.symbol or p.name}`",
         default=np.array([${p.value}]),
@@ -51,6 +55,7 @@ class ${model.name}(Model):
         doc="""${p.definition[:200].replace('\n', '')}"""
         % endif
     )
+    % endif
     % endfor
 
     _nvar = ${len(model.state_variables)}
@@ -60,43 +65,57 @@ class ${model.name}(Model):
 % endif
 ########## StateVariable Ranges and Boundaries ##########
 <%
-# Define 1e9 constant for readability
-INFINITY = '1e9'
-NEGINFINITY = '-1e9'
+import math
+from tvbo.adapters.tvb import tvb_state_variable_ranges, tvb_state_variable_boundaries
 
-def format_range_or_boundary(sv, attr, default=(NEGINFINITY, INFINITY)):
-    if getattr(sv, attr):
-        lo = str(getattr(sv, attr).lo) if getattr(sv, attr).lo is not None else default[0]
-        hi = str(getattr(sv, attr).hi) if getattr(sv, attr).hi is not None else default[1]
-    else:
-        lo, hi = default
+def _lit(v):
+    """Render a float as a TVB-code literal, preserving infinities as np.inf."""
+    return ('np.inf' if v > 0 else '-np.inf') if math.isinf(v) else repr(float(v))
 
-    return f'"{sv.name}": np.array([{lo}, {hi}])'
+def _entry(name, bounds):
+    """Render one ``"name": np.array([lo, hi])`` dict entry."""
+    lo, hi = bounds
+    return f'"{name}": np.array([{_lit(lo)}, {_lit(hi)}])'
+
+# Resolution (which source feeds the range vs the clamp) lives in the adapter;
+# the template only renders the resulting {name: (lo, hi)} mappings.
+sv_ranges = tvb_state_variable_ranges(model)
+sv_boundaries = tvb_state_variable_boundaries(model)
 %>
 
     state_variable_range = Final(
         label="State Variable ranges [lo, hi]",
         default={
-            ${",\n\t\t\t".join([format_range_or_boundary(sv, 'domain') for sv in model.state_variables.values()])}
+            ${",\n\t\t\t".join([_entry(n, b) for n, b in sv_ranges.items()])}
         },
         doc="""Expected ranges of the state variables for initial condition generation and phase plane setup."""
     )
 
-% if any(sv.boundaries is not None for sv in model.state_variables.values()):
+% if sv_boundaries:
     state_variable_boundaries = Final(
         label="State Variable boundaries [lo, hi]",
         default={
-            ${",\n\t\t\t".join([format_range_or_boundary(sv, 'boundaries') for sv in model.state_variables.values()])}
+            ${",\n\t\t\t".join([_entry(n, b) for n, b in sv_boundaries.items()])}
         },
         doc="""State variable boundaries for phase plane setup."""
     )
 % endif
 ########## Variables Of Interest ##########
     <%
-    output_keys = tuple(model.output) if isinstance(model.output, list) else tuple(model.output.keys()) if model.output else ()
+    # Recorded outputs. `record` is the canonical selector — state variables
+    # default to record=true, derived variables to record=false — superseding the
+    # deprecated `variable_of_interest` slot and the legacy `output` list.
+    recorded_states = tuple(sv.name for sv in model.state_variables.values() if getattr(sv, 'record', True))
+    recorded_derived = tuple(dv.name for dv in model.derived_variables.values() if getattr(dv, 'record', False))
+    if isinstance(model.output, dict):
+        legacy_output = tuple(model.output.keys())
+    elif model.output:
+        legacy_output = tuple(model.output)
+    else:
+        legacy_output = ()
+    output_keys = recorded_derived + tuple(k for k in legacy_output if k not in recorded_derived)
     choices = tuple(model.state_variables.keys()) + output_keys
-
-    variables_of_interest = tuple(sv.name for sv in model.state_variables.values() if sv.variable_of_interest) + output_keys
+    variables_of_interest = recorded_states + output_keys
     %>
 
     variables_of_interest = List(
@@ -147,20 +166,17 @@ def format_range_or_boundary(sv, attr, default=(NEGINFINITY, INFINITY)):
 % endif
 
 ########## OutputTransforms ##########
-% if model.output:
+% if output_keys:
     def _build_observer(self):
         template = ("def observe(state):\n"
                     "    {svars} = state\n"
-                    % if isinstance(model.output, list):
-                        % for var_name in model.output:
-<%                          dv = model.derived_variables.get(var_name) %>\
-                    "    ${var_name} = ${render(dv) if dv else var_name}\n"
-                        % endfor
-                    % else:
-                        % for ot in model.output.values():
-                    "    ${ot.name} = ${render(ot)}\n"
-                        % endfor
-                    % endif
+                    % for var_name in output_keys:
+<%
+    _dv = model.derived_variables.get(var_name)
+    _ot = model.output.get(var_name) if isinstance(model.output, dict) else None
+%>\
+                    "    ${var_name} = ${render(_dv) if _dv else (render(_ot) if _ot else var_name)}\n"
+                    % endfor
                     "    return numpy.array([{voi_names}])")
         svars = ','.join(self.state_variables)
         if len(self.state_variables) == 1:
@@ -193,7 +209,7 @@ def format_range_or_boundary(sv, attr, default=(NEGINFINITY, INFINITY)):
         # Functions
 % for f in model.functions.values():
 <%
-    fndef = capture(fn.function_def, f, format='numpy', render_func=render).strip()
+    fndef = capture(fn.function_def, f, format='numpy', render_func=render, render_func_cse=render_cse).strip()
     indented_fndef = '\n'.join('        ' + line if line.strip() else '' for line in fndef.split('\n'))
 %>
 ${indented_fndef}
@@ -218,8 +234,13 @@ ${indented_fndef}
 
 ## State-Equations
         # Time Derivatives
-        return np.array([
+        # Broadcast every derivative to a common per-node shape so constant
+        # (state-independent) derivatives — e.g. ``duA/dt = cA`` — stack into a
+        # homogeneous array alongside node-shaped ones, matching TVB's own
+        # ``numpy.full_like`` handling of constant drifts.
+        _derivs = np.broadcast_arrays(
     % for sv in model.state_variables.values():
-            ${render(sv)}, # ${sv.name}
+            np.asarray(${render(sv)}), # ${sv.name}
     % endfor
-        ])
+        )
+        return np.array(_derivs)

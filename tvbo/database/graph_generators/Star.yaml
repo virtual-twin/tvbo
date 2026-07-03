@@ -1,0 +1,16 @@
+name: Star
+description: "Star graph — one central hub connected to n-1 peripheral nodes."
+iri: tvbo:Star
+
+parameters:
+  n: { datatype: integer, description: "Number of nodes (1 hub + n-1 leaves)" }
+
+bindings:
+  julia:
+    library: Graphs
+    callable: star_graph
+    args: [n]
+  networkx:
+    library: networkx
+    callable: star_graph
+    args: [n]

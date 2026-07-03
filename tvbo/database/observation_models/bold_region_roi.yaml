@@ -29,10 +29,12 @@ pipeline:
     - name: temporal_average_interim
       output: interim_averaged
       equation:
-          rhs: "mean(X.reshape(-1, window, *X.shape[1:]), axis=1)"
+          rhs: "window_mean(X, window)"
       arguments:
-          - name: window
-            value: 1
+          window:
+              description: >-
+                  Interim averaging window in integration steps. Resolved from the
+                  integration dt (= stock_dt / dt), not a raw-grid literal.
       apply_on_dimension: time
 
     - name: hemodynamic_response
@@ -52,12 +54,12 @@ pipeline:
                   value: 0.4
                   unit: s
       arguments:
-          - name: duration
-            value: 20
-            unit: s
-          - name: stock_dt
-            value: 0.004
-            unit: s
+          duration:
+              value: 20
+              unit: s
+          stock_dt:
+              value: 0.004
+              unit: s
 
     - name: convolve
       input: temporal_average_interim
@@ -66,19 +68,25 @@ pipeline:
           module: scipy.signal
           name: fftconvolve
       arguments:
-          - name: in2
-            value: hrf_kernel
-          - name: mode
-            value: same
+          in2:
+              value: hrf_kernel
+          mode:
+              value: same
 
     - name: subsample_to_period
       input: convolve
       output: subsampled
       equation:
-          rhs: "X[::step]"
+          rhs: "subsample(X, start, step)"
       arguments:
-          - name: step
-            description: "Subsample factor"
+          start:
+              description: >-
+                  Index of first output sample (resolved to step - 1) so the first
+                  sample aligns with TVB's step % istep == 0 emission.
+          step:
+              description: >-
+                  Interim samples per output sample. Resolved from the integration
+                  dt (= (period / dt) / interim_istep), not a raw-grid literal.
       apply_on_dimension: time
 
     - name: volterra_transform
@@ -101,6 +109,6 @@ pipeline:
       equation:
           rhs: "spatial_mean @ X"
       arguments:
-          - name: spatial_mean
-            description: "Region averaging matrix (n_regions, n_sources)"
+          spatial_mean:
+              description: "Region averaging matrix (n_regions, n_sources)"
       apply_on_dimension: node

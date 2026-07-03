@@ -9,6 +9,7 @@ from tvbo import export as _export
 def formats(
     json: bool = typer.Option(False, "--json", help="Emit machine-readable JSON."),
 ) -> None:
+    """List every registered I/O format (key, extension, media type, importer)."""
     rows = _export.list_format_dicts()
     if json:
         from . import _common

@@ -1,0 +1,55 @@
+name: RandomReservoir
+description: >-
+  Sparse random recurrent adjacency with post-hoc spectral-radius rescaling —
+  the canonical Echo State Network substrate (Jaeger 2001). The recurrent
+  reservoir of an ESN is fully described by four numbers: size, sparsity,
+  target spectral radius, and the weight distribution of the non-zero entries.
+iri: tvbo:RandomReservoir
+
+parameters:
+  n:                  { datatype: integer, description: "Number of nodes" }
+  sparsity:           { datatype: float,   description: "Fraction of non-zero weights in [0, 1]" }
+  spectral_radius:    { datatype: float,   description: "Target spectral radius (post-rescaling)" }
+  weight_distribution:
+    datatype: Distribution
+    description: "Distribution from which non-zero weights are drawn. Default: Normal(0, 1)."
+  seed: { datatype: integer, required: false }
+
+# Symbolic procedure — backend-independent. Each step is a named intermediate
+# expressed via canonical array primitives (sample, eigvals, max, abs, ...).
+# Backends that implement these primitives translate natively; backends that
+# don't fall back to the `bindings:` block below.
+procedure:
+  steps:
+    - name: raw
+      description: "n×n matrix sampled from the weight distribution"
+      equation:
+        rhs: "sample(weight_distribution, shape=(n, n), seed=seed)"
+    - name: mask
+      description: "Bernoulli sparsity mask (1 with prob = sparsity)"
+      equation:
+        rhs: "sample(Uniform(0, 1), shape=(n, n), seed=seed + 1) < sparsity"
+    - name: masked
+      equation:
+        rhs: "raw * mask"
+    - name: rho
+      description: "Current spectral radius (largest absolute eigenvalue)"
+      equation:
+        rhs: "max(abs(eigvals(masked)))"
+    - name: rho_guard
+      description: >-
+        Fail loudly when the masked matrix has spectral radius 0 (e.g. sparsity
+        too low / n too small so every sampled edge was zeroed). Without this the
+        output step would divide by zero and silently emit an all-NaN connectome;
+        the legacy builtins.random_reservoir raised RuntimeError here.
+      equation:
+        rhs: "require(rho > 0, 'RandomReservoir: spectral radius of the masked matrix is 0 (no non-zero eigenvalues) — increase sparsity or n')"
+  output:
+    weights:
+      equation:
+        rhs: "masked * (spectral_radius / rho)"
+
+# No `bindings:` block — this generator is materialised entirely from the
+# symbolic `procedure:` above by the generic engine
+# (tvbo/graph_generators/engine.py), numpy/eager mode. The same primitive set
+# (sample, eigvals, max, abs, …) is the path future backends emit through.

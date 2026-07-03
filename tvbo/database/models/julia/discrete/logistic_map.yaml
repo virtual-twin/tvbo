@@ -7,12 +7,10 @@ source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main
 system_type: discrete
 parameters:
   r:
-    name: r
     value: 4.0
     description: Logistic growth rate r.
 state_variables:
   x:
-    name: x
     equation:
       lhs: x_next
       rhs: r*x*(1 - x)

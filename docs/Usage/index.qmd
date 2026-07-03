@@ -138,7 +138,7 @@ const PAGES = [
     href: "DefineDynamicalSystem.html",
     desc: "Create neural mass models from YAML, Python, or the ontology.",
     cats: ["fundamentals","dynamics","YAML"],
-    img: "" },
+    img: "thumbnails/DefineDynamicalSystem.png" },
   { title: "Defining Networks",
     href: "Network.html",
     desc: "Build brain networks from matrices, YAML, connectome databases, or BIDS.",

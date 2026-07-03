@@ -38,17 +38,17 @@ pipeline:
       equation:
           rhs: "bandpass(X, low_freq, high_freq, fs)"
       arguments:
-          - name: low_freq
-            value: 0.01
-            unit: Hz
-            description: "Low frequency cutoff"
-          - name: high_freq
-            value: 0.1
-            unit: Hz
-            description: "High frequency cutoff"
-          - name: order
-            value: 2
-            description: "Filter order"
+          low_freq:
+              value: 0.01
+              unit: Hz
+              description: "Low frequency cutoff"
+          high_freq:
+              value: 0.1
+              unit: Hz
+              description: "High frequency cutoff"
+          order:
+              value: 2
+              description: "Filter order"
       apply_on_dimension: time
 
     # Function 2: Z-score normalization per region
@@ -61,9 +61,9 @@ pipeline:
       equation:
           rhs: "(X - mean(X)) / std(X)"
       arguments:
-          - name: axis
-            value: 0
-            description: "Normalize along time axis"
+          axis:
+              value: 0
+              description: "Normalize along time axis"
       apply_on_dimension: time
 
     # Function 3: Compute Pearson correlation matrix
@@ -74,11 +74,11 @@ pipeline:
           module: numpy
           name: corrcoef
       equation:
-          rhs: "corrcoef(X.T)"
+          rhs: "corrcoef(transpose(X))"
       arguments:
-          - name: rowvar
-            value: false
-            description: "Each column represents a variable (region)"
+          rowvar:
+              value: false
+              description: "Each column represents a variable (region)"
 
     # Function 4: Fisher z-transformation (optional)
     - name: fisher_z_transform
@@ -94,6 +94,6 @@ pipeline:
                   value: 0.999
                   description: "Clip correlations to avoid infinity at r=±1"
       arguments:
-          - name: apply
-            value: true
-            description: "Whether to apply Fisher z-transformation"
+          apply:
+              value: true
+              description: "Whether to apply Fisher z-transformation"

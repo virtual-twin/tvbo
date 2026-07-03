@@ -1,3 +1,12 @@
+"""Parse TVBO equation strings into SymPy expressions.
+
+Provides [`parse_eq`](expression.qmd#parse_eq) for turning an `Equation` (or a raw
+string) into a SymPy expression, along with the custom aggregation symbols and the
+`ARRAY_FUNCTIONS` registry of array reduction/manipulation functions (`sum`, `mean`,
+`slice_axis`, `mode_dot`, …) that the code printers in `tvbo.codegen.code` lower to
+backend-specific calls.
+"""
+
 from sympy import parse_expr, Symbol, Function, IndexedBase, Sum, Product, sqrt
 from sympy.parsing.sympy_parser import (
     standard_transformations,
@@ -42,7 +51,21 @@ class Mean(Function):
 
     @classmethod
     def eval(cls, *args):
-        # Don't auto-evaluate; let the printer handle code generation
+        """Suppress automatic simplification so the symbol survives to codegen.
+
+        SymPy calls this classmethod when a `Mean(...)` is constructed. Returning
+        `None` signals that no closed-form evaluation should be performed, keeping
+        the expression as an unevaluated `Mean` node that the code printers in
+        [`tvbo.codegen.code`](../codegen/code.qmd) translate into the backend's
+        mean/reduction call.
+
+        Args:
+            *args: The positional arguments the `Mean` was called with (the inner
+                expression and index limit tuple). Left unused.
+
+        Returns:
+            Always `None`, leaving the `Mean` application unevaluated.
+        """
         return None
 
 
@@ -81,6 +104,21 @@ ARRAY_FUNCTIONS = {
     "abs": Function("abs"),
     "prod": Function("prod"),
     "concatenate": Function("concatenate"),
+    # Array-manipulation functions that carry Python-specific semantics.
+    # Custom printer methods in tvbo.codegen.code expand these to the correct
+    # JAX / NumPy calls (including .reshape() and keyword args that SymPy
+    # cannot represent natively).
+    "window_mean": Function("window_mean"),  # window_mean(X, w) → jnp.mean(X.reshape(-1, w, *X.shape[1:]), axis=1)
+    "subsample": Function("subsample"),      # subsample(X, step[, start]) → X[start::step]
+    # Structural slice/shape ops — let an observation pipeline that selects a voi, trims a
+    # transient, or downsamples be authored as declarative equations instead of source_code.
+    "slice_axis": Function("slice_axis"),    # slice_axis(X, axis, start, stop[, step]) → bounded slice of one axis (keeps ndim)
+    "slice_from": Function("slice_from"),    # slice_from(X, axis, start)               → open-ended slice of one axis (to the end)
+    "shape": Function("shape"),              # shape(X, axis)                           → length of X along axis
+    "global_mean": Function("global_mean"),  # global_mean(X) → jnp.mean(X, axis=-2, keepdims=True)
+    "transpose": Function("transpose"),      # transpose(X) → X.T
+    "mode_dot": Function("mode_dot"),        # mode_dot(X, M) → X·M contracted over the mode axis ({np,jnp}.dot)
+    "mode_sum": Function("mode_sum"),        # mode_sum(X) → sum over the mode axis, keepdims ({np,jnp}.sum(X, axis=-1, keepdims=True))
 }
 
 

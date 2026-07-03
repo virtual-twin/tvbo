@@ -11,6 +11,7 @@ Context Variables:
 </%doc>
 import jax
 import jax.numpy as jnp
+import jax.scipy as jsp
 from typing import Tuple
 
 from tvboptim.experimental.network_dynamics.core.bunch import Bunch

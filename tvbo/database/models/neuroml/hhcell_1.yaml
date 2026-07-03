@@ -126,6 +126,7 @@ state_variables:
     initial_value: 0.32
 coupling_inputs:
   I_syn:
+    name: I_syn
 events:
   spike:
     condition:

@@ -3,7 +3,6 @@ iri: tvbo:Generic2dOscillator
 model_type: generic
 parameters:
   I:
-    name: I
     definition: Baseline shift of the cubic nullcline
     value: 0.0
     domain:
@@ -12,9 +11,8 @@ parameters:
       step: 0.01
     description: Baseline shift of the cubic nullcline
     grounding:
-      - GO:0060079
+    - GO:0060079
   a:
-    name: a
     definition: Vertical shift of the configurable nullcline
     value: -2.0
     domain:
@@ -23,7 +21,6 @@ parameters:
       step: 0.01
     description: Vertical shift of the configurable nullcline
   alpha:
-    name: alpha
     definition: alpha_G2D is the coefficient of the linear feedback coupling term of the state-variable W_G2D to the first state-equation Vdot_G2D. Constant parameter to scale the rate of feedback from the slow variable to the fast variable.
     value: 1.0
     domain:
@@ -32,7 +29,6 @@ parameters:
       step: 0.0001
     description: Constant parameter to scale the rate of feedback from the slow variable to the fast variable.
   b:
-    name: b
     definition: Linear slope of the configurable nullcline
     value: -10.0
     domain:
@@ -41,10 +37,9 @@ parameters:
       step: 0.01
     description: Linear slope of the configurable nullcline
     grounding:
-      - GO:0098873
-      - GO:0099178
+    - GO:0098873
+    - GO:0099178
   beta:
-    name: beta
     definition: "Constant parameter to scale the rate of feedback from the\n            slow variable to itself"
     value: 1.0
     domain:
@@ -53,7 +48,6 @@ parameters:
       step: 0.0001
     description: Constant parameter to scale the rate of feedback from the             slow variable to itself
   c:
-    name: c
     definition: Parabolic term of the configurable nullcline
     value: 0.0
     domain:
@@ -62,7 +56,6 @@ parameters:
       step: 0.01
     description: Parabolic term of the configurable nullcline
   d:
-    name: d
     definition: "Temporal scale factor. Warning: do not use it unless\n        you know what you are doing and know about time tides."
     value: 0.02
     domain:
@@ -71,7 +64,6 @@ parameters:
       step: 0.0001
     description: Temporal scale factor
   e:
-    name: e
     definition: Coefficient of the quadratic term of the cubic nullcline.
     value: 3.0
     domain:
@@ -80,7 +72,6 @@ parameters:
       step: 0.0001
     description: Coefficient of the quadratic term of the cubic nullcline
   f:
-    name: f
     definition: Coefficient of the cubic term of the cubic nullcline.
     value: 1.0
     domain:
@@ -89,7 +80,6 @@ parameters:
       step: 0.0001
     description: Coefficient of the cubic term of the cubic nullcline
   g:
-    name: g
     definition: Coefficient of the linear term of the cubic nullcline.
     value: 0.0
     domain:
@@ -98,7 +88,6 @@ parameters:
       step: 0.5
     description: Coefficient of the linear term of the cubic nullcline
   gamma:
-    name: gamma
     definition: "Constant parameter to reproduce FHN dynamics where\n               excitatory input currents are negative.\n               It scales both I and the long range coupling term."
     value: 1.0
     domain:
@@ -107,7 +96,6 @@ parameters:
       step: 0.1
     description: Constant parameter to reproduce FHN dynamics where                excitatory input currents are negative
   tau:
-    name: tau
     definition: "A time-scale hierarchy can be introduced for the state\n        variables :math:`V` and :math:`W`. Default parameter is 1, which means\n        no time-scale hierarchy."
     value: 1.0
     domain:
@@ -117,16 +105,13 @@ parameters:
     description: A time-scale hierarchy can be introduced for the state         variables :math:`V` and :math:`W`
 description: The Generic 2-Dimensional Oscillator (G2D) is a phenomenological, coupled, nonlinear two-dimensional (i.e., two state-variables ('V', 'W')) oscillatory, neural mass model. The G2D is a generalization of the well-known FitzHugh-Nagumo model (FitzHugh, 1961; Nagumo et. al, 1962), adapted here for reproducing a wilder class of dynamical configurations of physiological phenomena as observed in neuronal population using phase-portrait method.
 references:
-  - Nagumo1962
-  - Fitzhugh1961
+- Nagumo1962
+- Fitzhugh1961
 coupling_inputs:
-  c_glob:
-    name: c_glob
-  local_coupling:
-    name: local_coupling
+  c_glob: {}
+  local_coupling: {local: true}
 state_variables:
   V:
-    name: V
     domain:
       lo: -2.0
       hi: 4.0
@@ -135,13 +120,11 @@ state_variables:
       lhs: Derivative(V, t)
       rhs: d*tau*(I*gamma - V**3*f + V**2*e + V*g + V*local_coupling + W*alpha + c_glob*gamma)
       latex: false
-    variable_of_interest: true
     coupling_variable: true
     initial_value: 0.1
     grounding:
-      - GO:0005272
+    - GO:0005272
   W:
-    name: W
     domain:
       lo: -6.0
       hi: 6.0
@@ -150,8 +133,7 @@ state_variables:
       lhs: Derivative(W, t)
       rhs: d*(V**2*c + V*b - W*beta + a)/tau
       latex: false
-    variable_of_interest: true
     initial_value: 0.1
     grounding:
-      - GO:0005272
+    - GO:0005272
 number_of_modes: 1

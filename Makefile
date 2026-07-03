@@ -5,7 +5,7 @@ IMAGE_TAG=latest
 IMAGE_FULL=$(IMAGE_NAME):$(IMAGE_TAG)
 TARBALL_PATH=/Users/leonmartin_bih/projects/TVB-O/tvbo-container/tvbo.tar.gz
 
-.PHONY: help build save run docs-quarto docs-jupyter docs-to-py docs-rm-py docs-test docs-pytest docs-pytest-all docs-test-all docs-preview docs-render docs-clean docs-publish docs-publish-changed pypi-release release gen-linkml gen-openminds gen-owl gen-shacl gen-all all
+.PHONY: help build save run docs-quarto docs-jupyter docs-to-py docs-rm-py docs-test docs-pytest docs-pytest-all docs-test-all docs-preview docs-render docs-clean docs-publish docs-publish-changed pypi-release release gen-linkml gen-openminds gen-owl gen-shacl gen-all all check-runtime-onto
 
 help: ## Show this help
 	@echo "TVBO Makefile"
@@ -58,9 +58,10 @@ OPENMINDS_DIR = schema/openMINDS_tvbo
 
 gen-linkml:
 	@echo "Generating Python datamodel from LinkML schema..."
-	@mkdir -p $(DATAMODEL_DIR)
-	@gen-pydantic $(SCHEMA_PATH) > $(DATAMODEL_DIR)/pydantic.py
-	@gen-python $(SCHEMA_PATH) > $(DATAMODEL_DIR)/schema.py
+	@# Single source of truth shared with the hatch build hook: hatch_build.py
+	@# generates + strips the nondeterministic header, so from-source (`make`) and
+	@# build-time (wheel/sdist/editable) codegen produce byte-identical output.
+	@python hatch_build.py
 	@echo "✓ LinkML datamodel generated in $(DATAMODEL_DIR)/"
 
 gen-openminds:
@@ -72,7 +73,15 @@ OWL_OUT = ontology/tvb-o-struct.owl
 SHACL_OUT = ontology/tvb-o.shacl.ttl
 ABOX_OUT = ontology/tvb-o-data.ttl
 AXIOMS_TTL = ontology/tvb-o-axioms.ttl
+CLINICAL_TTL = ontology/tvb-o-clinical.ttl
+CLINICAL_NMM = ontology/tvb-o-clinical-nmm.ttl
 MERGED_OUT = ontology/tvbo.owl
+# Packaged copy of the generated ontology that the runtime actually loads
+# (tvbo/ontology/owl.py). Shipped in the wheel via MANIFEST.in.
+RUNTIME_GEN = tvbo/data/ontology/tvbo.owl
+# Deprecated class-based ontology — preserved as a parity reference, no longer
+# loaded. See dev/runtime_ontology_migration.md.
+RUNTIME_ONTO = tvbo/data/ontology/tvb-o.owl
 WIDOCO_OUT = docs/ontology/spec
 ROBOT ?= robot
 WIDOCO_IMAGE ?= ghcr.io/dgarijo/widoco:v1.4.25
@@ -116,13 +125,36 @@ gen-merged: gen-owl gen-abox
 		--input $(OWL_OUT) \
 		--input $(AXIOMS_TTL) \
 		--input $(ABOX_OUT) \
-		query --update ontology/fix-punning.ru \
+		--input $(CLINICAL_TTL) \
+		--input $(CLINICAL_NMM) \
+		query --update ontology/fix-punning.ru --update ontology/clinical-postmerge.ru \
 		annotate \
 		--ontology-iri "https://w3id.org/tvbo/tvbo.owl" \
 		--version-iri "https://w3id.org/tvbo/$(shell date +%Y-%m-%d)/tvbo.owl" \
 		reason --reasoner ELK \
 		--output $(MERGED_OUT)
-	@echo "✓ Merged ontology written to $(MERGED_OUT)"
+	@cp $(MERGED_OUT) $(RUNTIME_GEN)
+	@echo "✓ Merged ontology written to $(MERGED_OUT) and packaged to $(RUNTIME_GEN)"
+
+# Layer the clinical addon into the ontology artifact that the runtime actually loads
+# (tvbo/ontology/owl.py loads RUNTIME_ONTO, not MERGED_OUT). Idempotent: re-merging the
+# same triples is a no-op and the label INSERTs are guarded.
+gen-runtime-onto:
+	@echo "Merging clinical addon into the runtime ontology artifact ($(RUNTIME_ONTO))..."
+	@$(ROBOT) merge \
+		--input $(RUNTIME_ONTO) \
+		--input $(CLINICAL_TTL) \
+		--input $(CLINICAL_NMM) \
+		query --update ontology/clinical-postmerge.ru \
+		--output $(RUNTIME_ONTO)
+	@echo "✓ Runtime ontology updated: $(RUNTIME_ONTO)"
+
+# Fail if the runtime ontology the platform KG loads ($(RUNTIME_ONTO)) is older
+# than its sources — gen-runtime-onto only re-layers the clinical addon, so a
+# struct/axioms/abox edit otherwise never reaches the deployed KG unnoticed.
+# Suitable as a CI gate next to the existing "regenerated == committed" checks.
+check-runtime-onto:
+	@python3 scripts/ontology/check_runtime_onto_fresh.py
 
 gen-widoco: gen-merged
 	@echo "Generating Widoco HTML documentation (W3C-style spec + WebVOWL) via Docker..."

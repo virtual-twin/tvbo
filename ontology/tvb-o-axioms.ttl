@@ -189,9 +189,12 @@ tvbo:PyRates a tvbo:Backend ;
 tvbo:tvboptim a tvbo:Backend ;
     rdfs:label "tvboptim"@en ;
     tvbo:supportsTask       tvbo:ODEIntegration, tvbo:SDEIntegration,
-                            tvbo:GradientBasedOptimization ;
+                            tvbo:DDEIntegration, tvbo:SDDEIntegration,
+                            tvbo:ParameterExploration, tvbo:GradientBasedOptimization,
+                            tvbo:ConductionSpeedInference ;
     tvbo:providesCapability tvbo:Autodiff, tvbo:JITCompilation, tvbo:StochasticSolver,
-                            tvbo:CodeGeneration .
+                            tvbo:CodeGeneration, tvbo:DelayHistoryBuffer,
+                            tvbo:InterpolatedDelays, tvbo:StaticDelayBuffer .
 
 tvbo:NetworkDynamics a tvbo:Backend ;
     rdfs:label "NetworkDynamics.jl"@en ;
@@ -205,6 +208,56 @@ tvbo:BifurcationKit a tvbo:Backend ;
     rdfs:label "BifurcationKit.jl"@en ;
     tvbo:supportsTask       tvbo:NumericalContinuation, tvbo:BifurcationAnalysis ;
     tvbo:providesCapability tvbo:ContinuationSolver, tvbo:JuliaJIT .
+
+#
+# ─────────────────────────────────────────────────────────────────
+# §4.1b Differentiable conduction delays (interpolate_delays gating).
+# ─────────────────────────────────────────────────────────────────
+#
+# Gradient-based inference or exploration of conduction speed
+# (delay = tract_length / speed) is only well-posed when delayed states
+# are read by *linear interpolation* between the two bracketing history
+# steps — the coupling `interpolate_delays: true` slot. Nearest-step
+# (snapped) delays are piecewise-constant in the delay, so the gradient
+# w.r.t. conduction speed is identically zero. This layer makes that
+# requirement explicit and machine-checkable, so a SimulationExperiment
+# configured for conduction-speed inference on a tvboptim backend can
+# *materialise* `interpolate_delays: true` at configure() time instead of
+# requiring the user to set it by hand.
+
+tvbo:requiresCapability a owl:ObjectProperty ;
+    rdfs:domain tvbo:SimulationTask ;
+    rdfs:range  tvbo:BackendCapability ;
+    rdfs:label  "requires capability"@en ;
+    rdfs:comment "The task is only well-posed on a backend that provides the named capability."@en .
+
+tvbo:enabledByCouplingSlot a owl:AnnotationProperty ;
+    rdfs:label   "enabled by coupling slot"@en ;
+    rdfs:comment "Name of the concrete Coupling metadata slot a SimulationExperiment must set to True to realise this capability; read at configure() time to materialise the slot."@en .
+
+tvbo:enabledByGraphParameter a owl:AnnotationProperty ;
+    rdfs:label   "enabled by graph parameter"@en ;
+    rdfs:comment "Name of the concrete graph parameter a SimulationExperiment must set to realise this capability; read at configure() time to materialise the value."@en .
+
+tvbo:boundConstraint a owl:AnnotationProperty ;
+    rdfs:label   "bound constraint"@en ;
+    rdfs:comment "Numerical pre-condition the realised parameter must satisfy for the capability to stay correct."@en .
+
+tvbo:InterpolatedDelays a tvbo:BackendCapability ;
+    rdfs:label   "Interpolated (differentiable) delays"@en ;
+    rdfs:comment "Delayed states read by linear interpolation between the two bracketing history time-steps instead of snapping to the nearest step, making the coupling differentiable w.r.t. the continuous delay — hence w.r.t. conduction speed (delay = tract_length / speed)."@en ;
+    tvbo:enabledByCouplingSlot "interpolate_delays" .
+
+tvbo:StaticDelayBuffer a tvbo:BackendCapability ;
+    rdfs:label   "Static delay history buffer"@en ;
+    rdfs:comment "Fixed-length delay-history buffer (ceil(max_delay/dt) steps) whose size is set by an explicit max_delay bound and decoupled from the (possibly varying / traced) per-edge delays — the prerequisite for varying or differentiating delays under JIT. Delays exceeding max_delay are truncated (saturated at max_delay), so the bound must cover the slowest conduction speed explored."@en ;
+    tvbo:enabledByGraphParameter "max_delay" ;
+    tvbo:boundConstraint "max_delay >= max(tract_length) / min(conduction_speed)" .
+
+tvbo:ConductionSpeedInference a tvbo:SimulationTask ;
+    rdfs:label   "Conduction-speed inference"@en ;
+    rdfs:comment "Gradient-based optimisation or parameter exploration of conduction speed / per-edge conduction delays."@en ;
+    tvbo:requiresCapability tvbo:InterpolatedDelays, tvbo:StaticDelayBuffer .
 
 #
 # ─────────────────────────────────────────────────────────────────
@@ -767,4 +820,45 @@ tvbo:KIonEx
     tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
     tvbo:hasTimescaleSeparation        true ;
     tvbo:hasModelFeature               tvbo:FastSlowDecomposition .
+
+#
+# ─────────────────────────────────────────────────────────────────
+# §4.5 Observation axioms — hemodynamic warm-up requirement.
+# ─────────────────────────────────────────────────────────────────
+#
+# A BOLD signal is produced by convolving simulated neural activity
+# with a hemodynamic response function (HRF) of finite support. The
+# convolution is causal: BOLD at time t is a weighted sum of neural
+# activity over the preceding kernel window, so the first kernel-length
+# of the recorded signal depends on activity from *before* recording
+# starts. The integrator supplies that pre-roll from the discarded
+# transient (`tvbo:transient_time`). If the transient is shorter than
+# the HRF kernel, the convolution history buffer is under-filled, the
+# valid-mode output is truncated, and its time axis shifts earlier —
+# the BOLD then spuriously *precedes* the stimulus instead of lagging
+# it by the hemodynamic delay. OWL cannot state the numeric inequality;
+# it is documented here as an axiom and enforced in `tvb-o.shacl.ttl`.
+#
+
+tvbo:HemodynamicObservation a owl:Class ;
+    rdfs:subClassOf tvbo:Observation ;
+    rdfs:label "Hemodynamic observation"@en ;
+    rdfs:comment "An observation model that maps neural activity to a haemodynamic / BOLD signal by causal convolution with a finite-support HRF kernel."@en .
+
+<https://w3id.org/tvbo/observation_models/bold_double_exponential> a tvbo:HemodynamicObservation .
+<https://w3id.org/tvbo/observation_models/bold_gamma>              a tvbo:HemodynamicObservation .
+<https://w3id.org/tvbo/observation_models/bold_mixture_of_gammas>  a tvbo:HemodynamicObservation .
+<https://w3id.org/tvbo/observation_models/bold_region_roi>         a tvbo:HemodynamicObservation .
+
+tvbo:hrfKernelDuration a owl:DatatypeProperty ;
+    rdfs:domain tvbo:HemodynamicObservation ;
+    rdfs:range  xsd:decimal ;
+    rdfs:label  "HRF kernel duration (ms)"@en ;
+    rdfs:comment "Temporal support of the HRF convolution kernel, in milliseconds; the lower bound the simulated transient must satisfy."@en .
+
+tvbo:HemodynamicWarmupRequirement a skos:Concept ;
+    skos:prefLabel "Hemodynamic warm-up requirement"@en ;
+    rdfs:comment "Modelling axiom: for any tvbo:HemodynamicObservation, the discarded transient (tvbo:transient_time) MUST be ≥ the observation's HRF kernel duration (tvbo:hrfKernelDuration). Otherwise the causal HRF convolution is under-filled and the BOLD time axis shifts earlier, so the signal spuriously precedes the stimulus rather than lagging it by the hemodynamic delay. Example: the tvboptim BOLD pipeline uses a 20000 ms kernel (5000 samples at dt = 4 ms) via prepend_history + valid-mode convolution, so transient_time ≥ 20000 ms is required."@en ;
+    rdfs:seeAlso tvbo:HemodynamicObservation, tvbo:hrfKernelDuration, tvbo:transient_time ;
+    skos:scopeNote "Observed empirically (TVB-O acoustic-stimulation use-case, 2026): a 15000 ms transient (< 20000 ms kernel) made auditory BOLD precede the loudness by ~1 s with a mislabelled 1043 ms TR; transient ≥ 20000 ms restored a causal hemodynamic lag (≈ +1.5 s) and the correct 1000 ms TR."@en .
 

@@ -19,6 +19,8 @@ Functions:
 """
 
 import operator
+from typing import Any
+
 import pandas as pd
 from tvbo.data import db
 
@@ -132,7 +134,7 @@ def save_latex(conf, fpath):
 ##############
 
 
-def render_citation(citation, style="apa"):
+def render_citation(citation: Any, style: str = "apa") -> str:
     """Render an ontology citation instance as formatted text.
 
     Args:
@@ -225,6 +227,15 @@ def get_citation(citation_key) -> str:
 
 
 def to_pdf(render, outputfile):
+    """Convert Markdown text to a PDF file via pandoc.
+
+    Uses `pypandoc` with the `xelatex` PDF engine and a 3.5 cm page margin to
+    render the given Markdown source and write the result to disk.
+
+    Args:
+        render: Markdown-formatted source text to convert.
+        outputfile: Path where the generated PDF is written.
+    """
     import pypandoc
 
     pypandoc.convert_text(

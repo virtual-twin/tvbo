@@ -57,10 +57,12 @@ def _resolve(dim, dynamics):
             break
         expr = new
 
+    from tvbo.utils import is_array_valued
+
     param_subs = {
         sp.Symbol(name): float(p.value)
         for name, p in dynamics.parameters.items()
-        if p.value is not None
+        if p.value is not None and not is_array_valued(p.value)
     }
     for name, dp in (getattr(dynamics, "derived_parameters", {}) or {}).items():
         if getattr(dp, "equation", None) is not None:
@@ -155,6 +157,7 @@ def plot_dynamics_layout(
     fig=None,
     axes=None,
 ):
+    """Backwards-compatible shim — delegates to [`tvbo.plot.dynamics_layout.plot_dynamics_layout`](./dynamics_layout.qmd#tvbo.plot.dynamics_layout.plot_dynamics_layout)."""
     # Compatibility shim: moved to tvbo.plot.dynamics_layout
     from tvbo.plot.dynamics_layout import plot_dynamics_layout as _plot_dynamics_layout
 
@@ -179,6 +182,7 @@ def plot_experiment_layout(
     fig=None,
     axes=None,
 ):
+    """Backwards-compatible shim — delegates to [`tvbo.plot.experiment_layout.plot_experiment_layout`](./experiment_layout.qmd#tvbo.plot.experiment_layout.plot_experiment_layout)."""
     # Compatibility shim: moved to tvbo.plot.experiment_layout
     from tvbo.plot.experiment_layout import plot_experiment_layout as _plot_experiment_layout
 
@@ -394,7 +398,7 @@ def _kind_vectorfield(dynamics, resolved, ax, grid_n, cmap, stream, ax_given=Fal
 def _kind_phaseplane(dynamics, resolved, ax, grid_n, cmap, stream, ax_given,
                      alpha, lw, n_trajectories=0, traj_duration=200, traj_dt=0.01,
                      show_nullclines=True, show_fixed_points=True,
-                     show_limit_cycle=True):
+                     show_limit_cycle=True, trajectory_color="red"):
     """Vector field + nullclines + (optional) sample trajectories.
 
     Nullclines are the zero-level contours of each component of the vector
@@ -488,7 +492,7 @@ def _kind_phaseplane(dynamics, resolved, ax, grid_n, cmap, stream, ax_given,
             ts = dynamics.run(duration=traj_duration, dt=traj_dt, u_0=u0, save=False)
             traj = ts.data[:, :, 0, 0]
             ax.plot(traj[:, sv_idx[0]], traj[:, sv_idx[1]],
-                    color="0.2", lw=0.8, alpha=0.7)
+                    color=trajectory_color, lw=0.8, alpha=0.7)
     return fig
 
 
@@ -524,6 +528,7 @@ def plot_dynamics(
     n_trajectories=0,
     show_nullclines=True,
     show_fixed_points=True,
+    trajectory_color="red",
 ):
     """Plot a ``Dynamics`` in several ways.
 
@@ -569,6 +574,10 @@ def plot_dynamics(
         Number of sample trajectories overlaid on a phase plane (random ICs).
     show_nullclines, show_fixed_points : bool
         Toggles for ``kind="phaseplane"``.
+    trajectory_color : str
+        Color of overlaid sample trajectories on a ``kind="phaseplane"`` plot.
+        Defaults to ``"red"`` for clear contrast against the streamline /
+        nullcline overlay.
 
     Returns
     -------
@@ -607,7 +616,8 @@ def plot_dynamics(
                                n_trajectories=n_trajectories,
                                traj_duration=duration, traj_dt=dt,
                                show_nullclines=show_nullclines,
-                               show_fixed_points=show_fixed_points)
+                               show_fixed_points=show_fixed_points,
+                               trajectory_color=trajectory_color)
     else:
         trials, time = _run_trials(dynamics, n_trials, duration, dt, u_0, transient)
         if kind == "timeseries":

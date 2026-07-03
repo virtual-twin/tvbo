@@ -28,7 +28,7 @@
 
     dt = integration.step_size if integration is not None else 0.1
     cvar = [i for i, sv in enumerate(experiment.dynamics.state_variables.values()) if sv.coupling_variable]
-    vois = [sv.name for sv in experiment.dynamics.state_variables.values() if sv.variable_of_interest]
+    vois = [sv.name for sv in experiment.dynamics.state_variables.values() if getattr(sv, 'record', True)]
 
     svars = list(model.state_variables.keys())
     svars_is_vois = svars == vois
@@ -113,7 +113,7 @@ def monitor_raw(time_steps, trace, params, t_offset = 0):
 
 ## Observations
 % if hasattr(experiment, 'observations') and experiment.observations:
-${obs.create_all_observations(experiment)}
+${obs.create_all_observations(experiment, obs_sampling=context.get('obs_sampling'))}
 % endif
 
 ## Transformation for derived parameters
@@ -336,6 +336,47 @@ def kernel(state):
     % else:
     return (result, new_ics)
     % endif
+
+
+% if not return_new_ics:
+def run_experiment(state):
+    """Run simulation, apply observations, and return a fully typed ExperimentResult.
+
+    Mirrors the tvboptim backend: the generated script constructs
+    ``SimulationResult`` / ``ExperimentResult`` objects directly, without any
+    post-hoc ``from_timeseries`` transformation in the Python caller.
+    """
+    from tvbo.data.types import SimulationResult, ExperimentResult, _to_dataarray
+
+    ts = kernel(state)
+
+    # ── Integration result ─────────────────────────────────────────────────
+    ld = ts.labels_dimensions if isinstance(ts.labels_dimensions, dict) else {}
+    integration_da = _to_dataarray(
+        ts.data,
+        raw_time=ts.time,
+        state_names=ld.get("State Variable"),
+        nodes=ld.get("Region"),
+    )
+
+    # ── Observations ───────────────────────────────────────────────────────
+    observations = {}
+% if hasattr(experiment, 'observations') and experiment.observations:
+% for obs_name in experiment.observations.keys():
+    _obs_ts = ${obs_name}(ts)
+    _obs_ld = _obs_ts.labels_dimensions if isinstance(_obs_ts.labels_dimensions, dict) else {}
+    observations['${obs_name}'] = SimulationResult(data=_to_dataarray(
+        _obs_ts.data,
+        raw_time=_obs_ts.time,
+        state_names=_obs_ld.get("State Variable"),
+        nodes=_obs_ld.get("Region"),
+    ))
+% endfor
+% endif
+
+    integration = SimulationResult(data=integration_da, observations=observations)
+    return ExperimentResult(integration=integration, name='${experiment.label or ""}')
+% endif
 
 
 # ---------------------------------------------------------------------------

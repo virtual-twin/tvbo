@@ -132,7 +132,9 @@ def onto2graph(
         if add_object_properties:
             for prop in props["object_properties"]:
                 p, o = next(iter(prop.items()))
-                if p in ["has_data_type", "has_dependency"] or o.name == "Thing":
+                # skip data-valued properties whose object is a literal/datatype (e.g. a
+                # float or xsd datatype) rather than an ontology entity — these are not graph edges
+                if p in ["has_data_type", "has_dependency"] or not hasattr(o, "name") or o.name == "Thing":
                     continue
                 object_id = o.storid if storid else (o if not object2string else o.label.first())
                 property_id = (
@@ -164,6 +166,24 @@ def onto2graph(
                         class_id,
                         type="is_instance_of",
                     )
+
+        # Connect individuals via their object properties (e.g. a clinical study ->
+        # the clinical domain it applies to and the node-dynamics model it uses).
+        if add_object_properties:
+            for prop in i.get_properties():
+                if isinstance(prop, str):
+                    continue
+                try:
+                    values = list(prop[i])
+                except Exception:
+                    continue
+                for o in values:
+                    if not hasattr(o, "storid") or not hasattr(o, "name") or o.name == "Thing":
+                        continue
+                    target_id = o.storid if storid else (o if not object2string else (o.label.first() or str(o)))
+                    property_id = prop.storid if storid else (prop if not object2string else (prop.label.first() if prop.label else prop.name))
+                    if not edge_exists(nx_graph, individual_id, target_id, edge_type=prop):
+                        nx_graph.add_edge(individual_id, target_id, type=property_id)
 
     return nx_graph
 
@@ -366,6 +386,32 @@ def subset2graph(
     individual_relationships: List[str] = ["has_reference"],
     expand_nodes: bool = False,
 ) -> nx.MultiDiGraph:
+    """Build a directed multigraph from a subset of ontology classes.
+
+    Each class in `subset` becomes a node with `is_a` edges to its parent
+    classes and, optionally, edges derived from object-property restrictions and
+    links from individuals that reference the class.
+
+    Args:
+        subset: Iterable of ontology classes (owlready2 `ThingClass`) to include
+            as nodes; `Restriction` entries are skipped.
+        add_object_properties: If `True`, add edges for object-property
+            restrictions found in each class's `is_a` list (data-property
+            restrictions are ignored).
+        add_annotation_properties: If `True`, attach each class's annotation
+            properties as node attributes.
+        add_individuals: If `True`, add edges from individuals that reference a
+            node via one of `individual_relationships`.
+        individual_relationships: Names of the properties linking individuals to
+            the subset classes; matching links are added as `has_reference`
+            edges.
+        expand_nodes: Currently unused placeholder for restricting the result to
+            the original subset.
+
+    Returns:
+        A `networkx.MultiDiGraph` of the subset with hierarchy, object-property,
+        and individual-reference edges.
+    """
     G = nx.MultiDiGraph()
     for cls in subset:
         if isinstance(cls, owl.class_construct.Restriction):
@@ -401,6 +447,19 @@ def subset2graph(
 
 
 def hierarchy_graph(G: nx.MultiDiGraph) -> nx.MultiDiGraph:
+    """Extract the `is_a` hierarchy of a graph into a new multigraph.
+
+    Copies only the edges whose `type` attribute equals `"is_a"`, together with
+    their incident nodes and attributes, dropping all object-property and other
+    relation edges.
+
+    Args:
+        G: Source graph whose edges carry a `type` attribute.
+
+    Returns:
+        A `networkx.MultiDiGraph` containing only the `is_a` edges and the nodes
+        they connect.
+    """
     G_isa = nx.MultiDiGraph()
 
     # Add only 'is_a' edges to the new graph
@@ -413,6 +472,22 @@ def hierarchy_graph(G: nx.MultiDiGraph) -> nx.MultiDiGraph:
 
 
 def model2graph(model) -> nx.MultiDiGraph:
+    """Build a dependency graph of a model's dynamics components.
+
+    Resolves `model` (by name if given as a string), walks its descendant
+    classes, and keeps only those categorised as a `Parameter`, `StateVariable`,
+    `TimeDerivative`, `Function`, or `ConditionalDerivedVariable`. Each retained
+    class becomes a node tagged with its category, with `is_a` edges to parent
+    classes and object-property edges to other in-model classes.
+
+    Args:
+        model: A model class, or the name of a model to resolve via
+            `ontology.get_model`.
+
+    Returns:
+        A `networkx.MultiDiGraph` induced on the retained dynamics-component
+        nodes, each node's `type` set to its ontology category.
+    """
     if isinstance(model, str):
         model = ontology.get_model(model)
     G = nx.MultiDiGraph()
@@ -480,6 +555,24 @@ def model2graph(model) -> nx.MultiDiGraph:
 def adjust_positions(
     pos: Dict[Any, np.ndarray], threshold_percent: int = 10, direction: str = "xy", mode: str = "outward"
 ) -> Dict[Any, np.ndarray]:
+    """Nudge node positions apart or together along the chosen axes.
+
+    Compares every pair of points and, where their separation along an axis is
+    below (outward mode) or above (inward mode) a threshold expressed as a
+    percentage of the layout span, shifts the two points relative to each other
+    to enforce the spacing.
+
+    Args:
+        pos: Mapping from node to its 2-D position array.
+        threshold_percent: Target separation as a percentage of the total span
+            along each considered axis.
+        direction: Axes to adjust; include `"x"` and/or `"y"` (e.g. `"xy"`).
+        mode: `"outward"` to push points apart when too close, otherwise pull
+            them together when too far.
+
+    Returns:
+        A new mapping from each node to its adjusted 2-D position array.
+    """
     pos_array = np.array(list(pos.values()))
 
     x_span = np.max(pos_array[:, 0]) - np.min(pos_array[:, 0])
@@ -489,6 +582,7 @@ def adjust_positions(
     y_threshold = y_span * threshold_percent / 100 if "y" in direction else 0
 
     def adjust_if_needed(coord_diff, threshold, adjust_outward):
+        """Return the half-threshold shift needed to enforce the target spacing, else 0."""
         if adjust_outward and coord_diff < threshold:
             return threshold / 2
         elif not adjust_outward and coord_diff > threshold:
@@ -517,6 +611,19 @@ def adjust_positions(
 
 
 def labels_as_symbols(G: nx.Graph) -> Dict[Any, str]:
+    """Map graph nodes to LaTeX-rendered symbol labels.
+
+    For each node exposing a non-empty `symbol` annotation, the label is that
+    symbol typeset as inline LaTeX (e.g. `$x$`); nodes without a symbol map to
+    themselves.
+
+    Args:
+        G: Graph whose nodes may carry a `symbol` annotation property.
+
+    Returns:
+        A mapping from each node to its inline-LaTeX label string, or the node
+        itself when it has no symbol.
+    """
     return {
         node: (f"${latex(symbols(node.symbol.first()))}$" if hasattr(node, "symbol") and node.symbol.first() else node)
         for node in G.nodes()

@@ -1,0 +1,112 @@
+---
+title: "Agentic Coding with TVBO"
+---
+
+## Why TVBO ships skills for AI assistants
+
+Large language models (Claude, GPT, open-weight models) are increasingly used as
+pair-programmers — through Claude Code, Cursor, GitHub Copilot, Aider, Codex CLI,
+or just a raw API call. None of these tools know what TVBO is until you tell
+them.
+
+**TVBO's skill system** is the way TVBO tells them. It's a bundle of short,
+focused behavioral rules and reference material that an AI assistant can pull
+in *on demand* when you're working in a TVBO project or maintaining TVBO
+itself.
+
+You install the skills once, and from that point on every Claude Code / Cursor
+session in your project benefits from them — without you having to paste a
+system prompt every time.
+
+```bash
+pip install tvbo
+tvbo skills install --target claude-code
+```
+
+That's it. Now your AI assistant knows the three pillars (LinkML datamodel,
+ontology, Python package), the YAML model spec format, how to pick a backend,
+and how to interact with the TVBO platform at
+[tvbo.charite.de](https://tvbo.charite.de).
+
+---
+
+## Pick your path
+
+::: {.panel-tabset}
+
+### Beginner
+
+You've heard of TVBO but haven't written a model yet, and you want your AI
+assistant to teach you as you go.
+
+→ [Getting started for beginners](beginner.qmd)
+
+### Intermediate
+
+You're using TVBO regularly, you have your own simulation setup, and you want
+your AI assistant to stop making basic mistakes about the YAML schema or the
+backend choices.
+
+→ [Installing and tuning the skills](installing-skills.qmd) ·
+[Skill reference](skills-reference.qmd)
+
+### Expert / Contributor
+
+You're contributing to the `tvbo` library or maintaining the platform. You
+want the same skill system to guide your AI assistant through the
+*internals* — LinkML codegen, backend templates, test markers.
+
+→ [Maintainer guide](maintainer-guide.qmd)
+
+:::
+
+---
+
+## What's in the system
+
+| Component | What it does |
+|-----------|--------------|
+| **Canonical skills** | The source-of-truth markdown files. Live in `skills/` (maintainer) and `tvbo/skills/canonical/` (user, shipped in the wheel). |
+| **Renderer** | `tvbo/skills/_render.py`. Produces per-tool adapter files from canonical sources. |
+| **`tvbo skills` CLI** | Subcommands `sync`, `install`, `uninstall` — see [installation](installing-skills.qmd). |
+| **AGENTS.md** | A repository-level file at the root of `tvbo/` that gives any AI assistant a 1-minute briefing. → [explainer](agents-md.qmd) |
+
+## How it fits together
+
+```
+canonical skill (skills/<name>/SKILL.md)
+        │
+        ▼   tvbo skills sync (build-time, maintainer side)
+        ├──► .claude/skills/<name>/SKILL.md           (Claude Code)
+        ├──► .github/instructions/<name>.instructions.md   (Copilot)
+        └──► AGENTS.md skills-index region            (universal fallback)
+
+canonical user skill (tvbo/skills/canonical/<name>/SKILL.md)
+        │
+        ▼   tvbo skills install --target X (install-time, user side)
+        ├──► ~/.claude/skills/tvbo-<name>/SKILL.md    (Claude Code)
+        ├──► ~/.cursor/rules/tvbo-<name>.mdc          (Cursor)
+        └──► stdout / <out>.md                        (prompt — raw API)
+```
+
+The same renderer runs in both contexts. There is exactly **one place** to
+edit a rule.
+
+## Supported targets
+
+| Target | What it produces | Where |
+|---|---|---|
+| `claude-code` | `<dest>/<name>/SKILL.md` | `~/.claude/skills/` (user) or `./.claude/skills/` (project) |
+| `copilot` | `<dest>/<name>.instructions.md` | `.github/instructions/` (repo-only, maintainer) |
+| `cursor` | `<dest>/<name>.mdc` | `~/.cursor/rules/` or `./.cursor/rules/` |
+| `agents-md` | Updates the skills-index region of `AGENTS.md` | `<cwd>/AGENTS.md` |
+| `prompt` | Concatenated markdown (raw API / local Ollama) | stdout or `--out path` |
+| `all` | All applicable targets | as above |
+
+## Roadmap
+
+- Add adapters for Aider, Continue.dev, OpenCode, Codex CLI when those
+  conventions stabilise.
+- A `--check` mode in CI to prevent canonical-vs-adapter drift (already
+  available; not yet wired into CI).
+- A `tvbo skills new <name>` scaffolder.

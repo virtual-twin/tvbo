@@ -5,14 +5,38 @@
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
 # Licensed under the EUPL-1.2-or-later
 #
+"""Plotting helpers for analysing simulation output.
+
+This module provides Matplotlib-based plotting utilities for visualising
+derived signal analyses, such as power spectra with shaded canonical EEG
+frequency bands.
+"""
+from typing import Any, Optional
+
 from matplotlib import colormaps
 import matplotlib.pyplot as plt
 import numpy as np
 
 
 # TODO: bands, colors params. not used, remove?
-def plot_power_spectrum(frequency, power, bands=None, colors=None, ax=None, label="simulation"):
+def plot_power_spectrum(
+    frequency: np.ndarray,
+    power: np.ndarray,
+    bands: Optional[dict] = None,
+    colors: Any = None,
+    ax: Any = None,
+    label: str = "simulation",
+):
+    """Plot a log-log power spectrum with shaded canonical EEG frequency bands.
 
+    Args:
+        frequency: 1-D array of frequencies (Hz).
+        power: 1-D array of spectral powers, aligned with *frequency*.
+        bands: Optional override of the band dict (defaults to δ/θ/α/β/γ).
+        colors: Optional override of the per-band background colors.
+        ax: Existing `matplotlib.axes.Axes` to draw into; required.
+        label: Legend label for the spectrum trace.
+    """
     ax.plot(
         frequency,
         power,

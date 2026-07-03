@@ -24,6 +24,16 @@ np.random.seed(1312)
 
 # %% Functions for generating a LEMS model
 def setup_lems_model():
+    """Create a LEMS model preloaded with base dimensions and units.
+
+    Builds an empty `lems.Model` and registers the physical dimensions
+    (`voltage`, `time`, `current`) and their SI-prefixed units
+    (`second`, `milliVolt`, `milliSecond`, `milliAmpere`) that TVB-O
+    component definitions are expressed in.
+
+    Returns:
+        The initialized LEMS model ready to have components added to it.
+    """
     model = lems.Model()
 
     model.add(lems.Dimension("voltage", m=1, l=2, t=-3, i=-1))

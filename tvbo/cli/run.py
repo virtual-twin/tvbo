@@ -52,6 +52,12 @@ def run(
         help="Shard sweep cells across array tasks: ``i/N`` runs cells where j%N==i.",
     ),
 ) -> None:
+    """Run a SPEC (experiment or study) in the selected backend.
+
+    Resolves *spec* to a `SimulationExperiment` or `SimulationStudy`, executes
+    via *backend* on *engine*, and optionally writes results to `--out-dir`.
+    Non-local engines re-emit the run through `tvbo workflow ENGINE` and submit.
+    """
     if engine != "local":
         _dispatch_to_engine(engine, spec=spec, backend=backend,
                             experiment=experiment, container=container, out_dir=out_dir)

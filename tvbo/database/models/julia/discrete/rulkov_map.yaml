@@ -8,27 +8,22 @@ source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main
 system_type: discrete
 parameters:
   alpha:
-    name: alpha
     value: 4.1
     description: Nonlinearity parameter α controlling spiking/bursting.
   beta:
-    name: beta
     value: 0.001
     description: Bias parameter β.
   sigma:
-    name: sigma
     value: 0.001
     description: Coupling parameter σ from fast to slow variable.
 state_variables:
   x:
-    name: x
     equation:
       lhs: x_next
       rhs: alpha/(1 + x**2) + y
       latex: false
     initial_value: 1.0
   y:
-    name: y
     equation:
       lhs: y_next
       rhs: y - sigma*x - beta

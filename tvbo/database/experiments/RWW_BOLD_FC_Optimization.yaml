@@ -70,6 +70,7 @@ dynamics:
       domain:
         lo: 0.0
         hi: 1.0
+        enforce: clamp
       description: "Fraction of open NMDA channels"
       coupling_variable: true
       noise:
@@ -129,14 +130,19 @@ integration:
 # =============================================================================
 functions:
   temporal_average:
-    description: "Temporal average downsampling"
-    source_code: "jnp.mean(data.reshape(-1, period_samples, *data.shape[1:]), axis=1)"
+    description: >
+      Downsample by averaging over non-overlapping windows of `period_samples`
+      samples. Reproduces tvboptim TemporalAverage exactly: window starts are
+      the centered indices (arange(T)+1)[::period_samples] (t0-independent — the
+      simulation start does not shift the result), each window is averaged with a
+      clamped dynamic slice, and the output is trimmed to the centered-index count.
+    source_code: "jax.vmap(lambda _i: jnp.mean(jax.lax.dynamic_slice(data, (_i,) + (0,) * (data.ndim - 1), (period_samples,) + data.shape[1:]), axis=0))((jnp.arange(data.shape[0]) + 1)[::period_samples])[: jnp.arange((period_samples - 2) // 2, data.shape[0], period_samples).shape[0]]"
     arguments:
-      - name: data
+      data:
         description: "Input time series (time, nodes)"
-      - name: period_samples
+      period_samples:
         value: 1
-        description: "Samples per averaging window"
+        description: "Samples per averaging window = round(downsample_period / dt)"
 
   hrf_kernel:
     description: "Hemodynamic response function kernel (Lotka-Volterra)"
@@ -154,21 +160,25 @@ functions:
           value: 0.4
           description: "Feedback time constant (seconds)"
     arguments:
-      - name: duration
+      duration:
         value: 20000.0
         description: "HRF kernel duration in ms"
 
   prepend_history:
-    description: "Prepend transient history to data for convolution"
-    source_code: "jnp.concatenate([history[-kernel_samples:], data], axis=0)"
+    description: >
+      Fit the (downsampled) transient history to exactly one kernel length and
+      prepend it. Zero-pads at the front when the transient is shorter than the
+      kernel support, otherwise keeps the last `kernel_samples` — matching
+      tvboptim HRFBold._process_history so a 'valid' convolution loses no samples.
+    source_code: "jnp.concatenate([(jnp.vstack([jnp.zeros((kernel_samples - history.shape[0],) + history.shape[1:], history.dtype), history]) if history.shape[0] < kernel_samples else history[-kernel_samples:]), data], axis=0)"
     arguments:
-      - name: data
+      data:
         description: "Input time series (time, nodes)"
-      - name: history
-        description: "Transient history data"
-      - name: kernel_samples
+      history:
+        description: "Downsampled transient history data"
+      kernel_samples:
         value: 5000
-        description: "Number of samples to prepend from history"
+        description: "Kernel support = ceil(kernel_duration / downsample_period)"
 
   volterra_transform:
     description: "Volterra nonlinear BOLD transformation"
@@ -182,30 +192,32 @@ functions:
           value: 0.02
           description: "Resting blood volume fraction"
     arguments:
-      - name: data
+      data:
         description: "Input data from previous step"
 
   subsample_bold:
-    description: "Subsample to BOLD TR (final_period / downsample_period)"
-    source_code: "data[::step][:n_samples]"
+    description: >
+      Sample the convolved signal at the end of each BOLD TR. Takes indices
+      arange(step, N, step) — anchored at the first full TR (index 0, the
+      zero-padded warm-up, is skipped) and uncapped, so the output length follows
+      the data length (no baked sample count). Matches tvboptim HRFBold's final
+      downsampling.
+    source_code: "data[step::step]"
     arguments:
-      - name: data
+      data:
         description: "Input time series"
-      - name: step
+      step:
         value: 250
-        description: "Subsample factor (TR/downsample_period = 1000/4 = 250)"
-      - name: n_samples
-        value: 120
-        description: "Number of output samples (simulation_time / TR = 120000 / 1000 = 120)"
+        description: "Subsample factor = round(TR / downsample_period) = 1000/4 = 250"
 
   rmse:
     description: "Root mean squared error"
     equation:
       rhs: "sqrt(mean((x - y)**2))"
     arguments:
-      - name: x
+      x:
         description: "First array (simulated)"
-      - name: y
+      y:
         description: "Second array (target)"
 
   fc_corr:
@@ -221,12 +233,11 @@ observations:
   empirical_fc:
     label: "Empirical Functional Connectivity"
     description: "Target FC matrix from network observations (loaded from BIDS)"
-    source: network.observations.BoldCorrelation
-
+    source: [network.observations.BoldCorrelation]
   bold:
     label: "Simulated BOLD Signal"
     description: "BOLD signal from hemodynamic response function (matches tvboptim Bold)"
-    source: S
+    source: [S]
     period: 1000.0
     pipeline:
       - function: hrf_kernel
@@ -234,26 +245,26 @@ observations:
       - output: downsampled_data
         function: temporal_average
         arguments:
-          - name: data
+          data:
             value: integration.result
-          - name: period_samples
+          period_samples:
             value: 1
 
       - output: downsampled_history
         function: temporal_average
         arguments:
-          - name: data
+          data:
             value: integration.transient
-          - name: period_samples
+          period_samples:
             value: 1
 
       - function: prepend_history
         arguments:
-          - name: data
+          data:
             value: downsampled_data
-          - name: history
+          history:
             value: downsampled_history
-          - name: kernel_samples
+          kernel_samples:
             value: 5000
 
       - output: bold_convolve
@@ -262,40 +273,37 @@ observations:
           name: fftconvolve
         apply_on_dimension: node
         arguments:
-          - name: in1
+          in1:
             value: prepend_history
-          - name: in2
+          in2:
             value: hrf_kernel
-          - name: mode
+          mode:
             value: valid
 
       - function: volterra_transform
         arguments:
-          - name: data
+          data:
             value: bold_convolve
 
       - function: subsample_bold
         arguments:
-          - name: data
+          data:
             value: volterra_transform
 
-# =============================================================================
-# DERIVED OBSERVATIONS: Computed from other observations
-# =============================================================================
-derived_observations:
+  # === Derived observations (computed from other observations) ===
   fc:
     label: "Simulated Functional Connectivity"
     description: "Pearson correlation matrix from BOLD time series"
-    source_observations:
+    source:
       - bold
     pipeline:
       - callable:
           name: compute_fc
           module: tvboptim.observations.observation
         arguments:
-          - name: timeseries
+          timeseries:
             value: bold
-          - name: skip_t
+          skip_t:
             value: 20
             description: "Skip first 20 TRs to avoid transient effects"
 
@@ -313,10 +321,10 @@ optimizations:
     loss:
       function: rmse
       arguments:
-        - name: simulated_fc
+        simulated_fc:
           value: observations.fc.data
           description: "Simulated functional connectivity matrix from fc observation"
-        - name: empirical_fc
+        empirical_fc:
           value: observations.empirical_fc.data
           description: "Empirical functional connectivity matrix (target, passed at runtime)"
 
@@ -381,9 +389,9 @@ explorations:
     observable:
       function: rmse
       arguments:
-        - name: simulated_fc
+        simulated_fc:
           value: fc.data
-        - name: empirical_fc
+        empirical_fc:
           value: empirical_fc.data
           description: "Target FC (passed at runtime)"
 

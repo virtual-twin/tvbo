@@ -60,24 +60,39 @@ if TYPE_CHECKING:
     from tvbo.classes.dynamics import Dynamics
     from tvbo.classes.network import Network
 
-# Reverse mapping: PyRates-safe names back to original TVBO names.
-# Must mirror PYRATES_REPL in tvbo/adapters/pyrates.py and the repl dict
-# in tvbo-pyrates-model.yaml.mako.
-_PYRATES_REPL_REVERSE = {
-    "I_": "I",
-    "gamma_": "gamma",
-    "beta_": "beta",
-    "zeta_": "zeta",
-    "lambda_": "lambda",
-    "E_": "E",
-    "N_": "N",
-    "S_": "S",
-    "O_": "O",
-    "Q_": "Q",
-    "epsilon_": "epsilon",
-    "y_": "y",
-    "dy_": "dy",
+# Single source of truth for PyRates-safe variable renaming, imported by
+# tvbo/adapters/pyrates.py and tvbo-pyrates-model.yaml.mako (the reverse map
+# below is DERIVED, never hand-maintained — so there is exactly one mapping to
+# keep correct).
+#
+# These names must be suffixed before codegen because a bare occurrence
+# resolves to something other than a free symbol when the equation renderer
+# sympifies it: SymPy functions/singletons (`gamma`->FunctionClass,
+# `I`->ImaginaryUnit, `S`->SingletonRegistry, `Q`->AssumptionKeys, …) crash
+# with "unsupported operand type(s) for *: 'FunctionClass' and 'Symbol'";
+# `lambda` is a Python keyword; `y`/`dy`/`epsilon` collide with PyRates'
+# internal slots. (Verified: dropping the SymPy entries breaks ~29 models.)
+# Capital `Gamma`/`Beta` auto-symbolize and are admitted raw by
+# _patch_pyrates_reserved_names instead, so they are intentionally absent.
+PYRATES_REPL = {
+    "I": "I_",
+    "gamma": "gamma_",
+    "beta": "beta_",
+    "zeta": "zeta_",
+    "lambda": "lambda_",
+    "E": "E_",
+    "N": "N_",
+    "S": "S_",
+    "O": "O_",
+    "Q": "Q_",
+    "epsilon": "epsilon_",
+    "y": "y_",
+    "dy": "dy_",
 }
+
+# Reverse mapping (PyRates-safe name -> original TVBO name), derived from
+# PYRATES_REPL so the two can never drift.
+_PYRATES_REPL_REVERSE = {safe: original for original, safe in PYRATES_REPL.items()}
 
 
 def _unrename_pyrates(name: str) -> str:

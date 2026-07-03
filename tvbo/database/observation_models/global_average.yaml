@@ -16,7 +16,7 @@ pipeline:
     - name: global_mean
       output: global_averaged
       equation:
-          rhs: "mean(X, axis=-2, keepdims=True)"
+          rhs: "global_mean(X)"
       aggregate:
           over: node
           type: mean

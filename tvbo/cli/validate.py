@@ -11,48 +11,57 @@ from . import _common
 app = typer.Typer(name="validate", no_args_is_help=True)
 
 
-@app.command("schema", help="LinkML structural validation of a YAML file.")
+@app.command("schema", help="Structural JSON Schema validation of a YAML file.")
 def schema(
     path: Path = typer.Argument(..., exists=True, readable=True, help="YAML file."),
     target_class: str = typer.Option(
         None, "--class",
-        help="LinkML target class (auto-detected from `class:` key when omitted).",
+        help="Target class (auto-detected from `class:` key when omitted).",
     ),
 ) -> None:
-    from linkml_runtime.loaders import yaml_loader
-    from linkml.validator import Validator
-    from linkml.validator.plugins import JsonschemaValidationPlugin
+    """Validate *path* against the shipped JSON Schema; auto-detects the target class.
 
-    # Locate the shipped schema
+    Uses the lightweight ``jsonschema`` library against the pre-generated
+    ``tvbo/datamodel/tvbo_datamodel.schema.json`` (produced from the LinkML schema at
+    build time), so validation needs no runtime ``linkml``. The file is parsed with
+    TVBO's loader so ``!include``/merge-key extensions and slot aliases resolve exactly
+    as they do when the model is loaded.
+    """
+    import json
+
+    import jsonschema
+
     import tvbo
-    schema_path = Path(tvbo.__file__).parent.parent / "schema" / "tvbo_datamodel.yaml"
-    if not schema_path.exists():
-        # Fall back to the installed copy under tvbo/datamodel
-        schema_path = Path(tvbo.__file__).parent / "datamodel" / "tvbo_datamodel.yaml"
-    if not schema_path.exists():
-        _common.die("Cannot locate tvbo_datamodel.yaml schema file.")
+    from tvbo.utils import yaml_loader
+
+    schema_json = Path(tvbo.__file__).parent / "datamodel" / "tvbo_datamodel.schema.json"
+    if not schema_json.exists():
+        _common.die(
+            f"Cannot locate the generated JSON Schema at {schema_json}. "
+            "Run `make gen-linkml` (or reinstall) to regenerate the datamodel."
+        )
+    full = json.loads(schema_json.read_text(encoding="utf-8"))
+    data = yaml_loader.load_as_dict(str(path))
 
     if target_class is None:
-        text = path.read_text(encoding="utf-8")
-        # Extremely lightweight detection — accept either explicit `class:`
-        # or fall back to common roots.
-        for line in text.splitlines():
-            stripped = line.strip()
-            if stripped.startswith("class:"):
-                target_class = stripped.split(":", 1)[1].strip()
-                break
-        if target_class is None:
-            target_class = "SimulationExperiment"
+        target_class = (data.get("class") if isinstance(data, dict) else None) or "SimulationExperiment"
 
-    validator = Validator(
-        schema=str(schema_path),
-        validation_plugins=[JsonschemaValidationPlugin(closed=False)],
+    defs = full.get("$defs", {})
+    if target_class not in defs:
+        _common.die(f"Unknown target class '{target_class}' (not in the schema's $defs).")
+
+    # Validate the document as an instance of `target_class` via a $ref into $defs.
+    class_schema = {"$schema": full.get("$schema"), "$defs": defs, "$ref": f"#/$defs/{target_class}"}
+    validator_cls = jsonschema.validators.validator_for(class_schema)
+    errors = sorted(
+        validator_cls(class_schema).iter_errors(data),
+        key=lambda e: list(e.absolute_path),
     )
-    report = validator.validate_file(str(path), target_class=target_class)
-    if report.results:
-        for r in report.results:
-            typer.echo(f"  {r.severity}: {r.message}", err=True)
-        _common.die(f"{len(report.results)} validation issue(s) in {path}.")
+    if errors:
+        for e in errors:
+            loc = "/".join(str(p) for p in e.absolute_path) or "<root>"
+            typer.echo(f"  ERROR at {loc}: {e.message}", err=True)
+        _common.die(f"{len(errors)} validation issue(s) in {path}.")
     typer.echo(f"OK — {path} is a valid {target_class}.")
 
 
@@ -65,6 +74,7 @@ def bids(
     path: Path = typer.Argument(..., exists=True, file_okay=False, dir_okay=True,
                                 readable=True, help="BIDS dataset root."),
 ) -> None:
+    """Validate a BIDS dataset directory using the `bids_validator` package."""
     try:
         from bids_validator import BIDSValidator  # type: ignore
     except ImportError:
@@ -93,6 +103,10 @@ def bids(
 def sedml(
     path: Path = typer.Argument(..., exists=True, readable=True, help="SED-ML XML file."),
 ) -> None:
+    """Shallow SED-ML check — confirms the file has a `<sedML>` root element.
+
+    Full L1V4 validation is scheduled for the post-P3 milestone.
+    """
     text = path.read_text(encoding="utf-8", errors="replace")
     if "<sedML" not in text and "<sedml" not in text:
         _common.die(f"{path}: does not look like SED-ML (no <sedML> root element).")
@@ -106,6 +120,10 @@ def sedml(
 def omex(
     path: Path = typer.Argument(..., exists=True, readable=True, help="OMEX archive (.omex / .zip)."),
 ) -> None:
+    """Shallow OMEX check — confirms the archive is a zip with `manifest.xml` at the root.
+
+    Full COMBINE-archive validation is scheduled for the post-P3 milestone.
+    """
     import zipfile
     if not zipfile.is_zipfile(path):
         _common.die(f"{path}: not a zip archive (OMEX must be a zip).")
@@ -127,6 +145,7 @@ def all_(
                                 help="Glob pattern, e.g. '*.yml' or '**/*.yaml'."),
     fail_fast: bool = typer.Option(False, "--fail-fast", help="Stop at first failure."),
 ) -> None:
+    """Recursively run `validate schema` on every YAML file under *directory* matching *pattern*."""
     files = sorted(directory.rglob(pattern))
     if not files:
         _common.die(f"No files matching {pattern!r} under {directory}.")

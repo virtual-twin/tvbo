@@ -9,7 +9,7 @@
 Plotting functions for visualizing networks
 -------------------------------------------
 
-```{python}
+```python
 # | fig-align: center
 import matplotlib.pyplot as plt
 from tvbo import plot
@@ -95,6 +95,15 @@ legend_params = {
 
 
 def get_default_params():
+    """Return the merged dictionary of all default plotting parameters.
+
+    Combines the module-level `node_params`, `edge_params`, `figure_params`,
+    `color_params`, `logo_params`, `layout_params`, and `legend_params` into a
+    single dictionary.
+
+    Returns:
+        The combined default parameters, keyed by parameter name.
+    """
     default_params = {
         **node_params,
         **edge_params,
@@ -264,18 +273,35 @@ def add_arrow(line, ax, position=None, direction="right", color=None, label=""):
 
 
 def plot_curve(
-    ax,
-    start,
-    end,
-    rad,
-    color="black",
-    shrinkA=0,
-    shrinkB=0.03,
-    arrow_size=0.1,
-    arrow_style="->",
-    annotate=None,
+    ax: Any,
+    start: Tuple[float, float],
+    end: Tuple[float, float],
+    rad: float,
+    color: str = "black",
+    shrinkA: float = 0,
+    shrinkB: float = 0.03,
+    arrow_size: float = 0.1,
+    arrow_style: str = "->",
+    annotate: Optional[str] = None,
     **kwargs,
 ):
+    """Draw a quadratic Bézier arrow from *start* to *end* on *ax*.
+
+    Used internally by the ontology-graph layout to render edges with smooth
+    curvature controlled by *rad*. Optional *annotate* renders a midpoint label.
+
+    Args:
+        ax: Target matplotlib axes.
+        start: `(x, y)` start coordinate.
+        end: `(x, y)` end coordinate.
+        rad: Curvature offset; `0` is a straight line, positive bends right.
+        color: Stroke color.
+        shrinkA: Start-point shrinkage (fraction of segment length).
+        shrinkB: End-point shrinkage (fraction of segment length).
+        arrow_size: Head width.
+        arrow_style: Matplotlib arrow style (e.g. `"->"`, `"-|>"`).
+        annotate: Optional midpoint label string.
+    """
     font_size = kwargs.pop("font_size") if "font_size" in kwargs else 12
 
     x1, y1 = start
@@ -343,6 +369,18 @@ def plot_curve(
 
 
 def get_edge_info(n1, n2, adj_matrix):
+    """Return the edge counts and edge lists between two nodes in both directions.
+
+    Args:
+        n1: First node.
+        n2: Second node.
+        adj_matrix: Adjacency mapping from `(source, target)` pairs to lists of
+            edge descriptors, as produced by `create_adj_matrix`.
+
+    Returns:
+        A 4-tuple `(num_edges_n1_n2, edges_n1_n2, num_edges_n2_n1, edges_n2_n1)`
+        giving the count and list of edges from `n1` to `n2` and from `n2` to `n1`.
+    """
     # Get edges for n1 -> n2
     edges_n1_n2 = adj_matrix.get((n1, n2), [])
     num_edges_n1_n2 = len(edges_n1_n2)
@@ -355,6 +393,15 @@ def get_edge_info(n1, n2, adj_matrix):
 
 
 def create_adj_matrix(G):
+    """Build an adjacency mapping of directed node pairs to their edge descriptors.
+
+    Args:
+        G: A networkx graph whose adjacency structure is traversed.
+
+    Returns:
+        A dictionary mapping each `(node, neighbor)` pair to a list of dicts, one
+        per edge, each holding the edge `type` and a `direction` string.
+    """
     # Initialize adjacency matrix dictionary
     adj_matrix = {}
 
@@ -373,6 +420,18 @@ def create_adj_matrix(G):
 
 
 def get_unique_node_pairs(G):
+    """Return the set of unordered node pairs that share at least one edge.
+
+    Each pair is sorted so that `(a, b)` and `(b, a)` collapse to a single entry;
+    nodes are ordered by their string value or, for object nodes, their `name`
+    attribute.
+
+    Args:
+        G: A networkx graph to extract edges from.
+
+    Returns:
+        A set of node-pair tuples, one per connected pair regardless of direction.
+    """
     unique_pairs = set()  # Use a set to store unique node pairs
     for n1, n2 in G.edges():
         # Sort using the 'name' attribute of the nodes (assuming each node has a 'name' attribute)
@@ -391,6 +450,22 @@ def draw_custom_edges(
     edge_radius=0,
     **kwargs,
 ):
+    """Draw curved Bézier edges between connected node pairs on an axes.
+
+    For every unique node pair, edges in each direction are fanned out with
+    distinct curvature so that parallel and bidirectional edges stay
+    distinguishable. Colors may be a single color or resolved from a colormap.
+
+    Args:
+        G: The graph whose edges are drawn.
+        pos: Mapping of nodes to `(x, y)` positions.
+        ax: Target matplotlib axes.
+        edge_labels: Whether to annotate each edge with its `type`.
+        color_by: Edge attribute used to look up colors when `edge_colors` names a colormap.
+        edge_colors: A single color, or the name of a colormap to map edge attributes onto.
+        edge_radius: Curvature used when a pair has a single edge.
+        **kwargs: Additional keyword arguments forwarded to `plot_curve`.
+    """
     # if "shrinkA" not in kwargs.keys():
     #     kwargs["shrinkA"] = .1
     # if "shrinkB" not in kwargs.keys():
@@ -521,7 +596,7 @@ def draw_custom_arrows(
         Optional[Dict[Any, Any]]: Color mapping if return_color_mapping is True, otherwise None.
 
     Example:
-        ```{python}
+        ```python
         import networkx as nx
         import matplotlib.pyplot as plt
         from tvbo.plot.ontology import draw_custom_arrows, draw_custom_nodes
@@ -635,6 +710,19 @@ def draw_custom_arrows(
 
 
 def get_actual_bounds(ax, axis="x"):
+    """Compute the data-coordinate extent of all rendered text on an axes.
+
+    Iterates over the non-empty text artists, transforms each one's window extent
+    into data coordinates, and returns the min and max along the requested axis.
+    The axes must already be drawn so that text extents are available.
+
+    Args:
+        ax: The matplotlib axes to inspect.
+        axis: Either `"x"` or `"y"`, selecting which axis to bound.
+
+    Returns:
+        A `(min, max)` tuple of the text bounds along the selected axis.
+    """
     renderer = ax.figure.canvas.get_renderer()
     xcoords = []
     ycoords = []
@@ -1605,24 +1693,48 @@ def draw_legend(g, ax, params):
 
 
 def plot_model(
-    model,
-    k_factor=1,
-    edge_cmap="viridis",
-    node_cmap="viridis",
-    edge_width=1,
-    font_size=20,
-    node_colors="math_type",
-    add_equations_to_labels=False,
-    add_parameter_values=False,
-    circle_matches=False,
-    ax=None,
-    legend=True,
-    figsize=(10, 6),
-    legend_kwargs={},
-    edge_kwargs={"shrinkA": 15, "shrinkB": 15},
-    node_kwargs={},
+    model: Any,
+    k_factor: float = 1,
+    edge_cmap: str = "viridis",
+    node_cmap: str = "viridis",
+    edge_width: float = 1,
+    font_size: float = 20,
+    node_colors: Any = "math_type",
+    add_equations_to_labels: bool = False,
+    add_parameter_values: bool = False,
+    circle_matches: bool = False,
+    ax: Any = None,
+    legend: bool = True,
+    figsize: Tuple[float, float] = (10, 6),
+    legend_kwargs: Dict = {},
+    edge_kwargs: Dict = {"shrinkA": 15, "shrinkB": 15},
+    node_kwargs: Dict = {},
     **kwargs,
 ):
+    """Render a `Dynamics` model as a directed graph: parameters → equations → state vars.
+
+    The graph layout is computed via a force-directed algorithm tuned by
+    *k_factor*. Node coloring is driven by the variable's `math_type`
+    (parameter / derived variable / state variable / function) unless overridden.
+
+    Args:
+        model: A `Dynamics` instance.
+        k_factor: Spring-constant multiplier for the force-directed layout.
+        edge_cmap: Matplotlib colormap name for edges.
+        node_cmap: Matplotlib colormap name for nodes.
+        edge_width: Stroke width for edges (auto-scaled with *font_size*).
+        font_size: Axes font size; also rescales edge width.
+        node_colors: Either a category attribute (`"math_type"`) or a dict of overrides.
+        add_equations_to_labels: Append the LaTeX equation to each node label.
+        add_parameter_values: Append the current value to parameter labels.
+        circle_matches: Draw a circle around nodes whose name matches the model's coupling vars.
+        ax: Existing matplotlib axes; created if `None`.
+        legend: Whether to render the category legend.
+        legend_kwargs: Forwarded to the legend constructor.
+        figsize: Figure size when *ax* is `None`.
+        edge_kwargs: Forwarded to the edge-drawing helper.
+        node_kwargs: Forwarded to the node-drawing helper.
+    """
     edge_width = font_size / 20
     edge_kwargs.update({"shrinkA": 15 * (font_size / 20), "shrinkB": 15 * (font_size / 20)})
     if isinstance(model, str):
@@ -1764,6 +1876,22 @@ def plot_model(
 
 
 def plot_hierarchy(cls, hierarchy_type="ancestors", ax=None, **kwargs):
+    """Plot the ontology class hierarchy around a given class as a tree.
+
+    Builds an `is_a` graph relating `cls` to the requested set of related classes
+    and lays it out top-down or bottom-up depending on the hierarchy direction.
+
+    Args:
+        cls: The ontology class at the center of the hierarchy.
+        hierarchy_type: Which related classes to include; one of `"ancestors"`,
+            `"parents"`/`"is_a"`/`"isa"`/`"superclasses"`, `"children"`/`"subclasses"`,
+            or `"descendants"`.
+        ax: Existing matplotlib axes; a new figure is created if `None`.
+        **kwargs: Additional keyword arguments forwarded to `hierarchy_pos`.
+
+    Returns:
+        The created figure when `ax` is `None`, otherwise nothing.
+    """
     if hierarchy_type.lower() == "ancestors":
         subset = cls.ancestors()
         G = graph.subset2graph(subset)
@@ -1870,6 +1998,18 @@ def create_colormap_legend(
     """
 
     def add_legend(ax, patches, title, loc, bbox_y):
+        """Attach a titled, expanded legend of color patches to the axes.
+
+        Args:
+            ax: The axes to add the legend artist to.
+            patches: The legend handle patches to display.
+            title: Legend title text.
+            loc: Matplotlib legend location string.
+            bbox_y: Vertical offset of the legend's bounding box, in axes coordinates.
+
+        Returns:
+            The created legend artist.
+        """
         legend = ax.legend(
             handles=patches,
             loc=loc,
@@ -2054,6 +2194,20 @@ def get_node_color_mapping(G, node_colors="math_type", colors="tvb", return_cate
 
 ########
 def adjust_arrow_end(start, end, bbox_end):
+    """Clip an arrow's endpoint to the edge of the target node's bounding box.
+
+    Computes where the line from `start` to `end` crosses the top or bottom edge
+    of `bbox_end` (chosen by arrow direction) and clamps the crossing to the box's
+    horizontal extent, so the arrow stops at the node border instead of its center.
+
+    Args:
+        start: `(x, y)` start coordinate of the arrow.
+        end: `(x, y)` target coordinate at the node center.
+        bbox_end: Bounding box of the target node, exposing a `.bounds` tuple.
+
+    Returns:
+        The adjusted `(x, y)` endpoint on the target box edge.
+    """
     x_start, y_start = start
     x_end, y_end = end
 
@@ -2083,6 +2237,16 @@ def adjust_arrow_end(start, end, bbox_end):
 
 
 def plot_edge(edge, pos, bbox_positions_data, ax, **kwargs):
+    """Draw a single edge as an arrow ending at the target node's box edge.
+
+    Args:
+        edge: A `(source, target)` node pair.
+        pos: Mapping of nodes to `(x, y)` positions.
+        bbox_positions_data: Mapping of nodes to their bounding boxes, used to trim
+            the arrow so it stops at the target node's border.
+        ax: Target matplotlib axes.
+        **kwargs: Additional keyword arguments forwarded to `FancyArrowPatch`.
+    """
     start, end = pos[edge[0]], pos[edge[1]]
     xstart, ystart = start
     xend, yend = end
