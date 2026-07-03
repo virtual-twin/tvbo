@@ -133,7 +133,7 @@ dt = float(integration.step_size)
 
 # Differentiation strategy -> native-solver kwargs, resolved in the tvboptim Python
 # layer (shared with the solver template) rather than duplicated across mako blocks.
-from tvbo.templates.tvboptim.utils import resolve_solver_kwargs, resolve_optimizer_mode, render_analysis_observations, render_recorded_observable, render_inference
+from tvbo.templates.tvboptim.utils import resolve_solver_kwargs, resolve_optimizer_mode, render_analysis_observations, render_recorded_observable, render_inference, render_adiabatic_signal, render_adiabatic_scan_body
 solver_kwargs_str = resolve_solver_kwargs(integration, dt)
 opt_mode = resolve_optimizer_mode(integration)
 
@@ -732,6 +732,23 @@ for expl in exploration_list:
             else:
                 _ga[_gpn] = float(_gpv)
         exp_info['ga'] = _ga
+    elif exp_info['strategy'] == 'adiabatic_scan':
+        # Adiabatic bifurcation scan: one swept axis (from `space`) plus an observed-signal
+        # expression and envelope settings carried on Exploration.parameters (Parameter.value
+        # accepts strings and numbers). Delegates to tvboptim's adiabatic_scan at codegen.
+        assert exp_info['axes'], f"adiabatic_scan exploration '{exp_info['name']}' requires one space axis"
+        from tvbo.templates.tvboptim.utils import get_recorded_variable_names as _grvn_adia
+        _ap = {str(_p.name): getattr(_p, 'value', None) for _p in (expl.parameters or [])}
+        _asig = _ap.get('signal')
+        assert _asig, f"adiabatic_scan '{exp_info['name']}' requires a 'signal' parameter (e.g. signal: {{value: 'y1 - y2'}})"
+        _, _, _adia_vars = _grvn_adia(model, experiment)
+        exp_info['adiabatic'] = {
+            'axis': exp_info['axes'][0],
+            'signal_code': render_adiabatic_signal(str(_asig), _adia_vars),
+            'segment_time': float(_ap.get('segment_time', 2000.0)),
+            'skip': float(_ap.get('transient_time', 1000.0)),
+            'bothways': bool(int(float(_ap.get('bothways', 1)))),
+        }
     explorations.append(exp_info)
 
 # Optimizations that depend on an Exploration front → per-seed parallel refinement.
@@ -791,6 +808,7 @@ for _opt in optim_list:
 # a refine optimization (depends_on an Exploration front) replaces the standard
 # single-state stage loop with a per-seed parallel sweep over the Pareto front.
 has_nsga2 = any(e.get('strategy') == 'nsga2' for e in explorations)
+has_adiabatic = any(e.get('strategy') == 'adiabatic_scan' for e in explorations)
 has_refine = len(refine_infos) > 0
 refine_info = list(refine_infos.values())[0] if refine_infos else None
 
@@ -881,6 +899,10 @@ from pymoo.core.problem import Problem as _Problem
 from pymoo.algorithms.moo.nsga2 import NSGA2 as _NSGA2
 from pymoo.optimize import minimize as _pymoo_minimize
 from pymoo.indicators.hv import HV as _HV
+% endif
+% if has_adiabatic:
+# Adiabatic bifurcation scan (Exploration.strategy == 'adiabatic_scan').
+from tvboptim.experimental.network_dynamics.analysis import adiabatic_scan as _adiabatic_scan
 % endif
 % for mod in derived_obs_modules:
 import ${mod}
@@ -1810,6 +1832,8 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
         _expl_state = state
 % if expl['strategy'] == 'nsga2':
 ${search.nsga2_body(expl)}\
+% elif expl['strategy'] == 'adiabatic_scan':
+${render_adiabatic_scan_body(expl, solver_class, dt)}
 % else:
 % if has_axes:
     grid_state = copy.deepcopy(_expl_state)

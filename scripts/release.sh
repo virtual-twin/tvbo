@@ -119,6 +119,10 @@ if [ "$NEW" != "$CURRENT" ]; then
 fi
 
 if [ "$CONFIRM" != "yes" ]; then
+	if [ ! -t 0 ]; then
+		[ "$NEW" != "$CURRENT" ] && set_version "$CURRENT" && info "Reverted $INIT."
+		die "no interactive terminal for confirmation — run in a terminal, or pass CONFIRM=yes (e.g. 'make release BUMP=patch CONFIRM=yes')"
+	fi
 	printf "Release v%s? This will commit, push and tag. [y/N] " "$NEW"
 	read -r ans || ans=""
 	case "$ans" in

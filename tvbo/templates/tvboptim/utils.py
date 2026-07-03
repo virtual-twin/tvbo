@@ -927,8 +927,17 @@ def render_analysis_observations(
             delta = float(params.get("delta", 0.3))
             seeds = int(params.get("seeds", 8))
             seed_base = int(params.get("seed_base", 0))
+            # `stat` selects the reduction over the per-seed central differences:
+            # 'mean' (default) = the seed-averaged gradient estimate; 'sem' = its standard
+            # error (std / sqrt(seeds)), the uncertainty band on that estimate. Both reduce
+            # the same per-seed array, so a mean/sem pair declares two observations.
+            stat = str(params.get("stat", "mean"))
+            reduce = (
+                f"jnp.std(_fds_{name}) / jnp.sqrt({seeds})" if stat == "sem"
+                else f"jnp.mean(_fds_{name})"
+            )
             lines += [
-                f"# {name}: seed-averaged central finite-difference gradient of '{target}' wrt {wrt[0]}",
+                f"# {name}: seed-averaged central finite-difference {stat} of '{target}' wrt {wrt[0]}",
                 f"_asolve_{name}, _ = prepare(network, {solver_class}(), {window})",
                 f"_delta_{name} = {delta}",
                 f"_keys_{name} = jax.random.split(jax.random.key({seed_base}), {seeds})",
@@ -937,10 +946,80 @@ def render_analysis_observations(
                 f"    _cs = eqx.tree_at(lambda _s: _s.noise.key, state, _key)",
                 f"    _loss_at = lambda _g: compute_all_observations(_asolve_{name}(eqx.tree_at(lambda _s: _s.{access}, _cs, _g)), _cs, result_transient).{target}",
                 f"    return (_loss_at(_g0_{name} + _delta_{name}) - _loss_at(_g0_{name} - _delta_{name})) / (2.0 * _delta_{name})",
-                f"obs.{name} = jnp.mean(jax.lax.map(_fd_{name}, _keys_{name}))",
+                f"_fds_{name} = jax.lax.map(_fd_{name}, _keys_{name})",
+                f"obs.{name} = {reduce}",
             ]
         else:
             lines.append(f"# {name}: analysis type '{atype}' not yet lowered for this backend — skipped.")
+    return "\n".join(f"    {ln}" for ln in lines)
+
+
+def render_adiabatic_signal(signal_expr: str, var_names: List[str]) -> str:
+    """Render an envelope-signal expression over recorded variables as an ``observe`` body.
+
+    Each recorded-variable name in ``signal_expr`` (e.g. ``"y1 - y2"``) is replaced by its
+    slice ``_r.ys[:, <index>, :]`` (a ``[n_time, n_nodes]`` view). ``<index>`` is the
+    variable's position in the solver's recorded ordering (:func:`get_recorded_variable_names`).
+    The replacement is a single alternation pass (longest names first, so a name is not
+    matched where it is a prefix of another like ``y1`` in ``y12``); a single pass — not
+    iterated ``re.sub`` per name — also guarantees the emitted slice text (which itself
+    contains ``ys``/``r``) is never re-scanned and re-substituted. Lets the adiabatic-scan
+    exploration observe an arbitrary state/derived signal declaratively, without a driver.
+    """
+    import re
+
+    if not var_names:
+        return str(signal_expr)
+    index = {nm: i for i, nm in enumerate(var_names)}
+    alt = "|".join(re.escape(nm) for nm in sorted(var_names, key=len, reverse=True))
+    pattern = re.compile(rf"\b({alt})\b")
+    return pattern.sub(lambda m: f"_r.ys[:, {index[m.group(0)]}, :]", str(signal_expr))
+
+
+def render_adiabatic_scan_body(expl: Dict[str, Any], solver_class: str, dt: float) -> str:
+    """Render the body of an ``adiabatic_scan`` exploration (``strategy == 'adiabatic_scan'``).
+
+    Delegates to tvboptim's ``adiabatic_scan``: ramp the single swept parameter up then back
+    down, carrying the settled state between values, and record the oscillation envelope of an
+    observed signal (per-node temporal min/max averaged across the network, plus the mean) at
+    each value. The up/down branches expose hysteresis. Emitted as a Python string — like the
+    analysis diagnostics — so the per-strategy layout lives in one place; the result is an
+    ``ExplorationResult`` with one swept axis, ``env_lo``/``env_hi``/``env_mean`` observations
+    (the signal-agnostic envelope), and ``n_up`` (the up-branch length) so a consumer can split
+    the up/down branches. The swept-axis point count honours the same
+    ``kwargs.get('n_<axis>', ...)`` runtime override as a grid sweep. Returns 4-space-indented
+    lines (an exploration-function body).
+    """
+    a = expl["adiabatic"]
+    axis = a["axis"]
+    name = axis["name"]
+    path = f"coupling.{axis['coupling_key']}.{name}" if axis.get("is_coupling") else f"dynamics.{name}"
+    lines = [
+        "# -- Adiabatic bifurcation scan (delegates to tvboptim adiabatic_scan) --",
+        "# Ramp the swept parameter up then back down, carrying the settled state; record the",
+        "# oscillation envelope (per-node temporal min/max averaged across nodes, plus the mean)",
+        "# of the observed signal at each value. The up/down branches expose any hysteresis.",
+        "def _adia_observe(_r):",
+        f"    return {a['signal_code']}",
+        '_adia_stats = {"mean": lambda _a: _a.mean(), "lo": lambda _a: _a.min(axis=0).mean(), '
+        '"hi": lambda _a: _a.max(axis=0).mean()}',
+        "_adia_res = _adiabatic_scan(",
+        f"    _network, {solver_class}(),",
+        f"    accessor=lambda _c: _c.{path},",
+        f"    low={axis['lo']}, high={axis['hi']}, n=kwargs.get('n_{name}', {axis['n']}),",
+        f"    t={a['segment_time']}, skip={a['skip']}, dt={dt}, bothways={a['bothways']},",
+        "    observe=_adia_observe, statistics=_adia_stats,",
+        ")",
+        "_adia_p = jnp.asarray(_adia_res.p)",
+        "return ExplorationResult(",
+        f"    name='{expl['name']}',",
+        f"    axes=[Bunch(name='{name}', explored_values=_adia_p, n=int(_adia_p.shape[0]), "
+        f"is_coupling={bool(axis.get('is_coupling'))}, coupling_key={axis.get('coupling_key')!r})],",
+        "    observations={'env_lo': jnp.asarray(_adia_res.stats['lo']), "
+        "'env_hi': jnp.asarray(_adia_res.stats['hi']), 'env_mean': jnp.asarray(_adia_res.stats['mean'])},",
+        f"    observable='adiabatic', dt={dt}, n_up=int(_adia_res.n_up), strategy='adiabatic_scan',",
+        ")",
+    ]
     return "\n".join(f"    {ln}" for ln in lines)
 
 

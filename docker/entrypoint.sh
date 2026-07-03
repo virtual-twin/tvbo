@@ -26,7 +26,11 @@ fi
 case "$MODE" in
     api)
         echo "Launching API server on port 8000..."
-        exec uvicorn tvbo.api.main:app --host 0.0.0.0 --port 8000 --reload
+        # --reload is a dev-only feature (file watcher + reloader subprocess); enable it
+        # only when DEV=1 so the shipped image runs a lean single-process server.
+        RELOAD=""
+        [ "${DEV:-0}" = "1" ] && RELOAD="--reload"
+        exec uvicorn tvbo.api.main:app --host 0.0.0.0 --port 8000 ${RELOAD}
         ;;
     jupyter)
         echo "Launching Jupyter Lab on port 8888..."

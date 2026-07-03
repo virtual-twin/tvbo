@@ -261,6 +261,23 @@ observations:
         delta: {value: 0.3}
         seeds: {value: 8}
         seed_base: {value: 0}
+        stat: {value: mean}   # seed-averaged gradient estimate (default)
+
+  fd_sem:
+    label: "Finite-difference gradient standard error"
+    description: >
+      Standard error (std / sqrt(seeds)) of the seed-averaged finite-difference gradient
+      above — the uncertainty band on the ground-truth gradient. Identical computation and
+      seeds as fd_gradient, reduced with stat: sem instead of the mean.
+    analysis:
+      type: finite_difference
+      target: loss
+      wrt: [c_sigmJR.G]
+      parameters:
+        delta: {value: 0.3}
+        seeds: {value: 8}
+        seed_base: {value: 0}
+        stat: {value: sem}    # standard error of that estimate
 
 # =============================================================================
 # OPTIMIZATION: fit G to empirical FC (the payoff — full-AD vs TBPTT)
@@ -308,6 +325,25 @@ explorations:
       arguments:
         x: {value: fc.data}
         y: {value: empirical_fc.data}
+  psp_bifurcation:
+    label: "PSP bifurcation envelope (adiabatic G-scan)"
+    description: >
+      Adiabatic scan of the pyramidal PSP (y1 - y2) oscillation envelope: ramp G up
+      then back down, carrying the settled state between values, and record the
+      per-node temporal min / max (averaged across the network) plus the mean at each
+      G. The amplitude stays bounded on the fixed-point / limit-cycle side and blows
+      open at the same G where the top Lyapunov exponent crosses zero — the same
+      bifurcation the gradient breaks at. The up- and down-sweeps expose any
+      hysteresis. Delegates to tvboptim's adiabatic_scan; no Python driver.
+    strategy: adiabatic_scan
+    space:
+      - parameter: c_sigmJR.G
+        domain: {lo: 0.0, hi: 40.0, n: 60}
+    parameters:
+      signal: {value: "y1 - y2"}       # observed envelope signal (pyramidal PSP)
+      segment_time: {value: 4000.0}    # per-step rollout after each G increment (ms)
+      transient_time: {value: 2000.0}  # transient dropped before the envelope stats (ms)
+      bothways: {value: 1}             # ramp up then back down (expose hysteresis)
   motivation_sweep:
     label: "Diagnostics vs G (the motivation sweep)"
     description: >
@@ -321,7 +357,7 @@ explorations:
       - parameter: c_sigmJR.G
         domain: {lo: 0.0, hi: 40.0, n: 80}
     mode: product
-    record: [loss, ad_gradient, fd_gradient, lyapunov]
+    record: [loss, ad_gradient, fd_gradient, fd_sem, lyapunov]
 
 references:
   - "tvboptim TBPTT.qmd - truncated backprop-through-time"
