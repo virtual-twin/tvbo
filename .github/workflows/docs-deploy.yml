@@ -1,4 +1,8 @@
-# Build and publish the TVB-O documentation on release.
+# Build and publish the TVB-O documentation.
+#
+# Trigger: called by the container pipeline (.github/workflows/docker.yml) after
+# the release image is built+pushed (so the pull can't race the build), or run
+# manually via workflow_dispatch against any tag.
 #
 # Renders the Quarto site inside the *exact* tvbo container that ships with
 # the release, so every backend (Julia, AUTO-07p, JAX, NeuroML, PyRates,
@@ -12,12 +16,20 @@
 name: Deploy Docs
 
 on:
-    release:
-        types: [published]
+    # Called by the container pipeline (.github/workflows/docker.yml) once the
+    # release image is built and pushed, so we render against that *exact* fresh
+    # image via a true job dependency — no pull race, no retry loop.
+    workflow_call:
+        inputs:
+            tag:
+                description: "Release ref / image tag to render against (e.g. 'v1.2.3' or '1.2.3'). A leading 'v' is stripped."
+                required: false
+                type: string
+                default: ""
     workflow_dispatch:
         inputs:
             tag:
-                description: "Container tag to render against (e.g. '1.2.3' or 'latest'). Defaults to release tag with leading 'v' stripped."
+                description: "Container tag to render against (e.g. '1.2.3' or 'latest'). Empty → 'latest'."
                 required: false
                 default: ""
 
@@ -43,9 +55,18 @@ jobs:
             # For workflow_dispatch the user supplies the exact image tag.
             - name: Resolve container tag
               id: tag
+              env:
+                  INPUT_TAG: ${{ inputs.tag }}
               run: |
-                  echo "tag=latest" >> "$GITHUB_OUTPUT"
-                  echo "Container tag: latest"
+                  # Strip a leading 'v' so a release ref like 'v1.2.3' maps to the
+                  # image's semver tag '1.2.3' (docker/metadata-action publishes
+                  # type=semver,pattern={{version}}). Empty input → 'latest' (manual
+                  # dispatch without a tag).
+                  raw="${INPUT_TAG:-}"
+                  tag="${raw#v}"
+                  tag="${tag:-latest}"
+                  echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+                  echo "Container tag: ${tag}"
 
             - uses: actions/checkout@v6
               with:
@@ -74,7 +95,13 @@ jobs:
               run: |
                   set -euo pipefail
                   docker pull "ghcr.io/virtual-twin/tvbo:${TAG}"
+                  # Override the image ENTRYPOINT with bash so the render script runs
+                  # regardless of what entrypoint the pulled tag ships. `latest` is only
+                  # rebuilt on pushes to main (see docker.yml), so a release can pull an
+                  # image whose entrypoint predates the `exec "$@"` fix; not depending on
+                  # it here makes this job immune to that staleness/ordering.
                   docker run --rm \
+                      --entrypoint bash \
                       -v "${PWD}:/work" \
                       -w /work \
                       -e PRIVATE_REPO_TOKEN \
@@ -82,7 +109,7 @@ jobs:
                       -e HOST_UID="$(id -u)" \
                       -e HOST_GID="$(id -g)" \
                       "ghcr.io/virtual-twin/tvbo:${TAG}" \
-                      bash -euxc '
+                      -euxc '
                           git config --global url."https://${PRIVATE_REPO_TOKEN}@github.com/".insteadOf "https://github.com/"
                           git config --global --add safe.directory /work
                           uv pip install --system -e . --no-deps
