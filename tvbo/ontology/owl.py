@@ -34,6 +34,7 @@ Copyright:
 """
 
 import collections
+import functools
 import os
 import re
 import tempfile
@@ -44,7 +45,7 @@ from typing import List, Dict, Tuple, Optional, Union
 import numpy as np
 import owlready2
 import pandas as pd
-from owlready2 import *
+from owlready2 import default_world, get_ontology, set_render_func
 from tvbo.utils import Bunch
 
 try:
@@ -126,30 +127,76 @@ def find_version() -> str:
 
 DATA_DIR = realpath(join(ROOT_DIR, "data"))
 ONTO_DIR = join(DATA_DIR, "ontology")
-# %% Load Ontology
+# %% Load Ontology (lazily)
+#
+# The TVB-O ontology is metadata only: it is consulted to retrieve specifications for
+# missing fields or to build a model from the ontology, and is NOT needed to generate or
+# run code. Parsing it eagerly at import made every ``import tvbo`` (through the class
+# modules that import this one) load the .owl file — an expensive step that also collided
+# with JAX's GC callback and could crash the kernel. We defer the parse to first actual
+# use behind a lazy proxy, so importing tvbo / generating / running code never triggers it.
+# The public surface is unchanged: ``onto`` still behaves like the loaded ontology
+# (attribute and item access, iteration, ``with onto:``), ``get_onto()`` returns it, and
+# ``iri`` / ``namespace`` remain importable module attributes (resolved lazily via PEP 562).
+@functools.cache
+def _load_ontology():
+    """Parse the TVB-O ontology once and return it (memoised for the process)."""
+    with open(join(ONTO_DIR, "tvb-o.owl"), "r", encoding="utf-8") as f:
+        xml = f.read()
+    # Drop the remote NIF-Ontology import so the load stays offline.
+    xml = xml.replace(
+        '<owl:imports rdf:resource="https://raw.githubusercontent.com/SciCrunch/NIF-Ontology/atlas/ttl/atom.ttl"/>',
+        "",
+    )
+    with tempfile.NamedTemporaryFile(suffix=".owl", delete=False, mode="w", encoding="utf-8") as tmp:
+        tmp.write(xml)
+        tmp_path = tmp.name
+    loaded_ontology = get_ontology("file://" + tmp_path).load()
+    loaded_ontology.load()  # TODO: check if the redundant reload can be removed
+    return loaded_ontology
 
-original_path = join(
-    ONTO_DIR,
-    "tvb-o.owl",
-)
 
-with open(original_path, "r", encoding="utf-8") as f:
-    xml = f.read()
+class _LazyOntologyProxy:
+    """Stand-in for the TVB-O ontology that loads it on first use.
 
-xml = xml.replace(
-    """<owl:imports rdf:resource="https://raw.githubusercontent.com/SciCrunch/NIF-Ontology/atlas/ttl/atom.ttl"/>""",
-    "",
-)
+    Keeps the ``onto`` API intact — attribute access (``onto.JansenRit``), item access
+    (``onto[iri]``), iteration and ``with onto:`` all forward to the real ontology and
+    trigger the parse only when first touched.
+    """
 
-with tempfile.NamedTemporaryFile(suffix=".owl", delete=False, mode="w", encoding="utf-8") as tmp:
-    tmp.write(xml)
-    tmp_path = tmp.name
+    __slots__ = ()
 
-onto = get_ontology("file://" + tmp_path).load()
-onto.load()  # TODO: Check if redundant load can be removed
+    def __getattr__(self, name):
+        return getattr(_load_ontology(), name)
 
-iri = onto.base_iri
-namespace = onto.get_namespace(iri)  # TODO: is this used?
+    def __getitem__(self, key):
+        return _load_ontology()[key]
+
+    def __iter__(self):
+        return iter(_load_ontology())
+
+    def __enter__(self):
+        return _load_ontology().__enter__()
+
+    def __exit__(self, *exc):
+        return _load_ontology().__exit__(*exc)
+
+    def __repr__(self):
+        is_loaded = _load_ontology.cache_info().currsize > 0
+        return f"<TVB-O ontology (lazy proxy; loaded={is_loaded})>"
+
+
+onto = _LazyOntologyProxy()
+
+
+def __getattr__(name):  # PEP 562: resolve ontology-derived module attributes on demand.
+    if name == "iri":
+        return _load_ontology().base_iri
+    if name == "namespace":
+        loaded_ontology = _load_ontology()
+        return loaded_ontology.get_namespace(loaded_ontology.base_iri)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 df_tvbo = pd.read_csv(join(DATA_DIR, "_tvb-o.csv"), sep=";")
 
@@ -163,7 +210,7 @@ def get_onto() -> owlready2.namespace.Ontology:
     Returns:
         The loaded `owlready2` ontology backing this module.
     """
-    return onto
+    return _load_ontology()
 
 
 def render_using_label(entity) -> str:
@@ -357,7 +404,7 @@ def ontology_info(print_info=True, return_info=False, return_df=False):
         ),
     )
     if print_info:
-        print("TVBO base IRI:", iri)
+        print("TVBO base IRI:", onto.base_iri)
         for k, v in info.items():
             print("Number of", sc.blue(k) + ":", sc.green(len(v)))
     if return_info:

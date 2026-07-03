@@ -6,6 +6,8 @@ the plain serializable datamodel definitions, without introducing runtime caches
 mutating stored parameters.
 """
 
+import functools
+
 import numpy as np
 import owlready2
 import sympy as sp
@@ -18,7 +20,19 @@ from tvbo.codegen import templater
 from tvbo.ontology import owl as ontology
 from tvbo.ontology.owl import onto
 
-available_integrators = onto.IntegrationMethod.descendants(include_self=False)
+
+@functools.cache
+def _available_integrators():
+    """The ontology's integration-method classes, resolved and memoised on first use."""
+    return onto.IntegrationMethod.descendants(include_self=False)
+
+
+def __getattr__(name):  # PEP 562: keep ``available_integrators`` importable, lazily.
+    # Resolving it eagerly at module import would force the ontology to load (through
+    # ``import tvbo``); defer that to first access.
+    if name == "available_integrators":
+        return _available_integrators()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 @register_pytree_node_class

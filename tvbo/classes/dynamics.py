@@ -17,6 +17,7 @@ together with the `Model` and `Dynamics` convenience subclasses.
 """
 
 import copy as _copy
+import functools
 import os
 import re
 import tempfile
@@ -46,7 +47,21 @@ from tvbo.parse.expression import parse_eq
 from tvbo.utils import report
 
 TEMPLATES = templates.root
-available_neural_mass_models = set(ontology.get_models().values())
+
+@functools.cache
+def _available_neural_mass_models():
+    """The ontology's neural-mass-model classes, resolved and memoised on first use.
+
+    Kept lazy so importing this module (through ``import tvbo``) does not force the
+    ontology to load — it is only needed to validate/build models from the ontology.
+    """
+    return set(ontology.get_models().values())
+
+
+def __getattr__(name):  # PEP 562: keep ``available_neural_mass_models`` importable, lazily.
+    if name == "available_neural_mass_models":
+        return _available_neural_mass_models()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 ## BifurcationResult moved to tvbo.analysis.bifurcation
@@ -476,12 +491,18 @@ def update_equations(model):
         # expressions (e.g., Mul) without lhs/rhs and caused AttributeError later.
         equations[k_orig] = eq if isinstance(eq, Eq) else Eq(k, eq)
 
+        # Coupling inputs (and time ``t``) are defined by the model spec, not missing
+        # specifications — excluding them keeps a fully-specified model from reaching into
+        # the ontology (an expensive, load-triggering lookup) just to resolve a symbol that
+        # is already known. The ontology is consulted only for genuinely unresolved symbols.
         missing_symbols = [
             s
             for s in eq.free_symbols
             if str(s) not in model.parameters
             and str(s) not in model.state_variables
-            and (model.derived_variables and str(s) not in model.derived_variables)
+            and str(s) not in (model.coupling_inputs or {})
+            and str(s) != "t"
+            and str(s) not in (model.derived_variables or {})
         ]
 
         if missing_symbols:
@@ -1165,7 +1186,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         if not name:
             return None
         cl = ontology.onto.search_one(label=str(name))
-        return cl if cl in available_neural_mass_models else None
+        return cl if cl in _available_neural_mass_models() else None
 
     def search_ontology(self, search_str: str, **kwargs):
         """Search this model's ontology subtree for a term.
