@@ -1616,6 +1616,10 @@ fp_shape = fp.get('shape', None)
 fp_lo = fp.get('lower_bound', None)
 fp_hi = fp.get('upper_bound', None)
 has_bounds = fp_lo is not None or fp_hi is not None
+# Optimizer start value (FreeParameter.initial_value): if given, the marked Parameter
+# wraps this value instead of the base config's, so the descent begins from the declared
+# point (e.g. G_START) while the base/warm-up config keeps its own value.
+fp_init = fp.get('initial_value', None)
 # Coupling key is explicitly set via dotted notation (e.g., FastLinearCoupling.G)
 # Translate function name to ci name for tvboptim state access
 coupling_key_for_param = fp.get('coupling_key', None)
@@ -1632,17 +1636,20 @@ if fp_shape:
     shape_code = '(' + shape_str + (',' if ',' not in shape_str else '') + ')'
 else:
     shape_code = '(n_nodes,)'
+# Value the marked Parameter wraps: the declared initial_value if given, else the base config.
+c_wrap = f"jnp.asarray({fp_init})" if fp_init is not None else f"init_state.coupling.{coupling_key_for_param}.{fp_name}"
+d_wrap = f"jnp.asarray({fp_init})" if fp_init is not None else f"init_state.dynamics.{fp_name}"
 %>
 % if is_coupling:
     # ${fp_name} - coupling parameter (${coupling_key_for_param})${ ' (bounded: ' + str(fp_lo) + ' to ' + str(fp_hi) + ')' if has_bounds else ''}
 % if has_bounds:
     init_state.coupling.${coupling_key_for_param}.${fp_name} = BoundedParameter(
-        init_state.coupling.${coupling_key_for_param}.${fp_name},
+        ${c_wrap},
         low=${lo_str},
         high=${hi_str},
     )
 % else:
-    init_state.coupling.${coupling_key_for_param}.${fp_name} = Parameter(init_state.coupling.${coupling_key_for_param}.${fp_name})
+    init_state.coupling.${coupling_key_for_param}.${fp_name} = Parameter(${c_wrap})
 % endif
 % if fp_hetero:
     init_state.coupling.${coupling_key_for_param}.${fp_name}.shape = ${shape_code}
@@ -1651,12 +1658,12 @@ else:
     # ${fp_name} - dynamics parameter${ ' (bounded: ' + str(fp_lo) + ' to ' + str(fp_hi) + ')' if has_bounds else ''}
 % if has_bounds:
     init_state.dynamics.${fp_name} = BoundedParameter(
-        init_state.dynamics.${fp_name},
+        ${d_wrap},
         low=${lo_str},
         high=${hi_str},
     )
 % else:
-    init_state.dynamics.${fp_name} = Parameter(init_state.dynamics.${fp_name})
+    init_state.dynamics.${fp_name} = Parameter(${d_wrap})
 % endif
 % if fp_hetero:
     init_state.dynamics.${fp_name}.shape = ${shape_code}
