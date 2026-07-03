@@ -888,6 +888,28 @@ def render_analysis_observations(
     """
     window = f"t0=0.0 + {transient_time}, t1={transient_time} + {t1_default}, dt={dt}"
     lines: List[str] = []
+
+    # Finite-difference observations that share the exact same per-seed computation
+    # (same target, wrt, delta, seeds, seed_base) reuse ONE ``jax.lax.map`` — matching the
+    # reference, which derives fd_mean and fd_sem from a single map — rather than
+    # recomputing the seeds once per reduction. Assign a shared group id per signature.
+    def _fd_signature(aobs):
+        an = aobs.analysis
+        p = {str(k): (v.value if hasattr(v, "value") else v)
+             for k, v in (getattr(an, "parameters", None) or {}).items()}
+        wrt = [str(w) for w in (getattr(an, "wrt", None) or [])]
+        return (
+            str(getattr(an, "target", None) or "loss"),
+            _analysis_wrt_access(wrt, coupling_keys),
+            float(p.get("delta", 0.3)), int(p.get("seeds", 8)), int(p.get("seed_base", 0)),
+        )
+
+    fd_group = {}  # signature -> group id
+    for aobs in analysis_obs.values():
+        if str(getattr(aobs.analysis, "type", "") or "") == "finite_difference":
+            fd_group.setdefault(_fd_signature(aobs), f"fdgrp{len(fd_group)}")
+    fd_emitted: Set[tuple] = set()
+
     for name, aobs in analysis_obs.items():
         an = aobs.analysis
         atype = str(getattr(an, "type", "") or "")
@@ -927,26 +949,31 @@ def render_analysis_observations(
             delta = float(params.get("delta", 0.3))
             seeds = int(params.get("seeds", 8))
             seed_base = int(params.get("seed_base", 0))
-            # `stat` selects the reduction over the per-seed central differences:
-            # 'mean' (default) = the seed-averaged gradient estimate; 'sem' = its standard
-            # error (std / sqrt(seeds)), the uncertainty band on that estimate. Both reduce
-            # the same per-seed array, so a mean/sem pair declares two observations.
+            # `stat` selects the reduction over the per-seed central differences: 'mean'
+            # (default) = the seed-averaged gradient estimate; 'sem' = its standard error
+            # (std / sqrt(seeds)). A mean/sem pair on the same settings shares the single
+            # per-seed map below, so the seeds are computed once (as in the reference).
             stat = str(params.get("stat", "mean"))
-            reduce = (
-                f"jnp.std(_fds_{name}) / jnp.sqrt({seeds})" if stat == "sem"
-                else f"jnp.mean(_fds_{name})"
-            )
+            sig = _fd_signature(aobs)
+            gid = fd_group[sig]
+            arr = f"_fds_{gid}"
+            if sig not in fd_emitted:
+                lines += [
+                    f"# per-seed central differences of '{target}' wrt {wrt[0]} (shared across its reductions)",
+                    f"_asolve_{gid}, _ = prepare(network, {solver_class}(), {window})",
+                    f"_delta_{gid} = {delta}",
+                    f"_keys_{gid} = jax.random.split(jax.random.key({seed_base}), {seeds})",
+                    f"_g0_{gid} = state.{access}",
+                    f"def _fd_{gid}(_key):",
+                    f"    _cs = eqx.tree_at(lambda _s: _s.noise.key, state, _key)",
+                    f"    _loss_at = lambda _g: compute_all_observations(_asolve_{gid}(eqx.tree_at(lambda _s: _s.{access}, _cs, _g)), _cs, result_transient).{target}",
+                    f"    return (_loss_at(_g0_{gid} + _delta_{gid}) - _loss_at(_g0_{gid} - _delta_{gid})) / (2.0 * _delta_{gid})",
+                    f"{arr} = jax.lax.map(_fd_{gid}, _keys_{gid})",
+                ]
+                fd_emitted.add(sig)
+            reduce = f"jnp.std({arr}) / jnp.sqrt({seeds})" if stat == "sem" else f"jnp.mean({arr})"
             lines += [
                 f"# {name}: seed-averaged central finite-difference {stat} of '{target}' wrt {wrt[0]}",
-                f"_asolve_{name}, _ = prepare(network, {solver_class}(), {window})",
-                f"_delta_{name} = {delta}",
-                f"_keys_{name} = jax.random.split(jax.random.key({seed_base}), {seeds})",
-                f"_g0_{name} = state.{access}",
-                f"def _fd_{name}(_key):",
-                f"    _cs = eqx.tree_at(lambda _s: _s.noise.key, state, _key)",
-                f"    _loss_at = lambda _g: compute_all_observations(_asolve_{name}(eqx.tree_at(lambda _s: _s.{access}, _cs, _g)), _cs, result_transient).{target}",
-                f"    return (_loss_at(_g0_{name} + _delta_{name}) - _loss_at(_g0_{name} - _delta_{name})) / (2.0 * _delta_{name})",
-                f"_fds_{name} = jax.lax.map(_fd_{name}, _keys_{name})",
                 f"obs.{name} = {reduce}",
             ]
         else:
@@ -1608,6 +1635,15 @@ def parse_free_param(fp: Any, coupling_keys: Set[str], model: Any = None, all_co
                     result["upper_bound"] = float(hi)
                 except (TypeError, ValueError):
                     pass
+        # Optional optimizer start value (overrides the referenced Parameter's value),
+        # so the descent can begin from a declared point without mutating the base config.
+        iv = getattr(fp, "initial_value", None)
+        if iv is not None:
+            iv = getattr(iv, "value", iv)
+            try:
+                result["initial_value"] = float(iv)
+            except (TypeError, ValueError):
+                pass
 
     elif isinstance(fp, str):
         stripped = fp.strip()

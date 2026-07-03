@@ -303,6 +303,8 @@ optimizations:
         description: "Descend FC-RMSE on the single global-coupling scalar G"
         free_parameters:
           - parameter: c_sigmJR.G
+            initial_value: 5.0   # G_START from the reference: descent begins here
+                                 # (the base/warm-up config keeps its own G = 8.0)
         algorithm: adam
         learning_rate: 1.0
         max_iterations: 100
