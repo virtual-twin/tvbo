@@ -68,8 +68,9 @@ def _matrix_bold_experiment(duration=_DURATION):
 def _find_observation(result, needle):
     """Return the observation data whose key contains *needle* (case-insensitive).
 
-    Backends label observations differently (jax/tvboptim: ``BOLD_TVB``;
-    tvb: ``bold_tvb``), so match on a lowercased substring.
+    All backends now expose the same canonical observation keys (e.g.
+    ``BOLD_TVB``); the case-insensitive substring match is kept as a
+    lenient safety net.
     """
     observations = result.integration.observations
     for key, value in observations.items():

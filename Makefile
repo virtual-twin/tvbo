@@ -44,7 +44,8 @@ help: ## Show this help
 	@echo ""
 	@echo "Release:"
 	@echo "  make pypi-release       Build and upload to PyPI"
-	@echo "  make release            Create GitHub release + trigger PyPI publish"
+	@echo "  make release [BUMP=patch|minor|major | VERSION=x.y.z] [DRYRUN=1]"
+	@echo "                          Preview, confirm + publish a GitHub release (auto version bump)"
 	@echo ""
 	@echo "Shortcuts:"
 	@echo "  make all                Build + save Docker image"
@@ -350,17 +351,14 @@ docs-test-to-debug:
 	echo "========================================"
 
 
+# Cut a release. Delegates to scripts/release.sh, which previews what is
+# shipping, verifies a forward version bump over the latest published release,
+# and asks for confirmation before committing/pushing/tagging. Examples:
+#   make release BUMP=patch          # auto next patch (x.y.Z+1)
+#   make release BUMP=minor          # auto next minor (x.Y+1.0)
+#   make release VERSION=0.6.0       # explicit version
+#   make release DRYRUN=1            # preview only, change nothing
+#   make release                     # release version currently in tvbo/__init__.py
 release:
-	@echo "Creating GitHub release..."
-	@VERSION=$$(grep '^__version__' tvbo/__init__.py | cut -d'"' -f2); \
-	echo "Current version: $$VERSION"; \
-	git add -A; \
-	git commit -m "Release v$$VERSION" || true; \
-	git push; \
-	gh release create "v$$VERSION" \
-		--title "v$$VERSION" \
-		--notes "See CHANGELOG.md for details" \
-		--generate-notes; \
-	echo "✓ GitHub release v$$VERSION created"
-	@echo "✓ GitHub Actions will automatically publish to PyPI"
+	@VERSION="$(VERSION)" BUMP="$(BUMP)" CONFIRM="$(CONFIRM)" DRYRUN="$(DRYRUN)" bash scripts/release.sh
 

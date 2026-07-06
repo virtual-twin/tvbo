@@ -344,3 +344,19 @@ jobs:
           name: tvbo-dist
           path: dist/*
           retention-days: 30
+
+  # ─── Publish docs from the freshly-built release image (tags only) ──────
+  # `needs: manifest` guarantees the version image (e.g. 0.5.0) is already
+  # pushed before docs-deploy pulls it — proper ordering, no race, no retry.
+  # docs-deploy renders inside that exact image and publishes to gh-pages.
+  publish-docs:
+    name: Publish docs
+    needs: manifest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write   # docs-deploy's `quarto publish gh-pages` pushes to gh-pages
+      packages: read
+    uses: ./.github/workflows/docs-deploy.yml
+    secrets: inherit
+    with:
+      tag: ${{ github.ref_name }}
