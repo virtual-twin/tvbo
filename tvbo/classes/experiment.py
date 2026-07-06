@@ -45,6 +45,7 @@ from tvbo.run.graph import GraphRunner as _Network
 from tvbo.adapters.tvb import from_tvb_simulator as _from_tvb_simulator
 from tvbo.utils import traverse_metadata
 from tvbo.utils import Bunch
+from tvbo.utils import as_list
 
 sessionid = 1
 
@@ -2058,7 +2059,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         dt = kwargs.get("dt", getattr(self.integration, "step_size", 0.1))
 
         for name, exploration in explorations.items():
-            axes = list(getattr(exploration, "space", None) or [])
+            axes = as_list(getattr(exploration, "space", None))
             axis_values = []
             axis_info = []
             for axis in axes:
@@ -2067,7 +2068,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 if not values:
                     raise ValueError(f"Exploration {name!r} axis {parameter!r} needs explored_values")
                 axis_values.append(values)
-                axis_info.append({"name": parameter, "n": len(values), "explored_values": values})
+                # Harmonized axis shape shared by every backend: Bunch(name,
+                # explored_values, n) — the coordinate source for ExplorationResult.as_grid().
+                axis_info.append(Bunch(name=parameter, explored_values=jnp.asarray(values), n=len(values)))
 
             obs = getattr(exploration, "observable", None)
             output_name = getattr(obs, "output", None) or getattr(obs, "function", None) or getattr(obs, "name", None)

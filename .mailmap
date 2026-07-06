@@ -1,0 +1,25 @@
+# Contributor identity map.
+#
+# Coalesces every identity that is really Leon Martin — plus the AI / bot
+# co-authors that committed under his account — onto one canonical identity.
+# Respected by `git shortlog`/`git log --use-mailmap` and by GitHub's
+# contributors graph, so history reads correctly without rewriting commits.
+#
+# Genuine external contributors (Marius Pille, adrianciu) are intentionally
+# left untouched.
+
+# Leon Martin — canonicalize name variants sharing the primary email
+leon-k-martin <leon.martin@bih-charite.de> <leon.martin@bih-charite.de>
+leon-k-martin <leon.martin@bih-charite.de> <49518876+leon-k-martin@users.noreply.github.com>
+
+# Private account
+leon-k-martin <leon.martin@bih-charite.de> <klebebande161@gmail.com>
+
+# GitHub Copilot (author bot + co-author trailers, several emails)
+leon-k-martin <leon.martin@bih-charite.de> <198982749+Copilot@users.noreply.github.com>
+leon-k-martin <leon.martin@bih-charite.de> <copilot@github.com>
+leon-k-martin <leon.martin@bih-charite.de> <175728472+Copilot@users.noreply.github.com>
+leon-k-martin <leon.martin@bih-charite.de> <223556219+Copilot@users.noreply.github.com>
+
+# Claude (co-author trailers)
+leon-k-martin <leon.martin@bih-charite.de> <noreply@anthropic.com>

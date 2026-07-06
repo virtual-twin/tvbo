@@ -15,9 +15,6 @@ import numpy as np
 
 import lems.api as lems
 
-from tvbo.ontology.owl import *  # noqa: F403  # owlready2-style namespace import
-
-
 # WD = abspath(dirname(__file__))
 np.random.seed(1312)
 

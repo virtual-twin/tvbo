@@ -67,10 +67,12 @@ ax.set(xlabel="Time [s]", ylabel="BOLD [a.u.]", title="BOLD Signal")
 # C: Parameter Landscape with Trajectory
 ax = axes["C"]
 expl = results.exploration.parameter_landscape
-pc = expl.grid.collect()
-G_vals, w_vals = pc.coupling.FastLinearCoupling.G.flatten(), pc.dynamics.w.flatten()
+# Labeled loss landscape: as_grid() is an xarray keyed by the dotted parameters,
+# so orient it by name (order-independent) and read the coords straight off it.
+loss = expl.as_grid().transpose("ReducedWongWang.w", "FastLinearCoupling.G")
+w_vals, G_vals = loss["ReducedWongWang.w"].values, loss["FastLinearCoupling.G"].values
 im = ax.imshow(
-    jnp.stack(expl.results).reshape(32, 32).T,
+    loss.values,
     cmap="cividis_r",
     extent=[G_vals.min(), G_vals.max(), w_vals.min(), w_vals.max()],
     origin="lower",

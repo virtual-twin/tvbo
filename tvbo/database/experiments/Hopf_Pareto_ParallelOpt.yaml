@@ -376,22 +376,18 @@ explorations:
     strategy: nsga2
     objectives: [psd_mae, one_minus_fc]
     space:
-      - parameter: LinCoupling.G
+      LinCoupling.G:
         domain: {lo: 0.001, hi: 0.15}
-      - parameter: SupHopf.a
+      SupHopf.a:
         domain: {lo: -0.1, hi: 0.01}
-      - parameter: noise.sigma
+      noise.sigma:
         domain: {lo: -2.0, hi: -0.5}
         transform: log10
     parameters:
-      - name: population_size
-        value: 8
-      - name: num_generations
-        value: 40
-      - name: seed
-        value: 42
-      - name: reference_point
-        value: [13.5, 1.5]
+      population_size: {value: 8}
+      num_generations: {value: 40}
+      seed: {value: 42}
+      reference_point: {value: [13.5, 1.5]}
     n_parallel: 8
 
 integration:

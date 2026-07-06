@@ -12,6 +12,8 @@ Output:
 - Grid search configuration and execution functions
 </%doc>
 <%
+from tvbo.utils import as_list
+
 # Get experiment info
 model = experiment.dynamics
 network = experiment.network
@@ -36,7 +38,7 @@ for expl in exploration_list:
         'n_parallel': getattr(expl, 'n_parallel', 8),
         'axes': [],
     }
-    axes_list = getattr(expl, 'space', None) or []
+    axes_list = as_list(getattr(expl, 'space', None))
     for axis in axes_list:
         domain = getattr(axis, 'domain', None)
         if domain:

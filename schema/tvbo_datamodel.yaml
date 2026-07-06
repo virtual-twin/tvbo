@@ -2555,21 +2555,21 @@ classes:
                 multivalued: true
                 range: ExplorationAxis
                 inlined: true
-                inlined_as_list: true
                 description: >-
-                    Ordered list of exploration axes spanning the search space.
-                    Each axis references an existing Parameter (by dotted name,
-                    e.g. "ReducedWongWang.w" or "FastLinearCoupling.G") and
-                    supplies the Range to sweep. No new Parameter is created here.
+                    Exploration axes spanning the search space, keyed by the
+                    dotted parameter reference each axis sweeps (e.g.
+                    "ReducedWongWang.w" or "FastLinearCoupling.G"). Insertion
+                    order is preserved and defines the grid axis order. Each axis
+                    references an existing Parameter and supplies the Range to
+                    sweep; no new Parameter is created here.
             parameters:
                 multivalued: true
                 range: Parameter
                 inlined: true
-                inlined_as_list: true
                 description: >-
                     Hyper-parameters of the exploration itself (e.g. tolerances,
-                    sampler settings, grid-refinement controls). Distinct from
-                    `space`, which defines what is being swept.
+                    sampler settings, grid-refinement controls), keyed by name.
+                    Distinct from `space`, which defines what is being swept.
             algorithms:
                 multivalued: true
                 range: string
@@ -2676,11 +2676,19 @@ classes:
             - description
         attributes:
             parameter:
-                range: Parameter
-                inlined: false
+                range: string
                 required: true
+                key: true
+                # `key: true` drives dict-keying in the generated Python/JSON-Schema
+                # loaders. The pydantic loader keys off a `name`/`id` identifier by
+                # convention, so it also needs this explicit marker to inject the
+                # collection key into `parameter` (LinkML consumes `key`/`identifier`
+                # and omits them from the emitted metadata). See utils/pydantic_loader.
+                annotations:
+                    collection_key: true
                 description: >-
-                    Dotted reference to the Parameter being swept.
+                    Dotted reference to the Parameter being swept; also the key
+                    of the enclosing `Exploration.space` collection.
                     Format: "<scope>.<param_name>" where <scope> is either a
                     Dynamics class name (e.g. "ReducedWongWang") or a coupling
                     key (e.g. "FastLinearCoupling"). Resolved against the

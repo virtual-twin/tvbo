@@ -312,6 +312,7 @@ jobs:
                           tests/test_tvboptim_experiments.py
                           tests/functional/test_simulation_backends_tvboptim.py
                           tests/test_full_workflow_comparison.py
+                          tests/test_tvboptim_byte_identity.py
                     - shard: tvb
                       paths: >-
                           tests/test_tvb_comparison.py

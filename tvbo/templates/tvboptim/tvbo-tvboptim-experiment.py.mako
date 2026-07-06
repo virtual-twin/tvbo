@@ -6,7 +6,7 @@
 <%
 from tvbo.codegen import render_expression
 from tvbo.templates.tvboptim.utils import (
-    safe_name, as_list, get_attr, is_network_observation, obs_has_all_args,
+    safe_name, iter_parameter_values, as_list, get_attr, is_network_observation, obs_has_all_args,
     get_observation_refs, parse_loss_function, parse_free_param, get_domain_bounds,
     parse_exploration, get_param_info, get_node_param_overrides,
     normalize_coupling_aliases, resolve_coupling_input_map,
@@ -532,8 +532,8 @@ for expl in exploration_list:
         # NOTE: this block duplicates utils.parse_exploration — should be consolidated onto it.
         'record': [str(r) for r in (getattr(expl, 'record', None) or [])],
     }
-    # Schema: space is a list of ExplorationAxis (optional for trial-only explorations)
-    axes_list = expl.space or []
+    # Schema: space is keyed by parameter (optional for trial-only explorations)
+    axes_list = as_list(expl.space)
     def _resolve_n(domain):
         """Compute n from domain: prefer n, else compute from step, else default 50."""
         if domain.n:
@@ -548,6 +548,10 @@ for expl in exploration_list:
         _has_el_ev = any(getattr(ed, 'explored_values', None) for ed in _el_domains)
         assert domain or explored_values or _has_el_ev, f"exploration axis requires domain, explored_values, or element_domains with explored_values for {axis.parameter}"
         pname = str(axis.parameter)
+        # Dotted reference (== the Exploration.space key); the ExplorationResult axis
+        # label uses this so grid coords are named consistently across backends, while
+        # the grid state path below uses the bare `pname`.
+        _axis_label = pname
         # Check for dotted notation: ClassName.param_name
         # If prefix matches a coupling key → coupling param, else dynamics param
         source_key = None
@@ -573,6 +577,7 @@ for expl in exploration_list:
             for _ei in range(_n):
                 ax_entry = {
                     'name': pname,
+                    'label': _axis_label,
                     'is_coupling': False,
                     'coupling_key': None,
                     'dynamics_key': source_key if source_key else None,
@@ -604,6 +609,7 @@ for expl in exploration_list:
                 vals = [float(v) for v in explored_values]
                 exp_info['axes'].append({
                     'name': pname,
+                    'label': _axis_label,
                     'values': vals,
                     'n': len(vals),
                     'is_coupling': is_coupling_param,
@@ -623,6 +629,7 @@ for expl in exploration_list:
                     _vals = [float(v) for v in _np.logspace(_np.log10(_lo), _np.log10(_hi), n)]
                     exp_info['axes'].append({
                         'name': pname,
+                        'label': _axis_label,
                         'values': _vals,
                         'n': n,
                         'is_coupling': is_coupling_param,
@@ -633,6 +640,7 @@ for expl in exploration_list:
                 else:
                     exp_info['axes'].append({
                         'name': pname,
+                        'label': _axis_label,
                         'lo': float(domain.lo),
                         'hi': float(domain.hi),
                         'n': n,
@@ -717,14 +725,11 @@ for expl in exploration_list:
                 'transform': str(getattr(_axis, 'transform', None) or 'none'),
             })
         exp_info['nsga2_axes'] = _nsga_axes
-        # GA hyperparameters from Exploration.parameters (name/value pairs).
+        # GA hyperparameters, keyed by name in Exploration.parameters.
         _default_pop = n_workers if 'n_workers' in dir() else 8
         _ga = {'population_size': _default_pop, 'num_generations': 40, 'seed': 42,
                'reference_point': [1.0e6] * len(exp_info['objectives'])}
-        for _gp in (expl.parameters or []):
-            _gpn = str(_gp.name); _gpv = getattr(_gp, 'value', None)
-            if _gpv is None:
-                continue
+        for _gpn, _gpv in iter_parameter_values(expl.parameters):
             if _gpn == 'reference_point':
                 _ga['reference_point'] = [float(v) for v in _gpv]
             elif _gpn in ('population_size', 'num_generations', 'seed'):
@@ -738,7 +743,7 @@ for expl in exploration_list:
         # accepts strings and numbers). Delegates to tvboptim's adiabatic_scan at codegen.
         assert exp_info['axes'], f"adiabatic_scan exploration '{exp_info['name']}' requires one space axis"
         from tvbo.templates.tvboptim.utils import get_recorded_variable_names as _grvn_adia
-        _ap = {str(_p.name): getattr(_p, 'value', None) for _p in (expl.parameters or [])}
+        _ap = dict(iter_parameter_values(expl.parameters))
         _asig = _ap.get('signal')
         assert _asig, f"adiabatic_scan '{exp_info['name']}' requires a 'signal' parameter (e.g. signal: {{value: 'y1 - y2'}})"
         _, _, _adia_vars = _grvn_adia(model, experiment)
@@ -1636,7 +1641,6 @@ if fp_shape:
     shape_code = '(' + shape_str + (',' if ',' not in shape_str else '') + ')'
 else:
     shape_code = '(n_nodes,)'
-# Value the marked Parameter wraps: the declared initial_value if given, else the base config.
 c_wrap = f"jnp.asarray({fp_init})" if fp_init is not None else f"init_state.coupling.{coupling_key_for_param}.{fp_name}"
 d_wrap = f"jnp.asarray({fp_init})" if fp_init is not None else f"init_state.dynamics.{fp_name}"
 %>
@@ -2194,9 +2198,9 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
 %>
         Bunch(
 % if ax.get('element_idx') is not None:
-            name='${ax['name']}[${ax['element_idx']}]',
+            name='${ax.get('label', ax['name'])}[${ax['element_idx']}]',
 % else:
-            name='${ax['name']}',
+            name='${ax.get('label', ax['name'])}',
 % endif
 % if 'values' in ax:
             explored_values=jnp.array(${ax['values']}),
