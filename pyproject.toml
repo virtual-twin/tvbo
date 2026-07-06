@@ -126,8 +126,9 @@ tvb = [
     "llvmlite<0.44;  sys_platform == 'darwin' and platform_machine == 'x86_64'",
 ]
 
-# TVB optimization (JAX-based simulation & optimization)
-tvboptim = ["tvboptim"]
+# TVB optimization (JAX-based simulation & optimization).
+# pymoo backs the NSGA-II multi-objective exploration strategy (Exploration.strategy: nsga2).
+tvboptim = ["tvboptim", "pymoo>=0.6.0"]
 
 # Full install (all features)
 all = ["tvbo[neuroml,neuron,data,knowledge,audio,api,tvb,tvboptim,docs,pyrates,julia]"]
