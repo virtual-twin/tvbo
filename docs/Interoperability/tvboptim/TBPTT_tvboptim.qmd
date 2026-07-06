@@ -14,11 +14,12 @@ workflow through the tvbo declarative pipeline.
 ```{python}
 import os
 
-# Shard the G-sweep across a few host devices (matches the reference N_DEVICES=4). Each
-# device runs one heavy reverse-mode AD diagnostic at a time, so keep this modest — 4 is
-# a safe, fast point on a ~32 GB machine (~1-1.5 GB live tape per device); oversubscribing
-# risks the kernel. Override with TVBO_XLA_DEVICE_COUNT if you have more/less RAM.
-device_count = os.environ.get("TVBO_XLA_DEVICE_COUNT", "4")
+# Sweep parallelism. The motivation sweep's per-point reverse-mode AD diagnostic keeps the
+# whole 60 s forward trajectory on tape, so ONE point already peaks near ~13 GB; each extra
+# parallel device multiplies that. Default to sequential (1) so the page builds within a
+# ~32 GB machine — the result is identical, only slower. Raise TVBO_XLA_DEVICE_COUNT (the
+# reference uses 4) on a larger-RAM/GPU host to parallelise the sweep.
+device_count = os.environ.get("TVBO_XLA_DEVICE_COUNT", "1")
 N_PMAP = int(device_count)  # sweep parallelism = device count
 os.environ["XLA_FLAGS"] = f"--xla_force_host_platform_device_count={device_count}"
 
