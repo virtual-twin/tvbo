@@ -1680,7 +1680,11 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 if m_name == "Raw":
                     sim_result = SimulationResult(data=da)
                 else:
-                    observations[m_name.lower()] = SimulationResult(data=da)
+                    # Key by the monitor's canonical name (its title's first
+                    # token already equals the observation name) so tvb results
+                    # expose the same keys as the jax/tvboptim backends, e.g.
+                    # result.observations.BOLD_TVB rather than a lower-cased key.
+                    observations[m_name] = SimulationResult(data=da)
 
             if sim_result is None:
                 # Fallback if no Raw monitor — use first
@@ -1697,7 +1701,11 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 da = xr.DataArray(data=data_np, dims=dims, coords=coords)
                 sim_result = SimulationResult(data=da)
 
-            sim_result.observations = observations
+            # Wrap in Bunch so tvb results support dot-access
+            # (result.observations.BOLD_TVB), matching the jax/tvboptim backends;
+            # assigning after construction bypasses SimulationResult's own
+            # normalization.
+            sim_result.observations = Bunch(observations)
             return ExperimentResult(
                 integration=sim_result,
                 source=self,

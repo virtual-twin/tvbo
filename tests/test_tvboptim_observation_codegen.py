@@ -86,16 +86,17 @@ def test_tvboptim_observations_match_native_tvb():
     tvb_result = experiment.run("tvb")
 
     assert set(tvboptim_result.integration.observations.keys()) == {"TemporalAverage", "BOLD_TVB"}
-    assert set(tvb_result.integration.observations.keys()) == {"temporalaverage", "bold_tvb"}
+    # tvb exposes the same canonical observation keys as tvboptim/jax.
+    assert set(tvb_result.integration.observations.keys()) == {"TemporalAverage", "BOLD_TVB"}
 
     comparisons = [
         (
             tvboptim_result.integration.observations["TemporalAverage"].data,
-            tvb_result.integration.observations["temporalaverage"].data,
+            tvb_result.integration.observations["TemporalAverage"].data,
         ),
         (
             tvboptim_result.integration.observations["BOLD_TVB"].data,
-            tvb_result.integration.observations["bold_tvb"].data,
+            tvb_result.integration.observations["BOLD_TVB"].data,
         ),
     ]
     for tvboptim_data, tvb_data in comparisons:
