@@ -721,8 +721,7 @@ for expl in exploration_list:
         _default_pop = n_workers if 'n_workers' in dir() else 8
         _ga = {'population_size': _default_pop, 'num_generations': 40, 'seed': 42,
                'reference_point': [1.0e6] * len(exp_info['objectives'])}
-        _expl_params = expl.parameters.values() if hasattr(expl.parameters, 'values') else (expl.parameters or [])
-        for _gp in _expl_params:
+        for _gp in as_list(expl.parameters):
             _gpn = str(_gp.name); _gpv = getattr(_gp, 'value', None)
             if _gpv is None:
                 continue
@@ -739,8 +738,7 @@ for expl in exploration_list:
         # accepts strings and numbers). Delegates to tvboptim's adiabatic_scan at codegen.
         assert exp_info['axes'], f"adiabatic_scan exploration '{exp_info['name']}' requires one space axis"
         from tvbo.templates.tvboptim.utils import get_recorded_variable_names as _grvn_adia
-        _adia_params = expl.parameters.values() if hasattr(expl.parameters, 'values') else (expl.parameters or [])
-        _ap = {str(_p.name): getattr(_p, 'value', None) for _p in _adia_params}
+        _ap = {str(_p.name): getattr(_p, 'value', None) for _p in as_list(expl.parameters)}
         _asig = _ap.get('signal')
         assert _asig, f"adiabatic_scan '{exp_info['name']}' requires a 'signal' parameter (e.g. signal: {{value: 'y1 - y2'}})"
         _, _, _adia_vars = _grvn_adia(model, experiment)
