@@ -319,7 +319,7 @@ explorations:
       Sweep global coupling G from quiescence through synchronized oscillation into
       chaos, tracing the FC-RMSE landscape the optimizer must descend.
     space:
-      - parameter: c_sigmJR.G
+      c_sigmJR.G:
         domain: {lo: 0.0, hi: 40.0, n: 80}
     mode: product
     observable:
@@ -339,7 +339,7 @@ explorations:
       hysteresis. Delegates to tvboptim's adiabatic_scan; no Python driver.
     strategy: adiabatic_scan
     space:
-      - parameter: c_sigmJR.G
+      c_sigmJR.G:
         domain: {lo: 0.0, hi: 40.0, n: 60}
     parameters:
       signal: {value: "y1 - y2"}       # observed envelope signal (pyramidal PSP)
@@ -356,7 +356,7 @@ explorations:
       ground truth until the Lyapunov exponent crosses zero (chaos onset), where it
       breaks. Recorded per grid point; no Python driver.
     space:
-      - parameter: c_sigmJR.G
+      c_sigmJR.G:
         domain: {lo: 0.0, hi: 40.0, n: 80}
     mode: product
     record: [loss, ad_gradient, fd_gradient, fd_sem, lyapunov]

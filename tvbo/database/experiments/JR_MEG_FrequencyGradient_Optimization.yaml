@@ -431,13 +431,13 @@ explorations:
 
       # Parameters with grid specifications (use domain with n for grid points)
     space:
-      - parameter: JansenRit.a
+      JansenRit.a:
         domain:
           lo: 0.001
           hi: 0.2
           n: 32
           log_scale: false
-      - parameter: JansenRit.b
+      JansenRit.b:
         domain:
           lo: 0.001
           hi: 0.2

@@ -1023,8 +1023,8 @@ expl_label = _p(expl, 'label', expl_name)
 expl_desc = _p(expl, 'description', '')
 expl_mode = _p(expl, 'mode', 'product')
 expl_n_par = _p(expl, 'n_parallel', 1)
-expl_axes = _p(expl, 'space', None) or []
-ep_items = [(str(_p(a, 'parameter', '?')).split('.', 1)[-1], a) for a in (list(expl_axes) if expl_axes else [])]
+expl_axes = _as_list(_p(expl, 'space', None))
+ep_items = [(str(_p(a, 'parameter', '?')).split('.', 1)[-1], a) for a in expl_axes]
 observable = _p(expl, 'observable', None)
 %>\
 

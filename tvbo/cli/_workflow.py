@@ -148,7 +148,7 @@ def extract_axes(experiment) -> list[SweepAxis]:
     out: list[SweepAxis] = []
     seen: set[str] = set()
     for expl in explorations:
-        for ax in (getattr(expl, "space", None) or []):
+        for ax in _as_list(getattr(expl, "space", None)):
             param = str(getattr(ax, "parameter", "") or "")
             if not param:
                 continue
@@ -280,4 +280,4 @@ def _as_plain_dict(obj) -> dict[str, Any]:
     return {}
 
 
-from tvbo.utils import deep_merge as _deep_merge  # noqa: E402  (shared recursive merge)
+from tvbo.utils import deep_merge as _deep_merge, as_list as _as_list  # noqa: E402  (late-imported shared utils)
