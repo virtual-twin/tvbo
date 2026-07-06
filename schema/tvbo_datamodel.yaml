@@ -2565,11 +2565,10 @@ classes:
                 multivalued: true
                 range: Parameter
                 inlined: true
-                inlined_as_list: true
                 description: >-
                     Hyper-parameters of the exploration itself (e.g. tolerances,
-                    sampler settings, grid-refinement controls). Distinct from
-                    `space`, which defines what is being swept.
+                    sampler settings, grid-refinement controls), keyed by name.
+                    Distinct from `space`, which defines what is being swept.
             algorithms:
                 multivalued: true
                 range: string

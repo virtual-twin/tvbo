@@ -384,14 +384,10 @@ explorations:
         domain: {lo: -2.0, hi: -0.5}
         transform: log10
     parameters:
-      - name: population_size
-        value: 8
-      - name: num_generations
-        value: 40
-      - name: seed
-        value: 42
-      - name: reference_point
-        value: [13.5, 1.5]
+      population_size: {value: 8}
+      num_generations: {value: 40}
+      seed: {value: 42}
+      reference_point: {value: [13.5, 1.5]}
     n_parallel: 8
 
 integration:
