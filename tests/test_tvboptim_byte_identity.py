@@ -177,7 +177,7 @@ def _load_landscape(t1, transient):
     exp = SimulationExperiment.from_file(str(EXPERIMENTS_DIR / "RWW_BOLD_FC_Optimization.yaml"))
     exp.integration.duration = t1
     exp.integration.transient_time = transient
-    for axis in exp.explorations["parameter_landscape"].space:
+    for axis in exp.explorations["parameter_landscape"].space.values():
         axis.domain.n = 2
     # a short run has too few BOLD TRs for skip_t=20; keep FC non-degenerate
     # (arguments are keyed by name).
@@ -428,7 +428,10 @@ def test_tbptt_optimization():
     from tvboptim.types import Parameter
 
     T1, TRANSIENT, DT, SKIP = 7200.0, 300.0, 1.0, 2
-    LR, MAX_STEPS, G0, W = 1.0, 4, 8.0, 100
+    # G0 is where the descent begins — it must match the YAML fit_G free-parameter
+    # `initial_value` (5.0), NOT the base/warm-up coupling G (8.0, used only to build
+    # the reference history in _tbptt_reference_network).
+    LR, MAX_STEPS, G0, W = 1.0, 4, 5.0, 100
 
     def _leg(diff, ref_solver, mode):
         exp = SimulationExperiment.from_file(str(EXPERIMENTS_DIR / "TBPTT_JansenRit_FC_Optimization.yaml"))

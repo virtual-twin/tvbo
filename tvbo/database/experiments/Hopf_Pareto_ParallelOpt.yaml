@@ -376,11 +376,11 @@ explorations:
     strategy: nsga2
     objectives: [psd_mae, one_minus_fc]
     space:
-      - parameter: LinCoupling.G
+      LinCoupling.G:
         domain: {lo: 0.001, hi: 0.15}
-      - parameter: SupHopf.a
+      SupHopf.a:
         domain: {lo: -0.1, hi: 0.01}
-      - parameter: noise.sigma
+      noise.sigma:
         domain: {lo: -2.0, hi: -0.5}
         transform: log10
     parameters:

@@ -177,9 +177,10 @@ ax.set(
 ax = axes["C"]
 expl = results.exploration.frequency_landscape
 pc = expl.grid.collect()
-_axes_by_param = {ax.parameter.split(".")[-1]: ax for ax in exp.explorations["frequency_landscape"].space}
-n1 = _axes_by_param["a"].domain.n
-n2 = _axes_by_param["b"].domain.n
+# space is keyed by the dotted parameter, so each axis is a direct lookup
+_space = exp.explorations["frequency_landscape"].space
+n1 = _space["JansenRit.a"].domain.n
+n2 = _space["JansenRit.b"].domain.n
 im = ax.imshow(
     expl.results.reshape(n1, n2).T,
     cmap="cividis",

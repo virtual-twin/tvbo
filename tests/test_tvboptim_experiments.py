@@ -8,6 +8,7 @@ pytest.importorskip("tvboptim", reason="tvboptim not installed")
 os.environ["XLA_FLAGS"] = "--xla_force_host_platform_device_count=8"
 
 from tvbo import SimulationExperiment, database_path
+from tvbo.utils import as_list
 
 EXPERIMENTS_DIR = database_path / "experiments"
 
@@ -26,10 +27,9 @@ def test_experiment_runs(experiment_name):
     # Shrink any exploration grids so CI stays fast.
     if exp.explorations:
         for expl in exp.explorations.values():
-            if expl.space:
-                for axis in expl.space:
-                    if axis.domain is not None and getattr(axis.domain, "n", None):
-                        axis.domain.n = 2
+            for axis in as_list(expl.space):
+                if axis.domain is not None and getattr(axis.domain, "n", None):
+                    axis.domain.n = 2
 
     # Shrink algorithm and optimization iteration counts so CI stays fast.
     if exp.algorithms:

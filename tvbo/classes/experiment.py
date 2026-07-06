@@ -45,6 +45,7 @@ from tvbo.run.graph import GraphRunner as _Network
 from tvbo.adapters.tvb import from_tvb_simulator as _from_tvb_simulator
 from tvbo.utils import traverse_metadata
 from tvbo.utils import Bunch
+from tvbo.utils import as_list
 
 sessionid = 1
 
@@ -739,7 +740,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         try:
             with open(filepath) as file_handle:
                 data_as_dict = yaml.safe_load(file_handle) or {}
-            exp = yaml_loader.loads(yaml.safe_dump(data_as_dict), target_class=cls)
+            # sort_keys=False: preserve authored order of keyed collections
+            # (e.g. Exploration.space defines grid axis order).
+            exp = yaml_loader.loads(yaml.safe_dump(data_as_dict, sort_keys=False), target_class=cls)
             exp._source_file = cls._pending_source_file
         finally:
             cls._pending_source_file = None
@@ -777,7 +780,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         import yaml
 
         data_as_dict = yaml.safe_load(yaml_string) or {}
-        return yaml_loader.loads(yaml.safe_dump(data_as_dict), target_class=cls)
+        # sort_keys=False: preserve authored order of keyed collections
+        # (e.g. Exploration.space defines grid axis order).
+        return yaml_loader.loads(yaml.safe_dump(data_as_dict, sort_keys=False), target_class=cls)
 
     # ── Platform retrieval ────────────────────────────────────────
 
@@ -2058,7 +2063,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         dt = kwargs.get("dt", getattr(self.integration, "step_size", 0.1))
 
         for name, exploration in explorations.items():
-            axes = list(getattr(exploration, "space", None) or [])
+            axes = as_list(getattr(exploration, "space", None))
             axis_values = []
             axis_info = []
             for axis in axes:

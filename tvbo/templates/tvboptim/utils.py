@@ -25,6 +25,8 @@ Usage in templates:
 import ast
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
+from tvbo.utils import as_list
+
 
 # =============================================================================
 # Basic Helpers
@@ -40,15 +42,6 @@ def safe_name(name: str) -> str:
     are invalid in identifiers (spaces, hyphens) are replaced.
     """
     return str(name).replace(" ", "_").replace("-", "_")
-
-
-def as_list(obj: Any) -> list:
-    """Convert dict or list to list of values."""
-    if obj is None:
-        return []
-    if hasattr(obj, "values"):
-        return list(obj.values())
-    return list(obj)
 
 
 def get_attr(obj: Any, name: str, default: Any = None) -> Any:
@@ -1801,8 +1794,8 @@ def parse_exploration(expl: Any, all_couplings: Dict, get_pipeline_output_key_fn
         "record": [str(r) for r in (getattr(expl, "record", None) or [])],
     }
 
-    # Parse exploration axes (schema: `space` is a list of ExplorationAxis)
-    axes_list = getattr(expl, "space", None) or []
+    # Parse exploration axes (schema: `space` is keyed by parameter)
+    axes_list = as_list(getattr(expl, "space", None))
 
     for axis in axes_list:
         domain = getattr(axis, "domain", None)

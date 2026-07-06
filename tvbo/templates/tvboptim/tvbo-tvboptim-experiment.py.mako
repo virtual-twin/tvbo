@@ -6,7 +6,7 @@
 <%
 from tvbo.codegen import render_expression
 from tvbo.templates.tvboptim.utils import (
-    safe_name, iter_parameter_values, get_attr, is_network_observation, obs_has_all_args,
+    safe_name, iter_parameter_values, as_list, get_attr, is_network_observation, obs_has_all_args,
     get_observation_refs, parse_loss_function, parse_free_param, get_domain_bounds,
     parse_exploration, get_param_info, get_node_param_overrides,
     normalize_coupling_aliases, resolve_coupling_input_map,
@@ -532,8 +532,8 @@ for expl in exploration_list:
         # NOTE: this block duplicates utils.parse_exploration — should be consolidated onto it.
         'record': [str(r) for r in (getattr(expl, 'record', None) or [])],
     }
-    # Schema: space is a list of ExplorationAxis (optional for trial-only explorations)
-    axes_list = expl.space or []
+    # Schema: space is keyed by parameter (optional for trial-only explorations)
+    axes_list = as_list(expl.space)
     def _resolve_n(domain):
         """Compute n from domain: prefer n, else compute from step, else default 50."""
         if domain.n:

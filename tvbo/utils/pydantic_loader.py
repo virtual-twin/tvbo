@@ -37,6 +37,7 @@ from __future__ import annotations
 
 import copy
 import re
+from functools import lru_cache
 from typing import Any, Type, Union, get_args, get_origin
 
 import yaml
@@ -98,19 +99,22 @@ def _first_model(annotation: Any) -> Type[BaseModel] | None:
     return None
 
 
+@lru_cache(maxsize=None)
 def _identifier_field(model_cls: Type[BaseModel]) -> str | None:
     """Name of the slot the inlined-dict key maps onto.
 
-    Honours an explicit ``identifier``/``key`` flag in the LinkML metadata when
-    present, otherwise falls back to the universal TVBO conventions ``name`` then
-    ``id``. Returns ``None`` when no identifier slot can be determined (the
+    A non-``name``/``id`` key slot marks itself with a ``collection_key``
+    annotation, because LinkML consumes ``identifier``/``key`` into the field's
+    required-ness and drops them from the emitted metadata (so they can't be read
+    back here). Otherwise falls back to the universal TVBO conventions ``name``
+    then ``id``. Returns ``None`` when no identifier slot can be determined (the
     member is then left untouched).
     """
     fields = model_cls.model_fields
     for fname, info in fields.items():
         extra = info.json_schema_extra
         meta = extra.get("linkml_meta") if isinstance(extra, dict) else None
-        if isinstance(meta, dict) and (meta.get("identifier") or meta.get("key")):
+        if isinstance(meta, dict) and "collection_key" in (meta.get("annotations") or {}):
             return fname
     for candidate in ("name", "id"):
         if candidate in fields:

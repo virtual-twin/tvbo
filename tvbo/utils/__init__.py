@@ -47,6 +47,20 @@ def domain_enforcement(domain) -> str:
     return str(enf).rsplit(".", 1)[-1]
 
 
+def as_list(obj) -> list:
+    """Normalize a keyed-dict-or-list collection to a list of its members.
+
+    TVBO keyed collections (``parameters``, ``space``, …) are dicts keyed by
+    each member's identifier, but may also appear as plain lists. Returns the
+    member values in either case (``None`` -> ``[]``).
+    """
+    if obj is None:
+        return []
+    if hasattr(obj, "values"):
+        return list(obj.values())
+    return list(obj)
+
+
 def is_array_valued(value) -> bool:
     """Return True if a parameter value is an array constant rather than a scalar.
 
