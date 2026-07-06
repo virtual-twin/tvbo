@@ -6,7 +6,7 @@
 <%
 from tvbo.codegen import render_expression
 from tvbo.templates.tvboptim.utils import (
-    safe_name, as_list, get_attr, is_network_observation, obs_has_all_args,
+    safe_name, iter_parameter_values, get_attr, is_network_observation, obs_has_all_args,
     get_observation_refs, parse_loss_function, parse_free_param, get_domain_bounds,
     parse_exploration, get_param_info, get_node_param_overrides,
     normalize_coupling_aliases, resolve_coupling_input_map,
@@ -721,10 +721,7 @@ for expl in exploration_list:
         _default_pop = n_workers if 'n_workers' in dir() else 8
         _ga = {'population_size': _default_pop, 'num_generations': 40, 'seed': 42,
                'reference_point': [1.0e6] * len(exp_info['objectives'])}
-        for _gp in as_list(expl.parameters):
-            _gpn = str(_gp.name); _gpv = getattr(_gp, 'value', None)
-            if _gpv is None:
-                continue
+        for _gpn, _gpv in iter_parameter_values(expl.parameters):
             if _gpn == 'reference_point':
                 _ga['reference_point'] = [float(v) for v in _gpv]
             elif _gpn in ('population_size', 'num_generations', 'seed'):
@@ -738,7 +735,7 @@ for expl in exploration_list:
         # accepts strings and numbers). Delegates to tvboptim's adiabatic_scan at codegen.
         assert exp_info['axes'], f"adiabatic_scan exploration '{exp_info['name']}' requires one space axis"
         from tvbo.templates.tvboptim.utils import get_recorded_variable_names as _grvn_adia
-        _ap = {str(_p.name): getattr(_p, 'value', None) for _p in as_list(expl.parameters)}
+        _ap = dict(iter_parameter_values(expl.parameters))
         _asig = _ap.get('signal')
         assert _asig, f"adiabatic_scan '{exp_info['name']}' requires a 'signal' parameter (e.g. signal: {{value: 'y1 - y2'}})"
         _, _, _adia_vars = _grvn_adia(model, experiment)
