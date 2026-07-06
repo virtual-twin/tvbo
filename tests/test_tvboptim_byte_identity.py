@@ -666,11 +666,9 @@ def _load_hopf(t1, num_gen=2, pop=4, refine_iter=2):
     exp = SimulationExperiment.from_file(str(EXPERIMENTS_DIR / "Hopf_Pareto_ParallelOpt.yaml"))
     exp.integration.duration = float(t1)
     exp.integration.transient_time = float(t1)
-    for _p in exp.explorations["ga_presearch"].parameters:
-        if _p.name == "num_generations":
-            _p.value = num_gen
-        elif _p.name == "population_size":
-            _p.value = pop
+    _ga_params = exp.explorations["ga_presearch"].parameters
+    _ga_params["num_generations"].value = num_gen
+    _ga_params["population_size"].value = pop
     exp.optimizations["refine"].max_iterations = refine_iter
     exp.configure()
     return exp
