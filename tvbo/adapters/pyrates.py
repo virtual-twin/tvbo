@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from tvbo.adapters.base import BaseAdapter
-from tvbo.utils import is_array_valued
+from tvbo.utils import is_array_valued, as_list
 
 # Single source of truth (forward map + derived reverse) lives in
 # tvbo/codegen/pyrates.py; re-imported here and used by the model template so
@@ -446,7 +446,7 @@ class PyRatesAdapter(BaseAdapter):
         param_map: dict = {}
         axes: list = []
 
-        for axis in expl.space:
+        for axis in as_list(expl.space):
             ref = str(axis.parameter)
             # Dotted ref "Class.param" → use bare param name as grid key
             name = ref.split(".", 1)[1] if "." in ref else ref
@@ -468,7 +468,9 @@ class PyRatesAdapter(BaseAdapter):
 
             param_grid[name] = list(values)
 
-            ax = Bunch(name=name, n=len(values), explored_values=values)
+            # Harmonized axis name = the dotted reference (== Exploration.space key,
+            # matching every other backend); the bare `name` stays the PyRates grid key.
+            ax = Bunch(name=ref, n=len(values), explored_values=values)
             axes.append(ax)
 
             # Resolve PyRates variable path via shared node map

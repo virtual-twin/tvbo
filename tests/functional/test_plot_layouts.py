@@ -7,6 +7,7 @@ from tvbo.classes.dynamics import Dynamics
 from tvbo.classes.experiment import SimulationExperiment
 from tvbo.data.types import ExperimentResult, SimulationResult, ExplorationResult
 from tvbo.plot.experiment_layout import _auto_experiment_panels
+from tvbo.utils import Bunch
 
 
 LINEAR = """
@@ -122,7 +123,7 @@ def test_auto_experiment_panels_overlay_timeseries_exploration():
     )
     expl = ExplorationResult(
         name="sweep_a",
-        axes=[{"name": "a", "n": 3, "explored_values": [-1.0, 0.0, 1.0]}],
+        axes=[Bunch(name="a", explored_values=[-1.0, 0.0, 1.0], n=3)],
         results=np.array(
             [
                 [[1.0], [0.8], [0.6], [0.4]],
@@ -145,7 +146,7 @@ def test_auto_experiment_panels_overlay_timeseries_exploration():
 def test_auto_experiment_panels_put_continuation_before_timeseries_exploration():
     expl = ExplorationResult(
         name="sweep_a",
-        axes=[{"name": "a", "n": 3, "explored_values": [-1.0, 0.0, 1.0]}],
+        axes=[Bunch(name="a", explored_values=[-1.0, 0.0, 1.0], n=3)],
         results=np.array(
             [
                 [[1.0], [0.8], [0.6], [0.4]],

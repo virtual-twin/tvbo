@@ -25,6 +25,8 @@ Usage in templates:
 import ast
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
+from tvbo.utils import as_list
+
 
 # =============================================================================
 # Basic Helpers
@@ -40,15 +42,6 @@ def safe_name(name: str) -> str:
     are invalid in identifiers (spaces, hyphens) are replaced.
     """
     return str(name).replace(" ", "_").replace("-", "_")
-
-
-def as_list(obj: Any) -> list:
-    """Convert dict or list to list of values."""
-    if obj is None:
-        return []
-    if hasattr(obj, "values"):
-        return list(obj.values())
-    return list(obj)
 
 
 def get_attr(obj: Any, name: str, default: Any = None) -> Any:
@@ -1020,6 +1013,7 @@ def render_adiabatic_scan_body(expl: Dict[str, Any], solver_class: str, dt: floa
     a = expl["adiabatic"]
     axis = a["axis"]
     name = axis["name"]
+    _label = axis.get("label", name)  # dotted axis name for the ExplorationResult (== space key)
     path = f"coupling.{axis['coupling_key']}.{name}" if axis.get("is_coupling") else f"dynamics.{name}"
     lines = [
         "# -- Adiabatic bifurcation scan (delegates to tvboptim adiabatic_scan) --",
@@ -1040,7 +1034,7 @@ def render_adiabatic_scan_body(expl: Dict[str, Any], solver_class: str, dt: floa
         "_adia_p = jnp.asarray(_adia_res.p)",
         "return ExplorationResult(",
         f"    name='{expl['name']}',",
-        f"    axes=[Bunch(name='{name}', explored_values=_adia_p, n=int(_adia_p.shape[0]), "
+        f"    axes=[Bunch(name='{_label}', explored_values=_adia_p, n=int(_adia_p.shape[0]), "
         f"is_coupling={bool(axis.get('is_coupling'))}, coupling_key={axis.get('coupling_key')!r})],",
         "    observations={'env_lo': jnp.asarray(_adia_res.stats['lo']), "
         "'env_hi': jnp.asarray(_adia_res.stats['hi']), 'env_mean': jnp.asarray(_adia_res.stats['mean'])},",
@@ -1801,8 +1795,8 @@ def parse_exploration(expl: Any, all_couplings: Dict, get_pipeline_output_key_fn
         "record": [str(r) for r in (getattr(expl, "record", None) or [])],
     }
 
-    # Parse exploration axes (schema: `space` is a list of ExplorationAxis)
-    axes_list = getattr(expl, "space", None) or []
+    # Parse exploration axes (schema: `space` is keyed by parameter)
+    axes_list = as_list(getattr(expl, "space", None))
 
     for axis in axes_list:
         domain = getattr(axis, "domain", None)

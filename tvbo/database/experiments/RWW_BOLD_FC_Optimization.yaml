@@ -374,12 +374,12 @@ explorations:
       to understand the FC fitting landscape before optimization.
 
     space:
-      - parameter: ReducedWongWang.w
+      ReducedWongWang.w:
         domain:
           lo: 0.001
           hi: 0.7
           n: 32
-      - parameter: FastLinearCoupling.G
+      FastLinearCoupling.G:
         domain:
           lo: 0.001
           hi: 0.7

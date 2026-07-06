@@ -1037,26 +1037,59 @@ class ExplorationResult(Bunch):
         self.shape = self._grid_shape
         self._find_optimal()
 
-    def as_grid(self) -> jnp.ndarray:
-        """Reshape flat results to grid shape.
+    @staticmethod
+    def _axis_name(ax):
+        return ax.get("name") if isinstance(ax, dict) else getattr(ax, "name", None)
 
-        Returns
-        -------
-        jnp.ndarray
-            Results reshaped to (n_axis1, n_axis2, ...) matching axes order.
-            For time series, returns (n_axis1, ..., n_time, ...) as-is.
+    @staticmethod
+    def _axis_values(ax):
+        """Swept coordinate values for one axis (``Bunch`` or plain dict)."""
+        return ax.get("explored_values") if isinstance(ax, dict) else getattr(ax, "explored_values", None)
+
+    def as_grid(self):
+        """Reshape the flat results into a grid **labeled by parameter name**.
+
+        Returns an ``xr.DataArray`` with one dimension per exploration axis — named
+        by the swept parameter, coordinates set to the swept values — so grid
+        results are addressed by name (``g.sel(**{"ReducedWongWang.w": 0.5})``) and
+        are **independent of axis order**. The data stays a JAX array (the DataArray
+        is a registered JAX pytree); only the coordinate labels are materialised. A
+        time-series observable keeps its intrinsic dims (time, variable, node, mode)
+        after the grid dims. Falls back to the positional array if it cannot be
+        labelled; ``None`` when empty.
         """
         if self.results is None:
             return None
-        if self.is_timeseries:
-            return self.results  # Already structured
-        if not self._grid_shape:
-            return self.results
-        expected_size = int(jnp.prod(jnp.array(self._grid_shape)))
-        if self.results.size == expected_size:
-            return self.results.reshape(self._grid_shape)
-        # Can't reshape - return as-is
-        return self.results
+        data = self.results  # keep JAX-native; never np.asarray the payload
+        names = [self._axis_name(ax) for ax in self.axes]
+        grid_shape = tuple(self._grid_shape or ())
+        n_grid = 1
+        for _s in grid_shape:
+            n_grid *= int(_s)
+        try:
+            if self.is_timeseries:
+                if not (grid_shape and data.shape[0] == n_grid):
+                    return data  # trials-only / unshaped: leave positional
+                data = data.reshape(grid_shape + tuple(data.shape[1:]))
+                dims = names + ["time", "variable", "node", "mode"][: data.ndim - len(names)]
+            else:
+                if not grid_shape or data.size != n_grid:
+                    return data  # nothing to lay out
+                data = data.reshape(grid_shape)
+                dims = list(names)
+            if not all(dims):
+                return data  # a nameless axis — positional fallback
+            sizes = dict(zip(dims, data.shape))
+            coords = {}
+            for ax, nm in zip(self.axes, names):
+                vals = self._axis_values(ax)
+                if vals is not None and len(vals) == sizes.get(nm):
+                    coords[nm] = np.asarray(vals)  # coordinate labels, like TimeSeries' time
+            if self.is_timeseries and "time" in dims and self.dt:
+                coords["time"] = np.arange(data.shape[dims.index("time")]) * self.dt
+            return xr.DataArray(data, dims=dims, coords=coords, name=self.observable or None)
+        except Exception:
+            return data
 
     def _find_optimal(self):
         """Find optimal point in the grid (scalar results only)."""
@@ -1082,12 +1115,8 @@ class ExplorationResult(Bunch):
         # Extract parameter values at optimal point
         self.optimal.parameters = Bunch()
         for i, ax in enumerate(self.axes):
-            ax_name = ax.get("name", getattr(ax, "name", None)) if isinstance(ax, dict) else getattr(ax, "name", None)
-            ax_values = (
-                ax.get("explored_values", getattr(ax, "explored_values", None))
-                if isinstance(ax, dict)
-                else getattr(ax, "explored_values", None)
-            )
+            ax_name = self._axis_name(ax)
+            ax_values = self._axis_values(ax)
             if ax_name and ax_values is not None and i < len(self.optimal.index):
                 idx = self.optimal.index[i]
                 if idx < len(ax_values):
@@ -1258,12 +1287,8 @@ class ExplorationResult(Bunch):
         indices = [slice(None)] * len(self.axes)
         for param_name, param_value in fixed_params.items():
             for i, ax in enumerate(self.axes):
-                ax_name = ax.get("name", getattr(ax, "name", None)) if isinstance(ax, dict) else getattr(ax, "name", None)
-                ax_values = (
-                    ax.get("explored_values", getattr(ax, "explored_values", None))
-                    if isinstance(ax, dict)
-                    else getattr(ax, "explored_values", None)
-                )
+                ax_name = self._axis_name(ax)
+                ax_values = self._axis_values(ax)
                 if ax_name == param_name and ax_values is not None:
                     # Find closest index
                     idx = int(jnp.argmin(jnp.abs(jnp.array(ax_values) - param_value)))
