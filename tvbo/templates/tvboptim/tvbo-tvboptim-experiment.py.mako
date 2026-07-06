@@ -548,6 +548,10 @@ for expl in exploration_list:
         _has_el_ev = any(getattr(ed, 'explored_values', None) for ed in _el_domains)
         assert domain or explored_values or _has_el_ev, f"exploration axis requires domain, explored_values, or element_domains with explored_values for {axis.parameter}"
         pname = str(axis.parameter)
+        # Dotted reference (== the Exploration.space key); the ExplorationResult axis
+        # label uses this so grid coords are named consistently across backends, while
+        # the grid state path below uses the bare `pname`.
+        _axis_label = pname
         # Check for dotted notation: ClassName.param_name
         # If prefix matches a coupling key → coupling param, else dynamics param
         source_key = None
@@ -573,6 +577,7 @@ for expl in exploration_list:
             for _ei in range(_n):
                 ax_entry = {
                     'name': pname,
+                    'label': _axis_label,
                     'is_coupling': False,
                     'coupling_key': None,
                     'dynamics_key': source_key if source_key else None,
@@ -604,6 +609,7 @@ for expl in exploration_list:
                 vals = [float(v) for v in explored_values]
                 exp_info['axes'].append({
                     'name': pname,
+                    'label': _axis_label,
                     'values': vals,
                     'n': len(vals),
                     'is_coupling': is_coupling_param,
@@ -623,6 +629,7 @@ for expl in exploration_list:
                     _vals = [float(v) for v in _np.logspace(_np.log10(_lo), _np.log10(_hi), n)]
                     exp_info['axes'].append({
                         'name': pname,
+                        'label': _axis_label,
                         'values': _vals,
                         'n': n,
                         'is_coupling': is_coupling_param,
@@ -633,6 +640,7 @@ for expl in exploration_list:
                 else:
                     exp_info['axes'].append({
                         'name': pname,
+                        'label': _axis_label,
                         'lo': float(domain.lo),
                         'hi': float(domain.hi),
                         'n': n,
@@ -2190,9 +2198,9 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
 %>
         Bunch(
 % if ax.get('element_idx') is not None:
-            name='${ax['name']}[${ax['element_idx']}]',
+            name='${ax.get('label', ax['name'])}[${ax['element_idx']}]',
 % else:
-            name='${ax['name']}',
+            name='${ax.get('label', ax['name'])}',
 % endif
 % if 'values' in ax:
             explored_values=jnp.array(${ax['values']}),

@@ -1013,6 +1013,7 @@ def render_adiabatic_scan_body(expl: Dict[str, Any], solver_class: str, dt: floa
     a = expl["adiabatic"]
     axis = a["axis"]
     name = axis["name"]
+    _label = axis.get("label", name)  # dotted axis name for the ExplorationResult (== space key)
     path = f"coupling.{axis['coupling_key']}.{name}" if axis.get("is_coupling") else f"dynamics.{name}"
     lines = [
         "# -- Adiabatic bifurcation scan (delegates to tvboptim adiabatic_scan) --",
@@ -1033,7 +1034,7 @@ def render_adiabatic_scan_body(expl: Dict[str, Any], solver_class: str, dt: floa
         "_adia_p = jnp.asarray(_adia_res.p)",
         "return ExplorationResult(",
         f"    name='{expl['name']}',",
-        f"    axes=[Bunch(name='{name}', explored_values=_adia_p, n=int(_adia_p.shape[0]), "
+        f"    axes=[Bunch(name='{_label}', explored_values=_adia_p, n=int(_adia_p.shape[0]), "
         f"is_coupling={bool(axis.get('is_coupling'))}, coupling_key={axis.get('coupling_key')!r})],",
         "    observations={'env_lo': jnp.asarray(_adia_res.stats['lo']), "
         "'env_hi': jnp.asarray(_adia_res.stats['hi']), 'env_mean': jnp.asarray(_adia_res.stats['mean'])},",

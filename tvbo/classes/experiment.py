@@ -740,9 +740,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         try:
             with open(filepath) as file_handle:
                 data_as_dict = yaml.safe_load(file_handle) or {}
-            # sort_keys=False: preserve authored order of keyed collections
-            # (e.g. Exploration.space defines grid axis order).
-            exp = yaml_loader.loads(yaml.safe_dump(data_as_dict, sort_keys=False), target_class=cls)
+            exp = yaml_loader.loads(yaml.safe_dump(data_as_dict), target_class=cls)
             exp._source_file = cls._pending_source_file
         finally:
             cls._pending_source_file = None
@@ -780,9 +778,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         import yaml
 
         data_as_dict = yaml.safe_load(yaml_string) or {}
-        # sort_keys=False: preserve authored order of keyed collections
-        # (e.g. Exploration.space defines grid axis order).
-        return yaml_loader.loads(yaml.safe_dump(data_as_dict, sort_keys=False), target_class=cls)
+        return yaml_loader.loads(yaml.safe_dump(data_as_dict), target_class=cls)
 
     # ── Platform retrieval ────────────────────────────────────────
 
@@ -2072,7 +2068,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 if not values:
                     raise ValueError(f"Exploration {name!r} axis {parameter!r} needs explored_values")
                 axis_values.append(values)
-                axis_info.append({"name": parameter, "n": len(values), "explored_values": values})
+                # Harmonized axis shape shared by every backend: Bunch(name,
+                # explored_values, n) — the coordinate source for ExplorationResult.as_grid().
+                axis_info.append(Bunch(name=parameter, explored_values=jnp.asarray(values), n=len(values)))
 
             obs = getattr(exploration, "observable", None)
             output_name = getattr(obs, "output", None) or getattr(obs, "function", None) or getattr(obs, "name", None)

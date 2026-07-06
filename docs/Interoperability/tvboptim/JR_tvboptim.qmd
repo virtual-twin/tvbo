@@ -176,20 +176,14 @@ ax.set(
 # C: Parameter Landscape with Fitted Points
 ax = axes["C"]
 expl = results.exploration.frequency_landscape
-pc = expl.grid.collect()
-# space is keyed by the dotted parameter, so each axis is a direct lookup
-_space = exp.explorations["frequency_landscape"].space
-n1 = _space["JansenRit.a"].domain.n
-n2 = _space["JansenRit.b"].domain.n
+# Labeled landscape: as_grid() is an xarray keyed by the dotted parameters, so
+# orient it by name (order-independent) and read the coordinates off it directly.
+loss = expl.as_grid().transpose("JansenRit.b", "JansenRit.a")
+a_vals, b_vals = loss["JansenRit.a"].values, loss["JansenRit.b"].values
 im = ax.imshow(
-    expl.results.reshape(n1, n2).T,
+    loss.values,
     cmap="cividis",
-    extent=[
-        pc.dynamics.a.min(),
-        pc.dynamics.a.max(),
-        pc.dynamics.b.min(),
-        pc.dynamics.b.max(),
-    ],
+    extent=[a_vals.min(), a_vals.max(), b_vals.min(), b_vals.max()],
     origin="lower",
     aspect="auto",
 )

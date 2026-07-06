@@ -18,6 +18,7 @@ jax.config.update("jax_enable_x64", True)
 import numpy as np
 
 from tvbo import SimulationExperiment, database_path
+from tvbo.utils import as_list
 
 EXPERIMENTS_DIR = database_path / "experiments"
 
@@ -786,15 +787,43 @@ def test_hopf_ga_pareto_and_refine():
         mae, omf, _, _ = _metrics(s)
         return {"psd_mae": mae, "one_minus_fc": omf}
 
+    # The GA decision space is the exploration's ``space`` — a keyed dict. Derive
+    # the axis order, bounds, and transforms from it (keyed by parameter name)
+    # instead of hardcoding column positions, so this reference stays byte-identical
+    # to the codegen regardless of how the axes are ordered. The only piece not
+    # derivable from the space is how each swept parameter attaches to the tvboptim
+    # state, so that mapping lives in an explicit name-keyed table.
+    _AXIS_SETTERS = {
+        "LinCoupling.G": lambda b, v: setattr(b.coupling.instant, "G", v),
+        "SupHopf.a": lambda b, v: setattr(b.dynamics, "a", v),
+        "noise.sigma": lambda b, v: setattr(b.noise, "sigma", v),
+    }
+
+    def _untransform(x, transform):
+        """Invert an exploration-axis transform (the GA searches in transformed space)."""
+        if transform in (None, "", "none", "identity"):
+            return x
+        if transform == "log10":
+            return 10.0 ** x
+        raise ValueError(f"unhandled axis transform: {transform!r}")
+
+    ga_axes = as_list(exp.explorations["ga_presearch"].space)
+    ga_xl = np.array([ax.domain.lo for ax in ga_axes])
+    ga_xu = np.array([ax.domain.hi for ax in ga_axes])
+
+    def _apply_axes(state, X):
+        """Assign each decision column to its parameter by name, not by position."""
+        for col, ax in enumerate(ga_axes):
+            val = DataAxis(jnp.asarray(_untransform(X[:, col], ax.transform)))
+            _AXIS_SETTERS[ax.parameter](state, val)
+
     class _P(Problem):
         def __init__(self):
-            super().__init__(n_var=3, n_obj=2, xl=np.array([0.001, -0.1, -2.0]), xu=np.array([0.15, 0.01, -0.5]))
+            super().__init__(n_var=len(ga_axes), n_obj=2, xl=ga_xl, xu=ga_xu)
 
         def _evaluate(self, X, out, *a, **k):
             b = _copy.deepcopy(base_state)
-            b.coupling.instant.G = DataAxis(jnp.asarray(X[:, 0]))
-            b.dynamics.a = DataAxis(jnp.asarray(X[:, 1]))
-            b.noise.sigma = DataAxis(jnp.asarray(10.0 ** X[:, 2]))
+            _apply_axes(b, X)
             rs = list(ParallelExecution(_ga_eval, Space(b, mode="zip"), n_pmap=N).run())
             F = np.array([[float(np.asarray(r["psd_mae"])), float(np.asarray(r["one_minus_fc"]))] for r in rs])
             out["F"] = np.nan_to_num(F, nan=1e6, posinf=1e6, neginf=1e6)
@@ -815,9 +844,7 @@ def test_hopf_ga_pareto_and_refine():
                 "om": jnp.asarray(fin.dynamics.omega)}
 
     seed = _copy.deepcopy(base_state)
-    seed.coupling.instant.G = DataAxis(jnp.asarray(ga_X[:, 0]))
-    seed.dynamics.a = DataAxis(jnp.asarray(ga_X[:, 1]))
-    seed.noise.sigma = DataAxis(jnp.asarray(10.0 ** ga_X[:, 2]))
+    _apply_axes(seed, ga_X)
     rows = list(ParallelExecution(_refine_seed, Space(seed, mode="zip"), n_pmap=N).run())
     for tr, rr in zip(refine.seeds, rows):
         assert_identical("Hopf refine G", np.asarray(tr.G_final), np.asarray(rr["G"]), atol=1e-10)

@@ -468,7 +468,9 @@ class PyRatesAdapter(BaseAdapter):
 
             param_grid[name] = list(values)
 
-            ax = Bunch(name=name, n=len(values), explored_values=values)
+            # Harmonized axis name = the dotted reference (== Exploration.space key,
+            # matching every other backend); the bare `name` stays the PyRates grid key.
+            ax = Bunch(name=ref, n=len(values), explored_values=values)
             axes.append(ax)
 
             # Resolve PyRates variable path via shared node map
