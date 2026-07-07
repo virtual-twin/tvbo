@@ -540,6 +540,25 @@ class PyRatesAdapter(BaseAdapter):
             else:
                 results_arr[c_idx, :, 0] = results_df[cond_name].values.squeeze()
 
+        # PyRates enumerates grid conditions in its own order (first axis fastest),
+        # but every other backend — and ExplorationResult.as_grid() — assumes the
+        # canonical C-order (axes[0] slowest … axes[-1] fastest). Reorder here by
+        # matching each condition's parameter values back to the axis coordinate
+        # indices, so `as_grid()` labels the grid correctly across all backends.
+        _axis_vals = [getattr(ax, "explored_values", None) for ax in axes]
+        grid_shape = tuple(0 if v is None else len(v) for v in _axis_vals)
+        if len(grid_shape) > 1 and 0 not in grid_shape and int(np.prod(grid_shape)) == n_conditions:
+            bare = [str(getattr(ax, "name", "")).rsplit(".", 1)[-1] for ax in axes]
+            vals = [np.asarray(v, dtype=float) for v in _axis_vals]
+            ordered = np.empty_like(results_arr)
+            for c_idx, cond_name in enumerate(results_map.index):
+                midx = tuple(
+                    int(np.argmin(np.abs(vals[k] - float(results_map.loc[cond_name, bare[k]]))))
+                    for k in range(len(axes))
+                )
+                ordered[int(np.ravel_multi_index(midx, grid_shape))] = results_arr[c_idx]
+            results_arr = ordered
+
         observable = None
         obs = getattr(expl, "observable", None)
         if obs is not None:

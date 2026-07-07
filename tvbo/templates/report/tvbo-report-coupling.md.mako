@@ -20,6 +20,7 @@ Context variables:
 <%
 from sympy import latex, Symbol
 from tvbo.parse.expression import parse_eq
+from tvbo.utils import report
 
 cpl = coupling
 cpl_label = getattr(cpl, "label", None) or getattr(cpl, "name", "Coupling")
@@ -48,75 +49,6 @@ def _safe_latex(rhs):
         return latex(parse_eq(str(rhs), parameters=extra_syms), mul_symbol="dot")
     except Exception:
         return str(rhs)
-
-def _slot(obj, name, default=None):
-    return getattr(obj, name, default) if obj is not None else default
-
-def _range_text(range_obj):
-    if not range_obj:
-        return ""
-    values = _slot(range_obj, "explored_values", None)
-    if values:
-        values = [str(v) for v in values]
-        return "{" + ", ".join(values[:8]) + ("..." if len(values) > 8 else "") + "}"
-    lo = _slot(range_obj, "lo", None)
-    hi = _slot(range_obj, "hi", None)
-    step = _slot(range_obj, "step", None)
-    n_points = _slot(range_obj, "n", None)
-    log_scale = _slot(range_obj, "log_scale", False)
-    parts = []
-    if lo is not None or hi is not None:
-        parts.append(f"[{lo if lo is not None else '-∞'}, {hi if hi is not None else '∞'}]")
-    if step is not None:
-        parts.append(f"step={step}")
-    if n_points is not None:
-        parts.append(f"n={n_points}")
-    if log_scale:
-        parts.append("log")
-    return ", ".join(parts)
-
-def _distribution_text(distribution):
-    if not distribution:
-        return ""
-    name = _slot(distribution, "name", "Distribution")
-    domain = _range_text(_slot(distribution, "domain", None))
-    axis = _slot(distribution, "axis", None)
-    seed = _slot(distribution, "seed", None)
-    parts = [str(name)]
-    if domain:
-        parts.append(domain)
-    if axis:
-        parts.append(f"axis={axis}")
-    if seed is not None:
-        parts.append(f"seed={seed}")
-    return " ".join(parts)
-
-def _metadata_text(obj):
-    bits = []
-    domain = _slot(obj, "domain", None)
-    distribution = _slot(obj, "distribution", None)
-    if domain:
-        bits.append(_range_text(domain))
-    if distribution:
-        bits.append(_distribution_text(distribution))
-    return "; ".join([b for b in bits if b]) or "—"
-
-def _flag_text(obj):
-    flags = []
-    if _slot(obj, "free", False):
-        flags.append("free")
-    if _slot(obj, "heterogeneous", False):
-        flags.append("heterogeneous")
-    shape = _slot(obj, "shape", None)
-    if shape:
-        flags.append(f"shape={shape}")
-    dataset_path = _slot(obj, "dataset_path", None)
-    if dataset_path:
-        flags.append(f"data={dataset_path}")
-    optimum = _slot(obj, "reported_optimum", None)
-    if optimum is not None:
-        flags.append(f"optimum={optimum}")
-    return ", ".join(flags) or "—"
 
 pre_rhs = getattr(getattr(cpl, "pre_expression", None), "rhs", None)
 post_rhs = getattr(getattr(cpl, "post_expression", None), "rhs", None)
@@ -189,10 +121,6 @@ ${" — ".join(meta_lines)}.
 % if cpl_items:
 **Coupling parameters**
 
-| Parameter | Value | Unit | Domain / Sampling | Flags | Description |
-|:----------|------:|:-----|:------------------|:------|:------------|
-% for pname, param in cpl_items:
-<% pval = getattr(param, "value", "—"); punit = getattr(param, "unit", "") or "—"; pdesc = getattr(param, "description", "") or "" %>\
-| $${latex(Symbol(pname))}$ | ${pval} | ${punit} | ${_metadata_text(param)} | ${_flag_text(param)} | ${pdesc} |
-% endfor
+${report.parameter_table(cpl_params_obj)}
+
 % endif

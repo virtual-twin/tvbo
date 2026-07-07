@@ -1087,6 +1087,9 @@ class ExplorationResult(Bunch):
                     coords[nm] = np.asarray(vals)  # coordinate labels, like TimeSeries' time
             if self.is_timeseries and "time" in dims and self.dt:
                 coords["time"] = np.arange(data.shape[dims.index("time")]) * self.dt
+            if self.is_timeseries and "variable" in dims and self.output_names \
+                    and len(self.output_names) == data.shape[dims.index("variable")]:
+                coords["variable"] = list(self.output_names)
             return xr.DataArray(data, dims=dims, coords=coords, name=self.observable or None)
         except Exception:
             return data
