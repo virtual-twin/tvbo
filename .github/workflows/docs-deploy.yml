@@ -143,7 +143,17 @@ jobs:
                               curl -sSL -o /usr/local/bin/robot.jar https://github.com/ontodev/robot/releases/latest/download/robot.jar
                               chmod +x /usr/local/bin/robot
                           fi
-                          make gen-merged
+                          # The release image ships tvbo's *runtime* deps only, so the
+                          # LinkML *generator* toolkit (build-time only) is absent and
+                          # `make gen-merged` → gen-owl failed with "gen-owl: not found"
+                          # (make Error 127). Generate the ontology in an isolated venv
+                          # so the schema-gen toolchain cannot perturb the tvbo runtime
+                          # the Quarto cells import — the gen scripts don't import tvbo,
+                          # so isolation is clean. Pin linkml to the build version.
+                          uv venv /tmp/genenv
+                          uv pip install --python /tmp/genenv/bin/python \
+                              "linkml==1.11.1" pyyaml rdflib bibtexparser
+                          PATH="/tmp/genenv/bin:${PATH}" make gen-merged
                           cd docs
                           # Cold build: drop every cache so all code cells re-execute.
                           rm -rf _freeze .quarto _site .jupyter_cache
