@@ -740,6 +740,10 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         try:
             with open(filepath) as file_handle:
                 data_as_dict = yaml.safe_load(file_handle) or {}
+            # Drop private/provenance keys (e.g. _source_file) — not schema slots,
+            # so a round-tripped render_yaml() spec reloads cleanly.
+            if isinstance(data_as_dict, dict):
+                data_as_dict = {k: v for k, v in data_as_dict.items() if not str(k).startswith("_")}
             exp = yaml_loader.loads(yaml.safe_dump(data_as_dict), target_class=cls)
             exp._source_file = cls._pending_source_file
         finally:
@@ -1348,9 +1352,18 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     filepath=filepath,
                 )
         else:
+            import re
+            from pathlib import Path as _Path
             from tvbo.utils import to_yaml as _to_yaml
 
-            return _to_yaml(self, filepath)
+            text = _to_yaml(self, None)
+            # Drop top-level private/provenance keys (e.g. _source_file, an absolute
+            # machine path) so the exported spec is clean and round-trips through from_file.
+            text = "\n".join(l for l in text.splitlines() if not re.match(r"^_[A-Za-z]", l)) + "\n"
+            if filepath:
+                _Path(filepath).write_text(text, encoding="utf-8")
+                return filepath
+            return text
 
     def render_yaml(self) -> str:
         """Deprecated Render the YAML representation as a string.
