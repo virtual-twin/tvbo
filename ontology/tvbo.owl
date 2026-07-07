@@ -1712,12 +1712,6 @@
     
 
 
-    <!-- https://w3id.org/tvbo/outsym -->
-
-    <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/outsym"/>
-    
-
-
     <!-- https://w3id.org/tvbo/over -->
 
     <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/over">
@@ -2090,12 +2084,6 @@
         <rdfs:range rdf:resource="https://w3id.org/tvbo/SimulationTask"/>
         <rdfs:label xml:lang="en">supports task</rdfs:label>
     </owl:ObjectProperty>
-    
-
-
-    <!-- https://w3id.org/tvbo/symmetry -->
-
-    <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/symmetry"/>
     
 
 
@@ -9381,12 +9369,6 @@
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="https://w3id.org/tvbo/outsym"/>
-                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
-            </owl:Restriction>
-        </rdfs:subClassOf>
-        <rdfs:subClassOf>
-            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/parameters"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
@@ -9412,12 +9394,6 @@
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/regional_connectivity"/>
-                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
-            </owl:Restriction>
-        </rdfs:subClassOf>
-        <rdfs:subClassOf>
-            <owl:Restriction>
-                <owl:onProperty rdf:resource="https://w3id.org/tvbo/symmetry"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -9489,12 +9465,6 @@
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="https://w3id.org/tvbo/symmetry"/>
-                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
-            </owl:Restriction>
-        </rdfs:subClassOf>
-        <rdfs:subClassOf>
-            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/delayed"/>
                 <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
             </owl:Restriction>
@@ -9543,7 +9513,19 @@
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/outsym"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/sparse"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/symmetry"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -9574,6 +9556,12 @@
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/sparse"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/symmetry"/>
                 <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -26965,11 +26953,11 @@ $Z$. Using the conformal transformation $Z=(1-W^\star)/(1+W^\star)$ and $W= \pi 
     </owl:NamedIndividual>
     <rdf:Description rdf:nodeID="genid2856">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
-        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/HomoclinicBifurcation"/>
+        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
     </rdf:Description>
     <rdf:Description rdf:nodeID="genid2857">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
-        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
+        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/HomoclinicBifurcation"/>
     </rdf:Description>
     
 
@@ -27496,11 +27484,11 @@ This model, its motivation and derivation can be found in the published article 
     </owl:NamedIndividual>
     <rdf:Description rdf:nodeID="genid2863">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
-        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
+        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
     </rdf:Description>
     <rdf:Description rdf:nodeID="genid2864">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
-        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
+        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
     
 
@@ -28097,11 +28085,11 @@ Note:
     </owl:NamedIndividual>
     <rdf:Description rdf:nodeID="genid2870">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
-        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
+        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
     <rdf:Description rdf:nodeID="genid2871">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
-        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
+        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
     </rdf:Description>
     
 
@@ -28775,11 +28763,11 @@ Note:
     </owl:NamedIndividual>
     <rdf:Description rdf:nodeID="genid2873">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
-        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
+        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
     </rdf:Description>
     <rdf:Description rdf:nodeID="genid2874">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
-        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
+        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
     
 
@@ -43034,6 +43022,393 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
         <terms:description>Truncated backprop-through-time for a chaotic Jansen-Rit network. Fits global coupling G to empirical FC; contrasts full-BPTT vs windowed (grad_horizon) gradients. Based on tvboptim TBPTT.qmd.
 </terms:description>
         <rdfs:label>TBPTT Jansen-Rit FC Fitting</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/graph_generators/BarabasiAlbert -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/graph_generators/BarabasiAlbert">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/GraphGenerator"/>
+        <terms:description>Barabasi-Albert preferential attachment graph: nodes are added one at a time and connect to k existing nodes with probability proportional to existing node degree. Produces scale-free networks with power-law degree distributions.</terms:description>
+        <rdfs:label>BarabasiAlbert</rdfs:label>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/graph_generators/BarabasiAlbert/parameters/k"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/graph_generators/BarabasiAlbert/parameters/n"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/graph_generators/BarabasiAlbert/parameters/seed"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/graph_generators/Complete -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/graph_generators/Complete">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/GraphGenerator"/>
+        <terms:description>Complete graph K_n — every node connected to every other node.</terms:description>
+        <rdfs:label>Complete</rdfs:label>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/graph_generators/Complete/parameters/n"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/graph_generators/Cycle -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/graph_generators/Cycle">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/GraphGenerator"/>
+        <terms:description>Cycle graph C_n — nodes arranged in a ring, each connected to its 2 neighbours.</terms:description>
+        <rdfs:label>Cycle</rdfs:label>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/graph_generators/Cycle/parameters/n"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/graph_generators/ErdosRenyi -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/graph_generators/ErdosRenyi">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/GraphGenerator"/>
+        <terms:description>Erdos-Renyi random graph G(n, p). Each of the n*(n-1)/2 possible undirected edges is independently included with probability p.</terms:description>
+        <rdfs:label>ErdosRenyi</rdfs:label>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/graph_generators/ErdosRenyi/parameters/density_from"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/graph_generators/ErdosRenyi/parameters/n"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/graph_generators/ErdosRenyi/parameters/p"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/graph_generators/ErdosRenyi/parameters/seed"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/graph_generators/RandomRegular -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/graph_generators/RandomRegular">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/GraphGenerator"/>
+        <terms:description>Random k-regular graph — every node has exactly degree k.</terms:description>
+        <rdfs:label>RandomRegular</rdfs:label>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/graph_generators/RandomRegular/parameters/k"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/graph_generators/RandomRegular/parameters/n"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/graph_generators/RandomRegular/parameters/seed"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/graph_generators/RandomReservoir -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/graph_generators/RandomReservoir">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/GraphGenerator"/>
+        <terms:description>Sparse random recurrent adjacency with post-hoc spectral-radius rescaling — the canonical Echo State Network substrate (Jaeger 2001). The recurrent reservoir of an ESN is fully described by four numbers: size, sparsity, target spectral radius, and the weight distribution of the non-zero entries.</terms:description>
+        <rdfs:label>RandomReservoir</rdfs:label>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/graph_generators/RandomReservoir/parameters/n"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/graph_generators/RandomReservoir/parameters/seed"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/graph_generators/RandomReservoir/parameters/sparsity"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/graph_generators/RandomReservoir/parameters/spectral_radius"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/graph_generators/RandomReservoir/parameters/weight_distribution"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/graph_generators/Star -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/graph_generators/Star">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/GraphGenerator"/>
+        <terms:description>Star graph — one central hub connected to n-1 peripheral nodes.</terms:description>
+        <rdfs:label>Star</rdfs:label>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/graph_generators/Star/parameters/n"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/graph_generators/WattsStrogatz -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/graph_generators/WattsStrogatz">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/GraphGenerator"/>
+        <terms:description>Watts-Strogatz small-world graph. Starts as a regular ring lattice where each node connects to k nearest neighbours, then rewires each edge with probability p to a uniformly random target.</terms:description>
+        <rdfs:label>WattsStrogatz</rdfs:label>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/graph_generators/WattsStrogatz/parameters/k"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/graph_generators/WattsStrogatz/parameters/n"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/graph_generators/WattsStrogatz/parameters/p"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/graph_generators/WattsStrogatz/parameters/seed"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/graph_generators/WeightShuffle -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/graph_generators/WeightShuffle">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/GraphGenerator"/>
+        <terms:description>Derived generator: load a reference adjacency by IRI and permute its non-zero entries under a chosen preservation mode. Used for null-model controls (e.g. shuffled SC matrices that preserve density / degree sequence / weight distribution while randomising topology).</terms:description>
+        <rdfs:label>WeightShuffle</rdfs:label>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/graph_generators/WeightShuffle/parameters/preserve"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/graph_generators/WeightShuffle/parameters/seed"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/graph_generators/WeightShuffle/parameters/source"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/graph_generators/BarabasiAlbert/parameters/k -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/graph_generators/BarabasiAlbert/parameters/k">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Number of edges per new node</terms:description>
+        <rdfs:label>k (BarabasiAlbert parameter)</rdfs:label>
+        <skos:notation>k</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/graph_generators/BarabasiAlbert/parameters/n -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/graph_generators/BarabasiAlbert/parameters/n">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Number of nodes</terms:description>
+        <rdfs:label>n (BarabasiAlbert parameter)</rdfs:label>
+        <skos:notation>n</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/graph_generators/BarabasiAlbert/parameters/seed -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/graph_generators/BarabasiAlbert/parameters/seed">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <rdfs:label>seed (BarabasiAlbert parameter)</rdfs:label>
+        <skos:notation>seed</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/graph_generators/Complete/parameters/n -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/graph_generators/Complete/parameters/n">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Number of nodes</terms:description>
+        <rdfs:label>n (Complete parameter)</rdfs:label>
+        <skos:notation>n</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/graph_generators/Cycle/parameters/n -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/graph_generators/Cycle/parameters/n">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Number of nodes</terms:description>
+        <rdfs:label>n (Cycle parameter)</rdfs:label>
+        <skos:notation>n</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/graph_generators/ErdosRenyi/parameters/density_from -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/graph_generators/ErdosRenyi/parameters/density_from">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Optional. When set, the value of p is computed at load time as the density of the referenced source matrix (a Network IRI), so that the generated null model matches the source&apos;s connection density.</terms:description>
+        <rdfs:label>density_from (ErdosRenyi parameter)</rdfs:label>
+        <skos:notation>density_from</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/graph_generators/ErdosRenyi/parameters/n -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/graph_generators/ErdosRenyi/parameters/n">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Number of nodes</terms:description>
+        <rdfs:label>n (ErdosRenyi parameter)</rdfs:label>
+        <skos:notation>n</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/graph_generators/ErdosRenyi/parameters/p -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/graph_generators/ErdosRenyi/parameters/p">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Edge probability in [0, 1]</terms:description>
+        <rdfs:label>p (ErdosRenyi parameter)</rdfs:label>
+        <skos:notation>p</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/graph_generators/ErdosRenyi/parameters/seed -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/graph_generators/ErdosRenyi/parameters/seed">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <rdfs:label>seed (ErdosRenyi parameter)</rdfs:label>
+        <skos:notation>seed</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/graph_generators/RandomRegular/parameters/k -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/graph_generators/RandomRegular/parameters/k">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Degree of every node (n*k must be even)</terms:description>
+        <rdfs:label>k (RandomRegular parameter)</rdfs:label>
+        <skos:notation>k</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/graph_generators/RandomRegular/parameters/n -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/graph_generators/RandomRegular/parameters/n">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Number of nodes</terms:description>
+        <rdfs:label>n (RandomRegular parameter)</rdfs:label>
+        <skos:notation>n</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/graph_generators/RandomRegular/parameters/seed -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/graph_generators/RandomRegular/parameters/seed">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <rdfs:label>seed (RandomRegular parameter)</rdfs:label>
+        <skos:notation>seed</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/graph_generators/RandomReservoir/parameters/n -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/graph_generators/RandomReservoir/parameters/n">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Number of nodes</terms:description>
+        <rdfs:label>n (RandomReservoir parameter)</rdfs:label>
+        <skos:notation>n</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/graph_generators/RandomReservoir/parameters/seed -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/graph_generators/RandomReservoir/parameters/seed">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <rdfs:label>seed (RandomReservoir parameter)</rdfs:label>
+        <skos:notation>seed</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/graph_generators/RandomReservoir/parameters/sparsity -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/graph_generators/RandomReservoir/parameters/sparsity">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Fraction of non-zero weights in [0, 1]</terms:description>
+        <rdfs:label>sparsity (RandomReservoir parameter)</rdfs:label>
+        <skos:notation>sparsity</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/graph_generators/RandomReservoir/parameters/spectral_radius -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/graph_generators/RandomReservoir/parameters/spectral_radius">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Target spectral radius (post-rescaling)</terms:description>
+        <rdfs:label>spectral_radius (RandomReservoir parameter)</rdfs:label>
+        <skos:notation>spectral_radius</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/graph_generators/RandomReservoir/parameters/weight_distribution -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/graph_generators/RandomReservoir/parameters/weight_distribution">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Distribution from which non-zero weights are drawn. Default: Normal(0, 1).</terms:description>
+        <rdfs:label>weight_distribution (RandomReservoir parameter)</rdfs:label>
+        <skos:notation>weight_distribution</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/graph_generators/Star/parameters/n -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/graph_generators/Star/parameters/n">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Number of nodes (1 hub + n-1 leaves)</terms:description>
+        <rdfs:label>n (Star parameter)</rdfs:label>
+        <skos:notation>n</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/graph_generators/WattsStrogatz/parameters/k -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/graph_generators/WattsStrogatz/parameters/k">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Initial ring degree (even)</terms:description>
+        <rdfs:label>k (WattsStrogatz parameter)</rdfs:label>
+        <skos:notation>k</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/graph_generators/WattsStrogatz/parameters/n -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/graph_generators/WattsStrogatz/parameters/n">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Number of nodes</terms:description>
+        <rdfs:label>n (WattsStrogatz parameter)</rdfs:label>
+        <skos:notation>n</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/graph_generators/WattsStrogatz/parameters/p -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/graph_generators/WattsStrogatz/parameters/p">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Rewiring probability in [0, 1]</terms:description>
+        <rdfs:label>p (WattsStrogatz parameter)</rdfs:label>
+        <skos:notation>p</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/graph_generators/WattsStrogatz/parameters/seed -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/graph_generators/WattsStrogatz/parameters/seed">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <rdfs:label>seed (WattsStrogatz parameter)</rdfs:label>
+        <skos:notation>seed</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/graph_generators/WeightShuffle/parameters/preserve -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/graph_generators/WeightShuffle/parameters/preserve">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Which structural property to preserve under permutation:
+  - binary_mask:        preserve the {0, nonzero} pattern; permute weight values among non-zero positions
+  - degree:             preserve per-node degree (within rounding)
+  - weight_distribution: preserve the multiset of weights (binary topology rerandomised)</terms:description>
+        <rdfs:label>preserve (WeightShuffle parameter)</rdfs:label>
+        <skos:notation>preserve</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/graph_generators/WeightShuffle/parameters/seed -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/graph_generators/WeightShuffle/parameters/seed">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <rdfs:label>seed (WeightShuffle parameter)</rdfs:label>
+        <skos:notation>seed</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/graph_generators/WeightShuffle/parameters/source -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/graph_generators/WeightShuffle/parameters/source">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>IRI of the reference Network whose weights matrix is shuffled.</terms:description>
+        <rdfs:label>source (WeightShuffle parameter)</rdfs:label>
+        <skos:notation>source</skos:notation>
     </owl:NamedIndividual>
     
 

@@ -1568,6 +1568,76 @@ tvbo:data a owl:Ontology ;
     dcterms:description """Truncated backprop-through-time for a chaotic Jansen-Rit network. Fits global coupling G to empirical FC; contrasts full-BPTT vs windowed (grad_horizon) gradients. Based on tvboptim TBPTT.qmd.
 """ .
 
+<https://w3id.org/tvbo/graph_generators/BarabasiAlbert> a owl:NamedIndividual,
+        tvbo:GraphGenerator ;
+    rdfs:label "BarabasiAlbert" ;
+    dcterms:description "Barabasi-Albert preferential attachment graph: nodes are added one at a time and connect to k existing nodes with probability proportional to existing node degree. Produces scale-free networks with power-law degree distributions." ;
+    tvbo:hasParameter <https://w3id.org/tvbo/graph_generators/BarabasiAlbert/parameters/k>,
+        <https://w3id.org/tvbo/graph_generators/BarabasiAlbert/parameters/n>,
+        <https://w3id.org/tvbo/graph_generators/BarabasiAlbert/parameters/seed> .
+
+<https://w3id.org/tvbo/graph_generators/Complete> a owl:NamedIndividual,
+        tvbo:GraphGenerator ;
+    rdfs:label "Complete" ;
+    dcterms:description "Complete graph K_n — every node connected to every other node." ;
+    tvbo:hasParameter <https://w3id.org/tvbo/graph_generators/Complete/parameters/n> .
+
+<https://w3id.org/tvbo/graph_generators/Cycle> a owl:NamedIndividual,
+        tvbo:GraphGenerator ;
+    rdfs:label "Cycle" ;
+    dcterms:description "Cycle graph C_n — nodes arranged in a ring, each connected to its 2 neighbours." ;
+    tvbo:hasParameter <https://w3id.org/tvbo/graph_generators/Cycle/parameters/n> .
+
+<https://w3id.org/tvbo/graph_generators/ErdosRenyi> a owl:NamedIndividual,
+        tvbo:GraphGenerator ;
+    rdfs:label "ErdosRenyi" ;
+    dcterms:description "Erdos-Renyi random graph G(n, p). Each of the n*(n-1)/2 possible undirected edges is independently included with probability p." ;
+    tvbo:hasParameter <https://w3id.org/tvbo/graph_generators/ErdosRenyi/parameters/density_from>,
+        <https://w3id.org/tvbo/graph_generators/ErdosRenyi/parameters/n>,
+        <https://w3id.org/tvbo/graph_generators/ErdosRenyi/parameters/p>,
+        <https://w3id.org/tvbo/graph_generators/ErdosRenyi/parameters/seed> .
+
+<https://w3id.org/tvbo/graph_generators/RandomRegular> a owl:NamedIndividual,
+        tvbo:GraphGenerator ;
+    rdfs:label "RandomRegular" ;
+    dcterms:description "Random k-regular graph — every node has exactly degree k." ;
+    tvbo:hasParameter <https://w3id.org/tvbo/graph_generators/RandomRegular/parameters/k>,
+        <https://w3id.org/tvbo/graph_generators/RandomRegular/parameters/n>,
+        <https://w3id.org/tvbo/graph_generators/RandomRegular/parameters/seed> .
+
+<https://w3id.org/tvbo/graph_generators/RandomReservoir> a owl:NamedIndividual,
+        tvbo:GraphGenerator ;
+    rdfs:label "RandomReservoir" ;
+    dcterms:description "Sparse random recurrent adjacency with post-hoc spectral-radius rescaling — the canonical Echo State Network substrate (Jaeger 2001). The recurrent reservoir of an ESN is fully described by four numbers: size, sparsity, target spectral radius, and the weight distribution of the non-zero entries." ;
+    tvbo:hasParameter <https://w3id.org/tvbo/graph_generators/RandomReservoir/parameters/n>,
+        <https://w3id.org/tvbo/graph_generators/RandomReservoir/parameters/seed>,
+        <https://w3id.org/tvbo/graph_generators/RandomReservoir/parameters/sparsity>,
+        <https://w3id.org/tvbo/graph_generators/RandomReservoir/parameters/spectral_radius>,
+        <https://w3id.org/tvbo/graph_generators/RandomReservoir/parameters/weight_distribution> .
+
+<https://w3id.org/tvbo/graph_generators/Star> a owl:NamedIndividual,
+        tvbo:GraphGenerator ;
+    rdfs:label "Star" ;
+    dcterms:description "Star graph — one central hub connected to n-1 peripheral nodes." ;
+    tvbo:hasParameter <https://w3id.org/tvbo/graph_generators/Star/parameters/n> .
+
+<https://w3id.org/tvbo/graph_generators/WattsStrogatz> a owl:NamedIndividual,
+        tvbo:GraphGenerator ;
+    rdfs:label "WattsStrogatz" ;
+    dcterms:description "Watts-Strogatz small-world graph. Starts as a regular ring lattice where each node connects to k nearest neighbours, then rewires each edge with probability p to a uniformly random target." ;
+    tvbo:hasParameter <https://w3id.org/tvbo/graph_generators/WattsStrogatz/parameters/k>,
+        <https://w3id.org/tvbo/graph_generators/WattsStrogatz/parameters/n>,
+        <https://w3id.org/tvbo/graph_generators/WattsStrogatz/parameters/p>,
+        <https://w3id.org/tvbo/graph_generators/WattsStrogatz/parameters/seed> .
+
+<https://w3id.org/tvbo/graph_generators/WeightShuffle> a owl:NamedIndividual,
+        tvbo:GraphGenerator ;
+    rdfs:label "WeightShuffle" ;
+    dcterms:description "Derived generator: load a reference adjacency by IRI and permute its non-zero entries under a chosen preservation mode. Used for null-model controls (e.g. shuffled SC matrices that preserve density / degree sequence / weight distribution while randomising topology)." ;
+    tvbo:hasParameter <https://w3id.org/tvbo/graph_generators/WeightShuffle/parameters/preserve>,
+        <https://w3id.org/tvbo/graph_generators/WeightShuffle/parameters/seed>,
+        <https://w3id.org/tvbo/graph_generators/WeightShuffle/parameters/source> .
+
 <https://w3id.org/tvbo/integrators/Dopri5> a owl:NamedIndividual,
         tvbo:Integrator ;
     rdfs:label "Dopri5" .
@@ -11320,6 +11390,153 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     dcterms:description "The steepness of the sigmoidal transformation" ;
     schema1:defaultValue 5.6e-01 ;
     skos:notation "r" .
+
+<https://w3id.org/tvbo/graph_generators/BarabasiAlbert/parameters/k> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "k (BarabasiAlbert parameter)" ;
+    dcterms:description "Number of edges per new node" ;
+    skos:notation "k" .
+
+<https://w3id.org/tvbo/graph_generators/BarabasiAlbert/parameters/n> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "n (BarabasiAlbert parameter)" ;
+    dcterms:description "Number of nodes" ;
+    skos:notation "n" .
+
+<https://w3id.org/tvbo/graph_generators/BarabasiAlbert/parameters/seed> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "seed (BarabasiAlbert parameter)" ;
+    skos:notation "seed" .
+
+<https://w3id.org/tvbo/graph_generators/Complete/parameters/n> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "n (Complete parameter)" ;
+    dcterms:description "Number of nodes" ;
+    skos:notation "n" .
+
+<https://w3id.org/tvbo/graph_generators/Cycle/parameters/n> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "n (Cycle parameter)" ;
+    dcterms:description "Number of nodes" ;
+    skos:notation "n" .
+
+<https://w3id.org/tvbo/graph_generators/ErdosRenyi/parameters/density_from> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "density_from (ErdosRenyi parameter)" ;
+    dcterms:description "Optional. When set, the value of p is computed at load time as the density of the referenced source matrix (a Network IRI), so that the generated null model matches the source's connection density." ;
+    skos:notation "density_from" .
+
+<https://w3id.org/tvbo/graph_generators/ErdosRenyi/parameters/n> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "n (ErdosRenyi parameter)" ;
+    dcterms:description "Number of nodes" ;
+    skos:notation "n" .
+
+<https://w3id.org/tvbo/graph_generators/ErdosRenyi/parameters/p> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "p (ErdosRenyi parameter)" ;
+    dcterms:description "Edge probability in [0, 1]" ;
+    skos:notation "p" .
+
+<https://w3id.org/tvbo/graph_generators/ErdosRenyi/parameters/seed> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "seed (ErdosRenyi parameter)" ;
+    skos:notation "seed" .
+
+<https://w3id.org/tvbo/graph_generators/RandomRegular/parameters/k> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "k (RandomRegular parameter)" ;
+    dcterms:description "Degree of every node (n*k must be even)" ;
+    skos:notation "k" .
+
+<https://w3id.org/tvbo/graph_generators/RandomRegular/parameters/n> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "n (RandomRegular parameter)" ;
+    dcterms:description "Number of nodes" ;
+    skos:notation "n" .
+
+<https://w3id.org/tvbo/graph_generators/RandomRegular/parameters/seed> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "seed (RandomRegular parameter)" ;
+    skos:notation "seed" .
+
+<https://w3id.org/tvbo/graph_generators/RandomReservoir/parameters/n> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "n (RandomReservoir parameter)" ;
+    dcterms:description "Number of nodes" ;
+    skos:notation "n" .
+
+<https://w3id.org/tvbo/graph_generators/RandomReservoir/parameters/seed> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "seed (RandomReservoir parameter)" ;
+    skos:notation "seed" .
+
+<https://w3id.org/tvbo/graph_generators/RandomReservoir/parameters/sparsity> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "sparsity (RandomReservoir parameter)" ;
+    dcterms:description "Fraction of non-zero weights in [0, 1]" ;
+    skos:notation "sparsity" .
+
+<https://w3id.org/tvbo/graph_generators/RandomReservoir/parameters/spectral_radius> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "spectral_radius (RandomReservoir parameter)" ;
+    dcterms:description "Target spectral radius (post-rescaling)" ;
+    skos:notation "spectral_radius" .
+
+<https://w3id.org/tvbo/graph_generators/RandomReservoir/parameters/weight_distribution> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "weight_distribution (RandomReservoir parameter)" ;
+    dcterms:description "Distribution from which non-zero weights are drawn. Default: Normal(0, 1)." ;
+    skos:notation "weight_distribution" .
+
+<https://w3id.org/tvbo/graph_generators/Star/parameters/n> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "n (Star parameter)" ;
+    dcterms:description "Number of nodes (1 hub + n-1 leaves)" ;
+    skos:notation "n" .
+
+<https://w3id.org/tvbo/graph_generators/WattsStrogatz/parameters/k> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "k (WattsStrogatz parameter)" ;
+    dcterms:description "Initial ring degree (even)" ;
+    skos:notation "k" .
+
+<https://w3id.org/tvbo/graph_generators/WattsStrogatz/parameters/n> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "n (WattsStrogatz parameter)" ;
+    dcterms:description "Number of nodes" ;
+    skos:notation "n" .
+
+<https://w3id.org/tvbo/graph_generators/WattsStrogatz/parameters/p> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "p (WattsStrogatz parameter)" ;
+    dcterms:description "Rewiring probability in [0, 1]" ;
+    skos:notation "p" .
+
+<https://w3id.org/tvbo/graph_generators/WattsStrogatz/parameters/seed> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "seed (WattsStrogatz parameter)" ;
+    skos:notation "seed" .
+
+<https://w3id.org/tvbo/graph_generators/WeightShuffle/parameters/preserve> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "preserve (WeightShuffle parameter)" ;
+    dcterms:description """Which structural property to preserve under permutation:
+  - binary_mask:        preserve the {0, nonzero} pattern; permute weight values among non-zero positions
+  - degree:             preserve per-node degree (within rounding)
+  - weight_distribution: preserve the multiset of weights (binary topology rerandomised)""" ;
+    skos:notation "preserve" .
+
+<https://w3id.org/tvbo/graph_generators/WeightShuffle/parameters/seed> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "seed (WeightShuffle parameter)" ;
+    skos:notation "seed" .
+
+<https://w3id.org/tvbo/graph_generators/WeightShuffle/parameters/source> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "source (WeightShuffle parameter)" ;
+    dcterms:description "IRI of the reference Network whose weights matrix is shuffled." ;
+    skos:notation "source" .
 
 <https://w3id.org/tvbo/networks/SmileyNetwork/parameters/conduction_speed> a owl:NamedIndividual,
         tvbo:Parameter ;

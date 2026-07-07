@@ -225,6 +225,7 @@ def emit_model(g: Graph, path: pathlib.Path) -> None:
 # schema/SANDS.yaml; do not mint tvbo:Atlas / tvbo:CoordinateSpace.
 GENERIC_FOLDER_TYPES: dict[str, URIRef] = {
     "coupling_functions": TVBO.Coupling,
+    "graph_generators": TVBO.GraphGenerator,
     "integrators": TVBO.Integrator,
     "networks": TVBO.Network,
     "software": TVBO.SoftwarePackage,
