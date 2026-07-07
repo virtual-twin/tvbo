@@ -90,6 +90,35 @@ kits/jr_meg_jax/
 tvbo workflow slurm experiment:JR_MEG --backend jax --stdout > run.sbatch
 ```
 
+## Choosing an engine
+
+The three emitters are not interchangeable; they match two different shapes of
+parallelism. The planner already picks the right shape from the backend, so this
+is mostly about understanding what you get.
+
+**Slurm array** fits a sweep the backend vectorizes. Every axis lives inside one
+JAX batch, so the tasks are identical and differ only by
+`$SLURM_ARRAY_TASK_ID`; task `i` runs `Space[i::N]`. There is no dependency graph
+to resolve and no per-cell file to track, so a bare `#SBATCH --array` is the
+whole mechanism. This is the `tvboptim` path for the Koller grid.
+
+**Snakemake / Nextflow** fit a sweep the backend fans out: one process per cell,
+each with its own inputs and outputs. A DAG engine earns its overhead here
+because it tracks per-cell files, re-runs only what is missing, and can chain a
+per-cell `preprocess → simulate → analyse`. This is the path when the backend
+vectorizes nothing (e.g. `tvb`), or when you want file-level resume.
+
+| Use a Slurm array when | Use Snakemake / Nextflow when |
+|------------------------|-------------------------------|
+| Backend vectorizes every swept axis (`tvboptim`, `jax`) | Backend fans axes out (`tvb`) |
+| Tasks are identical (`Space[i::N]` slices) | Each cell is a distinct process |
+| You want minimal scheduling overhead | You want file-level resume or a per-cell DAG |
+
+A vectorized sweep can still run under Snakemake if you prefer its executor, but
+it adds a driver process and per-rule bookkeeping for no gain over the array.
+The reverse does not hold: `--slurm-chunk` refuses a fanned sweep, because there
+is no in-process batch to slice.
+
 ## Chunking, dependencies, and notifications
 
 **Chunk a sweep into array tasks.** `--set chunk=N` shards the sweep across `N`
