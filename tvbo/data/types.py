@@ -73,7 +73,7 @@ def _to_dataarray(raw_data, raw_time=None, state_names=None, nodes=None):
     return xr.DataArray(data=data_np, dims=dims, coords=coords)
 
 
-def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1, name=None):
+def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1, name=None, cell_coords=None):
     """Build an ``xr.DataArray`` from a parameter-grid-stacked array.
 
     Outer dims correspond to exploration axes (parameter names with their
@@ -83,6 +83,12 @@ def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1,
     mode)``; the leading ``time`` dim is included only when ``intrinsic_ts``
     carries a multi-step time vector matching the leading remaining shape,
     so time-aggregated observations don't get a spurious ``time`` axis.
+
+    ``cell_coords`` (``{axis_name: per_cell_values}``) marks a sharded run: the
+    leading axis is a flat subset of grid points (one HPC array task's slice),
+    not the full Cartesian product. The result then gets a single ``point`` dim
+    with each axis's value hung on it as a coordinate, so the shard is
+    self-describing and reassembles by parameter value across tasks.
     """
     if stacked_arr is None:
         return None
@@ -106,6 +112,58 @@ def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1,
         grid_sizes.append(int(ax_n) if ax_n is not None else None)
         if ax_vals is not None:
             grid_coords[ax_name] = np.asarray(ax_vals)
+
+    # Sharded / non-rectangular subset: the leading axis is a flat list of grid
+    # points, not the full Cartesian product, so it cannot be reshaped into one
+    # dim per parameter. Emit a single ``point`` dim and hang each axis's
+    # per-cell value on it as a (non-dimension) coordinate.
+    _full_grid = (
+        bool(grid_sizes)
+        and all(s is not None for s in grid_sizes)
+        and arr.shape[0] == int(np.prod(grid_sizes))
+    )
+    if cell_coords is not None or (grid_dims and not _full_grid):
+        n_points = arr.shape[0]
+        inner_shape = arr.shape[1:]
+        coords = {}
+        for k, v in (cell_coords or grid_coords).items():
+            vv = np.asarray(v)
+            if vv.ndim == 1 and vv.shape[0] == n_points:
+                coords[k] = ("point", vv)
+        has_trial = n_trials > 1 and len(inner_shape) > 0 and inner_shape[0] == n_trials
+        if has_trial:
+            trial_dims = ["trial"]
+            coords["trial"] = np.arange(n_trials)
+            post_trial_shape = inner_shape[1:]
+        else:
+            trial_dims = []
+            post_trial_shape = inner_shape
+        ts_arr = None
+        if intrinsic_ts is not None:
+            ts_arr = np.asarray(intrinsic_ts)
+            while ts_arr.ndim > 1:
+                ts_arr = ts_arr[0]
+        has_time = (
+            ts_arr is not None
+            and ts_arr.size > 1
+            and len(post_trial_shape) > 0
+            and ts_arr.size == post_trial_shape[0]
+        )
+        if has_time:
+            post_time_template = ["variable", "node", "mode"]
+            inner_dims = ["time"] + [
+                post_time_template[i] if i < len(post_time_template) else f"dim_{i}"
+                for i in range(len(post_trial_shape) - 1)
+            ]
+            coords["time"] = ts_arr
+        else:
+            spatial_template = ["variable", "node", "mode"]
+            inner_dims = spatial_template[-len(post_trial_shape):] if post_trial_shape else []
+        while inner_dims and arr.shape[-1] == 1:
+            arr = arr[..., 0]
+            inner_dims = inner_dims[:-1]
+        all_dims = ["point"] + trial_dims + inner_dims
+        return xr.DataArray(data=arr, dims=all_dims, coords=coords, name=name)
 
     # Multi-axis 'product'-mode explorations come back with a flat leading
     # dim of size prod(grid_sizes). Reshape into per-axis dims so the
@@ -183,6 +241,54 @@ def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1,
 
     all_dims = grid_dims + trial_dims + inner_dims
     return xr.DataArray(data=arr, dims=all_dims, coords=coords, name=name)
+
+
+def reassemble_shards(source, pattern="*__results.nc", to_grid=False, point_dim="point"):
+    """Concatenate sharded exploration outputs into the full sweep result.
+
+    Each HPC array task writes its slice of the sweep as a flat ``point``-dim
+    ``DataArray`` whose per-cell parameter values are coordinates (see
+    :meth:`ExperimentResult.save`). This is the analysis-pass side of the
+    two-stage HPC pattern: it reads every shard file, concatenates them along
+    ``point``, and — with ``to_grid=True`` — pivots ``point`` into one dimension
+    per swept parameter, giving the full rectangular grid addressed by value
+    (order-independent, so it is robust to how tasks were sharded).
+
+    Args:
+        source: a directory to scan with *pattern*, or an explicit list of paths.
+        pattern: glob for shard files when *source* is a directory.
+        to_grid: pivot the flat ``point`` dim into one dim per parameter.
+        point_dim: name of the flat cell dimension written by the shards.
+
+    Returns:
+        The concatenated ``DataArray`` (flat ``point`` dim), or the gridded one
+        when ``to_grid`` is set.
+    """
+    import glob
+    import os
+
+    if isinstance(source, (str, os.PathLike)):
+        src = os.fspath(source)
+        paths = (
+            sorted(glob.glob(os.path.join(src, pattern)))
+            if os.path.isdir(src)
+            else sorted(glob.glob(src))
+        )
+    else:
+        paths = list(source)
+    if not paths:
+        raise FileNotFoundError(f"no shard files matched {source!r} (pattern {pattern!r})")
+
+    combined = xr.concat([xr.open_dataarray(p) for p in paths], dim=point_dim)
+    if not to_grid:
+        return combined
+    coord_names = [
+        c for c in combined.coords
+        if point_dim in combined[c].dims and c != point_dim
+    ]
+    if not coord_names:
+        return combined
+    return combined.set_index({point_dim: coord_names}).unstack(point_dim)
 
 
 # =============================================================================
@@ -985,6 +1091,7 @@ class ExplorationResult(Bunch):
         dt: float = None,
         output_names: list = None,
         observations=None,
+        cell_coords=None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -994,6 +1101,10 @@ class ExplorationResult(Bunch):
         self.observable = observable
         self.dt = dt
         self.output_names = output_names or []
+        # Per-cell parameter values for a sharded run ({axis: (n_point,) array}).
+        # Present only when this result is one HPC array task's slice; drives the
+        # flat 'point'-dim labelling in ``as_grid`` and reassembly by value.
+        self.cell_coords = cell_coords
         # Per-grid-point observations as {name: xr.DataArray} with grid axes
         # prepended to each observation's intrinsic dims (time/variable/node/mode).
         self.observations = observations or {}
@@ -1056,10 +1167,26 @@ class ExplorationResult(Bunch):
         is a registered JAX pytree); only the coordinate labels are materialised. A
         time-series observable keeps its intrinsic dims (time, variable, node, mode)
         after the grid dims. Falls back to the positional array if it cannot be
-        labelled; ``None`` when empty.
+        labelled; ``None`` when empty. A sharded result (``cell_coords`` set) is
+        a subset of grid points, not a full product, so it is labelled with a
+        single ``point`` dim carrying each axis's value — reassemble across
+        shards by parameter value.
         """
         if self.results is None:
             return None
+        if getattr(self, "cell_coords", None):
+            n_trials = int(getattr(self, "n_trials", 1) or 1)
+            intrinsic_ts = None
+            if self.is_timeseries and self.dt:
+                r = self.results
+                t_dim = 1 + (1 if (n_trials > 1 and r.ndim > 1 and r.shape[1] == n_trials) else 0)
+                if r.ndim > t_dim:
+                    intrinsic_ts = np.arange(r.shape[t_dim]) * self.dt
+            return _stacked_to_dataarray(
+                self.results, self.axes, intrinsic_ts=intrinsic_ts,
+                n_trials=n_trials, name=self.observable or None,
+                cell_coords=self.cell_coords,
+            )
         data = self.results  # keep JAX-native; never np.asarray the payload
         names = [self._axis_name(ax) for ax in self.axes]
         grid_shape = tuple(self._grid_shape or ())
@@ -1481,6 +1608,67 @@ class ExperimentResult:
             val = getattr(self, key, None)
             return val is not None and val != {}
         return key in self._extras
+
+    def save(self, out_dir):
+        """Persist the run's observation arrays to *out_dir* as netCDF.
+
+        Writes one file per observation ``DataArray`` on the explorations (the
+        two-stage HPC simulation output) and on the primary integration result.
+        A sharded run writes only its own slice; each file carries the swept
+        parameter value per cell as a coordinate, so shard files concatenate by
+        value into the full grid in the analysis pass. Returns written paths.
+        Falls back to ``.npz`` when a DataArray cannot be encoded as netCDF.
+        """
+        import os
+
+        os.makedirs(out_dir, exist_ok=True)
+        written = []
+
+        def _san(s):
+            return "".join(c if (c.isalnum() or c in "._-") else "_" for c in str(s))
+
+        def _dump(da, stem):
+            named = da if getattr(da, "name", None) is not None else da.rename(stem)
+            path = os.path.join(out_dir, stem + ".nc")
+            try:
+                named.to_netcdf(path)
+                return path
+            except Exception:
+                npz = os.path.join(out_dir, stem + ".npz")
+                np.savez(
+                    npz,
+                    data=np.asarray(da.values),
+                    **{f"coord__{_san(k)}": np.asarray(v) for k, v in da.coords.items()},
+                )
+                return npz
+
+        for expl_name, expl in (self.explorations or {}).items():
+            for obs_name, da in (getattr(expl, "observations", None) or {}).items():
+                if da is not None:
+                    written.append(_dump(da, f"exploration__{_san(expl_name)}__{_san(obs_name)}"))
+            # Raw sweep results (the no-observations two-stage sim output): dump the
+            # labelled array (grid for a full run, flat 'point' for a shard).
+            if getattr(expl, "results", None) is not None:
+                try:
+                    g = expl.as_grid()
+                except Exception:
+                    g = None
+                if g is not None and hasattr(g, "to_netcdf"):
+                    written.append(_dump(g, f"exploration__{_san(expl_name)}__results"))
+                elif g is not None:
+                    npz = os.path.join(out_dir, f"exploration__{_san(expl_name)}__results.npz")
+                    np.savez(npz, results=np.asarray(g))
+                    written.append(npz)
+
+        integ = self.integration
+        integ_obs = getattr(integ, "observations", None) if integ is not None else None
+        if integ_obs and hasattr(integ_obs, "items"):
+            for obs_name, obs in integ_obs.items():
+                da = getattr(obs, "data", obs)
+                if hasattr(da, "to_netcdf"):
+                    written.append(_dump(da, f"integration__{_san(obs_name)}"))
+
+        return written
 
     def plot(self, **kwargs):
         """Dispatch plot to the most relevant sub-result."""
