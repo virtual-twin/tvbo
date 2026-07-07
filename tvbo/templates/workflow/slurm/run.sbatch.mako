@@ -63,11 +63,13 @@ source ${sb["venv"]}/bin/activate
 <%
     out_pat = plan.out_dir + "/$SLURM_ARRAY_JOB_ID/$SLURM_ARRAY_TASK_ID"
     prefix = ("singularity exec " + plan.container + " ") if plan.container else ""
+    run_target = spec_relpath if spec_relpath else plan.run_spec
 %>\
 ## Each array task runs 1/N of the sweep cells; the backend vmap/pmap-s its share.
-exec ${prefix}tvbo run ${plan.run_spec} \
+## Prefer the self-contained frozen spec (spec/…yaml); fall back to the source recipe.
+exec ${prefix}tvbo run ${run_target} \
     --backend=${plan.backend.name} \
-% if plan.experiment_selector:
+% if plan.experiment_selector and not spec_relpath:
     --experiment="${plan.experiment_selector}" \
 % endif
     --slurm-chunk=$SLURM_ARRAY_TASK_ID/${plan.n_array_tasks} \

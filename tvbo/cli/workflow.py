@@ -164,10 +164,13 @@ def _emit_kit(*, engine: str, plan, experiment, out_dir: Path) -> Path:
     (out_dir / "scripts").mkdir(exist_ok=True)
     (out_dir / "spec").mkdir(exist_ok=True)
 
-    # 1) Frozen YAML spec snapshot
+    # 1) Frozen YAML spec snapshot (self-contained run target when it round-trips)
+    spec_relpath = None
     try:
         yaml_text = experiment.render(format="yaml")
-        (out_dir / "spec" / f"{plan.experiment_key}.yaml").write_text(yaml_text, encoding="utf-8")
+        spec_path = out_dir / "spec" / f"{plan.experiment_key}.yaml"
+        spec_path.write_text(yaml_text, encoding="utf-8")
+        spec_relpath = str(spec_path.relative_to(out_dir))
     except Exception as exc:
         _common.info(f"(could not snapshot YAML spec: {exc})")
 
@@ -190,6 +193,7 @@ def _emit_kit(*, engine: str, plan, experiment, out_dir: Path) -> Path:
         plan=plan,
         block=plan.engine_block,
         script_relpath=str(script_path.relative_to(out_dir)) if script_path else None,
+        spec_relpath=spec_relpath,
     )
     artefact.write_text(text, encoding="utf-8")
     _common.info(f"wrote {artefact.relative_to(out_dir)}")
