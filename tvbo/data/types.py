@@ -1071,7 +1071,19 @@ class ExplorationResult(Bunch):
                 if not (grid_shape and data.shape[0] == n_grid):
                     return data  # trials-only / unshaped: leave positional
                 data = data.reshape(grid_shape + tuple(data.shape[1:]))
-                dims = names + ["time", "variable", "node", "mode"][: data.ndim - len(names)]
+                # Intrinsic (post-grid) layout is (time, *spatial) following the TVB
+                # convention (variable, node, mode). tvboptim drops the `variable` dim
+                # for a single model output, so only label it `variable` when the
+                # leading spatial dim actually matches the output count; the rest map
+                # to (node, mode). Unknown output count → assume `variable` is present.
+                spatial = list(data.shape[len(names) + 1:])
+                n_out = len(self.output_names) if self.output_names else None
+                intrinsic = ["time"]
+                if spatial and (n_out is None or spatial[0] == n_out):
+                    intrinsic.append("variable")
+                    spatial = spatial[1:]
+                intrinsic += ["node", "mode"][: len(spatial)]
+                dims = names + intrinsic
             else:
                 if not grid_shape or data.size != n_grid:
                     return data  # nothing to lay out

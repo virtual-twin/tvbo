@@ -448,8 +448,13 @@ class PyRatesAdapter(BaseAdapter):
 
         for axis in as_list(expl.space):
             ref = str(axis.parameter)
-            # Dotted ref "Class.param" → use bare param name as grid key
-            name = ref.split(".", 1)[1] if "." in ref else ref
+            # Dotted ref "Dynamics.param": the prefix names the dynamics class and the
+            # suffix the parameter. Keep them separate — the parameter name drives
+            # variable resolution while the full ref stays the unique grid key.
+            if "." in ref:
+                dyn_class, param_name = ref.split(".", 1)
+            else:
+                dyn_class, param_name = None, ref
             domain = getattr(axis, "domain", None)
 
             # Get sweep values
@@ -466,30 +471,42 @@ class PyRatesAdapter(BaseAdapter):
             else:
                 continue
 
-            param_grid[name] = list(values)
+            # Grid key = the full dotted ref. PyRates treats it as an opaque label
+            # (grid_search only ever looks up param_map[key]), so it stays unique even
+            # when two axes sweep the same parameter name on different dynamics. A
+            # repeated key means the same axis was listed twice.
+            grid_key = ref
+            if grid_key in param_grid:
+                raise ValueError(
+                    f"Exploration '{getattr(expl, 'name', '')}' lists the axis "
+                    f"'{ref}' more than once; each swept parameter must be unique."
+                )
+            param_grid[grid_key] = list(values)
 
             # Harmonized axis name = the dotted reference (== Exploration.space key,
-            # matching every other backend); the bare `name` stays the PyRates grid key.
-            ax = Bunch(name=ref, n=len(values), explored_values=values)
+            # matching every other backend); `key` carries the PyRates grid key
+            # (== results_map column) so consumers never re-derive it from the name.
+            ax = Bunch(name=ref, n=len(values), explored_values=values, key=grid_key)
             axes.append(ax)
 
-            # Resolve PyRates variable path via shared node map
-            py_name = PYRATES_REPL.get(name, name)
-            for dyn_name, dyn in dynamics_dict.items():
-                if name in (dyn.parameters or {}):
-                    info = nmap[dyn_name]
-                    param_map[name] = {
-                        "vars": [f"{info['op']}/{py_name}"],
-                        "nodes": info["nodes"],
-                    }
-                    break
+            # Resolve the target dynamics: prefer the class named by the prefix (so
+            # `A.w` and `B.w` reach their own nodes), else the first dynamics that
+            # declares the parameter, else the first dynamics.
+            py_name = PYRATES_REPL.get(param_name, param_name)
+            resolved = None
+            if dyn_class and dyn_class in dynamics_dict \
+                    and param_name in (dynamics_dict[dyn_class].parameters or {}):
+                resolved = dyn_class
             else:
-                # Fallback: first dynamics
-                info = next(iter(nmap.values()))
-                param_map[name] = {
-                    "vars": [f"{info['op']}/{py_name}"],
-                    "nodes": info["nodes"],
-                }
+                for dyn_name, dyn in dynamics_dict.items():
+                    if param_name in (dyn.parameters or {}):
+                        resolved = dyn_name
+                        break
+            info = (resolved is not None and nmap.get(resolved)) or next(iter(nmap.values()))
+            param_map[grid_key] = {
+                "vars": [f"{info['op']}/{py_name}"],
+                "nodes": info["nodes"],
+            }
 
         return param_grid, param_map, axes
 
@@ -548,16 +565,28 @@ class PyRatesAdapter(BaseAdapter):
         _axis_vals = [getattr(ax, "explored_values", None) for ax in axes]
         grid_shape = tuple(0 if v is None else len(v) for v in _axis_vals)
         if len(grid_shape) > 1 and 0 not in grid_shape and int(np.prod(grid_shape)) == n_conditions:
-            bare = [str(getattr(ax, "name", "")).rsplit(".", 1)[-1] for ax in axes]
+            # Use the grid key carried on the axis (== results_map column); fall back
+            # to the trailing name segment only for axes built elsewhere.
+            bare = [
+                getattr(ax, "key", None) or str(getattr(ax, "name", "")).rsplit(".", 1)[-1]
+                for ax in axes
+            ]
             vals = [np.asarray(v, dtype=float) for v in _axis_vals]
             ordered = np.empty_like(results_arr)
+            filled = np.zeros(n_conditions, dtype=bool)
             for c_idx, cond_name in enumerate(results_map.index):
                 midx = tuple(
                     int(np.argmin(np.abs(vals[k] - float(results_map.loc[cond_name, bare[k]]))))
                     for k in range(len(axes))
                 )
-                ordered[int(np.ravel_multi_index(midx, grid_shape))] = results_arr[c_idx]
-            results_arr = ordered
+                pos = int(np.ravel_multi_index(midx, grid_shape))
+                ordered[pos] = results_arr[c_idx]
+                filled[pos] = True
+            # Only adopt the reorder when it is a clean permutation (every cell filled
+            # exactly once). Degenerate axes with duplicate swept values collide, which
+            # would leave uninitialised cells — keep the original order in that case.
+            if filled.all():
+                results_arr = ordered
 
         observable = None
         obs = getattr(expl, "observable", None)
