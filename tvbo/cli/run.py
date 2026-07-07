@@ -127,22 +127,43 @@ def _parse_chunk(s: str) -> tuple[int, int]:
 def _run_one(experiment, backend: str, out_dir: Path | None,
              kwargs: dict, chunk_i: int | None, chunk_n: int | None) -> None:
     if chunk_n is not None:
+        from ._backends import resolve_backend
         from ._workflow import extract_axes
         axes = extract_axes(experiment)
         if not axes:
             _common.info("no sweep axes on experiment; running once")
             _exec_one(experiment, backend, out_dir, kwargs)
             return
-        from itertools import product
-        grids = [ax.values for ax in axes]
-        for j, combo in enumerate(product(*grids)):
-            if j % chunk_n != chunk_i:
-                continue
-            cell_kwargs = dict(kwargs)
-            for ax, v in zip(axes, combo):
-                _common.info(f"  cell {j}: {ax.parameter}={v}")
-            cell_out = out_dir / f"cell_{j:06d}" if out_dir else None
-            _exec_one(experiment, backend, cell_out, cell_kwargs)
+        # A sweep is shardable in-process only where the backend vectorises every
+        # swept axis — the same ontology capability the planner uses to decide
+        # vectorised-vs-fanned (``BackendSpec.can_vectorize``). Slicing the shard
+        # then just indexes that vectorised batch (tvboptim: ``Space[i::N]``).
+        # Axes the backend cannot vectorise have no in-process batch to slice;
+        # they are fanned into per-cell tasks at the workflow layer instead.
+        try:
+            spec = resolve_backend(backend)
+        except KeyError:
+            spec = None
+        fanned = [ax for ax in axes if spec is None or not spec.can_vectorize(ax.kind)]
+        if fanned:
+            names = ", ".join(f"{ax.parameter} ({ax.kind})" for ax in fanned)
+            _common.die(
+                f"--slurm-chunk shards a sweep by slicing the backend's vectorised "
+                f"batch, but backend {backend!r} does not vectorise: {names}. Emit "
+                f"the kit with snakemake/nextflow (which fan these axes into per-cell "
+                f"tasks), or use a backend that vectorises them (e.g. tvboptim)."
+            )
+        n_cells = 1
+        for ax in axes:
+            n_cells *= len(ax.values)
+        per_task = -(-n_cells // chunk_n)  # ceil
+        _common.info(
+            f"sharding: task {chunk_i}/{chunk_n} runs ~{per_task} of {n_cells} "
+            f"sweep cells (backend-vectorised, Space[{chunk_i}::{chunk_n}])"
+        )
+        shard_kwargs = dict(kwargs)
+        shard_kwargs["shard"] = (chunk_i, chunk_n)
+        _exec_one(experiment, backend, out_dir, shard_kwargs)
         return
 
     _exec_one(experiment, backend, out_dir, kwargs)

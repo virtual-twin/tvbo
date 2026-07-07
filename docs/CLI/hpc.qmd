@@ -191,6 +191,22 @@ sim=$(sbatch --parsable run.sbatch)
 sbatch --dependency=afterok:$sim analysis.sbatch
 ```
 
+Each array task writes its own slice. Because `--slurm-chunk i/N` slices the
+backend's vectorized batch (tvboptim: `Space[i::N]`), task `i` runs only its
+cells and saves them as a flat `point`-dim array (netCDF), each cell carrying
+its swept parameter values as coordinates. The analysis pass stitches the
+slices back into the full grid **by value** with
+`tvbo.data.reassemble_shards`, so the result is correct no matter how the sweep
+was sharded:
+
+```python
+from tvbo.data import reassemble_shards
+
+grid = reassemble_shards("out/.../$SLURM_ARRAY_JOB_ID", to_grid=True)
+# grid: xr.DataArray with one dim per swept parameter, addressed by value
+# grid.sel(**{"Kuramoto.omega_mean_hz": 10.0, "conduction_speed": 3.0})
+```
+
 ## Provenance in the kit's README
 
 Every kit's `README.md` ends with a reproducibility block: backend, container,
