@@ -15,6 +15,7 @@ requires.
 """
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from typing import Any, Iterable
 
@@ -57,9 +58,13 @@ class WorkflowPlan:
     vectorize_axes: list[SweepAxis] = field(default_factory=list)
     workflow_axes: list[SweepAxis] = field(default_factory=list)
 
-    chunk: int = 1                    # cells per array task in the workflow space
+    chunk: int = 1                    # workflow-fanned: cells per array task;
+                                      # fully-vectorized sweep: number of array shards
     engine_block: dict[str, Any] = field(default_factory=dict)
     overrides: list[dict[str, Any]] = field(default_factory=list)
+    requirements: list[dict[str, Any]] = field(default_factory=list)  # normalized pip/conda deps
+    source_spec: str = ""             # SPEC arg for `tvbo run` (recipe path / CURIE / DB name)
+    experiment_selector: str | None = None  # --experiment value picking this experiment in a study
 
     # ---- derived helpers --------------------------------------------------
 
@@ -71,8 +76,41 @@ class WorkflowPlan:
         return n
 
     @property
+    def n_vectorize_cells(self) -> int:
+        n = 1
+        for ax in self.vectorize_axes:
+            n *= ax.n
+        return n
+
+    @property
     def n_array_tasks(self) -> int:
-        return max(1, (self.n_workflow_cells + self.chunk - 1) // self.chunk)
+        if self.workflow_axes:
+            # Fanned axes → one array task per ``chunk`` workflow cells.
+            return max(1, (self.n_workflow_cells + self.chunk - 1) // self.chunk)
+        # Fully backend-vectorized sweep (no fanned axes): ``chunk`` is the number
+        # of SLURM array shards. Each task runs ``tvbo run --slurm-chunk=$i/N`` over
+        # 1/N of the sweep cells (the backend vmap/pmap-s its own share). Capped at
+        # the cell count so we never emit more tasks than there are cells.
+        return max(1, min(self.chunk, self.n_vectorize_cells))
+
+    @property
+    def pip_specs(self) -> list[str]:
+        """Requirements as pip-installable strings (``pkg>=x`` or a source URL)."""
+        out: list[str] = []
+        for r in self.requirements:
+            url = r.get("source_url") or r.get("url")
+            if url:
+                out.append(str(url)); continue
+            pkg = r.get("package") or r.get("name")
+            if pkg:
+                out.append(f"{pkg}{r.get('version_spec') or ''}")
+        return out
+
+    @property
+    def run_spec(self) -> str:
+        """SPEC argument for ``tvbo run`` — the source recipe path/CURIE if known,
+        else the ``experiment:<key>`` fallback."""
+        return self.source_spec or f"experiment:{self.experiment_key}"
 
     @property
     def wildcards(self) -> list[str]:
@@ -173,6 +211,20 @@ def extract_axes(experiment) -> list[SweepAxis]:
 # Planner
 # ---------------------------------------------------------------------------
 
+def _norm_requirement(item) -> dict[str, Any]:
+    """Normalize a dep (``'libigl>=2.5'`` string, a dict, or a SoftwareRequirement
+    object) into ``{package, version_spec, source_url}`` for the env-file emitters."""
+    if item is None:
+        return {}
+    if isinstance(item, str):
+        m = re.match(r"^\s*([A-Za-z0-9_.\-]+)\s*(.*)$", item)
+        return {"package": m.group(1), "version_spec": (m.group(2).strip() or None)} if m else {}
+    get = item.get if isinstance(item, dict) else (lambda k, d=None: getattr(item, k, d))
+    return {"package": get("package") or get("name"),
+            "version_spec": get("version_spec"),
+            "source_url": get("source_url") or get("url")}
+
+
 def plan(
     *,
     study_key: str,
@@ -181,6 +233,8 @@ def plan(
     engine: str = "local",
     workflow_spec: dict[str, Any] | None = None,
     overrides: list[dict[str, Any]] | None = None,
+    source_spec: str = "",
+    experiment_selector: str | None = None,
 ) -> WorkflowPlan:
     """Compute a :class:`WorkflowPlan` from an Experiment + spec.
 
@@ -229,6 +283,15 @@ def plan(
     if "array_chunk" in engine_block:
         chunk = int(engine_block["array_chunk"])
 
+    # Software dependencies come from the experiment's schema-native
+    # environment.requirements (overridable via workflow_spec["requirements"]).
+    _exp_env = getattr(experiment, "environment", None)
+    _req_raw = (spec.get("requirements")
+                or (getattr(_exp_env, "requirements", None) if _exp_env is not None else None)
+                or [])
+    _reqs = [r for r in (_norm_requirement(x) for x in _as_list(_req_raw))
+             if r.get("package") or r.get("source_url")]
+
     return WorkflowPlan(
         study_key=study_key,
         experiment_key=str(getattr(experiment, "key", None) or getattr(experiment, "name", None) or "experiment"),
@@ -244,6 +307,9 @@ def plan(
         chunk=max(1, chunk),
         engine_block=engine_block,
         overrides=list(overrides or []),
+        requirements=_reqs,
+        source_spec=source_spec or "",
+        experiment_selector=experiment_selector,
     )
 
 

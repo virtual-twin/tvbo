@@ -79,7 +79,9 @@ dynamics_class = model.name.replace(' ', '').replace('-', '') if hasattr(model, 
 
 # Events metadata (stimuli and other time-dependent inputs)
 events_list = list(experiment.events.values()) if experiment.events else []
-stimulus_events = [ev for ev in events_list if 'stimulus' in str(getattr(ev, 'event_type', 'stimulus'))]
+stimulus_events = [ev for ev in events_list
+                   if ('stimul' in str(getattr(ev, 'event_type', 'stimulus')))
+                   or (str(getattr(ev, 'event_type', '')) in ('continuous', 'discrete'))]
 has_stimulus_events = len(stimulus_events) > 0
 %>
 """

@@ -407,6 +407,12 @@ tvbo:hasModelFeature a owl:ObjectProperty ;
     rdfs:range tvbo:ModelFeature ;
     rdfs:label "has model feature"@en .
 
+tvbo:requiresCoupling a owl:ObjectProperty ;
+    rdfs:domain tvbo:Dynamics ;
+    rdfs:range  tvbo:Coupling ;
+    rdfs:label  "requires coupling"@en ;
+    rdfs:comment "The model's dynamics are defined against this specific coupling function (e.g. a sigmoidal transform of afferent activity); substituting a different coupling yields a different model."@en .
+
 tvbo:SigmoidActivation             a tvbo:ModelFeature ; rdfs:label "Sigmoid activation"@en .
 tvbo:FastSlowDecomposition         a tvbo:ModelFeature ; rdfs:label "Fast-slow decomposition"@en .
 tvbo:ExcitatoryInhibitorySubpopulations
@@ -432,7 +438,8 @@ tvbo:JansenRit
     tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
     tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
     tvbo:hasTimescaleSeparation        false ;
-    tvbo:hasModelFeature               tvbo:SigmoidActivation .
+    tvbo:hasModelFeature               tvbo:SigmoidActivation ;
+    tvbo:requiresCoupling              <https://w3id.org/tvbo/coupling_functions/SigmoidalJansenRit> .
 
 tvbo:Epileptor
     rdfs:label "Epileptor"@en ;

@@ -302,7 +302,14 @@ for sv_name, sv in model.state_variables.items():
 # Schema: experiment.events is multivalued dict of Event objects
 # Each stimulus-type event becomes an AbstractExternalInput, available as a variable in dfun
 events_list = list(experiment.events.values()) if experiment.events else []
-stimulus_events = [ev for ev in events_list if 'stimulus' in str(getattr(ev, 'event_type', 'stimulus'))]
+# Events that become an AbstractExternalInput (a variable available in the dfun):
+# open-loop 'stimulus'/'stimulation' time functions AND closed-loop 'continuous'
+# events, whose onset is triggered by a state condition crossing zero (a stateful
+# ExternalInput that arms on the crossing and then emits its affect waveform).
+def _is_external_input_event(ev):
+    et = str(getattr(ev, 'event_type', 'stimulus'))
+    return ('stimul' in et) or (et in ('continuous', 'discrete'))
+stimulus_events = [ev for ev in events_list if _is_external_input_event(ev)]
 has_stimulus_events = len(stimulus_events) > 0
 
 # A stimulus event whose signal is an iid per-step draw (an event parameter with
@@ -2311,15 +2318,18 @@ def run_experiment(
     """Run complete experiment workflow. Mode: simulation, optimization, exploration, algorithms, or all."""
 
     weights = jnp.array(weights)
+    # quiet=True silences the structural progress prints (run(..., quiet=True)).
+    _quiet = kwargs.pop("quiet", False)
+    _log = (lambda *a, **k: None) if _quiet else print
 % if network_observation_names:
     # Materialize network-observation constants (empirical targets) from the
     # supplied matrices, keyed by observation name (e.g. {'fc_target': FC}).
     _bind_network_observations(network_observations)
 % endif
 
-    print("\n" + "=" * 60)
-    print("STEP 1: Running simulation...")
-    print("=" * 60)
+    _log("\n" + "=" * 60)
+    _log("STEP 1: Running simulation...")
+    _log("=" * 60)
 
     % if has_delay:
     if delays is None:
@@ -2341,8 +2351,8 @@ def run_experiment(
     default_state = sim_result.state
     # Raw transient result for observation monitors (HRF warmup)
     transient = sim_result.result_transient
-    print(f"  Simulation period: ${t1_default} ms, dt: ${dt} ms")
-    print(f"  Transient period: ${transient_time} ms")
+    _log(f"  Simulation period: ${t1_default} ms, dt: ${dt} ms")
+    _log(f"  Transient period: ${transient_time} ms")
 
     # Use custom state if provided (e.g., from previous optimization)
     if state is not None:
@@ -2460,17 +2470,17 @@ def run_experiment(
         integration=main_result,
 
     )
-    print("  Simulation complete.")
+    _log("  Simulation complete.")
 
     % if has_explorations:
     if mode in ('exploration', 'all'):
-        print("\n" + "=" * 60)
-        print("STEP 2: Running explorations...")
-        print("=" * 60)
+        _log("\n" + "=" * 60)
+        _log("STEP 2: Running explorations...")
+        _log("=" * 60)
         exploration_result = Bunch()
 
         % for expl in explorations:
-        print(f"  > ${expl['name']}")
+        _log(f"  > ${expl['name']}")
         exploration_result.${expl['name']} = ${expl['name']}(
             state, model_fn,
             result_transient=transient,
@@ -2480,7 +2490,7 @@ def run_experiment(
         % endfor
 
         results.explorations = exploration_result
-        print("  Explorations complete.")
+        _log("  Explorations complete.")
     % endif
 
     % if has_algorithms:
@@ -3175,9 +3185,9 @@ ${render_inference(_inf, coupling_keys, external_input_keys, set(derived_observa
         print(f"  Inference complete. Posteriors: {list(results.get('inferences', Bunch()).keys())}")
     % endif
 
-    print("\n" + "=" * 60)
-    print("Experiment complete.")
-    print("=" * 60)
+    _log("\n" + "=" * 60)
+    _log("Experiment complete.")
+    _log("=" * 60)
 
     return results
 
