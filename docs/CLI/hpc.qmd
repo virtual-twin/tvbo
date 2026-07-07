@@ -73,7 +73,25 @@ tvbo workflow plan mystudy.yaml --experiment "Full IF x K x v grid" \
 ```
 
 Pick `N` so each task's batch fits node memory. More tasks = smaller batches =
-lower peak memory but more scheduling overhead.
+lower peak memory but more scheduling overhead. The Koller `4 × 39 × 10` grid at
+10 trials is ~1.6 GB for *two* cells, so the whole sweep in one batch would need
+~1.25 TB; that is what chunking avoids.
+
+### How a task runs its share
+
+`--slurm-chunk i/N` slices the backend's own vectorized batch, not a Python cell
+loop. On `tvboptim` the sweep is a `Space`, and task `i` runs `Space[i::N]`: the
+strided subset of grid points, still vmapped, with peak memory scaled by `1/N`.
+Each task saves its slice as a flat `point`-dimension array (one entry per cell
+it ran), so the shards partition the grid and reassemble by value (see
+[Two-stage runs](#two-stage-runs-simulate-analyse)).
+
+Only a backend that vectorizes every swept axis can shard this way, and `tvbo
+run` checks that against the backend's ontology capabilities (the same
+`vectorize_axes` the planner uses). A backend that fans an axis instead (e.g.
+`tvb`, which vectorizes nothing) rejects `--slurm-chunk` and points you to the
+Snakemake or Nextflow emitter, where each cell is its own task. See
+[Choosing an engine](workflow.qmd#choosing-an-engine) for that split.
 
 ## Parallelism inside a task (`parallel_mode`)
 
