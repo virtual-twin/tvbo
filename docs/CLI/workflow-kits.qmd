@@ -10,9 +10,11 @@ Every successful `tvbo workflow {slurm,snakemake,nextflow}` invocation writes a 
 <out_dir>/
 ├── <artefact>             # Snakefile / run.sbatch / main.nf
 ├── scripts/
-│   └── <experiment>.<ext> # Frozen backend code, runnable with python or julia
+│   └── <experiment>.<ext> # Frozen backend code (record + direct-run)
 ├── spec/
-│   └── <experiment>.yaml  # Frozen YAML snapshot of the experiment
+│   └── <experiment>.yaml  # Frozen YAML snapshot; the artefact's run target
+├── requirements.txt       # pip deps, from environment.requirements
+├── environment.yml        # conda env, from environment.requirements
 └── README.md              # Provenance + how-to-run
 ```
 
@@ -33,8 +35,8 @@ Filename depends on the engine:
 Each artefact:
 
 - Sets up engine-specific job parameters (Slurm headers, Snakemake `rule all`, Nextflow channels) from the merged `slurm.*` / `snakemake.*` / `nextflow.*` workflow blocks.
-- Iterates the workflow-fanned axes — one array task / rule instance / process invocation per cell.
-- Inside each cell, runs **`python scripts/<exp>.<ext>`** when the frozen script is present, otherwise falls back to `tvbo run experiment:<key> --backend=… --slurm-chunk=…`. This means the kit is *not* required to have `tvbo` installed at run time — only the backend's runtime (e.g. `jax`, `julia`).
+- Iterates the workflow-fanned axes: one array task / rule instance / process invocation per cell.
+- Runs the kit's **own frozen spec**: `tvbo run spec/<exp>.yaml --backend=… --slurm-chunk=$SLURM_ARRAY_TASK_ID/N -o …`, so each array task simulates its `1/N` share of the sweep and the job is **self-contained** (no external recipe or callable modules at run time). Requires `tvbo` plus the backend runtime; provision both from the emitted `environment.yml`. (If the source recipe is preferred over the frozen spec, the fallback form is `tvbo run <recipe> --experiment "<label>" --slurm-chunk=…`.)
 - Optionally wraps the inner command in `singularity exec <image>` when `--set container=…` was passed.
 
 ### `scripts/<experiment>.<ext>`
@@ -62,20 +64,29 @@ julia --project=. scripts/JR_MEG_FrequencyGradient_Optimization.jl
 
 ### `spec/<experiment>.yaml`
 
-The frozen YAML snapshot of the experiment, produced by `experiment.render(format='yaml')`. It is the single source of truth the frozen script consumes at run time. **Do not edit by hand** unless you intend to change the rerun behaviour.
+The frozen YAML snapshot of the experiment, produced by `experiment.render(format='yaml')`, and the **run target** the artefact points `tvbo run` at. It round-trips: private/provenance keys (e.g. `_source_file`) are stripped on export so the spec is portable and reloads cleanly (`tvbo run spec/<exp>.yaml`). **Do not edit by hand** unless you intend to change the rerun behaviour.
+
+### `requirements.txt` / `environment.yml`
+
+Emitted from the experiment's schema-native `environment.requirements` (skipped
+if none are declared). `requirements.txt` is one pip spec per line (`pkg>=x`, or a
+`source_url` verbatim); `environment.yml` is a conda env with those under `pip:`.
+Provision the run env with `conda env create -f environment.yml` or
+`pip install -r requirements.txt`. Both are rendered from Mako templates
+(`templates/workflow/{requirements.txt,environment.yml}.mako`).
 
 ### `README.md`
 
 Auto-generated provenance + how-to-run. Sections:
 
-1. **Layout** — file inventory.
-2. **Run** — copy-pasteable command for the engine (`sbatch …`, `snakemake --cores all`, `nextflow run main.nf`).
+1. **Layout**: file inventory.
+2. **Run**: copy-pasteable command for the engine (`sbatch …`, `snakemake --cores all`, `nextflow run main.nf`).
 3. **Reproducibility**:
     - backend (key + label)
     - container image (or `(none)`)
     - cell counts: workflow cells, chunk size, array tasks
     - vectorized vs. workflow-fanned axes (with names + ranges)
-4. **CLI overrides** — every `--set KEY=VALUE` recorded with its source.
+4. **CLI overrides**: every `--set KEY=VALUE` recorded with its source.
 
 ## Why a *kit* (not a single file)?
 

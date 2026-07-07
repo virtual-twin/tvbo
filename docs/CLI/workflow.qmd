@@ -79,6 +79,8 @@ kits/jr_meg_jax/
 │   └── JR_MEG_FrequencyGradient_Optimization.py
 ├── spec/
 │   └── JR_MEG_FrequencyGradient_Optimization.yaml
+├── requirements.txt        # pip deps, from environment.requirements
+├── environment.yml         # conda env, from environment.requirements
 └── README.md
 ```
 
@@ -86,6 +88,35 @@ kits/jr_meg_jax/
 
 ```bash
 tvbo workflow slurm experiment:JR_MEG --backend jax --stdout > run.sbatch
+```
+
+## Chunking, dependencies, and notifications
+
+**Chunk a sweep into array tasks.** `--set chunk=N` shards the sweep across `N`
+Slurm array tasks. This applies even when every axis is *backend-vectorized* (the
+common `tvboptim` case): each task runs `--slurm-chunk=$SLURM_ARRAY_TASK_ID/N`
+over its share. See [HPC patterns](hpc.qmd), *Chunking a sweep into array tasks*.
+
+**Environment files.** Declare deps on the experiment's schema-native
+`environment.requirements`; the kit emits `requirements.txt` (pip) and
+`environment.yml` (conda) from them:
+
+```yaml
+environment:
+  name: mystudy_env
+  requirements:
+    - {name: libigl, package: libigl, version_spec: ">=2.5"}
+    - {name: tvboptim, package: tvboptim}
+```
+
+**Slurm resources / email.** Every `slurm.*` key becomes an `#SBATCH` directive,
+including notifications:
+
+```bash
+tvbo workflow slurm … \
+    --set chunk=40 \
+    --set slurm.partition=medium --set slurm.mem=16G \
+    --set slurm.mail_type=END,FAIL --set slurm.mail_user=you@example.org
 ```
 
 ## `tvbo workflow backends`
@@ -116,7 +147,7 @@ jax  (JAX)
     - `subjects` if it mentions `subject` or `sample`
     - otherwise `parameters`
 4. For each axis, place it as **vectorized** (handled inside the backend) or **workflow-fanned** (a wildcard / array index) according to the backend's `vectorize_axes` set.
-5. Compute total workflow cells (`product(n_i)` for workflow axes), default chunk = 1, derive number of array tasks.
+5. Derive the array-task count: for **workflow-fanned** axes, `ceil(workflow_cells / chunk)`; for a **fully backend-vectorized** sweep, `chunk` itself is the number of array shards (each running `--slurm-chunk=$i/N`). Read `environment.requirements` into the kit's `requirements.txt` / `environment.yml`.
 
 ## See also
 
