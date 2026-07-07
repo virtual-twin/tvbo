@@ -25,6 +25,12 @@ sb = block
 % if sb.get("account"):
 #SBATCH --account=${sb["account"]}
 % endif
+% if sb.get("mail_type"):
+#SBATCH --mail-type=${sb["mail_type"]}
+% endif
+% if sb.get("mail_user"):
+#SBATCH --mail-user=${sb["mail_user"]}
+% endif
 #SBATCH --output=logs/%x-%A_%a.out
 #SBATCH --error=logs/%x-%A_%a.err
 
@@ -54,27 +60,15 @@ module load ${mod}
 source ${sb["venv"]}/bin/activate
 % endif
 
-% if plan.container:
-exec singularity exec ${plan.container} \\
-% if script_relpath:
-    python ${script_relpath} \
-        --slurm-chunk=$SLURM_ARRAY_TASK_ID/${plan.n_array_tasks} \
-        -o ${plan.out_dir}/$SLURM_ARRAY_JOB_ID/$SLURM_ARRAY_TASK_ID
-% else:
-    tvbo run experiment:${plan.experiment_key} \
-        --backend=${plan.backend.name} \
-        --slurm-chunk=$SLURM_ARRAY_TASK_ID/${plan.n_array_tasks} \
-        -o ${plan.out_dir}/$SLURM_ARRAY_JOB_ID/$SLURM_ARRAY_TASK_ID
-% endif
-% else:
-% if script_relpath:
-exec python ${script_relpath} \
-    --slurm-chunk=$SLURM_ARRAY_TASK_ID/${plan.n_array_tasks} \
-    -o ${plan.out_dir}/$SLURM_ARRAY_JOB_ID/$SLURM_ARRAY_TASK_ID
-% else:
-exec tvbo run experiment:${plan.experiment_key} \
+<%
+    out_pat = plan.out_dir + "/$SLURM_ARRAY_JOB_ID/$SLURM_ARRAY_TASK_ID"
+    prefix = ("singularity exec " + plan.container + " ") if plan.container else ""
+%>\
+## Each array task runs 1/N of the sweep cells; the backend vmap/pmap-s its share.
+exec ${prefix}tvbo run ${plan.run_spec} \
     --backend=${plan.backend.name} \
+% if plan.experiment_selector:
+    --experiment="${plan.experiment_selector}" \
+% endif
     --slurm-chunk=$SLURM_ARRAY_TASK_ID/${plan.n_array_tasks} \
-    -o ${plan.out_dir}/$SLURM_ARRAY_JOB_ID/$SLURM_ARRAY_TASK_ID
-% endif
-% endif
+    -o ${out_pat}

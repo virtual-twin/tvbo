@@ -92,6 +92,14 @@ def run(
                 _common.die(f"No experiment named {experiment!r} in study.")
         for exp in items:
             _common.info(f"running experiment: {getattr(exp, 'key', None) or getattr(exp, 'label', None)}")
+            # Resolve to the runtime experiment (has .run) rather than the datamodel object.
+            if not hasattr(exp, "run") and hasattr(obj, "get_experiment"):
+                sel = (getattr(exp, "id", None) or getattr(exp, "key", None)
+                       or getattr(exp, "name", None) or getattr(exp, "label", None))
+                try:
+                    exp = obj.get_experiment(sel)
+                except Exception:
+                    pass
             _run_one(exp, backend, out_dir, kwargs, chunk_i, chunk_n)
         return
 

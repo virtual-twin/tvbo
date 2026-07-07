@@ -77,6 +77,16 @@ def _resolve_study_and_experiment(spec: str, experiment_arg: str | None):
             exp = wanted[0]
         else:
             exp = items[0]
+        # Prefer the *runtime* experiment (has render/render_code/render_yaml) over the
+        # datamodel object, so the kit can freeze the backend script + YAML snapshot.
+        if hasattr(obj, "get_experiment"):
+            sel = getattr(exp, "id", None)
+            if sel is None:
+                sel = getattr(exp, "key", None) or getattr(exp, "name", None) or getattr(exp, "label", None)
+            try:
+                exp = obj.get_experiment(sel)
+            except Exception:
+                pass
         return obj, exp, getattr(obj, "key", None) or "study"
 
     if kind == "experiment":
@@ -99,6 +109,8 @@ def _build_plan(spec: str, *, engine: str, backend: str,
         engine=engine,
         workflow_spec=spec_dict,
         overrides=parsed["records"],
+        source_spec=spec,
+        experiment_selector=experiment,
     )
     return plan, exp
 
@@ -181,6 +193,15 @@ def _emit_kit(*, engine: str, plan, experiment, out_dir: Path) -> Path:
     )
     artefact.write_text(text, encoding="utf-8")
     _common.info(f"wrote {artefact.relative_to(out_dir)}")
+
+    # 3b) Environment files (pip + conda) rendered via Mako from the experiment's
+    #     declared environment.requirements, so the kit provisions the right env.
+    if plan.pip_specs:
+        (out_dir / "requirements.txt").write_text(
+            _render_template("requirements.txt.mako", plan=plan), encoding="utf-8")
+        (out_dir / "environment.yml").write_text(
+            _render_template("environment.yml.mako", plan=plan), encoding="utf-8")
+        _common.info("wrote requirements.txt + environment.yml")
 
     # 4) README
     _write_readme(out_dir, engine=engine, plan=plan, script_relpath=
