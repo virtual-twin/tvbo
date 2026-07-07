@@ -76,6 +76,42 @@ tvbo:CoombesByrne2D a owl:NamedIndividual,
         <https://w3id.org/tvbo/CoombesByrne2D/state_variables/r> ;
     tvbo:model_type "mean_field" .
 
+tvbo:DecoBalancedExcInh a owl:NamedIndividual,
+        tvbo:Dynamics ;
+    rdfs:label "DecoBalancedExcInh" ;
+    dcterms:description "Deco Balanced Exc-Inh model. It extends the Reduced Wong-Wang Exc-Inh (RWW_EI) dynamic mean-field model with an effective regional gain parameter M_i that scales both the excitatory and inhibitory input currents, capturing the dynamical consequences of regional heterogeneity in the brain's transcriptional landscape (Deco et al., 2021)." ;
+    tvbo:hasDerivedVariable <https://w3id.org/tvbo/DecoBalancedExcInh/derived_variables/H_e>,
+        <https://w3id.org/tvbo/DecoBalancedExcInh/derived_variables/H_i>,
+        <https://w3id.org/tvbo/DecoBalancedExcInh/derived_variables/I_e>,
+        <https://w3id.org/tvbo/DecoBalancedExcInh/derived_variables/I_i>,
+        <https://w3id.org/tvbo/DecoBalancedExcInh/derived_variables/J_N_S_e>,
+        <https://w3id.org/tvbo/DecoBalancedExcInh/derived_variables/coupling>,
+        <https://w3id.org/tvbo/DecoBalancedExcInh/derived_variables/x_e>,
+        <https://w3id.org/tvbo/DecoBalancedExcInh/derived_variables/x_i> ;
+    tvbo:hasParameter <https://w3id.org/tvbo/DecoBalancedExcInh/parameters/G>,
+        <https://w3id.org/tvbo/DecoBalancedExcInh/parameters/I_ext>,
+        <https://w3id.org/tvbo/DecoBalancedExcInh/parameters/I_o>,
+        <https://w3id.org/tvbo/DecoBalancedExcInh/parameters/J_N>,
+        <https://w3id.org/tvbo/DecoBalancedExcInh/parameters/J_i>,
+        <https://w3id.org/tvbo/DecoBalancedExcInh/parameters/M_i>,
+        <https://w3id.org/tvbo/DecoBalancedExcInh/parameters/W_e>,
+        <https://w3id.org/tvbo/DecoBalancedExcInh/parameters/W_i>,
+        <https://w3id.org/tvbo/DecoBalancedExcInh/parameters/a_e>,
+        <https://w3id.org/tvbo/DecoBalancedExcInh/parameters/a_i>,
+        <https://w3id.org/tvbo/DecoBalancedExcInh/parameters/b_e>,
+        <https://w3id.org/tvbo/DecoBalancedExcInh/parameters/b_i>,
+        <https://w3id.org/tvbo/DecoBalancedExcInh/parameters/d_e>,
+        <https://w3id.org/tvbo/DecoBalancedExcInh/parameters/d_i>,
+        <https://w3id.org/tvbo/DecoBalancedExcInh/parameters/gamma_e>,
+        <https://w3id.org/tvbo/DecoBalancedExcInh/parameters/gamma_i>,
+        <https://w3id.org/tvbo/DecoBalancedExcInh/parameters/lamda>,
+        <https://w3id.org/tvbo/DecoBalancedExcInh/parameters/tau_e>,
+        <https://w3id.org/tvbo/DecoBalancedExcInh/parameters/tau_i>,
+        <https://w3id.org/tvbo/DecoBalancedExcInh/parameters/w_p> ;
+    tvbo:hasStateVariable <https://w3id.org/tvbo/DecoBalancedExcInh/state_variables/S_e>,
+        <https://w3id.org/tvbo/DecoBalancedExcInh/state_variables/S_i> ;
+    tvbo:model_type "mean_field" .
+
 tvbo:DumontGutkin a owl:NamedIndividual,
         tvbo:Dynamics ;
     rdfs:label "DumontGutkin" ;
@@ -103,6 +139,41 @@ tvbo:DumontGutkin a owl:NamedIndividual,
         <https://w3id.org/tvbo/DumontGutkin/state_variables/s_ie>,
         <https://w3id.org/tvbo/DumontGutkin/state_variables/s_ii> ;
     tvbo:model_type "mean_field" .
+
+tvbo:Epileptor a owl:NamedIndividual,
+        tvbo:Dynamics ;
+    rdfs:label "Epileptor" ;
+    dcterms:description "The Epileptor is a composite neural mass model of six dimensions which has been crafted to model the phenomenology of epileptic seizures. Equations and default parameters are taken from Jirsa et al. (2014)." ;
+    tvbo:hasDerivedVariable <https://w3id.org/tvbo/Epileptor/derived_variables/Iext_total>,
+        <https://w3id.org/tvbo/Epileptor/derived_variables/f1>,
+        <https://w3id.org/tvbo/Epileptor/derived_variables/f2>,
+        <https://w3id.org/tvbo/Epileptor/derived_variables/h>,
+        <https://w3id.org/tvbo/Epileptor/derived_variables/lfp> ;
+    tvbo:hasParameter <https://w3id.org/tvbo/Epileptor/parameters/Iext>,
+        <https://w3id.org/tvbo/Epileptor/parameters/Iext2>,
+        <https://w3id.org/tvbo/Epileptor/parameters/Kf>,
+        <https://w3id.org/tvbo/Epileptor/parameters/Ks>,
+        <https://w3id.org/tvbo/Epileptor/parameters/Kvf>,
+        <https://w3id.org/tvbo/Epileptor/parameters/a>,
+        <https://w3id.org/tvbo/Epileptor/parameters/aa>,
+        <https://w3id.org/tvbo/Epileptor/parameters/b>,
+        <https://w3id.org/tvbo/Epileptor/parameters/bb>,
+        <https://w3id.org/tvbo/Epileptor/parameters/c>,
+        <https://w3id.org/tvbo/Epileptor/parameters/d>,
+        <https://w3id.org/tvbo/Epileptor/parameters/modification>,
+        <https://w3id.org/tvbo/Epileptor/parameters/r>,
+        <https://w3id.org/tvbo/Epileptor/parameters/s>,
+        <https://w3id.org/tvbo/Epileptor/parameters/slope>,
+        <https://w3id.org/tvbo/Epileptor/parameters/tau>,
+        <https://w3id.org/tvbo/Epileptor/parameters/tt>,
+        <https://w3id.org/tvbo/Epileptor/parameters/x0> ;
+    tvbo:hasStateVariable <https://w3id.org/tvbo/Epileptor/state_variables/g>,
+        <https://w3id.org/tvbo/Epileptor/state_variables/x1>,
+        <https://w3id.org/tvbo/Epileptor/state_variables/x2>,
+        <https://w3id.org/tvbo/Epileptor/state_variables/y1>,
+        <https://w3id.org/tvbo/Epileptor/state_variables/y2>,
+        <https://w3id.org/tvbo/Epileptor/state_variables/z> ;
+    tvbo:model_type "neural_mass" .
 
 tvbo:Epileptor2D a owl:NamedIndividual,
         tvbo:Dynamics ;
@@ -192,6 +263,96 @@ Note:
         <https://w3id.org/tvbo/Epileptor5D/state_variables/y2>,
         <https://w3id.org/tvbo/Epileptor5D/state_variables/z> ;
     tvbo:model_type "phenomenological" .
+
+tvbo:EpileptorCodim3 a owl:NamedIndividual,
+        tvbo:Dynamics ;
+    rdfs:label "EpileptorCodim3" ;
+    dcterms:description "The Epileptor codim 3 model is a neural mass model containing two subsystems acting at different timescales. The fast subsystem (x, y) uses the unfolding of a degenerate Takens-Bogdanov bifurcation of codimension 3; the slow subsystem (z) steers the fast one back and forth along a great arc of a sphere, producing bursting behavior. It reproduces almost all classes of bursting predicted for systems with a planar fast subsystem. The default parameters correspond to Hysteresis-Loop burster class c2s (Saddle-Node at onset, Saddle-Homoclinic at offset, branch N=1, with the stabilising modification for negative dstar)." ;
+    tvbo:hasDerivedVariable <https://w3id.org/tvbo/EpileptorCodim3/derived_variables/E0>,
+        <https://w3id.org/tvbo/EpileptorCodim3/derived_variables/E1>,
+        <https://w3id.org/tvbo/EpileptorCodim3/derived_variables/E2>,
+        <https://w3id.org/tvbo/EpileptorCodim3/derived_variables/F0>,
+        <https://w3id.org/tvbo/EpileptorCodim3/derived_variables/F1>,
+        <https://w3id.org/tvbo/EpileptorCodim3/derived_variables/F2>,
+        <https://w3id.org/tvbo/EpileptorCodim3/derived_variables/cardano_a>,
+        <https://w3id.org/tvbo/EpileptorCodim3/derived_variables/cardano_d>,
+        <https://w3id.org/tvbo/EpileptorCodim3/derived_variables/mu1>,
+        <https://w3id.org/tvbo/EpileptorCodim3/derived_variables/mu2>,
+        <https://w3id.org/tvbo/EpileptorCodim3/derived_variables/nu>,
+        <https://w3id.org/tvbo/EpileptorCodim3/derived_variables/xs> ;
+    tvbo:hasParameter <https://w3id.org/tvbo/EpileptorCodim3/parameters/Ks>,
+        <https://w3id.org/tvbo/EpileptorCodim3/parameters/R>,
+        <https://w3id.org/tvbo/EpileptorCodim3/parameters/b>,
+        <https://w3id.org/tvbo/EpileptorCodim3/parameters/c>,
+        <https://w3id.org/tvbo/EpileptorCodim3/parameters/dstar>,
+        <https://w3id.org/tvbo/EpileptorCodim3/parameters/modification>,
+        <https://w3id.org/tvbo/EpileptorCodim3/parameters/mu1_start>,
+        <https://w3id.org/tvbo/EpileptorCodim3/parameters/mu1_stop>,
+        <https://w3id.org/tvbo/EpileptorCodim3/parameters/mu2_start>,
+        <https://w3id.org/tvbo/EpileptorCodim3/parameters/mu2_stop>,
+        <https://w3id.org/tvbo/EpileptorCodim3/parameters/nu_start>,
+        <https://w3id.org/tvbo/EpileptorCodim3/parameters/nu_stop> ;
+    tvbo:hasStateVariable <https://w3id.org/tvbo/EpileptorCodim3/state_variables/x>,
+        <https://w3id.org/tvbo/EpileptorCodim3/state_variables/y>,
+        <https://w3id.org/tvbo/EpileptorCodim3/state_variables/z> ;
+    tvbo:model_type "neural_mass" .
+
+tvbo:EpileptorCodim3SlowMod a owl:NamedIndividual,
+        tvbo:Dynamics ;
+    rdfs:label "EpileptorCodim3SlowMod" ;
+    dcterms:description "The Epileptor Codim 3 model with ultra-slow modulation of bursting classes (Saggio et al., 2017). It is a neural mass model containing a fast subsystem (x, y) built from the unfolding of a degenerate Takens-Bogdanov bifurcation of codimension 3 and a slow subsystem (z) that steers the fast one back and forth along a path in parameter space, producing bursting. Two additional ultra-slow state variables (uA, uB) modulate the offset (A) and onset (B) points of the burster along great arcs on a sphere of radius R, allowing the model to switch between different classes of bursters (Hysteresis-Loop bursters c0, c0', c2s, c3s, c4s, c10s, c11s, c2b, c4b, c8b, c14b, c16b as classified in Saggio et al. 2017 Table 2). The bifurcation parameters (mu1, mu2, nu) at the offset (A) and onset (B) points are obtained by parametrising great arcs between the points Ain/Aend and Bin/Bend on the sphere. This capture uses the default branch of the resting state (N = 1) and the default stabilising modification (modification = True)." ;
+    tvbo:hasDerivedVariable <https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/A0>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/A1>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/A2>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/B0>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/B1>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/B2>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/C0>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/C1>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/C2>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/E0>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/E1>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/E2>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/F0>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/F1>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/F2>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/Fx0>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/Fx1>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/Fx2>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/disc>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/mu1>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/mu2>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/normA>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/normF>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/nu>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/sqdisc>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/xs> ;
+    tvbo:hasParameter <https://w3id.org/tvbo/EpileptorCodim3SlowMod/parameters/Ks>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/parameters/R>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/parameters/b>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/parameters/c>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/parameters/cA>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/parameters/cB>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/parameters/dstar>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/parameters/modification>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/parameters/mu1_Aend>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/parameters/mu1_Ain>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/parameters/mu1_Bend>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/parameters/mu1_Bin>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/parameters/mu2_Aend>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/parameters/mu2_Ain>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/parameters/mu2_Bend>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/parameters/mu2_Bin>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/parameters/nu_Aend>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/parameters/nu_Ain>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/parameters/nu_Bend>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/parameters/nu_Bin> ;
+    tvbo:hasStateVariable <https://w3id.org/tvbo/EpileptorCodim3SlowMod/state_variables/uA>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/state_variables/uB>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/state_variables/x>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/state_variables/y>,
+        <https://w3id.org/tvbo/EpileptorCodim3SlowMod/state_variables/z> ;
+    tvbo:model_type "neural_mass" .
 
 tvbo:EpileptorRestingState a owl:NamedIndividual,
         tvbo:Dynamics ;
@@ -342,7 +503,8 @@ Note:
 - This model uses the modifications implemented by Golos et al. (2015).""" ;
     dcterms:references <https://w3id.org/tvbo/studies/Hopfield1982>,
         <https://w3id.org/tvbo/studies/Hopfield1984> ;
-    tvbo:hasParameter <https://w3id.org/tvbo/Hopfield/parameters/tauT>,
+    tvbo:hasParameter <https://w3id.org/tvbo/Hopfield/parameters/dynamic>,
+        <https://w3id.org/tvbo/Hopfield/parameters/tauT>,
         <https://w3id.org/tvbo/Hopfield/parameters/taux> ;
     tvbo:hasStateVariable <https://w3id.org/tvbo/Hopfield/state_variables/theta>,
         <https://w3id.org/tvbo/Hopfield/state_variables/x> ;
@@ -558,6 +720,13 @@ Note:
         <https://w3id.org/tvbo/LarterBreakspear/state_variables/Z> ;
     tvbo:model_type "neural_mass" .
 
+tvbo:Linear a owl:NamedIndividual,
+        tvbo:Dynamics ;
+    rdfs:label "Linear" ;
+    tvbo:hasParameter <https://w3id.org/tvbo/Linear/parameters/gamma> ;
+    tvbo:hasStateVariable <https://w3id.org/tvbo/Linear/state_variables/x> ;
+    tvbo:model_type "generic" .
+
 tvbo:ModelJansen1995 a owl:NamedIndividual,
         tvbo:Dynamics ;
     rdfs:label "ModelJansen1995" ;
@@ -594,6 +763,68 @@ tvbo:MontbrioPazoRoxin a owl:NamedIndividual,
     tvbo:hasStateVariable <https://w3id.org/tvbo/MontbrioPazoRoxin/state_variables/V>,
         <https://w3id.org/tvbo/MontbrioPazoRoxin/state_variables/r> ;
     tvbo:model_type "mean_field" .
+
+tvbo:ReducedSetFitzHughNagumo a owl:NamedIndividual,
+        tvbo:Dynamics ;
+    rdfs:label "ReducedSetFitzHughNagumo" ;
+    dcterms:description "Reduced set of FitzHugh-Nagumo oscillators (Stefanescu & Jirsa 2008); 3 modes coupled via mode-mixing matrices with Gaussian-quadrature coefficients recomputed from mu/sigma." ;
+    tvbo:hasParameter <https://w3id.org/tvbo/ReducedSetFitzHughNagumo/parameters/Aik>,
+        <https://w3id.org/tvbo/ReducedSetFitzHughNagumo/parameters/Bik>,
+        <https://w3id.org/tvbo/ReducedSetFitzHughNagumo/parameters/Cik>,
+        <https://w3id.org/tvbo/ReducedSetFitzHughNagumo/parameters/K11>,
+        <https://w3id.org/tvbo/ReducedSetFitzHughNagumo/parameters/K12>,
+        <https://w3id.org/tvbo/ReducedSetFitzHughNagumo/parameters/K21>,
+        <https://w3id.org/tvbo/ReducedSetFitzHughNagumo/parameters/a>,
+        <https://w3id.org/tvbo/ReducedSetFitzHughNagumo/parameters/b>,
+        <https://w3id.org/tvbo/ReducedSetFitzHughNagumo/parameters/iU0>,
+        <https://w3id.org/tvbo/ReducedSetFitzHughNagumo/parameters/iU4>,
+        <https://w3id.org/tvbo/ReducedSetFitzHughNagumo/parameters/iV0>,
+        <https://w3id.org/tvbo/ReducedSetFitzHughNagumo/parameters/iV4>,
+        <https://w3id.org/tvbo/ReducedSetFitzHughNagumo/parameters/iZU>,
+        <https://w3id.org/tvbo/ReducedSetFitzHughNagumo/parameters/iZV>,
+        <https://w3id.org/tvbo/ReducedSetFitzHughNagumo/parameters/mu>,
+        <https://w3id.org/tvbo/ReducedSetFitzHughNagumo/parameters/sigma>,
+        <https://w3id.org/tvbo/ReducedSetFitzHughNagumo/parameters/tau> ;
+    tvbo:hasStateVariable <https://w3id.org/tvbo/ReducedSetFitzHughNagumo/state_variables/alpha>,
+        <https://w3id.org/tvbo/ReducedSetFitzHughNagumo/state_variables/beta>,
+        <https://w3id.org/tvbo/ReducedSetFitzHughNagumo/state_variables/eta>,
+        <https://w3id.org/tvbo/ReducedSetFitzHughNagumo/state_variables/xi> ;
+    tvbo:model_type "neural_mass" .
+
+tvbo:ReducedSetHindmarshRose a owl:NamedIndividual,
+        tvbo:Dynamics ;
+    rdfs:label "ReducedSetHindmarshRose" ;
+    dcterms:description "Reduced set of Hindmarsh-Rose oscillators (Stefanescu & Jirsa 2008); 3 modes coupled via mode-mixing matrices with Gaussian-quadrature coefficients recomputed from mu/sigma." ;
+    tvbo:hasParameter <https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/A_ik>,
+        <https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/B_ik>,
+        <https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/C_ik>,
+        <https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/K11>,
+        <https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/K12>,
+        <https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/K21>,
+        <https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/a>,
+        <https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/b>,
+        <https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/c>,
+        <https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/d>,
+        <https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/iU0>,
+        <https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/iU3>,
+        <https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/iU4>,
+        <https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/iV0>,
+        <https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/iV3>,
+        <https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/iV4>,
+        <https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/iZU>,
+        <https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/iZV>,
+        <https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/mu>,
+        <https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/r>,
+        <https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/s>,
+        <https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/sigma>,
+        <https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/xo> ;
+    tvbo:hasStateVariable <https://w3id.org/tvbo/ReducedSetHindmarshRose/state_variables/alpha>,
+        <https://w3id.org/tvbo/ReducedSetHindmarshRose/state_variables/beta>,
+        <https://w3id.org/tvbo/ReducedSetHindmarshRose/state_variables/eta>,
+        <https://w3id.org/tvbo/ReducedSetHindmarshRose/state_variables/gamma>,
+        <https://w3id.org/tvbo/ReducedSetHindmarshRose/state_variables/tau>,
+        <https://w3id.org/tvbo/ReducedSetHindmarshRose/state_variables/xi> ;
+    tvbo:model_type "neural_mass" .
 
 tvbo:ReducedWongWang a owl:NamedIndividual,
         tvbo:Dynamics ;
@@ -926,6 +1157,91 @@ tvbo:ZerlautAdaptationFirstOrder a owl:NamedIndividual,
         <https://w3id.org/tvbo/ZerlautAdaptationFirstOrder/state_variables/ou_drift> ;
     tvbo:model_type "mean_field" .
 
+tvbo:ZerlautAdaptationSecondOrder a owl:NamedIndividual,
+        tvbo:Dynamics ;
+    rdfs:label "ZerlautAdaptationSecondOrder" ;
+    dcterms:description "Second-order mean-field model of a conductance-based network of adaptive exponential integrate-and-fire (AdEx) excitatory and inhibitory neurons (di Volo et al. 2018, Zerlaut et al. 2018). It tracks the mean firing rates of the excitatory (E) and inhibitory (I) populations, their second-order statistics (the covariance matrix C_ee, C_ei, C_ii), the adaptation currents (W_e, W_i) and an Ornstein-Uhlenbeck noise drift (ou_drift). The population firing rate is given by a semi-analytic transfer function (TF) whose argument is the membrane-potential fluctuation regime (mu_V, sigma_V, T_V) and a phenomenological voltage threshold fitted by a second-order polynomial. The first and second derivatives of the transfer function with respect to the pre-synaptic rates are evaluated with the SAME central finite-difference stencil (df = 1e-7) used in the original TVB implementation, so the drift is reproduced bit-for-bit." ;
+    dcterms:references <https://w3id.org/tvbo/studies/Zerlaut2018> ;
+    tvbo:hasDerivedVariable <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/derived_variables/E_input_excitatory>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/derived_variables/E_input_inhibitory>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/derived_variables/I_input_excitatory>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/derived_variables/I_input_inhibitory>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/derived_variables/TFe>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/derived_variables/TFi>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/derived_variables/d2_fefe_e>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/derived_variables/d2_fefe_i>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/derived_variables/d2_fefi_e>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/derived_variables/d2_fefi_i>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/derived_variables/d2_fife_e>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/derived_variables/d2_fife_i>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/derived_variables/d2_fifi_e>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/derived_variables/d2_fifi_i>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/derived_variables/dfe_TFe>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/derived_variables/dfe_TFi>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/derived_variables/dfi_TFe>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/derived_variables/dfi_TFi>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/derived_variables/muV_e>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/derived_variables/muV_i> ;
+    tvbo:hasParameter <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/C_m>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/E_L_e>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/E_L_i>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/E_e>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/E_i>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/K_ext_e>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/K_ext_i>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/N_tot>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/P_e0>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/P_e1>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/P_e2>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/P_e3>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/P_e4>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/P_e5>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/P_e6>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/P_e7>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/P_e8>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/P_e9>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/P_i0>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/P_i1>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/P_i2>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/P_i3>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/P_i4>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/P_i5>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/P_i6>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/P_i7>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/P_i8>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/P_i9>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/Q_e>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/Q_i>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/S_i>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/T>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/a_e>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/a_i>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/b_e>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/b_i>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/external_input_ex_ex>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/external_input_ex_in>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/external_input_in_ex>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/external_input_in_in>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/g>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/g_L>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/p_connect_e>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/p_connect_i>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/tau_OU>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/tau_e>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/tau_i>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/tau_w_e>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/tau_w_i>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/weight_noise> ;
+    tvbo:hasStateVariable <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/state_variables/C_ee>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/state_variables/C_ei>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/state_variables/C_ii>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/state_variables/E>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/state_variables/I>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/state_variables/W_e>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/state_variables/W_i>,
+        <https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/state_variables/ou_drift> ;
+    tvbo:model_type "mean_field" .
+
 tvbo:ZetterbergJansen a owl:NamedIndividual,
         tvbo:Dynamics ;
     rdfs:label "ZetterbergJansen" ;
@@ -1218,6 +1534,12 @@ tvbo:data a owl:Ontology ;
     dcterms:description """Fitting functional connectivity using the two-population Reduced Wong-Wang model with explicit excitatory and inhibitory populations. Combines Feedback Inhibition Control (FIC) to maintain local E-I balance with EIB tuning to globally optimize network connectivity. Supports both iterative (FIC+EIB) and gradient-based optimization approaches.
 """ .
 
+<https://w3id.org/tvbo/experiments/Hopf_Pareto_ParallelOpt> a owl:NamedIndividual,
+        tvbo:SimulationExperiment ;
+    rdfs:label "Hopf Pareto: FC vs Frequency-Gradient (NSGA-II + parallel refinement)" ;
+    dcterms:description """Fit a delay-coupled SupHopf network to two competing targets — empirical FC and a spatial peak-frequency gradient — replicating tvboptim Hopf_Pareto_ParallelOpt. Stage 0: NSGA-II genetic pre-search over (G, a, log10 sigma). Stage 1: parallel gradient refinement from every Pareto seed. Byte-identical to the reference workflow.
+""" .
+
 <https://w3id.org/tvbo/experiments/JR_MEG_FrequencyGradient_Optimization> a owl:NamedIndividual,
         tvbo:SimulationExperiment ;
     rdfs:label "JR Peak Frequency Optimization" ;
@@ -1233,6 +1555,18 @@ tvbo:data a owl:Ontology ;
 <https://w3id.org/tvbo/experiments/RateML_ReducedWongWang> a owl:NamedIndividual,
         tvbo:SimulationExperiment ;
     rdfs:label "RateML rwongwang ground truth" .
+
+<https://w3id.org/tvbo/experiments/Stimulation_Bayesian_Inference> a owl:NamedIndividual,
+        tvbo:SimulationExperiment ;
+    rdfs:label "Bayesian Inference (Stimulation)" ;
+    dcterms:description """Recover stimulus amplitude and excitability I of a pulse-driven Generic2dOscillator from one noisy recording, via numpyro NUTS/MCMC. Three prior scenarios steer the posterior along the amplitude/excitability degeneracy ridge. Replicates tvboptim.
+""" .
+
+<https://w3id.org/tvbo/experiments/TBPTT_JansenRit_FC_Optimization> a owl:NamedIndividual,
+        tvbo:SimulationExperiment ;
+    rdfs:label "TBPTT Jansen-Rit FC Fitting" ;
+    dcterms:description """Truncated backprop-through-time for a chaotic Jansen-Rit network. Fits global coupling G to empirical FC; contrasts full-BPTT vs windowed (grad_horizon) gradients. Based on tvboptim TBPTT.qmd.
+""" .
 
 <https://w3id.org/tvbo/integrators/Dopri5> a owl:NamedIndividual,
         tvbo:Integrator ;
@@ -1459,6 +1793,13 @@ tvbo:data a owl:Ontology ;
     rdfs:label "tpl-FSLMNI152_cohort-PPMI85_rec-PPMI85_atlas-Schaefer2018_seg-17Networks_scale-1000_desc-SC_relmat" ;
     skos:altLabel "Schaefer100017Networks (PPMI85)" ;
     tvbo:hasParameter <https://w3id.org/tvbo/networks/tpl-FSLMNI152_cohort-PPMI85_rec-PPMI85_atlas-Schaefer2018_seg-17Networks_scale-1000_desc-SC_relmat/parameters/conduction_speed> .
+
+<https://w3id.org/tvbo/networks/tpl-MNI152NLin2009bAsym_cohort-HCPYA_rec-avgMatrix_atlas-HCPMMP1_desc-SCFC_relmat> a owl:NamedIndividual,
+        tvbo:Network ;
+    rdfs:label "tpl-MNI152NLin2009bAsym_cohort-HCPYA_rec-avgMatrix_atlas-HCPMMP1_desc-SCFC_relmat" ;
+    dcterms:description "Group-average HCP connectome on the Glasser HCP-MMP1 atlas (360 cortical + 19 subcortical = 379 nodes). SC = average structural connectivity (streamline weights); FC = HCP1200 average resting-state functional connectivity. Node order is canonical L-cortical, R-cortical, L-subcortical, R-subcortical, Brainstem (identical to the rec-dTOR HCPMMP1 network). Node coordinates are fsLR den-32k midthickness parcel centroids (templateflow) for cortex and MNI152 2mm voxel centroids (Glasser dlabel Atlas_ROIs) for subcortex. Per-node HCP-MMP colours stored as the 'color' parameter." ;
+    skos:altLabel "HCPMMP1 (avgMatrix SC+FC)" ;
+    tvbo:hasParameter <https://w3id.org/tvbo/networks/tpl-MNI152NLin2009bAsym_cohort-HCPYA_rec-avgMatrix_atlas-HCPMMP1_desc-SCFC_relmat/parameters/conduction_speed> .
 
 <https://w3id.org/tvbo/networks/tpl-MNI152NLin2009bAsym_cohort-HCPYA_rec-dTOR_atlas-HCPMMP1_desc-SC_relmat> a owl:NamedIndividual,
         tvbo:Network ;
@@ -3484,7 +3825,7 @@ to a task-appropriate range (e.g. omega in Hz).
     dcterms:description "Filtered mean synaptic input current to the excitatory population." ;
     skos:notation "mu_se" ;
     tvbo:lhs "Derivative(mu_se, t)" ;
-    tvbo:rhs "(J_EE*r_E + J_EI*r_I + mu_E + c_pop0 - I_A_var/C - mu_se)/tau_se" .
+    tvbo:rhs "(J_EE*r_E + J_EI*r_I + mu_E + c_glob - I_A_var/C - mu_se)/tau_se" .
 
 <https://w3id.org/tvbo/CakanObermayer/state_variables/mu_si> a owl:NamedIndividual,
         tvbo:StateVariable ;
@@ -3542,7 +3883,7 @@ to a task-appropriate range (e.g. omega in Hz).
     rdfs:label "V (CoombesByrne state variable)" ;
     skos:notation "V" ;
     tvbo:lhs "Derivative(V, t)" ;
-    tvbo:rhs "V**2 + c_pop0 + eta + g*(-V + v_syn) - pi**2*r**2" .
+    tvbo:rhs "V**2 + c_glob + eta + g*(-V + v_syn) - pi**2*r**2" .
 
 <https://w3id.org/tvbo/CoombesByrne/state_variables/g> a owl:NamedIndividual,
         tvbo:StateVariable ;
@@ -3605,7 +3946,7 @@ to a task-appropriate range (e.g. omega in Hz).
     rdfs:label "V (CoombesByrne2D state variable)" ;
     skos:notation "V" ;
     tvbo:lhs "Derivative(V, t)" ;
-    tvbo:rhs "V**2 + c_pop0 + eta + pi*k*r*(-V + v_syn) - pi**2*r**2" .
+    tvbo:rhs "V**2 + c_glob + eta + pi*k*r*(-V + v_syn) - pi**2*r**2" .
 
 <https://w3id.org/tvbo/CoombesByrne2D/state_variables/r> a owl:NamedIndividual,
         tvbo:StateVariable ;
@@ -3613,6 +3954,281 @@ to a task-appropriate range (e.g. omega in Hz).
     skos:notation "r" ;
     tvbo:lhs "Derivative(r, t)" ;
     tvbo:rhs "Delta/pi + 2*V*r - pi*k*r**2" .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/derived_variables/H_e> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "H_e (DecoBalancedExcInh derived variable)" ;
+    dcterms:description "Sigmoid function that computes the averaged firing rate of the excitatory neuron population (Deco et al., 2021)." ;
+    oboInOwl:hasDbXref GO:0060079,
+        GO:0099605 ;
+    skos:notation "H_e" ;
+    tvbo:lhs "H_e" ;
+    tvbo:rhs "x_e/(1 - exp(-d_e*x_e))" .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/derived_variables/H_i> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "H_i (DecoBalancedExcInh derived variable)" ;
+    dcterms:description "Sigmoid function that computes the averaged firing rate of the inhibitory neuron population (Deco et al., 2021)." ;
+    oboInOwl:hasDbXref GO:0060080,
+        GO:0099605 ;
+    skos:notation "H_i" ;
+    tvbo:lhs "H_i" ;
+    tvbo:rhs "x_i/(1 - exp(-d_i*x_i))" .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/derived_variables/I_e> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "I_e (DecoBalancedExcInh derived variable)" ;
+    dcterms:description "Input current to the excitatory population (Deco et al., 2021)." ;
+    oboInOwl:hasDbXref GO:0098815 ;
+    skos:notation "I_e" ;
+    tvbo:lhs "I_e" ;
+    tvbo:rhs "I_ext + I_o*W_e + J_N_S_e*w_p - J_i*S_i + coupling" .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/derived_variables/I_i> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "I_i (DecoBalancedExcInh derived variable)" ;
+    dcterms:description "Input current to the inhibitory population (Deco et al., 2021)." ;
+    oboInOwl:hasDbXref GO:0060080 ;
+    skos:notation "I_i" ;
+    tvbo:lhs "I_i" ;
+    tvbo:rhs "I_o*W_i + J_N_S_e - S_i + coupling*lamda" .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/derived_variables/J_N_S_e> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "J_N_S_e (DecoBalancedExcInh derived variable)" ;
+    skos:notation "J_N_S_e" ;
+    tvbo:lhs "J_N_S_e" ;
+    tvbo:rhs "J_N*S_e" .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/derived_variables/coupling> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "coupling (DecoBalancedExcInh derived variable)" ;
+    skos:notation "coupling" ;
+    tvbo:lhs "coupling" ;
+    tvbo:rhs "G*J_N*(S_e*local_coupling + c_glob)" .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/derived_variables/x_e> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "x_e (DecoBalancedExcInh derived variable)" ;
+    dcterms:description "Gain-scaled input current to the excitatory population (Deco et al., 2021)." ;
+    oboInOwl:hasDbXref GO:0098815 ;
+    skos:notation "x_e" ;
+    tvbo:lhs "x_e" ;
+    tvbo:rhs "M_i*(a_e*I_e - b_e)" .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/derived_variables/x_i> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "x_i (DecoBalancedExcInh derived variable)" ;
+    dcterms:description "Gain-scaled input current to the inhibitory population (Deco et al., 2021)." ;
+    oboInOwl:hasDbXref GO:0060080 ;
+    skos:notation "x_i" ;
+    tvbo:lhs "x_i" ;
+    tvbo:rhs "M_i*(a_i*I_i - b_i)" .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/parameters/G> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "G (DecoBalancedExcInh parameter)" ;
+    dcterms:description "Global coupling scaling" ;
+    schema1:defaultValue 2e+00 ;
+    skos:definition "Global coupling scaling" ;
+    skos:notation "G" .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/parameters/I_ext> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "I_ext (DecoBalancedExcInh parameter)" ;
+    dcterms:description "External stimulation parameter for evoked potential simulated activity applied to the excitatory population firing rate IE (Deco et al" ;
+    schema1:defaultValue 0e+00 ;
+    oboInOwl:hasDbXref GO:0060079,
+        GO:0099605 ;
+    skos:definition "External stimulation parameter for evoked potential simulated activity applied to the excitatory population firing rate IE (Deco et al., 2014)." ;
+    skos:notation "I_ext" .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/parameters/I_o> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "I_o (DecoBalancedExcInh parameter)" ;
+    dcterms:description "Effective external input parameter to the excitatory E and inhibitory I population (Deco et al" ;
+    schema1:defaultValue 3.82e-01 ;
+    oboInOwl:hasDbXref GO:0060079,
+        GO:0060080 ;
+    skos:definition "Effective external input parameter to the excitatory E and inhibitory I population (Deco et al., 2014)." ;
+    skos:notation "I_o" ;
+    tvbo:unit "nA" .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/parameters/J_N> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "J_N (DecoBalancedExcInh parameter)" ;
+    dcterms:description "Excitatory synaptic coupling parameter (Deco et al" ;
+    schema1:defaultValue 1.5e-01 ;
+    oboInOwl:hasDbXref GO:0060079 ;
+    skos:definition "Excitatory synaptic coupling parameter (Deco et al., 2014)." ;
+    skos:notation "J_N" .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/parameters/J_i> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "J_i (DecoBalancedExcInh parameter)" ;
+    dcterms:description "Local feedback inhibitory synaptic coupling to the excitatory population firing rate IE (Deco et al" ;
+    schema1:defaultValue 1e+00 ;
+    oboInOwl:hasDbXref GO:0060080,
+        GO:0099605 ;
+    skos:definition "Local feedback inhibitory synaptic coupling to the excitatory population firing rate IE (Deco et al., 2014)." ;
+    skos:notation "J_i" .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/parameters/M_i> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "M_i (DecoBalancedExcInh parameter)" ;
+    dcterms:description "Effective gain within a region. Scales the excitatory and inhibitory input currents derived from the regional transcriptional landscape (Deco et al., 2021)." ;
+    schema1:defaultValue 1e+00 ;
+    oboInOwl:hasDbXref GO:0099605 ;
+    skos:definition "Effective gain within a region (Deco et al., 2021)." ;
+    skos:notation "M_i" .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/parameters/W_e> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "W_e (DecoBalancedExcInh parameter)" ;
+    dcterms:description "Excitatory population external input scaling weight" ;
+    schema1:defaultValue 1e+00 ;
+    oboInOwl:hasDbXref GO:0090394,
+        GO:2000463 ;
+    skos:definition "Excitatory population external input scaling weight" ;
+    skos:notation "W_e" .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/parameters/W_i> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "W_i (DecoBalancedExcInh parameter)" ;
+    dcterms:description "Inhibitory population external input scaling weight" ;
+    schema1:defaultValue 7e-01 ;
+    oboInOwl:hasDbXref GO:0060080 ;
+    skos:definition "Inhibitory population external input scaling weight" ;
+    skos:notation "W_i" .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/parameters/a_e> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "a_e (DecoBalancedExcInh parameter)" ;
+    dcterms:description "Slope (or gain) parameter of the sigmoid function HE_RWW_EI (Deco et al" ;
+    schema1:defaultValue 3.1e+02 ;
+    skos:definition "Slope (or gain) parameter of the sigmoid function HE_RWW_EI (Deco et al., 2014)." ;
+    skos:notation "a_e" ;
+    tvbo:unit "per_nC" .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/parameters/a_i> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "a_i (DecoBalancedExcInh parameter)" ;
+    dcterms:description "Slope (or gain) parameter of the sigmoid function HI_RWW_EI of the inhibitory population (Deco et al" ;
+    schema1:defaultValue 6.15e+02 ;
+    skos:definition "Slope (or gain) parameter of the sigmoid function HI_RWW_EI of the inhibitory population (Deco et al., 2014)." ;
+    skos:notation "a_i" ;
+    tvbo:unit "per_nC" .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/parameters/b_e> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "b_e (DecoBalancedExcInh parameter)" ;
+    dcterms:description "Shift parameter of the sigmoid function HE_RWW_EI of the excitatory population (Deco et al" ;
+    schema1:defaultValue 1.25e+02 ;
+    skos:definition "Shift parameter of the sigmoid function HE_RWW_EI of the excitatory population (Deco et al., 2014)." ;
+    skos:notation "b_e" ;
+    tvbo:unit "Hz" .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/parameters/b_i> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "b_i (DecoBalancedExcInh parameter)" ;
+    dcterms:description "Shift parameter of the sigmoid function HI_RWW_EI of the inhibitory population (Deco et al" ;
+    schema1:defaultValue 1.77e+02 ;
+    skos:definition "Shift parameter of the sigmoid function HI_RWW_EI of the inhibitory population (Deco et al., 2014)." ;
+    skos:notation "b_i" ;
+    tvbo:unit "Hz" .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/parameters/d_e> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "d_e (DecoBalancedExcInh parameter)" ;
+    dcterms:description "Scaling parameter of the sigmoid function HE_RWW_EI of the excitatory population (Deco et al" ;
+    schema1:defaultValue 1.6e-01 ;
+    skos:definition "Scaling parameter of the sigmoid function HE_RWW_EI of the excitatory population (Deco et al., 2014)." ;
+    skos:notation "d_e" ;
+    tvbo:unit "s" .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/parameters/d_i> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "d_i (DecoBalancedExcInh parameter)" ;
+    dcterms:description "Scaling parameter of the sigmoid function HI_RWW_EI of the inhibitory population (Deco et al" ;
+    schema1:defaultValue 8.7e-02 ;
+    skos:definition "Scaling parameter of the sigmoid function HI_RWW_EI of the inhibitory population (Deco et al., 2014)." ;
+    skos:notation "d_i" ;
+    tvbo:unit "s" .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/parameters/gamma_e> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "gamma_e (DecoBalancedExcInh parameter)" ;
+    dcterms:description "Excitatory population kinetic parameter" ;
+    schema1:defaultValue 6.41e-04 ;
+    oboInOwl:hasDbXref GO:0060079 ;
+    skos:definition "Excitatory population kinetic parameter" ;
+    skos:notation "gamma_e" .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/parameters/gamma_i> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "gamma_i (DecoBalancedExcInh parameter)" ;
+    dcterms:description "Inhibitory population kinetic parameter" ;
+    schema1:defaultValue 1e-03 ;
+    oboInOwl:hasDbXref GO:0060080 ;
+    skos:definition "Inhibitory population kinetic parameter" ;
+    skos:notation "gamma_i" .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/parameters/lamda> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "lamda (DecoBalancedExcInh parameter)" ;
+    dcterms:description "Inhibitory global coupling scaling" ;
+    schema1:defaultValue 0e+00 ;
+    oboInOwl:hasDbXref GO:0060080 ;
+    skos:definition "Inhibitory global coupling scaling" ;
+    skos:notation "lamda" .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/parameters/tau_e> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "tau_e (DecoBalancedExcInh parameter)" ;
+    dcterms:description "Kinetic parameter  that represents the decay times for NMDA synapses (Deco et al" ;
+    schema1:defaultValue 1e+02 ;
+    skos:definition "Kinetic parameter  that represents the decay times for NMDA synapses (Deco et al., 2014). Excitatory population NMDA decay time constant." ;
+    skos:notation "tau_e" ;
+    tvbo:unit "ms" .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/parameters/tau_i> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "tau_i (DecoBalancedExcInh parameter)" ;
+    dcterms:description "Kinetic parameter that represents the decay times for inhibitory GABA synapses (Deco et al" ;
+    schema1:defaultValue 1e+01 ;
+    oboInOwl:hasDbXref GO:0016917 ;
+    skos:definition "Kinetic parameter that represents the decay times for inhibitory GABA synapses (Deco et al., 2014)." ;
+    skos:notation "tau_i" ;
+    tvbo:unit "ms" .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/parameters/w_p> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "w_p (DecoBalancedExcInh parameter)" ;
+    dcterms:description "Excitatory population recurrence weight" ;
+    schema1:defaultValue 1.4e+00 ;
+    oboInOwl:hasDbXref GO:0060079 ;
+    skos:definition "Excitatory population recurrence weight" ;
+    skos:notation "w_p" .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/state_variables/S_e> a owl:NamedIndividual,
+        tvbo:StateVariable ;
+    rdfs:label "S_e (DecoBalancedExcInh state variable)" ;
+    dcterms:description "Excitatory population synaptic gating state-variable of the Deco Balanced Exc-Inh model (Deco et al., 2021)." ;
+    oboInOwl:hasDbXref GO:0060079,
+        GO:0099536 ;
+    skos:notation "S_e" ;
+    tvbo:lhs "Derivative(S_e, t)" ;
+    tvbo:rhs "H_e*gamma_e*(1 - S_e) - S_e/tau_e" .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/state_variables/S_i> a owl:NamedIndividual,
+        tvbo:StateVariable ;
+    rdfs:label "S_i (DecoBalancedExcInh state variable)" ;
+    dcterms:description "Inhibitory population synaptic gating state-variable of the Deco Balanced Exc-Inh model (Deco et al., 2021)." ;
+    oboInOwl:hasDbXref GO:0060080,
+        GO:0099536 ;
+    skos:notation "S_i" ;
+    tvbo:lhs "Derivative(S_i, t)" ;
+    tvbo:rhs "H_i*gamma_i - S_i/tau_i" .
 
 <https://w3id.org/tvbo/DumontGutkin/parameters/Delta_e> a owl:NamedIndividual,
         tvbo:Parameter ;
@@ -3785,7 +4401,7 @@ to a task-appropriate range (e.g. omega in Hz).
     rdfs:label "s_ee (DumontGutkin state variable)" ;
     skos:notation "s_ee" ;
     tvbo:lhs "Derivative(s_ee, t)" ;
-    tvbo:rhs "(J_ee*r_e + c_pop0 - s_ee)/tau_s" .
+    tvbo:rhs "(J_ee*r_e + c_glob - s_ee)/tau_s" .
 
 <https://w3id.org/tvbo/DumontGutkin/state_variables/s_ei> a owl:NamedIndividual,
         tvbo:StateVariable ;
@@ -3799,7 +4415,7 @@ to a task-appropriate range (e.g. omega in Hz).
     rdfs:label "s_ie (DumontGutkin state variable)" ;
     skos:notation "s_ie" ;
     tvbo:lhs "Derivative(s_ie, t)" ;
-    tvbo:rhs "(Gamma*c_pop0 + J_ie*r_e - s_ie)/tau_s" .
+    tvbo:rhs "(Gamma*c_glob + J_ie*r_e - s_ie)/tau_s" .
 
 <https://w3id.org/tvbo/DumontGutkin/state_variables/s_ii> a owl:NamedIndividual,
         tvbo:StateVariable ;
@@ -3807,6 +4423,238 @@ to a task-appropriate range (e.g. omega in Hz).
     skos:notation "s_ii" ;
     tvbo:lhs "Derivative(s_ii, t)" ;
     tvbo:rhs "(J_ii*r_i - s_ii)/tau_s" .
+
+<https://w3id.org/tvbo/Epileptor/derived_variables/Iext_total> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "Iext_total (Epileptor derived variable)" ;
+    dcterms:description "External input to the first population including local coupling input on x1." ;
+    skos:notation "Iext_total" ;
+    tvbo:lhs "Iext_total" ;
+    tvbo:rhs "Iext + local_coupling*x1" .
+
+<https://w3id.org/tvbo/Epileptor/derived_variables/f1> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "f1 (Epileptor derived variable)" ;
+    dcterms:description "Nonlinear function in the first state variable x1, piecewise on the sign of x1." ;
+    skos:notation "f1" ;
+    tvbo:lhs "f1" ;
+    tvbo:rhs "Piecewise((-a*x1**2 + b*x1, x1 < 0), (slope - x2 + 0.6*(z - 4.0)**2, True))" .
+
+<https://w3id.org/tvbo/Epileptor/derived_variables/f2> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "f2 (Epileptor derived variable)" ;
+    dcterms:description "Nonlinear function in the fifth state variable y2, piecewise on the value of x2." ;
+    skos:notation "f2" ;
+    tvbo:lhs "f2" ;
+    tvbo:rhs "Piecewise((0, x2 < -0.25), (aa*(x2 + 0.25), True))" .
+
+<https://w3id.org/tvbo/Epileptor/derived_variables/h> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "h (Epileptor derived variable)" ;
+    dcterms:description "Permittivity drive for z: sigmoidal when modification>0, else linear (Piecewise on modification)." ;
+    skos:notation "h" ;
+    tvbo:lhs "h" ;
+    tvbo:rhs "Piecewise((x0 + 3/(1 + exp(-(x1 + 0.5)/0.1)), modification > 0), (4*(x1 - x0) + Piecewise((-0.1*z**7, z < 0), (0, True)), True))" .
+
+<https://w3id.org/tvbo/Epileptor/derived_variables/lfp> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "lfp (Epileptor derived variable)" ;
+    dcterms:description "Local field potential proxy: TVB Epileptor observable x2 - x1." ;
+    skos:notation "lfp" ;
+    tvbo:lhs "lfp" ;
+    tvbo:rhs "x2 - x1" .
+
+<https://w3id.org/tvbo/Epileptor/parameters/Iext> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "Iext (Epileptor parameter)" ;
+    dcterms:description "External input current to the first population." ;
+    schema1:defaultValue 3.1e+00 ;
+    skos:definition "External input current to the first population." ;
+    skos:notation "Iext" .
+
+<https://w3id.org/tvbo/Epileptor/parameters/Iext2> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "Iext2 (Epileptor parameter)" ;
+    dcterms:description "External input current to the second population." ;
+    schema1:defaultValue 4.5e-01 ;
+    skos:definition "External input current to the second population." ;
+    skos:notation "Iext2" .
+
+<https://w3id.org/tvbo/Epileptor/parameters/Kf> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "Kf (Epileptor parameter)" ;
+    dcterms:description "Coupling scaling on a fast time scale." ;
+    schema1:defaultValue 0e+00 ;
+    skos:definition "Coupling scaling on a fast time scale." ;
+    skos:notation "Kf" .
+
+<https://w3id.org/tvbo/Epileptor/parameters/Ks> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "Ks (Epileptor parameter)" ;
+    dcterms:description "Permittivity coupling, that is from the fast time scale toward the slow time scale." ;
+    schema1:defaultValue 0e+00 ;
+    skos:definition "Permittivity coupling, from the fast time scale toward the slow time scale." ;
+    skos:notation "Ks" .
+
+<https://w3id.org/tvbo/Epileptor/parameters/Kvf> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "Kvf (Epileptor parameter)" ;
+    dcterms:description "Coupling scaling on a very fast time scale." ;
+    schema1:defaultValue 0e+00 ;
+    skos:definition "Coupling scaling on a very fast time scale." ;
+    skos:notation "Kvf" .
+
+<https://w3id.org/tvbo/Epileptor/parameters/a> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "a (Epileptor parameter)" ;
+    dcterms:description "Coefficient of the cubic term in the first state variable x1." ;
+    schema1:defaultValue 1e+00 ;
+    skos:definition "Coefficient of the cubic term in the first state variable." ;
+    skos:notation "a" .
+
+<https://w3id.org/tvbo/Epileptor/parameters/aa> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "aa (Epileptor parameter)" ;
+    dcterms:description "Linear coefficient in the fifth state variable y2." ;
+    schema1:defaultValue 6e+00 ;
+    skos:definition "Linear coefficient in the fifth state variable." ;
+    skos:notation "aa" .
+
+<https://w3id.org/tvbo/Epileptor/parameters/b> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "b (Epileptor parameter)" ;
+    dcterms:description "Coefficient of the squared term in the first state variable x1." ;
+    schema1:defaultValue 3e+00 ;
+    skos:definition "Coefficient of the squared term in the first state variable." ;
+    skos:notation "b" .
+
+<https://w3id.org/tvbo/Epileptor/parameters/bb> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "bb (Epileptor parameter)" ;
+    dcterms:description "Linear coefficient of lowpass excitatory coupling in the fourth state variable x2." ;
+    schema1:defaultValue 2e+00 ;
+    skos:definition "Linear coefficient of lowpass excitatory coupling in the fourth state variable." ;
+    skos:notation "bb" .
+
+<https://w3id.org/tvbo/Epileptor/parameters/c> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "c (Epileptor parameter)" ;
+    dcterms:description "Additive coefficient for the second state variable y1, called y0 in the Jirsa et al. (2014) paper." ;
+    schema1:defaultValue 1e+00 ;
+    skos:definition "Additive coefficient for the second state variable." ;
+    skos:notation "c" .
+
+<https://w3id.org/tvbo/Epileptor/parameters/d> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "d (Epileptor parameter)" ;
+    dcterms:description "Coefficient of the squared term in the second state variable y1." ;
+    schema1:defaultValue 5e+00 ;
+    skos:definition "Coefficient of the squared term in the second state variable." ;
+    skos:notation "d" .
+
+<https://w3id.org/tvbo/Epileptor/parameters/modification> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "modification (Epileptor parameter)" ;
+    dcterms:description "Switch between linear (0/False) and sigmoidal (>0/True) z-drive h." ;
+    schema1:defaultValue 0e+00 ;
+    skos:definition "Selects the permittivity-drive form: >0 (True) uses the sigmoidal influence on z, default 0 (False) the linear influence." ;
+    skos:notation "modification" .
+
+<https://w3id.org/tvbo/Epileptor/parameters/r> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "r (Epileptor parameter)" ;
+    dcterms:description "Temporal scaling in the third state variable z, called 1/tau0 in the Jirsa et al. (2014) paper." ;
+    schema1:defaultValue 3.5e-04 ;
+    skos:definition "Temporal scaling in the third state variable." ;
+    skos:notation "r" .
+
+<https://w3id.org/tvbo/Epileptor/parameters/s> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "s (Epileptor parameter)" ;
+    dcterms:description "Linear coefficient in the third state variable z." ;
+    schema1:defaultValue 4e+00 ;
+    skos:definition "Linear coefficient in the third state variable." ;
+    skos:notation "s" .
+
+<https://w3id.org/tvbo/Epileptor/parameters/slope> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "slope (Epileptor parameter)" ;
+    dcterms:description "Linear coefficient in the first state variable x1." ;
+    schema1:defaultValue 0e+00 ;
+    skos:definition "Linear coefficient in the first state variable." ;
+    skos:notation "slope" .
+
+<https://w3id.org/tvbo/Epileptor/parameters/tau> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "tau (Epileptor parameter)" ;
+    dcterms:description "Temporal scaling coefficient in the fifth state variable y2." ;
+    schema1:defaultValue 1e+01 ;
+    skos:definition "Temporal scaling coefficient in the fifth state variable." ;
+    skos:notation "tau" .
+
+<https://w3id.org/tvbo/Epileptor/parameters/tt> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "tt (Epileptor parameter)" ;
+    dcterms:description "Time scaling of the whole system." ;
+    schema1:defaultValue 1e+00 ;
+    skos:definition "Time scaling of the whole system." ;
+    skos:notation "tt" .
+
+<https://w3id.org/tvbo/Epileptor/parameters/x0> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "x0 (Epileptor parameter)" ;
+    dcterms:description "Epileptogenicity parameter." ;
+    schema1:defaultValue -1.6e+00 ;
+    skos:definition "Epileptogenicity parameter." ;
+    skos:notation "x0" .
+
+<https://w3id.org/tvbo/Epileptor/state_variables/g> a owl:NamedIndividual,
+        tvbo:StateVariable ;
+    rdfs:label "g (Epileptor state variable)" ;
+    dcterms:description "Lowpass-filtered excitatory coupling variable." ;
+    skos:notation "g" ;
+    tvbo:lhs "Derivative(g, t)" ;
+    tvbo:rhs "tt*(-0.01*(g - 0.1*x1))" .
+
+<https://w3id.org/tvbo/Epileptor/state_variables/x1> a owl:NamedIndividual,
+        tvbo:StateVariable ;
+    rdfs:label "x1 (Epileptor state variable)" ;
+    dcterms:description "First state variable of the first (fast) population." ;
+    skos:notation "x1" ;
+    tvbo:lhs "Derivative(x1, t)" ;
+    tvbo:rhs "tt*(y1 - z + Iext_total + Kvf*c_glob0 + f1*x1)" .
+
+<https://w3id.org/tvbo/Epileptor/state_variables/x2> a owl:NamedIndividual,
+        tvbo:StateVariable ;
+    rdfs:label "x2 (Epileptor state variable)" ;
+    dcterms:description "First state variable of the second (slow) population." ;
+    skos:notation "x2" ;
+    tvbo:lhs "Derivative(x2, t)" ;
+    tvbo:rhs "tt*(-y2 + x2 - x2**3 + Iext2 + bb*g - 0.3*(z - 3.5) + Kf*c_glob1)" .
+
+<https://w3id.org/tvbo/Epileptor/state_variables/y1> a owl:NamedIndividual,
+        tvbo:StateVariable ;
+    rdfs:label "y1 (Epileptor state variable)" ;
+    dcterms:description "Second state variable of the first (fast) population." ;
+    skos:notation "y1" ;
+    tvbo:lhs "Derivative(y1, t)" ;
+    tvbo:rhs "tt*(c - d*x1**2 - y1)" .
+
+<https://w3id.org/tvbo/Epileptor/state_variables/y2> a owl:NamedIndividual,
+        tvbo:StateVariable ;
+    rdfs:label "y2 (Epileptor state variable)" ;
+    dcterms:description "Second state variable of the second (slow) population." ;
+    skos:notation "y2" ;
+    tvbo:lhs "Derivative(y2, t)" ;
+    tvbo:rhs "tt*(-y2 + f2)/tau" .
+
+<https://w3id.org/tvbo/Epileptor/state_variables/z> a owl:NamedIndividual,
+        tvbo:StateVariable ;
+    rdfs:label "z (Epileptor state variable)" ;
+    dcterms:description "Slow permittivity (energy) state variable." ;
+    skos:notation "z" ;
+    tvbo:lhs "Derivative(z, t)" ;
+    tvbo:rhs "tt*r*(h - z + Ks*c_glob0)" .
 
 <https://w3id.org/tvbo/Epileptor2D/derived_variables/h> a owl:NamedIndividual,
         tvbo:DerivedVariable ;
@@ -3941,7 +4789,7 @@ if x0 is smaller than a critical value, x0,critic = 2.91, can trigger seizures a
     dcterms:description "First state-variable in the Epileptor2D (Proix et al" ;
     skos:notation "x1" ;
     tvbo:lhs "Derivative(x1, t)" ;
-    tvbo:rhs "tt*(Iext + Kvf*c_pop0 + c + local_coupling*x1 - x1*x1cond - z)" .
+    tvbo:rhs "tt*(Iext + Kvf*c_glob + c + local_coupling*x1 - x1*x1cond - z)" .
 
 <https://w3id.org/tvbo/Epileptor2D/state_variables/z> a owl:NamedIndividual,
         tvbo:StateVariable ;
@@ -3949,7 +4797,7 @@ if x0 is smaller than a critical value, x0,critic = 2.91, can trigger seizures a
     dcterms:description "Slow permittivity state-variable of the Epileptor2D (Proix et al" ;
     skos:notation "z" ;
     tvbo:lhs "Derivative(z, t)" ;
-    tvbo:rhs "r*tt*(Ks*c_pop0 + h - z)" .
+    tvbo:rhs "r*tt*(Ks*c_glob + h - z)" .
 
 <https://w3id.org/tvbo/Epileptor3DStefanescuMcDonald/parameters/N> a owl:NamedIndividual,
         tvbo:Parameter ;
@@ -3980,7 +4828,7 @@ if x0 is smaller than a critical value, x0,critic = 2.91, can trigger seizures a
     dcterms:description "Fast excitable variable (placeholder Epileptor-like dynamics)." ;
     skos:notation "x1" ;
     tvbo:lhs "Derivative(x1, t)" ;
-    tvbo:rhs "N*(x1 - x1**3/3 - z + c_pop0)" .
+    tvbo:rhs "N*(x1 - x1**3/3 - z + c_glob)" .
 
 <https://w3id.org/tvbo/Epileptor3DStefanescuMcDonald/state_variables/z> a owl:NamedIndividual,
         tvbo:StateVariable ;
@@ -4185,7 +5033,7 @@ if x0 is smaller than a critical value, x0,critic = 2.91, can trigger seizures a
     dcterms:description "First state-variable of the first Epileptor5D population (Jirsa et al" ;
     skos:notation "x1" ;
     tvbo:lhs "Derivative(x1, t)" ;
-    tvbo:rhs "tt*(Iext + Kvf*c_pop0 + local_coupling*x1 + x1*x1cond + y1 - z)" .
+    tvbo:rhs "tt*(Iext + Kvf*c_glob0 + local_coupling*x1 + x1*x1cond + y1 - z)" .
 
 <https://w3id.org/tvbo/Epileptor5D/state_variables/x2> a owl:NamedIndividual,
         tvbo:StateVariable ;
@@ -4193,7 +5041,7 @@ if x0 is smaller than a critical value, x0,critic = 2.91, can trigger seizures a
     dcterms:description "First state-variable of the second Epileptor5D sub-population (Jirsa et al" ;
     skos:notation "x2" ;
     tvbo:lhs "Derivative(x2, t)" ;
-    tvbo:rhs "tt*(Iext2 + Kf*c_pop1 + bb*g - x2**3 + x2 - y2 - 0.3*z + 1.05)" .
+    tvbo:rhs "tt*(Iext2 + Kf*c_glob1 + bb*g - x2**3 + x2 - y2 - 0.3*z + 1.05)" .
 
 <https://w3id.org/tvbo/Epileptor5D/state_variables/y1> a owl:NamedIndividual,
         tvbo:StateVariable ;
@@ -4217,7 +5065,590 @@ if x0 is smaller than a critical value, x0,critic = 2.91, can trigger seizures a
     dcterms:description "Slow permittivity state-variable of the Epileptor5D (Jirsa et al" ;
     skos:notation "z" ;
     tvbo:lhs "Derivative(z, t)" ;
-    tvbo:rhs "r*tt*(Ks*c_pop0 + h - z)" .
+    tvbo:rhs "r*tt*(Ks*c_glob0 + h - z)" .
+
+<https://w3id.org/tvbo/EpileptorCodim3/derived_variables/E0> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "E0 (EpileptorCodim3 derived variable)" ;
+    dcterms:description "First component of the unit vector E parametrising the great arc (A/||A|| with A = [mu2_start, -mu1_start, nu_start])." ;
+    skos:notation "E0" ;
+    tvbo:lhs "E0" ;
+    tvbo:rhs "mu2_start/sqrt(mu1_start**2 + mu2_start**2 + nu_start**2)" .
+
+<https://w3id.org/tvbo/EpileptorCodim3/derived_variables/E1> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "E1 (EpileptorCodim3 derived variable)" ;
+    dcterms:description "Second component of the unit vector E parametrising the great arc." ;
+    skos:notation "E1" ;
+    tvbo:lhs "E1" ;
+    tvbo:rhs "-mu1_start/sqrt(mu1_start**2 + mu2_start**2 + nu_start**2)" .
+
+<https://w3id.org/tvbo/EpileptorCodim3/derived_variables/E2> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "E2 (EpileptorCodim3 derived variable)" ;
+    dcterms:description "Third component of the unit vector E parametrising the great arc." ;
+    skos:notation "E2" ;
+    tvbo:lhs "E2" ;
+    tvbo:rhs "nu_start/sqrt(mu1_start**2 + mu2_start**2 + nu_start**2)" .
+
+<https://w3id.org/tvbo/EpileptorCodim3/derived_variables/F0> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "F0 (EpileptorCodim3 derived variable)" ;
+    dcterms:description "First component of the unit vector F parametrising the great arc (normalised ((A x B) x A) with B = [mu2_stop, -mu1_stop, nu_stop])." ;
+    skos:notation "F0" ;
+    tvbo:lhs "F0" ;
+    tvbo:rhs "(mu1_start*(mu1_start*mu2_stop - mu1_stop*mu2_start) + nu_start*(-mu2_start*nu_stop + mu2_stop*nu_start))/sqrt((mu1_start*(mu1_start*mu2_stop - mu1_stop*mu2_start) + nu_start*(-mu2_start*nu_stop + mu2_stop*nu_start))**2 + (-mu1_start*(-mu1_start*nu_stop + mu1_stop*nu_start) - mu2_start*(-mu2_start*nu_stop + mu2_stop*nu_start))**2 + (mu2_start*(mu1_start*mu2_stop - mu1_stop*mu2_start) - nu_start*(-mu1_start*nu_stop + mu1_stop*nu_start))**2)" .
+
+<https://w3id.org/tvbo/EpileptorCodim3/derived_variables/F1> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "F1 (EpileptorCodim3 derived variable)" ;
+    dcterms:description "Second component of the unit vector F parametrising the great arc." ;
+    skos:notation "F1" ;
+    tvbo:lhs "F1" ;
+    tvbo:rhs "(mu2_start*(mu1_start*mu2_stop - mu1_stop*mu2_start) - nu_start*(-mu1_start*nu_stop + mu1_stop*nu_start))/sqrt((mu1_start*(mu1_start*mu2_stop - mu1_stop*mu2_start) + nu_start*(-mu2_start*nu_stop + mu2_stop*nu_start))**2 + (-mu1_start*(-mu1_start*nu_stop + mu1_stop*nu_start) - mu2_start*(-mu2_start*nu_stop + mu2_stop*nu_start))**2 + (mu2_start*(mu1_start*mu2_stop - mu1_stop*mu2_start) - nu_start*(-mu1_start*nu_stop + mu1_stop*nu_start))**2)" .
+
+<https://w3id.org/tvbo/EpileptorCodim3/derived_variables/F2> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "F2 (EpileptorCodim3 derived variable)" ;
+    dcterms:description "Third component of the unit vector F parametrising the great arc." ;
+    skos:notation "F2" ;
+    tvbo:lhs "F2" ;
+    tvbo:rhs "(-mu1_start*(-mu1_start*nu_stop + mu1_stop*nu_start) - mu2_start*(-mu2_start*nu_stop + mu2_stop*nu_start))/sqrt((mu1_start*(mu1_start*mu2_stop - mu1_stop*mu2_start) + nu_start*(-mu2_start*nu_stop + mu2_stop*nu_start))**2 + (-mu1_start*(-mu1_start*nu_stop + mu1_stop*nu_start) - mu2_start*(-mu2_start*nu_stop + mu2_stop*nu_start))**2 + (mu2_start*(mu1_start*mu2_stop - mu1_stop*mu2_start) - nu_start*(-mu1_start*nu_stop + mu1_stop*nu_start))**2)" .
+
+<https://w3id.org/tvbo/EpileptorCodim3/derived_variables/cardano_a> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "cardano_a (EpileptorCodim3 derived variable)" ;
+    dcterms:description "Half of mu1 (the Cardano coefficient mu1/2 for the depressed cubic xs**3 - mu2*xs - mu1 = 0)." ;
+    skos:notation "cardano_a" ;
+    tvbo:lhs "cardano_a" ;
+    tvbo:rhs "mu1/2" .
+
+<https://w3id.org/tvbo/EpileptorCodim3/derived_variables/cardano_d> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "cardano_d (EpileptorCodim3 derived variable)" ;
+    dcterms:description "Cardano discriminant mu1**2/4 - mu2**3/27 for the cubic xs**3 - mu2*xs - mu1 = 0." ;
+    skos:notation "cardano_d" ;
+    tvbo:lhs "cardano_d" ;
+    tvbo:rhs "mu1**2/4 - mu2**3/27" .
+
+<https://w3id.org/tvbo/EpileptorCodim3/derived_variables/mu1> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "mu1 (EpileptorCodim3 derived variable)" ;
+    dcterms:description "Bifurcation parameter mu1 along the great arc as a function of the slow variable z." ;
+    skos:notation "mu1" ;
+    tvbo:lhs "mu1" ;
+    tvbo:rhs "-R*(E1*cos(z) + F1*sin(z))" .
+
+<https://w3id.org/tvbo/EpileptorCodim3/derived_variables/mu2> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "mu2 (EpileptorCodim3 derived variable)" ;
+    dcterms:description "Bifurcation parameter mu2 along the great arc as a function of the slow variable z." ;
+    skos:notation "mu2" ;
+    tvbo:lhs "mu2" ;
+    tvbo:rhs "R*(E0*cos(z) + F0*sin(z))" .
+
+<https://w3id.org/tvbo/EpileptorCodim3/derived_variables/nu> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "nu (EpileptorCodim3 derived variable)" ;
+    dcterms:description "Bifurcation parameter nu along the great arc as a function of the slow variable z." ;
+    skos:notation "nu" ;
+    tvbo:lhs "nu" ;
+    tvbo:rhs "R*(E2*cos(z) + F2*sin(z))" .
+
+<https://w3id.org/tvbo/EpileptorCodim3/derived_variables/xs> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "xs (EpileptorCodim3 derived variable)" ;
+    dcterms:description "The x-coordinate of the resting state (branch N=1), the real part of the Cardano root of xs**3 - mu2*xs - mu1 = 0, reproducing TVB's principal-branch complex cube root. For negative discriminant (three real roots) the trigonometric form is used; for non-negative discriminant the principal-branch real cube root sum is used (a real cube root for non-negative argument, half the real cube root of the magnitude for negative argument)." ;
+    skos:notation "xs" ;
+    tvbo:lhs "xs" ;
+    tvbo:rhs "Piecewise((2*(cardano_a**2 - cardano_d)**(1/6)*cos(atan2(sqrt(-cardano_d), cardano_a)/3), cardano_d < 0), (Piecewise(((cardano_a + sqrt(cardano_d))**(1/3), (cardano_a + sqrt(cardano_d)) >= 0), (Abs(cardano_a + sqrt(cardano_d))**(1/3)/2, True)) + Piecewise(((cardano_a - sqrt(cardano_d))**(1/3), (cardano_a - sqrt(cardano_d)) >= 0), (Abs(cardano_a - sqrt(cardano_d))**(1/3)/2, True)), True))" .
+
+<https://w3id.org/tvbo/EpileptorCodim3/parameters/Ks> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "Ks (EpileptorCodim3 parameter)" ;
+    dcterms:description "Slow permittivity coupling strength, the default of zero is no coupling." ;
+    schema1:defaultValue 0e+00 ;
+    skos:definition "Slow permittivity coupling strength." ;
+    skos:notation "Ks" .
+
+<https://w3id.org/tvbo/EpileptorCodim3/parameters/R> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "R (EpileptorCodim3 parameter)" ;
+    dcterms:description "Radius in the unfolding sphere on which the great arc connecting onset and offset points lies." ;
+    schema1:defaultValue 4e-01 ;
+    skos:definition "Radius in unfolding." ;
+    skos:notation "R" .
+
+<https://w3id.org/tvbo/EpileptorCodim3/parameters/b> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "b (EpileptorCodim3 parameter)" ;
+    dcterms:description "Unfolding type of the degenerate Takens-Bogdanov bifurcation, default is a focus type." ;
+    schema1:defaultValue 1e+00 ;
+    skos:definition "Unfolding type of the degenerate Takens-Bogdanov bifurcation." ;
+    skos:notation "b" .
+
+<https://w3id.org/tvbo/EpileptorCodim3/parameters/c> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "c (EpileptorCodim3 parameter)" ;
+    dcterms:description "Speed of the slow variable z." ;
+    schema1:defaultValue 1e-03 ;
+    skos:definition "Speed of the slow variable." ;
+    skos:notation "c" .
+
+<https://w3id.org/tvbo/EpileptorCodim3/parameters/dstar> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "dstar (EpileptorCodim3 parameter)" ;
+    dcterms:description "Threshold for the inversion of the slow variable z." ;
+    schema1:defaultValue 3e-01 ;
+    skos:definition "Threshold for the inversion of the slow variable." ;
+    skos:notation "dstar" .
+
+<https://w3id.org/tvbo/EpileptorCodim3/parameters/modification> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "modification (EpileptorCodim3 parameter)" ;
+    dcterms:description "Toggle the +0.1*(z-0.5)^7 stabilising term in z_dot: >0 (True, default) includes it, 0 (False) omits it." ;
+    schema1:defaultValue 1e+00 ;
+    skos:notation "modification" .
+
+<https://w3id.org/tvbo/EpileptorCodim3/parameters/mu1_start> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "mu1_start (EpileptorCodim3 parameter)" ;
+    dcterms:description "The bifurcation parameter mu1 at the offset point for the given class, default for class c2s (Saddle-Node at onset and Saddle-Homoclinic at offset)." ;
+    schema1:defaultValue -2.285e-02 ;
+    skos:definition "The bifurcation parameter mu1 at the offset point for the given class." ;
+    skos:notation "mu1_start" .
+
+<https://w3id.org/tvbo/EpileptorCodim3/parameters/mu1_stop> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "mu1_stop (EpileptorCodim3 parameter)" ;
+    dcterms:description "The bifurcation parameter mu1 at the onset point for the given class, default for class c2s (Saddle-Node at onset and Saddle-Homoclinic at offset)." ;
+    schema1:defaultValue -7.465e-02 ;
+    skos:definition "The bifurcation parameter mu1 at the onset point for the given class." ;
+    skos:notation "mu1_stop" .
+
+<https://w3id.org/tvbo/EpileptorCodim3/parameters/mu2_start> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "mu2_start (EpileptorCodim3 parameter)" ;
+    dcterms:description "The bifurcation parameter mu2 at the offset point for the given class, default for class c2s (Saddle-Node at onset and Saddle-Homoclinic at offset)." ;
+    schema1:defaultValue 3.448e-01 ;
+    skos:definition "The bifurcation parameter mu2 at the offset point for the given class." ;
+    skos:notation "mu2_start" .
+
+<https://w3id.org/tvbo/EpileptorCodim3/parameters/mu2_stop> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "mu2_stop (EpileptorCodim3 parameter)" ;
+    dcterms:description "The bifurcation parameter mu2 at the onset point for the given class, default for class c2s (Saddle-Node at onset and Saddle-Homoclinic at offset)." ;
+    schema1:defaultValue 3.351e-01 ;
+    skos:definition "The bifurcation parameter mu2 at the onset point for the given class." ;
+    skos:notation "mu2_stop" .
+
+<https://w3id.org/tvbo/EpileptorCodim3/parameters/nu_start> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "nu_start (EpileptorCodim3 parameter)" ;
+    dcterms:description "The bifurcation parameter nu at the offset point for the given class, default for class c2s (Saddle-Node at onset and Saddle-Homoclinic at offset)." ;
+    schema1:defaultValue 2.014e-01 ;
+    skos:definition "The bifurcation parameter nu at the offset point for the given class." ;
+    skos:notation "nu_start" .
+
+<https://w3id.org/tvbo/EpileptorCodim3/parameters/nu_stop> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "nu_stop (EpileptorCodim3 parameter)" ;
+    dcterms:description "The bifurcation parameter nu at the onset point for the given class, default for class c2s (Saddle-Node at onset and Saddle-Homoclinic at offset)." ;
+    schema1:defaultValue 2.053e-01 ;
+    skos:definition "The bifurcation parameter nu at the onset point for the given class." ;
+    skos:notation "nu_stop" .
+
+<https://w3id.org/tvbo/EpileptorCodim3/state_variables/x> a owl:NamedIndividual,
+        tvbo:StateVariable ;
+    rdfs:label "x (EpileptorCodim3 state variable)" ;
+    dcterms:description "Fast subsystem variable x." ;
+    skos:notation "x" ;
+    tvbo:lhs "Derivative(x, t)" ;
+    tvbo:rhs "-y" .
+
+<https://w3id.org/tvbo/EpileptorCodim3/state_variables/y> a owl:NamedIndividual,
+        tvbo:StateVariable ;
+    rdfs:label "y (EpileptorCodim3 state variable)" ;
+    dcterms:description "Fast subsystem variable y." ;
+    skos:notation "y" ;
+    tvbo:lhs "Derivative(y, t)" ;
+    tvbo:rhs "x**3 - mu2*x - mu1 - y*(nu + b*x + x**2)" .
+
+<https://w3id.org/tvbo/EpileptorCodim3/state_variables/z> a owl:NamedIndividual,
+        tvbo:StateVariable ;
+    rdfs:label "z (EpileptorCodim3 state variable)" ;
+    dcterms:description "Slow subsystem variable z steering the fast subsystem along the great arc." ;
+    skos:notation "z" ;
+    tvbo:lhs "Derivative(z, t)" ;
+    tvbo:rhs "-c*(sqrt((x - xs)**2 + y**2) - dstar + Piecewise(((z - 1/2)**7/10, modification > 0), (0, True)) + Ks*c_glob)" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/A0> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "A0 (EpileptorCodim3SlowMod derived variable)" ;
+    skos:notation "A0" ;
+    tvbo:lhs "A0" ;
+    tvbo:rhs "R*(G0*cos(uA) + H0*sin(uA))" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/A1> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "A1 (EpileptorCodim3SlowMod derived variable)" ;
+    skos:notation "A1" ;
+    tvbo:lhs "A1" ;
+    tvbo:rhs "R*(G1*cos(uA) + H1*sin(uA))" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/A2> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "A2 (EpileptorCodim3SlowMod derived variable)" ;
+    skos:notation "A2" ;
+    tvbo:lhs "A2" ;
+    tvbo:rhs "R*(G2*cos(uA) + H2*sin(uA))" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/B0> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "B0 (EpileptorCodim3SlowMod derived variable)" ;
+    skos:notation "B0" ;
+    tvbo:lhs "B0" ;
+    tvbo:rhs "R*(L0*cos(uB) + M0*sin(uB))" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/B1> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "B1 (EpileptorCodim3SlowMod derived variable)" ;
+    skos:notation "B1" ;
+    tvbo:lhs "B1" ;
+    tvbo:rhs "R*(L1*cos(uB) + M1*sin(uB))" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/B2> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "B2 (EpileptorCodim3SlowMod derived variable)" ;
+    skos:notation "B2" ;
+    tvbo:lhs "B2" ;
+    tvbo:rhs "R*(L2*cos(uB) + M2*sin(uB))" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/C0> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "C0 (EpileptorCodim3SlowMod derived variable)" ;
+    skos:notation "C0" ;
+    tvbo:lhs "C0" ;
+    tvbo:rhs "A1*B2 - A2*B1" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/C1> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "C1 (EpileptorCodim3SlowMod derived variable)" ;
+    skos:notation "C1" ;
+    tvbo:lhs "C1" ;
+    tvbo:rhs "A2*B0 - A0*B2" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/C2> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "C2 (EpileptorCodim3SlowMod derived variable)" ;
+    skos:notation "C2" ;
+    tvbo:lhs "C2" ;
+    tvbo:rhs "A0*B1 - A1*B0" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/E0> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "E0 (EpileptorCodim3SlowMod derived variable)" ;
+    skos:notation "E0" ;
+    tvbo:lhs "E0" ;
+    tvbo:rhs "A0/normA" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/E1> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "E1 (EpileptorCodim3SlowMod derived variable)" ;
+    skos:notation "E1" ;
+    tvbo:lhs "E1" ;
+    tvbo:rhs "A1/normA" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/E2> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "E2 (EpileptorCodim3SlowMod derived variable)" ;
+    skos:notation "E2" ;
+    tvbo:lhs "E2" ;
+    tvbo:rhs "A2/normA" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/F0> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "F0 (EpileptorCodim3SlowMod derived variable)" ;
+    skos:notation "F0" ;
+    tvbo:lhs "F0" ;
+    tvbo:rhs "Fx0/normF" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/F1> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "F1 (EpileptorCodim3SlowMod derived variable)" ;
+    skos:notation "F1" ;
+    tvbo:lhs "F1" ;
+    tvbo:rhs "Fx1/normF" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/F2> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "F2 (EpileptorCodim3SlowMod derived variable)" ;
+    skos:notation "F2" ;
+    tvbo:lhs "F2" ;
+    tvbo:rhs "Fx2/normF" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/Fx0> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "Fx0 (EpileptorCodim3SlowMod derived variable)" ;
+    skos:notation "Fx0" ;
+    tvbo:lhs "Fx0" ;
+    tvbo:rhs "C1*A2 - C2*A1" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/Fx1> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "Fx1 (EpileptorCodim3SlowMod derived variable)" ;
+    skos:notation "Fx1" ;
+    tvbo:lhs "Fx1" ;
+    tvbo:rhs "C2*A0 - C0*A2" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/Fx2> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "Fx2 (EpileptorCodim3SlowMod derived variable)" ;
+    skos:notation "Fx2" ;
+    tvbo:lhs "Fx2" ;
+    tvbo:rhs "C0*A1 - C1*A0" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/disc> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "disc (EpileptorCodim3SlowMod derived variable)" ;
+    dcterms:description "Discriminant mu1^2/4 - mu2^3/27 of the depressed cubic for the resting-state x-coordinate." ;
+    skos:notation "disc" ;
+    tvbo:lhs "disc" ;
+    tvbo:rhs "mu1**2/4 - mu2**3/27" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/mu1> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "mu1 (EpileptorCodim3SlowMod derived variable)" ;
+    dcterms:description "Bifurcation parameter mu1 along the great arc (E, F, R) at slow variable z." ;
+    skos:notation "mu1" ;
+    tvbo:lhs "mu1" ;
+    tvbo:rhs "-R*(E1*cos(z) + F1*sin(z))" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/mu2> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "mu2 (EpileptorCodim3SlowMod derived variable)" ;
+    dcterms:description "Bifurcation parameter mu2 along the great arc (E, F, R) at slow variable z." ;
+    skos:notation "mu2" ;
+    tvbo:lhs "mu2" ;
+    tvbo:rhs "R*(E0*cos(z) + F0*sin(z))" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/normA> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "normA (EpileptorCodim3SlowMod derived variable)" ;
+    skos:notation "normA" ;
+    tvbo:lhs "normA" ;
+    tvbo:rhs "sqrt(A0**2 + A1**2 + A2**2)" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/normF> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "normF (EpileptorCodim3SlowMod derived variable)" ;
+    skos:notation "normF" ;
+    tvbo:lhs "normF" ;
+    tvbo:rhs "sqrt(Fx0**2 + Fx1**2 + Fx2**2)" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/nu> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "nu (EpileptorCodim3SlowMod derived variable)" ;
+    dcterms:description "Bifurcation parameter nu along the great arc (E, F, R) at slow variable z." ;
+    skos:notation "nu" ;
+    tvbo:lhs "nu" ;
+    tvbo:rhs "R*(E2*cos(z) + F2*sin(z))" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/sqdisc> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "sqdisc (EpileptorCodim3SlowMod derived variable)" ;
+    dcterms:description "Square root of the absolute discriminant." ;
+    skos:notation "sqdisc" ;
+    tvbo:lhs "sqdisc" ;
+    tvbo:rhs "sqrt(Abs(disc))" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/derived_variables/xs> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "xs (EpileptorCodim3SlowMod derived variable)" ;
+    dcterms:description "Real x-coordinate of the resting state, the branch (N = 1) real solution of x_s^3 - mu2 x_s - mu1 = 0 via Cardano's formula, taking the real part of the principal complex cube roots in both the one-real-root (disc >= 0) and three-real-roots (disc < 0) regimes." ;
+    skos:notation "xs" ;
+    tvbo:lhs "xs" ;
+    tvbo:rhs "Piecewise((Abs(mu1/2 + sqdisc)**(1/3)*cos(atan2(0, mu1/2 + sqdisc)/3) + Abs(mu1/2 - sqdisc)**(1/3)*cos(atan2(0, mu1/2 - sqdisc)/3), disc >= 0), (sqrt((mu1/2)**2 + sqdisc**2)**(1/3)*cos(atan2(sqdisc, mu1/2)/3) + sqrt((mu1/2)**2 + sqdisc**2)**(1/3)*cos(atan2(-sqdisc, mu1/2)/3), True))" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/parameters/Ks> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "Ks (EpileptorCodim3SlowMod parameter)" ;
+    dcterms:description "Slow permittivity coupling strength, the default is no coupling." ;
+    schema1:defaultValue 0e+00 ;
+    skos:notation "Ks" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/parameters/R> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "R (EpileptorCodim3SlowMod parameter)" ;
+    dcterms:description "Radius in unfolding." ;
+    schema1:defaultValue 4e-01 ;
+    skos:notation "R" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/parameters/b> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "b (EpileptorCodim3SlowMod parameter)" ;
+    dcterms:description "Unfolding type of the degenerate Takens-Bogdanov bifurcation, default is a focus type." ;
+    schema1:defaultValue 1e+00 ;
+    skos:notation "b" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/parameters/c> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "c (EpileptorCodim3SlowMod parameter)" ;
+    dcterms:description "Speed of the slow variable." ;
+    schema1:defaultValue 2e-03 ;
+    skos:notation "c" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/parameters/cA> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "cA (EpileptorCodim3SlowMod parameter)" ;
+    dcterms:description "Speed of the ultra-slow transition of the initial point." ;
+    schema1:defaultValue 1e-04 ;
+    skos:notation "cA" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/parameters/cB> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "cB (EpileptorCodim3SlowMod parameter)" ;
+    dcterms:description "Speed of the ultra-slow transition of the final point." ;
+    schema1:defaultValue 1.2e-04 ;
+    skos:notation "cB" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/parameters/dstar> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "dstar (EpileptorCodim3SlowMod parameter)" ;
+    dcterms:description "Threshold for the inversion of the slow variable." ;
+    schema1:defaultValue 3e-01 ;
+    skos:notation "dstar" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/parameters/modification> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "modification (EpileptorCodim3SlowMod parameter)" ;
+    dcterms:description "Toggle the +0.1*(z-0.5)^7 stabilising term in z_dot: >0 (True, default) includes it, 0 (False) omits it." ;
+    schema1:defaultValue 1e+00 ;
+    skos:notation "modification" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/parameters/mu1_Aend> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "mu1_Aend (EpileptorCodim3SlowMod parameter)" ;
+    dcterms:description "The bifurcation parameter mu1 at the final point at bursting offset." ;
+    schema1:defaultValue 6.485e-02 ;
+    skos:notation "mu1_Aend" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/parameters/mu1_Ain> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "mu1_Ain (EpileptorCodim3SlowMod parameter)" ;
+    dcterms:description "The bifurcation parameter mu1 at the initial point at bursting offset." ;
+    schema1:defaultValue 5.494e-02 ;
+    skos:notation "mu1_Ain" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/parameters/mu1_Bend> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "mu1_Bend (EpileptorCodim3SlowMod parameter)" ;
+    dcterms:description "The bifurcation parameter mu1 at the final point at bursting onset." ;
+    schema1:defaultValue 3.676e-02 ;
+    skos:notation "mu1_Bend" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/parameters/mu1_Bin> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "mu1_Bin (EpileptorCodim3SlowMod parameter)" ;
+    dcterms:description "The bifurcation parameter mu1 at the initial point at bursting onset." ;
+    schema1:defaultValue -4.61e-02 ;
+    skos:notation "mu1_Bin" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/parameters/mu2_Aend> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "mu2_Aend (EpileptorCodim3SlowMod parameter)" ;
+    dcterms:description "The bifurcation parameter mu2 at the final point at bursting offset." ;
+    schema1:defaultValue 7.337e-02 ;
+    skos:notation "mu2_Aend" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/parameters/mu2_Ain> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "mu2_Ain (EpileptorCodim3SlowMod parameter)" ;
+    dcterms:description "The bifurcation parameter mu2 at the initial point at bursting offset." ;
+    schema1:defaultValue 2.731e-01 ;
+    skos:notation "mu2_Ain" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/parameters/mu2_Bend> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "mu2_Bend (EpileptorCodim3SlowMod parameter)" ;
+    dcterms:description "The bifurcation parameter mu2 at the final point at bursting onset." ;
+    schema1:defaultValue -2.792e-02 ;
+    skos:notation "mu2_Bend" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/parameters/mu2_Bin> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "mu2_Bin (EpileptorCodim3SlowMod parameter)" ;
+    dcterms:description "The bifurcation parameter mu2 at the initial point at bursting onset." ;
+    schema1:defaultValue 2.43e-01 ;
+    skos:notation "mu2_Bin" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/parameters/nu_Aend> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "nu_Aend (EpileptorCodim3SlowMod parameter)" ;
+    dcterms:description "The bifurcation parameter nu at the final point at bursting offset." ;
+    schema1:defaultValue -3.878e-01 ;
+    skos:notation "nu_Aend" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/parameters/nu_Ain> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "nu_Ain (EpileptorCodim3SlowMod parameter)" ;
+    dcterms:description "The bifurcation parameter nu at the initial point at bursting offset." ;
+    schema1:defaultValue 2.87e-01 ;
+    skos:notation "nu_Ain" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/parameters/nu_Bend> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "nu_Bend (EpileptorCodim3SlowMod parameter)" ;
+    dcterms:description "The bifurcation parameter nu at the final point at bursting onset." ;
+    schema1:defaultValue -3.973e-01 ;
+    skos:notation "nu_Bend" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/parameters/nu_Bin> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "nu_Bin (EpileptorCodim3SlowMod parameter)" ;
+    dcterms:description "The bifurcation parameter nu at the initial point at bursting onset." ;
+    schema1:defaultValue 3.144e-01 ;
+    skos:notation "nu_Bin" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/state_variables/uA> a owl:NamedIndividual,
+        tvbo:StateVariable ;
+    rdfs:label "uA (EpileptorCodim3SlowMod state variable)" ;
+    dcterms:description "Ultra-slow modulation of the offset point A along the offset great arc." ;
+    skos:notation "uA" ;
+    tvbo:lhs "Derivative(uA, t)" ;
+    tvbo:rhs "cA + 0*uA" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/state_variables/uB> a owl:NamedIndividual,
+        tvbo:StateVariable ;
+    rdfs:label "uB (EpileptorCodim3SlowMod state variable)" ;
+    dcterms:description "Ultra-slow modulation of the onset point B along the onset great arc." ;
+    skos:notation "uB" ;
+    tvbo:lhs "Derivative(uB, t)" ;
+    tvbo:rhs "cB + 0*uB" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/state_variables/x> a owl:NamedIndividual,
+        tvbo:StateVariable ;
+    rdfs:label "x (EpileptorCodim3SlowMod state variable)" ;
+    dcterms:description "Fast-subsystem state variable x (membrane-potential-like)." ;
+    skos:notation "x" ;
+    tvbo:lhs "Derivative(x, t)" ;
+    tvbo:rhs "-y" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/state_variables/y> a owl:NamedIndividual,
+        tvbo:StateVariable ;
+    rdfs:label "y (EpileptorCodim3SlowMod state variable)" ;
+    dcterms:description "Fast-subsystem state variable y." ;
+    skos:notation "y" ;
+    tvbo:lhs "Derivative(y, t)" ;
+    tvbo:rhs "x**3 - mu2*x - mu1 - y*(nu + b*x + x**2)" .
+
+<https://w3id.org/tvbo/EpileptorCodim3SlowMod/state_variables/z> a owl:NamedIndividual,
+        tvbo:StateVariable ;
+    rdfs:label "z (EpileptorCodim3SlowMod state variable)" ;
+    dcterms:description "Slow-subsystem permittivity variable z." ;
+    skos:notation "z" ;
+    tvbo:lhs "Derivative(z, t)" ;
+    tvbo:rhs "-c*(sqrt((x - xs)**2 + y**2) - dstar + Piecewise(((z - 1/2)**7/10, modification > 0), (0, True)) + Ks*c_glob)" .
 
 <https://w3id.org/tvbo/EpileptorRestingState/derived_variables/lc_1> a owl:NamedIndividual,
         tvbo:DerivedVariable ;
@@ -4490,21 +5921,21 @@ if x0 is smaller than a critical value, x0,critic = 2.91, can trigger seizures a
     rdfs:label "x1 (EpileptorRestingState state variable)" ;
     skos:notation "x1" ;
     tvbo:lhs "Derivative(x1, t)" ;
-    tvbo:rhs "tt*(Iext + Kvf*c_pop0 + local_coupling*x1 + x1*x1cond + y1 - z)" .
+    tvbo:rhs "tt*(Iext + Kvf*c_glob0 + local_coupling*x1 + x1*x1cond + y1 - z)" .
 
 <https://w3id.org/tvbo/EpileptorRestingState/state_variables/x2> a owl:NamedIndividual,
         tvbo:StateVariable ;
     rdfs:label "x2 (EpileptorRestingState state variable)" ;
     skos:notation "x2" ;
     tvbo:lhs "Derivative(x2, t)" ;
-    tvbo:rhs "tt*(Iext2 + Kf*c_pop1 + bb*g - x2**3 + x2 - y2 - 0.3*z + 1.05)" .
+    tvbo:rhs "tt*(Iext2 + Kf*c_glob1 + bb*g - x2**3 + x2 - y2 - 0.3*z + 1.05)" .
 
 <https://w3id.org/tvbo/EpileptorRestingState/state_variables/x_rs> a owl:NamedIndividual,
         tvbo:StateVariable ;
     rdfs:label "x_rs (EpileptorRestingState state variable)" ;
     skos:notation "x_rs" ;
     tvbo:lhs "Derivative(x_rs, t)" ;
-    tvbo:rhs "d_rs*tau_rs*(I_rs*gamma_rs + K_rs*c_pop2*gamma_rs + alpha_rs*y_rs + e_rs*x_rs**2 - f_rs*x_rs**3 + lc_1)" .
+    tvbo:rhs "d_rs*tau_rs*(I_rs*gamma_rs + K_rs*c_glob2*gamma_rs + alpha_rs*y_rs + e_rs*x_rs**2 - f_rs*x_rs**3 + lc_1)" .
 
 <https://w3id.org/tvbo/EpileptorRestingState/state_variables/y1> a owl:NamedIndividual,
         tvbo:StateVariable ;
@@ -4532,7 +5963,7 @@ if x0 is smaller than a critical value, x0,critic = 2.91, can trigger seizures a
     rdfs:label "z (EpileptorRestingState state variable)" ;
     skos:notation "z" ;
     tvbo:lhs "Derivative(z, t)" ;
-    tvbo:rhs "r*tt*(Ks*c_pop0 - 4*x0 + 4*x1 - z + zcond)" .
+    tvbo:rhs "r*tt*(Ks*c_glob0 - 4*x0 + 4*x1 - z + zcond)" .
 
 <https://w3id.org/tvbo/GastSchmidtKnosche_SD/parameters/Delta> a owl:NamedIndividual,
         tvbo:Parameter ;
@@ -4626,7 +6057,7 @@ if x0 is smaller than a critical value, x0,critic = 2.91, can trigger seizures a
     rdfs:label "V (GastSchmidtKnosche_SD state variable)" ;
     skos:notation "V" ;
     tvbo:lhs "Derivative(V, t)" ;
-    tvbo:rhs "(I + J*r*tau*(1 - A) + V**2 + c_pop0*cr + c_pop1*cv + eta - pi**2*r**2*tau**2)/tau" .
+    tvbo:rhs "(I + J*r*tau*(1 - A) + V**2 + c_glob0*cr + c_glob1*cv + eta - pi**2*r**2*tau**2)/tau" .
 
 <https://w3id.org/tvbo/GastSchmidtKnosche_SD/state_variables/r> a owl:NamedIndividual,
         tvbo:StateVariable ;
@@ -4728,7 +6159,7 @@ if x0 is smaller than a critical value, x0,critic = 2.91, can trigger seizures a
     rdfs:label "V (GastSchmidtKnosche_SF state variable)" ;
     skos:notation "V" ;
     tvbo:lhs "Derivative(V, t)" ;
-    tvbo:rhs "(-A + I + J*r*tau + V**2 + c_pop0*cr + c_pop1*cv + eta - pi**2*r**2*tau**2)/tau" .
+    tvbo:rhs "(-A + I + J*r*tau + V**2 + c_glob0*cr + c_glob1*cv + eta - pi**2*r**2*tau**2)/tau" .
 
 <https://w3id.org/tvbo/GastSchmidtKnosche_SF/state_variables/r> a owl:NamedIndividual,
         tvbo:StateVariable ;
@@ -4876,7 +6307,14 @@ Note: The ‘minus’ sign for the self-connections, scaled by 'gamma_GL', guara
     dcterms:description "State-variable of the Generic Linear model" ;
     skos:notation "x" ;
     tvbo:lhs "Derivative(x, t)" ;
-    tvbo:rhs "c_pop0 + gamma*x + local_coupling*x" .
+    tvbo:rhs "c_glob + gamma*x + local_coupling*x" .
+
+<https://w3id.org/tvbo/Hopfield/parameters/dynamic> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "dynamic (Hopfield parameter)" ;
+    dcterms:description "Threshold dynamics: 0 (default) -> theta tracks x (TVB display hack); >0 -> theta relaxes to its own coupling input." ;
+    schema1:defaultValue 0e+00 ;
+    skos:notation "dynamic" .
 
 <https://w3id.org/tvbo/Hopfield/parameters/tauT> a owl:NamedIndividual,
         tvbo:Parameter ;
@@ -4900,14 +6338,14 @@ Note: The ‘minus’ sign for the self-connections, scaled by 'gamma_GL', guara
     dcterms:description "Slow state variable at node i" ;
     skos:notation "theta" ;
     tvbo:lhs "Derivative(theta, t)" ;
-    tvbo:rhs "(c_pop1 - theta)/tauT" .
+    tvbo:rhs "Piecewise(((c_glob1 - theta)/tauT, dynamic > 0), ((c_glob0 - x)/taux, True))" .
 
 <https://w3id.org/tvbo/Hopfield/state_variables/x> a owl:NamedIndividual,
         tvbo:StateVariable ;
     rdfs:label "x (Hopfield state variable)" ;
     skos:notation "x" ;
     tvbo:lhs "Derivative(x, t)" ;
-    tvbo:rhs "(c_pop0 - x)/taux" .
+    tvbo:rhs "(c_glob0 - x)/taux" .
 
 <https://w3id.org/tvbo/JansenRit/derived_variables/sigma_y0_1> a owl:NamedIndividual,
         tvbo:DerivedVariable ;
@@ -5110,7 +6548,7 @@ Note:
     oboInOwl:hasDbXref CL:0000099 ;
     skos:notation "y4" ;
     tvbo:lhs "Derivative(y4, t)" ;
-    tvbo:rhs "A*a*(J*a_2*sigma_y0_1 + c_pop0 + local_coupling*(y1 - y2) + mu) - a**2*y1 - 2.0*a*y4" .
+    tvbo:rhs "A*a*(J*a_2*sigma_y0_1 + c_glob + local_coupling*(y1 - y2) + mu) - a**2*y1 - 2.0*a*y4" .
 
 <https://w3id.org/tvbo/JansenRit/state_variables/y5> a owl:NamedIndividual,
         tvbo:StateVariable ;
@@ -5324,7 +6762,7 @@ Note:
     rdfs:label "Vcond (KIonEx derived variable)" ;
     skos:notation "Vcond" ;
     tvbo:lhs "Vcond" ;
-    tvbo:rhs "Piecewise((R_minus*c_pop0*(-V + E)/pi - R_minus*x**2 + V_temp + eta, V <= Vstar), (R_minus*c_pop0*(-V + E)/pi - R_plus*x**2 + V_temp + eta, True))" .
+    tvbo:rhs "Piecewise((R_minus*c_glob*(-V + E)/pi - R_minus*x**2 + V_temp + eta, V <= Vstar), (R_minus*c_glob*(-V + E)/pi - R_plus*x**2 + V_temp + eta, True))" .
 
 <https://w3id.org/tvbo/KIonEx/derived_variables/beta> a owl:NamedIndividual,
         tvbo:DerivedVariable ;
@@ -5719,7 +7157,7 @@ Note:
     dcterms:description "Input via local and long range connectivity, passing first through the Kuramoto coupling function" ;
     skos:notation "I" ;
     tvbo:lhs "I" ;
-    tvbo:rhs "c_pop0 + lc_0" .
+    tvbo:rhs "c_glob + lc_0" .
 
 <https://w3id.org/tvbo/Kuramoto/derived_variables/lc_0> a owl:NamedIndividual,
         tvbo:DerivedVariable ;
@@ -6144,7 +7582,7 @@ Describes relationship between membrane voltage and channel conductance.""" ;
     oboInOwl:hasDbXref GO:0042391 ;
     skos:notation "V" ;
     tvbo:lhs "Derivative(V, t)" ;
-    tvbo:rhs "t_scale*(I_ext*a_ne - Q_Z*Z*a_ie - W*g_K*(V - V_K) - g_L*(V - V_L) + m_Ca*(V - V_Ca)*(-C*a_ee*c_pop0*r_NMDA - a_ee*r_NMDA*(1.0 - C)*(Q_V + lc_0) - g_Ca) - (V - V_Na)*(C*a_ee*c_pop0 + a_ee*(1.0 - C)*(Q_V + lc_0) + g_Na*m_Na))" .
+    tvbo:rhs "t_scale*(I_ext*a_ne - Q_Z*Z*a_ie - W*g_K*(V - V_K) - g_L*(V - V_L) + m_Ca*(V - V_Ca)*(-C*a_ee*c_glob*r_NMDA - a_ee*r_NMDA*(1.0 - C)*(Q_V + lc_0) - g_Ca) - (V - V_Na)*(C*a_ee*c_glob + a_ee*(1.0 - C)*(Q_V + lc_0) + g_Na*m_Na))" .
 
 <https://w3id.org/tvbo/LarterBreakspear/state_variables/W> a owl:NamedIndividual,
         tvbo:StateVariable ;
@@ -6164,6 +7602,22 @@ Describes relationship between membrane voltage and channel conductance.""" ;
     skos:notation "Z" ;
     tvbo:lhs "Derivative(Z, t)" ;
     tvbo:rhs "b*t_scale*(I_ext*a_ni + Q_V*V*a_ei)" .
+
+<https://w3id.org/tvbo/Linear/parameters/gamma> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "gamma (Linear parameter)" ;
+    dcterms:description "The damping coefficient specifies how quickly the node's activity relaxes, must be larger than the node's in-degree in order to remain stable." ;
+    schema1:defaultValue -1e+01 ;
+    skos:definition "The damping coefficient" ;
+    skos:notation "gamma" .
+
+<https://w3id.org/tvbo/Linear/state_variables/x> a owl:NamedIndividual,
+        tvbo:StateVariable ;
+    rdfs:label "x (Linear state variable)" ;
+    dcterms:description "The Linear model has a single state variable." ;
+    skos:notation "x" ;
+    tvbo:lhs "Derivative(x, t)" ;
+    tvbo:rhs "gamma*x + c_glob + local_coupling*x" .
 
 <https://w3id.org/tvbo/ModelJansen1995/derived_variables/v_pyr> a owl:NamedIndividual,
         tvbo:DerivedVariable ;
@@ -6335,7 +7789,7 @@ Describes relationship between membrane voltage and channel conductance.""" ;
     rdfs:label "V (MontbrioPazoRoxin state variable)" ;
     skos:notation "V" ;
     tvbo:lhs "Derivative(V, t)" ;
-    tvbo:rhs "(I + J*r*tau + V**2 + c_pop0*cr*tau + c_pop1*cv + eta - pi**2*r**2*tau**2)/tau" .
+    tvbo:rhs "(I + J*r*tau + V**2 + c_glob0*cr*tau + c_glob1*cv + eta - pi**2*r**2*tau**2)/tau" .
 
 <https://w3id.org/tvbo/MontbrioPazoRoxin/state_variables/r> a owl:NamedIndividual,
         tvbo:StateVariable ;
@@ -6343,6 +7797,336 @@ Describes relationship between membrane voltage and channel conductance.""" ;
     skos:notation "r" ;
     tvbo:lhs "Derivative(r, t)" ;
     tvbo:rhs "(Delta/(pi*tau) + 2*V*r)/tau" .
+
+<https://w3id.org/tvbo/ReducedSetFitzHughNagumo/parameters/Aik> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "Aik (ReducedSetFitzHughNagumo parameter)" ;
+    dcterms:description "Fixed SJ_2008 quadrature constant (Aik)." ;
+    schema1:defaultValue "[[0.3328165811190223, 0.18525241779532714, 0.3328165811190241], [0.5984537933538554, 0.3331114447027479, 0.5984537933538587], [0.33281658111902046, 0.18525241779532614, 0.33281658111902235]]" ;
+    skos:notation "Aik" .
+
+<https://w3id.org/tvbo/ReducedSetFitzHughNagumo/parameters/Bik> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "Bik (ReducedSetFitzHughNagumo parameter)" ;
+    dcterms:description "Fixed SJ_2008 quadrature constant (Bik)." ;
+    schema1:defaultValue "[[0.3328165811190223, 0.5984537933538554, 0.33281658111902046], [0.18525241779532714, 0.3331114447027479, 0.18525241779532614], [0.3328165811190241, 0.5984537933538587, 0.33281658111902235]]" ;
+    skos:notation "Bik" .
+
+<https://w3id.org/tvbo/ReducedSetFitzHughNagumo/parameters/Cik> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "Cik (ReducedSetFitzHughNagumo parameter)" ;
+    dcterms:description "Fixed SJ_2008 quadrature constant (Cik)." ;
+    schema1:defaultValue "[[0.3328165811190223, 0.18525241779532714, 0.3328165811190241], [0.5984537933538554, 0.3331114447027479, 0.5984537933538587], [0.33281658111902046, 0.18525241779532614, 0.33281658111902235]]" ;
+    skos:notation "Cik" .
+
+<https://w3id.org/tvbo/ReducedSetFitzHughNagumo/parameters/K11> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "K11 (ReducedSetFitzHughNagumo parameter)" ;
+    schema1:defaultValue 5e-01 ;
+    skos:notation "K11" .
+
+<https://w3id.org/tvbo/ReducedSetFitzHughNagumo/parameters/K12> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "K12 (ReducedSetFitzHughNagumo parameter)" ;
+    schema1:defaultValue 1.5e-01 ;
+    skos:notation "K12" .
+
+<https://w3id.org/tvbo/ReducedSetFitzHughNagumo/parameters/K21> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "K21 (ReducedSetFitzHughNagumo parameter)" ;
+    schema1:defaultValue 1.5e-01 ;
+    skos:notation "K21" .
+
+<https://w3id.org/tvbo/ReducedSetFitzHughNagumo/parameters/a> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "a (ReducedSetFitzHughNagumo parameter)" ;
+    schema1:defaultValue 4.5e-01 ;
+    skos:notation "a" .
+
+<https://w3id.org/tvbo/ReducedSetFitzHughNagumo/parameters/b> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "b (ReducedSetFitzHughNagumo parameter)" ;
+    schema1:defaultValue 9e-01 ;
+    skos:notation "b" .
+
+<https://w3id.org/tvbo/ReducedSetFitzHughNagumo/parameters/iU0> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "iU0 (ReducedSetFitzHughNagumo parameter)" ;
+    dcterms:description "Fixed SJ_2008 quadrature constant (iU0)." ;
+    schema1:defaultValue "[1.6668762461300366, 0.9278169186250886, 1.666876246130046]" ;
+    skos:notation "iU0" .
+
+<https://w3id.org/tvbo/ReducedSetFitzHughNagumo/parameters/iU4> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "iU4 (ReducedSetFitzHughNagumo parameter)" ;
+    dcterms:description "Fixed SJ_2008 quadrature constant (iU4)." ;
+    schema1:defaultValue "[0.35990947874643836, 1.1616503426964113, 0.3599094787464342]" ;
+    skos:notation "iU4" .
+
+<https://w3id.org/tvbo/ReducedSetFitzHughNagumo/parameters/iV0> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "iV0 (ReducedSetFitzHughNagumo parameter)" ;
+    dcterms:description "Fixed SJ_2008 quadrature constant (iV0)." ;
+    schema1:defaultValue "[1.6668762461300366, 0.9278169186250886, 1.666876246130046]" ;
+    skos:notation "iV0" .
+
+<https://w3id.org/tvbo/ReducedSetFitzHughNagumo/parameters/iV4> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "iV4 (ReducedSetFitzHughNagumo parameter)" ;
+    dcterms:description "Fixed SJ_2008 quadrature constant (iV4)." ;
+    schema1:defaultValue "[0.35990947874643836, 1.1616503426964113, 0.3599094787464342]" ;
+    skos:notation "iV4" .
+
+<https://w3id.org/tvbo/ReducedSetFitzHughNagumo/parameters/iZU> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "iZU (ReducedSetFitzHughNagumo parameter)" ;
+    dcterms:description "Fixed SJ_2008 quadrature constant (iZU)." ;
+    schema1:defaultValue "[-3.033148827134955, 1.3877787807814457e-17, 3.033148827134998]" ;
+    skos:notation "iZU" .
+
+<https://w3id.org/tvbo/ReducedSetFitzHughNagumo/parameters/iZV> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "iZV (ReducedSetFitzHughNagumo parameter)" ;
+    dcterms:description "Fixed SJ_2008 quadrature constant (iZV)." ;
+    schema1:defaultValue "[-3.033148827134955, 1.3877787807814457e-17, 3.033148827134998]" ;
+    skos:notation "iZV" .
+
+<https://w3id.org/tvbo/ReducedSetFitzHughNagumo/parameters/mu> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "mu (ReducedSetFitzHughNagumo parameter)" ;
+    schema1:defaultValue 0e+00 ;
+    skos:notation "mu" .
+
+<https://w3id.org/tvbo/ReducedSetFitzHughNagumo/parameters/sigma> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "sigma (ReducedSetFitzHughNagumo parameter)" ;
+    schema1:defaultValue 3.5e-01 ;
+    skos:notation "sigma" .
+
+<https://w3id.org/tvbo/ReducedSetFitzHughNagumo/parameters/tau> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "tau (ReducedSetFitzHughNagumo parameter)" ;
+    schema1:defaultValue 3e+00 ;
+    skos:notation "tau" .
+
+<https://w3id.org/tvbo/ReducedSetFitzHughNagumo/state_variables/alpha> a owl:NamedIndividual,
+        tvbo:StateVariable ;
+    rdfs:label "alpha (ReducedSetFitzHughNagumo state variable)" ;
+    skos:notation "alpha" ;
+    tvbo:lhs "Derivative(alpha, t)" ;
+    tvbo:rhs "tau*(alpha - f_i*alpha**3/3 - beta) + K21*(mode_dot(xi, Cik) - alpha) + tau*(II_i + mode_sum(c_glob0) + local_coupling*xi)" .
+
+<https://w3id.org/tvbo/ReducedSetFitzHughNagumo/state_variables/beta> a owl:NamedIndividual,
+        tvbo:StateVariable ;
+    rdfs:label "beta (ReducedSetFitzHughNagumo state variable)" ;
+    skos:notation "beta" ;
+    tvbo:lhs "Derivative(beta, t)" ;
+    tvbo:rhs "(alpha - b*beta + n_i)/tau" .
+
+<https://w3id.org/tvbo/ReducedSetFitzHughNagumo/state_variables/eta> a owl:NamedIndividual,
+        tvbo:StateVariable ;
+    rdfs:label "eta (ReducedSetFitzHughNagumo state variable)" ;
+    skos:notation "eta" ;
+    tvbo:lhs "Derivative(eta, t)" ;
+    tvbo:rhs "(xi - b*eta + m_i)/tau" .
+
+<https://w3id.org/tvbo/ReducedSetFitzHughNagumo/state_variables/xi> a owl:NamedIndividual,
+        tvbo:StateVariable ;
+    rdfs:label "xi (ReducedSetFitzHughNagumo state variable)" ;
+    skos:notation "xi" ;
+    tvbo:lhs "Derivative(xi, t)" ;
+    tvbo:rhs "tau*(xi - e_i*xi**3/3 - eta) + K11*(mode_dot(xi, Aik) - xi) - K12*(mode_dot(alpha, Bik) - xi) + tau*(IE_i + mode_sum(c_glob0) + local_coupling*xi)" .
+
+<https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/A_ik> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "A_ik (ReducedSetHindmarshRose parameter)" ;
+    dcterms:description "Fixed SJ_2008 quadrature constant (A_ik)." ;
+    schema1:defaultValue "[[0.3328165811190223, 0.18525241779532714, 0.3328165811190241], [0.5984537933538554, 0.3331114447027479, 0.5984537933538587], [0.33281658111902046, 0.18525241779532614, 0.33281658111902235]]" ;
+    skos:notation "A_ik" .
+
+<https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/B_ik> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "B_ik (ReducedSetHindmarshRose parameter)" ;
+    dcterms:description "Fixed SJ_2008 quadrature constant (B_ik)." ;
+    schema1:defaultValue "[[0.3328165811190223, 0.5984537933538554, 0.33281658111902046], [0.18525241779532714, 0.3331114447027479, 0.18525241779532614], [0.3328165811190241, 0.5984537933538587, 0.33281658111902235]]" ;
+    skos:notation "B_ik" .
+
+<https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/C_ik> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "C_ik (ReducedSetHindmarshRose parameter)" ;
+    dcterms:description "Fixed SJ_2008 quadrature constant (C_ik)." ;
+    schema1:defaultValue "[[0.3328165811190223, 0.18525241779532714, 0.3328165811190241], [0.5984537933538554, 0.3331114447027479, 0.5984537933538587], [0.33281658111902046, 0.18525241779532614, 0.33281658111902235]]" ;
+    skos:notation "C_ik" .
+
+<https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/K11> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "K11 (ReducedSetHindmarshRose parameter)" ;
+    schema1:defaultValue 5e-01 ;
+    skos:notation "K11" .
+
+<https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/K12> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "K12 (ReducedSetHindmarshRose parameter)" ;
+    schema1:defaultValue 1e-01 ;
+    skos:notation "K12" .
+
+<https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/K21> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "K21 (ReducedSetHindmarshRose parameter)" ;
+    schema1:defaultValue 1.5e-01 ;
+    skos:notation "K21" .
+
+<https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/a> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "a (ReducedSetHindmarshRose parameter)" ;
+    schema1:defaultValue 1e+00 ;
+    skos:notation "a" .
+
+<https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/b> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "b (ReducedSetHindmarshRose parameter)" ;
+    schema1:defaultValue 3e+00 ;
+    skos:notation "b" .
+
+<https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/c> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "c (ReducedSetHindmarshRose parameter)" ;
+    schema1:defaultValue 1e+00 ;
+    skos:notation "c" .
+
+<https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/d> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "d (ReducedSetHindmarshRose parameter)" ;
+    schema1:defaultValue 5e+00 ;
+    skos:notation "d" .
+
+<https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/iU0> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "iU0 (ReducedSetHindmarshRose parameter)" ;
+    dcterms:description "Fixed SJ_2008 quadrature constant (iU0)." ;
+    schema1:defaultValue "[1.6668762461300366, 0.9278169186250886, 1.666876246130046]" ;
+    skos:notation "iU0" .
+
+<https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/iU3> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "iU3 (ReducedSetHindmarshRose parameter)" ;
+    dcterms:description "Fixed SJ_2008 quadrature constant (iU3)." ;
+    schema1:defaultValue "[0.5999245608794813, 1.0777988414803623, 0.5999245608794778]" ;
+    skos:notation "iU3" .
+
+<https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/iU4> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "iU4 (ReducedSetHindmarshRose parameter)" ;
+    dcterms:description "Fixed SJ_2008 quadrature constant (iU4)." ;
+    schema1:defaultValue "[0.35990947874643836, 1.1616503426964113, 0.3599094787464342]" ;
+    skos:notation "iU4" .
+
+<https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/iV0> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "iV0 (ReducedSetHindmarshRose parameter)" ;
+    dcterms:description "Fixed SJ_2008 quadrature constant (iV0)." ;
+    schema1:defaultValue "[1.6668762461300366, 0.9278169186250886, 1.666876246130046]" ;
+    skos:notation "iV0" .
+
+<https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/iV3> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "iV3 (ReducedSetHindmarshRose parameter)" ;
+    dcterms:description "Fixed SJ_2008 quadrature constant (iV3)." ;
+    schema1:defaultValue "[0.5999245608794813, 1.0777988414803623, 0.5999245608794778]" ;
+    skos:notation "iV3" .
+
+<https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/iV4> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "iV4 (ReducedSetHindmarshRose parameter)" ;
+    dcterms:description "Fixed SJ_2008 quadrature constant (iV4)." ;
+    schema1:defaultValue "[0.35990947874643836, 1.1616503426964113, 0.3599094787464342]" ;
+    skos:notation "iV4" .
+
+<https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/iZU> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "iZU (ReducedSetHindmarshRose parameter)" ;
+    dcterms:description "Fixed SJ_2008 quadrature constant (iZU)." ;
+    schema1:defaultValue "[-3.033148827134955, 1.3877787807814457e-17, 3.033148827134998]" ;
+    skos:notation "iZU" .
+
+<https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/iZV> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "iZV (ReducedSetHindmarshRose parameter)" ;
+    dcterms:description "Fixed SJ_2008 quadrature constant (iZV)." ;
+    schema1:defaultValue "[-3.033148827134955, 1.3877787807814457e-17, 3.033148827134998]" ;
+    skos:notation "iZV" .
+
+<https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/mu> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "mu (ReducedSetHindmarshRose parameter)" ;
+    schema1:defaultValue 3.3e+00 ;
+    skos:notation "mu" .
+
+<https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/r> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "r (ReducedSetHindmarshRose parameter)" ;
+    schema1:defaultValue 6e-03 ;
+    skos:notation "r" .
+
+<https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/s> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "s (ReducedSetHindmarshRose parameter)" ;
+    schema1:defaultValue 4e+00 ;
+    skos:notation "s" .
+
+<https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/sigma> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "sigma (ReducedSetHindmarshRose parameter)" ;
+    schema1:defaultValue 3e-01 ;
+    skos:notation "sigma" .
+
+<https://w3id.org/tvbo/ReducedSetHindmarshRose/parameters/xo> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "xo (ReducedSetHindmarshRose parameter)" ;
+    schema1:defaultValue -1.6e+00 ;
+    skos:notation "xo" .
+
+<https://w3id.org/tvbo/ReducedSetHindmarshRose/state_variables/alpha> a owl:NamedIndividual,
+        tvbo:StateVariable ;
+    rdfs:label "alpha (ReducedSetHindmarshRose state variable)" ;
+    skos:notation "alpha" ;
+    tvbo:lhs "Derivative(alpha, t)" ;
+    tvbo:rhs "beta - e_i*alpha**3 + f_i*alpha**2 - gamma + K21*(mode_dot(xi, C_ik) - alpha) + II_i + mode_sum(c_glob0) + local_coupling*xi" .
+
+<https://w3id.org/tvbo/ReducedSetHindmarshRose/state_variables/beta> a owl:NamedIndividual,
+        tvbo:StateVariable ;
+    rdfs:label "beta (ReducedSetHindmarshRose state variable)" ;
+    skos:notation "beta" ;
+    tvbo:lhs "Derivative(beta, t)" ;
+    tvbo:rhs "h_i - p_i*alpha**2 - beta" .
+
+<https://w3id.org/tvbo/ReducedSetHindmarshRose/state_variables/eta> a owl:NamedIndividual,
+        tvbo:StateVariable ;
+    rdfs:label "eta (ReducedSetHindmarshRose state variable)" ;
+    skos:notation "eta" ;
+    tvbo:lhs "Derivative(eta, t)" ;
+    tvbo:rhs "c_i - d_i*xi**2 - eta" .
+
+<https://w3id.org/tvbo/ReducedSetHindmarshRose/state_variables/gamma> a owl:NamedIndividual,
+        tvbo:StateVariable ;
+    rdfs:label "gamma (ReducedSetHindmarshRose state variable)" ;
+    skos:notation "gamma" ;
+    tvbo:lhs "Derivative(gamma, t)" ;
+    tvbo:rhs "r*s*alpha - r*gamma - n_i" .
+
+<https://w3id.org/tvbo/ReducedSetHindmarshRose/state_variables/tau> a owl:NamedIndividual,
+        tvbo:StateVariable ;
+    rdfs:label "tau (ReducedSetHindmarshRose state variable)" ;
+    skos:notation "tau" ;
+    tvbo:lhs "Derivative(tau, t)" ;
+    tvbo:rhs "r*s*xi - r*tau - m_i" .
+
+<https://w3id.org/tvbo/ReducedSetHindmarshRose/state_variables/xi> a owl:NamedIndividual,
+        tvbo:StateVariable ;
+    rdfs:label "xi (ReducedSetHindmarshRose state variable)" ;
+    skos:notation "xi" ;
+    tvbo:lhs "Derivative(xi, t)" ;
+    tvbo:rhs "eta - a_i*xi**3 + b_i*xi**2 - tau + K11*(mode_dot(xi, A_ik) - xi) - K12*(mode_dot(alpha, B_ik) - xi) + IE_i + mode_sum(c_glob0) + local_coupling*xi" .
 
 <https://w3id.org/tvbo/ReducedWongWang/derived_variables/H> a owl:NamedIndividual,
         tvbo:DerivedVariable ;
@@ -6359,7 +8143,7 @@ Describes relationship between membrane voltage and channel conductance.""" ;
     dcterms:description "(NMDAR)-mediated synaptic input current to the neurons population (Deco et al., 2013)." ;
     skos:notation "x" ;
     tvbo:lhs "x" ;
-    tvbo:rhs "I_o + J_N*S*local_coupling + J_N*S*w + J_N*c_pop0" .
+    tvbo:rhs "I_o + J_N*S*local_coupling + J_N*S*w + J_N*c_glob" .
 
 <https://w3id.org/tvbo/ReducedWongWang/parameters/I_o> a owl:NamedIndividual,
         tvbo:Parameter ;
@@ -6946,7 +8730,7 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     oboInOwl:hasDbXref GO:0060080 ;
     skos:notation "alpha" ;
     tvbo:lhs "Derivative(alpha, t)" ;
-    tvbo:rhs "tau*(alpha - f_i*alpha**3/3 - beta) + K21*(Cik*xi - alpha) + tau*(II_i + c_pop0 + local_coupling*xi)" .
+    tvbo:rhs "tau*(alpha - f_i*alpha**3/3 - beta) + K21*(Cik*xi - alpha) + tau*(II_i + c_glob + local_coupling*xi)" .
 
 <https://w3id.org/tvbo/StefanescuJirsa2D/state_variables/beta> a owl:NamedIndividual,
         tvbo:StateVariable ;
@@ -6973,7 +8757,7 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     oboInOwl:hasDbXref GO:0060079 ;
     skos:notation "xi" ;
     tvbo:lhs "Derivative(xi, t)" ;
-    tvbo:rhs "tau*(xi - e_i*xi**3/3 - eta) + K11*(Aik*xi - xi) - K12*(Bik*alpha - xi) + tau*(IE_i + c_pop0 + local_coupling*xi)" .
+    tvbo:rhs "tau*(xi - e_i*xi**3/3 - eta) + K11*(Aik*xi - xi) - K12*(Bik*alpha - xi) + tau*(IE_i + c_glob + local_coupling*xi)" .
 
 <https://w3id.org/tvbo/StefanescuJirsa3D/derived_variables/A_ik> a owl:NamedIndividual,
         tvbo:DerivedVariable ;
@@ -7199,7 +8983,7 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     oboInOwl:hasDbXref GO:0060080 ;
     skos:notation "alpha" ;
     tvbo:lhs "Derivative(alpha, t)" ;
-    tvbo:rhs "beta - e_i*alpha**3 + f_i*alpha**2 - gamma + K_21*(C_ik*xi - alpha) + II_i + c_pop0 + local_coupling*xi" .
+    tvbo:rhs "beta - e_i*alpha**3 + f_i*alpha**2 - gamma + K_21*(C_ik*xi - alpha) + II_i + c_glob + local_coupling*xi" .
 
 <https://w3id.org/tvbo/StefanescuJirsa3D/state_variables/beta> a owl:NamedIndividual,
         tvbo:StateVariable ;
@@ -7244,7 +9028,7 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     oboInOwl:hasDbXref GO:0042391 ;
     skos:notation "xi" ;
     tvbo:lhs "Derivative(xi, t)" ;
-    tvbo:rhs "eta - a_i*xi**3 + b_i*xi**2 - tau + K_11*(A_ik*xi - xi) - K_12*(B_ik*alpha - xi) + IE_i + c_pop0 + local_coupling*xi" .
+    tvbo:rhs "eta - a_i*xi**3 + b_i*xi**2 - tau + K_11*(A_ik*xi - xi) - K_12*(B_ik*alpha - xi) + IE_i + c_glob + local_coupling*xi" .
 
 <https://w3id.org/tvbo/SupHopf/derived_variables/lc_0> a owl:NamedIndividual,
         tvbo:DerivedVariable ;
@@ -7275,7 +9059,7 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     dcterms:description "First state-variable of the Supercritical Hopf model" ;
     skos:notation "x" ;
     tvbo:lhs "Derivative(x, t)" ;
-    tvbo:rhs "c_pop0 + lc_0 - omega*y + x*(a - x**2 - y**2)" .
+    tvbo:rhs "c_glob0 + lc_0 - omega*y + x*(a - x**2 - y**2)" .
 
 <https://w3id.org/tvbo/SupHopf/state_variables/y> a owl:NamedIndividual,
         tvbo:StateVariable ;
@@ -7283,7 +9067,7 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     dcterms:description "Second state-variable of the Supercritical Hopf model" ;
     skos:notation "y" ;
     tvbo:lhs "Derivative(y, t)" ;
-    tvbo:rhs "c_pop1 + omega*x + y*(a - x**2 - y**2)" .
+    tvbo:rhs "c_glob1 + omega*x + y*(a - x**2 - y**2)" .
 
 <https://w3id.org/tvbo/TsodyksMarkram/derived_variables/SS0> a owl:NamedIndividual,
         tvbo:DerivedVariable ;
@@ -7409,7 +9193,7 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     oboInOwl:hasDbXref GO:0042391 ;
     skos:notation "x_e" ;
     tvbo:lhs "x_e" ;
-    tvbo:rhs "alpha_e*(-I*c_ei + P + c_ee*E + c_pop0 + lc_0 + lc_1 - theta_e)" .
+    tvbo:rhs "alpha_e*(-I*c_ei + P + c_ee*E + c_glob + lc_0 + lc_1 - theta_e)" .
 
 <https://w3id.org/tvbo/WilsonCowan/derived_variables/x_i> a owl:NamedIndividual,
         tvbo:DerivedVariable ;
@@ -7650,7 +9434,7 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "Fe_ext (ZerlautAdaptationFirstOrder derived variable)" ;
     skos:notation "Fe_ext" ;
     tvbo:lhs "Fe_ext" ;
-    tvbo:rhs "Piecewise((0, K_ext_e*(c_pop0 + lc_E + ou_drift*weight_noise) < 0), (c_pop0 + lc_E + ou_drift*weight_noise, True))" .
+    tvbo:rhs "Piecewise((0, K_ext_e*(c_glob + lc_E + ou_drift*weight_noise) < 0), (c_glob + lc_E + ou_drift*weight_noise, True))" .
 
 <https://w3id.org/tvbo/ZerlautAdaptationFirstOrder/derived_variables/Fi_ext> a owl:NamedIndividual,
         tvbo:DerivedVariable ;
@@ -8421,12 +10205,654 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     tvbo:lhs "Derivative(ou_drift, t)" ;
     tvbo:rhs "-ou_drift/tau_OU" .
 
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/derived_variables/E_input_excitatory> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "E_input_excitatory (ZerlautAdaptationSecondOrder derived variable)" ;
+    dcterms:description "External excitatory input onto the excitatory population (clamped to be non-negative)." ;
+    skos:notation "E_input_excitatory" ;
+    tvbo:lhs "E_input_excitatory" ;
+    tvbo:rhs "Piecewise((0.0, c_glob + local_coupling*E + external_input_ex_ex + weight_noise*ou_drift < 0), (c_glob + local_coupling*E + external_input_ex_ex + weight_noise*ou_drift, True))" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/derived_variables/E_input_inhibitory> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "E_input_inhibitory (ZerlautAdaptationSecondOrder derived variable)" ;
+    dcterms:description "External excitatory input onto the inhibitory population (clamped to be non-negative)." ;
+    skos:notation "E_input_inhibitory" ;
+    tvbo:lhs "E_input_inhibitory" ;
+    tvbo:rhs "Piecewise((0.0, S_i*c_glob + local_coupling*E + external_input_in_ex + weight_noise*ou_drift < 0), (S_i*c_glob + local_coupling*E + external_input_in_ex + weight_noise*ou_drift, True))" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/derived_variables/I_input_excitatory> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "I_input_excitatory (ZerlautAdaptationSecondOrder derived variable)" ;
+    dcterms:description "External inhibitory input onto the excitatory population." ;
+    skos:notation "I_input_excitatory" ;
+    tvbo:lhs "I_input_excitatory" ;
+    tvbo:rhs "local_coupling*I + external_input_ex_in" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/derived_variables/I_input_inhibitory> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "I_input_inhibitory (ZerlautAdaptationSecondOrder derived variable)" ;
+    dcterms:description "External inhibitory input onto the inhibitory population." ;
+    skos:notation "I_input_inhibitory" ;
+    tvbo:lhs "I_input_inhibitory" ;
+    tvbo:rhs "local_coupling*I + external_input_in_in" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/derived_variables/TFe> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "TFe (ZerlautAdaptationSecondOrder derived variable)" ;
+    dcterms:description "Excitatory transfer-function output evaluated at the current state." ;
+    skos:notation "TFe" ;
+    tvbo:lhs "TFe" ;
+    tvbo:rhs "TF_e(E, I, E_input_excitatory, I_input_excitatory, W_e)" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/derived_variables/TFi> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "TFi (ZerlautAdaptationSecondOrder derived variable)" ;
+    dcterms:description "Inhibitory transfer-function output evaluated at the current state." ;
+    skos:notation "TFi" ;
+    tvbo:lhs "TFi" ;
+    tvbo:rhs "TF_i(E, I, E_input_inhibitory, I_input_inhibitory, W_i)" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/derived_variables/d2_fefe_e> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "d2_fefe_e (ZerlautAdaptationSecondOrder derived variable)" ;
+    dcterms:description "Second central difference of TF_e w.r.t. excitatory rate." ;
+    skos:notation "d2_fefe_e" ;
+    tvbo:lhs "d2_fefe_e" ;
+    tvbo:rhs "(TF_e(E + 1.0e-7, I, E_input_excitatory, I_input_excitatory, W_e) - 2*TFe + TF_e(E - 1.0e-7, I, E_input_excitatory, I_input_excitatory, W_e))/((1.0e-7*1000.0)**2)" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/derived_variables/d2_fefe_i> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "d2_fefe_i (ZerlautAdaptationSecondOrder derived variable)" ;
+    dcterms:description "Second central difference of TF_i w.r.t. excitatory rate." ;
+    skos:notation "d2_fefe_i" ;
+    tvbo:lhs "d2_fefe_i" ;
+    tvbo:rhs "(TF_i(E + 1.0e-7, I, E_input_inhibitory, I_input_inhibitory, W_i) - 2*TFi + TF_i(E - 1.0e-7, I, E_input_inhibitory, I_input_inhibitory, W_i))/((1.0e-7*1000.0)**2)" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/derived_variables/d2_fefi_e> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "d2_fefi_e (ZerlautAdaptationSecondOrder derived variable)" ;
+    dcterms:description "Mixed second central difference of TF_e (d/dfi of d/dfe)." ;
+    skos:notation "d2_fefi_e" ;
+    tvbo:lhs "d2_fefi_e" ;
+    tvbo:rhs "((TF_e(E + 1.0e-7, I + 1.0e-7, E_input_excitatory, I_input_excitatory, W_e) - TF_e(E - 1.0e-7, I + 1.0e-7, E_input_excitatory, I_input_excitatory, W_e))/(2*1.0e-7*1000.0) - (TF_e(E + 1.0e-7, I - 1.0e-7, E_input_excitatory, I_input_excitatory, W_e) - TF_e(E - 1.0e-7, I - 1.0e-7, E_input_excitatory, I_input_excitatory, W_e))/(2*1.0e-7*1000.0))/(2*1.0e-7*1000.0)" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/derived_variables/d2_fefi_i> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "d2_fefi_i (ZerlautAdaptationSecondOrder derived variable)" ;
+    dcterms:description "Mixed second central difference of TF_i (d/dfi of d/dfe)." ;
+    skos:notation "d2_fefi_i" ;
+    tvbo:lhs "d2_fefi_i" ;
+    tvbo:rhs "((TF_i(E + 1.0e-7, I + 1.0e-7, E_input_inhibitory, I_input_inhibitory, W_i) - TF_i(E - 1.0e-7, I + 1.0e-7, E_input_inhibitory, I_input_inhibitory, W_i))/(2*1.0e-7*1000.0) - (TF_i(E + 1.0e-7, I - 1.0e-7, E_input_inhibitory, I_input_inhibitory, W_i) - TF_i(E - 1.0e-7, I - 1.0e-7, E_input_inhibitory, I_input_inhibitory, W_i))/(2*1.0e-7*1000.0))/(2*1.0e-7*1000.0)" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/derived_variables/d2_fife_e> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "d2_fife_e (ZerlautAdaptationSecondOrder derived variable)" ;
+    dcterms:description "Mixed second central difference of TF_e (d/dfe of d/dfi)." ;
+    skos:notation "d2_fife_e" ;
+    tvbo:lhs "d2_fife_e" ;
+    tvbo:rhs "((TF_e(E + 1.0e-7, I + 1.0e-7, E_input_excitatory, I_input_excitatory, W_e) - TF_e(E + 1.0e-7, I - 1.0e-7, E_input_excitatory, I_input_excitatory, W_e))/(2*1.0e-7*1000.0) - (TF_e(E - 1.0e-7, I + 1.0e-7, E_input_excitatory, I_input_excitatory, W_e) - TF_e(E - 1.0e-7, I - 1.0e-7, E_input_excitatory, I_input_excitatory, W_e))/(2*1.0e-7*1000.0))/(2*1.0e-7*1000.0)" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/derived_variables/d2_fife_i> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "d2_fife_i (ZerlautAdaptationSecondOrder derived variable)" ;
+    dcterms:description "Mixed second central difference of TF_i (d/dfe of d/dfi)." ;
+    skos:notation "d2_fife_i" ;
+    tvbo:lhs "d2_fife_i" ;
+    tvbo:rhs "((TF_i(E + 1.0e-7, I + 1.0e-7, E_input_inhibitory, I_input_inhibitory, W_i) - TF_i(E + 1.0e-7, I - 1.0e-7, E_input_inhibitory, I_input_inhibitory, W_i))/(2*1.0e-7*1000.0) - (TF_i(E - 1.0e-7, I + 1.0e-7, E_input_inhibitory, I_input_inhibitory, W_i) - TF_i(E - 1.0e-7, I - 1.0e-7, E_input_inhibitory, I_input_inhibitory, W_i))/(2*1.0e-7*1000.0))/(2*1.0e-7*1000.0)" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/derived_variables/d2_fifi_e> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "d2_fifi_e (ZerlautAdaptationSecondOrder derived variable)" ;
+    dcterms:description "Second central difference of TF_e w.r.t. inhibitory rate." ;
+    skos:notation "d2_fifi_e" ;
+    tvbo:lhs "d2_fifi_e" ;
+    tvbo:rhs "(TF_e(E, I + 1.0e-7, E_input_excitatory, I_input_excitatory, W_e) - 2*TFe + TF_e(E, I - 1.0e-7, E_input_excitatory, I_input_excitatory, W_e))/((1.0e-7*1000.0)**2)" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/derived_variables/d2_fifi_i> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "d2_fifi_i (ZerlautAdaptationSecondOrder derived variable)" ;
+    dcterms:description "Second central difference of TF_i w.r.t. inhibitory rate." ;
+    skos:notation "d2_fifi_i" ;
+    tvbo:lhs "d2_fifi_i" ;
+    tvbo:rhs "(TF_i(E, I + 1.0e-7, E_input_inhibitory, I_input_inhibitory, W_i) - 2*TFi + TF_i(E, I - 1.0e-7, E_input_inhibitory, I_input_inhibitory, W_i))/((1.0e-7*1000.0)**2)" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/derived_variables/dfe_TFe> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "dfe_TFe (ZerlautAdaptationSecondOrder derived variable)" ;
+    dcterms:description "Central finite-difference derivative of TF_e w.r.t. excitatory rate (df=1e-7)." ;
+    skos:notation "dfe_TFe" ;
+    tvbo:lhs "dfe_TFe" ;
+    tvbo:rhs "(TF_e(E + 1.0e-7, I, E_input_excitatory, I_input_excitatory, W_e) - TF_e(E - 1.0e-7, I, E_input_excitatory, I_input_excitatory, W_e))/(2*1.0e-7*1000.0)" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/derived_variables/dfe_TFi> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "dfe_TFi (ZerlautAdaptationSecondOrder derived variable)" ;
+    dcterms:description "Central finite-difference derivative of TF_i w.r.t. excitatory rate (df=1e-7)." ;
+    skos:notation "dfe_TFi" ;
+    tvbo:lhs "dfe_TFi" ;
+    tvbo:rhs "(TF_i(E + 1.0e-7, I, E_input_inhibitory, I_input_inhibitory, W_i) - TF_i(E - 1.0e-7, I, E_input_inhibitory, I_input_inhibitory, W_i))/(2*1.0e-7*1000.0)" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/derived_variables/dfi_TFe> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "dfi_TFe (ZerlautAdaptationSecondOrder derived variable)" ;
+    dcterms:description "Central finite-difference derivative of TF_e w.r.t. inhibitory rate (df=1e-7)." ;
+    skos:notation "dfi_TFe" ;
+    tvbo:lhs "dfi_TFe" ;
+    tvbo:rhs "(TF_e(E, I + 1.0e-7, E_input_excitatory, I_input_excitatory, W_e) - TF_e(E, I - 1.0e-7, E_input_excitatory, I_input_excitatory, W_e))/(2*1.0e-7*1000.0)" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/derived_variables/dfi_TFi> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "dfi_TFi (ZerlautAdaptationSecondOrder derived variable)" ;
+    dcterms:description "Central finite-difference derivative of TF_i w.r.t. inhibitory rate (df=1e-7)." ;
+    skos:notation "dfi_TFi" ;
+    tvbo:lhs "dfi_TFi" ;
+    tvbo:rhs "(TF_i(E, I + 1.0e-7, E_input_inhibitory, I_input_inhibitory, W_i) - TF_i(E, I - 1.0e-7, E_input_inhibitory, I_input_inhibitory, W_i))/(2*1.0e-7*1000.0)" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/derived_variables/muV_e> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "muV_e (ZerlautAdaptationSecondOrder derived variable)" ;
+    dcterms:description "Mean membrane potential of the excitatory population (used for adaptation)." ;
+    skos:notation "muV_e" ;
+    tvbo:lhs "muV_e" ;
+    tvbo:rhs "muV(E, I, E_input_excitatory, I_input_excitatory, W_e, E_L_e)" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/derived_variables/muV_i> a owl:NamedIndividual,
+        tvbo:DerivedVariable ;
+    rdfs:label "muV_i (ZerlautAdaptationSecondOrder derived variable)" ;
+    dcterms:description "Mean membrane potential of the inhibitory population (used for adaptation)." ;
+    skos:notation "muV_i" ;
+    tvbo:lhs "muV_i" ;
+    tvbo:rhs "muV(E, I, E_input_inhibitory, I_input_inhibitory, W_i, E_L_i)" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/C_m> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "C_m (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "membrane capacitance [pF]" ;
+    schema1:defaultValue 2e+02 ;
+    skos:definition "Membrane capacitance." ;
+    skos:notation "C_m" ;
+    tvbo:unit "pF" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/E_L_e> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "E_L_e (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "leak reversal potential for excitatory [mV]" ;
+    schema1:defaultValue -6.5e+01 ;
+    skos:definition "Leak reversal potential for the excitatory population." ;
+    skos:notation "E_L_e" ;
+    tvbo:unit "mV" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/E_L_i> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "E_L_i (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "leak reversal potential for inhibitory [mV]" ;
+    schema1:defaultValue -6.5e+01 ;
+    skos:definition "Leak reversal potential for the inhibitory population." ;
+    skos:notation "E_L_i" ;
+    tvbo:unit "mV" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/E_e> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "E_e (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "excitatory reversal potential [mV]" ;
+    schema1:defaultValue 0e+00 ;
+    skos:definition "Excitatory synaptic reversal potential." ;
+    skos:notation "E_e" ;
+    tvbo:unit "mV" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/E_i> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "E_i (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "inhibitory reversal potential [mV]" ;
+    schema1:defaultValue -8e+01 ;
+    skos:definition "Inhibitory synaptic reversal potential." ;
+    skos:notation "E_i" ;
+    tvbo:unit "mV" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/K_ext_e> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "K_ext_e (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "Number of excitatory connexions from external population" ;
+    schema1:defaultValue 400 ;
+    skos:definition "Number of excitatory connexions from the external population." ;
+    skos:notation "K_ext_e" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/K_ext_i> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "K_ext_i (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "Number of inhibitory connexions from external population" ;
+    schema1:defaultValue 0 ;
+    skos:definition "Number of inhibitory connexions from the external population." ;
+    skos:notation "K_ext_i" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/N_tot> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "N_tot (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "cell number" ;
+    schema1:defaultValue 10000 ;
+    skos:definition "Total number of cells in the network." ;
+    skos:notation "N_tot" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/P_e0> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "P_e0 (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "Polynome of excitatory phenomenological threshold (coefficient 0)" ;
+    schema1:defaultValue -4.983106e-02 ;
+    skos:definition "Excitatory phenomenological-threshold polynomial coefficient (order 0)." ;
+    skos:notation "P_e0" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/P_e1> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "P_e1 (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "Polynome of excitatory phenomenological threshold (coefficient 1)" ;
+    schema1:defaultValue 5.063551e-03 ;
+    skos:definition "Excitatory phenomenological-threshold polynomial coefficient (order 1)." ;
+    skos:notation "P_e1" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/P_e2> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "P_e2 (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "Polynome of excitatory phenomenological threshold (coefficient 2)" ;
+    schema1:defaultValue -2.347012e-02 ;
+    skos:definition "Excitatory phenomenological-threshold polynomial coefficient (order 2)." ;
+    skos:notation "P_e2" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/P_e3> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "P_e3 (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "Polynome of excitatory phenomenological threshold (coefficient 3)" ;
+    schema1:defaultValue 2.295151e-03 ;
+    skos:definition "Excitatory phenomenological-threshold polynomial coefficient (order 3)." ;
+    skos:notation "P_e3" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/P_e4> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "P_e4 (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "Polynome of excitatory phenomenological threshold (coefficient 4)" ;
+    schema1:defaultValue -4.105303e-04 ;
+    skos:definition "Excitatory phenomenological-threshold polynomial coefficient (order 4)." ;
+    skos:notation "P_e4" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/P_e5> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "P_e5 (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "Polynome of excitatory phenomenological threshold (coefficient 5)" ;
+    schema1:defaultValue 1.054705e-02 ;
+    skos:definition "Excitatory phenomenological-threshold polynomial coefficient (order 5)." ;
+    skos:notation "P_e5" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/P_e6> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "P_e6 (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "Polynome of excitatory phenomenological threshold (coefficient 6)" ;
+    schema1:defaultValue -3.659253e-02 ;
+    skos:definition "Excitatory phenomenological-threshold polynomial coefficient (order 6)." ;
+    skos:notation "P_e6" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/P_e7> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "P_e7 (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "Polynome of excitatory phenomenological threshold (coefficient 7)" ;
+    schema1:defaultValue 7.437488e-03 ;
+    skos:definition "Excitatory phenomenological-threshold polynomial coefficient (order 7)." ;
+    skos:notation "P_e7" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/P_e8> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "P_e8 (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "Polynome of excitatory phenomenological threshold (coefficient 8)" ;
+    schema1:defaultValue 1.265065e-03 ;
+    skos:definition "Excitatory phenomenological-threshold polynomial coefficient (order 8)." ;
+    skos:notation "P_e8" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/P_e9> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "P_e9 (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "Polynome of excitatory phenomenological threshold (coefficient 9)" ;
+    schema1:defaultValue -4.072161e-02 ;
+    skos:definition "Excitatory phenomenological-threshold polynomial coefficient (order 9)." ;
+    skos:notation "P_e9" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/P_i0> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "P_i0 (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "Polynome of inhibitory phenomenological threshold (coefficient 0)" ;
+    schema1:defaultValue -5.149122e-02 ;
+    skos:definition "Inhibitory phenomenological-threshold polynomial coefficient (order 0)." ;
+    skos:notation "P_i0" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/P_i1> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "P_i1 (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "Polynome of inhibitory phenomenological threshold (coefficient 1)" ;
+    schema1:defaultValue 4.003689e-03 ;
+    skos:definition "Inhibitory phenomenological-threshold polynomial coefficient (order 1)." ;
+    skos:notation "P_i1" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/P_i2> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "P_i2 (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "Polynome of inhibitory phenomenological threshold (coefficient 2)" ;
+    schema1:defaultValue -8.352014e-03 ;
+    skos:definition "Inhibitory phenomenological-threshold polynomial coefficient (order 2)." ;
+    skos:notation "P_i2" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/P_i3> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "P_i3 (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "Polynome of inhibitory phenomenological threshold (coefficient 3)" ;
+    schema1:defaultValue 2.414238e-04 ;
+    skos:definition "Inhibitory phenomenological-threshold polynomial coefficient (order 3)." ;
+    skos:notation "P_i3" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/P_i4> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "P_i4 (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "Polynome of inhibitory phenomenological threshold (coefficient 4)" ;
+    schema1:defaultValue -5.070645e-04 ;
+    skos:definition "Inhibitory phenomenological-threshold polynomial coefficient (order 4)." ;
+    skos:notation "P_i4" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/P_i5> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "P_i5 (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "Polynome of inhibitory phenomenological threshold (coefficient 5)" ;
+    schema1:defaultValue 1.434539e-03 ;
+    skos:definition "Inhibitory phenomenological-threshold polynomial coefficient (order 5)." ;
+    skos:notation "P_i5" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/P_i6> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "P_i6 (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "Polynome of inhibitory phenomenological threshold (coefficient 6)" ;
+    schema1:defaultValue -1.468669e-02 ;
+    skos:definition "Inhibitory phenomenological-threshold polynomial coefficient (order 6)." ;
+    skos:notation "P_i6" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/P_i7> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "P_i7 (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "Polynome of inhibitory phenomenological threshold (coefficient 7)" ;
+    schema1:defaultValue 4.502706e-03 ;
+    skos:definition "Inhibitory phenomenological-threshold polynomial coefficient (order 7)." ;
+    skos:notation "P_i7" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/P_i8> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "P_i8 (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "Polynome of inhibitory phenomenological threshold (coefficient 8)" ;
+    schema1:defaultValue 2.847219e-03 ;
+    skos:definition "Inhibitory phenomenological-threshold polynomial coefficient (order 8)." ;
+    skos:notation "P_i8" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/P_i9> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "P_i9 (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "Polynome of inhibitory phenomenological threshold (coefficient 9)" ;
+    schema1:defaultValue -1.53578e-02 ;
+    skos:definition "Inhibitory phenomenological-threshold polynomial coefficient (order 9)." ;
+    skos:notation "P_i9" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/Q_e> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "Q_e (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "excitatory quantal conductance [nS]" ;
+    schema1:defaultValue 1.5e+00 ;
+    skos:definition "Excitatory quantal conductance." ;
+    skos:notation "Q_e" ;
+    tvbo:unit "nS" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/Q_i> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "Q_i (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "inhibitory quantal conductance [nS]" ;
+    schema1:defaultValue 5e+00 ;
+    skos:definition "Inhibitory quantal conductance." ;
+    skos:notation "Q_i" ;
+    tvbo:unit "nS" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/S_i> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "S_i (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "Scaling of the remote input for the inhibitory population" ;
+    schema1:defaultValue 1e+00 ;
+    skos:definition "Scaling of the remote (long-range) input for the inhibitory population with respect to the excitatory population." ;
+    skos:notation "S_i" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/T> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "T (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "time scale of describing network activity" ;
+    schema1:defaultValue 2e+01 ;
+    skos:definition "Time scale describing the network activity." ;
+    skos:notation "T" ;
+    tvbo:unit "ms" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/a_e> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "a_e (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "Excitatory adaptation conductance [nS]" ;
+    schema1:defaultValue 4e+00 ;
+    skos:definition "Excitatory subthreshold adaptation conductance." ;
+    skos:notation "a_e" ;
+    tvbo:unit "nS" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/a_i> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "a_i (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "Inhibitory adaptation conductance [nS]" ;
+    schema1:defaultValue 0e+00 ;
+    skos:definition "Inhibitory subthreshold adaptation conductance." ;
+    skos:notation "a_i" ;
+    tvbo:unit "nS" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/b_e> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "b_e (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "Excitatory adaptation current increment [pA]" ;
+    schema1:defaultValue 6e+01 ;
+    skos:definition "Excitatory adaptation current increment." ;
+    skos:notation "b_e" ;
+    tvbo:unit "pA" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/b_i> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "b_i (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "Inhibitory adaptation current increment [pA]" ;
+    schema1:defaultValue 0e+00 ;
+    skos:definition "Inhibitory adaptation current increment." ;
+    skos:notation "b_i" ;
+    tvbo:unit "pA" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/external_input_ex_ex> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "external_input_ex_ex (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "external drive" ;
+    schema1:defaultValue 0e+00 ;
+    skos:definition "External excitatory drive onto the excitatory population." ;
+    skos:notation "external_input_ex_ex" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/external_input_ex_in> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "external_input_ex_in (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "external drive" ;
+    schema1:defaultValue 0e+00 ;
+    skos:definition "External inhibitory drive onto the excitatory population." ;
+    skos:notation "external_input_ex_in" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/external_input_in_ex> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "external_input_in_ex (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "external drive" ;
+    schema1:defaultValue 0e+00 ;
+    skos:definition "External excitatory drive onto the inhibitory population." ;
+    skos:notation "external_input_in_ex" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/external_input_in_in> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "external_input_in_in (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "external drive" ;
+    schema1:defaultValue 0e+00 ;
+    skos:definition "External inhibitory drive onto the inhibitory population." ;
+    skos:notation "external_input_in_in" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/g> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "g (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "fraction of inhibitory cells" ;
+    schema1:defaultValue 2e-01 ;
+    skos:definition "Fraction of inhibitory cells." ;
+    skos:notation "g" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/g_L> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "g_L (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "leak conductance [nS]" ;
+    schema1:defaultValue 1e+01 ;
+    skos:definition "Leak conductance." ;
+    skos:notation "g_L" ;
+    tvbo:unit "nS" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/p_connect_e> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "p_connect_e (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "connectivity probability" ;
+    schema1:defaultValue 5e-02 ;
+    skos:definition "Connectivity probability of excitatory neurons." ;
+    skos:notation "p_connect_e" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/p_connect_i> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "p_connect_i (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "connectivity probability" ;
+    schema1:defaultValue 5e-02 ;
+    skos:definition "Connectivity probability of inhibitory neurons." ;
+    skos:notation "p_connect_i" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/tau_OU> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "tau_OU (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "time constant noise" ;
+    schema1:defaultValue 5e+00 ;
+    skos:definition "Time constant of the Ornstein-Uhlenbeck noise process." ;
+    skos:notation "tau_OU" ;
+    tvbo:unit "ms" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/tau_e> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "tau_e (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "excitatory decay [ms]" ;
+    schema1:defaultValue 5e+00 ;
+    skos:definition "Excitatory synaptic decay time constant." ;
+    skos:notation "tau_e" ;
+    tvbo:unit "ms" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/tau_i> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "tau_i (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "inhibitory decay [ms]" ;
+    schema1:defaultValue 5e+00 ;
+    skos:definition "Inhibitory synaptic decay time constant." ;
+    skos:notation "tau_i" ;
+    tvbo:unit "ms" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/tau_w_e> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "tau_w_e (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "Adaptation time constant of excitatory neurons [ms]" ;
+    schema1:defaultValue 5e+02 ;
+    skos:definition "Adaptation time constant of excitatory neurons." ;
+    skos:notation "tau_w_e" ;
+    tvbo:unit "ms" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/tau_w_i> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "tau_w_i (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "Adaptation time constant of inhibitory neurons [ms]" ;
+    schema1:defaultValue 1e+00 ;
+    skos:definition "Adaptation time constant of inhibitory neurons." ;
+    skos:notation "tau_w_i" ;
+    tvbo:unit "ms" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/parameters/weight_noise> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "weight_noise (ZerlautAdaptationSecondOrder parameter)" ;
+    dcterms:description "weight noise" ;
+    schema1:defaultValue 1.05e+01 ;
+    skos:definition "Weight of the Ornstein-Uhlenbeck noise drift onto the external excitatory input." ;
+    skos:notation "weight_noise" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/state_variables/C_ee> a owl:NamedIndividual,
+        tvbo:StateVariable ;
+    rdfs:label "C_ee (ZerlautAdaptationSecondOrder state variable)" ;
+    dcterms:description "Variance of the excitatory population activity." ;
+    skos:notation "C_ee" ;
+    tvbo:lhs "Derivative(C_ee, t)" ;
+    tvbo:rhs "(TFe*(1.0/T - TFe)/(N_tot*(1.0 - g)) + (TFe - E)**2 + 2.0*C_ee*dfe_TFe + 2.0*C_ei*dfi_TFe - 2.0*C_ee)/T" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/state_variables/C_ei> a owl:NamedIndividual,
+        tvbo:StateVariable ;
+    rdfs:label "C_ei (ZerlautAdaptationSecondOrder state variable)" ;
+    dcterms:description "Covariance between the excitatory and inhibitory population activities." ;
+    skos:notation "C_ei" ;
+    tvbo:lhs "Derivative(C_ei, t)" ;
+    tvbo:rhs "((TFe - E)*(TFi - I) + C_ee*dfe_TFe + C_ei*dfe_TFi + C_ei*dfi_TFe + C_ii*dfi_TFi - 2.0*C_ei)/T" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/state_variables/C_ii> a owl:NamedIndividual,
+        tvbo:StateVariable ;
+    rdfs:label "C_ii (ZerlautAdaptationSecondOrder state variable)" ;
+    dcterms:description "Variance of the inhibitory population activity." ;
+    skos:notation "C_ii" ;
+    tvbo:lhs "Derivative(C_ii, t)" ;
+    tvbo:rhs "(TFi*(1.0/T - TFi)/(N_tot*g) + (TFi - I)**2 + 2.0*C_ii*dfi_TFi + 2.0*C_ei*dfe_TFi - 2.0*C_ii)/T" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/state_variables/E> a owl:NamedIndividual,
+        tvbo:StateVariable ;
+    rdfs:label "E (ZerlautAdaptationSecondOrder state variable)" ;
+    dcterms:description "Firing rate of the excitatory population [kHz]." ;
+    skos:notation "E" ;
+    tvbo:lhs "Derivative(E, t)" ;
+    tvbo:rhs "(TFe - E + 0.5*C_ee*d2_fefe_e + 0.5*C_ei*d2_fefi_e + 0.5*C_ei*d2_fife_e + 0.5*C_ii*d2_fifi_e)/T" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/state_variables/I> a owl:NamedIndividual,
+        tvbo:StateVariable ;
+    rdfs:label "I (ZerlautAdaptationSecondOrder state variable)" ;
+    dcterms:description "Firing rate of the inhibitory population [kHz]." ;
+    skos:notation "I" ;
+    tvbo:lhs "Derivative(I, t)" ;
+    tvbo:rhs "(TFi - I + 0.5*C_ee*d2_fefe_i + 0.5*C_ei*d2_fefi_i + 0.5*C_ei*d2_fife_i + 0.5*C_ii*d2_fifi_i)/T" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/state_variables/W_e> a owl:NamedIndividual,
+        tvbo:StateVariable ;
+    rdfs:label "W_e (ZerlautAdaptationSecondOrder state variable)" ;
+    dcterms:description "Adaptation current of the excitatory population [pA]." ;
+    skos:notation "W_e" ;
+    tvbo:lhs "Derivative(W_e, t)" ;
+    tvbo:rhs "-W_e/tau_w_e + b_e*E + a_e*(muV_e - E_L_e)/tau_w_e" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/state_variables/W_i> a owl:NamedIndividual,
+        tvbo:StateVariable ;
+    rdfs:label "W_i (ZerlautAdaptationSecondOrder state variable)" ;
+    dcterms:description "Adaptation current of the inhibitory population [pA]." ;
+    skos:notation "W_i" ;
+    tvbo:lhs "Derivative(W_i, t)" ;
+    tvbo:rhs "-W_i/tau_w_i + b_i*I + a_i*(muV_i - E_L_i)/tau_w_i" .
+
+<https://w3id.org/tvbo/ZerlautAdaptationSecondOrder/state_variables/ou_drift> a owl:NamedIndividual,
+        tvbo:StateVariable ;
+    rdfs:label "ou_drift (ZerlautAdaptationSecondOrder state variable)" ;
+    dcterms:description "Ornstein-Uhlenbeck noise drift." ;
+    skos:notation "ou_drift" ;
+    tvbo:lhs "Derivative(ou_drift, t)" ;
+    tvbo:rhs "-ou_drift/tau_OU" .
+
 <https://w3id.org/tvbo/ZetterbergJansen/derived_variables/coupled_input> a owl:NamedIndividual,
         tvbo:DerivedVariable ;
     rdfs:label "coupled_input (ZetterbergJansen derived variable)" ;
     skos:notation "coupled_input" ;
     tvbo:lhs "coupled_input" ;
-    tvbo:rhs "2*e0/(exp(rho_1*(-c_pop0 - local_coupling*v6 + rho_2)) + 1)" .
+    tvbo:rhs "2*e0/(exp(rho_1*(-c_glob - local_coupling*v6 + rho_2)) + 1)" .
 
 <https://w3id.org/tvbo/ZetterbergJansen/derived_variables/sigma_v1> a owl:NamedIndividual,
         tvbo:DerivedVariable ;
@@ -9125,6 +11551,13 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     skos:notation "conduction_speed" ;
     tvbo:unit "mm_per_ms" .
 
+<https://w3id.org/tvbo/networks/tpl-MNI152NLin2009bAsym_cohort-HCPYA_rec-avgMatrix_atlas-HCPMMP1_desc-SCFC_relmat/parameters/conduction_speed> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "conduction_speed (tpl-MNI152NLin2009bAsym_cohort-HCPYA_rec-avgMatrix_atlas-HCPMMP1_desc-SCFC_relmat parameter)" ;
+    schema1:defaultValue 3e+00 ;
+    skos:notation "conduction_speed" ;
+    tvbo:unit "mm_per_ms" .
+
 <https://w3id.org/tvbo/networks/tpl-MNI152NLin2009bAsym_cohort-HCPYA_rec-dTOR_atlas-HCPMMP1_desc-SC_relmat/parameters/conduction_speed> a owl:NamedIndividual,
         tvbo:Parameter ;
     rdfs:label "conduction_speed (tpl-MNI152NLin2009bAsym_cohort-HCPYA_rec-dTOR_atlas-HCPMMP1_desc-SC_relmat parameter)" ;
@@ -9597,15 +12030,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         "Wilson, Hugh R." ;
     schema1:isPartOf "Biological Cybernetics" .
 
-<https://w3id.org/tvbo/studies/Zerlaut2018> a schema1:ScholarlyArticle,
-        owl:NamedIndividual ;
-    rdfs:label "Zerlaut2018" ;
-    dcterms:issued "2018" ;
-    dcterms:title "A mean-field model of conductance-based networks of adaptive exponential integrate-and-fire neurons" ;
-    schema1:author "Destexhe, Alain",
-        "Zerlaut, Yann" ;
-    schema1:isPartOf "Neural Computation" .
-
 <https://w3id.org/tvbo/studies/Zetterberg1978> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
     rdfs:label "Zetterberg1978" ;
@@ -9683,4 +12107,13 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     schema1:pagination "1314--1328" ;
     schema1:publisher "Society for Neuroscience" ;
     schema1:volumeNumber "26" .
+
+<https://w3id.org/tvbo/studies/Zerlaut2018> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Zerlaut2018" ;
+    dcterms:issued "2018" ;
+    dcterms:title "A mean-field model of conductance-based networks of adaptive exponential integrate-and-fire neurons" ;
+    schema1:author "Destexhe, Alain",
+        "Zerlaut, Yann" ;
+    schema1:isPartOf "Neural Computation" .
 
