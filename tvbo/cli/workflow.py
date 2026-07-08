@@ -99,7 +99,7 @@ def _build_plan(spec: str, *, engine: str, backend: str,
                 experiment: str | None, overrides: list[str]):
     """Return ``(plan, experiment_obj)``."""
     study, exp, study_key = _resolve_study_and_experiment(spec, experiment)
-    base = _wf.merge_workflow_spec(study, getattr(exp, "key", None)) if study is not None else {}
+    base = _wf.merge_workflow_spec(study, exp)
     parsed = _parse_overrides(overrides)
     spec_dict = _deep_merge(base, parsed["merged"])
     plan = _wf.plan(
