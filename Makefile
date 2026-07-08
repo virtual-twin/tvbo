@@ -73,6 +73,7 @@ gen-openminds:
 OWL_OUT = ontology/tvb-o-struct.owl
 SHACL_OUT = ontology/tvb-o.shacl.ttl
 ABOX_OUT = ontology/tvb-o-data.ttl
+BIOLOGY_OUT = ontology/tvb-o-biology.ttl
 AXIOMS_TTL = ontology/tvb-o-axioms.ttl
 CLINICAL_TTL = ontology/tvb-o-clinical.ttl
 CLINICAL_NMM = ontology/tvb-o-clinical-nmm.ttl
@@ -108,8 +109,8 @@ gen-studies:
 gen-abox: gen-studies
 	@echo "Generating A-box from YAML database..."
 	@mkdir -p ontology
-	@python scripts/ontology/gen_abox.py -o $(ABOX_OUT)
-	@echo "✓ A-box written to $(ABOX_OUT)"
+	@python scripts/ontology/gen_abox.py -o $(ABOX_OUT) --bio-output $(BIOLOGY_OUT)
+	@echo "✓ A-box written to $(ABOX_OUT) (+ biology grounding to $(BIOLOGY_OUT))"
 
 crosswalk:
 	@echo "Refreshing crosswalk + boundary-matrix from schema/api/odoo..."
@@ -126,6 +127,7 @@ gen-merged: gen-owl gen-abox
 		--input $(OWL_OUT) \
 		--input $(AXIOMS_TTL) \
 		--input $(ABOX_OUT) \
+		--input $(BIOLOGY_OUT) \
 		--input $(CLINICAL_TTL) \
 		--input $(CLINICAL_NMM) \
 		query --update ontology/fix-punning.ru --update ontology/clinical-postmerge.ru \

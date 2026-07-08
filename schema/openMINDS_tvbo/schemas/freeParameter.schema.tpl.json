@@ -1,0 +1,35 @@
+{
+  "_type": "tvbo:FreeParameter",
+  "required": [
+    "parameter"
+  ],
+  "properties": {
+    "label": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "parameter": {
+      "_linkedTypes": [
+        "tvbo:Parameter"
+      ]
+    },
+    "heterogeneous": {
+      "type": "boolean"
+    },
+    "shape": {
+      "type": "string"
+    },
+    "initial_value": {
+      "_linkedTypes": [
+        "tvbo:ScalarValue"
+      ]
+    },
+    "domain": {
+      "_embeddedTypes": [
+        "tvbo:Range"
+      ]
+    }
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "_type": "tvbo:OptimizationStage",
+  "properties": {
+    "name": {
+      "type": "string",
+      "_instruction": "Enter the name."
+    },
+    "label": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "free_parameters": {
+      "_embeddedTypes": [
+        "tvbo:FreeParameter"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "algorithm": {
+      "type": "string"
+    },
+    "learning_rate": {
+      "type": "number"
+    },
+    "max_iterations": {
+      "type": "integer"
+    },
+    "hyperparameters": {
+      "_embeddedTypes": [
+        "tvbo:Parameter"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "freeze_parameters": {
+      "_linkedTypes": [
+        "tvbo:Parameter"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "warmup_from": {
+      "_linkedTypes": [
+        "tvbo:OptimizationStage"
+      ]
+    }
+  }
+}

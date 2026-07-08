@@ -86,18 +86,17 @@ slots:
             fully self-contained (equations, parameters, etc. defined
             in the file itself).
     grounding:
-        slot_uri: oboInOwl:hasDbXref
+        slot_uri: tvbo:surrogate_of
         range: uriorcurie
         multivalued: true
         description: >-
             External ontology IRIs (typically GO, ChEBI, UBERON, CL, MeSH)
-            that this entity is a surrogate / abstraction / model of. Replaces
-            the legacy OWL pattern `tvbo:surrogate_of` by carrying the link
-            inline with the YAML data instance. Multiple IRIs allowed: a
-            single parameter may abstract several biological processes
-            (e.g. a synaptic conductance grounding both
-            GO:0060079 (excitatory PSP) and GO:0007268 (chemical synaptic
-            transmission)).
+            that this entity is a surrogate / abstraction / model of. Realized
+            as the `tvbo:surrogate_of` object property, carried inline with the
+            YAML data instance. Multiple IRIs allowed: a single parameter may
+            abstract several biological processes (e.g. a synaptic conductance
+            grounding both GO:0060079 (excitatory PSP) and GO:0007268 (chemical
+            synaptic transmission)).
     value:
         slot_uri: schema:value
         range: ScalarValue

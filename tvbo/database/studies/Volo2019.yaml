@@ -1,10 +1,1 @@
-name: Volo2019
 citekey: Volo2019
-type: article
-title: Biophysical ingredients for a robust model of cortical dynamics
-authors:
-- di Volo, Matteo
-- others
-year: 2019
-journal: PLOS Computational Biology
-note: Key used in ZerlautAdaptationFirstOrder model

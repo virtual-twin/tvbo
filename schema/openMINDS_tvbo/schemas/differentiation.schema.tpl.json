@@ -1,0 +1,14 @@
+{
+  "_type": "tvbo:Differentiation",
+  "properties": {
+    "truncation_window": {
+      "type": "number"
+    },
+    "checkpoint_interval": {
+      "type": "number"
+    },
+    "mode": {
+      "type": "string"
+    }
+  }
+}

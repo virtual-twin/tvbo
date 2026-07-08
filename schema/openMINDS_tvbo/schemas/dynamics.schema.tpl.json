@@ -38,6 +38,10 @@
         "type": "string"
       }
     },
+    "dataLocation": {
+      "type": "string",
+      "_instruction": "Enter the dataLocation."
+    },
     "derived_parameters": {
       "_embeddedTypes": [
         "tvbo:DerivedParameter"
@@ -82,15 +86,17 @@
       "type": "boolean"
     },
     "output": {
-      "_embeddedTypes": [
-        "tvbo:DerivedVariable"
-      ],
       "type": "array",
       "minItems": 1,
-      "uniqueItems": true
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
     },
     "derived_from_model": {
-      "type": "string"
+      "_linkedTypes": [
+        "tvbo:Dynamics"
+      ]
     },
     "number_of_modes": {
       "type": "integer"
@@ -114,15 +120,43 @@
       ]
     },
     "modes": {
+      "_embeddedTypes": [
+        "tvbo:Dynamics"
+      ],
       "type": "array",
       "minItems": 1,
-      "uniqueItems": true,
-      "items": {
-        "type": "string"
-      }
+      "uniqueItems": true
+    },
+    "model_type": {
+      "type": "string"
     },
     "system_type": {
       "type": "string"
+    },
+    "autonomous": {
+      "type": "boolean"
+    },
+    "observed": {
+      "_embeddedTypes": [
+        "tvbo:DerivedVariable"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "events": {
+      "_embeddedTypes": [
+        "tvbo:Event"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "cse": {
+      "type": "boolean"
+    },
+    "compile": {
+      "type": "boolean"
     }
   }
 }

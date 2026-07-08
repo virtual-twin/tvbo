@@ -1,0 +1,28 @@
+{
+  "_type": "tvbo:InitialState",
+  "properties": {
+    "method": {
+      "type": "string"
+    },
+    "duration": {
+      "type": "number"
+    },
+    "abs_tol": {
+      "type": "number"
+    },
+    "rel_tol": {
+      "type": "number"
+    },
+    "solver": {
+      "_embeddedTypes": [
+        "tvbo:Solver"
+      ]
+    },
+    "source_branch": {
+      "type": "string"
+    },
+    "source_point": {
+      "type": "string"
+    }
+  }
+}

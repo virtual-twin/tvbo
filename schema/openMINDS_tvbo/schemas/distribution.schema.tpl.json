@@ -4,11 +4,6 @@
     "name": {
       "type": "string"
     },
-    "equation": {
-      "_linkedTypes": [
-        "tvbo:Equation"
-      ]
-    },
     "parameters": {
       "_embeddedTypes": [
         "tvbo:Parameter"
@@ -17,13 +12,21 @@
       "minItems": 1,
       "uniqueItems": true
     },
-    "dependencies": {
+    "domain": {
       "_embeddedTypes": [
-        "tvbo:Parameter"
-      ],
-      "type": "array",
-      "minItems": 1,
-      "uniqueItems": true
+        "tvbo:Range"
+      ]
+    },
+    "function": {
+      "_embeddedTypes": [
+        "tvbo:Function"
+      ]
+    },
+    "seed": {
+      "type": "integer"
+    },
+    "axis": {
+      "type": "string"
     },
     "correlation": {
       "_embeddedTypes": [

@@ -2,7 +2,8 @@
   "_type": "tvbo:StateVariable",
   "properties": {
     "name": {
-      "type": "string"
+      "type": "string",
+      "_instruction": "Enter the name."
     },
     "symbol": {
       "type": "string"
@@ -22,18 +23,35 @@
       "type": "string"
     },
     "equation": {
-      "_linkedTypes": [
+      "_embeddedTypes": [
         "tvbo:Equation"
       ]
     },
     "unit": {
       "type": "string"
     },
+    "record": {
+      "type": "boolean"
+    },
+    "grounding": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
     "variable_of_interest": {
       "type": "boolean"
     },
     "coupling_variable": {
       "type": "boolean"
+    },
+    "equation_type": {
+      "type": "string"
+    },
+    "equation_order": {
+      "type": "integer"
     },
     "noise": {
       "_embeddedTypes": [
@@ -43,13 +61,16 @@
     "stimulation_variable": {
       "type": "boolean"
     },
-    "boundaries": {
-      "_embeddedTypes": [
-        "tvbo:Range"
-      ]
-    },
     "initial_value": {
       "type": "number"
+    },
+    "derivative_initial_value": {
+      "type": "number"
+    },
+    "distribution": {
+      "_embeddedTypes": [
+        "tvbo:Distribution"
+      ]
     },
     "history": {
       "_embeddedTypes": [

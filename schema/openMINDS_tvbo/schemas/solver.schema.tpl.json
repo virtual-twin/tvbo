@@ -1,0 +1,14 @@
+{
+  "_type": "tvbo:Solver",
+  "properties": {
+    "method": {
+      "type": "string"
+    },
+    "abs_tol": {
+      "type": "number"
+    },
+    "rel_tol": {
+      "type": "number"
+    }
+  }
+}

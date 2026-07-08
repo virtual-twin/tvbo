@@ -1,0 +1,31 @@
+{
+  "_type": "tvbo:Optimization",
+  "properties": {
+    "execution": {
+      "_embeddedTypes": [
+        "tvbo:ExecutionConfig"
+      ]
+    },
+    "integration": {
+      "_embeddedTypes": [
+        "tvbo:Integrator"
+      ]
+    },
+    "loss": {
+      "_embeddedTypes": [
+        "tvbo:FunctionCall"
+      ]
+    },
+    "stages": {
+      "_embeddedTypes": [
+        "tvbo:OptimizationStage"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "depends_on": {
+      "type": "string"
+    }
+  }
+}

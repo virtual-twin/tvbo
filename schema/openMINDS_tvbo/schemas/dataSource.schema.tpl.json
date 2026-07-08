@@ -1,0 +1,34 @@
+{
+  "_type": "tvbo:DataSource",
+  "properties": {
+    "name": {
+      "type": "string",
+      "_instruction": "Enter the name."
+    },
+    "label": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "path": {
+      "type": "string"
+    },
+    "loader": {
+      "_embeddedTypes": [
+        "tvbo:Callable"
+      ]
+    },
+    "format": {
+      "type": "string"
+    },
+    "key": {
+      "type": "string"
+    },
+    "preprocessing": {
+      "_embeddedTypes": [
+        "tvbo:Function"
+      ]
+    }
+  }
+}
