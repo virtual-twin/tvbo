@@ -107,7 +107,18 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
                 if source_file:
                     experiment.SimulationExperiment._pending_source_file = source_file
                 try:
-                    exp = experiment.SimulationExperiment.from_datamodel(exp_dm)
+                    # Materialise through the YAML construction path so that
+                    # iri-sourced components (dynamics, coupling) are merged
+                    # from the registry — exactly as SimulationExperiment.from_file
+                    # does. from_datamodel alone skips that resolution and would
+                    # leave an iri-only dynamics unpopulated (no state variables).
+                    from linkml_runtime.dumpers import yaml_dumper
+
+                    exp = experiment.SimulationExperiment.from_string(
+                        yaml_dumper.dumps(exp_dm)
+                    )
+                    if source_file:
+                        exp._source_file = source_file
                 finally:
                     experiment.SimulationExperiment._pending_source_file = None
                 return exp
