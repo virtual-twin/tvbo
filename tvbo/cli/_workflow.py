@@ -292,12 +292,17 @@ def plan(
     _reqs = [r for r in (_norm_requirement(x) for x in _as_list(_req_raw))
              if r.get("package") or r.get("source_url")]
 
+    experiment_key = str(getattr(experiment, "key", None)
+                         or getattr(experiment, "name", None) or "experiment")
+    out_dir = str(spec.get("out_dir") or "out/{study}/{experiment}")
+    out_dir = out_dir.replace("{study}", study_key).replace("{experiment}", experiment_key)
+
     return WorkflowPlan(
         study_key=study_key,
-        experiment_key=str(getattr(experiment, "key", None) or getattr(experiment, "name", None) or "experiment"),
+        experiment_key=experiment_key,
         backend=bk,
         engine=engine,
-        out_dir=str(spec.get("out_dir") or "out/{study}/{experiment}"),
+        out_dir=out_dir,
         container=(spec.get("container") or None),
         retries=int(spec.get("retries") or 0),
         rng=str(spec.get("rng") or "deterministic"),
