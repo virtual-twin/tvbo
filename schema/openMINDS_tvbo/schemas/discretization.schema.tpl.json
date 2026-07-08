@@ -1,0 +1,43 @@
+{
+  "_type": "tvbo:Discretization",
+  "properties": {
+    "parameters": {
+      "_embeddedTypes": [
+        "tvbo:Parameter"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "method": {
+      "type": "string"
+    },
+    "ode_solver": {
+      "_embeddedTypes": [
+        "tvbo:Solver"
+      ]
+    },
+    "linear_solver": {
+      "_embeddedTypes": [
+        "tvbo:Solver"
+      ]
+    },
+    "mesh_intervals": {
+      "type": "integer"
+    },
+    "degree": {
+      "type": "integer"
+    },
+    "n_sections": {
+      "type": "integer"
+    },
+    "options": {
+      "_embeddedTypes": [
+        "tvbo:Option"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    }
+  }
+}

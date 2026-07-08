@@ -1,0 +1,133 @@
+{
+  "_type": "tvbo:Event",
+  "properties": {
+    "name": {
+      "type": "string",
+      "_instruction": "Enter the name."
+    },
+    "label": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "parameters": {
+      "_embeddedTypes": [
+        "tvbo:Parameter"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "event_type": {
+      "type": "string"
+    },
+    "condition": {
+      "_embeddedTypes": [
+        "tvbo:Equation"
+      ]
+    },
+    "condition_states": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "condition_parameters": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "affect": {
+      "_embeddedTypes": [
+        "tvbo:Equation"
+      ]
+    },
+    "affect_states": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "affect_parameters": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "affect_negative": {
+      "_embeddedTypes": [
+        "tvbo:Equation"
+      ]
+    },
+    "trigger_times": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "number"
+      }
+    },
+    "target_component": {
+      "type": "string"
+    },
+    "equation": {
+      "_embeddedTypes": [
+        "tvbo:Equation"
+      ]
+    },
+    "nodes": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "integer"
+      }
+    },
+    "weights": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "number"
+      }
+    },
+    "weight_distribution": {
+      "_embeddedTypes": [
+        "tvbo:Distribution"
+      ]
+    },
+    "target_variable": {
+      "type": "string"
+    },
+    "target_regions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "duration": {
+      "type": "number"
+    },
+    "dataLocation": {
+      "type": "string"
+    },
+    "sampling_rate": {
+      "type": "number"
+    },
+    "interpolation": {
+      "type": "string"
+    }
+  }
+}

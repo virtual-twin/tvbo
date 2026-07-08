@@ -1,0 +1,21 @@
+{
+  "_type": "tvbo:Procedure",
+  "properties": {
+    "steps": {
+      "_embeddedTypes": [
+        "tvbo:ProcedureStep"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "output": {
+      "_embeddedTypes": [
+        "tvbo:ProcedureStep"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    }
+  }
+}

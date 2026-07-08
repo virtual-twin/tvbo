@@ -1,0 +1,10 @@
+{
+  "_type": "tvbo:LossFunction",
+  "properties": {
+    "aggregate": {
+      "_embeddedTypes": [
+        "tvbo:Aggregation"
+      ]
+    }
+  }
+}

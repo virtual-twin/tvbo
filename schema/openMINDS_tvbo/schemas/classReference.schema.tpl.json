@@ -1,0 +1,24 @@
+{
+  "_type": "tvbo:ClassReference",
+  "properties": {
+    "constructor_args": {
+      "_embeddedTypes": [
+        "tvbo:Argument"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "call_args": {
+      "_embeddedTypes": [
+        "tvbo:Argument"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "warmup_source": {
+      "type": "string"
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "_type": "tvbo:MeasureSpec",
+  "required": [
+    "name"
+  ],
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "task_iri": {
+      "type": "string"
+    },
+    "concept_iri": {
+      "type": "string"
+    },
+    "unit": {
+      "type": "string"
+    },
+    "measure_type": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    }
+  }
+}
