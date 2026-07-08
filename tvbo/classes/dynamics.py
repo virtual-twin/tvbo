@@ -539,6 +539,11 @@ def update_equations(model):
                         ]
                     )
 
+                if not labelsearch:
+                    # The suffix filter above can drop every candidate when no
+                    # label matches the symbol exactly; nothing to substitute.
+                    continue
+
                 synonyms = labelsearch[0].synonym + labelsearch[0].symbol
 
                 match = next(
