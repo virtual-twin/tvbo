@@ -198,6 +198,21 @@ enums:
             pmap:
                 description: "Cross-device parallel execution (jax.pmap). For multi-GPU/TPU."
 
+    WorkflowDistributeBy:
+        description: >-
+            Default tier a sweep axis is placed on when it is not named explicitly
+            in a DistributionConfig. Vectorized axes are packed into one batched
+            backend call; workflow axes are fanned out into independent scheduler
+            tasks.
+        permissible_values:
+            auto:
+                description: >-
+                    Vectorize every axis the backend can batch; fan out the rest.
+            vectorize:
+                description: "Place all otherwise-unassigned axes on the vectorized tier."
+            workflow:
+                description: "Fan out all otherwise-unassigned axes as scheduler tasks."
+
     ImagingModality:
         permissible_values:
             BOLD:
@@ -3712,6 +3727,156 @@ classes:
                     time integration. Used as initial condition for ODEProblem.
                     Maps to NLsolve.fixpoint! in ND.jl or similar in other backends.
 
+    DistributionConfig:
+        class_uri: tvbo:DistributionConfig
+        description: >-
+            Policy for mapping a parameter sweep's exploration axes onto the two
+            parallelism tiers when rendering a distributed workflow. Vectorized
+            axes are packed into a single batched backend call (e.g. vmap/pmap);
+            workflow axes are fanned out into independent scheduler tasks, one per
+            value combination. Backend-independent: the emitter validates that a
+            requested vectorized axis is one the chosen backend can actually batch.
+        attributes:
+            by:
+                range: WorkflowDistributeBy
+                description: >-
+                    Default tier for axes not named in ``vectorize`` or ``workflow``.
+                    Unset means ``auto``.
+            vectorize:
+                multivalued: true
+                range: string
+                description: >-
+                    Axis names or parameters to pack into a single vectorized backend
+                    call. It is an error to name an axis the backend cannot batch.
+            workflow:
+                multivalued: true
+                range: string
+                description: >-
+                    Axis names or parameters to fan out into independent scheduler
+                    tasks (one workflow cell per value combination).
+            chunk:
+                range: integer
+                description: >-
+                    Sharding granularity. For a fully vectorized sweep, the number of
+                    scheduler shards to split the batched cells across (each task runs
+                    ``1/chunk`` of the grid). For a fanned sweep, the number of
+                    workflow cells packed into one task. Unset means one shard.
+
+    WorkflowEngineConfig:
+        class_uri: tvbo:WorkflowEngineConfig
+        description: >-
+            Execution directives for one target workflow engine (Slurm, Snakemake,
+            Nextflow). Every field is optional; each engine renders the subset it
+            understands, so a single shape serves all three. Resource fields are
+            engine-agnostic; scheduler fields (partition, account, …) pass through
+            verbatim to the target scheduler.
+        attributes:
+            cpus_per_task:
+                range: integer
+                description: "CPU cores requested per task."
+            mem:
+                range: string
+                description: "Memory per task in scheduler syntax (e.g. '16G')."
+            time:
+                range: string
+                description: "Wall-clock limit per task (e.g. '24:00:00')."
+            gres:
+                range: string
+                description: "Generic scheduler resources, e.g. 'gpu:1' (Slurm --gres)."
+            partition:
+                range: string
+                description: "Scheduler partition or queue to submit to."
+            account:
+                range: string
+                description: "Accounting allocation to charge the tasks against."
+            cores:
+                range: integer
+                description: "Total cores for local engines (e.g. Snakemake --cores)."
+            modules:
+                multivalued: true
+                range: string
+                description: "Environment modules to load before running (module load …)."
+            venv:
+                range: string
+                description: "Path to a virtual environment to activate before running."
+            mail_type:
+                range: string
+                description: "Scheduler notification trigger (e.g. 'END,FAIL')."
+            mail_user:
+                range: string
+                description: "Notification email address."
+            array_chunk:
+                range: integer
+                description: >-
+                    Overrides ``distribute.chunk`` for this engine only: the number
+                    of array-task shards to split the vectorized sweep across.
+
+    WorkflowConfig:
+        class_uri: tvbo:WorkflowConfig
+        description: >-
+            Declarative orchestration for rendering a parameter sweep into a
+            distributed, reproducible workflow (Slurm array, Snakemake, Nextflow).
+            Backend- and engine-independent: it names *what* to distribute, *where*
+            results go, and the per-engine resources, while each engine emitter
+            renders the concrete artefact. Declared on a study as ``workflow`` and
+            refined per experiment via ``workflow_overrides``; unset fields fall
+            back to the emitter's defaults so an override sets only what it names.
+        attributes:
+            out_dir:
+                range: string
+                description: >-
+                    Output directory template. ``{study}`` and ``{experiment}`` are
+                    substituted with the study and experiment keys at emit time.
+                    Unset means ``out/{study}/{experiment}``.
+            container:
+                range: string
+                description: >-
+                    Container image wrapping each task (Apptainer/Singularity/Docker
+                    reference); tasks run as ``<runtime> exec <image> …``.
+            retries:
+                range: integer
+                description: "Automatic retries per failed task. Unset means none."
+            rng:
+                range: string
+                description: >-
+                    Random-seed policy across shards. ``deterministic`` (the default
+                    when unset) derives each task's seed from its shard index so the
+                    fan-out is reproducible.
+            provenance:
+                range: boolean
+                description: >-
+                    Whether to emit provenance sidecars alongside results. Unset
+                    means enabled.
+            chunk:
+                range: integer
+                description: >-
+                    Default shard count used when ``distribute.chunk`` is unset (see
+                    DistributionConfig.chunk).
+            distribute:
+                range: DistributionConfig
+                inlined: true
+                description: "How exploration axes map onto the vectorized vs fanned-out tiers."
+            requirements:
+                multivalued: true
+                range: SoftwareRequirement
+                inlined: true
+                inlined_as_list: true
+                description: >-
+                    Software requirements for the workflow environment; overrides
+                    ``experiment.environment.requirements`` when set.
+            slurm:
+                range: WorkflowEngineConfig
+                inlined: true
+                description: "Slurm sbatch directives for array-job execution."
+            snakemake:
+                range: WorkflowEngineConfig
+                inlined: true
+                description: "Snakemake execution directives."
+            nextflow:
+                range: WorkflowEngineConfig
+                inlined: true
+                description: "Nextflow execution directives."
+
     SimulationExperiment:
         tree_root: true
         class_uri: tvbo:Simulation
@@ -3832,6 +3997,14 @@ classes:
                     Multi-subject dataset for workflow rendering. When set,
                     render_workflow() uses dataset.subjects/sessions to generate
                     per-subject parallel jobs.
+            workflow:
+                range: WorkflowConfig
+                inlined: true
+                description: >-
+                    Orchestration for distributing this experiment's sweep across a
+                    workflow engine. Refines the study's ``workflow`` block: only the
+                    fields it sets take precedence, the rest are inherited. Use it to
+                    give one experiment its own shard count or resources.
 
     Study:
         class_uri: tvbo:Study
@@ -3885,6 +4058,13 @@ classes:
                     back-compatibility with existing tooling.
             sample:
                 range: Sample
+            workflow:
+                range: WorkflowConfig
+                inlined: true
+                description: >-
+                    Study-wide default orchestration for rendering its experiments'
+                    sweeps into distributed workflows (Slurm/Snakemake/Nextflow).
+                    Individual experiments refine it via ``workflow_overrides``.
             simulation_experiments:
                 alias: experiments
                 multivalued: true
