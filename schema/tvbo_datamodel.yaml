@@ -3762,6 +3762,23 @@ classes:
                     ``1/chunk`` of the grid). For a fanned sweep, the number of
                     workflow cells packed into one task. Unset means one shard.
 
+    EnvironmentVariable:
+        class_uri: tvbo:EnvironmentVariable
+        description: >-
+            One environment variable assignment exported before executing the
+            workflow task command. Use this for reproducible runtime knobs such
+            as XLA/OMP settings in emitted workflow artefacts.
+        attributes:
+            name:
+                range: string
+                identifier: true
+                required: true
+                description: "Environment variable name (e.g. XLA_FLAGS)."
+            value:
+                range: string
+                required: true
+                description: "Value exported for this variable."
+
     WorkflowEngineConfig:
         class_uri: tvbo:WorkflowEngineConfig
         description: >-
@@ -3810,6 +3827,13 @@ classes:
                 description: >-
                     Overrides ``distribute.chunk`` for this engine only: the number
                     of array-task shards to split the vectorized sweep across.
+            env:
+                multivalued: true
+                range: EnvironmentVariable
+                inlined: true
+                description: >-
+                    Environment variables exported before task execution
+                    (e.g. XLA_PYTHON_CLIENT_PREALLOCATE=false).
 
     WorkflowConfig:
         class_uri: tvbo:WorkflowConfig

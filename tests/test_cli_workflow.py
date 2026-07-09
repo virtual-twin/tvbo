@@ -119,6 +119,30 @@ def test_workflow_slurm_emits_kit(tmp_path: Path):
     assert "#SBATCH --array=" in sbatch
 
 
+def test_workflow_slurm_emits_env_exports(tmp_path: Path):
+    out = tmp_path / "kit"
+    r = runner.invoke(
+        app,
+        [
+            "workflow",
+            "slurm",
+            EXP,
+            "--backend",
+            "jax",
+            "-o",
+            str(out),
+            "--set",
+            "slurm.env.XLA_PYTHON_CLIENT_PREALLOCATE=false",
+            "--set",
+            "slurm.env.OMP_NUM_THREADS=1",
+        ],
+    )
+    assert r.exit_code == 0, r.stdout
+    sbatch = (out / "run.sbatch").read_text()
+    assert 'export XLA_PYTHON_CLIENT_PREALLOCATE="false"' in sbatch
+    assert 'export OMP_NUM_THREADS="1"' in sbatch
+
+
 def test_workflow_nextflow_emits_kit(tmp_path: Path):
     out = tmp_path / "kit"
     r = runner.invoke(app, ["workflow", "nextflow", EXP, "--backend", "jax", "-o", str(out)])

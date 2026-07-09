@@ -59,6 +59,28 @@ module load ${mod}
 % if sb.get("venv"):
 source ${sb["venv"]}/bin/activate
 % endif
+<%
+_env = sb.get("env") or {}
+%>
+% if isinstance(_env, dict):
+% for _k, _v in _env.items():
+<%
+_val = _v.get("value") if isinstance(_v, dict) else _v
+if isinstance(_val, bool):
+    _val = str(_val).lower()
+%>
+export ${_k}="${_val}"
+% endfor
+% else:
+% for kv in _env:
+<%
+_v = kv["value"]
+if isinstance(_v, bool):
+    _v = str(_v).lower()
+%>
+export ${kv["name"]}="${_v}"
+% endfor
+% endif
 
 <%
     out_pat = plan.out_dir + "/$SLURM_ARRAY_JOB_ID/$SLURM_ARRAY_TASK_ID"
