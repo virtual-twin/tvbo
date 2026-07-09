@@ -1945,6 +1945,14 @@ ${sweep.warmstart_sweep_body(expl, solver_class, dt, warmstart_solver_kwargs)}\
     % endif
     % endfor
     grid = Space(grid_state, mode="${expl['mode']}")
+    # HPC sharding (tvboptim-native): `shard=(i, N)` runs only this array task's
+    # slice of the sweep via Space's strided slice — the cells where j % N == i,
+    # still vectorised, with fewer cells → bounded memory per task. The full grid
+    # is reassembled by parameter value downstream (two-stage HPC pattern).
+    _shard = kwargs.get('shard')
+    if _shard is not None:
+        _shard_i, _shard_n = int(_shard[0]), int(_shard[1])
+        grid = grid[_shard_i::_shard_n]
 % endif
 
     # Create observation monitors ONCE with history baked in (optimized pattern)
@@ -2296,6 +2304,29 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
 % endfor
     ]
 
+    # Sharded run: read each retained cell's actual parameter values back from
+    # the sliced grid itself, so the coordinates track the grid's own cell order
+    # regardless of how the Space orders axes internally (avoids positional
+    # mislabelling). Relabel to the exploration's axis names where unambiguous,
+    # else keep the grid keypath. The flat per-shard result is then
+    # self-describing and reassembles by value across tasks.
+    _cell_coords = None
+% if has_axes:
+    _shard = kwargs.get('shard')
+    if _shard is not None:
+        _df = grid.to_dataframe()
+        _bare_to_label = {}
+        for _a in _axes_info:
+            _bare_to_label.setdefault(str(_a.name).rsplit('.', 1)[-1], str(_a.name))
+        _cell_coords, _used = {}, set()
+        for _col in _df.columns:
+            _label = _bare_to_label.get(str(_col).rsplit('.', 1)[-1], str(_col))
+            if _label in _used:
+                _label = str(_col)  # disambiguate a bare-name collision with the keypath
+            _used.add(_label)
+            _cell_coords[_label] = np.asarray(_df[_col].to_numpy())
+% endif
+
 % if bundles_observations:
     # observable_fn returned a Bunch of reduced observations.
     # No raw trajectory to attach; wrap each observation as xr.DataArray.
@@ -2310,6 +2341,7 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
         _observations_xr[_obs_key] = _stacked_to_dataarray(
             _arr, _axes_info, intrinsic_ts=_ts,
             n_trials=${expl.get('n_trials', 1)}, name=str(_obs_key),
+            cell_coords=_cell_coords,
         )
 % else:
     _stacked_results = _stacked
@@ -2324,6 +2356,9 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
 % endif
         results=_stacked_results,
         axes=_axes_info,
+% if has_axes:
+        cell_coords=_cell_coords,
+% endif
 <% _obs_label = obs_name if obs_name else (', '.join(model_output_vars) if has_model_output else obs_func) %>\
         observable='${_obs_label}',
         dt=${dt},

@@ -1,0 +1,23 @@
+{
+  "_type": "tvbo:Binding",
+  "properties": {
+    "name": {
+      "type": "string",
+      "_instruction": "Enter the name."
+    },
+    "library": {
+      "type": "string"
+    },
+    "callable": {
+      "type": "string"
+    },
+    "args": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

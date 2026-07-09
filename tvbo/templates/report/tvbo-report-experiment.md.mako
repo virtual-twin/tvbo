@@ -399,11 +399,7 @@ out_names = [n for n in out_names if n not in dvars]
 % if coupling_terms:
 **Coupling Terms**
 
-| Term | Value | Domain / Sampling | Flags | Description |
-|:-----|------:|:------------------|:------|:------------|
-% for term_name, term in _items(coupling_terms):
-| $${latex(Symbol(term_name))}$ | ${_p(term, 'value', '—')} | ${_metadata_text(term)} | ${_flag_text(term, [('free', 'free'), ('heterogeneous', 'heterogeneous')])} | ${_p(term, 'description', '') or _p(term, 'definition', '') or ''} |
-% endfor
+${report.param_table(coupling_terms, name_header='Term')}
 
 % endif
 % if observed:
@@ -637,11 +633,7 @@ Receives ${ ', '.join(['$' + latex(Symbol(s)) + '$' for s in incoming])} from co
 % endif
 % if cpl_items:
 
-| Parameter | Value | Unit | Domain / Sampling | Flags | Description |
-|:----------|------:|:-----|:------------------|:------|:------------|
-% for pname, param in cpl_items:
-| $${latex(Symbol(pname))}$ | ${_p(param, 'value', '—')} | ${_unit_text(_p(param, 'unit', None))} | ${_metadata_text(param)} | ${_flag_text(param, [('free', 'free'), ('heterogeneous', 'heterogeneous')])} | ${_p(param, 'description', '') or _p(param, 'definition', '') or ''} |
-% endfor
+${report.param_table(cpl_params_obj, name_header='Parameter')}
 % endif
 
 % endfor
@@ -676,11 +668,7 @@ $$I_{\text{stim}}(t) = ${safe_latex(stim_rhs, [_p(p, 'name', '') for p in stim_p
 % endif
 
 % if stim_param_list:
-| Parameter | Value | Unit | Domain / Sampling | Flags | Description |
-|:----------|------:|:-----|:------------------|:------|:------------|
-% for param in stim_param_list:
-| $${latex(Symbol(_p(param, 'name', '?')))}$ | ${_p(param, 'value', '—')} | ${_unit_text(_p(param, 'unit', None))} | ${_metadata_text(param)} | ${_flag_text(param, [('free', 'free'), ('heterogeneous', 'heterogeneous')])} | ${_p(param, 'description', '') or _p(param, 'definition', '') or ''} |
-% endfor
+${report.param_table(stim_param_list, name_header='Parameter')}
 % endif
 % endif
 <%
@@ -747,11 +735,7 @@ ${_p(integ, 'description').strip()}
 % endif
 
 % if integration_params:
-| Parameter | Value | Unit | Domain / Sampling | Description |
-|:----------|------:|:-----|:------------------|:------------|
-% for param_name, param in integration_params:
-| $${latex(Symbol(param_name))}$ | ${_p(param, 'value', '—')} | ${_unit_text(_p(param, 'unit', None))} | ${_metadata_text(param)} | ${_p(param, 'description', '') or _p(param, 'definition', '') or ''} |
-% endfor
+${report.param_table(_p(integ, 'parameters', {}), name_header='Parameter')}
 
 % endif
 % if intermediate_expressions or update_expression:
@@ -800,11 +784,7 @@ ${', '.join(noise_bits)}.
 % if noise_nsig is not None:
 $\sigma = ${noise_nsig}$
 % elif noise_param_list:
-| Parameter | Value | Unit | Domain / Sampling | Description |
-|:----------|------:|:-----|:------------------|:------------|
-% for np_item in noise_param_list:
-| $${latex(Symbol(_p(np_item, 'name', 'σ')))}$ | ${_p(np_item, 'value', '—')} | ${_unit_text(_p(np_item, 'unit', None))} | ${_metadata_text(np_item)} | ${_p(np_item, 'description', '') or _p(np_item, 'definition', '') or ''} |
-% endfor
+${report.param_table(noise_param_list, name_header='Parameter')}
 % endif
 % endif
 % endif
@@ -1179,11 +1159,7 @@ Requires: ${', '.join([str(r) for r in requires])}
 % if hp_items:
 **Hyperparameters**
 
-| Hyperparameter | Value | Unit | Domain / Sampling | Description |
-|:---------------|------:|:-----|:------------------|:------------|
-% for hp_name, hp in hp_items:
-| ${hp_name} | ${_p(hp, 'value', '—')} | ${_unit_text(_p(hp, 'unit', None))} | ${_metadata_text(hp)} | ${_p(hp, 'description', '') or _p(hp, 'definition', '') or ''} |
-% endfor
+${report.param_table(hypers, name_header='Hyperparameter', symbolic=False)}
 
 % endif
 

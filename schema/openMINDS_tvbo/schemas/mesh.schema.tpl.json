@@ -29,6 +29,35 @@
       "_linkedTypes": [
         "sands:CommonCoordinateSpace"
       ]
+    },
+    "mesh_file": {
+      "type": "string"
+    },
+    "mesh_format": {
+      "type": "string"
+    },
+    "number_of_vertices": {
+      "type": "integer"
+    },
+    "number_of_elements": {
+      "type": "integer"
+    },
+    "parcellation": {
+      "_embeddedTypes": [
+        "tvbo:Parcellation"
+      ]
+    },
+    "normals": {
+      "type": "string"
+    },
+    "curvature": {
+      "type": "string"
+    },
+    "vertices_field": {
+      "type": "string"
+    },
+    "parcel_map_field": {
+      "type": "string"
     }
   }
 }

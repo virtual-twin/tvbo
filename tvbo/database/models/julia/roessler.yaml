@@ -36,7 +36,7 @@ state_variables:
     initial_value: 0.1
     description: Third state variable producing spiral funnel.
 description: |-
-  This three-dimensional continuous system is due to Rössler [^Rössler1976]. It is a
+  This three-dimensional continuous system is due to Rössler [^Roessler1976]. It is a
   system that by design behaves similarly to the Lorenz system and displays a strange
   attractor. However, it is easier to analyze qualitatively, as for example the attractor
   is composed of a single manifold. Default values are the same as the original paper.

@@ -1,0 +1,20 @@
+{
+  "_type": "tvbo:Prior",
+  "required": [
+    "distribution"
+  ],
+  "properties": {
+    "name": {
+      "type": "string",
+      "_instruction": "Enter the name."
+    },
+    "description": {
+      "type": "string"
+    },
+    "distribution": {
+      "_embeddedTypes": [
+        "tvbo:Distribution"
+      ]
+    }
+  }
+}

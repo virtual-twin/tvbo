@@ -18,6 +18,9 @@
     "duration": {
       "type": "number"
     },
+    "description": {
+      "type": "string"
+    },
     "method": {
       "type": "string"
     },
@@ -64,6 +67,11 @@
     },
     "delayed": {
       "type": "boolean"
+    },
+    "differentiation": {
+      "_embeddedTypes": [
+        "tvbo:Differentiation"
+      ]
     }
   }
 }

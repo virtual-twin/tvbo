@@ -5,8 +5,8 @@ abstract: |
   TVB-O (The Virtual Brain Ontology) is a Python package for understanding and generating
   large-scale brain network models, integrating data, simulation components and ontological
   knowledge representations.
-version: "0.5.2"
-date-released: 2026-07-07
+version: "0.5.3"
+date-released: 2026-07-09
 license: EUPL-1.2
 repository-code: "https://github.com/virtual-twin/tvbo"
 url: "https://github.com/virtual-twin/tvbo"

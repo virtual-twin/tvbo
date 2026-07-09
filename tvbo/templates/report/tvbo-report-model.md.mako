@@ -179,11 +179,7 @@ ${report.parameter_table(model.parameters)}
 % if coupling_terms:
 **Coupling Terms**
 
-| Term | Value | Domain / Sampling | Flags | Description |
-|:-----|------:|:------------------|:------|:------------|
-% for term_name, term in coupling_terms.items():
-| $${latex(Symbol(term_name))}$ | ${_slot(term, 'value', '—')} | ${_metadata_text(term)} | ${_flag_text(term, [('free', 'free'), ('heterogeneous', 'heterogeneous')])} | ${_slot(term, 'description', '') or _slot(term, 'definition', '') or ''} |
-% endfor
+${report.param_table(coupling_terms, name_header='Term')}
 
 % endif
 % if derived_parameters:

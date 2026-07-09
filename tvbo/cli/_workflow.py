@@ -292,12 +292,17 @@ def plan(
     _reqs = [r for r in (_norm_requirement(x) for x in _as_list(_req_raw))
              if r.get("package") or r.get("source_url")]
 
+    experiment_key = str(getattr(experiment, "key", None)
+                         or getattr(experiment, "name", None) or "experiment")
+    out_dir = str(spec.get("out_dir") or "out/{study}/{experiment}")
+    out_dir = out_dir.replace("{study}", study_key).replace("{experiment}", experiment_key)
+
     return WorkflowPlan(
         study_key=study_key,
-        experiment_key=str(getattr(experiment, "key", None) or getattr(experiment, "name", None) or "experiment"),
+        experiment_key=experiment_key,
         backend=bk,
         engine=engine,
-        out_dir=str(spec.get("out_dir") or "out/{study}/{experiment}"),
+        out_dir=out_dir,
         container=(spec.get("container") or None),
         retries=int(spec.get("retries") or 0),
         rng=str(spec.get("rng") or "deterministic"),
@@ -313,37 +318,43 @@ def plan(
     )
 
 
-def merge_workflow_spec(study, experiment_key: str | None = None) -> dict[str, Any]:
-    """Merge ``study.workflow`` with ``experiment.workflow_overrides``.
+def merge_workflow_spec(study, experiment=None) -> dict[str, Any]:
+    """Merge the study's ``workflow`` defaults with an experiment's ``workflow``.
 
-    Returns the effective spec dict for the named experiment. When
-    *experiment_key* is None, only the Study-level block is returned.
+    The experiment block refines the study block: only the fields it sets take
+    precedence, the rest are inherited. Pass the experiment object directly — it
+    need not carry a ``key``. With no experiment, only the study block is returned.
     """
     base = _as_plain_dict(getattr(study, "workflow", None))
-    if experiment_key is None:
-        return base
-    exps = getattr(study, "experiments", None) or getattr(study, "simulation_experiments", None) or []
-    items = list(exps.values()) if hasattr(exps, "values") else list(exps)
-    for e in items:
-        ek = getattr(e, "key", None) or getattr(e, "name", None) or getattr(e, "label", None)
-        if ek == experiment_key:
-            override = _as_plain_dict(getattr(e, "workflow_overrides", None))
-            return _deep_merge(base, override)
-    return base
+    override = (_as_plain_dict(getattr(experiment, "workflow", None))
+                if experiment is not None else {})
+    return _deep_merge(base, override)
 
 
 def _as_plain_dict(obj) -> dict[str, Any]:
-    """Best-effort conversion of LinkML-ish objects into plain dicts."""
-    if obj is None:
-        return {}
+    """Convert a (possibly nested) LinkML object into a plain dict tree.
+
+    Unset scalar fields (``None``) are dropped so an experiment's ``workflow``
+    block overrides only the keys it names when merged onto the study default;
+    empty multivalued fields serialize as ``[]`` and are harmless. Always returns
+    a dict (an empty one for ``None``).
+    """
+    plain = _plainify(obj)
+    return plain if isinstance(plain, dict) else {}
+
+
+def _plainify(obj):
+    """Recursively turn LinkML objects / containers into plain Python values."""
+    if obj is None or isinstance(obj, (str, int, float, bool)):
+        return obj
     if isinstance(obj, dict):
-        return {k: _as_plain_dict(v) if hasattr(v, "__dict__") and not isinstance(v, (str, int, float, bool)) else v
-                for k, v in obj.items()}
-    if hasattr(obj, "_as_dict"):
-        return obj._as_dict
+        return {k: _plainify(v) for k, v in obj.items() if v is not None}
+    if isinstance(obj, (list, tuple)):
+        return [_plainify(v) for v in obj]
     if hasattr(obj, "__dict__"):
-        return {k: v for k, v in obj.__dict__.items() if not k.startswith("_")}
-    return {}
+        return {k: _plainify(v) for k, v in vars(obj).items()
+                if not k.startswith("_") and v is not None}
+    return obj
 
 
 from tvbo.utils import deep_merge as _deep_merge, as_list as _as_list  # noqa: E402  (late-imported shared utils)

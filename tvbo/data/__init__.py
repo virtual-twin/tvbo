@@ -16,31 +16,25 @@ Access and manage TVB-O data.
 from .db import *  # noqa: F403  # database submodule re-exports
 from .tvbo_data import ATLAS_DIR
 
-__all__ = [
+# Names served lazily from the (heavy: jax/xarray) ``.types`` module, so
+# ``import tvbo.data`` stays cheap for callers that only need ``db`` / ATLAS_DIR.
+# Single source of truth — add a symbol here and it flows to __all__ + __getattr__.
+_LAZY_FROM_TYPES = (
     "SimulationResult",
     "AlgorithmResult",
     "OptimizationResult",
     "ExplorationResult",
-    "ATLAS_DIR",
-]
+    "reassemble_shards",
+)
+
+__all__ = [*_LAZY_FROM_TYPES, "ATLAS_DIR"]
 
 
 def __getattr__(name):
-    if name in ("SimulationResult", "AlgorithmResult", "OptimizationResult", "ExplorationResult"):
-        from .types import (
-            SimulationResult,
-            AlgorithmResult,
-            OptimizationResult,
-            ExplorationResult,
-        )
+    if name in _LAZY_FROM_TYPES:
+        from . import types
 
-        globals().update(
-            {
-                "SimulationResult": SimulationResult,
-                "AlgorithmResult": AlgorithmResult,
-                "OptimizationResult": OptimizationResult,
-                "ExplorationResult": ExplorationResult,
-            }
-        )
-        return globals()[name]
+        value = getattr(types, name)
+        globals()[name] = value  # cache: later access resolves as a normal global
+        return value
     raise AttributeError(f"module 'tvbo.data' has no attribute {name!r}")

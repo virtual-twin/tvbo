@@ -10,6 +10,14 @@
     "description": {
       "type": "string"
     },
+    "parameters": {
+      "_embeddedTypes": [
+        "tvbo:Parameter"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
     "nodes": {
       "_embeddedTypes": [
         "tvbo:Node"
@@ -26,6 +34,9 @@
       "minItems": 1,
       "uniqueItems": true
     },
+    "primary_weight": {
+      "type": "string"
+    },
     "coupling": {
       "_embeddedTypes": [
         "tvbo:Coupling"
@@ -34,11 +45,31 @@
       "minItems": 1,
       "uniqueItems": true
     },
-    "number_of_regions": {
-      "type": "integer"
+    "dynamics": {
+      "_embeddedTypes": [
+        "tvbo:Dynamics"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "node_template": {
+      "_embeddedTypes": [
+        "tvbo:Node"
+      ]
+    },
+    "edge_template": {
+      "_embeddedTypes": [
+        "tvbo:Edge"
+      ]
     },
     "number_of_nodes": {
       "type": "integer"
+    },
+    "coordinate_space": {
+      "_embeddedTypes": [
+        "sands:CommonCoordinateSpace"
+      ]
     },
     "parcellation": {
       "_embeddedTypes": [
@@ -46,28 +77,82 @@
       ]
     },
     "tractogram": {
+      "_embeddedTypes": [
+        "tvbo:Tractogram"
+      ]
+    },
+    "mesh": {
+      "_embeddedTypes": [
+        "tvbo:Mesh"
+      ]
+    },
+    "transforms": {
+      "_embeddedTypes": [
+        "tvbo:Function"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "data_file": {
       "type": "string"
     },
-    "normalization": {
+    "descriptor": {
+      "type": "string"
+    },
+    "bids_dir": {
+      "type": "string"
+    },
+    "bids": {
       "_embeddedTypes": [
-        "tvbo:Equation"
+        "tvbo:BidsEntities"
       ]
     },
-    "global_coupling_strength": {
+    "structural_measures": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "observational_measures": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "provenance": {
       "_embeddedTypes": [
-        "tvbo:Parameter"
+        "tvbo:Provenance"
       ]
     },
-    "conduction_speed": {
-      "_embeddedTypes": [
-        "tvbo:Parameter"
-      ]
+    "parent_network": {
+      "type": "string"
+    },
+    "node_mapping": {
+      "type": "string"
     },
     "distance_unit": {
       "type": "string"
     },
     "time_unit": {
       "type": "string"
+    },
+    "edge_matrix_files": {
+      "_linkedTypes": [
+        "core:File"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "graph_generator": {
+      "_embeddedTypes": [
+        "tvbo:GraphGenerator"
+      ]
     }
   }
 }

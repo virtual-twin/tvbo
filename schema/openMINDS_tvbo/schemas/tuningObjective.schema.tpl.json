@@ -1,0 +1,32 @@
+{
+  "_type": "tvbo:TuningObjective",
+  "properties": {
+    "label": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string"
+    },
+    "target_variable": {
+      "_linkedTypes": [
+        "tvbo:StateVariable"
+      ]
+    },
+    "target_value": {
+      "type": "number"
+    },
+    "target_data": {
+      "_linkedTypes": [
+        "tvbo:Observation"
+      ]
+    },
+    "metric": {
+      "_embeddedTypes": [
+        "tvbo:Equation"
+      ]
+    }
+  }
+}

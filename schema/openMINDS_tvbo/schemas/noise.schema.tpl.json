@@ -10,7 +10,7 @@
       "uniqueItems": true
     },
     "equation": {
-      "_linkedTypes": [
+      "_embeddedTypes": [
         "tvbo:Equation"
       ]
     },
@@ -37,6 +37,11 @@
     "intensity": {
       "_embeddedTypes": [
         "tvbo:Parameter"
+      ]
+    },
+    "distribution": {
+      "_embeddedTypes": [
+        "tvbo:Distribution"
       ]
     },
     "function": {

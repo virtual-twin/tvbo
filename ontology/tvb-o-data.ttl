@@ -1,8 +1,5 @@
-@prefix CL: <http://purl.obolibrary.org/obo/CL_> .
-@prefix GO: <http://purl.obolibrary.org/obo/GO_> .
 @prefix atom: <http://uri.interlex.org/tgbugs/uris/readable/> .
 @prefix dcterms: <http://purl.org/dc/terms/> .
-@prefix oboInOwl: <http://www.geneontology.org/formats/oboInOwl#> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix schema1: <http://schema.org/> .
@@ -677,6 +674,9 @@ The excitatory to excitatory connections are modelled in more detail as glutamat
 Note:
 - Equations and default parameters are taken from (Breakspear et al., 2003b), 
 - All equations and parameters are non-dimensional and normalized to neural capacitance C = 1.""" ;
+    dcterms:references <https://w3id.org/tvbo/studies/Breakspear2003>,
+        <https://w3id.org/tvbo/studies/Breakspear2003a>,
+        <https://w3id.org/tvbo/studies/Larter1999> ;
     tvbo:hasDerivedVariable <https://w3id.org/tvbo/LarterBreakspear/derived_variables/Q_V>,
         <https://w3id.org/tvbo/LarterBreakspear/derived_variables/Q_Z>,
         <https://w3id.org/tvbo/LarterBreakspear/derived_variables/lc_0>,
@@ -986,6 +986,7 @@ tvbo:TsodyksMarkram a owl:NamedIndividual,
         tvbo:Dynamics ;
     rdfs:label "TsodyksMarkram" ;
     dcterms:description "Tsodyks-Markram mean-field model of short-term synaptic plasticity. A three-variable neural mass model with firing rate E, synaptic depression variable x, and facilitation variable u. The transfer function uses a softplus nonlinearity α·log(1 + exp(s/α)). Reproduces the dynamics from BifurcationKit.jl/examples/TMModel.jl." ;
+    dcterms:references <https://w3id.org/tvbo/studies/Tsodyks1997> ;
     tvbo:hasDerivedVariable <https://w3id.org/tvbo/TsodyksMarkram/derived_variables/SS0>,
         <https://w3id.org/tvbo/TsodyksMarkram/derived_variables/SS1> ;
     tvbo:hasParameter <https://w3id.org/tvbo/TsodyksMarkram/parameters/E0>,
@@ -2721,14 +2722,9 @@ to a task-appropriate range (e.g. omega in Hz).
         "Avez, A." ;
     schema1:publisher "W. A. Benjamin" .
 
-<https://w3id.org/tvbo/studies/Arnold1968a> a schema1:Book,
+<https://w3id.org/tvbo/studies/Arnold1968a> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
-    rdfs:label "Arnold1968a" ;
-    dcterms:issued "1968" ;
-    dcterms:title "Ergodic Problems of Classical Mechanics" ;
-    schema1:author "Arnol'd, V. I.",
-        "Avez, A." ;
-    schema1:publisher "W. A. Benjamin" .
+    rdfs:label "Arnold1968a" .
 
 <https://w3id.org/tvbo/studies/Bandyopadhyay2021> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
@@ -2845,8 +2841,26 @@ to a task-appropriate range (e.g. omega in Hz).
     schema1:isPartOf "Scholarpedia" ;
     schema1:issueNumber "10" ;
     schema1:pagination "1488" ;
-    schema1:url "http://www.scholarpedia.org/article/Chua_circuit" ;
+    schema1:url "http://www.scholarpedia.org/article/Chua\\\\_circuit" ;
     schema1:volumeNumber "2" .
+
+<https://w3id.org/tvbo/studies/Cortes2013> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Cortes2013" ;
+    dcterms:issued "2013" ;
+    dcterms:title "Short-term synaptic plasticity in the deterministic Tsodyks–Markram model leads to unpredictable network dynamics" ;
+    schema1:author "Cortes, Jesus M.",
+        "Desroches, Mathieu",
+        "Muñoz, Miguel A.",
+        "Rodrigues, Serafim",
+        "Sejnowski, Terrence J.",
+        "Veltz, Romain" ;
+    schema1:identifier "10.1073/pnas.1316071110" ;
+    schema1:isPartOf "Proceedings of the National Academy of Sciences" ;
+    schema1:issueNumber "41" ;
+    schema1:pagination "16610--16615" ;
+    schema1:publisher "Proceedings of the National Academy of Sciences" ;
+    schema1:volumeNumber "110" .
 
 <https://w3id.org/tvbo/studies/Datseris2019> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
@@ -2975,8 +2989,7 @@ to a task-appropriate range (e.g. omega in Hz).
 
 <https://w3id.org/tvbo/studies/GuckenheimerHolmes1983Alias> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
-    rdfs:label "GuckenheimerHolmes1983Alias" ;
-    dcterms:title "Alias for GuckenheimerHolmes1983" .
+    rdfs:label "GuckenheimerHolmes1983Alias" .
 
 <https://w3id.org/tvbo/studies/Halvorsen2000> a schema1:CreativeWork,
         owl:NamedIndividual ;
@@ -2985,17 +2998,26 @@ to a task-appropriate range (e.g. omega in Hz).
     dcterms:title "An algebraically simple chaotic system" ;
     schema1:author "Halvorsen, E." .
 
+<https://w3id.org/tvbo/studies/Hansen2015> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Hansen2015" ;
+    dcterms:issued "2015" ;
+    dcterms:title "Functional connectivity dynamics: Modeling the switching behavior of the resting state" ;
+    schema1:author "Battaglia, Demian",
+        "Deco, Gustavo",
+        "Hansen, Enrique C.A.",
+        "Jirsa, Viktor K.",
+        "Spiegler, Andreas" ;
+    schema1:identifier "10.1016/j.neuroimage.2014.11.001" ;
+    schema1:isPartOf "NeuroImage" ;
+    schema1:pagination "525--535" ;
+    schema1:publisher "Elsevier BV" ;
+    schema1:volumeNumber "105" .
+
 <https://w3id.org/tvbo/studies/Henon1964> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
     rdfs:label "Henon1964" ;
-    dcterms:issued "1964" ;
-    dcterms:title "The Applicability of the Third Integral of Motion: Some Numerical Experiments" ;
-    schema1:author "Heiles, Carl",
-        "Henon, Michel" ;
-    schema1:identifier "10.1086/109234" ;
-    schema1:isPartOf "The Astronomical Journal" ;
-    schema1:pagination "73--79" ;
-    schema1:volumeNumber "69" .
+    schema1:identifier "10.1086/109234" .
 
 <https://w3id.org/tvbo/studies/Henon1976> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
@@ -3003,7 +3025,7 @@ to a task-appropriate range (e.g. omega in Hz).
     dcterms:issued "1976" ;
     dcterms:title "A Two-Dimensional Mapping with a Strange Attractor" ;
     schema1:author "H\\'enon, Michel" ;
-    schema1:identifier "10.1007/978-0-387-21830-4_8" ;
+    schema1:identifier "10.1007/978-0-387-21830-4\\\\_8" ;
     schema1:isPartOf "Communications in Mathematical Physics" ;
     schema1:pagination "69--77" ;
     schema1:volumeNumber "50" .
@@ -3022,14 +3044,7 @@ to a task-appropriate range (e.g. omega in Hz).
 
 <https://w3id.org/tvbo/studies/Hindmarsh1984> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
-    rdfs:label "Hindmarsh1984" ;
-    dcterms:issued "1984" ;
-    dcterms:title "A model of neuronal bursting using three coupled first order differential equations" ;
-    schema1:author "Hindmarsh, J. L.",
-        "Rose, R. M." ;
-    schema1:isPartOf "Proceedings of the Royal Society of London. Series B, Biological Sciences" ;
-    schema1:pagination "87--102" ;
-    schema1:volumeNumber "221" .
+    rdfs:label "Hindmarsh1984" .
 
 <https://w3id.org/tvbo/studies/HindmarshRose1984> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
@@ -3045,15 +3060,7 @@ to a task-appropriate range (e.g. omega in Hz).
 <https://w3id.org/tvbo/studies/Hodgkin1952> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
     rdfs:label "Hodgkin1952" ;
-    dcterms:issued "1952" ;
-    dcterms:title "A Quantitative Description of Membrane Current and Its Application to Conduction and Excitation in Nerve" ;
-    schema1:author "Hodgkin, A. L.",
-        "Huxley, A. F." ;
-    schema1:identifier "10.1113/jphysiol.1952.sp004764" ;
-    schema1:isPartOf "The Journal of Physiology" ;
-    schema1:issueNumber "4" ;
-    schema1:pagination "500--544" ;
-    schema1:volumeNumber "117" .
+    schema1:identifier "10.1113/jphysiol.1952.sp004764" .
 
 <https://w3id.org/tvbo/studies/HodgkinHuxley1952> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
@@ -3241,16 +3248,7 @@ to a task-appropriate range (e.g. omega in Hz).
 
 <https://w3id.org/tvbo/studies/Micluta-Campeanu2018> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
-    rdfs:label "Micluta-Campeanu2018" ;
-    dcterms:issued "2018" ;
-    dcterms:title "Chaoticity Evolution in a Quartic Collective Hamiltonian" ;
-    schema1:author "Baran, V.",
-        "Micluta-Campeanu, S.",
-        "Nicolin, A. I.",
-        "Raportaru, M. C." ;
-    schema1:isPartOf "Romanian Reports in Physics" ;
-    schema1:pagination "105" ;
-    schema1:volumeNumber "70" .
+    rdfs:label "Micluta-Campeanu2018" .
 
 <https://w3id.org/tvbo/studies/MiclutaCampeanu2018> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
@@ -3267,19 +3265,7 @@ to a task-appropriate range (e.g. omega in Hz).
 <https://w3id.org/tvbo/studies/Mirshra2018> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
     rdfs:label "Mirshra2018" ;
-    dcterms:issued "2018" ;
-    dcterms:title "Dragon-king-like extreme events in coupled bursting neurons" ;
-    schema1:author "Dana, S. K.",
-        "Kapitaniak, T.",
-        "Mishra, A.",
-        "Pal, P.",
-        "Saha, S.",
-        "Vigneshwaran, M." ;
-    schema1:identifier "10.1103/PhysRevE.97.062311" ;
-    schema1:isPartOf "Physical Review E" ;
-    schema1:issueNumber "6" ;
-    schema1:pagination "062311" ;
-    schema1:volumeNumber "97" .
+    schema1:identifier "10.1103/PhysRevE.97.062311" .
 
 <https://w3id.org/tvbo/studies/Mishra2018> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
@@ -3301,19 +3287,7 @@ to a task-appropriate range (e.g. omega in Hz).
 <https://w3id.org/tvbo/studies/Mishra2018a> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
     rdfs:label "Mishra2018a" ;
-    dcterms:issued "2018" ;
-    dcterms:title "Dragon-king-like extreme events in coupled bursting neurons" ;
-    schema1:author "Dana, S. K.",
-        "Kapitaniak, T.",
-        "Mishra, A.",
-        "Pal, P.",
-        "Saha, S.",
-        "Vigneshwaran, M." ;
-    schema1:identifier "10.1103/PhysRevE.97.062311" ;
-    schema1:isPartOf "Physical Review E" ;
-    schema1:issueNumber "6" ;
-    schema1:pagination "062311" ;
-    schema1:volumeNumber "97" .
+    schema1:identifier "10.1103/PhysRevE.97.062311" .
 
 <https://w3id.org/tvbo/studies/MorrisLecar1981> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
@@ -3333,13 +3307,9 @@ to a task-appropriate range (e.g. omega in Hz).
     schema1:author "Ott, Edward" ;
     schema1:publisher "Cambridge University Press" .
 
-<https://w3id.org/tvbo/studies/Ott2010> a schema1:Book,
+<https://w3id.org/tvbo/studies/Ott2010> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
-    rdfs:label "Ott2010" ;
-    dcterms:issued "2010" ;
-    dcterms:title "Chaos in Dynamical Systems" ;
-    schema1:author "Ott, Edward" ;
-    schema1:publisher "Cambridge University Press" .
+    rdfs:label "Ott2010" .
 
 <https://w3id.org/tvbo/studies/OttRiddled2014> a schema1:CreativeWork,
         owl:NamedIndividual ;
@@ -3350,7 +3320,7 @@ to a task-appropriate range (e.g. omega in Hz).
         "Ott, Edward",
         "Sommerer, J. C.",
         "Yorke, James A." ;
-    schema1:url "http://yorke.umd.edu/Yorke_papers_most_cited_and_post2000/1994_04_Ott_Alexander_Kan_Sommerer_PhysicaD_riddled%20basins.pdf" .
+    schema1:url "http://yorke.umd.edu/Yorke\\\\_papers\\\\_most\\\\_cited\\\\_and\\\\_post2000/1994\\\\_04\\\\_Ott\\\\_Alexander\\\\_Kan\\\\_Sommerer\\\\_PhysicaD\\\\_riddled\\\\%20basins.pdf" .
 
 <https://w3id.org/tvbo/studies/Pang2011> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
@@ -3377,18 +3347,6 @@ to a task-appropriate range (e.g. omega in Hz).
     schema1:issueNumber "2" ;
     schema1:pagination "124--136" ;
     schema1:volumeNumber "372" .
-
-<https://w3id.org/tvbo/studies/R_ossler1976> a schema1:ScholarlyArticle,
-        owl:NamedIndividual ;
-    rdfs:label "R_ossler1976" ;
-    dcterms:issued "1976" ;
-    dcterms:title "An Equation for Continuous Chaos" ;
-    schema1:author "R\"ossler, Otto E." ;
-    schema1:identifier "10.1016/0375-9601(76)90101-8" ;
-    schema1:isPartOf "Physics Letters A" ;
-    schema1:issueNumber "5" ;
-    schema1:pagination "397--398" ;
-    schema1:volumeNumber "57" .
 
 <https://w3id.org/tvbo/studies/Rikitake1958> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
@@ -3426,31 +3384,16 @@ to a task-appropriate range (e.g. omega in Hz).
 
 <https://w3id.org/tvbo/studies/Roessler1979Alias> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
-    rdfs:label "Roessler1979Alias" ;
-    dcterms:title "Alias for Rossler1979" .
+    rdfs:label "Roessler1979Alias" .
 
 <https://w3id.org/tvbo/studies/Rossler1976> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
     rdfs:label "Rossler1976" ;
-    dcterms:issued "1976" ;
-    dcterms:title "An Equation for Continuous Chaos" ;
-    schema1:author "R\"ossler, Otto E." ;
-    schema1:identifier "10.1016/0375-9601(76)90101-8" ;
-    schema1:isPartOf "Physics Letters A" ;
-    schema1:issueNumber "5" ;
-    schema1:pagination "397--398" ;
-    schema1:volumeNumber "57" .
+    schema1:identifier "10.1016/0375-9601(76)90101-8" .
 
 <https://w3id.org/tvbo/studies/Rossler1979> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
-    rdfs:label "Rossler1979" ;
-    dcterms:issued "1979" ;
-    dcterms:title "An equation for hyperchaos" ;
-    schema1:author "R\"ossler, O. E." ;
-    schema1:isPartOf "Physics Letters A" ;
-    schema1:issueNumber "2--3" ;
-    schema1:pagination "155--157" ;
-    schema1:volumeNumber "71" .
+    rdfs:label "Rossler1979" .
 
 <https://w3id.org/tvbo/studies/Ruelle1980> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
@@ -3553,6 +3496,24 @@ to a task-appropriate range (e.g. omega in Hz).
     dcterms:title "Hyperchaotic dynamics in a R\"ossler-like system" ;
     schema1:author "Stankevich, N. V." .
 
+<https://w3id.org/tvbo/studies/Stefanovski2019> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Stefanovski2019" ;
+    dcterms:issued "2019" ;
+    dcterms:title "Linking Molecular Pathways and Large-Scale Computational Modeling to Assess Candidate Disease Mechanisms and Pharmacodynamics in Alzheimer’s Disease" ;
+    schema1:author "Diaz-Cortes, Margarita-Arimatea",
+        "Jirsa, Viktor",
+        "McIntosh, Anthony Randal",
+        "Ritter, Petra",
+        "Solodkin, Ana",
+        "Spiegler, Andreas",
+        "Stefanovski, Leon",
+        "Triebkorn, Paul" ;
+    schema1:identifier "10.3389/fncom.2019.00054" ;
+    schema1:isPartOf "Frontiers in Computational Neuroscience" ;
+    schema1:publisher "Frontiers Media SA" ;
+    schema1:volumeNumber "13" .
+
 <https://w3id.org/tvbo/studies/Stommel1961> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
     rdfs:label "Stommel1961" ;
@@ -3575,7 +3536,7 @@ to a task-appropriate range (e.g. omega in Hz).
         owl:NamedIndividual ;
     rdfs:label "Thomas1999" ;
     dcterms:issued "1999" ;
-    dcterms:title "Deterministic chaos seen in terms of feedback circuits: Analysis, synthesis, \\& biological applications" ;
+    dcterms:title "Deterministic chaos seen in terms of feedback circuits: Analysis, synthesis, \\\\\\& biological applications" ;
     schema1:author "Thomas, Ren\\'e" ;
     schema1:isPartOf "International Journal of Bifurcation and Chaos" ;
     schema1:issueNumber "10" ;
@@ -3623,8 +3584,7 @@ to a task-appropriate range (e.g. omega in Hz).
 
 <https://w3id.org/tvbo/studies/Volo2019a> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
-    rdfs:label "Volo2019a" ;
-    dcterms:title "Alias for di Volo et al. 2019" .
+    rdfs:label "Volo2019a" .
 
 <https://w3id.org/tvbo/studies/Wang2008> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
@@ -3673,6 +3633,28 @@ to a task-appropriate range (e.g. omega in Hz).
     schema1:pagination "145--147" ;
     schema1:volumeNumber "69" .
 
+<https://w3id.org/tvbo/studies/Zimmermann2018> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Zimmermann2018" ;
+    dcterms:issued "2018" ;
+    dcterms:title "Differentiation of Alzheimer’s disease based on local and global parameters in personalized Virtual Brain models" ;
+    schema1:author "Breakspear, M.",
+        "Kochan, N.A.",
+        "Mapstone, M.",
+        "McIntosh, A.R.",
+        "Perry, A.",
+        "Ritter, P.",
+        "Sachdev, P.",
+        "Schirner, M.",
+        "Solodkin, A.",
+        "Wen, W.",
+        "Zimmermann, J." ;
+    schema1:identifier "10.1016/j.nicl.2018.04.017" ;
+    schema1:isPartOf "NeuroImage: Clinical" ;
+    schema1:pagination "240--251" ;
+    schema1:publisher "Elsevier BV" ;
+    schema1:volumeNumber "19" .
+
 <https://w3id.org/tvbo/studies/vanderpol1926> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
     rdfs:label "vanderpol1926" ;
@@ -3704,9 +3686,6 @@ to a task-appropriate range (e.g. omega in Hz).
         tvbo:Parameter ;
     rdfs:label "C (CakanObermayer parameter)" ;
     schema1:defaultValue 2e+02 ;
-    oboInOwl:hasDbXref GO:0030322,
-        GO:0042391,
-        GO:0098696 ;
     skos:definition "Membrane capacitance of a single AdEx neuron." ;
     skos:notation "C" ;
     tvbo:unit "pF" .
@@ -3715,7 +3694,6 @@ to a task-appropriate range (e.g. omega in Hz).
         tvbo:Parameter ;
     rdfs:label "E_A (CakanObermayer parameter)" ;
     schema1:defaultValue -8e+01 ;
-    oboInOwl:hasDbXref GO:0042391 ;
     skos:definition "Reversal potential of the adaptation current." ;
     skos:notation "E_A" ;
     tvbo:unit "mV" .
@@ -3724,7 +3702,6 @@ to a task-appropriate range (e.g. omega in Hz).
         tvbo:Parameter ;
     rdfs:label "E_L (CakanObermayer parameter)" ;
     schema1:defaultValue -6.5e+01 ;
-    oboInOwl:hasDbXref GO:0022840 ;
     skos:definition "Leak reversal potential of a single AdEx neuron." ;
     skos:notation "E_L" ;
     tvbo:unit "mV" .
@@ -3733,7 +3710,6 @@ to a task-appropriate range (e.g. omega in Hz).
         tvbo:Parameter ;
     rdfs:label "I_A (CakanObermayer parameter)" ;
     schema1:defaultValue 0e+00 ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:definition "Subthreshold adaptation conductance amplitude (a in AdEx)." ;
     skos:notation "I_A" ;
     tvbo:unit "nS" .
@@ -3742,9 +3718,6 @@ to a task-appropriate range (e.g. omega in Hz).
         tvbo:Parameter ;
     rdfs:label "J_EE (CakanObermayer parameter)" ;
     schema1:defaultValue 2.43e+00 ;
-    oboInOwl:hasDbXref GO:0060076,
-        GO:0060079,
-        GO:0098817 ;
     skos:definition "Maximum excitatory-to-excitatory PSC amplitude (Jee_max in neurolib)." ;
     skos:notation "J_EE" ;
     tvbo:unit "mV_per_ms" .
@@ -3753,8 +3726,6 @@ to a task-appropriate range (e.g. omega in Hz).
         tvbo:Parameter ;
     rdfs:label "J_EI (CakanObermayer parameter)" ;
     schema1:defaultValue -3.3e+00 ;
-    oboInOwl:hasDbXref GO:0060080,
-        GO:0099536 ;
     skos:definition "Maximum inhibitory-to-excitatory PSC amplitude (Jei_max in neurolib, signed negative)." ;
     skos:notation "J_EI" ;
     tvbo:unit "mV_per_ms" .
@@ -3763,7 +3734,6 @@ to a task-appropriate range (e.g. omega in Hz).
         tvbo:Parameter ;
     rdfs:label "J_IE (CakanObermayer parameter)" ;
     schema1:defaultValue 2.6e+00 ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:definition "Maximum excitatory-to-inhibitory PSC amplitude (Jie_max in neurolib)." ;
     skos:notation "J_IE" ;
     tvbo:unit "mV_per_ms" .
@@ -3772,7 +3742,6 @@ to a task-appropriate range (e.g. omega in Hz).
         tvbo:Parameter ;
     rdfs:label "J_II (CakanObermayer parameter)" ;
     schema1:defaultValue -1.64e+00 ;
-    oboInOwl:hasDbXref GO:0060080 ;
     skos:definition "Maximum inhibitory-to-inhibitory PSC amplitude (Jii_max in neurolib, signed negative)." ;
     skos:notation "J_II" ;
     tvbo:unit "mV_per_ms" .
@@ -3796,9 +3765,6 @@ to a task-appropriate range (e.g. omega in Hz).
         tvbo:Parameter ;
     rdfs:label "mu_I (CakanObermayer parameter)" ;
     schema1:defaultValue 3e-01 ;
-    oboInOwl:hasDbXref GO:0042391,
-        GO:0060080,
-        GO:0098828 ;
     skos:definition "Mean external input current to the inhibitory population (mui_ext_mean)." ;
     skos:notation "mu_I" ;
     tvbo:unit "mV_per_ms" .
@@ -3823,8 +3789,6 @@ to a task-appropriate range (e.g. omega in Hz).
         tvbo:Parameter ;
     rdfs:label "s_EE (CakanObermayer parameter)" ;
     schema1:defaultValue 1.5e+00 ;
-    oboInOwl:hasDbXref GO:0060079,
-        GO:0098815 ;
     skos:definition "Standard deviation of the random-coupling-driven membrane-potential fluctuations entering the E->E channel (sigmae_ext component)." ;
     skos:notation "s_EE" ;
     tvbo:unit "mV_per_ms" .
@@ -3833,7 +3797,6 @@ to a task-appropriate range (e.g. omega in Hz).
         tvbo:Parameter ;
     rdfs:label "s_EI (CakanObermayer parameter)" ;
     schema1:defaultValue 1.5e+00 ;
-    oboInOwl:hasDbXref GO:0098815 ;
     skos:definition "Standard deviation of the random-coupling-driven membrane-potential fluctuations entering the I->E channel." ;
     skos:notation "s_EI" ;
     tvbo:unit "mV_per_ms" .
@@ -3842,7 +3805,6 @@ to a task-appropriate range (e.g. omega in Hz).
         tvbo:Parameter ;
     rdfs:label "s_IE (CakanObermayer parameter)" ;
     schema1:defaultValue 1.5e+00 ;
-    oboInOwl:hasDbXref GO:0098815 ;
     skos:definition "Standard deviation of the random-coupling-driven membrane-potential fluctuations entering the E->I channel." ;
     skos:notation "s_IE" ;
     tvbo:unit "mV_per_ms" .
@@ -3851,8 +3813,6 @@ to a task-appropriate range (e.g. omega in Hz).
         tvbo:Parameter ;
     rdfs:label "s_II (CakanObermayer parameter)" ;
     schema1:defaultValue 1.5e+00 ;
-    oboInOwl:hasDbXref GO:0060080,
-        GO:0098828 ;
     skos:definition "Standard deviation of the random-coupling-driven membrane-potential fluctuations entering the I->I channel." ;
     skos:notation "s_II" ;
     tvbo:unit "mV_per_ms" .
@@ -3926,7 +3886,6 @@ to a task-appropriate range (e.g. omega in Hz).
     rdfs:label "eta (CoombesByrne parameter)" ;
     dcterms:description "Constant parameter to scale the rate of feedback from the             firing rate variable to itself" ;
     schema1:defaultValue 2e+01 ;
-    oboInOwl:hasDbXref GO:0099605 ;
     skos:definition """Constant parameter to scale the rate of feedback from the
             firing rate variable to itself""" ;
     skos:notation "eta" .
@@ -3944,7 +3903,6 @@ to a task-appropriate range (e.g. omega in Hz).
     rdfs:label "v_syn (CoombesByrne parameter)" ;
     dcterms:description "QIF membrane reversal potential" ;
     schema1:defaultValue -1e+01 ;
-    oboInOwl:hasDbXref GO:0042391 ;
     skos:definition "QIF membrane reversal potential" ;
     skos:notation "v_syn" .
 
@@ -3989,7 +3947,6 @@ to a task-appropriate range (e.g. omega in Hz).
     rdfs:label "eta (CoombesByrne2D parameter)" ;
     dcterms:description "Constant parameter to scale the rate of feedback from the             firing rate variable to itself" ;
     schema1:defaultValue 2e+00 ;
-    oboInOwl:hasDbXref GO:0099605 ;
     skos:definition """Constant parameter to scale the rate of feedback from the
             firing rate variable to itself""" ;
     skos:notation "eta" .
@@ -4007,7 +3964,6 @@ to a task-appropriate range (e.g. omega in Hz).
     rdfs:label "v_syn (CoombesByrne2D parameter)" ;
     dcterms:description "QIF membrane reversal potential" ;
     schema1:defaultValue -4e+00 ;
-    oboInOwl:hasDbXref GO:0042391 ;
     skos:definition "QIF membrane reversal potential" ;
     skos:notation "v_syn" .
 
@@ -4029,8 +3985,6 @@ to a task-appropriate range (e.g. omega in Hz).
         tvbo:DerivedVariable ;
     rdfs:label "H_e (DecoBalancedExcInh derived variable)" ;
     dcterms:description "Sigmoid function that computes the averaged firing rate of the excitatory neuron population (Deco et al., 2021)." ;
-    oboInOwl:hasDbXref GO:0060079,
-        GO:0099605 ;
     skos:notation "H_e" ;
     tvbo:lhs "H_e" ;
     tvbo:rhs "x_e/(1 - exp(-d_e*x_e))" .
@@ -4039,8 +3993,6 @@ to a task-appropriate range (e.g. omega in Hz).
         tvbo:DerivedVariable ;
     rdfs:label "H_i (DecoBalancedExcInh derived variable)" ;
     dcterms:description "Sigmoid function that computes the averaged firing rate of the inhibitory neuron population (Deco et al., 2021)." ;
-    oboInOwl:hasDbXref GO:0060080,
-        GO:0099605 ;
     skos:notation "H_i" ;
     tvbo:lhs "H_i" ;
     tvbo:rhs "x_i/(1 - exp(-d_i*x_i))" .
@@ -4049,7 +4001,6 @@ to a task-appropriate range (e.g. omega in Hz).
         tvbo:DerivedVariable ;
     rdfs:label "I_e (DecoBalancedExcInh derived variable)" ;
     dcterms:description "Input current to the excitatory population (Deco et al., 2021)." ;
-    oboInOwl:hasDbXref GO:0098815 ;
     skos:notation "I_e" ;
     tvbo:lhs "I_e" ;
     tvbo:rhs "I_ext + I_o*W_e + J_N_S_e*w_p - J_i*S_i + coupling" .
@@ -4058,7 +4009,6 @@ to a task-appropriate range (e.g. omega in Hz).
         tvbo:DerivedVariable ;
     rdfs:label "I_i (DecoBalancedExcInh derived variable)" ;
     dcterms:description "Input current to the inhibitory population (Deco et al., 2021)." ;
-    oboInOwl:hasDbXref GO:0060080 ;
     skos:notation "I_i" ;
     tvbo:lhs "I_i" ;
     tvbo:rhs "I_o*W_i + J_N_S_e - S_i + coupling*lamda" .
@@ -4081,7 +4031,6 @@ to a task-appropriate range (e.g. omega in Hz).
         tvbo:DerivedVariable ;
     rdfs:label "x_e (DecoBalancedExcInh derived variable)" ;
     dcterms:description "Gain-scaled input current to the excitatory population (Deco et al., 2021)." ;
-    oboInOwl:hasDbXref GO:0098815 ;
     skos:notation "x_e" ;
     tvbo:lhs "x_e" ;
     tvbo:rhs "M_i*(a_e*I_e - b_e)" .
@@ -4090,7 +4039,6 @@ to a task-appropriate range (e.g. omega in Hz).
         tvbo:DerivedVariable ;
     rdfs:label "x_i (DecoBalancedExcInh derived variable)" ;
     dcterms:description "Gain-scaled input current to the inhibitory population (Deco et al., 2021)." ;
-    oboInOwl:hasDbXref GO:0060080 ;
     skos:notation "x_i" ;
     tvbo:lhs "x_i" ;
     tvbo:rhs "M_i*(a_i*I_i - b_i)" .
@@ -4108,8 +4056,6 @@ to a task-appropriate range (e.g. omega in Hz).
     rdfs:label "I_ext (DecoBalancedExcInh parameter)" ;
     dcterms:description "External stimulation parameter for evoked potential simulated activity applied to the excitatory population firing rate IE (Deco et al" ;
     schema1:defaultValue 0e+00 ;
-    oboInOwl:hasDbXref GO:0060079,
-        GO:0099605 ;
     skos:definition "External stimulation parameter for evoked potential simulated activity applied to the excitatory population firing rate IE (Deco et al., 2014)." ;
     skos:notation "I_ext" .
 
@@ -4118,8 +4064,6 @@ to a task-appropriate range (e.g. omega in Hz).
     rdfs:label "I_o (DecoBalancedExcInh parameter)" ;
     dcterms:description "Effective external input parameter to the excitatory E and inhibitory I population (Deco et al" ;
     schema1:defaultValue 3.82e-01 ;
-    oboInOwl:hasDbXref GO:0060079,
-        GO:0060080 ;
     skos:definition "Effective external input parameter to the excitatory E and inhibitory I population (Deco et al., 2014)." ;
     skos:notation "I_o" ;
     tvbo:unit "nA" .
@@ -4129,7 +4073,6 @@ to a task-appropriate range (e.g. omega in Hz).
     rdfs:label "J_N (DecoBalancedExcInh parameter)" ;
     dcterms:description "Excitatory synaptic coupling parameter (Deco et al" ;
     schema1:defaultValue 1.5e-01 ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:definition "Excitatory synaptic coupling parameter (Deco et al., 2014)." ;
     skos:notation "J_N" .
 
@@ -4138,8 +4081,6 @@ to a task-appropriate range (e.g. omega in Hz).
     rdfs:label "J_i (DecoBalancedExcInh parameter)" ;
     dcterms:description "Local feedback inhibitory synaptic coupling to the excitatory population firing rate IE (Deco et al" ;
     schema1:defaultValue 1e+00 ;
-    oboInOwl:hasDbXref GO:0060080,
-        GO:0099605 ;
     skos:definition "Local feedback inhibitory synaptic coupling to the excitatory population firing rate IE (Deco et al., 2014)." ;
     skos:notation "J_i" .
 
@@ -4148,7 +4089,6 @@ to a task-appropriate range (e.g. omega in Hz).
     rdfs:label "M_i (DecoBalancedExcInh parameter)" ;
     dcterms:description "Effective gain within a region. Scales the excitatory and inhibitory input currents derived from the regional transcriptional landscape (Deco et al., 2021)." ;
     schema1:defaultValue 1e+00 ;
-    oboInOwl:hasDbXref GO:0099605 ;
     skos:definition "Effective gain within a region (Deco et al., 2021)." ;
     skos:notation "M_i" .
 
@@ -4157,8 +4097,6 @@ to a task-appropriate range (e.g. omega in Hz).
     rdfs:label "W_e (DecoBalancedExcInh parameter)" ;
     dcterms:description "Excitatory population external input scaling weight" ;
     schema1:defaultValue 1e+00 ;
-    oboInOwl:hasDbXref GO:0090394,
-        GO:2000463 ;
     skos:definition "Excitatory population external input scaling weight" ;
     skos:notation "W_e" .
 
@@ -4167,7 +4105,6 @@ to a task-appropriate range (e.g. omega in Hz).
     rdfs:label "W_i (DecoBalancedExcInh parameter)" ;
     dcterms:description "Inhibitory population external input scaling weight" ;
     schema1:defaultValue 7e-01 ;
-    oboInOwl:hasDbXref GO:0060080 ;
     skos:definition "Inhibitory population external input scaling weight" ;
     skos:notation "W_i" .
 
@@ -4230,7 +4167,6 @@ to a task-appropriate range (e.g. omega in Hz).
     rdfs:label "gamma_e (DecoBalancedExcInh parameter)" ;
     dcterms:description "Excitatory population kinetic parameter" ;
     schema1:defaultValue 6.41e-04 ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:definition "Excitatory population kinetic parameter" ;
     skos:notation "gamma_e" .
 
@@ -4239,7 +4175,6 @@ to a task-appropriate range (e.g. omega in Hz).
     rdfs:label "gamma_i (DecoBalancedExcInh parameter)" ;
     dcterms:description "Inhibitory population kinetic parameter" ;
     schema1:defaultValue 1e-03 ;
-    oboInOwl:hasDbXref GO:0060080 ;
     skos:definition "Inhibitory population kinetic parameter" ;
     skos:notation "gamma_i" .
 
@@ -4248,7 +4183,6 @@ to a task-appropriate range (e.g. omega in Hz).
     rdfs:label "lamda (DecoBalancedExcInh parameter)" ;
     dcterms:description "Inhibitory global coupling scaling" ;
     schema1:defaultValue 0e+00 ;
-    oboInOwl:hasDbXref GO:0060080 ;
     skos:definition "Inhibitory global coupling scaling" ;
     skos:notation "lamda" .
 
@@ -4266,7 +4200,6 @@ to a task-appropriate range (e.g. omega in Hz).
     rdfs:label "tau_i (DecoBalancedExcInh parameter)" ;
     dcterms:description "Kinetic parameter that represents the decay times for inhibitory GABA synapses (Deco et al" ;
     schema1:defaultValue 1e+01 ;
-    oboInOwl:hasDbXref GO:0016917 ;
     skos:definition "Kinetic parameter that represents the decay times for inhibitory GABA synapses (Deco et al., 2014)." ;
     skos:notation "tau_i" ;
     tvbo:unit "ms" .
@@ -4276,7 +4209,6 @@ to a task-appropriate range (e.g. omega in Hz).
     rdfs:label "w_p (DecoBalancedExcInh parameter)" ;
     dcterms:description "Excitatory population recurrence weight" ;
     schema1:defaultValue 1.4e+00 ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:definition "Excitatory population recurrence weight" ;
     skos:notation "w_p" .
 
@@ -4284,8 +4216,6 @@ to a task-appropriate range (e.g. omega in Hz).
         tvbo:StateVariable ;
     rdfs:label "S_e (DecoBalancedExcInh state variable)" ;
     dcterms:description "Excitatory population synaptic gating state-variable of the Deco Balanced Exc-Inh model (Deco et al., 2021)." ;
-    oboInOwl:hasDbXref GO:0060079,
-        GO:0099536 ;
     skos:notation "S_e" ;
     tvbo:lhs "Derivative(S_e, t)" ;
     tvbo:rhs "H_e*gamma_e*(1 - S_e) - S_e/tau_e" .
@@ -4294,8 +4224,6 @@ to a task-appropriate range (e.g. omega in Hz).
         tvbo:StateVariable ;
     rdfs:label "S_i (DecoBalancedExcInh state variable)" ;
     dcterms:description "Inhibitory population synaptic gating state-variable of the Deco Balanced Exc-Inh model (Deco et al., 2021)." ;
-    oboInOwl:hasDbXref GO:0060080,
-        GO:0099536 ;
     skos:notation "S_i" ;
     tvbo:lhs "Derivative(S_i, t)" ;
     tvbo:rhs "H_i*gamma_i - S_i/tau_i" .
@@ -4305,8 +4233,6 @@ to a task-appropriate range (e.g. omega in Hz).
     rdfs:label "Delta_e (DumontGutkin parameter)" ;
     dcterms:description "Half-width of heterogeneous noise distribution over excitatory population" ;
     schema1:defaultValue 1e+00 ;
-    oboInOwl:hasDbXref GO:0060079,
-        GO:0098815 ;
     skos:definition "Half-width of heterogeneous noise distribution over excitatory population" ;
     skos:notation "Delta_e" .
 
@@ -4315,9 +4241,6 @@ to a task-appropriate range (e.g. omega in Hz).
     rdfs:label "Delta_i (DumontGutkin parameter)" ;
     dcterms:description "Half-width of heterogeneous noise distribution over inhibitory population" ;
     schema1:defaultValue 1e+00 ;
-    oboInOwl:hasDbXref GO:0032228,
-        GO:0060080,
-        GO:0098828 ;
     skos:definition "Half-width of heterogeneous noise distribution over inhibitory population" ;
     skos:notation "Delta_i" .
 
@@ -4326,8 +4249,6 @@ to a task-appropriate range (e.g. omega in Hz).
     rdfs:label "Gamma (DumontGutkin parameter)" ;
     dcterms:description "Ratio of excitatory VS inhibitory global couplings G_ie/G_ee " ;
     schema1:defaultValue 5e+00 ;
-    oboInOwl:hasDbXref GO:0060079,
-        GO:0060080 ;
     skos:definition "Ratio of excitatory VS inhibitory global couplings G_ie/G_ee ." ;
     skos:notation "Gamma" .
 
@@ -4336,7 +4257,6 @@ to a task-appropriate range (e.g. omega in Hz).
     rdfs:label "I_e (DumontGutkin parameter)" ;
     dcterms:description "External homogeneous current on excitatory population" ;
     schema1:defaultValue 0e+00 ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:definition "External homogeneous current on excitatory population" ;
     skos:notation "I_e" .
 
@@ -4345,8 +4265,6 @@ to a task-appropriate range (e.g. omega in Hz).
     rdfs:label "I_i (DumontGutkin parameter)" ;
     dcterms:description "External current on inhibitory population" ;
     schema1:defaultValue 0e+00 ;
-    oboInOwl:hasDbXref GO:0060080,
-        GO:0098828 ;
     skos:definition "External current on inhibitory population" ;
     skos:notation "I_i" .
 
@@ -4355,9 +4273,6 @@ to a task-appropriate range (e.g. omega in Hz).
     rdfs:label "J_ee (DumontGutkin parameter)" ;
     dcterms:description "Synaptic weight e-->e" ;
     schema1:defaultValue 0e+00 ;
-    oboInOwl:hasDbXref GO:0060076,
-        GO:0097060,
-        GO:0099536 ;
     skos:definition "Synaptic weight e-->e" ;
     skos:notation "J_ee" .
 
@@ -4366,8 +4281,6 @@ to a task-appropriate range (e.g. omega in Hz).
     rdfs:label "J_ei (DumontGutkin parameter)" ;
     dcterms:description "Synaptic weight i-->e" ;
     schema1:defaultValue 1e+01 ;
-    oboInOwl:hasDbXref GO:0042391,
-        GO:0097060 ;
     skos:definition "Synaptic weight i-->e" ;
     skos:notation "J_ei" .
 
@@ -4376,8 +4289,6 @@ to a task-appropriate range (e.g. omega in Hz).
     rdfs:label "J_ie (DumontGutkin parameter)" ;
     dcterms:description "Synaptic weight e-->i" ;
     schema1:defaultValue 0e+00 ;
-    oboInOwl:hasDbXref GO:0097060,
-        GO:0099536 ;
     skos:definition "Synaptic weight e-->i" ;
     skos:notation "J_ie" .
 
@@ -4386,8 +4297,6 @@ to a task-appropriate range (e.g. omega in Hz).
     rdfs:label "J_ii (DumontGutkin parameter)" ;
     dcterms:description "Synaptic weight i-->i" ;
     schema1:defaultValue 1.5e+01 ;
-    oboInOwl:hasDbXref GO:0060077,
-        GO:0097060 ;
     skos:definition "Synaptic weight i-->i" ;
     skos:notation "J_ii" .
 
@@ -4396,7 +4305,6 @@ to a task-appropriate range (e.g. omega in Hz).
     rdfs:label "eta_e (DumontGutkin parameter)" ;
     dcterms:description "Mean heterogeneous current on excitatory population" ;
     schema1:defaultValue -5e+00 ;
-    oboInOwl:hasDbXref GO:0098815 ;
     skos:definition "Mean heterogeneous current on excitatory population" ;
     skos:notation "eta_e" .
 
@@ -4405,7 +4313,6 @@ to a task-appropriate range (e.g. omega in Hz).
     rdfs:label "eta_i (DumontGutkin parameter)" ;
     dcterms:description "Mean heterogeneous current on inhibitory population" ;
     schema1:defaultValue -5e+00 ;
-    oboInOwl:hasDbXref GO:0060080 ;
     skos:definition "Mean heterogeneous current on inhibitory population" ;
     skos:notation "eta_i" .
 
@@ -4414,8 +4321,6 @@ to a task-appropriate range (e.g. omega in Hz).
     rdfs:label "tau_e (DumontGutkin parameter)" ;
     dcterms:description "Characteristic time of excitatory population" ;
     schema1:defaultValue 1e+01 ;
-    oboInOwl:hasDbXref GO:0043179,
-        GO:0060079 ;
     skos:definition "Characteristic time of excitatory population" ;
     skos:notation "tau_e" .
 
@@ -4424,8 +4329,6 @@ to a task-appropriate range (e.g. omega in Hz).
     rdfs:label "tau_i (DumontGutkin parameter)" ;
     dcterms:description "Characteristic time of inhibitory population" ;
     schema1:defaultValue 1e+01 ;
-    oboInOwl:hasDbXref GO:0043180,
-        GO:0060080 ;
     skos:definition "Characteristic time of inhibitory population" ;
     skos:notation "tau_i" .
 
@@ -4434,7 +4337,6 @@ to a task-appropriate range (e.g. omega in Hz).
     rdfs:label "tau_s (DumontGutkin parameter)" ;
     dcterms:description "Synaptic time constant" ;
     schema1:defaultValue 1e+00 ;
-    oboInOwl:hasDbXref GO:0099536 ;
     skos:definition "Synaptic time constant" ;
     skos:notation "tau_s" .
 
@@ -4843,7 +4745,6 @@ The coupling quantifies the influence of neuronal fast discharges x_E2D on the l
     rdfs:label "x0 (Epileptor2D parameter)" ;
     dcterms:description "Degree of excitability or epileptogenicity in Epileptor2D (Proix et al" ;
     schema1:defaultValue -1.6e+00 ;
-    oboInOwl:hasDbXref GO:0043179 ;
     skos:definition """Degree of excitability or epileptogenicity in Epileptor2D (Proix et al.,2014).
 
 If x0 is greater than a critical value, x0,critic = −2.05 (i.e., in the supercritical regime), the system can trigger seizures autonomously; otherwise it is in its equilibrium state (i.e., in the subcritical regime).
@@ -4873,7 +4774,6 @@ if x0 is smaller than a critical value, x0,critic = 2.91, can trigger seizures a
         tvbo:Parameter ;
     rdfs:label "N (Epileptor3DStefanescuMcDonald parameter)" ;
     schema1:defaultValue 1e+00 ;
-    oboInOwl:hasDbXref GO:0042391 ;
     skos:definition "Effective population size / scaling of the resting-state regulation term." ;
     skos:notation "N" .
 
@@ -5079,7 +4979,6 @@ The coupling quantifies the influence of neuronal fast discharges x1_E5D on the 
     rdfs:label "x0 (Epileptor5D parameter)" ;
     dcterms:description "Epileptogenicity Parameter" ;
     schema1:defaultValue -1.6e+00 ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:definition """Epileptogenicity Parameter. Degree of excitability or epileptogenicity in Epileptor5D (Jirsa et al.,2014).
 
 If x0 is greater than a critical value, x0,critic = −2.05, the system can trigger seizures autonomously; otherwise it is in its equilibrium state.
@@ -6056,7 +5955,6 @@ if x0 is smaller than a critical value, x0,critic = 2.91, can trigger seizures a
     rdfs:label "J (GastSchmidtKnosche_SD parameter)" ;
     dcterms:description "Synaptic weight" ;
     schema1:defaultValue 2.12132e+01 ;
-    oboInOwl:hasDbXref GO:0099536 ;
     skos:definition "Synaptic weight" ;
     skos:notation "J" .
 
@@ -6157,7 +6055,6 @@ if x0 is smaller than a critical value, x0,critic = 2.91, can trigger seizures a
     rdfs:label "J (GastSchmidtKnosche_SF parameter)" ;
     dcterms:description "Synaptic weight" ;
     schema1:defaultValue 2.12132e+01 ;
-    oboInOwl:hasDbXref GO:0099536 ;
     skos:definition "Synaptic weight" ;
     skos:notation "J" .
 
@@ -6166,7 +6063,6 @@ if x0 is smaller than a critical value, x0,critic = 2.91, can trigger seizures a
     rdfs:label "alpha (GastSchmidtKnosche_SF parameter)" ;
     dcterms:description "adaptation rate" ;
     schema1:defaultValue 1e+01 ;
-    oboInOwl:hasDbXref GO:0042391 ;
     skos:definition "adaptation rate" ;
     skos:notation "alpha" .
 
@@ -6243,7 +6139,6 @@ if x0 is smaller than a critical value, x0,critic = 2.91, can trigger seizures a
     rdfs:label "I (Generic2dOscillator parameter)" ;
     dcterms:description "Baseline shift of the cubic nullcline" ;
     schema1:defaultValue 0e+00 ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:definition "Baseline shift of the cubic nullcline" ;
     skos:notation "I" .
 
@@ -6268,8 +6163,6 @@ if x0 is smaller than a critical value, x0,critic = 2.91, can trigger seizures a
     rdfs:label "b (Generic2dOscillator parameter)" ;
     dcterms:description "Linear slope of the configurable nullcline" ;
     schema1:defaultValue -1e+01 ;
-    oboInOwl:hasDbXref GO:0098873,
-        GO:0099178 ;
     skos:definition "Linear slope of the configurable nullcline" ;
     skos:notation "b" .
 
@@ -6347,7 +6240,6 @@ if x0 is smaller than a critical value, x0,critic = 2.91, can trigger seizures a
         tvbo:StateVariable ;
     rdfs:label "V (Generic2dOscillator state variable)" ;
     dcterms:description "V_G2D is the first state-variable of the Generic 2-Dimensional Oscillator model, that can be associated with membrane potentials and sodium activation (FitzHugh, 1961)" ;
-    oboInOwl:hasDbXref GO:0005272 ;
     skos:notation "V" ;
     tvbo:lhs "Derivative(V, t)" ;
     tvbo:rhs "d*tau*(I*gamma - V**3*f + V**2*e + V*g + V*local_coupling + W*alpha + c_glob*gamma)" .
@@ -6356,7 +6248,6 @@ if x0 is smaller than a critical value, x0,critic = 2.91, can trigger seizures a
         tvbo:StateVariable ;
     rdfs:label "W (Generic2dOscillator state variable)" ;
     dcterms:description "W_G2D is the second state-variable of the Generic 2-Dimensional Oscillator model, that can be associated with accommodation and refractoriness and considered to represent potassium activation, sodium inactivation, or both (FitzHugh, 1961)" ;
-    oboInOwl:hasDbXref GO:0005272 ;
     skos:notation "W" ;
     tvbo:lhs "Derivative(W, t)" ;
     tvbo:rhs "d*(V**2*c + V*b - W*beta + a)/tau" .
@@ -6447,7 +6338,6 @@ into an average firing rate to the PCs.""" ;
     rdfs:label "A (JansenRit parameter)" ;
     dcterms:description "Maximum amplitude of EPSP [mV]" ;
     schema1:defaultValue 3.25e+00 ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:definition "Maximum amplitude of EPSP [mV]. Also called average synaptic gain." ;
     skos:notation "A" ;
     tvbo:unit "mV" .
@@ -6457,7 +6347,6 @@ into an average firing rate to the PCs.""" ;
     rdfs:label "B (JansenRit parameter)" ;
     dcterms:description "Maximum amplitude of IPSP [mV]" ;
     schema1:defaultValue 2.2e+01 ;
-    oboInOwl:hasDbXref GO:0060080 ;
     skos:definition "Maximum amplitude of IPSP [mV]. Also called average synaptic gain." ;
     skos:notation "B" ;
     tvbo:unit "mV" .
@@ -6467,8 +6356,6 @@ into an average firing rate to the PCs.""" ;
     rdfs:label "J (JansenRit parameter)" ;
     dcterms:description "Average number of synapses between three neuronal populations of the model" ;
     schema1:defaultValue 1.35e+02 ;
-    oboInOwl:hasDbXref GO:0051124,
-        GO:0150092 ;
     skos:definition "Average number of synapses between three neuronal populations of the model. It accounts for synaptic phenomena such as neurotransmitter depletion." ;
     skos:notation "J" .
 
@@ -6477,7 +6364,6 @@ into an average firing rate to the PCs.""" ;
     rdfs:label "a (JansenRit parameter)" ;
     dcterms:description "Reciprocal of the time constant of passive membrane and all other spatially distributed delays in the dendritic network. Also called average synaptic time constant." ;
     schema1:defaultValue 1e-01 ;
-    oboInOwl:hasDbXref GO:0099605 ;
     skos:definition "Rate constant of the excitatory post-synaptic potential (EPSP). It is interpreted as being the lumped representation of the sum of the reciprocal of the time constant of passive membrane and all other spatially distributed delays, including temporal dispersion in the afferent tract, synaptic diffusion, and resistive-capacitive delay in the dendritic network." ;
     skos:notation "a" ;
     tvbo:unit "per_ms" .
@@ -6487,7 +6373,6 @@ into an average firing rate to the PCs.""" ;
     rdfs:label "a_1 (JansenRit parameter)" ;
     dcterms:description "Average probability constant of the number of synapses made by the pyramidal cells to the dendrites of the excitatory interneurons  (feedback excitatory loop)" ;
     schema1:defaultValue 1e+00 ;
-    oboInOwl:hasDbXref GO:0099536 ;
     skos:definition "Average probability constant of the number of synapses made by the pyramidal cells to the dendrites of the excitatory interneurons  (feedback excitatory loop). It characterizes the connectivity between the PCs and EINs." ;
     skos:notation "a_1" .
 
@@ -6496,7 +6381,6 @@ into an average firing rate to the PCs.""" ;
     rdfs:label "a_2 (JansenRit parameter)" ;
     dcterms:description "Average probability constant of the number of synapses made by the EINs to the dendrites of the PCs" ;
     schema1:defaultValue 8e-01 ;
-    oboInOwl:hasDbXref GO:0099536 ;
     skos:definition "Average probability constant of the number of synapses made by the EINs to the dendrites of the PCs. It characterizes the excitatory connectivity between the EINs and PCs." ;
     skos:notation "a_2" .
 
@@ -6505,7 +6389,6 @@ into an average firing rate to the PCs.""" ;
     rdfs:label "a_3 (JansenRit parameter)" ;
     dcterms:description "Average probability constant of the number of synapses made by the PCs to the dendrites of the IINs" ;
     schema1:defaultValue 2.5e-01 ;
-    oboInOwl:hasDbXref GO:0099536 ;
     skos:definition "Average probability constant of the number of synapses made by the PCs to the dendrites of the IINs. It characterizes the connectivity between the PCs and inhibitory IINs." ;
     skos:notation "a_3" .
 
@@ -6514,8 +6397,6 @@ into an average firing rate to the PCs.""" ;
     rdfs:label "a_4 (JansenRit parameter)" ;
     dcterms:description "Average probability constant of the number of synapses made by the IINs to the dendrites of the PCs" ;
     schema1:defaultValue 2.5e-01 ;
-    oboInOwl:hasDbXref GO:0060077,
-        GO:0099536 ;
     skos:definition "Average probability constant of the number of synapses made by the IINs to the dendrites of the PCs. It characterizes the connectivity between the IINs and  PCs." ;
     skos:notation "a_4" .
 
@@ -6524,7 +6405,6 @@ into an average firing rate to the PCs.""" ;
     rdfs:label "b (JansenRit parameter)" ;
     dcterms:description "Rate constant of the inhibitory post-synaptic potential (IPSP)" ;
     schema1:defaultValue 5e-02 ;
-    oboInOwl:hasDbXref GO:0060080 ;
     skos:definition "Rate constant of the inhibitory post-synaptic potential (IPSP). It is interpreted as being the lumped representation of the sum of the reciprocal of the time constant of passive membrane and all other spatially distributed delays, including temporal dispersion in the afferent tract, synaptic diffusion, and resistive-capacitive delay in the dendritic network (Freeman 1975)." ;
     skos:notation "b" ;
     tvbo:unit "per_ms" .
@@ -6534,7 +6414,6 @@ into an average firing rate to the PCs.""" ;
     rdfs:label "mu (JansenRit parameter)" ;
     dcterms:description "Mean excitatory external input to the derivative of the state-variable y4_JR (PCs) represented by a pulse density, that consists of activity originating from adjacent and more distant cortical columns, as well as from subcortical structures (e" ;
     schema1:defaultValue 2.2e-01 ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:definition "Mean excitatory external input to the derivative of the state-variable y4_JR (PCs) represented by a pulse density, that consists of activity originating from adjacent and more distant cortical columns, as well as from subcortical structures (e.g., thalamus)." ;
     skos:notation "mu" ;
     tvbo:unit "per_ms" .
@@ -6544,7 +6423,6 @@ into an average firing rate to the PCs.""" ;
     rdfs:label "nu_max (JansenRit parameter)" ;
     dcterms:description "Asymptotic of the sigmoid function Sigm_JR corresponds to the maximum firing rate of the neural populations" ;
     schema1:defaultValue 2.5e-03 ;
-    oboInOwl:hasDbXref GO:0099605 ;
     skos:definition "Asymptotic of the sigmoid function Sigm_JR corresponds to the maximum firing rate of the neural populations." ;
     skos:notation "nu_max" ;
     tvbo:unit "per_ms" .
@@ -6563,7 +6441,6 @@ into an average firing rate to the PCs.""" ;
     rdfs:label "v0 (JansenRit parameter)" ;
     dcterms:description "Average firing threshold (PSP) for which half of the firing rate is achieved" ;
     schema1:defaultValue 5.52e+00 ;
-    oboInOwl:hasDbXref GO:0099605 ;
     skos:definition """Average firing threshold (PSP) for which half of the firing rate is achieved.
 
 Note:
@@ -6575,8 +6452,6 @@ Note:
         tvbo:StateVariable ;
     rdfs:label "y0 (JansenRit state variable)" ;
     dcterms:description "First state-variable of the first Jansen-Rit population" ;
-    oboInOwl:hasDbXref CL:0000598,
-        GO:0060079 ;
     skos:notation "y0" ;
     tvbo:lhs "Derivative(y0, t)" ;
     tvbo:rhs "y3" .
@@ -6585,9 +6460,6 @@ Note:
         tvbo:StateVariable ;
     rdfs:label "y1 (JansenRit state variable)" ;
     dcterms:description "First state-variable of the second Jansen-Rit population (EINs)" ;
-    oboInOwl:hasDbXref CL:0000099,
-        GO:0060076,
-        GO:0060079 ;
     skos:notation "y1" ;
     tvbo:lhs "Derivative(y1, t)" ;
     tvbo:rhs "y4" .
@@ -6596,8 +6468,6 @@ Note:
         tvbo:StateVariable ;
     rdfs:label "y2 (JansenRit state variable)" ;
     dcterms:description "First state-variable of the third Jansen-Rit population (IINs)" ;
-    oboInOwl:hasDbXref CL:0000099,
-        GO:0060077 ;
     skos:notation "y2" ;
     tvbo:lhs "Derivative(y2, t)" ;
     tvbo:rhs "y5" .
@@ -6606,7 +6476,6 @@ Note:
         tvbo:StateVariable ;
     rdfs:label "y3 (JansenRit state variable)" ;
     dcterms:description "Second state-variable of the first Jansen-Rit population (excitatory PCs)" ;
-    oboInOwl:hasDbXref CL:0000598 ;
     skos:notation "y3" ;
     tvbo:lhs "Derivative(y3, t)" ;
     tvbo:rhs "A*a*sigma_y1_y2 - a**2*y0 - 2.0*a*y3" .
@@ -6615,7 +6484,6 @@ Note:
         tvbo:StateVariable ;
     rdfs:label "y4 (JansenRit state variable)" ;
     dcterms:description "Second state-variable of the second excitatory Jansen-Rit population (excitatory EINs)" ;
-    oboInOwl:hasDbXref CL:0000099 ;
     skos:notation "y4" ;
     tvbo:lhs "Derivative(y4, t)" ;
     tvbo:rhs "A*a*(J*a_2*sigma_y0_1 + c_glob + local_coupling*(y1 - y2) + mu) - a**2*y1 - 2.0*a*y4" .
@@ -6624,7 +6492,6 @@ Note:
         tvbo:StateVariable ;
     rdfs:label "y5 (JansenRit state variable)" ;
     dcterms:description "Second state-variable of the third (inhibitory) Jansen-Rit population (IINs)" ;
-    oboInOwl:hasDbXref CL:0000099 ;
     skos:notation "y5" ;
     tvbo:lhs "Derivative(y5, t)" ;
     tvbo:rhs "B*J*a_4*b*sigma_y0_3 - b**2*y2 - 2.0*b*y5" .
@@ -6912,7 +6779,6 @@ Note:
     rdfs:label "Cm (KIonEx parameter)" ;
     dcterms:description "membrane capacitance" ;
     schema1:defaultValue 1e+00 ;
-    oboInOwl:hasDbXref GO:0042391 ;
     skos:definition "membrane capacitance" ;
     skos:notation "Cm" .
 
@@ -6984,7 +6850,6 @@ Note:
     rdfs:label "E (KIonEx parameter)" ;
     dcterms:description "Reversal Potential" ;
     schema1:defaultValue 0e+00 ;
-    oboInOwl:hasDbXref GO:0019228 ;
     skos:definition "Reversal Potential" ;
     skos:notation "E" .
 
@@ -6993,7 +6858,6 @@ Note:
     rdfs:label "J (KIonEx parameter)" ;
     dcterms:description "Mean Synaptic weight" ;
     schema1:defaultValue 1e-01 ;
-    oboInOwl:hasDbXref GO:0099536 ;
     skos:definition "Mean Synaptic weight" ;
     skos:notation "J" .
 
@@ -7002,7 +6866,6 @@ Note:
     rdfs:label "K_bath (KIonEx parameter)" ;
     dcterms:description "Potassium concentration in bath" ;
     schema1:defaultValue 5.5e+00 ;
-    oboInOwl:hasDbXref GO:0055075 ;
     skos:definition "Potassium concentration in bath" ;
     skos:notation "K_bath" .
 
@@ -7301,7 +7164,6 @@ Note:
         tvbo:DerivedVariable ;
     rdfs:label "Q_V (LarterBreakspear derived variable)" ;
     dcterms:description "Average firing rate of the population of PCs, V." ;
-    oboInOwl:hasDbXref GO:0099605 ;
     skos:notation "Q_V" ;
     tvbo:lhs "Q_V" ;
     tvbo:rhs "0.5*Q_Vmax*(tanh((V - V_T)/delta_V) + 1)" .
@@ -7310,7 +7172,6 @@ Note:
         tvbo:DerivedVariable ;
     rdfs:label "Q_Z (LarterBreakspear derived variable)" ;
     dcterms:description "Average firing rate of the population of IINs, Z." ;
-    oboInOwl:hasDbXref GO:0099605 ;
     skos:notation "Q_Z" ;
     tvbo:lhs "Q_Z" ;
     tvbo:rhs "0.5*Q_Zmax*(tanh((Z - Z_T)/delta_Z) + 1)" .
@@ -7328,7 +7189,6 @@ Note:
     dcterms:description """Fraction of open calcium channels (Breakspear et al., 2003b). 
 
 Describes relationship between membrane voltage and channel conductance.""" ;
-    oboInOwl:hasDbXref GO:0005262 ;
     skos:notation "m_Ca" ;
     tvbo:lhs "m_Ca" ;
     tvbo:rhs "0.5*tanh((-T_Ca + V)/delta_Ca) + 0.5" .
@@ -7339,7 +7199,6 @@ Describes relationship between membrane voltage and channel conductance.""" ;
     dcterms:description """Fraction of open potassium channels (Breakspear et al., 2003b). 
 
 Describes relationship between membrane voltage and channel conductance.""" ;
-    oboInOwl:hasDbXref GO:0005267 ;
     skos:notation "m_K" ;
     tvbo:lhs "m_K" ;
     tvbo:rhs "0.5*tanh((-T_K + V)/delta_K) + 0.5" .
@@ -7350,7 +7209,6 @@ Describes relationship between membrane voltage and channel conductance.""" ;
     dcterms:description """Fraction of open sodium channels (Breakspear et al., 2003b). 
 
 Describes relationship between membrane voltage and channel conductance.""" ;
-    oboInOwl:hasDbXref GO:0005272 ;
     skos:notation "m_Na" ;
     tvbo:lhs "m_Na" ;
     tvbo:rhs "0.5*tanh((-T_Na + V)/delta_Na) + 0.5" .
@@ -7360,7 +7218,6 @@ Describes relationship between membrane voltage and channel conductance.""" ;
     rdfs:label "C (LarterBreakspear parameter)" ;
     dcterms:description "Coupling scaling factor" ;
     schema1:defaultValue 1e-01 ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:definition "Coupling scaling factor. Strength of excitatory coupling and balance between internal and local/global coupling strength." ;
     skos:notation "C" .
 
@@ -7369,7 +7226,6 @@ Describes relationship between membrane voltage and channel conductance.""" ;
     rdfs:label "I_ext (LarterBreakspear parameter)" ;
     dcterms:description "Subcortical input current" ;
     schema1:defaultValue 3e-01 ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:definition "Subcortical input current. Represents a non-specific excitation or thalamic inputs." ;
     skos:notation "I_ext" .
 
@@ -7378,8 +7234,6 @@ Describes relationship between membrane voltage and channel conductance.""" ;
     rdfs:label "Q_Vmax (LarterBreakspear parameter)" ;
     dcterms:description "Maximal firing rate for excitatory populations" ;
     schema1:defaultValue 1e+00 ;
-    oboInOwl:hasDbXref GO:0098976,
-        GO:0099605 ;
     skos:definition "Maximal firing rate for excitatory populations." ;
     skos:notation "Q_Vmax" ;
     tvbo:unit "kHz" .
@@ -7389,7 +7243,6 @@ Describes relationship between membrane voltage and channel conductance.""" ;
     rdfs:label "Q_Zmax (LarterBreakspear parameter)" ;
     dcterms:description "Maximal firing rate for inhibitory population" ;
     schema1:defaultValue 1e+00 ;
-    oboInOwl:hasDbXref GO:0099605 ;
     skos:definition "Maximal firing rate for inhibitory population." ;
     skos:notation "Q_Zmax" ;
     tvbo:unit "kHz" .
@@ -7399,8 +7252,6 @@ Describes relationship between membrane voltage and channel conductance.""" ;
     rdfs:label "T_Ca (LarterBreakspear parameter)" ;
     dcterms:description "Threshold value for Ca channels" ;
     schema1:defaultValue -1e-02 ;
-    oboInOwl:hasDbXref GO:0005262,
-        GO:1903233 ;
     skos:definition "Threshold value for Ca channels." ;
     skos:notation "T_Ca" .
 
@@ -7409,7 +7260,6 @@ Describes relationship between membrane voltage and channel conductance.""" ;
     rdfs:label "T_K (LarterBreakspear parameter)" ;
     dcterms:description "Threshold value for K channels" ;
     schema1:defaultValue 0e+00 ;
-    oboInOwl:hasDbXref GO:0005267 ;
     skos:definition "Threshold value for K channels." ;
     skos:notation "T_K" .
 
@@ -7418,7 +7268,6 @@ Describes relationship between membrane voltage and channel conductance.""" ;
     rdfs:label "T_Na (LarterBreakspear parameter)" ;
     dcterms:description "Threshold value for sodium channels" ;
     schema1:defaultValue 3e-01 ;
-    oboInOwl:hasDbXref GO:0005272 ;
     skos:definition "Threshold value for sodium channels." ;
     skos:notation "T_Na" .
 
@@ -7427,7 +7276,6 @@ Describes relationship between membrane voltage and channel conductance.""" ;
     rdfs:label "V_Ca (LarterBreakspear parameter)" ;
     dcterms:description "Calcium Nernst potential" ;
     schema1:defaultValue 1e+00 ;
-    oboInOwl:hasDbXref GO:0005262 ;
     skos:definition "Calcium Nernst potential." ;
     skos:notation "V_Ca" .
 
@@ -7436,7 +7284,6 @@ Describes relationship between membrane voltage and channel conductance.""" ;
     rdfs:label "V_K (LarterBreakspear parameter)" ;
     dcterms:description "K Nernst potential" ;
     schema1:defaultValue -7e-01 ;
-    oboInOwl:hasDbXref GO:0005267 ;
     skos:definition "K Nernst potential." ;
     skos:notation "V_K" .
 
@@ -7445,7 +7292,6 @@ Describes relationship between membrane voltage and channel conductance.""" ;
     rdfs:label "V_L (LarterBreakspear parameter)" ;
     dcterms:description "Nernst potential leak channels" ;
     schema1:defaultValue -5e-01 ;
-    oboInOwl:hasDbXref GO:0022840 ;
     skos:definition "Nernst potential leak channels." ;
     skos:notation "V_L" .
 
@@ -7454,7 +7300,6 @@ Describes relationship between membrane voltage and channel conductance.""" ;
     rdfs:label "V_Na (LarterBreakspear parameter)" ;
     dcterms:description "Na Nernst potential" ;
     schema1:defaultValue 5.3e-01 ;
-    oboInOwl:hasDbXref GO:0005272 ;
     skos:definition "Na Nernst potential." ;
     skos:notation "V_Na" .
 
@@ -7463,7 +7308,6 @@ Describes relationship between membrane voltage and channel conductance.""" ;
     rdfs:label "V_T (LarterBreakspear parameter)" ;
     dcterms:description "Threshold potential for excitatory neurons" ;
     schema1:defaultValue 0e+00 ;
-    oboInOwl:hasDbXref GO:0098815 ;
     skos:definition "Threshold potential for excitatory neurons. Describes the mean potential of the excitatory population." ;
     skos:notation "V_T" .
 
@@ -7472,7 +7316,6 @@ Describes relationship between membrane voltage and channel conductance.""" ;
     rdfs:label "Z_T (LarterBreakspear parameter)" ;
     dcterms:description "Threshold potential (mean) for inihibtory neurons" ;
     schema1:defaultValue 0e+00 ;
-    oboInOwl:hasDbXref GO:0060080 ;
     skos:definition "Threshold potential (mean) for inihibtory neurons." ;
     skos:notation "Z_T" .
 
@@ -7481,7 +7324,6 @@ Describes relationship between membrane voltage and channel conductance.""" ;
     rdfs:label "a_ee (LarterBreakspear parameter)" ;
     dcterms:description "Excitatory-to-excitatory synaptic strength" ;
     schema1:defaultValue 4e-01 ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:definition "Excitatory-to-excitatory synaptic strength." ;
     skos:notation "a_ee" .
 
@@ -7490,7 +7332,6 @@ Describes relationship between membrane voltage and channel conductance.""" ;
     rdfs:label "a_ei (LarterBreakspear parameter)" ;
     dcterms:description "Excitatory-to-inhibitory synaptic strength" ;
     schema1:defaultValue 2e+00 ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:definition "Excitatory-to-inhibitory synaptic strength." ;
     skos:notation "a_ei" .
 
@@ -7499,7 +7340,6 @@ Describes relationship between membrane voltage and channel conductance.""" ;
     rdfs:label "a_ie (LarterBreakspear parameter)" ;
     dcterms:description "Inhibitory-to-excitatory synaptic strength" ;
     schema1:defaultValue 2e+00 ;
-    oboInOwl:hasDbXref GO:0060080 ;
     skos:definition "Inhibitory-to-excitatory synaptic strength." ;
     skos:notation "a_ie" .
 
@@ -7508,7 +7348,6 @@ Describes relationship between membrane voltage and channel conductance.""" ;
     rdfs:label "a_ne (LarterBreakspear parameter)" ;
     dcterms:description "Non-specific-to-excitatory synaptic strength" ;
     schema1:defaultValue 1e+00 ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:definition "Non-specific-to-excitatory synaptic strength." ;
     skos:notation "a_ne" .
 
@@ -7517,7 +7356,6 @@ Describes relationship between membrane voltage and channel conductance.""" ;
     rdfs:label "a_ni (LarterBreakspear parameter)" ;
     dcterms:description "Non-specific-to-inhibitory synaptic strength" ;
     schema1:defaultValue 4e-01 ;
-    oboInOwl:hasDbXref GO:0060080 ;
     skos:definition "Non-specific-to-inhibitory synaptic strength." ;
     skos:notation "a_ni" .
 
@@ -7534,7 +7372,6 @@ Describes relationship between membrane voltage and channel conductance.""" ;
     rdfs:label "delta_Ca (LarterBreakspear parameter)" ;
     dcterms:description "Variance of Calcium channel threshold" ;
     schema1:defaultValue 1.5e-01 ;
-    oboInOwl:hasDbXref GO:0005262 ;
     skos:definition "Variance of Calcium channel threshold. Defines the steepness of the sigmoid $m_{Ca}$." ;
     skos:notation "delta_Ca" .
 
@@ -7543,7 +7380,6 @@ Describes relationship between membrane voltage and channel conductance.""" ;
     rdfs:label "delta_K (LarterBreakspear parameter)" ;
     dcterms:description "Variance of Potassium channel threshold" ;
     schema1:defaultValue 3e-01 ;
-    oboInOwl:hasDbXref GO:0005267 ;
     skos:definition "Variance of Potassium channel threshold. Defines the steepness of the sigmoid $m_K$." ;
     skos:notation "delta_K" .
 
@@ -7552,7 +7388,6 @@ Describes relationship between membrane voltage and channel conductance.""" ;
     rdfs:label "delta_Na (LarterBreakspear parameter)" ;
     dcterms:description "Variance of sodium channel threshold" ;
     schema1:defaultValue 1.5e-01 ;
-    oboInOwl:hasDbXref GO:0005272 ;
     skos:definition "Variance of sodium channel threshold. Defines the steepness of the sigmoid $m_{Na}$." ;
     skos:notation "delta_Na" .
 
@@ -7561,8 +7396,6 @@ Describes relationship between membrane voltage and channel conductance.""" ;
     rdfs:label "delta_V (LarterBreakspear parameter)" ;
     dcterms:description "Variance of excitatory threshold" ;
     schema1:defaultValue 6.5e-01 ;
-    oboInOwl:hasDbXref GO:0060079,
-        tvbo:ExcitabilityThresholdVariance ;
     skos:definition "Variance of excitatory threshold. Defines the steepness of sigmoid $Q_V$." ;
     skos:notation "delta_V" .
 
@@ -7571,7 +7404,6 @@ Describes relationship between membrane voltage and channel conductance.""" ;
     rdfs:label "delta_Z (LarterBreakspear parameter)" ;
     dcterms:description "Variance of inhibitory threshold" ;
     schema1:defaultValue 7e-01 ;
-    oboInOwl:hasDbXref GO:0060080 ;
     skos:definition "Variance of inhibitory threshold. Defines the steepness of sigmoid $Q_Z$." ;
     skos:notation "delta_Z" .
 
@@ -7580,7 +7412,6 @@ Describes relationship between membrane voltage and channel conductance.""" ;
     rdfs:label "g_Ca (LarterBreakspear parameter)" ;
     dcterms:description "Conductance of population of calcium (Ca++) channels" ;
     schema1:defaultValue 1.1e+00 ;
-    oboInOwl:hasDbXref GO:0005262 ;
     skos:definition "Conductance of population of calcium (Ca++) channels. Describes the maximal conductance if all channels are open." ;
     skos:notation "g_Ca" .
 
@@ -7589,7 +7420,6 @@ Describes relationship between membrane voltage and channel conductance.""" ;
     rdfs:label "g_K (LarterBreakspear parameter)" ;
     dcterms:description "Conductance of population of potassium (K) channels" ;
     schema1:defaultValue 2e+00 ;
-    oboInOwl:hasDbXref GO:0005267 ;
     skos:definition "Conductance of population of potassium (K) channels. Describes the maximal conductance if all channels are open." ;
     skos:notation "g_K" .
 
@@ -7598,7 +7428,6 @@ Describes relationship between membrane voltage and channel conductance.""" ;
     rdfs:label "g_L (LarterBreakspear parameter)" ;
     dcterms:description "Conductance of population of leak channels" ;
     schema1:defaultValue 5e-01 ;
-    oboInOwl:hasDbXref GO:0022840 ;
     skos:definition "Conductance of population of leak channels." ;
     skos:notation "g_L" .
 
@@ -7607,7 +7436,6 @@ Describes relationship between membrane voltage and channel conductance.""" ;
     rdfs:label "g_Na (LarterBreakspear parameter)" ;
     dcterms:description "Conductance of population of Na channels" ;
     schema1:defaultValue 6.7e+00 ;
-    oboInOwl:hasDbXref GO:0005272 ;
     skos:definition "Conductance of population of Na channels." ;
     skos:notation "g_Na" .
 
@@ -7624,7 +7452,6 @@ Describes relationship between membrane voltage and channel conductance.""" ;
     rdfs:label "r_NMDA (LarterBreakspear parameter)" ;
     dcterms:description "Ratio of NMDA to AMPA receptors" ;
     schema1:defaultValue 2.5e-01 ;
-    oboInOwl:hasDbXref GO:0004971 ;
     skos:definition "Ratio of NMDA to AMPA receptors." ;
     skos:notation "r_NMDA" .
 
@@ -7641,7 +7468,6 @@ Describes relationship between membrane voltage and channel conductance.""" ;
     rdfs:label "tau_K (LarterBreakspear parameter)" ;
     dcterms:description "Time constant for K relaxation time (ms)" ;
     schema1:defaultValue 1e+00 ;
-    oboInOwl:hasDbXref GO:0005267 ;
     skos:definition "Time constant for K relaxation time (ms)" ;
     skos:notation "tau_K" .
 
@@ -7649,7 +7475,6 @@ Describes relationship between membrane voltage and channel conductance.""" ;
         tvbo:StateVariable ;
     rdfs:label "V (LarterBreakspear state variable)" ;
     dcterms:description "First state-variable of the Larter-Breakspear (Breakspear et al" ;
-    oboInOwl:hasDbXref GO:0042391 ;
     skos:notation "V" ;
     tvbo:lhs "Derivative(V, t)" ;
     tvbo:rhs "t_scale*(I_ext*a_ne - Q_Z*Z*a_ie - W*g_K*(V - V_K) - g_L*(V - V_L) + m_Ca*(V - V_Ca)*(-C*a_ee*c_glob*r_NMDA - a_ee*r_NMDA*(1.0 - C)*(Q_V + lc_0) - g_Ca) - (V - V_Na)*(C*a_ee*c_glob + a_ee*(1.0 - C)*(Q_V + lc_0) + g_Na*m_Na))" .
@@ -7658,7 +7483,6 @@ Describes relationship between membrane voltage and channel conductance.""" ;
         tvbo:StateVariable ;
     rdfs:label "W (LarterBreakspear state variable)" ;
     dcterms:description "Second state-variable of the Larter-Breakspear (Breakspear et al" ;
-    oboInOwl:hasDbXref GO:0005267 ;
     skos:notation "W" ;
     tvbo:lhs "Derivative(W, t)" ;
     tvbo:rhs "phi*t_scale*(-W + m_K)/tau_K" .
@@ -7667,8 +7491,6 @@ Describes relationship between membrane voltage and channel conductance.""" ;
         tvbo:StateVariable ;
     rdfs:label "Z (LarterBreakspear state variable)" ;
     dcterms:description "Third state-variable of the Larter-Breakspear (Breakspear et al" ;
-    oboInOwl:hasDbXref CL:0000099,
-        GO:0060080 ;
     skos:notation "Z" ;
     tvbo:lhs "Derivative(Z, t)" ;
     tvbo:rhs "b*t_scale*(I_ext*a_ni + Q_V*V*a_ei)" .
@@ -7799,7 +7621,6 @@ Describes relationship between membrane voltage and channel conductance.""" ;
     rdfs:label "Delta (MontbrioPazoRoxin parameter)" ;
     dcterms:description "Mean heterogeneous noise" ;
     schema1:defaultValue 1e+00 ;
-    oboInOwl:hasDbXref GO:0061669 ;
     skos:definition "Mean heterogeneous noise" ;
     skos:notation "Delta" .
 
@@ -7816,8 +7637,6 @@ Describes relationship between membrane voltage and channel conductance.""" ;
     rdfs:label "J (MontbrioPazoRoxin parameter)" ;
     dcterms:description "Mean Synaptic weight" ;
     schema1:defaultValue 1.5e+01 ;
-    oboInOwl:hasDbXref GO:0042391,
-        GO:0099536 ;
     skos:definition "Mean Synaptic weight." ;
     skos:notation "J" .
 
@@ -7842,7 +7661,6 @@ Describes relationship between membrane voltage and channel conductance.""" ;
     rdfs:label "eta (MontbrioPazoRoxin parameter)" ;
     dcterms:description "Constant parameter to scale the rate of feedback from the firing rate variable to itself" ;
     schema1:defaultValue -5e+00 ;
-    oboInOwl:hasDbXref GO:0099605 ;
     skos:definition "Constant parameter to scale the rate of feedback from the firing rate variable to itself" ;
     skos:notation "eta" .
 
@@ -8202,7 +8020,6 @@ Describes relationship between membrane voltage and channel conductance.""" ;
         tvbo:DerivedVariable ;
     rdfs:label "H (ReducedWongWang derived variable)" ;
     dcterms:description "Sigmoid input-output function of the synaptic input current, x_RWW, that computes the averaged firing rate of the neurons population (Deco et al., 2013)." ;
-    oboInOwl:hasDbXref GO:0099605 ;
     skos:notation "H" ;
     tvbo:lhs "H" ;
     tvbo:rhs "(a*x - b)/(1 - exp(-d*(a*x - b)))" .
@@ -8233,7 +8050,6 @@ In TVB, the default value is set to 0.33 (instead of 0.30 as in Deco et al. (201
     rdfs:label "J_N (ReducedWongWang parameter)" ;
     dcterms:description "Excitatory recurrence" ;
     schema1:defaultValue 2.609e-01 ;
-    oboInOwl:hasDbXref GO:0098815 ;
     skos:definition "Excitatory recurrence" ;
     skos:notation "J_N" ;
     tvbo:unit "nA" .
@@ -8315,8 +8131,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:DerivedVariable ;
     rdfs:label "H_e (ReducedWongWangExcInh derived variable)" ;
     dcterms:description "Sigmoid function that computes the averaged firing rate of the excitatory neuron population IE_RWW_EI (Deco et al., 2014; Abbott & Chance, 2005)." ;
-    oboInOwl:hasDbXref GO:0060079,
-        GO:0099605 ;
     skos:notation "H_e" ;
     tvbo:lhs "H_e" ;
     tvbo:rhs "x_e/(1 - exp(-d_e*x_e))" .
@@ -8325,8 +8139,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:DerivedVariable ;
     rdfs:label "H_i (ReducedWongWangExcInh derived variable)" ;
     dcterms:description "Sigmoid function that computes the averaged firing rate of the inhibitory neuron population II_RWW (Deco et al., 2014; Abbott & Chance, 2005)." ;
-    oboInOwl:hasDbXref GO:0060080,
-        GO:0099605 ;
     skos:notation "H_i" ;
     tvbo:lhs "H_i" ;
     tvbo:rhs "x_i/(1 - exp(-d_i*x_i))" .
@@ -8349,7 +8161,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:DerivedVariable ;
     rdfs:label "x_e (ReducedWongWangExcInh derived variable)" ;
     dcterms:description "Input current to the excitatory population (Deco et al., 2014)." ;
-    oboInOwl:hasDbXref GO:0098815 ;
     skos:notation "x_e" ;
     tvbo:lhs "x_e" ;
     tvbo:rhs "a_e*(I_ext + I_o*W_e + J_N_S_e*w_p - J_i*S_i + coupling) - b_e" .
@@ -8358,7 +8169,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:DerivedVariable ;
     rdfs:label "x_i (ReducedWongWangExcInh derived variable)" ;
     dcterms:description "Input current to the inhibitory population (Deco et al., 2014)." ;
-    oboInOwl:hasDbXref GO:0060080 ;
     skos:notation "x_i" ;
     tvbo:lhs "x_i" ;
     tvbo:rhs "a_i*(I_o*W_i + J_N_S_e - S_i + coupling*lamda) - b_i" .
@@ -8376,8 +8186,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "I_ext (ReducedWongWangExcInh parameter)" ;
     dcterms:description "External stimulation parameter for evoked potential simulated activity applied to the excitatory population firing rate IE (Deco et al" ;
     schema1:defaultValue 0e+00 ;
-    oboInOwl:hasDbXref GO:0060079,
-        GO:0099605 ;
     skos:definition "External stimulation parameter for evoked potential simulated activity applied to the excitatory population firing rate IE (Deco et al., 2014)." ;
     skos:notation "I_ext" .
 
@@ -8386,8 +8194,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "I_o (ReducedWongWangExcInh parameter)" ;
     dcterms:description "Effective external input parameter to the excitatory E and inhibitory I population (Deco et al" ;
     schema1:defaultValue 3.82e-01 ;
-    oboInOwl:hasDbXref GO:0060079,
-        GO:0060080 ;
     skos:definition "Effective external input parameter to the excitatory E and inhibitory I population (Deco et al., 2014)." ;
     skos:notation "I_o" ;
     tvbo:unit "nA" .
@@ -8397,7 +8203,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "J_N (ReducedWongWangExcInh parameter)" ;
     dcterms:description "Excitatory synaptic coupling parameter (Deco et al" ;
     schema1:defaultValue 1.5e-01 ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:definition "Excitatory synaptic coupling parameter (Deco et al., 2014)." ;
     skos:notation "J_N" .
 
@@ -8406,8 +8211,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "J_i (ReducedWongWangExcInh parameter)" ;
     dcterms:description "Local feedback inhibitory synaptic coupling to the excitatory population firing rate IE (Deco et al" ;
     schema1:defaultValue 1e+00 ;
-    oboInOwl:hasDbXref GO:0060080,
-        GO:0099605 ;
     skos:definition "Local feedback inhibitory synaptic coupling to the excitatory population firing rate IE (Deco et al., 2014)." ;
     skos:notation "J_i" .
 
@@ -8416,8 +8219,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "W_e (ReducedWongWangExcInh parameter)" ;
     dcterms:description "Excitatory population external input scaling weight" ;
     schema1:defaultValue 1e+00 ;
-    oboInOwl:hasDbXref GO:0090394,
-        GO:2000463 ;
     skos:definition "Excitatory population external input scaling weight" ;
     skos:notation "W_e" .
 
@@ -8426,7 +8227,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "W_i (ReducedWongWangExcInh parameter)" ;
     dcterms:description "Inhibitory population external input scaling weight" ;
     schema1:defaultValue 7e-01 ;
-    oboInOwl:hasDbXref GO:0060080 ;
     skos:definition "Inhibitory population external input scaling weight" ;
     skos:notation "W_i" .
 
@@ -8489,7 +8289,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "gamma_e (ReducedWongWangExcInh parameter)" ;
     dcterms:description "Excitatory population kinetic parameter" ;
     schema1:defaultValue 6.41e-04 ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:definition "Excitatory population kinetic parameter" ;
     skos:notation "gamma_e" .
 
@@ -8498,7 +8297,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "gamma_i (ReducedWongWangExcInh parameter)" ;
     dcterms:description "Inhibitory population kinetic parameter" ;
     schema1:defaultValue 1e-03 ;
-    oboInOwl:hasDbXref GO:0060080 ;
     skos:definition "Inhibitory population kinetic parameter" ;
     skos:notation "gamma_i" .
 
@@ -8507,7 +8305,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "lamda (ReducedWongWangExcInh parameter)" ;
     dcterms:description "Inhibitory global coupling scaling" ;
     schema1:defaultValue 0e+00 ;
-    oboInOwl:hasDbXref GO:0060080 ;
     skos:definition "Inhibitory global coupling scaling" ;
     skos:notation "lamda" .
 
@@ -8525,7 +8322,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "tau_i (ReducedWongWangExcInh parameter)" ;
     dcterms:description "Kinetic parameter that represents the decay times for inhibitory GABA synapses (Deco et al" ;
     schema1:defaultValue 1e+01 ;
-    oboInOwl:hasDbXref GO:0016917 ;
     skos:definition "Kinetic parameter that represents the decay times for inhibitory GABA synapses (Deco et al., 2014)." ;
     skos:notation "tau_i" ;
     tvbo:unit "ms" .
@@ -8535,7 +8331,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "w_p (ReducedWongWangExcInh parameter)" ;
     dcterms:description "Excitatory population recurrence weight" ;
     schema1:defaultValue 1.4e+00 ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:definition "Excitatory population recurrence weight" ;
     skos:notation "w_p" .
 
@@ -8543,8 +8338,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:StateVariable ;
     rdfs:label "S_e (ReducedWongWangExcInh state variable)" ;
     dcterms:description "State-variable of the Reduced WongWang_EI model (Deco et al" ;
-    oboInOwl:hasDbXref GO:0060079,
-        GO:0099536 ;
     skos:notation "S_e" ;
     tvbo:lhs "Derivative(S_e, t)" ;
     tvbo:rhs "H_e*gamma_e*(1 - S_e) - S_e/tau_e" .
@@ -8553,8 +8346,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:StateVariable ;
     rdfs:label "S_i (ReducedWongWangExcInh state variable)" ;
     dcterms:description "State-variable of the Reduced WongWang_EI model (Deco et al" ;
-    oboInOwl:hasDbXref GO:0060080,
-        GO:0099536 ;
     skos:notation "S_i" ;
     tvbo:lhs "Derivative(S_i, t)" ;
     tvbo:rhs "H_i*gamma_i - S_i/tau_i" .
@@ -8658,7 +8449,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:DerivedVariable ;
     rdfs:label "Aik (StefanescuJirsa2D derived variable)" ;
     dcterms:description "Excitatory-to-excitatory mode-coupling matrix derived from Gaussian quadrature over N(mu, sigma); computed offline at `update_derived_parameters`." ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:notation "Aik" ;
     tvbo:lhs "Aik" ;
     tvbo:rhs "0.5" .
@@ -8667,7 +8457,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:DerivedVariable ;
     rdfs:label "Bik (StefanescuJirsa2D derived variable)" ;
     dcterms:description "Inhibitory-to-excitatory mode-coupling matrix." ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:notation "Bik" ;
     tvbo:lhs "Bik" ;
     tvbo:rhs "0.5" .
@@ -8676,7 +8465,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:DerivedVariable ;
     rdfs:label "Cik (StefanescuJirsa2D derived variable)" ;
     dcterms:description "Excitatory-to-inhibitory mode-coupling matrix." ;
-    oboInOwl:hasDbXref GO:0060080 ;
     skos:notation "Cik" ;
     tvbo:lhs "Cik" ;
     tvbo:rhs "0.5" .
@@ -8685,7 +8473,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:DerivedVariable ;
     rdfs:label "IE_i (StefanescuJirsa2D derived variable)" ;
     dcterms:description "Per-mode constant excitatory input from the heterogeneity distribution." ;
-    oboInOwl:hasDbXref GO:0042391 ;
     skos:notation "IE_i" ;
     tvbo:lhs "IE_i" ;
     tvbo:rhs "0.0" .
@@ -8694,7 +8481,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:DerivedVariable ;
     rdfs:label "II_i (StefanescuJirsa2D derived variable)" ;
     dcterms:description "Per-mode constant inhibitory input from the heterogeneity distribution." ;
-    oboInOwl:hasDbXref GO:0042391 ;
     skos:notation "II_i" ;
     tvbo:lhs "II_i" ;
     tvbo:rhs "0.0" .
@@ -8735,7 +8521,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:Parameter ;
     rdfs:label "K11 (StefanescuJirsa2D parameter)" ;
     schema1:defaultValue 5e-01 ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:definition "Internal coupling, excitatory to excitatory." ;
     skos:notation "K11" .
 
@@ -8743,7 +8528,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:Parameter ;
     rdfs:label "K12 (StefanescuJirsa2D parameter)" ;
     schema1:defaultValue 1.5e-01 ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:definition "Internal coupling, inhibitory to excitatory." ;
     skos:notation "K12" .
 
@@ -8751,7 +8535,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:Parameter ;
     rdfs:label "K21 (StefanescuJirsa2D parameter)" ;
     schema1:defaultValue 1.5e-01 ;
-    oboInOwl:hasDbXref GO:0060080 ;
     skos:definition "Internal coupling, excitatory to inhibitory." ;
     skos:notation "K21" .
 
@@ -8773,7 +8556,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:Parameter ;
     rdfs:label "mu (StefanescuJirsa2D parameter)" ;
     schema1:defaultValue 0e+00 ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:definition "Mean of the Gaussian heterogeneity distribution." ;
     skos:notation "mu" .
 
@@ -8781,7 +8563,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:Parameter ;
     rdfs:label "sigma (StefanescuJirsa2D parameter)" ;
     schema1:defaultValue 3.5e-01 ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:definition "Standard deviation of the Gaussian heterogeneity distribution." ;
     skos:notation "sigma" .
 
@@ -8797,7 +8578,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:StateVariable ;
     rdfs:label "alpha (StefanescuJirsa2D state variable)" ;
     dcterms:description "Inhibitory fast variable (per mode)." ;
-    oboInOwl:hasDbXref GO:0060080 ;
     skos:notation "alpha" ;
     tvbo:lhs "Derivative(alpha, t)" ;
     tvbo:rhs "tau*(alpha - f_i*alpha**3/3 - beta) + K21*(Cik*xi - alpha) + tau*(II_i + c_glob + local_coupling*xi)" .
@@ -8806,7 +8586,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:StateVariable ;
     rdfs:label "beta (StefanescuJirsa2D state variable)" ;
     dcterms:description "Inhibitory slow recovery variable (per mode)." ;
-    oboInOwl:hasDbXref GO:0060080 ;
     skos:notation "beta" ;
     tvbo:lhs "Derivative(beta, t)" ;
     tvbo:rhs "(alpha - b*beta + n_i)/tau" .
@@ -8815,7 +8594,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:StateVariable ;
     rdfs:label "eta (StefanescuJirsa2D state variable)" ;
     dcterms:description "Excitatory slow recovery variable (per mode)." ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:notation "eta" ;
     tvbo:lhs "Derivative(eta, t)" ;
     tvbo:rhs "(xi - b*eta + m_i)/tau" .
@@ -8824,7 +8602,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:StateVariable ;
     rdfs:label "xi (StefanescuJirsa2D state variable)" ;
     dcterms:description "Excitatory fast variable (per mode)." ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:notation "xi" ;
     tvbo:lhs "Derivative(xi, t)" ;
     tvbo:rhs "tau*(xi - e_i*xi**3/3 - eta) + K11*(Aik*xi - xi) - K12*(Bik*alpha - xi) + tau*(IE_i + c_glob + local_coupling*xi)" .
@@ -8833,7 +8610,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:DerivedVariable ;
     rdfs:label "A_ik (StefanescuJirsa3D derived variable)" ;
     dcterms:description "Excitatory-to-excitatory mode-coupling matrix from Gaussian quadrature." ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:notation "A_ik" ;
     tvbo:lhs "A_ik" ;
     tvbo:rhs "0.5" .
@@ -8842,7 +8618,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:DerivedVariable ;
     rdfs:label "B_ik (StefanescuJirsa3D derived variable)" ;
     dcterms:description "Inhibitory-to-excitatory mode-coupling matrix." ;
-    oboInOwl:hasDbXref GO:0060080 ;
     skos:notation "B_ik" ;
     tvbo:lhs "B_ik" ;
     tvbo:rhs "0.5" .
@@ -8851,7 +8626,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:DerivedVariable ;
     rdfs:label "C_ik (StefanescuJirsa3D derived variable)" ;
     dcterms:description "Excitatory-to-inhibitory mode-coupling matrix." ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:notation "C_ik" ;
     tvbo:lhs "C_ik" ;
     tvbo:rhs "0.5" .
@@ -8860,7 +8634,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:DerivedVariable ;
     rdfs:label "IE_i (StefanescuJirsa3D derived variable)" ;
     dcterms:description "Per-mode constant excitatory input." ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:notation "IE_i" ;
     tvbo:lhs "IE_i" ;
     tvbo:rhs "0.0" .
@@ -8869,7 +8642,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:DerivedVariable ;
     rdfs:label "II_i (StefanescuJirsa3D derived variable)" ;
     dcterms:description "Per-mode constant inhibitory input." ;
-    oboInOwl:hasDbXref GO:0060080 ;
     skos:notation "II_i" ;
     tvbo:lhs "II_i" ;
     tvbo:rhs "0.0" .
@@ -8902,7 +8674,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:DerivedVariable ;
     rdfs:label "d_i (StefanescuJirsa3D derived variable)" ;
     dcterms:description "Per-mode quadratic coefficient for the excitatory eta dynamics." ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:notation "d_i" ;
     tvbo:lhs "d_i" ;
     tvbo:rhs "d" .
@@ -8951,7 +8722,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:DerivedVariable ;
     rdfs:label "p_i (StefanescuJirsa3D derived variable)" ;
     dcterms:description "Per-mode quadratic coefficient for the inhibitory beta dynamics." ;
-    oboInOwl:hasDbXref GO:0060080 ;
     skos:notation "p_i" ;
     tvbo:lhs "p_i" ;
     tvbo:rhs "d" .
@@ -8960,7 +8730,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:Parameter ;
     rdfs:label "K_11 (StefanescuJirsa3D parameter)" ;
     schema1:defaultValue 5e-01 ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:definition "Internal coupling, excitatory to excitatory." ;
     skos:notation "K_11" .
 
@@ -8968,7 +8737,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:Parameter ;
     rdfs:label "K_12 (StefanescuJirsa3D parameter)" ;
     schema1:defaultValue 1e-01 ;
-    oboInOwl:hasDbXref GO:0060080 ;
     skos:definition "Internal coupling, inhibitory to excitatory." ;
     skos:notation "K_12" .
 
@@ -8976,7 +8744,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:Parameter ;
     rdfs:label "K_21 (StefanescuJirsa3D parameter)" ;
     schema1:defaultValue 1.5e-01 ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:definition "Internal coupling, excitatory to inhibitory." ;
     skos:notation "K_21" .
 
@@ -9012,7 +8779,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:Parameter ;
     rdfs:label "mu (StefanescuJirsa3D parameter)" ;
     schema1:defaultValue 3.3e+00 ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:definition "Mean of the Gaussian heterogeneity distribution." ;
     skos:notation "mu" .
 
@@ -9034,7 +8800,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:Parameter ;
     rdfs:label "sigma (StefanescuJirsa3D parameter)" ;
     schema1:defaultValue 3e-01 ;
-    oboInOwl:hasDbXref GO:0042391 ;
     skos:definition "Standard deviation of the Gaussian heterogeneity distribution." ;
     skos:notation "sigma" .
 
@@ -9042,7 +8807,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:Parameter ;
     rdfs:label "x_0 (StefanescuJirsa3D parameter)" ;
     schema1:defaultValue -1.6e+00 ;
-    oboInOwl:hasDbXref GO:0042391 ;
     skos:definition "Leftmost equilibrium point of x in the Hindmarsh-Rose oscillator." ;
     skos:notation "x_0" .
 
@@ -9050,7 +8814,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:StateVariable ;
     rdfs:label "alpha (StefanescuJirsa3D state variable)" ;
     dcterms:description "Inhibitory fast variable (per mode)." ;
-    oboInOwl:hasDbXref GO:0060080 ;
     skos:notation "alpha" ;
     tvbo:lhs "Derivative(alpha, t)" ;
     tvbo:rhs "beta - e_i*alpha**3 + f_i*alpha**2 - gamma + K_21*(C_ik*xi - alpha) + II_i + c_glob + local_coupling*xi" .
@@ -9059,7 +8822,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:StateVariable ;
     rdfs:label "beta (StefanescuJirsa3D state variable)" ;
     dcterms:description "Inhibitory recovery variable (per mode)." ;
-    oboInOwl:hasDbXref GO:0042391 ;
     skos:notation "beta" ;
     tvbo:lhs "Derivative(beta, t)" ;
     tvbo:rhs "h_i - p_i*alpha**2 - beta" .
@@ -9068,7 +8830,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:StateVariable ;
     rdfs:label "eta (StefanescuJirsa3D state variable)" ;
     dcterms:description "Excitatory recovery variable (per mode)." ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:notation "eta" ;
     tvbo:lhs "Derivative(eta, t)" ;
     tvbo:rhs "c_i - d_i*xi**2 - eta" .
@@ -9077,7 +8838,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:StateVariable ;
     rdfs:label "gamma (StefanescuJirsa3D state variable)" ;
     dcterms:description "Inhibitory slow adaptation variable (per mode)." ;
-    oboInOwl:hasDbXref GO:0060080 ;
     skos:notation "gamma" ;
     tvbo:lhs "Derivative(gamma, t)" ;
     tvbo:rhs "r*s*alpha - r*gamma - n_i" .
@@ -9086,7 +8846,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:StateVariable ;
     rdfs:label "tau (StefanescuJirsa3D state variable)" ;
     dcterms:description "Excitatory slow adaptation variable (per mode)." ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:notation "tau" ;
     tvbo:lhs "Derivative(tau, t)" ;
     tvbo:rhs "r*s*xi - r*tau - m_i" .
@@ -9095,7 +8854,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:StateVariable ;
     rdfs:label "xi (StefanescuJirsa3D state variable)" ;
     dcterms:description "Excitatory fast variable (per mode)." ;
-    oboInOwl:hasDbXref GO:0042391 ;
     skos:notation "xi" ;
     tvbo:lhs "Derivative(xi, t)" ;
     tvbo:rhs "eta - a_i*xi**3 + b_i*xi**2 - tau + K_11*(A_ik*xi - xi) - K_12*(B_ik*alpha - xi) + IE_i + c_glob + local_coupling*xi" .
@@ -9260,7 +9018,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:DerivedVariable ;
     rdfs:label "x_e (WilsonCowan derived variable)" ;
     dcterms:description "Average level of excitation in excitatory neuron at time t. Can be interpreted as membrane potential (Sanz-Leon et al., 2015)." ;
-    oboInOwl:hasDbXref GO:0042391 ;
     skos:notation "x_e" ;
     tvbo:lhs "x_e" ;
     tvbo:rhs "alpha_e*(-I*c_ei + P + c_ee*E + c_glob + lc_0 + lc_1 - theta_e)" .
@@ -9269,7 +9026,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:DerivedVariable ;
     rdfs:label "x_i (WilsonCowan derived variable)" ;
     dcterms:description "Average level of excitation in inhibitory neuron at time t. Can be interpreted as membrane potential. (Sanz-Leon et al., 2015)." ;
-    oboInOwl:hasDbXref GO:0042391 ;
     skos:notation "x_i" ;
     tvbo:lhs "x_i" ;
     tvbo:rhs "alpha_i*(-I*c_ii + Q + c_ie*E + lc_0 + lc_1 - theta_i)" .
@@ -9279,7 +9035,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "P (WilsonCowan parameter)" ;
     dcterms:description "External stimulus to the excitatory population (Wilson and Cowan, 1972)" ;
     schema1:defaultValue 0e+00 ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:definition "External stimulus to the excitatory population (Wilson and Cowan, 1972)." ;
     skos:notation "P" .
 
@@ -9288,7 +9043,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "Q (WilsonCowan parameter)" ;
     dcterms:description "External stimulus to the inhibitory population (Wilson and Cowan, 1972)" ;
     schema1:defaultValue 0e+00 ;
-    oboInOwl:hasDbXref GO:0060080 ;
     skos:definition "External stimulus to the inhibitory population (Wilson and Cowan, 1972)." ;
     skos:notation "Q" .
 
@@ -9297,7 +9051,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "a_e (WilsonCowan parameter)" ;
     dcterms:description "Steepness of the excitatory response function S_e_WC (Wilson and Cowan, 1972)" ;
     schema1:defaultValue 1.2e+00 ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:definition "Steepness of the excitatory response function S_e_WC (Wilson and Cowan, 1972)." ;
     skos:notation "a_e" .
 
@@ -9306,7 +9059,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "a_i (WilsonCowan parameter)" ;
     dcterms:description "Steepness of the excitatory response function S_i_WC (Wilson and Cowan, 1972)" ;
     schema1:defaultValue 1e+00 ;
-    oboInOwl:hasDbXref GO:0060080 ;
     skos:definition "Steepness of the excitatory response function S_i_WC (Wilson and Cowan, 1972)." ;
     skos:notation "a_i" .
 
@@ -9331,7 +9083,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "b_e (WilsonCowan parameter)" ;
     dcterms:description "Position of the maximum slope of the excitatory response function S_e_WC (Sanz-Leon et al" ;
     schema1:defaultValue 2.8e+00 ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:definition "Position of the maximum slope of the excitatory response function S_e_WC (Sanz-Leon et al., 2015)." ;
     skos:notation "b_e" .
 
@@ -9340,7 +9091,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "b_i (WilsonCowan parameter)" ;
     dcterms:description "Position of the maximum slope of a sigmoid function [in         threshold units]" ;
     schema1:defaultValue 4e+00 ;
-    oboInOwl:hasDbXref GO:0060080 ;
     skos:definition """Position of the maximum slope of a sigmoid function [in
         threshold units]""" ;
     skos:notation "b_i" .
@@ -9350,7 +9100,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "c_e (WilsonCowan parameter)" ;
     dcterms:description "The amplitude parameter for the excitatory response function" ;
     schema1:defaultValue 1e+00 ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:definition "The amplitude parameter for the excitatory response function" ;
     skos:notation "c_e" .
 
@@ -9359,7 +9108,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "c_ee (WilsonCowan parameter)" ;
     dcterms:description "Excitatory to excitatory  coupling coefficient" ;
     schema1:defaultValue 1.2e+01 ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:definition "Excitatory to excitatory  coupling coefficient" ;
     skos:notation "c_ee" .
 
@@ -9368,7 +9116,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "c_ei (WilsonCowan parameter)" ;
     dcterms:description "Inhibitory to excitatory coupling coefficient" ;
     schema1:defaultValue 4e+00 ;
-    oboInOwl:hasDbXref GO:0060080 ;
     skos:definition "Inhibitory to excitatory coupling coefficient" ;
     skos:notation "c_ei" .
 
@@ -9377,7 +9124,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "c_i (WilsonCowan parameter)" ;
     dcterms:description "The amplitude parameter for the excitatory response function S_i_WC (Sanz-Leon et al" ;
     schema1:defaultValue 1e+00 ;
-    oboInOwl:hasDbXref GO:0098815 ;
     skos:definition "The amplitude parameter for the excitatory response function S_i_WC (Sanz-Leon et al., 2015)." ;
     skos:notation "c_i" .
 
@@ -9386,7 +9132,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "c_ie (WilsonCowan parameter)" ;
     dcterms:description "Excitatory to inhibitory coupling coefficient (Sanz-Leon et al" ;
     schema1:defaultValue 1.3e+01 ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:definition "Excitatory to inhibitory coupling coefficient (Sanz-Leon et al., 2015)" ;
     skos:notation "c_ie" .
 
@@ -9395,7 +9140,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "c_ii (WilsonCowan parameter)" ;
     dcterms:description "Inhibitory to inhibitory coupling coefficient (Sanz-Leon et al" ;
     schema1:defaultValue 1.1e+01 ;
-    oboInOwl:hasDbXref GO:0060080 ;
     skos:definition "Inhibitory to inhibitory coupling coefficient (Sanz-Leon et al., 2015)" ;
     skos:notation "c_ii" .
 
@@ -9404,7 +9148,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "k_e (WilsonCowan parameter)" ;
     dcterms:description "Maximum value of the excitatory response function" ;
     schema1:defaultValue 1e+00 ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:definition "Maximum value of the excitatory response function" ;
     skos:notation "k_e" .
 
@@ -9413,7 +9156,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "k_i (WilsonCowan parameter)" ;
     dcterms:description "Maximum value of the inhibitory response function" ;
     schema1:defaultValue 1e+00 ;
-    oboInOwl:hasDbXref GO:0060080 ;
     skos:definition "Maximum value of the inhibitory response function" ;
     skos:notation "k_i" .
 
@@ -9422,7 +9164,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "r_e (WilsonCowan parameter)" ;
     dcterms:description "Excitatory refractory period" ;
     schema1:defaultValue 1e+00 ;
-    oboInOwl:hasDbXref GO:0098815 ;
     skos:definition "Excitatory refractory period" ;
     skos:notation "r_e" .
 
@@ -9431,7 +9172,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "r_i (WilsonCowan parameter)" ;
     dcterms:description "Inhibitory refractory period" ;
     schema1:defaultValue 1e+00 ;
-    oboInOwl:hasDbXref GO:0098828 ;
     skos:definition "Inhibitory refractory period" ;
     skos:notation "r_i" .
 
@@ -9449,7 +9189,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "tau_e (WilsonCowan parameter)" ;
     dcterms:description "Excitatory population, membrane time-constant (Wilson and Cowan, 1972)" ;
     schema1:defaultValue 1e+01 ;
-    oboInOwl:hasDbXref GO:0043179 ;
     skos:definition "Excitatory population, membrane time-constant (Wilson and Cowan, 1972)." ;
     skos:notation "tau_e" ;
     tvbo:unit "ms" .
@@ -9459,7 +9198,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "tau_i (WilsonCowan parameter)" ;
     dcterms:description "Inhibitory population, membrane time-constant (Wilson and Cowan, 1972)" ;
     schema1:defaultValue 1e+01 ;
-    oboInOwl:hasDbXref GO:0043180 ;
     skos:definition "Inhibitory population, membrane time-constant (Wilson and Cowan, 1972)." ;
     skos:notation "tau_i" ;
     tvbo:unit "ms" .
@@ -9477,7 +9215,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "theta_i (WilsonCowan parameter)" ;
     dcterms:description "Excitation threshold of inhibitory population (Sanz-Leon et al" ;
     schema1:defaultValue 0e+00 ;
-    oboInOwl:hasDbXref tvbo:InhibitoryThresholdVariance ;
     skos:definition "Excitation threshold of inhibitory population (Sanz-Leon et al., 2015)." ;
     skos:notation "theta_i" .
 
@@ -9485,7 +9222,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:StateVariable ;
     rdfs:label "E (WilsonCowan state variable)" ;
     dcterms:description "State-variable of the Wilson and Cowan model (Wilson and Cowan, 1973), denoting the mean firing rate of all excitatory neurons of the population" ;
-    oboInOwl:hasDbXref GO:0098815 ;
     skos:notation "E" ;
     tvbo:lhs "Derivative(E, t)" ;
     tvbo:rhs "(-E + s_e*(-E*r_e + k_e))/tau_e" .
@@ -9494,7 +9230,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         tvbo:StateVariable ;
     rdfs:label "I (WilsonCowan state variable)" ;
     dcterms:description "State-variable of the Wilson and Cowan model (Wilson and Cowan, 1973), denoting the mean firing rate of all inhibitory neurons of the population" ;
-    oboInOwl:hasDbXref GO:0060080 ;
     skos:notation "I" ;
     tvbo:lhs "Derivative(I, t)" ;
     tvbo:rhs "(-I + s_i*(-I*r_i + k_i))/tau_i" .
@@ -9758,7 +9493,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "C_m (ZerlautAdaptationFirstOrder parameter)" ;
     dcterms:description "membrane capacitance [pF]" ;
     schema1:defaultValue 2e+02 ;
-    oboInOwl:hasDbXref GO:0042391 ;
     skos:definition "membrane capacitance [pF]" ;
     skos:notation "C_m" .
 
@@ -9791,7 +9525,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "E_L_e (ZerlautAdaptationFirstOrder parameter)" ;
     dcterms:description "leak reversal potential for excitatory [mV]" ;
     schema1:defaultValue -6.5e+01 ;
-    oboInOwl:hasDbXref GO:0022840 ;
     skos:definition "leak reversal potential for excitatory [mV]" ;
     skos:notation "E_L_e" .
 
@@ -9800,7 +9533,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "E_L_i (ZerlautAdaptationFirstOrder parameter)" ;
     dcterms:description "leak reversal potential for inhibitory [mV]" ;
     schema1:defaultValue -6.5e+01 ;
-    oboInOwl:hasDbXref GO:0022840 ;
     skos:definition "leak reversal potential for inhibitory [mV]" ;
     skos:notation "E_L_i" .
 
@@ -9809,7 +9541,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "E_e (ZerlautAdaptationFirstOrder parameter)" ;
     dcterms:description "excitatory reversal potential [mV]" ;
     schema1:defaultValue 0e+00 ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:definition "excitatory reversal potential [mV]" ;
     skos:notation "E_e" .
 
@@ -9818,7 +9549,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "E_i (ZerlautAdaptationFirstOrder parameter)" ;
     dcterms:description "inhibitory reversal potential [mV]" ;
     schema1:defaultValue -8e+01 ;
-    oboInOwl:hasDbXref GO:0060080 ;
     skos:definition "inhibitory reversal potential [mV]" ;
     skos:notation "E_i" .
 
@@ -10027,7 +9757,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "Q_e (ZerlautAdaptationFirstOrder parameter)" ;
     dcterms:description "excitatory quantal conductance [nS]" ;
     schema1:defaultValue 1.5e+00 ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:definition "excitatory quantal conductance [nS]" ;
     skos:notation "Q_e" .
 
@@ -10036,7 +9765,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "Q_i (ZerlautAdaptationFirstOrder parameter)" ;
     dcterms:description "inhibitory quantal conductance [nS]" ;
     schema1:defaultValue 5e+00 ;
-    oboInOwl:hasDbXref GO:0060080 ;
     skos:definition "inhibitory quantal conductance [nS]" ;
     skos:notation "Q_i" .
 
@@ -10045,7 +9773,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "S_i (ZerlautAdaptationFirstOrder parameter)" ;
     dcterms:description "Scaling of the remote input for the inhibitory population with         respect to the excitatory population" ;
     schema1:defaultValue 1e+00 ;
-    oboInOwl:hasDbXref GO:0060080 ;
     skos:definition """Scaling of the remote input for the inhibitory population with
         respect to the excitatory population.""" ;
     skos:notation "S_i" .
@@ -10071,7 +9798,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "a_e (ZerlautAdaptationFirstOrder parameter)" ;
     dcterms:description "Excitatory adaptation conductance [nS]" ;
     schema1:defaultValue 4e+00 ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:definition "Excitatory adaptation conductance [nS]" ;
     skos:notation "a_e" .
 
@@ -10080,7 +9806,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "a_i (ZerlautAdaptationFirstOrder parameter)" ;
     dcterms:description "Inhibitory adaptation conductance [nS]" ;
     schema1:defaultValue 0e+00 ;
-    oboInOwl:hasDbXref GO:0060080 ;
     skos:definition "Inhibitory adaptation conductance [nS]" ;
     skos:notation "a_i" .
 
@@ -10089,7 +9814,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "b_e (ZerlautAdaptationFirstOrder parameter)" ;
     dcterms:description "Excitatory adaptation current increment [pA]" ;
     schema1:defaultValue 6e+01 ;
-    oboInOwl:hasDbXref GO:0060079 ;
     skos:definition "Excitatory adaptation current increment [pA]" ;
     skos:notation "b_e" .
 
@@ -10098,7 +9822,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "b_i (ZerlautAdaptationFirstOrder parameter)" ;
     dcterms:description "Inhibitory adaptation current increment [pA]" ;
     schema1:defaultValue 0e+00 ;
-    oboInOwl:hasDbXref GO:0060080 ;
     skos:definition "Inhibitory adaptation current increment [pA]" ;
     skos:notation "b_i" .
 
@@ -10139,7 +9862,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "g (ZerlautAdaptationFirstOrder parameter)" ;
     dcterms:description "fraction of inhibitory cells" ;
     schema1:defaultValue 2e-01 ;
-    oboInOwl:hasDbXref GO:0060077 ;
     skos:definition "fraction of inhibitory cells" ;
     skos:notation "g" .
 
@@ -10148,7 +9870,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "g_L (ZerlautAdaptationFirstOrder parameter)" ;
     dcterms:description "leak conductance [nS]" ;
     schema1:defaultValue 1e+01 ;
-    oboInOwl:hasDbXref GO:0022840 ;
     skos:definition "leak conductance [nS]" ;
     skos:notation "g_L" .
 
@@ -10197,7 +9918,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "tau_e (ZerlautAdaptationFirstOrder parameter)" ;
     dcterms:description "excitatory decay [ms]" ;
     schema1:defaultValue 5e+00 ;
-    oboInOwl:hasDbXref GO:0098815 ;
     skos:definition "excitatory decay [ms]" ;
     skos:notation "tau_e" .
 
@@ -10206,7 +9926,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "tau_i (ZerlautAdaptationFirstOrder parameter)" ;
     dcterms:description "inhibitory decay [ms]" ;
     schema1:defaultValue 5e+00 ;
-    oboInOwl:hasDbXref GO:0098828 ;
     skos:definition "inhibitory decay [ms]" ;
     skos:notation "tau_i" .
 
@@ -10215,7 +9934,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "tau_w_e (ZerlautAdaptationFirstOrder parameter)" ;
     dcterms:description "Adaptation time constant of excitatory neurons [ms]" ;
     schema1:defaultValue 5e+02 ;
-    oboInOwl:hasDbXref GO:0098815 ;
     skos:definition "Adaptation time constant of excitatory neurons [ms]" ;
     skos:notation "tau_w_e" .
 
@@ -10224,7 +9942,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "tau_w_i (ZerlautAdaptationFirstOrder parameter)" ;
     dcterms:description "Adaptation time constant of inhibitory neurons [ms]" ;
     schema1:defaultValue 1e+00 ;
-    oboInOwl:hasDbXref GO:0098828 ;
     skos:definition "Adaptation time constant of inhibitory neurons [ms]" ;
     skos:notation "tau_w_i" .
 
@@ -10950,8 +10667,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "He (ZetterbergJansen parameter)" ;
     dcterms:description "Maximum amplitude of EPSP [mV]" ;
     schema1:defaultValue 3.25e+00 ;
-    oboInOwl:hasDbXref GO:0060079,
-        GO:0098815 ;
     skos:definition "Maximum amplitude of EPSP [mV]. Also called average synaptic gain." ;
     skos:notation "He" .
 
@@ -10960,8 +10675,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "Hi (ZetterbergJansen parameter)" ;
     dcterms:description "Maximum amplitude of IPSP [mV]" ;
     schema1:defaultValue 2.2e+01 ;
-    oboInOwl:hasDbXref GO:0060080,
-        GO:0098828 ;
     skos:definition "Maximum amplitude of IPSP [mV]. Also called average synaptic gain." ;
     skos:notation "Hi" .
 
@@ -10970,8 +10683,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "P (ZetterbergJansen parameter)" ;
     dcterms:description "Maximum firing rate to the pyramidal population [ms^-1]" ;
     schema1:defaultValue 1.2e-01 ;
-    oboInOwl:hasDbXref CL:0000598,
-        GO:0099605 ;
     skos:definition """Maximum firing rate to the pyramidal population [ms^-1].
         (External stimulus. Constant intensity.Entry point for coupling.)""" ;
     skos:notation "P" .
@@ -10981,8 +10692,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "Q (ZetterbergJansen parameter)" ;
     dcterms:description "Maximum firing rate to the interneurons population [ms^-1]" ;
     schema1:defaultValue 1.2e-01 ;
-    oboInOwl:hasDbXref CL:0000099,
-        GO:0099605 ;
     skos:definition """Maximum firing rate to the interneurons population [ms^-1].
         (External stimulus. Constant intensity.Entry point for coupling.)""" ;
     skos:notation "Q" .
@@ -10992,7 +10701,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "U (ZetterbergJansen parameter)" ;
     dcterms:description "Maximum firing rate to the stellate population [ms^-1]" ;
     schema1:defaultValue 1.2e-01 ;
-    oboInOwl:hasDbXref GO:0099605 ;
     skos:definition """Maximum firing rate to the stellate population [ms^-1].
         (External stimulus. Constant intensity.Entry point for coupling.)""" ;
     skos:notation "U" .
@@ -11002,7 +10710,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "e0 (ZetterbergJansen parameter)" ;
     dcterms:description "Half of the maximum population mean firing rate [ms^-1]" ;
     schema1:defaultValue 2.5e-03 ;
-    oboInOwl:hasDbXref GO:0099605 ;
     skos:definition "Half of the maximum population mean firing rate [ms^-1]." ;
     skos:notation "e0" .
 
@@ -11011,8 +10718,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "gamma_1 (ZetterbergJansen parameter)" ;
     dcterms:description "Average number of synapses between populations (pyramidal to stellate)" ;
     schema1:defaultValue 1.35e+02 ;
-    oboInOwl:hasDbXref CL:0000598,
-        GO:0099536 ;
     skos:definition "Average number of synapses between populations (pyramidal to stellate)." ;
     skos:notation "gamma_1" .
 
@@ -11021,7 +10726,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "gamma_1T (ZetterbergJansen parameter)" ;
     dcterms:description "Coupling factor from the extrinisic input to the spiny stellate population" ;
     schema1:defaultValue 1e+00 ;
-    oboInOwl:hasDbXref GO:0099536 ;
     skos:definition "Coupling factor from the extrinisic input to the spiny stellate population." ;
     skos:notation "gamma_1T" .
 
@@ -11030,7 +10734,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "gamma_2 (ZetterbergJansen parameter)" ;
     dcterms:description "Average number of synapses between populations (stellate to pyramidal)" ;
     schema1:defaultValue 1.08e+02 ;
-    oboInOwl:hasDbXref GO:0099536 ;
     skos:definition "Average number of synapses between populations (stellate to pyramidal)." ;
     skos:notation "gamma_2" .
 
@@ -11039,8 +10742,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "gamma_2T (ZetterbergJansen parameter)" ;
     dcterms:description "Coupling factor from the extrinisic input to the pyramidal population" ;
     schema1:defaultValue 1e+00 ;
-    oboInOwl:hasDbXref CL:0000598,
-        GO:0099536 ;
     skos:definition "Coupling factor from the extrinisic input to the pyramidal population." ;
     skos:notation "gamma_2T" .
 
@@ -11049,9 +10750,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "gamma_3 (ZetterbergJansen parameter)" ;
     dcterms:description "Connectivity constant (pyramidal to interneurons)" ;
     schema1:defaultValue 3.375e+01 ;
-    oboInOwl:hasDbXref CL:0000099,
-        CL:0000598,
-        GO:0099536 ;
     skos:definition "Connectivity constant (pyramidal to interneurons)" ;
     skos:notation "gamma_3" .
 
@@ -11060,7 +10758,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "gamma_3T (ZetterbergJansen parameter)" ;
     dcterms:description "Coupling factor from the extrinisic input to the inhibitory population" ;
     schema1:defaultValue 1e+00 ;
-    oboInOwl:hasDbXref GO:0099536 ;
     skos:definition "Coupling factor from the extrinisic input to the inhibitory population." ;
     skos:notation "gamma_3T" .
 
@@ -11069,8 +10766,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "gamma_4 (ZetterbergJansen parameter)" ;
     dcterms:description "Connectivity constant (interneurons to pyramidal)" ;
     schema1:defaultValue 3.375e+01 ;
-    oboInOwl:hasDbXref CL:0000099,
-        CL:0000598 ;
     skos:definition "Connectivity constant (interneurons to pyramidal)" ;
     skos:notation "gamma_4" .
 
@@ -11079,7 +10774,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "gamma_5 (ZetterbergJansen parameter)" ;
     dcterms:description "Connectivity constant (interneurons to interneurons)" ;
     schema1:defaultValue 1.5e+01 ;
-    oboInOwl:hasDbXref CL:0000099 ;
     skos:definition "Connectivity constant (interneurons to interneurons)" ;
     skos:notation "gamma_5" .
 
@@ -12065,14 +11759,48 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     dcterms:description "Vector of length N_nodes mapping each node to a region index (0-indexed). Inferred from network topology if not provided." ;
     skos:notation "spatial_mask" .
 
+<https://w3id.org/tvbo/studies/Breakspear2003> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Breakspear2003" ;
+    dcterms:issued "2003" ;
+    dcterms:title "Modulation of excitatory synaptic coupling facilitates synchronization and complex dynamics in a nonlinear model of neuronal dynamics" ;
+    schema1:author "Breakspear, Michael",
+        "J. Friston, Karl",
+        "R. Terry, John" ;
+    schema1:identifier "10.1016/s0925-2312(02)00740-3" ;
+    schema1:isPartOf "Neurocomputing" ;
+    schema1:pagination "151--158" ;
+    schema1:publisher "Elsevier BV" ;
+    schema1:volumeNumber "52–54" .
+
+<https://w3id.org/tvbo/studies/Breakspear2003a> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Breakspear2003a" ;
+    dcterms:issued "2003" ;
+    dcterms:title "Modulation of excitatory synaptic coupling facilitates synchronization and complex dynamics in a biophysical model of neuronal dynamics." ;
+    schema1:author "Breakspear, Michael",
+        "Friston, Karl J.",
+        "Terry, John R." ;
+    schema1:identifier "10.1088/0954-898X/14/4/305" ;
+    schema1:isPartOf "Network (Bristol, England)" ;
+    schema1:pagination "703--732" ;
+    schema1:volumeNumber "14" .
+
 <https://w3id.org/tvbo/studies/Cabral2011> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
     rdfs:label "Cabral2011" ;
     dcterms:issued "2011" ;
     dcterms:title "Role of local network oscillations in resting-state functional connectivity" ;
     schema1:author "Cabral, Joana",
-        "others" ;
-    schema1:isPartOf "NeuroImage" .
+        "Deco, Gustavo",
+        "Hugues, Etienne",
+        "Sporns, Olaf" ;
+    schema1:identifier "10.1016/j.neuroimage.2011.04.010" ;
+    schema1:isPartOf "NeuroImage" ;
+    schema1:issueNumber "1" ;
+    schema1:pagination "130--139" ;
+    schema1:publisher "Elsevier BV" ;
+    schema1:volumeNumber "57" .
 
 <https://w3id.org/tvbo/studies/Courtiol2020> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
@@ -12087,10 +11815,18 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         owl:NamedIndividual ;
     rdfs:label "Deco2014" ;
     dcterms:issued "2014" ;
-    dcterms:title "How local excitation--inhibition ratio impacts the whole brain dynamics" ;
-    schema1:author "Deco, Gustavo",
-        "others" ;
-    schema1:isPartOf "Journal of Neuroscience" .
+    dcterms:title "How local excitation-inhibition ratio impacts the whole brain dynamics" ;
+    schema1:author "Corbetta, Maurizio",
+        "Deco, Gustavo",
+        "Hagmann, Patric",
+        "Mantini, Dante",
+        "Ponce-Alvarez, Adrián",
+        "Romani, Gian Luca" ;
+    schema1:identifier "10.1523/JNEUROSCI.5068-13.2014" ;
+    schema1:isPartOf "Journal of Neuroscience" ;
+    schema1:pagination "7886--7898" ;
+    schema1:publisher "Society for Neuroscience" ;
+    schema1:volumeNumber "34" .
 
 <https://w3id.org/tvbo/studies/Deco2017> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
@@ -12126,9 +11862,14 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         owl:NamedIndividual ;
     rdfs:label "FitzHugh1961" ;
     dcterms:issued "1961" ;
-    dcterms:title "Impulses and physiological states in theoretical models of nerve membrane" ;
+    dcterms:title "Impulses and Physiological States in Theoretical Models of Nerve Membrane" ;
     schema1:author "FitzHugh, Richard" ;
-    schema1:isPartOf "Biophysical Journal" .
+    schema1:identifier "10.1016/s0006-3495(61)86902-6" ;
+    schema1:isPartOf "Biophysical Journal" ;
+    schema1:issueNumber "6" ;
+    schema1:pagination "445--466" ;
+    schema1:publisher "Elsevier BV" ;
+    schema1:volumeNumber "1" .
 
 <https://w3id.org/tvbo/studies/Galan2008> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
@@ -12160,19 +11901,30 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         owl:NamedIndividual ;
     rdfs:label "Jansen1993" ;
     dcterms:issued "1993" ;
-    dcterms:title "Electroencephalogram and visual evoked potential generation in a mathematical model of coupled cortical columns" ;
-    schema1:author "Jansen, Ben H.",
-        "Rit, Vincent G." ;
-    schema1:isPartOf "Biological Cybernetics" .
+    dcterms:title "A neurophysiologically-based mathematical model of flash visual evoked potentials" ;
+    schema1:author "Brandt, Michael E.",
+        "Jansen, Ben H.",
+        "Zouridakis, George" ;
+    schema1:identifier "10.1007/bf00224863" ;
+    schema1:isPartOf "Biological Cybernetics" ;
+    schema1:issueNumber "3" ;
+    schema1:pagination "275--283" ;
+    schema1:publisher "Springer Science and Business Media LLC" ;
+    schema1:volumeNumber "68" .
 
 <https://w3id.org/tvbo/studies/Jansen1995> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
     rdfs:label "Jansen1995" ;
     dcterms:issued "1995" ;
-    dcterms:title "Parameter exploration of a realistic neural mass model of visual cortex" ;
+    dcterms:title "Electroencephalogram and visual evoked potential generation in a mathematical model of coupled cortical columns" ;
     schema1:author "Jansen, Ben H.",
         "Rit, Vincent G." ;
-    schema1:isPartOf "Biological Cybernetics" .
+    schema1:identifier "10.1007/bf00199471" ;
+    schema1:isPartOf "Biological Cybernetics" ;
+    schema1:issueNumber "4" ;
+    schema1:pagination "357--366" ;
+    schema1:publisher "Springer Science and Business Media LLC" ;
+    schema1:volumeNumber "73" .
 
 <https://w3id.org/tvbo/studies/Kuramoto1975> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
@@ -12182,6 +11934,21 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     schema1:author "Kuramoto, Yoshiki" ;
     schema1:isPartOf "International Symposium on Mathematical Problems in Theoretical Physics" ;
     schema1:volumeNumber "39" .
+
+<https://w3id.org/tvbo/studies/Larter1999> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Larter1999" ;
+    dcterms:issued "1999" ;
+    dcterms:title "A coupled ordinary differential equation lattice model for the simulation of epileptic seizures" ;
+    schema1:author "Larter, Raima",
+        "Speelman, Brent",
+        "Worth, Robert M." ;
+    schema1:identifier "10.1063/1.166453" ;
+    schema1:isPartOf "Chaos: An Interdisciplinary Journal of Nonlinear Science" ;
+    schema1:issueNumber "3" ;
+    schema1:pagination "795--804" ;
+    schema1:publisher "AIP Publishing" ;
+    schema1:volumeNumber "9" .
 
 <https://w3id.org/tvbo/studies/Montbrio2015> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
@@ -12197,11 +11964,16 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
         owl:NamedIndividual ;
     rdfs:label "Nagumo1962" ;
     dcterms:issued "1962" ;
-    dcterms:title "An active pulse transmission line simulating nerve axon" ;
+    dcterms:title "An Active Pulse Transmission Line Simulating Nerve Axon" ;
     schema1:author "Arimoto, S.",
         "Nagumo, J.",
         "Yoshizawa, S." ;
-    schema1:isPartOf "Proceedings of the IRE" .
+    schema1:identifier "10.1109/jrproc.1962.288235" ;
+    schema1:isPartOf "Proceedings of the IRE" ;
+    schema1:issueNumber "10" ;
+    schema1:pagination "2061--2070" ;
+    schema1:publisher "Institute of Electrical and Electronics Engineers (IEEE)" ;
+    schema1:volumeNumber "50" .
 
 <https://w3id.org/tvbo/studies/Proix2017> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
@@ -12218,7 +11990,26 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     dcterms:issued "2000" ;
     dcterms:title "From Kuramoto to Crawford: exploring the onset of synchronization in populations of coupled oscillators" ;
     schema1:author "Strogatz, Steven H." ;
-    schema1:isPartOf "Physica D" .
+    schema1:identifier "10.1016/s0167-2789(00)00094-4" ;
+    schema1:isPartOf "Physica D: Nonlinear Phenomena" ;
+    schema1:issueNumber "1–4" ;
+    schema1:pagination "1--20" ;
+    schema1:publisher "Elsevier BV" ;
+    schema1:volumeNumber "143" .
+
+<https://w3id.org/tvbo/studies/Tsodyks1997> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Tsodyks1997" ;
+    dcterms:issued "1997" ;
+    dcterms:title "The neural code between neocortical pyramidal neurons depends on neurotransmitter release probability" ;
+    schema1:author "Markram, Henry",
+        "Tsodyks, Misha V." ;
+    schema1:identifier "10.1073/pnas.94.2.719" ;
+    schema1:isPartOf "Proceedings of the National Academy of Sciences" ;
+    schema1:issueNumber "2" ;
+    schema1:pagination "719--723" ;
+    schema1:publisher "Proceedings of the National Academy of Sciences" ;
+    schema1:volumeNumber "94" .
 
 <https://w3id.org/tvbo/studies/Volo2019> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
@@ -12298,9 +12089,17 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "Jirsa2014" ;
     dcterms:issued "2014" ;
     dcterms:title "On the nature of seizure dynamics" ;
-    schema1:author "Jirsa, Viktor",
-        "others" ;
-    schema1:isPartOf "Brain" .
+    schema1:author "Bernard, Christophe",
+        "Ivanov, Anton I.",
+        "Jirsa, Viktor K.",
+        "Quilichini, Pascale P.",
+        "Stacey, William C." ;
+    schema1:identifier "10.1093/brain/awu133" ;
+    schema1:isPartOf "Brain" ;
+    schema1:issueNumber "8" ;
+    schema1:pagination "2210--2230" ;
+    schema1:publisher "Oxford University Press (OUP)" ;
+    schema1:volumeNumber "137" .
 
 <https://w3id.org/tvbo/studies/Proix2014> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
