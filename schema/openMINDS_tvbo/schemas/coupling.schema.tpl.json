@@ -7,6 +7,9 @@
     "label": {
       "type": "string"
     },
+    "iri": {
+      "type": "string"
+    },
     "parameters": {
       "_embeddedTypes": [
         "tvbo:Parameter"
@@ -14,6 +17,9 @@
       "type": "array",
       "minItems": 1,
       "uniqueItems": true
+    },
+    "description": {
+      "type": "string"
     },
     "coupling_function": {
       "_embeddedTypes": [
@@ -34,17 +40,48 @@
       ]
     },
     "incoming_states": {
-      "_embeddedTypes": [
+      "_linkedTypes": [
         "tvbo:StateVariable"
-      ]
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
     },
     "local_states": {
-      "_embeddedTypes": [
+      "_linkedTypes": [
         "tvbo:StateVariable"
-      ]
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
     },
     "delayed": {
       "type": "boolean"
+    },
+    "interpolate_delays": {
+      "type": "boolean"
+    },
+    "vectorized": {
+      "type": "boolean"
+    },
+    "symmetry": {
+      "type": "string"
+    },
+    "outsym": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "observed": {
+      "_embeddedTypes": [
+        "tvbo:DerivedVariable"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
     },
     "inner_coupling": {
       "_embeddedTypes": [

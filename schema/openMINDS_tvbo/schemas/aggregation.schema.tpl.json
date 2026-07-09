@@ -1,0 +1,11 @@
+{
+  "_type": "tvbo:Aggregation",
+  "properties": {
+    "over": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string"
+    }
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "_type": "tvbo:Inference",
+  "required": [
+    "likelihood"
+  ],
+  "properties": {
+    "name": {
+      "type": "string",
+      "_instruction": "Enter the name."
+    },
+    "label": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "priors": {
+      "_embeddedTypes": [
+        "tvbo:Prior"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "likelihood": {
+      "_embeddedTypes": [
+        "tvbo:Likelihood"
+      ]
+    },
+    "sampler": {
+      "type": "string"
+    },
+    "num_samples": {
+      "type": "integer"
+    },
+    "num_warmup": {
+      "type": "integer"
+    },
+    "num_chains": {
+      "type": "integer"
+    },
+    "seed": {
+      "type": "integer"
+    },
+    "execution": {
+      "_embeddedTypes": [
+        "tvbo:ExecutionConfig"
+      ]
+    },
+    "integration": {
+      "_embeddedTypes": [
+        "tvbo:Integrator"
+      ]
+    },
+    "depends_on": {
+      "_linkedTypes": [
+        "tvbo:Algorithm"
+      ]
+    }
+  }
+}

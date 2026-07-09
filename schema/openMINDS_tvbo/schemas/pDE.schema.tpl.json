@@ -26,17 +26,12 @@
       ]
     },
     "state_variables": {
-      "_linkedTypes": [
+      "_embeddedTypes": [
         "tvbo:FieldStateVariable"
       ],
       "type": "array",
       "minItems": 1,
       "uniqueItems": true
-    },
-    "field": {
-      "_linkedTypes": [
-        "tvbo:SpatialField"
-      ]
     },
     "operators": {
       "_linkedTypes": [

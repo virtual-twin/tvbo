@@ -1,0 +1,31 @@
+{
+  "_type": "tvbo:Study",
+  "properties": {
+    "description": {
+      "type": "string"
+    },
+    "citekey": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "authors": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "year": {
+      "type": "integer"
+    },
+    "doi": {
+      "type": "string"
+    }
+  }
+}

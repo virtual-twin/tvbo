@@ -1,0 +1,14 @@
+{
+  "_type": "tvbo:StateValue",
+  "properties": {
+    "name": {
+      "type": "string",
+      "_instruction": "Enter the name."
+    },
+    "value": {
+      "_linkedTypes": [
+        "tvbo:ScalarValue"
+      ]
+    }
+  }
+}

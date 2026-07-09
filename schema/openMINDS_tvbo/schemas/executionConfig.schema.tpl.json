@@ -1,0 +1,26 @@
+{
+  "_type": "tvbo:ExecutionConfig",
+  "properties": {
+    "n_workers": {
+      "type": "integer"
+    },
+    "n_threads": {
+      "type": "integer"
+    },
+    "precision": {
+      "type": "string"
+    },
+    "accelerator": {
+      "type": "string"
+    },
+    "batch_size": {
+      "type": "integer"
+    },
+    "random_seed": {
+      "type": "integer"
+    },
+    "find_fixpoint": {
+      "type": "boolean"
+    }
+  }
+}

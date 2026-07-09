@@ -2,99 +2,238 @@
 title: "HPC patterns"
 ---
 
-This page collects the HPC-relevant flags that span multiple verbs (`run`, `workflow`, `--set` overrides) and shows the canonical patterns for cluster, container, and chunking workflows.
+How to take a Study/Experiment from your laptop to a cluster: declare its
+dependencies, emit a self-contained kit, provision the environment, submit a
+Slurm array job, and collect results. This page collects the HPC-relevant flags
+that span `run` and `workflow` and shows the canonical cluster patterns.
+
+## End to end (Slurm)
+
+Take a large parameter sweep: a 4 × 39 × 10 grid over intrinsic frequency,
+coupling and conduction speed (1 560 cells × 10 trials). It runs as a **Slurm array
+job** where each task simulates a chunk of the grid and the backend vmap/pmap-s
+its share:
+
+```bash
+# 1. Emit the kit locally (from wherever the recipe + its callables resolve)
+tvbo workflow slurm mystudy.yaml \
+    --experiment "Full IF x K x v grid" \
+    --backend tvboptim \
+    --set chunk=40 \
+    --set slurm.partition=medium \
+    --set slurm.time=08:00:00 \
+    --set slurm.mem=16G \
+    --set slurm.mail_type=END,FAIL \
+    --set slurm.mail_user=you@example.org \
+    -o ./cluster_kit
+
+# 2. Ship it to the cluster
+rsync -a ./cluster_kit/ hpc:~/runs/mysweep/
+
+# 3. On the cluster: provision the env from the emitted file, then submit
+ssh hpc
+cd ~/runs/mysweep
+conda env create -f environment.yml      # or: pip install -r requirements.txt
+conda activate mystudy-...
+sbatch run.sbatch                          # 40 array tasks; email on END/FAIL
+```
+
+The generated `run.sbatch` runs, per array task:
+
+```bash
+tvbo run spec/experiment.yaml --backend=tvboptim \
+    --slurm-chunk=$SLURM_ARRAY_TASK_ID/40 \
+    -o out/.../$SLURM_ARRAY_JOB_ID/$SLURM_ARRAY_TASK_ID
+```
+
+It points at the kit's **own frozen `spec/experiment.yaml`**, so the job is
+self-contained (no external recipe or callable modules needed at run time).
+
+## Chunking a sweep into array tasks (`chunk` / `--slurm-chunk`)
+
+Every cell of the sweep's cartesian product gets a deterministic index `j`;
+`--slurm-chunk i/N` runs cell `j` iff `j % N == i`. There are two layers:
+
+- **`--set chunk=N`** (planning): how many Slurm **array tasks** to split the
+  sweep into. The emitted `run.sbatch` gets `#SBATCH --array=0-(N-1)` and passes
+  `--slurm-chunk=$SLURM_ARRAY_TASK_ID/N`.
+- **`--slurm-chunk i/N`** (execution): the `1/N` share of the cells one
+  `tvbo run` invocation actually runs.
+
+This works **even when every axis is backend-vectorized**. For `tvboptim`, a
+`4 × 39 × 10` grid is vectorized inside the backend, so with no chunking it is a
+single (memory-heavy) vmap job; `--set chunk=40` shards it into 40 array tasks
+that each vmap ~39 cells:
+
+```bash
+tvbo workflow plan mystudy.yaml --experiment "Full IF x K x v grid" \
+    --backend tvboptim --set chunk=40
+# …
+# chunk                : 40  →  40 array task(s)
+```
+
+Pick `N` so each task's batch fits node memory. More tasks = smaller batches =
+lower peak memory but more scheduling overhead. The Koller `4 × 39 × 10` grid at
+10 trials is ~1.6 GB for *two* cells, so the whole sweep in one batch would need
+~1.25 TB; that is what chunking avoids.
+
+### How a task runs its share
+
+`--slurm-chunk i/N` slices the backend's own vectorized batch, not a Python cell
+loop. On `tvboptim` the sweep is a `Space`, and task `i` runs `Space[i::N]`: the
+strided subset of grid points, still vmapped, with peak memory scaled by `1/N`.
+Each task saves its slice as a flat `point`-dimension array (one entry per cell
+it ran), so the shards partition the grid and reassemble by value (see
+[Two-stage runs](#two-stage-runs-simulate-analyse)).
+
+Only a backend that vectorizes every swept axis can shard this way, and `tvbo
+run` checks that against the backend's ontology capabilities (the same
+`vectorize_axes` the planner uses). A backend that fans an axis instead (e.g.
+`tvb`, which vectorizes nothing) rejects `--slurm-chunk` and points you to the
+Snakemake or Nextflow emitter, where each cell is its own task. See
+[Choosing an engine](workflow.qmd#choosing-an-engine) for that split.
+
+## Parallelism inside a task (`parallel_mode`)
+
+Within one array task the backend parallelises its cells/trials via the
+exploration's `parallel_mode` (set on `Exploration.parallel_mode` in the recipe,
+or leave `auto`):
+
+| Mode | Behaviour | Use when |
+|------|-----------|----------|
+| `vmap` | all cells batched at once (fast, `n × working-set` memory) | small batch fits memory |
+| `lax_map` | cells run sequentially (bounded memory) | large batch / CPU node |
+| `pmap` | sharded across devices (`jax.pmap`) | multi-GPU / multi-device node |
+| `auto` | `vmap` when the estimated batch fits, else `lax_map` | default |
+
+Combine `--set chunk=N` (across nodes) with `parallel_mode` (within a node) for
+the fastest memory-safe layout: e.g. GPU nodes with `pmap`, or many CPU tasks
+with `auto`.
+
+## Environment provisioning (`environment.requirements`)
+
+Declare the run's dependencies on the experiment's schema-native
+`environment.requirements`, and the kit emits a matching `requirements.txt`
+(pip) **and** `environment.yml` (conda):
+
+```yaml
+# in the experiment
+environment:
+  name: mystudy_env
+  requirements:
+    - {name: tvboptim, package: tvboptim}
+    - {name: jax, package: jax}
+    - {name: libigl, package: libigl, version_spec: ">=2.5"}
+    - {name: potpourri3d, package: potpourri3d}
+    - {name: scikit-sparse, package: scikit-sparse}
+```
+
+→ emitted `environment.yml`:
+
+```yaml
+name: mystudy-experiment
+channels: [conda-forge, defaults]
+dependencies:
+  - python>=3.10
+  - pip
+  - pip:
+      - tvboptim
+      - jax
+      - libigl>=2.5
+      - potpourri3d
+      - scikit-sparse
+```
+
+Each requirement's `source_url`/`url` (if set) is emitted verbatim (for git or
+wheel URLs); otherwise `package` + `version_spec`. Provision on the cluster with
+`conda env create -f environment.yml` or `pip install -r requirements.txt`.
+
+## Email notification
+
+```bash
+tvbo workflow slurm … \
+    --set slurm.mail_type=END,FAIL \
+    --set slurm.mail_user=you@example.org
+```
+
+emits `#SBATCH --mail-type=END,FAIL` and `#SBATCH --mail-user=…`.
+
+## Resources (`--set slurm.*`)
+
+Any key under `slurm.*` becomes an `#SBATCH` directive:
+
+```bash
+tvbo workflow slurm … \
+    --set slurm.account=brain \
+    --set slurm.partition=medium \
+    --set slurm.time=08:00:00 \
+    --set slurm.mem=16G \
+    --set slurm.cpus_per_task=8 \
+    --set slurm.gres=gpu:1
+```
+
+Supported keys: `account`, `partition`, `time`, `mem`, `cpus_per_task`, `gres`,
+`mail_type`, `mail_user`, plus `modules` (a list of `module load …`) and `venv`
+(activated before the run).
 
 ## Engine dispatch (one command, end to end)
 
 ```bash
-tvbo run experiment:JR_MEG --engine slurm --backend jax -o ./run-001
+tvbo run mystudy.yaml --engine slurm --backend tvboptim -o ./run-001
 ```
 
-Equivalent to:
+Equivalent to emitting the kit and then `sbatch`-ing it. For `snakemake` and
+`nextflow` the artefact is written but **no launcher is invoked**; run
+`snakemake --cores all` / `nextflow run main.nf` yourself (Slurm's `sbatch` is
+fire-and-forget, the others need a sustained shell).
+
+## Containers (`--set container=IMAGE`)
 
 ```bash
-tvbo workflow slurm experiment:JR_MEG --backend jax -o ./run-001/run.sbatch
-sbatch ./run-001/run.sbatch
+tvbo workflow slurm … --set container=ghcr.io/the-virtual-brain/tvbo:0.7.0
 ```
 
-For `snakemake` and `nextflow`, the artefact is written but **no launcher is invoked** — call `snakemake --cores all` or `nextflow run main.nf` yourself. This intentional asymmetry exists because Slurm's `sbatch` is fire-and-forget while Snakemake / Nextflow typically need a sustained shell.
+The generated `run.sbatch` wraps the run in `singularity exec <image> …`. A
+container is an alternative to `environment.yml` when the cluster prefers images.
 
-## Sharding with `--slurm-chunk i/N`
+## Two-stage runs (simulate → analyse)
 
-Every cell of the cartesian product of exploration axes gets a deterministic index `j`. `--slurm-chunk i/N` runs cell `j` iff `j % N == i`. The Slurm template emits `--array=0-(N-1)` headers and passes the array index as `i`:
+A large exploration usually **declares no `observations:`**. The array job
+produces the raw simulation results, and the figure-level metrics are computed
+in a **second pass** by analysis scripts over those results (mirroring the
+common simulate-then-analyse HPC pattern). Submit the simulation array first,
+then a dependent analysis job:
 
 ```bash
-# Cell 0 only
-tvbo run experiment:Sweep --slurm-chunk 0/16 -o ./out
-
-# All cells from this array task into a labelled subdirectory per cell
-tvbo run experiment:Sweep --slurm-chunk ${SLURM_ARRAY_TASK_ID}/16 -o ./out
+sim=$(sbatch --parsable run.sbatch)
+sbatch --dependency=afterok:$sim analysis.sbatch
 ```
 
-Each cell writes to `<out_dir>/cell_<j:06d>/`. This is what the generated `run.sbatch` does internally.
+Each array task writes its own slice. Because `--slurm-chunk i/N` slices the
+backend's vectorized batch (tvboptim: `Space[i::N]`), task `i` runs only its
+cells and saves them as a flat `point`-dim array (netCDF), each cell carrying
+its swept parameter values as coordinates. The analysis pass stitches the
+slices back into the full grid **by value** with
+`tvbo.data.reassemble_shards`, so the result is correct no matter how the sweep
+was sharded:
 
-## Containers (`--container IMAGE`)
+```python
+from tvbo.data import reassemble_shards
 
-```bash
-tvbo run experiment:JR_MEG --container ghcr.io/the-virtual-brain/tvbo:0.7.0
+grid = reassemble_shards("out/.../$SLURM_ARRAY_JOB_ID", to_grid=True)
+# grid: xr.DataArray with one dim per swept parameter, addressed by value
+# grid.sel(**{"Kuramoto.omega_mean_hz": 10.0, "conduction_speed": 3.0})
 ```
-
-Runtime selection:
-
-| Condition | Runtime |
-|-----------|---------|
-| `singularity` on `PATH` or `SINGULARITY_BIND` set | `singularity exec --bind $PWD:$PWD <image> tvbo …` |
-| otherwise | `docker run --rm -e TVBO_IN_CONTAINER=1 -v $PWD:$PWD -w $PWD <image> tvbo …` |
-
-The inner invocation has `TVBO_IN_CONTAINER=1` set so it does not recursively re-exec.
-
-The same flag works in workflow kits via `--set container=…`:
-
-```bash
-tvbo workflow slurm experiment:JR_MEG --backend jax \
-    --set container=ghcr.io/the-virtual-brain/tvbo:0.7.0 \
-    -o ./kit
-```
-
-The generated `run.sbatch` then wraps every `python scripts/...` invocation in `singularity exec <image>`.
-
-## Workflow spec overrides (`--set KEY=VALUE`)
-
-Any key under the Study's `workflow:` block can be overridden from the CLI. Dotted keys nest, and values are coerced (booleans, then ints, then floats):
-
-```bash
-tvbo workflow slurm experiment:JR_MEG --backend jax \
-    --set slurm.account=brain \
-    --set slurm.time=04:00:00 \
-    --set slurm.mem=32G \
-    --set slurm.gres=gpu:1 \
-    --set retries=2 \
-    -o ./kit
-```
-
-The full provenance of every override is recorded in the generated `README.md` so the kit is self-documenting.
 
 ## Provenance in the kit's README
 
-Every kit's `README.md` ends with a reproducibility block:
-
-```markdown
-## Reproducibility
-
-- backend       : `jax` (JAX)
-- container     : `ghcr.io/the-virtual-brain/tvbo:0.7.0`
-- workflow cells: 88 (chunk=4, array tasks=22)
-- vectorize_axes: ['G', 'noise_seed']
-- workflow_axes : ['subject']
-
-### CLI overrides
-- `slurm.account` = `brain` (flag)
-- `slurm.time` = `04:00:00` (flag)
-```
+Every kit's `README.md` ends with a reproducibility block: backend, container,
+cell/chunk/array-task counts, vectorized vs. workflow-fanned axes, and every
+`--set KEY=VALUE` with its source. The kit documents itself.
 
 ## See also
 
-- [`tvbo run`](run.qmd) — execution flags
-- [`tvbo workflow`](workflow.qmd) — emitter flags
-- [Workflow kits anatomy](workflow-kits.qmd) — what each file does
-- [Backends](backends.qmd) — vectorize vs. fan-out
+- [`tvbo run`](run.qmd) — execution flags (`--slurm-chunk`, `--engine`)
+- [`tvbo workflow`](workflow.qmd) — emitter flags and the planner
+- [Workflow kits anatomy](workflow-kits.qmd) — what each emitted file does
+- [Backends](backends.qmd) — what a backend vectorizes vs. fans out
