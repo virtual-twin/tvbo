@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import subprocess
 
 import pytest
 from typer.testing import CliRunner
@@ -159,6 +160,43 @@ def test_workflow_stdout_only_does_not_create_kit(tmp_path: Path):
     assert r.exit_code == 0, r.stdout
     assert "rule" in r.stdout
     assert not out.exists()
+
+
+@pytest.mark.parametrize(
+    "engine,expected_cmd,expected_file",
+    [
+        ("slurm", ["sbatch", "run.sbatch"], "run.sbatch"),
+        ("snakemake", ["snakemake", "--cores", "all"], "Snakefile"),
+        ("nextflow", ["nextflow", "run", "main.nf"], "main.nf"),
+    ],
+)
+def test_workflow_run_emits_and_executes_engine(tmp_path: Path, monkeypatch, engine, expected_cmd, expected_file):
+    calls = []
+
+    def _fake_run(cmd, check, cwd=None):
+        calls.append({"cmd": cmd, "check": check, "cwd": cwd})
+        return subprocess.CompletedProcess(cmd, 0)
+
+    monkeypatch.setattr("tvbo.cli.run.subprocess.run", _fake_run)
+
+    out = tmp_path / "kit"
+    r = runner.invoke(
+        app,
+        ["workflow", "run", engine, EXP, "--backend", "jax", "-o", str(out)],
+    )
+    assert r.exit_code == 0, r.stdout
+    assert (out / expected_file).is_file()
+    assert calls, "expected workflow run to execute engine command"
+    assert calls[0]["cmd"] == expected_cmd
+    assert calls[0]["check"] is True
+    assert Path(calls[0]["cwd"]) == out
+
+
+def test_workflow_run_rejects_unknown_engine():
+    r = runner.invoke(app, ["workflow", "run", "local", EXP, "--backend", "jax"])
+    assert r.exit_code != 0
+    combined = (r.stdout or "") + (r.stderr or "")
+    assert "expects engine one of" in combined
 
 
 # ---------------------------------------------------------------------------
