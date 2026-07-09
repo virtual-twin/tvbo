@@ -124,6 +124,18 @@ specify any `Space` configuration that tvboptim supports
 Full design, rationale, file-by-file impact, and step-by-step
 implementation plan: **see `dev/tvboptim_harmonization.md`**.
 
+### Expose dynamics parameters as `net.dynamics[name].parameters`
+The built tvboptim `Network` exposes model parameters at `net.dynamics.params.<P>`
+(a `Bunch`), but the tvbo schema convention is `Dynamics.parameters` keyed by model
+name. Two mismatches:
+- naming: tvboptim `.params` vs tvbo `.parameters`;
+- shape: tvboptim `net.dynamics` is a single object, not name-keyed, so
+  `net.dynamics[name].parameters.P` (the natural path for multi-model networks) fails.
+Needed: expose `.parameters` (alias or rename) and make `net.dynamics` addressable by
+model name, so introspection/round-trip uses one convention on both sides of the
+tvbo↔tvboptim boundary. (Surfaced while inspecting the Taher2019 built model —
+parameters ARE there, just at `net.dynamics.params.P`.)
+
 ## Unify Exploration / Optimization / Pareto / Inference under one `Search` concept
 
 **Status:** design north-star; Hopf_Pareto PR ships only the forward-compatible
@@ -438,6 +450,44 @@ Neurodata without Borders (NDWB)
 
 ## Bifurcation result needs to be also xarray structure!
 - selection of variables should be possible etc.
+
+
+## Native result container format (single-file save/load + `StudyResult` hierarchy)
+Result objects can be *exported* but not *stored/reloaded* as a self-contained container.
+Consumers (e.g. replication run scripts) fall back to ad-hoc `np.savez` because there is no
+native "save this result to one file, load it back" path.
+
+- **Current state.**
+    - Result types: `SimulationResult`, `ExplorationResult(Bunch)`, `AlgorithmResult`,
+      `OptimizationResult`, `ExperimentResult` (in `tvbo/data/types.py`). There is **no
+      `StudyResult`** — a `SimulationStudy.run()` returns a loose dict/list of per-experiment
+      results with no container.
+    - `ExperimentResult.export()` / `.to_bids()` write a **multi-file BIDS BEP034 directory**
+      (yaml + per-observation `.nc`/`.h5`). This is **one-way** — there is no `from_bids` /
+      `load_result`, so an exported result cannot be reloaded into the typed objects.
+    - `experiment_result_io.py` has a fingerprint-keyed sidecar+h5 **cache** (internal), not a
+      user-facing result container.
+- **Needed (two tiers, one API — mirrors the network sidecar/companion design).**
+    1. **Single-file, self-contained container** for when the full BIDS tree is overkill:
+       `result.save(path.h5)` / `Result.load(path)` round-trip, xarray/HDF5-backed, one file per
+       `SimulationResult`/`ExperimentResult`. Extension-dispatched (`.h5`/`.nc`/`.zarr`).
+    2. **`StudyResult` container** at the top of the hierarchy
+       `StudyResult → ExperimentResult → {SimulationResult, ExplorationResult, AlgorithmResult,
+       OptimizationResult}` — serializable either as one grouped file (HDF5 groups / zarr) or a
+       fan-out of per-experiment containers, with the study spec (key/title/provenance) carried
+       alongside.
+    3. **Round-trip load** (`from_file` / `load_result`, `from_bids`) so `export`/`to_bids` output
+       reloads into the typed objects — export must not be one-way.
+    4. **BIDS stays the interoperable/full tier**; the single-file container is the quick/local
+       tier. `result.save()` picks the container by extension; `.to_bids(dir)` writes the tree.
+    5. `ExplorationResult` must serialize its **keyed** observations + axes + `n_up` as labeled
+       xarrays (per the keyed-xarray-never-positional rule), so a swept result reloads with named
+       coordinates (K, node, …), not positional arrays.
+- **Related:** `Harmonize SimulationResult with tvboptim's NativeSolution`, `Bifurcation result
+  needs to be also xarray structure!`, `Data Standards` (NDWB) above — a unified result container
+  should subsume all of these.
+- **Surfaced by:** the Taher2019 replication `code/run_sweeps.py`, which currently writes
+  `output/exp*.npz` as a documented stopgap pending this.
 
 
 ## Harmonize IRI resolution and DB metadata fetching across all classes
@@ -842,6 +892,42 @@ Options:
 Option 2/3 is preferred: `SimulationResult` already handles the
 `result=NativeSolution` constructor path; the tvboptim template just needs
 to use that path and stop exposing raw `NativeSolution` objects to users.
+
+## Thorough analysis of `Integrator.coupling_evaluation` (per_stage vs per_step)
+A new backend-neutral integration field (`CouplingStageEvaluation`: `per_stage` /
+`per_step`) was added after the Taher2019 replication revealed that tvboptim's Heun
+**holds the network coupling constant across the two predictor-corrector stages by
+default** (`recompute_coupling_per_stage=False`). For that chaotic + multistable
+power grid this selected a *different attractor*: cold-start at K=817 gave 12/438
+nodes locked with `per_step` vs **437/438** with `per_stage` (matching an
+independent full-Heun reference and the paper). The RHS, coupling sign/weights, and
+parameters were all byte-exact — only the intra-step coupling evaluation differed.
+
+This needs a proper study before we trust either default broadly:
+- **When does it matter / when is it safe?** Quantify the error vs `dt` (the two
+  schemes agree as `dt → 0`, difference is O(dt) in the coupling); characterise
+  which regimes diverge (stiff, chaotic, multistable, near-bifurcation, strong
+  coupling) vs which are indifferent (linear, weakly-coupled, deep in a single
+  basin). Give guidance: "use per_stage when λ₁ ≳ 0 / multistable / matching a
+  reference; per_step is fine (and faster) for a single stable working point."
+- **Equivalents in original TVB.** TVB's `HeunDeterministic`/`HeunStochastic`
+  compute the coupling **once per step** and reuse it in the corrector (coupling is
+  passed into `dfun` and not recomputed at the predicted state) — i.e. TVB is
+  effectively `per_step`. Confirm this against `tvb.simulator.integrators`, and
+  check RK4 and the SDE Heun. If TVB is per_step, the paper's own results (if TVB-
+  based) and any TVB cross-validation must account for it. Document the mapping for
+  every backend (diffrax = always per_stage; Julia DiffEq = per_stage; ND.jl = ?).
+- **Should the default change?** `per_step` is the current tvboptim default and is a
+  silent correctness footgun for sensitive systems; `per_stage` is correct-by-
+  default but ~2× the coupling-reduction cost per step. Decide per-backend defaults
+  and whether tvbo should override to `per_stage` for `method: heun/rk4`.
+- **Audit existing results.** Re-run a sample of shipped experiments (esp. chaotic /
+  multistable / FIC-tuned working points) under both settings to see which reported
+  numbers move; flag any that were implicitly relying on `per_step`.
+- **Naming / scope.** Confirm `per_stage`/`per_step` is the right conceptual axis
+  (vs a more general "coupling lag" / operator-splitting description), and whether
+  the same field should also govern *stimulus/external-input* evaluation across
+  stages (currently only coupling).
 
 ## Julia backend: mode-axis state layout for multi-mode models
 
