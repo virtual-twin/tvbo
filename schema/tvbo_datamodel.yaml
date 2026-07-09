@@ -198,6 +198,33 @@ enums:
             pmap:
                 description: "Cross-device parallel execution (jax.pmap). For multi-GPU/TPU."
 
+    CouplingStageEvaluation:
+        description: >-
+            How the network coupling term is evaluated within one step of a
+            multi-stage integrator (Heun, RK4, ...). A backend-neutral numerical
+            contract: whether the coupling is part of the vector field, re-evaluated
+            at each solver stage, or computed once per step and held constant across
+            the stages. Matters because the two choices integrate a different
+            effective system — for stiff / chaotic / multistable dynamics they can
+            converge to different trajectories or attractors.
+        permissible_values:
+            per_stage:
+                description: >-
+                    Re-evaluate the coupling at every integrator stage — the coupling
+                    is a full part of the vector field (standard ODE integration).
+                    Accurate; required to reproduce reference integrators for stiff /
+                    chaotic / multistable systems. (tvboptim maps this to
+                    recompute_coupling_per_stage=True; diffrax already recomputes the
+                    whole RHS per stage.)
+            per_step:
+                description: >-
+                    Evaluate the coupling once per integration step and hold it
+                    constant across the stages — a TVB-style efficiency shortcut
+                    (the coupling reduction runs once per step). Faster but lower-
+                    order in the coupling; can change the trajectory for sensitive
+                    systems. (tvboptim: recompute_coupling_per_stage=False, the
+                    current backend default.)
+                    
     WorkflowDistributeBy:
         description: >-
             Default tier a sweep axis is placed on when it is not named explicitly
@@ -459,6 +486,52 @@ enums:
                 description: "Compressed Sparse Row (data, indices, indptr)"
             coo:
                 description: "Coordinate list (data, row, col)"
+
+    SweepSeeding:
+        description: >-
+            How each point of a parameter sweep (Exploration) obtains its initial
+            state. Determines whether the sweep points are independent (and
+            therefore parallelisable) or whether the trajectory follows a
+            solution branch as the swept parameter is changed quasi-statically.
+            The latter is forward-time-integration branch following — distinct
+            from numerical continuation of equilibria (the Continuation class),
+            which tracks branches with a Newton corrector rather than by
+            simulation.
+        permissible_values:
+            independent:
+                description: >-
+                    Each point is initialised independently from the model's
+                    initial values (a cold start), so points are order-independent
+                    and may be evaluated in parallel (see parallel_mode). Default;
+                    today's behaviour.
+            from_previous:
+                description: >-
+                    Each point is seeded from the final state of the preceding
+                    point, so the trajectory follows the solution branch as the
+                    swept parameter changes quasi-statically. Forces sequential,
+                    order-dependent execution (emitted as a scan, not a vmap).
+                    Used to reach a working point by slowly ramping a parameter
+                    (e.g. global coupling) and, with sweep_direction, to expose
+                    hysteresis / multistability. Sweep-granularity analogue of
+                    InitialStateMethod.from_branch.
+
+    SweepDirection:
+        description: >-
+            Order in which a branch-following sweep (SweepSeeding.from_previous)
+            traverses its axis. Ignored for independent seeding, where order is
+            irrelevant.
+        permissible_values:
+            up:
+                description: "Increase the parameter monotonically (low to high), once."
+            down:
+                description: "Decrease the parameter monotonically (high to low), once."
+            bidirectional:
+                description: >-
+                    Increase then decrease over the same values, recording both
+                    branches. Where the two branches differ, the sweep traces a
+                    hysteresis loop that exposes coexisting stable states
+                    (bistability / multistability). The multivalued generalisation
+                    of Continuation.bothside.
 
 classes:
     ScalarValue:
@@ -2676,6 +2749,30 @@ classes:
                     values amortise compile overhead across trials at the
                     cost of memory. Ignored when parallel_mode is ``vmap``
                     (which always uses the full n_trials axis).
+            sweep_seeding:
+                range: SweepSeeding
+                ifabsent: string(independent)
+                description: >-
+                    How each sweep point's initial state is obtained.
+                    'independent' (default) cold-starts every point from the
+                    model's initial values, so points are order-independent and
+                    may run in parallel (see parallel_mode). 'from_previous' seeds
+                    each point from the final state of the preceding point, so the
+                    trajectory follows the solution branch as the swept parameter
+                    changes quasi-statically; this forces sequential execution (a
+                    scan, not a vmap) and, with sweep_direction, exposes hysteresis
+                    / multistability. It is forward-integration branch following,
+                    not numerical continuation (cf. the Continuation class).
+            sweep_direction:
+                range: SweepDirection
+                ifabsent: string(up)
+                description: >-
+                    Order in which a branch-following axis (sweep_seeding:
+                    from_previous) is traversed: 'up' increases the parameter once,
+                    'down' decreases it once, 'bidirectional' increases then
+                    decreases over the same values and records both branches — a
+                    hysteresis loop where they differ. Ignored when sweep_seeding
+                    is 'independent'. Applies to a single swept axis.
 
     ExplorationAxis:
         class_uri: tvbo:ExplorationAxis
@@ -2735,6 +2832,20 @@ classes:
                     Per-element sweep overrides for heterogeneous parameters
                     (e.g. shape "(n_nodes,)"). When set, element_domains[i]
                     replaces the shared domain for element i.
+            builder:
+                range: FunctionCall
+                inlined: true
+                description: >-
+                    Callable that generates this axis's swept values, as an
+                    alternative to domain / explored_values. Use when the points
+                    cannot be written as a static list because each is an array
+                    or depends on other results — e.g. per-count control-gain
+                    vectors g whose entries are chosen from a runtime-computed
+                    solitary-node ordering. The callable returns the stacked
+                    sweep values (leading axis = sweep points); its `arguments`
+                    may reference other observations by name. The value-supplying
+                    analogue of graph_generator.builder, keeping computed sweeps
+                    declarative rather than requiring a Python driver.
             unit:
                 range: string
                 description: "Optional axis unit (defaults to the referenced Parameter's unit)."
@@ -3515,6 +3626,20 @@ classes:
                 description: >-
                     Backend-neutral strategy for propagating gradients through the
                     temporal integration (e.g. truncated backprop-through-time).
+            coupling_evaluation:
+                range: CouplingStageEvaluation
+                ifabsent: string(per_step)
+                description: >-
+                    Backend-neutral numerical treatment of the network coupling
+                    term across the stages of a multi-stage integrator (Heun, RK4,
+                    ...): re-evaluated at every stage (per_stage — standard ODE
+                    accuracy) or computed once per step and held constant across
+                    stages (per_step — a TVB-style efficiency shortcut). Single-
+                    stage methods (Euler) and always-recompute solvers (diffrax)
+                    ignore it. per_stage is required to match reference integrators
+                    for stiff / chaotic / multistable systems, where the frozen-
+                    coupling error can select a different trajectory or attractor.
+                    See CouplingStageEvaluation.
 
     Differentiation:
         class_uri: tvbo:Differentiation
