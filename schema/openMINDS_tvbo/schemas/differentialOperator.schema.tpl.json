@@ -8,7 +8,7 @@
       "type": "string"
     },
     "equation": {
-      "_linkedTypes": [
+      "_embeddedTypes": [
         "tvbo:Equation"
       ]
     },

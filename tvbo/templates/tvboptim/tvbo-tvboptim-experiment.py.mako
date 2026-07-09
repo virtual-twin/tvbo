@@ -248,11 +248,29 @@ for pname in list(dyn_param_names):
             stochastic_param_names.add(pname)
             domain = getattr(dist, 'domain', None)
             dist_name = str(getattr(dist, 'name', 'Uniform')).lower()
+            # Explicit mean/std (sigma) from the distribution parameters take
+            # precedence over the domain; the domain is only a sampling-bounds
+            # fallback (mean<-value, std<-(hi-lo)/4) when they are not given.
+            _dmean = _dstd = None
+            _dparams = getattr(dist, 'parameters', None) or {}
+            for _dp in (_dparams.values() if hasattr(_dparams, 'values') else _dparams):
+                _dn = str(getattr(_dp, 'name', ''))
+                _dv = getattr(_dp, 'value', None)
+                if _dv is None:
+                    continue
+                if _dn in ('mean', 'mu'):
+                    _dmean = float(_dv)
+                elif _dn in ('std', 'sigma', 'sd'):
+                    _dstd = float(_dv)
+            _lo = float(getattr(domain, 'lo', 0)) if domain else 0.0
+            _hi = float(getattr(domain, 'hi', 1)) if domain else 1.0
             stochastic_param_info[pname] = {
                 'dist': dist_name,
-                'lo': float(getattr(domain, 'lo', 0)) if domain else 0.0,
-                'hi': float(getattr(domain, 'hi', 1)) if domain else 1.0,
+                'lo': _lo,
+                'hi': _hi,
                 'default': float(p_obj.value) if p_obj.value is not None else 0.0,
+                'mean': _dmean,
+                'std': _dstd,
                 'seed': int(getattr(dist, 'seed', None) or 42),
                 'shape': str(getattr(p_obj, 'shape', '')) if getattr(p_obj, 'shape', None) else '',
             }
@@ -284,7 +302,14 @@ for sv_name, sv in model.state_variables.items():
 # Schema: experiment.events is multivalued dict of Event objects
 # Each stimulus-type event becomes an AbstractExternalInput, available as a variable in dfun
 events_list = list(experiment.events.values()) if experiment.events else []
-stimulus_events = [ev for ev in events_list if 'stimulus' in str(getattr(ev, 'event_type', 'stimulus'))]
+# Events that become an AbstractExternalInput (a variable available in the dfun):
+# open-loop 'stimulus'/'stimulation' time functions AND closed-loop 'continuous'
+# events, whose onset is triggered by a state condition crossing zero (a stateful
+# ExternalInput that arms on the crossing and then emits its affect waveform).
+def _is_external_input_event(ev):
+    et = str(getattr(ev, 'event_type', 'stimulus'))
+    return ('stimul' in et) or (et in ('continuous', 'discrete'))
+stimulus_events = [ev for ev in events_list if _is_external_input_event(ev)]
 has_stimulus_events = len(stimulus_events) > 0
 
 # A stimulus event whose signal is an iid per-step draw (an event parameter with
@@ -943,15 +968,19 @@ def _inject_stochastic_trajectories(state, t1, dt, key=None):
         _noise_shape = '(n_steps, n_nodes)'
     else:
         _noise_shape = '(n_steps,)'
+    # Effective mean/std: explicit distribution parameters win; the domain
+    # (mean<-value, std<-(hi-lo)/4) is only the fallback.
+    _mu = sp_info['mean'] if sp_info.get('mean') is not None else sp_info['default']
+    _sigma = sp_info['std'] if sp_info.get('std') is not None else (sp_info['hi'] - sp_info['lo']) / 4.0
 %>\
     key, _subkey = jax.random.split(key)
     % if sp_info['dist'] == 'uniform':
     state.dynamics._stoch_${sp_name} = jax.random.uniform(_subkey, ${_noise_shape}, minval=${sp_info['lo']}, maxval=${sp_info['hi']})
     % elif sp_info['dist'] in ('gaussian', 'normal'):
-    state.dynamics._stoch_${sp_name} = ${sp_info['default']} + ${(sp_info['hi'] - sp_info['lo']) / 4.0} * jax.random.normal(_subkey, ${_noise_shape})
+    state.dynamics._stoch_${sp_name} = ${_mu} + ${_sigma} * jax.random.normal(_subkey, ${_noise_shape})
     % elif sp_info['dist'] in ('truncated_normal', 'truncatednormal'):
-    _raw = jax.random.truncated_normal(_subkey, lower=${(sp_info['lo'] - sp_info['default']) / max((sp_info['hi'] - sp_info['lo']) / 4.0, 1e-6)}, upper=${(sp_info['hi'] - sp_info['default']) / max((sp_info['hi'] - sp_info['lo']) / 4.0, 1e-6)}, shape=${_noise_shape})
-    state.dynamics._stoch_${sp_name} = ${sp_info['default']} + ${(sp_info['hi'] - sp_info['lo']) / 4.0} * _raw
+    _raw = jax.random.truncated_normal(_subkey, lower=${(sp_info['lo'] - _mu) / max(_sigma, 1e-6)}, upper=${(sp_info['hi'] - _mu) / max(_sigma, 1e-6)}, shape=${_noise_shape})
+    state.dynamics._stoch_${sp_name} = ${_mu} + ${_sigma} * _raw
     % else:
     # Unsupported distribution '${sp_info['dist']}', using uniform fallback
     state.dynamics._stoch_${sp_name} = jax.random.uniform(_subkey, ${_noise_shape}, minval=${sp_info['lo']}, maxval=${sp_info['hi']})
@@ -1872,6 +1901,14 @@ ${render_adiabatic_scan_body(expl, solver_class, dt)}
     % endif
     % endfor
     grid = Space(grid_state, mode="${expl['mode']}")
+    # HPC sharding (tvboptim-native): `shard=(i, N)` runs only this array task's
+    # slice of the sweep via Space's strided slice — the cells where j % N == i,
+    # still vectorised, with fewer cells → bounded memory per task. The full grid
+    # is reassembled by parameter value downstream (two-stage HPC pattern).
+    _shard = kwargs.get('shard')
+    if _shard is not None:
+        _shard_i, _shard_n = int(_shard[0]), int(_shard[1])
+        grid = grid[_shard_i::_shard_n]
 % endif
 
     # Create observation monitors ONCE with history baked in (optimized pattern)
@@ -2047,10 +2084,11 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
         _trial_noise_shape = f'(_n_steps_stoch, {n_nodes})'
     else:
         _trial_noise_shape = '(_n_steps_stoch,)'
-    # Distribution-specific noise generation
+    # Distribution-specific noise generation. Explicit mean/std (sigma) from the
+    # distribution parameters win; the domain is only a fallback.
     if _sp_info['dist'] in ('gaussian', 'normal'):
-        _mean = _sp_info['default']
-        _std = (_sp_info['hi'] - _sp_info['lo']) / 4.0
+        _mean = _sp_info['mean'] if _sp_info.get('mean') is not None else _sp_info['default']
+        _std = _sp_info['std'] if _sp_info.get('std') is not None else (_sp_info['hi'] - _sp_info['lo']) / 4.0
         _noise_gen = f'{_mean} + {_std} * jax.random.normal(k, {_trial_noise_shape})'
     else:
         # Default: uniform
@@ -2222,6 +2260,29 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
 % endfor
     ]
 
+    # Sharded run: read each retained cell's actual parameter values back from
+    # the sliced grid itself, so the coordinates track the grid's own cell order
+    # regardless of how the Space orders axes internally (avoids positional
+    # mislabelling). Relabel to the exploration's axis names where unambiguous,
+    # else keep the grid keypath. The flat per-shard result is then
+    # self-describing and reassembles by value across tasks.
+    _cell_coords = None
+% if has_axes:
+    _shard = kwargs.get('shard')
+    if _shard is not None:
+        _df = grid.to_dataframe()
+        _bare_to_label = {}
+        for _a in _axes_info:
+            _bare_to_label.setdefault(str(_a.name).rsplit('.', 1)[-1], str(_a.name))
+        _cell_coords, _used = {}, set()
+        for _col in _df.columns:
+            _label = _bare_to_label.get(str(_col).rsplit('.', 1)[-1], str(_col))
+            if _label in _used:
+                _label = str(_col)  # disambiguate a bare-name collision with the keypath
+            _used.add(_label)
+            _cell_coords[_label] = np.asarray(_df[_col].to_numpy())
+% endif
+
 % if bundles_observations:
     # observable_fn returned a Bunch of reduced observations.
     # No raw trajectory to attach; wrap each observation as xr.DataArray.
@@ -2236,6 +2297,7 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
         _observations_xr[_obs_key] = _stacked_to_dataarray(
             _arr, _axes_info, intrinsic_ts=_ts,
             n_trials=${expl.get('n_trials', 1)}, name=str(_obs_key),
+            cell_coords=_cell_coords,
         )
 % else:
     _stacked_results = _stacked
@@ -2250,6 +2312,9 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
 % endif
         results=_stacked_results,
         axes=_axes_info,
+% if has_axes:
+        cell_coords=_cell_coords,
+% endif
 <% _obs_label = obs_name if obs_name else (', '.join(model_output_vars) if has_model_output else obs_func) %>\
         observable='${_obs_label}',
         dt=${dt},
@@ -2288,15 +2353,18 @@ def run_experiment(
     """Run complete experiment workflow. Mode: simulation, optimization, exploration, algorithms, or all."""
 
     weights = jnp.array(weights)
+    # quiet=True silences the structural progress prints (run(..., quiet=True)).
+    _quiet = kwargs.pop("quiet", False)
+    _log = (lambda *a, **k: None) if _quiet else print
 % if network_observation_names:
     # Materialize network-observation constants (empirical targets) from the
     # supplied matrices, keyed by observation name (e.g. {'fc_target': FC}).
     _bind_network_observations(network_observations)
 % endif
 
-    print("\n" + "=" * 60)
-    print("STEP 1: Running simulation...")
-    print("=" * 60)
+    _log("\n" + "=" * 60)
+    _log("STEP 1: Running simulation...")
+    _log("=" * 60)
 
     % if has_delay:
     if delays is None:
@@ -2318,8 +2386,8 @@ def run_experiment(
     default_state = sim_result.state
     # Raw transient result for observation monitors (HRF warmup)
     transient = sim_result.result_transient
-    print(f"  Simulation period: ${t1_default} ms, dt: ${dt} ms")
-    print(f"  Transient period: ${transient_time} ms")
+    _log(f"  Simulation period: ${t1_default} ms, dt: ${dt} ms")
+    _log(f"  Transient period: ${transient_time} ms")
 
     # Use custom state if provided (e.g., from previous optimization)
     if state is not None:
@@ -2437,17 +2505,17 @@ def run_experiment(
         integration=main_result,
 
     )
-    print("  Simulation complete.")
+    _log("  Simulation complete.")
 
     % if has_explorations:
     if mode in ('exploration', 'all'):
-        print("\n" + "=" * 60)
-        print("STEP 2: Running explorations...")
-        print("=" * 60)
+        _log("\n" + "=" * 60)
+        _log("STEP 2: Running explorations...")
+        _log("=" * 60)
         exploration_result = Bunch()
 
         % for expl in explorations:
-        print(f"  > ${expl['name']}")
+        _log(f"  > ${expl['name']}")
         exploration_result.${expl['name']} = ${expl['name']}(
             state, model_fn,
             result_transient=transient,
@@ -2457,7 +2525,7 @@ def run_experiment(
         % endfor
 
         results.explorations = exploration_result
-        print("  Explorations complete.")
+        _log("  Explorations complete.")
     % endif
 
     % if has_algorithms:
@@ -3152,9 +3220,9 @@ ${render_inference(_inf, coupling_keys, external_input_keys, set(derived_observa
         print(f"  Inference complete. Posteriors: {list(results.get('inferences', Bunch()).keys())}")
     % endif
 
-    print("\n" + "=" * 60)
-    print("Experiment complete.")
-    print("=" * 60)
+    _log("\n" + "=" * 60)
+    _log("Experiment complete.")
+    _log("=" * 60)
 
     return results
 

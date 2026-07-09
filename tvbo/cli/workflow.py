@@ -77,6 +77,16 @@ def _resolve_study_and_experiment(spec: str, experiment_arg: str | None):
             exp = wanted[0]
         else:
             exp = items[0]
+        # Prefer the *runtime* experiment (has render/render_code/render_yaml) over the
+        # datamodel object, so the kit can freeze the backend script + YAML snapshot.
+        if hasattr(obj, "get_experiment"):
+            sel = getattr(exp, "id", None)
+            if sel is None:
+                sel = getattr(exp, "key", None) or getattr(exp, "name", None) or getattr(exp, "label", None)
+            try:
+                exp = obj.get_experiment(sel)
+            except Exception:
+                pass
         return obj, exp, getattr(obj, "key", None) or "study"
 
     if kind == "experiment":
@@ -89,7 +99,7 @@ def _build_plan(spec: str, *, engine: str, backend: str,
                 experiment: str | None, overrides: list[str]):
     """Return ``(plan, experiment_obj)``."""
     study, exp, study_key = _resolve_study_and_experiment(spec, experiment)
-    base = _wf.merge_workflow_spec(study, getattr(exp, "key", None)) if study is not None else {}
+    base = _wf.merge_workflow_spec(study, exp)
     parsed = _parse_overrides(overrides)
     spec_dict = _deep_merge(base, parsed["merged"])
     plan = _wf.plan(
@@ -99,6 +109,8 @@ def _build_plan(spec: str, *, engine: str, backend: str,
         engine=engine,
         workflow_spec=spec_dict,
         overrides=parsed["records"],
+        source_spec=spec,
+        experiment_selector=experiment,
     )
     return plan, exp
 
@@ -135,6 +147,68 @@ _TEMPLATE_PATH = {
 }
 
 
+def _network_has_matrices(net) -> bool:
+    """True when a network carries a real connectome (more than a placeholder node).
+
+    A metadata-only experiment has ``number_of_nodes in (None, 0, 1)`` and no
+    weights; such a network round-trips fine as inline YAML and needs no
+    companion file.
+    """
+    if net is None:
+        return False
+    n = getattr(net, "number_of_nodes", None)
+    if n and n > 1:
+        return True
+    try:
+        import numpy as _np
+
+        return _np.asarray(net.weights).size > 1
+    except Exception:
+        return False
+
+
+def _freeze_spec_yaml(experiment, spec_dir: Path) -> str:
+    """Render the experiment as a self-contained YAML spec next to *spec_dir*.
+
+    When the experiment has a connectome, its matrices are saved as an HDF5
+    companion (``network.h5``) with a YAML sidecar (``network.yaml``) and the
+    rendered spec references them through ``network.data_file`` while preserving
+    any inline coupling / transforms / parameters. Without a connectome the plain
+    metadata render already round-trips, so it is returned unchanged.
+    """
+    from tvbo import datamodel as dm
+    from tvbo.classes.network import Network
+
+    net = getattr(experiment, "network", None)
+    if not _network_has_matrices(net):
+        return experiment.render(format="yaml")
+
+    spec_dir.mkdir(parents=True, exist_ok=True)
+    if not isinstance(net, Network):
+        net.__class__ = Network
+    net.save(spec_dir / "network.yaml", binary_format="h5")
+    _common.info("wrote spec/network.yaml + spec/network.h5")
+
+    # Compact network reference: data_file + inline coupling/transforms/parameters,
+    # so the rendered spec loads the companion connectome rather than a stub.
+    ref = dm.Network(data_file="network.h5")
+    if getattr(net, "coupling", None):
+        for k, v in dict(net.coupling).items():
+            ref.coupling[k] = v
+    if getattr(net, "transforms", None):
+        ref.transforms = list(net.transforms)
+    if getattr(net, "parameters", None):
+        for k, v in dict(net.parameters).items():
+            ref.parameters[k] = v
+
+    original = experiment.network
+    experiment.network = ref
+    try:
+        return experiment.to_yaml()
+    finally:
+        experiment.network = original
+
+
 def _emit_kit(*, engine: str, plan, experiment, out_dir: Path) -> Path:
     """Write a self-contained reproducibility kit under *out_dir*.
 
@@ -152,10 +226,19 @@ def _emit_kit(*, engine: str, plan, experiment, out_dir: Path) -> Path:
     (out_dir / "scripts").mkdir(exist_ok=True)
     (out_dir / "spec").mkdir(exist_ok=True)
 
-    # 1) Frozen YAML spec snapshot
+    # 1) Frozen YAML spec snapshot (self-contained run target when it round-trips).
+    #    A connectome-backed experiment cannot be frozen as inline YAML: the
+    #    metadata render drops the matrices, so the reloaded network collapses to
+    #    a single node. Instead the network is written as an HDF5 companion
+    #    (network.h5) + YAML sidecar (network.yaml) and referenced from the spec
+    #    via ``network.data_file`` — the mechanism resolve_spec loads on the node.
+    spec_relpath = None
     try:
-        yaml_text = experiment.render(format="yaml")
-        (out_dir / "spec" / f"{plan.experiment_key}.yaml").write_text(yaml_text, encoding="utf-8")
+        spec_dir = out_dir / "spec"
+        yaml_text = _freeze_spec_yaml(experiment, spec_dir)
+        spec_path = spec_dir / f"{plan.experiment_key}.yaml"
+        spec_path.write_text(yaml_text, encoding="utf-8")
+        spec_relpath = str(spec_path.relative_to(out_dir))
     except Exception as exc:
         _common.info(f"(could not snapshot YAML spec: {exc})")
 
@@ -178,9 +261,19 @@ def _emit_kit(*, engine: str, plan, experiment, out_dir: Path) -> Path:
         plan=plan,
         block=plan.engine_block,
         script_relpath=str(script_path.relative_to(out_dir)) if script_path else None,
+        spec_relpath=spec_relpath,
     )
     artefact.write_text(text, encoding="utf-8")
     _common.info(f"wrote {artefact.relative_to(out_dir)}")
+
+    # 3b) Environment files (pip + conda) rendered via Mako from the experiment's
+    #     declared environment.requirements, so the kit provisions the right env.
+    if plan.pip_specs:
+        (out_dir / "requirements.txt").write_text(
+            _render_template("requirements.txt.mako", plan=plan), encoding="utf-8")
+        (out_dir / "environment.yml").write_text(
+            _render_template("environment.yml.mako", plan=plan), encoding="utf-8")
+        _common.info("wrote requirements.txt + environment.yml")
 
     # 4) README
     _write_readme(out_dir, engine=engine, plan=plan, script_relpath=

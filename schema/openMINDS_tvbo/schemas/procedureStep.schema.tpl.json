@@ -1,0 +1,17 @@
+{
+  "_type": "tvbo:ProcedureStep",
+  "properties": {
+    "name": {
+      "type": "string",
+      "_instruction": "Enter the name."
+    },
+    "description": {
+      "type": "string"
+    },
+    "equation": {
+      "_embeddedTypes": [
+        "tvbo:Equation"
+      ]
+    }
+  }
+}

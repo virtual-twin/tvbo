@@ -15,10 +15,13 @@
       "minItems": 1,
       "uniqueItems": true
     },
-    "lefthandside": {
+    "description": {
       "type": "string"
     },
-    "righthandside": {
+    "lhs": {
+      "type": "string"
+    },
+    "rhs": {
       "type": "string"
     },
     "conditionals": {
@@ -30,9 +33,7 @@
       "uniqueItems": true
     },
     "engine": {
-      "_embeddedTypes": [
-        "tvbo:SoftwareRequirement"
-      ]
+      "type": "string"
     },
     "pycode": {
       "type": "string"

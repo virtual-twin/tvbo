@@ -1,14 +1,40 @@
 {
   "_type": "tvbo:Range",
   "properties": {
+    "enforce": {
+      "type": "string"
+    },
     "lo": {
-      "type": "number"
+      "_linkedTypes": [
+        "tvbo:ScalarValue"
+      ]
     },
     "hi": {
-      "type": "number"
+      "_linkedTypes": [
+        "tvbo:ScalarValue"
+      ]
     },
     "step": {
-      "type": "number"
+      "_linkedTypes": [
+        "tvbo:ScalarValue"
+      ]
+    },
+    "n": {
+      "type": "integer"
+    },
+    "log_scale": {
+      "type": "boolean"
+    },
+    "explored_values": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "number"
+      }
+    },
+    "element": {
+      "type": "integer"
     }
   }
 }

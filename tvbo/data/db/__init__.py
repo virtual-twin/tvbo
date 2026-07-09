@@ -26,7 +26,10 @@ except ImportError:
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
 
-bib_file = os.path.join(ROOT, "tvbo-literature-db.bib")
+# The package literature bibliography — single source of truth, shared with the
+# ontology generators (scripts/ontology/_bib.py). Lives with the study database
+# it annotates (tvbo/database/), keyed by citekey.
+bib_file = os.path.abspath(os.path.join(ROOT, "..", "..", "database", "references.bib"))
 
 # Get all YAML files in the ROOT directory
 yaml_files = glob.glob(os.path.join(ROOT, "*.yaml"))
@@ -110,7 +113,7 @@ def load_bibliography():
     """Parse the bundled BibTeX literature database.
 
     Returns:
-        The parsed `pybtex` bibliography for `tvbo-literature-db.bib`.
+        The parsed `pybtex` bibliography for `tvbo/database/references.bib`.
 
     Raises:
         ImportError: If the optional `pybtex` dependency is not installed.

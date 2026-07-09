@@ -31,7 +31,16 @@ from tvbo.codegen import render_expression
 assert 'experiment' in context.keys(), "experiment required for stimulus template"
 
 events_list = list(experiment.events.values()) if experiment.events else []
-stimulus_events = [ev for ev in events_list if 'stimulus' in str(getattr(ev, 'event_type', 'stimulus'))]
+def _is_external_input_event(ev):
+    et = str(getattr(ev, 'event_type', 'stimulus'))
+    return ('stimul' in et) or (et in ('continuous', 'discrete'))
+stimulus_events = [ev for ev in events_list if _is_external_input_event(ev)]
+
+# State index lookup for continuous-event conditions (map a state name to its
+# row in the [n_states, n_nodes] state array).
+_model = experiment.dynamics
+_state_names = [str(sv.name) for sv in _model.state_variables.values()] if getattr(_model, 'state_variables', None) else []
+_state_index = {nm: i for i, nm in enumerate(_state_names)}
 
 # Collect user-defined functions from model (for code rendering)
 model = experiment.dynamics
@@ -99,9 +108,26 @@ def _time_axis_distribution(event):
     # Build spatial mask: array of shape (n_nodes,) with weights per region
     has_spatial = bool(ev_regions)
 
+    # Closed-loop 'continuous' event: onset is triggered when a state condition
+    # crosses zero, then the affect waveform (a function of tau = t - t_trigger)
+    # is emitted. A stateful ExternalInput carries armed/t_trigger/cond_prev.
+    _ev_type = str(getattr(event, 'event_type', 'stimulus'))
+    is_continuous = _ev_type in ('continuous', 'discrete')
+    if is_continuous:
+        cond_rhs = str(event.condition.rhs) if getattr(event, 'condition', None) else '0.0'
+        _aff = getattr(event, 'affect', None) or getattr(event, 'equation', None)
+        affect_rhs = str(_aff.rhs) if _aff else '0.0'
+        cond_states = [str(s) for s in (getattr(event, 'condition_states', None) or [])]
+        cond_idx = [_state_index.get(s, 0) for s in cond_states]
+        _wlo = float(ev_params['window_lo'].value) if ('window_lo' in ev_params and ev_params['window_lo'].value is not None) else 0.0
+        _whi = float(ev_params['window_hi'].value) if ('window_hi' in ev_params and ev_params['window_hi'].value is not None) else 1e30
+        # +1 = trigger on upward zero crossing (default), -1 = downward
+        _cdir = float(ev_params['crossing'].value) if ('crossing' in ev_params and ev_params['crossing'].value is not None) else 1.0
+        wave_params = {k: v for k, v in ev_params.items() if k not in ('window_lo', 'window_hi', 'crossing')}
+
     # Data-driven stimulus: waveform read from a file and interpolated at time t,
     # instead of evaluating a symbolic equation.
-    data_location = getattr(event, 'dataLocation', None)
+    data_location = None if is_continuous else getattr(event, 'dataLocation', None)
     is_data = bool(data_location)
     if is_data:
         sampling_rate = float(getattr(event, 'sampling_rate', None) or 1.0)
@@ -114,14 +140,89 @@ def _time_axis_distribution(event):
     # distribution.axis == 'time' pre-generates a fresh sample per integration
     # step (e.g. u ~ U(-1, 1)). Computed unconditionally; only consumed in the
     # non-data branch below.
-    _stoch_pname, _stoch_info = _time_axis_distribution(event)
-    is_stochastic = (not is_data) and _stoch_pname is not None
+    _stoch_pname, _stoch_info = (None, None) if is_continuous else _time_axis_distribution(event)
+    is_stochastic = (not is_data) and (not is_continuous) and _stoch_pname is not None
     # The deterministic equation parameters exclude the stochastic one (it is
     # supplied by the pre-generated array, not a scalar DEFAULT_PARAM).
     det_params = {k: v for k, v in ev_params.items() if k != _stoch_pname}
 %>
 
-% if is_data:
+% if is_continuous:
+class ${class_name}(AbstractExternalInput):
+    """Closed-loop (state-triggered) external input: ${ev_name}.
+
+    ${event.description or event.label or 'Condition-triggered input.'}
+
+    Arms when the condition ``${cond_rhs}`` crosses zero (${'upward' if _cdir >= 0 else 'downward'})
+    within the window [${_wlo}, ${_whi}] s, then emits the affect waveform as a
+    function of ``tau`` = t - t_trigger:  ${affect_rhs}
+
+    Triggering is detected by a per-step sign change of the condition (checked in
+    update_state on the post-step state); there is no sub-step root polish, so the
+    onset resolves to the integration step (dt). Per-node: each node arms
+    independently on its own condition crossing.
+    """
+
+    N_OUTPUT_DIMS = 1
+    DEFAULT_PARAMS = Bunch(
+        % for pname, pobj in wave_params.items():
+        ${pname}=${float(pobj.value) if pobj.value is not None else 0.0},
+        % endfor
+    )
+    WINDOW_LO = ${_wlo}
+    WINDOW_HI = ${_whi}
+    CROSS_DIR = ${_cdir}
+    COND_IDX = (${', '.join(str(i) for i in cond_idx)}${',' if len(cond_idx) == 1 else ''})
+
+    def prepare(self, network, dt: float):
+        _n = network.graph.n_nodes
+        % if has_spatial:
+        _mask = jnp.zeros(_n)
+        _regions = [${', '.join(str(r) for r in ev_regions)}]
+        _weights = [${', '.join(str(float(w)) for w in ev_weighting) if ev_weighting else ', '.join('1.0' for _ in ev_regions)}]
+        for _r, _w in zip(_regions, _weights):
+            _mask = _mask.at[_r].set(_w)
+        % else:
+        _mask = jnp.ones(_n)
+        % endif
+        input_data = Bunch(mask=_mask, dt=dt)
+        # armed / trigger time / previous (direction-adjusted) condition / step
+        # counter — per node. cond_prev starts at +inf so (cond_prev < 0) is False
+        # on the first step: no false trigger regardless of crossing direction.
+        input_state = Bunch(
+            armed=jnp.zeros(_n),
+            t_trigger=jnp.zeros(_n),
+            cond_prev=jnp.full(_n, jnp.inf),
+            step=jnp.array(0.0),
+        )
+        return input_data, input_state
+
+    def compute(self, t, state, input_data, input_state, params):
+        % for pname in wave_params:
+        ${pname} = params.${pname}
+        % endfor
+        tau = t - input_state.t_trigger          # per-node time since each node's trigger
+        _wave = ${stim_jaxcode(affect_rhs, param_names=list(wave_params.keys()) + ['tau'])}
+        signal = jnp.where(input_state.armed > 0.5, _wave, 0.0)
+        return (signal * input_data.mask)[None, :]
+
+    def update_state(self, input_data, input_state, new_state):
+        # Evaluate the condition on the post-step state (per node)
+        % for s, i in zip(cond_states, cond_idx):
+        ${s} = new_state[${i}]
+        % endfor
+        _cond = self.CROSS_DIR * (${stim_jaxcode(cond_rhs, param_names=cond_states) if cond_states else '0.0'})
+        _t_now = input_state.step * input_data.dt
+        _crossed = (input_state.cond_prev < 0.0) & (_cond >= 0.0)
+        _in_win = (_t_now >= self.WINDOW_LO) & (_t_now < self.WINDOW_HI)
+        _fire = _crossed & _in_win & (input_state.armed < 0.5)
+        return Bunch(
+            armed=jnp.where(_fire, 1.0, input_state.armed),
+            t_trigger=jnp.where(_fire, _t_now, input_state.t_trigger),
+            cond_prev=_cond,
+            step=input_state.step + 1.0,
+        )
+% elif is_data:
 class ${class_name}(AbstractExternalInput):
     """Data-driven external input: ${ev_name}(t) interpolated from a file.
 

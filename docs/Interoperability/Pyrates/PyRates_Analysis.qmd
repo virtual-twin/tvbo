@@ -158,11 +158,11 @@ print("Running 2-D grid search …")
 result2 = exp2.run('pyrates')
 sweep2  = result2.explorations['amp_landscape']
 
-a_vals   = sweep2.axes[0].explored_values   # varies fastest
-I_vals   = sweep2.axes[1].explored_values   # varies slowest
+a_name, I_name = sweep2.axes[0].name, sweep2.axes[1].name  # dotted parameter refs
+a_vals   = sweep2.axes[0].explored_values
+I_vals   = sweep2.axes[1].explored_values
 n_a, n_I = len(a_vals), len(I_vals)
 n_time2  = sweep2.results.shape[1]
-v_idx    = sweep2.output_names.index('v')
 
 print(f"Grid: {n_a}×{n_I} = {n_a*n_I} conditions, {n_time2} time steps")
 ```
@@ -170,18 +170,15 @@ print(f"Grid: {n_a}×{n_I} = {n_a*n_I} conditions, {n_time2} time steps")
 ### Amplitude Heatmap
 
 ```{python}
-# Steady-state amplitude for each condition
-amps = np.array([
-    np.ptp(sweep2.results[i, n_time2 // 2:, v_idx])
-    for i in range(n_a * n_I)
-])
-
-# Reshape: conditions ordered (a varies fastest → rows=I, cols=a)
-amps_grid = amps.reshape(n_I, n_a)
+# Steady-state peak-to-peak amplitude of v per grid point, computed on the labeled
+# xarray (as_grid() keys the sweep by parameter name), so no positional reshape.
+_v = sweep2.as_grid().sel(variable='v')          # dims (a, I, time), keyed by name
+_v = _v.isel(time=slice(n_time2 // 2, None))       # steady-state window
+amps_grid = (_v.max('time') - _v.min('time')).transpose(I_name, a_name)  # rows=I, cols=a
 
 fig, ax = plt.subplots(figsize=(7, 5))
 im = ax.imshow(
-    amps_grid, origin='lower', aspect='auto',
+    amps_grid.values, origin='lower', aspect='auto',
     extent=[a_vals[0], a_vals[-1], I_vals[0], I_vals[-1]],
     cmap='viridis',
 )

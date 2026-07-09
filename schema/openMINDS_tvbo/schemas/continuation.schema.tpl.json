@@ -1,0 +1,99 @@
+{
+  "_type": "tvbo:Continuation",
+  "properties": {
+    "name": {
+      "type": "string",
+      "_instruction": "Enter the name."
+    },
+    "label": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "dynamics": {
+      "_linkedTypes": [
+        "tvbo:Dynamics"
+      ]
+    },
+    "free_parameters": {
+      "_embeddedTypes": [
+        "tvbo:Parameter"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "ds": {
+      "type": "number"
+    },
+    "ds_min": {
+      "type": "number"
+    },
+    "ds_max": {
+      "type": "number"
+    },
+    "max_steps": {
+      "type": "integer"
+    },
+    "newton_tol": {
+      "type": "number"
+    },
+    "newton_max_iterations": {
+      "type": "integer"
+    },
+    "nev": {
+      "type": "integer"
+    },
+    "tol_stability": {
+      "type": "number"
+    },
+    "detect_bifurcation": {
+      "type": "integer"
+    },
+    "detect_fold": {
+      "type": "boolean"
+    },
+    "n_inversion": {
+      "type": "integer"
+    },
+    "max_bisection_steps": {
+      "type": "integer"
+    },
+    "algorithm": {
+      "type": "string"
+    },
+    "initial_state": {
+      "_embeddedTypes": [
+        "tvbo:InitialState"
+      ]
+    },
+    "branches": {
+      "_embeddedTypes": [
+        "tvbo:BranchSwitch"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "bothside": {
+      "type": "boolean"
+    },
+    "execution": {
+      "_embeddedTypes": [
+        "tvbo:ExecutionConfig"
+      ]
+    },
+    "software": {
+      "type": "string"
+    },
+    "options": {
+      "_embeddedTypes": [
+        "tvbo:Option"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    }
+  }
+}

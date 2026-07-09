@@ -1,0 +1,86 @@
+{
+  "_type": "tvbo:Exploration",
+  "properties": {
+    "name": {
+      "type": "string",
+      "_instruction": "Enter the name."
+    },
+    "label": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "execution": {
+      "_embeddedTypes": [
+        "tvbo:ExecutionConfig"
+      ]
+    },
+    "space": {
+      "_embeddedTypes": [
+        "tvbo:ExplorationAxis"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "parameters": {
+      "_embeddedTypes": [
+        "tvbo:Parameter"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "algorithms": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "mode": {
+      "type": "string"
+    },
+    "strategy": {
+      "type": "string"
+    },
+    "objectives": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "observable": {
+      "_embeddedTypes": [
+        "tvbo:FunctionCall"
+      ]
+    },
+    "record": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "n_parallel": {
+      "type": "integer"
+    },
+    "n_trials": {
+      "type": "integer"
+    },
+    "average": {
+      "type": "string"
+    },
+    "parallel_mode": {
+      "type": "string"
+    },
+    "parallel_batch_size": {
+      "type": "integer"
+    }
+  }
+}

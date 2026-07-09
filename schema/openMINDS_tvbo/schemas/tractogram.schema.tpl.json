@@ -2,9 +2,13 @@
   "_type": "tvbo:Tractogram",
   "properties": {
     "name": {
-      "type": "string"
+      "type": "string",
+      "_instruction": "Enter the name."
     },
     "label": {
+      "type": "string"
+    },
+    "iri": {
       "type": "string"
     },
     "description": {

@@ -6,7 +6,7 @@ This script reads the TVBO LinkML datamodel and generates openMINDS JSON schema
 templates, dynamically mapping types to existing openMINDS namespaces where
 appropriate.
 
-All type mappings are imported from tvbo.export.openminds to maintain a single
+All type mappings are imported from tvbo.adapters.openminds to maintain a single
 source of truth.
 
 Usage:
@@ -30,7 +30,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 # Import all type mappings from the single source of truth
-from tvbo.export.openminds import (
+from tvbo.adapters.openminds import (
     EXTERNAL_TYPE_MAPPINGS,
     LINKML_TO_JSON_TYPE,
     OPENMINDS_CATEGORIES,

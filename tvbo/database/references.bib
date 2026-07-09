@@ -1,625 +1,1243 @@
-@article{Lorenz1963,
-  author  = {Lorenz, Edward N.},
-  title   = {Deterministic Nonperiodic Flow},
-  journal = {Journal of the Atmospheric Sciences},
-  year    = {1963},
-  volume  = {20},
-  pages   = {130--141},
-  doi     = {10.1175/1520-0469(1963)020<0130:DNF>2.0.CO;2}
+% TVBO package literature database (single source of truth).
+% Consolidated from references.bib + references_from_julia.bib +
+% tvbo-literature-db.bib. `groups` fields mirror the master TVBO.bib library.
+
+@book{Abbott2005,
+    author = "Abbott, L. F. and Dayan, Peter",
+    title = "Theoretical Neuroscience: Computational and Mathematical Modeling of Neural Systems",
+    publisher = "MIT Press",
+    year = "2005",
+    groups = "Dynamical Systems"
 }
 
-@article{Chua1992,
-  author  = {Chua, Leon O.},
-  title   = {The Genesis of Chua's Circuit},
-  journal = {Archiv f{"u}r Elektronik und {"U}bertragungstechnik},
-  year    = {1992},
-  volume  = {46},
-  pages   = {250--257}
+@book{Arnold1968,
+    author = "Arnol'd, V. I. and Avez, A.",
+    publisher = "W. A. Benjamin",
+    title = "Ergodic Problems of Classical Mechanics",
+    year = "1968",
+    groups = "Dynamical Systems"
 }
 
-@article{Chua2007,
-  author  = {Chua, Leon O.},
-  title   = {Chua circuit},
-  journal = {Scholarpedia},
-  year    = {2007},
-  volume  = {2},
-  number  = {10},
-  pages   = {1488},
-  url     = {http://www.scholarpedia.org/article/Chua_circuit}
-}
-
-@article{Rossler1976,
-  author  = {R{"o}ssler, Otto E.},
-  title   = {An Equation for Continuous Chaos},
-  journal = {Physics Letters A},
-  year    = {1976},
-  volume  = {57},
-  number  = {5},
-  pages   = {397--398},
-  doi     = {10.1016/0375-9601(76)90101-8}
-}
-
-@article{HenonHeiles1964,
-  author  = {H{\'e}non, Michel and Heiles, Carl},
-  title   = {The Applicability of the Third Integral of Motion: {S}ome Numerical Experiments},
-  journal = {The Astronomical Journal},
-  year    = {1964},
-  volume  = {69},
-  pages   = {73--79},
-  doi     = {10.1086/109234}
-}
-
-@book{Eisenberg1975,
-  author    = {Eisenberg, Judah M. and Greiner, Walter},
-  title     = {Nuclear Theory: Nuclear Models Collective and Single-Particle Phenomena},
-  publisher = {North-Holland},
-  year      = {1975}
+@article{Bandyopadhyay2021,
+    author = "Bandyopadhyay, S. and others",
+    title = "K Ion Exchange model reference",
+    journal = "Preprint",
+    year = "2021",
+    note = "Placeholder; update details"
 }
 
 @article{Baran1998,
-  author  = {Baran, V. and Raduta, A. A.},
-  title   = {Chaotic Dynamics in a Quartic Nuclear Collective Hamiltonian},
-  journal = {International Journal of Modern Physics E},
-  year    = {1998},
-  volume  = {7},
-  pages   = {527--551}
-}
-
-@article{MiclutaCampeanu2018,
-  author  = {Micluta-Campeanu, S. and Raduta, A. and {others}},
-  title   = {Chaoticity Evolution in a Quartic Collective Hamiltonian},
-  journal = {Romanian Journal of Physics},
-  year    = {2018},
-  volume  = {70},
-  pages   = {105}
-}
-
-@article{Datseris2019,
-  author  = {Datseris, George and {et al.}},
-  title   = {Abrupt Phase-Space Contraction in a Magnetotransport System},
-  journal = {New Journal of Physics},
-  year    = {2019},
-  volume  = {21},
-  number  = {5},
-  pages   = {053036},
-  doi     = {10.1088/1367-2630/ab19cc}
-}
-
-@article{Gissinger2012,
-  author  = {Gissinger, Christophe},
-  title   = {A New Deterministic Model of Chaotic Reversals},
-  journal = {The European Physical Journal B},
-  year    = {2012},
-  volume  = {85},
-  number  = {4},
-  pages   = {137},
-  doi     = {10.1140/epjb/e2012-30024-x}
-}
-
-@article{Rikitake1958,
-  author  = {Rikitake, Tsuneji},
-  title   = {Oscillations of a System of Disks},
-  journal = {Proceedings of the Cambridge Philosophical Society},
-  year    = {1958},
-  volume  = {54},
-  pages   = {89--105},
-  doi     = {10.1017/S0305004100033283}
-}
-
-@article{Hoover1995,
-  author  = {Hoover, William G.},
-  title   = {Remark on {``Some Simple Chaotic Flows''}},
-  journal = {Physical Review E},
-  year    = {1995},
-  volume  = {51},
-  pages   = {759--760},
-  doi     = {10.1103/PhysRevE.51.759}
-}
-
-@book{Sprott2010,
-  author    = {Sprott, J. C.},
-  title     = {Elegant Chaos: Algebraically Simple Chaotic Flows},
-  publisher = {World Scientific},
-  year      = {2010},
-  doi       = {10.1142/7434}
-}
-
-@article{Ruelle1980,
-  author  = {Ruelle, David},
-  title   = {Strange Attractors},
-  journal = {The Mathematical Intelligencer},
-  year    = {1980},
-  volume  = {2},
-  number  = {3},
-  pages   = {126--137},
-  doi     = {10.1007/BF03024089}
-}
-
-@article{Ueda1961,
-  author  = {Ueda, Yoshisuke},
-  title   = {Randomly Transitional Phenomena in the System Governed by Duffing's Equation},
-  journal = {Journal of Statistical Physics},
-  year    = {1961},
-  note    = {Early report; widely cited later (exact bibliographic details sometimes vary)}
-}
-
-@article{HodgkinHuxley1952,
-  author  = {Hodgkin, A. L. and Huxley, A. F.},
-  title   = {A Quantitative Description of Membrane Current and Its Application to Conduction and Excitation in Nerve},
-  journal = {The Journal of Physiology},
-  year    = {1952},
-  volume  = {117},
-  number  = {4},
-  pages   = {500--544},
-  doi     = {10.1113/jphysiol.1952.sp004764}
-}
-
-@book{Ermentrout2010,
-  author    = {Ermentrout, G. Bard and Terman, David H.},
-  title     = {Mathematical Foundations of Neuroscience},
-  publisher = {Springer},
-  year      = {2010}
-}
-
-@book{Abbott2005,
-  author    = {Abbott, L. F. and Dayan, Peter},
-  title     = {Theoretical Neuroscience: Computational and Mathematical Modeling of Neural Systems},
-  publisher = {MIT Press},
-  year      = {2005}
-}
-
-@article{Kanamaru2007,
-  author  = {Kanamaru, Takashi},
-  title   = {Van der Pol Oscillator},
-  journal = {Scholarpedia},
-  year    = {2007},
-  volume  = {2},
-  number  = {1},
-  pages   = {2202}
-}
-
-@book{Strogatz2015,
-  author    = {Strogatz, Steven H.},
-  title     = {Nonlinear Dynamics and Chaos: With Applications to Physics, Biology, Chemistry, and Engineering},
-  publisher = {Westview Press},
-  address   = {Boulder, CO},
-  year      = {2015}
-}
-
-@article{vanderpol1926,
-  author  = {van der Pol, B.},
-  title   = {On relaxation-oscillations},
-  journal = {The London, Edinburgh, and Dublin Philosophical Magazine and Journal of Science},
-  year    = {1926},
-  volume  = {2},
-  number  = {11},
-  pages   = {978--992}
-}
-
-@article{Hoppensteadt2006,
-  author  = {Hoppensteadt, Frank},
-  title   = {Predator-prey model},
-  journal = {Scholarpedia},
-  year    = {2006},
-  volume  = {1},
-  number  = {10},
-  pages   = {1563}
-}
-
-@misc{Weisstein,
-  author = {Weisstein, Eric W.},
-  title  = {Lotka-Volterra Equations},
-  howpublished = {MathWorld--A Wolfram Web Resource},
-  url    = {https://mathworld.wolfram.com/Lotka-VolterraEquations.html}
-}
-
-@article{HindmarshRose1984,
-  author  = {Hindmarsh, J. L. and Rose, R. M.},
-  title   = {A model of neuronal bursting using three coupled first order differential equations},
-  journal = {Proceedings of the Royal Society of London. Series B, Biological Sciences},
-  year    = {1984},
-  volume  = {221},
-  pages   = {87--102}
-}
-
-@article{Freire2008,
-  author  = {Freire, Jos{\'e} G. and others},
-  title   = {Multistability, phase diagrams, and intransitivity in the Lorenz-84 low-order atmospheric circulation model},
-  journal = {Chaos},
-  year    = {2008},
-  volume  = {18},
-  pages   = {033121}
-}
-
-@article{Stommel1961,
-  author  = {Stommel, Henry},
-  title   = {Thermohaline convection with two stable regimes of flow},
-  journal = {Tellus},
-  year    = {1961},
-  volume  = {13},
-  number  = {2}
-}
-
-@article{Thomas1999,
-  author  = {Thomas, Ren{\'e}},
-  title   = {Deterministic chaos seen in terms of feedback circuits: Analysis, synthesis, \& biological applications},
-  journal = {International Journal of Bifurcation and Chaos},
-  year    = {1999},
-  volume  = {9},
-  number  = {10},
-  pages   = {1889--1905}
-}
-
-@article{Tufillaro1984,
-  author  = {Tufillaro, Nicholas B. and Abbott, Tyler A. and Griffiths, David J.},
-  title   = {Swinging Atwood's Machine},
-  journal = {American Journal of Physics},
-  year    = {1984},
-  volume  = {52},
-  number  = {10},
-  pages   = {895--903}
-}
-
-@book{GuckenheimerHolmes1983,
-  author    = {Guckenheimer, John and Holmes, Philip},
-  title     = {Nonlinear Oscillations, Dynamical Systems, and Bifurcations of Vector Fields},
-  publisher = {Springer},
-  year      = {1983},
-  volume    = {42}
-}
-
-@article{Sprott2014,
-  author  = {Sprott, J. C.},
-  title   = {Simplest Chaotic Flows with Involutional Symmetries},
-  journal = {International Journal of Bifurcation and Chaos},
-  year    = {2014},
-  volume  = {24},
-  pages   = {1450009}
-}
-
-@article{Sprott2014b,
-  author  = {Sprott, J. C.},
-  title   = {Physics Letters A},
-  journal = {Physics Letters A},
-  year    = {2014},
-  volume  = {378}
-}
-
-@inproceedings{Kuramoto1975,
-  author    = {Kuramoto, Yoshiki},
-  title     = {Self-entrainment of a Population of Coupled Nonlinear Oscillators},
-  booktitle = {International Symposium on Mathematical Problems in Theoretical Physics},
-  volume    = {39},
-  year      = {1975}
-}
-
-@article{Huisman2001,
-  author  = {Huisman, Johan and Weissing, Franz J.},
-  title   = {Fundamental Unpredictability in Multispecies Competition},
-  journal = {The American Naturalist},
-  year    = {2001},
-  volume  = {157},
-  number  = {5}
-}
-
-@article{Rossler1979,
-  author  = {R{"o}ssler, O. E.},
-  title   = {An equation for hyperchaos},
-  journal = {Physics Letters A},
-  year    = {1979},
-  volume  = {71},
-  number  = {2--3},
-  pages   = {155--157}
-}
-
-@article{Wang2008,
-  author  = {Wang, X. and Wang, M.},
-  title   = {A hyperchaos generated from Lorenz system},
-  journal = {Physica A: Statistical Mechanics and its Applications},
-  year    = {2008},
-  volume  = {387},
-  number  = {14},
-  pages   = {3751--3758}
-}
-
-@article{Qi2008,
-  author  = {Qi, G. and van Wyk, M. A. and van Wyk, B. J. and Chen, G.},
-  title   = {On a new hyperchaotic system},
-  journal = {Physics Letters A},
-  year    = {2008},
-  volume  = {372},
-  number  = {2},
-  pages   = {124--136}
-}
-
-@article{Hussain2015,
-  author  = {Hussain, I. and Gondal, M. A. and Hussain, A.},
-  title   = {Construction of dynamical non-linear components based on Lorenz system and symmetric group of permutations},
-  journal = {3D Research},
-  year    = {2015},
-  volume  = {6},
-  pages   = {1--6}
-}
-
-@article{Wang2009,
-  author  = {Wang, Z. and Sun, Y. and van Wyk, B. J. and Qi, G. and van Wyk, M. A.},
-  title   = {A 3-D four-wing attractor and its analysis},
-  journal = {Brazilian Journal of Physics},
-  year    = {2009},
-  volume  = {39},
-  pages   = {547--553}
-}
-
-@article{Letellier2007,
-  author  = {Letellier, Christophe and R{"o}ssler, Otto E.},
-  title   = {Hyperchaos},
-  journal = {Scholarpedia},
-  year    = {2007},
-  volume  = {2},
-  number  = {8},
-  pages   = {1936}
+    author = "Baran, V. and Raduta, A. A.",
+    title = "Chaotic Dynamics in a Quartic Nuclear Collective Hamiltonian",
+    journal = "International Journal of Modern Physics E",
+    year = "1998",
+    volume = "7",
+    pages = "527--551"
 }
 
 @article{Bo-Cheng2008,
-  author  = {Bo-Cheng, B. and Zhong, L.},
-  title   = {A hyperchaotic attractor coined from chaotic L{"u} system},
-  journal = {Chinese Physics Letters},
-  year    = {2008},
-  volume  = {25},
-  number  = {7},
-  pages   = {2396}
+    author = "Bo-Cheng, B. and Zhong, L.",
+    title = {A hyperchaotic attractor coined from chaotic L{"u} system},
+    journal = "Chinese Physics Letters",
+    year = "2008",
+    volume = "25",
+    number = "7",
+    pages = "2396"
+}
+
+@article{BoCheng2008,
+    author = "Bo-Cheng, B. and Zhong, L.",
+    journal = "Chinese Physics Letters",
+    title = {A hyperchaotic attractor coined from chaotic L{"u} system},
+    year = "2008",
+    number = "7",
+    pages = "2396",
+    volume = "25",
+    doi = "10.1088/0256-307x/25/7/018",
+    groups = "Digital Twins"
+}
+
+@article{Breakspear2003,
+    author = "Breakspear, Michael and R. Terry, John and J. Friston, Karl",
+    journal = "Neurocomputing",
+    title = "Modulation of excitatory synaptic coupling facilitates synchronization and complex dynamics in a nonlinear model of neuronal dynamics",
+    year = "2003",
+    issn = "0925-2312",
+    month = "June",
+    pages = "151--158",
+    volume = "52–54",
+    doi = "10.1016/s0925-2312(02)00740-3",
+    file = ":Breakspear2003 - Modulation of Excitatory Synaptic Coupling Facilitates Synchronization and Complex Dynamics in a Nonlinear Model of Neuronal Dynamics.pdf:PDF:http\://www.fil.ion.ucl.ac.uk/\textasciitilde karl/Modulation\\%20of\\%20excitatory\\%20synaptic\\%20coupling\\%20facilitates\\%20synchronization.pdf",
+    groups = "Neural Mass Models, LarterBreakspear",
+    publisher = "Elsevier BV"
+}
+
+@article{Breakspear2003a,
+    author = "Breakspear, Michael and Terry, John R. and Friston, Karl J.",
+    journal = "Network (Bristol, England)",
+    title = "Modulation of excitatory synaptic coupling facilitates synchronization and complex dynamics in a biophysical model of neuronal dynamics.",
+    year = "2003",
+    issn = "0954-898X",
+    month = "November",
+    pages = "703--732",
+    volume = "14",
+    abstract = "In this paper, complex dynamical synchronization in a non-linear model of a neural system is studied, and the computational significance of the behaviours is explored. The local neural dynamics is determined by voltage- and ligand-gated ion channels and feedback between densely interconnected excitatory and inhibitory neurons. A mesoscopic array of local networks is modelled by introducing coupling between the local networks via weak excitatory-to-excitatory connectivity. It is shown that with modulation of this long-range synaptic coupling, the system undergoes a transition from independent oscillations to stable chaotic synchronization. Between these states exists a 'weakly' stable state associated with complex, intermittent behaviour in the temporal domain and clusters of synchronous regions in the spatial domain. The paper concludes with a discussion of the putative relevance of such processes in the brain, including the role of neuromodulatory systems and the mechanisms underlying sensory perception, adaptation, computation and complexity.",
+    citation-subset = "IM",
+    completed = "2004-01-09",
+    country = "England",
+    doi = "10.1088/0954-898X/14/4/305",
+    groups = "LarterBreakspear",
+    issn-linking = "0954-898X",
+    issue = "4",
+    keywords = "Action Potentials; Animals; Computer Simulation; Cortical Synchronization; Excitatory Postsynaptic Potentials; Feedback; Humans; Ion Channel Gating, physiology; Membrane Potentials; Models, Neurological; Neural Inhibition; Neural Networks, Computer; Neurons, physiology; Nonlinear Dynamics; Synapses, physiology; Time Factors",
+    nlm-id = "9431867",
+    owner = "NLM",
+    pmid = "14653499",
+    pubmodel = "Print",
+    pubstate = "ppublish",
+    revised = "2019-12-10"
+}
+
+@article{Byrne2020,
+    author = "Byrne, A. and Coombes, S.",
+    title = "Next generation neural mass models",
+    journal = "Journal of Mathematical Neuroscience",
+    year = "2020",
+    groups = "CoombesByrne, Neural Field Models"
+}
+
+@article{Cabral2011,
+    author = "Cabral, Joana and Hugues, Etienne and Sporns, Olaf and Deco, Gustavo",
+    journal = "NeuroImage",
+    title = "Role of local network oscillations in resting-state functional connectivity",
+    year = "2011",
+    issn = "1053-8119",
+    month = "July",
+    number = "1",
+    pages = "130--139",
+    volume = "57",
+    doi = "10.1016/j.neuroimage.2011.04.010",
+    file = ":Cabral2011 - Role of Local Network Oscillations in Resting State Functional Connectivity.pdf:PDF",
+    groups = "BNM-Studies, Kuramoto",
+    publisher = "Elsevier BV"
 }
 
 @article{Cai2007,
-  author  = {Cai, G. and Huang, J.},
-  title   = {A new finance chaotic attractor},
-  journal = {International Journal of Nonlinear Science},
-  year    = {2007},
-  volume  = {3},
-  number  = {3},
-  pages   = {213--220}
+    author = "Cai, G. and Huang, J.",
+    title = "A new finance chaotic attractor",
+    journal = "International Journal of Nonlinear Science",
+    year = "2007",
+    volume = "3",
+    number = "3",
+    pages = "213--220"
 }
 
-@article{Chen2006,
-  author  = {Chen, A. and Lu, J. and L{"u}, J. and Yu, S.},
-  title   = {Generating hyperchaotic L{"u} attractor via state feedback control},
-  journal = {Physica A: Statistical Mechanics and its Applications},
-  year    = {2006},
-  volume  = {364},
-  pages   = {103--110}
-}
-
-@article{Pang2011,
-  author  = {Pang, S. and Liu, Y.},
-  title   = {A new hyperchaotic system from the L{"u} system and its control},
-  journal = {Journal of Computational and Applied Mathematics},
-  year    = {2011},
-  volume  = {235},
-  number  = {8},
-  pages   = {2775--2789}
-}
-
-@article{Deco2017,
-  author  = {Deco, Gustavo and Kringelbach, Morten L. and {others}},
-  title   = {The dynamics of resting fluctuations in the brain: metastability and its dynamical cortical core},
-  journal = {Scientific Reports},
-  year    = {2017},
-  volume  = {7},
-  pages   = {3095}
-}
-
-@article{Landau1944,
-  author  = {Landau, L. D.},
-  title   = {On the problem of turbulence},
-  journal = {Doklady Akademii Nauk SSSR},
-  year    = {1944},
-  volume  = {44},
-  number  = {8},
-  pages   = {339--349}
-}
-
-@article{Sprott2020,
-  author  = {Sprott, J. C.},
-  title   = {Do We Need More Chaos Examples?},
-  journal = {Chaos Theory and Applications},
-  year    = {2020},
-  volume  = {2},
-  number  = {2},
-  pages   = {1--3}
-}
-
-@article{Manneville1980,
-  author  = {Manneville, Paul},
-  title   = {Intermittency, self-similarity and 1/f spectrum in dissipative dynamical systems},
-  journal = {Journal de Physique},
-  year    = {1980},
-  volume  = {41},
-  number  = {11},
-  pages   = {1235--1243}
-}
-
-@book{Ott2002,
-  author    = {Ott, Edward},
-  title     = {Chaos in Dynamical Systems},
-  edition   = {2},
-  publisher = {Cambridge University Press},
-  year      = {2010}
-}
-
-@article{Rulkov2002,
-  author  = {Rulkov, Nikolai F.},
-  title   = {Modeling of spiking-bursting neural behavior using two-dimensional map},
-  journal = {Physical Review E},
-  year    = {2002},
-  volume  = {65},
-  pages   = {041922}
-}
-
-@article{Rulkov2001,
-  author  = {Rulkov, Nikolai F. and Sushchik, M. M. and Tsimring, L. S. and Abarbanel, Henry D. I.},
-  title   = {Regularization of Synchronized Chaotic Bursts},
-  journal = {Physical Review Letters},
-  year    = {2001},
-  volume  = {86},
-  pages   = {183}
+@misc{Cakan,
+    author = "Cakan, C. and Obermayer, K.",
+    note = "Bibliographic details to be completed",
+    title = "Reference for network mean-field neural mass model",
+    groups = "Digital Twins"
 }
 
 @article{Cao2013,
-  author  = {Cao, H. and Wu, Y.},
-  title   = {Bursting types and stable domains of Rulkov neuron network with mean field coupling},
-  journal = {International Journal of Bifurcation and Chaos},
-  year    = {2013},
-  volume  = {23},
-  pages   = {1330041}
+    author = "Cao, H. and Wu, Y.",
+    title = "Bursting types and stable domains of Rulkov neuron network with mean field coupling",
+    journal = "International Journal of Bifurcation and Chaos",
+    year = "2013",
+    volume = "23",
+    pages = "1330041"
 }
 
-@book{Skiadas2008,
-  author    = {Skiadas, Christos H.},
-  title     = {Chaotic Modelling and Simulation: Analysis of Chaotic Models, Attractors and Forms},
-  publisher = {CRC Press},
-  year      = {2008}
+@article{Chen2006,
+    author = {Chen, A. and Lu, J. and L{"u}, J. and Yu, S.},
+    title = {Generating hyperchaotic L{"u} attractor via state feedback control},
+    journal = "Physica A: Statistical Mechanics and its Applications",
+    year = "2006",
+    volume = "364",
+    pages = "103--110"
 }
 
-@article{Zaslavskii1978,
-  author  = {Zaslavskii, G. M. and Sagdeev, R. Z. and Usikov, D. A. and Chernikov, A. A.},
-  title   = {The simplest case of a strange attractor},
-  journal = {Physics Letters A},
-  year    = {1978},
-  volume  = {69},
-  number  = {3},
-  pages   = {145--147}
+@techreport{Chirikov1969,
+    author = "Chirikov, Boris V.",
+    title = "Research concerning the theory of nonlinear resonance",
+    year = "1969",
+    number = "Preprint 267",
+    groups = "Digital Twins",
+    school = "Institute of Nuclear Physics, Novosibirsk"
+}
+
+@article{Chua1992,
+    author = "Chua, Leon O.",
+    title = "The Genesis of Chua's Circuit",
+    journal = {Archiv f{"u}r Elektronik und {"U}bertragungstechnik},
+    year = "1992",
+    volume = "46",
+    pages = "250--257"
+}
+
+@article{Chua2007,
+    author = "Chua, Leon O.",
+    title = "Chua circuit",
+    journal = "Scholarpedia",
+    year = "2007",
+    volume = "2",
+    number = "10",
+    pages = "1488",
+    url = "http://www.scholarpedia.org/article/Chua\\_circuit"
+}
+
+@article{Cortes2013,
+    author = "Cortes, Jesus M. and Desroches, Mathieu and Rodrigues, Serafim and Veltz, Romain and Muñoz, Miguel A. and Sejnowski, Terrence J.",
+    journal = "Proceedings of the National Academy of Sciences",
+    title = "Short-term synaptic plasticity in the deterministic Tsodyks–Markram model leads to unpredictable network dynamics",
+    year = "2013",
+    issn = "1091-6490",
+    month = "September",
+    number = "41",
+    pages = "16610--16615",
+    volume = "110",
+    doi = "10.1073/pnas.1316071110",
+    file = ":Cortes2013 - Short Term Synaptic Plasticity in the Deterministic Tsodyks–Markram Model Leads to Unpredictable Network Dynamics.pdf:PDF",
+    groups = "TsodyksMarkram, Annotate!",
+    publisher = "Proceedings of the National Academy of Sciences"
+}
+
+@article{Courtiol2020,
+    author = "Courtiol, Julie and others",
+    title = "The brain resting state: dynamics and models",
+    journal = "Journal of Neuroscience Methods",
+    year = "2020",
+    note = "Placeholder",
+    groups = "Neural Mass Models"
+}
+
+@article{Datseris2019,
+    author = "Datseris, George and {et al.}",
+    title = "Abrupt Phase-Space Contraction in a Magnetotransport System",
+    journal = "New Journal of Physics",
+    year = "2019",
+    volume = "21",
+    number = "5",
+    pages = "053036",
+    doi = "10.1088/1367-2630/ab19cc"
+}
+
+@article{Deco2013,
+    author = "Deco, G. and Ponce-Alvarez, A. and Mantini, D. and Romani, G. L. and Hagmann, P. and Corbetta, M.",
+    journal = "Journal of Neuroscience",
+    title = "Resting-State Functional Connectivity Emerges from Structurally and Dynamically Shaped Slow Linear Fluctuations",
+    year = "2013",
+    issn = "1529-2401",
+    month = "July",
+    number = "27",
+    pages = "11239--11252",
+    volume = "33",
+    doi = "10.1523/jneurosci.1091-13.2013",
+    publisher = "Society for Neuroscience"
+}
+
+@article{Deco2014,
+    author = "Deco, Gustavo and Ponce-Alvarez, Adrián and Hagmann, Patric and Romani, Gian Luca and Mantini, Dante and Corbetta, Maurizio",
+    journal = "Journal of Neuroscience",
+    title = "How local excitation-inhibition ratio impacts the whole brain dynamics",
+    year = "2014",
+    issn = "1529-2401",
+    pages = "7886--7898",
+    volume = "34",
+    doi = "10.1523/JNEUROSCI.5068-13.2014",
+    file = ":Deco2014 - How Local Excitation Inhibition Ratio Impacts the Whole Brain Dynamics.pdf:PDF",
+    groups = "LiteratureDB",
+    issue = "23",
+    keywords = "Anatomical connectivity,Functional connectivity,Large-scale brain model,Local feedback inhibition,Resting-state activity",
+    pmid = "24899711",
+    publisher = "Society for Neuroscience"
+}
+
+@article{Deco2017,
+    author = "Deco, Gustavo and Kringelbach, Morten L. and {others}",
+    title = "The dynamics of resting fluctuations in the brain: metastability and its dynamical cortical core",
+    journal = "Scientific Reports",
+    year = "2017",
+    volume = "7",
+    pages = "3095",
+    groups = "BNM-Studies"
+}
+
+@article{Depannemaecker2023,
+    author = "Depannemaecker, Damien and others",
+    title = "K Ion Exchange model extensions",
+    journal = "Preprint",
+    year = "2023",
+    note = "Placeholder; update details",
+    groups = "Epilepsy"
+}
+
+@book{Duffing1918,
+    author = "Duffing, Georg",
+    publisher = "Vieweg+Teubner",
+    title = {Erzwungene Schwingungen bei ver{"a}nderlicher Eigenfrequenz und ihre technische Bedeutung},
+    year = "1918",
+    groups = "Digital Twins"
+}
+
+@article{Dumont2019,
+    author = "Dumont, Gr{\'e}goire and Gutkin, Boris",
+    title = "A reduced model of coupled neural masses with complex dynamics",
+    journal = "eNeuro",
+    year = "2019",
+    note = "Placeholder entry",
+    groups = "Neural Mass Models"
+}
+
+@book{Eisenberg1975,
+    author = "Eisenberg, Judah M. and Greiner, Walter",
+    title = "Nuclear Theory: Nuclear Models Collective and Single-Particle Phenomena",
+    publisher = "North-Holland",
+    year = "1975"
+}
+
+@book{Ermentrout2010,
+    author = "Ermentrout, G. Bard and Terman, David H.",
+    title = "Mathematical Foundations of Neuroscience",
+    publisher = "Springer",
+    year = "2010"
+}
+
+@article{Feigenbaum1978,
+    author = "Feigenbaum, Mitchell J.",
+    journal = "Journal of Statistical Physics",
+    title = "Quantitative Universality for a Class of Nonlinear Transformations",
+    year = "1978",
+    pages = "25--52",
+    volume = "19",
+    doi = "10.1007/bf01020332",
+    groups = "Digital Twins"
+}
+
+@article{FitzHugh1961,
+    author = "FitzHugh, Richard",
+    journal = "Biophysical Journal",
+    title = "Impulses and Physiological States in Theoretical Models of Nerve Membrane",
+    year = "1961",
+    issn = "0006-3495",
+    month = "July",
+    number = "6",
+    pages = "445--466",
+    volume = "1",
+    abstract = {Van der Pol's equation for a relaxation oscillator is generalized by the addition of terms to produce a pair of non-linear differential equations with either a stable singular point or a limit cycle. The resulting "BVP model" has two variables of state, representing excitability and refractoriness, and qualitatively resembles Bonhoeffer's theoretical model for the iron wire model of nerve. This BVP model serves as a simple representative of a class of excitable-oscillatory systems including the Hodgkin-Huxley (HH) model of the squid giant axon. The BVP phase plane can be divided into regions corresponding to the physiological states of nerve fiber (resting, active, refractory, enhanced, depressed, etc.) to form a "physiological state diagram," with the help of which many physiological phenomena can be summarized. A properly chosen projection from the 4-dimensional HH phase space onto a plane produces a similar diagram which shows the underlying relationship between the two models. Impulse trains occur in the BVP and HH models for a range of constant applied currents which make the singular point representing the resting state unstable.},
+    doi = "10.1016/s0006-3495(61)86902-6",
+    file = ":FitzHugh1961 - Impulses and Physiological States in Theoretical Models of Nerve Membrane.pdf:PDF",
+    groups = "Modeling Theory",
+    publisher = "Elsevier BV"
+}
+
+@misc{FitzHughNagumo,
+    note = "Canonical two-dimensional reduction of the Hodgkin--Huxley model; standard reference summary",
+    title = "FitzHugh--Nagumo model",
+    doi = "10.4249/scholarpedia.1349",
+    groups = "Digital Twins"
+}
+
+@article{Freire2008,
+    author = "Freire, Jos{\'e} G. and others",
+    title = "Multistability, phase diagrams, and intransitivity in the Lorenz-84 low-order atmospheric circulation model",
+    journal = "Chaos",
+    year = "2008",
+    volume = "18",
+    pages = "033121"
+}
+
+@article{Galan2008,
+    author = "Gal\'an, R. F. and Ermentrout, G. Bard and Urban, N. N.",
+    title = "Optimal time scale for spike-time reliability: theory, simulations, and experiments",
+    journal = "Journal of Neurophysiology",
+    year = "2008"
+}
+
+@article{Gast2020,
+    author = {Gast, Richard and Schmidt, Helmut and Kn\"{o}sche, T. R.},
+    title = "A mean-field description of bursting dynamics in neural populations",
+    journal = "PLOS Computational Biology",
+    year = "2020",
+    groups = "Neural Mass Models"
+}
+
+@article{Gissinger2012,
+    author = "Gissinger, Christophe",
+    title = "A New Deterministic Model of Chaotic Reversals",
+    journal = "The European Physical Journal B",
+    year = "2012",
+    volume = "85",
+    number = "4",
+    pages = "137",
+    doi = "10.1140/epjb/e2012-30024-x"
 }
 
 @article{Grebogi1983,
-  author  = {Grebogi, Celso and McDonald, S. W. and Ott, Edward and Yorke, James A.},
-  title   = {Final state sensitivity: An obstruction to predictability},
-  journal = {Physics Letters A},
-  year    = {1983},
-  volume  = {99},
-  number  = {9},
-  pages   = {373--375}
+    author = "Grebogi, Celso and McDonald, S. W. and Ott, Edward and Yorke, James A.",
+    title = "Final state sensitivity: An obstruction to predictability",
+    journal = "Physics Letters A",
+    year = "1983",
+    volume = "99",
+    number = "9",
+    pages = "373--375"
+}
+
+@article{Greene1979,
+    author = "Greene, J. M.",
+    journal = "Journal of Mathematical Physics",
+    title = "A Method for Determining a Stochastic Transition",
+    year = "1979",
+    pages = "1183--1201",
+    volume = "20",
+    doi = "10.1201/9781003069515-23",
+    groups = "Digital Twins"
+}
+
+@book{Guckenheimer1983,
+    author = "Guckenheimer, John and Holmes, Philip",
+    publisher = "Springer",
+    title = "Nonlinear Oscillations, Dynamical Systems, and Bifurcations of Vector Fields",
+    year = "1983",
+    volume = "42",
+    doi = "10.1007/978-1-4612-1140-2",
+    groups = "Digital Twins"
+}
+
+@book{GuckenheimerHolmes1983,
+    author = "Guckenheimer, John and Holmes, Philip",
+    title = "Nonlinear Oscillations, Dynamical Systems, and Bifurcations of Vector Fields",
+    publisher = "Springer",
+    year = "1983",
+    volume = "42"
+}
+
+@misc{Halvorsen2000,
+    author = "Halvorsen, E.",
+    note = "Common reference name for the Halvorsen system",
+    title = "An algebraically simple chaotic system",
+    year = "2000",
+    groups = "Digital Twins"
+}
+
+@article{Hansen2015,
+    author = "Hansen, Enrique C.A. and Battaglia, Demian and Spiegler, Andreas and Deco, Gustavo and Jirsa, Viktor K.",
+    journal = "NeuroImage",
+    title = "Functional connectivity dynamics: Modeling the switching behavior of the resting state",
+    year = "2015",
+    issn = "1053-8119",
+    month = "January",
+    pages = "525--535",
+    volume = "105",
+    date = "2014-11-10",
+    day = "10",
+    doi = "10.1016/j.neuroimage.2014.11.001",
+    file = ":Hansen2015 - Functional Connectivity Dynamics\\_ Modeling the Switching Behavior of the Resting State.pdf:PDF",
+    groups = "LiteratureDB",
+    keywords = "Functional connectivity Functional connectivity dynamics Structural connectivity Resting state Brain dynamics Whole brain computational model SC, structural connectivity, FC, functional connectivity, FCD, functional connectivity dynamics, MFM, mean-field model, LSM, linear stochastic model, eMFM, enhanced non-linearity mean-field model, RSN, resting state network, DSI, diffusion spectrum imaging, fMRI, functional magnetic resonance imaging, BOLD, blood oxygenation-level dependent",
+    publisher = "Elsevier BV"
+}
+
+@article{Henon1976,
+    author = "H{\'e}non, Michel",
+    journal = "Communications in Mathematical Physics",
+    title = "A Two-Dimensional Mapping with a Strange Attractor",
+    year = "1976",
+    pages = "69--77",
+    volume = "50",
+    doi = "10.1007/978-0-387-21830-4\\_8",
+    groups = "Digital Twins"
+}
+
+@article{HenonHeiles1964,
+    author = "H{\'e}non, Michel and Heiles, Carl",
+    title = "The Applicability of the Third Integral of Motion: {S}ome Numerical Experiments",
+    journal = "The Astronomical Journal",
+    year = "1964",
+    volume = "69",
+    pages = "73--79",
+    doi = "10.1086/109234"
+}
+
+@article{HindmarshRose1984,
+    author = "Hindmarsh, J. L. and Rose, R. M.",
+    title = "A model of neuronal bursting using three coupled first order differential equations",
+    journal = "Proceedings of the Royal Society of London. Series B, Biological Sciences",
+    year = "1984",
+    volume = "221",
+    pages = "87--102"
+}
+
+@article{HodgkinHuxley1952,
+    author = "Hodgkin, A. L. and Huxley, A. F.",
+    title = "A Quantitative Description of Membrane Current and Its Application to Conduction and Excitation in Nerve",
+    journal = "The Journal of Physiology",
+    year = "1952",
+    volume = "117",
+    number = "4",
+    pages = "500--544",
+    doi = "10.1113/jphysiol.1952.sp004764"
+}
+
+@article{Hoover1995,
+    author = "Hoover, William G.",
+    title = "Remark on {``Some Simple Chaotic Flows''}",
+    journal = "Physical Review E",
+    year = "1995",
+    volume = "51",
+    pages = "759--760",
+    doi = "10.1103/PhysRevE.51.759"
+}
+
+@article{Hopfield1982,
+    author = "Hopfield, John J.",
+    title = "Neural networks and physical systems with emergent collective computational abilities",
+    journal = "Proceedings of the National Academy of Sciences",
+    year = "1982",
+    groups = "Neural Mass Models"
+}
+
+@article{Hopfield1984,
+    author = "Hopfield, John J.",
+    title = "Neurons with graded response have collective computational properties like those of two-state neurons",
+    journal = "Proceedings of the National Academy of Sciences",
+    year = "1984",
+    groups = "Neural Mass Models"
+}
+
+@article{Hoppensteadt2006,
+    author = "Hoppensteadt, Frank",
+    title = "Predator-prey model",
+    journal = "Scholarpedia",
+    year = "2006",
+    volume = "1",
+    number = "10",
+    pages = "1563"
+}
+
+@article{Huisman2001,
+    author = "Huisman, Johan and Weissing, Franz J.",
+    title = "Fundamental Unpredictability in Multispecies Competition",
+    journal = "The American Naturalist",
+    year = "2001",
+    volume = "157",
+    number = "5"
+}
+
+@article{Hussain2015,
+    author = "Hussain, I. and Gondal, M. A. and Hussain, A.",
+    title = "Construction of dynamical non-linear components based on Lorenz system and symmetric group of permutations",
+    journal = "3D Research",
+    year = "2015",
+    volume = "6",
+    pages = "1--6"
 }
 
 @book{IzhikevichBook,
-  author    = {Izhikevich, Eugene M.},
-  title     = {Dynamical Systems in Neuroscience: The Geometry of Excitability and Bursting},
-  publisher = {MIT Press},
-  year      = {2007}
+    author = "Izhikevich, Eugene M.",
+    title = "Dynamical Systems in Neuroscience: The Geometry of Excitability and Bursting",
+    publisher = "MIT Press",
+    year = "2007"
 }
 
-@article{MorrisLecar1981,
-  author  = {Morris, C. and Lecar, H.},
-  title   = {Voltage oscillations in the barnacle giant muscle fiber},
-  journal = {Biophysical Journal},
-  year    = {1981},
-  url     = {https://www.cell.com/biophysj/pdf/S0006-3495(81)84782-0.pdf}
+@article{Jansen1993,
+    author = "Jansen, Ben H. and Zouridakis, George and Brandt, Michael E.",
+    journal = "Biological Cybernetics",
+    title = "A neurophysiologically-based mathematical model of flash visual evoked potentials",
+    year = "1993",
+    issn = "1432-0770",
+    month = "January",
+    number = "3",
+    pages = "275--283",
+    volume = "68",
+    abstract = "Evidence is presented that a neurophysiologi- produce the spontaneous EEG activity may also be cally-inspired mathematical model, originally developed responsible for the generation of EP activity. The for the generation of spontaneous EEG (electroen- present study was conducted to explore this hypothesis. cephalogram) activity, can produce VEP (visual evoked In this paper, we report on the degree to which the potential)-like waveforms when pulse-like signals serve flash-visual evoked potential (VEP) can be simulated as input. It was found that the simulated VEP activity using a neurophysiologicaUy-based mathematical model was mainly due to intracortical excitatory connections originally developed for the generation of spontaneous rather than direct thalamic input. Also, the model-gen- electroencephalogram (EEG) activity, when presented erated VEPs exhibited similar relationships between with a transient input. prestimulus EEG characteristics and subsequent VEP In using this model, we take a system's approach to morphology, as seen in human data. Specifically, the EP generation. That is, we consider the evoked poten- large correlation between the N1 amplitude and the tial as the output \textasciitilde f a system excited by a transient, prestimulus alpha phase angle, and the insensitivity of reflecting the volley of neural activity generated by a P2 to the latter feature, as observed in actual VEPs to sensory event. This transient sums with other cortical low intensity flashes, was also found in the model-gen- and/or sub-cortical activity entering the same region of erated data. These findings provide support for the the cortex. At the most abstract level, the sensory input hypothesis that the spontaneous EEG and the VEP are can be viewed as an impulse, and the evoked output as generated by some of the same neural structures and an impulse response. The nonlinearity of the neural that the VEP is due to distributed activity, rather than networks processing the sensory input, and the fact that dipolar sources. these networks receive sensory and nonsensory-related",
+    doi = "10.1007/bf00224863",
+    file = ":Jansen1993 - A Neurophysiologically Based Mathematical Model of Flash Visual Evoked Potentials.pdf:PDF",
+    publisher = "Springer Science and Business Media LLC"
+}
+
+@article{Jansen1995,
+    author = "Jansen, Ben H. and Rit, Vincent G.",
+    journal = "Biological Cybernetics",
+    title = "Electroencephalogram and visual evoked potential generation in a mathematical model of coupled cortical columns",
+    year = "1995",
+    issn = "1432-0770",
+    month = "September",
+    number = "4",
+    pages = "357--366",
+    volume = "73",
+    doi = "10.1007/bf00199471",
+    file = ":Jansen1995 - Electroencephalogram and Visual Evoked Potential Generation in a Mathematical Model of Coupled Cortical Columns.pdf:PDF:https\://link.springer.com/content/pdf/10.1007/BF00199471.pdf",
+    groups = "Neural Mass Models, JansenRit",
+    publisher = "Springer Science and Business Media LLC",
+    readstatus = "read"
+}
+
+@article{Jirsa2014,
+    author = "Jirsa, Viktor K. and Stacey, William C. and Quilichini, Pascale P. and Ivanov, Anton I. and Bernard, Christophe",
+    journal = "Brain",
+    title = "On the nature of seizure dynamics",
+    year = "2014",
+    issn = "0006-8950",
+    month = "June",
+    number = "8",
+    pages = "2210--2230",
+    volume = "137",
+    doi = "10.1093/brain/awu133",
+    file = ":Jirsa2014 - On the Nature of Seizure Dynamics.pdf:PDF:https\://academic.oup.com/brain/article-pdf/137/8/2210/13797867/awu133.pdf",
+    groups = "Neural Mass Models",
+    publisher = "Oxford University Press (OUP)"
+}
+
+@article{Kanamaru2007,
+    author = "Kanamaru, Takashi",
+    title = "Van der Pol Oscillator",
+    journal = "Scholarpedia",
+    year = "2007",
+    volume = "2",
+    number = "1",
+    pages = "2202"
+}
+
+@article{KantzGrassberger1988,
+    author = "Kantz, Holger and Grassberger, Peter",
+    journal = "Journal of Physics A: Mathematical and General",
+    title = "On a Robust Method to Detect Intermittency",
+    year = "1988",
+    pages = "127--133",
+    volume = "21",
+    groups = "Digital Twins"
+}
+
+@inproceedings{Kuramoto1975,
+    author = "Kuramoto, Yoshiki",
+    title = "Self-entrainment of a Population of Coupled Nonlinear Oscillators",
+    booktitle = "International Symposium on Mathematical Problems in Theoretical Physics",
+    volume = "39",
+    year = "1975",
+    groups = "Neural Mass Models"
+}
+
+@article{Landau1944,
+    author = "Landau, L. D.",
+    title = "On the problem of turbulence",
+    journal = "Doklady Akademii Nauk SSSR",
+    year = "1944",
+    volume = "44",
+    number = "8",
+    pages = "339--349"
+}
+
+@article{Larter1999,
+    author = "Larter, Raima and Speelman, Brent and Worth, Robert M.",
+    journal = "Chaos: An Interdisciplinary Journal of Nonlinear Science",
+    title = "A coupled ordinary differential equation lattice model for the simulation of epileptic seizures",
+    year = "1999",
+    issn = "1089-7682",
+    month = "September",
+    number = "3",
+    pages = "795--804",
+    volume = "9",
+    doi = "10.1063/1.166453",
+    file = ":Larter1999 - A Coupled Ordinary Differential Equation Lattice Model for the Simulation of Epileptic Seizures.pdf:PDF:https\://pubs.aip.org/aip/cha/article-pdf/9/3/795/18301745/795\\_1\\_online.pdf",
+    groups = "BNM-Studies",
+    publisher = "AIP Publishing"
+}
+
+@article{Letellier2007,
+    author = {Letellier, Christophe and R{"o}ssler, Otto E.},
+    title = "Hyperchaos",
+    journal = "Scholarpedia",
+    year = "2007",
+    volume = "2",
+    number = "8",
+    pages = "1936"
 }
 
 @article{Li2015,
-  author  = {Li, Chunbiao and {et al.}},
-  title   = {A novel four-wing strange attractor born in bistability},
-  journal = {IEICE Electronics Express},
-  year    = {2015},
-  volume  = {12},
-  number  = {4}
+    author = "Li, Chunbiao and {et al.}",
+    title = "A novel four-wing strange attractor born in bistability",
+    journal = "IEICE Electronics Express",
+    year = "2015",
+    volume = "12",
+    number = "4"
 }
 
-@article{SprottXiong2015,
-  author  = {Sprott, J. C. and Xiong, A.},
-  title   = {Classifying and quantifying basins of attraction},
-  journal = {Chaos: An Interdisciplinary Journal of Nonlinear Science},
-  year    = {2015},
-  volume  = {25},
-  number  = {8},
-  pages   = {083101}
+@article{Lorenz1963,
+    author = "Lorenz, Edward N.",
+    title = "Deterministic Nonperiodic Flow",
+    journal = "Journal of the Atmospheric Sciences",
+    year = "1963",
+    volume = "20",
+    pages = "130--141",
+    doi = "10.1175/1520-0469(1963)020<0130:DNF>2.0.CO;2"
+}
+
+@inproceedings{Lorenz1996,
+    author = "Lorenz, Edward N.",
+    booktitle = "Proc. Seminar on Predictability",
+    title = "Predictability: A Problem Partly Solved",
+    year = "1996",
+    organization = "ECMWF",
+    doi = "10.1017/cbo9780511617652.004",
+    groups = "Digital Twins"
+}
+
+@article{Manneville1980,
+    author = "Manneville, Paul",
+    title = "Intermittency, self-similarity and 1/f spectrum in dissipative dynamical systems",
+    journal = "Journal de Physique",
+    year = "1980",
+    volume = "41",
+    number = "11",
+    pages = "1235--1243"
+}
+
+@article{MannevillePomeau1980,
+    author = "Manneville, P. and Pomeau, Y.",
+    journal = "Communications in Mathematical Physics",
+    title = "Intermittency and the Lorenz Model",
+    year = "1980",
+    volume = "74",
+    groups = "Digital Twins"
+}
+
+@article{May1976,
+    author = "May, Robert M.",
+    journal = "Nature",
+    title = "Simple mathematical models with very complicated dynamics",
+    year = "1976",
+    pages = "459--467",
+    volume = "261",
+    doi = "10.1201/9780203734636-5",
+    groups = "Digital Twins"
+}
+
+@article{Meyer2019,
+    author = "Meyer, R. and et al.",
+    journal = "New Journal of Physics",
+    title = "Long-range correlations in intermittent maps",
+    year = "2019",
+    volume = "20",
+    groups = "Digital Twins"
+}
+
+@article{MiclutaCampeanu2018,
+    author = "Micluta-Campeanu, S. and Raduta, A. and {others}",
+    title = "Chaoticity Evolution in a Quartic Collective Hamiltonian",
+    journal = "Romanian Journal of Physics",
+    year = "2018",
+    volume = "70",
+    pages = "105"
+}
+
+@article{Mishra2018,
+    author = "Mishra, A. and Saha, S. and Vigneshwaran, M. and Pal, P. and Kapitaniak, T. and Dana, S. K.",
+    title = "Dragon-king-like extreme events in coupled bursting neurons",
+    journal = "Physical Review E",
+    year = "2018",
+    volume = "97",
+    number = "6",
+    pages = "062311",
+    doi = "10.1103/PhysRevE.97.062311"
+}
+
+@article{Montbrio2015,
+    author = "Montbri{\'o}, Ernest and Paz{\'o}, Diego and Roxin, Alex",
+    title = "Macroscopic description for networks of spiking neurons",
+    journal = "Physical Review X",
+    year = "2015",
+    groups = "Neural Mass Models"
+}
+
+@article{MorrisLecar1981,
+    author = "Morris, C. and Lecar, H.",
+    title = "Voltage oscillations in the barnacle giant muscle fiber",
+    journal = "Biophysical Journal",
+    year = "1981",
+    url = "https://www.cell.com/biophysj/pdf/S0006-3495(81)84782-0.pdf"
+}
+
+@article{Nagumo1962,
+    author = "Nagumo, J. and Arimoto, S. and Yoshizawa, S.",
+    journal = "Proceedings of the IRE",
+    title = "An Active Pulse Transmission Line Simulating Nerve Axon",
+    year = "1962",
+    issn = "0096-8390",
+    month = "October",
+    number = "10",
+    pages = "2061--2070",
+    volume = "50",
+    doi = "10.1109/jrproc.1962.288235",
+    file = ":Nagumo1962 - An Active Pulse Transmission Line Simulating Nerve Axon.pdf:PDF",
+    groups = "Modeling Theory",
+    publisher = "Institute of Electrical and Electronics Engineers (IEEE)"
+}
+
+@book{Ott2002,
+    author = "Ott, Edward",
+    title = "Chaos in Dynamical Systems",
+    edition = "2",
+    publisher = "Cambridge University Press",
+    year = "2010"
 }
 
 @misc{OttRiddled2014,
-  author = {Ott, Edward and Alexander, J. C. and Kan, I. and Sommerer, J. C. and Yorke, James A.},
-  title  = {The transition to chaotic attractors with riddled basins},
-  howpublished = {Physica D preprint link},
-  url    = {http://yorke.umd.edu/Yorke_papers_most_cited_and_post2000/1994_04_Ott_Alexander_Kan_Sommerer_PhysicaD_riddled%20basins.pdf},
-  note   = {Key label follows code docstring}
+    author = "Ott, Edward and Alexander, J. C. and Kan, I. and Sommerer, J. C. and Yorke, James A.",
+    title = "The transition to chaotic attractors with riddled basins",
+    howpublished = "Physica D preprint link",
+    url = "http://yorke.umd.edu/Yorke\\_papers\\_most\\_cited\\_and\\_post2000/1994\\_04\\_Ott\\_Alexander\\_Kan\\_Sommerer\\_PhysicaD\\_riddled\\%20basins.pdf",
+    note = "Key label follows code docstring"
 }
 
-% Aliases with diacritics to match [^Key] usages exactly
-@article{R{"o}ssler1976,
-  author  = {R{"o}ssler, Otto E.},
-  title   = {An Equation for Continuous Chaos},
-  journal = {Physics Letters A},
-  year    = {1976},
-  volume  = {57},
-  number  = {5},
-  pages   = {397--398},
-  doi     = {10.1016/0375-9601(76)90101-8}
+@article{Pang2011,
+    author = "Pang, S. and Liu, Y.",
+    title = {A new hyperchaotic system from the L{"u} system and its control},
+    journal = "Journal of Computational and Applied Mathematics",
+    year = "2011",
+    volume = "235",
+    number = "8",
+    pages = "2775--2789"
 }
 
-@article{H{\'e}nonHeiles1964,
-  author  = {H{\'e}non, Michel and Heiles, Carl},
-  title   = {The Applicability of the Third Integral of Motion: {S}ome Numerical Experiments},
-  journal = {The Astronomical Journal},
-  year    = {1964},
-  volume  = {69},
-  pages   = {73--79},
-  doi     = {10.1086/109234}
+@article{Proix2014,
+    author = "Proix, Timoth\'ee and others",
+    title = "A neural mass model of seizure initiation and propagation",
+    journal = "Brain",
+    year = "2014"
 }
 
-@article{Micluta-Campeanu2018,
-  author  = {Micluta-Campeanu, S. and Raportaru, M. C. and Nicolin, A. I. and Baran, V.},
-  title   = {Chaoticity Evolution in a Quartic Collective Hamiltonian},
-  journal = {Romanian Reports in Physics},
-  year    = {2018},
-  volume  = {70},
-  pages   = {105}
+@article{Proix2017,
+    author = "Proix, Timoth\'ee and others",
+    title = "Individual structural connectivity defines propagation networks in partial epilepsy",
+    journal = "Brain",
+    year = "2017",
+    groups = "Epilepsy"
 }
 
-% Potentially mismatched key in docstring; include both
-@article{Mishra2018,
-  author  = {Mishra, A. and Saha, S. and Vigneshwaran, M. and Pal, P. and Kapitaniak, T. and Dana, S. K.},
-  title   = {Dragon-king-like extreme events in coupled bursting neurons},
-  journal = {Physical Review E},
-  year    = {2018},
-  volume  = {97},
-  number  = {6},
-  pages   = {062311},
-  doi     = {10.1103/PhysRevE.97.062311}
+@article{Qi2008,
+    author = "Qi, G. and van Wyk, M. A. and van Wyk, B. J. and Chen, G.",
+    title = "On a new hyperchaotic system",
+    journal = "Physics Letters A",
+    year = "2008",
+    volume = "372",
+    number = "2",
+    pages = "124--136"
 }
 
-@article{Mirshra2018,
-  author  = {Mishra, A. and Saha, S. and Vigneshwaran, M. and Pal, P. and Kapitaniak, T. and Dana, S. K.},
-  title   = {Dragon-king-like extreme events in coupled bursting neurons},
-  journal = {Physical Review E},
-  year    = {2018},
-  volume  = {97},
-  number  = {6},
-  pages   = {062311},
-  doi     = {10.1103/PhysRevE.97.062311}
+@article{Rikitake1958,
+    author = "Rikitake, Tsuneji",
+    title = "Oscillations of a System of Disks",
+    journal = "Proceedings of the Cambridge Philosophical Society",
+    year = "1958",
+    volume = "54",
+    pages = "89--105",
+    doi = "10.1017/S0305004100033283"
 }
 
-@Article{Wong2006,
-  author    = {Wong, Kong-Fatt and Wang, Xiao-Jing},
-  journal   = {The Journal of Neuroscience},
-  title     = {A Recurrent Network Mechanism of Time Integration in Perceptual Decisions},
-  year      = {2006},
-  issn      = {1529-2401},
-  month     = jan,
-  number    = {4},
-  pages     = {1314--1328},
-  volume    = {26},
-  doi       = {10.1523/jneurosci.3733-05.2006},
-  publisher = {Society for Neuroscience},
+@article{Roessler1976,
+    author = "Roessler, Otto E.",
+    journal = "Physics Letters A",
+    title = "An Equation for Continuous Chaos",
+    year = "1976",
+    number = "5",
+    pages = "397--398",
+    volume = "57",
+    doi = "10.1016/0375-9601(76)90101-8",
+    groups = "Digital Twins"
 }
 
-@Article{Deco2013,
-  author    = {Deco, G. and Ponce-Alvarez, A. and Mantini, D. and Romani, G. L. and Hagmann, P. and Corbetta, M.},
-  journal   = {Journal of Neuroscience},
-  title     = {Resting-State Functional Connectivity Emerges from Structurally and Dynamically Shaped Slow Linear Fluctuations},
-  year      = {2013},
-  issn      = {1529-2401},
-  month     = jul,
-  number    = {27},
-  pages     = {11239--11252},
-  volume    = {33},
-  doi       = {10.1523/jneurosci.1091-13.2013},
-  publisher = {Society for Neuroscience},
+@article{Roessler1979,
+    author = {R{"o}ssler, Otto E.},
+    journal = "Physics Letters A",
+    title = "An equation for hyperchaos",
+    year = "1979",
+    number = "2--3",
+    pages = "155--157",
+    volume = "71",
+    groups = "Digital Twins"
+}
+
+@article{Ruelle1980,
+    author = "Ruelle, David",
+    title = "Strange Attractors",
+    journal = "The Mathematical Intelligencer",
+    year = "1980",
+    volume = "2",
+    number = "3",
+    pages = "126--137",
+    doi = "10.1007/BF03024089"
+}
+
+@article{Rulkov2001,
+    author = "Rulkov, Nikolai F. and Sushchik, M. M. and Tsimring, L. S. and Abarbanel, Henry D. I.",
+    title = "Regularization of Synchronized Chaotic Bursts",
+    journal = "Physical Review Letters",
+    year = "2001",
+    volume = "86",
+    pages = "183"
+}
+
+@article{Rulkov2002,
+    author = "Rulkov, Nikolai F.",
+    title = "Modeling of spiking-bursting neural behavior using two-dimensional map",
+    journal = "Physical Review E",
+    year = "2002",
+    volume = "65",
+    pages = "041922"
+}
+
+@book{Skiadas2008,
+    author = "Skiadas, Christos H.",
+    title = "Chaotic Modelling and Simulation: Analysis of Chaotic Models, Attractors and Forms",
+    publisher = "CRC Press",
+    year = "2008"
+}
+
+@book{Sprott2010,
+    author = "Sprott, J. C.",
+    title = "Elegant Chaos: Algebraically Simple Chaotic Flows",
+    publisher = "World Scientific",
+    year = "2010",
+    doi = "10.1142/7434"
+}
+
+@article{Sprott2014,
+    author = "Sprott, J. C.",
+    title = "Simplest Chaotic Flows with Involutional Symmetries",
+    journal = "International Journal of Bifurcation and Chaos",
+    year = "2014",
+    volume = "24",
+    pages = "1450009"
+}
+
+@article{Sprott2014b,
+    author = "Sprott, J. C.",
+    title = "Physics Letters A",
+    journal = "Physics Letters A",
+    year = "2014",
+    volume = "378"
+}
+
+@article{Sprott2020,
+    author = "Sprott, J. C.",
+    title = "Do We Need More Chaos Examples?",
+    journal = "Chaos Theory and Applications",
+    year = "2020",
+    volume = "2",
+    number = "2",
+    pages = "1--3"
+}
+
+@article{SprottXiong2015,
+    author = "Sprott, J. C. and Xiong, A.",
+    title = "Classifying and quantifying basins of attraction",
+    journal = "Chaos: An Interdisciplinary Journal of Nonlinear Science",
+    year = "2015",
+    volume = "25",
+    number = "8",
+    pages = "083101"
+}
+
+@misc{Stankevich2012,
+    author = "Stankevich, N. V.",
+    note = {Commonly cited for hyper-R{"o}ssler variants},
+    title = {Hyperchaotic dynamics in a R{"o}ssler-like system},
+    year = "2012",
+    groups = "Digital Twins"
+}
+
+@article{Stefanovski2019,
+    author = "Stefanovski, Leon and Triebkorn, Paul and Spiegler, Andreas and Diaz-Cortes, Margarita-Arimatea and Solodkin, Ana and Jirsa, Viktor and McIntosh, Anthony Randal and Ritter, Petra",
+    journal = "Frontiers in Computational Neuroscience",
+    title = "Linking Molecular Pathways and Large-Scale Computational Modeling to Assess Candidate Disease Mechanisms and Pharmacodynamics in Alzheimer’s Disease",
+    year = "2019",
+    issn = "1662-5188",
+    month = "August",
+    volume = "13",
+    doi = "10.3389/fncom.2019.00054",
+    file = ":Stefanovski2019 - Linking Molecular Pathways and Large Scale Computational Modeling to Assess Candidate Disease Mechanisms and Pharmacodynamics in Alzheimer’s Disease.pdf:PDF:https\://www.frontiersin.org/articles/10.3389/fncom.2019.00054/pdf",
+    groups = "Alzheimer, Annotate!",
+    publisher = "Frontiers Media SA",
+    ranking = "rank5"
+}
+
+@article{Stommel1961,
+    author = "Stommel, Henry",
+    title = "Thermohaline convection with two stable regimes of flow",
+    journal = "Tellus",
+    year = "1961",
+    volume = "13",
+    number = "2"
+}
+
+@article{Strogatz2000,
+    author = "Strogatz, Steven H.",
+    journal = "Physica D: Nonlinear Phenomena",
+    title = "From Kuramoto to Crawford: exploring the onset of synchronization in populations of coupled oscillators",
+    year = "2000",
+    issn = "0167-2789",
+    month = "September",
+    number = "1–4",
+    pages = "1--20",
+    volume = "143",
+    doi = "10.1016/s0167-2789(00)00094-4",
+    file = ":Strogatz2000 - From Kuramoto to Crawford\\_ Exploring the Onset of Synchronization in Populations of Coupled Oscillators.pdf:PDF",
+    groups = "Modeling Theory",
+    publisher = "Elsevier BV"
+}
+
+@book{Strogatz2015,
+    author = "Strogatz, Steven H.",
+    title = "Nonlinear Dynamics and Chaos: With Applications to Physics, Biology, Chemistry, and Engineering",
+    publisher = "Westview Press",
+    address = "Boulder, CO",
+    year = "2015"
+}
+
+@article{Thomas1999,
+    author = "Thomas, Ren{\'e}",
+    title = "Deterministic chaos seen in terms of feedback circuits: Analysis, synthesis, \\\& biological applications",
+    journal = "International Journal of Bifurcation and Chaos",
+    year = "1999",
+    volume = "9",
+    number = "10",
+    pages = "1889--1905"
+}
+
+@article{Tsodyks1997,
+    author = "Tsodyks, Misha V. and Markram, Henry",
+    journal = "Proceedings of the National Academy of Sciences",
+    title = "The neural code between neocortical pyramidal neurons depends on neurotransmitter release probability",
+    year = "1997",
+    issn = "1091-6490",
+    month = "January",
+    number = "2",
+    pages = "719--723",
+    volume = "94",
+    doi = "10.1073/pnas.94.2.719",
+    file = ":Tsodyks1997 - The Neural Code between Neocortical Pyramidal Neurons Depends on Neurotransmitter Release Probability.pdf:PDF",
+    groups = "TsodyksMarkram",
+    publisher = "Proceedings of the National Academy of Sciences"
+}
+
+@article{Tufillaro1984,
+    author = "Tufillaro, Nicholas B. and Abbott, Tyler A. and Griffiths, David J.",
+    title = "Swinging Atwood's Machine",
+    journal = "American Journal of Physics",
+    year = "1984",
+    volume = "52",
+    number = "10",
+    pages = "895--903"
+}
+
+@book{Tufillaro1992,
+    author = "Tufillaro, Nicholas B. and Abbott, Tyler and Reilly, James",
+    publisher = "Addison-Wesley",
+    title = "An Experimental Approach to Nonlinear Dynamics and Chaos",
+    year = "1992",
+    doi = "10.1119/1.17380",
+    groups = "Digital Twins"
+}
+
+@article{Ueda1961,
+    author = "Ueda, Yoshisuke",
+    title = "Randomly Transitional Phenomena in the System Governed by Duffing's Equation",
+    journal = "Journal of Statistical Physics",
+    year = "1961",
+    note = "Early report; widely cited later (exact bibliographic details sometimes vary)"
+}
+
+@misc{Ulam1960s,
+    author = "Ulam, Stanislaw",
+    note = "Generic reference for the Ulam ring map (historical)",
+    title = "Ulam coupled map on a ring",
+    year = "1960",
+    groups = "Digital Twins"
+}
+
+@article{vanderpol1926,
+    author = "van der Pol, B.",
+    title = "On relaxation-oscillations",
+    journal = "The London, Edinburgh, and Dublin Philosophical Magazine and Journal of Science",
+    year = "1926",
+    volume = "2",
+    number = "11",
+    pages = "978--992"
+}
+
+@article{Volo2019,
+    author = "di Volo, Matteo and others",
+    journal = "PLOS Computational Biology",
+    title = "Biophysical ingredients for a robust model of cortical dynamics",
+    year = "2019",
+    note = "Key used in ZerlautAdaptationFirstOrder model",
+    groups = "Digital Twins"
+}
+
+@article{Wang2008,
+    author = "Wang, X. and Wang, M.",
+    title = "A hyperchaos generated from Lorenz system",
+    journal = "Physica A: Statistical Mechanics and its Applications",
+    year = "2008",
+    volume = "387",
+    number = "14",
+    pages = "3751--3758"
+}
+
+@article{Wang2009,
+    author = "Wang, Z. and Sun, Y. and van Wyk, B. J. and Qi, G. and van Wyk, M. A.",
+    title = "A 3-D four-wing attractor and its analysis",
+    journal = "Brazilian Journal of Physics",
+    year = "2009",
+    volume = "39",
+    pages = "547--553"
+}
+
+@misc{Weisstein,
+    author = "Weisstein, Eric W.",
+    title = "Lotka-Volterra Equations",
+    howpublished = "MathWorld--A Wolfram Web Resource",
+    url = "https://mathworld.wolfram.com/Lotka-VolterraEquations.html"
+}
+
+@article{Wilson1972,
+    author = "Wilson, Hugh R. and Cowan, Jack D.",
+    title = "Excitatory and inhibitory interactions in localized populations of model neurons",
+    journal = "Biophysical Journal",
+    year = "1972",
+    groups = "Neural Field Models"
+}
+
+@article{Wilson1973,
+    author = "Wilson, Hugh R. and Cowan, Jack D.",
+    title = "A mathematical theory of the functional dynamics of cortical and thalamic nervous tissue",
+    journal = "Biological Cybernetics",
+    year = "1973",
+    groups = "Neural Field Models"
+}
+
+@article{Wong2006,
+    author = "Wong, Kong-Fatt and Wang, Xiao-Jing",
+    journal = "The Journal of Neuroscience",
+    title = "A Recurrent Network Mechanism of Time Integration in Perceptual Decisions",
+    year = "2006",
+    issn = "1529-2401",
+    month = "January",
+    number = "4",
+    pages = "1314--1328",
+    volume = "26",
+    doi = "10.1523/jneurosci.3733-05.2006",
+    publisher = "Society for Neuroscience"
+}
+
+@article{Zaslavskii1978,
+    author = "Zaslavskii, G. M. and Sagdeev, R. Z. and Usikov, D. A. and Chernikov, A. A.",
+    title = "The simplest case of a strange attractor",
+    journal = "Physics Letters A",
+    year = "1978",
+    volume = "69",
+    number = "3",
+    pages = "145--147"
+}
+
+@article{Zerlaut2018,
+    author = "Zerlaut, Yann and Destexhe, Alain",
+    title = "A mean-field model of conductance-based networks of adaptive exponential integrate-and-fire neurons",
+    journal = "Neural Computation",
+    year = "2018"
+}
+
+@article{Zetterberg1978,
+    author = "Zetterberg, L. H. and Jansen, B. H.",
+    title = "A model for the interrelationship between EEG and evoked potentials",
+    journal = "Biological Cybernetics",
+    year = "1978",
+    groups = "Neural Mass Models"
+}
+
+@article{Zimmermann2018,
+    author = "Zimmermann, J. and Perry, A. and Breakspear, M. and Schirner, M. and Sachdev, P. and Wen, W. and Kochan, N.A. and Mapstone, M. and Ritter, P. and McIntosh, A.R. and Solodkin, A.",
+    journal = "NeuroImage: Clinical",
+    title = "Differentiation of Alzheimer’s disease based on local and global parameters in personalized Virtual Brain models",
+    year = "2018",
+    issn = "2213-1582",
+    pages = "240--251",
+    volume = "19",
+    doi = "10.1016/j.nicl.2018.04.017",
+    file = ":Zimmermann2018 - Differentiation of Alzheimer’s Disease Based on Local and Global Parameters in Personalized Virtual Brain Models.pdf:PDF",
+    groups = "Alzheimer, Annotate!",
+    publisher = "Elsevier BV"
+}
+
+
+@Comment{jabref-meta: databaseType:bibtex;}
+
+@Comment{jabref-meta: grouping:
+0 AllEntriesGroup:;
+1 StaticGroup:Stimulation\;2\;0\;0x4d8080ff\;LIGHTNING_FILL\;\;;
+1 StaticGroup:AI Research\;2\;1\;\;\;\;;
+1 StaticGroup:ClinicalApplication\;2\;1\;0x57b1b6ff\;MEDICAL_BAG\;\;;
+2 StaticGroup:Mental Disorders\;2\;1\;0x794ea4ff\;MEDICAL_BAG\;\;;
+3 StaticGroup:Schizophrenia\;2\;1\;\;BRAIN\;\;;
+3 StaticGroup:Depression\;2\;1\;0x6d4694ff\;MEDICAL_BAG\;\;;
+3 StaticGroup:Autism\;2\;1\;0x6d9446ff\;MEDICAL_BAG\;\;;
+2 StaticGroup:Neurological Disorders\;2\;1\;0xa4534eff\;MEDICAL_BAG\;\;;
+3 StaticGroup:Epilepsy\;2\;0\;\;BRAIN\;\;;
+1 StaticGroup:Toolboxes\;2\;1\;\;\;\;;
+1 StaticGroup:Dynamical Systems\;2\;1\;0x57b1b6ff\;MICROSOFT_DYNAMICS_365\;\;;
+1 StaticGroup:Ontologies and Knowledge Graphs\;2\;1\;\;\;\;;
+1 StaticGroup:Simulators\;2\;1\;\;COMPUTER\;\;;
+1 StaticGroup:BNM-Studies\;2\;1\;\;BRAIN\;\;;
+2 StaticGroup:TVB-Studies\;2\;1\;\;\;\;;
+2 StaticGroup:CitingTVB\;2\;1\;\;BRAIN\;\;;
+2 StaticGroup:Methodological\;2\;1\;\;BRAIN\;\;;
+2 StaticGroup:Alzheimer\;2\;1\;\;BRAIN\;\;;
+2 StaticGroup:Aging\;2\;1\;\;BRAIN\;\;;
+2 StaticGroup:Parkinson\;2\;1\;\;BRAIN\;\;;
+2 StaticGroup:Multi-scale\;2\;1\;\;BRAIN\;\;;
+2 StaticGroup:rs-fMRI\;2\;1\;\;BRAIN\;\;;
+2 StaticGroup:Tumor\;2\;1\;\;BRAIN\;\;;
+1 StaticGroup:Annotate!\;2\;1\;0xb31a1aff\;MDI_FORMAT_ANNOTATION_PLUS\;\;;
+1 StaticGroup:Digital Twins\;2\;0\;\;MDI_CONTENT_COPY\;\;;
+1 StaticGroup:Metadata\;2\;0\;\;\;\;;
+1 StaticGroup:Knowledge\;2\;1\;\;DEVICE_UNKNOWN\;\;;
+1 StaticGroup:HighImpactModelingStudies\;0\;0\;0x67bf60ff\;SHIELD_FILL_EXCLAMATION\;\;;
+1 StaticGroup:NeuroscienceBigData\;0\;1\;0xb760bfff\;\;\;;
+1 StaticGroup:Reproducibility and data-sharing in Neuroscience\;0\;1\;\;GEAR_FILL\;\;;
+1 StaticGroup:Comparable Approaches\;0\;0\;0xaa5b5bff\;COMPARE\;\;;
+1 StaticGroup:Semantic Neuroscience\;0\;1\;0xff6666ff\;SEMANTIC_WEB\;\;;
+1 StaticGroup:Brain Atlas Ontology\;2\;1\;0x5fa7b9ff\;MDI_MAP_MARKER_RADIUS\;\;;
+2 StaticGroup:Parcellations\;2\;0\;0x5696a6ff\;BRAIN\;\;;
+1 StaticGroup:Modeling Theory\;2\;1\;0xb1805dff\;MDI_BOOK_OPEN_PAGE_VARIANT\;\;;
+1 StaticGroup:Neural Field Models\;2\;0\;\;\;\;;
+1 StaticGroup:Neural Mass Models\;2\;0\;0x974d4dff\;FILE_DOCUMENT_EDIT\;\;;
+2 StaticGroup:TsodyksMarkram\;2\;1\;0x884545ff\;FILE_DOCUMENT_EDIT\;\;;
+2 StaticGroup:JansenRit\;2\;1\;0x458888ff\;FILE_DOCUMENT_EDIT\;\;;
+2 StaticGroup:KIonEx\;2\;1\;0x674588ff\;FILE_DOCUMENT_EDIT\;\;;
+2 StaticGroup:LarterBreakspear\;2\;1\;0x678845ff\;FILE_DOCUMENT_EDIT\;\;;
+2 StaticGroup:CoombesByrne\;2\;1\;0x457388ff\;FILE_DOCUMENT_EDIT\;\;;
+2 StaticGroup:Kuramoto\;2\;1\;0x885a45ff\;FILE_DOCUMENT_EDIT\;\;;
+1 StaticGroup:TVB-O Paper\;2\;0\;0x4d8080ff\;FILE_DOCUMENT_EDIT\;\;;
+2 StaticGroup:Intro\;0\;1\;0x56a8a8ff\;FILE_DOCUMENT_EDIT\;\;;
+3 StaticGroup:Semantic Web\;2\;1\;\;SEMANTIC_WEB\;\;;
+4 StaticGroup:Knowledge Graphs\;2\;0\;\;GRAPH_OUTLINE\;\;;
+5 StaticGroup:KG for clinical decision support systems\;2\;1\;\;GRAPH_OUTLINE\;\;;
+2 StaticGroup:Methods\;0\;1\;0xa85656ff\;FILE_DOCUMENT_EDIT\;\;;
+2 StaticGroup:LiteratureDB\;0\;0\;0x4d8080ff\;MDI_DATABASE\;Studies represented in TVB-Os Model database\;;
+2 StaticGroup:Discussion\;2\;1\;0x77549bff\;FILE_DOCUMENT_EDIT\;\;;
+1 StaticGroup:Data Preprocessing\;2\;0\;\;\;\;;
+2 StaticGroup:EEG\;2\;1\;\;\;\;;
+2 StaticGroup:MRI\;2\;1\;\;\;\;;
+1 StaticGroup:Brain Development\;2\;1\;0x5fa6b9ff\;HUMAN_MALE_CHILD\;\;;
+1 StaticGroup:Books\;2\;1\;\;MDI_BOOK_OPEN_VARIANT\;\;;
+1 StaticGroup:Brain Networks\;2\;1\;\;\;\;;
+1 StaticGroup:Model Specification\;2\;1\;\;MDI_FILE_XML\;\;;
+1 StaticGroup:F.A.I.R.\;2\;1\;\;SIGNPOST_SPLIT_FILL\;\;;
+1 StaticGroup:Normative Connectivity\;2\;1\;0xb96d5fff\;MDI_GRID\;\;;
+1 StaticGroup:Nature Methods Articles\;2\;1\;\;\;\;;
+1 StaticGroup:Automated Workflows\;2\;1\;\;MDI_AUTO_FIX\;\;;
+1 StaticGroup:Data Provenance\;2\;1\;\;\;\;;
+1 StaticGroup:Ritter\;2\;1\;\;\;\;;
+1 StaticGroup:UDEs\;2\;1\;\;\;\;;
 }

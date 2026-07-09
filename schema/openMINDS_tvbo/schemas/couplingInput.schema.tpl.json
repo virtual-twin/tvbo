@@ -2,13 +2,28 @@
   "_type": "tvbo:CouplingInput",
   "properties": {
     "name": {
-      "type": "string"
+      "type": "string",
+      "_instruction": "Enter the name."
     },
     "description": {
       "type": "string"
     },
+    "source": {
+      "type": "string"
+    },
     "dimension": {
       "type": "integer"
+    },
+    "keys": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "local": {
+      "type": "boolean"
     }
   }
 }

@@ -24,7 +24,6 @@ Context Variables:
 <%
 from sympy import latex, Eq, Symbol
 from tvbo.utils import report
-from tvbo.utils.units import unit_to_latex
 from tvbo.parse.expression import parse_eq
 
 # ── Short-hands ──
@@ -106,77 +105,13 @@ def _items(value):
         return [(_p(item, 'name', f'item_{idx}'), item) for idx, item in enumerate(value)]
     return []
 
-def _unit_text(unit):
-    unit_ltx = unit_to_latex(unit) if unit else ''
-    return '$' + unit_ltx + '$' if unit_ltx else '—'
-
-def _range_text(range_obj):
-    if not range_obj:
-        return ''
-    values = _p(range_obj, 'explored_values', None)
-    if values:
-        values = [str(v) for v in values]
-        return '{' + ', '.join(values[:8]) + ('...' if len(values) > 8 else '') + '}'
-    lo = _p(range_obj, 'lo', None)
-    hi = _p(range_obj, 'hi', None)
-    step = _p(range_obj, 'step', None)
-    n_points = _p(range_obj, 'n', None)
-    log_scale = _p(range_obj, 'log_scale', False)
-    parts = []
-    if lo is not None or hi is not None:
-        parts.append(f"[{lo if lo is not None else '-∞'}, {hi if hi is not None else '∞'}]")
-    if step is not None:
-        parts.append(f"step={step}")
-    if n_points is not None:
-        parts.append(f"n={n_points}")
-    if log_scale:
-        parts.append('log')
-    return ', '.join(parts)
-
-def _distribution_text(distribution):
-    if not distribution:
-        return ''
-    name = _p(distribution, 'name', 'Distribution')
-    domain = _range_text(_p(distribution, 'domain', None))
-    axis = _p(distribution, 'axis', None)
-    seed = _p(distribution, 'seed', None)
-    parts = [str(name)]
-    if domain:
-        parts.append(domain)
-    if axis:
-        parts.append(f"axis={axis}")
-    if seed is not None:
-        parts.append(f"seed={seed}")
-    return ' '.join(parts)
-
-def _metadata_text(obj):
-    from tvbo.utils import domain_enforcement
-    bits = []
-    _dom = _p(obj, 'domain', None)
-    if _present(_dom):
-        bits.append(_range_text(_dom))
-        _enf = domain_enforcement(_dom)   # none / clamp / wrap (boundaries folded into domain)
-        if _enf != 'none':
-            bits.append(f'enforce={_enf}')
-    if _present(_p(obj, 'distribution', None)):
-        bits.append(_distribution_text(_p(obj, 'distribution')))
-    return '; '.join([bit for bit in bits if bit]) or '—'
-
-def _flag_text(obj, flags):
-    labels = []
-    for name, label in flags:
-        if _p(obj, name, False):
-            labels.append(label)
-    shape = _p(obj, 'shape', None)
-    if shape:
-        labels.append(f"shape={shape}")
-    dataset_path = _p(obj, 'dataset_path', None)
-    if dataset_path:
-        labels.append(f"data={dataset_path}")
-    optimum = _p(obj, 'reported_optimum', None)
-    if optimum is not None:
-        labels.append(f"optimum={optimum}")
-    return ', '.join(labels) or '—'
+# Cell formatters live in the adapter (tvbo.utils.report) to avoid duplicating
+# them across the report templates; alias for the local call sites below.
+_unit_text = report.unit_text
+_range_text = report.range_text
+_distribution_text = report.distribution_text
+_metadata_text = report.metadata_text
+_flag_text = report.flag_text
 
 def _name_text(value):
     if value is None:
@@ -411,21 +346,13 @@ $$${fname}(${', '.join(arg_names)}) = ${safe_latex(func_rhs, arg_names)}$$
 % if svars:
 **State Variables**
 
-| Variable | Initial Value | Unit | Equation | Domain / Sampling | Flags | Description |
-|:---------|:--------------|:-----|:---------|:------------------|:------|:------------|
-% for name, svar in svars.items():
-| $${latex(Symbol(name))}$ | ${_p(svar, 'initial_value', '—')} | ${_unit_text(_p(svar, 'unit', None))} | ${_p(svar, 'equation_type', 'differential')} (order ${_p(svar, 'equation_order', 1)}) | ${_metadata_text(svar)} | ${_flag_text(svar, [('coupling_variable', 'coupling'), ('stimulation_variable', 'stimulation'), ('record', 'recorded')])} | ${_p(svar, 'description', '') or _p(svar, 'definition', '') or ''} |
-% endfor
+${report.state_variable_table(svars)}
 
 % endif
 % if params:
 **Parameters**
 
-| Parameter | Value | Default | Unit | Domain / Sampling | Flags | Description |
-|:----------|------:|:--------|:-----|:------------------|:------|:------------|
-% for name, param in params.items():
-| $${latex(Symbol(name))}$ | ${_p(param, 'value', '—')} | ${_p(param, 'default', '—') if _p(param, 'default', None) is not None else '—'} | ${_unit_text(_p(param, 'unit', None))} | ${_metadata_text(param)} | ${_flag_text(param, [('free', 'free'), ('heterogeneous', 'heterogeneous')])} | ${_p(param, 'description', '') or _p(param, 'definition', '') or ''} |
-% endfor
+${report.parameter_table(params)}
 
 % endif
 % if dparams:
@@ -472,11 +399,7 @@ out_names = [n for n in out_names if n not in dvars]
 % if coupling_terms:
 **Coupling Terms**
 
-| Term | Value | Domain / Sampling | Flags | Description |
-|:-----|------:|:------------------|:------|:------------|
-% for term_name, term in _items(coupling_terms):
-| $${latex(Symbol(term_name))}$ | ${_p(term, 'value', '—')} | ${_metadata_text(term)} | ${_flag_text(term, [('free', 'free'), ('heterogeneous', 'heterogeneous')])} | ${_p(term, 'description', '') or _p(term, 'definition', '') or ''} |
-% endfor
+${report.param_table(coupling_terms, name_header='Term')}
 
 % endif
 % if observed:
@@ -710,11 +633,7 @@ Receives ${ ', '.join(['$' + latex(Symbol(s)) + '$' for s in incoming])} from co
 % endif
 % if cpl_items:
 
-| Parameter | Value | Unit | Domain / Sampling | Flags | Description |
-|:----------|------:|:-----|:------------------|:------|:------------|
-% for pname, param in cpl_items:
-| $${latex(Symbol(pname))}$ | ${_p(param, 'value', '—')} | ${_unit_text(_p(param, 'unit', None))} | ${_metadata_text(param)} | ${_flag_text(param, [('free', 'free'), ('heterogeneous', 'heterogeneous')])} | ${_p(param, 'description', '') or _p(param, 'definition', '') or ''} |
-% endfor
+${report.param_table(cpl_params_obj, name_header='Parameter')}
 % endif
 
 % endfor
@@ -749,11 +668,7 @@ $$I_{\text{stim}}(t) = ${safe_latex(stim_rhs, [_p(p, 'name', '') for p in stim_p
 % endif
 
 % if stim_param_list:
-| Parameter | Value | Unit | Domain / Sampling | Flags | Description |
-|:----------|------:|:-----|:------------------|:------|:------------|
-% for param in stim_param_list:
-| $${latex(Symbol(_p(param, 'name', '?')))}$ | ${_p(param, 'value', '—')} | ${_unit_text(_p(param, 'unit', None))} | ${_metadata_text(param)} | ${_flag_text(param, [('free', 'free'), ('heterogeneous', 'heterogeneous')])} | ${_p(param, 'description', '') or _p(param, 'definition', '') or ''} |
-% endfor
+${report.param_table(stim_param_list, name_header='Parameter')}
 % endif
 % endif
 <%
@@ -820,11 +735,7 @@ ${_p(integ, 'description').strip()}
 % endif
 
 % if integration_params:
-| Parameter | Value | Unit | Domain / Sampling | Description |
-|:----------|------:|:-----|:------------------|:------------|
-% for param_name, param in integration_params:
-| $${latex(Symbol(param_name))}$ | ${_p(param, 'value', '—')} | ${_unit_text(_p(param, 'unit', None))} | ${_metadata_text(param)} | ${_p(param, 'description', '') or _p(param, 'definition', '') or ''} |
-% endfor
+${report.param_table(_p(integ, 'parameters', {}), name_header='Parameter')}
 
 % endif
 % if intermediate_expressions or update_expression:
@@ -873,11 +784,7 @@ ${', '.join(noise_bits)}.
 % if noise_nsig is not None:
 $\sigma = ${noise_nsig}$
 % elif noise_param_list:
-| Parameter | Value | Unit | Domain / Sampling | Description |
-|:----------|------:|:-----|:------------------|:------------|
-% for np_item in noise_param_list:
-| $${latex(Symbol(_p(np_item, 'name', 'σ')))}$ | ${_p(np_item, 'value', '—')} | ${_unit_text(_p(np_item, 'unit', None))} | ${_metadata_text(np_item)} | ${_p(np_item, 'description', '') or _p(np_item, 'definition', '') or ''} |
-% endfor
+${report.param_table(noise_param_list, name_header='Parameter')}
 % endif
 % endif
 % endif
@@ -1252,11 +1159,7 @@ Requires: ${', '.join([str(r) for r in requires])}
 % if hp_items:
 **Hyperparameters**
 
-| Hyperparameter | Value | Unit | Domain / Sampling | Description |
-|:---------------|------:|:-----|:------------------|:------------|
-% for hp_name, hp in hp_items:
-| ${hp_name} | ${_p(hp, 'value', '—')} | ${_unit_text(_p(hp, 'unit', None))} | ${_metadata_text(hp)} | ${_p(hp, 'description', '') or _p(hp, 'definition', '') or ''} |
-% endfor
+${report.param_table(hypers, name_header='Hyperparameter', symbolic=False)}
 
 % endif
 

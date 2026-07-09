@@ -1,0 +1,14 @@
+{
+  "_type": "tvbo:Reference",
+  "required": [
+    "iri"
+  ],
+  "properties": {
+    "iri": {
+      "type": "string"
+    },
+    "field": {
+      "type": "string"
+    }
+  }
+}

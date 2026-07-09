@@ -59,8 +59,24 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
             A `SimulationStudy` parsed from the file.
         """
         from pathlib import Path
+        import yaml
+
         study = yaml_loader.load(filepath, cls)
         study._source_file = str(Path(filepath).resolve())
+        # Keep the raw (anchor-resolved) experiment dicts so experiments can be
+        # materialised through SimulationExperiment.from_string — that path
+        # iri-sources dynamics/coupling from the registry, which loading the
+        # datamodel object directly does not.
+        try:
+            with open(filepath) as _fh:
+                _raw = yaml.safe_load(_fh) or {}
+            _raw_exps = {
+                e.get("id"): e for e in (_raw.get("experiments") or []) if isinstance(e, dict)
+            }
+        except Exception:
+            _raw_exps = {}
+        # Store as a plain dict (bypass the JsonObj setattr that would wrap it).
+        object.__setattr__(study, "_raw_experiments", _raw_exps)
         return study
 
     @classmethod
@@ -102,12 +118,34 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
         """Retrieve a single experiment by its declared id."""
         exps = getattr(self, "experiments", None) or []
         source_file = getattr(self, "_source_file", None)
+        raw_experiments = getattr(self, "_raw_experiments", None) or {}
         for exp_dm in exps:
             if getattr(exp_dm, "id", None) == experiment_id:
                 if source_file:
                     experiment.SimulationExperiment._pending_source_file = source_file
                 try:
-                    exp = experiment.SimulationExperiment.from_datamodel(exp_dm)
+                    # Materialise through the YAML construction path so that
+                    # iri-sourced components (dynamics, coupling) are merged from
+                    # the registry — exactly as SimulationExperiment.from_file
+                    # does. from_datamodel alone skips that resolution and would
+                    # leave an iri-only dynamics unpopulated. Prefer the raw
+                    # authored experiment dict (minimal, anchor-resolved) so the
+                    # merge behaves identically to loading a standalone spec.
+                    raw = raw_experiments.get(experiment_id)
+                    if isinstance(raw, dict):
+                        import yaml
+
+                        exp = experiment.SimulationExperiment.from_string(
+                            yaml.safe_dump(raw)
+                        )
+                    else:
+                        from linkml_runtime.dumpers import yaml_dumper
+
+                        exp = experiment.SimulationExperiment.from_string(
+                            yaml_dumper.dumps(exp_dm)
+                        )
+                    if source_file:
+                        exp._source_file = source_file
                 finally:
                     experiment.SimulationExperiment._pending_source_file = None
                 return exp

@@ -137,7 +137,7 @@ if 'experiment' in context.keys():
     _events = list(experiment.events.values()) if experiment.events else []
     for ev in _events:
         ev_type = str(getattr(ev, 'event_type', 'stimulus'))
-        if 'stimulus' in ev_type:
+        if ('stimul' in ev_type) or (ev_type in ('continuous', 'discrete')):
             external_inputs_dict[str(ev.name)] = 1
 %>
 

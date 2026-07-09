@@ -2,7 +2,8 @@
   "_type": "tvbo:DerivedParameter",
   "properties": {
     "name": {
-      "type": "string"
+      "type": "string",
+      "_instruction": "Enter the name."
     },
     "symbol": {
       "type": "string"
@@ -11,7 +12,7 @@
       "type": "string"
     },
     "equation": {
-      "_linkedTypes": [
+      "_embeddedTypes": [
         "tvbo:Equation"
       ]
     },
