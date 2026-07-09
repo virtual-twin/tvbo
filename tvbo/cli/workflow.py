@@ -12,6 +12,7 @@ from mako.template import Template
 from . import _common
 from . import _workflow as _wf
 from ._backends import list_backends, resolve_backend
+from .run import _execute_engine_artefact
 
 
 app = typer.Typer(name="workflow", no_args_is_help=True)
@@ -404,9 +405,16 @@ def _emit(engine: str, *, spec: str, backend: str, experiment: str | None,
         text = _render_template(_TEMPLATE_PATH[engine], plan=plan,
                                 block=plan.engine_block, script_relpath=None)
         typer.echo(text)
-        return
+        return None
     out_dir = output or Path("out") / plan.study_key / plan.experiment_key / engine
     _emit_kit(engine=engine, plan=plan, experiment=exp, out_dir=out_dir)
+    return out_dir
+
+
+def _execute_emitted(engine: str, out_dir: Path) -> None:
+    """Execute a generated workflow artefact inside *out_dir*."""
+    artefact = out_dir / _ARTEFACT_NAME[engine]
+    _execute_engine_artefact(engine, artefact)
 
 
 @app.command("slurm", help="Emit a self-contained sbatch kit (artefact + scripts + spec).")
@@ -449,6 +457,26 @@ def nextflow(
     """Emit a self-contained Nextflow kit (`main.nf` + scripts + frozen spec)."""
     _emit("nextflow", spec=spec, backend=backend, experiment=experiment,
           output=output, override=override, stdout=stdout)
+
+
+@app.command("run", help="Emit a workflow kit and execute it with the selected engine.")
+def run_workflow(
+    engine: str = typer.Argument(..., help="Execution engine: slurm | snakemake | nextflow."),
+    spec: str = typer.Argument(..., help="Path, CURIE, or DB name (Study or Experiment)."),
+    backend: str = typer.Option("tvboptim", "--backend", "-b"),
+    experiment: str = typer.Option(None, "--experiment"),
+    output: Path = typer.Option(None, "-o", "--output", help="Output directory."),
+    override: list[str] = typer.Option([], "--set"),
+) -> None:
+    """Emit a self-contained kit then execute it (or submit for Slurm)."""
+    engine = engine.lower()
+    if engine not in {"slurm", "snakemake", "nextflow"}:
+        _common.die("`tvbo workflow run` expects engine one of: slurm, snakemake, nextflow")
+    out_dir = _emit(engine, spec=spec, backend=backend, experiment=experiment,
+                    output=output, override=override, stdout=False)
+    if out_dir is None:
+        _common.die("failed to emit workflow kit")
+    _execute_emitted(engine, out_dir)
 
 
 @app.command("backends", help="List backends and their ontology-derived capabilities.")

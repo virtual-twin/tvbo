@@ -193,13 +193,14 @@ def _dispatch_to_engine(engine: str, *, spec: str, backend: str,
     if out_dir:
         overrides.append(f"--set=out_dir={out_dir}")
 
-    artefact = Path(out_dir or ".") / {
+    kit_dir = out_dir or _default_engine_kit_dir(spec=spec, experiment=experiment, engine=engine, backend=backend)
+    artefact = kit_dir / {
         "slurm": "run.sbatch",
         "snakemake": "Snakefile",
         "nextflow": "main.nf",
     }[engine]
 
-    cmd = ["tvbo", "workflow", engine, spec, "--backend", backend, "-o", str(artefact)]
+    cmd = ["tvbo", "workflow", engine, spec, "--backend", backend, "-o", str(kit_dir)]
     if experiment:
         cmd.extend(["--experiment", experiment])
     cmd.extend(overrides)
@@ -208,9 +209,43 @@ def _dispatch_to_engine(engine: str, *, spec: str, backend: str,
     _common.info(f"emitted {artefact}")
 
     if engine == "slurm":
-        sub = ["sbatch", str(artefact)]
-        _common.info("$ " + " ".join(shlex.quote(c) for c in sub))
-        subprocess.run(sub, check=True)
+        _execute_engine_artefact(engine, artefact)
+
+
+def _default_engine_kit_dir(*, spec: str, experiment: str | None, engine: str, backend: str) -> Path:
+    """Resolve the default workflow kit directory for ``tvbo run --engine``.
+
+    Mirrors ``tvbo workflow <engine>`` defaults so ``tvbo run`` can emit a kit
+    without an explicit ``--out-dir`` while still knowing where to execute it.
+    """
+    from . import workflow as _workflow_cmd
+
+    plan, _exp = _workflow_cmd._build_plan(
+        spec,
+        engine=engine,
+        backend=backend,
+        experiment=experiment,
+        overrides=[],
+    )
+    return Path("out") / plan.study_key / plan.experiment_key / engine
+
+
+def _execute_engine_artefact(engine: str, artefact: Path) -> None:
+    """Execute a rendered workflow artefact for *engine*.
+
+    Uses the artefact directory as CWD so generated scripts can use relative
+    paths (e.g. ``spec/`` and ``scripts/`` in emitted kits).
+    """
+    if engine == "slurm":
+        cmd = ["sbatch", artefact.name]
+    elif engine == "snakemake":
+        cmd = ["snakemake", "--cores", "all"]
+    elif engine == "nextflow":
+        cmd = ["nextflow", "run", artefact.name]
+    else:
+        _common.die(f"unsupported engine {engine!r}; expected slurm|snakemake|nextflow")
+    _common.info("$ " + " ".join(shlex.quote(c) for c in cmd))
+    subprocess.run(cmd, check=True, cwd=artefact.parent)
 
 
 def _reexec_in_container(image: str, argv: list[str]) -> None:
