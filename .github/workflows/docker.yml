@@ -188,7 +188,22 @@ jobs:
       - name: Configure git for private repos
         run: git config --global url."https://${{ secrets.PRIVATE_REPO_TOKEN }}@github.com/".insteadOf "https://github.com/"
       - name: Link checkout as editable (deps already in image)
-        run: uv pip install --system -e . --no-deps && uv pip install --system pytest-xdist pytest-timeout
+        run: |
+          UV_BIN="$(command -v uv || true)"
+          if [ -z "${UV_BIN}" ]; then
+            if ! command -v curl >/dev/null 2>&1; then
+              apt-get update && apt-get install -y --no-install-recommends curl ca-certificates
+            fi
+            curl -LsSf https://astral.sh/uv/install.sh | sh
+            export PATH="$HOME/.local/bin:${PATH}"
+            UV_BIN="$(command -v uv || true)"
+          fi
+          if [ -z "${UV_BIN}" ]; then
+            echo "FATAL: uv is required but was not found in PATH."
+            exit 1
+          fi
+          "${UV_BIN}" pip install --system -e . --no-deps
+          "${UV_BIN}" pip install --system pytest-xdist pytest-timeout
       - name: Generate Julia reference data
         if: matrix.needs_julia_refdata
         run: python -c "from juliacall import Main; Main.seval('include(\"tests/reference_data/generate_nd_references.jl\")')"
@@ -283,7 +298,22 @@ jobs:
       - name: Configure git for private repos
         run: git config --global url."https://${{ secrets.PRIVATE_REPO_TOKEN }}@github.com/".insteadOf "https://github.com/"
       - name: Link checkout as editable (deps already in image)
-        run: uv pip install --system -e . --no-deps && uv pip install --system pytest-xdist pytest-timeout
+        run: |
+          UV_BIN="$(command -v uv || true)"
+          if [ -z "${UV_BIN}" ]; then
+            if ! command -v curl >/dev/null 2>&1; then
+              apt-get update && apt-get install -y --no-install-recommends curl ca-certificates
+            fi
+            curl -LsSf https://astral.sh/uv/install.sh | sh
+            export PATH="$HOME/.local/bin:${PATH}"
+            UV_BIN="$(command -v uv || true)"
+          fi
+          if [ -z "${UV_BIN}" ]; then
+            echo "FATAL: uv is required but was not found in PATH."
+            exit 1
+          fi
+          "${UV_BIN}" pip install --system -e . --no-deps
+          "${UV_BIN}" pip install --system pytest-xdist pytest-timeout
       - name: Run doc tests (${{ matrix.shard }})
         run: |
           pytest tests/test_docs.py -v --tb=long -m docs \

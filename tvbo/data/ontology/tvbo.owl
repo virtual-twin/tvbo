@@ -17,12 +17,12 @@
      xmlns:clinical="https://w3id.org/tvbo/clinical/"
      xmlns:oboInOwl="http://www.geneontology.org/formats/oboInOwl#">
     <owl:Ontology rdf:about="https://w3id.org/tvbo/tvbo.owl">
-        <owl:versionIRI rdf:resource="https://w3id.org/tvbo/2026-07-07/tvbo.owl"/>
+        <owl:versionIRI rdf:resource="https://w3id.org/tvbo/2026-07-08/tvbo.owl"/>
         <terms:contributor>The Virtual Brain Ontology contributors</terms:contributor>
         <terms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2024-01-01</terms:created>
         <terms:description>Metadata schema for simulation studies using The Virtual Brain neuroinformatics platform or other dynamic network models of large-scale brain activity.</terms:description>
         <terms:license rdf:resource="https://spdx.org/licenses/EUPL-1.2"/>
-        <terms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2026-07-07</terms:modified>
+        <terms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2026-07-08</terms:modified>
         <terms:publisher rdf:resource="https://www.thevirtualbrain.org/"/>
         <terms:title>The Virtual Brain Data Model</terms:title>
         <pav:version>0.4.0</pav:version>
@@ -1530,6 +1530,7 @@
     <!-- https://w3id.org/tvbo/modelsAnatomicalRegion -->
 
     <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/modelsAnatomicalRegion">
+        <rdfs:subPropertyOf rdf:resource="https://w3id.org/tvbo/surrogate_of"/>
         <rdfs:comment xml:lang="en">Anatomical region(s) the Dynamics model is intended to represent. Range: UBERON terms.</rdfs:comment>
         <rdfs:label xml:lang="en">models anatomical region</rdfs:label>
     </owl:ObjectProperty>
@@ -1539,6 +1540,7 @@
     <!-- https://w3id.org/tvbo/modelsCellType -->
 
     <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/modelsCellType">
+        <rdfs:subPropertyOf rdf:resource="https://w3id.org/tvbo/surrogate_of"/>
         <rdfs:comment xml:lang="en">Cell type(s) whose collective dynamics the model represents. Range: CL terms.</rdfs:comment>
         <rdfs:label xml:lang="en">models cell type</rdfs:label>
     </owl:ObjectProperty>
@@ -1548,6 +1550,7 @@
     <!-- https://w3id.org/tvbo/modelsNeurotransmitterSystem -->
 
     <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/modelsNeurotransmitterSystem">
+        <rdfs:subPropertyOf rdf:resource="https://w3id.org/tvbo/surrogate_of"/>
         <rdfs:comment xml:lang="en">Neurotransmitter system(s) whose synaptic dynamics the model represents. Range: GO biological-process terms.</rdfs:comment>
         <rdfs:label xml:lang="en">models neurotransmitter system</rdfs:label>
     </owl:ObjectProperty>
@@ -1709,6 +1712,12 @@
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
         <skos:notation>output_equation</skos:notation>
     </owl:ObjectProperty>
+    
+
+
+    <!-- https://w3id.org/tvbo/outsym -->
+
+    <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/outsym"/>
     
 
 
@@ -1916,6 +1925,17 @@
     
 
 
+    <!-- https://w3id.org/tvbo/requiresCoupling -->
+
+    <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/requiresCoupling">
+        <rdfs:domain rdf:resource="https://w3id.org/tvbo/Dynamics"/>
+        <rdfs:range rdf:resource="https://w3id.org/tvbo/Coupling"/>
+        <rdfs:comment xml:lang="en">The model&apos;s dynamics are defined against this specific coupling function (e.g. a sigmoidal transform of afferent activity); substituting a different coupling yields a different model.</rdfs:comment>
+        <rdfs:label xml:lang="en">requires coupling</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
     <!-- https://w3id.org/tvbo/sample -->
 
     <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/sample">
@@ -2084,6 +2104,21 @@
         <rdfs:range rdf:resource="https://w3id.org/tvbo/SimulationTask"/>
         <rdfs:label xml:lang="en">supports task</rdfs:label>
     </owl:ObjectProperty>
+    
+
+
+    <!-- https://w3id.org/tvbo/surrogate_of -->
+
+    <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/surrogate_of">
+        <rdfs:comment xml:lang="en">General grounding relation: the subject (parameter, state variable, model, ...) is a surrogate / abstraction / model of an external ontology term (typically GO, ChEBI, UBERON, CL, MeSH). The target term&apos;s own ontology carries the specificity, so no per-domain relation is required. Populated inline from the LinkML `grounding` slot; the `models*` properties below are sub-properties that refine the range.</rdfs:comment>
+        <rdfs:label xml:lang="en">surrogate of</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- https://w3id.org/tvbo/symmetry -->
+
+    <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/symmetry"/>
     
 
 
@@ -3564,7 +3599,7 @@
     <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/grounding">
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#anyURI"/>
         <rdfs:label>grounding (slot)</rdfs:label>
-        <skos:definition>External ontology IRIs (typically GO, ChEBI, UBERON, CL, MeSH) that this entity is a surrogate / abstraction / model of. Replaces the legacy OWL pattern `tvbo:surrogate_of` by carrying the link inline with the YAML data instance. Multiple IRIs allowed: a single parameter may abstract several biological processes (e.g. a synaptic conductance grounding both GO:0060079 (excitatory PSP) and GO:0007268 (chemical synaptic transmission)).</skos:definition>
+        <skos:definition>External ontology IRIs (typically GO, ChEBI, UBERON, CL, MeSH) that this entity is a surrogate / abstraction / model of. Realized as the `tvbo:surrogate_of` object property, carried inline with the YAML data instance. Multiple IRIs allowed: a single parameter may abstract several biological processes (e.g. a synaptic conductance grounding both GO:0060079 (excitatory PSP) and GO:0007268 (chemical synaptic transmission)).</skos:definition>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
         <skos:notation>grounding</skos:notation>
     </owl:DatatypeProperty>
@@ -9369,6 +9404,12 @@
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/outsym"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/parameters"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
@@ -9394,6 +9435,12 @@
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/regional_connectivity"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/symmetry"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -9465,6 +9512,12 @@
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/symmetry"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/delayed"/>
                 <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
             </owl:Restriction>
@@ -9513,19 +9566,7 @@
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="https://w3id.org/tvbo/outsym"/>
-                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
-            </owl:Restriction>
-        </rdfs:subClassOf>
-        <rdfs:subClassOf>
-            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/sparse"/>
-                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
-            </owl:Restriction>
-        </rdfs:subClassOf>
-        <rdfs:subClassOf>
-            <owl:Restriction>
-                <owl:onProperty rdf:resource="https://w3id.org/tvbo/symmetry"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -9556,12 +9597,6 @@
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/sparse"/>
-                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
-            </owl:Restriction>
-        </rdfs:subClassOf>
-        <rdfs:subClassOf>
-            <owl:Restriction>
-                <owl:onProperty rdf:resource="https://w3id.org/tvbo/symmetry"/>
                 <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -26516,15 +26551,213 @@ Aligns with the BIDS phenotype standard (https://bids-specification.readthedocs.
     
 
 
+    <!-- http://purl.obolibrary.org/obo/GO_0004971 -->
+
+    <owl:NamedIndividual rdf:about="http://purl.obolibrary.org/obo/GO_0004971"/>
+    
+
+
+    <!-- http://purl.obolibrary.org/obo/GO_0005262 -->
+
+    <owl:NamedIndividual rdf:about="http://purl.obolibrary.org/obo/GO_0005262"/>
+    
+
+
+    <!-- http://purl.obolibrary.org/obo/GO_0005267 -->
+
+    <owl:NamedIndividual rdf:about="http://purl.obolibrary.org/obo/GO_0005267"/>
+    
+
+
+    <!-- http://purl.obolibrary.org/obo/GO_0005272 -->
+
+    <owl:NamedIndividual rdf:about="http://purl.obolibrary.org/obo/GO_0005272"/>
+    
+
+
     <!-- http://purl.obolibrary.org/obo/GO_0007214 -->
 
     <owl:NamedIndividual rdf:about="http://purl.obolibrary.org/obo/GO_0007214"/>
     
 
 
+    <!-- http://purl.obolibrary.org/obo/GO_0016917 -->
+
+    <owl:NamedIndividual rdf:about="http://purl.obolibrary.org/obo/GO_0016917"/>
+    
+
+
+    <!-- http://purl.obolibrary.org/obo/GO_0019228 -->
+
+    <owl:NamedIndividual rdf:about="http://purl.obolibrary.org/obo/GO_0019228"/>
+    
+
+
+    <!-- http://purl.obolibrary.org/obo/GO_0022840 -->
+
+    <owl:NamedIndividual rdf:about="http://purl.obolibrary.org/obo/GO_0022840"/>
+    
+
+
+    <!-- http://purl.obolibrary.org/obo/GO_0030322 -->
+
+    <owl:NamedIndividual rdf:about="http://purl.obolibrary.org/obo/GO_0030322"/>
+    
+
+
+    <!-- http://purl.obolibrary.org/obo/GO_0032228 -->
+
+    <owl:NamedIndividual rdf:about="http://purl.obolibrary.org/obo/GO_0032228"/>
+    
+
+
     <!-- http://purl.obolibrary.org/obo/GO_0035249 -->
 
     <owl:NamedIndividual rdf:about="http://purl.obolibrary.org/obo/GO_0035249"/>
+    
+
+
+    <!-- http://purl.obolibrary.org/obo/GO_0042391 -->
+
+    <owl:NamedIndividual rdf:about="http://purl.obolibrary.org/obo/GO_0042391"/>
+    
+
+
+    <!-- http://purl.obolibrary.org/obo/GO_0043179 -->
+
+    <owl:NamedIndividual rdf:about="http://purl.obolibrary.org/obo/GO_0043179"/>
+    
+
+
+    <!-- http://purl.obolibrary.org/obo/GO_0043180 -->
+
+    <owl:NamedIndividual rdf:about="http://purl.obolibrary.org/obo/GO_0043180"/>
+    
+
+
+    <!-- http://purl.obolibrary.org/obo/GO_0051124 -->
+
+    <owl:NamedIndividual rdf:about="http://purl.obolibrary.org/obo/GO_0051124"/>
+    
+
+
+    <!-- http://purl.obolibrary.org/obo/GO_0055075 -->
+
+    <owl:NamedIndividual rdf:about="http://purl.obolibrary.org/obo/GO_0055075"/>
+    
+
+
+    <!-- http://purl.obolibrary.org/obo/GO_0060076 -->
+
+    <owl:NamedIndividual rdf:about="http://purl.obolibrary.org/obo/GO_0060076"/>
+    
+
+
+    <!-- http://purl.obolibrary.org/obo/GO_0060077 -->
+
+    <owl:NamedIndividual rdf:about="http://purl.obolibrary.org/obo/GO_0060077"/>
+    
+
+
+    <!-- http://purl.obolibrary.org/obo/GO_0060079 -->
+
+    <owl:NamedIndividual rdf:about="http://purl.obolibrary.org/obo/GO_0060079"/>
+    
+
+
+    <!-- http://purl.obolibrary.org/obo/GO_0060080 -->
+
+    <owl:NamedIndividual rdf:about="http://purl.obolibrary.org/obo/GO_0060080"/>
+    
+
+
+    <!-- http://purl.obolibrary.org/obo/GO_0061669 -->
+
+    <owl:NamedIndividual rdf:about="http://purl.obolibrary.org/obo/GO_0061669"/>
+    
+
+
+    <!-- http://purl.obolibrary.org/obo/GO_0090394 -->
+
+    <owl:NamedIndividual rdf:about="http://purl.obolibrary.org/obo/GO_0090394"/>
+    
+
+
+    <!-- http://purl.obolibrary.org/obo/GO_0097060 -->
+
+    <owl:NamedIndividual rdf:about="http://purl.obolibrary.org/obo/GO_0097060"/>
+    
+
+
+    <!-- http://purl.obolibrary.org/obo/GO_0098696 -->
+
+    <owl:NamedIndividual rdf:about="http://purl.obolibrary.org/obo/GO_0098696"/>
+    
+
+
+    <!-- http://purl.obolibrary.org/obo/GO_0098815 -->
+
+    <owl:NamedIndividual rdf:about="http://purl.obolibrary.org/obo/GO_0098815"/>
+    
+
+
+    <!-- http://purl.obolibrary.org/obo/GO_0098817 -->
+
+    <owl:NamedIndividual rdf:about="http://purl.obolibrary.org/obo/GO_0098817"/>
+    
+
+
+    <!-- http://purl.obolibrary.org/obo/GO_0098828 -->
+
+    <owl:NamedIndividual rdf:about="http://purl.obolibrary.org/obo/GO_0098828"/>
+    
+
+
+    <!-- http://purl.obolibrary.org/obo/GO_0098873 -->
+
+    <owl:NamedIndividual rdf:about="http://purl.obolibrary.org/obo/GO_0098873"/>
+    
+
+
+    <!-- http://purl.obolibrary.org/obo/GO_0098976 -->
+
+    <owl:NamedIndividual rdf:about="http://purl.obolibrary.org/obo/GO_0098976"/>
+    
+
+
+    <!-- http://purl.obolibrary.org/obo/GO_0099178 -->
+
+    <owl:NamedIndividual rdf:about="http://purl.obolibrary.org/obo/GO_0099178"/>
+    
+
+
+    <!-- http://purl.obolibrary.org/obo/GO_0099536 -->
+
+    <owl:NamedIndividual rdf:about="http://purl.obolibrary.org/obo/GO_0099536"/>
+    
+
+
+    <!-- http://purl.obolibrary.org/obo/GO_0099605 -->
+
+    <owl:NamedIndividual rdf:about="http://purl.obolibrary.org/obo/GO_0099605"/>
+    
+
+
+    <!-- http://purl.obolibrary.org/obo/GO_0150092 -->
+
+    <owl:NamedIndividual rdf:about="http://purl.obolibrary.org/obo/GO_0150092"/>
+    
+
+
+    <!-- http://purl.obolibrary.org/obo/GO_1903233 -->
+
+    <owl:NamedIndividual rdf:about="http://purl.obolibrary.org/obo/GO_1903233"/>
+    
+
+
+    <!-- http://purl.obolibrary.org/obo/GO_2000463 -->
+
+    <owl:NamedIndividual rdf:about="http://purl.obolibrary.org/obo/GO_2000463"/>
     
 
 
@@ -27292,6 +27525,12 @@ This model, its motivation and derivation can be found in the published article 
     
 
 
+    <!-- https://w3id.org/tvbo/ExcitabilityThresholdVariance -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ExcitabilityThresholdVariance"/>
+    
+
+
     <!-- https://w3id.org/tvbo/Excitable -->
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/Excitable"/>
@@ -27484,11 +27723,11 @@ This model, its motivation and derivation can be found in the published article 
     </owl:NamedIndividual>
     <rdf:Description rdf:nodeID="genid2863">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
-        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
+        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
     <rdf:Description rdf:nodeID="genid2864">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
-        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
+        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
     </rdf:Description>
     
 
@@ -27591,6 +27830,12 @@ Note:
     
 
 
+    <!-- https://w3id.org/tvbo/InhibitoryThresholdVariance -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/InhibitoryThresholdVariance"/>
+    
+
+
     <!-- https://w3id.org/tvbo/InternalCoupling -->
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/InternalCoupling">
@@ -27684,6 +27929,7 @@ Note:
         <tvbo:modelsCellType rdf:resource="http://purl.obolibrary.org/obo/CL_0000598"/>
         <tvbo:modelsNeurotransmitterSystem rdf:resource="http://purl.obolibrary.org/obo/GO_0007214"/>
         <tvbo:modelsNeurotransmitterSystem rdf:resource="http://purl.obolibrary.org/obo/GO_0035249"/>
+        <tvbo:requiresCoupling rdf:resource="https://w3id.org/tvbo/coupling_functions/SigmoidalJansenRit"/>
         <tvbo:hasTimescaleSeparation rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</tvbo:hasTimescaleSeparation>
         <tvbo:phaseSpaceDimension rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">6</tvbo:phaseSpaceDimension>
         <terms:description>The Jansen-Rit is a neurophysiologically-inspired neural mass model of a cortical column (or area), developed to simulate the electrical brain activity, i.e., the electroencephalogram (EEG), and evoked-potentials (EPs; Jansen et al., 1993; Jansen &amp; Rit, 1995). It is a 6-dimensional, non-linear, model describing the local average states of three interconnected neural populations: pyramidal cells (PCs), excitatory and inhibitory interneurons (EINs and IINs), interacting through positive and negative feedback loops. The main output of the model is the average membrane potential of the pyramidal cell population, as the sum of the potential of these cells is thought to be the source of the potential recorded in the EEG.</terms:description>
@@ -27958,6 +28204,9 @@ The excitatory to excitatory connections are modelled in more detail as glutamat
 Note:
 - Equations and default parameters are taken from (Breakspear et al., 2003b), 
 - All equations and parameters are non-dimensional and normalized to neural capacitance C = 1.</terms:description>
+        <terms:references rdf:resource="https://w3id.org/tvbo/studies/Breakspear2003"/>
+        <terms:references rdf:resource="https://w3id.org/tvbo/studies/Breakspear2003a"/>
+        <terms:references rdf:resource="https://w3id.org/tvbo/studies/Larter1999"/>
         <rdfs:label>LarterBreakspear</rdfs:label>
         <skos:prefLabel xml:lang="en">Larter-Breakspear</skos:prefLabel>
         <tvbo:hasDerivedVariable rdf:resource="https://w3id.org/tvbo/LarterBreakspear/derived_variables/Q_V"/>
@@ -28662,6 +28911,7 @@ This normal form has a supercritical bifurcation at &apos;a=0&apos; with &apos;a
         <tvbo:modelsNeurotransmitterSystem rdf:resource="http://purl.obolibrary.org/obo/GO_0035249"/>
         <tvbo:phaseSpaceDimension rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">3</tvbo:phaseSpaceDimension>
         <terms:description>Tsodyks-Markram mean-field model of short-term synaptic plasticity. A three-variable neural mass model with firing rate E, synaptic depression variable x, and facilitation variable u. The transfer function uses a softplus nonlinearity α·log(1 + exp(s/α)). Reproduces the dynamics from BifurcationKit.jl/examples/TMModel.jl.</terms:description>
+        <terms:references rdf:resource="https://w3id.org/tvbo/studies/Tsodyks1997"/>
         <rdfs:label>TsodyksMarkram</rdfs:label>
         <skos:prefLabel xml:lang="en">Tsodyks-Markram</skos:prefLabel>
         <tvbo:hasDerivedVariable rdf:resource="https://w3id.org/tvbo/TsodyksMarkram/derived_variables/SS0"/>
@@ -28763,11 +29013,11 @@ Note:
     </owl:NamedIndividual>
     <rdf:Description rdf:nodeID="genid2873">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
-        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
+        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
     <rdf:Description rdf:nodeID="genid2874">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
-        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
+        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
     </rdf:Description>
     
 
@@ -29103,6 +29353,9 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/CakanObermayer/parameters/C">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0030322"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0042391"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0098696"/>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">200.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0030322"/>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0042391"/>
@@ -29119,6 +29372,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/CakanObermayer/parameters/E_A">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0042391"/>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-80.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0042391"/>
         <rdfs:label>E_A (CakanObermayer parameter)</rdfs:label>
@@ -29133,6 +29387,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/CakanObermayer/parameters/E_L">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0022840"/>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-65.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0022840"/>
         <rdfs:label>E_L (CakanObermayer parameter)</rdfs:label>
@@ -29147,6 +29402,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/CakanObermayer/parameters/I_A">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <rdfs:label>I_A (CakanObermayer parameter)</rdfs:label>
@@ -29161,6 +29417,9 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/CakanObermayer/parameters/J_EE">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060076"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0098817"/>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">2.43</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060076"/>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
@@ -29177,6 +29436,8 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/CakanObermayer/parameters/J_EI">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099536"/>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-3.3</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0099536"/>
@@ -29192,6 +29453,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/CakanObermayer/parameters/J_IE">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">2.6</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <rdfs:label>J_IE (CakanObermayer parameter)</rdfs:label>
@@ -29206,6 +29468,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/CakanObermayer/parameters/J_II">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-1.64</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <rdfs:label>J_II (CakanObermayer parameter)</rdfs:label>
@@ -29245,6 +29508,9 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/CakanObermayer/parameters/mu_I">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0042391"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0098828"/>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.3</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0042391"/>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
@@ -29287,6 +29553,8 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/CakanObermayer/parameters/s_EE">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0098815"/>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.5</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0098815"/>
@@ -29302,6 +29570,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/CakanObermayer/parameters/s_EI">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0098815"/>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.5</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0098815"/>
         <rdfs:label>s_EI (CakanObermayer parameter)</rdfs:label>
@@ -29316,6 +29585,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/CakanObermayer/parameters/s_IE">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0098815"/>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.5</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0098815"/>
         <rdfs:label>s_IE (CakanObermayer parameter)</rdfs:label>
@@ -29330,6 +29600,8 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/CakanObermayer/parameters/s_II">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0098828"/>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.5</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0098828"/>
@@ -29449,6 +29721,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/CoombesByrne/parameters/eta">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099605"/>
         <terms:description>Constant parameter to scale the rate of feedback from the             firing rate variable to itself</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">20.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0099605"/>
@@ -29477,6 +29750,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/CoombesByrne/parameters/v_syn">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0042391"/>
         <terms:description>QIF membrane reversal potential</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-10.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0042391"/>
@@ -29552,6 +29826,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/CoombesByrne2D/parameters/eta">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099605"/>
         <terms:description>Constant parameter to scale the rate of feedback from the             firing rate variable to itself</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">2.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0099605"/>
@@ -29580,6 +29855,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/CoombesByrne2D/parameters/v_syn">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0042391"/>
         <terms:description>QIF membrane reversal potential</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-4.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0042391"/>
@@ -29618,6 +29894,8 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/DecoBalancedExcInh/derived_variables/H_e">
         <rdf:type rdf:resource="https://w3id.org/tvbo/DerivedVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099605"/>
         <tvbo:lhs>H_e</tvbo:lhs>
         <tvbo:rhs>x_e/(1 - exp(-d_e*x_e))</tvbo:rhs>
         <terms:description>Sigmoid function that computes the averaged firing rate of the excitatory neuron population (Deco et al., 2021).</terms:description>
@@ -29633,6 +29911,8 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/DecoBalancedExcInh/derived_variables/H_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/DerivedVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099605"/>
         <tvbo:lhs>H_i</tvbo:lhs>
         <tvbo:rhs>x_i/(1 - exp(-d_i*x_i))</tvbo:rhs>
         <terms:description>Sigmoid function that computes the averaged firing rate of the inhibitory neuron population (Deco et al., 2021).</terms:description>
@@ -29648,6 +29928,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/DecoBalancedExcInh/derived_variables/I_e">
         <rdf:type rdf:resource="https://w3id.org/tvbo/DerivedVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0098815"/>
         <tvbo:lhs>I_e</tvbo:lhs>
         <tvbo:rhs>I_ext + I_o*W_e + J_N_S_e*w_p - J_i*S_i + coupling</tvbo:rhs>
         <terms:description>Input current to the excitatory population (Deco et al., 2021).</terms:description>
@@ -29662,6 +29943,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/DecoBalancedExcInh/derived_variables/I_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/DerivedVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <tvbo:lhs>I_i</tvbo:lhs>
         <tvbo:rhs>I_o*W_i + J_N_S_e - S_i + coupling*lamda</tvbo:rhs>
         <terms:description>Input current to the inhibitory population (Deco et al., 2021).</terms:description>
@@ -29700,6 +29982,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/DecoBalancedExcInh/derived_variables/x_e">
         <rdf:type rdf:resource="https://w3id.org/tvbo/DerivedVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0098815"/>
         <tvbo:lhs>x_e</tvbo:lhs>
         <tvbo:rhs>M_i*(a_e*I_e - b_e)</tvbo:rhs>
         <terms:description>Gain-scaled input current to the excitatory population (Deco et al., 2021).</terms:description>
@@ -29714,6 +29997,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/DecoBalancedExcInh/derived_variables/x_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/DerivedVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <tvbo:lhs>x_i</tvbo:lhs>
         <tvbo:rhs>M_i*(a_i*I_i - b_i)</tvbo:rhs>
         <terms:description>Gain-scaled input current to the inhibitory population (Deco et al., 2021).</terms:description>
@@ -29741,6 +30025,8 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/DecoBalancedExcInh/parameters/I_ext">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099605"/>
         <terms:description>External stimulation parameter for evoked potential simulated activity applied to the excitatory population firing rate IE (Deco et al</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
@@ -29756,6 +30042,8 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/DecoBalancedExcInh/parameters/I_o">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <terms:description>Effective external input parameter to the excitatory E and inhibitory I population (Deco et al</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.382</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
@@ -29772,6 +30060,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/DecoBalancedExcInh/parameters/J_N">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <terms:description>Excitatory synaptic coupling parameter (Deco et al</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.15</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
@@ -29786,6 +30075,8 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/DecoBalancedExcInh/parameters/J_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099605"/>
         <terms:description>Local feedback inhibitory synaptic coupling to the excitatory population firing rate IE (Deco et al</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
@@ -29801,6 +30092,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/DecoBalancedExcInh/parameters/M_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099605"/>
         <terms:description>Effective gain within a region. Scales the excitatory and inhibitory input currents derived from the regional transcriptional landscape (Deco et al., 2021).</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0099605"/>
@@ -29815,6 +30107,8 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/DecoBalancedExcInh/parameters/W_e">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0090394"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_2000463"/>
         <terms:description>Excitatory population external input scaling weight</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0090394"/>
@@ -29830,6 +30124,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/DecoBalancedExcInh/parameters/W_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <terms:description>Inhibitory population external input scaling weight</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.7</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
@@ -29928,6 +30223,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/DecoBalancedExcInh/parameters/gamma_e">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <terms:description>Excitatory population kinetic parameter</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">6.41E-4</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
@@ -29942,6 +30238,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/DecoBalancedExcInh/parameters/gamma_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <terms:description>Inhibitory population kinetic parameter</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.001</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
@@ -29956,6 +30253,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/DecoBalancedExcInh/parameters/lamda">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <terms:description>Inhibitory global coupling scaling</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
@@ -29984,6 +30282,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/DecoBalancedExcInh/parameters/tau_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0016917"/>
         <terms:description>Kinetic parameter that represents the decay times for inhibitory GABA synapses (Deco et al</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">10.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0016917"/>
@@ -29999,6 +30298,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/DecoBalancedExcInh/parameters/w_p">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <terms:description>Excitatory population recurrence weight</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.4</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
@@ -30013,6 +30313,8 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/DecoBalancedExcInh/state_variables/S_e">
         <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099536"/>
         <tvbo:lhs>Derivative(S_e, t)</tvbo:lhs>
         <tvbo:rhs>H_e*gamma_e*(1 - S_e) - S_e/tau_e</tvbo:rhs>
         <terms:description>Excitatory population synaptic gating state-variable of the Deco Balanced Exc-Inh model (Deco et al., 2021).</terms:description>
@@ -30028,6 +30330,8 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/DecoBalancedExcInh/state_variables/S_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099536"/>
         <tvbo:lhs>Derivative(S_i, t)</tvbo:lhs>
         <tvbo:rhs>H_i*gamma_i - S_i/tau_i</tvbo:rhs>
         <terms:description>Inhibitory population synaptic gating state-variable of the Deco Balanced Exc-Inh model (Deco et al., 2021).</terms:description>
@@ -30043,6 +30347,8 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/DumontGutkin/parameters/Delta_e">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0098815"/>
         <terms:description>Half-width of heterogeneous noise distribution over excitatory population</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
@@ -30058,6 +30364,9 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/DumontGutkin/parameters/Delta_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0032228"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0098828"/>
         <terms:description>Half-width of heterogeneous noise distribution over inhibitory population</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0032228"/>
@@ -30074,6 +30383,8 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/DumontGutkin/parameters/Gamma">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <terms:description>Ratio of excitatory VS inhibitory global couplings G_ie/G_ee </terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">5.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
@@ -30089,6 +30400,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/DumontGutkin/parameters/I_e">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <terms:description>External homogeneous current on excitatory population</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
@@ -30103,6 +30415,8 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/DumontGutkin/parameters/I_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0098828"/>
         <terms:description>External current on inhibitory population</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
@@ -30118,6 +30432,9 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/DumontGutkin/parameters/J_ee">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060076"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0097060"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099536"/>
         <terms:description>Synaptic weight e--&gt;e</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060076"/>
@@ -30134,6 +30451,8 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/DumontGutkin/parameters/J_ei">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0042391"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0097060"/>
         <terms:description>Synaptic weight i--&gt;e</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">10.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0042391"/>
@@ -30149,6 +30468,8 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/DumontGutkin/parameters/J_ie">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0097060"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099536"/>
         <terms:description>Synaptic weight e--&gt;i</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0097060"/>
@@ -30164,6 +30485,8 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/DumontGutkin/parameters/J_ii">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060077"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0097060"/>
         <terms:description>Synaptic weight i--&gt;i</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">15.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060077"/>
@@ -30179,6 +30502,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/DumontGutkin/parameters/eta_e">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0098815"/>
         <terms:description>Mean heterogeneous current on excitatory population</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-5.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0098815"/>
@@ -30193,6 +30517,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/DumontGutkin/parameters/eta_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <terms:description>Mean heterogeneous current on inhibitory population</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-5.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
@@ -30207,6 +30532,8 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/DumontGutkin/parameters/tau_e">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0043179"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <terms:description>Characteristic time of excitatory population</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">10.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0043179"/>
@@ -30222,6 +30549,8 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/DumontGutkin/parameters/tau_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0043180"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <terms:description>Characteristic time of inhibitory population</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">10.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0043180"/>
@@ -30237,6 +30566,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/DumontGutkin/parameters/tau_s">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099536"/>
         <terms:description>Synaptic time constant</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0099536"/>
@@ -30906,6 +31236,7 @@ The coupling quantifies the influence of neuronal fast discharges x_E2D on the l
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/Epileptor2D/parameters/x0">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0043179"/>
         <terms:description>Degree of excitability or epileptogenicity in Epileptor2D (Proix et al</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-1.6</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0043179"/>
@@ -30952,6 +31283,7 @@ if x0 is smaller than a critical value, x0,critic = 2.91, can trigger seizures a
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/Epileptor3DStefanescuMcDonald/parameters/N">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0042391"/>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0042391"/>
         <rdfs:label>N (Epileptor3DStefanescuMcDonald parameter)</rdfs:label>
@@ -31287,6 +31619,7 @@ The coupling quantifies the influence of neuronal fast discharges x1_E5D on the 
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/Epileptor5D/parameters/x0">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <terms:description>Epileptogenicity Parameter</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-1.6</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
@@ -32904,6 +33237,7 @@ if x0 is smaller than a critical value, x0,critic = 2.91, can trigger seizures a
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/GastSchmidtKnosche_SD/parameters/J">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099536"/>
         <terms:description>Synaptic weight</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">21.2132</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0099536"/>
@@ -33070,6 +33404,7 @@ if x0 is smaller than a critical value, x0,critic = 2.91, can trigger seizures a
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/GastSchmidtKnosche_SF/parameters/J">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099536"/>
         <terms:description>Synaptic weight</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">21.2132</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0099536"/>
@@ -33084,6 +33419,7 @@ if x0 is smaller than a critical value, x0,critic = 2.91, can trigger seizures a
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/GastSchmidtKnosche_SF/parameters/alpha">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0042391"/>
         <terms:description>adaptation rate</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">10.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0042391"/>
@@ -33211,6 +33547,7 @@ if x0 is smaller than a critical value, x0,critic = 2.91, can trigger seizures a
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/Generic2dOscillator/parameters/I">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <terms:description>Baseline shift of the cubic nullcline</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
@@ -33251,6 +33588,8 @@ if x0 is smaller than a critical value, x0,critic = 2.91, can trigger seizures a
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/Generic2dOscillator/parameters/b">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0098873"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099178"/>
         <terms:description>Linear slope of the configurable nullcline</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-10.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0098873"/>
@@ -33376,6 +33715,7 @@ if x0 is smaller than a critical value, x0,critic = 2.91, can trigger seizures a
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/Generic2dOscillator/state_variables/V">
         <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0005272"/>
         <tvbo:lhs>Derivative(V, t)</tvbo:lhs>
         <tvbo:rhs>d*tau*(I*gamma - V**3*f + V**2*e + V*g + V*local_coupling + W*alpha + c_glob*gamma)</tvbo:rhs>
         <terms:description>V_G2D is the first state-variable of the Generic 2-Dimensional Oscillator model, that can be associated with membrane potentials and sodium activation (FitzHugh, 1961)</terms:description>
@@ -33390,6 +33730,7 @@ if x0 is smaller than a critical value, x0,critic = 2.91, can trigger seizures a
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/Generic2dOscillator/state_variables/W">
         <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0005272"/>
         <tvbo:lhs>Derivative(W, t)</tvbo:lhs>
         <tvbo:rhs>d*(V**2*c + V*b - W*beta + a)/tau</tvbo:rhs>
         <terms:description>W_G2D is the second state-variable of the Generic 2-Dimensional Oscillator model, that can be associated with accommodation and refractoriness and considered to represent potassium activation, sodium inactivation, or both (FitzHugh, 1961)</terms:description>
@@ -33535,6 +33876,7 @@ into an average firing rate to the PCs.</terms:description>
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/JansenRit/parameters/A">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <terms:description>Maximum amplitude of EPSP [mV]</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">3.25</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
@@ -33550,6 +33892,7 @@ into an average firing rate to the PCs.</terms:description>
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/JansenRit/parameters/B">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <terms:description>Maximum amplitude of IPSP [mV]</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">22.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
@@ -33565,6 +33908,8 @@ into an average firing rate to the PCs.</terms:description>
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/JansenRit/parameters/J">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0051124"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0150092"/>
         <terms:description>Average number of synapses between three neuronal populations of the model</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">135.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0051124"/>
@@ -33580,6 +33925,7 @@ into an average firing rate to the PCs.</terms:description>
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/JansenRit/parameters/a">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099605"/>
         <terms:description>Reciprocal of the time constant of passive membrane and all other spatially distributed delays in the dendritic network. Also called average synaptic time constant.</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.1</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0099605"/>
@@ -33595,6 +33941,7 @@ into an average firing rate to the PCs.</terms:description>
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/JansenRit/parameters/a_1">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099536"/>
         <terms:description>Average probability constant of the number of synapses made by the pyramidal cells to the dendrites of the excitatory interneurons  (feedback excitatory loop)</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0099536"/>
@@ -33609,6 +33956,7 @@ into an average firing rate to the PCs.</terms:description>
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/JansenRit/parameters/a_2">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099536"/>
         <terms:description>Average probability constant of the number of synapses made by the EINs to the dendrites of the PCs</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.8</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0099536"/>
@@ -33623,6 +33971,7 @@ into an average firing rate to the PCs.</terms:description>
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/JansenRit/parameters/a_3">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099536"/>
         <terms:description>Average probability constant of the number of synapses made by the PCs to the dendrites of the IINs</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.25</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0099536"/>
@@ -33637,6 +33986,8 @@ into an average firing rate to the PCs.</terms:description>
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/JansenRit/parameters/a_4">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060077"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099536"/>
         <terms:description>Average probability constant of the number of synapses made by the IINs to the dendrites of the PCs</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.25</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060077"/>
@@ -33652,6 +34003,7 @@ into an average firing rate to the PCs.</terms:description>
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/JansenRit/parameters/b">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <terms:description>Rate constant of the inhibitory post-synaptic potential (IPSP)</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.05</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
@@ -33667,6 +34019,7 @@ into an average firing rate to the PCs.</terms:description>
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/JansenRit/parameters/mu">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <terms:description>Mean excitatory external input to the derivative of the state-variable y4_JR (PCs) represented by a pulse density, that consists of activity originating from adjacent and more distant cortical columns, as well as from subcortical structures (e</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.22</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
@@ -33682,6 +34035,7 @@ into an average firing rate to the PCs.</terms:description>
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/JansenRit/parameters/nu_max">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099605"/>
         <terms:description>Asymptotic of the sigmoid function Sigm_JR corresponds to the maximum firing rate of the neural populations</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.0025</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0099605"/>
@@ -33711,6 +34065,7 @@ into an average firing rate to the PCs.</terms:description>
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/JansenRit/parameters/v0">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099605"/>
         <terms:description>Average firing threshold (PSP) for which half of the firing rate is achieved</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">5.52</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0099605"/>
@@ -33729,6 +34084,8 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/JansenRit/state_variables/y0">
         <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/CL_0000598"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <tvbo:lhs>Derivative(y0, t)</tvbo:lhs>
         <tvbo:rhs>y3</tvbo:rhs>
         <terms:description>First state-variable of the first Jansen-Rit population</terms:description>
@@ -33744,6 +34101,9 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/JansenRit/state_variables/y1">
         <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/CL_0000099"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060076"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <tvbo:lhs>Derivative(y1, t)</tvbo:lhs>
         <tvbo:rhs>y4</tvbo:rhs>
         <terms:description>First state-variable of the second Jansen-Rit population (EINs)</terms:description>
@@ -33760,6 +34120,8 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/JansenRit/state_variables/y2">
         <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/CL_0000099"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060077"/>
         <tvbo:lhs>Derivative(y2, t)</tvbo:lhs>
         <tvbo:rhs>y5</tvbo:rhs>
         <terms:description>First state-variable of the third Jansen-Rit population (IINs)</terms:description>
@@ -33775,6 +34137,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/JansenRit/state_variables/y3">
         <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/CL_0000598"/>
         <tvbo:lhs>Derivative(y3, t)</tvbo:lhs>
         <tvbo:rhs>A*a*sigma_y1_y2 - a**2*y0 - 2.0*a*y3</tvbo:rhs>
         <terms:description>Second state-variable of the first Jansen-Rit population (excitatory PCs)</terms:description>
@@ -33789,6 +34152,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/JansenRit/state_variables/y4">
         <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/CL_0000099"/>
         <tvbo:lhs>Derivative(y4, t)</tvbo:lhs>
         <tvbo:rhs>A*a*(J*a_2*sigma_y0_1 + c_glob + local_coupling*(y1 - y2) + mu) - a**2*y1 - 2.0*a*y4</tvbo:rhs>
         <terms:description>Second state-variable of the second excitatory Jansen-Rit population (excitatory EINs)</terms:description>
@@ -33803,6 +34167,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/JansenRit/state_variables/y5">
         <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/CL_0000099"/>
         <tvbo:lhs>Derivative(y5, t)</tvbo:lhs>
         <tvbo:rhs>B*J*a_4*b*sigma_y0_3 - b**2*y2 - 2.0*b*y5</tvbo:rhs>
         <terms:description>Second state-variable of the third (inhibitory) Jansen-Rit population (IINs)</terms:description>
@@ -34290,6 +34655,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/KIonEx/parameters/Cm">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0042391"/>
         <terms:description>membrane capacitance</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0042391"/>
@@ -34412,6 +34778,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/KIonEx/parameters/E">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0019228"/>
         <terms:description>Reversal Potential</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0019228"/>
@@ -34426,6 +34793,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/KIonEx/parameters/J">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099536"/>
         <terms:description>Mean Synaptic weight</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.1</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0099536"/>
@@ -34440,6 +34808,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/KIonEx/parameters/K_bath">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0055075"/>
         <terms:description>Potassium concentration in bath</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">5.5</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0055075"/>
@@ -34925,6 +35294,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/LarterBreakspear/derived_variables/Q_V">
         <rdf:type rdf:resource="https://w3id.org/tvbo/DerivedVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099605"/>
         <tvbo:lhs>Q_V</tvbo:lhs>
         <tvbo:rhs>0.5*Q_Vmax*(tanh((V - V_T)/delta_V) + 1)</tvbo:rhs>
         <terms:description>Average firing rate of the population of PCs, V.</terms:description>
@@ -34939,6 +35309,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/LarterBreakspear/derived_variables/Q_Z">
         <rdf:type rdf:resource="https://w3id.org/tvbo/DerivedVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099605"/>
         <tvbo:lhs>Q_Z</tvbo:lhs>
         <tvbo:rhs>0.5*Q_Zmax*(tanh((Z - Z_T)/delta_Z) + 1)</tvbo:rhs>
         <terms:description>Average firing rate of the population of IINs, Z.</terms:description>
@@ -34965,6 +35336,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/LarterBreakspear/derived_variables/m_Ca">
         <rdf:type rdf:resource="https://w3id.org/tvbo/DerivedVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0005262"/>
         <tvbo:lhs>m_Ca</tvbo:lhs>
         <tvbo:rhs>0.5*tanh((-T_Ca + V)/delta_Ca) + 0.5</tvbo:rhs>
         <terms:description>Fraction of open calcium channels (Breakspear et al., 2003b). 
@@ -34981,6 +35353,7 @@ Describes relationship between membrane voltage and channel conductance.</terms:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/LarterBreakspear/derived_variables/m_K">
         <rdf:type rdf:resource="https://w3id.org/tvbo/DerivedVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0005267"/>
         <tvbo:lhs>m_K</tvbo:lhs>
         <tvbo:rhs>0.5*tanh((-T_K + V)/delta_K) + 0.5</tvbo:rhs>
         <terms:description>Fraction of open potassium channels (Breakspear et al., 2003b). 
@@ -34997,6 +35370,7 @@ Describes relationship between membrane voltage and channel conductance.</terms:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/LarterBreakspear/derived_variables/m_Na">
         <rdf:type rdf:resource="https://w3id.org/tvbo/DerivedVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0005272"/>
         <tvbo:lhs>m_Na</tvbo:lhs>
         <tvbo:rhs>0.5*tanh((-T_Na + V)/delta_Na) + 0.5</tvbo:rhs>
         <terms:description>Fraction of open sodium channels (Breakspear et al., 2003b). 
@@ -35013,6 +35387,7 @@ Describes relationship between membrane voltage and channel conductance.</terms:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/LarterBreakspear/parameters/C">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <terms:description>Coupling scaling factor</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.1</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
@@ -35027,6 +35402,7 @@ Describes relationship between membrane voltage and channel conductance.</terms:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/LarterBreakspear/parameters/I_ext">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <terms:description>Subcortical input current</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.3</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
@@ -35041,6 +35417,8 @@ Describes relationship between membrane voltage and channel conductance.</terms:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/LarterBreakspear/parameters/Q_Vmax">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0098976"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099605"/>
         <terms:description>Maximal firing rate for excitatory populations</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0098976"/>
@@ -35057,6 +35435,7 @@ Describes relationship between membrane voltage and channel conductance.</terms:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/LarterBreakspear/parameters/Q_Zmax">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099605"/>
         <terms:description>Maximal firing rate for inhibitory population</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0099605"/>
@@ -35072,6 +35451,8 @@ Describes relationship between membrane voltage and channel conductance.</terms:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/LarterBreakspear/parameters/T_Ca">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0005262"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_1903233"/>
         <terms:description>Threshold value for Ca channels</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-0.01</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0005262"/>
@@ -35087,6 +35468,7 @@ Describes relationship between membrane voltage and channel conductance.</terms:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/LarterBreakspear/parameters/T_K">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0005267"/>
         <terms:description>Threshold value for K channels</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0005267"/>
@@ -35101,6 +35483,7 @@ Describes relationship between membrane voltage and channel conductance.</terms:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/LarterBreakspear/parameters/T_Na">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0005272"/>
         <terms:description>Threshold value for sodium channels</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.3</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0005272"/>
@@ -35115,6 +35498,7 @@ Describes relationship between membrane voltage and channel conductance.</terms:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/LarterBreakspear/parameters/V_Ca">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0005262"/>
         <terms:description>Calcium Nernst potential</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0005262"/>
@@ -35129,6 +35513,7 @@ Describes relationship between membrane voltage and channel conductance.</terms:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/LarterBreakspear/parameters/V_K">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0005267"/>
         <terms:description>K Nernst potential</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-0.7</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0005267"/>
@@ -35143,6 +35528,7 @@ Describes relationship between membrane voltage and channel conductance.</terms:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/LarterBreakspear/parameters/V_L">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0022840"/>
         <terms:description>Nernst potential leak channels</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-0.5</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0022840"/>
@@ -35157,6 +35543,7 @@ Describes relationship between membrane voltage and channel conductance.</terms:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/LarterBreakspear/parameters/V_Na">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0005272"/>
         <terms:description>Na Nernst potential</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.53</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0005272"/>
@@ -35171,6 +35558,7 @@ Describes relationship between membrane voltage and channel conductance.</terms:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/LarterBreakspear/parameters/V_T">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0098815"/>
         <terms:description>Threshold potential for excitatory neurons</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0098815"/>
@@ -35185,6 +35573,7 @@ Describes relationship between membrane voltage and channel conductance.</terms:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/LarterBreakspear/parameters/Z_T">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <terms:description>Threshold potential (mean) for inihibtory neurons</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
@@ -35199,6 +35588,7 @@ Describes relationship between membrane voltage and channel conductance.</terms:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/LarterBreakspear/parameters/a_ee">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <terms:description>Excitatory-to-excitatory synaptic strength</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.4</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
@@ -35213,6 +35603,7 @@ Describes relationship between membrane voltage and channel conductance.</terms:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/LarterBreakspear/parameters/a_ei">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <terms:description>Excitatory-to-inhibitory synaptic strength</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">2.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
@@ -35227,6 +35618,7 @@ Describes relationship between membrane voltage and channel conductance.</terms:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/LarterBreakspear/parameters/a_ie">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <terms:description>Inhibitory-to-excitatory synaptic strength</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">2.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
@@ -35241,6 +35633,7 @@ Describes relationship between membrane voltage and channel conductance.</terms:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/LarterBreakspear/parameters/a_ne">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <terms:description>Non-specific-to-excitatory synaptic strength</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
@@ -35255,6 +35648,7 @@ Describes relationship between membrane voltage and channel conductance.</terms:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/LarterBreakspear/parameters/a_ni">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <terms:description>Non-specific-to-inhibitory synaptic strength</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.4</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
@@ -35282,6 +35676,7 @@ Describes relationship between membrane voltage and channel conductance.</terms:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/LarterBreakspear/parameters/delta_Ca">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0005262"/>
         <terms:description>Variance of Calcium channel threshold</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.15</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0005262"/>
@@ -35296,6 +35691,7 @@ Describes relationship between membrane voltage and channel conductance.</terms:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/LarterBreakspear/parameters/delta_K">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0005267"/>
         <terms:description>Variance of Potassium channel threshold</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.3</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0005267"/>
@@ -35310,6 +35706,7 @@ Describes relationship between membrane voltage and channel conductance.</terms:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/LarterBreakspear/parameters/delta_Na">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0005272"/>
         <terms:description>Variance of sodium channel threshold</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.15</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0005272"/>
@@ -35324,6 +35721,8 @@ Describes relationship between membrane voltage and channel conductance.</terms:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/LarterBreakspear/parameters/delta_V">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
+        <tvbo:surrogate_of rdf:resource="https://w3id.org/tvbo/ExcitabilityThresholdVariance"/>
         <terms:description>Variance of excitatory threshold</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.65</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
@@ -35339,6 +35738,7 @@ Describes relationship between membrane voltage and channel conductance.</terms:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/LarterBreakspear/parameters/delta_Z">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <terms:description>Variance of inhibitory threshold</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.7</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
@@ -35353,6 +35753,7 @@ Describes relationship between membrane voltage and channel conductance.</terms:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/LarterBreakspear/parameters/g_Ca">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0005262"/>
         <terms:description>Conductance of population of calcium (Ca++) channels</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.1</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0005262"/>
@@ -35367,6 +35768,7 @@ Describes relationship between membrane voltage and channel conductance.</terms:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/LarterBreakspear/parameters/g_K">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0005267"/>
         <terms:description>Conductance of population of potassium (K) channels</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">2.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0005267"/>
@@ -35381,6 +35783,7 @@ Describes relationship between membrane voltage and channel conductance.</terms:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/LarterBreakspear/parameters/g_L">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0022840"/>
         <terms:description>Conductance of population of leak channels</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.5</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0022840"/>
@@ -35395,6 +35798,7 @@ Describes relationship between membrane voltage and channel conductance.</terms:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/LarterBreakspear/parameters/g_Na">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0005272"/>
         <terms:description>Conductance of population of Na channels</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">6.7</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0005272"/>
@@ -35422,6 +35826,7 @@ Describes relationship between membrane voltage and channel conductance.</terms:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/LarterBreakspear/parameters/r_NMDA">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0004971"/>
         <terms:description>Ratio of NMDA to AMPA receptors</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.25</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0004971"/>
@@ -35449,6 +35854,7 @@ Describes relationship between membrane voltage and channel conductance.</terms:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/LarterBreakspear/parameters/tau_K">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0005267"/>
         <terms:description>Time constant for K relaxation time (ms)</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0005267"/>
@@ -35463,6 +35869,7 @@ Describes relationship between membrane voltage and channel conductance.</terms:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/LarterBreakspear/state_variables/V">
         <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0042391"/>
         <tvbo:lhs>Derivative(V, t)</tvbo:lhs>
         <tvbo:rhs>t_scale*(I_ext*a_ne - Q_Z*Z*a_ie - W*g_K*(V - V_K) - g_L*(V - V_L) + m_Ca*(V - V_Ca)*(-C*a_ee*c_glob*r_NMDA - a_ee*r_NMDA*(1.0 - C)*(Q_V + lc_0) - g_Ca) - (V - V_Na)*(C*a_ee*c_glob + a_ee*(1.0 - C)*(Q_V + lc_0) + g_Na*m_Na))</tvbo:rhs>
         <terms:description>First state-variable of the Larter-Breakspear (Breakspear et al</terms:description>
@@ -35477,6 +35884,7 @@ Describes relationship between membrane voltage and channel conductance.</terms:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/LarterBreakspear/state_variables/W">
         <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0005267"/>
         <tvbo:lhs>Derivative(W, t)</tvbo:lhs>
         <tvbo:rhs>phi*t_scale*(-W + m_K)/tau_K</tvbo:rhs>
         <terms:description>Second state-variable of the Larter-Breakspear (Breakspear et al</terms:description>
@@ -35491,6 +35899,8 @@ Describes relationship between membrane voltage and channel conductance.</terms:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/LarterBreakspear/state_variables/Z">
         <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/CL_0000099"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <tvbo:lhs>Derivative(Z, t)</tvbo:lhs>
         <tvbo:rhs>b*t_scale*(I_ext*a_ni + Q_V*V*a_ei)</tvbo:rhs>
         <terms:description>Third state-variable of the Larter-Breakspear (Breakspear et al</terms:description>
@@ -35717,6 +36127,7 @@ Describes relationship between membrane voltage and channel conductance.</terms:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/MontbrioPazoRoxin/parameters/Delta">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0061669"/>
         <terms:description>Mean heterogeneous noise</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0061669"/>
@@ -35744,6 +36155,8 @@ Describes relationship between membrane voltage and channel conductance.</terms:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/MontbrioPazoRoxin/parameters/J">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0042391"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099536"/>
         <terms:description>Mean Synaptic weight</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">15.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0042391"/>
@@ -35785,6 +36198,7 @@ Describes relationship between membrane voltage and channel conductance.</terms:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/MontbrioPazoRoxin/parameters/eta">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099605"/>
         <terms:description>Constant parameter to scale the rate of feedback from the firing rate variable to itself</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-5.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0099605"/>
@@ -36416,6 +36830,7 @@ Describes relationship between membrane voltage and channel conductance.</terms:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ReducedWongWang/derived_variables/H">
         <rdf:type rdf:resource="https://w3id.org/tvbo/DerivedVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099605"/>
         <tvbo:lhs>H</tvbo:lhs>
         <tvbo:rhs>(a*x - b)/(1 - exp(-d*(a*x - b)))</tvbo:rhs>
         <terms:description>Sigmoid input-output function of the synaptic input current, x_RWW, that computes the averaged firing rate of the neurons population (Deco et al., 2013).</terms:description>
@@ -36461,6 +36876,7 @@ In TVB, the default value is set to 0.33 (instead of 0.30 as in Deco et al. (201
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ReducedWongWang/parameters/J_N">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0098815"/>
         <terms:description>Excitatory recurrence</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.2609</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0098815"/>
@@ -36584,6 +37000,8 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ReducedWongWangExcInh/derived_variables/H_e">
         <rdf:type rdf:resource="https://w3id.org/tvbo/DerivedVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099605"/>
         <tvbo:lhs>H_e</tvbo:lhs>
         <tvbo:rhs>x_e/(1 - exp(-d_e*x_e))</tvbo:rhs>
         <terms:description>Sigmoid function that computes the averaged firing rate of the excitatory neuron population IE_RWW_EI (Deco et al., 2014; Abbott &amp; Chance, 2005).</terms:description>
@@ -36599,6 +37017,8 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ReducedWongWangExcInh/derived_variables/H_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/DerivedVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099605"/>
         <tvbo:lhs>H_i</tvbo:lhs>
         <tvbo:rhs>x_i/(1 - exp(-d_i*x_i))</tvbo:rhs>
         <terms:description>Sigmoid function that computes the averaged firing rate of the inhibitory neuron population II_RWW (Deco et al., 2014; Abbott &amp; Chance, 2005).</terms:description>
@@ -36638,6 +37058,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ReducedWongWangExcInh/derived_variables/x_e">
         <rdf:type rdf:resource="https://w3id.org/tvbo/DerivedVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0098815"/>
         <tvbo:lhs>x_e</tvbo:lhs>
         <tvbo:rhs>a_e*(I_ext + I_o*W_e + J_N_S_e*w_p - J_i*S_i + coupling) - b_e</tvbo:rhs>
         <terms:description>Input current to the excitatory population (Deco et al., 2014).</terms:description>
@@ -36652,6 +37073,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ReducedWongWangExcInh/derived_variables/x_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/DerivedVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <tvbo:lhs>x_i</tvbo:lhs>
         <tvbo:rhs>a_i*(I_o*W_i + J_N_S_e - S_i + coupling*lamda) - b_i</tvbo:rhs>
         <terms:description>Input current to the inhibitory population (Deco et al., 2014).</terms:description>
@@ -36679,6 +37101,8 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ReducedWongWangExcInh/parameters/I_ext">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099605"/>
         <terms:description>External stimulation parameter for evoked potential simulated activity applied to the excitatory population firing rate IE (Deco et al</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
@@ -36694,6 +37118,8 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ReducedWongWangExcInh/parameters/I_o">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <terms:description>Effective external input parameter to the excitatory E and inhibitory I population (Deco et al</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.382</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
@@ -36710,6 +37136,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ReducedWongWangExcInh/parameters/J_N">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <terms:description>Excitatory synaptic coupling parameter (Deco et al</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.15</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
@@ -36724,6 +37151,8 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ReducedWongWangExcInh/parameters/J_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099605"/>
         <terms:description>Local feedback inhibitory synaptic coupling to the excitatory population firing rate IE (Deco et al</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
@@ -36739,6 +37168,8 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ReducedWongWangExcInh/parameters/W_e">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0090394"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_2000463"/>
         <terms:description>Excitatory population external input scaling weight</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0090394"/>
@@ -36754,6 +37185,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ReducedWongWangExcInh/parameters/W_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <terms:description>Inhibitory population external input scaling weight</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.7</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
@@ -36852,6 +37284,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ReducedWongWangExcInh/parameters/gamma_e">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <terms:description>Excitatory population kinetic parameter</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">6.41E-4</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
@@ -36866,6 +37299,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ReducedWongWangExcInh/parameters/gamma_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <terms:description>Inhibitory population kinetic parameter</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.001</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
@@ -36880,6 +37314,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ReducedWongWangExcInh/parameters/lamda">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <terms:description>Inhibitory global coupling scaling</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
@@ -36908,6 +37343,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ReducedWongWangExcInh/parameters/tau_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0016917"/>
         <terms:description>Kinetic parameter that represents the decay times for inhibitory GABA synapses (Deco et al</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">10.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0016917"/>
@@ -36923,6 +37359,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ReducedWongWangExcInh/parameters/w_p">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <terms:description>Excitatory population recurrence weight</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.4</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
@@ -36937,6 +37374,8 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ReducedWongWangExcInh/state_variables/S_e">
         <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099536"/>
         <tvbo:lhs>Derivative(S_e, t)</tvbo:lhs>
         <tvbo:rhs>H_e*gamma_e*(1 - S_e) - S_e/tau_e</tvbo:rhs>
         <terms:description>State-variable of the Reduced WongWang_EI model (Deco et al</terms:description>
@@ -36952,6 +37391,8 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ReducedWongWangExcInh/state_variables/S_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099536"/>
         <tvbo:lhs>Derivative(S_i, t)</tvbo:lhs>
         <tvbo:rhs>H_i*gamma_i - S_i/tau_i</tvbo:rhs>
         <terms:description>State-variable of the Reduced WongWang_EI model (Deco et al</terms:description>
@@ -37117,6 +37558,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/StefanescuJirsa2D/derived_variables/Aik">
         <rdf:type rdf:resource="https://w3id.org/tvbo/DerivedVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <tvbo:lhs>Aik</tvbo:lhs>
         <tvbo:rhs>0.5</tvbo:rhs>
         <terms:description>Excitatory-to-excitatory mode-coupling matrix derived from Gaussian quadrature over N(mu, sigma); computed offline at `update_derived_parameters`.</terms:description>
@@ -37131,6 +37573,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/StefanescuJirsa2D/derived_variables/Bik">
         <rdf:type rdf:resource="https://w3id.org/tvbo/DerivedVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <tvbo:lhs>Bik</tvbo:lhs>
         <tvbo:rhs>0.5</tvbo:rhs>
         <terms:description>Inhibitory-to-excitatory mode-coupling matrix.</terms:description>
@@ -37145,6 +37588,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/StefanescuJirsa2D/derived_variables/Cik">
         <rdf:type rdf:resource="https://w3id.org/tvbo/DerivedVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <tvbo:lhs>Cik</tvbo:lhs>
         <tvbo:rhs>0.5</tvbo:rhs>
         <terms:description>Excitatory-to-inhibitory mode-coupling matrix.</terms:description>
@@ -37159,6 +37603,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/StefanescuJirsa2D/derived_variables/IE_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/DerivedVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0042391"/>
         <tvbo:lhs>IE_i</tvbo:lhs>
         <tvbo:rhs>0.0</tvbo:rhs>
         <terms:description>Per-mode constant excitatory input from the heterogeneity distribution.</terms:description>
@@ -37173,6 +37618,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/StefanescuJirsa2D/derived_variables/II_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/DerivedVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0042391"/>
         <tvbo:lhs>II_i</tvbo:lhs>
         <tvbo:rhs>0.0</tvbo:rhs>
         <terms:description>Per-mode constant inhibitory input from the heterogeneity distribution.</terms:description>
@@ -37239,6 +37685,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/StefanescuJirsa2D/parameters/K11">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.5</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <rdfs:label>K11 (StefanescuJirsa2D parameter)</rdfs:label>
@@ -37252,6 +37699,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/StefanescuJirsa2D/parameters/K12">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.15</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <rdfs:label>K12 (StefanescuJirsa2D parameter)</rdfs:label>
@@ -37265,6 +37713,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/StefanescuJirsa2D/parameters/K21">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.15</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <rdfs:label>K21 (StefanescuJirsa2D parameter)</rdfs:label>
@@ -37302,6 +37751,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/StefanescuJirsa2D/parameters/mu">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <rdfs:label>mu (StefanescuJirsa2D parameter)</rdfs:label>
@@ -37315,6 +37765,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/StefanescuJirsa2D/parameters/sigma">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.35</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <rdfs:label>sigma (StefanescuJirsa2D parameter)</rdfs:label>
@@ -37341,6 +37792,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/StefanescuJirsa2D/state_variables/alpha">
         <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <tvbo:lhs>Derivative(alpha, t)</tvbo:lhs>
         <tvbo:rhs>tau*(alpha - f_i*alpha**3/3 - beta) + K21*(Cik*xi - alpha) + tau*(II_i + c_glob + local_coupling*xi)</tvbo:rhs>
         <terms:description>Inhibitory fast variable (per mode).</terms:description>
@@ -37355,6 +37807,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/StefanescuJirsa2D/state_variables/beta">
         <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <tvbo:lhs>Derivative(beta, t)</tvbo:lhs>
         <tvbo:rhs>(alpha - b*beta + n_i)/tau</tvbo:rhs>
         <terms:description>Inhibitory slow recovery variable (per mode).</terms:description>
@@ -37369,6 +37822,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/StefanescuJirsa2D/state_variables/eta">
         <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <tvbo:lhs>Derivative(eta, t)</tvbo:lhs>
         <tvbo:rhs>(xi - b*eta + m_i)/tau</tvbo:rhs>
         <terms:description>Excitatory slow recovery variable (per mode).</terms:description>
@@ -37383,6 +37837,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/StefanescuJirsa2D/state_variables/xi">
         <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <tvbo:lhs>Derivative(xi, t)</tvbo:lhs>
         <tvbo:rhs>tau*(xi - e_i*xi**3/3 - eta) + K11*(Aik*xi - xi) - K12*(Bik*alpha - xi) + tau*(IE_i + c_glob + local_coupling*xi)</tvbo:rhs>
         <terms:description>Excitatory fast variable (per mode).</terms:description>
@@ -37397,6 +37852,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/StefanescuJirsa3D/derived_variables/A_ik">
         <rdf:type rdf:resource="https://w3id.org/tvbo/DerivedVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <tvbo:lhs>A_ik</tvbo:lhs>
         <tvbo:rhs>0.5</tvbo:rhs>
         <terms:description>Excitatory-to-excitatory mode-coupling matrix from Gaussian quadrature.</terms:description>
@@ -37411,6 +37867,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/StefanescuJirsa3D/derived_variables/B_ik">
         <rdf:type rdf:resource="https://w3id.org/tvbo/DerivedVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <tvbo:lhs>B_ik</tvbo:lhs>
         <tvbo:rhs>0.5</tvbo:rhs>
         <terms:description>Inhibitory-to-excitatory mode-coupling matrix.</terms:description>
@@ -37425,6 +37882,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/StefanescuJirsa3D/derived_variables/C_ik">
         <rdf:type rdf:resource="https://w3id.org/tvbo/DerivedVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <tvbo:lhs>C_ik</tvbo:lhs>
         <tvbo:rhs>0.5</tvbo:rhs>
         <terms:description>Excitatory-to-inhibitory mode-coupling matrix.</terms:description>
@@ -37439,6 +37897,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/StefanescuJirsa3D/derived_variables/IE_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/DerivedVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <tvbo:lhs>IE_i</tvbo:lhs>
         <tvbo:rhs>0.0</tvbo:rhs>
         <terms:description>Per-mode constant excitatory input.</terms:description>
@@ -37453,6 +37912,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/StefanescuJirsa3D/derived_variables/II_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/DerivedVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <tvbo:lhs>II_i</tvbo:lhs>
         <tvbo:rhs>0.0</tvbo:rhs>
         <terms:description>Per-mode constant inhibitory input.</terms:description>
@@ -37506,6 +37966,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/StefanescuJirsa3D/derived_variables/d_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/DerivedVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <tvbo:lhs>d_i</tvbo:lhs>
         <tvbo:rhs>d</tvbo:rhs>
         <terms:description>Per-mode quadratic coefficient for the excitatory eta dynamics.</terms:description>
@@ -37585,6 +38046,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/StefanescuJirsa3D/derived_variables/p_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/DerivedVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <tvbo:lhs>p_i</tvbo:lhs>
         <tvbo:rhs>d</tvbo:rhs>
         <terms:description>Per-mode quadratic coefficient for the inhibitory beta dynamics.</terms:description>
@@ -37599,6 +38061,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/StefanescuJirsa3D/parameters/K_11">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.5</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <rdfs:label>K_11 (StefanescuJirsa3D parameter)</rdfs:label>
@@ -37612,6 +38075,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/StefanescuJirsa3D/parameters/K_12">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.1</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <rdfs:label>K_12 (StefanescuJirsa3D parameter)</rdfs:label>
@@ -37625,6 +38089,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/StefanescuJirsa3D/parameters/K_21">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.15</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <rdfs:label>K_21 (StefanescuJirsa3D parameter)</rdfs:label>
@@ -37686,6 +38151,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/StefanescuJirsa3D/parameters/mu">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">3.3</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <rdfs:label>mu (StefanescuJirsa3D parameter)</rdfs:label>
@@ -37723,6 +38189,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/StefanescuJirsa3D/parameters/sigma">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0042391"/>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.3</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0042391"/>
         <rdfs:label>sigma (StefanescuJirsa3D parameter)</rdfs:label>
@@ -37736,6 +38203,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/StefanescuJirsa3D/parameters/x_0">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0042391"/>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-1.6</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0042391"/>
         <rdfs:label>x_0 (StefanescuJirsa3D parameter)</rdfs:label>
@@ -37749,6 +38217,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/StefanescuJirsa3D/state_variables/alpha">
         <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <tvbo:lhs>Derivative(alpha, t)</tvbo:lhs>
         <tvbo:rhs>beta - e_i*alpha**3 + f_i*alpha**2 - gamma + K_21*(C_ik*xi - alpha) + II_i + c_glob + local_coupling*xi</tvbo:rhs>
         <terms:description>Inhibitory fast variable (per mode).</terms:description>
@@ -37763,6 +38232,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/StefanescuJirsa3D/state_variables/beta">
         <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0042391"/>
         <tvbo:lhs>Derivative(beta, t)</tvbo:lhs>
         <tvbo:rhs>h_i - p_i*alpha**2 - beta</tvbo:rhs>
         <terms:description>Inhibitory recovery variable (per mode).</terms:description>
@@ -37777,6 +38247,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/StefanescuJirsa3D/state_variables/eta">
         <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <tvbo:lhs>Derivative(eta, t)</tvbo:lhs>
         <tvbo:rhs>c_i - d_i*xi**2 - eta</tvbo:rhs>
         <terms:description>Excitatory recovery variable (per mode).</terms:description>
@@ -37791,6 +38262,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/StefanescuJirsa3D/state_variables/gamma">
         <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <tvbo:lhs>Derivative(gamma, t)</tvbo:lhs>
         <tvbo:rhs>r*s*alpha - r*gamma - n_i</tvbo:rhs>
         <terms:description>Inhibitory slow adaptation variable (per mode).</terms:description>
@@ -37805,6 +38277,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/StefanescuJirsa3D/state_variables/tau">
         <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <tvbo:lhs>Derivative(tau, t)</tvbo:lhs>
         <tvbo:rhs>r*s*xi - r*tau - m_i</tvbo:rhs>
         <terms:description>Excitatory slow adaptation variable (per mode).</terms:description>
@@ -37819,6 +38292,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/StefanescuJirsa3D/state_variables/xi">
         <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0042391"/>
         <tvbo:lhs>Derivative(xi, t)</tvbo:lhs>
         <tvbo:rhs>eta - a_i*xi**3 + b_i*xi**2 - tau + K_11*(A_ik*xi - xi) - K_12*(B_ik*alpha - xi) + IE_i + c_glob + local_coupling*xi</tvbo:rhs>
         <terms:description>Excitatory fast variable (per mode).</terms:description>
@@ -38094,6 +38568,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/WilsonCowan/derived_variables/x_e">
         <rdf:type rdf:resource="https://w3id.org/tvbo/DerivedVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0042391"/>
         <tvbo:lhs>x_e</tvbo:lhs>
         <tvbo:rhs>alpha_e*(-I*c_ei + P + c_ee*E + c_glob + lc_0 + lc_1 - theta_e)</tvbo:rhs>
         <terms:description>Average level of excitation in excitatory neuron at time t. Can be interpreted as membrane potential (Sanz-Leon et al., 2015).</terms:description>
@@ -38108,6 +38583,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/WilsonCowan/derived_variables/x_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/DerivedVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0042391"/>
         <tvbo:lhs>x_i</tvbo:lhs>
         <tvbo:rhs>alpha_i*(-I*c_ii + Q + c_ie*E + lc_0 + lc_1 - theta_i)</tvbo:rhs>
         <terms:description>Average level of excitation in inhibitory neuron at time t. Can be interpreted as membrane potential. (Sanz-Leon et al., 2015).</terms:description>
@@ -38122,6 +38598,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/WilsonCowan/parameters/P">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <terms:description>External stimulus to the excitatory population (Wilson and Cowan, 1972)</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
@@ -38136,6 +38613,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/WilsonCowan/parameters/Q">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <terms:description>External stimulus to the inhibitory population (Wilson and Cowan, 1972)</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
@@ -38150,6 +38628,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/WilsonCowan/parameters/a_e">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <terms:description>Steepness of the excitatory response function S_e_WC (Wilson and Cowan, 1972)</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.2</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
@@ -38164,6 +38643,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/WilsonCowan/parameters/a_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <terms:description>Steepness of the excitatory response function S_i_WC (Wilson and Cowan, 1972)</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
@@ -38204,6 +38684,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/WilsonCowan/parameters/b_e">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <terms:description>Position of the maximum slope of the excitatory response function S_e_WC (Sanz-Leon et al</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">2.8</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
@@ -38218,6 +38699,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/WilsonCowan/parameters/b_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <terms:description>Position of the maximum slope of a sigmoid function [in         threshold units]</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">4.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
@@ -38233,6 +38715,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/WilsonCowan/parameters/c_e">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <terms:description>The amplitude parameter for the excitatory response function</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
@@ -38247,6 +38730,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/WilsonCowan/parameters/c_ee">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <terms:description>Excitatory to excitatory  coupling coefficient</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">12.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
@@ -38261,6 +38745,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/WilsonCowan/parameters/c_ei">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <terms:description>Inhibitory to excitatory coupling coefficient</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">4.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
@@ -38275,6 +38760,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/WilsonCowan/parameters/c_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0098815"/>
         <terms:description>The amplitude parameter for the excitatory response function S_i_WC (Sanz-Leon et al</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0098815"/>
@@ -38289,6 +38775,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/WilsonCowan/parameters/c_ie">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <terms:description>Excitatory to inhibitory coupling coefficient (Sanz-Leon et al</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">13.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
@@ -38303,6 +38790,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/WilsonCowan/parameters/c_ii">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <terms:description>Inhibitory to inhibitory coupling coefficient (Sanz-Leon et al</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">11.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
@@ -38317,6 +38805,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/WilsonCowan/parameters/k_e">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <terms:description>Maximum value of the excitatory response function</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
@@ -38331,6 +38820,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/WilsonCowan/parameters/k_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <terms:description>Maximum value of the inhibitory response function</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
@@ -38345,6 +38835,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/WilsonCowan/parameters/r_e">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0098815"/>
         <terms:description>Excitatory refractory period</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0098815"/>
@@ -38359,6 +38850,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/WilsonCowan/parameters/r_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0098828"/>
         <terms:description>Inhibitory refractory period</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0098828"/>
@@ -38387,6 +38879,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/WilsonCowan/parameters/tau_e">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0043179"/>
         <terms:description>Excitatory population, membrane time-constant (Wilson and Cowan, 1972)</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">10.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0043179"/>
@@ -38402,6 +38895,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/WilsonCowan/parameters/tau_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0043180"/>
         <terms:description>Inhibitory population, membrane time-constant (Wilson and Cowan, 1972)</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">10.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0043180"/>
@@ -38430,6 +38924,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/WilsonCowan/parameters/theta_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="https://w3id.org/tvbo/InhibitoryThresholdVariance"/>
         <terms:description>Excitation threshold of inhibitory population (Sanz-Leon et al</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="https://w3id.org/tvbo/InhibitoryThresholdVariance"/>
@@ -38444,6 +38939,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/WilsonCowan/state_variables/E">
         <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0098815"/>
         <tvbo:lhs>Derivative(E, t)</tvbo:lhs>
         <tvbo:rhs>(-E + s_e*(-E*r_e + k_e))/tau_e</tvbo:rhs>
         <terms:description>State-variable of the Wilson and Cowan model (Wilson and Cowan, 1973), denoting the mean firing rate of all excitatory neurons of the population</terms:description>
@@ -38458,6 +38954,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/WilsonCowan/state_variables/I">
         <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <tvbo:lhs>Derivative(I, t)</tvbo:lhs>
         <tvbo:rhs>(-I + s_i*(-I*r_i + k_i))/tau_i</tvbo:rhs>
         <terms:description>State-variable of the Wilson and Cowan model (Wilson and Cowan, 1973), denoting the mean firing rate of all inhibitory neurons of the population</terms:description>
@@ -38906,6 +39403,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ZerlautAdaptationFirstOrder/parameters/C_m">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0042391"/>
         <terms:description>membrane capacitance [pF]</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">200.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0042391"/>
@@ -38959,6 +39457,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ZerlautAdaptationFirstOrder/parameters/E_L_e">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0022840"/>
         <terms:description>leak reversal potential for excitatory [mV]</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-65.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0022840"/>
@@ -38973,6 +39472,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ZerlautAdaptationFirstOrder/parameters/E_L_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0022840"/>
         <terms:description>leak reversal potential for inhibitory [mV]</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-65.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0022840"/>
@@ -38987,6 +39487,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ZerlautAdaptationFirstOrder/parameters/E_e">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <terms:description>excitatory reversal potential [mV]</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
@@ -39001,6 +39502,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ZerlautAdaptationFirstOrder/parameters/E_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <terms:description>inhibitory reversal potential [mV]</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-80.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
@@ -39340,6 +39842,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ZerlautAdaptationFirstOrder/parameters/Q_e">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <terms:description>excitatory quantal conductance [nS]</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.5</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
@@ -39354,6 +39857,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ZerlautAdaptationFirstOrder/parameters/Q_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <terms:description>inhibitory quantal conductance [nS]</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">5.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
@@ -39368,6 +39872,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ZerlautAdaptationFirstOrder/parameters/S_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <terms:description>Scaling of the remote input for the inhibitory population with         respect to the excitatory population</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
@@ -39409,6 +39914,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ZerlautAdaptationFirstOrder/parameters/a_e">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <terms:description>Excitatory adaptation conductance [nS]</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">4.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
@@ -39423,6 +39929,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ZerlautAdaptationFirstOrder/parameters/a_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <terms:description>Inhibitory adaptation conductance [nS]</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
@@ -39437,6 +39944,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ZerlautAdaptationFirstOrder/parameters/b_e">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
         <terms:description>Excitatory adaptation current increment [pA]</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">60.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
@@ -39451,6 +39959,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ZerlautAdaptationFirstOrder/parameters/b_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
         <terms:description>Inhibitory adaptation current increment [pA]</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
@@ -39517,6 +40026,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ZerlautAdaptationFirstOrder/parameters/g">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060077"/>
         <terms:description>fraction of inhibitory cells</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.2</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060077"/>
@@ -39531,6 +40041,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ZerlautAdaptationFirstOrder/parameters/g_L">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0022840"/>
         <terms:description>leak conductance [nS]</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">10.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0022840"/>
@@ -39610,6 +40121,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ZerlautAdaptationFirstOrder/parameters/tau_e">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0098815"/>
         <terms:description>excitatory decay [ms]</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">5.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0098815"/>
@@ -39624,6 +40136,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ZerlautAdaptationFirstOrder/parameters/tau_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0098828"/>
         <terms:description>inhibitory decay [ms]</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">5.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0098828"/>
@@ -39638,6 +40151,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ZerlautAdaptationFirstOrder/parameters/tau_w_e">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0098815"/>
         <terms:description>Adaptation time constant of excitatory neurons [ms]</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">500.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0098815"/>
@@ -39652,6 +40166,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ZerlautAdaptationFirstOrder/parameters/tau_w_i">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0098828"/>
         <terms:description>Adaptation time constant of inhibitory neurons [ms]</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0098828"/>
@@ -40823,6 +41338,8 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ZetterbergJansen/parameters/He">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0098815"/>
         <terms:description>Maximum amplitude of EPSP [mV]</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">3.25</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
@@ -40838,6 +41355,8 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ZetterbergJansen/parameters/Hi">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0098828"/>
         <terms:description>Maximum amplitude of IPSP [mV]</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">22.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
@@ -40853,6 +41372,8 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ZetterbergJansen/parameters/P">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/CL_0000598"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099605"/>
         <terms:description>Maximum firing rate to the pyramidal population [ms^-1]</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.12</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/CL_0000598"/>
@@ -40869,6 +41390,8 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ZetterbergJansen/parameters/Q">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/CL_0000099"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099605"/>
         <terms:description>Maximum firing rate to the interneurons population [ms^-1]</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.12</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/CL_0000099"/>
@@ -40885,6 +41408,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ZetterbergJansen/parameters/U">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099605"/>
         <terms:description>Maximum firing rate to the stellate population [ms^-1]</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.12</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0099605"/>
@@ -40900,6 +41424,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ZetterbergJansen/parameters/e0">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099605"/>
         <terms:description>Half of the maximum population mean firing rate [ms^-1]</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.0025</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0099605"/>
@@ -40914,6 +41439,8 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ZetterbergJansen/parameters/gamma_1">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/CL_0000598"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099536"/>
         <terms:description>Average number of synapses between populations (pyramidal to stellate)</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">135.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/CL_0000598"/>
@@ -40929,6 +41456,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ZetterbergJansen/parameters/gamma_1T">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099536"/>
         <terms:description>Coupling factor from the extrinisic input to the spiny stellate population</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0099536"/>
@@ -40943,6 +41471,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ZetterbergJansen/parameters/gamma_2">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099536"/>
         <terms:description>Average number of synapses between populations (stellate to pyramidal)</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">108.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0099536"/>
@@ -40957,6 +41486,8 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ZetterbergJansen/parameters/gamma_2T">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/CL_0000598"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099536"/>
         <terms:description>Coupling factor from the extrinisic input to the pyramidal population</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/CL_0000598"/>
@@ -40972,6 +41503,9 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ZetterbergJansen/parameters/gamma_3">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/CL_0000099"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/CL_0000598"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099536"/>
         <terms:description>Connectivity constant (pyramidal to interneurons)</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">33.75</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/CL_0000099"/>
@@ -40988,6 +41522,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ZetterbergJansen/parameters/gamma_3T">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099536"/>
         <terms:description>Coupling factor from the extrinisic input to the inhibitory population</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0099536"/>
@@ -41002,6 +41537,8 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ZetterbergJansen/parameters/gamma_4">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/CL_0000099"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/CL_0000598"/>
         <terms:description>Connectivity constant (interneurons to pyramidal)</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">33.75</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/CL_0000099"/>
@@ -41017,6 +41554,7 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ZetterbergJansen/parameters/gamma_5">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/CL_0000099"/>
         <terms:description>Connectivity constant (interneurons to interneurons)</terms:description>
         <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">15.0</schema:defaultValue>
         <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/CL_0000099"/>
@@ -46165,12 +46703,7 @@ to a task-appropriate range (e.g. omega in Hz).
     <!-- https://w3id.org/tvbo/studies/Arnold1968a -->
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Arnold1968a">
-        <rdf:type rdf:resource="http://schema.org/Book"/>
-        <terms:issued>1968</terms:issued>
-        <terms:title>Ergodic Problems of Classical Mechanics</terms:title>
-        <schema:author>Arnol&apos;d, V. I.</schema:author>
-        <schema:author>Avez, A.</schema:author>
-        <schema:publisher>W. A. Benjamin</schema:publisher>
+        <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
         <rdfs:label>Arnold1968a</rdfs:label>
     </owl:NamedIndividual>
     
@@ -46241,6 +46774,43 @@ to a task-appropriate range (e.g. omega in Hz).
     
 
 
+    <!-- https://w3id.org/tvbo/studies/Breakspear2003 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Breakspear2003">
+        <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
+        <terms:issued>2003</terms:issued>
+        <terms:title>Modulation of excitatory synaptic coupling facilitates synchronization and complex dynamics in a nonlinear model of neuronal dynamics</terms:title>
+        <schema:author>Breakspear, Michael</schema:author>
+        <schema:author>J. Friston, Karl</schema:author>
+        <schema:author>R. Terry, John</schema:author>
+        <schema:identifier>10.1016/s0925-2312(02)00740-3</schema:identifier>
+        <schema:isPartOf>Neurocomputing</schema:isPartOf>
+        <schema:pagination>151--158</schema:pagination>
+        <schema:publisher>Elsevier BV</schema:publisher>
+        <schema:volumeNumber>52–54</schema:volumeNumber>
+        <rdfs:label>Breakspear2003</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/studies/Breakspear2003a -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Breakspear2003a">
+        <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
+        <terms:issued>2003</terms:issued>
+        <terms:title>Modulation of excitatory synaptic coupling facilitates synchronization and complex dynamics in a biophysical model of neuronal dynamics.</terms:title>
+        <schema:author>Breakspear, Michael</schema:author>
+        <schema:author>Friston, Karl J.</schema:author>
+        <schema:author>Terry, John R.</schema:author>
+        <schema:identifier>10.1088/0954-898X/14/4/305</schema:identifier>
+        <schema:isPartOf>Network (Bristol, England)</schema:isPartOf>
+        <schema:pagination>703--732</schema:pagination>
+        <schema:volumeNumber>14</schema:volumeNumber>
+        <rdfs:label>Breakspear2003a</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
     <!-- https://w3id.org/tvbo/studies/Byrne2020 -->
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Byrne2020">
@@ -46262,8 +46832,15 @@ to a task-appropriate range (e.g. omega in Hz).
         <terms:issued>2011</terms:issued>
         <terms:title>Role of local network oscillations in resting-state functional connectivity</terms:title>
         <schema:author>Cabral, Joana</schema:author>
-        <schema:author>others</schema:author>
+        <schema:author>Deco, Gustavo</schema:author>
+        <schema:author>Hugues, Etienne</schema:author>
+        <schema:author>Sporns, Olaf</schema:author>
+        <schema:identifier>10.1016/j.neuroimage.2011.04.010</schema:identifier>
         <schema:isPartOf>NeuroImage</schema:isPartOf>
+        <schema:issueNumber>1</schema:issueNumber>
+        <schema:pagination>130--139</schema:pagination>
+        <schema:publisher>Elsevier BV</schema:publisher>
+        <schema:volumeNumber>57</schema:volumeNumber>
         <rdfs:label>Cabral2011</rdfs:label>
     </owl:NamedIndividual>
     
@@ -46370,9 +46947,32 @@ to a task-appropriate range (e.g. omega in Hz).
         <schema:isPartOf>Scholarpedia</schema:isPartOf>
         <schema:issueNumber>10</schema:issueNumber>
         <schema:pagination>1488</schema:pagination>
-        <schema:url>http://www.scholarpedia.org/article/Chua_circuit</schema:url>
+        <schema:url>http://www.scholarpedia.org/article/Chua\\_circuit</schema:url>
         <schema:volumeNumber>2</schema:volumeNumber>
         <rdfs:label>Chua2007</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/studies/Cortes2013 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Cortes2013">
+        <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
+        <terms:issued>2013</terms:issued>
+        <terms:title>Short-term synaptic plasticity in the deterministic Tsodyks–Markram model leads to unpredictable network dynamics</terms:title>
+        <schema:author>Cortes, Jesus M.</schema:author>
+        <schema:author>Desroches, Mathieu</schema:author>
+        <schema:author>Muñoz, Miguel A.</schema:author>
+        <schema:author>Rodrigues, Serafim</schema:author>
+        <schema:author>Sejnowski, Terrence J.</schema:author>
+        <schema:author>Veltz, Romain</schema:author>
+        <schema:identifier>10.1073/pnas.1316071110</schema:identifier>
+        <schema:isPartOf>Proceedings of the National Academy of Sciences</schema:isPartOf>
+        <schema:issueNumber>41</schema:issueNumber>
+        <schema:pagination>16610--16615</schema:pagination>
+        <schema:publisher>Proceedings of the National Academy of Sciences</schema:publisher>
+        <schema:volumeNumber>110</schema:volumeNumber>
+        <rdfs:label>Cortes2013</rdfs:label>
     </owl:NamedIndividual>
     
 
@@ -46437,10 +47037,18 @@ to a task-appropriate range (e.g. omega in Hz).
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Deco2014">
         <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
         <terms:issued>2014</terms:issued>
-        <terms:title>How local excitation--inhibition ratio impacts the whole brain dynamics</terms:title>
+        <terms:title>How local excitation-inhibition ratio impacts the whole brain dynamics</terms:title>
+        <schema:author>Corbetta, Maurizio</schema:author>
         <schema:author>Deco, Gustavo</schema:author>
-        <schema:author>others</schema:author>
+        <schema:author>Hagmann, Patric</schema:author>
+        <schema:author>Mantini, Dante</schema:author>
+        <schema:author>Ponce-Alvarez, Adrián</schema:author>
+        <schema:author>Romani, Gian Luca</schema:author>
+        <schema:identifier>10.1523/JNEUROSCI.5068-13.2014</schema:identifier>
         <schema:isPartOf>Journal of Neuroscience</schema:isPartOf>
+        <schema:pagination>7886--7898</schema:pagination>
+        <schema:publisher>Society for Neuroscience</schema:publisher>
+        <schema:volumeNumber>34</schema:volumeNumber>
         <rdfs:label>Deco2014</rdfs:label>
     </owl:NamedIndividual>
     
@@ -46553,9 +47161,14 @@ to a task-appropriate range (e.g. omega in Hz).
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/FitzHugh1961">
         <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
         <terms:issued>1961</terms:issued>
-        <terms:title>Impulses and physiological states in theoretical models of nerve membrane</terms:title>
+        <terms:title>Impulses and Physiological States in Theoretical Models of Nerve Membrane</terms:title>
         <schema:author>FitzHugh, Richard</schema:author>
+        <schema:identifier>10.1016/s0006-3495(61)86902-6</schema:identifier>
         <schema:isPartOf>Biophysical Journal</schema:isPartOf>
+        <schema:issueNumber>6</schema:issueNumber>
+        <schema:pagination>445--466</schema:pagination>
+        <schema:publisher>Elsevier BV</schema:publisher>
+        <schema:volumeNumber>1</schema:volumeNumber>
         <rdfs:label>FitzHugh1961</rdfs:label>
     </owl:NamedIndividual>
     
@@ -46705,7 +47318,6 @@ to a task-appropriate range (e.g. omega in Hz).
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/GuckenheimerHolmes1983Alias">
         <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
-        <terms:title>Alias for GuckenheimerHolmes1983</terms:title>
         <rdfs:label>GuckenheimerHolmes1983Alias</rdfs:label>
     </owl:NamedIndividual>
     
@@ -46723,18 +47335,32 @@ to a task-appropriate range (e.g. omega in Hz).
     
 
 
+    <!-- https://w3id.org/tvbo/studies/Hansen2015 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Hansen2015">
+        <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
+        <terms:issued>2015</terms:issued>
+        <terms:title>Functional connectivity dynamics: Modeling the switching behavior of the resting state</terms:title>
+        <schema:author>Battaglia, Demian</schema:author>
+        <schema:author>Deco, Gustavo</schema:author>
+        <schema:author>Hansen, Enrique C.A.</schema:author>
+        <schema:author>Jirsa, Viktor K.</schema:author>
+        <schema:author>Spiegler, Andreas</schema:author>
+        <schema:identifier>10.1016/j.neuroimage.2014.11.001</schema:identifier>
+        <schema:isPartOf>NeuroImage</schema:isPartOf>
+        <schema:pagination>525--535</schema:pagination>
+        <schema:publisher>Elsevier BV</schema:publisher>
+        <schema:volumeNumber>105</schema:volumeNumber>
+        <rdfs:label>Hansen2015</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
     <!-- https://w3id.org/tvbo/studies/Henon1964 -->
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Henon1964">
         <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
-        <terms:issued>1964</terms:issued>
-        <terms:title>The Applicability of the Third Integral of Motion: Some Numerical Experiments</terms:title>
-        <schema:author>Heiles, Carl</schema:author>
-        <schema:author>Henon, Michel</schema:author>
         <schema:identifier>10.1086/109234</schema:identifier>
-        <schema:isPartOf>The Astronomical Journal</schema:isPartOf>
-        <schema:pagination>73--79</schema:pagination>
-        <schema:volumeNumber>69</schema:volumeNumber>
         <rdfs:label>Henon1964</rdfs:label>
     </owl:NamedIndividual>
     
@@ -46747,7 +47373,7 @@ to a task-appropriate range (e.g. omega in Hz).
         <terms:issued>1976</terms:issued>
         <terms:title>A Two-Dimensional Mapping with a Strange Attractor</terms:title>
         <schema:author>H\&apos;enon, Michel</schema:author>
-        <schema:identifier>10.1007/978-0-387-21830-4_8</schema:identifier>
+        <schema:identifier>10.1007/978-0-387-21830-4\\_8</schema:identifier>
         <schema:isPartOf>Communications in Mathematical Physics</schema:isPartOf>
         <schema:pagination>69--77</schema:pagination>
         <schema:volumeNumber>50</schema:volumeNumber>
@@ -46777,13 +47403,6 @@ to a task-appropriate range (e.g. omega in Hz).
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Hindmarsh1984">
         <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
-        <terms:issued>1984</terms:issued>
-        <terms:title>A model of neuronal bursting using three coupled first order differential equations</terms:title>
-        <schema:author>Hindmarsh, J. L.</schema:author>
-        <schema:author>Rose, R. M.</schema:author>
-        <schema:isPartOf>Proceedings of the Royal Society of London. Series B, Biological Sciences</schema:isPartOf>
-        <schema:pagination>87--102</schema:pagination>
-        <schema:volumeNumber>221</schema:volumeNumber>
         <rdfs:label>Hindmarsh1984</rdfs:label>
     </owl:NamedIndividual>
     
@@ -46809,15 +47428,7 @@ to a task-appropriate range (e.g. omega in Hz).
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Hodgkin1952">
         <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
-        <terms:issued>1952</terms:issued>
-        <terms:title>A Quantitative Description of Membrane Current and Its Application to Conduction and Excitation in Nerve</terms:title>
-        <schema:author>Hodgkin, A. L.</schema:author>
-        <schema:author>Huxley, A. F.</schema:author>
         <schema:identifier>10.1113/jphysiol.1952.sp004764</schema:identifier>
-        <schema:isPartOf>The Journal of Physiology</schema:isPartOf>
-        <schema:issueNumber>4</schema:issueNumber>
-        <schema:pagination>500--544</schema:pagination>
-        <schema:volumeNumber>117</schema:volumeNumber>
         <rdfs:label>Hodgkin1952</rdfs:label>
     </owl:NamedIndividual>
     
@@ -46950,10 +47561,16 @@ to a task-appropriate range (e.g. omega in Hz).
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Jansen1993">
         <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
         <terms:issued>1993</terms:issued>
-        <terms:title>Electroencephalogram and visual evoked potential generation in a mathematical model of coupled cortical columns</terms:title>
+        <terms:title>A neurophysiologically-based mathematical model of flash visual evoked potentials</terms:title>
+        <schema:author>Brandt, Michael E.</schema:author>
         <schema:author>Jansen, Ben H.</schema:author>
-        <schema:author>Rit, Vincent G.</schema:author>
+        <schema:author>Zouridakis, George</schema:author>
+        <schema:identifier>10.1007/bf00224863</schema:identifier>
         <schema:isPartOf>Biological Cybernetics</schema:isPartOf>
+        <schema:issueNumber>3</schema:issueNumber>
+        <schema:pagination>275--283</schema:pagination>
+        <schema:publisher>Springer Science and Business Media LLC</schema:publisher>
+        <schema:volumeNumber>68</schema:volumeNumber>
         <rdfs:label>Jansen1993</rdfs:label>
     </owl:NamedIndividual>
     
@@ -46964,10 +47581,15 @@ to a task-appropriate range (e.g. omega in Hz).
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Jansen1995">
         <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
         <terms:issued>1995</terms:issued>
-        <terms:title>Parameter exploration of a realistic neural mass model of visual cortex</terms:title>
+        <terms:title>Electroencephalogram and visual evoked potential generation in a mathematical model of coupled cortical columns</terms:title>
         <schema:author>Jansen, Ben H.</schema:author>
         <schema:author>Rit, Vincent G.</schema:author>
+        <schema:identifier>10.1007/bf00199471</schema:identifier>
         <schema:isPartOf>Biological Cybernetics</schema:isPartOf>
+        <schema:issueNumber>4</schema:issueNumber>
+        <schema:pagination>357--366</schema:pagination>
+        <schema:publisher>Springer Science and Business Media LLC</schema:publisher>
+        <schema:volumeNumber>73</schema:volumeNumber>
         <rdfs:label>Jansen1995</rdfs:label>
     </owl:NamedIndividual>
     
@@ -46979,9 +47601,17 @@ to a task-appropriate range (e.g. omega in Hz).
         <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
         <terms:issued>2014</terms:issued>
         <terms:title>On the nature of seizure dynamics</terms:title>
-        <schema:author>Jirsa, Viktor</schema:author>
-        <schema:author>others</schema:author>
+        <schema:author>Bernard, Christophe</schema:author>
+        <schema:author>Ivanov, Anton I.</schema:author>
+        <schema:author>Jirsa, Viktor K.</schema:author>
+        <schema:author>Quilichini, Pascale P.</schema:author>
+        <schema:author>Stacey, William C.</schema:author>
+        <schema:identifier>10.1093/brain/awu133</schema:identifier>
         <schema:isPartOf>Brain</schema:isPartOf>
+        <schema:issueNumber>8</schema:issueNumber>
+        <schema:pagination>2210--2230</schema:pagination>
+        <schema:publisher>Oxford University Press (OUP)</schema:publisher>
+        <schema:volumeNumber>137</schema:volumeNumber>
         <rdfs:label>Jirsa2014</rdfs:label>
     </owl:NamedIndividual>
     
@@ -47045,6 +47675,26 @@ to a task-appropriate range (e.g. omega in Hz).
         <schema:pagination>339--349</schema:pagination>
         <schema:volumeNumber>44</schema:volumeNumber>
         <rdfs:label>Landau1944</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/studies/Larter1999 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Larter1999">
+        <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
+        <terms:issued>1999</terms:issued>
+        <terms:title>A coupled ordinary differential equation lattice model for the simulation of epileptic seizures</terms:title>
+        <schema:author>Larter, Raima</schema:author>
+        <schema:author>Speelman, Brent</schema:author>
+        <schema:author>Worth, Robert M.</schema:author>
+        <schema:identifier>10.1063/1.166453</schema:identifier>
+        <schema:isPartOf>Chaos: An Interdisciplinary Journal of Nonlinear Science</schema:isPartOf>
+        <schema:issueNumber>3</schema:issueNumber>
+        <schema:pagination>795--804</schema:pagination>
+        <schema:publisher>AIP Publishing</schema:publisher>
+        <schema:volumeNumber>9</schema:volumeNumber>
+        <rdfs:label>Larter1999</rdfs:label>
     </owl:NamedIndividual>
     
 
@@ -47178,15 +47828,6 @@ to a task-appropriate range (e.g. omega in Hz).
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Micluta-Campeanu2018">
         <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
-        <terms:issued>2018</terms:issued>
-        <terms:title>Chaoticity Evolution in a Quartic Collective Hamiltonian</terms:title>
-        <schema:author>Baran, V.</schema:author>
-        <schema:author>Micluta-Campeanu, S.</schema:author>
-        <schema:author>Nicolin, A. I.</schema:author>
-        <schema:author>Raportaru, M. C.</schema:author>
-        <schema:isPartOf>Romanian Reports in Physics</schema:isPartOf>
-        <schema:pagination>105</schema:pagination>
-        <schema:volumeNumber>70</schema:volumeNumber>
         <rdfs:label>Micluta-Campeanu2018</rdfs:label>
     </owl:NamedIndividual>
     
@@ -47213,19 +47854,7 @@ to a task-appropriate range (e.g. omega in Hz).
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Mirshra2018">
         <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
-        <terms:issued>2018</terms:issued>
-        <terms:title>Dragon-king-like extreme events in coupled bursting neurons</terms:title>
-        <schema:author>Dana, S. K.</schema:author>
-        <schema:author>Kapitaniak, T.</schema:author>
-        <schema:author>Mishra, A.</schema:author>
-        <schema:author>Pal, P.</schema:author>
-        <schema:author>Saha, S.</schema:author>
-        <schema:author>Vigneshwaran, M.</schema:author>
         <schema:identifier>10.1103/PhysRevE.97.062311</schema:identifier>
-        <schema:isPartOf>Physical Review E</schema:isPartOf>
-        <schema:issueNumber>6</schema:issueNumber>
-        <schema:pagination>062311</schema:pagination>
-        <schema:volumeNumber>97</schema:volumeNumber>
         <rdfs:label>Mirshra2018</rdfs:label>
     </owl:NamedIndividual>
     
@@ -47257,19 +47886,7 @@ to a task-appropriate range (e.g. omega in Hz).
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Mishra2018a">
         <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
-        <terms:issued>2018</terms:issued>
-        <terms:title>Dragon-king-like extreme events in coupled bursting neurons</terms:title>
-        <schema:author>Dana, S. K.</schema:author>
-        <schema:author>Kapitaniak, T.</schema:author>
-        <schema:author>Mishra, A.</schema:author>
-        <schema:author>Pal, P.</schema:author>
-        <schema:author>Saha, S.</schema:author>
-        <schema:author>Vigneshwaran, M.</schema:author>
         <schema:identifier>10.1103/PhysRevE.97.062311</schema:identifier>
-        <schema:isPartOf>Physical Review E</schema:isPartOf>
-        <schema:issueNumber>6</schema:issueNumber>
-        <schema:pagination>062311</schema:pagination>
-        <schema:volumeNumber>97</schema:volumeNumber>
         <rdfs:label>Mishra2018a</rdfs:label>
     </owl:NamedIndividual>
     
@@ -47310,11 +47927,16 @@ to a task-appropriate range (e.g. omega in Hz).
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Nagumo1962">
         <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
         <terms:issued>1962</terms:issued>
-        <terms:title>An active pulse transmission line simulating nerve axon</terms:title>
+        <terms:title>An Active Pulse Transmission Line Simulating Nerve Axon</terms:title>
         <schema:author>Arimoto, S.</schema:author>
         <schema:author>Nagumo, J.</schema:author>
         <schema:author>Yoshizawa, S.</schema:author>
+        <schema:identifier>10.1109/jrproc.1962.288235</schema:identifier>
         <schema:isPartOf>Proceedings of the IRE</schema:isPartOf>
+        <schema:issueNumber>10</schema:issueNumber>
+        <schema:pagination>2061--2070</schema:pagination>
+        <schema:publisher>Institute of Electrical and Electronics Engineers (IEEE)</schema:publisher>
+        <schema:volumeNumber>50</schema:volumeNumber>
         <rdfs:label>Nagumo1962</rdfs:label>
     </owl:NamedIndividual>
     
@@ -47336,11 +47958,7 @@ to a task-appropriate range (e.g. omega in Hz).
     <!-- https://w3id.org/tvbo/studies/Ott2010 -->
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Ott2010">
-        <rdf:type rdf:resource="http://schema.org/Book"/>
-        <terms:issued>2010</terms:issued>
-        <terms:title>Chaos in Dynamical Systems</terms:title>
-        <schema:author>Ott, Edward</schema:author>
-        <schema:publisher>Cambridge University Press</schema:publisher>
+        <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
         <rdfs:label>Ott2010</rdfs:label>
     </owl:NamedIndividual>
     
@@ -47356,7 +47974,7 @@ to a task-appropriate range (e.g. omega in Hz).
         <schema:author>Ott, Edward</schema:author>
         <schema:author>Sommerer, J. C.</schema:author>
         <schema:author>Yorke, James A.</schema:author>
-        <schema:url>http://yorke.umd.edu/Yorke_papers_most_cited_and_post2000/1994_04_Ott_Alexander_Kan_Sommerer_PhysicaD_riddled%20basins.pdf</schema:url>
+        <schema:url>http://yorke.umd.edu/Yorke\\_papers\\_most\\_cited\\_and\\_post2000/1994\\_04\\_Ott\\_Alexander\\_Kan\\_Sommerer\\_PhysicaD\\_riddled\\%20basins.pdf</schema:url>
         <rdfs:label>OttRiddled2014</rdfs:label>
     </owl:NamedIndividual>
     
@@ -47426,23 +48044,6 @@ to a task-appropriate range (e.g. omega in Hz).
     
 
 
-    <!-- https://w3id.org/tvbo/studies/R_ossler1976 -->
-
-    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/R_ossler1976">
-        <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
-        <terms:issued>1976</terms:issued>
-        <terms:title>An Equation for Continuous Chaos</terms:title>
-        <schema:author>R&quot;ossler, Otto E.</schema:author>
-        <schema:identifier>10.1016/0375-9601(76)90101-8</schema:identifier>
-        <schema:isPartOf>Physics Letters A</schema:isPartOf>
-        <schema:issueNumber>5</schema:issueNumber>
-        <schema:pagination>397--398</schema:pagination>
-        <schema:volumeNumber>57</schema:volumeNumber>
-        <rdfs:label>R_ossler1976</rdfs:label>
-    </owl:NamedIndividual>
-    
-
-
     <!-- https://w3id.org/tvbo/studies/Rikitake1958 -->
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Rikitake1958">
@@ -47496,7 +48097,6 @@ to a task-appropriate range (e.g. omega in Hz).
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Roessler1979Alias">
         <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
-        <terms:title>Alias for Rossler1979</terms:title>
         <rdfs:label>Roessler1979Alias</rdfs:label>
     </owl:NamedIndividual>
     
@@ -47506,14 +48106,7 @@ to a task-appropriate range (e.g. omega in Hz).
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Rossler1976">
         <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
-        <terms:issued>1976</terms:issued>
-        <terms:title>An Equation for Continuous Chaos</terms:title>
-        <schema:author>R&quot;ossler, Otto E.</schema:author>
         <schema:identifier>10.1016/0375-9601(76)90101-8</schema:identifier>
-        <schema:isPartOf>Physics Letters A</schema:isPartOf>
-        <schema:issueNumber>5</schema:issueNumber>
-        <schema:pagination>397--398</schema:pagination>
-        <schema:volumeNumber>57</schema:volumeNumber>
         <rdfs:label>Rossler1976</rdfs:label>
     </owl:NamedIndividual>
     
@@ -47523,13 +48116,6 @@ to a task-appropriate range (e.g. omega in Hz).
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Rossler1979">
         <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
-        <terms:issued>1979</terms:issued>
-        <terms:title>An equation for hyperchaos</terms:title>
-        <schema:author>R&quot;ossler, O. E.</schema:author>
-        <schema:isPartOf>Physics Letters A</schema:isPartOf>
-        <schema:issueNumber>2--3</schema:issueNumber>
-        <schema:pagination>155--157</schema:pagination>
-        <schema:volumeNumber>71</schema:volumeNumber>
         <rdfs:label>Rossler1979</rdfs:label>
     </owl:NamedIndividual>
     
@@ -47686,6 +48272,29 @@ to a task-appropriate range (e.g. omega in Hz).
     
 
 
+    <!-- https://w3id.org/tvbo/studies/Stefanovski2019 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Stefanovski2019">
+        <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
+        <terms:issued>2019</terms:issued>
+        <terms:title>Linking Molecular Pathways and Large-Scale Computational Modeling to Assess Candidate Disease Mechanisms and Pharmacodynamics in Alzheimer’s Disease</terms:title>
+        <schema:author>Diaz-Cortes, Margarita-Arimatea</schema:author>
+        <schema:author>Jirsa, Viktor</schema:author>
+        <schema:author>McIntosh, Anthony Randal</schema:author>
+        <schema:author>Ritter, Petra</schema:author>
+        <schema:author>Solodkin, Ana</schema:author>
+        <schema:author>Spiegler, Andreas</schema:author>
+        <schema:author>Stefanovski, Leon</schema:author>
+        <schema:author>Triebkorn, Paul</schema:author>
+        <schema:identifier>10.3389/fncom.2019.00054</schema:identifier>
+        <schema:isPartOf>Frontiers in Computational Neuroscience</schema:isPartOf>
+        <schema:publisher>Frontiers Media SA</schema:publisher>
+        <schema:volumeNumber>13</schema:volumeNumber>
+        <rdfs:label>Stefanovski2019</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
     <!-- https://w3id.org/tvbo/studies/Stommel1961 -->
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Stommel1961">
@@ -47708,7 +48317,12 @@ to a task-appropriate range (e.g. omega in Hz).
         <terms:issued>2000</terms:issued>
         <terms:title>From Kuramoto to Crawford: exploring the onset of synchronization in populations of coupled oscillators</terms:title>
         <schema:author>Strogatz, Steven H.</schema:author>
-        <schema:isPartOf>Physica D</schema:isPartOf>
+        <schema:identifier>10.1016/s0167-2789(00)00094-4</schema:identifier>
+        <schema:isPartOf>Physica D: Nonlinear Phenomena</schema:isPartOf>
+        <schema:issueNumber>1–4</schema:issueNumber>
+        <schema:pagination>1--20</schema:pagination>
+        <schema:publisher>Elsevier BV</schema:publisher>
+        <schema:volumeNumber>143</schema:volumeNumber>
         <rdfs:label>Strogatz2000</rdfs:label>
     </owl:NamedIndividual>
     
@@ -47732,13 +48346,32 @@ to a task-appropriate range (e.g. omega in Hz).
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Thomas1999">
         <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
         <terms:issued>1999</terms:issued>
-        <terms:title>Deterministic chaos seen in terms of feedback circuits: Analysis, synthesis, \&amp; biological applications</terms:title>
+        <terms:title>Deterministic chaos seen in terms of feedback circuits: Analysis, synthesis, \\\&amp; biological applications</terms:title>
         <schema:author>Thomas, Ren\&apos;e</schema:author>
         <schema:isPartOf>International Journal of Bifurcation and Chaos</schema:isPartOf>
         <schema:issueNumber>10</schema:issueNumber>
         <schema:pagination>1889--1905</schema:pagination>
         <schema:volumeNumber>9</schema:volumeNumber>
         <rdfs:label>Thomas1999</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/studies/Tsodyks1997 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Tsodyks1997">
+        <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
+        <terms:issued>1997</terms:issued>
+        <terms:title>The neural code between neocortical pyramidal neurons depends on neurotransmitter release probability</terms:title>
+        <schema:author>Markram, Henry</schema:author>
+        <schema:author>Tsodyks, Misha V.</schema:author>
+        <schema:identifier>10.1073/pnas.94.2.719</schema:identifier>
+        <schema:isPartOf>Proceedings of the National Academy of Sciences</schema:isPartOf>
+        <schema:issueNumber>2</schema:issueNumber>
+        <schema:pagination>719--723</schema:pagination>
+        <schema:publisher>Proceedings of the National Academy of Sciences</schema:publisher>
+        <schema:volumeNumber>94</schema:volumeNumber>
+        <rdfs:label>Tsodyks1997</rdfs:label>
     </owl:NamedIndividual>
     
 
@@ -47820,7 +48453,6 @@ to a task-appropriate range (e.g. omega in Hz).
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Volo2019a">
         <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
-        <terms:title>Alias for di Volo et al. 2019</terms:title>
         <rdfs:label>Volo2019a</rdfs:label>
     </owl:NamedIndividual>
     
@@ -47964,6 +48596,33 @@ to a task-appropriate range (e.g. omega in Hz).
         <schema:author>Zetterberg, L. H.</schema:author>
         <schema:isPartOf>Biological Cybernetics</schema:isPartOf>
         <rdfs:label>Zetterberg1978</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/studies/Zimmermann2018 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Zimmermann2018">
+        <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
+        <terms:issued>2018</terms:issued>
+        <terms:title>Differentiation of Alzheimer’s disease based on local and global parameters in personalized Virtual Brain models</terms:title>
+        <schema:author>Breakspear, M.</schema:author>
+        <schema:author>Kochan, N.A.</schema:author>
+        <schema:author>Mapstone, M.</schema:author>
+        <schema:author>McIntosh, A.R.</schema:author>
+        <schema:author>Perry, A.</schema:author>
+        <schema:author>Ritter, P.</schema:author>
+        <schema:author>Sachdev, P.</schema:author>
+        <schema:author>Schirner, M.</schema:author>
+        <schema:author>Solodkin, A.</schema:author>
+        <schema:author>Wen, W.</schema:author>
+        <schema:author>Zimmermann, J.</schema:author>
+        <schema:identifier>10.1016/j.nicl.2018.04.017</schema:identifier>
+        <schema:isPartOf>NeuroImage: Clinical</schema:isPartOf>
+        <schema:pagination>240--251</schema:pagination>
+        <schema:publisher>Elsevier BV</schema:publisher>
+        <schema:volumeNumber>19</schema:volumeNumber>
+        <rdfs:label>Zimmermann2018</rdfs:label>
     </owl:NamedIndividual>
     
 

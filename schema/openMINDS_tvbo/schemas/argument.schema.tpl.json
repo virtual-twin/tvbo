@@ -1,0 +1,20 @@
+{
+  "_type": "tvbo:Argument",
+  "properties": {
+    "name": {
+      "type": "string",
+      "_instruction": "Enter the name."
+    },
+    "description": {
+      "type": "string"
+    },
+    "value": {
+      "_linkedTypes": [
+        "tvbo:ScalarValue"
+      ]
+    },
+    "unit": {
+      "type": "string"
+    }
+  }
+}

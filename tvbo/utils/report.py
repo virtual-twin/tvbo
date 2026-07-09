@@ -161,14 +161,20 @@ def flag_text(obj, flags=None):
     """Flags cell: boolean flags + shape / dataset / reported optimum.
 
     ``flags`` is a list of ``(attr, label)`` pairs; it defaults to the standard
-    parameter flags (``free``, ``heterogeneous``).
+    parameter flags (``free``, ``heterogeneous``). A purely symbolic shape such
+    as ``(n_nodes,)`` is skipped: it names the broadcast dimension rather than a
+    concrete size, so it carries no information for a reader and would otherwise
+    keep an empty Flags column alive. A concrete shape like ``(84, 84)`` is kept.
     """
     flags = _PARAM_FLAGS if flags is None else flags
     labels = [label for name, label in flags if slot(obj, name, False)]
     for attr, key in (("shape", "shape"), ("dataset_path", "data"), ("reported_optimum", "optimum")):
         val = slot(obj, attr)
-        if val is not None and val != "":
-            labels.append(f"{key}={val}")
+        if val is None or val == "":
+            continue
+        if attr == "shape" and not any(ch.isdigit() for ch in str(val)):
+            continue
+        labels.append(f"{key}={val}")
     return ", ".join(labels) or "—"
 
 
@@ -190,18 +196,41 @@ def state_variable_table(svars):
     return md_table(["Variable", "Initial Value", "Unit", "Equation", "Domain / Sampling", "Flags", "Description"], rows)
 
 
-def parameter_table(params):
-    """Markdown Parameters table (empty columns dropped) from a name->obj map."""
+def param_table(collection, name_header="Parameter", symbolic=True, flags=None):
+    """Markdown table for any parameter-like collection, empty columns dropped.
+
+    Renders the full column set (name, value, default, unit, domain/sampling,
+    flags, description) and lets :func:`md_table` drop every column that is empty
+    across all rows, so each collection shows only the columns that carry data.
+    One builder serves model parameters, coupling terms, and the stimulation,
+    integration, noise, and hyperparameter tables, instead of a hand-written
+    table per section.
+
+    Args:
+        collection: A name->obj map or a list of parameter-like objects.
+        name_header: Title of the first (name) column, e.g. ``Term``.
+        symbolic: Render the name as inline-LaTeX ``$symbol$`` when true, else plain.
+        flags: ``(attr, label)`` pairs for :func:`flag_text`; defaults to the
+            standard parameter flags.
+    """
     from sympy import Symbol, latex
 
+    def _name(name):
+        return f"${latex(Symbol(name))}$" if symbolic else str(name)
+
     rows = [
-        [f"${latex(Symbol(name))}$", slot(p, "value", ""), slot(p, "default", ""), unit_text(slot(p, "unit")),
-         metadata_text(p), flag_text(p, _PARAM_FLAGS),
+        [_name(name), slot(p, "value", ""), slot(p, "default", ""), unit_text(slot(p, "unit")),
+         metadata_text(p), flag_text(p, flags),
          slot(p, "description", "") or slot(p, "definition", "") or ""]
-        for name, p in name_items(params)
+        for name, p in name_items(collection)
     ]
-    return md_table(["Parameter", "Value", "Default", "Unit", "Domain / Sampling", "Flags", "Description"],
+    return md_table([name_header, "Value", "Default", "Unit", "Domain / Sampling", "Flags", "Description"],
                     rows, aligns=["l", "r", "l", "l", "l", "l", "l"])
+
+
+def parameter_table(params):
+    """Markdown model Parameters table (empty columns dropped) from a name->obj map."""
+    return param_table(params, name_header="Parameter")
 
 
 def parameter_report(param_setting, decimals=3, format="latex", **kwargs):

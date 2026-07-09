@@ -2,7 +2,7 @@
   "_type": "tvbo:Stimulus",
   "properties": {
     "equation": {
-      "_linkedTypes": [
+      "_embeddedTypes": [
         "tvbo:Equation"
       ]
     },
@@ -42,6 +42,11 @@
       "items": {
         "type": "number"
       }
+    },
+    "noise": {
+      "_embeddedTypes": [
+        "tvbo:Noise"
+      ]
     }
   }
 }

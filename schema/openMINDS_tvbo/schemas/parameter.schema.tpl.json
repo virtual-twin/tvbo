@@ -2,7 +2,8 @@
   "_type": "tvbo:Parameter",
   "properties": {
     "name": {
-      "type": "string"
+      "type": "string",
+      "_instruction": "Enter the name."
     },
     "label": {
       "type": "string"
@@ -14,7 +15,9 @@
       "type": "string"
     },
     "value": {
-      "type": "number"
+      "_linkedTypes": [
+        "tvbo:ScalarValue"
+      ]
     },
     "default": {
       "type": "string"
@@ -31,18 +34,40 @@
       "type": "string"
     },
     "equation": {
-      "_linkedTypes": [
+      "_embeddedTypes": [
         "tvbo:Equation"
       ]
     },
     "unit": {
       "type": "string"
     },
+    "dataset_path": {
+      "type": "string"
+    },
+    "grounding": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
     "comment": {
       "type": "string"
     },
     "heterogeneous": {
       "type": "boolean"
+    },
+    "distribution": {
+      "_embeddedTypes": [
+        "tvbo:Distribution"
+      ]
+    },
+    "source": {
+      "type": "string"
+    },
+    "measure": {
+      "type": "string"
     },
     "free": {
       "type": "boolean"
@@ -57,6 +82,20 @@
       "items": {
         "type": "number"
       }
+    },
+    "element_domains": {
+      "_embeddedTypes": [
+        "tvbo:Range"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "datatype": {
+      "type": "string"
+    },
+    "required": {
+      "type": "boolean"
     }
   }
 }

@@ -1,0 +1,811 @@
+@prefix CL: <http://purl.obolibrary.org/obo/CL_> .
+@prefix GO: <http://purl.obolibrary.org/obo/GO_> .
+@prefix oboInOwl: <http://www.geneontology.org/formats/oboInOwl#> .
+@prefix tvbo: <https://w3id.org/tvbo/> .
+
+<https://w3id.org/tvbo/CakanObermayer/parameters/C> oboInOwl:hasDbXref GO:0030322,
+        GO:0042391,
+        GO:0098696 ;
+    tvbo:surrogate_of GO:0030322,
+        GO:0042391,
+        GO:0098696 .
+
+<https://w3id.org/tvbo/CakanObermayer/parameters/E_A> oboInOwl:hasDbXref GO:0042391 ;
+    tvbo:surrogate_of GO:0042391 .
+
+<https://w3id.org/tvbo/CakanObermayer/parameters/E_L> oboInOwl:hasDbXref GO:0022840 ;
+    tvbo:surrogate_of GO:0022840 .
+
+<https://w3id.org/tvbo/CakanObermayer/parameters/I_A> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/CakanObermayer/parameters/J_EE> oboInOwl:hasDbXref GO:0060076,
+        GO:0060079,
+        GO:0098817 ;
+    tvbo:surrogate_of GO:0060076,
+        GO:0060079,
+        GO:0098817 .
+
+<https://w3id.org/tvbo/CakanObermayer/parameters/J_EI> oboInOwl:hasDbXref GO:0060080,
+        GO:0099536 ;
+    tvbo:surrogate_of GO:0060080,
+        GO:0099536 .
+
+<https://w3id.org/tvbo/CakanObermayer/parameters/J_IE> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/CakanObermayer/parameters/J_II> oboInOwl:hasDbXref GO:0060080 ;
+    tvbo:surrogate_of GO:0060080 .
+
+<https://w3id.org/tvbo/CakanObermayer/parameters/mu_I> oboInOwl:hasDbXref GO:0042391,
+        GO:0060080,
+        GO:0098828 ;
+    tvbo:surrogate_of GO:0042391,
+        GO:0060080,
+        GO:0098828 .
+
+<https://w3id.org/tvbo/CakanObermayer/parameters/s_EE> oboInOwl:hasDbXref GO:0060079,
+        GO:0098815 ;
+    tvbo:surrogate_of GO:0060079,
+        GO:0098815 .
+
+<https://w3id.org/tvbo/CakanObermayer/parameters/s_EI> oboInOwl:hasDbXref GO:0098815 ;
+    tvbo:surrogate_of GO:0098815 .
+
+<https://w3id.org/tvbo/CakanObermayer/parameters/s_IE> oboInOwl:hasDbXref GO:0098815 ;
+    tvbo:surrogate_of GO:0098815 .
+
+<https://w3id.org/tvbo/CakanObermayer/parameters/s_II> oboInOwl:hasDbXref GO:0060080,
+        GO:0098828 ;
+    tvbo:surrogate_of GO:0060080,
+        GO:0098828 .
+
+<https://w3id.org/tvbo/CoombesByrne/parameters/eta> oboInOwl:hasDbXref GO:0099605 ;
+    tvbo:surrogate_of GO:0099605 .
+
+<https://w3id.org/tvbo/CoombesByrne/parameters/v_syn> oboInOwl:hasDbXref GO:0042391 ;
+    tvbo:surrogate_of GO:0042391 .
+
+<https://w3id.org/tvbo/CoombesByrne2D/parameters/eta> oboInOwl:hasDbXref GO:0099605 ;
+    tvbo:surrogate_of GO:0099605 .
+
+<https://w3id.org/tvbo/CoombesByrne2D/parameters/v_syn> oboInOwl:hasDbXref GO:0042391 ;
+    tvbo:surrogate_of GO:0042391 .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/derived_variables/H_e> oboInOwl:hasDbXref GO:0060079,
+        GO:0099605 ;
+    tvbo:surrogate_of GO:0060079,
+        GO:0099605 .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/derived_variables/H_i> oboInOwl:hasDbXref GO:0060080,
+        GO:0099605 ;
+    tvbo:surrogate_of GO:0060080,
+        GO:0099605 .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/derived_variables/I_e> oboInOwl:hasDbXref GO:0098815 ;
+    tvbo:surrogate_of GO:0098815 .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/derived_variables/I_i> oboInOwl:hasDbXref GO:0060080 ;
+    tvbo:surrogate_of GO:0060080 .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/derived_variables/x_e> oboInOwl:hasDbXref GO:0098815 ;
+    tvbo:surrogate_of GO:0098815 .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/derived_variables/x_i> oboInOwl:hasDbXref GO:0060080 ;
+    tvbo:surrogate_of GO:0060080 .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/parameters/I_ext> oboInOwl:hasDbXref GO:0060079,
+        GO:0099605 ;
+    tvbo:surrogate_of GO:0060079,
+        GO:0099605 .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/parameters/I_o> oboInOwl:hasDbXref GO:0060079,
+        GO:0060080 ;
+    tvbo:surrogate_of GO:0060079,
+        GO:0060080 .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/parameters/J_N> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/parameters/J_i> oboInOwl:hasDbXref GO:0060080,
+        GO:0099605 ;
+    tvbo:surrogate_of GO:0060080,
+        GO:0099605 .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/parameters/M_i> oboInOwl:hasDbXref GO:0099605 ;
+    tvbo:surrogate_of GO:0099605 .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/parameters/W_e> oboInOwl:hasDbXref GO:0090394,
+        GO:2000463 ;
+    tvbo:surrogate_of GO:0090394,
+        GO:2000463 .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/parameters/W_i> oboInOwl:hasDbXref GO:0060080 ;
+    tvbo:surrogate_of GO:0060080 .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/parameters/gamma_e> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/parameters/gamma_i> oboInOwl:hasDbXref GO:0060080 ;
+    tvbo:surrogate_of GO:0060080 .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/parameters/lamda> oboInOwl:hasDbXref GO:0060080 ;
+    tvbo:surrogate_of GO:0060080 .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/parameters/tau_i> oboInOwl:hasDbXref GO:0016917 ;
+    tvbo:surrogate_of GO:0016917 .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/parameters/w_p> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/state_variables/S_e> oboInOwl:hasDbXref GO:0060079,
+        GO:0099536 ;
+    tvbo:surrogate_of GO:0060079,
+        GO:0099536 .
+
+<https://w3id.org/tvbo/DecoBalancedExcInh/state_variables/S_i> oboInOwl:hasDbXref GO:0060080,
+        GO:0099536 ;
+    tvbo:surrogate_of GO:0060080,
+        GO:0099536 .
+
+<https://w3id.org/tvbo/DumontGutkin/parameters/Delta_e> oboInOwl:hasDbXref GO:0060079,
+        GO:0098815 ;
+    tvbo:surrogate_of GO:0060079,
+        GO:0098815 .
+
+<https://w3id.org/tvbo/DumontGutkin/parameters/Delta_i> oboInOwl:hasDbXref GO:0032228,
+        GO:0060080,
+        GO:0098828 ;
+    tvbo:surrogate_of GO:0032228,
+        GO:0060080,
+        GO:0098828 .
+
+<https://w3id.org/tvbo/DumontGutkin/parameters/Gamma> oboInOwl:hasDbXref GO:0060079,
+        GO:0060080 ;
+    tvbo:surrogate_of GO:0060079,
+        GO:0060080 .
+
+<https://w3id.org/tvbo/DumontGutkin/parameters/I_e> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/DumontGutkin/parameters/I_i> oboInOwl:hasDbXref GO:0060080,
+        GO:0098828 ;
+    tvbo:surrogate_of GO:0060080,
+        GO:0098828 .
+
+<https://w3id.org/tvbo/DumontGutkin/parameters/J_ee> oboInOwl:hasDbXref GO:0060076,
+        GO:0097060,
+        GO:0099536 ;
+    tvbo:surrogate_of GO:0060076,
+        GO:0097060,
+        GO:0099536 .
+
+<https://w3id.org/tvbo/DumontGutkin/parameters/J_ei> oboInOwl:hasDbXref GO:0042391,
+        GO:0097060 ;
+    tvbo:surrogate_of GO:0042391,
+        GO:0097060 .
+
+<https://w3id.org/tvbo/DumontGutkin/parameters/J_ie> oboInOwl:hasDbXref GO:0097060,
+        GO:0099536 ;
+    tvbo:surrogate_of GO:0097060,
+        GO:0099536 .
+
+<https://w3id.org/tvbo/DumontGutkin/parameters/J_ii> oboInOwl:hasDbXref GO:0060077,
+        GO:0097060 ;
+    tvbo:surrogate_of GO:0060077,
+        GO:0097060 .
+
+<https://w3id.org/tvbo/DumontGutkin/parameters/eta_e> oboInOwl:hasDbXref GO:0098815 ;
+    tvbo:surrogate_of GO:0098815 .
+
+<https://w3id.org/tvbo/DumontGutkin/parameters/eta_i> oboInOwl:hasDbXref GO:0060080 ;
+    tvbo:surrogate_of GO:0060080 .
+
+<https://w3id.org/tvbo/DumontGutkin/parameters/tau_e> oboInOwl:hasDbXref GO:0043179,
+        GO:0060079 ;
+    tvbo:surrogate_of GO:0043179,
+        GO:0060079 .
+
+<https://w3id.org/tvbo/DumontGutkin/parameters/tau_i> oboInOwl:hasDbXref GO:0043180,
+        GO:0060080 ;
+    tvbo:surrogate_of GO:0043180,
+        GO:0060080 .
+
+<https://w3id.org/tvbo/DumontGutkin/parameters/tau_s> oboInOwl:hasDbXref GO:0099536 ;
+    tvbo:surrogate_of GO:0099536 .
+
+<https://w3id.org/tvbo/Epileptor2D/parameters/x0> oboInOwl:hasDbXref GO:0043179 ;
+    tvbo:surrogate_of GO:0043179 .
+
+<https://w3id.org/tvbo/Epileptor3DStefanescuMcDonald/parameters/N> oboInOwl:hasDbXref GO:0042391 ;
+    tvbo:surrogate_of GO:0042391 .
+
+<https://w3id.org/tvbo/Epileptor5D/parameters/x0> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/GastSchmidtKnosche_SD/parameters/J> oboInOwl:hasDbXref GO:0099536 ;
+    tvbo:surrogate_of GO:0099536 .
+
+<https://w3id.org/tvbo/GastSchmidtKnosche_SF/parameters/J> oboInOwl:hasDbXref GO:0099536 ;
+    tvbo:surrogate_of GO:0099536 .
+
+<https://w3id.org/tvbo/GastSchmidtKnosche_SF/parameters/alpha> oboInOwl:hasDbXref GO:0042391 ;
+    tvbo:surrogate_of GO:0042391 .
+
+<https://w3id.org/tvbo/Generic2dOscillator/parameters/I> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/Generic2dOscillator/parameters/b> oboInOwl:hasDbXref GO:0098873,
+        GO:0099178 ;
+    tvbo:surrogate_of GO:0098873,
+        GO:0099178 .
+
+<https://w3id.org/tvbo/Generic2dOscillator/state_variables/V> oboInOwl:hasDbXref GO:0005272 ;
+    tvbo:surrogate_of GO:0005272 .
+
+<https://w3id.org/tvbo/Generic2dOscillator/state_variables/W> oboInOwl:hasDbXref GO:0005272 ;
+    tvbo:surrogate_of GO:0005272 .
+
+<https://w3id.org/tvbo/JansenRit/parameters/A> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/JansenRit/parameters/B> oboInOwl:hasDbXref GO:0060080 ;
+    tvbo:surrogate_of GO:0060080 .
+
+<https://w3id.org/tvbo/JansenRit/parameters/J> oboInOwl:hasDbXref GO:0051124,
+        GO:0150092 ;
+    tvbo:surrogate_of GO:0051124,
+        GO:0150092 .
+
+<https://w3id.org/tvbo/JansenRit/parameters/a> oboInOwl:hasDbXref GO:0099605 ;
+    tvbo:surrogate_of GO:0099605 .
+
+<https://w3id.org/tvbo/JansenRit/parameters/a_1> oboInOwl:hasDbXref GO:0099536 ;
+    tvbo:surrogate_of GO:0099536 .
+
+<https://w3id.org/tvbo/JansenRit/parameters/a_2> oboInOwl:hasDbXref GO:0099536 ;
+    tvbo:surrogate_of GO:0099536 .
+
+<https://w3id.org/tvbo/JansenRit/parameters/a_3> oboInOwl:hasDbXref GO:0099536 ;
+    tvbo:surrogate_of GO:0099536 .
+
+<https://w3id.org/tvbo/JansenRit/parameters/a_4> oboInOwl:hasDbXref GO:0060077,
+        GO:0099536 ;
+    tvbo:surrogate_of GO:0060077,
+        GO:0099536 .
+
+<https://w3id.org/tvbo/JansenRit/parameters/b> oboInOwl:hasDbXref GO:0060080 ;
+    tvbo:surrogate_of GO:0060080 .
+
+<https://w3id.org/tvbo/JansenRit/parameters/mu> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/JansenRit/parameters/nu_max> oboInOwl:hasDbXref GO:0099605 ;
+    tvbo:surrogate_of GO:0099605 .
+
+<https://w3id.org/tvbo/JansenRit/parameters/v0> oboInOwl:hasDbXref GO:0099605 ;
+    tvbo:surrogate_of GO:0099605 .
+
+<https://w3id.org/tvbo/JansenRit/state_variables/y0> oboInOwl:hasDbXref CL:0000598,
+        GO:0060079 ;
+    tvbo:surrogate_of CL:0000598,
+        GO:0060079 .
+
+<https://w3id.org/tvbo/JansenRit/state_variables/y1> oboInOwl:hasDbXref CL:0000099,
+        GO:0060076,
+        GO:0060079 ;
+    tvbo:surrogate_of CL:0000099,
+        GO:0060076,
+        GO:0060079 .
+
+<https://w3id.org/tvbo/JansenRit/state_variables/y2> oboInOwl:hasDbXref CL:0000099,
+        GO:0060077 ;
+    tvbo:surrogate_of CL:0000099,
+        GO:0060077 .
+
+<https://w3id.org/tvbo/JansenRit/state_variables/y3> oboInOwl:hasDbXref CL:0000598 ;
+    tvbo:surrogate_of CL:0000598 .
+
+<https://w3id.org/tvbo/JansenRit/state_variables/y4> oboInOwl:hasDbXref CL:0000099 ;
+    tvbo:surrogate_of CL:0000099 .
+
+<https://w3id.org/tvbo/JansenRit/state_variables/y5> oboInOwl:hasDbXref CL:0000099 ;
+    tvbo:surrogate_of CL:0000099 .
+
+<https://w3id.org/tvbo/KIonEx/parameters/Cm> oboInOwl:hasDbXref GO:0042391 ;
+    tvbo:surrogate_of GO:0042391 .
+
+<https://w3id.org/tvbo/KIonEx/parameters/E> oboInOwl:hasDbXref GO:0019228 ;
+    tvbo:surrogate_of GO:0019228 .
+
+<https://w3id.org/tvbo/KIonEx/parameters/J> oboInOwl:hasDbXref GO:0099536 ;
+    tvbo:surrogate_of GO:0099536 .
+
+<https://w3id.org/tvbo/KIonEx/parameters/K_bath> oboInOwl:hasDbXref GO:0055075 ;
+    tvbo:surrogate_of GO:0055075 .
+
+<https://w3id.org/tvbo/LarterBreakspear/derived_variables/Q_V> oboInOwl:hasDbXref GO:0099605 ;
+    tvbo:surrogate_of GO:0099605 .
+
+<https://w3id.org/tvbo/LarterBreakspear/derived_variables/Q_Z> oboInOwl:hasDbXref GO:0099605 ;
+    tvbo:surrogate_of GO:0099605 .
+
+<https://w3id.org/tvbo/LarterBreakspear/derived_variables/m_Ca> oboInOwl:hasDbXref GO:0005262 ;
+    tvbo:surrogate_of GO:0005262 .
+
+<https://w3id.org/tvbo/LarterBreakspear/derived_variables/m_K> oboInOwl:hasDbXref GO:0005267 ;
+    tvbo:surrogate_of GO:0005267 .
+
+<https://w3id.org/tvbo/LarterBreakspear/derived_variables/m_Na> oboInOwl:hasDbXref GO:0005272 ;
+    tvbo:surrogate_of GO:0005272 .
+
+<https://w3id.org/tvbo/LarterBreakspear/parameters/C> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/LarterBreakspear/parameters/I_ext> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/LarterBreakspear/parameters/Q_Vmax> oboInOwl:hasDbXref GO:0098976,
+        GO:0099605 ;
+    tvbo:surrogate_of GO:0098976,
+        GO:0099605 .
+
+<https://w3id.org/tvbo/LarterBreakspear/parameters/Q_Zmax> oboInOwl:hasDbXref GO:0099605 ;
+    tvbo:surrogate_of GO:0099605 .
+
+<https://w3id.org/tvbo/LarterBreakspear/parameters/T_Ca> oboInOwl:hasDbXref GO:0005262,
+        GO:1903233 ;
+    tvbo:surrogate_of GO:0005262,
+        GO:1903233 .
+
+<https://w3id.org/tvbo/LarterBreakspear/parameters/T_K> oboInOwl:hasDbXref GO:0005267 ;
+    tvbo:surrogate_of GO:0005267 .
+
+<https://w3id.org/tvbo/LarterBreakspear/parameters/T_Na> oboInOwl:hasDbXref GO:0005272 ;
+    tvbo:surrogate_of GO:0005272 .
+
+<https://w3id.org/tvbo/LarterBreakspear/parameters/V_Ca> oboInOwl:hasDbXref GO:0005262 ;
+    tvbo:surrogate_of GO:0005262 .
+
+<https://w3id.org/tvbo/LarterBreakspear/parameters/V_K> oboInOwl:hasDbXref GO:0005267 ;
+    tvbo:surrogate_of GO:0005267 .
+
+<https://w3id.org/tvbo/LarterBreakspear/parameters/V_L> oboInOwl:hasDbXref GO:0022840 ;
+    tvbo:surrogate_of GO:0022840 .
+
+<https://w3id.org/tvbo/LarterBreakspear/parameters/V_Na> oboInOwl:hasDbXref GO:0005272 ;
+    tvbo:surrogate_of GO:0005272 .
+
+<https://w3id.org/tvbo/LarterBreakspear/parameters/V_T> oboInOwl:hasDbXref GO:0098815 ;
+    tvbo:surrogate_of GO:0098815 .
+
+<https://w3id.org/tvbo/LarterBreakspear/parameters/Z_T> oboInOwl:hasDbXref GO:0060080 ;
+    tvbo:surrogate_of GO:0060080 .
+
+<https://w3id.org/tvbo/LarterBreakspear/parameters/a_ee> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/LarterBreakspear/parameters/a_ei> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/LarterBreakspear/parameters/a_ie> oboInOwl:hasDbXref GO:0060080 ;
+    tvbo:surrogate_of GO:0060080 .
+
+<https://w3id.org/tvbo/LarterBreakspear/parameters/a_ne> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/LarterBreakspear/parameters/a_ni> oboInOwl:hasDbXref GO:0060080 ;
+    tvbo:surrogate_of GO:0060080 .
+
+<https://w3id.org/tvbo/LarterBreakspear/parameters/delta_Ca> oboInOwl:hasDbXref GO:0005262 ;
+    tvbo:surrogate_of GO:0005262 .
+
+<https://w3id.org/tvbo/LarterBreakspear/parameters/delta_K> oboInOwl:hasDbXref GO:0005267 ;
+    tvbo:surrogate_of GO:0005267 .
+
+<https://w3id.org/tvbo/LarterBreakspear/parameters/delta_Na> oboInOwl:hasDbXref GO:0005272 ;
+    tvbo:surrogate_of GO:0005272 .
+
+<https://w3id.org/tvbo/LarterBreakspear/parameters/delta_V> oboInOwl:hasDbXref GO:0060079,
+        tvbo:ExcitabilityThresholdVariance ;
+    tvbo:surrogate_of GO:0060079,
+        tvbo:ExcitabilityThresholdVariance .
+
+<https://w3id.org/tvbo/LarterBreakspear/parameters/delta_Z> oboInOwl:hasDbXref GO:0060080 ;
+    tvbo:surrogate_of GO:0060080 .
+
+<https://w3id.org/tvbo/LarterBreakspear/parameters/g_Ca> oboInOwl:hasDbXref GO:0005262 ;
+    tvbo:surrogate_of GO:0005262 .
+
+<https://w3id.org/tvbo/LarterBreakspear/parameters/g_K> oboInOwl:hasDbXref GO:0005267 ;
+    tvbo:surrogate_of GO:0005267 .
+
+<https://w3id.org/tvbo/LarterBreakspear/parameters/g_L> oboInOwl:hasDbXref GO:0022840 ;
+    tvbo:surrogate_of GO:0022840 .
+
+<https://w3id.org/tvbo/LarterBreakspear/parameters/g_Na> oboInOwl:hasDbXref GO:0005272 ;
+    tvbo:surrogate_of GO:0005272 .
+
+<https://w3id.org/tvbo/LarterBreakspear/parameters/r_NMDA> oboInOwl:hasDbXref GO:0004971 ;
+    tvbo:surrogate_of GO:0004971 .
+
+<https://w3id.org/tvbo/LarterBreakspear/parameters/tau_K> oboInOwl:hasDbXref GO:0005267 ;
+    tvbo:surrogate_of GO:0005267 .
+
+<https://w3id.org/tvbo/LarterBreakspear/state_variables/V> oboInOwl:hasDbXref GO:0042391 ;
+    tvbo:surrogate_of GO:0042391 .
+
+<https://w3id.org/tvbo/LarterBreakspear/state_variables/W> oboInOwl:hasDbXref GO:0005267 ;
+    tvbo:surrogate_of GO:0005267 .
+
+<https://w3id.org/tvbo/LarterBreakspear/state_variables/Z> oboInOwl:hasDbXref CL:0000099,
+        GO:0060080 ;
+    tvbo:surrogate_of CL:0000099,
+        GO:0060080 .
+
+<https://w3id.org/tvbo/MontbrioPazoRoxin/parameters/Delta> oboInOwl:hasDbXref GO:0061669 ;
+    tvbo:surrogate_of GO:0061669 .
+
+<https://w3id.org/tvbo/MontbrioPazoRoxin/parameters/J> oboInOwl:hasDbXref GO:0042391,
+        GO:0099536 ;
+    tvbo:surrogate_of GO:0042391,
+        GO:0099536 .
+
+<https://w3id.org/tvbo/MontbrioPazoRoxin/parameters/eta> oboInOwl:hasDbXref GO:0099605 ;
+    tvbo:surrogate_of GO:0099605 .
+
+<https://w3id.org/tvbo/ReducedWongWang/derived_variables/H> oboInOwl:hasDbXref GO:0099605 ;
+    tvbo:surrogate_of GO:0099605 .
+
+<https://w3id.org/tvbo/ReducedWongWang/parameters/J_N> oboInOwl:hasDbXref GO:0098815 ;
+    tvbo:surrogate_of GO:0098815 .
+
+<https://w3id.org/tvbo/ReducedWongWangExcInh/derived_variables/H_e> oboInOwl:hasDbXref GO:0060079,
+        GO:0099605 ;
+    tvbo:surrogate_of GO:0060079,
+        GO:0099605 .
+
+<https://w3id.org/tvbo/ReducedWongWangExcInh/derived_variables/H_i> oboInOwl:hasDbXref GO:0060080,
+        GO:0099605 ;
+    tvbo:surrogate_of GO:0060080,
+        GO:0099605 .
+
+<https://w3id.org/tvbo/ReducedWongWangExcInh/derived_variables/x_e> oboInOwl:hasDbXref GO:0098815 ;
+    tvbo:surrogate_of GO:0098815 .
+
+<https://w3id.org/tvbo/ReducedWongWangExcInh/derived_variables/x_i> oboInOwl:hasDbXref GO:0060080 ;
+    tvbo:surrogate_of GO:0060080 .
+
+<https://w3id.org/tvbo/ReducedWongWangExcInh/parameters/I_ext> oboInOwl:hasDbXref GO:0060079,
+        GO:0099605 ;
+    tvbo:surrogate_of GO:0060079,
+        GO:0099605 .
+
+<https://w3id.org/tvbo/ReducedWongWangExcInh/parameters/I_o> oboInOwl:hasDbXref GO:0060079,
+        GO:0060080 ;
+    tvbo:surrogate_of GO:0060079,
+        GO:0060080 .
+
+<https://w3id.org/tvbo/ReducedWongWangExcInh/parameters/J_N> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/ReducedWongWangExcInh/parameters/J_i> oboInOwl:hasDbXref GO:0060080,
+        GO:0099605 ;
+    tvbo:surrogate_of GO:0060080,
+        GO:0099605 .
+
+<https://w3id.org/tvbo/ReducedWongWangExcInh/parameters/W_e> oboInOwl:hasDbXref GO:0090394,
+        GO:2000463 ;
+    tvbo:surrogate_of GO:0090394,
+        GO:2000463 .
+
+<https://w3id.org/tvbo/ReducedWongWangExcInh/parameters/W_i> oboInOwl:hasDbXref GO:0060080 ;
+    tvbo:surrogate_of GO:0060080 .
+
+<https://w3id.org/tvbo/ReducedWongWangExcInh/parameters/gamma_e> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/ReducedWongWangExcInh/parameters/gamma_i> oboInOwl:hasDbXref GO:0060080 ;
+    tvbo:surrogate_of GO:0060080 .
+
+<https://w3id.org/tvbo/ReducedWongWangExcInh/parameters/lamda> oboInOwl:hasDbXref GO:0060080 ;
+    tvbo:surrogate_of GO:0060080 .
+
+<https://w3id.org/tvbo/ReducedWongWangExcInh/parameters/tau_i> oboInOwl:hasDbXref GO:0016917 ;
+    tvbo:surrogate_of GO:0016917 .
+
+<https://w3id.org/tvbo/ReducedWongWangExcInh/parameters/w_p> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/ReducedWongWangExcInh/state_variables/S_e> oboInOwl:hasDbXref GO:0060079,
+        GO:0099536 ;
+    tvbo:surrogate_of GO:0060079,
+        GO:0099536 .
+
+<https://w3id.org/tvbo/ReducedWongWangExcInh/state_variables/S_i> oboInOwl:hasDbXref GO:0060080,
+        GO:0099536 ;
+    tvbo:surrogate_of GO:0060080,
+        GO:0099536 .
+
+<https://w3id.org/tvbo/StefanescuJirsa2D/derived_variables/Aik> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/StefanescuJirsa2D/derived_variables/Bik> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/StefanescuJirsa2D/derived_variables/Cik> oboInOwl:hasDbXref GO:0060080 ;
+    tvbo:surrogate_of GO:0060080 .
+
+<https://w3id.org/tvbo/StefanescuJirsa2D/derived_variables/IE_i> oboInOwl:hasDbXref GO:0042391 ;
+    tvbo:surrogate_of GO:0042391 .
+
+<https://w3id.org/tvbo/StefanescuJirsa2D/derived_variables/II_i> oboInOwl:hasDbXref GO:0042391 ;
+    tvbo:surrogate_of GO:0042391 .
+
+<https://w3id.org/tvbo/StefanescuJirsa2D/parameters/K11> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/StefanescuJirsa2D/parameters/K12> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/StefanescuJirsa2D/parameters/K21> oboInOwl:hasDbXref GO:0060080 ;
+    tvbo:surrogate_of GO:0060080 .
+
+<https://w3id.org/tvbo/StefanescuJirsa2D/parameters/mu> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/StefanescuJirsa2D/parameters/sigma> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/StefanescuJirsa2D/state_variables/alpha> oboInOwl:hasDbXref GO:0060080 ;
+    tvbo:surrogate_of GO:0060080 .
+
+<https://w3id.org/tvbo/StefanescuJirsa2D/state_variables/beta> oboInOwl:hasDbXref GO:0060080 ;
+    tvbo:surrogate_of GO:0060080 .
+
+<https://w3id.org/tvbo/StefanescuJirsa2D/state_variables/eta> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/StefanescuJirsa2D/state_variables/xi> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/StefanescuJirsa3D/derived_variables/A_ik> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/StefanescuJirsa3D/derived_variables/B_ik> oboInOwl:hasDbXref GO:0060080 ;
+    tvbo:surrogate_of GO:0060080 .
+
+<https://w3id.org/tvbo/StefanescuJirsa3D/derived_variables/C_ik> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/StefanescuJirsa3D/derived_variables/IE_i> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/StefanescuJirsa3D/derived_variables/II_i> oboInOwl:hasDbXref GO:0060080 ;
+    tvbo:surrogate_of GO:0060080 .
+
+<https://w3id.org/tvbo/StefanescuJirsa3D/derived_variables/d_i> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/StefanescuJirsa3D/derived_variables/p_i> oboInOwl:hasDbXref GO:0060080 ;
+    tvbo:surrogate_of GO:0060080 .
+
+<https://w3id.org/tvbo/StefanescuJirsa3D/parameters/K_11> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/StefanescuJirsa3D/parameters/K_12> oboInOwl:hasDbXref GO:0060080 ;
+    tvbo:surrogate_of GO:0060080 .
+
+<https://w3id.org/tvbo/StefanescuJirsa3D/parameters/K_21> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/StefanescuJirsa3D/parameters/mu> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/StefanescuJirsa3D/parameters/sigma> oboInOwl:hasDbXref GO:0042391 ;
+    tvbo:surrogate_of GO:0042391 .
+
+<https://w3id.org/tvbo/StefanescuJirsa3D/parameters/x_0> oboInOwl:hasDbXref GO:0042391 ;
+    tvbo:surrogate_of GO:0042391 .
+
+<https://w3id.org/tvbo/StefanescuJirsa3D/state_variables/alpha> oboInOwl:hasDbXref GO:0060080 ;
+    tvbo:surrogate_of GO:0060080 .
+
+<https://w3id.org/tvbo/StefanescuJirsa3D/state_variables/beta> oboInOwl:hasDbXref GO:0042391 ;
+    tvbo:surrogate_of GO:0042391 .
+
+<https://w3id.org/tvbo/StefanescuJirsa3D/state_variables/eta> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/StefanescuJirsa3D/state_variables/gamma> oboInOwl:hasDbXref GO:0060080 ;
+    tvbo:surrogate_of GO:0060080 .
+
+<https://w3id.org/tvbo/StefanescuJirsa3D/state_variables/tau> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/StefanescuJirsa3D/state_variables/xi> oboInOwl:hasDbXref GO:0042391 ;
+    tvbo:surrogate_of GO:0042391 .
+
+<https://w3id.org/tvbo/WilsonCowan/derived_variables/x_e> oboInOwl:hasDbXref GO:0042391 ;
+    tvbo:surrogate_of GO:0042391 .
+
+<https://w3id.org/tvbo/WilsonCowan/derived_variables/x_i> oboInOwl:hasDbXref GO:0042391 ;
+    tvbo:surrogate_of GO:0042391 .
+
+<https://w3id.org/tvbo/WilsonCowan/parameters/P> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/WilsonCowan/parameters/Q> oboInOwl:hasDbXref GO:0060080 ;
+    tvbo:surrogate_of GO:0060080 .
+
+<https://w3id.org/tvbo/WilsonCowan/parameters/a_e> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/WilsonCowan/parameters/a_i> oboInOwl:hasDbXref GO:0060080 ;
+    tvbo:surrogate_of GO:0060080 .
+
+<https://w3id.org/tvbo/WilsonCowan/parameters/b_e> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/WilsonCowan/parameters/b_i> oboInOwl:hasDbXref GO:0060080 ;
+    tvbo:surrogate_of GO:0060080 .
+
+<https://w3id.org/tvbo/WilsonCowan/parameters/c_e> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/WilsonCowan/parameters/c_ee> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/WilsonCowan/parameters/c_ei> oboInOwl:hasDbXref GO:0060080 ;
+    tvbo:surrogate_of GO:0060080 .
+
+<https://w3id.org/tvbo/WilsonCowan/parameters/c_i> oboInOwl:hasDbXref GO:0098815 ;
+    tvbo:surrogate_of GO:0098815 .
+
+<https://w3id.org/tvbo/WilsonCowan/parameters/c_ie> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/WilsonCowan/parameters/c_ii> oboInOwl:hasDbXref GO:0060080 ;
+    tvbo:surrogate_of GO:0060080 .
+
+<https://w3id.org/tvbo/WilsonCowan/parameters/k_e> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/WilsonCowan/parameters/k_i> oboInOwl:hasDbXref GO:0060080 ;
+    tvbo:surrogate_of GO:0060080 .
+
+<https://w3id.org/tvbo/WilsonCowan/parameters/r_e> oboInOwl:hasDbXref GO:0098815 ;
+    tvbo:surrogate_of GO:0098815 .
+
+<https://w3id.org/tvbo/WilsonCowan/parameters/r_i> oboInOwl:hasDbXref GO:0098828 ;
+    tvbo:surrogate_of GO:0098828 .
+
+<https://w3id.org/tvbo/WilsonCowan/parameters/tau_e> oboInOwl:hasDbXref GO:0043179 ;
+    tvbo:surrogate_of GO:0043179 .
+
+<https://w3id.org/tvbo/WilsonCowan/parameters/tau_i> oboInOwl:hasDbXref GO:0043180 ;
+    tvbo:surrogate_of GO:0043180 .
+
+<https://w3id.org/tvbo/WilsonCowan/parameters/theta_i> oboInOwl:hasDbXref tvbo:InhibitoryThresholdVariance ;
+    tvbo:surrogate_of tvbo:InhibitoryThresholdVariance .
+
+<https://w3id.org/tvbo/WilsonCowan/state_variables/E> oboInOwl:hasDbXref GO:0098815 ;
+    tvbo:surrogate_of GO:0098815 .
+
+<https://w3id.org/tvbo/WilsonCowan/state_variables/I> oboInOwl:hasDbXref GO:0060080 ;
+    tvbo:surrogate_of GO:0060080 .
+
+<https://w3id.org/tvbo/ZerlautAdaptationFirstOrder/parameters/C_m> oboInOwl:hasDbXref GO:0042391 ;
+    tvbo:surrogate_of GO:0042391 .
+
+<https://w3id.org/tvbo/ZerlautAdaptationFirstOrder/parameters/E_L_e> oboInOwl:hasDbXref GO:0022840 ;
+    tvbo:surrogate_of GO:0022840 .
+
+<https://w3id.org/tvbo/ZerlautAdaptationFirstOrder/parameters/E_L_i> oboInOwl:hasDbXref GO:0022840 ;
+    tvbo:surrogate_of GO:0022840 .
+
+<https://w3id.org/tvbo/ZerlautAdaptationFirstOrder/parameters/E_e> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/ZerlautAdaptationFirstOrder/parameters/E_i> oboInOwl:hasDbXref GO:0060080 ;
+    tvbo:surrogate_of GO:0060080 .
+
+<https://w3id.org/tvbo/ZerlautAdaptationFirstOrder/parameters/Q_e> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/ZerlautAdaptationFirstOrder/parameters/Q_i> oboInOwl:hasDbXref GO:0060080 ;
+    tvbo:surrogate_of GO:0060080 .
+
+<https://w3id.org/tvbo/ZerlautAdaptationFirstOrder/parameters/S_i> oboInOwl:hasDbXref GO:0060080 ;
+    tvbo:surrogate_of GO:0060080 .
+
+<https://w3id.org/tvbo/ZerlautAdaptationFirstOrder/parameters/a_e> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/ZerlautAdaptationFirstOrder/parameters/a_i> oboInOwl:hasDbXref GO:0060080 ;
+    tvbo:surrogate_of GO:0060080 .
+
+<https://w3id.org/tvbo/ZerlautAdaptationFirstOrder/parameters/b_e> oboInOwl:hasDbXref GO:0060079 ;
+    tvbo:surrogate_of GO:0060079 .
+
+<https://w3id.org/tvbo/ZerlautAdaptationFirstOrder/parameters/b_i> oboInOwl:hasDbXref GO:0060080 ;
+    tvbo:surrogate_of GO:0060080 .
+
+<https://w3id.org/tvbo/ZerlautAdaptationFirstOrder/parameters/g> oboInOwl:hasDbXref GO:0060077 ;
+    tvbo:surrogate_of GO:0060077 .
+
+<https://w3id.org/tvbo/ZerlautAdaptationFirstOrder/parameters/g_L> oboInOwl:hasDbXref GO:0022840 ;
+    tvbo:surrogate_of GO:0022840 .
+
+<https://w3id.org/tvbo/ZerlautAdaptationFirstOrder/parameters/tau_e> oboInOwl:hasDbXref GO:0098815 ;
+    tvbo:surrogate_of GO:0098815 .
+
+<https://w3id.org/tvbo/ZerlautAdaptationFirstOrder/parameters/tau_i> oboInOwl:hasDbXref GO:0098828 ;
+    tvbo:surrogate_of GO:0098828 .
+
+<https://w3id.org/tvbo/ZerlautAdaptationFirstOrder/parameters/tau_w_e> oboInOwl:hasDbXref GO:0098815 ;
+    tvbo:surrogate_of GO:0098815 .
+
+<https://w3id.org/tvbo/ZerlautAdaptationFirstOrder/parameters/tau_w_i> oboInOwl:hasDbXref GO:0098828 ;
+    tvbo:surrogate_of GO:0098828 .
+
+<https://w3id.org/tvbo/ZetterbergJansen/parameters/He> oboInOwl:hasDbXref GO:0060079,
+        GO:0098815 ;
+    tvbo:surrogate_of GO:0060079,
+        GO:0098815 .
+
+<https://w3id.org/tvbo/ZetterbergJansen/parameters/Hi> oboInOwl:hasDbXref GO:0060080,
+        GO:0098828 ;
+    tvbo:surrogate_of GO:0060080,
+        GO:0098828 .
+
+<https://w3id.org/tvbo/ZetterbergJansen/parameters/P> oboInOwl:hasDbXref CL:0000598,
+        GO:0099605 ;
+    tvbo:surrogate_of CL:0000598,
+        GO:0099605 .
+
+<https://w3id.org/tvbo/ZetterbergJansen/parameters/Q> oboInOwl:hasDbXref CL:0000099,
+        GO:0099605 ;
+    tvbo:surrogate_of CL:0000099,
+        GO:0099605 .
+
+<https://w3id.org/tvbo/ZetterbergJansen/parameters/U> oboInOwl:hasDbXref GO:0099605 ;
+    tvbo:surrogate_of GO:0099605 .
+
+<https://w3id.org/tvbo/ZetterbergJansen/parameters/e0> oboInOwl:hasDbXref GO:0099605 ;
+    tvbo:surrogate_of GO:0099605 .
+
+<https://w3id.org/tvbo/ZetterbergJansen/parameters/gamma_1> oboInOwl:hasDbXref CL:0000598,
+        GO:0099536 ;
+    tvbo:surrogate_of CL:0000598,
+        GO:0099536 .
+
+<https://w3id.org/tvbo/ZetterbergJansen/parameters/gamma_1T> oboInOwl:hasDbXref GO:0099536 ;
+    tvbo:surrogate_of GO:0099536 .
+
+<https://w3id.org/tvbo/ZetterbergJansen/parameters/gamma_2> oboInOwl:hasDbXref GO:0099536 ;
+    tvbo:surrogate_of GO:0099536 .
+
+<https://w3id.org/tvbo/ZetterbergJansen/parameters/gamma_2T> oboInOwl:hasDbXref CL:0000598,
+        GO:0099536 ;
+    tvbo:surrogate_of CL:0000598,
+        GO:0099536 .
+
+<https://w3id.org/tvbo/ZetterbergJansen/parameters/gamma_3> oboInOwl:hasDbXref CL:0000099,
+        CL:0000598,
+        GO:0099536 ;
+    tvbo:surrogate_of CL:0000099,
+        CL:0000598,
+        GO:0099536 .
+
+<https://w3id.org/tvbo/ZetterbergJansen/parameters/gamma_3T> oboInOwl:hasDbXref GO:0099536 ;
+    tvbo:surrogate_of GO:0099536 .
+
+<https://w3id.org/tvbo/ZetterbergJansen/parameters/gamma_4> oboInOwl:hasDbXref CL:0000099,
+        CL:0000598 ;
+    tvbo:surrogate_of CL:0000099,
+        CL:0000598 .
+
+<https://w3id.org/tvbo/ZetterbergJansen/parameters/gamma_5> oboInOwl:hasDbXref CL:0000099 ;
+    tvbo:surrogate_of CL:0000099 .
+

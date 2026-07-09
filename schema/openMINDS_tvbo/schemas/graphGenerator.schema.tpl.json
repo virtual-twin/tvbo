@@ -1,0 +1,50 @@
+{
+  "_type": "tvbo:GraphGenerator",
+  "properties": {
+    "name": {
+      "type": "string",
+      "_instruction": "Enter the name."
+    },
+    "description": {
+      "type": "string"
+    },
+    "iri": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string"
+    },
+    "seed": {
+      "type": "integer"
+    },
+    "directed": {
+      "type": "boolean"
+    },
+    "parameters": {
+      "_embeddedTypes": [
+        "tvbo:Parameter"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "bindings": {
+      "_embeddedTypes": [
+        "tvbo:Binding"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "procedure": {
+      "_embeddedTypes": [
+        "tvbo:Procedure"
+      ]
+    },
+    "builder": {
+      "_embeddedTypes": [
+        "tvbo:Callable"
+      ]
+    }
+  }
+}

@@ -1,0 +1,99 @@
+{
+  "_type": "tvbo:Algorithm",
+  "properties": {
+    "name": {
+      "type": "string",
+      "_instruction": "Enter the name."
+    },
+    "description": {
+      "type": "string"
+    },
+    "execution": {
+      "_embeddedTypes": [
+        "tvbo:ExecutionConfig"
+      ]
+    },
+    "type": {
+      "type": "string"
+    },
+    "includes": {
+      "_embeddedTypes": [
+        "tvbo:AlgorithmInclude"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "stages": {
+      "_embeddedTypes": [
+        "tvbo:AlgorithmStage"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "objective": {
+      "_embeddedTypes": [
+        "tvbo:TuningObjective"
+      ]
+    },
+    "observations": {
+      "_linkedTypes": [
+        "tvbo:Observation"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "update_rules": {
+      "_embeddedTypes": [
+        "tvbo:UpdateRule"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "hyperparameters": {
+      "_embeddedTypes": [
+        "tvbo:Parameter"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "learning_rate": {
+      "type": "number"
+    },
+    "learning_rate_warmup": {
+      "type": "boolean"
+    },
+    "n_iterations": {
+      "type": "integer"
+    },
+    "learning_rate_schedule": {
+      "type": "string"
+    },
+    "simulation_period": {
+      "type": "number"
+    },
+    "apply_every": {
+      "type": "integer"
+    },
+    "functions": {
+      "_embeddedTypes": [
+        "tvbo:FunctionCall"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "depends_on": {
+      "_linkedTypes": [
+        "tvbo:Algorithm"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    }
+  }
+}

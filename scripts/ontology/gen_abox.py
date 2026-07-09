@@ -8,13 +8,15 @@ This replaces the legacy `tvbo/data/ontology/tvb-o.owl` A-box, which had
 ~1300 entities wrongly typed as `owl:Class`. See PR-N audit and PR-Q
 (class->individual migration superseded by automated A-box generation).
 
-Output: `ontology/tvb-o-data.ttl`.
+Output: `ontology/tvb-o-data.ttl` (structural KG) plus
+`ontology/tvb-o-biology.ttl` (the `tvbo:surrogate_of` grounding links to
+GO/ChEBI/UBERON/CL/MeSH, split out so biology can be maintained separately).
 
 Scope (initial pilot): models. Each model emits:
   - the Dynamics individual itself
   - one Parameter individual per `parameters[*]`
   - one StateVariable individual per `state_variables[*]`
-  - groundings as `oboInOwl:hasDbXref` on parameter/state-variable
+  - groundings as `tvbo:surrogate_of` object-property links on parameter/state-variable
 
 Subsequent extensions (separate PRs) will add coupling_functions,
 integrators, observation_models, networks, atlases, software, studies.
@@ -29,6 +31,8 @@ import sys
 import yaml
 from rdflib import Graph, Literal, Namespace, URIRef
 from rdflib.namespace import OWL, RDF, RDFS, SKOS, XSD
+
+from _bib import load_bib_records, sanitize_citekey
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 DB = ROOT / "tvbo" / "database"
@@ -79,18 +83,9 @@ def _study_iri(citekey: str) -> URIRef:
     return URIRef(f"{TVBO}studies/{safe_local(citekey)}")
 
 
-# Mirror of bib_to_studies._sanitize_citekey: lookup-side normalisation so
-# `references:` strings in yaml files match the sanitised filenames in
-# tvbo/database/studies/.
-import re as _re
-_CITEKEY_SAFE_RE = _re.compile(r"[^A-Za-z0-9_.-]")
-
-
-def _norm_citekey(raw: str) -> str:
-    s = raw.replace("{", "").replace("}", "")
-    s = _re.sub(r"\\['`^\"~=.]?\{?([A-Za-z])\}?", r"\1", s)
-    s = _CITEKEY_SAFE_RE.sub("_", s)
-    return s.strip("_")
+# Lookup-side normalisation so `references:` strings in yaml files match the
+# sanitised study filenames. Shared with bib_to_studies via _bib.sanitize_citekey.
+_norm_citekey = sanitize_citekey
 
 
 # Populated lazily by `build_graph` after scanning `studies/`. Used by
@@ -99,6 +94,10 @@ _STUDY_CITEKEYS: set[str] = set()
 # Case-folded -> canonical map so e.g. `Fitzhugh1961` resolves to the
 # study individual built from `FitzHugh1961.yaml`.
 _STUDY_CITEKEYS_CI: dict[str, str] = {}
+# citekey -> full bibliographic record resolved from references.bib. Back-fills
+# the slim study yaml pointers so the A-box stays rich without duplicating bib
+# metadata into the yaml. Populated by `build_graph`.
+_STUDY_BIB: dict[str, dict] = {}
 
 
 def _resolve_study(citekey: str) -> str | None:
@@ -117,6 +116,12 @@ def _add_groundings(g: Graph, iri: URIRef, data: dict) -> None:
     for cur in data.get("grounding") or []:
         u = expand_curie(str(cur))
         if u is not None:
+            # Emit each grounding under two complementary vocabularies:
+            #  - tvbo:surrogate_of  : the semantic, reasoner-visible relation
+            #    (defined in tvb-o-axioms.ttl) meaning "X is a surrogate of Y".
+            #  - oboInOwl:hasDbXref : the OBO cross-reference convention, kept for
+            #    interoperability with GO/OBO tooling.
+            g.add((iri, TVBO.surrogate_of, u))
             g.add((iri, OBOINOWL.hasDbXref, u))
 
 
@@ -272,6 +277,13 @@ def emit_generic_record(g: Graph, folder: str, cls_iri: URIRef,
     data = yaml.safe_load(path.read_text())
     if not isinstance(data, dict):
         return None
+    if folder == "studies":
+        # references.bib is the source of truth: resolve the full bibliographic
+        # record by citekey (= filename stem) and let it back-fill the slim study
+        # pointer. YAML-authored keys (e.g. doi) win on overlap.
+        bib = _STUDY_BIB.get(path.stem)
+        if bib:
+            data = {**bib, **data}
     label = _record_label(data, path.stem)
     iri = URIRef(f"{TVBO}{folder}/{safe_local(path.stem)}")
     g.add((iri, RDF.type, OWL.NamedIndividual))
@@ -371,6 +383,8 @@ def build_graph() -> Graph:
     for sp in (DB / "studies").glob("*.yaml"):
         _STUDY_CITEKEYS.add(sp.stem)
         _STUDY_CITEKEYS_CI[sp.stem.lower()] = sp.stem
+    _STUDY_BIB.clear()
+    _STUDY_BIB.update(load_bib_records())
 
     for path in sorted((DB / "models").glob("*.yaml")):
         emit_model(g, path)
@@ -381,12 +395,36 @@ def build_graph() -> Graph:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("-o", "--output", default=str(ROOT / "ontology" / "tvb-o-data.ttl"))
+    ap.add_argument(
+        "--bio-output",
+        default=str(ROOT / "ontology" / "tvb-o-biology.ttl"),
+        help=(
+            "Biological grounding links (tvbo:surrogate_of -> GO/ChEBI/UBERON/CL/MeSH) "
+            "are split out of the structural A-box into this companion file."
+        ),
+    )
     args = ap.parse_args()
 
     g = build_graph()
+
+    # Split the biological grounding (surrogate_of links) into a companion file so
+    # the structural KG (tvb-o-data.ttl) and the bio-ontology grounding
+    # (tvb-o-biology.ttl) can be maintained / reviewed / submitted separately.
+    # `make gen-merged` merges both back into tvbo.owl.
+    bio = Graph()
+    for pfx, ns in g.namespaces():
+        bio.bind(pfx, ns)
+    for pred in (TVBO.surrogate_of, OBOINOWL.hasDbXref):
+        for triple in list(g.triples((None, pred, None))):
+            g.remove(triple)
+            bio.add(triple)
+
     out = pathlib.Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
     g.serialize(destination=str(out), format="turtle")
+    bio_out = pathlib.Path(args.bio_output)
+    bio_out.parent.mkdir(parents=True, exist_ok=True)
+    bio.serialize(destination=str(bio_out), format="turtle")
     n_inds = sum(1 for _ in g.subjects(RDF.type, OWL.NamedIndividual))
     n_models = sum(1 for _ in g.subjects(RDF.type, TVBO.Dynamics))
     n_params = sum(1 for _ in g.subjects(RDF.type, TVBO.Parameter))
@@ -403,6 +441,8 @@ def main() -> int:
         n = sum(1 for _ in g.subjects(RDF.type, cls_iri))
         local = str(cls_iri).rsplit("/", 1)[-1]
         print(f"  {local + ' (' + folder + ')':<36}{n}")
+    print(f"Wrote {bio_out}")
+    print(f"  grounding links (surrogate_of):     {len(bio)}")
     return 0
 
 

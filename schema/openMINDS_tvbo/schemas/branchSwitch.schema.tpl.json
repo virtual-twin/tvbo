@@ -1,0 +1,47 @@
+{
+  "_type": "tvbo:BranchSwitch",
+  "properties": {
+    "name": {
+      "type": "string",
+      "_instruction": "Enter the name."
+    },
+    "description": {
+      "type": "string"
+    },
+    "parameters": {
+      "_embeddedTypes": [
+        "tvbo:Parameter"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "source_point": {
+      "type": "string"
+    },
+    "delta_p": {
+      "type": "number"
+    },
+    "continuation": {
+      "_embeddedTypes": [
+        "tvbo:Continuation"
+      ]
+    },
+    "discretization": {
+      "_embeddedTypes": [
+        "tvbo:Discretization"
+      ]
+    },
+    "bothside": {
+      "type": "boolean"
+    },
+    "options": {
+      "_embeddedTypes": [
+        "tvbo:Option"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    }
+  }
+}

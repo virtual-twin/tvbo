@@ -1,0 +1,27 @@
+{
+  "_type": "tvbo:AlgorithmInclude",
+  "required": [
+    "algorithm"
+  ],
+  "properties": {
+    "algorithm": {
+      "_linkedTypes": [
+        "tvbo:Algorithm"
+      ]
+    },
+    "arguments": {
+      "_embeddedTypes": [
+        "tvbo:Parameter"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "mode": {
+      "type": "string"
+    },
+    "inner_iterations": {
+      "type": "integer"
+    }
+  }
+}

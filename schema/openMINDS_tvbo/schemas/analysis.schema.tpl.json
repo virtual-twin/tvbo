@@ -1,0 +1,27 @@
+{
+  "_type": "tvbo:Analysis",
+  "properties": {
+    "parameters": {
+      "_embeddedTypes": [
+        "tvbo:Parameter"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "type": {
+      "type": "string"
+    },
+    "target": {
+      "type": "string"
+    },
+    "wrt": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

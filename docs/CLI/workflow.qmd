@@ -79,6 +79,8 @@ kits/jr_meg_jax/
 │   └── JR_MEG_FrequencyGradient_Optimization.py
 ├── spec/
 │   └── JR_MEG_FrequencyGradient_Optimization.yaml
+├── requirements.txt        # pip deps, from environment.requirements
+├── environment.yml         # conda env, from environment.requirements
 └── README.md
 ```
 
@@ -86,6 +88,64 @@ kits/jr_meg_jax/
 
 ```bash
 tvbo workflow slurm experiment:JR_MEG --backend jax --stdout > run.sbatch
+```
+
+## Choosing an engine
+
+The three emitters are not interchangeable; they match two different shapes of
+parallelism. The planner already picks the right shape from the backend, so this
+is mostly about understanding what you get.
+
+**Slurm array** fits a sweep the backend vectorizes. Every axis lives inside one
+JAX batch, so the tasks are identical and differ only by
+`$SLURM_ARRAY_TASK_ID`; task `i` runs `Space[i::N]`. There is no dependency graph
+to resolve and no per-cell file to track, so a bare `#SBATCH --array` is the
+whole mechanism. This is the `tvboptim` path for the Koller grid.
+
+**Snakemake / Nextflow** fit a sweep the backend fans out: one process per cell,
+each with its own inputs and outputs. A DAG engine earns its overhead here
+because it tracks per-cell files, re-runs only what is missing, and can chain a
+per-cell `preprocess → simulate → analyse`. This is the path when the backend
+vectorizes nothing (e.g. `tvb`), or when you want file-level resume.
+
+| Use a Slurm array when | Use Snakemake / Nextflow when |
+|------------------------|-------------------------------|
+| Backend vectorizes every swept axis (`tvboptim`, `jax`) | Backend fans axes out (`tvb`) |
+| Tasks are identical (`Space[i::N]` slices) | Each cell is a distinct process |
+| You want minimal scheduling overhead | You want file-level resume or a per-cell DAG |
+
+A vectorized sweep can still run under Snakemake if you prefer its executor, but
+it adds a driver process and per-rule bookkeeping for no gain over the array.
+The reverse does not hold: `--slurm-chunk` refuses a fanned sweep, because there
+is no in-process batch to slice.
+
+## Chunking, dependencies, and notifications
+
+**Chunk a sweep into array tasks.** `--set chunk=N` shards the sweep across `N`
+Slurm array tasks. This applies even when every axis is *backend-vectorized* (the
+common `tvboptim` case): each task runs `--slurm-chunk=$SLURM_ARRAY_TASK_ID/N`
+over its share. See [HPC patterns](hpc.qmd), *Chunking a sweep into array tasks*.
+
+**Environment files.** Declare deps on the experiment's schema-native
+`environment.requirements`; the kit emits `requirements.txt` (pip) and
+`environment.yml` (conda) from them:
+
+```yaml
+environment:
+  name: mystudy_env
+  requirements:
+    - {name: libigl, package: libigl, version_spec: ">=2.5"}
+    - {name: tvboptim, package: tvboptim}
+```
+
+**Slurm resources / email.** Every `slurm.*` key becomes an `#SBATCH` directive,
+including notifications:
+
+```bash
+tvbo workflow slurm … \
+    --set chunk=40 \
+    --set slurm.partition=medium --set slurm.mem=16G \
+    --set slurm.mail_type=END,FAIL --set slurm.mail_user=you@example.org
 ```
 
 ## `tvbo workflow backends`
@@ -116,7 +176,7 @@ jax  (JAX)
     - `subjects` if it mentions `subject` or `sample`
     - otherwise `parameters`
 4. For each axis, place it as **vectorized** (handled inside the backend) or **workflow-fanned** (a wildcard / array index) according to the backend's `vectorize_axes` set.
-5. Compute total workflow cells (`product(n_i)` for workflow axes), default chunk = 1, derive number of array tasks.
+5. Derive the array-task count: for **workflow-fanned** axes, `ceil(workflow_cells / chunk)`; for a **fully backend-vectorized** sweep, `chunk` itself is the number of array shards (each running `--slurm-chunk=$i/N`). Read `environment.requirements` into the kit's `requirements.txt` / `environment.yml`.
 
 ## See also
 

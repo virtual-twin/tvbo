@@ -1,9 +1,5 @@
 {
   "_type": "tvbo:Edge",
-  "required": [
-    "source",
-    "target"
-  ],
   "properties": {
     "label": {
       "type": "string"
@@ -25,6 +21,30 @@
     "target": {
       "type": "integer"
     },
+    "weight": {
+      "type": "number"
+    },
+    "delay": {
+      "type": "number"
+    },
+    "distance": {
+      "type": "number"
+    },
+    "unit": {
+      "type": "string"
+    },
+    "format": {
+      "type": "string"
+    },
+    "weighted": {
+      "type": "boolean"
+    },
+    "valid_diagonal": {
+      "type": "boolean"
+    },
+    "non_negative": {
+      "type": "boolean"
+    },
     "source_var": {
       "type": "string"
     },
@@ -38,6 +58,33 @@
     },
     "directed": {
       "type": "boolean"
+    },
+    "source_network": {
+      "type": "string"
+    },
+    "target_network": {
+      "type": "string"
+    },
+    "dimension_labels": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "dynamics": {
+      "_linkedTypes": [
+        "tvbo:Dynamics"
+      ]
+    },
+    "events": {
+      "_embeddedTypes": [
+        "tvbo:Event"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
     }
   }
 }

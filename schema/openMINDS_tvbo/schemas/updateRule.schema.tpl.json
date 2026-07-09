@@ -1,0 +1,42 @@
+{
+  "_type": "tvbo:UpdateRule",
+  "required": [
+    "target_parameter",
+    "equation"
+  ],
+  "properties": {
+    "name": {
+      "type": "string",
+      "_instruction": "Enter the name."
+    },
+    "description": {
+      "type": "string"
+    },
+    "target_parameter": {
+      "_embeddedTypes": [
+        "tvbo:Parameter"
+      ]
+    },
+    "equation": {
+      "_embeddedTypes": [
+        "tvbo:Equation"
+      ]
+    },
+    "bounds": {
+      "_embeddedTypes": [
+        "tvbo:Range"
+      ]
+    },
+    "warmup": {
+      "type": "boolean"
+    },
+    "requires": {
+      "_linkedTypes": [
+        "tvbo:Observation"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    }
+  }
+}

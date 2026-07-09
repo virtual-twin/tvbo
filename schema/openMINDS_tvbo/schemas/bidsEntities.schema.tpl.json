@@ -1,0 +1,29 @@
+{
+  "_type": "tvbo:BidsEntities",
+  "properties": {
+    "template": {
+      "type": "string"
+    },
+    "cohort": {
+      "type": "string"
+    },
+    "reconstruction": {
+      "type": "string"
+    },
+    "segmentation": {
+      "type": "string"
+    },
+    "scale": {
+      "type": "string"
+    },
+    "atlas": {
+      "type": "string"
+    },
+    "acquisition": {
+      "type": "string"
+    },
+    "hemi": {
+      "type": "string"
+    }
+  }
+}
