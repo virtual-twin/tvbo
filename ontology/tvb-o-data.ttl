@@ -2722,10 +2722,6 @@ to a task-appropriate range (e.g. omega in Hz).
         "Avez, A." ;
     schema1:publisher "W. A. Benjamin" .
 
-<https://w3id.org/tvbo/studies/Arnold1968a> a schema1:ScholarlyArticle,
-        owl:NamedIndividual ;
-    rdfs:label "Arnold1968a" .
-
 <https://w3id.org/tvbo/studies/Bandyopadhyay2021> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
     rdfs:label "Bandyopadhyay2021" ;
@@ -2987,10 +2983,6 @@ to a task-appropriate range (e.g. omega in Hz).
     schema1:publisher "Springer" ;
     schema1:volumeNumber "42" .
 
-<https://w3id.org/tvbo/studies/GuckenheimerHolmes1983Alias> a schema1:ScholarlyArticle,
-        owl:NamedIndividual ;
-    rdfs:label "GuckenheimerHolmes1983Alias" .
-
 <https://w3id.org/tvbo/studies/Halvorsen2000> a schema1:CreativeWork,
         owl:NamedIndividual ;
     rdfs:label "Halvorsen2000" ;
@@ -3013,11 +3005,6 @@ to a task-appropriate range (e.g. omega in Hz).
     schema1:pagination "525--535" ;
     schema1:publisher "Elsevier BV" ;
     schema1:volumeNumber "105" .
-
-<https://w3id.org/tvbo/studies/Henon1964> a schema1:ScholarlyArticle,
-        owl:NamedIndividual ;
-    rdfs:label "Henon1964" ;
-    schema1:identifier "10.1086/109234" .
 
 <https://w3id.org/tvbo/studies/Henon1976> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
@@ -3042,10 +3029,6 @@ to a task-appropriate range (e.g. omega in Hz).
     schema1:pagination "73--79" ;
     schema1:volumeNumber "69" .
 
-<https://w3id.org/tvbo/studies/Hindmarsh1984> a schema1:ScholarlyArticle,
-        owl:NamedIndividual ;
-    rdfs:label "Hindmarsh1984" .
-
 <https://w3id.org/tvbo/studies/HindmarshRose1984> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
     rdfs:label "HindmarshRose1984" ;
@@ -3056,11 +3039,6 @@ to a task-appropriate range (e.g. omega in Hz).
     schema1:isPartOf "Proceedings of the Royal Society of London. Series B, Biological Sciences" ;
     schema1:pagination "87--102" ;
     schema1:volumeNumber "221" .
-
-<https://w3id.org/tvbo/studies/Hodgkin1952> a schema1:ScholarlyArticle,
-        owl:NamedIndividual ;
-    rdfs:label "Hodgkin1952" ;
-    schema1:identifier "10.1113/jphysiol.1952.sp004764" .
 
 <https://w3id.org/tvbo/studies/HodgkinHuxley1952> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
@@ -3246,10 +3224,6 @@ to a task-appropriate range (e.g. omega in Hz).
     schema1:isPartOf "New Journal of Physics" ;
     schema1:volumeNumber "20" .
 
-<https://w3id.org/tvbo/studies/Micluta-Campeanu2018> a schema1:ScholarlyArticle,
-        owl:NamedIndividual ;
-    rdfs:label "Micluta-Campeanu2018" .
-
 <https://w3id.org/tvbo/studies/MiclutaCampeanu2018> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
     rdfs:label "MiclutaCampeanu2018" ;
@@ -3261,11 +3235,6 @@ to a task-appropriate range (e.g. omega in Hz).
     schema1:isPartOf "Romanian Journal of Physics" ;
     schema1:pagination "105" ;
     schema1:volumeNumber "70" .
-
-<https://w3id.org/tvbo/studies/Mirshra2018> a schema1:ScholarlyArticle,
-        owl:NamedIndividual ;
-    rdfs:label "Mirshra2018" ;
-    schema1:identifier "10.1103/PhysRevE.97.062311" .
 
 <https://w3id.org/tvbo/studies/Mishra2018> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
@@ -3284,11 +3253,6 @@ to a task-appropriate range (e.g. omega in Hz).
     schema1:pagination "062311" ;
     schema1:volumeNumber "97" .
 
-<https://w3id.org/tvbo/studies/Mishra2018a> a schema1:ScholarlyArticle,
-        owl:NamedIndividual ;
-    rdfs:label "Mishra2018a" ;
-    schema1:identifier "10.1103/PhysRevE.97.062311" .
-
 <https://w3id.org/tvbo/studies/MorrisLecar1981> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
     rdfs:label "MorrisLecar1981" ;
@@ -3306,10 +3270,6 @@ to a task-appropriate range (e.g. omega in Hz).
     dcterms:title "Chaos in Dynamical Systems" ;
     schema1:author "Ott, Edward" ;
     schema1:publisher "Cambridge University Press" .
-
-<https://w3id.org/tvbo/studies/Ott2010> a schema1:ScholarlyArticle,
-        owl:NamedIndividual ;
-    rdfs:label "Ott2010" .
 
 <https://w3id.org/tvbo/studies/OttRiddled2014> a schema1:CreativeWork,
         owl:NamedIndividual ;
@@ -3381,19 +3341,6 @@ to a task-appropriate range (e.g. omega in Hz).
     schema1:issueNumber "2--3" ;
     schema1:pagination "155--157" ;
     schema1:volumeNumber "71" .
-
-<https://w3id.org/tvbo/studies/Roessler1979Alias> a schema1:ScholarlyArticle,
-        owl:NamedIndividual ;
-    rdfs:label "Roessler1979Alias" .
-
-<https://w3id.org/tvbo/studies/Rossler1976> a schema1:ScholarlyArticle,
-        owl:NamedIndividual ;
-    rdfs:label "Rossler1976" ;
-    schema1:identifier "10.1016/0375-9601(76)90101-8" .
-
-<https://w3id.org/tvbo/studies/Rossler1979> a schema1:ScholarlyArticle,
-        owl:NamedIndividual ;
-    rdfs:label "Rossler1979" .
 
 <https://w3id.org/tvbo/studies/Ruelle1980> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;
@@ -3581,10 +3528,6 @@ to a task-appropriate range (e.g. omega in Hz).
     dcterms:issued "1960" ;
     dcterms:title "Ulam coupled map on a ring" ;
     schema1:author "Ulam, Stanislaw" .
-
-<https://w3id.org/tvbo/studies/Volo2019a> a schema1:ScholarlyArticle,
-        owl:NamedIndividual ;
-    rdfs:label "Volo2019a" .
 
 <https://w3id.org/tvbo/studies/Wang2008> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;

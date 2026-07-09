@@ -31,6 +31,11 @@
         "tvbo:Sample"
       ]
     },
+    "workflow": {
+      "_embeddedTypes": [
+        "tvbo:WorkflowConfig"
+      ]
+    },
     "simulation_experiments": {
       "_embeddedTypes": [
         "tvbo:SimulationExperiment"

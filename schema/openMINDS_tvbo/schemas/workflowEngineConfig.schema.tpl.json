@@ -1,0 +1,54 @@
+{
+  "_type": "tvbo:WorkflowEngineConfig",
+  "properties": {
+    "cpus_per_task": {
+      "type": "integer"
+    },
+    "mem": {
+      "type": "string"
+    },
+    "time": {
+      "type": "string"
+    },
+    "gres": {
+      "type": "string"
+    },
+    "partition": {
+      "type": "string"
+    },
+    "account": {
+      "type": "string"
+    },
+    "cores": {
+      "type": "integer"
+    },
+    "modules": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "venv": {
+      "type": "string"
+    },
+    "mail_type": {
+      "type": "string"
+    },
+    "mail_user": {
+      "type": "string"
+    },
+    "array_chunk": {
+      "type": "integer"
+    },
+    "env": {
+      "_embeddedTypes": [
+        "tvbo:EnvironmentVariable"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    }
+  }
+}

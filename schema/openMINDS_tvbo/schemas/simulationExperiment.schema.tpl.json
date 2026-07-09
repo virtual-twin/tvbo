@@ -147,6 +147,11 @@
     },
     "dataset": {
       "type": "string"
+    },
+    "workflow": {
+      "_embeddedTypes": [
+        "tvbo:WorkflowConfig"
+      ]
     }
   }
 }
