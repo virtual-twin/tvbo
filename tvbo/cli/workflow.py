@@ -471,11 +471,19 @@ def run_workflow(
         None, "--array",
         help="Slurm array index or range to submit (e.g. '0' for smoke, '0-3' for four tasks). Ignored for non-Slurm engines.",
     ),
+    array_throttle: int = typer.Option(
+        None,
+        "--array-throttle",
+        min=1,
+        help="Limit concurrent Slurm array tasks when using --array, e.g. 1 for one GPU at a time.",
+    ),
 ) -> None:
     """Emit a self-contained kit then execute it (or submit for Slurm).
 
     Use ``--array 0`` to submit only the first array task as a quick smoke test
-    without changing the experiment spec.
+    without changing the experiment spec. Use ``--array-throttle`` to cap how
+    many Slurm array tasks run at once, for example ``--array 0-39 --array-throttle 1``
+    to keep one GPU busy at a time.
     """
     engine = engine.lower()
     if engine not in {"slurm", "snakemake", "nextflow"}:
@@ -511,6 +519,8 @@ def run_workflow(
                     output=output, override=effective_overrides, stdout=False)
     if out_dir is None:
         _common.die("failed to emit workflow kit")
+    if array is not None and array_throttle is not None:
+        array = f"{array}%{array_throttle}"
     _execute_emitted(engine, out_dir, slurm_array=array)
 
 

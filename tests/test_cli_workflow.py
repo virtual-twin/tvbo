@@ -246,6 +246,39 @@ def test_workflow_run_slurm_array_smoke(tmp_path: Path, monkeypatch):
     assert "#SBATCH --array=0-1023" in sbatch_text
 
 
+def test_workflow_run_slurm_array_throttle(tmp_path: Path, monkeypatch):
+    sbatch_calls = []
+
+    def _fake_sbatch(cmd, check, cwd=None):
+        if cmd[0] == "sbatch":
+            sbatch_calls.append({"cmd": cmd, "cwd": cwd})
+        return subprocess.CompletedProcess(cmd, 0)
+
+    monkeypatch.setattr("tvbo.cli.run.subprocess.run", _fake_sbatch)
+
+    out = tmp_path / "kit"
+    r = runner.invoke(
+        app,
+        [
+            "workflow",
+            "run",
+            "slurm",
+            EXP,
+            "--backend",
+            "jax",
+            "-o",
+            str(out),
+            "--array",
+            "0-39",
+            "--array-throttle",
+            "1",
+        ],
+    )
+    assert r.exit_code == 0, r.stdout
+    assert sbatch_calls, "sbatch was never called"
+    assert sbatch_calls[0]["cmd"][1] == "--array=0-39%1"
+
+
 # ---------------------------------------------------------------------------
 # CLI: validate stubs (C5)
 # ---------------------------------------------------------------------------
