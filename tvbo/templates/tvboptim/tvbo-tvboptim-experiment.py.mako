@@ -3,6 +3,7 @@
 <%namespace name="fn" file="/base/function-def.mako"/>
 <%namespace name="const" file="/base/constants.mako"/>
 <%namespace name="search" file="tvbo-tvboptim-search.py.mako"/>
+<%namespace name="sweep" file="tvbo-tvboptim-sweep.py.mako"/>\
 <%
 from tvbo.codegen import render_expression
 from tvbo.templates.tvboptim.utils import (
@@ -133,8 +134,13 @@ dt = float(integration.step_size)
 
 # Differentiation strategy -> native-solver kwargs, resolved in the tvboptim Python
 # layer (shared with the solver template) rather than duplicated across mako blocks.
-from tvbo.templates.tvboptim.utils import resolve_solver_kwargs, resolve_optimizer_mode, render_analysis_observations, render_recorded_observable, render_inference, render_adiabatic_signal, render_adiabatic_scan_body
+from tvbo.templates.tvboptim.utils import resolve_solver_kwargs, resolve_optimizer_mode, render_analysis_observations, render_recorded_observable, render_inference, render_adiabatic_signal
 solver_kwargs_str = resolve_solver_kwargs(integration, dt)
+# Warm-start/adiabatic scans run a plain forward solver but must honour the
+# coupling_evaluation choice (recompute_coupling_per_stage); gradient kwargs
+# (grad_horizon/block_size) don't apply to a forward scan, so pass only this.
+_ce = getattr(integration, 'coupling_evaluation', None) if integration else None
+warmstart_solver_kwargs = 'recompute_coupling_per_stage=True' if str(_ce) == 'per_stage' else ''
 opt_mode = resolve_optimizer_mode(integration)
 
 # Noise configuration from state_variables or integration.
@@ -728,6 +734,11 @@ for expl in exploration_list:
     # Search strategy: 'grid' (default, exhaustive) or 'nsga2' (pymoo multi-objective).
     exp_info['strategy'] = str(getattr(expl, 'strategy', None) or 'grid')
     exp_info['objectives'] = [str(o) for o in (getattr(expl, 'objectives', None) or [])]
+    # Warm-start controls (orthogonal to the search strategy): from_previous seeds each point
+    # from the preceding point's settled state — a quasi-static branch-following sweep rendered
+    # onto the tvboptim adiabatic_scan primitive; sweep_direction sets the traversal order.
+    exp_info['sweep_seeding'] = str(getattr(expl, 'sweep_seeding', None) or 'independent')
+    exp_info['sweep_direction'] = str(getattr(expl, 'sweep_direction', None) or 'up')
     if exp_info['strategy'] == 'nsga2':
         assert exp_info['objectives'], f"nsga2 exploration '{exp_info['name']}' requires objectives"
         # Resolve each decision axis to a tvboptim state path (+ optional log10 decode).
@@ -779,6 +790,39 @@ for expl in exploration_list:
             'skip': float(_ap.get('transient_time', 1000.0)),
             'bothways': bool(int(float(_ap.get('bothways', 1)))),
         }
+        # adiabatic_scan is a preset over the orthogonal warm-start controls: a from_previous
+        # sweep whose traversal is bidirectional when bothways is set and whose observable is the
+        # signal envelope. Normalise onto sweep_seeding/sweep_direction so the shared warm-start
+        # partial (sweep.warmstart_sweep_body) drives it — one renderer, one runtime primitive.
+        exp_info['sweep_seeding'] = 'from_previous'
+        exp_info['sweep_direction'] = 'bidirectional' if exp_info['adiabatic']['bothways'] else 'up'
+    # General record-based warm-start (sweep_seeding=from_previous, no envelope preset): each
+    # recorded observation must be a single-source, single-step trajectory reduction — it
+    # becomes an adiabatic_scan statistic over the settled rollout of its source state variable.
+    # The reduction callables are backend-agnostic, so they run under adiabatic_scan's jit; the
+    # per-point rollout / transient come from the experiment integration.
+    if exp_info['sweep_seeding'] == 'from_previous' and 'adiabatic' not in exp_info:
+        assert len(exp_info['axes']) == 1, \
+            f"warm-start '{exp_info['name']}' requires exactly one swept axis"
+        assert exp_info['record'], \
+            f"warm-start '{exp_info['name']}' (sweep_seeding=from_previous) requires record: [...]"
+        _ws_records = []
+        for _rn in exp_info['record']:
+            _obs = _all_observations.get(_rn)
+            assert _obs is not None, \
+                f"warm-start '{exp_info['name']}' records unknown observation '{_rn}'"
+            _src = [str(s) for s in (getattr(_obs, 'source', None) or [])]
+            _pipe = list(getattr(_obs, 'pipeline', None) or [])
+            _cal = getattr(_pipe[0], 'callable', None) if _pipe else None
+            assert len(_src) == 1 and len(_pipe) == 1 and _cal is not None and getattr(_cal, 'module', None), \
+                (f"warm-start record '{_rn}' must be a single-source, single-callable trajectory "
+                 "reduction with a module (analysis / multi-source observations are not supported "
+                 "on the warm-start scan)")
+            _ws_records.append({'name': _rn, 'call': "%s.%s" % (_cal.module, _cal.name),
+                                'var_idx': var_names.index(_src[0])})
+        exp_info['warmstart_records'] = _ws_records
+        exp_info['warmstart_segment'] = float(getattr(experiment.integration, 'duration', 1000.0))
+        exp_info['warmstart_skip'] = float(getattr(experiment.integration, 'transient_time', 0.0) or 0.0)
     explorations.append(exp_info)
 
 # Optimizations that depend on an Exploration front → per-seed parallel refinement.
@@ -838,7 +882,7 @@ for _opt in optim_list:
 # a refine optimization (depends_on an Exploration front) replaces the standard
 # single-state stage loop with a per-seed parallel sweep over the Pareto front.
 has_nsga2 = any(e.get('strategy') == 'nsga2' for e in explorations)
-has_adiabatic = any(e.get('strategy') == 'adiabatic_scan' for e in explorations)
+has_warmstart = any(e.get('sweep_seeding') == 'from_previous' for e in explorations)
 has_refine = len(refine_infos) > 0
 refine_info = list(refine_infos.values())[0] if refine_infos else None
 
@@ -930,11 +974,11 @@ from pymoo.algorithms.moo.nsga2 import NSGA2 as _NSGA2
 from pymoo.optimize import minimize as _pymoo_minimize
 from pymoo.indicators.hv import HV as _HV
 % endif
-% if has_adiabatic:
-# Adiabatic bifurcation scan (Exploration.strategy == 'adiabatic_scan').
+% if has_warmstart:
+# Warm-started (from_previous) parameter sweep — shared runtime primitive.
 from tvboptim.experimental.network_dynamics.analysis import adiabatic_scan as _adiabatic_scan
 % endif
-% for mod in derived_obs_modules:
+% for mod in sorted(derived_obs_modules):
 import ${mod}
 % endfor
 
@@ -1199,7 +1243,7 @@ def _sample_initial_conditions(state, key=None):
 # values are materialized at run_experiment() time from the network (or a
 # `network_observations` override).
 _NETWORK_OBS_MEASURES = {${', '.join("'%s': '%s'" % (k, v) for k, v in network_obs_measures.items())}}
-% for _on in network_observation_names:
+% for _on in sorted(network_observation_names):
 ${_on} = None  # network observation <- ${network_obs_measures[_on]}
 % endfor
 
@@ -1208,7 +1252,7 @@ def _bind_network_observations(network_observations=None):
     dict (keyed by observation name). Mirrors how `weights`/`distances` flow
     into the experiment; raises a clear error if a declared one is missing."""
     network_observations = network_observations or {}
-% for _on in network_observation_names:
+% for _on in sorted(network_observation_names):
     global ${_on}
     if '${_on}' in network_observations and network_observations['${_on}'] is not None:
         ${_on} = jnp.asarray(network_observations['${_on}'])
@@ -1304,7 +1348,7 @@ def run_simulation(
 
         # Compute derived observations
         _all_obs = compute_all_observations(result, state, result_transient)
-% for obs_name in derived_observation_names:
+% for obs_name in sorted(derived_observation_names):
         observations.${obs_name} = _all_obs.${obs_name}
 % endfor
 
@@ -1470,14 +1514,14 @@ else:
 from tvbo.templates.tvboptim.utils import toposort_observations
 
 sorted_observation_names = list(observation_names)
-sorted_derived_obs_names = toposort_observations(list(derived_observation_names), derived_observations_dict, _all_observations)
+sorted_derived_obs_names = toposort_observations(sorted(derived_observation_names), derived_observations_dict, _all_observations)
 %>
 
 def compute_all_observations(result, state, result_transient=None):
     obs = Bunch()
 
     # Network observations (static data from BIDS)
-% for obs_name in network_observation_names:
+% for obs_name in sorted(network_observation_names):
     obs.${obs_name} = ${obs_name}  # Module-level constant
 % endfor
 
@@ -1872,8 +1916,8 @@ def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_wo
         _expl_state = state
 % if expl['strategy'] == 'nsga2':
 ${search.nsga2_body(expl)}\
-% elif expl['strategy'] == 'adiabatic_scan':
-${render_adiabatic_scan_body(expl, solver_class, dt)}
+% elif expl['sweep_seeding'] == 'from_previous':
+${sweep.warmstart_sweep_body(expl, solver_class, dt, warmstart_solver_kwargs)}\
 % else:
 % if has_axes:
     grid_state = copy.deepcopy(_expl_state)
@@ -2412,7 +2456,7 @@ def run_experiment(
 % endfor
 
         _all_obs = compute_all_observations(result, state, transient)
-% for obs_name in derived_observation_names:
+% for obs_name in sorted(derived_observation_names):
         observations.${obs_name} = _all_obs.${obs_name}
 % endfor
 
