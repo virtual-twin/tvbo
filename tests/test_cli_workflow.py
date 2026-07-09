@@ -199,6 +199,30 @@ def test_workflow_run_rejects_unknown_engine():
     assert "expects engine one of" in combined
 
 
+def test_workflow_run_slurm_array_smoke(tmp_path: Path, monkeypatch):
+    """--array 0 passed to workflow run must appear in the sbatch call."""
+    sbatch_calls = []
+
+    def _fake_sbatch(cmd, check, cwd=None):
+        if cmd[0] == "sbatch":
+            sbatch_calls.append({"cmd": cmd, "cwd": cwd})
+        return subprocess.CompletedProcess(cmd, 0)
+
+    monkeypatch.setattr("tvbo.cli.run.subprocess.run", _fake_sbatch)
+
+    out = tmp_path / "kit"
+    r = runner.invoke(
+        app,
+        ["workflow", "run", "slurm", EXP, "--backend", "jax", "-o", str(out), "--array", "0"],
+    )
+    assert r.exit_code == 0, r.stdout
+    assert (out / "run.sbatch").is_file(), "kit was not emitted"
+    assert sbatch_calls, "sbatch was never called"
+    sbatch_cmd = sbatch_calls[0]["cmd"]
+    assert "--array=0" in sbatch_cmd
+    assert sbatch_cmd[-1] == "run.sbatch"
+
+
 # ---------------------------------------------------------------------------
 # CLI: validate stubs (C5)
 # ---------------------------------------------------------------------------

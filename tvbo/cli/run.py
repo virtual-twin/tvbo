@@ -230,14 +230,21 @@ def _default_engine_kit_dir(*, spec: str, experiment: str | None, engine: str, b
     return Path("out") / plan.study_key / plan.experiment_key / engine
 
 
-def _execute_engine_artefact(engine: str, artefact: Path) -> None:
+def _execute_engine_artefact(engine: str, artefact: Path, *, slurm_array: str | None = None) -> None:
     """Execute a rendered workflow artefact for *engine*.
 
     Uses the artefact directory as CWD so generated scripts can use relative
     paths (e.g. ``spec/`` and ``scripts/`` in emitted kits).
+
+    *slurm_array* restricts the Slurm array submission to a specific index or
+    range (e.g. ``'0'`` for a single smoke task, ``'0-3'`` for four tasks).
+    Ignored for non-Slurm engines.
     """
     if engine == "slurm":
-        cmd = ["sbatch", artefact.name]
+        cmd = ["sbatch"]
+        if slurm_array is not None:
+            cmd.append(f"--array={slurm_array}")
+        cmd.append(artefact.name)
     elif engine == "snakemake":
         cmd = ["snakemake", "--cores", "all"]
     elif engine == "nextflow":

@@ -411,10 +411,10 @@ def _emit(engine: str, *, spec: str, backend: str, experiment: str | None,
     return out_dir
 
 
-def _execute_emitted(engine: str, out_dir: Path) -> None:
+def _execute_emitted(engine: str, out_dir: Path, *, slurm_array: str | None = None) -> None:
     """Execute a generated workflow artefact inside *out_dir*."""
     artefact = out_dir / _ARTEFACT_NAME[engine]
-    _execute_engine_artefact(engine, artefact)
+    _execute_engine_artefact(engine, artefact, slurm_array=slurm_array)
 
 
 @app.command("slurm", help="Emit a self-contained sbatch kit (artefact + scripts + spec).")
@@ -467,8 +467,16 @@ def run_workflow(
     experiment: str = typer.Option(None, "--experiment"),
     output: Path = typer.Option(None, "-o", "--output", help="Output directory."),
     override: list[str] = typer.Option([], "--set"),
+    array: str = typer.Option(
+        None, "--array",
+        help="Slurm array index or range to submit (e.g. '0' for smoke, '0-3' for four tasks). Ignored for non-Slurm engines.",
+    ),
 ) -> None:
-    """Emit a self-contained kit then execute it (or submit for Slurm)."""
+    """Emit a self-contained kit then execute it (or submit for Slurm).
+
+    Use ``--array 0`` to submit only the first array task as a quick smoke test
+    without changing the experiment spec.
+    """
     engine = engine.lower()
     if engine not in {"slurm", "snakemake", "nextflow"}:
         _common.die("`tvbo workflow run` expects engine one of: slurm, snakemake, nextflow")
@@ -476,7 +484,7 @@ def run_workflow(
                     output=output, override=override, stdout=False)
     if out_dir is None:
         _common.die("failed to emit workflow kit")
-    _execute_emitted(engine, out_dir)
+    _execute_emitted(engine, out_dir, slurm_array=array)
 
 
 @app.command("backends", help="List backends and their ontology-derived capabilities.")
