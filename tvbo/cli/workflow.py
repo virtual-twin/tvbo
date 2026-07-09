@@ -480,8 +480,35 @@ def run_workflow(
     engine = engine.lower()
     if engine not in {"slurm", "snakemake", "nextflow"}:
         _common.die("`tvbo workflow run` expects engine one of: slurm, snakemake, nextflow")
+    effective_overrides = list(override)
+    if engine == "slurm" and array is not None:
+        override_keys = {
+            s.lstrip("-").split("=", 1)[0]
+            for s in effective_overrides
+            if "=" in s
+        }
+        chunk_keys = {"distribute.chunk", "chunk", "slurm.array_chunk"}
+        if not (override_keys & chunk_keys):
+            plan_preview, _exp = _build_plan(
+                spec,
+                engine=engine,
+                backend=backend,
+                experiment=experiment,
+                overrides=effective_overrides,
+            )
+            # Smoke submissions should not run the full vectorized sweep as task 0/1.
+            if (not plan_preview.workflow_axes
+                    and plan_preview.n_array_tasks == 1
+                    and plan_preview.n_vectorize_cells > 1):
+                effective_overrides.append(
+                    f"slurm.array_chunk={plan_preview.n_vectorize_cells}"
+                )
+                _common.info(
+                    "auto smoke chunking: set slurm.array_chunk="
+                    f"{plan_preview.n_vectorize_cells} for --array run"
+                )
     out_dir = _emit(engine, spec=spec, backend=backend, experiment=experiment,
-                    output=output, override=override, stdout=False)
+                    output=output, override=effective_overrides, stdout=False)
     if out_dir is None:
         _common.die("failed to emit workflow kit")
     _execute_emitted(engine, out_dir, slurm_array=array)

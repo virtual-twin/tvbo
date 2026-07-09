@@ -202,6 +202,7 @@ def test_workflow_run_rejects_unknown_engine():
 def test_workflow_run_slurm_array_smoke(tmp_path: Path, monkeypatch):
     """--array 0 passed to workflow run must appear in the sbatch call."""
     sbatch_calls = []
+    emitted = {}
 
     def _fake_sbatch(cmd, check, cwd=None):
         if cmd[0] == "sbatch":
@@ -211,6 +212,24 @@ def test_workflow_run_slurm_array_smoke(tmp_path: Path, monkeypatch):
     monkeypatch.setattr("tvbo.cli.run.subprocess.run", _fake_sbatch)
 
     out = tmp_path / "kit"
+    from tvbo.cli import workflow as workflow_cli
+
+    original_emit = workflow_cli._emit
+
+    def _capture_emit(engine, *, spec, backend, experiment, output, override, stdout):
+        emitted["overrides"] = list(override)
+        return original_emit(
+            engine,
+            spec=spec,
+            backend=backend,
+            experiment=experiment,
+            output=output,
+            override=override,
+            stdout=stdout,
+        )
+
+    monkeypatch.setattr("tvbo.cli.workflow._emit", _capture_emit)
+
     r = runner.invoke(
         app,
         ["workflow", "run", "slurm", EXP, "--backend", "jax", "-o", str(out), "--array", "0"],
@@ -221,6 +240,10 @@ def test_workflow_run_slurm_array_smoke(tmp_path: Path, monkeypatch):
     sbatch_cmd = sbatch_calls[0]["cmd"]
     assert "--array=0" in sbatch_cmd
     assert sbatch_cmd[-1] == "run.sbatch"
+    assert "slurm.array_chunk=1024" in emitted["overrides"]
+
+    sbatch_text = (out / "run.sbatch").read_text()
+    assert "#SBATCH --array=0-1023" in sbatch_text
 
 
 # ---------------------------------------------------------------------------
