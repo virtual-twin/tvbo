@@ -802,16 +802,23 @@ def resolve_solver_kwargs(integration: Any, dt: float, is_diffrax: bool = False)
     Shared by the experiment and solver templates so the mapping lives in one
     place rather than being duplicated in both mako blocks.
     """
-    diff = getattr(integration, "differentiation", None) if integration else None
-    if diff is None or is_diffrax:
+    if integration is None or is_diffrax:
         return ""
     kwargs = []
-    tw = getattr(diff, "truncation_window", None)
-    if tw is not None:
-        kwargs.append(f"grad_horizon={int(round(float(tw) / dt))}")
-    ci = getattr(diff, "checkpoint_interval", None)
-    if ci is not None:
-        kwargs.append(f"block_size={int(round(float(ci) / dt))}")
+    # Coupling evaluation across integrator stages (backend-neutral -> native flag):
+    # per_stage recomputes the coupling every solver stage (accurate); per_step (the
+    # native default) holds it constant across stages. Only emit the non-default.
+    ce = getattr(integration, "coupling_evaluation", None)
+    if ce is not None and str(ce) == "per_stage":
+        kwargs.append("recompute_coupling_per_stage=True")
+    diff = getattr(integration, "differentiation", None)
+    if diff is not None:
+        tw = getattr(diff, "truncation_window", None)
+        if tw is not None:
+            kwargs.append(f"grad_horizon={int(round(float(tw) / dt))}")
+        ci = getattr(diff, "checkpoint_interval", None)
+        if ci is not None:
+            kwargs.append(f"block_size={int(round(float(ci) / dt))}")
     return ", ".join(kwargs)
 
 
@@ -996,52 +1003,6 @@ def render_adiabatic_signal(signal_expr: str, var_names: List[str]) -> str:
     return pattern.sub(lambda m: f"_r.ys[:, {index[m.group(0)]}, :]", str(signal_expr))
 
 
-def render_adiabatic_scan_body(expl: Dict[str, Any], solver_class: str, dt: float) -> str:
-    """Render the body of an ``adiabatic_scan`` exploration (``strategy == 'adiabatic_scan'``).
-
-    Delegates to tvboptim's ``adiabatic_scan``: ramp the single swept parameter up then back
-    down, carrying the settled state between values, and record the oscillation envelope of an
-    observed signal (per-node temporal min/max averaged across the network, plus the mean) at
-    each value. The up/down branches expose hysteresis. Emitted as a Python string — like the
-    analysis diagnostics — so the per-strategy layout lives in one place; the result is an
-    ``ExplorationResult`` with one swept axis, ``env_lo``/``env_hi``/``env_mean`` observations
-    (the signal-agnostic envelope), and ``n_up`` (the up-branch length) so a consumer can split
-    the up/down branches. The swept-axis point count honours the same
-    ``kwargs.get('n_<axis>', ...)`` runtime override as a grid sweep. Returns 4-space-indented
-    lines (an exploration-function body).
-    """
-    a = expl["adiabatic"]
-    axis = a["axis"]
-    name = axis["name"]
-    _label = axis.get("label", name)  # dotted axis name for the ExplorationResult (== space key)
-    path = f"coupling.{axis['coupling_key']}.{name}" if axis.get("is_coupling") else f"dynamics.{name}"
-    lines = [
-        "# -- Adiabatic bifurcation scan (delegates to tvboptim adiabatic_scan) --",
-        "# Ramp the swept parameter up then back down, carrying the settled state; record the",
-        "# oscillation envelope (per-node temporal min/max averaged across nodes, plus the mean)",
-        "# of the observed signal at each value. The up/down branches expose any hysteresis.",
-        "def _adia_observe(_r):",
-        f"    return {a['signal_code']}",
-        '_adia_stats = {"mean": lambda _a: _a.mean(), "lo": lambda _a: _a.min(axis=0).mean(), '
-        '"hi": lambda _a: _a.max(axis=0).mean()}',
-        "_adia_res = _adiabatic_scan(",
-        f"    _network, {solver_class}(),",
-        f"    accessor=lambda _c: _c.{path},",
-        f"    low={axis['lo']}, high={axis['hi']}, n=kwargs.get('n_{name}', {axis['n']}),",
-        f"    t={a['segment_time']}, skip={a['skip']}, dt={dt}, bothways={a['bothways']},",
-        "    observe=_adia_observe, statistics=_adia_stats,",
-        ")",
-        "_adia_p = jnp.asarray(_adia_res.p)",
-        "return ExplorationResult(",
-        f"    name='{expl['name']}',",
-        f"    axes=[Bunch(name='{_label}', explored_values=_adia_p, n=int(_adia_p.shape[0]), "
-        f"is_coupling={bool(axis.get('is_coupling'))}, coupling_key={axis.get('coupling_key')!r})],",
-        "    observations={'env_lo': jnp.asarray(_adia_res.stats['lo']), "
-        "'env_hi': jnp.asarray(_adia_res.stats['hi']), 'env_mean': jnp.asarray(_adia_res.stats['mean'])},",
-        f"    observable='adiabatic', dt={dt}, n_up=int(_adia_res.n_up), strategy='adiabatic_scan',",
-        ")",
-    ]
-    return "\n".join(f"    {ln}" for ln in lines)
 
 
 def render_recorded_observable(
