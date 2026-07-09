@@ -81,6 +81,12 @@
     },
     "parallel_batch_size": {
       "type": "integer"
+    },
+    "sweep_seeding": {
+      "type": "string"
+    },
+    "sweep_direction": {
+      "type": "string"
     }
   }
 }

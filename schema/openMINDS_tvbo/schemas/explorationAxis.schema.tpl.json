@@ -37,6 +37,11 @@
       "minItems": 1,
       "uniqueItems": true
     },
+    "builder": {
+      "_embeddedTypes": [
+        "tvbo:FunctionCall"
+      ]
+    },
     "unit": {
       "type": "string"
     }

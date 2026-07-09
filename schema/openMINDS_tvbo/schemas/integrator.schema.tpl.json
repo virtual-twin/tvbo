@@ -72,6 +72,9 @@
       "_embeddedTypes": [
         "tvbo:Differentiation"
       ]
+    },
+    "coupling_evaluation": {
+      "type": "string"
     }
   }
 }
