@@ -913,12 +913,19 @@ class ${class_name}(AbstractMonitor):
 <%
     full_call = step_callable['full_call']
     args = step.get('arguments', {})
+    # This observation's source state variable(s): an argument value naming one of
+    # them refers to the source time series (bound above as `_data`), not a string.
+    _src_vars = [str(s) for s in (obs_source if isinstance(obs_source, (list, tuple)) else [obs_source])] if obs_source else []
 
     # Build call arguments
     call_parts = []
     for arg_name, arg_val in args.items():
         if isinstance(arg_val, str):
-            if arg_val in step_names or arg_val == 'data':
+            if arg_val in _src_vars:
+                # Reference to this observation's SOURCE state variable → its data slice
+                # (result.data[:, self.voi, :], bound above as `_data`).
+                call_parts.append(f"{arg_name}=_data")
+            elif arg_val in step_names or arg_val == 'data':
                 # Reference to previous step output
                 if arg_val == 'data':
                     call_parts.append(f"{arg_name}={input_var}")
