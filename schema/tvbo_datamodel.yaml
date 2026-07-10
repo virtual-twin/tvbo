@@ -1171,6 +1171,12 @@ classes:
             hemi:
                 range: string
                 description: "BIDS hemi- entity (L or R) for hemisphere-specific surface/volume data"
+            desc:
+                range: string
+                description: "BIDS desc- entity (e.g., FCavg, SC), for disambiguating derived data variants"
+            suffix:
+                range: string
+                description: "BIDS suffix (e.g., relmat), the trailing name component before the extension"
 
     Network:
         class_uri: tvbo:Network
