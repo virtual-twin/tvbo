@@ -102,12 +102,15 @@ def test_workflow_snakemake_emits_kit(tmp_path: Path):
     assert r.exit_code == 0, r.stdout
     assert (out / "Snakefile").is_file()
     assert (out / "README.md").is_file()
-    assert (out / "spec" / "experiment.yaml").is_file()
-    assert (out / "scripts" / "experiment.py").is_file()
+    # Each experiment is frozen into its own self-contained spec/<key>/ directory,
+    # so one Snakefile fans a whole study (per experiment, per subject / sweep cell).
+    frozen = list(out.glob("spec/*/experiment.yaml"))
+    assert frozen, "expected a frozen spec/<key>/experiment.yaml"
     smk = (out / "Snakefile").read_text()
     assert "rule" in smk
-    # When a frozen script exists, the rule should call it (not `tvbo run`)
-    assert "python scripts/experiment.py" in smk
+    # A rule runs the frozen spec through `tvbo run` (the resolution layer needed
+    # for per-subject targets), not the raw backend script.
+    assert "tvbo run spec/" in smk
 
 
 def test_workflow_slurm_emits_kit(tmp_path: Path):

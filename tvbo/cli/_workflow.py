@@ -129,13 +129,17 @@ class WorkflowPlan:
 
     def per_cell_command(self, *, run_cmd: str = "tvbo run") -> str:
         """Render a `tvbo run` command line for one workflow cell."""
-        spec = f"experiment:{self.experiment_key}"
-        parts = [run_cmd, spec, f"--backend={self.backend.name}"]
+        parts = [run_cmd, self.run_spec, f"--backend={self.backend.name}"]
         if self.container:
             parts.append(f"--container={self.container}")
-        # Workflow-fanned axes become explicit --override flags
+        # Workflow-fanned axes become explicit per-cell flags. The subject axis
+        # (dataset fan-out) resolves that subject's empirical target via --subject;
+        # other fanned axes are metadata overrides.
         for ax in self.workflow_axes:
-            parts.append(f"--override={ax.parameter}={{wildcards.{ax.name}}}")
+            if ax.parameter == "dataset.active_subject":
+                parts.append(f"--subject={{wildcards.{ax.name}}}")
+            else:
+                parts.append(f"--set={ax.parameter}={{wildcards.{ax.name}}}")
         # Vectorized axes are passed as a sweep range so the backend packs them
         for ax in self.vectorize_axes:
             parts.append(f"--sweep={ax.parameter}={','.join(repr(v) for v in ax.values)}")
@@ -206,6 +210,32 @@ def extract_axes(experiment) -> list[SweepAxis]:
                 kind=axis_kind_of(param),
             ))
     return out
+
+
+def _dataset_subject_axis(experiment) -> "SweepAxis | None":
+    """A workflow-fanned ``subject`` axis when the experiment has a per-subject target.
+
+    Values are the cohort subject IDs (from ``experiment.dataset_subject_ids()``);
+    the per-cell command carries ``--override dataset.active_subject=<sub>`` so the
+    run resolves that subject's empirical target. Returns ``None`` when the
+    experiment declares no dataset-sourced observation.
+    """
+    ids_fn = getattr(experiment, "dataset_subject_ids", None)
+    if not callable(ids_fn):
+        return None
+    try:
+        subjects = list(ids_fn())
+    except Exception:
+        return None
+    if not subjects:
+        return None
+    return SweepAxis(
+        name="subject",
+        parameter="dataset.active_subject",
+        values=tuple(str(s) for s in subjects),
+        kind="subjects",
+        placement="workflow",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -336,9 +366,21 @@ def plan(
 
     axes = extract_axes(experiment)
 
+    # A per-subject empirical target adds an implicit "subject" fan-out axis: one
+    # shard per subject, each resolving its own target. It reuses the same
+    # wildcard/array machinery as sweep axes, so no separate per-subject path.
+    subject_axis = _dataset_subject_axis(experiment)
+    if subject_axis is not None:
+        axes = [subject_axis, *axes]
+
     vectorize: list[SweepAxis] = []
     workflow: list[SweepAxis] = []
     for ax in axes:
+        # An axis constructed with an explicit placement (e.g. the subject
+        # fan-out) is honoured as-is rather than re-decided by the auto rule.
+        if ax.placement in ("workflow", "vectorize"):
+            (workflow if ax.placement == "workflow" else vectorize).append(ax)
+            continue
         forced_vec = ax.parameter in explicit_vec or ax.name in explicit_vec
         forced_wf = ax.parameter in explicit_wf or ax.name in explicit_wf
         if forced_vec and forced_wf:

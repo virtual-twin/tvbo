@@ -859,9 +859,14 @@ for expl in exploration_list:
             # the per-value map.
             if _rn in analysis_observation_names:
                 _an = analysis_observations_dict[_rn].analysis
+                _atype = str(getattr(_an, 'type', '') or '')
+                assert _atype == 'lyapunov', \
+                    (f"warm-start '{exp_info['name']}' records analysis observation '{_rn}' of "
+                     f"type '{_atype}'; only 'lyapunov' rides the warm-start scan (it is seeded "
+                     "from each value's carried settled state). Compute other analyses on the grid path.")
                 _ap = {str(k): (v.value if hasattr(v, 'value') else v)
                        for k, v in (getattr(_an, 'parameters', None) or {}).items()}
-                _ws_analysis.append({'name': _rn, 'type': str(getattr(_an, 'type', '') or ''),
+                _ws_analysis.append({'name': _rn, 'type': _atype,
                                      'segment_time': float(_ap.get('segment_time', 1.0)),
                                      'n_steps': int(_ap.get('n_steps', _ap.get('n', 10))),
                                      'n_exponents': int(_ap.get('n_exponents', _ap.get('k', 1)))})
@@ -1322,6 +1327,22 @@ def _bind_network_observations(network_observations=None):
 % endfor
 
 % endif
+<% _ds_recon_idx = context.get('dataset_reconcile_indices') or {} %>
+% if _ds_recon_idx:
+# ── Node reconciliation (keyed by label, never positional) ───────────────────
+# Positions of the labels shared between the model network and each by_label
+# empirical target. The loss gathers the simulated observable onto these nodes so
+# it aligns, label for label, with the reconciled target.
+_DATASET_RECON_IDX = {
+% for _tname, _idx in _ds_recon_idx.items():
+    '${_tname}': jnp.array(${_idx}),
+% endfor
+}
+
+def _gather2d(matrix, idx):
+    """Select the shared nodes on both axes of a (node, node) matrix by index."""
+    return matrix[jnp.ix_(idx, idx)]
+% endif
 def run_simulation(
     network: Network,
     t1: float = ${t1_default},
@@ -1573,7 +1594,19 @@ sorted_observation_names = list(observation_names)
 sorted_derived_obs_names = toposort_observations(sorted(derived_observation_names), derived_observations_dict, _all_observations)
 %>
 
-def compute_all_observations(result, state, result_transient=None):
+def _obs_data(_o):
+    """Underlying array of an observation value. Monitor results wrap the array in
+    ``.data``; a bare array (numpy/jax — has ``.dtype``) is returned as-is, since its
+    own ``.data`` would be a raw buffer, not the array."""
+    return _o if hasattr(_o, 'dtype') else getattr(_o, 'data', _o)
+
+
+def compute_all_observations(result, state, result_transient=None, only=None):
+    # ``only`` (a set of observation names) restricts computation to those observations
+    # plus, by the caller's closure, whatever they derive from. Default None computes
+    # every declared observation (unchanged behaviour). The jitted per-grid-point
+    # observable passes it so non-recorded observations — e.g. a non-jittable
+    # ``solitary`` needed only by the base run — never execute inside the trace.
     obs = Bunch()
 
     # Network observations (static data from BIDS)
@@ -1612,11 +1645,12 @@ def compute_all_observations(result, state, result_transient=None):
                 pipeline_call = str(fname) if fname else None
 %>
 % if obs_name not in network_observation_names:
-    # ${obs_name}: observation derived from simulation state
-    _${obs_name}_monitor = ${obs_class}(history=result_transient)
-    _${obs_name}_result = _${obs_name}_monitor(result)
-    # Keep full result to preserve named outputs (e.g., .psd, .frequencies)
-    obs.${obs_name} = _${obs_name}_result
+    if only is None or '${obs_name}' in only:
+        # ${obs_name}: observation derived from simulation state
+        _${obs_name}_monitor = ${obs_class}(history=result_transient)
+        _${obs_name}_result = _${obs_name}_monitor(result)
+        # Keep full result to preserve named outputs (e.g., .psd, .frequencies)
+        obs.${obs_name} = _${obs_name}_result
 % endif
 % endfor
 
@@ -1660,8 +1694,12 @@ def compute_all_observations(result, state, result_transient=None):
                     val_str = str(arg_value)
                     # Check if value is an observation reference vs a literal
                     if val_str in src_obs_list or val_str in observation_names or val_str in derived_observation_names:
-                        # Simple observation reference - add as positional
-                        positional_args.append(f"obs.{val_str}")
+                        # Simple observation reference → its data array. Observations are stored
+                        # as the full monitor result (a NativeSolution, to keep named outputs like
+                        # .psd); a plain positional reference wants the underlying array, so unwrap
+                        # `.data` (no-op when it is already a bare array). Dotted references below
+                        # keep the named-output attribute instead.
+                        positional_args.append(f"_obs_data(obs.{val_str})")
                     elif val_str.replace('.', '').replace('-', '').isdigit():
                         # Numeric literal - use as keyword arg
                         pipeline_args.append(f"{arg_name}={val_str}")
@@ -1678,14 +1716,14 @@ def compute_all_observations(result, state, result_transient=None):
                         pipeline_args.append(f"{arg_name}='{val_str}'" if isinstance(arg_value, str) else f"{arg_name}={val_str}")
         # If no explicit args were parsed, use source_observations positionally
         if not positional_args and not pipeline_args:
-            positional_args = [f"obs.{s}" for s in src_obs_list]
+            positional_args = [f"_obs_data(obs.{s})" for s in src_obs_list]
 
     # Build final args: positional first, then keyword
     all_args = positional_args + pipeline_args
 %>
 % if pipeline_call and src_obs_list:
     # ${dobs_name}: derived from ${', '.join(src_obs_list)}
-    if all(hasattr(obs, _src) for _src in [${', '.join(f"'{s}'" for s in src_obs_list)}]):
+    if (only is None or '${dobs_name}' in only) and all(hasattr(obs, _src) for _src in [${', '.join(f"'{s}'" for s in src_obs_list)}]):
         obs.${dobs_name} = ${pipeline_call}(${', '.join(all_args)})
 % endif
 % endfor
@@ -2039,12 +2077,51 @@ ${sweep.warmstart_sweep_body(expl, solver_class, dt, warmstart_solver_kwargs)}\
 
     # Create observation monitors ONCE with history baked in (optimized pattern)
 % if expl.get('record'):
+<%
+    # Closure of observations the jitted per-cell observable must compute: the recorded
+    # (non-analysis) ones plus every observation they transitively depend on — through
+    # `source` AND through pipeline-argument references (e.g. solitary's `omega_profile`
+    # arg). Anything else — e.g. a non-jittable `solitary` the base run/builder needs but
+    # this sweep does not record — is skipped so it never traces inside the observable.
+    _all_obs_names = set(_all_observations.keys())
+    def _obs_deps(_o):
+        _deps = set()
+        for _s in (getattr(_o, 'source', None) or []):
+            _sn = str(_s) if not hasattr(_s, 'name') else str(_s.name)
+            if _sn in _all_obs_names:
+                _deps.add(_sn)
+        for _st in (getattr(_o, 'pipeline', None) or []):
+            for _an, _arg in ((getattr(_st, 'arguments', None) or {}).items()):
+                _av = getattr(_arg, 'value', None)
+                if _av is None:
+                    continue
+                _avs = str(_av)
+                _base = _avs.split('.', 1)[0]   # bare name or dotted named-output ref
+                if _avs in _all_obs_names:
+                    _deps.add(_avs)
+                elif _base in _all_obs_names:
+                    _deps.add(_base)
+        return _deps
+    _need = set()
+    _stack = [r for r in expl['record'] if r not in analysis_observation_names]
+    while _stack:
+        _n = _stack.pop()
+        if _n in _need:
+            continue
+        _need.add(_n)
+        _od = _all_observations.get(_n)
+        if _od is not None:
+            for _sn in _obs_deps(_od):
+                if _sn not in _need:
+                    _stack.append(_sn)
+    _only_list = sorted(_need)
+%>
     # Record a declared list of observations per grid point (derived via
     # compute_all_observations, `analysis` diagnostics via compute_analysis_observations),
     # stacked over the sweep into one array per name.
     @jax.jit
     def observable_fn(s):
-${render_recorded_observable(expl['record'], derived_observation_names, network_observation_names, list(analysis_observations_dict.keys()))}
+${render_recorded_observable(expl['record'], derived_observation_names, network_observation_names, list(analysis_observations_dict.keys()), only_obs=_only_list)}
 % elif obs_type == 'function_call':
 <%
     # Collect unique observations used - categorize by type
@@ -2369,8 +2446,8 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
 % endif
 % if ax.get('builder_expr'):
             ## Builder axis: values are runtime whole-vectors; the coordinate is the point index.
-            explored_values=jnp.arange(int(jnp.asarray(_axisvals_${ax['name']}).shape[0])),
-            n=int(jnp.asarray(_axisvals_${ax['name']}).shape[0]),
+            explored_values=jnp.arange(len(_axisvals_${ax['name']})),
+            n=len(_axisvals_${ax['name']}),
 % elif 'values' in ax:
             explored_values=jnp.array(${ax['values']}),
             n=${ax['n']},
@@ -3176,6 +3253,11 @@ def run_experiment(
             def loss_fn(state):
                 _obs = compute_all_observations(_opt_model_fn(state), state, _opt_transient)
 <%
+    _recon_idx = context.get('dataset_reconcile_indices') or {}
+    # A by_label empirical target in this loss carries a keyed gather; the simulated
+    # observables it is compared against are gathered onto the same shared nodes.
+    _recon_target = next((a['obs_name'] for a in _lf_args
+                          if a['type'] == 'observation' and a['obs_name'] in _recon_idx), None)
     loss_arg_exprs = []
     for a in _lf_args:
         if a['type'] == 'observation':
@@ -3188,6 +3270,9 @@ def run_experiment(
             if obs_name_arg in network_observation_names:
                 # Empirical target: allow a runtime override, else the loaded constant.
                 loss_arg_exprs.append(f"kwargs.get('{obs_name_arg}', {_acc})")
+            elif _recon_target is not None:
+                # Simulated observable: gather onto the target's shared nodes (keyed).
+                loss_arg_exprs.append(f"_gather2d({_acc}, _DATASET_RECON_IDX['{_recon_target}'])")
             else:
                 loss_arg_exprs.append(_acc)
         elif a['type'] == 'constant':

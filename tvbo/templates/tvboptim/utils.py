@@ -1015,6 +1015,7 @@ def render_recorded_observable(
     derived_names: List[str],
     network_obs_names: List[str],
     analysis_names: List[str],
+    only_obs: Optional[List[str]] = None,
 ) -> str:
     """Render the body of an exploration ``observable_fn`` that records a `record:` list.
 
@@ -1029,7 +1030,14 @@ def render_recorded_observable(
     analysis_set = set(analysis_names)
     lines = ["result = _expl_model_fn(s)"]
     if any(n not in analysis_set for n in record_names):
-        lines.append("_all_obs = compute_all_observations(result, s, result_transient)")
+        # Restrict the per-cell computation to the recorded observations and their
+        # closure (passed by the caller), so non-recorded — possibly non-jittable —
+        # observations never execute inside this jitted observable.
+        if only_obs is not None:
+            _only_lit = "{%s}" % ", ".join(repr(n) for n in sorted(only_obs))
+            lines.append(f"_all_obs = compute_all_observations(result, s, result_transient, only={_only_lit})")
+        else:
+            lines.append("_all_obs = compute_all_observations(result, s, result_transient)")
     if any(n in analysis_set for n in record_names):
         lines.append("_an_obs = compute_analysis_observations(s, _network, result_transient)")
     entries = []
@@ -1242,11 +1250,14 @@ def format_bounds_array(bounds: List, format: str = "jax") -> str:
 
 
 def is_network_observation(obs: Any) -> bool:
-    """Check if observation is a network observation (static data from network).
+    """Check if observation is bound from data rather than the simulation state.
 
-    Network observations have source starting with 'network.observations' or 'network.edges'.
-    The slot is multivalued; for raw network observations there is exactly
-    one entry. Accept both scalar and list forms.
+    True when the source starts with ``network.observations``, ``network.edges``
+    (data carried by the model network), or ``dataset.subject`` (a per-subject
+    empirical target resolved from the dataset). All three are materialized into
+    a module-level constant and bound at ``run_experiment`` time via
+    ``_bind_network_observations``, not recorded from the solver. The slot is
+    multivalued; accept both scalar and list forms.
     """
     if not obs:
         return False
@@ -1260,7 +1271,8 @@ def is_network_observation(obs: Any) -> bool:
     for item in items:
         name = item.name if hasattr(item, "name") else item
         s = str(name)
-        if s.startswith("network.observations") or s.startswith("network.edges"):
+        if (s.startswith("network.observations") or s.startswith("network.edges")
+                or s.startswith("dataset.subject")):
             return True
     return False
 

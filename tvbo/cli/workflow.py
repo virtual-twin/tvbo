@@ -199,6 +199,11 @@ def _freeze_spec_yaml(experiment, spec_dir: Path, *, workflow_spec: dict | None 
         spec_dir.mkdir(parents=True, exist_ok=True)
         if not isinstance(net, Network):
             net.__class__ = Network
+        # Bake real node labels into the frozen connectome so the kit is
+        # self-contained and label reconciliation works on reload (the bids- block
+        # that would hydrate them is dropped from the frozen spec).
+        if hasattr(experiment, "bake_real_node_labels"):
+            experiment.bake_real_node_labels()
         net.save(spec_dir / "network.yaml", binary_format="h5")
         _common.info("wrote spec/network.yaml + spec/network.h5")
 
@@ -307,6 +312,12 @@ def _emit_kit(*, engine: str, plan, experiment, out_dir: Path) -> Path:
 
     # 3) Workflow artefact
     artefact = out_dir / _ARTEFACT_NAME[engine]
+    # BIDS result stem (no subject) so the engine can declare the exact output a
+    # per-subject `tvbo run` writes (sub-<subject>_<stem>.h5), not a bare result.h5.
+    try:
+        result_stem = experiment.get_result_stem()
+    except Exception:
+        result_stem = "result"
     text = _render_template(
         _TEMPLATE_PATH[engine],
         plan=plan,
@@ -314,6 +325,7 @@ def _emit_kit(*, engine: str, plan, experiment, out_dir: Path) -> Path:
         script_relpath=str(script_path.relative_to(out_dir)) if script_path else None,
         spec_relpath=spec_relpath,
         bundled_code=bundled_code,
+        result_stem=result_stem,
     )
     artefact.write_text(text, encoding="utf-8")
     _common.info(f"wrote {artefact.relative_to(out_dir)}")
@@ -464,8 +476,105 @@ def plan_cmd(
             typer.echo(f"  - {o['key']}={o['value']!r}  ({o['source']})")
 
 
+def _study_experiments(spec: str, experiment: str | None):
+    """Resolve the runtime experiments a study/experiment SPEC fans out over.
+
+    Returns ``(study_or_none, [runtime_experiments], study_key)``. A study yields
+    all its experiments (or the ``--experiment`` id/label subset); a bare
+    experiment SPEC yields a single-item list.
+    """
+    kind, obj = _common.resolve_spec(spec)
+    if kind != "study":
+        _study, exp, study_key = _resolve_study_and_experiment(spec, experiment)
+        return None, [exp], study_key
+    raw = getattr(obj, "experiments", None) or getattr(obj, "simulation_experiments", None) or []
+    items = list(raw.values()) if hasattr(raw, "values") else list(raw)
+    if experiment is not None:
+        wanted = {s.strip() for s in str(experiment).split(",") if s.strip()}
+        items = [e for e in items if wanted & _common.experiment_ids(e)]
+        if not items:
+            _common.die(f"No experiment(s) matching {experiment!r} in study.")
+    resolved = []
+    for e in items:
+        if not hasattr(e, "render") and hasattr(obj, "get_experiment"):
+            sel = (getattr(e, "id", None) or getattr(e, "key", None)
+                   or getattr(e, "name", None) or getattr(e, "label", None))
+            try:
+                e = obj.get_experiment(sel)
+            except Exception as exc:
+                _common.die(f"Could not resolve experiment {sel!r} to a runnable object: {exc}")
+        resolved.append(e)
+    return obj, resolved, getattr(obj, "key", None) or "study"
+
+
+def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
+                          output: Path | None, override: list[str], stdout: bool = False):
+    """Emit one Snakefile that fans every experiment (and, per experiment, every
+    subject / sweep cell) into its own job. In kit mode each experiment is frozen
+    into a self-contained ``spec/<key>/`` so a rule runs ``tvbo run
+    spec/<key>/experiment.yaml``; in ``--stdout`` mode nothing is written and the
+    rules run ``tvbo run <source-spec> --experiment <id>``."""
+    study, experiments, study_key = _study_experiments(spec, experiment)
+    out_dir = output or Path("out").joinpath(str(study_key), "snakemake")
+    if not stdout:
+        out_dir.mkdir(parents=True, exist_ok=True)
+    parsed = _parse_overrides(override)
+
+    def _san(s):
+        return "".join(c if (c.isalnum() or c in ".-") else "_" for c in str(s))
+
+    exp_plans, block, last_plan = [], {}, None
+    for exp in experiments:
+        key = _san(getattr(exp, "key", None) or getattr(exp, "id", None)
+                   or getattr(exp, "label", None) or "experiment")
+        base = _wf.merge_workflow_spec(study, exp)
+        spec_dict = _deep_merge(base, parsed["merged"])
+        plan = _wf.plan(study_key=str(study_key), experiment=exp, backend=backend,
+                        engine="snakemake", workflow_spec=spec_dict,
+                        overrides=parsed["records"], source_spec=spec, experiment_selector=key)
+        block = plan.engine_block or {}
+        last_plan = plan
+        try:
+            result_stem = exp.get_result_stem()
+        except Exception:
+            result_stem = "result"
+        if stdout:
+            spec_relpath, select = spec, key
+        else:
+            edir = out_dir / "spec" / key
+            (edir / "experiment.yaml").write_text(
+                _freeze_spec_yaml(exp, edir, workflow_spec=spec_dict), encoding="utf-8")
+            spec_relpath, select = f"spec/{key}/experiment.yaml", None
+            _common.info(f"froze experiment {key} ({len(plan.workflow_axes)} fan-out axes)")
+        exp_plans.append({
+            "key": key,
+            "rule_name": "exp_" + key.replace("-", "_").replace(".", "_"),
+            "spec_relpath": spec_relpath,
+            "select": select,
+            "backend": backend,
+            "out_dir": plan.out_dir,
+            "result_stem": result_stem,
+            "container": plan.container,
+            "axes": [{"name": ax.name, "parameter": ax.parameter, "values": list(ax.values)}
+                     for ax in plan.workflow_axes],
+        })
+
+    text = _render_template("snakemake/study.smk.mako", exp_plans=exp_plans, block=block)
+    if stdout:
+        typer.echo(text)
+        return None
+    (out_dir / "Snakefile").write_text(text, encoding="utf-8")
+    _common.info(f"wrote Snakefile ({len(exp_plans)} experiment rule(s))")
+    if last_plan is not None:
+        _write_readme(out_dir, engine="snakemake", plan=last_plan, script_relpath=None)
+    return out_dir
+
+
 def _emit(engine: str, *, spec: str, backend: str, experiment: str | None,
           output: Path | None, override: list[str], stdout: bool) -> None:
+    if engine == "snakemake":
+        return _emit_snakemake_study(spec=spec, backend=backend, experiment=experiment,
+                                     output=output, override=override, stdout=stdout)
     plan, exp = _build_plan(spec, engine=engine, backend=backend,
                             experiment=experiment, overrides=override)
     if stdout:

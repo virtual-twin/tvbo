@@ -15,6 +15,7 @@ backend code, and running it on any of the supported backends (`tvb`,
 """
 import copy as _copy
 import os
+import re
 from os.path import join
 from pathlib import Path
 from typing import Any
@@ -1674,6 +1675,14 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         if "duration" in kwargs:
             self.integration.duration = kwargs.pop("duration")
 
+        # The active subject (set by the per-subject workflow fan-out) selects
+        # which per-subject empirical target this run resolves. Popped here so it
+        # never leaks into a backend runner's kwargs.
+        active_subject = kwargs.pop("active_subject", None)
+        if active_subject is None:
+            active_subject = getattr(getattr(self, "dataset", None), "active_subject", None)
+        self._active_subject = str(active_subject) if active_subject is not None else None
+
         self.configure()
         Bunch()
 
@@ -1771,6 +1780,13 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             # set when present, so experiments without network observations are
             # unaffected.
             net_obs = self.resolve_network_observations()
+            # Per-subject dataset-sourced targets (e.g. this subject's empirical
+            # FC), reconciled to the model's node labels, merge into the same
+            # network_observations injection.
+            if getattr(self, "_active_subject", None):
+                for obs_name, da in self.resolve_dataset_observations(self._active_subject).items():
+                    net_obs = dict(net_obs or {})
+                    net_obs[obs_name] = np.asarray(da.values)
             if net_obs:
                 kwargs.setdefault("network_observations", net_obs)
 
@@ -2212,6 +2228,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         out_dir.mkdir(parents=True, exist_ok=True)
         if not isinstance(net, _Network):
             net.__class__ = _Network
+        self.bake_real_node_labels()
         sidecar = out_dir / f"{network_stem}.yaml"
         net.save(sidecar, binary_format="h5")
         # The network sidecar goes through a different serializer; strip the same
@@ -2335,6 +2352,265 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 )
             resolved[name] = available[measure]
         return resolved
+
+    def bake_real_node_labels(self) -> bool:
+        """Replace the model network's placeholder labels with real ones in place.
+
+        A network sourced by a ``bids:`` entity block carries only ``region_N``
+        placeholders until run time; freezing drops that block, so the real labels
+        (hydrated from the db) are written onto the network's nodes here. This keeps
+        a frozen kit self-contained and label reconciliation (never positional)
+        working on reload. Returns True when labels were applied.
+        """
+        net = getattr(self, "network", None)
+        nodes = list(getattr(net, "nodes", None) or []) if net is not None else []
+        real_labels = self._resolve_model_node_labels()
+        if not real_labels or len(real_labels) != len(nodes):
+            return False
+        if [str(getattr(nd, "label", "")) for nd in nodes] == real_labels:
+            return False
+        for nd, lbl in zip(nodes, real_labels):
+            nd.label = lbl
+        return True
+
+    def _resolve_model_node_labels(self) -> list:
+        """Real node labels of the model network, hydrated if needed.
+
+        A network sourced by a ``bids:`` entity block loads its weights lazily,
+        so at parse time its node labels can be placeholders (``region_<i>``).
+        Label reconciliation needs the true labels, so when the current ones look
+        like placeholders this resolves the ``bids:`` entities against the tvbo
+        database and reads the matched connectome's labels. Returns the existing
+        labels unchanged when they are already real.
+        """
+        net = getattr(self, "network", None)
+        if net is None:
+            return []
+        labels = [str(lbl) for lbl in (net.node_labels or [])]
+        placeholder = bool(labels) and all(re.fullmatch(r"region_\d+", lbl) for lbl in labels)
+        if labels and not placeholder:
+            return labels
+        bids = getattr(net, "bids", None)
+        if bids is None:
+            return labels
+        from tvbo.classes.network import _filter_networks_by_entities
+
+        key_map = {
+            "template": "tpl", "cohort": "cohort", "reconstruction": "rec",
+            "segmentation": "seg", "scale": "scale", "atlas": "atlas",
+            "acquisition": "acq", "hemi": "hemi", "desc": "desc",
+        }
+        ents = {short: str(getattr(bids, attr))
+                for attr, short in key_map.items() if getattr(bids, attr, None) is not None}
+        matches = _filter_networks_by_entities(ents) if ents else []
+        if len(matches) == 1:
+            return [str(lbl) for lbl in Network.load(str(matches[0])).node_labels]
+        return labels
+
+    @property
+    def dataset_observation_targets(self) -> dict:
+        """Map each dataset-sourced observation to its measure name.
+
+        Recognises ``source: [dataset.subject.<measure>]`` pointers — the
+        per-subject empirical target selected by the observation's ``query``
+        under ``dataset.bids_root``. Returns e.g. ``{'empirical_fc': 'fc'}``;
+        empty when no observation is dataset-sourced.
+        """
+        out: dict = {}
+        for name, obs in (self.observations or {}).items():
+            src = getattr(obs, "source", None)
+            if isinstance(src, (list, tuple)):
+                src = src[0] if src else None
+            if src is not None and hasattr(src, "name"):
+                src = src.name
+            s = str(src) if src is not None else ""
+            if s.startswith("dataset.subject."):
+                out[name] = s.split(".")[-1]
+        return out
+
+    @staticmethod
+    def _bids_query_dict(query) -> tuple[dict, str | None]:
+        """Split a ``BidsEntities`` query into (key-value entities, suffix).
+
+        Maps the schema's attribute names to the short entity keys that
+        :func:`tvbo.classes.network._parse_bids_entities` emits. ``suffix`` is
+        returned separately because it is the trailing filename component, not a
+        ``key-value`` entity.
+        """
+        if query is None:
+            return {}, None
+        key_map = {
+            "template": "tpl", "cohort": "cohort", "reconstruction": "rec",
+            "segmentation": "seg", "scale": "scale", "atlas": "atlas",
+            "acquisition": "acq", "hemi": "hemi", "desc": "desc",
+        }
+        ents: dict = {}
+        for attr, short in key_map.items():
+            val = getattr(query, attr, None)
+            if val is not None:
+                ents[short] = str(val)
+        suffix = getattr(query, "suffix", None)
+        return ents, (str(suffix) if suffix is not None else None)
+
+    def _find_subject_file(self, root: Path, subject: str, query) -> Path:
+        """Resolve the single per-subject file under *root* matching *query*."""
+        from tvbo.classes.network import _parse_bids_entities
+
+        sub = str(subject).replace("sub-", "")
+        ents, suffix = self._bids_query_dict(query)
+        matches = []
+        for f in sorted((root / f"sub-{sub}").glob("*.yaml")):
+            file_ents = _parse_bids_entities(f.stem)
+            if file_ents.get("sub") != sub:
+                continue
+            if suffix is not None and not f.stem.endswith(f"_{suffix}"):
+                continue
+            if all(file_ents.get(k) == v for k, v in ents.items()):
+                matches.append(f)
+        if not matches:
+            raise ValueError(
+                f"No file for sub-{sub} matching query {ents} suffix={suffix!r} under {root}."
+            )
+        if len(matches) > 1:
+            raise ValueError(
+                f"Query {ents} suffix={suffix!r} is ambiguous for sub-{sub}: "
+                f"{[m.name for m in matches]}. Add entities to disambiguate."
+            )
+        return matches[0]
+
+    def resolve_dataset_observations(self, active_subject: str) -> dict:
+        """Resolve per-subject dataset-sourced targets for one subject.
+
+        For each observation whose ``source`` is ``dataset.subject.<measure>``:
+        query ``dataset.bids_root`` for the subject's matching file, load it as a
+        Network, read ``<measure>``, and reconcile its nodes to the model network
+        (``reconcile: by_label`` selects the shared node labels on both sides by
+        name — never by position, so a differing node count or order cannot
+        silently misalign the target).
+
+        Returns ``{obs_name: xarray.DataArray}`` keyed by node label on both axes,
+        restricted to the labels shared with the model network. The model-side
+        gather (which model nodes the shared labels are) is available via
+        :meth:`dataset_reconcile_index` so the simulated observation selects the
+        same sub-block.
+        """
+        targets = self.dataset_observation_targets
+        if not targets:
+            return {}
+        ds = getattr(self, "dataset", None)
+        root = getattr(ds, "bids_root", None) if ds is not None else None
+        if not root:
+            raise ValueError(
+                "A dataset-sourced observation needs experiment.dataset.bids_root."
+            )
+        root = Path(root)
+        model_labels = self._resolve_model_node_labels()
+        resolved: dict = {}
+        for name, measure in targets.items():
+            obs = self.observations[name]
+            path = self._find_subject_file(root, active_subject, getattr(obs, "query", None))
+            target_net = Network.load(str(path))
+            mat = np.asarray(target_net.matrix(measure))
+            if mat is None or mat.ndim != 2:
+                raise ValueError(
+                    f"Observation '{name}': measure '{measure}' is not a 2-D matrix "
+                    f"in {path.name}."
+                )
+            tlabels = list(target_net.node_labels)
+            da = xr.DataArray(
+                mat, dims=("node_i", "node_j"),
+                coords={"node_i": tlabels, "node_j": tlabels},
+            )
+            recon = getattr(obs, "reconcile", None)
+            recon = str(getattr(recon, "value", recon) or "by_label")
+            if recon == "by_label" and model_labels:
+                shared = [lbl for lbl in model_labels if lbl in set(tlabels)]
+                if not shared:
+                    raise ValueError(
+                        f"Observation '{name}': no node labels shared between the model "
+                        f"network and target {path.name}."
+                    )
+                da = da.sel(node_i=shared, node_j=shared)
+            resolved[name] = da
+        return resolved
+
+    def dataset_reconcile_index(self, shared_labels: list) -> np.ndarray:
+        """Indices into the model network's nodes for *shared_labels* (keyed).
+
+        The simulated observation selects this sub-block so it aligns, label for
+        label, with a ``by_label``-reconciled empirical target.
+        """
+        model_labels = self._resolve_model_node_labels()
+        pos = {lbl: i for i, lbl in enumerate(model_labels)}
+        return np.array([pos[lbl] for lbl in shared_labels], dtype=int)
+
+    def dataset_reconcile_indices(self) -> dict:
+        """Model-side gather index for each ``by_label`` dataset target (keyed).
+
+        For every observation sourced from ``dataset.subject.<measure>`` with
+        ``reconcile: by_label``, returns the positions of the shared node labels
+        within the model network's node order — derived from the labels, never
+        from position. The shared label set is identical across the cohort, so it
+        is resolved once from the first cohort subject. Codegen uses this to
+        gather the simulated observable onto the same shared labels as the
+        reconciled empirical target before comparing them. Returns ``{}`` (no
+        gather) when nothing is dataset-sourced or the data cannot be resolved.
+        """
+        targets = self.dataset_observation_targets
+        subjects = self.dataset_subject_ids() if targets else []
+        if not subjects:
+            return {}
+        try:
+            resolved = self.resolve_dataset_observations(subjects[0])
+        except Exception:
+            return {}
+        out: dict = {}
+        for name in targets:
+            obs = self.observations[name]
+            recon = getattr(obs, "reconcile", None)
+            recon = str(getattr(recon, "value", recon) or "by_label")
+            da = resolved.get(name)
+            if recon != "by_label" or da is None:
+                continue
+            shared = [str(x) for x in da.coords["node_i"].values]
+            out[name] = self.dataset_reconcile_index(shared).tolist()
+        return out
+
+    def dataset_subject_ids(self) -> list:
+        """Enumerate the cohort for the per-subject workflow fan-out.
+
+        An explicit ``dataset.subjects`` list wins (a curated subset). Otherwise
+        the subjects are discovered by querying ``dataset.bids_root`` with the
+        first dataset-sourced observation's ``query`` — the same filter that
+        resolves each shard's target, so discovery and resolution never diverge.
+        Returns sorted subject IDs without the ``sub-`` prefix; empty when the
+        experiment has no dataset-sourced observation.
+        """
+        ds = getattr(self, "dataset", None)
+        if ds is None:
+            return []
+        subs = getattr(ds, "subjects", None)
+        if subs:
+            ids = list(subs.keys()) if hasattr(subs, "keys") else [
+                getattr(x, "subject_id", x) for x in subs
+            ]
+            return [str(s).replace("sub-", "") for s in ids]
+        targets = self.dataset_observation_targets
+        root = getattr(ds, "bids_root", None)
+        if not targets or not root:
+            return []
+        from tvbo.classes.network import _parse_bids_entities
+
+        query = getattr(self.observations[next(iter(targets))], "query", None)
+        ents, suffix = self._bids_query_dict(query)
+        found = set()
+        for f in sorted(Path(root).glob("sub-*/*.yaml")):
+            file_ents = _parse_bids_entities(f.stem)
+            if suffix is not None and not f.stem.endswith(f"_{suffix}"):
+                continue
+            if file_ents.get("sub") and all(file_ents.get(k) == v for k, v in ents.items()):
+                found.add(file_ents["sub"])
+        return sorted(found)
 
     def _resolve_events(self) -> None:
         """Lower declarative stimulus/stimulation Event fields into the form the

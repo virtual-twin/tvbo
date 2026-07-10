@@ -42,7 +42,7 @@ BEP034_CONFIG_PATH = Path(__file__).parent / "bep034.json"
 # invalid combination fails fast; ``desc`` is optional. Customize the naming by
 # editing this pattern — build_path handles entity substitution and optionality.
 RESULT_PATTERNS = [
-    "exp-{experiment}[_desc-{description}]_{suffix<result>}{extension<.h5|.yaml|.json>}",
+    "[sub-{subject}_]exp-{experiment}[_desc-{description}]_{suffix<result>}{extension<.h5|.yaml|.json>}",
 ]
 
 
@@ -59,6 +59,11 @@ def result_entities(experiment, extension: str = ".h5") -> dict:
         return "".join(c for c in str(s) if c.isalnum())
 
     entities = {"suffix": "result", "extension": extension}
+    # Per-subject shards (dataset fan-out) get a sub- entity so their results do
+    # not collide when reassembled.
+    active_subject = getattr(experiment, "_active_subject", None)
+    if active_subject:
+        entities["subject"] = _alnum(active_subject)
     eid = getattr(experiment, "id", None)
     if eid is not None:
         entities["experiment"] = _alnum(eid)
