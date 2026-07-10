@@ -200,6 +200,31 @@ def test_env_and_options_render_across_engines(tmp_path, engine, artefact, opt_n
     assert env_needle in text
 
 
+def test_frozen_spec_captures_merged_workflow_for_reproducibility(tmp_path: Path):
+    """The emitted spec records the effective workflow config (study < experiment <
+    --set), so re-emitting from it reproduces the run with no flags — one-click
+    provenance rather than the overrides living only in run.sbatch."""
+    k1 = tmp_path / "k1"
+    r = runner.invoke(app, [
+        "workflow", "slurm", EXP, "--backend", "jax", "-o", str(k1),
+        "--set", "slurm.partition=gpu", "--set", "slurm.array_chunk=1",
+        "--set", "slurm.env.FOO=bar",
+    ])
+    assert r.exit_code == 0, r.stdout
+    spec_yaml = next(p for p in (k1 / "spec").glob("*.yaml") if p.name != "network.yaml")
+    frozen = spec_yaml.read_text()
+    assert "partition: gpu" in frozen and "array_chunk: 1" in frozen and "FOO" in frozen
+
+    # Re-emit from the frozen spec with NO --set → the GPU sbatch is reproduced.
+    k2 = tmp_path / "k2"
+    r2 = runner.invoke(app, ["workflow", "slurm", str(spec_yaml), "--backend", "jax", "-o", str(k2)])
+    assert r2.exit_code == 0, r2.stdout
+    sbatch = (k2 / "run.sbatch").read_text()
+    assert "#SBATCH --partition=gpu" in sbatch
+    assert "#SBATCH --array=0-0" in sbatch          # array_chunk=1 → single shard
+    assert "export FOO=bar" in sbatch
+
+
 def test_workflow_stdout_only_does_not_create_kit(tmp_path: Path):
     out = tmp_path / "kit"
     r = runner.invoke(app, ["workflow", "snakemake", EXP, "--backend", "jax",
