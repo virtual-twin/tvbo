@@ -13,6 +13,8 @@ Every successful `tvbo workflow {slurm,snakemake,nextflow}` invocation writes a 
 │   └── <experiment>.<ext> # Frozen backend code (record + direct-run)
 ├── spec/
 │   └── <experiment>.yaml  # Frozen YAML snapshot; the artefact's run target
+├── code/                  # Custom callable/builder modules the recipe references
+│   └── <module>.py        #   (only when the recipe uses `module: my_code`)
 ├── requirements.txt       # pip deps, from environment.requirements
 ├── environment.yml        # conda env, from environment.requirements
 └── README.md              # Provenance + how-to-run
