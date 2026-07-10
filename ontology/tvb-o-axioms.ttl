@@ -310,6 +310,42 @@ tvbo:SparseDelayGraph a owl:Class ;
 
 #
 # ─────────────────────────────────────────────────────────────────
+# §4.1d Analysis observables (Analysis.type vocabulary).
+# ─────────────────────────────────────────────────────────────────
+#
+# An analysis observable ANALYSES the model / its solve / a derived loss rather
+# than transforming the recorded trajectory. `Analysis.type` names it and stays a
+# free string (extensible — backends dispatch on it), so the vocabulary lives
+# here as concepts rather than a closed schema enum. Each concept is
+# backend-independent (says what is computed, not how); a backend that has no
+# equivalent emits a comment and skips rather than raising. Named backends below
+# are the ones that currently lower the type.
+
+tvbo:AnalysisObservable a owl:Class ;
+    rdfs:label   "Analysis observable"@en ;
+    rdfs:comment "A quantity obtained by analysing the model, its solve, or a derived loss — the vocabulary of Analysis.type."@en .
+
+tvbo:realisedByBackend a owl:AnnotationProperty ;
+    rdfs:label   "realised by backend"@en ;
+    rdfs:comment "Backend(s) whose codegen currently lowers this analysis observable to a concrete implementation."@en .
+
+tvbo:LyapunovAnalysis a tvbo:AnalysisObservable ;
+    rdfs:label   "Lyapunov analysis"@en ;
+    rdfs:comment "Benettin QR estimate of the tangent-dynamics Lyapunov spectrum: the leading exponents lambda_i (rate of trajectory divergence, chaos when lambda_1 > 0) and, for the leading direction, the per-node Lyapunov vector xi_i (which nodes drive the instability). Parameters: n_exponents, n_steps (rescaling segments), segment_time, mode (tangent-space jvp / two-trajectory sim). Independent per operating point, so it fans out across a parameter axis."@en ;
+    tvbo:realisedByBackend "tvboptim" .
+
+tvbo:GradientAnalysis a tvbo:AnalysisObservable ;
+    rdfs:label   "Gradient analysis"@en ;
+    rdfs:comment "Autodiff (forward/reverse) gradient of a target observable or loss with respect to named parameters — the untruncated sensitivity of the full solve. Parameters: mode. Binds via target + wrt."@en ;
+    tvbo:realisedByBackend "tvboptim" .
+
+tvbo:FiniteDifferenceAnalysis a tvbo:AnalysisObservable ;
+    rdfs:label   "Finite-difference analysis"@en ;
+    rdfs:comment "Seed-averaged central finite-difference sensitivity of a target with respect to a parameter; the mean is the gradient estimate, the sem its standard error. Parameters: delta, seeds, seed_base, stat. Binds via target + wrt."@en ;
+    tvbo:realisedByBackend "tvboptim" .
+
+#
+# ─────────────────────────────────────────────────────────────────
 # §4.2 Biological substrate axioms.
 # ─────────────────────────────────────────────────────────────────
 #

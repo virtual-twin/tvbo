@@ -1846,7 +1846,11 @@ classes:
                 description: >-
                     The analysis kind, e.g. 'gradient', 'finite_difference',
                     'lyapunov', 'bifurcation', 'identifiability', 'sensitivity'.
-                    Extensible — backends dispatch on it.
+                    A free string, not a closed enum, so backends can extend the
+                    set; the backend-independent vocabulary (what each kind
+                    computes) is defined as AnalysisObservable concepts in the
+                    ontology (tvb-o-axioms §4.1d). Backends dispatch on it and
+                    skip (with a comment, not a raise) when they have no equivalent.
             target:
                 range: string
                 description: >-

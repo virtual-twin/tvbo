@@ -2163,6 +2163,20 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         desc = self.dynamics.label or self.dynamics.name or "simulation"
         return f"ses-{self.id}_desc-{desc}"
 
+    def get_result_stem(self):
+        """BIDS result basename (no extension), generated with pybids ``build_path``.
+
+        Returns e.g. ``exp-<id>_desc-<label>_result`` — the shared stem for this
+        experiment's ``<stem>.h5`` data file and ``<stem>.yaml`` provenance sidecar,
+        identical whether written by a local run or the HPC gather pass. The naming
+        is driven by ``tvbo.adapters.bids.RESULT_PATTERNS`` (a pybids rule string),
+        so it stays BIDS-compliant and customizable in one place.
+        """
+        from tvbo.adapters.bids import build_result_path
+
+        path = build_result_path(self, extension=".h5")
+        return os.path.splitext(path)[0] if path else "result"
+
     @property
     def max_delay(self) -> float:
         """Compute the maximum delay (ms) from the current network/connectome."""

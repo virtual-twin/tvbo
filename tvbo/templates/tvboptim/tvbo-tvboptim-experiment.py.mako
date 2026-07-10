@@ -3,7 +3,8 @@
 <%namespace name="fn" file="/base/function-def.mako"/>
 <%namespace name="const" file="/base/constants.mako"/>
 <%namespace name="search" file="tvbo-tvboptim-search.py.mako"/>
-<%namespace name="sweep" file="tvbo-tvboptim-sweep.py.mako"/>\
+<%namespace name="sweep" file="tvbo-tvboptim-sweep.py.mako"/>
+<%namespace name="lyap" file="tvbo-tvboptim-lyapunov.py.mako"/>\
 <%
 from tvbo.codegen import render_expression
 from tvbo.templates.tvboptim.utils import (
@@ -495,6 +496,7 @@ _all_observations = dict(experiment.observations) if experiment.observations els
 # Lyapunov, ...) — handled by a dedicated path, not the raw/derived pipelines.
 analysis_observations_dict = {n: o for n, o in _all_observations.items() if getattr(o, 'analysis', None) is not None}
 analysis_observation_names = set(analysis_observations_dict.keys())
+has_lyapunov = any(str(getattr(o.analysis, 'type', '') or '') == 'lyapunov' for o in analysis_observations_dict.values())
 observations = {n: o for n, o in _all_observations.items() if not _is_derived(o, experiment) and n not in analysis_observation_names}
 derived_observations_dict = {n: o for n, o in _all_observations.items() if _is_derived(o, experiment) and n not in analysis_observation_names}
 derived_observation_names = set(derived_observations_dict.keys())
@@ -1640,6 +1642,10 @@ def compute_all_observations(result, state, result_transient=None):
 
 
 % if analysis_observations_dict:
+% if has_lyapunov:
+${lyap.benettin_function()}
+
+% endif
 def compute_analysis_observations(state, network, result_transient=None):
     """Compute the declarative ``analysis`` observations — diagnostics that ANALYZE the
     solve/loss (Lyapunov spectrum, autodiff and finite-difference gradients) rather than
@@ -1648,7 +1654,7 @@ def compute_analysis_observations(state, network, result_transient=None):
     diagnostics fully metadata-derived. Analysis solves use a plain solver — the truncation
     window is an optimization knob, not part of these diagnostics."""
     obs = Bunch()
-${render_analysis_observations(analysis_observations_dict, coupling_keys, solver_class, transient_time, t1_default, dt)}
+${render_analysis_observations(analysis_observations_dict, coupling_keys, solver_class, transient_time, t1_default, dt, solver_kwargs_str)}
     return obs
 % endif
 

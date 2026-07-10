@@ -383,7 +383,11 @@ def plan(
 
     experiment_key = str(getattr(experiment, "key", None)
                          or getattr(experiment, "name", None) or "experiment")
-    out_dir = str(spec.get("out_dir") or "out/{study}/{experiment}")
+    # Results land in a kit-relative ``results/`` by default (the emitted scripts
+    # run from the kit dir, which already encodes study/experiment/engine — like
+    # ``logs/``). An explicit out_dir (relative or absolute) overrides it; the
+    # {study}/{experiment} placeholders still resolve for custom templates.
+    out_dir = str(spec.get("out_dir") or "results")
     out_dir = out_dir.replace("{study}", study_key).replace("{experiment}", experiment_key)
 
     return WorkflowPlan(
