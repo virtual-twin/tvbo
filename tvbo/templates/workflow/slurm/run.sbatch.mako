@@ -68,6 +68,11 @@ source ${sb["venv"]}/bin/activate
 % for _e in (sb.get("env") or []):
 export ${_e["name"]}=${_e["value"]}
 % endfor
+% if bundled_code:
+## The recipe's custom callable/builder modules were bundled into ./code; put it
+## on the path so the frozen spec's `module:` references resolve on the node.
+export PYTHONPATH="code:$PYTHONPATH"
+% endif
 
 <%
     out_pat = plan.out_dir + "/$SLURM_ARRAY_JOB_ID/$SLURM_ARRAY_TASK_ID"
