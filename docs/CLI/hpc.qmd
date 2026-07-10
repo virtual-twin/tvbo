@@ -47,7 +47,11 @@ tvbo run spec/experiment.yaml --backend=tvboptim \
 ```
 
 It points at the kit's **own frozen `spec/experiment.yaml`**, so the job is
-self-contained (no external recipe or callable modules needed at run time).
+self-contained. Any custom callable/builder modules the recipe references
+(`callable: {module: my_analysis}`, `builder: {module: my_networks}`) are copied
+into the kit's **`code/`** and put on `PYTHONPATH`, so no external recipe or code is
+needed at run time. Installed dependencies still come from the emitted
+`requirements.txt` / `environment.yml` (they are not bundled).
 
 ## Chunking a sweep into array tasks (`chunk` / `--slurm-chunk`)
 
@@ -179,13 +183,17 @@ Supported keys: `account`, `partition`, `time`, `mem`, `cpus_per_task`, `gres`,
 ## Engine dispatch (one command, end to end)
 
 ```bash
-tvbo run mystudy.yaml --engine slurm --backend tvboptim -o ./run-001
+tvbo workflow run slurm mystudy.yaml --experiment 2,3,20,30 --backend tvboptim
 ```
 
-Equivalent to emitting the kit and then `sbatch`-ing it. For `snakemake` and
-`nextflow` the artefact is written but **no launcher is invoked**; run
-`snakemake --cores all` / `nextflow run main.nf` yourself (Slurm's `sbatch` is
-fire-and-forget, the others need a sustained shell).
+`tvbo workflow run <engine>` emits the kit **and** submits it. A comma-separated
+`--experiment` (`2,3,20,30`) emits and submits **one kit/job per experiment** — on
+Slurm they run in parallel; the ids match an experiment's key, name, label, or numeric
+`id`. The lower-level equivalents are `tvbo run mystudy.yaml --engine slurm` (emit +
+`sbatch`) and `tvbo workflow slurm … -o kit` then `sbatch kit/run.sbatch`. For
+`snakemake` / `nextflow`, `tvbo workflow run` invokes the engine and blocks until it
+finishes; the two-step forms write the artefact but leave you to run
+`snakemake --cores all` / `nextflow run main.nf` (Slurm's `sbatch` is fire-and-forget).
 
 ## Containers (`--set container=IMAGE`)
 

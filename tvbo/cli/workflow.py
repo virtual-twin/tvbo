@@ -222,6 +222,42 @@ def _freeze_spec_yaml(experiment, spec_dir: Path, *, workflow_spec: dict | None 
             experiment.workflow = original_wf
 
 
+def _bundle_callable_modules(spec_yaml_text: str, out_dir: Path) -> bool:
+    """Copy the recipe's custom callable/builder modules into the kit's ``code/``.
+
+    A recipe references user code by bare module name (``callable: {module:
+    my_analysis}`` / ``builder: {module: my_networks}``). Those modules are
+    importable at emit time (on the author's ``PYTHONPATH``) but are not installed
+    packages, so the frozen spec cannot resolve them on a compute node unless they
+    travel with the kit. Each referenced module that resolves to a **local** ``.py``
+    file (not under ``site-packages``/``dist-packages`` — installed deps are
+    provisioned via ``requirements.txt``/``environment.yml`` instead) is copied into
+    ``code/``. Returns True if anything was bundled (the sbatch then puts ``code`` on
+    ``PYTHONPATH``).
+    """
+    import importlib
+    import re
+    import shutil
+
+    names = set(re.findall(r'module:\s*["\']?([A-Za-z_][\w.]*)', spec_yaml_text))
+    bundled: list[str] = []
+    code_dir = out_dir / "code"
+    for name in sorted(names):
+        try:
+            mod = importlib.import_module(name)
+        except Exception:
+            continue
+        f = getattr(mod, "__file__", None) or ""
+        if not f.endswith(".py") or "site-packages" in f or "dist-packages" in f:
+            continue  # installed package — comes from the emitted requirements, not bundled
+        code_dir.mkdir(exist_ok=True)
+        shutil.copy2(f, code_dir / Path(f).name)
+        bundled.append(Path(f).name)
+    if bundled:
+        _common.info(f"bundled callable modules → code/: {', '.join(bundled)}")
+    return bool(bundled)
+
+
 def _emit_kit(*, engine: str, plan, experiment, out_dir: Path) -> Path:
     """Write a self-contained reproducibility kit under *out_dir*.
 
@@ -246,12 +282,14 @@ def _emit_kit(*, engine: str, plan, experiment, out_dir: Path) -> Path:
     #    (network.h5) + YAML sidecar (network.yaml) and referenced from the spec
     #    via ``network.data_file`` — the mechanism resolve_spec loads on the node.
     spec_relpath = None
+    bundled_code = False
     try:
         spec_dir = out_dir / "spec"
         yaml_text = _freeze_spec_yaml(experiment, spec_dir, workflow_spec=plan.workflow_spec)
         spec_path = spec_dir / f"{plan.experiment_key}.yaml"
         spec_path.write_text(yaml_text, encoding="utf-8")
         spec_relpath = str(spec_path.relative_to(out_dir))
+        bundled_code = _bundle_callable_modules(yaml_text, out_dir)
     except Exception as exc:
         _common.info(f"(could not snapshot YAML spec: {exc})")
 
@@ -275,6 +313,7 @@ def _emit_kit(*, engine: str, plan, experiment, out_dir: Path) -> Path:
         block=plan.engine_block,
         script_relpath=str(script_path.relative_to(out_dir)) if script_path else None,
         spec_relpath=spec_relpath,
+        bundled_code=bundled_code,
     )
     artefact.write_text(text, encoding="utf-8")
     _common.info(f"wrote {artefact.relative_to(out_dir)}")
