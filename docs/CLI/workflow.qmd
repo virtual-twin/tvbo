@@ -22,7 +22,7 @@ All emitter commands share the same flag surface. The kit layout is documented o
 |------|---------|---------|
 | `SPEC` | _(required)_ | Path, CURIE, or DB name (Study or Experiment). |
 | `--backend, -b` | `tvboptim` | Backend whose code is rendered into the kit's `scripts/` and whose `vectorize_axes` drive the planner. |
-| `--experiment` | _(first in study)_ | If SPEC is a Study, pick this experiment by `key`/`name`/`label`. |
+| `--experiment` | _(first in study)_ | If SPEC is a Study, pick the experiment(s) by `key`/`name`/`label`/numeric `id`. A comma-list (`2,3,20,30`) emits one kit per experiment (and, with `workflow run`, submits each). |
 | `-o, --output` | `out/<study>/<exp>/<engine>/` | Output directory for the kit. |
 | `--set KEY=VALUE` | _(none, repeatable)_ | Override a workflow spec key. Dotted keys nest, e.g. `--set slurm.account=foo`. Booleans/numbers are coerced. |
 | `--stdout` | _(off)_ | Print the artefact text only and skip kit creation. |
