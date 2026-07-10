@@ -45,7 +45,6 @@ from tvbo.log import (  # noqa: E402,F401
     configure_logging,
     ensure_configured,
     get_log_level,
-    get_logger,
     log_level,
     set_log_level,
     silence,

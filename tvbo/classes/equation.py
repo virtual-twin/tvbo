@@ -59,8 +59,6 @@ E = sp.symbols("E")  # TODO: not used
 logger = logging.getLogger(__name__)
 
 
-
-
 def add_spaces_around_operators(expression):
     """Insert surrounding spaces around binary arithmetic operators in a string.
 

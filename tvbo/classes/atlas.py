@@ -67,8 +67,6 @@ available_atlases = bids_utils.get_unique_entity_values(atlas_data, "atlas")
 logger = logging.getLogger(__name__)
 
 
-
-
 class Atlas(tvbo_datamodel.BrainAtlas):
     """BrainAtlas with lazy, computed properties for data files and derived attributes.
 

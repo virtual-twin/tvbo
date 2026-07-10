@@ -38,7 +38,6 @@ from typing import Iterator, Optional, Union
 
 __all__ = [
     "logger",
-    "get_logger",
     "configure_logging",
     "ensure_configured",
     "set_log_level",
@@ -73,27 +72,6 @@ logger = logging.getLogger(LOGGER_NAME)
 logger.addHandler(logging.NullHandler())
 
 
-def get_logger(name: Optional[str] = None) -> logging.Logger:
-    """Return a logger within the ``tvbo`` hierarchy.
-
-    In-package modules should call ``logging.getLogger(__name__)`` directly; this
-    helper is for code outside the package tree — notably generated backend
-    scripts — that wants a child of the central ``tvbo`` logger by short name.
-
-    Args:
-        name: Short name (``"run"`` → ``tvbo.run``) or a fully qualified
-            ``tvbo.*`` name. Falsy or ``"tvbo"`` returns the root tvbo logger.
-
-    Returns:
-        The requested logger, guaranteed to sit under ``tvbo``.
-    """
-    if not name or name == LOGGER_NAME:
-        return logger
-    if not name.startswith(LOGGER_NAME + "."):
-        name = f"{LOGGER_NAME}.{name}"
-    return logging.getLogger(name)
-
-
 def _coerce_level(level: LevelLike) -> Optional[int]:
     """Turn a user-supplied level into a numeric level (``None`` passes through).
 
@@ -107,7 +85,7 @@ def _coerce_level(level: LevelLike) -> Optional[int]:
     if isinstance(level, int):
         return level
     text = str(level).strip().upper()
-    if text in ("OFF", "NONE", "SILENT", "QUIET", "DISABLE", "DISABLED"):
+    if text in ("OFF", "NONE"):
         return _OFF
     value = logging.getLevelName(text)  # name → int for known levels
     if isinstance(value, int):

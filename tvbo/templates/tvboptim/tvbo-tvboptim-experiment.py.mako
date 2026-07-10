@@ -2418,9 +2418,9 @@ def run_experiment(
     # level decides what is shown.
     _quiet = kwargs.pop("quiet", False)
 
-    def _log(*args):
+    def _log(msg):
         if not _quiet:
-            logger.info(" ".join(str(a) for a in args))
+            logger.info(msg)
 % if network_observation_names:
     # Materialize network-observation constants (empirical targets) from the
     # supplied matrices, keyed by observation name (e.g. {'fc_target': FC}).

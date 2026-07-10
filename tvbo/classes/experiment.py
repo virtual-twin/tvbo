@@ -47,6 +47,7 @@ from tvbo.adapters.tvb import from_tvb_simulator as _from_tvb_simulator
 from tvbo.utils import traverse_metadata
 from tvbo.utils import Bunch
 from tvbo.utils import as_list
+from tvbo.log import ensure_configured
 
 logger = logging.getLogger(__name__)
 
@@ -1681,8 +1682,6 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         # clobbering an app's own logging — the same switch the CLI uses, so
         # ``exp.run(...)`` and ``tvbo run`` log identically. No-op if the
         # embedding application already configured logging.
-        from tvbo.log import ensure_configured
-
         ensure_configured()
 
         if "duration" in kwargs:

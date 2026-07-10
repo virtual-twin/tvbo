@@ -31,6 +31,8 @@ logger = logging.getLogger(__name__)
 
 def _log_source(rendered_code: str) -> None:
     """Emit rendered code with line numbers when ``print_source`` is requested."""
+    if not logger.isEnabledFor(logging.INFO):
+        return
     numbered = "\n".join(
         f"{i}\t{line}" for i, line in enumerate(rendered_code.split("\n"), start=1)
     )

@@ -93,7 +93,9 @@ def _configure(
         level = "ERROR"
     if log_level:
         level = log_level
-    configure_logging(level)
+    # CLI output is user-facing: keep it bare (no "LEVEL [name]" diagnostic
+    # prefix), matching the plain lines the CLI printed before.
+    configure_logging(level, fmt="%(message)s")
 
 
 __all__ = ["app"]
