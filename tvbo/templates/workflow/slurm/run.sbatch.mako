@@ -31,6 +31,10 @@ sb = block
 % if sb.get("mail_user"):
 #SBATCH --mail-user=${sb["mail_user"]}
 % endif
+## Passthrough for any scheduler directive the typed fields don't name.
+% for _opt in (sb.get("options") or []):
+#SBATCH --${_opt["name"]}=${_opt["value"]}
+% endfor
 #SBATCH --output=logs/%x-%A_%a.out
 #SBATCH --error=logs/%x-%A_%a.err
 
@@ -59,28 +63,11 @@ module load ${mod}
 % if sb.get("venv"):
 source ${sb["venv"]}/bin/activate
 % endif
-<%
-_env = sb.get("env") or {}
-%>
-% if isinstance(_env, dict):
-% for _k, _v in _env.items():
-<%
-_val = _v.get("value") if isinstance(_v, dict) else _v
-if isinstance(_val, bool):
-    _val = str(_val).lower()
-%>
-export ${_k}="${_val}"
+## env is normalized to a shell-quoted [{name, value}] list in the plan builder
+## (tvbo.cli._workflow._normalize_env), so values are emitted verbatim.
+% for _e in (sb.get("env") or []):
+export ${_e["name"]}=${_e["value"]}
 % endfor
-% else:
-% for kv in _env:
-<%
-_v = kv["value"]
-if isinstance(_v, bool):
-    _v = str(_v).lower()
-%>
-export ${kv["name"]}="${_v}"
-% endfor
-% endif
 
 <%
     out_pat = plan.out_dir + "/$SLURM_ARRAY_JOB_ID/$SLURM_ARRAY_TASK_ID"

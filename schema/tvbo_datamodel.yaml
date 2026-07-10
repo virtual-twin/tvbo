@@ -196,7 +196,12 @@ enums:
             lax_map:
                 description: "Sequential execution via jax.lax.map. Slower; bounded memory."
             pmap:
-                description: "Cross-device parallel execution (jax.pmap). For multi-GPU/TPU."
+                description: >-
+                    Parallel execution across the local devices of a single node
+                    (jax.pmap over the several GPUs/TPUs visible to that task).
+                    Intra-task only — it never spans nodes; inter-node parallelism
+                    is scheduler fan-out (DistributionConfig.chunk), not pmap. On a
+                    one-GPU (or CPU) task this degenerates to vmap.
 
     CouplingStageEvaluation:
         description: >-
@@ -3885,11 +3890,19 @@ classes:
                     tasks (one workflow cell per value combination).
             chunk:
                 range: integer
+                minimum_value: 1
                 description: >-
-                    Sharding granularity. For a fully vectorized sweep, the number of
-                    scheduler shards to split the batched cells across (each task runs
-                    ``1/chunk`` of the grid). For a fanned sweep, the number of
-                    workflow cells packed into one task. Unset means one shard.
+                    Sharding granularity — the inter-task (inter-node) tier. For a
+                    fully vectorized sweep, the number of independent scheduler
+                    shards to split the batched cells across (each task runs
+                    ``1/chunk`` of the grid on its own node). For a fanned sweep,
+                    the number of workflow cells packed into one task. Unset means
+                    one shard. This is orthogonal to the intra-task device tier
+                    (Exploration.parallel_mode: vmap/lax_map/pmap): on CPU, where
+                    nodes are plentiful, raise chunk to fan the grid across many
+                    nodes; on GPU, where nodes are scarce, keep chunk=1 so one node
+                    holds the whole grid and batches it on-device with vmap rather
+                    than claiming many GPUs.
 
     EnvironmentVariable:
         class_uri: tvbo:EnvironmentVariable
@@ -3908,18 +3921,41 @@ classes:
                 required: true
                 description: "Value exported for this variable."
 
+    SchedulerDirective:
+        class_uri: tvbo:SchedulerDirective
+        description: >-
+            One engine-native scheduler directive passed through verbatim by the
+            engine's emitter (e.g. a Slurm ``#SBATCH --<name>=<value>`` line). The
+            open extension point of WorkflowEngineConfig: it carries any directive
+            the typed fields do not name, so a new scheduler flag needs no schema
+            change.
+        attributes:
+            name:
+                range: string
+                identifier: true
+                required: true
+                description: "Directive name without its flag prefix (e.g. 'qos', 'constraint')."
+            value:
+                range: string
+                required: true
+                description: "Directive value (e.g. 'normal')."
+
     WorkflowEngineConfig:
         class_uri: tvbo:WorkflowEngineConfig
         description: >-
-            Execution directives for one target workflow engine (Slurm, Snakemake,
-            Nextflow). Every field is optional; each engine renders the subset it
-            understands, so a single shape serves all three. Resource fields are
-            engine-agnostic; scheduler fields (partition, account, …) pass through
-            verbatim to the target scheduler.
+            Execution directives for a workflow engine. Every field is optional and
+            each engine's emitter consumes the subset it supports, so one block may
+            carry directives for more than one target. The generic resource fields
+            (cpus_per_task, mem, time) map across engines; the remaining fields are
+            named for the engine that reads them (Slurm: partition/account/gres/
+            mail_*/array_chunk; Snakemake: cores; Nextflow: executor/queue). Any
+            directive not named here is passed through ``options`` verbatim, so the
+            block stays extensible without a schema change.
         attributes:
             cpus_per_task:
                 range: integer
-                description: "CPU cores requested per task."
+                minimum_value: 1
+                description: "CPU cores requested per task (Slurm --cpus-per-task)."
             mem:
                 range: string
                 description: "Memory per task in scheduler syntax (e.g. '16G')."
@@ -3931,13 +3967,20 @@ classes:
                 description: "Generic scheduler resources, e.g. 'gpu:1' (Slurm --gres)."
             partition:
                 range: string
-                description: "Scheduler partition or queue to submit to."
+                description: "Scheduler partition to submit to (Slurm)."
             account:
                 range: string
-                description: "Accounting allocation to charge the tasks against."
+                description: "Accounting allocation to charge the tasks against (Slurm)."
             cores:
                 range: integer
-                description: "Total cores for local engines (e.g. Snakemake --cores)."
+                minimum_value: 1
+                description: "Total cores for local engines (Snakemake --cores)."
+            executor:
+                range: string
+                description: "Executor to run the pipeline through (Nextflow process.executor)."
+            queue:
+                range: string
+                description: "Scheduler queue for the executor (Nextflow process.queue)."
             modules:
                 multivalued: true
                 range: string
@@ -3953,16 +3996,30 @@ classes:
                 description: "Notification email address."
             array_chunk:
                 range: integer
+                minimum_value: 1
                 description: >-
                     Overrides ``distribute.chunk`` for this engine only: the number
                     of array-task shards to split the vectorized sweep across.
+            options:
+                multivalued: true
+                range: SchedulerDirective
+                inlined: true
+                inlined_as_list: true
+                description: >-
+                    Additional engine-native scheduler directives passed through
+                    verbatim, each in the target's native form: a Slurm ``#SBATCH
+                    --<name>=<value>`` line, a Snakemake ``resources:`` entry, or a
+                    Nextflow ``process.<name>`` assignment. The extension point for
+                    any flag the typed fields do not cover.
             env:
                 multivalued: true
                 range: EnvironmentVariable
                 inlined: true
+                inlined_as_list: true
                 description: >-
-                    Environment variables exported before task execution
-                    (e.g. XLA_PYTHON_CLIENT_PREALLOCATE=false).
+                    Environment variables exported before the task command on every
+                    engine (e.g. XLA_PYTHON_CLIENT_PREALLOCATE=false). An ordered
+                    list of {name, value}; values are shell-quoted at emit time.
 
     WorkflowConfig:
         class_uri: tvbo:WorkflowConfig
@@ -3988,6 +4045,7 @@ classes:
                     reference); tasks run as ``<runtime> exec <image> …``.
             retries:
                 range: integer
+                minimum_value: 0
                 description: "Automatic retries per failed task. Unset means none."
             rng:
                 range: string
@@ -4002,6 +4060,7 @@ classes:
                     means enabled.
             chunk:
                 range: integer
+                minimum_value: 1
                 description: >-
                     Default shard count used when ``distribute.chunk`` is unset (see
                     DistributionConfig.chunk).

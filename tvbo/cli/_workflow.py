@@ -225,6 +225,90 @@ def _norm_requirement(item) -> dict[str, Any]:
             "source_url": get("source_url") or get("url")}
 
 
+def _normalize_env(raw) -> list[dict[str, str]]:
+    """Canonicalise an engine block's ``env`` into a shell-ready list.
+
+    Accepts the YAML list form ``[{name, value}]`` and the mapping form
+    ``{NAME: value}`` produced by ``--set slurm.env.NAME=value``. Booleans lower
+    to ``true``/``false``; every value is shell-quoted so the template can emit
+    ``export NAME=value`` verbatim without branching on shape or escaping.
+    """
+    import shlex
+
+    pairs: list[tuple[Any, Any]] = []
+    if isinstance(raw, dict):
+        for name, value in raw.items():
+            # schema-inlined EnvironmentVariable carries {name, value}; --set is scalar.
+            pairs.append((name, value.get("value") if isinstance(value, dict) else value))
+    elif isinstance(raw, (list, tuple)):
+        for item in raw:
+            if isinstance(item, dict):
+                pairs.append((item.get("name"), item.get("value")))
+    out: list[dict[str, str]] = []
+    for name, value in pairs:
+        if name is None:
+            continue
+        if isinstance(value, bool):
+            value = str(value).lower()
+        out.append({"name": str(name), "value": shlex.quote(str(value))})
+    return out
+
+
+def _pairs_to_map(items) -> dict[str, Any]:
+    """Flatten a name-keyed slot (YAML ``[{name, value}]`` list or schema/CLI map)
+    into a plain ``{name: value}`` dict."""
+    if isinstance(items, dict):
+        return {k: (v.get("value") if isinstance(v, dict) else v) for k, v in items.items()}
+    out: dict[str, Any] = {}
+    if isinstance(items, (list, tuple)):
+        for item in items:
+            if isinstance(item, dict) and item.get("name") is not None:
+                out[item["name"]] = item.get("value")
+    return out
+
+
+#: Engine-block slots that are name-keyed lists in YAML but must merge by name.
+_ENGINE_MAP_SLOTS = ("env", "options")
+
+
+def _canonicalize_engine_maps(block: dict) -> dict:
+    """Rewrite each engine block's name-keyed slots (env, options) to maps in place.
+
+    The YAML author writes ``env: [{name, value}]`` (a list) while ``--set
+    slurm.env.X=v`` yields a mapping; representing both as a name-keyed map lets
+    the workflow merge (study < experiment < --set) override single entries by
+    name instead of replacing the whole list. The plan later lowers each map back
+    to a list via :func:`_normalize_env` / :func:`_normalize_directives`.
+    """
+    for engine in ("slurm", "snakemake", "nextflow"):
+        eng = block.get(engine)
+        if isinstance(eng, dict):
+            for slot in _ENGINE_MAP_SLOTS:
+                if slot in eng:
+                    eng[slot] = _pairs_to_map(eng[slot])
+    return block
+
+
+def _normalize_directives(raw) -> list[dict[str, str]]:
+    """Canonicalise an engine block's ``options`` into a ``[{name, value}]`` list.
+
+    Same name-keyed shapes as :func:`_normalize_env`, but the values are scheduler
+    directive tokens (e.g. a Slurm ``#SBATCH --<name>=<value>`` line), not shell
+    words, so they are emitted verbatim rather than shell-quoted.
+    """
+    src = raw.items() if isinstance(raw, dict) else (
+        ((i.get("name"), i.get("value")) for i in raw if isinstance(i, dict))
+        if isinstance(raw, (list, tuple)) else ())
+    out: list[dict[str, str]] = []
+    for name, value in src:
+        if name is None:
+            continue
+        if isinstance(value, bool):
+            value = str(value).lower()
+        out.append({"name": str(name), "value": str(value)})
+    return out
+
+
 def plan(
     *,
     study_key: str,
@@ -282,6 +366,10 @@ def plan(
     engine_block = dict(spec.get(engine) or {})
     if "array_chunk" in engine_block:
         chunk = int(engine_block["array_chunk"])
+    if "env" in engine_block:
+        engine_block["env"] = _normalize_env(engine_block["env"])
+    if "options" in engine_block:
+        engine_block["options"] = _normalize_directives(engine_block["options"])
 
     # Software dependencies come from the experiment's schema-native
     # environment.requirements (overridable via workflow_spec["requirements"]).
@@ -325,9 +413,10 @@ def merge_workflow_spec(study, experiment=None) -> dict[str, Any]:
     precedence, the rest are inherited. Pass the experiment object directly — it
     need not carry a ``key``. With no experiment, only the study block is returned.
     """
-    base = _as_plain_dict(getattr(study, "workflow", None))
-    override = (_as_plain_dict(getattr(experiment, "workflow", None))
-                if experiment is not None else {})
+    base = _canonicalize_engine_maps(_as_plain_dict(getattr(study, "workflow", None)))
+    override = _canonicalize_engine_maps(
+        _as_plain_dict(getattr(experiment, "workflow", None))
+        if experiment is not None else {})
     return _deep_merge(base, override)
 
 

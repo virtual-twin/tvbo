@@ -54,6 +54,8 @@ website:
                         href: Specification/LossFunction.qmd
                       - text: "Parameter Exploration"
                         href: Usage/ParameterExploration.qmd
+                      - text: "Distributed Workflows (HPC)"
+                        href: Usage/DistributedWorkflows.qmd
                       - text: "Model Fitting"
                         href: Usage/ModelFitting.qmd
                       - text: "Bifurcation Analysis"

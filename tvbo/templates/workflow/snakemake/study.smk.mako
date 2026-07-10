@@ -57,7 +57,17 @@ rule ${plan.experiment_key.replace("-", "_")}:
 % endif
     threads: ${block.get("cores") or 1}
     retries: ${plan.retries}
+% if block.get("options"):
+    resources:
+% for _opt in block["options"]:
+        ${_opt["name"]}="${_opt["value"]}"${"" if loop.last else ","}
+% endfor
+% endif
     shell:
+## env is exported ahead of the task command (values shell-quoted in the plan).
+% for _e in (block.get("env") or []):
+        "export ${_e['name']}=${_e['value']} && "
+% endfor
 % if script_relpath:
         "python ${script_relpath} "
 % for ax in axes:

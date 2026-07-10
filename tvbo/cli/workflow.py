@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import datetime as _dt
 import os
+import shlex
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -12,7 +14,6 @@ from mako.template import Template
 from . import _common
 from . import _workflow as _wf
 from ._backends import list_backends, resolve_backend
-from .run import _execute_engine_artefact
 
 
 app = typer.Typer(name="workflow", no_args_is_help=True)
@@ -411,6 +412,29 @@ def _emit(engine: str, *, spec: str, backend: str, experiment: str | None,
     return out_dir
 
 
+def _execute_engine_artefact(engine: str, artefact: Path, *, slurm_array: str | None = None) -> None:
+    """Submit/execute a rendered workflow artefact for *engine*.
+
+    Runs from the artefact's own directory so the generated script can use the
+    relative ``spec/`` and ``scripts/`` paths of an emitted kit. *slurm_array*
+    restricts a Slurm submission to an index or range (``'0'`` for a single
+    smoke task, ``'0-3'`` for four); ignored for non-Slurm engines.
+    """
+    if engine == "slurm":
+        cmd = ["sbatch"]
+        if slurm_array is not None:
+            cmd.append(f"--array={slurm_array}")
+        cmd.append(artefact.name)
+    elif engine == "snakemake":
+        cmd = ["snakemake", "--cores", "all"]
+    elif engine == "nextflow":
+        cmd = ["nextflow", "run", artefact.name]
+    else:
+        _common.die(f"unsupported engine {engine!r}; expected {'|'.join(_ARTEFACT_NAME)}")
+    _common.info("$ " + " ".join(shlex.quote(c) for c in cmd))
+    subprocess.run(cmd, check=True, cwd=artefact.parent)
+
+
 def _execute_emitted(engine: str, out_dir: Path, *, slurm_array: str | None = None) -> None:
     """Execute a generated workflow artefact inside *out_dir*."""
     artefact = out_dir / _ARTEFACT_NAME[engine]
@@ -486,8 +510,8 @@ def run_workflow(
     to keep one GPU busy at a time.
     """
     engine = engine.lower()
-    if engine not in {"slurm", "snakemake", "nextflow"}:
-        _common.die("`tvbo workflow run` expects engine one of: slurm, snakemake, nextflow")
+    if engine not in _ARTEFACT_NAME:
+        _common.die(f"`tvbo workflow run` expects engine one of: {', '.join(_ARTEFACT_NAME)}")
     effective_overrides = list(override)
     if engine == "slurm" and array is not None:
         override_keys = {

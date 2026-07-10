@@ -184,8 +184,17 @@ def _exec_one(experiment, backend: str, out_dir: Path | None, kwargs: dict) -> N
 def _dispatch_to_engine(engine: str, *, spec: str, backend: str,
                         experiment: str | None, container: str | None,
                         out_dir: Path | None) -> None:
-    if engine not in {"slurm", "snakemake", "nextflow"}:
-        _common.die(f"--engine {engine!r} not supported. Use local|slurm|snakemake|nextflow.")
+    """Emit a workflow kit for *engine* and submit/execute it, all in-process.
+
+    Shares the emit + execute path with ``tvbo workflow <engine>`` rather than
+    re-shelling ``tvbo`` (which needs it on ``$PATH`` — fragile under venv /
+    module / container setups on HPC) and rather than building the plan twice.
+    """
+    from . import workflow as _workflow_cmd
+
+    if engine not in _workflow_cmd._ARTEFACT_NAME:
+        supported = "|".join(_workflow_cmd._ARTEFACT_NAME)
+        _common.die(f"--engine {engine!r} not supported. Use local|{supported}.")
 
     overrides: list[str] = []
     if container:
@@ -193,66 +202,12 @@ def _dispatch_to_engine(engine: str, *, spec: str, backend: str,
     if out_dir:
         overrides.append(f"--set=out_dir={out_dir}")
 
-    kit_dir = out_dir or _default_engine_kit_dir(spec=spec, experiment=experiment, engine=engine, backend=backend)
-    artefact = kit_dir / {
-        "slurm": "run.sbatch",
-        "snakemake": "Snakefile",
-        "nextflow": "main.nf",
-    }[engine]
-
-    cmd = ["tvbo", "workflow", engine, spec, "--backend", backend, "-o", str(kit_dir)]
-    if experiment:
-        cmd.extend(["--experiment", experiment])
-    cmd.extend(overrides)
-    _common.info("$ " + " ".join(shlex.quote(c) for c in cmd))
-    subprocess.run(cmd, check=True)
-    _common.info(f"emitted {artefact}")
-
-    if engine == "slurm":
-        _execute_engine_artefact(engine, artefact)
-
-
-def _default_engine_kit_dir(*, spec: str, experiment: str | None, engine: str, backend: str) -> Path:
-    """Resolve the default workflow kit directory for ``tvbo run --engine``.
-
-    Mirrors ``tvbo workflow <engine>`` defaults so ``tvbo run`` can emit a kit
-    without an explicit ``--out-dir`` while still knowing where to execute it.
-    """
-    from . import workflow as _workflow_cmd
-
-    plan, _exp = _workflow_cmd._build_plan(
-        spec,
-        engine=engine,
-        backend=backend,
-        experiment=experiment,
-        overrides=[],
-    )
-    return Path("out") / plan.study_key / plan.experiment_key / engine
-
-
-def _execute_engine_artefact(engine: str, artefact: Path, *, slurm_array: str | None = None) -> None:
-    """Execute a rendered workflow artefact for *engine*.
-
-    Uses the artefact directory as CWD so generated scripts can use relative
-    paths (e.g. ``spec/`` and ``scripts/`` in emitted kits).
-
-    *slurm_array* restricts the Slurm array submission to a specific index or
-    range (e.g. ``'0'`` for a single smoke task, ``'0-3'`` for four tasks).
-    Ignored for non-Slurm engines.
-    """
-    if engine == "slurm":
-        cmd = ["sbatch"]
-        if slurm_array is not None:
-            cmd.append(f"--array={slurm_array}")
-        cmd.append(artefact.name)
-    elif engine == "snakemake":
-        cmd = ["snakemake", "--cores", "all"]
-    elif engine == "nextflow":
-        cmd = ["nextflow", "run", artefact.name]
-    else:
-        _common.die(f"unsupported engine {engine!r}; expected slurm|snakemake|nextflow")
-    _common.info("$ " + " ".join(shlex.quote(c) for c in cmd))
-    subprocess.run(cmd, check=True, cwd=artefact.parent)
+    kit_dir = _workflow_cmd._emit(engine, spec=spec, backend=backend,
+                                  experiment=experiment, output=out_dir,
+                                  override=overrides, stdout=False)
+    if kit_dir is None:
+        _common.die("failed to emit workflow kit")
+    _workflow_cmd._execute_emitted(engine, kit_dir)
 
 
 def _reexec_in_container(image: str, argv: list[str]) -> None:

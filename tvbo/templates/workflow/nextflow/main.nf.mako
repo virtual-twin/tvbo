@@ -23,6 +23,10 @@ process.executor  = '${block["executor"]}'
 % if block.get("queue"):
 process.queue     = '${block["queue"]}'
 % endif
+## Passthrough: each option is a Nextflow process directive (e.g. clusterOptions).
+% for _opt in (block.get("options") or []):
+process.${_opt["name"]} = '${_opt["value"]}'
+% endfor
 
 process tvbo_run {
     tag "${plan.experiment_key}"
@@ -38,6 +42,10 @@ process tvbo_run {
 
     script:
     """
+## env is exported ahead of the task command (values shell-quoted in the plan).
+% for _e in (block.get("env") or []):
+    export ${_e['name']}=${_e['value']}
+% endfor
 % if script_relpath:
     python ${'${baseDir}/'}${script_relpath} \\
 % for ax in axes:
