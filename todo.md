@@ -113,6 +113,33 @@ layer and buggy — do NOT keep it; Phase B replaces it:
   synced.
 Also switch the runtime load off the deprecated `tvb-o.owl` (see this section).
 
+## Unify experiment selection on `SimulationStudy` (dedup the two CLIs)
+
+`tvbo run` and `tvbo workflow` both resolve `--experiment` against a study by
+matching `{key, name, label, str(id)}` on the datamodel objects, then
+reverse-derive `sel = id or key or name or label` to hand back to
+`SimulationStudy.get_experiment(sel)` for materialisation. The `{…}` identity set
+is now shared via `_common.experiment_ids()`, but the resolution block (guard →
+`sel` → `get_experiment` → `die`) is still copy-pasted in both CLIs and has drifted
+(`hasattr(exp,"run")` vs `hasattr(exp,"render")`; different `die` wording). Root
+cause: `get_experiment` (`tvbo/classes/study.py:117`) matches by **id only**, so
+each CLI must do its own 4-field match first.
+
+Fix at the right layer:
+- Broaden `SimulationStudy.get_experiment` to accept id **or** key/name/label
+  (backward-compatible — id still matches).
+- Add `SimulationStudy.select_experiments(selector) -> list[runtime experiment]`
+  that splits the comma-list and returns runtime (`.run`/`.render`-capable)
+  experiments.
+- Collapse both CLIs to one call, deleting the per-CLI 4-field match, the `sel`
+  reverse-derivation, and the `hasattr` guard. The comma-list *semantics* stay
+  per-CLI (`tvbo run` runs all in-process; `tvbo workflow` fans into separate
+  kits) — that difference is intended, not duplication.
+
+Deferred from a `/simplify` pass because it touches `study.py` (outside the
+reviewed CLI diff) and the CLIs were being actively edited. Surfaced by 3/4
+cleanup agents (reuse + altitude).
+
 ## Harmonize class names with `tvboptim`
 
 Rename `ExplorationAxis` → `Axis` and reshape it so tvbo can declaratively
