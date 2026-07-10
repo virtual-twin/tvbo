@@ -1165,7 +1165,15 @@ class ExplorationResult(Bunch):
         self.cell_coords = cell_coords
         # Per-grid-point observations as {name: xr.DataArray} with grid axes
         # prepended to each observation's intrinsic dims (time/variable/node/mode).
-        self.observations = observations or {}
+        # Grid codegen already hands over labelled DataArrays; the warm-start /
+        # adiabatic path hands over plain arrays, so label those here (against the
+        # swept axes) — the class honours its own contract regardless of producer,
+        # and every consumer (plotting, save, reassembly) sees DataArrays.
+        self.observations = {
+            k: (_stacked_to_dataarray(v, self.axes, name=k)
+                if v is not None and not hasattr(v, "dims") else v)
+            for k, v in (observations or {}).items()
+        }
 
         # Compute expected grid shape from axes
         self._grid_shape = tuple(
@@ -1689,19 +1697,11 @@ class ExperimentResult:
         # ── collect every output as a data-variable ──────────────────────────
         by_output: dict[tuple, "xr.DataArray"] = {}
         for expl_name, expl in (self.explorations or {}).items():
-            _axes = getattr(expl, "axes", None) or []
+            # ExplorationResult labels every observation as a DataArray at
+            # construction (grid and warm-start alike), so this stays uniform.
             for obs_name, da in (getattr(expl, "observations", None) or {}).items():
-                if da is None:
-                    continue
-                # Warm-start / non-grid explorations store observations as plain
-                # arrays; label their leading (swept-parameter) axis so they
-                # serialise like grid observations rather than being dropped.
-                if not hasattr(da, "dims"):
-                    try:
-                        da = _stacked_to_dataarray(da, _axes, name=obs_name)
-                    except Exception:
-                        continue
-                by_output[(_san(expl_name), _san(obs_name))] = da
+                if da is not None and hasattr(da, "dims"):
+                    by_output[(_san(expl_name), _san(obs_name))] = da
             if getattr(expl, "results", None) is not None:
                 try:
                     g = expl.as_grid()

@@ -52,6 +52,11 @@ def run(
         help="Run one shard of the sweep in-process: ``i/N`` runs cells where j%N==i "
              "(no scheduler needed). ``--slurm-chunk`` is a deprecated alias.",
     ),
+    limit: int = typer.Option(
+        None, "--limit", min=1,
+        help="Run at most N cells of the sweep (a spread sample) — a quick look "
+             "without needing to know the grid size. Ignored when --shard is given.",
+    ),
 ) -> None:
     """Run a SPEC (experiment or study) in the selected backend.
 
@@ -78,6 +83,8 @@ def run(
     if shard:
         chunk_i, chunk_n = _parse_chunk(shard)
         _common.info(f"sharding: cell j runs iff j%{chunk_n}=={chunk_i}")
+    # --limit is a cell budget; it becomes a per-experiment shard in _run_one,
+    # which knows each experiment's grid size (a study's experiments can differ).
 
     if kind == "study":
         exps = obj.experiments if hasattr(obj, "experiments") else obj.simulation_experiments
@@ -103,11 +110,11 @@ def run(
                         "(e.g. `module: my_networks`), make them importable — run from "
                         "their directory or set PYTHONPATH."
                     )
-            _run_one(exp, backend, out_dir, kwargs, chunk_i, chunk_n)
+            _run_one(exp, backend, out_dir, kwargs, chunk_i, chunk_n, limit)
         return
 
     if kind == "experiment":
-        _run_one(obj, backend, out_dir, kwargs, chunk_i, chunk_n)
+        _run_one(obj, backend, out_dir, kwargs, chunk_i, chunk_n, limit)
         return
 
     _common.die(f"`tvbo run` does not yet support kind={kind!r}.")
@@ -128,7 +135,22 @@ def _parse_chunk(s: str) -> tuple[int, int]:
 
 
 def _run_one(experiment, backend: str, out_dir: Path | None,
-             kwargs: dict, chunk_i: int | None, chunk_n: int | None) -> None:
+             kwargs: dict, chunk_i: int | None, chunk_n: int | None,
+             limit: int | None = None) -> None:
+    # --limit N is a cell budget: turn it into a stride over this experiment's own
+    # grid so ``Space[0::stride]`` yields ~N spread cells — no need to know the size.
+    if limit is not None and chunk_n is None:
+        import math
+
+        from ._workflow import extract_axes
+        n_cells = 1
+        for ax in extract_axes(experiment):
+            n_cells *= len(ax.values)
+        if n_cells > limit:
+            chunk_i, chunk_n = 0, math.ceil(n_cells / limit)
+            _common.info(f"--limit {limit}: running ~{-(-n_cells // chunk_n)} of "
+                         f"{n_cells} cells (Space[0::{chunk_n}])")
+
     if chunk_n is not None:
         from ._backends import resolve_backend
         from ._workflow import extract_axes
