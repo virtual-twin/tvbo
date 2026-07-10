@@ -37,6 +37,41 @@ except ImportError:
 BEP034_CONFIG_PATH = Path(__file__).parent / "bep034.json"
 
 
+# BIDS pybids rule string for an experiment-result artifact (``<prefix>_result.h5``
+# + ``.yaml`` sidecar). ``suffix``/``extension`` are value-constrained so an
+# invalid combination fails fast; ``desc`` is optional. Customize the naming by
+# editing this pattern — build_path handles entity substitution and optionality.
+RESULT_PATTERNS = [
+    "exp-{experiment}[_desc-{description}]_{suffix<result>}{extension<.h5|.yaml|.json>}",
+]
+
+
+def result_entities(experiment, extension: str = ".h5") -> dict:
+    """BIDS entities for an experiment's result, with alphanumeric values.
+
+    BIDS entity values must be alphanumeric (no spaces/hyphens/underscores), so
+    the id and dynamics label are stripped to ``[A-Za-z0-9]``. Returns a dict
+    ready for :func:`bids.layout.writing.build_path` with ``RESULT_PATTERNS``.
+    """
+    def _alnum(s):
+        return "".join(c for c in str(s) if c.isalnum())
+
+    entities = {"suffix": "result", "extension": extension}
+    eid = getattr(experiment, "id", None)
+    if eid is not None:
+        entities["experiment"] = _alnum(eid)
+    dyn = getattr(experiment, "dynamics", None)
+    label = (getattr(dyn, "label", None) or getattr(dyn, "name", None)) if dyn else None
+    if label and _alnum(label):
+        entities["description"] = _alnum(label)
+    return entities
+
+
+def build_result_path(experiment=None, *, entities: dict = None, extension: str = ".h5") -> str:
+    """Filename for an experiment result via pybids ``build_path`` + RESULT_PATTERNS."""
+    return build_path(entities or result_entities(experiment, extension=extension), RESULT_PATTERNS)
+
+
 def load_bep034_config() -> dict:
     """Load the BEP034 configuration file."""
     with open(BEP034_CONFIG_PATH, "r") as f:

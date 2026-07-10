@@ -291,6 +291,64 @@ def reassemble_shards(source, pattern="*__results.nc", to_grid=False, point_dim=
     return combined.set_index({point_dim: coord_names}).unstack(point_dim)
 
 
+def reassemble_experiment_results(shards_root, out_dir, pattern="**/*_result.h5",
+                                  point_dim="point", stem="result", sidecar=None):
+    """Gather an HPC run's shard outputs into one keyed ``ExperimentResult`` artifact.
+
+    Follows the same on-disk shape as a :class:`~tvbo.classes.network.Network`:
+    one HDF5 file (``<stem>.h5``) holding the data, plus a YAML sidecar
+    (``<stem>.yaml``) carrying the frozen, fully-overridden experiment spec — so
+    the result is self-describing, provenance-complete and reproducible without
+    any extra flags, and identical to what a local run writes.
+
+    Each array task wrote a shard as the same ``<prefix>_result.h5`` Dataset with
+    a flat, self-describing ``point`` dimension (see :meth:`ExperimentResult.save`).
+    This concatenates them along ``point`` and pivots by parameter value into the
+    full rectangular grid, giving one standard xarray ``Dataset`` that opens with a
+    plain ``xarray.open_dataset("<stem>.h5")`` — no TVBO-specific reader.
+
+    Args:
+        shards_root: directory scanned recursively for the shard ``.h5`` files.
+        out_dir: where the ``<stem>.h5`` (+ ``<stem>.yaml``) is written.
+        pattern: glob for shard files.
+        point_dim: the flat cell dimension the shards wrote.
+        stem: basename of the result artifact (default ``result``).
+        sidecar: path to the frozen spec YAML to copy as ``<stem>.yaml``
+            (typically the kit's ``spec/<name>.yaml``). Omit to skip the sidecar.
+
+    Returns:
+        List of written paths (``<stem>.h5`` first, then ``<stem>.yaml``).
+    """
+    import glob
+    import os
+    import shutil
+
+    src = os.fspath(shards_root)
+    paths = sorted(glob.glob(os.path.join(src, pattern), recursive=True))
+    if not paths:
+        raise FileNotFoundError(f"no shard files matched {pattern!r} under {src!r}")
+
+    combined = xr.concat([xr.open_dataset(p, engine="h5netcdf") for p in paths], dim=point_dim)
+    coord_names = [c for c in combined.coords
+                   if point_dim in combined[c].dims and c != point_dim]
+    grid = (combined.set_index({point_dim: coord_names}).unstack(point_dim)
+            if coord_names else combined)
+    grid.attrs["tvbo_class"] = "tvbo:ExperimentResult"
+    if sidecar is not None:
+        grid.attrs["sidecar_file"] = f"{stem}.yaml"
+
+    os.makedirs(out_dir, exist_ok=True)
+    h5_path = os.path.join(out_dir, f"{stem}.h5")
+    grid.to_netcdf(h5_path, engine="h5netcdf")
+    written = [h5_path]
+
+    if sidecar is not None and os.path.exists(os.fspath(sidecar)):
+        yaml_path = os.path.join(out_dir, f"{stem}.yaml")
+        shutil.copyfile(os.fspath(sidecar), yaml_path)
+        written.append(yaml_path)
+    return written
+
+
 # =============================================================================
 # Result Classes for Simulation Experiments
 # =============================================================================
@@ -1610,64 +1668,80 @@ class ExperimentResult:
         return key in self._extras
 
     def save(self, out_dir):
-        """Persist the run's observation arrays to *out_dir* as netCDF.
+        """Persist the run as one keyed HDF5 result plus a YAML provenance sidecar.
 
-        Writes one file per observation ``DataArray`` on the explorations (the
-        two-stage HPC simulation output) and on the primary integration result.
-        A sharded run writes only its own slice; each file carries the swept
-        parameter value per cell as a coordinate, so shard files concatenate by
-        value into the full grid in the analysis pass. Returns written paths.
-        Falls back to ``.npz`` when a DataArray cannot be encoded as netCDF.
+        Writes ``<prefix>_result.h5`` — a single xarray ``Dataset`` where every
+        output is a data-variable and the sweep parameters are shared coordinates
+        (a full run is gridded; a sharded run keeps the flat, self-describing
+        ``point`` dim that reassembles by value) — and ``<prefix>_result.yaml``,
+        the frozen experiment spec. ``<prefix>`` is the experiment's BIDS-style
+        key-value name (``ses-<id>_desc-<label>``). The **same** artifact is
+        produced by a local run and by the HPC gather pass, so they are
+        interchangeable. Returns the written paths.
         """
         import os
 
         os.makedirs(out_dir, exist_ok=True)
-        written = []
 
         def _san(s):
             return "".join(c if (c.isalnum() or c in "._-") else "_" for c in str(s))
 
-        def _dump(da, stem):
-            named = da if getattr(da, "name", None) is not None else da.rename(stem)
-            path = os.path.join(out_dir, stem + ".nc")
-            try:
-                named.to_netcdf(path)
-                return path
-            except Exception:
-                npz = os.path.join(out_dir, stem + ".npz")
-                np.savez(
-                    npz,
-                    data=np.asarray(da.values),
-                    **{f"coord__{_san(k)}": np.asarray(v) for k, v in da.coords.items()},
-                )
-                return npz
-
+        # ── collect every output as a data-variable ──────────────────────────
+        by_output: dict[tuple, "xr.DataArray"] = {}
         for expl_name, expl in (self.explorations or {}).items():
             for obs_name, da in (getattr(expl, "observations", None) or {}).items():
-                if da is not None:
-                    written.append(_dump(da, f"exploration__{_san(expl_name)}__{_san(obs_name)}"))
-            # Raw sweep results (the no-observations two-stage sim output): dump the
-            # labelled array (grid for a full run, flat 'point' for a shard).
+                if da is not None and hasattr(da, "dims"):
+                    by_output[(_san(expl_name), _san(obs_name))] = da
             if getattr(expl, "results", None) is not None:
                 try:
                     g = expl.as_grid()
                 except Exception:
                     g = None
-                if g is not None and hasattr(g, "to_netcdf"):
-                    written.append(_dump(g, f"exploration__{_san(expl_name)}__results"))
-                elif g is not None:
-                    npz = os.path.join(out_dir, f"exploration__{_san(expl_name)}__results.npz")
-                    np.savez(npz, results=np.asarray(g))
-                    written.append(npz)
-
-        integ = self.integration
-        integ_obs = getattr(integ, "observations", None) if integ is not None else None
+                if g is not None and hasattr(g, "dims"):
+                    by_output[(_san(expl_name), "results")] = g
+        outputs = [o for _, o in by_output]
+        data_vars = {(o if outputs.count(o) == 1 else f"{e}__{o}"): da
+                     for (e, o), da in by_output.items()}
+        integ_obs = getattr(self.integration, "observations", None) if self.integration is not None else None
         if integ_obs and hasattr(integ_obs, "items"):
             for obs_name, obs in integ_obs.items():
                 da = getattr(obs, "data", obs)
-                if hasattr(da, "to_netcdf"):
-                    written.append(_dump(da, f"integration__{_san(obs_name)}"))
+                if hasattr(da, "dims"):
+                    data_vars[f"integration__{_san(obs_name)}"] = da
 
+        stem = "result"
+        if self.source is not None and hasattr(self.source, "get_result_stem"):
+            try:
+                stem = self.source.get_result_stem()  # BIDS pybids-generated, filename-safe
+            except Exception:
+                stem = "result"
+
+        # A sharded run's cell coordinates mark it as one slice of the sweep; its
+        # provenance sidecar is written once by the gather pass, not per task.
+        is_shard = any(getattr(e, "cell_coords", None) is not None
+                       for e in (self.explorations or {}).values())
+
+        written = []
+        if data_vars:
+            ds = xr.Dataset(data_vars, attrs={"tvbo_class": "tvbo:ExperimentResult",
+                                              "sidecar_file": f"{stem}.yaml"})
+            h5 = os.path.join(out_dir, f"{stem}.h5")
+            try:
+                ds.to_netcdf(h5, engine="h5netcdf")
+                written.append(h5)
+            except Exception:
+                npz = os.path.join(out_dir, f"{stem}.npz")
+                np.savez(npz, **{k: np.asarray(v.values) for k, v in data_vars.items()})
+                written.append(npz)
+
+        if (not is_shard and written and written[0].endswith(".h5")
+                and self.source is not None and hasattr(self.source, "to_yaml")):
+            try:
+                yaml_path = os.path.join(out_dir, f"{stem}.yaml")
+                self.source.to_yaml(filepath=yaml_path)
+                written.append(yaml_path)
+            except Exception:
+                pass
         return written
 
     def plot(self, **kwargs):

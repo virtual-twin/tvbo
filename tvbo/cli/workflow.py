@@ -281,6 +281,22 @@ def _emit_kit(*, engine: str, plan, experiment, out_dir: Path) -> Path:
     artefact.write_text(text, encoding="utf-8")
     _common.info(f"wrote {artefact.relative_to(out_dir)}")
 
+    # 3a) Gather job — reassembles the array's shard outputs into one result per
+    #     experiment (identical to a local run). Submitted with a dependency by
+    #     `tvbo workflow run`, so no manual post-processing is needed.
+    if engine == "slurm":
+        # BIDS-style result stem (pybids), matching what a local ExperimentResult.save writes.
+        try:
+            result_stem = experiment.get_result_stem()
+        except Exception:
+            result_stem = "result"
+        finalize = out_dir / "finalize.sbatch"
+        finalize.write_text(
+            _render_template("slurm/finalize.sbatch.mako", plan=plan,
+                             block=plan.engine_block, result_stem=result_stem),
+            encoding="utf-8")
+        _common.info(f"wrote {finalize.relative_to(out_dir)}")
+
     # 3b) Environment files (pip + conda) rendered via Mako from the experiment's
     #     declared environment.requirements, so the kit provisions the right env.
     if plan.pip_specs:
@@ -420,7 +436,14 @@ def _emit(engine: str, *, spec: str, backend: str, experiment: str | None,
                                 block=plan.engine_block, script_relpath=None)
         typer.echo(text)
         return None
-    out_dir = output or Path("out") / plan.study_key / plan.experiment_key / engine
+    if output:
+        out_dir = output
+    else:
+        # A standalone experiment has study_key == experiment_key (same fallback),
+        # so collapse the redundant level: out/<experiment>/<engine> not …/x/x/….
+        parts = ([plan.experiment_key] if plan.study_key == plan.experiment_key
+                 else [plan.study_key, plan.experiment_key])
+        out_dir = Path("out").joinpath(*parts, engine)
     _emit_kit(engine=engine, plan=plan, experiment=exp, out_dir=out_dir)
     return out_dir
 
@@ -449,9 +472,43 @@ def _execute_engine_artefact(engine: str, artefact: Path, *, slurm_array: str | 
 
 
 def _execute_emitted(engine: str, out_dir: Path, *, slurm_array: str | None = None) -> None:
-    """Execute a generated workflow artefact inside *out_dir*."""
-    artefact = out_dir / _ARTEFACT_NAME[engine]
-    _execute_engine_artefact(engine, artefact, slurm_array=slurm_array)
+    """Execute a generated workflow artefact inside *out_dir*.
+
+    For Slurm this submits the array job and then chains the gather job
+    (``finalize.sbatch``) with an ``afterok`` dependency, so the run converges to
+    one reassembled result with no manual step.
+    """
+    if engine == "slurm":
+        _submit_slurm_chain(out_dir, slurm_array=slurm_array)
+    else:
+        _execute_engine_artefact(engine, out_dir / _ARTEFACT_NAME[engine], slurm_array=slurm_array)
+
+
+def _submit_slurm_chain(out_dir: Path, *, slurm_array: str | None = None) -> None:
+    """Submit ``run.sbatch`` (array), then ``finalize.sbatch`` with a dependency.
+
+    ``sbatch --parsable`` returns the array job id; the gather job is submitted
+    ``--dependency=afterok`` on it and told where the shards landed via
+    ``TVBO_SHARD_DIR``, so it reassembles them into one result once every task
+    succeeds.
+    """
+    cmd = ["sbatch", "--parsable"]
+    if slurm_array is not None:
+        cmd.append(f"--array={slurm_array}")
+    cmd.append(_ARTEFACT_NAME["slurm"])
+    _common.info("$ " + " ".join(shlex.quote(c) for c in cmd))
+    res = subprocess.run(cmd, check=True, cwd=out_dir, capture_output=True, text=True)
+    job_id = (res.stdout or "").strip().split(";")[0]
+    _common.info(f"submitted array job {job_id}")
+
+    finalize = out_dir / "finalize.sbatch"
+    if finalize.exists() and job_id:
+        base = job_id.split("_")[0]
+        fcmd = ["sbatch", f"--dependency=afterok:{base}",
+                f"--export=ALL,TVBO_SHARD_DIR=results/{base}", finalize.name]
+        _common.info("$ " + " ".join(shlex.quote(c) for c in fcmd))
+        subprocess.run(fcmd, check=True, cwd=out_dir)
+        _common.info(f"submitted gather job (afterok:{base}) — one result when the array finishes")
 
 
 @app.command("slurm", help="Emit a self-contained sbatch kit (artefact + scripts + spec).")
@@ -494,6 +551,33 @@ def nextflow(
     """Emit a self-contained Nextflow kit (`main.nf` + scripts + frozen spec)."""
     _emit("nextflow", spec=spec, backend=backend, experiment=experiment,
           output=output, override=override, stdout=stdout)
+
+
+@app.command("finalize", help="Reassemble an array run's shard outputs into one keyed result artifact.")
+def finalize(
+    shards_dir: str = typer.Argument("results", help="Directory holding the array tasks' shard outputs."),
+    output: Path = typer.Option(Path("results"), "-o", "--output", help="Where to write the reassembled result."),
+    spec: Path = typer.Option(None, "--spec", help="Frozen spec YAML to attach as the result sidecar (auto-detected in spec/ when omitted)."),
+    stem: str = typer.Option("result", "--stem", help="Basename of the result artifact (<stem>.h5 + <stem>.yaml)."),
+) -> None:
+    """Gather sharded HPC outputs into one self-describing ``ExperimentResult``.
+
+    Concatenates each array task's slice by parameter value into the full grid a
+    local run produces, and writes it as ``<stem>.h5`` (keyed groups) plus a
+    ``<stem>.yaml`` sidecar (the frozen, fully-overridden spec) — the same
+    HDF5-plus-YAML layout as a network. No manual post-processing is needed;
+    emitted kits submit this automatically as a dependent gather job.
+    """
+    from tvbo.data.types import reassemble_experiment_results
+
+    sidecar = spec
+    if sidecar is None:
+        specs = sorted(p for p in Path("spec").glob("*.yaml")
+                       if p.name != "network.yaml") if Path("spec").is_dir() else []
+        sidecar = specs[0] if specs else None
+    written = reassemble_experiment_results(shards_dir, str(output), stem=stem, sidecar=sidecar)
+    for w in written:
+        _common.info(f"wrote {w}")
 
 
 @app.command("run", help="Emit a workflow kit and execute it with the selected engine.")

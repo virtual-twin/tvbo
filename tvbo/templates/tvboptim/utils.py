@@ -873,6 +873,7 @@ def render_analysis_observations(
     transient_time: float,
     t1_default: float,
     dt: float,
+    solver_kwargs: str = "",
 ) -> str:
     """Render the body of the generated ``compute_analysis_observations()`` function.
 
@@ -922,24 +923,28 @@ def render_analysis_observations(
         access = _analysis_wrt_access(wrt, coupling_keys)
         if atype == "lyapunov":
             seg = float(params["segment_time"])
-            n = int(params.get("n", 10))
-            k = int(params["k"]) if "k" in params else None
+            # Accept the declarative names (n_steps / n_exponents) and the short
+            # aliases (n / k). n_exponents defaults to 1 (the leading exponent).
+            n = int(params.get("n_steps", params.get("n", 10)))
+            k = int(params.get("n_exponents", params.get("k", 1)))
             lines += [
-                "from tvboptim.experimental.network_dynamics.analysis.lyapunov import _lyapunov_spectrum_jvp",
-                f"# {name}: Lyapunov spectrum on a short segment solve at the current parameters",
-                f"_le_solve, _le_cfg = prepare(network, {solver_class}(), t0=0.0, t1={seg}, dt={dt})",
+                f"# {name}: Benettin QR spectrum + leading Lyapunov vector on a segment solve.",
+                f"# Same integrator config as the main sim (coupling_evaluation) so lambda_1",
+                f"# matches the trajectory it characterises. Emits the exponents and the",
+                f"# per-node leading-vector profile ({name}_xi, paper's xi_i).",
+                f"_le_solve, _le_cfg = prepare(network, {solver_class}({solver_kwargs}), t0=0.0, t1={seg}, dt={dt})",
             ]
             # Evaluate at the current operating point: sync `wrt` (e.g. the swept coupling)
-            # into the segment config so a G-sweep reports lambda_max(G), not lambda_max at
-            # the network's fixed parameters. Optional — omit `wrt` for a static Lyapunov.
+            # into the segment config so a K-sweep reports lambda_1(K), not at the network's
+            # fixed parameters. Optional — omit `wrt` for a static Lyapunov.
             if access:
                 lines.append(f"_le_cfg = eqx.tree_at(lambda _c: _c.{access}, _le_cfg, state.{access})")
-            lines.append(f"obs.{name} = _lyapunov_spectrum_jvp(_le_solve, _le_cfg, t={seg}, n={n}, k={k})")
+            lines.append(f"obs.{name}, obs.{name}_xi = benettin_spectrum_and_vectors(_le_solve, _le_cfg, t={seg}, n={n}, k={k})")
         elif atype == "gradient":
             mode = params.get("mode", "reverse")
             lines += [
                 f"# {name}: full (untruncated) {mode}-mode gradient of '{target}' wrt {wrt[0]}",
-                f"_asolve_{name}, _ = prepare(network, {solver_class}(), {window})",
+                f"_asolve_{name}, _ = prepare(network, {solver_class}({solver_kwargs}), {window})",
                 f"def _grad_of_{name}(_p):",
                 f"    _gs = eqx.tree_at(lambda _s: _s.{access}, state, _p)",
                 f"    return compute_all_observations(_asolve_{name}(_gs), _gs, result_transient).{target}",
@@ -960,7 +965,7 @@ def render_analysis_observations(
             if sig not in fd_emitted:
                 lines += [
                     f"# per-seed central differences of '{target}' wrt {wrt[0]} (shared across its reductions)",
-                    f"_asolve_{gid}, _ = prepare(network, {solver_class}(), {window})",
+                    f"_asolve_{gid}, _ = prepare(network, {solver_class}({solver_kwargs}), {window})",
                     f"_delta_{gid} = {delta}",
                     f"_keys_{gid} = jax.random.split(jax.random.key({seed_base}), {seeds})",
                     f"_g0_{gid} = state.{access}",
