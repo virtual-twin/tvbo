@@ -18,42 +18,39 @@ from tvbo.cli import run as run_cli
     ],
 )
 def test_dispatch_to_engine_uses_kit_dir_not_file(monkeypatch, tmp_path: Path, engine: str, expected_workflow_file: str):
-    """Regression: ``tvbo run --engine`` must pass a kit directory to workflow.
+    """``tvbo run --engine`` emits the kit in-process into a directory.
 
-    Older code passed a file path to ``tvbo workflow <engine> -o ...``; since
-    workflow expects an output directory, this produced an empty script path and
-    Slurm failed with "Batch script is empty".
+    The emit runs in-process (no re-shelling ``tvbo``), so it must not depend on
+    ``tvbo`` being on ``$PATH``; only the engine submission (sbatch/snakemake/
+    nextflow) shells out. The artefact must land inside the kit directory.
     """
     calls = []
 
     def _fake_run(cmd, check, cwd=None):
         calls.append({"cmd": cmd, "check": check, "cwd": cwd})
-        # Mimic emission side-effect: create expected artefact in kit dir so the
-        # follow-up execute step can reference it.
-        if len(calls) == 1:
-            out_idx = cmd.index("-o") + 1
-            kit_dir = Path(cmd[out_idx])
-            kit_dir.mkdir(parents=True, exist_ok=True)
-            (kit_dir / expected_workflow_file).write_text("#!/bin/bash\n", encoding="utf-8")
         return subprocess.CompletedProcess(cmd, 0)
 
-    monkeypatch.setattr("tvbo.cli.run.subprocess.run", _fake_run)
+    # Only the engine submission shells out; it lives in workflow now.
+    monkeypatch.setattr("tvbo.cli.workflow.subprocess.run", _fake_run)
 
+    kit_dir = tmp_path / "kit"
     run_cli._dispatch_to_engine(
         engine,
         spec="experiment:JR_MEG_FrequencyGradient_Optimization",
         backend="jax",
         experiment=None,
         container=None,
-        out_dir=tmp_path / "kit",
+        out_dir=kit_dir,
     )
 
-    assert len(calls) >= 1
-    emit = calls[0]["cmd"]
-    out_arg = Path(emit[emit.index("-o") + 1])
-    # Critical assertion: output target is a directory (kit root), not artefact file.
-    assert out_arg.name == "kit"
-    assert out_arg.suffix == ""
+    # Kit emitted in-process into the directory (not a bare artefact file).
+    assert (kit_dir / expected_workflow_file).is_file()
+    # Exactly one shell-out: the engine submission, run from the kit dir.
+    assert len(calls) == 1
+    assert calls[0]["cmd"][0] in {"sbatch", "snakemake", "nextflow"}
+    assert Path(calls[0]["cwd"]) == kit_dir
+    # No call re-invokes `tvbo` on PATH.
+    assert all(c["cmd"][0] != "tvbo" for c in calls)
 
 
 def test_dispatch_to_engine_slurm_executes_emitted_script(monkeypatch, tmp_path: Path):
@@ -61,14 +58,9 @@ def test_dispatch_to_engine_slurm_executes_emitted_script(monkeypatch, tmp_path:
 
     def _fake_run(cmd, check, cwd=None):
         calls.append({"cmd": cmd, "check": check, "cwd": cwd})
-        if len(calls) == 1:
-            out_idx = cmd.index("-o") + 1
-            kit_dir = Path(cmd[out_idx])
-            kit_dir.mkdir(parents=True, exist_ok=True)
-            (kit_dir / "run.sbatch").write_text("#!/bin/bash\n", encoding="utf-8")
         return subprocess.CompletedProcess(cmd, 0)
 
-    monkeypatch.setattr("tvbo.cli.run.subprocess.run", _fake_run)
+    monkeypatch.setattr("tvbo.cli.workflow.subprocess.run", _fake_run)
 
     kit_dir = tmp_path / "kit"
     run_cli._dispatch_to_engine(
@@ -80,6 +72,6 @@ def test_dispatch_to_engine_slurm_executes_emitted_script(monkeypatch, tmp_path:
         out_dir=kit_dir,
     )
 
-    assert len(calls) >= 2
-    assert calls[1]["cmd"] == ["sbatch", "run.sbatch"]
-    assert Path(calls[1]["cwd"]) == kit_dir
+    assert len(calls) == 1
+    assert calls[0]["cmd"] == ["sbatch", "run.sbatch"]
+    assert Path(calls[0]["cwd"]) == kit_dir

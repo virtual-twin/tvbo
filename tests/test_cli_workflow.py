@@ -140,8 +140,30 @@ def test_workflow_slurm_emits_env_exports(tmp_path: Path):
     )
     assert r.exit_code == 0, r.stdout
     sbatch = (out / "run.sbatch").read_text()
-    assert 'export XLA_PYTHON_CLIENT_PREALLOCATE="false"' in sbatch
-    assert 'export OMP_NUM_THREADS="1"' in sbatch
+    # Values are shell-quoted (shlex.quote): safe tokens need no quotes.
+    assert "export XLA_PYTHON_CLIENT_PREALLOCATE=false" in sbatch
+    assert "export OMP_NUM_THREADS=1" in sbatch
+
+
+def test_env_set_merges_by_name_not_replace():
+    """--set slurm.env.X overrides one var in a YAML env list, keeping the rest.
+
+    Guards the GPU footgun: a YAML env: [{name,value}] list and a --set mapping
+    must merge by name, else overriding one XLA flag silently drops the others
+    (e.g. losing XLA_PYTHON_CLIENT_PREALLOCATE=false grabs all VRAM on GPU).
+    """
+    from tvbo.cli._workflow import _canonicalize_engine_maps, _normalize_env
+    from tvbo.utils import deep_merge
+
+    yaml_side = _canonicalize_engine_maps(
+        {"slurm": {"env": [{"name": "XLA_PYTHON_CLIENT_PREALLOCATE", "value": "false"},
+                           {"name": "XLA_FLAGS", "value": "--host_device_count=1"}]}}
+    )
+    cli_side = {"slurm": {"env": {"XLA_FLAGS": ""}}}  # --set slurm.env.XLA_FLAGS=""
+    merged = deep_merge(yaml_side, cli_side)["slurm"]["env"]
+    names = {e["name"]: e["value"] for e in _normalize_env(merged)}
+    assert names["XLA_PYTHON_CLIENT_PREALLOCATE"] == "false"  # preserved
+    assert names["XLA_FLAGS"] == "''"                          # overridden (empty, quoted)
 
 
 def test_workflow_nextflow_emits_kit(tmp_path: Path):
@@ -151,6 +173,31 @@ def test_workflow_nextflow_emits_kit(tmp_path: Path):
     nf = (out / "main.nf").read_text()
     assert "nextflow.enable.dsl = 2" in nf
     assert "process tvbo_run" in nf
+
+
+@pytest.mark.parametrize(
+    "engine,artefact,opt_needle,env_needle",
+    [
+        ("slurm", "run.sbatch", "#SBATCH --qos=normal", "export OMP_NUM_THREADS=2"),
+        ("snakemake", "Snakefile", 'slurm_partition="gpu"', "export OMP_NUM_THREADS=2 &&"),
+        ("nextflow", "main.nf", "process.clusterOptions = '--gres=gpu:1'", "export OMP_NUM_THREADS=2"),
+    ],
+)
+def test_env_and_options_render_across_engines(tmp_path, engine, artefact, opt_needle, env_needle):
+    """env + options are name-keyed passthroughs rendered by every engine's emitter,
+    each in its native form (Slurm #SBATCH / Snakemake resources / Nextflow process)."""
+    opt = {"slurm": "qos=normal", "snakemake": "slurm_partition=gpu",
+           "nextflow": "clusterOptions=--gres=gpu:1"}[engine]
+    out = tmp_path / "kit"
+    r = runner.invoke(app, [
+        "workflow", engine, EXP, "--backend", "jax", "-o", str(out),
+        "--set", f"{engine}.env.OMP_NUM_THREADS=2",
+        "--set", f"{engine}.options.{opt}",
+    ])
+    assert r.exit_code == 0, r.stdout
+    text = (out / artefact).read_text()
+    assert opt_needle in text
+    assert env_needle in text
 
 
 def test_workflow_stdout_only_does_not_create_kit(tmp_path: Path):
