@@ -19,8 +19,6 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-
-
 def _require_librosa():
     if librosa is None:
         raise ImportError(

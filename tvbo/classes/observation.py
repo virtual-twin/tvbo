@@ -38,8 +38,6 @@ from tvbo.plot.ontology import draw_custom_nodes
 logger = logging.getLogger(__name__)
 
 
-
-
 def expand_to_4d(array):
     """Expand dimensions of the input array to ensure it has 4 dimensions."""
     while array.ndim < 4:

@@ -809,7 +809,7 @@ def run_${algo_name}(
 % endif
 % endfor
 
-        if verbose and (i + 1) % print_every == 0:
+        if verbose and logger.isEnabledFor(logging.INFO) and (i + 1) % print_every == 0:
 <%
     # Build progress output - show functions (if any) + all simulated observations
     progress_items = []
