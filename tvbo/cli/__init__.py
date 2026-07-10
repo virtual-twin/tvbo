@@ -68,4 +68,32 @@ app.add_typer(_workflow_cmd.app, name="workflow", help="Plan / emit HPC + pipeli
 app.add_typer(_skills_cmd.app, name="skills", help="Render skills for Claude Code / Copilot / Cursor; install user skills locally.")
 
 
+@app.callback()
+def _configure(
+    log_level: str = typer.Option(
+        None, "--log-level", "-L", metavar="LEVEL",
+        help="tvbo log level (DEBUG|INFO|WARNING|ERROR|OFF); overrides TVBO_LOG_LEVEL.",
+    ),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose output (DEBUG)."),
+    quiet: bool = typer.Option(False, "--quiet", "-q", help="Errors only — suppress progress."),
+) -> None:
+    """Configure tvbo logging once for every verb.
+
+    Progress and status flow through the central ``tvbo`` logger (see
+    :mod:`tvbo.log`), so ``tvbo run`` and the in-process ``.run()`` API behave
+    identically. ``--log-level`` wins over ``--quiet``/``--verbose``; with none
+    set the level falls back to ``TVBO_LOG_LEVEL`` and then INFO.
+    """
+    from tvbo.log import configure_logging
+
+    level = None
+    if verbose:
+        level = "DEBUG"
+    if quiet:
+        level = "ERROR"
+    if log_level:
+        level = log_level
+    configure_logging(level)
+
+
 __all__ = ["app"]

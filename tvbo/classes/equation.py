@@ -10,6 +10,7 @@
 # Handling Equations and Expressions
 """
 
+import logging
 import re
 from collections import deque
 
@@ -55,6 +56,9 @@ _clash1.update(
 coupling_variables = ["lrc", "short_range_coupling", "coupling", "lc_0", "c_0", "lc_1"]
 lambda_symbol = sp.symbols("lambda")
 E = sp.symbols("E")  # TODO: not used
+logger = logging.getLogger(__name__)
+
+
 
 
 def add_spaces_around_operators(expression):
@@ -262,8 +266,7 @@ def sympify_value(v, acronym="", evaluate=False):
             evaluate=False,
         )
     except Exception as e:
-        print(f"Error parsing equation: {eq}")
-        print(f"Error message: {e}")
+        logger.debug("Error parsing equation %r: %s", eq, e)
         raise ValueError(f"Failed to parse equation: {eq}. Ensure the equation is in a valid format.")
 
     return eq
@@ -808,7 +811,7 @@ def get_latex_equation(model, func_dict="all", mul_symbol="dot"):
                 if len(search) == 1:
                     c_rhs = search[0]
                 else:
-                    print(search)
+                    logger.debug("ambiguous search for %s in %s: %s", s, model, search)
                     raise ValueError(f"Could not find {s} in {model}")
 
             symb = c_rhs.symbol.first()
@@ -909,17 +912,17 @@ def update_mathematical_relationships(model):
     for k, v in symbolic_model_equations(model).items():
         k_cls = ontology.find_variables(k, model)
         if k_cls is None:
-            print('did not find "{}" in "{}"'.format(k, model))
+            logger.warning('did not find "%s" in "%s"', k, model)
             continue
 
         # Handle cases where v might be None (e.g., for discrete maps with conditionals)
         if v is None:
-            print(f'Skipping "{k}" in "{model}" - equation is None')
+            logger.debug('Skipping "%s" in "%s" - equation is None', k, model)
             continue
 
         # Check if v has free_symbols attribute (valid SymPy expression)
         if not hasattr(v, "free_symbols"):
-            print(f'Skipping "{k}" in "{model}" - not a valid SymPy expression')
+            logger.debug('Skipping "%s" in "%s" - not a valid SymPy expression', k, model)
             continue
 
         for symbol in v.free_symbols:

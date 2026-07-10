@@ -6,6 +6,7 @@ YAML file) into backend code and executable stimulus functions, plus helpers to
 convert ontology classes to metadata and to replay audio files as stimuli.
 """
 
+import logging
 import os
 
 import matplotlib.pyplot as plt
@@ -15,6 +16,9 @@ try:
     import librosa
 except ImportError:
     librosa = None
+logger = logging.getLogger(__name__)
+
+
 
 
 def _require_librosa():
@@ -210,7 +214,7 @@ class Stimulus(tvbo_datamodel.Stimulus):
             if not ontoclasses:
                 raise ValueError(f"No stimulus class found for label '{ontoclass}'")
             if len(ontoclasses) > 1:
-                print(f"Multiple stimulus classes found: {ontoclasses}")
+                logger.warning("Multiple stimulus classes found: %s", ontoclasses)
             ontoclass = ontoclasses[0]
         metadata = class2metadata(ontoclass)
         return cls(**metadata._as_dict)
@@ -313,7 +317,7 @@ class Stimulus(tvbo_datamodel.Stimulus):
                 )
             if self.weighting:
                 weighting = np.array(self.weighting)
-                print(weighting)
+                logger.debug("stimulus weighting: %s", weighting)
             elif weighting is None and connectivity:
                 weighting = np.zeros(connectivity.number_of_regions)
                 weighting[region_indices] = 1

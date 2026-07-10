@@ -8,8 +8,11 @@ Julia package management is handled automatically by juliapkg via
 will install Julia (if needed) and all declared packages.
 """
 
+import logging
 import re
 from typing import Any, Optional
+
+logger = logging.getLogger(__name__)
 
 _julia_main = None
 _installed_packages = set()
@@ -60,16 +63,16 @@ def install_julia_package(package_name: str, Main: Optional[Any] = None, update:
     if package_name in _installed_packages and not update:
         return
 
-    print(f"{'Updating' if update else 'Installing'} Julia package: {package_name}...")
+    logger.info("%s Julia package: %s...", "Updating" if update else "Installing", package_name)
     try:
         if update:
             Main.seval(f'import Pkg; Pkg.update("{package_name}")')
         else:
             Main.seval(f'import Pkg; Pkg.add("{package_name}")')
         _installed_packages.add(package_name)
-        print(f"Successfully {'updated' if update else 'installed'} {package_name}")
+        logger.info("Successfully %s %s", "updated" if update else "installed", package_name)
     except Exception as e:
-        print(f"Warning: Failed to {'update' if update else 'install'} {package_name}: {e}")
+        logger.warning("Failed to %s %s: %s", "update" if update else "install", package_name, e)
         raise
 
 
@@ -91,7 +94,7 @@ def eval_with_auto_install(code, max_retries=3):
                     # Retry after installing
                     continue
                 except Exception:
-                    print(f"Failed to auto-install {package_name}, re-raising original error")
+                    logger.warning("Failed to auto-install %s, re-raising original error", package_name)
                     raise e
             else:
                 # Not a package error or max retries reached
