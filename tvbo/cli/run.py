@@ -7,7 +7,7 @@ Implements the cardinal HPC contract from §5.1 of ``dev/tvbo-cli.md``:
 * ``--container IMAGE`` re-execs the run inside the named OCI image
   (Singularity if ``SINGULARITY_BIND`` is set in the environment, else
   Docker).
-* ``--slurm-chunk i/N`` shards the study's sweep grid across array tasks:
+* ``--shard i/N`` runs one shard of the sweep in-process (no scheduler):
   cell index ``j`` runs iff ``j %% N == i``. This is what the generated
   sbatch script invokes for every array index.
 """
@@ -47,9 +47,10 @@ def run(
         None, "--container",
         help="OCI image (e.g. ghcr.io/the-virtual-brain/tvbo:0.7.0); re-execs the same `tvbo run` inside it.",
     ),
-    slurm_chunk: str = typer.Option(
-        None, "--slurm-chunk",
-        help="Shard sweep cells across array tasks: ``i/N`` runs cells where j%N==i.",
+    shard: str = typer.Option(
+        None, "--shard", "--slurm-chunk",
+        help="Run one shard of the sweep in-process: ``i/N`` runs cells where j%N==i "
+             "(no scheduler needed). ``--slurm-chunk`` is a deprecated alias.",
     ),
 ) -> None:
     """Run a SPEC (experiment or study) in the selected backend.
@@ -74,25 +75,19 @@ def run(
         kwargs["duration"] = duration
 
     chunk_i = chunk_n = None
-    if slurm_chunk:
-        chunk_i, chunk_n = _parse_chunk(slurm_chunk)
+    if shard:
+        chunk_i, chunk_n = _parse_chunk(shard)
         _common.info(f"sharding: cell j runs iff j%{chunk_n}=={chunk_i}")
 
     if kind == "study":
         exps = obj.experiments if hasattr(obj, "experiments") else obj.simulation_experiments
         items = list(exps.values()) if hasattr(exps, "values") else list(exps)
         if experiment is not None:
-            items = [
-                e for e in items
-                if experiment in (
-                    getattr(e, "key", None),
-                    getattr(e, "name", None),
-                    getattr(e, "label", None),
-                    str(getattr(e, "id", "")),
-                )
-            ]
+            # Accept one id/name or a comma-separated list ("2,3,20,30" runs all).
+            wanted = {s.strip() for s in str(experiment).split(",") if s.strip()}
+            items = [e for e in items if wanted & _common.experiment_ids(e)]
             if not items:
-                _common.die(f"No experiment named {experiment!r} in study.")
+                _common.die(f"No experiment(s) matching {experiment!r} in study.")
         for exp in items:
             _common.info(f"running experiment: {getattr(exp, 'key', None) or getattr(exp, 'label', None)}")
             # Resolve to the runtime experiment (has .run) rather than the datamodel object.
@@ -124,11 +119,11 @@ def run(
 
 def _parse_chunk(s: str) -> tuple[int, int]:
     if "/" not in s:
-        raise typer.BadParameter("--slurm-chunk must be of the form i/N")
+        raise typer.BadParameter("--shard must be of the form i/N")
     i_s, n_s = s.split("/", 1)
     i, n = int(i_s), int(n_s)
     if not (0 <= i < n):
-        raise typer.BadParameter(f"--slurm-chunk i={i} out of range [0,{n})")
+        raise typer.BadParameter(f"--shard i={i} out of range [0,{n})")
     return i, n
 
 
@@ -156,7 +151,7 @@ def _run_one(experiment, backend: str, out_dir: Path | None,
         if fanned:
             names = ", ".join(f"{ax.parameter} ({ax.kind})" for ax in fanned)
             _common.die(
-                f"--slurm-chunk shards a sweep by slicing the backend's vectorised "
+                f"--shard shards a sweep by slicing the backend's vectorised "
                 f"batch, but backend {backend!r} does not vectorise: {names}. Emit "
                 f"the kit with snakemake/nextflow (which fan these axes into per-cell "
                 f"tasks), or use a backend that vectorises them (e.g. tvboptim)."

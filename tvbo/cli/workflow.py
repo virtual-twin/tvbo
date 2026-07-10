@@ -68,15 +68,7 @@ def _resolve_study_and_experiment(spec: str, experiment_arg: str | None):
         if not items:
             _common.die(f"Study {spec!r} has no experiments.")
         if experiment_arg is not None:
-            wanted = [
-                e for e in items
-                if experiment_arg in (
-                    getattr(e, "key", None),
-                    getattr(e, "name", None),
-                    getattr(e, "label", None),
-                    str(getattr(e, "id", "")),
-                )
-            ]
+            wanted = [e for e in items if experiment_arg in _common.experiment_ids(e)]
             if not wanted:
                 _common.die(f"No experiment named {experiment_arg!r} in study.")
             exp = wanted[0]
@@ -615,6 +607,15 @@ def run_workflow(
     engine = engine.lower()
     if engine not in _ARTEFACT_NAME:
         _common.die(f"`tvbo workflow run` expects engine one of: {', '.join(_ARTEFACT_NAME)}")
+    # A comma-separated --experiment ("2,3,20,30") submits each as its own kit/job;
+    # on the cluster they run in parallel. Each gets its own output subdir.
+    _exp_ids = [e.strip() for e in str(experiment).split(",") if e.strip()] if experiment else []
+    if len(_exp_ids) > 1:
+        for _eid in _exp_ids:
+            _out_i = (output / f"exp{_eid}") if output else Path("out") / f"exp{_eid}"
+            _common.info(f"── experiment {_eid} → {_out_i}")
+            run_workflow(engine, spec, backend, _eid, _out_i, override, array, array_throttle)
+        return
     effective_overrides = list(override)
     if engine == "slurm" and array is not None:
         override_keys = {
