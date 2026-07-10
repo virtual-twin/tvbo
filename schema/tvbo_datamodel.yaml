@@ -2718,7 +2718,11 @@ classes:
             n_parallel:
                 range: integer
                 ifabsent: integer(1)
-                description: "Parallel evaluations"
+                description: >-
+                    Parallel evaluations / batch size for parameter exploration.
+                    Backends translate this into their own execution primitive
+                    (e.g. tvboptim's vectorised chunk size) without exposing any
+                    backend-specific names in the schema.
             n_trials:
                 range: integer
                 ifabsent: integer(1)
