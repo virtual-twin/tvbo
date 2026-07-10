@@ -549,7 +549,9 @@ for expl in exploration_list:
         'label': expl.label or '',
         # mode has schema ifabsent: string(product)
         'mode': expl.mode or 'product',
-        # n_parallel has schema ifabsent: integer(1)
+        # n_parallel is the backend-agnostic batch size: how many sweep cells the
+        # backend processes as one vectorised chunk. The template translates this to
+        # tvboptim internals (n_vmap, n_pmap) without exposing those names.
         'n_parallel': int(expl.n_parallel) if expl.n_parallel is not None else 1,
         # n_trials has schema ifabsent: integer(1)
         'n_trials': int(expl.n_trials) if expl.n_trials is not None else 1,
@@ -1875,7 +1877,7 @@ def run_optimization(
         and bool(observation_names or derived_observation_names)
     )
 %>
-def ${expl['name']}(state, model_fn, result_transient=None, n_pmap: int = ${n_workers}, **kwargs):
+def ${expl['name']}(state, model_fn, result_transient=None, **kwargs):
     """${expl['label']} - ${grid_desc}."""
     _network = kwargs.get('network')
     if _network is not None:
@@ -2259,7 +2261,8 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
 % endif
 % else:
 % if has_axes:
-    exec_runner = ParallelExecution(observable_fn, grid, n_pmap=n_pmap)
+    import jax as _jax
+    exec_runner = ParallelExecution(observable_fn, grid, n_pmap=_jax.device_count(), n_vmap=${expl['n_parallel']})
     _grid_outputs = list(exec_runner.run())
 % else:
     # Trial-only exploration — no parameter grid

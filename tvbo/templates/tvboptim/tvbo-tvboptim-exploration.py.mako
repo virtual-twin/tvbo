@@ -35,7 +35,8 @@ for expl in exploration_list:
         'name': getattr(expl, 'name', 'exploration'),
         'label': getattr(expl, 'label', ''),
         'mode': getattr(expl, 'mode', 'product'),
-        'n_parallel': getattr(expl, 'n_parallel', 8),
+        # n_parallel = backend-agnostic batch size → tvboptim n_vmap.
+        'n_parallel': getattr(expl, 'n_parallel', 1),
         'axes': [],
     }
     axes_list = as_list(getattr(expl, 'space', None))
@@ -84,10 +85,13 @@ def setup_${expl['name']}_grid(state):
     return Space(grid_state, mode="${expl['mode']}")
 
 
-def run_${expl['name']}_exploration(state, observable_fn, n_pmap: int = ${expl['n_parallel']}):
+def run_${expl['name']}_exploration(state, observable_fn):
     """Run ${expl['name']} parameter exploration."""
     grid = setup_${expl['name']}_grid(state)
-    exec = ParallelExecution(observable_fn, grid, n_pmap=n_pmap)
+    import jax as _jax
+    _n_devices = _jax.device_count()
+    _n_vmap = ${expl['n_parallel']}  # schema: n_parallel = cells per vectorised chunk
+    exec = ParallelExecution(observable_fn, grid, n_pmap=_n_devices, n_vmap=_n_vmap)
     results = exec.run()
     return grid, jnp.stack(results)
 

@@ -1031,3 +1031,20 @@ cheap wins: (1) enable jax **persistent compilation cache**
 single/interactive run → a non-compiling backend (tvb/numpy), sweep/optimization
 → jax/tvboptim. Disabling jit is NOT the fix (eager scan is slower); backend
 choice + compile cache are.
+
+
+
+## PDF to markdown / KG
+
+- [ ] compare https://github.com/opendataloader-project/opendataloader-pdf with dots-mocr setup (/Users/leonmartin_bih/tools/dots-mocr).
+
+- [ ] explore https://github.com/EPFLiGHT/mmore
+
+
+
+## Check SONATA Data format
+https://github.com/AllenInstitute/sonata/blob/master/docs/SONATA_DEVELOPER_GUIDE.md
+
+- can we adopt?
+- can we improve move to more modern state-of the art?
+- Is it BIDS compatible?
