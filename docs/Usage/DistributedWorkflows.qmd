@@ -78,8 +78,10 @@ shelled out. Override any field at emit time with `--set`, for example
 
 The kit is a self-contained provenance record. Its `spec/<name>.yaml` freezes the
 **effective** config after merging study, experiment, and every `--set` override,
-alongside the connectome (`spec/network.yaml` + `spec/network.h5`). Re-emitting
-from that frozen spec reproduces the same run with no flags:
+alongside the connectome (`spec/network.yaml` + `spec/network.h5`) and any custom
+callable/builder modules the recipe references (bundled into `code/`, put on
+`PYTHONPATH` by the artefact). Re-emitting from that frozen spec reproduces the same
+run with no flags:
 
 ```bash
 tvbo workflow slurm kit/spec/<name>.yaml        # same partition, chunk, env, …
