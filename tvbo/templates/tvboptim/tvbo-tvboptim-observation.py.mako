@@ -32,7 +32,7 @@ def resolve_var_index(source, label: str) -> int:
     for item in candidates:
         s = item.name if hasattr(item, 'name') else item
         s = str(s)
-        if s.startswith('network.'):
+        if s.startswith('network.') or s.startswith('dataset.'):
             return 0
         if s in var_names:
             return var_names.index(s)
@@ -647,11 +647,23 @@ from ${module} import ${class_name} as _Ext${class_name}
     is_network_edge = obs_source and str(obs_source).startswith('network.edges.')
     network_edge_label = str(obs_source).split('network.edges.')[1] if is_network_edge else None
 
+    # A per-subject dataset target (dataset.subject.<measure>) is materialized as a
+    # module-level constant and bound at run_experiment time by
+    # _bind_network_observations, so this template emits no monitor for it.
+    is_dataset_target = obs_source and str(obs_source).startswith('dataset.subject.')
+
     # Resolve source to its column in the recorded variable layout (states + recorded aux).
-    # Returns 0 for network/external/empty sources (back-compat for external monitor paths).
+    # Returns 0 for network/dataset/external/empty sources (back-compat for external monitors).
     state_idx = resolve_var_index(obs_source, obs_name)
 %>
-% if is_network_edge and network_edge_label in network_edge_data:
+% if is_dataset_target:
+## =============================================================================
+## Per-subject dataset target — bound at run_experiment time (see
+## _bind_network_observations); no monitor emitted here.
+## =============================================================================
+# ${obs['label'] or obs_name} <- dataset.subject.${str(obs_source).split('.')[-1]} (runtime-bound)
+
+% elif is_network_edge and network_edge_label in network_edge_data:
 ## =============================================================================
 ## Static Network Edge Data (embedded from network edge matrix)
 ## =============================================================================
@@ -1061,6 +1073,14 @@ class ${class_name}(AbstractMonitor):
 % if str(aggregation) == 'mean':
         # Declarative: mean over time axis (aggregation: mean)
         ${decl_input} = jnp.mean(${decl_input}, axis=0)
+        _aggregated = True
+% elif str(aggregation) == 'variance':
+        # Declarative: variance over time axis (aggregation: variance)
+        ${decl_input} = jnp.var(${decl_input}, axis=0)
+        _aggregated = True
+% elif str(aggregation) == 'std':
+        # Declarative: standard deviation over time axis (aggregation: std)
+        ${decl_input} = jnp.std(${decl_input}, axis=0)
         _aggregated = True
 % elif str(aggregation) == 'last':
         ${decl_input} = ${decl_input}[-1]

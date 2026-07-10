@@ -245,6 +245,20 @@ enums:
             workflow:
                 description: "Fan out all otherwise-unassigned axes as scheduler tasks."
 
+    NodeReconciliation:
+        description: >-
+            Strategy for aligning a dataset-sourced empirical target's nodes to the
+            model network before comparison. Keyed alignment is the default so a
+            differing node count or ordering (e.g. a 998-parcel empirical FC against a
+            1000-parcel model) cannot silently misalign the comparison.
+        permissible_values:
+            by_label:
+                description: >-
+                    Restrict both sides to their shared node labels by name (keyed
+                    ``.sel``), preserving the model network's order. Never positional.
+            none:
+                description: "No reconciliation; the node sets are assumed identical."
+
     ImagingModality:
         permissible_values:
             BOLD:
@@ -363,6 +377,8 @@ enums:
         description: "How to aggregate time series data"
         permissible_values:
             mean: { description: "Average over time" }
+            variance: { description: "Variance over time (per node)" }
+            std: { description: "Standard deviation over time (per node)" }
             last: { description: "Last value in window" }
             first: { description: "First value in window" }
             window: { description: "Sliding window aggregation" }
@@ -1790,6 +1806,27 @@ classes:
                     Load data from external source (file, database, API).
                     When specified, this observation represents empirical/external data
                     rather than simulated data. Enables unified treatment of all data.
+            query:
+                range: BidsEntities
+                inlined: true
+                description: >-
+                    BIDS entity filter that selects one per-subject file under the
+                    experiment's ``dataset.bids_root`` when ``source`` is dataset-sourced
+                    (``dataset.subject.<measure>``). The active subject fills the ``sub-``
+                    entity at resolution time; the remaining entities (e.g. ``desc: FCavg,
+                    atlas: Schaefer1000, suffix: relmat``) disambiguate among the subject's
+                    several networks/measurements. The same filter enumerates the cohort
+                    for the per-subject workflow fan-out, so one declaration drives both
+                    discovery and resolution.
+            reconcile:
+                range: NodeReconciliation
+                ifabsent: "by_label"
+                description: >-
+                    How a dataset-sourced target's nodes are aligned to the model
+                    network before comparison. ``by_label`` selects the shared node
+                    labels on both sides by name (keyed ``.sel``), never by position, so
+                    a differing node count or order cannot silently misalign the
+                    comparison. ``none`` disables reconciliation (identical node sets).
 
             # Observable/aggregation attributes (for tuning algorithms)
             skip_t:

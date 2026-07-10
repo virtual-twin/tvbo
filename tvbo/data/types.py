@@ -1719,6 +1719,55 @@ class ExperimentResult:
                 if hasattr(da, "dims"):
                     data_vars[f"integration__{_san(obs_name)}"] = da
 
+        # Experiments that produce observations/optimizations without an exploration
+        # sweep (e.g. a per-subject FC fit) still carry data to persist: the derived
+        # observations (simulated + reconciled empirical FC) and the fit outcome
+        # (fitted parameters, final loss, loss trajectory). Coerce to float and skip
+        # anything non-numeric so the HDF5 write never trips on Python objects.
+        def _numeric_da(name, arr):
+            if arr is None:
+                return None
+            try:
+                a = np.asarray(getattr(arr, "values", arr), dtype=float)
+            except (ValueError, TypeError):
+                try:  # jax/0-d scalar wrapped as object
+                    a = np.asarray(float(arr), dtype=float)
+                except (ValueError, TypeError):
+                    return None
+            if a.dtype == object or a.size == 0:
+                return None
+            if a.ndim == 0:
+                return xr.DataArray(a)
+            return xr.DataArray(a, dims=[f"{name}_d{i}" for i in range(a.ndim)])
+
+        def _numeric_leaves(prefix, obj):
+            """Yield (var_name, DataArray) for the numeric leaves of a nested pytree."""
+            leaf = _numeric_da(prefix.rsplit("__", 1)[-1], obj)
+            if leaf is not None:
+                yield prefix, leaf
+                return
+            if isinstance(obj, dict):
+                for k, v in obj.items():
+                    yield from _numeric_leaves(f"{prefix}__{_san(k)}", v)
+            elif isinstance(obj, (list, tuple)):
+                for i, v in enumerate(obj):
+                    yield from _numeric_leaves(f"{prefix}__{i}", v)
+
+        for obs_name, obs in (self.observations or {}).items():
+            key = f"observation__{_san(obs_name)}"
+            da = _numeric_da(key, getattr(obs, "data", obs))
+            if da is not None and key not in data_vars:
+                data_vars[key] = da
+        for opt_name, opt in (self.optimizations or {}).items():
+            for field in ("final_loss", "loss_trajectory"):
+                da = _numeric_da(field, getattr(opt, field, None))
+                if da is not None:
+                    data_vars[f"optimization__{_san(opt_name)}__{field}"] = da
+            fitted = getattr(opt, "fitted_params", None)
+            if fitted is not None:
+                for name, da in _numeric_leaves(f"optimization__{_san(opt_name)}__fitted", fitted):
+                    data_vars[name] = da
+
         stem = "result"
         if self.source is not None and hasattr(self.source, "get_result_stem"):
             try:
