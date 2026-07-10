@@ -261,6 +261,55 @@ tvbo:ConductionSpeedInference a tvbo:SimulationTask ;
 
 #
 # ─────────────────────────────────────────────────────────────────
+# §4.1c Graph representation (sparse vs dense connectivity).
+# ─────────────────────────────────────────────────────────────────
+#
+# The connectome can be carried for coupling evaluation either as a dense
+# adjacency (coupling cost ~ nodes^2) or as an edge list (cost ~ edges).
+# Both compute the identical coupling, so the choice is a performance
+# contract, not a numerical one — exposed as the backend-independent
+# `Network.graph_representation` slot (auto | dense | sparse). It is
+# orthogonal to whether the coupling reads delayed states (§4.1b): the two
+# binary dimensions — edge-sparsity × delay — give the four concrete backend
+# graph kinds. `auto` resolves by connection density: the sparse
+# representation wins once the adjacency is sparse enough that summing over
+# existing edges is cheaper than the dense product — a large saving for
+# large, sparsely-connected connectomes (structural connectomes, power
+# grids), a loss for small or dense networks where dense linear algebra's
+# constant factor dominates.
+
+tvbo:SparseCoupling a tvbo:BackendCapability ;
+    rdfs:label   "Sparse (edge-list) coupling evaluation"@en ;
+    rdfs:comment "Evaluate network coupling by summing over the existing edges only (cost scales with the number of edges) rather than over the full dense adjacency (cost scales with nodes-squared). Numerically identical to the dense evaluation; a pure performance optimisation for sparsely-connected networks."@en ;
+    tvbo:enabledByGraphParameter "graph_representation" ;
+    tvbo:boundConstraint "edges << nodes^2  (connection density below the backend's sparse/dense crossover)" .
+
+tvbo:DenseCoupling a tvbo:BackendCapability ;
+    rdfs:label   "Dense (full-adjacency) coupling evaluation"@en ;
+    rdfs:comment "Evaluate network coupling as a product over the full nodes-by-nodes adjacency. Preferred for densely-connected or small networks, where dense linear algebra's constant-factor efficiency outweighs its nodes-squared scaling."@en ;
+    tvbo:enabledByGraphParameter "graph_representation" .
+
+# The four concrete backend graph kinds = {dense, sparse} × {instantaneous, delayed}.
+# Sparsity is chosen by `graph_representation`; the delay axis is chosen by whether
+# any coupling carries a conduction delay (§4.1b), independently.
+tvbo:DenseGraph a owl:Class ;
+    rdfs:label "DenseGraph"@en ;
+    rdfs:comment "Dense adjacency, instantaneous coupling. Used when graph_representation resolves to dense and no coupling carries a conduction delay."@en .
+
+tvbo:SparseGraph a owl:Class ;
+    rdfs:label "SparseGraph"@en ;
+    rdfs:comment "Edge-list adjacency, instantaneous coupling. Used when graph_representation resolves to sparse and no coupling carries a conduction delay."@en .
+
+tvbo:DenseDelayGraph a owl:Class ;
+    rdfs:label "DenseDelayGraph"@en ;
+    rdfs:comment "Dense adjacency with a delay-history buffer, used when any coupling carries a conduction delay and graph_representation resolves to dense. Required for interpolated (differentiable) delays (§4.1b)."@en .
+
+tvbo:SparseDelayGraph a owl:Class ;
+    rdfs:label "SparseDelayGraph"@en ;
+    rdfs:comment "Edge-list adjacency with a delay-history buffer, used when any coupling carries a conduction delay and graph_representation resolves to sparse."@en .
+
+#
+# ─────────────────────────────────────────────────────────────────
 # §4.2 Biological substrate axioms.
 # ─────────────────────────────────────────────────────────────────
 #
