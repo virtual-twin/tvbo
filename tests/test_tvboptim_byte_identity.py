@@ -212,9 +212,10 @@ def test_experiment_result_roundtrips_via_sidecar(tmp_path, eager):
 
     import xarray as xr
 
-    exp = _load_landscape(2000.0, 500.0)
-    exp.configure()
-    written = exp.run("tvboptim", mode="exploration", n_w=2, n_G=2, n_pmap=1).save(str(tmp_path / "A"))
+    # A full experiment with a connectome (plain simulation; empirical observations
+    # dropped so the run needs no companion measure — see _load_sim).
+    exp = _load_sim("RWW_BOLD_FC_Optimization", 400.0, 200.0)
+    written = exp.run("tvboptim").save(str(tmp_path / "A"))
     h5_a = next(p for p in written if p.endswith(".h5"))
     yaml_a = next(p for p in written if p.endswith(".yaml"))
 
@@ -222,10 +223,10 @@ def test_experiment_result_roundtrips_via_sidecar(tmp_path, eager):
     name = Path(h5_a).name
     assert name.startswith("exp-") and " " not in name, name
 
-    # Reload the sidecar spec alone, replicate, re-save.
+    # Reload the sidecar spec alone (connectome frozen alongside), replicate, re-save.
     exp2 = SimulationExperiment.from_file(yaml_a)
     exp2.configure()
-    written2 = exp2.run("tvboptim", mode="exploration", n_w=2, n_G=2, n_pmap=1).save(str(tmp_path / "B"))
+    written2 = exp2.run("tvboptim").save(str(tmp_path / "B"))
     h5_b = next(p for p in written2 if p.endswith(".h5"))
     yaml_b = next(p for p in written2 if p.endswith(".yaml"))
 
