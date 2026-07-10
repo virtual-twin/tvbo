@@ -50,6 +50,28 @@ from tvbo.utils import as_list
 sessionid = 1
 
 
+def _strip_private_yaml_keys(text: str) -> str:
+    """Drop private/runtime keys (``_source_file``, a codegen ``_coupling_key`` on a
+    Parameter, …) from a serialized YAML at any depth, so the spec round-trips
+    through ``from_file``. A private key line and its deeper-indented block go too.
+    """
+    import re as _re
+
+    key = _re.compile(r"^(\s*)_[A-Za-z]\w*\s*:")
+    kept, drop_indent = [], None
+    for line in text.splitlines():
+        if drop_indent is not None:
+            if line.strip() == "" or (len(line) - len(line.lstrip())) > drop_indent:
+                continue
+            drop_indent = None
+        m = key.match(line)
+        if m:
+            drop_indent = len(m.group(1))
+            continue
+        kept.append(line)
+    return "\n".join(kept) + "\n"
+
+
 def _sync_network_node_count(net):
     """Sync number_of_nodes from the nodes list.
 
@@ -1356,10 +1378,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             from pathlib import Path as _Path
             from tvbo.utils import to_yaml as _to_yaml
 
-            text = _to_yaml(self, None)
-            # Drop top-level private/provenance keys (e.g. _source_file, an absolute
-            # machine path) so the exported spec is clean and round-trips through from_file.
-            text = "\n".join(l for l in text.splitlines() if not re.match(r"^_[A-Za-z]", l)) + "\n"
+            text = _strip_private_yaml_keys(_to_yaml(self, None))
             if filepath:
                 _Path(filepath).write_text(text, encoding="utf-8")
                 return filepath
@@ -2162,6 +2181,59 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         """
         desc = self.dynamics.label or self.dynamics.name or "simulation"
         return f"ses-{self.id}_desc-{desc}"
+
+    def freeze_yaml(self, out_dir, network_stem="network"):
+        """Render a self-contained spec YAML with the connectome frozen alongside.
+
+        When the experiment has a resolved multi-node network, its matrices are
+        written as an HDF5 companion (``<network_stem>.h5`` + ``.yaml`` sidecar) in
+        *out_dir* and the returned YAML references them via ``network.data_file``
+        (inline coupling / transforms / parameters preserved). This makes the spec
+        reproducible on reload without the original data sources — the same
+        mechanism the workflow emitter uses. Without such a network the plain
+        metadata YAML already round-trips and is returned unchanged.
+        """
+        from pathlib import Path as _Path
+
+        import numpy as _np
+
+        from tvbo import datamodel as _dm
+        from tvbo.classes.network import Network as _Network
+
+        net = getattr(self, "network", None)
+        has_matrices = net is not None and (
+            (getattr(net, "number_of_nodes", None) or 0) > 1
+            or (getattr(net, "weights", None) is not None and _np.asarray(net.weights).size > 1)
+        )
+        if not has_matrices:
+            return self.to_yaml()
+
+        out_dir = _Path(out_dir)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        if not isinstance(net, _Network):
+            net.__class__ = _Network
+        sidecar = out_dir / f"{network_stem}.yaml"
+        net.save(sidecar, binary_format="h5")
+        # The network sidecar goes through a different serializer; strip the same
+        # private runtime keys so the frozen connectome round-trips on reload.
+        sidecar.write_text(_strip_private_yaml_keys(sidecar.read_text()), encoding="utf-8")
+
+        ref = _dm.Network(data_file=f"{network_stem}.h5")
+        if getattr(net, "coupling", None):
+            for k, v in dict(net.coupling).items():
+                ref.coupling[k] = v
+        if getattr(net, "transforms", None):
+            ref.transforms = list(net.transforms)
+        if getattr(net, "parameters", None):
+            for k, v in dict(net.parameters).items():
+                ref.parameters[k] = v
+
+        original = self.network
+        self.network = ref
+        try:
+            return self.to_yaml()
+        finally:
+            self.network = original
 
     def get_result_stem(self):
         """BIDS result basename (no extension), generated with pybids ``build_path``.

@@ -198,6 +198,49 @@ def test_rww_exploration_runs():
     assert np.all(np.isfinite(grid)), "exploration produced non-finite values"
 
 
+def test_experiment_result_roundtrips_via_sidecar(tmp_path, eager):
+    """A saved ExperimentResult is self-describing and reproducible.
+
+    Runs a full experiment (network + sweep), saves the unified ``<stem>.h5`` +
+    ``<stem>.yaml`` sidecar, then reloads *only the sidecar spec*, reruns, and
+    re-saves. The two result Datasets must be identical and the two YAML sidecars
+    byte-identical — i.e. the sidecar loses no config and replays exactly, and the
+    HDF5 opens with a plain ``xarray.open_dataset``. File name is BIDS-clean.
+    """
+    import filecmp
+    from pathlib import Path
+
+    import xarray as xr
+
+    exp = _load_landscape(2000.0, 500.0)
+    # Drop empirical observations that source the network's observational (FC) data:
+    # a frozen structural connectome does not carry them, and they are irrelevant to
+    # replicating the simulation sweep this test exercises.
+    for name, obs in list((exp.observations or {}).items()):
+        if any("network.observations" in str(s) for s in (getattr(obs, "source", None) or [])):
+            del exp.observations[name]
+    exp.configure()
+    written = exp.run("tvboptim", mode="exploration", n_w=2, n_G=2, n_pmap=1).save(str(tmp_path / "A"))
+    h5_a = next(p for p in written if p.endswith(".h5"))
+    yaml_a = next(p for p in written if p.endswith(".yaml"))
+
+    # BIDS-clean name: exp-<id> prefix, no spaces.
+    name = Path(h5_a).name
+    assert name.startswith("exp-") and " " not in name, name
+
+    # Reload the sidecar spec alone, replicate, re-save.
+    exp2 = SimulationExperiment.from_file(yaml_a)
+    exp2.configure()
+    written2 = exp2.run("tvboptim", mode="exploration", n_w=2, n_G=2, n_pmap=1).save(str(tmp_path / "B"))
+    h5_b = next(p for p in written2 if p.endswith(".h5"))
+    yaml_b = next(p for p in written2 if p.endswith(".yaml"))
+
+    # Same BIDS stem, data identical, provenance sidecar byte-identical.
+    assert Path(h5_b).name == name
+    xr.testing.assert_identical(xr.open_dataset(h5_a), xr.open_dataset(h5_b))
+    assert filecmp.cmp(yaml_a, yaml_b, shallow=False), "sidecar YAML not byte-identical"
+
+
 def test_rww_optimization_runs():
     exp = _load_landscape(2000.0, 500.0)
     for opt in (exp.optimizations or {}).values():

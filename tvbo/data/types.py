@@ -1735,10 +1735,14 @@ class ExperimentResult:
                 written.append(npz)
 
         if (not is_shard and written and written[0].endswith(".h5")
-                and self.source is not None and hasattr(self.source, "to_yaml")):
+                and self.source is not None and hasattr(self.source, "freeze_yaml")):
             try:
+                # Self-contained provenance: spec + connectome companion
+                # (<stem>_network.h5), reproducible on reload without data sources.
+                yaml_text = self.source.freeze_yaml(out_dir, network_stem=f"{stem}_network")
                 yaml_path = os.path.join(out_dir, f"{stem}.yaml")
-                self.source.to_yaml(filepath=yaml_path)
+                with open(yaml_path, "w", encoding="utf-8") as fh:
+                    fh.write(yaml_text)
                 written.append(yaml_path)
             except Exception:
                 pass
