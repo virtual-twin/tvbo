@@ -237,7 +237,8 @@ def test_workflow_stdout_only_does_not_create_kit(tmp_path: Path):
 @pytest.mark.parametrize(
     "engine,expected_cmd,expected_file",
     [
-        ("slurm", ["sbatch", "run.sbatch"], "run.sbatch"),
+        # Slurm submits the array with --parsable (then chains a gather job).
+        ("slurm", ["sbatch", "--parsable", "run.sbatch"], "run.sbatch"),
         ("snakemake", ["snakemake", "--cores", "all"], "Snakefile"),
         ("nextflow", ["nextflow", "run", "main.nf"], "main.nf"),
     ],
@@ -245,11 +246,11 @@ def test_workflow_stdout_only_does_not_create_kit(tmp_path: Path):
 def test_workflow_run_emits_and_executes_engine(tmp_path: Path, monkeypatch, engine, expected_cmd, expected_file):
     calls = []
 
-    def _fake_run(cmd, check, cwd=None):
-        calls.append({"cmd": cmd, "check": check, "cwd": cwd})
-        return subprocess.CompletedProcess(cmd, 0)
+    def _fake_run(cmd, check=True, cwd=None, **kwargs):
+        calls.append({"cmd": cmd, "cwd": cwd})
+        return subprocess.CompletedProcess(cmd, 0, stdout="12345\n")
 
-    monkeypatch.setattr("tvbo.cli.run.subprocess.run", _fake_run)
+    monkeypatch.setattr("tvbo.cli.workflow.subprocess.run", _fake_run)
 
     out = tmp_path / "kit"
     r = runner.invoke(
@@ -260,8 +261,10 @@ def test_workflow_run_emits_and_executes_engine(tmp_path: Path, monkeypatch, eng
     assert (out / expected_file).is_file()
     assert calls, "expected workflow run to execute engine command"
     assert calls[0]["cmd"] == expected_cmd
-    assert calls[0]["check"] is True
     assert Path(calls[0]["cwd"]) == out
+    # Slurm chains a dependent gather job after the array.
+    if engine == "slurm":
+        assert any("--dependency=afterok" in a for c in calls[1:] for a in c["cmd"])
 
 
 def test_workflow_run_rejects_unknown_engine():
@@ -276,12 +279,12 @@ def test_workflow_run_slurm_array_smoke(tmp_path: Path, monkeypatch):
     sbatch_calls = []
     emitted = {}
 
-    def _fake_sbatch(cmd, check, cwd=None):
+    def _fake_sbatch(cmd, check=True, cwd=None, **kwargs):
         if cmd[0] == "sbatch":
             sbatch_calls.append({"cmd": cmd, "cwd": cwd})
-        return subprocess.CompletedProcess(cmd, 0)
+        return subprocess.CompletedProcess(cmd, 0, stdout="12345\n")
 
-    monkeypatch.setattr("tvbo.cli.run.subprocess.run", _fake_sbatch)
+    monkeypatch.setattr("tvbo.cli.workflow.subprocess.run", _fake_sbatch)
 
     out = tmp_path / "kit"
     from tvbo.cli import workflow as workflow_cli
@@ -321,12 +324,12 @@ def test_workflow_run_slurm_array_smoke(tmp_path: Path, monkeypatch):
 def test_workflow_run_slurm_array_throttle(tmp_path: Path, monkeypatch):
     sbatch_calls = []
 
-    def _fake_sbatch(cmd, check, cwd=None):
+    def _fake_sbatch(cmd, check=True, cwd=None, **kwargs):
         if cmd[0] == "sbatch":
             sbatch_calls.append({"cmd": cmd, "cwd": cwd})
-        return subprocess.CompletedProcess(cmd, 0)
+        return subprocess.CompletedProcess(cmd, 0, stdout="12345\n")
 
-    monkeypatch.setattr("tvbo.cli.run.subprocess.run", _fake_sbatch)
+    monkeypatch.setattr("tvbo.cli.workflow.subprocess.run", _fake_sbatch)
 
     out = tmp_path / "kit"
     r = runner.invoke(
@@ -348,7 +351,7 @@ def test_workflow_run_slurm_array_throttle(tmp_path: Path, monkeypatch):
     )
     assert r.exit_code == 0, r.stdout
     assert sbatch_calls, "sbatch was never called"
-    assert sbatch_calls[0]["cmd"][1] == "--array=0-39%1"
+    assert "--array=0-39%1" in sbatch_calls[0]["cmd"]
 
 
 # ---------------------------------------------------------------------------
