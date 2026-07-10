@@ -2227,6 +2227,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         if getattr(net, "parameters", None):
             for k, v in dict(net.parameters).items():
                 ref.parameters[k] = v
+        if getattr(net, "observations", None):
+            for k, v in dict(net.observations).items():
+                ref.observations[k] = v
 
         original = self.network
         self.network = ref
