@@ -169,46 +169,59 @@ def _network_has_matrices(net) -> bool:
         return False
 
 
-def _freeze_spec_yaml(experiment, spec_dir: Path) -> str:
+def _freeze_spec_yaml(experiment, spec_dir: Path, *, workflow_spec: dict | None = None) -> str:
     """Render the experiment as a self-contained YAML spec next to *spec_dir*.
 
     When the experiment has a connectome, its matrices are saved as an HDF5
     companion (``network.h5``) with a YAML sidecar (``network.yaml``) and the
     rendered spec references them through ``network.data_file`` while preserving
     any inline coupling / transforms / parameters. Without a connectome the plain
-    metadata render already round-trips, so it is returned unchanged.
+    metadata render already round-trips.
+
+    *workflow_spec* is the effective merged workflow config (study < experiment <
+    ``--set``). When given, the frozen spec's ``workflow`` block is rewritten to it,
+    so the spec records exactly what ran and re-emits identically without the flags.
     """
     from tvbo import datamodel as dm
     from tvbo.classes.network import Network
 
     net = getattr(experiment, "network", None)
-    if not _network_has_matrices(net):
-        return experiment.render(format="yaml")
+    has_net = _network_has_matrices(net)
 
-    spec_dir.mkdir(parents=True, exist_ok=True)
-    if not isinstance(net, Network):
-        net.__class__ = Network
-    net.save(spec_dir / "network.yaml", binary_format="h5")
-    _common.info("wrote spec/network.yaml + spec/network.h5")
-
-    # Compact network reference: data_file + inline coupling/transforms/parameters,
-    # so the rendered spec loads the companion connectome rather than a stub.
-    ref = dm.Network(data_file="network.h5")
-    if getattr(net, "coupling", None):
-        for k, v in dict(net.coupling).items():
-            ref.coupling[k] = v
-    if getattr(net, "transforms", None):
-        ref.transforms = list(net.transforms)
-    if getattr(net, "parameters", None):
-        for k, v in dict(net.parameters).items():
-            ref.parameters[k] = v
-
-    original = experiment.network
-    experiment.network = ref
+    original_net = getattr(experiment, "network", None)
+    original_wf = getattr(experiment, "workflow", None)
+    if workflow_spec:
+        effective = _wf.workflow_config_from_spec(workflow_spec)
+        if effective is not None:
+            experiment.workflow = effective
     try:
+        if not has_net:
+            return experiment.render(format="yaml")
+
+        spec_dir.mkdir(parents=True, exist_ok=True)
+        if not isinstance(net, Network):
+            net.__class__ = Network
+        net.save(spec_dir / "network.yaml", binary_format="h5")
+        _common.info("wrote spec/network.yaml + spec/network.h5")
+
+        # Compact network reference: data_file + inline coupling/transforms/parameters,
+        # so the rendered spec loads the companion connectome rather than a stub.
+        ref = dm.Network(data_file="network.h5")
+        if getattr(net, "coupling", None):
+            for k, v in dict(net.coupling).items():
+                ref.coupling[k] = v
+        if getattr(net, "transforms", None):
+            ref.transforms = list(net.transforms)
+        if getattr(net, "parameters", None):
+            for k, v in dict(net.parameters).items():
+                ref.parameters[k] = v
+
+        experiment.network = ref
         return experiment.to_yaml()
     finally:
-        experiment.network = original
+        experiment.network = original_net
+        if workflow_spec:
+            experiment.workflow = original_wf
 
 
 def _emit_kit(*, engine: str, plan, experiment, out_dir: Path) -> Path:
@@ -237,7 +250,7 @@ def _emit_kit(*, engine: str, plan, experiment, out_dir: Path) -> Path:
     spec_relpath = None
     try:
         spec_dir = out_dir / "spec"
-        yaml_text = _freeze_spec_yaml(experiment, spec_dir)
+        yaml_text = _freeze_spec_yaml(experiment, spec_dir, workflow_spec=plan.workflow_spec)
         spec_path = spec_dir / f"{plan.experiment_key}.yaml"
         spec_path.write_text(yaml_text, encoding="utf-8")
         spec_relpath = str(spec_path.relative_to(out_dir))

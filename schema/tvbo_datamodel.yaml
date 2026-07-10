@@ -492,6 +492,39 @@ enums:
             coo:
                 description: "Coordinate list (data, row, col)"
 
+    GraphRepresentation:
+        description: >-
+            How a Network's connectivity is represented when evaluating coupling.
+            This is a backend-independent performance contract, not a numerical
+            one: both representations compute the same coupling, but a sparse
+            representation sums over the existing edges (cost scales with the
+            number of edges) while a dense representation operates on the full
+            adjacency (cost scales with nodes-squared). A backend maps the choice
+            onto its own primitives (edge gather / segment-sum vs matrix product).
+            Orthogonal to whether the coupling reads *delayed* states — that is
+            decided per coupling by its conduction delay — so the two dimensions
+            together yield the four backend graph kinds: dense/sparse ×
+            instantaneous/delayed.
+        permissible_values:
+            auto:
+                description: >-
+                    Select by connection density: use the sparse representation
+                    when the adjacency is sparse enough that edge-wise evaluation
+                    is cheaper than the dense product, dense otherwise. Default.
+                    Lets the backend apply its own crossover without the recipe
+                    hard-coding a data structure.
+            dense:
+                description: >-
+                    Force the dense-adjacency representation. Preferred for densely
+                    connected or small networks, where dense linear algebra's
+                    constant-factor efficiency outweighs its nodes-squared scaling.
+            sparse:
+                description: >-
+                    Force the edge-list (sparse) representation. Preferred for
+                    large, sparsely connected networks (structural connectomes,
+                    power grids) where coupling cost then scales with the number
+                    of edges rather than nodes-squared.
+
     SweepSeeding:
         description: >-
             How each point of a parameter sweep (Exploration) obtains its initial
@@ -1179,6 +1212,17 @@ classes:
                 range: Coupling
                 description: "Reusable coupling configurations referenced by edges (e.g., 'instant', 'delayed', 'inhibitory')"
                 inlined: true
+            graph_representation:
+                range: GraphRepresentation
+                ifabsent: string(auto)
+                description: >-
+                    Representation used to evaluate coupling over this network's
+                    connectivity (``auto`` | ``dense`` | ``sparse``). ``auto``
+                    lets the backend choose by connection density. This names
+                    whether to exploit edge sparsity, not a concrete data
+                    structure, so it is backend-independent; the
+                    delayed-vs-instantaneous graph kind is decided separately from
+                    the couplings' conduction delays.
             dynamics:
                 multivalued: true
                 range: Dynamics

@@ -65,6 +65,7 @@ class WorkflowPlan:
     requirements: list[dict[str, Any]] = field(default_factory=list)  # normalized pip/conda deps
     source_spec: str = ""             # SPEC arg for `tvbo run` (recipe path / CURIE / DB name)
     experiment_selector: str | None = None  # --experiment value picking this experiment in a study
+    workflow_spec: dict[str, Any] = field(default_factory=dict)  # effective merged workflow config (study < experiment < --set)
 
     # ---- derived helpers --------------------------------------------------
 
@@ -403,7 +404,64 @@ def plan(
         requirements=_reqs,
         source_spec=source_spec or "",
         experiment_selector=experiment_selector,
+        workflow_spec=spec,
     )
+
+
+def workflow_config_from_spec(spec: dict) -> Any:
+    """Rebuild a datamodel ``WorkflowConfig`` from the merged workflow spec dict.
+
+    Lets an emitted kit freeze the *effective* configuration (study < experiment
+    < ``--set``) into its spec, so the spec re-emits identically without the flags
+    being re-supplied — full, self-contained provenance. Returns ``None`` when the
+    spec carries no workflow settings.
+    """
+    from tvbo import datamodel as dm
+
+    if not spec:
+        return None
+    wc = dm.WorkflowConfig()
+    for key in ("out_dir", "container", "retries", "rng", "provenance", "chunk"):
+        if spec.get(key) is not None:
+            setattr(wc, key, spec[key])
+    dist = spec.get("distribute")
+    if isinstance(dist, dict):
+        dc = dm.DistributionConfig()
+        for key in ("by", "chunk"):
+            if dist.get(key) is not None:
+                setattr(dc, key, dist[key])
+        if dist.get("vectorize"):
+            dc.vectorize = list(dist["vectorize"])
+        if dist.get("workflow"):
+            dc.workflow = list(dist["workflow"])
+        wc.distribute = dc
+    for engine in ("slurm", "snakemake", "nextflow"):
+        blk = spec.get(engine)
+        if isinstance(blk, dict) and blk:
+            setattr(wc, engine, _engine_config_from_dict(blk))
+    return wc
+
+
+def _engine_config_from_dict(blk: dict) -> Any:
+    """Rebuild a ``WorkflowEngineConfig`` from a merged engine block (env/options as
+    name-keyed maps or lists, values raw so they re-quote cleanly on the next emit)."""
+    from tvbo import datamodel as dm
+
+    ec = dm.WorkflowEngineConfig()
+    for key in ("cpus_per_task", "mem", "time", "gres", "partition", "account",
+                "cores", "executor", "queue", "venv", "mail_type", "mail_user",
+                "array_chunk"):
+        if blk.get(key) is not None:
+            setattr(ec, key, blk[key])
+    if blk.get("modules"):
+        ec.modules = list(blk["modules"])
+    env_map = _pairs_to_map(blk.get("env")) if blk.get("env") else {}
+    if env_map:
+        ec.env = [dm.EnvironmentVariable(name=str(n), value=str(v)) for n, v in env_map.items()]
+    opt_map = _pairs_to_map(blk.get("options")) if blk.get("options") else {}
+    if opt_map:
+        ec.options = [dm.SchedulerDirective(name=str(n), value=str(v)) for n, v in opt_map.items()]
+    return ec
 
 
 def merge_workflow_spec(study, experiment=None) -> dict[str, Any]:
