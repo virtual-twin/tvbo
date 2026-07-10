@@ -70,9 +70,12 @@ def _resolve_study_and_experiment(spec: str, experiment_arg: str | None):
         if experiment_arg is not None:
             wanted = [
                 e for e in items
-                if (getattr(e, "key", None) == experiment_arg
-                    or getattr(e, "name", None) == experiment_arg
-                    or getattr(e, "label", None) == experiment_arg)
+                if experiment_arg in (
+                    getattr(e, "key", None),
+                    getattr(e, "name", None),
+                    getattr(e, "label", None),
+                    str(getattr(e, "id", "")),
+                )
             ]
             if not wanted:
                 _common.die(f"No experiment named {experiment_arg!r} in study.")
@@ -81,14 +84,17 @@ def _resolve_study_and_experiment(spec: str, experiment_arg: str | None):
             exp = items[0]
         # Prefer the *runtime* experiment (has render/render_code/render_yaml) over the
         # datamodel object, so the kit can freeze the backend script + YAML snapshot.
-        if hasattr(obj, "get_experiment"):
-            sel = getattr(exp, "id", None)
-            if sel is None:
-                sel = getattr(exp, "key", None) or getattr(exp, "name", None) or getattr(exp, "label", None)
+        if not hasattr(exp, "render") and hasattr(obj, "get_experiment"):
+            sel = (getattr(exp, "id", None) or getattr(exp, "key", None)
+                   or getattr(exp, "name", None) or getattr(exp, "label", None))
             try:
                 exp = obj.get_experiment(sel)
-            except Exception:
-                pass
+            except Exception as e:
+                _common.die(
+                    f"Could not resolve experiment {sel!r} to a runnable object: {e}\n"
+                    "If the recipe references custom modules, make them importable "
+                    "(run from their directory or set PYTHONPATH)."
+                )
         return obj, exp, getattr(obj, "key", None) or "study"
 
     if kind == "experiment":
