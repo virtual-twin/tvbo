@@ -45,14 +45,16 @@ def test_dispatch_to_engine_uses_kit_dir_not_file(monkeypatch, tmp_path: Path, e
 
     # Kit emitted in-process into the directory (not a bare artefact file).
     assert (kit_dir / expected_workflow_file).is_file()
-    # Every shell-out is the engine submission from the kit dir; none re-invokes `tvbo`.
-    assert calls and calls[0]["cmd"][0] in {"sbatch", "snakemake", "nextflow"}
-    assert all(Path(c["cwd"]) == kit_dir for c in calls)
+    # The submission shells out from the kit dir; none re-invokes `tvbo` on PATH.
+    # (Filter out unrelated subprocess calls a library may make, e.g. `uname -p`.)
+    submits = [c for c in calls if c["cmd"][0] in {"sbatch", "snakemake", "nextflow"}]
+    assert submits, calls
+    assert all(Path(c["cwd"]) == kit_dir for c in submits)
     assert all(c["cmd"][0] != "tvbo" for c in calls)
     # Slurm submits the array (--parsable) then chains a dependent gather job.
     if engine == "slurm":
-        assert calls[0]["cmd"] == ["sbatch", "--parsable", "run.sbatch"]
-        assert any("--dependency=afterok" in a for c in calls[1:] for a in c["cmd"])
+        assert submits[0]["cmd"] == ["sbatch", "--parsable", "run.sbatch"]
+        assert any("--dependency=afterok" in a for c in submits[1:] for a in c["cmd"])
 
 
 def test_dispatch_to_engine_slurm_chains_gather_job(monkeypatch, tmp_path: Path):
@@ -75,9 +77,11 @@ def test_dispatch_to_engine_slurm_chains_gather_job(monkeypatch, tmp_path: Path)
     )
 
     # Array job first (parsable), then the gather job with an afterok dependency.
-    assert calls[0]["cmd"] == ["sbatch", "--parsable", "run.sbatch"]
-    assert Path(calls[0]["cwd"]) == kit_dir
-    assert len(calls) == 2
-    assert "--dependency=afterok:27452074" in calls[1]["cmd"]
-    assert calls[1]["cmd"][-1] == "finalize.sbatch"
-    assert Path(calls[1]["cwd"]) == kit_dir
+    # (Filter out unrelated subprocess calls a library may make, e.g. `uname -p`.)
+    submits = [c for c in calls if c["cmd"][0] == "sbatch"]
+    assert len(submits) == 2
+    assert submits[0]["cmd"] == ["sbatch", "--parsable", "run.sbatch"]
+    assert Path(submits[0]["cwd"]) == kit_dir
+    assert "--dependency=afterok:27452074" in submits[1]["cmd"]
+    assert submits[1]["cmd"][-1] == "finalize.sbatch"
+    assert Path(submits[1]["cwd"]) == kit_dir

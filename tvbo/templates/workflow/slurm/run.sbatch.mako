@@ -81,5 +81,5 @@ exec ${prefix}tvbo run ${run_target} \
 % if plan.experiment_selector and not spec_relpath:
     --experiment="${plan.experiment_selector}" \
 % endif
-    --slurm-chunk=$SLURM_ARRAY_TASK_ID/${plan.n_array_tasks} \
+    --shard=$SLURM_ARRAY_TASK_ID/${plan.n_array_tasks} \
     -o ${out_pat}

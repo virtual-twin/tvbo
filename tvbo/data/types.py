@@ -1700,9 +1700,8 @@ class ExperimentResult:
                     try:
                         da = _stacked_to_dataarray(da, _axes, name=obs_name)
                     except Exception:
-                        da = None
-                if da is not None and hasattr(da, "dims"):
-                    by_output[(_san(expl_name), _san(obs_name))] = da
+                        continue
+                by_output[(_san(expl_name), _san(obs_name))] = da
             if getattr(expl, "results", None) is not None:
                 try:
                     g = expl.as_grid()

@@ -88,6 +88,17 @@ def resolve_spec(spec: str) -> tuple[str, Any]:
     )
 
 
+def experiment_ids(exp: Any) -> set[str]:
+    """The identifiers an experiment can be selected by on the CLI.
+
+    Its ``key``, ``name``, ``label``, and stringified ``id`` (dropping the empty
+    ones). Shared by ``tvbo run`` and ``tvbo workflow`` so ``--experiment`` matches
+    the same way in both.
+    """
+    return {getattr(exp, "key", None), getattr(exp, "name", None),
+            getattr(exp, "label", None), str(getattr(exp, "id", ""))} - {None, ""}
+
+
 def _load_from_file(path: Path) -> tuple[str, Any]:
     """Best-effort type detection by reading the YAML's `class:` / shape."""
     import tvbo
