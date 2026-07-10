@@ -581,7 +581,9 @@ for expl in exploration_list:
         explored_values = axis.explored_values
         _el_domains = getattr(axis, 'element_domains', None) or []
         _has_el_ev = any(getattr(ed, 'explored_values', None) for ed in _el_domains)
-        assert domain or explored_values or _has_el_ev, f"exploration axis requires domain, explored_values, or element_domains with explored_values for {axis.parameter}"
+        _builder = getattr(axis, 'builder', None)
+        assert domain or explored_values or _has_el_ev or _builder is not None, \
+            f"exploration axis requires domain, explored_values, element_domains, or builder for {axis.parameter}"
         pname = str(axis.parameter)
         # Dotted reference (== the Exploration.space key); the ExplorationResult axis
         # label uses this so grid coords are named consistently across backends, while
@@ -595,6 +597,40 @@ for expl in exploration_list:
             prefix, pname = pname.rsplit('.', 1)
             is_coupling_param = prefix in all_couplings
             source_key = _to_ci_key(prefix) if is_coupling_param else prefix
+        # Builder axis: values materialized at runtime by a callable (ExplorationAxis.builder) —
+        # e.g. per-count control-gain vectors chosen from a runtime solitary-node ordering. The
+        # callable returns the stacked sweep values (leading axis = points); each value may be a
+        # whole vector. Routed through the normal grid path as a DataAxis (Space gathers array-
+        # valued axes per cell), so it inherits sharding / batching / as_grid with no special
+        # path. Bypasses the hetero auto-expansion below: the builder supplies whole per-node
+        # vectors, not per-element scalars. Arguments resolve to a literal or a base-sim
+        # observation (`observations.<name>` -> `_bov('<name>')`, wired in the exploration fn).
+        if _builder is not None:
+            _bc = getattr(_builder, 'callable', None)
+            assert _bc is not None and getattr(_bc, 'module', None) and getattr(_bc, 'name', None), \
+                f"builder for exploration axis '{axis.parameter}' requires callable: {{name, module}}"
+            import json as _json
+            _arg_strs = []
+            for _an, _arg in (_builder.arguments.items() if getattr(_builder, 'arguments', None) else []):
+                _av = _arg.value if hasattr(_arg, 'value') else _arg
+                if isinstance(_av, str) and 'observations.' in _av:
+                    _arg_strs.append("%s=_bov(%r)" % (str(_an), _av.split('observations.', 1)[1]))
+                else:
+                    try:
+                        _lit = repr(_json.loads(_json.dumps(_av)))   # coerce JsonObj -> plain literal
+                    except Exception:
+                        _lit = repr(_av)
+                    _arg_strs.append("%s=%s" % (str(_an), _lit))
+            exp_info['axes'].append({
+                'name': pname,
+                'label': _axis_label,
+                'is_coupling': is_coupling_param,
+                'coupling_key': source_key if is_coupling_param else None,
+                'dynamics_key': source_key if not is_coupling_param and source_key else None,
+                'element_idx': None,
+                'builder_expr': "%s.%s(%s)" % (_bc.module, _bc.name, ", ".join(_arg_strs)),
+            })
+            continue
         # Auto-expand heterogeneous parameters: if pname matches a dynamics param
         # with shape containing 'n_nodes', expand to n_nodes element axes automatically.
         # e.g., K with shape "(n_nodes,)" → K_el0, K_el1, ... K_el(n_nodes-1)
@@ -811,20 +847,36 @@ for expl in exploration_list:
         assert exp_info['record'], \
             f"warm-start '{exp_info['name']}' (sweep_seeding=from_previous) requires record: [...]"
         _ws_records = []
+        _ws_analysis = []
         for _rn in exp_info['record']:
             _obs = _all_observations.get(_rn)
             assert _obs is not None, \
                 f"warm-start '{exp_info['name']}' records unknown observation '{_rn}'"
+            # Analysis observations (Lyapunov, ...) ride the warm-start scan as a post-scan
+            # pass: each swept value's carried settled state seeds the analysis solve, so
+            # lambda_1 / xi_i are measured on the continued branch (unreachable from a cold
+            # start). Resolved here to backend-agnostic metadata; the sweep partial lays out
+            # the per-value map.
+            if _rn in analysis_observation_names:
+                _an = analysis_observations_dict[_rn].analysis
+                _ap = {str(k): (v.value if hasattr(v, 'value') else v)
+                       for k, v in (getattr(_an, 'parameters', None) or {}).items()}
+                _ws_analysis.append({'name': _rn, 'type': str(getattr(_an, 'type', '') or ''),
+                                     'segment_time': float(_ap.get('segment_time', 1.0)),
+                                     'n_steps': int(_ap.get('n_steps', _ap.get('n', 10))),
+                                     'n_exponents': int(_ap.get('n_exponents', _ap.get('k', 1)))})
+                continue
             _src = [str(s) for s in (getattr(_obs, 'source', None) or [])]
             _pipe = list(getattr(_obs, 'pipeline', None) or [])
             _cal = getattr(_pipe[0], 'callable', None) if _pipe else None
             assert len(_src) == 1 and len(_pipe) == 1 and _cal is not None and getattr(_cal, 'module', None), \
                 (f"warm-start record '{_rn}' must be a single-source, single-callable trajectory "
-                 "reduction with a module (analysis / multi-source observations are not supported "
-                 "on the warm-start scan)")
+                 "reduction with a module, or an analysis observation (analysis rides the scan as a "
+                 "post-scan pass; multi-source pipeline observations are not supported on the scan)")
             _ws_records.append({'name': _rn, 'call': "%s.%s" % (_cal.module, _cal.name),
                                 'var_idx': var_names.index(_src[0])})
         exp_info['warmstart_records'] = _ws_records
+        exp_info['warmstart_analysis'] = _ws_analysis
         exp_info['warmstart_segment'] = float(getattr(experiment.integration, 'duration', 1000.0))
         exp_info['warmstart_skip'] = float(getattr(experiment.integration, 'transient_time', 0.0) or 0.0)
     explorations.append(exp_info)
@@ -1864,14 +1916,14 @@ def run_optimization(
 <%
     total_points = 1
     for ax in expl['axes']:
-        total_points *= ax['n']
+        total_points *= (ax.get('n') or 1)   # builder axes have a runtime-only size (unknown here)
     has_axes = len(expl['axes']) > 0
     obs_type = expl.get('observable_type', 'observation')
     obs_func = expl.get('observable_func', '')
     obs_args = expl.get('observable_args', [])
     obs_name = expl.get('observable', '')
     output_key = expl.get('output_key')
-    grid_desc = ' x '.join([f"{ax['name']}[{ax['n']}]" for ax in expl['axes']]) if has_axes else f"{expl.get('n_trials', 1)} trials"
+    grid_desc = ' x '.join([f"{ax['name']}[{ax.get('n', '?')}]" for ax in expl['axes']]) if has_axes else f"{expl.get('n_trials', 1)} trials"
     # When the YAML declares observations, the JIT'd observable_fn returns
     # only the reduced observation values (no trajectory). This supersedes
     # the legacy model-output extraction path (which would have returned a
@@ -1886,6 +1938,18 @@ def run_optimization(
 def ${expl['name']}(state, model_fn, result_transient=None, **kwargs):
     """${expl['label']} - ${grid_desc}."""
     _network = kwargs.get('network')
+% if any(ax.get('builder_expr') for ax in expl['axes']):
+    # Builder-axis support: resolve a base-sim observation named in a builder argument.
+    # `base_observations` is the Bunch of observations the main run computed before this
+    # exploration; `_bov(name)` returns one (unwrapping a monitor result's `.data`).
+    _base_obs = kwargs.get('base_observations') or Bunch()
+    def _bov(_name):
+        assert _name in _base_obs, (
+            f"builder for '${expl['name']}' references base observation '{_name}', which the "
+            "main run did not compute (run mode='all' so base observations are available)")
+        _o = _base_obs[_name]
+        return _o.data if hasattr(_o, 'data') else _o
+% endif
     if _network is not None:
         _solver = get_solver()
 % if has_transient:
@@ -1930,7 +1994,17 @@ ${sweep.warmstart_sweep_body(expl, solver_class, dt, warmstart_solver_kwargs)}\
 % if has_axes:
     grid_state = copy.deepcopy(_expl_state)
     % for ax in expl['axes']:
-    % if ax.get('element_idx') is not None:
+    % if ax.get('builder_expr'):
+    ## Builder axis: materialize the sweep values from a callable, then sweep as a DataAxis.
+    ## Values may be whole per-node vectors (array-valued axis); Space gathers one per cell
+    ## just like a scalar axis, so sharding / batching / as_grid all apply unchanged.
+    _axisvals_${ax['name']} = ${ax['builder_expr']}
+    % if ax.get('is_coupling'):
+    grid_state.coupling.${ax['coupling_key']}.${ax['name']} = DataAxis(jnp.asarray(_axisvals_${ax['name']}))
+    % else:
+    grid_state.dynamics.${ax['name']} = DataAxis(jnp.asarray(_axisvals_${ax['name']}))
+    % endif
+    % elif ax.get('element_idx') is not None:
     ## Element-indexed parameter: create dummy scalar slot for Space discovery
     ## e.g., K[0] → grid_state.dynamics._K_el0 = GridAxis(...)
     % if 'values' in ax:
@@ -2293,7 +2367,11 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
 % else:
             name='${ax.get('label', ax['name'])}',
 % endif
-% if 'values' in ax:
+% if ax.get('builder_expr'):
+            ## Builder axis: values are runtime whole-vectors; the coordinate is the point index.
+            explored_values=jnp.arange(int(jnp.asarray(_axisvals_${ax['name']}).shape[0])),
+            n=int(jnp.asarray(_axisvals_${ax['name']}).shape[0]),
+% elif 'values' in ax:
             explored_values=jnp.array(${ax['values']}),
             n=${ax['n']},
 % else:
@@ -2573,6 +2651,7 @@ def run_experiment(
             state, model_fn,
             result_transient=transient,
             network=network,
+            base_observations=observations,  # base-sim observations for builder-axis arguments
             **kwargs,  # Pass runtime kwargs (e.g., target data for correlation-based observables)
         )
         % endfor

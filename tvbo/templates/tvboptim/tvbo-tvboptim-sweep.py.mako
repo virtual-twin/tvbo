@@ -61,6 +61,12 @@ metadata. `_adiabatic_scan` is imported once at module top, gated by `has_warmst
         observable='adiabatic', dt=${dt}, n_up=int(_adia_res.n_up), strategy='adiabatic_scan',
     )
 % else:
+<%
+    ws_analysis = [a for a in (expl.get('warmstart_analysis') or []) if a['type'] == 'lyapunov']
+    obs_pairs = ["'%s': jnp.asarray(_ws_res.stats['%s'])" % (r['name'], r['name']) for r in expl['warmstart_records']]
+    for a in ws_analysis:
+        obs_pairs += ["'%s': %s_lam" % (a['name'], a['name']), "'%s_xi': %s_xi" % (a['name'], a['name'])]
+%>\
     # -- Warm-started record sweep (delegates to tvboptim adiabatic_scan) --
     # Ramp the swept parameter, carrying each settled state into the next value; at every
     # value record the declared trajectory-reduction observations of the settled rollout.
@@ -71,6 +77,11 @@ metadata. `_adiabatic_scan` is imported once at module top, gated by `has_warmst
 % for r in expl['warmstart_records']:
         '${r['name']}': (lambda _a, _f=${r['call']}, _i=${r['var_idx']}: _f(_a[:, _i, :])),
 % endfor
+% if ws_analysis:
+        # Capture the settled (n_states, n_nodes) state at each value — the same carry the
+        # scan feeds to the next value — to seed the post-scan analysis pass below.
+        '_seed_state': (lambda _a: _a[-1]),
+% endif
     }
     _ws_res = _adiabatic_scan(
         _network, ${solver_class}(${solver_kwargs}),
@@ -80,10 +91,27 @@ metadata. `_adiabatic_scan` is imported once at module top, gated by `has_warmst
         observe=_ws_observe, statistics=_ws_stats,
     )
     _ws_p = jnp.asarray(_ws_res.p)
+% if ws_analysis:
+    # -- Per-value analysis on the warm-start branch (seeded from the carried state) --
+    # Independent per value → a memory-bounded lax.map (one analysis run per point).
+    _ws_seed_states = jnp.asarray(_ws_res.stats['_seed_state'])   # (n_values, n_states, n_nodes)
+% for a in ws_analysis:
+    # ${a['name']}: Benettin QR lambda_1 / xi_i at each swept value, re-seeded from that
+    # value's settled branch state so it tracks the continued branch, not a cold start.
+    _le_solve_${a['name']}, _le_cfg_${a['name']} = prepare(_network, ${solver_class}(${solver_kwargs}), t0=0.0, t1=${a['segment_time']}, dt=${dt})
+    def _lyap_at_${a['name']}(_carry):
+        _val, _seed = _carry
+        _cfg = eqx.tree_at(lambda _c: _c.${path}, _le_cfg_${a['name']}, _val)
+        _cfg = eqx.tree_at(lambda _c: _c.initial_state.dynamics, _cfg, _seed)
+        return benettin_spectrum_and_vectors(_le_solve_${a['name']}, _cfg, t=${a['segment_time']}, n=${a['n_steps']}, k=${a['n_exponents']})
+    _exps_${a['name']}, ${a['name']}_xi = jax.lax.map(_lyap_at_${a['name']}, (_ws_p, _ws_seed_states))
+    ${a['name']}_lam = _exps_${a['name']}[:, 0]   # leading exponent lambda_1(value)
+% endfor
+% endif
     return ExplorationResult(
         name='${expl['name']}',
         axes=[Bunch(name='${label}', explored_values=_ws_p, n=int(_ws_p.shape[0]), is_coupling=${bool(axis.get('is_coupling'))}, coupling_key=${repr(axis.get('coupling_key'))})],
-        observations={${', '.join("'%s': jnp.asarray(_ws_res.stats['%s'])" % (r['name'], r['name']) for r in expl['warmstart_records'])}},
+        observations={${', '.join(obs_pairs)}},
         observable='warmstart', dt=${dt}, n_up=int(_ws_res.n_up), strategy='warmstart',
     )
 % endif
