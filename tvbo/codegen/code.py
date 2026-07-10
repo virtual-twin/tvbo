@@ -9,6 +9,8 @@ and per-backend syntax fixes. `get_printer` selects a printer by target format
 expression and prints it for the chosen backend.
 """
 
+import logging
+
 import sympy.printing.julia as spj
 import sympy.printing.numpy as spn
 import sympy.printing.fortran as spf
@@ -18,6 +20,8 @@ from sympy import latex
 from sympy.printing import StrPrinter
 from tvbo.datamodel.schema import Equation
 from tvbo.parse.expression import parse_eq
+
+logger = logging.getLogger(__name__)
 
 
 # =============================================================================
@@ -193,15 +197,12 @@ def print_Piecewise(Printer, expr, verbose=False):
     result = default  # Default fallback for np.where
 
     if verbose:
-        print("expr:", expr)
-        print("args:", args)
-        print("default:", default)
+        logger.debug("Piecewise expr=%s args=%s default=%s", expr, args, default)
 
     # Iterate over conditions and expressions in reverse order (excluding the default)
     for value, condition in reversed(args[:-1]):
         if verbose:
-            print("condition:", condition)
-            print("value:", value)
+            logger.debug("Piecewise branch: condition=%s value=%s", condition, value)
         condition_str = Printer._print(condition)
         value_str = Printer._print(value)
         # Build the nested conditional via the printer's backend-abstracted primitive
@@ -209,8 +210,7 @@ def print_Piecewise(Printer, expr, verbose=False):
         result = Printer._where3(condition_str, value_str, result)
 
     if verbose:
-        print("result:", result)
-        print()
+        logger.debug("Piecewise result=%s", result)
     return result
 
 

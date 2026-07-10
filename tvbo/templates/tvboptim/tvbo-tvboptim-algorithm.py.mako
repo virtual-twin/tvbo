@@ -426,7 +426,7 @@ def run_${algo_name}(
                 _${src_obs}_buffer = _passed_buffer[-int(window_size):].reshape((int(window_size), 1, n_nodes))
             _buffer_idx = int(window_size)
             if verbose:
-                print(f"  Using passed ${src_obs} buffer ({_passed_len} samples, using last {int(window_size)})")
+                logger.info(f"  Using passed ${src_obs} buffer ({_passed_len} samples, using last {int(window_size)})")
         else:
             _${src_obs}_buffer = jnp.zeros((int(window_size), 1, n_nodes))
             if _passed_buffer.ndim == 2:
@@ -439,7 +439,7 @@ def run_${algo_name}(
                     _${src_obs}_buffer = _${src_obs}_buffer.at[int(window_size) - _passed_len + _pi, 0, :].set(_passed_buffer[_pi])
             _buffer_idx = _passed_len
             if verbose:
-                print(f"  Passed ${src_obs} buffer too small ({_passed_len} < {int(window_size)}), running warmup for remaining {int(window_size) - _passed_len} samples...")
+                logger.info(f"  Passed ${src_obs} buffer too small ({_passed_len} < {int(window_size)}), running warmup for remaining {int(window_size) - _passed_len} samples...")
             for _warmup_i in range(int(window_size) - _passed_len):
                 key, subkey = jax.random.split(key)
                 _warmup_result = model_fn(state)
@@ -469,14 +469,14 @@ def run_${algo_name}(
                     _${src_obs}_monitor = eqx.tree_at(history_accessor, _${src_obs}_monitor, _new_history)
             _buffer_idx = int(window_size)
             if verbose:
-                print(f"  Warmup complete. Buffer filled with {_buffer_idx} samples.")
+                logger.info(f"  Warmup complete. Buffer filled with {_buffer_idx} samples.")
     else:
         # No buffer passed - run warmup phase
         _${src_obs}_buffer = jnp.zeros((int(window_size), 1, n_nodes))
         _buffer_idx = 0
 
         if verbose:
-            print(f"  Warmup: filling ${src_obs} buffer with {int(window_size)} samples...")
+            logger.info(f"  Warmup: filling ${src_obs} buffer with {int(window_size)} samples...")
 
         for _warmup_i in range(int(window_size)):
             key, subkey = jax.random.split(key)
@@ -508,12 +508,12 @@ def run_${algo_name}(
 
         _buffer_idx = int(window_size)
         if verbose:
-            print(f"  Warmup complete. Buffer filled with {_buffer_idx} samples.")
+            logger.info(f"  Warmup complete. Buffer filled with {_buffer_idx} samples.")
 % endfor
 % endif
 
     if verbose:
-        print(f"Running ${algo_name} algorithm for {n_iterations} iterations...")
+        logger.info(f"Running ${algo_name} algorithm for {n_iterations} iterations...")
 
     for i in range(n_iterations):
         key, subkey = jax.random.split(key)
@@ -831,7 +831,7 @@ def run_${algo_name}(
     progress_str = ", ".join(progress_parts)
 %>
 % if progress_items:
-            print(f"  {i+1}/{n_iterations}: ${progress_str}")
+            logger.info(f"  {i+1}/{n_iterations}: ${progress_str}")
 % else:
             raise ValueError("Algorithm must have functions or simulated_observations for progress display")
 % endif
@@ -891,7 +891,7 @@ def run_${algo_name}(
 % endfor
 
     if verbose:
-        print(f"${algo_name} complete!")
+        logger.info(f"${algo_name} complete!")
 
     # Build hyperparameters Bunch for AlgorithmResult
     _hyperparams = Bunch(

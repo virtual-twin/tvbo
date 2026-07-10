@@ -16,6 +16,7 @@ generation, simulation and bifurcation runs, plotting, and report export —
 together with the `Model` and `Dynamics` convenience subclasses.
 """
 
+import logging
 import copy as _copy
 import functools
 import os
@@ -45,6 +46,8 @@ from tvbo.ontology import owl as ontology
 from tvbo.ontology import query
 from tvbo.parse.expression import parse_eq
 from tvbo.utils import report
+
+logger = logging.getLogger(__name__)
 
 TEMPLATES = templates.root
 
@@ -425,7 +428,7 @@ def update_parameters(metadata, ontoclass, verbose=0, only_used=True, **kwargs):
             synonym in metadata.parameters for synonym in k.synonym + k.symbol
         ):
             if verbose > 0:
-                print(f"using parameter {label} from the ontology")
+                logger.debug("using parameter %s from the ontology", label)
             metadata.parameters.update(
                 {
                     label: tvbo_datamodel.Parameter(
