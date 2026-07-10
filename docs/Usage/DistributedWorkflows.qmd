@@ -76,6 +76,15 @@ Emission and submission run in-process, so the node does not need `tvbo` on
 shelled out. Override any field at emit time with `--set`, for example
 `--set slurm.mem=64G` or `--set distribute.chunk=8`.
 
+The kit is a self-contained provenance record. Its `spec/<name>.yaml` freezes the
+**effective** config after merging study, experiment, and every `--set` override,
+alongside the connectome (`spec/network.yaml` + `spec/network.h5`). Re-emitting
+from that frozen spec reproduces the same run with no flags:
+
+```bash
+tvbo workflow slurm kit/spec/<name>.yaml        # same partition, chunk, env, …
+```
+
 Submit a single shard as a smoke test without editing the spec:
 
 ```bash
