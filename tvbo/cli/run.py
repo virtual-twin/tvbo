@@ -84,9 +84,12 @@ def run(
         if experiment is not None:
             items = [
                 e for e in items
-                if (getattr(e, "key", None) == experiment
-                    or getattr(e, "name", None) == experiment
-                    or getattr(e, "label", None) == experiment)
+                if experiment in (
+                    getattr(e, "key", None),
+                    getattr(e, "name", None),
+                    getattr(e, "label", None),
+                    str(getattr(e, "id", "")),
+                )
             ]
             if not items:
                 _common.die(f"No experiment named {experiment!r} in study.")
@@ -98,8 +101,13 @@ def run(
                        or getattr(exp, "name", None) or getattr(exp, "label", None))
                 try:
                     exp = obj.get_experiment(sel)
-                except Exception:
-                    pass
+                except Exception as e:
+                    _common.die(
+                        f"Could not resolve experiment {sel!r} to a runnable object: {e}\n"
+                        "If the recipe references custom builder/analysis modules "
+                        "(e.g. `module: my_networks`), make them importable — run from "
+                        "their directory or set PYTHONPATH."
+                    )
             _run_one(exp, backend, out_dir, kwargs, chunk_i, chunk_n)
         return
 
