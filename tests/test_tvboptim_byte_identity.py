@@ -213,12 +213,6 @@ def test_experiment_result_roundtrips_via_sidecar(tmp_path, eager):
     import xarray as xr
 
     exp = _load_landscape(2000.0, 500.0)
-    # Drop empirical observations that source the network's observational (FC) data:
-    # a frozen structural connectome does not carry them, and they are irrelevant to
-    # replicating the simulation sweep this test exercises.
-    for name, obs in list((exp.observations or {}).items()):
-        if any("network.observations" in str(s) for s in (getattr(obs, "source", None) or [])):
-            del exp.observations[name]
     exp.configure()
     written = exp.run("tvboptim", mode="exploration", n_w=2, n_G=2, n_pmap=1).save(str(tmp_path / "A"))
     h5_a = next(p for p in written if p.endswith(".h5"))
