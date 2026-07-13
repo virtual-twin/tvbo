@@ -4,7 +4,7 @@
 from tvbo.codegen import render_expression
 from tvbo.templates.tvboptim.utils import (
     get_attr, to_numeric, get_recorded_variable_names,
-    adapt_class_reference_for_tvboptim,
+    adapt_class_reference_for_tvboptim, resolve_reduction,
 )
 
 model = experiment.dynamics
@@ -458,6 +458,9 @@ for obs_name, obs in observations.items():
         'period': get_attr(obs, 'period'),  # Sampling period (ms) for time computation
         'tail_samples': get_attr(obs, 'tail_samples'),  # Last N samples before aggregation
         'aggregation': get_attr(obs, 'aggregation'),  # Aggregation type (mean, last, first, etc.)
+        # An Observation.dynamics observer resolves to a streaming reducer (init, update,
+        # finalize). None when the observation has no dynamics — the pipeline path applies.
+        'reduction': resolve_reduction(obs),
     }
 
     # Check for class_reference first (takes precedence over pipeline)
@@ -599,7 +602,49 @@ if network_obs_keys:
                     # Fallback: resolve relative to cwd
                     _bids_path = (Path.cwd() / _bids_dir_raw).resolve()
             bids_dir = str(_bids_path)
-%>
+%>\
+## Emit a tvboptim reducer (init, update, finalize) from a resolved Observation.dynamics
+## observer (utils.resolve_reduction). The observer's per-step recurrence runs as an inner
+## scan over each block — accumulators commit gated on the first step, when memory is not
+## yet valid — so the block trajectory is never held. Every expression is a sympy Expr
+## rendered here via render_expression, keeping the reducer backend-independent.
+<%def name="render_reduction(red, name, s_idx, dt)">\
+<%
+    from tvbo.codegen import render_expression
+    _snames = [s['name'] for s in red['states']]
+    _src = red['source']
+    _rparams = _snames + [_src, 'dt', 'count']
+    _rufuncs = {f: f for f in red['functions']}
+    _jc = lambda e, ps=_rparams: render_expression(e, format='jax', user_functions=_rufuncs, parameters=ps)
+%>\
+def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}):
+% for _fname, _fdef in red['functions'].items():
+    def ${_fname}(${", ".join(_fdef['args'])}):
+        return ${_jc(_fdef['expr'], _fdef['args'])}
+% endfor
+    def _init(template, n_steps):
+        n = template.shape[-1]
+        return (${", ".join("jnp.full((n,), %r)" % s['init'] for s in red['states'])}, jnp.array(0), jnp.array(False))
+    def _update(acc, block):
+        def _step(carry, s_row):
+            ${", ".join(_snames)}, _count, _inited = carry
+            ${_src} = s_row[s_var]
+% for s in red['states']:
+            _new_${s['name']} = ${_jc(s['update'])}
+% endfor
+% for s in red['states']:
+% if s['is_accumulator']:
+            _new_${s['name']} = jnp.where(_inited, _new_${s['name']}, ${s['name']})
+% endif
+% endfor
+            _count = _count + jnp.where(_inited, 1, 0)
+            return (${", ".join("_new_%s" % _n for _n in _snames)}, _count, jnp.array(True)), None
+        return jax.lax.scan(_step, acc, block)[0]
+    def _finalize(acc):
+        ${", ".join(_snames)}, count, _inited = acc
+        return ${_jc(red['output'])}
+    return (_init, _update, _finalize)
+</%def>\
 """Observation classes derived from AbstractMonitor for tvboptim."""
 
 import math
@@ -656,6 +701,16 @@ from ${module} import ${class_name} as _Ext${class_name}
     # Returns 0 for network/dataset/external/empty sources (back-compat for external monitors).
     state_idx = resolve_var_index(obs_source, obs_name)
 %>
+% if obs['reduction'] is not None:
+## =============================================================================
+## Streaming reducer for the Observation.dynamics observer `${obs_name}`.
+## The (init, update, finalize) triple serves both paths: the host/base run passes
+## the whole trajectory as one block (update scans it → post-scan value), while the
+## exploration grid passes it to prepare(reduce=...) to fold the value in-carry with
+## no trajectory held. `_reduction_${obs_name}(s_var, dt)` builds a fresh triple.
+## =============================================================================
+${render_reduction(obs['reduction'], obs_name, state_idx, dt)}
+% endif
 % if is_dataset_target:
 ## =============================================================================
 ## Per-subject dataset target — bound at run_experiment time (see
@@ -742,6 +797,31 @@ class ${class_name}(eqx.Module):
     def __call__(self, result):
         """Process simulation result using external class."""
         return self._monitor(result)
+
+% elif obs['reduction'] is not None:
+## =============================================================================
+## Dynamics-observer Observation `${obs_name}` — host monitor backed by the
+## streaming reducer `_reduction_${obs_name}`. The host/base run folds the reducer
+## over the whole trajectory as a single block, which equals the in-carry value the
+## exploration grid streams via prepare(reduce=...). There is no pipeline: the
+## Observation.dynamics observer *is* the definition, one source of truth for both.
+## =============================================================================
+class ${class_name}(AbstractMonitor):
+    """${obs['label'] or obs_name} observation (dynamics observer)."""
+    dt: float = eqx.field(static=True, default=${dt})
+
+    def __init__(self, history=None, voi: int = ${state_idx}, period: float = None, dt: float = ${dt}, **kwargs):
+        self.voi = voi
+        self.period = period if period is not None else dt
+        self.dt = dt
+
+    def __call__(self, result):
+        # One big block over the whole trajectory == the post-scan reduction.
+        _init, _update, _finalize = _reduction_${obs_name}(s_var=${state_idx}, dt=self.dt)
+        _data = result.data if hasattr(result, 'data') else result
+        _acc = _init(_data[0], _data.shape[0])
+        _acc = _update(_acc, _data)
+        return _finalize(_acc)
 
 % else:
 ## =============================================================================

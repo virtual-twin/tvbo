@@ -163,19 +163,18 @@ def process_atlas(name: str, spec: dict, check: bool) -> int:
         print(f"[{name}] NOTE: no empirical sidecar reachable; wrote rule-derived aliases "
               f"without a data cross-check")
 
-    # Append the empirical alias to each entity's alternateName (keep existing, dedup).
+    # One pass over the entities: append the empirical alias to each entity's
+    # alternateName (keep existing, dedup), flag which entities drift, and check global
+    # alias uniqueness (region_alias_map must never see one alias map to two regions).
     drift = []
-    for c in canon_labels:
-        cur = list(entities[c].get("alternateName") or [])
-        if aliases[c] not in cur:
-            drift.append(c)
-    # Global uniqueness across the FINAL alias sets, so region_alias_map cannot hit an
-    # ambiguous alias (would map one string to two regions).
+    merged_by_c: dict = {}
     final_index: dict[str, str] = {}
     for c in canon_labels:
-        merged = list(entities[c].get("alternateName") or [])
-        if aliases[c] not in merged:
-            merged = merged + [aliases[c]]
+        cur = list(entities[c].get("alternateName") or [])
+        merged = cur if aliases[c] in cur else cur + [aliases[c]]
+        merged_by_c[c] = merged
+        if aliases[c] not in cur:
+            drift.append(c)
         for alias in merged:
             prev = final_index.get(alias)
             if prev is not None and prev != c:
@@ -192,10 +191,8 @@ def process_atlas(name: str, spec: dict, check: bool) -> int:
         print(f"[{name}] DRIFT: {len(drift)} entities need the empirical alias "
               f"(e.g. {drift[:3]})", file=sys.stderr)
         return 1
-    for c in canon_labels:
-        cur = list(entities[c].get("alternateName") or [])
-        if aliases[c] not in cur:
-            entities[c]["alternateName"] = cur + [aliases[c]]
+    for c in drift:
+        entities[c]["alternateName"] = merged_by_c[c]
     with path.open("w") as f:
         yaml.dump(data, f)
     print(f"[{name}] wrote empirical alias for {len(drift)} entities -> {rel}")

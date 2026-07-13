@@ -2576,7 +2576,13 @@ class Network(tvbo_datamodel.Network):
                 return {}
             term = getattr(Atlas(resolved), "terminology", None)
             return getattr(term, "entities", None) or {}
-        except Exception:
+        except Exception as exc:  # noqa: BLE001 — aliases are optional; degrade but surface
+            import logging
+
+            logging.getLogger(__name__).warning(
+                "Could not load atlas terminology for %r (region aliases unavailable): %s",
+                name, exc,
+            )
             return {}
 
     def region_alias_map(self) -> Dict[str, str]:
