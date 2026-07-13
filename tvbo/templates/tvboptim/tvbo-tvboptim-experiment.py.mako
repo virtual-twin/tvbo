@@ -1399,6 +1399,20 @@ def _gather2d(matrix, idx):
     """Select the shared nodes on both axes of a (node, node) matrix by index."""
     return matrix[jnp.ix_(idx, idx)]
 % endif
+# ── Runtime IC seeding (InitialState.from_experiment) ────────────────────────
+# A run may be seeded from an externally supplied operating point: the settled
+# (n_states, n_nodes) state another experiment already reached, handed in as
+# run_experiment(seed_dynamics=...). None (the default) leaves the sampled IC
+# untouched — a no-op for every run that does not use it. Applied at each IC
+# construction site (transient, main, and each exploration base) so the whole
+# run starts on the supplied branch rather than a cold sample.
+_SEED_DYNAMICS = None
+
+def _apply_seed_dynamics(state):
+    if _SEED_DYNAMICS is not None:
+        state.initial_state.dynamics = jnp.asarray(_SEED_DYNAMICS)
+    return state
+
 def run_simulation(
     network: Network,
     t1: float = ${t1_default},
