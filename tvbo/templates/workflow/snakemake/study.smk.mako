@@ -80,7 +80,7 @@ rule ${ep["rule_name"]}:
 % endif
     shell:
 % if context.get("bundled_code"):
-        "export PYTHONPATH=code:$PYTHONPATH && "
+        "export PYTHONPATH=code:${'$'}{PYTHONPATH:-} && "
 % endif
 % for _e in (block.get("env") or []):
         "export ${_e['name']}=${_e['value']} && "
