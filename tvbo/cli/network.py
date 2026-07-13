@@ -102,11 +102,57 @@ def build(
     for path, what in ((tractogram, "tractogram"), (parcellation, "parcellation")):
         if not path.exists():
             _common.die(f"{what} not found: {path}")
+    if labels is not None and not labels.exists():
+        _common.die(f"labels file not found: {labels}")
 
     if not space:
         _common.info(
             "No --space given; assuming the tractogram and parcellation are already "
             "co-registered in the same space.")
+
+    from tvbo.classes.network import Network
+
+    bids = {k: v for k, v in (
+        ("template", space), ("cohort", cohort), ("reconstruction", reconstruction),
+        ("atlas", atlas), ("segmentation", segmentation), ("scale", scale),
+    ) if v}
+
+    def apply_metadata(net: "Network") -> "Network":
+        """Attach the flag-derived SC metadata used for naming and serialisation.
+
+        The ``atlas`` filename entity is read from ``parcellation.atlas.name``
+        (not ``bids``), so the naming shell needs the same parcellation the saved
+        network gets — hence one shared helper for both.
+        """
+        net.descriptor = "SC"
+        net.distance_unit = "mm"
+        if atlas or space:
+            net.parcellation = {"atlas": {
+                k: v for k, v in (("name", atlas), ("coordinateSpace", space)) if v}}
+        if reconstruction:
+            net.tractogram = {"name": reconstruction}
+        if bids:
+            net.bids = bids
+        label_bits = [b for b in (atlas, segmentation, scale, reconstruction) if b]
+        if label_bits:
+            net.label = " ".join(label_bits)
+        return net
+
+    # BIDS entities are entirely flag-derived, so resolve the output path and the
+    # overwrite guard up front — before the (potentially minutes-long) MRtrix run.
+    if output is not None:
+        sidecar = Path(output).with_suffix(".yaml")
+    else:
+        shell = apply_metadata(Network(nodes=[], edges=[], number_of_nodes=0))
+        fname = getattr(shell, "bids_filename", None)
+        if not fname:
+            _common.die(
+                "Could not derive an output name from the given entities; pass "
+                "-o/--output, or add entities like --space/--atlas/--rec.")
+        sidecar = Path.cwd() / Path(fname).with_suffix(".yaml")
+    companion = sidecar.with_suffix(".h5")
+    if (sidecar.exists() or companion.exists()) and not overwrite:
+        _common.die(f"{sidecar.name} already exists (use --overwrite).")
 
     # 1. MRtrix → weight and length matrices.
     _common.info(f"Running tck2connectome on {tractogram.name} × {parcellation.name} …")
@@ -120,48 +166,15 @@ def build(
     # 2. Optional node labels.
     node_labels = None
     if labels is not None:
-        if not labels.exists():
-            _common.die(f"labels file not found: {labels}")
         node_labels = [ln.strip() for ln in labels.read_text().splitlines() if ln.strip()]
         if len(node_labels) != n_nodes:
             _common.die(
                 f"labels count ({len(node_labels)}) != parcellation node count ({n_nodes}).")
 
-    # 3. Assemble a tvbo Network and attach the entities that were provided.
-    from tvbo.classes.network import Network
+    # 3. Assemble the tvbo Network with the same metadata used for naming.
+    net = apply_metadata(Network.from_matrix(weights=weights, lengths=lengths, labels=node_labels))
 
-    net = Network.from_matrix(weights=weights, lengths=lengths, labels=node_labels)
-    net.descriptor = "SC"
-    net.distance_unit = "mm"
-    if atlas or space:
-        net.parcellation = {"atlas": {
-            k: v for k, v in (("name", atlas), ("coordinateSpace", space)) if v}}
-    if reconstruction:
-        net.tractogram = {"name": reconstruction}
-    bids = {k: v for k, v in (
-        ("template", space), ("cohort", cohort), ("reconstruction", reconstruction),
-        ("atlas", atlas), ("segmentation", segmentation), ("scale", scale),
-    ) if v}
-    if bids:
-        net.bids = bids
-    label_bits = [b for b in (atlas, segmentation, scale, reconstruction) if b]
-    if label_bits:
-        net.label = " ".join(label_bits)
-
-    # 4. Resolve the output path (explicit -o, else BIDS-derived name in the CWD).
-    if output is not None:
-        sidecar = Path(output).with_suffix(".yaml")
-    else:
-        fname = getattr(net, "bids_filename", None)
-        if not fname:
-            _common.die(
-                "Could not derive an output name from the given entities; pass "
-                "-o/--output, or add entities like --space/--atlas/--rec.")
-        sidecar = Path.cwd() / Path(fname).with_suffix(".yaml")
-    companion = sidecar.with_suffix(".h5")
-    if (sidecar.exists() or companion.exists()) and not overwrite:
-        _common.die(f"{sidecar.name} already exists (use --overwrite).")
-
+    # 4. Save (sidecar + .h5 companion).
     sidecar.parent.mkdir(parents=True, exist_ok=True)
     net.save(sidecar)
 

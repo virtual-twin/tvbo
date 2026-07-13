@@ -32,8 +32,12 @@ def ensure_mrtrix(tool: str = TCK2CONNECTOME) -> None:
     """Raise a friendly ``RuntimeError`` when the MRtrix command is missing."""
     if not mrtrix_available(tool):
         raise RuntimeError(
-            f"{tool!r} was not found on PATH. This wraps MRtrix3 — install it "
-            f"(https://www.mrtrix.org/) and make sure `{tool}` runs."
+            f"{tool!r} was not found on PATH. `tvbo network build` is a thin wrapper "
+            f"around MRtrix3.\n"
+            f"  Install MRtrix3: https://www.mrtrix.org/download/\n"
+            f"  {tool} reference: "
+            f"https://mrtrix.readthedocs.io/en/latest/reference/commands/{tool}.html\n"
+            f"After installing, make sure `{tool}` runs from your shell."
         )
 
 
