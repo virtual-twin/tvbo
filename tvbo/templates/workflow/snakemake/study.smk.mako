@@ -12,8 +12,8 @@ def _values(vals):
 def _cell_out(ep):
     """Per-cell output basename = exactly the file `tvbo run` writes for this cell."""
     axes = ep["axes"]
-    subj = [a for a in axes if a["parameter"] == "dataset.active_subject"]
-    if subj and len(axes) == 1:
+    is_subject_only = len(axes) == 1 and axes[0]["parameter"] == "dataset.active_subject"
+    if is_subject_only:
         return "sub-" + _wildcard("subject") + "_" + ep["result_stem"] + ".h5"
     if axes:
         return "/".join("%s=%s" % (a["name"], _wildcard(a["name"])) for a in axes) + "/" + ep["result_stem"] + ".h5"
@@ -79,6 +79,9 @@ rule ${ep["rule_name"]}:
 % endfor
 % endif
     shell:
+% if context.get("bundled_code"):
+        "export PYTHONPATH=code:$PYTHONPATH && "
+% endif
 % for _e in (block.get("env") or []):
         "export ${_e['name']}=${_e['value']} && "
 % endfor

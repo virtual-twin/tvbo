@@ -523,7 +523,7 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
     def _san(s):
         return "".join(c if (c.isalnum() or c in ".-") else "_" for c in str(s))
 
-    exp_plans, block, last_plan = [], {}, None
+    exp_plans, block, last_plan, bundled_code = [], {}, None, False
     for exp in experiments:
         key = _san(getattr(exp, "key", None) or getattr(exp, "id", None)
                    or getattr(exp, "label", None) or "experiment")
@@ -542,8 +542,11 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
             spec_relpath, select = spec, key
         else:
             edir = out_dir / "spec" / key
-            (edir / "experiment.yaml").write_text(
-                _freeze_spec_yaml(exp, edir, workflow_spec=spec_dict), encoding="utf-8")
+            yaml_text = _freeze_spec_yaml(exp, edir, workflow_spec=spec_dict)
+            (edir / "experiment.yaml").write_text(yaml_text, encoding="utf-8")
+            # Custom callable/builder modules the recipe references travel with the
+            # kit (shared code/ dir), so `tvbo run` resolves them on the node.
+            bundled_code = _bundle_callable_modules(yaml_text, out_dir) or bundled_code
             spec_relpath, select = f"spec/{key}/experiment.yaml", None
             _common.info(f"froze experiment {key} ({len(plan.workflow_axes)} fan-out axes)")
         exp_plans.append({
@@ -559,7 +562,8 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
                      for ax in plan.workflow_axes],
         })
 
-    text = _render_template("snakemake/study.smk.mako", exp_plans=exp_plans, block=block)
+    text = _render_template("snakemake/study.smk.mako", exp_plans=exp_plans,
+                            block=block, bundled_code=bundled_code)
     if stdout:
         typer.echo(text)
         return None

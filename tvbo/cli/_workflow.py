@@ -127,25 +127,6 @@ class WorkflowPlan:
         for combo in product(*(ax.values for ax in self.workflow_axes)):
             yield dict(zip(names, combo))
 
-    def per_cell_command(self, *, run_cmd: str = "tvbo run") -> str:
-        """Render a `tvbo run` command line for one workflow cell."""
-        parts = [run_cmd, self.run_spec, f"--backend={self.backend.name}"]
-        if self.container:
-            parts.append(f"--container={self.container}")
-        # Workflow-fanned axes become explicit per-cell flags. The subject axis
-        # (dataset fan-out) resolves that subject's empirical target via --subject;
-        # other fanned axes are metadata overrides.
-        for ax in self.workflow_axes:
-            if ax.parameter == "dataset.active_subject":
-                parts.append(f"--subject={{wildcards.{ax.name}}}")
-            else:
-                parts.append(f"--set={ax.parameter}={{wildcards.{ax.name}}}")
-        # Vectorized axes are passed as a sweep range so the backend packs them
-        for ax in self.vectorize_axes:
-            parts.append(f"--sweep={ax.parameter}={','.join(repr(v) for v in ax.values)}")
-        parts.append(f"-o {self.out_dir}")
-        return " ".join(parts)
-
 
 # ---------------------------------------------------------------------------
 # Sweep extraction
@@ -216,9 +197,9 @@ def _dataset_subject_axis(experiment) -> "SweepAxis | None":
     """A workflow-fanned ``subject`` axis when the experiment has a per-subject target.
 
     Values are the cohort subject IDs (from ``experiment.dataset_subject_ids()``);
-    the per-cell command carries ``--override dataset.active_subject=<sub>`` so the
-    run resolves that subject's empirical target. Returns ``None`` when the
-    experiment declares no dataset-sourced observation.
+    each fanned cell runs ``tvbo run … --subject <sub>`` so the run resolves that
+    subject's empirical target. Returns ``None`` when the experiment declares no
+    dataset-sourced observation.
     """
     ids_fn = getattr(experiment, "dataset_subject_ids", None)
     if not callable(ids_fn):
