@@ -154,7 +154,10 @@ slots:
             Whether to include this element in simulation output files.
             Applicable to state variables (default true), derived
             variables (default false), and network nodes (default true).
-            Set false to suppress recording.
+            On an observation it forces (true) or suppresses (false)
+            persistence in the result; left unset, a terminal observation
+            (one not consumed by another observation or a loss) is recorded
+            and an intermediate one is not. Set false to suppress recording.
 
 enums:
     AlgorithmCompositionMode:
@@ -1743,6 +1746,7 @@ classes:
             - parameters
             - environment
             - time_scale
+            - record
         attributes:
             # Source specification - what this observation derives from.
             # Each entry is either a state-variable name/ref (raw observation

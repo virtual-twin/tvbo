@@ -75,6 +75,12 @@ def run(
         help="gzip-deflate the result HDF5 (default on; grids compress well). "
              "--no-compress writes uncompressed for maximum write speed.",
     ),
+    save_all: bool = typer.Option(
+        False, "--save-all",
+        help="Persist every observation, including intermediates. By default only "
+             "recorded outputs are saved (leaves + `record: true`); this keeps the "
+             "scaffolding (e.g. a raw BOLD feeding an FC) for debugging.",
+    ),
 ) -> None:
     """Run a SPEC (experiment or study) in the selected backend.
 
@@ -99,6 +105,7 @@ def run(
     if subject is not None:
         kwargs["active_subject"] = subject
     kwargs["compress"] = compress
+    kwargs["record_only"] = not save_all
 
     chunk_i = chunk_n = None
     if shard:
@@ -276,13 +283,14 @@ def _run_one(experiment, backend: str, out_dir: Path | None,
 
 
 def _exec_one(experiment, backend: str, out_dir: Path | None, kwargs: dict) -> None:
-    compress = kwargs.pop("compress", True)  # a save option, not a backend-run kwarg
+    compress = kwargs.pop("compress", True)          # save options, not backend-run kwargs
+    record_only = kwargs.pop("record_only", True)
     result = experiment.run(format=backend, **kwargs)
     _common.info(f"done: {type(result).__name__}")
     if out_dir is not None:
         out_dir.mkdir(parents=True, exist_ok=True)
         if hasattr(result, "save"):
-            saved = result.save(str(out_dir), compress=compress)
+            saved = result.save(str(out_dir), compress=compress, record_only=record_only)
             _common.info(f"wrote {saved}")
         else:
             _common.info(f"(result has no .save(); skipping write to {out_dir})")
