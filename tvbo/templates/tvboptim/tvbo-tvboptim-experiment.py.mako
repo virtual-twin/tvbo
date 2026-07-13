@@ -242,6 +242,28 @@ _default_init = [
 ]
 node_state_overrides = get_node_state_overrides(network, n_nodes, state_names, _default_init)
 
+# initial_state.method == from_working_point: a warm-start ramp (reusing ExplorationAxis:
+# parameter + Range domain) that reaches a working point (operating branch) and seeds this
+# run's IC from the settled endpoint. None unless declared. Per-step settle = the
+# experiment's transient (else its main duration) — no separate settle concept.
+from_working_point = None
+_ini = getattr(experiment, 'initial_state', None)
+if _ini is not None and str(getattr(_ini, 'method', '') or '') == 'from_working_point':
+    _rax = _ini.ramp
+    assert _rax is not None and getattr(_rax, 'parameter', None), \
+        "initial_state.method=from_working_point requires ramp.parameter + ramp.domain"
+    _rdom = _rax.domain
+    _rlo = float(getattr(_rdom, 'lo', 0.0) or 0.0)
+    _rhi = float(_rdom.hi)
+    _rn = getattr(_rdom, 'n', None)
+    _rnpts = int(_rn) if _rn else int(round((_rhi - _rlo) / float(_rdom.step))) + 1
+    _rtr = float(getattr(integration, 'transient_time', 0.0) or 0.0)
+    from_working_point = {
+        'path': 'dynamics.%s' % str(_rax.parameter).rsplit('.', 1)[-1],
+        'lo': _rlo, 'hi': _rhi, 'n': _rnpts,
+        'settle': _rtr if _rtr > 0 else float(integration.duration),
+    }
+
 # Detect parameters with distribution.axis == 'time' — these are stochastic
 # time-varying inputs pre-generated as arrays and indexed per integration step.
 # Not regular params: excluded from DEFAULT_PARAMS, trajectories injected after prepare().
@@ -837,6 +859,9 @@ for expl in exploration_list:
             else:
                 _ga[_gpn] = float(_gpv)
         exp_info['ga'] = _ga
+        # Parallelism for the per-generation candidate evaluation (pmap devices),
+        # baked as a literal like the refine stage's n_workers.
+        exp_info['n_workers'] = n_workers if 'n_workers' in dir() else 1
     elif exp_info['strategy'] == 'adiabatic_scan':
         # Adiabatic bifurcation scan: one swept axis (from `space`) plus an observed-signal
         # expression and envelope settings carried on Exploration.parameters (Parameter.value
@@ -1059,8 +1084,9 @@ from pymoo.algorithms.moo.nsga2 import NSGA2 as _NSGA2
 from pymoo.optimize import minimize as _pymoo_minimize
 from pymoo.indicators.hv import HV as _HV
 % endif
-% if has_warmstart:
-# Warm-started (from_previous) parameter sweep — shared runtime primitive.
+% if has_warmstart or from_working_point:
+# Warm-started (from_previous) parameter sweep — shared runtime primitive. Also used by
+# initial_state.from_working_point to ramp to a working point and seed the run's IC.
 from tvboptim.experimental.network_dynamics.analysis import adiabatic_scan as _adiabatic_scan
 % endif
 % for mod in sorted(derived_obs_modules):
@@ -1146,8 +1172,14 @@ def _freeze_step_time(solver):
 
 % endif
 
-def get_solver():
-    base_solver = ${solver_class}(${solver_kwargs_str})
+def get_solver(block_size=None):
+    """Configured solver. ``block_size`` (native solvers only) sets the nested-block-scan
+    granularity so a streaming reduction (``prepare(reduce=...)``) folds the observable
+    in-carry instead of materializing the trajectory; ``None`` keeps the single scan."""
+    _solver_kwargs = dict(${solver_kwargs_str})
+    if block_size is not None:
+        _solver_kwargs['block_size'] = block_size
+    base_solver = ${solver_class}(**_solver_kwargs)
 % if has_state_bounds:
     solver = BoundedSolver(
         base_solver,
@@ -1416,6 +1448,20 @@ def run_simulation(
     % for sv_name, sv_vals in node_state_overrides.items():
     state.initial_state.dynamics = state.initial_state.dynamics.at[${state_names.index(sv_name)}].set(jnp.array([${', '.join(str(v) for v in sv_vals)}]))
     % endfor
+    % endif
+    % if from_working_point:
+    # initial_state.from_working_point: reach the operating branch by ramping the parameter
+    # quasi-statically 0→target (warm-start, from_previous), then seed this run's IC from the
+    # settled endpoint — not the cold IC above. Reuses the adiabatic_scan warm-start primitive.
+    _wp_scan = _adiabatic_scan(
+        network, solver,
+        accessor=lambda _c: _c.${from_working_point['path']},
+        low=${from_working_point['lo']}, high=${from_working_point['hi']}, n=${from_working_point['n']},
+        t=${from_working_point['settle']}, skip=0, dt=dt, bothways=False,
+        observe=lambda _r: _r.ys,
+        statistics={'_endpoint': (lambda _a: _a[-1])},
+    )
+    state.initial_state.dynamics = jnp.asarray(_wp_scan.stats['_endpoint'])[-1]
     % endif
     % if stochastic_param_info:
     _inject_stochastic_trajectories(state, t1, dt, key=jax.random.key(${list(stochastic_param_info.values())[0]['seed']}))
@@ -1999,10 +2045,12 @@ def run_optimization(
     # Streaming-reduction fast path: when every recorded (non-analysis) observable is an
     # Observation.dynamics observer, fold each into the integrator carry via
     # prepare(reduce=...) so the trajectory is never materialized (peak memory drops from
-    # O(batch·n_time·n_node) to O(batch·block·n_node)). Guarded to the clean grid case —
-    # the trajectory wrappers (transient trim, stochastic/IC trials, element slots, wired
-    # algorithms) all assume a full-trajectory model_fn, so any of them forces the
-    # post-scan bundles path instead.
+    # O(batch·n_time·n_node) to O(batch·block·n_node)). This IS the memory win for the
+    # trial-ensemble sweeps: the streaming observable is the base that the IC-trial vmap
+    # maps over, so each of the N trials streams instead of materializing its trajectory.
+    # A transient is handled inside the stream (skip=n_transient over the full window), so
+    # no trim wrapper is needed. Element-slot axes, stochastic noise injection, and wired
+    # algorithms still need the trajectory model_fn, so any of them forces the post-scan path.
     _rec_stream = [r for r in expl['record'] if r not in analysis_observation_names]
     _all_recorded_streaming = bool(_rec_stream) and all(
         resolve_reduction(_all_observations.get(r)) is not None for r in _rec_stream
@@ -2011,15 +2059,14 @@ def run_optimization(
     _use_stream = (
         bundles_observations
         and _all_recorded_streaming
-        and not has_transient
         and not stochastic_param_info
-        and not sv_distribution_info
         and not _element_axes_present
-        and expl.get('n_trials', 1) <= 1
         and not expl.get('algorithms')
     )
     _stream_names = _rec_stream
     _stream_bs = expl.get('block_size') or 1000
+    _stream_skip = int(round(transient_time / dt)) if has_transient else 0
+    _stream_t1 = (transient_time + t1_default) if has_transient else t1_default
 %>
 def ${expl['name']}(state, model_fn, result_transient=None, **kwargs):
     """${expl['label']} - ${grid_desc}."""
@@ -2124,7 +2171,34 @@ ${sweep.warmstart_sweep_body(expl, solver_class, dt, warmstart_solver_kwargs)}\
 % endif
 
     # Create observation monitors ONCE with history baked in (optimized pattern)
-% if expl.get('record'):
+% if _use_stream:
+    # Streaming reductions: every recorded observable is an Observation.dynamics observer,
+    # so fold each into the integrator carry via prepare(reduce=...). The trajectory is
+    # never materialized — peak memory is O(batch·block·n_node), which is what lets the
+    # whole grid vmap on one device. Falls back to the post-scan path when the network is
+    # not rebuildable (a passed-in model_fn) so the value is still produced.
+    if _network is not None:
+        # Stream over the FULL window [0, transient + observable]; the reducer's
+        # skip=${_stream_skip} folds only the post-transient samples, so no trim wrapper
+        # and no separate settle pass is needed — the settle happens inside the scan.
+        _stream_model_fn, _ = prepare(
+            _network, get_solver(block_size=${_stream_bs}),
+            t0=0.0, t1=${_stream_t1}, dt=${dt},
+            reduce=_compose_reducers(*[
+                _STREAMING_REDUCERS[_n][0](_STREAMING_REDUCERS[_n][1], ${dt}, skip=${_stream_skip})
+                for _n in ${repr(_stream_names)}
+            ]),
+        )
+        @jax.jit
+        def observable_fn(s):
+            _vals = _stream_model_fn(s)
+            return Bunch(**{_n: _v for _n, _v in zip(${repr(_stream_names)}, _vals)})
+    else:
+        @jax.jit
+        def observable_fn(s):
+            result = _expl_model_fn(s)
+            return compute_all_observations(result, s, result_transient, only=${repr(set(_stream_names))})
+% elif expl.get('record'):
 <%
     # Closure of observations the jitted per-cell observable must compute: the recorded
     # (non-analysis) ones plus every observation they transitively depend on — through
@@ -2235,31 +2309,7 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
     if not n_aux and model.derived_variables:
         n_aux = len(model.derived_variables)
 %>
-% if _use_stream:
-    # Streaming reductions: every recorded observable is an Observation.dynamics observer,
-    # so fold each into the integrator carry via prepare(reduce=...). The trajectory is
-    # never materialized — peak memory is O(batch·block·n_node), which is what lets the
-    # whole grid vmap on one device. Falls back to the post-scan path when the network is
-    # not rebuildable (a passed-in model_fn) so the value is still produced.
-    if _network is not None:
-        _stream_model_fn, _ = prepare(
-            _network, get_solver(block_size=${_stream_bs}),
-            t0=0.0, t1=${t1_default}, dt=${dt},
-            reduce=_compose_reducers(*[
-                _STREAMING_REDUCERS[_n][0](_STREAMING_REDUCERS[_n][1], ${dt})
-                for _n in ${repr(_stream_names)}
-            ]),
-        )
-        @jax.jit
-        def observable_fn(s):
-            _vals = _stream_model_fn(s)
-            return Bunch(**{_n: _v for _n, _v in zip(${repr(_stream_names)}, _vals)})
-    else:
-        @jax.jit
-        def observable_fn(s):
-            result = _expl_model_fn(s)
-            return compute_all_observations(result, s, result_transient)
-% elif bundles_observations:
+% if bundles_observations:
     # Observations declared: observable_fn returns only the reduced
     # observation values per grid point (no trajectory). Output size is
     # the sum of declared observation shapes — typically per-node or
