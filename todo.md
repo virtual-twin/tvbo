@@ -468,6 +468,18 @@ Companion to the streaming-reducer work below (same loop body). MUST ship behind
 codegen flag with the Python loop as fallback + a `scan == python-loop`
 byte-equivalence test before it becomes default.
 
+### Julia printer: `argmax(...) * scalar` fails
+
+`render_expression('argmax(r >= thr) * dt', format='julia')` raises
+`TypeError: can't multiply sequence by non-int of type 'Symbol'` in the Julia
+printer (jax/numpy render fine: `dt*jnp.argmax(jnp.greater_equal(r, thr))`).
+Surfaced 2026-07-13 while proving the DM first-passage observation (decision =
+first threshold crossing → integration time) is expressible with existing
+array-ops (`argmax`/`where`/`max`). Backend-independence gap — the DM decision
+observation renders on jax/numpy but not Julia until this is fixed. Low priority
+(DM circuit runs on jax/numpy), but it's a genuine printer bug in the
+`argmax`-times-scalar path.
+
 ### Codegen-emit streaming reducers (drop hardcoded `tvboptim` factories)
 
 **Motivation.** Windowed pipeline reducers (`compute_fc` → an incremental FC

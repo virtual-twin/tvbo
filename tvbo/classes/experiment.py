@@ -1691,7 +1691,87 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         else:
             raise ValueError(f"Format {format} not supported. Valid formats: tvb, tvboptim, jax.")
 
-    def run(self, format="tvboptim", initial_conditions=None, **kwargs):
+    def _resolve_from_experiment_seed(self, results_root=None):
+        """Load the operating point for ``initial_state.method == from_experiment``.
+
+        The source experiment exposes its settled per-node state as observations
+        named ``<state_variable>_final`` (e.g. ``theta_final``). This locates that
+        experiment's saved result under ``results_root`` — matched by the
+        ``exp-<id>_`` file stem, so the output-directory layout (``results/2``,
+        ``output/nc/exp2``, …) does not matter — reads one ``<sv>_final`` per state
+        variable of *this* experiment in declaration order, and stacks them into an
+        ``(n_states, n_nodes)`` initial condition. Keyed by name/dim, never by
+        positional order. For a swept source (an adiabatic ramp) the operating point
+        is the last recorded point (``source_point``; default ``'endpoint'``).
+
+        Returns the IC array, or ``None`` when this experiment does not use
+        ``from_experiment``.
+        """
+        from pathlib import Path
+
+        ini = getattr(self, "initial_state", None)
+        if ini is None or str(getattr(ini, "method", "") or "") != "from_experiment":
+            return None
+        src = getattr(ini, "source_experiment", None)
+        if src is None:
+            raise ValueError("initial_state.method=from_experiment requires source_experiment")
+        source_id = int(getattr(src, "id", src))
+
+        # State variables of THIS experiment, in declaration order → which
+        # <sv>_final observations to load and the row order to stack them in
+        # (must match the generated state.initial_state.dynamics row order).
+        svs = self.dynamics.state_variables
+        sv_items = svs.items() if hasattr(svs, "items") else [(getattr(s, "name", None), s) for s in svs]
+        sv_names = [getattr(sv, "name", None) or key for key, sv in sv_items]
+
+        root = Path(results_root) if results_root else Path.cwd()
+        cands = [p for p in root.glob(f"**/*exp-{source_id}_*.h5") if "network" not in p.name]
+        if not cands:
+            raise FileNotFoundError(
+                f"initial_state.from_experiment: no saved result for experiment {source_id} "
+                f"under {root} (looked for '*exp-{source_id}_*.h5'). Run experiment "
+                f"{source_id} first so its operating point is available."
+            )
+        src_h5 = sorted(cands)[0]
+
+        n_nodes = len(self.network.nodes) if self.network.nodes else None
+
+        def _node_dim(da):
+            if n_nodes is not None:
+                for d in da.dims:
+                    if da.sizes[d] == n_nodes:
+                        return d
+            for d in da.dims:
+                if "node" in str(d).lower():
+                    return d
+            return da.dims[-1]
+
+        def _final_key(ds, sv):
+            target = f"{sv}_final"
+            for k in ds.data_vars:
+                if k == target or k.endswith(f"__{target}"):
+                    return k
+            raise KeyError(
+                f"initial_state.from_experiment: source experiment {source_id} does not "
+                f"record '{target}'. The source must expose its settled state as an "
+                f"observation named '{sv}_final' for each state variable."
+            )
+
+        point = str(getattr(ini, "source_point", "") or "endpoint")
+        ds = xr.open_dataset(src_h5, engine="h5netcdf")
+        try:
+            rows = []
+            for sv in sv_names:
+                da = ds[_final_key(ds, sv)]
+                sel = -1 if (point in ("", "endpoint")) else int(point)
+                for d in [d for d in da.dims if d != _node_dim(da)]:
+                    da = da.isel({d: sel})
+                rows.append(np.asarray(da.values).ravel())
+        finally:
+            ds.close()
+        return jnp.asarray(np.stack(rows, axis=0))
+
+    def run(self, format="tvboptim", initial_conditions=None, results_root=None, **kwargs):
         """Configure, build, and run the experiment on a backend.
 
         Dispatches on `format` to the corresponding backend (`tvb`, `tvboptim`,
@@ -1703,6 +1783,11 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             initial_conditions: Optional history to seed the simulation
                 (used by the JAX backend); defaults to conditions collected
                 from the experiment.
+            results_root: Directory under which sibling experiments' saved
+                results are searched when this experiment's
+                `initial_state.method == from_experiment` (see
+                `_resolve_from_experiment_seed`). Defaults to the current
+                directory; the CLI passes the run's output-directory parent.
             **kwargs: Backend-specific run options. A `duration` value is
                 applied to the integration settings before running; other
                 keys (e.g. `benchmark`, `mode`) are passed through to the
@@ -1829,6 +1914,13 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     net_obs[obs_name] = np.asarray(da.values)
             if net_obs:
                 kwargs.setdefault("network_observations", net_obs)
+
+            # Resolve InitialState.from_experiment -> the operating point another
+            # experiment already reached, loaded from its saved run and handed to the
+            # generated code as seed_dynamics. No-op unless method == from_experiment.
+            _seed = self._resolve_from_experiment_seed(results_root)
+            if _seed is not None:
+                kwargs.setdefault("seed_dynamics", _seed)
 
             # Run the experiment with optional per-step timing
             if benchmark:

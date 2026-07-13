@@ -1399,13 +1399,31 @@ def _gather2d(matrix, idx):
     """Select the shared nodes on both axes of a (node, node) matrix by index."""
     return matrix[jnp.ix_(idx, idx)]
 % endif
-# ── Runtime IC seeding (InitialState.from_experiment) ────────────────────────
-# A run may be seeded from an externally supplied operating point: the settled
-# (n_states, n_nodes) state another experiment already reached, handed in as
-# run_experiment(seed_dynamics=...). None (the default) leaves the sampled IC
-# untouched — a no-op for every run that does not use it. Applied at each IC
-# construction site (transient, main, and each exploration base) so the whole
-# run starts on the supplied branch rather than a cold sample.
+# ── Initial-condition construction (shared across every IC site) ─────────────
+# The transient, the main run, and each exploration base build their IC the same
+# way — sampled defaults, then per-node declared overrides, then an optional
+# externally supplied operating point — so a sweep's points start from the same
+# declared state as the main run rather than a cold sample.
+% if node_state_overrides:
+# Per-node initial state declared via node ``state:`` YAML entries, keyed by
+# state-variable index; ``initial_state.dynamics`` is [n_states, n_nodes].
+_NODE_STATE_OVERRIDES = {
+% for sv_name, sv_vals in node_state_overrides.items():
+    ${state_names.index(sv_name)}: jnp.array([${', '.join(str(v) for v in sv_vals)}]),
+% endfor
+}
+% else:
+_NODE_STATE_OVERRIDES = {}
+% endif
+
+def _apply_node_overrides(state):
+    for _idx, _vals in _NODE_STATE_OVERRIDES.items():
+        state.initial_state.dynamics = state.initial_state.dynamics.at[_idx].set(_vals)
+    return state
+
+# Runtime IC seed (InitialState.from_experiment): the settled (n_states, n_nodes)
+# state another experiment already reached, handed in as
+# run_experiment(seed_dynamics=...). None (the default) is a no-op.
 _SEED_DYNAMICS = None
 
 def _apply_seed_dynamics(state):
@@ -1433,12 +1451,8 @@ def run_simulation(
         # Sample initial conditions from state variable distributions
         state_init = _sample_initial_conditions(state_init)
         % endif
-        % if node_state_overrides:
-        # Per-node initial state overrides for transient
-        % for sv_name, sv_vals in node_state_overrides.items():
-        state_init.initial_state.dynamics = state_init.initial_state.dynamics.at[${state_names.index(sv_name)}].set(jnp.array([${', '.join(str(v) for v in sv_vals)}]))
-        % endfor
-        % endif
+        # Per-node declared overrides, then an optional from_experiment seed
+        state_init = _apply_seed_dynamics(_apply_node_overrides(state_init))
         % if stochastic_param_info:
         _inject_stochastic_trajectories(state_init, t_transient, dt, key=jax.random.key(${list(stochastic_param_info.values())[0]['seed']}))
         % endif
@@ -1456,13 +1470,8 @@ def run_simulation(
     # Sample initial conditions from state variable distributions
     state = _sample_initial_conditions(state)
     % endif
-    % if node_state_overrides:
     # Per-node initial state overrides (from node ``state:`` YAML entries)
-    # initial_state.dynamics is [n_states, n_nodes] — set per-state row
-    % for sv_name, sv_vals in node_state_overrides.items():
-    state.initial_state.dynamics = state.initial_state.dynamics.at[${state_names.index(sv_name)}].set(jnp.array([${', '.join(str(v) for v in sv_vals)}]))
-    % endfor
-    % endif
+    state = _apply_node_overrides(state)
     % if from_working_point:
     # initial_state.from_working_point: reach the operating branch by ramping the parameter
     # quasi-statically 0→target (warm-start, from_previous), then seed this run's IC from the
@@ -1477,6 +1486,9 @@ def run_simulation(
     )
     state.initial_state.dynamics = jnp.asarray(_wp_scan.stats['_endpoint'])[-1]
     % endif
+    # from_experiment: a supplied operating point is the final word on the main IC
+    # (when there is no transient; with one, the transient's settled state below wins)
+    state = _apply_seed_dynamics(state)
     % if stochastic_param_info:
     _inject_stochastic_trajectories(state, t1, dt, key=jax.random.key(${list(stochastic_param_info.values())[0]['seed']}))
     % endif
@@ -2107,6 +2119,9 @@ def ${expl['name']}(state, model_fn, result_transient=None, **kwargs):
         _n_transient = int(_t_transient / ${dt})
         _expl_model_fn_raw, _expl_state = prepare(_network, _solver, t0=0.0, t1=_t_total, dt=${dt})
         _expl_state = copy.deepcopy(_expl_state)  # isolate from shared network params
+        # Same IC construction as the main run: declared per-node overrides, then an
+        # optional from_experiment operating-point seed (else the sweep cold-starts).
+        _expl_state = _apply_seed_dynamics(_apply_node_overrides(_expl_state))
         % if stochastic_param_info:
         _inject_stochastic_trajectories(_expl_state, _t_total, ${dt}, key=jax.random.key(${list(stochastic_param_info.values())[0]['seed']}))
         % endif
@@ -2126,6 +2141,9 @@ def ${expl['name']}(state, model_fn, result_transient=None, **kwargs):
 % else:
         _expl_model_fn, _expl_state = prepare(_network, _solver, t0=0.0, t1=${t1_default}, dt=${dt})
         _expl_state = copy.deepcopy(_expl_state)  # isolate from shared network params
+        # Same IC construction as the main run: declared per-node overrides, then an
+        # optional from_experiment operating-point seed (else the sweep cold-starts).
+        _expl_state = _apply_seed_dynamics(_apply_node_overrides(_expl_state))
         % if stochastic_param_info:
         _inject_stochastic_trajectories(_expl_state, ${t1_default}, ${dt}, key=jax.random.key(${list(stochastic_param_info.values())[0]['seed']}))
         % endif
@@ -2697,12 +2715,19 @@ def run_experiment(
     mode: str = "all",
     stage: str = None,
     state: Bunch = None,
+    seed_dynamics=None,
 % if network_observation_names:
     network_observations: Dict[str, Any] = None,
 % endif
     **kwargs,
 ) -> Dict[str, Any]:
-    """Run complete experiment workflow. Mode: simulation, optimization, exploration, algorithms, or all."""
+    """Run complete experiment workflow. Mode: simulation, optimization, exploration, algorithms, or all.
+
+    seed_dynamics: optional (n_states, n_nodes) operating point (InitialState.
+    from_experiment) that overrides the sampled IC at every construction site.
+    """
+    global _SEED_DYNAMICS
+    _SEED_DYNAMICS = seed_dynamics
 
     weights = jnp.array(weights)
     # quiet=True silences the structural progress prints (run(..., quiet=True)).
