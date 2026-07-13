@@ -66,6 +66,7 @@ class WorkflowPlan:
     source_spec: str = ""             # SPEC arg for `tvbo run` (recipe path / CURIE / DB name)
     experiment_selector: str | None = None  # --experiment value picking this experiment in a study
     workflow_spec: dict[str, Any] = field(default_factory=dict)  # effective merged workflow config (study < experiment < --set)
+    depends_on: list[str] = field(default_factory=list)  # experiment keys whose result seeds this run (initial_state.from_experiment)
 
     # ---- derived helpers --------------------------------------------------
 
@@ -430,6 +431,16 @@ def plan(
     out_dir = str(spec.get("out_dir") or "results")
     out_dir = out_dir.replace("{study}", study_key).replace("{experiment}", experiment_key)
 
+    # A ``from_experiment`` initial state makes this experiment depend on another
+    # experiment's completed result (its operating point). Recorded as an ordering
+    # edge so DAG engines run the source first (Snakemake input; SLURM afterok).
+    depends_on: list[str] = []
+    _ini = getattr(experiment, "initial_state", None)
+    if _ini is not None and str(getattr(_ini, "method", "") or "") == "from_experiment":
+        _src = getattr(_ini, "source_experiment", None)
+        if _src is not None:
+            depends_on.append(str(int(getattr(_src, "id", _src))))
+
     return WorkflowPlan(
         study_key=study_key,
         experiment_key=experiment_key,
@@ -449,6 +460,7 @@ def plan(
         source_spec=source_spec or "",
         experiment_selector=experiment_selector,
         workflow_spec=spec,
+        depends_on=depends_on,
     )
 
 

@@ -568,6 +568,7 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
             "container": plan.container,
             "axes": [{"name": ax.name, "parameter": ax.parameter, "values": list(ax.values)}
                      for ax in plan.workflow_axes],
+            "depends_on": list(plan.depends_on),
         })
 
     text = _render_template("snakemake/study.smk.mako", exp_plans=exp_plans,
