@@ -19,8 +19,10 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parent.parent
-ATLAS_DIR = ROOT / "tvbo" / "data" / "tvbo_data" / "atlas"
-SOURCE_DIR = ATLAS_DIR / "schaefer2018_original_mni"
+# Atlases are consolidated under tvbo/database/atlases (the runtime SoT).
+ATLAS_DIR = ROOT / "tvbo" / "database" / "atlases"
+# Non-BIDS Schaefer download staging stays out of the BIDS database (gitignored).
+SOURCE_DIR = ROOT / "tvbo" / "data" / "tvbo_data" / "atlas" / "schaefer2018_original_mni"
 
 FILE_RE = re.compile(
     r"^Schaefer2018_(?P<scale>\d+)Parcels_(?P<nets>7|17)Networks_"
