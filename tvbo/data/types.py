@@ -1678,7 +1678,54 @@ class ExperimentResult:
             return val is not None and val != {}
         return key in self._extras
 
-    def save(self, out_dir, compress: bool = True):
+    def _recorded_observation_names(self) -> set:
+        """Observation names to persist: leaves plus anything flagged ``record``.
+
+        An observation is recorded when it is either explicitly ``record: true``
+        or *terminal* — not consumed as a ``source`` by another observation or by
+        an optimization loss. ``record: false`` always drops it. This keeps final
+        results (a fitted FC, an effective-frequency map) while omitting
+        intermediates (a raw BOLD feeding an FC, an FC feeding a loss), which are
+        recomputable from the recipe in the sidecar. Falls back to keeping every
+        observation when the experiment carries no observation definitions.
+        """
+        exp = self.source
+        obs_defs = getattr(exp, "observations", None) or {}
+        present = set(self.observations or {})
+        if not obs_defs:
+            return present
+        consumed: set = set()
+
+        def _mark(ref):
+            s = str(getattr(ref, "name", ref))
+            if s in obs_defs:                       # bare observation name
+                consumed.add(s)
+            elif s.startswith("observations."):     # observations.<name>[.data]
+                base = s.split(".")[1]
+                if base in obs_defs:
+                    consumed.add(base)
+
+        for o in obs_defs.values():
+            for src in (getattr(o, "source", None) or []):
+                _mark(src)
+        for opt in (getattr(exp, "optimizations", None) or {}).values():
+            loss = getattr(opt, "loss", None)
+            for arg in (getattr(loss, "arguments", None) or {}).values():
+                if getattr(arg, "value", None) is not None:
+                    _mark(arg.value)
+
+        keep = set()
+        for name, o in obs_defs.items():
+            rec = getattr(o, "record", None)
+            if rec is True:
+                keep.add(name)
+            elif rec is False:
+                continue
+            elif name not in consumed:
+                keep.add(name)
+        return keep & present if present else keep
+
+    def save(self, out_dir, compress: bool = True, record_only: bool = True):
         """Persist the run as one keyed HDF5 result plus a YAML provenance sidecar.
 
         Writes ``<prefix>_result.h5`` — a single xarray ``Dataset`` where every
@@ -1756,7 +1803,10 @@ class ExperimentResult:
                 for i, v in enumerate(obj):
                     yield from _numeric_leaves(f"{prefix}__{i}", v)
 
+        keep_obs = self._recorded_observation_names() if record_only else set(self.observations or {})
         for obs_name, obs in (self.observations or {}).items():
+            if obs_name not in keep_obs:
+                continue
             key = f"observation__{_san(obs_name)}"
             da = _numeric_da(key, getattr(obs, "data", obs))
             if da is not None and key not in data_vars:
