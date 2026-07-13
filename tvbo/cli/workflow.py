@@ -662,6 +662,18 @@ def _submit_slurm_chain(out_dir: Path, *, slurm_array: str | None = None) -> Non
         _common.info(f"submitted gather job (afterok:{base}) — one result when the array finishes")
 
 
+def _detect_engine_from_kit(kit_dir: Path) -> str | None:
+    """Infer an already-emitted kit's engine from its artefact file.
+
+    A kit carries exactly one engine artefact (``run.sbatch`` / ``Snakefile`` /
+    ``main.nf``); its presence names the engine to submit with.
+    """
+    for engine, artefact in _ARTEFACT_NAME.items():
+        if (kit_dir / artefact).exists():
+            return engine
+    return None
+
+
 @app.command("slurm", help="Emit a self-contained sbatch kit (artefact + scripts + spec).")
 def slurm(
     spec: str = typer.Argument(...),
@@ -806,6 +818,54 @@ def run_workflow(
     if array is not None and array_throttle is not None:
         array = f"{array}%{array_throttle}"
     _execute_emitted(engine, out_dir, slurm_array=array)
+
+
+@app.command("submit", help="Submit an already-emitted kit to its engine (no recipe, no re-emit).")
+def submit_kit(
+    kit: Path = typer.Argument(..., help="Path to an emitted kit directory (holds run.sbatch / Snakefile / main.nf)."),
+    engine: str = typer.Option(None, "--engine", "-e", help="Engine to submit with; auto-detected from the kit when omitted."),
+    array: str = typer.Option(
+        None, "--array",
+        help="Slurm array index or range to submit (e.g. '0' for a smoke task, '0-3' for four). Ignored for non-Slurm engines.",
+    ),
+    array_throttle: int = typer.Option(
+        None, "--array-throttle", min=1,
+        help="Limit concurrent Slurm array tasks when using --array (e.g. 1 for one GPU at a time).",
+    ),
+) -> None:
+    """Submit a kit already emitted by ``tvbo workflow slurm|snakemake|nextflow``.
+
+    Runs only the *execute* half of ``tvbo workflow run`` against an existing kit
+    directory — no recipe, no re-emit. For Slurm this submits ``run.sbatch`` (the
+    array job) and chains ``finalize.sbatch`` with an ``afterok`` dependency, so
+    you get one reassembled result without touching ``sbatch`` yourself. The engine
+    is inferred from the kit's artefact file unless ``--engine`` is given. Run it
+    from a login node (Slurm) or wherever the engine's launcher is available.
+    """
+    kit = kit.expanduser().resolve()
+    if not kit.is_dir():
+        _common.die(f"not a kit directory: {kit}")
+    eng = (engine or "").lower() or _detect_engine_from_kit(kit)
+    if eng is None:
+        _common.die(
+            f"could not detect an engine in {kit} "
+            f"(expected one of: {', '.join(_ARTEFACT_NAME.values())})."
+        )
+    if eng not in _ARTEFACT_NAME:
+        _common.die(f"unknown engine {eng!r}; expected one of: {', '.join(_ARTEFACT_NAME)}")
+    if not (kit / _ARTEFACT_NAME[eng]).exists():
+        _common.die(f"{kit} has no {_ARTEFACT_NAME[eng]} (needed for engine {eng!r}).")
+    import shutil
+    launcher = {"slurm": "sbatch", "snakemake": "snakemake", "nextflow": "nextflow"}[eng]
+    if shutil.which(launcher) is None:
+        _common.die(
+            f"{launcher!r} is not on PATH — {eng} kits are launched with {launcher}. "
+            f"Run this where {launcher} is available"
+            + (" (a Slurm login node)." if eng == "slurm" else ".")
+        )
+    if array is not None and array_throttle is not None:
+        array = f"{array}%{array_throttle}"
+    _execute_emitted(eng, kit, slurm_array=array)
 
 
 @app.command("backends", help="List backends and their ontology-derived capabilities.")
