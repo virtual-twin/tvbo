@@ -71,7 +71,9 @@ export ${_e["name"]}=${_e["value"]}
 % if bundled_code:
 ## The recipe's custom callable/builder modules were bundled into ./code; put it
 ## on the path so the frozen spec's `module:` references resolve on the node.
-export PYTHONPATH="code:$PYTHONPATH"
+## ${'$'}{PYTHONPATH:-} escapes the Mako ${} so bash sees a literal ${PYTHONPATH:-},
+## which keeps an unset PYTHONPATH from tripping `set -u` above.
+export PYTHONPATH="code:${'$'}{PYTHONPATH:-}"
 % endif
 
 <%
