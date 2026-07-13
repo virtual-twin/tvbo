@@ -17,6 +17,7 @@ import copy as _copy
 import logging
 import os
 import re
+from collections import Counter
 from os.path import join
 from pathlib import Path
 from typing import Any
@@ -2601,8 +2602,6 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             if self._reconcile_mode(obs) == "by_label" and model_labels:
                 # Relabel the target's node axes to the model's canonical labels by
                 # NAME (alias-aware), then select the shared labels in model order.
-                from collections import Counter
-
                 tcanon = self._target_canonical_labels(target_net)
                 tcanon_set = set(tcanon)
                 model_set = set(model_labels)

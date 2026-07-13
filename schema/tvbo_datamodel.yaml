@@ -2112,8 +2112,14 @@ classes:
                 range: string
                 ifabsent: "string(differential)"
                 description: >-
-                    Type of equation: 'differential' (default) means dx/dt = rhs,
-                    'algebraic' means 0 = rhs or x ~ rhs (DAE constraint).
+                    How to interpret ``equation.rhs`` when advancing this state:
+                    'differential' (default) integrates it as ``dx/dt = rhs``;
+                    'algebraic' is a constraint ``0 = rhs`` / ``x ~ rhs`` (DAE);
+                    'recurrence' is a discrete per-step update ``x_next = rhs``
+                    (no integrator applied), used by an observation's auxiliary
+                    ``dynamics`` for online reductions/accumulators (e.g. a running
+                    sum ``x_next = x + f``) — the symbolic, backend-independent
+                    sibling of the continuous 'differential' form.
                     Algebraic equations are used by ModelingToolkit.jl backend.
             equation_order:
                 range: integer

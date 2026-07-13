@@ -12,7 +12,8 @@ from tvbo.templates.tvboptim.utils import (
     get_observation_refs, parse_loss_function, parse_free_param, get_domain_bounds,
     parse_exploration, get_param_info, get_node_param_overrides,
     normalize_coupling_aliases, resolve_coupling_input_map,
-    get_node_state_overrides, render_jax_default, get_mode_layout
+    get_node_state_overrides, render_jax_default, get_mode_layout,
+    get_all_observations_from_algo,
 )
 import numpy as np
 
@@ -765,10 +766,33 @@ for expl in exploration_list:
             _hp[str(_h.name)] = float(_h.value) if getattr(_h, 'value', None) is not None else 0.0
         _nit = getattr(_alg, 'n_iterations', None)
         assert _nit is not None, f"algorithm '{_alg_name}' missing n_iterations"
+        # External inputs the run-func requires (same classification as the flat path,
+        # ~2919-2934) so the exploration call site can forward them:
+        #   input_names        - observations with a data_source (file)
+        #   network_obs_inputs - network.observations.* / dataset.subject.*, bound as
+        #                        module-level network-observation globals
+        _alg_inp, _alg_netobs = [], []
+        for _on in get_all_observations_from_algo(_alg, _exp_algos):
+            _od = observations_dict.get(_on)
+            if _od is None:
+                continue
+            if getattr(_od, 'data_source', None) is not None:
+                _alg_inp.append(_on)
+                continue
+            _s = getattr(_od, 'source', None)
+            if isinstance(_s, (list, tuple)):
+                _s = _s[0] if _s else None
+            if _s is not None and hasattr(_s, 'name'):
+                _s = _s.name
+            if _s and (str(_s).startswith('network.observations.')
+                       or str(_s).startswith('dataset.subject')):
+                _alg_netobs.append(_on)
         exp_info['algorithms'].append({
             'name': safe_name(_alg_name),
             'n_iterations': int(_nit),
             'hyperparams': _hp,
+            'input_names': _alg_inp,
+            'network_obs_inputs': _alg_netobs,
         })
 
     # Search strategy: 'grid' (default, exhaustive) or 'nsga2' (pymoo multi-objective).
@@ -2403,6 +2427,14 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
             n_iterations=${_algo['n_iterations']},
 % for _hp_name, _hp_val in _algo['hyperparams'].items():
             ${_hp_name}=${_hp_val},
+% endfor
+## External inputs the run-func requires (data-source files from kwargs; network/
+## dataset targets from their module-level globals) — mirrors the flat call site.
+% for _inp_name in _algo.get('input_names', []):
+            ${_inp_name}=kwargs.get('${_inp_name}'),
+% endfor
+% for _net_obs_name in _algo.get('network_obs_inputs', []):
+            ${_net_obs_name}=${_net_obs_name},
 % endfor
             history=result_transient, verbose=False,
         )
