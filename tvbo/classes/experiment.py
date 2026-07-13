@@ -61,7 +61,11 @@ sessionid = 1
 def _strip_private_yaml_keys(text: str) -> str:
     """Drop private/runtime keys (``_source_file``, a codegen ``_coupling_key`` on a
     Parameter, …) from a serialized YAML at any depth, so the spec round-trips
-    through ``from_file``. A private key line and its deeper-indented block go too.
+    through ``from_file``. A private key line and its whole value block go too. The
+    value block includes deeper-indented lines and a block-sequence value whose
+    ``-`` items YAML writes at the key's own indentation (not deeper); without that
+    case a private list-valued cache (e.g. ``_model_labels_from_bids``) would leave
+    its items orphaned as a bare list at the document root.
     """
     import re as _re
 
@@ -69,7 +73,12 @@ def _strip_private_yaml_keys(text: str) -> str:
     kept, drop_indent = [], None
     for line in text.splitlines():
         if drop_indent is not None:
-            if line.strip() == "" or (len(line) - len(line.lstrip())) > drop_indent:
+            stripped = line.strip()
+            indent = len(line) - len(line.lstrip())
+            same_indent_seq_item = indent == drop_indent and (
+                stripped == "-" or stripped.startswith("- ")
+            )
+            if stripped == "" or indent > drop_indent or same_indent_seq_item:
                 continue
             drop_indent = None
         m = key.match(line)
