@@ -517,7 +517,7 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
     spec/<key>/experiment.yaml``; in ``--stdout`` mode nothing is written and the
     rules run ``tvbo run <source-spec> --experiment <id>``."""
     study, experiments, study_key = _study_experiments(spec, experiment)
-    out_dir = output or Path("out").joinpath(str(study_key), "snakemake")
+    out_dir = output or Path("output").joinpath(str(study_key), "snakemake")
     if not stdout:
         out_dir.mkdir(parents=True, exist_ok=True)
     parsed = _parse_overrides(override)
@@ -594,7 +594,7 @@ def _emit(engine: str, *, spec: str, backend: str, experiment: str | None,
         # so collapse the redundant level: out/<experiment>/<engine> not …/x/x/….
         parts = ([plan.experiment_key] if plan.study_key == plan.experiment_key
                  else [plan.study_key, plan.experiment_key])
-        out_dir = Path("out").joinpath(*parts, engine)
+        out_dir = Path("output").joinpath(*parts, engine)
     _emit_kit(engine=engine, plan=plan, experiment=exp, out_dir=out_dir)
     return out_dir
 
@@ -710,6 +710,8 @@ def finalize(
     output: Path = typer.Option(Path("results"), "-o", "--output", help="Where to write the reassembled result."),
     spec: Path = typer.Option(None, "--spec", help="Frozen spec YAML to attach as the result sidecar (auto-detected in spec/ when omitted)."),
     stem: str = typer.Option("result", "--stem", help="Basename of the result artifact (<stem>.h5 + <stem>.yaml)."),
+    compress: bool = typer.Option(True, "--compress/--no-compress",
+                                  help="gzip-deflate the reassembled HDF5 (default on)."),
 ) -> None:
     """Gather sharded HPC outputs into one self-describing ``ExperimentResult``.
 
@@ -726,7 +728,8 @@ def finalize(
         specs = sorted(p for p in Path("spec").glob("*.yaml")
                        if p.name != "network.yaml") if Path("spec").is_dir() else []
         sidecar = specs[0] if specs else None
-    written = reassemble_experiment_results(shards_dir, str(output), stem=stem, sidecar=sidecar)
+    written = reassemble_experiment_results(shards_dir, str(output), stem=stem,
+                                            sidecar=sidecar, compress=compress)
     for w in written:
         _common.info(f"wrote {w}")
 
@@ -765,7 +768,7 @@ def run_workflow(
     _exp_ids = [e.strip() for e in str(experiment).split(",") if e.strip()] if experiment else []
     if len(_exp_ids) > 1:
         for _eid in _exp_ids:
-            _out_i = (output / f"exp{_eid}") if output else Path("out") / f"exp{_eid}"
+            _out_i = (output / f"exp{_eid}") if output else Path("output") / f"exp{_eid}"
             _common.info(f"── experiment {_eid} → {_out_i}")
             run_workflow(engine, spec, backend, _eid, _out_i, override, array, array_throttle)
         return

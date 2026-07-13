@@ -292,7 +292,8 @@ def reassemble_shards(source, pattern="*__results.nc", to_grid=False, point_dim=
 
 
 def reassemble_experiment_results(shards_root, out_dir, pattern="**/*_result.h5",
-                                  point_dim="point", stem="result", sidecar=None):
+                                  point_dim="point", stem="result", sidecar=None,
+                                  compress: bool = True):
     """Gather an HPC run's shard outputs into one keyed ``ExperimentResult`` artifact.
 
     Follows the same on-disk shape as a :class:`~tvbo.classes.network.Network`:
@@ -339,7 +340,9 @@ def reassemble_experiment_results(shards_root, out_dir, pattern="**/*_result.h5"
 
     os.makedirs(out_dir, exist_ok=True)
     h5_path = os.path.join(out_dir, f"{stem}.h5")
-    grid.to_netcdf(h5_path, engine="h5netcdf")
+    encoding = ({name: {"zlib": True, "complevel": 4} for name in grid.data_vars}
+                if compress else None)
+    grid.to_netcdf(h5_path, engine="h5netcdf", encoding=encoding)
     written = [h5_path]
 
     if sidecar is not None and os.path.exists(os.fspath(sidecar)):
@@ -1675,7 +1678,7 @@ class ExperimentResult:
             return val is not None and val != {}
         return key in self._extras
 
-    def save(self, out_dir):
+    def save(self, out_dir, compress: bool = True):
         """Persist the run as one keyed HDF5 result plus a YAML provenance sidecar.
 
         Writes ``<prefix>_result.h5`` — a single xarray ``Dataset`` where every
@@ -1785,8 +1788,13 @@ class ExperimentResult:
             ds = xr.Dataset(data_vars, attrs={"tvbo_class": "tvbo:ExperimentResult",
                                               "sidecar_file": f"{stem}.yaml"})
             h5 = os.path.join(out_dir, f"{stem}.h5")
+            # Grids of trajectories/observations compress well (repeated structure,
+            # smooth fields), so gzip-deflate by default; `compress=False` opts out
+            # for max write speed. complevel 4 is the deflate speed/size sweet spot.
+            encoding = ({name: {"zlib": True, "complevel": 4} for name in ds.data_vars}
+                        if compress else None)
             try:
-                ds.to_netcdf(h5, engine="h5netcdf")
+                ds.to_netcdf(h5, engine="h5netcdf", encoding=encoding)
                 written.append(h5)
             except Exception:
                 npz = os.path.join(out_dir, f"{stem}.npz")
@@ -1805,6 +1813,68 @@ class ExperimentResult:
                 written.append(yaml_path)
             except Exception:
                 pass
+            # BEP034 alignment: a JSON metadata sidecar (BIDS tooling reads JSON)
+            # beside the richer YAML re-run recipe, and a dataset_description.json
+            # marking out_dir as a BIDS-derivatives dataset.
+            try:
+                written += self._write_bep034_sidecars(out_dir, stem)
+            except Exception:
+                pass
+        return written
+
+    def _write_bep034_sidecars(self, out_dir, stem) -> list:
+        """Write a BEP034 JSON metadata sidecar + a derivatives dataset_description.json.
+
+        Complements the YAML re-run recipe with BIDS-standard JSON so the result is
+        discoverable by pybids/BIDS tooling. The gridded HDF5 itself supersedes
+        emitting one BEP034 ``ts/`` file per sweep cell (a 15,600-cell grid would be
+        15,600 files); the sidecar records the model, integrator, and swept space so
+        the mapping back to per-cell simulations is explicit.
+        """
+        import datetime as _dt
+        import json as _json
+        import os
+
+        from tvbo.adapters.bids import DatasetDescription, SimulationProvenance
+
+        exp = self.source
+        integ = getattr(exp, "integration", None)
+        dyn = getattr(exp, "dynamics", None)
+        now = _dt.datetime.now().isoformat(timespec="seconds")
+        prov = SimulationProvenance(
+            Model=getattr(dyn, "name", None) or getattr(dyn, "label", None),
+            Integrator=getattr(integ, "method", None),
+            Duration=getattr(integ, "duration", None),
+            StepSize=getattr(integ, "step_size", None),
+            GeneratedAt=now,
+            Software="tvbo",
+        )
+        # Swept parameter space (the grid axes) — the metadata a per-cell BEP034
+        # ``ts/`` file would carry, aggregated for the whole grid.
+        space = {}
+        for expl in (getattr(exp, "explorations", None) or {}).values():
+            for ax in (getattr(expl, "space", None) or []):
+                pname = getattr(ax, "parameter", None)
+                if pname:
+                    space[str(pname)] = getattr(ax, "explored_values", None) or None
+        sidecar = {**prov.to_dict(), "ModelingRecipe": f"{stem}.yaml"}
+        if space:
+            sidecar["SweptParameters"] = space
+        json_path = os.path.join(out_dir, f"{stem}.json")
+        with open(json_path, "w", encoding="utf-8") as fh:
+            _json.dump(sidecar, fh, indent=2, default=str)
+
+        written = [json_path]
+        dd = os.path.join(out_dir, "dataset_description.json")
+        if not os.path.exists(dd):
+            desc = DatasetDescription(
+                Name=str(getattr(exp, "label", None) or getattr(exp, "id", None) or "tvbo results"),
+                DatasetType="derivative",
+                GeneratedBy=[{"Name": "tvbo", "Description": "TVB-Ontology simulation result"}],
+            )
+            with open(dd, "w", encoding="utf-8") as fh:
+                fh.write(desc.to_json())
+            written.append(dd)
         return written
 
     def plot(self, **kwargs):

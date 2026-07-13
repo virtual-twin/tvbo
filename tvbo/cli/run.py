@@ -70,6 +70,11 @@ def run(
              "Repeatable; dotted keys traverse attributes and keyed collections. Lets one "
              "recipe stay the single source of truth while the CLI runs it with test settings.",
     ),
+    compress: bool = typer.Option(
+        True, "--compress/--no-compress",
+        help="gzip-deflate the result HDF5 (default on; grids compress well). "
+             "--no-compress writes uncompressed for maximum write speed.",
+    ),
 ) -> None:
     """Run a SPEC (experiment or study) in the selected backend.
 
@@ -93,6 +98,7 @@ def run(
         kwargs["duration"] = duration
     if subject is not None:
         kwargs["active_subject"] = subject
+    kwargs["compress"] = compress
 
     chunk_i = chunk_n = None
     if shard:
@@ -270,12 +276,13 @@ def _run_one(experiment, backend: str, out_dir: Path | None,
 
 
 def _exec_one(experiment, backend: str, out_dir: Path | None, kwargs: dict) -> None:
+    compress = kwargs.pop("compress", True)  # a save option, not a backend-run kwarg
     result = experiment.run(format=backend, **kwargs)
     _common.info(f"done: {type(result).__name__}")
     if out_dir is not None:
         out_dir.mkdir(parents=True, exist_ok=True)
         if hasattr(result, "save"):
-            saved = result.save(str(out_dir))
+            saved = result.save(str(out_dir), compress=compress)
             _common.info(f"wrote {saved}")
         else:
             _common.info(f"(result has no .save(); skipping write to {out_dir})")

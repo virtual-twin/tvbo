@@ -43,6 +43,30 @@ tvbo run SPEC
 | `study` | Iterates over `study.experiments`; if `--experiment NAME` is given, only that one runs. |
 | anything else | Errors with `tvbo run does not yet support kind=<kind>`. |
 
+## Custom code in a recipe (`code/`)
+
+A recipe can reference custom Python by bare module name — a network builder
+(`builder: {module: my_networks}`) or an analysis callable
+(`callable: {module: my_analysis}`). tvbo resolves these by making the recipe's
+**`code/` subdir** importable when the recipe loads, so the modules resolve with no
+`PYTHONPATH` prefix:
+
+```text
+study/
+  recipe.yaml            # references module: my_analysis
+  code/my_analysis.py    # found automatically on load
+```
+
+```bash
+tvbo run recipe.yaml --experiment 3      # not: PYTHONPATH=code tvbo run …
+```
+
+The paths go to the front of `sys.path` on load and stay there (callables resolve
+lazily during the run, not only at load). The convention carries to the cluster:
+`tvbo workflow` bundles the referenced local modules into the kit's `code/` and the
+emitted job puts it on `PYTHONPATH`. Modules installed as packages are used as-is;
+only local `.py` files travel with the kit.
+
 ## Overriding metadata for a run (`--set`)
 
 Keep **one** recipe as the ground truth and let the CLI run it with different

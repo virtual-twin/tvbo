@@ -773,11 +773,15 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             A new `SimulationExperiment` populated from the file.
         """
         from pathlib import Path
-        from tvbo.utils import yaml_loader
+        from tvbo.utils import yaml_loader, register_recipe_code_paths
         import yaml
 
         # Store source file path BEFORE loading so __init__ can use it
         cls._pending_source_file = str(Path(filepath).resolve())
+        # Make the recipe's code/ subdir importable, so custom builders/callables
+        # resolve by bare module name without a PYTHONPATH prefix. Before loading:
+        # construction resolves the network builder eagerly (see __init__).
+        register_recipe_code_paths(cls._pending_source_file)
         try:
             with open(filepath) as file_handle:
                 data_as_dict = yaml.safe_load(file_handle) or {}
