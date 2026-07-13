@@ -1560,6 +1560,7 @@ classes:
         description: "A node in a network with its own dynamics and properties"
         slots:
             - label
+            - alternateName
             - description
             - parameters
             - record
@@ -1830,7 +1831,23 @@ classes:
                     network before comparison. ``by_label`` selects the shared node
                     labels on both sides by name (keyed ``.sel``), never by position, so
                     a differing node count or order cannot silently misalign the
-                    comparison. ``none`` disables reconciliation (identical node sets).
+                    comparison. Matching is alias-aware: a target label matches a model
+                    node when it equals that node's ``label`` or any of its
+                    ``alternateName`` entries, so a differing nomenclature reconciles
+                    without relabelling either side. ``none`` disables reconciliation
+                    (identical node sets).
+            min_coverage:
+                range: float
+                minimum_value: 0.0
+                maximum_value: 1.0
+                description: >-
+                    Minimum fraction of the model network's nodes that a ``by_label``
+                    reconciliation must cover, else resolution raises. The realised
+                    coverage is always logged. Absent (``null``) means require full
+                    coverage (``1.0``) for a dataset-sourced target — silently fitting on
+                    a partial node subset must be an explicit opt-in (e.g. ``0.95`` to
+                    tolerate a few genuinely-missing empirical parcels), never the
+                    default.
 
             # Observable/aggregation attributes (for tuning algorithms)
             skip_t:

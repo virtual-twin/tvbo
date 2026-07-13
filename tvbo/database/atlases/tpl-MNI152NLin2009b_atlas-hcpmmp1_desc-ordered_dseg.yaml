@@ -10,6 +10,8 @@ terminology:
         x: -10.363954536003888
         y: -84.10040543350198
         z: 1.6224097304040441
+      alternateName:
+      - L_V1_ROI
     L_MST:
       name: L_MST
       lookupLabel: 2
@@ -17,6 +19,8 @@ terminology:
         x: -43.78398058252427
         y: -66.80582524271844
         z: 11.951456310679617
+      alternateName:
+      - L_MST_ROI
     L_V6:
       name: L_V6
       lookupLabel: 3
@@ -24,6 +28,8 @@ terminology:
         x: -14.882160804020103
         y: -80.57311557788944
         z: 32.21532663316583
+      alternateName:
+      - L_V6_ROI
     L_V2:
       name: L_V2
       lookupLabel: 4
@@ -31,6 +37,8 @@ terminology:
         x: -10.568908096106568
         y: -82.33163508048528
         z: 4.062901435254929
+      alternateName:
+      - L_V2_ROI
     L_V3:
       name: L_V3
       lookupLabel: 5
@@ -38,6 +46,8 @@ terminology:
         x: -15.975991009399266
         y: -86.19554556599918
         z: 7.9722108704536225
+      alternateName:
+      - L_V3_ROI
     L_V4:
       name: L_V4
       lookupLabel: 6
@@ -45,6 +55,8 @@ terminology:
         x: -28.375145857642934
         y: -86.97578763127188
         z: -0.006126021003495907
+      alternateName:
+      - L_V4_ROI
     L_V8:
       name: L_V8
       lookupLabel: 7
@@ -52,6 +64,8 @@ terminology:
         x: -30.34229098805646
         y: -76.89657980456026
         z: -12.875407166123779
+      alternateName:
+      - L_V8_ROI
     L_4:
       name: L_4
       lookupLabel: 8
@@ -59,6 +73,8 @@ terminology:
         x: -28.428445042111974
         y: -20.36759501734022
         z: 54.63718239082738
+      alternateName:
+      - L_4_ROI
     L_3b:
       name: L_3b
       lookupLabel: 9
@@ -66,6 +82,8 @@ terminology:
         x: -39.39708467623792
         y: -22.295268092587165
         z: 52.810357456782896
+      alternateName:
+      - L_3b_ROI
     L_FEF:
       name: L_FEF
       lookupLabel: 10
@@ -73,6 +91,8 @@ terminology:
         x: -41.82425742574257
         y: -6.82508250825083
         z: 51.54785478547855
+      alternateName:
+      - L_FEF_ROI
     L_PEF:
       name: L_PEF
       lookupLabel: 11
@@ -80,6 +100,8 @@ terminology:
         x: -49.009512937595126
         y: -0.45167427701673546
         z: 40.59170471841705
+      alternateName:
+      - L_PEF_ROI
     L_55b:
       name: L_55b
       lookupLabel: 12
@@ -87,6 +109,8 @@ terminology:
         x: -48.98161361141602
         y: -1.5128979143798063
         z: 50.190724478594944
+      alternateName:
+      - L_55b_ROI
     L_V3A:
       name: L_V3A
       lookupLabel: 13
@@ -94,6 +118,8 @@ terminology:
         x: -15.015406162464984
         y: -91.6078431372549
         z: 28.244397759103634
+      alternateName:
+      - L_V3A_ROI
     L_RSC:
       name: L_RSC
       lookupLabel: 14
@@ -101,6 +127,8 @@ terminology:
         x: -4.884923664122141
         y: -36.57099236641221
         z: 21.112213740458017
+      alternateName:
+      - L_RSC_ROI
     L_POS2:
       name: L_POS2
       lookupLabel: 15
@@ -108,6 +136,8 @@ terminology:
         x: -9.494167287168025
         y: -72.25235790518738
         z: 36.790208488458674
+      alternateName:
+      - L_POS2_ROI
     L_V7:
       name: L_V7
       lookupLabel: 16
@@ -115,6 +145,8 @@ terminology:
         x: -24.09813753581662
         y: -87.07378223495702
         z: 29.61676217765043
+      alternateName:
+      - L_V7_ROI
     L_IPS1:
       name: L_IPS1
       lookupLabel: 17
@@ -122,6 +154,8 @@ terminology:
         x: -24.30388127853881
         y: -75.26963470319635
         z: 37.459589041095896
+      alternateName:
+      - L_IPS1_ROI
     L_FFC:
       name: L_FFC
       lookupLabel: 18
@@ -129,6 +163,8 @@ terminology:
         x: -42.021202412363365
         y: -61.422446287222016
         z: -17.290708631737658
+      alternateName:
+      - L_FFC_ROI
     L_V3B:
       name: L_V3B
       lookupLabel: 19
@@ -136,6 +172,8 @@ terminology:
         x: -26.29415011037527
         y: -83.02814569536423
         z: 17.652869757174386
+      alternateName:
+      - L_V3B_ROI
     L_LO1:
       name: L_LO1
       lookupLabel: 20
@@ -143,6 +181,8 @@ terminology:
         x: -39.78090332805071
         y: -83.91164817749603
         z: 8.24445324881141
+      alternateName:
+      - L_LO1_ROI
     L_LO2:
       name: L_LO2
       lookupLabel: 21
@@ -150,6 +190,8 @@ terminology:
         x: -45.77868391451069
         y: -85.16957255343081
         z: 0.7286276715410622
+      alternateName:
+      - L_LO2_ROI
     L_PIT:
       name: L_PIT
       lookupLabel: 22
@@ -157,6 +199,8 @@ terminology:
         x: -43.705652173913045
         y: -83.2108695652174
         z: -11.014347826086954
+      alternateName:
+      - L_PIT_ROI
     L_MT:
       name: L_MT
       lookupLabel: 23
@@ -164,6 +208,8 @@ terminology:
         x: -42.772167487684726
         y: -69.95935960591133
         z: 14.451970443349751
+      alternateName:
+      - L_MT_ROI
     L_A1:
       name: L_A1
       lookupLabel: 24
@@ -171,6 +217,8 @@ terminology:
         x: -43.17227979274612
         y: -25.35794473229707
         z: 12.323402417962
+      alternateName:
+      - L_A1_ROI
     L_PSL:
       name: L_PSL
       lookupLabel: 25
@@ -178,6 +226,8 @@ terminology:
         x: -58.58393501805054
         y: -47.228339350180505
         z: 25.431107099879668
+      alternateName:
+      - L_PSL_ROI
     L_SFL:
       name: L_SFL
       lookupLabel: 26
@@ -185,6 +235,8 @@ terminology:
         x: -8.609526235354053
         y: 17.51371200543386
         z: 63.92931737137036
+      alternateName:
+      - L_SFL_ROI
     L_PCV:
       name: L_PCV
       lookupLabel: 27
@@ -192,6 +244,8 @@ terminology:
         x: -6.298026315789471
         y: -51.15789473684211
         z: 49.208552631578954
+      alternateName:
+      - L_PCV_ROI
     L_STV:
       name: L_STV
       lookupLabel: 28
@@ -199,6 +253,8 @@ terminology:
         x: -61.08898305084746
         y: -50.95208604954368
         z: 18.23239895697523
+      alternateName:
+      - L_STV_ROI
     L_7Pm:
       name: L_7Pm
       lookupLabel: 29
@@ -206,6 +262,8 @@ terminology:
         x: -4.206202651515156
         y: -70.42140151515152
         z: 50.34043560606061
+      alternateName:
+      - L_7Pm_ROI
     L_7m:
       name: L_7m
       lookupLabel: 30
@@ -213,6 +271,8 @@ terminology:
         x: -4.284500339904824
         y: -63.87848402447315
         z: 35.18405846363018
+      alternateName:
+      - L_7m_ROI
     L_POS1:
       name: L_POS1
       lookupLabel: 31
@@ -220,6 +280,8 @@ terminology:
         x: -12.60349383440986
         y: -59.00190839694656
         z: 15.042425132119789
+      alternateName:
+      - L_POS1_ROI
     L_23d:
       name: L_23d
       lookupLabel: 32
@@ -227,6 +289,8 @@ terminology:
         x: -2.8880784708249507
         y: -20.67806841046277
         z: 39.35865191146881
+      alternateName:
+      - L_23d_ROI
     L_v23ab:
       name: L_v23ab
       lookupLabel: 33
@@ -234,6 +298,8 @@ terminology:
         x: -3.3635817307692264
         y: -58.24699519230769
         z: 18.21334134615384
+      alternateName:
+      - L_v23ab_ROI
     L_d23ab:
       name: L_d23ab
       lookupLabel: 34
@@ -241,6 +307,8 @@ terminology:
         x: -3.0437872535534183
         y: -42.68076570380559
         z: 31.2974552957359
+      alternateName:
+      - L_d23ab_ROI
     L_31pv:
       name: L_31pv
       lookupLabel: 35
@@ -248,6 +316,8 @@ terminology:
         x: -9.407347204161255
         y: -46.760403120936274
         z: 32.54193758127438
+      alternateName:
+      - L_31pv_ROI
     L_5m:
       name: L_5m
       lookupLabel: 36
@@ -255,6 +325,8 @@ terminology:
         x: -6.284216046145772
         y: -41.917278447823804
         z: 63.399711588883065
+      alternateName:
+      - L_5m_ROI
     L_5mv:
       name: L_5mv
       lookupLabel: 37
@@ -262,6 +334,8 @@ terminology:
         x: -13.701790633608809
         y: -37.139348025711655
         z: 50.381772268135904
+      alternateName:
+      - L_5mv_ROI
     L_23c:
       name: L_23c
       lookupLabel: 38
@@ -269,6 +343,8 @@ terminology:
         x: -11.448782961460452
         y: -30.526876267748477
         z: 43.00828262339418
+      alternateName:
+      - L_23c_ROI
     L_5L:
       name: L_5L
       lookupLabel: 39
@@ -276,6 +352,8 @@ terminology:
         x: -14.777593818984542
         y: -48.60651214128035
         z: 72.59326710816777
+      alternateName:
+      - L_5L_ROI
     L_24dd:
       name: L_24dd
       lookupLabel: 40
@@ -283,6 +361,8 @@ terminology:
         x: -5.885481852315394
         y: -16.012578222778473
         z: 50.5897997496871
+      alternateName:
+      - L_24dd_ROI
     L_24dv:
       name: L_24dv
       lookupLabel: 41
@@ -290,6 +370,8 @@ terminology:
         x: -8.302213393870602
         y: -0.3765607264472237
         z: 44.810158910329164
+      alternateName:
+      - L_24dv_ROI
     L_7AL:
       name: L_7AL
       lookupLabel: 42
@@ -297,6 +379,8 @@ terminology:
         x: -20.40274803711634
         y: -51.99125624553891
         z: 65.6771948608137
+      alternateName:
+      - L_7AL_ROI
     L_SCEF:
       name: L_SCEF
       lookupLabel: 43
@@ -304,6 +388,8 @@ terminology:
         x: -5.931673905780158
         y: 4.134229869695957
         z: 59.60315736719011
+      alternateName:
+      - L_SCEF_ROI
     L_6ma:
       name: L_6ma
       lookupLabel: 44
@@ -311,6 +397,8 @@ terminology:
         x: -20.098363393453567
         y: 3.969438877755522
         z: 67.89028056112224
+      alternateName:
+      - L_6ma_ROI
     L_7Am:
       name: L_7Am
       lookupLabel: 45
@@ -318,6 +406,8 @@ terminology:
         x: -6.9458244617932365
         y: -60.317305417553825
         z: 61.458067187130354
+      alternateName:
+      - L_7Am_ROI
     L_7PL:
       name: L_7PL
       lookupLabel: 46
@@ -325,6 +415,8 @@ terminology:
         x: -14.81601941747573
         y: -73.71116504854369
         z: 56.00825242718446
+      alternateName:
+      - L_7PL_ROI
     L_7PC:
       name: L_7PC
       lookupLabel: 47
@@ -332,6 +424,8 @@ terminology:
         x: -37.4515145140934
         y: -46.7108750525873
         z: 60.62757677745057
+      alternateName:
+      - L_7PC_ROI
     L_LIPv:
       name: L_LIPv
       lookupLabel: 48
@@ -339,6 +433,8 @@ terminology:
         x: -30.85463618802318
         y: -58.40292981326465
         z: 55.232292337411465
+      alternateName:
+      - L_LIPv_ROI
     L_VIP:
       name: L_VIP
       lookupLabel: 49
@@ -346,6 +442,8 @@ terminology:
         x: -22.821780653111517
         y: -63.50477510782501
         z: 64.474584103512
+      alternateName:
+      - L_VIP_ROI
     L_MIP:
       name: L_MIP
       lookupLabel: 50
@@ -353,6 +451,8 @@ terminology:
         x: -24.856965174129357
         y: -67.12810945273633
         z: 47.10074626865672
+      alternateName:
+      - L_MIP_ROI
     L_1:
       name: L_1
       lookupLabel: 51
@@ -360,6 +460,8 @@ terminology:
         x: -47.029623477297896
         y: -26.318106312292358
         z: 56.384772978959035
+      alternateName:
+      - L_1_ROI
     L_2:
       name: L_2
       lookupLabel: 52
@@ -367,6 +469,8 @@ terminology:
         x: -38.86826484018265
         y: -32.92016742770167
         z: 51.957001522070016
+      alternateName:
+      - L_2_ROI
     L_3a:
       name: L_3a
       lookupLabel: 53
@@ -374,6 +478,8 @@ terminology:
         x: -35.28051493960585
         y: -20.509694850603935
         z: 42.83391608391608
+      alternateName:
+      - L_3a_ROI
     L_6d:
       name: L_6d
       lookupLabel: 54
@@ -381,6 +487,8 @@ terminology:
         x: -33.79434121621621
         y: -14.21621621621621
         z: 67.734375
+      alternateName:
+      - L_6d_ROI
     L_6mp:
       name: L_6mp
       lookupLabel: 55
@@ -388,6 +496,8 @@ terminology:
         x: -10.733435381587583
         y: -15.008692324513447
         z: 71.02618631095561
+      alternateName:
+      - L_6mp_ROI
     L_6v:
       name: L_6v
       lookupLabel: 56
@@ -395,6 +505,8 @@ terminology:
         x: -59.50335215243472
         y: 3.787050105857446
         z: 31.906669019054334
+      alternateName:
+      - L_6v_ROI
     L_p24pr:
       name: L_p24pr
       lookupLabel: 57
@@ -402,6 +514,8 @@ terminology:
         x: -3.961538461538467
         y: -2.244123931623932
         z: 40.376068376068375
+      alternateName:
+      - L_p24pr_ROI
     L_33pr:
       name: L_33pr
       lookupLabel: 58
@@ -409,6 +523,8 @@ terminology:
         x: -2.3982504604051513
         y: 11.25920810313076
         z: 28.721454880294658
+      alternateName:
+      - L_33pr_ROI
     L_a24pr:
       name: L_a24pr
       lookupLabel: 59
@@ -416,6 +532,8 @@ terminology:
         x: -5.386851015801355
         y: 18.300225733634306
         z: 30.981376975169297
+      alternateName:
+      - L_a24pr_ROI
     L_p32pr:
       name: L_p32pr
       lookupLabel: 60
@@ -423,6 +541,8 @@ terminology:
         x: -7.929197994987462
         y: 15.395363408521291
         z: 38.79594820384294
+      alternateName:
+      - L_p32pr_ROI
     L_a24:
       name: L_a24
       lookupLabel: 61
@@ -430,6 +550,8 @@ terminology:
         x: -6.136344359626804
         y: 41.96501272264632
         z: -4.496819338422398
+      alternateName:
+      - L_a24_ROI
     L_d32:
       name: L_d32
       lookupLabel: 62
@@ -437,6 +559,8 @@ terminology:
         x: -8.040343074968234
         y: 42.475540025412954
         z: 24.959656925031766
+      alternateName:
+      - L_d32_ROI
     L_8BM:
       name: L_8BM
       lookupLabel: 63
@@ -444,6 +568,8 @@ terminology:
         x: -4.759222919937201
         y: 32.56828885400313
         z: 45.16620879120879
+      alternateName:
+      - L_8BM_ROI
     L_p32:
       name: L_p32
       lookupLabel: 64
@@ -451,6 +577,8 @@ terminology:
         x: -11.275899280575544
         y: 50.39244604316548
         z: -2.33920863309352
+      alternateName:
+      - L_p32_ROI
     L_10r:
       name: L_10r
       lookupLabel: 65
@@ -458,6 +586,8 @@ terminology:
         x: -6.034112149532717
         y: 51.64065420560749
         z: -10.644392523364488
+      alternateName:
+      - L_10r_ROI
     L_47m:
       name: L_47m
       lookupLabel: 66
@@ -465,6 +595,8 @@ terminology:
         x: -37.49242424242424
         y: 31.53484848484848
         z: -13.922727272727272
+      alternateName:
+      - L_47m_ROI
     L_8Av:
       name: L_8Av
       lookupLabel: 67
@@ -472,6 +604,8 @@ terminology:
         x: -38.33117890382627
         y: 16.588934850051714
         z: 52.27921406411582
+      alternateName:
+      - L_8Av_ROI
     L_8Ad:
       name: L_8Ad
       lookupLabel: 68
@@ -479,6 +613,8 @@ terminology:
         x: -23.35066850176956
         y: 28.99596932756586
         z: 43.34653952025167
+      alternateName:
+      - L_8Ad_ROI
     L_9m:
       name: L_9m
       lookupLabel: 69
@@ -486,6 +622,8 @@ terminology:
         x: -6.037457296242067
         y: 55.14775500244022
         z: 24.263665202537823
+      alternateName:
+      - L_9m_ROI
     L_8BL:
       name: L_8BL
       lookupLabel: 70
@@ -493,6 +631,8 @@ terminology:
         x: -11.6218459495352
         y: 37.147299690128364
         z: 53.800464807436924
+      alternateName:
+      - L_8BL_ROI
     L_9p:
       name: L_9p
       lookupLabel: 71
@@ -500,6 +640,8 @@ terminology:
         x: -19.89443462897526
         y: 47.305653710247356
         z: 38.47924028268551
+      alternateName:
+      - L_9p_ROI
     L_10d:
       name: L_10d
       lookupLabel: 72
@@ -507,6 +649,8 @@ terminology:
         x: -11.1631633356306
         y: 66.29583046175051
         z: 8.404376292212262
+      alternateName:
+      - L_10d_ROI
     L_8C:
       name: L_8C
       lookupLabel: 73
@@ -514,6 +658,8 @@ terminology:
         x: -43.70362268113406
         y: 11.811778088904447
         z: 37.70974798739937
+      alternateName:
+      - L_8C_ROI
     L_44:
       name: L_44
       lookupLabel: 74
@@ -521,6 +667,8 @@ terminology:
         x: -53.8786231884058
         y: 14.841183574879238
         z: 14.009661835748787
+      alternateName:
+      - L_44_ROI
     L_45:
       name: L_45
       lookupLabel: 75
@@ -528,6 +676,8 @@ terminology:
         x: -50.60904463586531
         y: 25.568715740015648
         z: 3.2206342991386094
+      alternateName:
+      - L_45_ROI
     L_47l:
       name: L_47l
       lookupLabel: 76
@@ -535,6 +685,8 @@ terminology:
         x: -46.77078085642317
         y: 30.10012594458439
         z: -9.95780856423174
+      alternateName:
+      - L_47l_ROI
     L_a47r:
       name: L_a47r
       lookupLabel: 77
@@ -542,6 +694,8 @@ terminology:
         x: -41.356263633530695
         y: 48.56380492365224
         z: -11.907214085384858
+      alternateName:
+      - L_a47r_ROI
     L_6r:
       name: L_6r
       lookupLabel: 78
@@ -549,6 +703,8 @@ terminology:
         x: -52.490793201133144
         y: 6.664069877242696
         z: 17.774079320113316
+      alternateName:
+      - L_6r_ROI
     L_IFJa:
       name: L_IFJa
       lookupLabel: 79
@@ -556,6 +712,8 @@ terminology:
         x: -41.00675675675676
         y: 10.852602602602616
         z: 26.385635635635637
+      alternateName:
+      - L_IFJa_ROI
     L_IFJp:
       name: L_IFJp
       lookupLabel: 80
@@ -563,6 +721,8 @@ terminology:
         x: -41.36342894393742
         y: 2.2956323337679407
         z: 30.064211212516298
+      alternateName:
+      - L_IFJp_ROI
     L_IFSp:
       name: L_IFSp
       lookupLabel: 81
@@ -570,6 +730,8 @@ terminology:
         x: -48.801580698835274
         y: 20.908901830282872
         z: 22.851497504159738
+      alternateName:
+      - L_IFSp_ROI
     L_IFSa:
       name: L_IFSa
       lookupLabel: 82
@@ -577,6 +739,8 @@ terminology:
         x: -48.10146804835924
         y: 32.12161773172136
         z: 10.653281519861835
+      alternateName:
+      - L_IFSa_ROI
     L_p9-46v:
       name: L_p9-46v
       lookupLabel: 83
@@ -584,6 +748,8 @@ terminology:
         x: -47.190255459414914
         y: 28.89194478780388
         z: 25.991450350226614
+      alternateName:
+      - L_p9-46v_ROI
     L_46:
       name: L_46
       lookupLabel: 84
@@ -591,6 +757,8 @@ terminology:
         x: -38.40568557618926
         y: 37.85264563724243
         z: 32.920694479776145
+      alternateName:
+      - L_46_ROI
     L_a9-46v:
       name: L_a9-46v
       lookupLabel: 85
@@ -598,6 +766,8 @@ terminology:
         x: -40.00723412251033
         y: 51.63970311912814
         z: 9.1727733934611
+      alternateName:
+      - L_a9-46v_ROI
     L_9-46d:
       name: L_9-46d
       lookupLabel: 86
@@ -605,6 +775,8 @@ terminology:
         x: -29.44874715261959
         y: 45.85791571753987
         z: 23.46355353075171
+      alternateName:
+      - L_9-46d_ROI
     L_9a:
       name: L_9a
       lookupLabel: 87
@@ -612,6 +784,8 @@ terminology:
         x: -21.72691334598356
         y: 57.56277672359266
         z: 24.152593295382673
+      alternateName:
+      - L_9a_ROI
     L_10v:
       name: L_10v
       lookupLabel: 88
@@ -619,6 +793,8 @@ terminology:
         x: -4.007095158597664
         y: 52.91193656093489
         z: -17.83430717863105
+      alternateName:
+      - L_10v_ROI
     L_a10p:
       name: L_a10p
       lookupLabel: 89
@@ -626,6 +802,8 @@ terminology:
         x: -26.478136882129277
         y: 59.74201520912547
         z: -6.898669201520917
+      alternateName:
+      - L_a10p_ROI
     L_10pp:
       name: L_10pp
       lookupLabel: 90
@@ -633,6 +811,8 @@ terminology:
         x: -12.772091310751108
         y: 62.28313696612665
         z: -16.248527245949923
+      alternateName:
+      - L_10pp_ROI
     L_11l:
       name: L_11l
       lookupLabel: 91
@@ -640,6 +820,8 @@ terminology:
         x: -25.936197404640183
         y: 49.47611089264649
         z: -15.47139205662603
+      alternateName:
+      - L_11l_ROI
     L_13l:
       name: L_13l
       lookupLabel: 92
@@ -647,6 +829,8 @@ terminology:
         x: -23.304250320375914
         y: 30.078278513455786
         z: -19.88648013669372
+      alternateName:
+      - L_13l_ROI
     L_OFC:
       name: L_OFC
       lookupLabel: 93
@@ -654,6 +838,8 @@ terminology:
         x: -10.828698655034529
         y: 33.53898582333696
         z: -24.50517993456925
+      alternateName:
+      - L_OFC_ROI
     L_47s:
       name: L_47s
       lookupLabel: 94
@@ -661,6 +847,8 @@ terminology:
         x: -34.5232782369146
         y: 22.11336088154269
         z: -19.154683195592284
+      alternateName:
+      - L_47s_ROI
     L_LIPd:
       name: L_LIPd
       lookupLabel: 95
@@ -668,6 +856,8 @@ terminology:
         x: -30.07446043165467
         y: -55.44352517985611
         z: 42.899640287769785
+      alternateName:
+      - L_LIPd_ROI
     L_6a:
       name: L_6a
       lookupLabel: 96
@@ -675,6 +865,8 @@ terminology:
         x: -25.360372340425528
         y: -4.931848404255305
         z: 55.56183510638297
+      alternateName:
+      - L_6a_ROI
     L_i6-8:
       name: L_i6-8
       lookupLabel: 97
@@ -682,6 +874,8 @@ terminology:
         x: -29.576462765957444
         y: 5.227393617021278
         z: 56.748005319148945
+      alternateName:
+      - L_i6-8_ROI
     L_s6-8:
       name: L_s6-8
       lookupLabel: 98
@@ -689,6 +883,8 @@ terminology:
         x: -22.3087219343696
         y: 24.151554404145088
         z: 56.29663212435233
+      alternateName:
+      - L_s6-8_ROI
     L_43:
       name: L_43
       lookupLabel: 99
@@ -696,6 +892,8 @@ terminology:
         x: -56.383133133133136
         y: -0.33658658658657714
         z: 9.476726726726724
+      alternateName:
+      - L_43_ROI
     L_OP4:
       name: L_OP4
       lookupLabel: 100
@@ -703,6 +901,8 @@ terminology:
         x: -59.22332421340629
         y: -13.484610123119012
         z: 15.314979480164155
+      alternateName:
+      - L_OP4_ROI
     L_OP1:
       name: L_OP1
       lookupLabel: 101
@@ -710,6 +910,8 @@ terminology:
         x: -46.949643493761144
         y: -22.380124777183596
         z: 19.142156862745097
+      alternateName:
+      - L_OP1_ROI
     L_OP2-3:
       name: L_OP2-3
       lookupLabel: 102
@@ -717,6 +919,8 @@ terminology:
         x: -40.460134128166914
         y: -17.24329359165425
         z: 19.021236959761552
+      alternateName:
+      - L_OP2-3_ROI
     L_52:
       name: L_52
       lookupLabel: 103
@@ -724,6 +928,8 @@ terminology:
         x: -38.001619870410366
         y: -22.361231101511876
         z: 1.9379049676025915
+      alternateName:
+      - L_52_ROI
     L_RI:
       name: L_RI
       lookupLabel: 104
@@ -731,6 +937,8 @@ terminology:
         x: -40.184648581997536
         y: -35.52188655980271
         z: 20.243218249075213
+      alternateName:
+      - L_RI_ROI
     L_PFcm:
       name: L_PFcm
       lookupLabel: 105
@@ -738,6 +946,8 @@ terminology:
         x: -50.40590405904059
         y: -32.3090405904059
         z: 21.746309963099634
+      alternateName:
+      - L_PFcm_ROI
     L_PoI2:
       name: L_PoI2
       lookupLabel: 106
@@ -745,6 +955,8 @@ terminology:
         x: -40.4908400357462
         y: -2.9287310098302157
         z: -0.0029043789097471517
+      alternateName:
+      - L_PoI2_ROI
     L_TA2:
       name: L_TA2
       lookupLabel: 107
@@ -752,6 +964,8 @@ terminology:
         x: -50.36752577319588
         y: -0.17371134020618229
         z: -5.478865979381439
+      alternateName:
+      - L_TA2_ROI
     L_FOP4:
       name: L_FOP4
       lookupLabel: 108
@@ -759,6 +973,8 @@ terminology:
         x: -41.49167171411266
         y: 12.777559055118104
         z: 5.6918534221683785
+      alternateName:
+      - L_FOP4_ROI
     L_MI:
       name: L_MI
       lookupLabel: 109
@@ -766,6 +982,8 @@ terminology:
         x: -36.28790271636134
         y: 11.19630448515477
         z: 3.326121288692363
+      alternateName:
+      - L_MI_ROI
     L_Pir:
       name: L_Pir
       lookupLabel: 110
@@ -773,6 +991,8 @@ terminology:
         x: -32.0389502762431
         y: 6.381491712707174
         z: -17.67983425414365
+      alternateName:
+      - L_Pir_ROI
     L_AVI:
       name: L_AVI
       lookupLabel: 111
@@ -780,6 +1000,8 @@ terminology:
         x: -30.860792192881746
         y: 25.40269804822043
         z: -2.488805970149258
+      alternateName:
+      - L_AVI_ROI
     L_AAIC:
       name: L_AAIC
       lookupLabel: 112
@@ -787,6 +1009,8 @@ terminology:
         x: -35.42083946980854
         y: 14.344992636229762
         z: -10.438512518409425
+      alternateName:
+      - L_AAIC_ROI
     L_FOP1:
       name: L_FOP1
       lookupLabel: 113
@@ -794,6 +1018,8 @@ terminology:
         x: -49.8875
         y: 1.6589285714285609
         z: 4.569642857142853
+      alternateName:
+      - L_FOP1_ROI
     L_FOP3:
       name: L_FOP3
       lookupLabel: 114
@@ -801,6 +1027,8 @@ terminology:
         x: -35.99497991967871
         y: 2.1375502008032186
         z: 13.442771084337352
+      alternateName:
+      - L_FOP3_ROI
     L_FOP2:
       name: L_FOP2
       lookupLabel: 115
@@ -808,6 +1036,8 @@ terminology:
         x: -42.412835249042146
         y: -4.953065134099603
         z: 14.79980842911877
+      alternateName:
+      - L_FOP2_ROI
     L_PFt:
       name: L_PFt
       lookupLabel: 116
@@ -815,6 +1045,8 @@ terminology:
         x: -56.39276729559749
         y: -25.75377358490566
         z: 36.533018867924525
+      alternateName:
+      - L_PFt_ROI
     L_AIP:
       name: L_AIP
       lookupLabel: 117
@@ -822,6 +1054,8 @@ terminology:
         x: -39.7851617440225
         y: -39.01371308016877
         z: 42.27672292545711
+      alternateName:
+      - L_AIP_ROI
     L_EC:
       name: L_EC
       lookupLabel: 118
@@ -829,6 +1063,8 @@ terminology:
         x: -22.93984812150279
         y: -13.646083133493207
         z: -31.66806554756195
+      alternateName:
+      - L_EC_ROI
     L_PreS:
       name: L_PreS
       lookupLabel: 119
@@ -836,6 +1072,8 @@ terminology:
         x: -16.928135405105436
         y: -34.299389567147614
         z: -13.86043285238624
+      alternateName:
+      - L_PreS_ROI
     L_H:
       name: L_H
       lookupLabel: 120
@@ -843,6 +1081,8 @@ terminology:
         x: -11.916666666666671
         y: -39.75
         z: -2.9166666666666714
+      alternateName:
+      - L_H_ROI
     L_ProS:
       name: L_ProS
       lookupLabel: 121
@@ -850,6 +1090,8 @@ terminology:
         x: -22.06854838709677
         y: -57.01075268817205
         z: 4.69086021505376
+      alternateName:
+      - L_ProS_ROI
     L_PeEc:
       name: L_PeEc
       lookupLabel: 122
@@ -857,6 +1099,8 @@ terminology:
         x: -31.135586449344842
         y: -9.588926174496649
         z: -33.602828379674015
+      alternateName:
+      - L_PeEc_ROI
     L_STGa:
       name: L_STGa
       lookupLabel: 123
@@ -864,6 +1108,8 @@ terminology:
         x: -50.85345821325648
         y: 12.921469740633995
         z: -16.669596541786746
+      alternateName:
+      - L_STGa_ROI
     L_PBelt:
       name: L_PBelt
       lookupLabel: 124
@@ -871,6 +1117,8 @@ terminology:
         x: -52.70952197378566
         y: -26.003662297609864
         z: 9.005975327679266
+      alternateName:
+      - L_PBelt_ROI
     L_A5:
       name: L_A5
       lookupLabel: 125
@@ -878,6 +1126,8 @@ terminology:
         x: -62.983247422680414
         y: -15.211769759450178
         z: -1.1005154639175316
+      alternateName:
+      - L_A5_ROI
     L_PHA1:
       name: L_PHA1
       lookupLabel: 126
@@ -885,6 +1135,8 @@ terminology:
         x: -23.349369085173507
         y: -37.71924290220821
         z: -14.638012618296528
+      alternateName:
+      - L_PHA1_ROI
     L_PHA3:
       name: L_PHA3
       lookupLabel: 127
@@ -892,6 +1144,8 @@ terminology:
         x: -31.839830508474577
         y: -37.931016949152536
         z: -17.730677966101695
+      alternateName:
+      - L_PHA3_ROI
     L_STSda:
       name: L_STSda
       lookupLabel: 128
@@ -899,6 +1153,8 @@ terminology:
         x: -54.80822550831793
         y: -4.146796056685162
         z: -11.595656192236596
+      alternateName:
+      - L_STSda_ROI
     L_STSdp:
       name: L_STSdp
       lookupLabel: 129
@@ -906,6 +1162,8 @@ terminology:
         x: -52.7883502170767
         y: -32.63856729377713
         z: 1.1349493487698936
+      alternateName:
+      - L_STSdp_ROI
     L_STSvp:
       name: L_STSvp
       lookupLabel: 130
@@ -913,6 +1171,8 @@ terminology:
         x: -54.889782016348775
         y: -34.85517711171663
         z: -3.435831062670303
+      alternateName:
+      - L_STSvp_ROI
     L_TGd:
       name: L_TGd
       lookupLabel: 131
@@ -920,6 +1180,8 @@ terminology:
         x: -38.19212869283691
         y: 12.305038445973281
         z: -34.47271684877917
+      alternateName:
+      - L_TGd_ROI
     L_TE1a:
       name: L_TE1a
       lookupLabel: 132
@@ -927,6 +1189,8 @@ terminology:
         x: -59.77543720190779
         y: -5.224562798092222
         z: -23.115129835718072
+      alternateName:
+      - L_TE1a_ROI
     L_TE1p:
       name: L_TE1p
       lookupLabel: 133
@@ -934,6 +1198,8 @@ terminology:
         x: -61.772608695652174
         y: -48.213478260869564
         z: -8.696304347826086
+      alternateName:
+      - L_TE1p_ROI
     L_TE2a:
       name: L_TE2a
       lookupLabel: 134
@@ -941,6 +1207,8 @@ terminology:
         x: -57.275185518326964
         y: -24.38323588936362
         z: -27.70086575219249
+      alternateName:
+      - L_TE2a_ROI
     L_TF:
       name: L_TF
       lookupLabel: 135
@@ -948,6 +1216,8 @@ terminology:
         x: -42.3942250149611
         y: -22.009724715739083
         z: -30.005236385397964
+      alternateName:
+      - L_TF_ROI
     L_TE2p:
       name: L_TE2p
       lookupLabel: 136
@@ -955,6 +1225,8 @@ terminology:
         x: -49.39131607335491
         y: -43.42349874145991
         z: -20.50566343042071
+      alternateName:
+      - L_TE2p_ROI
     L_PHT:
       name: L_PHT
       lookupLabel: 137
@@ -962,6 +1234,8 @@ terminology:
         x: -58.391753572808035
         y: -60.646098879876405
         z: 3.228949401313244
+      alternateName:
+      - L_PHT_ROI
     L_PH:
       name: L_PH
       lookupLabel: 138
@@ -969,6 +1243,8 @@ terminology:
         x: -45.984491315136474
         y: -65.14660876757651
         z: -5.342224979321756
+      alternateName:
+      - L_PH_ROI
     L_TPOJ1:
       name: L_TPOJ1
       lookupLabel: 139
@@ -976,6 +1252,8 @@ terminology:
         x: -54.167647058823526
         y: -46.32024221453287
         z: 10.260034602076118
+      alternateName:
+      - L_TPOJ1_ROI
     L_TPOJ2:
       name: L_TPOJ2
       lookupLabel: 140
@@ -983,6 +1261,8 @@ terminology:
         x: -51.993362831858406
         y: -62.363032984714394
         z: 15.783789219629924
+      alternateName:
+      - L_TPOJ2_ROI
     L_TPOJ3:
       name: L_TPOJ3
       lookupLabel: 141
@@ -990,6 +1270,8 @@ terminology:
         x: -45.97455902306648
         y: -72.67401628222524
         z: 20.70115332428766
+      alternateName:
+      - L_TPOJ3_ROI
     L_DVT:
       name: L_DVT
       lookupLabel: 142
@@ -997,6 +1279,8 @@ terminology:
         x: -17.637888707037646
         y: -74.29009819967267
         z: 36.31055646481178
+      alternateName:
+      - L_DVT_ROI
     L_PGp:
       name: L_PGp
       lookupLabel: 143
@@ -1004,6 +1288,8 @@ terminology:
         x: -38.69778987828315
         y: -85.43289557975658
         z: 23.08888532991672
+      alternateName:
+      - L_PGp_ROI
     L_IP2:
       name: L_IP2
       lookupLabel: 144
@@ -1011,6 +1297,8 @@ terminology:
         x: -40.949077359829666
         y: -48.80039034776438
         z: 43.375266146202975
+      alternateName:
+      - L_IP2_ROI
     L_IP1:
       name: L_IP1
       lookupLabel: 145
@@ -1018,6 +1306,8 @@ terminology:
         x: -30.258007117437728
         y: -70.63256227758006
         z: 39.10231316725978
+      alternateName:
+      - L_IP1_ROI
     L_IP0:
       name: L_IP0
       lookupLabel: 146
@@ -1025,6 +1315,8 @@ terminology:
         x: -30.844692400482515
         y: -79.07569360675512
         z: 24.272316043425818
+      alternateName:
+      - L_IP0_ROI
     L_PFop:
       name: L_PFop
       lookupLabel: 147
@@ -1032,6 +1324,8 @@ terminology:
         x: -62.96147540983606
         y: -23.73606557377049
         z: 24.032786885245898
+      alternateName:
+      - L_PFop_ROI
     L_PF:
       name: L_PF
       lookupLabel: 148
@@ -1039,6 +1333,8 @@ terminology:
         x: -60.30597512216792
         y: -37.278209684584624
         z: 37.90526432696579
+      alternateName:
+      - L_PF_ROI
     L_PFm:
       name: L_PFm
       lookupLabel: 149
@@ -1046,6 +1342,8 @@ terminology:
         x: -49.51604231703087
         y: -58.048300381546994
         z: 44.89516129032258
+      alternateName:
+      - L_PFm_ROI
     L_PGi:
       name: L_PGi
       lookupLabel: 150
@@ -1053,6 +1351,8 @@ terminology:
         x: -46.54554531490015
         y: -64.01082949308756
         z: 27.54201228878648
+      alternateName:
+      - L_PGi_ROI
     L_PGs:
       name: L_PGs
       lookupLabel: 151
@@ -1060,6 +1360,8 @@ terminology:
         x: -39.190649867374006
         y: -78.0709549071618
         z: 38.99038461538461
+      alternateName:
+      - L_PGs_ROI
     L_V6A:
       name: L_V6A
       lookupLabel: 152
@@ -1067,6 +1369,8 @@ terminology:
         x: -21.78363914373088
         y: -86.1888379204893
         z: 42.722477064220186
+      alternateName:
+      - L_V6A_ROI
     L_VMV1:
       name: L_VMV1
       lookupLabel: 153
@@ -1074,6 +1378,8 @@ terminology:
         x: -18.661894273127757
         y: -55.941629955947135
         z: -5.522026431718061
+      alternateName:
+      - L_VMV1_ROI
     L_VMV3:
       name: L_VMV3
       lookupLabel: 154
@@ -1081,6 +1387,8 @@ terminology:
         x: -27.721874999999997
         y: -62.696875000000006
         z: -11.214062499999997
+      alternateName:
+      - L_VMV3_ROI
     L_PHA2:
       name: L_PHA2
       lookupLabel: 155
@@ -1088,6 +1396,8 @@ terminology:
         x: -31.92342342342343
         y: -37.4481981981982
         z: -11.781531531531535
+      alternateName:
+      - L_PHA2_ROI
     L_V4t:
       name: L_V4t
       lookupLabel: 156
@@ -1095,6 +1405,8 @@ terminology:
         x: -49.261019283746556
         y: -77.11776859504133
         z: 7.835399449035819
+      alternateName:
+      - L_V4t_ROI
     L_FST:
       name: L_FST
       lookupLabel: 157
@@ -1102,6 +1414,8 @@ terminology:
         x: -45.82532751091703
         y: -68.69213973799127
         z: 5.620087336244538
+      alternateName:
+      - L_FST_ROI
     L_V3CD:
       name: L_V3CD
       lookupLabel: 158
@@ -1109,6 +1423,8 @@ terminology:
         x: -35.65
         y: -88.84571428571428
         z: 11.272857142857148
+      alternateName:
+      - L_V3CD_ROI
     L_LO3:
       name: L_LO3
       lookupLabel: 159
@@ -1116,6 +1432,8 @@ terminology:
         x: -41.209493670886076
         y: -77.17278481012659
         z: 15.155063291139243
+      alternateName:
+      - L_LO3_ROI
     L_VMV2:
       name: L_VMV2
       lookupLabel: 160
@@ -1123,6 +1441,8 @@ terminology:
         x: -27.337475149105373
         y: -54.82355864811133
         z: -6.411033797216703
+      alternateName:
+      - L_VMV2_ROI
     L_31pd:
       name: L_31pd
       lookupLabel: 161
@@ -1130,6 +1450,8 @@ terminology:
         x: -8.700000000000003
         y: -53.43229166666667
         z: 34.646874999999994
+      alternateName:
+      - L_31pd_ROI
     L_31a:
       name: L_31a
       lookupLabel: 162
@@ -1137,6 +1459,8 @@ terminology:
         x: -4.678950307091014
         y: -37.74553322166388
         z: 43.55792853154662
+      alternateName:
+      - L_31a_ROI
     L_VVC:
       name: L_VVC
       lookupLabel: 163
@@ -1144,6 +1468,8 @@ terminology:
         x: -31.03338762214983
         y: -53.23588490770901
         z: -17.340662323561347
+      alternateName:
+      - L_VVC_ROI
     L_25:
       name: L_25
       lookupLabel: 164
@@ -1151,6 +1477,8 @@ terminology:
         x: -4.275012444001987
         y: 23.93790443006472
         z: -14.756222000995521
+      alternateName:
+      - L_25_ROI
     L_s32:
       name: L_s32
       lookupLabel: 165
@@ -1158,6 +1486,8 @@ terminology:
         x: -7.536610878661094
         y: 35.66213389121339
         z: -15.06589958158996
+      alternateName:
+      - L_s32_ROI
     L_pOFC:
       name: L_pOFC
       lookupLabel: 166
@@ -1165,6 +1495,8 @@ terminology:
         x: -14.397169811320751
         y: 14.35641509433961
         z: -20.889245283018866
+      alternateName:
+      - L_pOFC_ROI
     L_PoI1:
       name: L_PoI1
       lookupLabel: 167
@@ -1172,6 +1504,8 @@ terminology:
         x: -39.19017094017094
         y: -12.182789432789434
         z: -2.267094017094024
+      alternateName:
+      - L_PoI1_ROI
     L_Ig:
       name: L_Ig
       lookupLabel: 168
@@ -1179,6 +1513,8 @@ terminology:
         x: -35.59035087719298
         y: -16.179824561403507
         z: 15.986842105263165
+      alternateName:
+      - L_Ig_ROI
     L_FOP5:
       name: L_FOP5
       lookupLabel: 169
@@ -1186,6 +1522,8 @@ terminology:
         x: -35.410526315789475
         y: 26.75
         z: 5.168421052631572
+      alternateName:
+      - L_FOP5_ROI
     L_p10p:
       name: L_p10p
       lookupLabel: 170
@@ -1193,6 +1531,8 @@ terminology:
         x: -24.070744081172492
         y: 62.92023675310034
         z: 2.393179255918824
+      alternateName:
+      - L_p10p_ROI
     L_p47r:
       name: L_p47r
       lookupLabel: 171
@@ -1200,6 +1540,8 @@ terminology:
         x: -45.63447971781305
         y: 43.07951205173427
         z: 0.9857436801881221
+      alternateName:
+      - L_p47r_ROI
     L_TGv:
       name: L_TGv
       lookupLabel: 172
@@ -1207,6 +1549,8 @@ terminology:
         x: -37.30673758865248
         y: -1.312217923920059
         z: -44.45825274016764
+      alternateName:
+      - L_TGv_ROI
     L_MBelt:
       name: L_MBelt
       lookupLabel: 173
@@ -1214,6 +1558,8 @@ terminology:
         x: -44.38879781420765
         y: -17.70628415300547
         z: 4.348907103825141
+      alternateName:
+      - L_MBelt_ROI
     L_LBelt:
       name: L_LBelt
       lookupLabel: 174
@@ -1221,6 +1567,8 @@ terminology:
         x: -45.298706240487064
         y: -27.43493150684931
         z: 9.052891933028917
+      alternateName:
+      - L_LBelt_ROI
     L_A4:
       name: L_A4
       lookupLabel: 175
@@ -1228,6 +1576,8 @@ terminology:
         x: -63.31973947895791
         y: -23.574048096192385
         z: 9.17004008016032
+      alternateName:
+      - L_A4_ROI
     L_STSva:
       name: L_STSva
       lookupLabel: 176
@@ -1235,6 +1585,8 @@ terminology:
         x: -51.63795003673769
         y: -7.799228508449673
         z: -16.96565025716385
+      alternateName:
+      - L_STSva_ROI
     L_TE1m:
       name: L_TE1m
       lookupLabel: 177
@@ -1242,6 +1594,8 @@ terminology:
         x: -64.13602654176424
         y: -26.129391100702577
         z: -14.955308352849336
+      alternateName:
+      - L_TE1m_ROI
     L_PI:
       name: L_PI
       lookupLabel: 178
@@ -1249,6 +1603,8 @@ terminology:
         x: -43.94744318181818
         y: -4.144886363636374
         z: -13.57244318181818
+      alternateName:
+      - L_PI_ROI
     L_a32pr:
       name: L_a32pr
       lookupLabel: 179
@@ -1256,6 +1612,8 @@ terminology:
         x: -7.680207587687903
         y: 30.63224767358625
         z: 28.654795991410168
+      alternateName:
+      - L_a32pr_ROI
     L_p24:
       name: L_p24
       lookupLabel: 180
@@ -1263,6 +1621,8 @@ terminology:
         x: -5.170354826402132
         y: 38.859309423884014
         z: 13.873998473864944
+      alternateName:
+      - L_p24_ROI
     R_V1:
       name: R_V1
       lookupLabel: 181
@@ -1270,6 +1630,8 @@ terminology:
         x: 12.44857482185273
         y: -80.39251781472684
         z: 4.057244655581954
+      alternateName:
+      - R_V1_ROI
     R_MST:
       name: R_MST
       lookupLabel: 182
@@ -1277,6 +1639,8 @@ terminology:
         x: 48.033760683760676
         y: -64.23717948717949
         z: 7.262820512820511
+      alternateName:
+      - R_MST_ROI
     R_V6:
       name: R_V6
       lookupLabel: 183
@@ -1284,6 +1648,8 @@ terminology:
         x: 17.9109098567818
         y: -76.95134793597305
         z: 31.02969671440607
+      alternateName:
+      - R_V6_ROI
     R_V2:
       name: R_V2
       lookupLabel: 184
@@ -1291,6 +1657,8 @@ terminology:
         x: 12.265188897455673
         y: -79.28616037008481
         z: 6.877987663839633
+      alternateName:
+      - R_V2_ROI
     R_V3:
       name: R_V3
       lookupLabel: 185
@@ -1298,6 +1666,8 @@ terminology:
         x: 17.421965588180285
         y: -85.24111651393304
         z: 8.912521039835426
+      alternateName:
+      - R_V3_ROI
     R_V4:
       name: R_V4
       lookupLabel: 186
@@ -1305,6 +1675,8 @@ terminology:
         x: 30.753990688393742
         y: -84.88335550382442
         z: -1.1632025274359847
+      alternateName:
+      - R_V4_ROI
     R_V8:
       name: R_V8
       lookupLabel: 187
@@ -1312,6 +1684,8 @@ terminology:
         x: 30.43438914027149
         y: -75.26131221719457
         z: -11.8789592760181
+      alternateName:
+      - R_V8_ROI
     R_4:
       name: R_4
       lookupLabel: 188
@@ -1319,6 +1693,8 @@ terminology:
         x: 29.77963938745266
         y: -17.152931006092544
         z: 55.20726988308908
+      alternateName:
+      - R_4_ROI
     R_3b:
       name: R_3b
       lookupLabel: 189
@@ -1326,6 +1702,8 @@ terminology:
         x: 40.143928571428575
         y: -19.370000000000005
         z: 51.0025
+      alternateName:
+      - R_3b_ROI
     R_FEF:
       name: R_FEF
       lookupLabel: 190
@@ -1333,6 +1711,8 @@ terminology:
         x: 44.802502050861364
         y: -2.431706316652992
         z: 51.70159967186218
+      alternateName:
+      - R_FEF_ROI
     R_PEF:
       name: R_PEF
       lookupLabel: 191
@@ -1340,6 +1720,8 @@ terminology:
         x: 47.4892703862661
         y: 2.6072961373390626
         z: 37.136266094420606
+      alternateName:
+      - R_PEF_ROI
     R_55b:
       name: R_55b
       lookupLabel: 192
@@ -1347,6 +1729,8 @@ terminology:
         x: 50.35502838605029
         y: 1.9929034874290323
         z: 47.079278183292786
+      alternateName:
+      - R_55b_ROI
     R_V3A:
       name: R_V3A
       lookupLabel: 193
@@ -1354,6 +1738,8 @@ terminology:
         x: 16.760077059869587
         y: -89.18212803793716
         z: 30.947391819798455
+      alternateName:
+      - R_V3A_ROI
     R_RSC:
       name: R_RSC
       lookupLabel: 194
@@ -1361,6 +1747,8 @@ terminology:
         x: 5.562176165803109
         y: -36.43782383419689
         z: 21.563471502590673
+      alternateName:
+      - R_RSC_ROI
     R_POS2:
       name: R_POS2
       lookupLabel: 195
@@ -1368,6 +1756,8 @@ terminology:
         x: 12.009044216167936
         y: -70.26585529254132
         z: 38.215386333184455
+      alternateName:
+      - R_POS2_ROI
     R_V7:
       name: R_V7
       lookupLabel: 196
@@ -1375,6 +1765,8 @@ terminology:
         x: 28.28285543608125
         y: -84.39516129032259
         z: 31.162186379928315
+      alternateName:
+      - R_V7_ROI
     R_IPS1:
       name: R_IPS1
       lookupLabel: 197
@@ -1382,6 +1774,8 @@ terminology:
         x: 27.329166666666666
         y: -72.735
         z: 39.84
+      alternateName:
+      - R_IPS1_ROI
     R_FFC:
       name: R_FFC
       lookupLabel: 198
@@ -1389,6 +1783,8 @@ terminology:
         x: 40.82234314980795
         y: -53.460307298335465
         z: -19.196222791293216
+      alternateName:
+      - R_FFC_ROI
     R_V3B:
       name: R_V3B
       lookupLabel: 199
@@ -1396,6 +1792,8 @@ terminology:
         x: 29.712376237623758
         y: -77.21336633663367
         z: 20.854950495049508
+      alternateName:
+      - R_V3B_ROI
     R_LO1:
       name: R_LO1
       lookupLabel: 200
@@ -1403,6 +1801,8 @@ terminology:
         x: 39.69767441860466
         y: -80.23255813953489
         z: 4.844961240310084
+      alternateName:
+      - R_LO1_ROI
     R_LO2:
       name: R_LO2
       lookupLabel: 201
@@ -1410,6 +1810,8 @@ terminology:
         x: 44.594444444444434
         y: -83.4508547008547
         z: -0.8363247863247807
+      alternateName:
+      - R_LO2_ROI
     R_PIT:
       name: R_PIT
       lookupLabel: 202
@@ -1417,6 +1819,8 @@ terminology:
         x: 42.783807829181484
         y: -80.54537366548043
         z: -11.879003558718864
+      alternateName:
+      - R_PIT_ROI
     R_MT:
       name: R_MT
       lookupLabel: 203
@@ -1424,6 +1828,8 @@ terminology:
         x: 51.98973727422003
         y: -69.6252052545156
         z: 10.795977011494259
+      alternateName:
+      - R_MT_ROI
     R_A1:
       name: R_A1
       lookupLabel: 204
@@ -1431,6 +1837,8 @@ terminology:
         x: 42.71813725490196
         y: -21.674019607843135
         z: 11.399509803921575
+      alternateName:
+      - R_A1_ROI
     R_PSL:
       name: R_PSL
       lookupLabel: 205
@@ -1438,6 +1846,8 @@ terminology:
         x: 63.962610734757675
         y: -35.718733715476816
         z: 27.437858259510165
+      alternateName:
+      - R_PSL_ROI
     R_SFL:
       name: R_SFL
       lookupLabel: 206
@@ -1445,6 +1855,8 @@ terminology:
         x: 8.827118214104516
         y: 17.007483510908173
         z: 65.40499746321663
+      alternateName:
+      - R_SFL_ROI
     R_PCV:
       name: R_PCV
       lookupLabel: 207
@@ -1452,6 +1864,8 @@ terminology:
         x: 5.5034996956786415
         y: -52.247261107729756
         z: 51.21804625684723
+      alternateName:
+      - R_PCV_ROI
     R_STV:
       name: R_STV
       lookupLabel: 208
@@ -1459,6 +1873,8 @@ terminology:
         x: 60.03563626433643
         y: -44.02525942108137
         z: 20.40592572364828
+      alternateName:
+      - R_STV_ROI
     R_7Pm:
       name: R_7Pm
       lookupLabel: 209
@@ -1466,6 +1882,8 @@ terminology:
         x: 5.241646778042963
         y: -68.45525059665871
         z: 50.84427207637232
+      alternateName:
+      - R_7Pm_ROI
     R_7m:
       name: R_7m
       lookupLabel: 210
@@ -1473,6 +1891,8 @@ terminology:
         x: 4.522998014559889
         y: -62.51042356055592
         z: 34.464758438120455
+      alternateName:
+      - R_7m_ROI
     R_POS1:
       name: R_POS1
       lookupLabel: 211
@@ -1480,6 +1900,8 @@ terminology:
         x: 13.983739837398375
         y: -57.0650406504065
         z: 17.40548780487805
+      alternateName:
+      - R_POS1_ROI
     R_23d:
       name: R_23d
       lookupLabel: 212
@@ -1487,6 +1909,8 @@ terminology:
         x: 3.4703718048024825
         y: -21.133423702556158
         z: 39.42467079783114
+      alternateName:
+      - R_23d_ROI
     R_v23ab:
       name: R_v23ab
       lookupLabel: 213
@@ -1494,6 +1918,8 @@ terminology:
         x: 4.364253393665152
         y: -55.01470588235294
         z: 18.838235294117652
+      alternateName:
+      - R_v23ab_ROI
     R_d23ab:
       name: R_d23ab
       lookupLabel: 214
@@ -1501,6 +1927,8 @@ terminology:
         x: 3.4886990077177558
         y: -40.71141124586549
         z: 33.10832414553472
+      alternateName:
+      - R_d23ab_ROI
     R_31pv:
       name: R_31pv
       lookupLabel: 215
@@ -1508,6 +1936,8 @@ terminology:
         x: 9.127336448598129
         y: -42.98014018691589
         z: 34.75700934579439
+      alternateName:
+      - R_31pv_ROI
     R_5m:
       name: R_5m
       lookupLabel: 216
@@ -1515,6 +1945,8 @@ terminology:
         x: 5.431855840927923
         y: -39.23632974316487
         z: 65.87841756420877
+      alternateName:
+      - R_5m_ROI
     R_5mv:
       name: R_5mv
       lookupLabel: 217
@@ -1522,6 +1954,8 @@ terminology:
         x: 12.077225130890056
         y: -40.258507853403145
         z: 55.00785340314137
+      alternateName:
+      - R_5mv_ROI
     R_23c:
       name: R_23c
       lookupLabel: 218
@@ -1529,6 +1963,8 @@ terminology:
         x: 11.25159948816379
         y: -33.034069097888676
         z: 44.11532309660909
+      alternateName:
+      - R_23c_ROI
     R_5L:
       name: R_5L
       lookupLabel: 219
@@ -1536,6 +1972,8 @@ terminology:
         x: 14.053824362606235
         y: -47.55099150141643
         z: 74.55099150141643
+      alternateName:
+      - R_5L_ROI
     R_24dd:
       name: R_24dd
       lookupLabel: 220
@@ -1543,6 +1981,8 @@ terminology:
         x: 6.350089365504914
         y: -16.25044682752457
         z: 53.144548704200176
+      alternateName:
+      - R_24dd_ROI
     R_24dv:
       name: R_24dv
       lookupLabel: 221
@@ -1550,6 +1990,8 @@ terminology:
         x: 9.12715321849501
         y: -2.558703535811418
         z: 46.757252946509524
+      alternateName:
+      - R_24dv_ROI
     R_7AL:
       name: R_7AL
       lookupLabel: 222
@@ -1557,6 +1999,8 @@ terminology:
         x: 23.9706466250709
         y: -51.699517867271695
         z: 68.66832104367555
+      alternateName:
+      - R_7AL_ROI
     R_SCEF:
       name: R_SCEF
       lookupLabel: 223
@@ -1564,6 +2008,8 @@ terminology:
         x: 6.105520127540856
         y: 4.079812674372249
         z: 61.31237544838581
+      alternateName:
+      - R_SCEF_ROI
     R_6ma:
       name: R_6ma
       lookupLabel: 224
@@ -1571,6 +2017,8 @@ terminology:
         x: 21.02052176802924
         y: 5.251661681621812
         z: 67.20696244599534
+      alternateName:
+      - R_6ma_ROI
     R_7Am:
       name: R_7Am
       lookupLabel: 225
@@ -1578,6 +2026,8 @@ terminology:
         x: 9.016784452296818
         y: -60.45082449941107
         z: 62.13221436984688
+      alternateName:
+      - R_7Am_ROI
     R_7PL:
       name: R_7PL
       lookupLabel: 226
@@ -1585,6 +2035,8 @@ terminology:
         x: 12.421378091872796
         y: -73.09746760895172
         z: 56.92432273262662
+      alternateName:
+      - R_7PL_ROI
     R_7PC:
       name: R_7PC
       lookupLabel: 227
@@ -1592,6 +2044,8 @@ terminology:
         x: 36.42088607594937
         y: -47.30082470272343
         z: 61.418200997314926
+      alternateName:
+      - R_7PC_ROI
     R_LIPv:
       name: R_LIPv
       lookupLabel: 228
@@ -1599,6 +2053,8 @@ terminology:
         x: 28.34354226020892
         y: -57.36918328584996
         z: 53.83736942070276
+      alternateName:
+      - R_LIPv_ROI
     R_VIP:
       name: R_VIP
       lookupLabel: 229
@@ -1606,6 +2062,8 @@ terminology:
         x: 21.826388888888886
         y: -63.62586805555556
         z: 63.31336805555554
+      alternateName:
+      - R_VIP_ROI
     R_MIP:
       name: R_MIP
       lookupLabel: 230
@@ -1613,6 +2071,8 @@ terminology:
         x: 25.66491985203453
         y: -68.12916152897657
         z: 50.8733045622688
+      alternateName:
+      - R_MIP_ROI
     R_1:
       name: R_1
       lookupLabel: 231
@@ -1620,6 +2080,8 @@ terminology:
         x: 48.99934005279579
         y: -21.15100791936645
         z: 54.73632109431246
+      alternateName:
+      - R_1_ROI
     R_2:
       name: R_2
       lookupLabel: 232
@@ -1627,6 +2089,8 @@ terminology:
         x: 38.498777838131446
         y: -30.237235198261814
         z: 52.333107007061386
+      alternateName:
+      - R_2_ROI
     R_3a:
       name: R_3a
       lookupLabel: 233
@@ -1634,6 +2098,8 @@ terminology:
         x: 32.625481386392806
         y: -19.941912708600768
         z: 46.98555840821567
+      alternateName:
+      - R_3a_ROI
     R_6d:
       name: R_6d
       lookupLabel: 234
@@ -1641,6 +2107,8 @@ terminology:
         x: 38.00440414507773
         y: -11.32046632124353
         z: 64.74740932642487
+      alternateName:
+      - R_6d_ROI
     R_6mp:
       name: R_6mp
       lookupLabel: 235
@@ -1648,6 +2116,8 @@ terminology:
         x: 17.389145216124334
         y: -11.763113161728995
         z: 69.37360369111218
+      alternateName:
+      - R_6mp_ROI
     R_6v:
       name: R_6v
       lookupLabel: 236
@@ -1655,6 +2125,8 @@ terminology:
         x: 59.51385421867198
         y: 6.688841737393915
         z: 30.60971043434847
+      alternateName:
+      - R_6v_ROI
     R_p24pr:
       name: R_p24pr
       lookupLabel: 237
@@ -1662,6 +2134,8 @@ terminology:
         x: 4.364678899082563
         y: -2.1376146788990695
         z: 40.56116207951071
+      alternateName:
+      - R_p24pr_ROI
     R_33pr:
       name: R_33pr
       lookupLabel: 238
@@ -1669,6 +2143,8 @@ terminology:
         x: 3.3874829001368028
         y: 14.953146374829004
         z: 26.86080711354309
+      alternateName:
+      - R_33pr_ROI
     R_a24pr:
       name: R_a24pr
       lookupLabel: 239
@@ -1676,6 +2152,8 @@ terminology:
         x: 4.366634799235186
         y: 19.49091778202677
         z: 32.13814531548758
+      alternateName:
+      - R_a24pr_ROI
     R_p32pr:
       name: R_p32pr
       lookupLabel: 240
@@ -1683,6 +2161,8 @@ terminology:
         x: 9.031569965870304
         y: 14.621160409556325
         z: 40.19112627986348
+      alternateName:
+      - R_p32pr_ROI
     R_a24:
       name: R_a24
       lookupLabel: 241
@@ -1690,6 +2170,8 @@ terminology:
         x: -0.5
         y: 33.25
         z: -6.575000000000003
+      alternateName:
+      - R_a24_ROI
     R_d32:
       name: R_d32
       lookupLabel: 242
@@ -1697,6 +2179,8 @@ terminology:
         x: 7.21994219653179
         y: 39.42861271676301
         z: 26.991040462427748
+      alternateName:
+      - R_d32_ROI
     R_8BM:
       name: R_8BM
       lookupLabel: 243
@@ -1704,6 +2188,8 @@ terminology:
         x: 4.865793079821856
         y: 30.65184994861255
         z: 47.43653648509763
+      alternateName:
+      - R_8BM_ROI
     R_p32:
       name: R_p32
       lookupLabel: 244
@@ -1711,6 +2197,8 @@ terminology:
         x: -0.5
         y: 43.25
         z: -12.75
+      alternateName:
+      - R_p32_ROI
     R_10r:
       name: R_10r
       lookupLabel: 245
@@ -1718,6 +2206,8 @@ terminology:
         x: -0.5
         y: 45.25
         z: -11.75
+      alternateName:
+      - R_10r_ROI
     R_47m:
       name: R_47m
       lookupLabel: 246
@@ -1725,6 +2215,8 @@ terminology:
         x: 33.735732814526585
         y: 32.57166018158236
         z: -15.882944228274965
+      alternateName:
+      - R_47m_ROI
     R_8Av:
       name: R_8Av
       lookupLabel: 247
@@ -1732,6 +2224,8 @@ terminology:
         x: 39.82491364421415
         y: 18.82016407599309
         z: 49.09974093264249
+      alternateName:
+      - R_8Av_ROI
     R_8Ad:
       name: R_8Ad
       lookupLabel: 248
@@ -1739,6 +2233,8 @@ terminology:
         x: 23.983657243816253
         y: 30.605123674911653
         z: 42.313604240282686
+      alternateName:
+      - R_8Ad_ROI
     R_9m:
       name: R_9m
       lookupLabel: 249
@@ -1746,6 +2242,8 @@ terminology:
         x: 6.743400791904975
         y: 55.090079190497136
         z: 20.946876374835014
+      alternateName:
+      - R_9m_ROI
     R_8BL:
       name: R_8BL
       lookupLabel: 250
@@ -1753,6 +2251,8 @@ terminology:
         x: 13.209679537693717
         y: 41.907473075912804
         z: 49.511754662463886
+      alternateName:
+      - R_8BL_ROI
     R_9p:
       name: R_9p
       lookupLabel: 251
@@ -1760,6 +2260,8 @@ terminology:
         x: 20.632601797990475
         y: 50.93588048651506
         z: 34.19315177154944
+      alternateName:
+      - R_9p_ROI
     R_10d:
       name: R_10d
       lookupLabel: 252
@@ -1767,6 +2269,8 @@ terminology:
         x: 9.5
         y: 67.84716981132075
         z: 5.073113207547166
+      alternateName:
+      - R_10d_ROI
     R_8C:
       name: R_8C
       lookupLabel: 253
@@ -1774,6 +2278,8 @@ terminology:
         x: 39.56847133757961
         y: 18.153093721565057
         z: 36.71496815286625
+      alternateName:
+      - R_8C_ROI
     R_44:
       name: R_44
       lookupLabel: 254
@@ -1781,6 +2287,8 @@ terminology:
         x: 53.43095712861415
         y: 18.97781655034896
         z: 12.59097706879362
+      alternateName:
+      - R_44_ROI
     R_45:
       name: R_45
       lookupLabel: 255
@@ -1788,6 +2296,8 @@ terminology:
         x: 50.38198118753675
         y: 26.57921810699588
         z: 3.371399176954739
+      alternateName:
+      - R_45_ROI
     R_47l:
       name: R_47l
       lookupLabel: 256
@@ -1795,6 +2305,8 @@ terminology:
         x: 45.23400000000001
         y: 33.28200000000001
         z: -13.70133333333333
+      alternateName:
+      - R_47l_ROI
     R_a47r:
       name: R_a47r
       lookupLabel: 257
@@ -1802,6 +2314,8 @@ terminology:
         x: 39.27214285714285
         y: 51.76821428571429
         z: -8.549999999999997
+      alternateName:
+      - R_a47r_ROI
     R_6r:
       name: R_6r
       lookupLabel: 258
@@ -1809,6 +2323,8 @@ terminology:
         x: 52.19514925373133
         y: 10.025373134328362
         z: 13.33097014925373
+      alternateName:
+      - R_6r_ROI
     R_IFJa:
       name: R_IFJa
       lookupLabel: 259
@@ -1816,6 +2332,8 @@ terminology:
         x: 44.36234567901235
         y: 16.601851851851848
         z: 25.558641975308646
+      alternateName:
+      - R_IFJa_ROI
     R_IFJp:
       name: R_IFJp
       lookupLabel: 260
@@ -1823,6 +2341,8 @@ terminology:
         x: 38.60614849187934
         y: 7.4912993039443165
         z: 27.174593967517396
+      alternateName:
+      - R_IFJp_ROI
     R_IFSp:
       name: R_IFSp
       lookupLabel: 261
@@ -1830,6 +2350,8 @@ terminology:
         x: 47.722403776325336
         y: 28.692992011619452
         z: 18.92864923747277
+      alternateName:
+      - R_IFSp_ROI
     R_IFSa:
       name: R_IFSa
       lookupLabel: 262
@@ -1837,6 +2359,8 @@ terminology:
         x: 49.99172335600906
         y: 36.13299319727892
         z: 3.710997732426307
+      alternateName:
+      - R_IFSa_ROI
     R_p9-46v:
       name: R_p9-46v
       lookupLabel: 263
@@ -1844,6 +2368,8 @@ terminology:
         x: 47.47749099639856
         y: 30.948979591836746
         z: 27.212484993997606
+      alternateName:
+      - R_p9-46v_ROI
     R_46:
       name: R_46
       lookupLabel: 264
@@ -1851,6 +2377,8 @@ terminology:
         x: 36.77531259530343
         y: 39.89897834705704
         z: 30.743595608417195
+      alternateName:
+      - R_46_ROI
     R_a9-46v:
       name: R_a9-46v
       lookupLabel: 265
@@ -1858,6 +2386,8 @@ terminology:
         x: 39.722477064220186
         y: 52.66371778069026
         z: 10.134884228920924
+      alternateName:
+      - R_a9-46v_ROI
     R_9-46d:
       name: R_9-46d
       lookupLabel: 266
@@ -1865,6 +2395,8 @@ terminology:
         x: 29.25714077528417
         y: 49.34180996793938
         z: 23.474278635966186
+      alternateName:
+      - R_9-46d_ROI
     R_9a:
       name: R_9a
       lookupLabel: 267
@@ -1872,6 +2404,8 @@ terminology:
         x: 19.27009345794393
         y: 62.32710280373831
         z: 19.861682242990653
+      alternateName:
+      - R_9a_ROI
     R_10v:
       name: R_10v
       lookupLabel: 268
@@ -1879,6 +2413,8 @@ terminology:
         x: -0.5
         y: 27.25
         z: -24.375
+      alternateName:
+      - R_10v_ROI
     R_a10p:
       name: R_a10p
       lookupLabel: 269
@@ -1886,6 +2422,8 @@ terminology:
         x: 25.09744027303755
         y: 62.27457337883959
         z: -8.503924914675771
+      alternateName:
+      - R_a10p_ROI
     R_10pp:
       name: R_10pp
       lookupLabel: 270
@@ -1893,6 +2431,8 @@ terminology:
         x: 12.489285714285714
         y: 63.23214285714286
         z: -16.408163265306122
+      alternateName:
+      - R_10pp_ROI
     R_11l:
       name: R_11l
       lookupLabel: 271
@@ -1900,6 +2440,8 @@ terminology:
         x: 25.70719844357977
         y: 48.191309987029825
         z: -16.244487678339816
+      alternateName:
+      - R_11l_ROI
     R_13l:
       name: R_13l
       lookupLabel: 272
@@ -1907,6 +2449,8 @@ terminology:
         x: 20.14066339066339
         y: 28.982186732186733
         z: -20.260647010647013
+      alternateName:
+      - R_13l_ROI
     R_OFC:
       name: R_OFC
       lookupLabel: 273
@@ -1914,6 +2458,8 @@ terminology:
         x: -0.5
         y: 23.178571428571416
         z: -23.964285714285715
+      alternateName:
+      - R_OFC_ROI
     R_47s:
       name: R_47s
       lookupLabel: 274
@@ -1921,6 +2467,8 @@ terminology:
         x: 31.287923614846704
         y: 22.431818181818187
         z: -19.62224314147391
+      alternateName:
+      - R_47s_ROI
     R_LIPd:
       name: R_LIPd
       lookupLabel: 275
@@ -1928,6 +2476,8 @@ terminology:
         x: 31.199820788530474
         y: -54.465053763440864
         z: 45.138888888888886
+      alternateName:
+      - R_LIPd_ROI
     R_6a:
       name: R_6a
       lookupLabel: 276
@@ -1935,6 +2485,8 @@ terminology:
         x: 26.937934186471665
         y: -2.1452468007312575
         z: 53.461882998171845
+      alternateName:
+      - R_6a_ROI
     R_i6-8:
       name: R_i6-8
       lookupLabel: 277
@@ -1942,6 +2494,8 @@ terminology:
         x: 32.98572639909554
         y: 8.112068965517238
         z: 58.07108535895986
+      alternateName:
+      - R_i6-8_ROI
     R_s6-8:
       name: R_s6-8
       lookupLabel: 278
@@ -1949,6 +2503,8 @@ terminology:
         x: 20.472158438576344
         y: 22.041044776119406
         z: 59.11796785304247
+      alternateName:
+      - R_s6-8_ROI
     R_43:
       name: R_43
       lookupLabel: 279
@@ -1956,6 +2512,8 @@ terminology:
         x: 55.701399116347574
         y: 0.7986008836524263
         z: 9.749263622974965
+      alternateName:
+      - R_43_ROI
     R_OP4:
       name: R_OP4
       lookupLabel: 280
@@ -1963,6 +2521,8 @@ terminology:
         x: 56.67201559688061
         y: -11.195110977804433
         z: 14.169916016796634
+      alternateName:
+      - R_OP4_ROI
     R_OP1:
       name: R_OP1
       lookupLabel: 281
@@ -1970,6 +2530,8 @@ terminology:
         x: 41.9844013490725
         y: -19.719645868465435
         z: 19.186762225969645
+      alternateName:
+      - R_OP1_ROI
     R_OP2-3:
       name: R_OP2-3
       lookupLabel: 282
@@ -1977,6 +2539,8 @@ terminology:
         x: 38.684426229508205
         y: -13.571721311475414
         z: 18.45286885245902
+      alternateName:
+      - R_OP2-3_ROI
     R_52:
       name: R_52
       lookupLabel: 283
@@ -1984,6 +2548,8 @@ terminology:
         x: 38.23726114649682
         y: -20.593949044585983
         z: 2.6576433121019107
+      alternateName:
+      - R_52_ROI
     R_RI:
       name: R_RI
       lookupLabel: 284
@@ -1991,6 +2557,8 @@ terminology:
         x: 41.18804034582132
         y: -30.816282420749275
         z: 19.757204610951007
+      alternateName:
+      - R_RI_ROI
     R_PFcm:
       name: R_PFcm
       lookupLabel: 285
@@ -1998,6 +2566,8 @@ terminology:
         x: 47.02060270602706
         y: -27.75615006150062
         z: 22.838560885608857
+      alternateName:
+      - R_PFcm_ROI
     R_PoI2:
       name: R_PoI2
       lookupLabel: 286
@@ -2005,6 +2575,8 @@ terminology:
         x: 41.040063424947135
         y: -1.3233615221987236
         z: -0.3265327695560245
+      alternateName:
+      - R_PoI2_ROI
     R_TA2:
       name: R_TA2
       lookupLabel: 287
@@ -2012,6 +2584,8 @@ terminology:
         x: 50.64983164983164
         y: 1.1111111111111143
         z: -5.57744107744108
+      alternateName:
+      - R_TA2_ROI
     R_FOP4:
       name: R_FOP4
       lookupLabel: 288
@@ -2019,6 +2593,8 @@ terminology:
         x: 38.70143706640238
         y: 15.140981169474713
         z: 7.443756194251733
+      alternateName:
+      - R_FOP4_ROI
     R_MI:
       name: R_MI
       lookupLabel: 289
@@ -2026,6 +2602,8 @@ terminology:
         x: 36.89003164556962
         y: 12.321202531645582
         z: 3.016613924050631
+      alternateName:
+      - R_MI_ROI
     R_Pir:
       name: R_Pir
       lookupLabel: 290
@@ -2033,6 +2611,8 @@ terminology:
         x: 33.20903954802259
         y: 8.545197740112997
         z: -18.355932203389834
+      alternateName:
+      - R_Pir_ROI
     R_AVI:
       name: R_AVI
       lookupLabel: 291
@@ -2040,6 +2620,8 @@ terminology:
         x: 32.67650103519668
         y: 26.25
         z: -3.3400621118012452
+      alternateName:
+      - R_AVI_ROI
     R_AAIC:
       name: R_AAIC
       lookupLabel: 292
@@ -2047,6 +2629,8 @@ terminology:
         x: 35.071173104434905
         y: 16.767167381974247
         z: -10.488912732474965
+      alternateName:
+      - R_AAIC_ROI
     R_FOP1:
       name: R_FOP1
       lookupLabel: 293
@@ -2054,6 +2638,8 @@ terminology:
         x: 46.17549923195085
         y: 4.638632872503848
         z: 5.743855606758828
+      alternateName:
+      - R_FOP1_ROI
     R_FOP3:
       name: R_FOP3
       lookupLabel: 294
@@ -2061,6 +2647,8 @@ terminology:
         x: 34.70601173020529
         y: 8.012463343108493
         z: 12.093108504398828
+      alternateName:
+      - R_FOP3_ROI
     R_FOP2:
       name: R_FOP2
       lookupLabel: 295
@@ -2068,6 +2656,8 @@ terminology:
         x: 40.45631067961165
         y: -1.9126213592232943
         z: 15.550970873786412
+      alternateName:
+      - R_FOP2_ROI
     R_PFt:
       name: R_PFt
       lookupLabel: 296
@@ -2075,6 +2665,8 @@ terminology:
         x: 56.22141896435778
         y: -20.324310692669812
         z: 37.27790854068594
+      alternateName:
+      - R_PFt_ROI
     R_AIP:
       name: R_AIP
       lookupLabel: 297
@@ -2082,6 +2674,8 @@ terminology:
         x: 38.6782267792521
         y: -38.670989143546436
         z: 44.44601930036188
+      alternateName:
+      - R_AIP_ROI
     R_EC:
       name: R_EC
       lookupLabel: 298
@@ -2089,6 +2683,8 @@ terminology:
         x: 21.96528525296017
         y: -16.307588805166844
         z: -29.791442411194836
+      alternateName:
+      - R_EC_ROI
     R_PreS:
       name: R_PreS
       lookupLabel: 299
@@ -2096,6 +2692,8 @@ terminology:
         x: 16.533306581059392
         y: -34.39205457463885
         z: -10.778089887640448
+      alternateName:
+      - R_PreS_ROI
     R_H:
       name: R_H
       lookupLabel: 300
@@ -2103,6 +2701,8 @@ terminology:
         x: 13.211538461538467
         y: -39.13461538461539
         z: -2.0192307692307736
+      alternateName:
+      - R_H_ROI
     R_ProS:
       name: R_ProS
       lookupLabel: 301
@@ -2110,6 +2710,8 @@ terminology:
         x: 22.010387811634345
         y: -50.286011080332415
         z: 3.03393351800554
+      alternateName:
+      - R_ProS_ROI
     R_PeEc:
       name: R_PeEc
       lookupLabel: 302
@@ -2117,6 +2719,8 @@ terminology:
         x: 30.155775638652358
         y: -9.921047760088854
         z: -34.3296001480933
+      alternateName:
+      - R_PeEc_ROI
     R_STGa:
       name: R_STGa
       lookupLabel: 303
@@ -2124,6 +2728,8 @@ terminology:
         x: 50.162170639899614
         y: 15.200439146800505
         z: -19.031681304893347
+      alternateName:
+      - R_STGa_ROI
     R_PBelt:
       name: R_PBelt
       lookupLabel: 304
@@ -2131,6 +2737,8 @@ terminology:
         x: 55.791558441558436
         y: -18.91969696969697
         z: 8.968181818181819
+      alternateName:
+      - R_PBelt_ROI
     R_A5:
       name: R_A5
       lookupLabel: 305
@@ -2138,6 +2746,8 @@ terminology:
         x: 62.39120290356033
         y: -14.145782924300036
         z: -1.887054960248875
+      alternateName:
+      - R_A5_ROI
     R_PHA1:
       name: R_PHA1
       lookupLabel: 306
@@ -2145,6 +2755,8 @@ terminology:
         x: 22.32861060329067
         y: -35.80667276051189
         z: -15.326782449725776
+      alternateName:
+      - R_PHA1_ROI
     R_PHA3:
       name: R_PHA3
       lookupLabel: 307
@@ -2152,6 +2764,8 @@ terminology:
         x: 33.473338485316845
         y: -37.29250386398763
         z: -14.900695517774345
+      alternateName:
+      - R_PHA3_ROI
     R_STSda:
       name: R_STSda
       lookupLabel: 308
@@ -2159,6 +2773,8 @@ terminology:
         x: 53.12557959814529
         y: -0.6531427099433245
         z: -14.851751674394642
+      alternateName:
+      - R_STSda_ROI
     R_STSdp:
       name: R_STSdp
       lookupLabel: 309
@@ -2166,6 +2782,8 @@ terminology:
         x: 49.2487113402062
         y: -27.936211340206185
         z: -1.1140463917525807
+      alternateName:
+      - R_STSdp_ROI
     R_STSvp:
       name: R_STSvp
       lookupLabel: 310
@@ -2173,6 +2791,8 @@ terminology:
         x: 57.357777777777784
         y: -29.70555555555555
         z: -4.142777777777781
+      alternateName:
+      - R_STSvp_ROI
     R_TGd:
       name: R_TGd
       lookupLabel: 311
@@ -2180,6 +2800,8 @@ terminology:
         x: 35.96915444348576
         y: 14.269844693701458
         z: -35.73274374460742
+      alternateName:
+      - R_TGd_ROI
     R_TE1a:
       name: R_TE1a
       lookupLabel: 312
@@ -2187,6 +2809,8 @@ terminology:
         x: 58.87770772712577
         y: -0.5747655997413403
         z: -26.16820239249919
+      alternateName:
+      - R_TE1a_ROI
     R_TE1p:
       name: R_TE1p
       lookupLabel: 313
@@ -2194,6 +2818,8 @@ terminology:
         x: 61.76427568453079
         y: -42.81108120758249
         z: -12.132284109524925
+      alternateName:
+      - R_TE1p_ROI
     R_TE2a:
       name: R_TE2a
       lookupLabel: 314
@@ -2201,6 +2827,8 @@ terminology:
         x: 55.18058443058442
         y: -18.107588357588355
         z: -30.1529799029799
+      alternateName:
+      - R_TE2a_ROI
     R_TF:
       name: R_TF
       lookupLabel: 315
@@ -2208,6 +2836,8 @@ terminology:
         x: 41.39750957854406
         y: -20.072723253757744
         z: -30.013925729442974
+      alternateName:
+      - R_TF_ROI
     R_TE2p:
       name: R_TE2p
       lookupLabel: 316
@@ -2215,6 +2845,8 @@ terminology:
         x: 48.30426176059618
         y: -37.408593386120174
         z: -21.533185840707965
+      alternateName:
+      - R_TE2p_ROI
     R_PHT:
       name: R_PHT
       lookupLabel: 317
@@ -2222,6 +2854,8 @@ terminology:
         x: 60.32077435470441
         y: -52.89029975020816
         z: -4.6230224812656076
+      alternateName:
+      - R_PHT_ROI
     R_PH:
       name: R_PH
       lookupLabel: 318
@@ -2229,6 +2863,8 @@ terminology:
         x: 47.912915851272004
         y: -62.63160469667319
         z: -9.515166340508806
+      alternateName:
+      - R_PH_ROI
     R_TPOJ1:
       name: R_TPOJ1
       lookupLabel: 319
@@ -2236,6 +2872,8 @@ terminology:
         x: 54.49825174825176
         y: -43.996153846153845
         z: 12.318531468531475
+      alternateName:
+      - R_TPOJ1_ROI
     R_TPOJ2:
       name: R_TPOJ2
       lookupLabel: 320
@@ -2243,6 +2881,8 @@ terminology:
         x: 54.06372549019608
         y: -55.99667931688805
         z: 8.48561037318153
+      alternateName:
+      - R_TPOJ2_ROI
     R_TPOJ3:
       name: R_TPOJ3
       lookupLabel: 321
@@ -2250,6 +2890,8 @@ terminology:
         x: 46.51398210290827
         y: -62.06096196868009
         z: 18.236577181208048
+      alternateName:
+      - R_TPOJ3_ROI
     R_DVT:
       name: R_DVT
       lookupLabel: 322
@@ -2257,6 +2899,8 @@ terminology:
         x: 20.227640959170444
         y: -71.13431626701231
         z: 36.50178224238496
+      alternateName:
+      - R_DVT_ROI
     R_PGp:
       name: R_PGp
       lookupLabel: 323
@@ -2264,6 +2908,8 @@ terminology:
         x: 44.585319609967485
         y: -77.68752257132539
         z: 25.48167208378476
+      alternateName:
+      - R_PGp_ROI
     R_IP2:
       name: R_IP2
       lookupLabel: 324
@@ -2271,6 +2917,8 @@ terminology:
         x: 43.21243617797228
         y: -41.783552151714076
         z: 46.256929248723566
+      alternateName:
+      - R_IP2_ROI
     R_IP1:
       name: R_IP1
       lookupLabel: 325
@@ -2278,6 +2926,8 @@ terminology:
         x: 34.10836734693876
         y: -67.14591836734694
         z: 41.90020408163265
+      alternateName:
+      - R_IP1_ROI
     R_IP0:
       name: R_IP0
       lookupLabel: 326
@@ -2285,6 +2935,8 @@ terminology:
         x: 34.13036117381489
         y: -74.70033860045146
         z: 27.493792325056432
+      alternateName:
+      - R_IP0_ROI
     R_PFop:
       name: R_PFop
       lookupLabel: 327
@@ -2292,6 +2944,8 @@ terminology:
         x: 61.990983606557364
         y: -19.14754098360656
         z: 23.404098360655738
+      alternateName:
+      - R_PFop_ROI
     R_PF:
       name: R_PF
       lookupLabel: 328
@@ -2299,6 +2953,8 @@ terminology:
         x: 60.76220657276994
         y: -28.570344287949922
         z: 37.12527386541471
+      alternateName:
+      - R_PF_ROI
     R_PFm:
       name: R_PFm
       lookupLabel: 329
@@ -2306,6 +2962,8 @@ terminology:
         x: 52.62481638648603
         y: -48.011955279908605
         z: 46.548596376693325
+      alternateName:
+      - R_PFm_ROI
     R_PGi:
       name: R_PGi
       lookupLabel: 330
@@ -2313,6 +2971,8 @@ terminology:
         x: 51.173493975903625
         y: -59.60451807228915
         z: 28.7867469879518
+      alternateName:
+      - R_PGi_ROI
     R_PGs:
       name: R_PGs
       lookupLabel: 331
@@ -2320,6 +2980,8 @@ terminology:
         x: 44.58025969138126
         y: -68.62692886714339
         z: 42.13991343620624
+      alternateName:
+      - R_PGs_ROI
     R_V6A:
       name: R_V6A
       lookupLabel: 332
@@ -2327,6 +2989,8 @@ terminology:
         x: 24.236885245901632
         y: -84.3860655737705
         z: 43.51229508196721
+      alternateName:
+      - R_V6A_ROI
     R_VMV1:
       name: R_VMV1
       lookupLabel: 333
@@ -2334,6 +2998,8 @@ terminology:
         x: 18.165533980582524
         y: -54.592718446601936
         z: -6.3762135922330145
+      alternateName:
+      - R_VMV1_ROI
     R_VMV3:
       name: R_VMV3
       lookupLabel: 334
@@ -2341,6 +3007,8 @@ terminology:
         x: 27.495945945945948
         y: -61.11756756756756
         z: -9.42972972972973
+      alternateName:
+      - R_VMV3_ROI
     R_PHA2:
       name: R_PHA2
       lookupLabel: 335
@@ -2348,6 +3016,8 @@ terminology:
         x: 31.138127853881286
         y: -35.28196347031964
         z: -12.871004566210047
+      alternateName:
+      - R_PHA2_ROI
     R_V4t:
       name: R_V4t
       lookupLabel: 336
@@ -2355,6 +3025,8 @@ terminology:
         x: 50.17153493699885
         y: -74.18069873997709
         z: -0.2362542955326461
+      alternateName:
+      - R_V4t_ROI
     R_FST:
       name: R_FST
       lookupLabel: 337
@@ -2362,6 +3034,8 @@ terminology:
         x: 50.02332242225859
         y: -63.07815057283142
         z: 1.4210310965630129
+      alternateName:
+      - R_FST_ROI
     R_V3CD:
       name: R_V3CD
       lookupLabel: 338
@@ -2369,6 +3043,8 @@ terminology:
         x: 37.86700844390833
         y: -83.50030156815441
         z: 12.1034378769602
+      alternateName:
+      - R_V3CD_ROI
     R_LO3:
       name: R_LO3
       lookupLabel: 339
@@ -2376,6 +3052,8 @@ terminology:
         x: 43.52718120805369
         y: -74.29362416107382
         z: 13.249328859060398
+      alternateName:
+      - R_LO3_ROI
     R_VMV2:
       name: R_VMV2
       lookupLabel: 340
@@ -2383,6 +3061,8 @@ terminology:
         x: 27.185257410296416
         y: -54.02145085803433
         z: -6.6275351014040496
+      alternateName:
+      - R_VMV2_ROI
     R_31pd:
       name: R_31pd
       lookupLabel: 341
@@ -2390,6 +3070,8 @@ terminology:
         x: 11.04812606473594
         y: -52.36328790459966
         z: 35.753407155025556
+      alternateName:
+      - R_31pd_ROI
     R_31a:
       name: R_31a
       lookupLabel: 342
@@ -2397,6 +3079,8 @@ terminology:
         x: 6.678571428571431
         y: -41.39160401002506
         z: 42.74624060150376
+      alternateName:
+      - R_31a_ROI
     R_VVC:
       name: R_VVC
       lookupLabel: 343
@@ -2404,6 +3088,8 @@ terminology:
         x: 28.975396825396828
         y: -48.27380952380952
         z: -17.603439153439155
+      alternateName:
+      - R_VVC_ROI
     R_25:
       name: R_25
       lookupLabel: 344
@@ -2411,6 +3097,8 @@ terminology:
         x: -0.5
         y: 23.184782608695656
         z: -18.532608695652172
+      alternateName:
+      - R_25_ROI
     R_s32:
       name: R_s32
       lookupLabel: 345
@@ -2418,6 +3106,8 @@ terminology:
         x: -0.5
         y: 37.89516129032259
         z: -16.088709677419352
+      alternateName:
+      - R_s32_ROI
     R_pOFC:
       name: R_pOFC
       lookupLabel: 346
@@ -2425,6 +3115,8 @@ terminology:
         x: 13.150634920634914
         y: 15.451904761904757
         z: -19.916666666666664
+      alternateName:
+      - R_pOFC_ROI
     R_PoI1:
       name: R_PoI1
       lookupLabel: 347
@@ -2432,6 +3124,8 @@ terminology:
         x: 39.27380952380952
         y: -9.349999999999994
         z: -4.627489177489181
+      alternateName:
+      - R_PoI1_ROI
     R_Ig:
       name: R_Ig
       lookupLabel: 348
@@ -2439,6 +3133,8 @@ terminology:
         x: 36.55669144981414
         y: -12.947026022304826
         z: 14.114312267657994
+      alternateName:
+      - R_Ig_ROI
     R_FOP5:
       name: R_FOP5
       lookupLabel: 349
@@ -2446,6 +3142,8 @@ terminology:
         x: 36.99032042723633
         y: 27.550400534045394
         z: 4.831441922563414
+      alternateName:
+      - R_FOP5_ROI
     R_p10p:
       name: R_p10p
       lookupLabel: 350
@@ -2453,6 +3151,8 @@ terminology:
         x: 24.291880341880344
         y: 60.99643874643874
         z: 3.7517094017094053
+      alternateName:
+      - R_p10p_ROI
     R_p47r:
       name: R_p47r
       lookupLabel: 351
@@ -2460,6 +3160,8 @@ terminology:
         x: 46.39924346629985
         y: 44.291265474552944
         z: -4.291265474552958
+      alternateName:
+      - R_p47r_ROI
     R_TGv:
       name: R_TGv
       lookupLabel: 352
@@ -2467,6 +3169,8 @@ terminology:
         x: 35.20703006377164
         y: -1.2091557849984724
         z: -45.193516550258124
+      alternateName:
+      - R_TGv_ROI
     R_MBelt:
       name: R_MBelt
       lookupLabel: 353
@@ -2474,6 +3178,8 @@ terminology:
         x: 45.40606936416185
         y: -16.026011560693647
         z: 4.697976878612721
+      alternateName:
+      - R_MBelt_ROI
     R_LBelt:
       name: R_LBelt
       lookupLabel: 354
@@ -2481,6 +3187,8 @@ terminology:
         x: 46.75763358778627
         y: -25.133206106870233
         z: 10.743893129770996
+      alternateName:
+      - R_LBelt_ROI
     R_A4:
       name: R_A4
       lookupLabel: 355
@@ -2488,6 +3196,8 @@ terminology:
         x: 64.40990504963315
         y: -15.49104445403539
         z: 6.570025895554593
+      alternateName:
+      - R_A4_ROI
     R_STSva:
       name: R_STSva
       lookupLabel: 356
@@ -2495,6 +3205,8 @@ terminology:
         x: 54.14915966386553
         y: -8.57352941176471
         z: -16.90966386554622
+      alternateName:
+      - R_STSva_ROI
     R_TE1m:
       name: R_TE1m
       lookupLabel: 357
@@ -2502,6 +3214,8 @@ terminology:
         x: 64.4446177847114
         y: -22.457878315132604
         z: -16.45748829953198
+      alternateName:
+      - R_TE1m_ROI
     R_PI:
       name: R_PI
       lookupLabel: 358
@@ -2509,6 +3223,8 @@ terminology:
         x: 44.23837209302326
         y: -3.3354993160054676
         z: -12.723324213406293
+      alternateName:
+      - R_PI_ROI
     R_a32pr:
       name: R_a32pr
       lookupLabel: 359
@@ -2516,6 +3232,8 @@ terminology:
         x: 9.49804905239688
         y: 28.60785953177256
         z: 30.501393534002233
+      alternateName:
+      - R_a32pr_ROI
     R_p24:
       name: R_p24
       lookupLabel: 360
@@ -2523,6 +3241,8 @@ terminology:
         x: 4.540288529204787
         y: 37.96006333567911
         z: 15.406579873328639
+      alternateName:
+      - R_p24_ROI
     L_Cerebellum:
       name: L_Cerebellum
       lookupLabel: 361
@@ -2530,6 +3250,8 @@ terminology:
         x: -24.48406697634512
         y: -62.91741405082212
         z: -36.83932078532312
+      alternateName:
+      - CEREBELLUM_LEFT
     L_Thalamus:
       name: L_Thalamus
       lookupLabel: 362
@@ -2537,6 +3259,8 @@ terminology:
         x: -11.496794431469525
         y: -19.229690433667628
         z: 6.6696318175573595
+      alternateName:
+      - THALAMUS_LEFT
     L_Caudate:
       name: L_Caudate
       lookupLabel: 363
@@ -2544,6 +3268,8 @@ terminology:
         x: -12.935904089682381
         y: 9.588800083039246
         z: 9.577901183309109
+      alternateName:
+      - CAUDATE_LEFT
     L_Putamen:
       name: L_Putamen
       lookupLabel: 364
@@ -2551,6 +3277,8 @@ terminology:
         x: -26.351774609434244
         y: 0.004133171545589676
         z: 0.17590626421961986
+      alternateName:
+      - PUTAMEN_LEFT
     L_Pallidum:
       name: L_Pallidum
       lookupLabel: 365
@@ -2558,6 +3286,8 @@ terminology:
         x: -20.573129251700678
         y: -5.126039304610742
         z: -1.1611866969009839
+      alternateName:
+      - PALLIDUM_LEFT
     L_Hippocampus:
       name: L_Hippocampus
       lookupLabel: 366
@@ -2565,6 +3295,8 @@ terminology:
         x: -25.404492905938
         y: -22.463785251357507
         z: -14.297994394815206
+      alternateName:
+      - HIPPOCAMPUS_LEFT
     L_Amygdala:
       name: L_Amygdala
       lookupLabel: 367
@@ -2572,6 +3304,8 @@ terminology:
         x: -22.99617737003058
         y: -5.069571865443436
         z: -19.665392456676862
+      alternateName:
+      - AMYGDALA_LEFT
     L_Accumbens:
       name: L_Accumbens
       lookupLabel: 368
@@ -2579,6 +3313,8 @@ terminology:
         x: -8.521477663230243
         y: 9.993986254295521
         z: -8.447594501718214
+      alternateName:
+      - ACCUMBENS_LEFT
     L_VentralDC:
       name: L_VentralDC
       lookupLabel: 369
@@ -2586,6 +3322,8 @@ terminology:
         x: -10.531068871462665
         y: -15.487811114899415
         z: -10.567337197408797
+      alternateName:
+      - DIENCEPHALON_VENTRAL_LEFT
     R_Cerebellum:
       name: R_Cerebellum
       lookupLabel: 370
@@ -2593,6 +3331,8 @@ terminology:
         x: -0.5
         y: -55.72687861271676
         z: -48.02456647398844
+      alternateName:
+      - CEREBELLUM_RIGHT
     R_Thalamus:
       name: R_Thalamus
       lookupLabel: 371
@@ -2600,6 +3340,8 @@ terminology:
         x: 11.250937530839835
         y: -17.52795322214547
         z: 6.882241192144477
+      alternateName:
+      - THALAMUS_RIGHT
     R_Caudate:
       name: R_Caudate
       lookupLabel: 372
@@ -2607,6 +3349,8 @@ terminology:
         x: 13.048647242455772
         y: 11.009209157127998
         z: 9.626170655567122
+      alternateName:
+      - CAUDATE_RIGHT
     R_Putamen:
       name: R_Putamen
       lookupLabel: 373
@@ -2614,6 +3358,8 @@ terminology:
         x: 26.342504106316255
         y: 2.011385695087341
         z: -0.2747872181573854
+      alternateName:
+      - PUTAMEN_RIGHT
     R_Pallidum:
       name: R_Pallidum
       lookupLabel: 374
@@ -2621,6 +3367,8 @@ terminology:
         x: 21.01383138878434
         y: -3.7857546104629307
         z: -1.0324614226571356
+      alternateName:
+      - PALLIDUM_RIGHT
     R_Hippocampus:
       name: R_Hippocampus
       lookupLabel: 375
@@ -2628,6 +3376,8 @@ terminology:
         x: 26.09407680438882
         y: -21.39443682496143
         z: -14.08730498885651
+      alternateName:
+      - HIPPOCAMPUS_RIGHT
     R_Amygdala:
       name: R_Amygdala
       lookupLabel: 376
@@ -2635,6 +3385,8 @@ terminology:
         x: 23.239999999999995
         y: -3.7350000000000136
         z: -19.836363636363636
+      alternateName:
+      - AMYGDALA_RIGHT
     R_Accumbens:
       name: R_Accumbens
       lookupLabel: 377
@@ -2642,6 +3394,8 @@ terminology:
         x: 7.9292828685259025
         y: 11.381474103585646
         z: -7.499667994687911
+      alternateName:
+      - ACCUMBENS_RIGHT
     R_VentralDC:
       name: R_VentralDC
       lookupLabel: 378
@@ -2649,6 +3403,8 @@ terminology:
         x: 10.552531234788248
         y: -14.65524095408081
         z: -10.15475417815999
+      alternateName:
+      - DIENCEPHALON_VENTRAL_RIGHT
     Brain-Stem:
       name: Brain-Stem
       lookupLabel: 379
@@ -2656,3 +3412,5 @@ terminology:
         x: -6.083886808450501
         y: -30.95130007772204
         z: -33.07643255846817
+      alternateName:
+      - BRAIN_STEM

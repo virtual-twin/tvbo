@@ -147,6 +147,26 @@ _LENGTH_MEASURES = {
 }
 
 
+def _length_like_key(keys) -> Optional[str]:
+    """Find the edge key holding tract lengths among *keys*.
+
+    Prefers the canonical ``length`` / ``lengths``; otherwise accepts any length-like
+    name in :data:`_LENGTH_MEASURES` (``tract_length``, ``tractLength``, …). Unlike
+    weights (selected by ``primary_weight`` / ``weight`` / ``weights`` / ``sc``), the
+    length matrix has no explicit selector, so this by-meaning resolution is what makes
+    a length edge findable regardless of how a sidecar names it — and delayed
+    simulations depend on it being found.
+    """
+    ks = list(keys)
+    for canonical in ("length", "lengths"):
+        if canonical in ks:
+            return canonical
+    for k in ks:
+        if str(k).lower() in _LENGTH_MEASURES:
+            return k
+    return None
+
+
 def _discover_bids_measures(bids_dir) -> list[str]:
     """Auto-discover structural measures from BEP017 relmat files.
 
@@ -2533,6 +2553,75 @@ class Network(tvbo_datamodel.Network):
             return []
         return [n.label for n in self.nodes]  # type: ignore[union-attr]
 
+    def _atlas_terminology_entities(self) -> dict:
+        """Parcellation-terminology entities for this network's atlas, or ``{}``.
+
+        Resolves ``parcellation.atlas.name`` (case-insensitively — networks may
+        declare ``HCPMMP1`` while the packaged atlas is keyed ``hcpmmp1``) and reads
+        its SANDS ``terminology.entities``. Returns ``{}`` when the network declares
+        no atlas or the atlas has no terminology.
+        """
+        parc = getattr(self, "parcellation", None)
+        atlas = getattr(parc, "atlas", None) if parc is not None else None
+        name = getattr(atlas, "name", None) if atlas is not None else None
+        if not name:
+            return {}
+        try:
+            from tvbo.classes.atlas import Atlas, available_atlases
+
+            resolved = name if name in available_atlases else next(
+                (a for a in available_atlases if a.lower() == str(name).lower()), None
+            )
+            if not resolved:
+                return {}
+            term = getattr(Atlas(resolved), "terminology", None)
+            return getattr(term, "entities", None) or {}
+        except Exception:
+            return {}
+
+    def region_alias_map(self) -> Dict[str, str]:
+        """Map each node's canonical label AND every known alias -> canonical label.
+
+        Aliases are alternative label strings that denote the SAME region under a
+        different nomenclature. They come from two sources, unioned: each node's own
+        ``alternateName`` (inline on the network) and, when the network declares a
+        parcellation atlas, that atlas terminology's ``alternateName`` per region
+        (joined to nodes by canonical label — never by position). The identity
+        ``label -> label`` is always included so exact matches still resolve.
+
+        Used by ``by_label`` node reconciliation so a dataset-sourced target whose
+        nodes carry a divergent convention (e.g. ``THALAMUS_LEFT`` for
+        ``L_Thalamus``) aligns by name. Raises when one alias would map to two
+        different canonical labels — an ambiguous crosswalk must fail loudly rather
+        than silently mis-assign a region (and, in particular, a hemisphere).
+        """
+        labels = self.node_labels
+        canon_set = set(labels)
+        index: Dict[str, str] = {}
+
+        def _add(alias: str, canonical: str) -> None:
+            prev = index.get(alias)
+            if prev is not None and prev != canonical:
+                raise ValueError(
+                    f"Ambiguous node alias {alias!r}: maps to both {prev!r} and "
+                    f"{canonical!r}. A region alias must identify exactly one node."
+                )
+            index[alias] = canonical
+
+        for lbl in labels:
+            _add(str(lbl), str(lbl))
+        for node in self.nodes or []:
+            canonical = str(getattr(node, "label", "") or "")
+            for alias in getattr(node, "alternateName", None) or []:
+                _add(str(alias), canonical)
+        for key, ent in self._atlas_terminology_entities().items():
+            canonical = str(getattr(ent, "name", None) or key)
+            if canonical not in canon_set:
+                continue  # atlas region not present in this (sub)network
+            for alias in getattr(ent, "alternateName", None) or []:
+                _add(str(alias), canonical)
+        return index
+
     @property
     def weights_matrix(self) -> Optional[Union[np.ndarray, JaxArray]]:
         """Connection weights matrix as numpy/JAX array.
@@ -2659,17 +2748,15 @@ class Network(tvbo_datamodel.Network):
         if hasattr(self, "_pytree_data") and self._pytree_data is not None:
             return self._pytree_data[1]
 
-        # Check _arrays (set by set_matrix / add_edges)
+        # Check _arrays (set by set_matrix / add_edges). Resolve the length edge by
+        # meaning, not just the canonical name, so a sidecar naming it e.g. tract_length
+        # still drives delayed simulations.
         _arrs = self._get_arrays()
-        if "length" in _arrs:
+        _lk = _length_like_key(_arrs)
+        if _lk is not None:
             from scipy import sparse as _sp
 
-            L = _arrs["length"]
-            return L.toarray() if _sp.issparse(L) else L
-        elif "lengths" in _arrs:
-            from scipy import sparse as _sp
-
-            L = _arrs["lengths"]
+            L = _arrs[_lk]
             return L.toarray() if _sp.issparse(L) else L
 
         # Check for cached matrix from from_matrix (performance optimization)
@@ -2679,11 +2766,9 @@ class Network(tvbo_datamodel.Network):
         if hasattr(self, "_store") and self._store is not None:
             # Lazy load from companion file (set by load_network)
             arrays = self._store.arrays
-            if "length" in arrays:
-                self._cached_lengths = arrays["length"]
-                return self._cached_lengths
-            elif "lengths" in arrays:
-                self._cached_lengths = arrays["lengths"]
+            _lk = _length_like_key(arrays)
+            if _lk is not None:
+                self._cached_lengths = arrays[_lk]
                 return self._cached_lengths
 
         # Compute from edges (fallback for networks built from explicit edges)

@@ -14,6 +14,7 @@ backend code, and running it on any of the supported backends (`tvb`,
 `tvboptim`, `jax`, `pde`, `cuda`, `python`).
 """
 import copy as _copy
+import logging
 import os
 import re
 from os.path import join
@@ -2527,32 +2528,64 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             raise ValueError("A dataset-sourced observation needs experiment.dataset.bids_root.")
         return Path(root)
 
+    def _target_canonical_labels(self, target_net) -> list:
+        """Each target node's label mapped to the model's canonical label, target order.
+
+        Alias-aware: a target label that equals a model node's ``label`` or any of its
+        ``alternateName`` entries maps to that node's canonical label; an unmatched
+        label is returned unchanged (it will not intersect the model set and so is
+        excluded from the reconciliation, counting against coverage). Mapping is by
+        name only — a target whose nodes are permuted still maps correctly.
+        """
+        amap = self.network.region_alias_map()
+        return [amap.get(str(tl), str(tl)) for tl in target_net.node_labels]
+
     def _shared_labels(self, model_labels: list, target_net) -> list:
-        """Labels shared by the model network and a target, in model order (keyed)."""
-        tset = set(target_net.node_labels)
+        """Canonical labels shared by the model network and a target, in model order.
+
+        Keyed and alias-aware (never positional): the target's labels are mapped to
+        the model's canonical labels first, so a divergent nomenclature reconciles.
+        """
+        tset = set(self._target_canonical_labels(target_net))
         return [lbl for lbl in model_labels if lbl in tset]
+
+    @staticmethod
+    def _coverage_threshold(obs) -> float:
+        """Minimum reconciliation coverage for a ``by_label`` dataset target.
+
+        Absent ``min_coverage`` means require full coverage (``1.0``): silently
+        fitting on a partial node subset must be an explicit opt-in.
+        """
+        mc = getattr(obs, "min_coverage", None)
+        return 1.0 if mc is None else float(mc)
 
     def resolve_dataset_observations(self, active_subject: str) -> dict:
         """Resolve per-subject dataset-sourced targets for one subject.
 
         For each observation whose ``source`` is ``dataset.subject.<measure>``:
         query ``dataset.bids_root`` for the subject's matching file, load it as a
-        Network, read ``<measure>``, and reconcile its nodes to the model network
-        (``reconcile: by_label`` selects the shared node labels on both sides by
-        name — never by position, so a differing node count or order cannot
-        silently misalign the target).
+        Network, read ``<measure>``, and reconcile its nodes to the model network.
+        ``reconcile: by_label`` maps each target node to the model's canonical label
+        (alias-aware — a divergent nomenclature such as ``THALAMUS_LEFT`` for
+        ``L_Thalamus`` still matches via the atlas ``alternateName`` crosswalk), then
+        selects the shared labels in the model's order. Alignment is by name on both
+        the empirical target and the simulated observable — never by row index — so a
+        differing node count or order (or a swapped hemisphere block) cannot silently
+        misalign the comparison. The realised coverage is logged, and falls back to
+        requiring full coverage unless the observation sets ``min_coverage``.
 
-        Returns ``{obs_name: xarray.DataArray}`` keyed by node label on both axes,
-        restricted to the labels shared with the model network. The model-side
+        Returns ``{obs_name: xarray.DataArray}`` keyed by canonical node label on both
+        axes, restricted to the labels shared with the model network. The model-side
         gather (which model nodes the shared labels are) is available via
-        :meth:`dataset_reconcile_index` so the simulated observation selects the
-        same sub-block.
+        :meth:`dataset_reconcile_index` so the simulated observation selects the same
+        sub-block.
         """
         targets = self.dataset_observation_targets
         if not targets:
             return {}
         root = self._dataset_bids_root()
         model_labels = self._resolve_model_node_labels()
+        logger = logging.getLogger(__name__)
         resolved: dict = {}
         for name, measure in targets.items():
             obs = self.observations[name]
@@ -2565,18 +2598,50 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     f"in {path.name}."
                 )
             tlabels = list(target_net.node_labels)
-            da = xr.DataArray(
-                mat, dims=("node_i", "node_j"),
-                coords={"node_i": tlabels, "node_j": tlabels},
-            )
             if self._reconcile_mode(obs) == "by_label" and model_labels:
-                shared = self._shared_labels(model_labels, target_net)
+                # Relabel the target's node axes to the model's canonical labels by
+                # NAME (alias-aware), then select the shared labels in model order.
+                tcanon = self._target_canonical_labels(target_net)
+                model_set = set(model_labels)
+                dup = sorted({c for c in tcanon if c in model_set and tcanon.count(c) > 1})
+                if dup:
+                    raise ValueError(
+                        f"Observation '{name}': target {path.name} maps multiple nodes "
+                        f"onto the same model region(s) {dup} — ambiguous reconciliation."
+                    )
+                shared = [lbl for lbl in model_labels if lbl in set(tcanon)]
+                coverage = len(shared) / len(model_labels) if model_labels else 0.0
+                logger.info(
+                    "reconcile[%s] sub-%s: %d/%d model nodes matched (coverage %.3f) "
+                    "against %s",
+                    name, active_subject, len(shared), len(model_labels), coverage,
+                    path.name,
+                )
                 if not shared:
                     raise ValueError(
                         f"Observation '{name}': no node labels shared between the model "
-                        f"network and target {path.name}."
+                        f"network and target {path.name} (after alias reconciliation). "
+                        f"Check the atlas alternateName crosswalk."
                     )
+                threshold = self._coverage_threshold(obs)
+                if coverage < threshold:
+                    unmatched = [lbl for lbl in model_labels if lbl not in set(tcanon)]
+                    raise ValueError(
+                        f"Observation '{name}': reconciliation coverage {coverage:.3f} "
+                        f"< required {threshold:.3f} for {path.name}. "
+                        f"{len(unmatched)} model node(s) unmatched, e.g. {unmatched[:5]}. "
+                        f"Set observation.min_coverage to accept a partial subset."
+                    )
+                da = xr.DataArray(
+                    mat, dims=("node_i", "node_j"),
+                    coords={"node_i": tcanon, "node_j": tcanon},
+                )
                 da = da.sel(node_i=shared, node_j=shared)
+            else:
+                da = xr.DataArray(
+                    mat, dims=("node_i", "node_j"),
+                    coords={"node_i": tlabels, "node_j": tlabels},
+                )
             resolved[name] = da
         return resolved
 

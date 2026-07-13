@@ -582,11 +582,29 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
     return out_dir
 
 
+def _pack_kit(out_dir: Path) -> Path:
+    """Write ``<out_dir>.tar.gz`` next to the kit, ready to ship + submit.
+
+    The archive holds the kit directory at top level, so ``tvbo workflow submit
+    <archive>`` extracts and runs it directly (see :func:`_resolve_kit_dir`).
+    """
+    import shutil
+
+    out_dir = Path(out_dir)
+    archive = shutil.make_archive(str(out_dir), "gztar",
+                                  root_dir=str(out_dir.parent), base_dir=out_dir.name)
+    _common.info(f"packed {Path(archive).name}")
+    return Path(archive)
+
+
 def _emit(engine: str, *, spec: str, backend: str, experiment: str | None,
-          output: Path | None, override: list[str], stdout: bool) -> None:
+          output: Path | None, override: list[str], stdout: bool, pack: bool = False) -> None:
     if engine == "snakemake":
-        return _emit_snakemake_study(spec=spec, backend=backend, experiment=experiment,
-                                     output=output, override=override, stdout=stdout)
+        out_dir = _emit_snakemake_study(spec=spec, backend=backend, experiment=experiment,
+                                        output=output, override=override, stdout=stdout)
+        if pack and out_dir is not None:
+            _pack_kit(out_dir)
+        return out_dir
     plan, exp = _build_plan(spec, engine=engine, backend=backend,
                             experiment=experiment, overrides=override)
     if stdout:
@@ -603,6 +621,8 @@ def _emit(engine: str, *, spec: str, backend: str, experiment: str | None,
                  else [plan.study_key, plan.experiment_key])
         out_dir = Path("output").joinpath(*parts, engine)
     _emit_kit(engine=engine, plan=plan, experiment=exp, out_dir=out_dir)
+    if pack:
+        _pack_kit(out_dir)
     return out_dir
 
 
@@ -689,10 +709,11 @@ def slurm(
     output: Path = typer.Option(None, "-o", "--output", help="Output directory."),
     override: list[str] = typer.Option([], "--set"),
     stdout: bool = typer.Option(False, "--stdout", help="Print artefact only; do not write a kit."),
+    pack: bool = typer.Option(False, "--pack", help="Also write <kit>.tar.gz, ready to scp + `tvbo workflow submit`."),
 ) -> None:
     """Emit a self-contained sbatch kit (`run.sbatch` + scripts + frozen spec)."""
     _emit("slurm", spec=spec, backend=backend, experiment=experiment,
-          output=output, override=override, stdout=stdout)
+          output=output, override=override, stdout=stdout, pack=pack)
 
 
 @app.command("snakemake", help="Emit a self-contained Snakemake kit (Snakefile + scripts + spec).")
@@ -703,10 +724,11 @@ def snakemake(
     output: Path = typer.Option(None, "-o", "--output", help="Output directory."),
     override: list[str] = typer.Option([], "--set"),
     stdout: bool = typer.Option(False, "--stdout", help="Print artefact only; do not write a kit."),
+    pack: bool = typer.Option(False, "--pack", help="Also write <kit>.tar.gz, ready to scp + `tvbo workflow submit`."),
 ) -> None:
     """Emit a self-contained Snakemake kit (`Snakefile` + scripts + frozen spec)."""
     _emit("snakemake", spec=spec, backend=backend, experiment=experiment,
-          output=output, override=override, stdout=stdout)
+          output=output, override=override, stdout=stdout, pack=pack)
 
 
 @app.command("nextflow", help="Emit a self-contained Nextflow kit (main.nf + scripts + spec).")
@@ -717,10 +739,11 @@ def nextflow(
     output: Path = typer.Option(None, "-o", "--output", help="Output directory."),
     override: list[str] = typer.Option([], "--set"),
     stdout: bool = typer.Option(False, "--stdout", help="Print artefact only; do not write a kit."),
+    pack: bool = typer.Option(False, "--pack", help="Also write <kit>.tar.gz, ready to scp + `tvbo workflow submit`."),
 ) -> None:
     """Emit a self-contained Nextflow kit (`main.nf` + scripts + frozen spec)."""
     _emit("nextflow", spec=spec, backend=backend, experiment=experiment,
-          output=output, override=override, stdout=stdout)
+          output=output, override=override, stdout=stdout, pack=pack)
 
 
 @app.command("finalize", help="Reassemble an array run's shard outputs into one keyed result artifact.")
