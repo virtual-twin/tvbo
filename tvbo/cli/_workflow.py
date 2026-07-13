@@ -404,8 +404,9 @@ def plan(
     _reqs = [r for r in (_norm_requirement(x) for x in _as_list(_req_raw))
              if r.get("package") or r.get("source_url")]
 
-    experiment_key = str(getattr(experiment, "key", None)
-                         or getattr(experiment, "name", None) or "experiment")
+    from ._common import experiment_key as _experiment_key  # canonical (id-first) key
+
+    experiment_key = _experiment_key(experiment)
     # Results land in a kit-relative ``results/`` by default (the emitted scripts
     # run from the kit dir, which already encodes study/experiment/engine — like
     # ``logs/``). An explicit out_dir (relative or absolute) overrides it; the

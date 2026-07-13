@@ -262,12 +262,38 @@ def test_workflow_run_emits_and_executes_engine(tmp_path: Path, monkeypatch, eng
     )
     assert r.exit_code == 0, r.stdout
     assert (out / expected_file).is_file()
-    assert calls, "expected workflow run to execute engine command"
-    assert calls[0]["cmd"] == expected_cmd
-    assert Path(calls[0]["cwd"]) == out
-    # Slurm chains a dependent gather job after the array.
+    # Filter to the engine's submission commands — a globally-patched subprocess.run
+    # also captures an incidental platform `uname -p` (jax init) on some hosts.
+    submits = [c for c in calls if c["cmd"] and c["cmd"][0] in {"sbatch", "snakemake", "nextflow"}]
+    assert submits, "expected workflow run to execute engine command"
+    assert submits[0]["cmd"] == expected_cmd
+    assert Path(submits[0]["cwd"]) == out
+    # EXP is a single array task (chunk=1): that one task IS the whole result, so
+    # slurm submits just the array — no gather job to reassemble a single shard.
     if engine == "slurm":
-        assert any("--dependency=afterok" in a for c in calls[1:] for a in c["cmd"])
+        assert not (out / "finalize.sbatch").exists()
+        assert not any("--dependency=afterok" in a for c in submits for a in c["cmd"])
+
+
+def test_workflow_run_slurm_chains_gather_when_sharded(tmp_path: Path, monkeypatch):
+    """A multi-shard array (chunk>1) emits and chains a dependent gather job."""
+    calls = []
+
+    def _fake_run(cmd, check=True, cwd=None, **kwargs):
+        calls.append(cmd)
+        return subprocess.CompletedProcess(cmd, 0, stdout="12345\n")
+
+    monkeypatch.setattr("tvbo.cli.workflow.subprocess.run", _fake_run)
+    out = tmp_path / "kit"
+    r = runner.invoke(
+        app,
+        ["workflow", "run", "slurm", EXP, "--backend", "jax",
+         "--set", "distribute.chunk=4", "-o", str(out)],
+    )
+    assert r.exit_code == 0, r.stdout
+    assert (out / "finalize.sbatch").is_file()
+    submits = [c for c in calls if c and c[0] == "sbatch"]
+    assert any("--dependency=afterok" in a for c in submits for a in c)
 
 
 def test_workflow_run_rejects_unknown_engine():

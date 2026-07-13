@@ -62,13 +62,13 @@ Snakemake, `clusterOptions` for Nextflow).
 
 ```bash
 # Emit a kit (spec + network companion + backend script + run.sbatch):
-tvbo workflow slurm study.yaml --experiment "<label>" -o kit/
+tvbo workflow slurm study.yaml --experiment <id> -o kit/
 
 # Emit and submit in one step:
-tvbo workflow run slurm study.yaml --experiment "<label>"
+tvbo workflow run slurm study.yaml --experiment <id>
 
 # Or drive it through `tvbo run`:
-tvbo run study.yaml --engine slurm --experiment "<label>"
+tvbo run study.yaml --engine slurm --experiment <id>
 ```
 
 Emission and submission run in-process, so the node does not need `tvbo` on
@@ -117,7 +117,7 @@ on-device with `vmap` (`chunk: 1`). Splitting into 40 array tasks here would
 claim 40 GPUs. Let JAX grow GPU memory on demand:
 
 ```bash
-tvbo workflow slurm study.yaml --experiment "<label>" \
+tvbo workflow slurm study.yaml --experiment <id> \
   --set distribute.chunk=1 \
   --set slurm.partition=gpu --set slurm.gres=gpu:1 \
   --set slurm.env.XLA_PYTHON_CLIENT_PREALLOCATE=false

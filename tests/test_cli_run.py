@@ -51,13 +51,16 @@ def test_dispatch_to_engine_uses_kit_dir_not_file(monkeypatch, tmp_path: Path, e
     assert submits, calls
     assert all(Path(c["cwd"]) == kit_dir for c in submits)
     assert all(c["cmd"][0] != "tvbo" for c in calls)
-    # Slurm submits the array (--parsable) then chains a dependent gather job.
+    # JR_MEG dispatches as a single array task (chunk=1) — that one task IS the
+    # whole result, so slurm submits just the array; no gather job is chained.
     if engine == "slurm":
         assert submits[0]["cmd"] == ["sbatch", "--parsable", "run.sbatch"]
-        assert any("--dependency=afterok" in a for c in submits[1:] for a in c["cmd"])
+        assert not (kit_dir / "finalize.sbatch").exists()
+        assert not any("--dependency=afterok" in a for c in submits for a in c["cmd"])
 
 
-def test_dispatch_to_engine_slurm_chains_gather_job(monkeypatch, tmp_path: Path):
+def test_dispatch_to_engine_slurm_single_task_no_gather(monkeypatch, tmp_path: Path):
+    """A single-task array (chunk=1) submits just the array — nothing to reassemble."""
     calls = []
 
     def _fake_run(cmd, check=True, cwd=None, **kwargs):
@@ -76,12 +79,8 @@ def test_dispatch_to_engine_slurm_chains_gather_job(monkeypatch, tmp_path: Path)
         out_dir=kit_dir,
     )
 
-    # Array job first (parsable), then the gather job with an afterok dependency.
-    # (Filter out unrelated subprocess calls a library may make, e.g. `uname -p`.)
     submits = [c for c in calls if c["cmd"][0] == "sbatch"]
-    assert len(submits) == 2
+    assert len(submits) == 1
     assert submits[0]["cmd"] == ["sbatch", "--parsable", "run.sbatch"]
     assert Path(submits[0]["cwd"]) == kit_dir
-    assert "--dependency=afterok:27452074" in submits[1]["cmd"]
-    assert submits[1]["cmd"][-1] == "finalize.sbatch"
-    assert Path(submits[1]["cwd"]) == kit_dir
+    assert not (kit_dir / "finalize.sbatch").exists()

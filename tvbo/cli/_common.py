@@ -99,6 +99,18 @@ def experiment_ids(exp: Any) -> set[str]:
             getattr(exp, "label", None), str(getattr(exp, "id", ""))} - {None, ""}
 
 
+def experiment_key(exp: Any) -> str:
+    """The canonical short key for an experiment.
+
+    An explicit ``key`` if set, else its ``id`` (the usual identifier, e.g. ``40``),
+    else ``name``. Used for job names, result stems, and kit paths so they read
+    ``…-40`` rather than a generic fallback — one source of truth shared by every
+    emitter (``experiment_ids`` is the wider *match* set for ``--experiment``).
+    """
+    return str(getattr(exp, "key", None) or getattr(exp, "id", None)
+               or getattr(exp, "name", None) or "experiment")
+
+
 def _load_from_file(path: Path) -> tuple[str, Any]:
     """Best-effort type detection by reading the YAML's `class:` / shape."""
     import tvbo

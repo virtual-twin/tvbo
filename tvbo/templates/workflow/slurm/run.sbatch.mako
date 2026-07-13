@@ -75,7 +75,10 @@ export PYTHONPATH="code:$PYTHONPATH"
 % endif
 
 <%
-    out_pat = plan.out_dir + "/$SLURM_ARRAY_JOB_ID/$SLURM_ARRAY_TASK_ID"
+    # A single task IS the whole run — write straight to the canonical results dir
+    # (no gather). Multiple tasks each write a shard subdir for finalize to reassemble.
+    single_task = plan.n_array_tasks == 1
+    out_pat = plan.out_dir if single_task else plan.out_dir + "/$SLURM_ARRAY_JOB_ID/$SLURM_ARRAY_TASK_ID"
     prefix = ("singularity exec " + plan.container + " ") if plan.container else ""
     run_target = spec_relpath if spec_relpath else plan.run_spec
 %>\
