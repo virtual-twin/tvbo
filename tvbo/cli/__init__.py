@@ -19,6 +19,7 @@ from . import (
     formats as _formats_cmd,
     info as _info_cmd,
     import_ as _import_cmd,
+    network as _network_cmd,
     run as _run_cmd,
     save as _save_cmd,
     skills as _skills_cmd,
@@ -64,6 +65,7 @@ app.command("version", help="Print the tvbo version.")(_version_cmd.version)
 # Sub-trees (registered as their own Typer apps)
 app.add_typer(_validate_cmd.app, name="validate", help="Validate YAML / OMEX / BIDS / SED-ML files.")
 app.add_typer(_config_cmd.app, name="config", help="Manage CLI configuration.")
+app.add_typer(_network_cmd.app, name="network", help="Build connectomes from a tractogram + parcellation (MRtrix wrapper).")
 app.add_typer(_workflow_cmd.app, name="workflow", help="Plan / emit HPC + pipeline artefacts (slurm, snakemake, nextflow).")
 app.add_typer(_skills_cmd.app, name="skills", help="Render skills for Claude Code / Copilot / Cursor; install user skills locally.")
 
