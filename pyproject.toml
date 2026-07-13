@@ -167,8 +167,10 @@ artifacts = [
 ]
 exclude = [
     "tvbo/database/networks/*.h5",
-    "tvbo/data/tvbo_data/atlas/**/*.nii.gz",
-    "tvbo/data/tvbo_data/atlas/**/*.yaml",
+    # Atlases live under tvbo/database/atlases (consolidated). Volumes + parcellation
+    # yamls stay out of the wheel (size); shipped/used from source as before.
+    "tvbo/database/atlases/**/*.nii.gz",
+    "tvbo/database/atlases/**/*.yaml",
     "tvbo/data/go-basic.obo",
     "tvbo/data/ontology/_tvb-o.owl",
     "tvbo/data/NeuroMMSig_abeta_subgraph.dill",

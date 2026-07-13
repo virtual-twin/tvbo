@@ -2601,15 +2601,19 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             if self._reconcile_mode(obs) == "by_label" and model_labels:
                 # Relabel the target's node axes to the model's canonical labels by
                 # NAME (alias-aware), then select the shared labels in model order.
+                from collections import Counter
+
                 tcanon = self._target_canonical_labels(target_net)
+                tcanon_set = set(tcanon)
                 model_set = set(model_labels)
-                dup = sorted({c for c in tcanon if c in model_set and tcanon.count(c) > 1})
+                counts = Counter(tcanon)
+                dup = sorted(c for c in tcanon_set if c in model_set and counts[c] > 1)
                 if dup:
                     raise ValueError(
                         f"Observation '{name}': target {path.name} maps multiple nodes "
                         f"onto the same model region(s) {dup} — ambiguous reconciliation."
                     )
-                shared = [lbl for lbl in model_labels if lbl in set(tcanon)]
+                shared = [lbl for lbl in model_labels if lbl in tcanon_set]
                 coverage = len(shared) / len(model_labels) if model_labels else 0.0
                 logger.info(
                     "reconcile[%s] sub-%s: %d/%d model nodes matched (coverage %.3f) "
@@ -2625,7 +2629,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     )
                 threshold = self._coverage_threshold(obs)
                 if coverage < threshold:
-                    unmatched = [lbl for lbl in model_labels if lbl not in set(tcanon)]
+                    unmatched = [lbl for lbl in model_labels if lbl not in tcanon_set]
                     raise ValueError(
                         f"Observation '{name}': reconciliation coverage {coverage:.3f} "
                         f"< required {threshold:.3f} for {path.name}. "
