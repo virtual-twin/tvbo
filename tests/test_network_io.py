@@ -677,32 +677,39 @@ class TestRegionAliasMap:
             assert np.array_equal(A, B), f"order dependence under perm {perm}"
 
 
-class TestHCPMMP1AtlasAliases:
-    """The packaged HCP-MMP1 terminology carries hemisphere-correct empirical aliases."""
+def _atlas_hemi(label):
+    """Hemisphere of a node label under any packaged-atlas convention, or None."""
+    if label in ("Brain-Stem", "BRAIN_STEM", "brain-stem"):
+        return None
+    if label[:2] == "L_" or label.endswith("_LEFT") or label.startswith(("ctx-lh-", "left-")):
+        return "L"
+    if label[:2] == "R_" or label.endswith("_RIGHT") or label.startswith(("ctx-rh-", "right-")):
+        return "R"
+    return None
 
-    def test_atlas_aliases_present_and_hemisphere_consistent(self):
+
+class TestAtlasAliases:
+    """Packaged atlas terminologies carry hemisphere-correct empirical aliases."""
+
+    @pytest.mark.parametrize("atlas,checks", [
+        ("hcpmmp1", {"L_Thalamus": "THALAMUS_LEFT", "R_Thalamus": "THALAMUS_RIGHT",
+                     "Brain-Stem": "BRAIN_STEM"}),
+        ("DesikanKilliany", {"left-thalamus": "THALAMUS_LEFT", "right-thalamus": "THALAMUS_RIGHT",
+                             "ctx-lh-bankssts": "L_bankssts", "brain-stem": "BRAIN_STEM"}),
+    ])
+    def test_atlas_aliases_present_and_hemisphere_consistent(self, atlas, checks):
         from tvbo.classes.atlas import Atlas
 
-        ents = getattr(getattr(Atlas("hcpmmp1"), "terminology", None), "entities", None) or {}
+        ents = getattr(getattr(Atlas(atlas), "terminology", None), "entities", None) or {}
         if not ents:
-            pytest.skip("HCP-MMP1 atlas terminology not available")
-        assert ents["L_Thalamus"].alternateName == ["THALAMUS_LEFT"]
-        assert ents["R_Thalamus"].alternateName == ["THALAMUS_RIGHT"]
-        assert ents["Brain-Stem"].alternateName == ["BRAIN_STEM"]
-
-        def hemi(l):
-            if l in ("Brain-Stem", "BRAIN_STEM"):
-                return None
-            if l[:2] == "L_" or l.endswith("_LEFT"):
-                return "L"
-            if l[:2] == "R_" or l.endswith("_RIGHT"):
-                return "R"
-            return None
+            pytest.skip(f"{atlas} atlas terminology not available")
+        for canon, empirical in checks.items():
+            assert empirical in (ents[canon].alternateName or []), f"{canon} missing {empirical}"
 
         # every alias keeps its region's hemisphere; aliases are globally unique
         seen = {}
         for canon, ent in ents.items():
             for alt in ent.alternateName or []:
-                assert hemi(canon) == hemi(alt), f"hemisphere swap {canon} -> {alt}"
-                assert alt not in seen, f"duplicate alias {alt}"
+                assert _atlas_hemi(canon) == _atlas_hemi(alt), f"hemisphere swap {canon} -> {alt}"
+                assert alt not in seen or seen[alt] == canon, f"alias {alt} on two regions"
                 seen[alt] = canon
