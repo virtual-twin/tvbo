@@ -382,6 +382,7 @@ enums:
             mean: { description: "Average over time" }
             variance: { description: "Variance over time (per node)" }
             std: { description: "Standard deviation over time (per node)" }
+            first_passage: { description: "First-passage time index (per node): the first sample at which the source crosses the observation's `threshold` parameter (>=), or the sample count if it never crosses. Backend-independent (argmax of the threshold-crossing). Multiply by the sampling step for a time." }
             last: { description: "Last value in window" }
             first: { description: "First value in window" }
             window: { description: "Sliding window aggregation" }

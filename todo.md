@@ -468,6 +468,25 @@ Companion to the streaming-reducer work below (same loop body). MUST ship behind
 codegen flag with the Python loop as fallback + a `scan == python-loop`
 byte-equivalence test before it becomes default.
 
+### Derived observations over aggregation outputs (base-run codegen)
+
+Added a general **`first_passage` aggregation** (2026-07-13: `AggregationType`
+enum + `tvbo-tvboptim-observation.py.mako` branch reading `parameters.threshold`)
+— first sample where a source crosses a threshold over the time axis, via
+`argmax` of the crossing (backend-independent). Works end-to-end (Schirner Exp 50
+DM decision: `t_A`/`t_B` = first 40 Hz crossing of A/B_PFC).
+
+**Gap:** a DERIVED observation whose `source` is other aggregation-output
+observations fails in the **base-run** path — e.g. `integration_time` with
+`source: [t_A, t_B]` and `equation: Min(t_A, t_B)*dt` raises `'Bunch' object has
+no attribute integration_time` (`run_simulation`), because `t_A`/`t_B` collapse to
+per-node scalars (no time axis) and the derived-obs resolver doesn't chain over
+already-aggregated observations. Fix: let the derived-observation path accept
+aggregation-output sources (scalars) and emit their equation after the aggregations
+resolve. Until then, scalar summaries of a first-passage pair (integration time =
+`min`, winner = comparison) are computed in the study's analysis from the recorded
+`t_A`/`t_B` (Schirner Exp 50).
+
 ### Julia printer: `argmax(...) * scalar` fails
 
 `render_expression('argmax(r >= thr) * dt', format='julia')` raises
