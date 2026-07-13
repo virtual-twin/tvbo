@@ -1403,13 +1403,22 @@ def _gather2d(matrix, idx):
 # The transient, the main run, and each exploration base build their IC the same
 # way — sampled defaults, then per-node declared overrides, then an optional
 # externally supplied operating point — so a sweep's points start from the same
-# declared state as the main run rather than a cold sample.
+# declared state as the main run rather than a cold sample. Every per-variable
+# override is applied BY NAME through _STATE_INDEX (never by positional order).
+_STATE_INDEX = {${', '.join("'%s': %d" % (n, i) for i, n in enumerate(state_names))}}
+
+def _set_rows(state, name_to_vals):
+    """Set per-node values of named state variables in initial_state.dynamics
+    ([n_states, n_nodes]), placing each by its canonical row index _STATE_INDEX[name]."""
+    for _name, _vals in name_to_vals.items():
+        state.initial_state.dynamics = state.initial_state.dynamics.at[_STATE_INDEX[_name]].set(jnp.asarray(_vals))
+    return state
+
+# Per-node initial state declared via node ``state:`` YAML entries, keyed by name.
 % if node_state_overrides:
-# Per-node initial state declared via node ``state:`` YAML entries, keyed by
-# state-variable index; ``initial_state.dynamics`` is [n_states, n_nodes].
 _NODE_STATE_OVERRIDES = {
 % for sv_name, sv_vals in node_state_overrides.items():
-    ${state_names.index(sv_name)}: jnp.array([${', '.join(str(v) for v in sv_vals)}]),
+    '${sv_name}': jnp.array([${', '.join(str(v) for v in sv_vals)}]),
 % endfor
 }
 % else:
@@ -1417,19 +1426,15 @@ _NODE_STATE_OVERRIDES = {}
 % endif
 
 def _apply_node_overrides(state):
-    for _idx, _vals in _NODE_STATE_OVERRIDES.items():
-        state.initial_state.dynamics = state.initial_state.dynamics.at[_idx].set(_vals)
-    return state
+    return _set_rows(state, _NODE_STATE_OVERRIDES)
 
-# Runtime IC seed (InitialState.from_experiment): the settled (n_states, n_nodes)
-# state another experiment already reached, handed in as
+# Runtime IC seed (InitialState.from_experiment): the settled operating point another
+# experiment already reached, keyed by state-variable name -> (n_nodes,), handed in as
 # run_experiment(seed_dynamics=...). None (the default) is a no-op.
 _SEED_DYNAMICS = None
 
 def _apply_seed_dynamics(state):
-    if _SEED_DYNAMICS is not None:
-        state.initial_state.dynamics = jnp.asarray(_SEED_DYNAMICS)
-    return state
+    return state if _SEED_DYNAMICS is None else _set_rows(state, _SEED_DYNAMICS)
 
 def run_simulation(
     network: Network,
