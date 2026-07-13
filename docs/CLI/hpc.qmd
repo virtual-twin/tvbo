@@ -17,6 +17,8 @@ its share:
 ```bash
 # 1. Emit the kit locally (tvbo finds the recipe's code/ itself — no PYTHONPATH prefix).
 #    Bake env activation into the kit via `setup` so each array task self-activates.
+#    Hardcode the conda base (from `conda info --base`): a batch shell has no `conda`
+#    command, so `$(conda info --base)` would fail on the node — use the real path.
 tvbo workflow slurm mystudy.yaml \
     --experiment "Full IF x K x v grid" \
     --backend tvboptim \
@@ -26,7 +28,7 @@ tvbo workflow slurm mystudy.yaml \
     --set slurm.mem=16G \
     --set slurm.mail_type=END,FAIL \
     --set slurm.mail_user=you@example.org \
-    --set 'slurm.setup=["source $(conda info --base)/etc/profile.d/conda.sh","conda activate mystudy_env"]' \
+    --set 'slurm.setup=["source /opt/conda/etc/profile.d/conda.sh","conda activate mystudy_env"]' \
     -o ./cluster_kit
 
 # 2. Ship it to the cluster

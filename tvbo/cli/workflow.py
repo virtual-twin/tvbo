@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import datetime as _dt
+import json
 import os
 import shlex
 import subprocess
@@ -44,7 +45,6 @@ def _parse_overrides(items: list[str]) -> dict[str, Any]:
         # command list), else bool/int/float, else the raw string.
         coerced: Any = v
         if v.lstrip()[:1] in ("[", "{"):
-            import json
             try:
                 coerced = json.loads(v)
             except ValueError:

@@ -11,7 +11,6 @@ import numpy as np
 from sympy import Symbol, lambdify
 
 from tvbo.datamodel import schema as tvbo_datamodel
-from tvbo.parse.expression import parse_eq
 
 
 class Event(tvbo_datamodel.Event):
@@ -23,6 +22,12 @@ class Event(tvbo_datamodel.Event):
         Generic: works for any ``event.equation.rhs`` expressed in terms of
         ``t`` and the event's own parameters.
         """
+        # Imported here rather than at module top: this module is imported by
+        # ``tvbo.datamodel`` to attach the Event helpers, and parse.expression
+        # imports back from ``tvbo.datamodel.schema`` — a module-top import would
+        # form an import cycle when parse.expression is imported first.
+        from tvbo.parse.expression import parse_eq
+
         params = {name: Symbol(name) for name in (self.parameters or {})}
         params.setdefault("t", Symbol("t"))
         expr = parse_eq(self.equation, local_dict=params)
