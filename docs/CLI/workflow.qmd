@@ -31,6 +31,7 @@ its own page: see [Workflow kits anatomy](workflow-kits.qmd).
 | `-o, --output` | `out/<study>/<exp>/<engine>/` | Output directory for the kit. |
 | `--set KEY=VALUE` | _(none, repeatable)_ | Override a workflow spec key. Dotted keys nest, e.g. `--set slurm.account=foo`. Booleans/numbers are coerced. |
 | `--stdout` | _(off)_ | Print the artefact text only and skip kit creation. |
+| `--pack` | _(off)_ | Also write `<kit>.tar.gz` (the kit dir at top level), ready to `scp` + [`tvbo workflow submit`](#run-and-submit). The unpacked dir is kept too. |
 
 ## `tvbo workflow plan`
 
@@ -119,12 +120,15 @@ kit's artefact (`run.sbatch` → slurm) and runs the same array + `finalize` cha
 `run`, so you never type `sbatch` by hand:
 
 ```bash
-tvbo workflow slurm mystudy.yaml --experiment 30 -o kit   # laptop: emit
-rsync -a kit/ hpc:~/runs/exp30/                            # ship it
-ssh hpc 'cd ~/runs/exp30 && tvbo workflow submit .'        # login node: launch
+tvbo workflow slurm mystudy.yaml --experiment 30 -o kit --pack   # laptop: emit + pack → kit.tar.gz
+scp kit.tar.gz hpc:~/runs/                                        # ship one file
+ssh hpc 'cd ~/runs && tvbo workflow submit kit.tar.gz'           # extracts, then launches
 ```
 
-`--array 0` submits a single smoke task; `--engine` overrides the auto-detection.
+`submit` takes a kit directory or a `.tar.gz`/`.tgz`/`.tar`/`.zip` of one — an
+archive is extracted next to itself first (and an already-extracted copy is reused,
+so a re-submit never clobbers an in-progress `results/`). `--array 0` submits a
+single smoke task; `--engine` overrides the auto-detection.
 
 **`tvbo workflow finalize`** reassembles an array run's per-shard outputs into one
 keyed `<stem>.h5` (+ `.yaml` sidecar). `run`/`submit` chain it automatically; call it
