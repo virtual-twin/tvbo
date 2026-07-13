@@ -25,6 +25,13 @@ import jax.numpy as jnp
 import numpy as np
 import xarray as xr
 
+# Apply the JAX Metal-fallback guard before any simulation touches JAX. Idempotent
+# and cheap here (jax is already imported); kept out of ``import tvbo`` so the CLI
+# and bare imports stay fast. See tvbo.__init__._configure_jax_backend.
+from tvbo import _configure_jax_backend as _cfg_jax
+
+_cfg_jax()
+
 try:
     from lems.base.util import validate_lems
 except ImportError:

@@ -1075,3 +1075,26 @@ https://github.com/AllenInstitute/sonata/blob/master/docs/SONATA_DEVELOPER_GUIDE
 - can we adopt?
 - can we improve move to more modern state-of the art?
 - Is it BIDS compatible?
+
+
+
+## Engine-agnostic `workflow.setup` (dedup env activation for multi-engine studies)
+
+`WorkflowEngineConfig.setup` (verbatim shell lines run before the workload, e.g.
+`conda activate <env>`) is declared **per engine** — `workflow.slurm.setup`,
+`workflow.snakemake.setup`, `workflow.nextflow.setup` — like `env`/`venv`/`modules`.
+A study run under more than one engine must repeat the same activation lines in each
+block, but env setup is engine-independent, so that's redundant.
+
+**Plan.** Add an engine-agnostic `workflow.setup` (on `WorkflowConfig`, sibling of
+the per-engine blocks) that every emitter prepends to its own
+`workflow.<engine>.setup`. Precedence: shared `workflow.setup` first, then per-engine
+`setup` (an engine can add to / override after the shared lines). Touches: schema
+`WorkflowConfig.setup` + `make gen-linkml`; `merge_workflow_spec` / `plan()` to fold
+the shared list into each `engine_block['setup']` (reuse `_as_lines`); templates
+already consume `sb.get('setup')` unchanged. Keep per-engine `setup` for
+engine-specific lines.
+
+Context: per-engine `setup` hook + `tvbo workflow submit` landed 2026-07-13. The
+per-engine model is consistent with `env`/`venv`/`modules`; this only removes the
+multi-engine duplication.

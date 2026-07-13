@@ -40,9 +40,16 @@ def _parse_overrides(items: list[str]) -> dict[str, Any]:
         parts = k.split(".")
         for p in parts[:-1]:
             target = target.setdefault(p, {})
-        # Try numeric/bool coercion
+        # Coerce the value: JSON for a list/object literal (e.g. a `setup`
+        # command list), else bool/int/float, else the raw string.
         coerced: Any = v
-        if v.lower() in {"true", "false"}:
+        if v.lstrip()[:1] in ("[", "{"):
+            import json
+            try:
+                coerced = json.loads(v)
+            except ValueError:
+                coerced = v
+        elif v.lower() in {"true", "false"}:
             coerced = v.lower() == "true"
         else:
             try:

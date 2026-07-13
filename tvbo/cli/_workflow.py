@@ -321,6 +321,18 @@ def _normalize_directives(raw) -> list[dict[str, str]]:
     return out
 
 
+def _as_lines(raw) -> list[str]:
+    """Normalize a shell-line field (``setup``) to a list of strings.
+
+    Accepts a single string (one line) or a list of lines; anything else is
+    stringified per element. So ``--set slurm.setup="conda activate env"`` yields
+    one line, not one line per character.
+    """
+    if raw is None:
+        return []
+    return [raw] if isinstance(raw, str) else [str(x) for x in raw]
+
+
 def plan(
     *,
     study_key: str,
@@ -394,6 +406,8 @@ def plan(
         engine_block["env"] = _normalize_env(engine_block["env"])
     if "options" in engine_block:
         engine_block["options"] = _normalize_directives(engine_block["options"])
+    if "setup" in engine_block:
+        engine_block["setup"] = _as_lines(engine_block["setup"])
 
     # Software dependencies come from the experiment's schema-native
     # environment.requirements (overridable via workflow_spec["requirements"]).
@@ -483,6 +497,8 @@ def _engine_config_from_dict(blk: dict) -> Any:
             setattr(ec, key, blk[key])
     if blk.get("modules"):
         ec.modules = list(blk["modules"])
+    if blk.get("setup"):
+        ec.setup = _as_lines(blk["setup"])
     env_map = _pairs_to_map(blk.get("env")) if blk.get("env") else {}
     if env_map:
         ec.env = [dm.EnvironmentVariable(name=str(n), value=str(v)) for n, v in env_map.items()]

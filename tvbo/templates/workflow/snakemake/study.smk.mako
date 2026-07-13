@@ -79,6 +79,9 @@ rule ${ep["rule_name"]}:
 % endfor
 % endif
     shell:
+% for _line in (block.get("setup") or []):
+        ${repr(_line + " && ")}
+% endfor
 % if context.get("bundled_code"):
         "export PYTHONPATH=code:${'$'}{PYTHONPATH:-} && "
 % endif
