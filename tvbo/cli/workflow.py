@@ -332,8 +332,10 @@ def _emit_kit(*, engine: str, plan, experiment, out_dir: Path) -> Path:
 
     # 3a) Gather job — reassembles the array's shard outputs into one result per
     #     experiment (identical to a local run). Submitted with a dependency by
-    #     `tvbo workflow run`, so no manual post-processing is needed.
-    if engine == "slurm":
+    #     `tvbo workflow run`, so no manual post-processing is needed. A single-task
+    #     array (e.g. chunk=1 on one GPU) has nothing to reassemble — it writes the
+    #     canonical result directly — so no gather job is emitted.
+    if engine == "slurm" and plan.n_array_tasks > 1:
         # BIDS-style result stem (pybids), matching what a local ExperimentResult.save writes.
         try:
             result_stem = experiment.get_result_stem()
@@ -525,8 +527,7 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
 
     exp_plans, block, last_plan, bundled_code = [], {}, None, False
     for exp in experiments:
-        key = _san(getattr(exp, "key", None) or getattr(exp, "id", None)
-                   or getattr(exp, "label", None) or "experiment")
+        key = _san(_common.experiment_key(exp))
         base = _wf.merge_workflow_spec(study, exp)
         spec_dict = _deep_merge(base, parsed["merged"])
         plan = _wf.plan(study_key=str(study_key), experiment=exp, backend=backend,
