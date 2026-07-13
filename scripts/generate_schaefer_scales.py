@@ -21,15 +21,13 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import shutil
-import subprocess
-import tempfile
 from pathlib import Path
 
 import numpy as np
 import yaml
 
-from tvbo.data.tvbo_data.connectomes import Network
+from tvbo.classes.network import Network
+from tvbo.data.connectome_build import connectome_from_tractogram, ensure_mrtrix
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -130,45 +128,6 @@ def load_atlas_entities(atlas_dir: Path, scale: int, networks: int, resolution: 
     return sorted(entities.values(), key=lambda e: e["lookupLabel"])
 
 
-def run_tck2connectome(
-    tractogram_path: Path,
-    atlas_file: Path,
-    weights_csv: Path,
-    lengths_csv: Path,
-    assignments_csv: Path,
-) -> None:
-    subprocess.run(
-        [
-            "tck2connectome",
-            str(tractogram_path),
-            str(atlas_file),
-            str(weights_csv),
-            "-out_assignments",
-            str(assignments_csv),
-            "-symmetric",
-            "-zero_diagonal",
-            "-force",
-        ],
-        check=True,
-    )
-
-    subprocess.run(
-        [
-            "tck2connectome",
-            str(tractogram_path),
-            str(atlas_file),
-            str(lengths_csv),
-            "-scale_length",
-            "-stat_edge",
-            "mean",
-            "-symmetric",
-            "-zero_diagonal",
-            "-force",
-        ],
-        check=True,
-    )
-
-
 def extract_functional_network(region_name: str) -> str:
     """Extract hemisphere + functional network from a Schaefer region name.
 
@@ -243,8 +202,7 @@ def build_network(
 def main() -> None:
     args = parse_args()
 
-    if shutil.which("tck2connectome") is None:
-        raise RuntimeError("tck2connectome was not found in PATH. Install MRtrix3 and ensure tck2connectome is available.")
+    ensure_mrtrix()  # friendly error if MRtrix3 is not installed
 
     tractograms = parse_tractogram_specs(args.tractogram)
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -256,47 +214,33 @@ def main() -> None:
         for scale in args.scales:
             atlas_file = atlas_path(args.atlas_dir, scale, args.networks, args.resolution)
 
-            with tempfile.TemporaryDirectory(prefix="tvbo_schaefer_") as tmp:
-                tmpdir = Path(tmp)
-                weights_csv = tmpdir / "weights.csv"
-                lengths_csv = tmpdir / "lengths.csv"
-                assignments_csv = tmpdir / "assignments.csv"
+            print(f"[run ] tractogram={tract_name} scale={scale} nets={args.networks}")
+            # Shared MRtrix wrapper behind `tvbo network build`.
+            weights, lengths = connectome_from_tractogram(tract_path, atlas_file)
 
-                print(f"[run ] tractogram={tract_name} scale={scale} nets={args.networks}")
-                run_tck2connectome(
-                    tractogram_path=tract_path,
-                    atlas_file=atlas_file,
-                    weights_csv=weights_csv,
-                    lengths_csv=lengths_csv,
-                    assignments_csv=assignments_csv,
-                )
+            net = build_network(
+                weights=weights,
+                lengths=lengths,
+                tractogram_name=tract_name,
+                scale=scale,
+                networks=args.networks,
+                atlas_dir=args.atlas_dir,
+                resolution=args.resolution,
+            )
 
-                weights = np.loadtxt(weights_csv, delimiter=",")
-                lengths = np.loadtxt(lengths_csv, delimiter=",")
+            out_name = net.bids_filename
+            out_path = args.output_dir / out_name
+            sidecar_path = out_path.with_suffix(".yaml")
+            companion_path = sidecar_path.with_suffix(".h5")
 
-                net = build_network(
-                    weights=weights,
-                    lengths=lengths,
-                    tractogram_name=tract_name,
-                    scale=scale,
-                    networks=args.networks,
-                    atlas_dir=args.atlas_dir,
-                    resolution=args.resolution,
-                )
+            if sidecar_path.exists() and companion_path.exists() and not args.overwrite:
+                skipped += 1
+                print(f"[skip] {sidecar_path.name}")
+                continue
 
-                out_name = net.bids_filename
-                out_path = args.output_dir / out_name
-                sidecar_path = out_path.with_suffix(".yaml")
-                companion_path = sidecar_path.with_suffix(".h5")
-
-                if sidecar_path.exists() and companion_path.exists() and not args.overwrite:
-                    skipped += 1
-                    print(f"[skip] {sidecar_path.name}")
-                    continue
-
-                net.save(out_path)
-                generated += 1
-                print(f"[ok  ] {sidecar_path.name}")
+            net.save(out_path)
+            generated += 1
+            print(f"[ok  ] {sidecar_path.name}")
 
     print("\nDone.")
     print(f"  generated: {generated}")
