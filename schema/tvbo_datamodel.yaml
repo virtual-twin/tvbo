@@ -1871,6 +1871,21 @@ classes:
                 inlined_as_list: true
                 range: FunctionCall
 
+            # Co-integrated auxiliary dynamics (an online reduction / monitor)
+            dynamics:
+                range: Dynamics
+                inlined: true
+                description: >-
+                    Auxiliary state system co-integrated with the model to compute this
+                    observation online, so the full trajectory need never be held. Its
+                    state variables advance in step with the model, and the observation's
+                    value is this Dynamics' ``output`` — read at the final step for a
+                    reduction (e.g. effective frequency) or, when ``period`` is set,
+                    sub-sampled over time for a monitor. Backends fold it into their own
+                    integration so a batched parameter sweep carries only the accumulator,
+                    not a per-cell trajectory. An alternative to the post-scan ``pipeline``
+                    / ``class_reference`` for observations expressible as a time recurrence.
+
             # Direct class reference (alternative to pipeline)
             class_reference:
                 description: >-

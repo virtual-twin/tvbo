@@ -2930,7 +2930,13 @@ def run_experiment(
                     _src = _src[0] if _src else None
                 if _src is not None and hasattr(_src, 'name'):
                     _src = _src.name
-                if _src and str(_src).startswith('network.observations.'):
+                # `network.observations.*` (materialized from the Network/BIDS) and
+                # `dataset.subject.*` (a per-subject target injected at run time via
+                # run(active_subject=...)) are BOTH bound as module-level network-
+                # observation globals by _bind_network_observations, so both must be
+                # forwarded to the algorithm run-func as external inputs.
+                if _src and (str(_src).startswith('network.observations.')
+                             or str(_src).startswith('dataset.subject')):
                     network_obs_inputs.append(obs_name)
 
     # Get dependencies for this algorithm

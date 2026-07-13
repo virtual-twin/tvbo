@@ -427,6 +427,66 @@ There are classical examples, however we need to find a solution to describe any
 - Convolution
 
 
+### Codegen-emit streaming reducers (drop hardcoded `tvboptim` factories)
+
+**Motivation.** Windowed pipeline reducers (`compute_fc` → an incremental FC
+accumulator, dFC/FCD, metastability) are today realised by **hand-written
+factories that live in `tvboptim`** and are referenced by fully-qualified string
+in `tvbo/codegen/streaming_reducers.py` (`tvboptim.observations.observation.
+windowed_cov`, `…windowed_fcd`). The generated experiment calls that factory
+directly, so tvbo is coupled to a *specific tvboptim build*. This drifted: the
+streaming feature named `windowed_cov`, but the locked, PyPI-released
+`tvboptim==0.2.4` exposes only `compute_fc` — CI raised
+`AttributeError: module 'tvboptim.observations.observation' has no attribute
+'windowed_cov'` (`Native (tvboptim)` + `Container (tvboptim)`, 2026-07-13). The
+hardcoded realisation is the wrong layer: the reducer's math is
+backend-independent and should be **specified symbolically in metadata and
+emitted by codegen for each backend**, not imported from one backend's package.
+
+**Stopgap shipped (2026-07-13, commit on this PR).**
+`lookup_streaming_reducer` now resolves the factory via `_factory_available`
+(memoised `importlib` check) and returns `None` — i.e. falls back to the
+**byte-identical recompute path** already documented as the fallback — when the
+factory is absent in the installed backend. Keeps every tvboptim version green
+without changing generated code where the factory *is* present. This only masks
+the coupling; it does not remove it. Once reducers are codegen-emitted (below),
+there is no external factory to resolve and the `_factory_available` guard +
+`StreamingReducerSpec.factory` string both disappear.
+
+**Target — symbolic `StreamingReducer` realisation.** Express the reducer's
+`(init, add, evict, emit, finalize, resync)` protocol as symbolic recurrences
+over the sliding window (windowed covariance ≈ running-sum / Welford update on
+`add`, subtract on `evict`; Pearson normalisation on `emit`), authored once in
+metadata, and lower it through the **same** sympy → `JaxPrinter` / `JuliaPrinter`
+/ numpy pipeline every other equation uses. Each backend then emits its own
+`windowed_cov`-equivalent; tvbo ships no reducer realisation and depends on no
+tvboptim reducer API.
+
+**Unify with `Observation.dynamics` (the co-integration slot).** A windowed FC
+reducer *is* a co-integrated state recurrence — running accumulators that advance
+in lock-step with the model and read out a reduced value at emit. That is exactly
+the `Observation.dynamics` (auxiliary co-integrated Dynamics / online reduction)
+mechanism being added on the Observation class. Prefer **one** engine: lower the
+streaming reducer as a co-integrated auxiliary Dynamics rather than maintaining a
+second, string-referenced registry. The `emit_kind: window|stride` distinction
+(step-wise FC vs. per-window dFC/FCD) becomes `period`-driven read-out on that
+Dynamics.
+
+**Validation.** Byte-identity against (a) the current tvboptim
+`windowed_cov`/`windowed_fcd` reducers where present, and (b) the recompute
+reference via `TVBO_STREAMING_REDUCERS=0`. Re-verify the online-tuning
+experiments (`EI_Tuning_FIC_EIB_Optimization`, `RWW_BOLD_FC_Optimization`).
+
+**Scope / files.** `tvbo/codegen/streaming_reducers.py` (retire
+`factory`-as-string + `_factory_available`); the streaming branch in
+`tvbo/templates/tvboptim/tvbo-tvboptim-algorithm.py.mako` (emit the lowered
+recurrence instead of calling an imported factory); the reducer symbolic specs in
+metadata (co-located with the `Observation.dynamics` design); a numpy/julia
+emission path so `tvb`/`pyrates`/`julia` gain streaming instead of only the
+recompute fallback. Depends on the `Observation.dynamics` slot + the generic
+procedure/equation engine (see `NetworkGenerator` §, same sympy-printer
+extension). Not blocking — the recompute fallback is correct meanwhile.
+
 ### Explorations: Observations should be also available in Explorations
 
 So I want to setup:
