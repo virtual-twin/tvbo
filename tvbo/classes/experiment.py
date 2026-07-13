@@ -1698,14 +1698,15 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         named ``<state_variable>_final`` (e.g. ``theta_final``). This locates that
         experiment's saved result under ``results_root`` — matched by the
         ``exp-<id>_`` file stem, so the output-directory layout (``results/2``,
-        ``output/nc/exp2``, …) does not matter — reads one ``<sv>_final`` per state
-        variable of *this* experiment in declaration order, and stacks them into an
-        ``(n_states, n_nodes)`` initial condition. Keyed by name/dim, never by
-        positional order. For a swept source (an adiabatic ramp) the operating point
-        is the last recorded point (``source_point``; default ``'endpoint'``).
+        ``output/nc/exp2``, …) does not matter — and reads one ``<sv>_final`` per
+        state variable of *this* experiment. Everything is keyed by name/dim, never
+        positional: the result is a ``{state_variable_name: (n_nodes,)}`` dict that
+        the generated code places into its own canonical rows. For a swept source
+        (an adiabatic ramp) the operating point is the last recorded point
+        (``source_point``; default ``'endpoint'``).
 
-        Returns the IC array, or ``None`` when this experiment does not use
-        ``from_experiment``.
+        Returns the name-keyed IC dict, or ``None`` when this experiment does not
+        use ``from_experiment``.
         """
         from pathlib import Path
 
@@ -1717,9 +1718,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             raise ValueError("initial_state.method=from_experiment requires source_experiment")
         source_id = int(getattr(src, "id", src))
 
-        # State variables of THIS experiment, in declaration order → which
-        # <sv>_final observations to load and the row order to stack them in
-        # (must match the generated state.initial_state.dynamics row order).
+        # State variables of THIS experiment → which <sv>_final observations to
+        # load. Keyed by name; the generated code places each into its own row.
         svs = self.dynamics.state_variables
         sv_items = svs.items() if hasattr(svs, "items") else [(getattr(s, "name", None), s) for s in svs]
         sv_names = [getattr(sv, "name", None) or key for key, sv in sv_items]
@@ -1760,16 +1760,16 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         point = str(getattr(ini, "source_point", "") or "endpoint")
         ds = xr.open_dataset(src_h5, engine="h5netcdf")
         try:
-            rows = []
+            seed = {}
             for sv in sv_names:
                 da = ds[_final_key(ds, sv)]
                 sel = -1 if (point in ("", "endpoint")) else int(point)
                 for d in [d for d in da.dims if d != _node_dim(da)]:
                     da = da.isel({d: sel})
-                rows.append(np.asarray(da.values).ravel())
+                seed[sv] = jnp.asarray(np.asarray(da.values).ravel())
         finally:
             ds.close()
-        return jnp.asarray(np.stack(rows, axis=0))
+        return seed
 
     def run(self, format="tvboptim", initial_conditions=None, results_root=None, **kwargs):
         """Configure, build, and run the experiment on a backend.
