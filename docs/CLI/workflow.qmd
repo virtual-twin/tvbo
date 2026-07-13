@@ -172,14 +172,17 @@ it. The artefact runs `set -euo pipefail` and then activates in this order:
 | `venv: /path/to/venv` | `source /path/to/venv/bin/activate` | a virtualenv |
 | `setup: ["…"]` | the lines verbatim, in order | anything else — conda, sourcing a profile, computed paths |
 
-`setup` is the general hook. A conda env is not a venv, so activate it with `setup`,
-either in the recipe:
+`setup` is the general hook. A conda env is not a venv, so activate it with `setup`.
+**Hardcode the conda base** — run `conda info --base` once to get it. A batch job
+runs a non-login shell with no `conda` command (it's an interactive-shell function,
+and `--export=ALL` carries env vars, not shell functions), so `$(conda info --base)`
+fails on the node. Point `source` at the real path, in the recipe:
 
 ```yaml
 workflow:
   slurm:
     setup:
-      - "source $(conda info --base)/etc/profile.d/conda.sh"
+      - "source /opt/conda/etc/profile.d/conda.sh"   # ← your `conda info --base`
       - "conda activate mystudy_env"
 ```
 
@@ -187,7 +190,7 @@ or at submit time, keeping the recipe portable (the value is JSON, so a list wor
 
 ```bash
 tvbo workflow run slurm mystudy.yaml --experiment 30 \
-  --set 'slurm.setup=["source $(conda info --base)/etc/profile.d/conda.sh","conda activate mystudy_env"]'
+  --set 'slurm.setup=["source /opt/conda/etc/profile.d/conda.sh","conda activate mystudy_env"]'
 ```
 
 For a single command, skip the JSON — a bare string is one line:
@@ -196,8 +199,9 @@ For a single command, skip the JSON — a bare string is one line:
 tvbo workflow run slurm mystudy.yaml --experiment 30 --set slurm.setup="conda activate mystudy_env"
 ```
 
-If a job dies at once with `ModuleNotFoundError: tvbo` in the logs, the node never
-got the env — this is where you fix it.
+If a job dies at once with `conda: command not found` or `ModuleNotFoundError: tvbo`
+in the logs, the node never got the env — this is where you fix it (and make sure the
+base path is hardcoded, not `$(conda info --base)`).
 
 **Recipe code needs no `PYTHONPATH`.** Callables/builders referenced by bare module
 name (`callable: {module: my_analysis}`) are bundled into the kit's `code/` and put on

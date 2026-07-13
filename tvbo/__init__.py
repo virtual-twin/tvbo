@@ -80,10 +80,10 @@ _JAX_CONFIGURED = False
 def _configure_jax_backend():
     """Fall back to CPU when the Metal plugin is broken.
 
-    Invoked lazily the first time TVBO touches JAX for a simulation (from the
-    compute modules), not at ``import tvbo``: importing JAX eagerly added
-    ~0.3 s to every CLI invocation and to bare ``import tvbo``. Idempotent, so
-    the guard runs at most once regardless of how many entry points call it.
+    Called by the compute modules the first time TVBO touches JAX for a
+    simulation, not at ``import tvbo`` — so a bare import (and the CLI) never
+    imports JAX. Idempotent: the guard runs at most once regardless of how many
+    entry points call it.
     """
     global _JAX_CONFIGURED
     if _JAX_CONFIGURED:
@@ -116,9 +116,10 @@ def _configure_jax_backend():
 # ---------------------------------------------------------------------------
 
 
-# PyRates is an optional backend. Its networkx-dispatch monkeypatch lives in
-# ``tvbo.adapters.pyrates`` and is applied there when the adapter actually runs,
-# so importing tvbo (and the CLI) no longer pulls in pyrates at all.
+# PyRates is an optional backend, imported only when its adapter runs. Its
+# networkx-dispatch monkeypatch lives with the adapters that build a PyRates
+# ComputeGraph (``tvbo.adapters.pyrates`` and ``tvbo.adapters.pyrates_bifurcation``),
+# each applying it before compiling — so a bare ``import tvbo`` pulls in no pyrates.
 
 # ---------------------------------------------------------------------------
 # Lazy public API — imports happen on first attribute access

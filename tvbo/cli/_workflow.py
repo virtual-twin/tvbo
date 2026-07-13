@@ -324,13 +324,15 @@ def _normalize_directives(raw) -> list[dict[str, str]]:
 def _as_lines(raw) -> list[str]:
     """Normalize a shell-line field (``setup``) to a list of strings.
 
-    Accepts a single string (one line) or a list of lines; anything else is
-    stringified per element. So ``--set slurm.setup="conda activate env"`` yields
-    one line, not one line per character.
+    A string (or any scalar) becomes a single line; a list/tuple is stringified
+    per element. So ``--set slurm.setup="conda activate env"`` yields one line, not
+    one line per character, and a bare scalar does not raise.
     """
     if raw is None:
         return []
-    return [raw] if isinstance(raw, str) else [str(x) for x in raw]
+    if isinstance(raw, (list, tuple)):
+        return [str(x) for x in raw]
+    return [str(raw)]
 
 
 def plan(
