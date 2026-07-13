@@ -15,7 +15,8 @@ job** where each task simulates a chunk of the grid and the backend vmap/pmap-s
 its share:
 
 ```bash
-# 1. Emit the kit locally (from wherever the recipe + its callables resolve)
+# 1. Emit the kit locally (tvbo finds the recipe's code/ itself — no PYTHONPATH prefix).
+#    Bake env activation into the kit via `setup` so each array task self-activates.
 tvbo workflow slurm mystudy.yaml \
     --experiment "Full IF x K x v grid" \
     --backend tvboptim \
@@ -25,18 +26,22 @@ tvbo workflow slurm mystudy.yaml \
     --set slurm.mem=16G \
     --set slurm.mail_type=END,FAIL \
     --set slurm.mail_user=you@example.org \
+    --set 'slurm.setup=["source $(conda info --base)/etc/profile.d/conda.sh","conda activate mystudy_env"]' \
     -o ./cluster_kit
 
 # 2. Ship it to the cluster
 rsync -a ./cluster_kit/ hpc:~/runs/mysweep/
 
-# 3. On the cluster: provision the env from the emitted file, then submit
+# 3. On the cluster: provision the env once, then launch with one tvbo command.
+#    `submit` runs the same sbatch array + finalize chain — no sbatch by hand.
 ssh hpc
 cd ~/runs/mysweep
 conda env create -f environment.yml      # or: pip install -r requirements.txt
-conda activate mystudy-...
-sbatch run.sbatch                          # 40 array tasks; email on END/FAIL
+tvbo workflow submit .                     # 40 array tasks + gather; email on END/FAIL
 ```
+
+Because `setup` is baked into `run.sbatch`, each array task activates `mystudy_env`
+itself — the run does not depend on whatever shell you submitted from.
 
 The generated `run.sbatch` runs, per array task:
 

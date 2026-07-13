@@ -26,6 +26,13 @@ from jsonasobj2 import as_dict
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
+# Apply the JAX Metal-fallback guard before any Network-level JAX compute. Idempotent
+# and cheap (jax already imported); kept out of ``import tvbo``. See
+# tvbo.__init__._configure_jax_backend.
+from tvbo import _configure_jax_backend as _cfg_jax
+
+_cfg_jax()
+
 
 from tvbo.data.registry import database_dir
 from tvbo.datamodel import schema as tvbo_datamodel

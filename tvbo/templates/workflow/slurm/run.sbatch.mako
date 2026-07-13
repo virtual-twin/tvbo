@@ -63,6 +63,11 @@ module load ${mod}
 % if sb.get("venv"):
 source ${sb["venv"]}/bin/activate
 % endif
+## workflow.<engine>.setup — verbatim shell lines for env setup the typed fields
+## don't cover (e.g. `conda activate <env>`). Runs after module/venv activation.
+% for _line in (sb.get("setup") or []):
+${_line}
+% endfor
 ## env is normalized to a shell-quoted [{name, value}] list in the plan builder
 ## (tvbo.cli._workflow._normalize_env), so values are emitted verbatim.
 % for _e in (sb.get("env") or []):

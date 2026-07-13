@@ -4083,6 +4083,16 @@ classes:
             venv:
                 range: string
                 description: "Path to a virtual environment to activate before running."
+            setup:
+                multivalued: true
+                range: string
+                description: >-
+                    Shell lines run verbatim before the task command, after
+                    ``set -euo pipefail`` and any module/venv activation. The general
+                    hook for environment setup the typed fields do not cover, e.g.
+                    activating a conda env (``conda activate <name>``), sourcing a
+                    profile, or exporting a computed path. Ordered; each line is
+                    emitted as-is.
             mail_type:
                 range: string
                 description: "Scheduler notification trigger (e.g. 'END,FAIL')."
