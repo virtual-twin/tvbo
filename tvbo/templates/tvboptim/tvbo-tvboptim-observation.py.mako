@@ -1238,3 +1238,33 @@ class ${class_name}(AbstractMonitor):
 
 % endif
 % endfor
+<%
+    # Registry of every Observation.dynamics observer: name -> (reducer_factory, source
+    # column index). The exploration grid uses it to stream recorded observables via
+    # prepare(reduce=...) with no trajectory held (see the experiment template).
+    _streaming = [(o['name'], resolve_var_index(o['source'], o['name']))
+                  for o in obs_list if o.get('reduction') is not None]
+%>
+% if _streaming:
+
+
+def _compose_reducers(*reducers):
+    """Fuse several (init, update, finalize) triples into one whose carry is the tuple
+    of per-reducer carries; finalize returns the tuple of per-reducer values. Each
+    reducer scans the block independently — no cross-talk, order matches ``reducers``."""
+    def _init(template, n_steps):
+        return tuple(_r[0](template, n_steps) for _r in reducers)
+    def _update(accs, block):
+        return tuple(_r[1](_a, block) for _r, _a in zip(reducers, accs))
+    def _finalize(accs):
+        return tuple(_r[2](_a) for _r, _a in zip(reducers, accs))
+    return (_init, _update, _finalize)
+
+
+# name -> (reducer_factory, source column index) for every Observation.dynamics observer.
+_STREAMING_REDUCERS = {
+% for _sname, _sidx in _streaming:
+    ${repr(_sname)}: (_reduction_${_sname}, ${_sidx}),
+% endfor
+}
+% endif

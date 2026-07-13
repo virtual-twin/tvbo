@@ -136,7 +136,7 @@ dt = float(integration.step_size)
 
 # Differentiation strategy -> native-solver kwargs, resolved in the tvboptim Python
 # layer (shared with the solver template) rather than duplicated across mako blocks.
-from tvbo.templates.tvboptim.utils import resolve_solver_kwargs, resolve_optimizer_mode, render_analysis_observations, render_recorded_observable, render_inference, render_adiabatic_signal
+from tvbo.templates.tvboptim.utils import resolve_solver_kwargs, resolve_optimizer_mode, render_analysis_observations, render_recorded_observable, render_inference, render_adiabatic_signal, resolve_reduction
 solver_kwargs_str = resolve_solver_kwargs(integration, dt)
 # Warm-start/adiabatic scans run a plain forward solver but must honour the
 # coupling_evaluation choice (recompute_coupling_per_stage); gradient kwargs
@@ -1996,6 +1996,30 @@ def run_optimization(
         and not obs_name
         and bool(observation_names or derived_observation_names)
     )
+    # Streaming-reduction fast path: when every recorded (non-analysis) observable is an
+    # Observation.dynamics observer, fold each into the integrator carry via
+    # prepare(reduce=...) so the trajectory is never materialized (peak memory drops from
+    # O(batch·n_time·n_node) to O(batch·block·n_node)). Guarded to the clean grid case —
+    # the trajectory wrappers (transient trim, stochastic/IC trials, element slots, wired
+    # algorithms) all assume a full-trajectory model_fn, so any of them forces the
+    # post-scan bundles path instead.
+    _rec_stream = [r for r in expl['record'] if r not in analysis_observation_names]
+    _all_recorded_streaming = bool(_rec_stream) and all(
+        resolve_reduction(_all_observations.get(r)) is not None for r in _rec_stream
+    )
+    _element_axes_present = any(ax.get('element_idx') is not None for ax in expl['axes'])
+    _use_stream = (
+        bundles_observations
+        and _all_recorded_streaming
+        and not has_transient
+        and not stochastic_param_info
+        and not sv_distribution_info
+        and not _element_axes_present
+        and expl.get('n_trials', 1) <= 1
+        and not expl.get('algorithms')
+    )
+    _stream_names = _rec_stream
+    _stream_bs = expl.get('block_size') or 1000
 %>
 def ${expl['name']}(state, model_fn, result_transient=None, **kwargs):
     """${expl['label']} - ${grid_desc}."""
@@ -2211,7 +2235,31 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
     if not n_aux and model.derived_variables:
         n_aux = len(model.derived_variables)
 %>
-% if bundles_observations:
+% if _use_stream:
+    # Streaming reductions: every recorded observable is an Observation.dynamics observer,
+    # so fold each into the integrator carry via prepare(reduce=...). The trajectory is
+    # never materialized — peak memory is O(batch·block·n_node), which is what lets the
+    # whole grid vmap on one device. Falls back to the post-scan path when the network is
+    # not rebuildable (a passed-in model_fn) so the value is still produced.
+    if _network is not None:
+        _stream_model_fn, _ = prepare(
+            _network, get_solver(block_size=${_stream_bs}),
+            t0=0.0, t1=${t1_default}, dt=${dt},
+            reduce=_compose_reducers(*[
+                _STREAMING_REDUCERS[_n][0](_STREAMING_REDUCERS[_n][1], ${dt})
+                for _n in ${repr(_stream_names)}
+            ]),
+        )
+        @jax.jit
+        def observable_fn(s):
+            _vals = _stream_model_fn(s)
+            return Bunch(**{_n: _v for _n, _v in zip(${repr(_stream_names)}, _vals)})
+    else:
+        @jax.jit
+        def observable_fn(s):
+            result = _expl_model_fn(s)
+            return compute_all_observations(result, s, result_transient)
+% elif bundles_observations:
     # Observations declared: observable_fn returns only the reduced
     # observation values per grid point (no trajectory). Output size is
     # the sum of declared observation shapes — typically per-node or
