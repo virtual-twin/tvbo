@@ -285,7 +285,10 @@ def _run_one(experiment, backend: str, out_dir: Path | None,
 def _exec_one(experiment, backend: str, out_dir: Path | None, kwargs: dict) -> None:
     compress = kwargs.pop("compress", True)          # save options, not backend-run kwargs
     record_only = kwargs.pop("record_only", True)
-    result = experiment.run(format=backend, **kwargs)
+    # initial_state.from_experiment seeds from a sibling experiment's saved result;
+    # search the output dir's parent (covers results/<key> and output/nc/exp<id> alike).
+    results_root = out_dir.parent if out_dir is not None else None
+    result = experiment.run(format=backend, results_root=results_root, **kwargs)
     _common.info(f"done: {type(result).__name__}")
     if out_dir is not None:
         out_dir.mkdir(parents=True, exist_ok=True)
