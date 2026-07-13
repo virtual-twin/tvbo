@@ -19,6 +19,7 @@ Registering a new streaming reducer (e.g. for dFC / metastability) is a single
 """
 from __future__ import annotations
 
+import importlib
 import os
 from dataclasses import dataclass
 
@@ -51,6 +52,36 @@ class StreamingReducerSpec:
 # backend -> {fully_qualified_reducer_name -> StreamingReducerSpec}
 _REGISTRY: dict[str, dict[str, StreamingReducerSpec]] = {}
 
+# factory string -> whether it resolves in the current environment (memoised).
+_FACTORY_AVAILABLE: dict[str, bool] = {}
+
+
+def _factory_available(factory: str) -> bool:
+    """True when the ``module.attr`` *factory* resolves in the current env.
+
+    Streaming reducers live in ``tvboptim``; a tvboptim older than the reducer
+    it names (e.g. a released wheel that predates ``windowed_cov``) won't expose
+    it. Codegen runs in the same interpreter that executes the generated
+    experiment, so resolving the factory here reliably predicts whether the
+    emitted call would work — and lets an unresolved factory fall back to the
+    recompute path (supported on every backend) instead of emitting a call that
+    raises ``AttributeError`` at runtime.
+    """
+    cached = _FACTORY_AVAILABLE.get(factory)
+    if cached is not None:
+        return cached
+    module_name, _, attr = factory.rpartition(".")
+    available = False
+    if module_name and attr:
+        try:
+            module = importlib.import_module(module_name)
+        except ImportError:
+            available = False
+        else:
+            available = hasattr(module, attr)
+    _FACTORY_AVAILABLE[factory] = available
+    return available
+
 
 def register_streaming_reducer(backend: str, reducer: str, spec: StreamingReducerSpec) -> None:
     """Register *spec* as *backend*'s streaming form of the *reducer* callable.
@@ -69,9 +100,11 @@ def lookup_streaming_reducer(backend: str, reducer_module: str | None, reducer_n
     """Return the :class:`StreamingReducerSpec` for a pipeline reducer, or ``None``.
 
     Returns ``None`` (-> recompute fallback) when the backend registers nothing
-    for this reducer, or when streaming is disabled via the
-    ``TVBO_STREAMING_REDUCERS=0`` environment switch (used to codegen the
-    recompute reference for validation and as an escape hatch).
+    for this reducer, when the registered factory does not resolve in the
+    installed backend package (e.g. a tvboptim that predates the reducer), or
+    when streaming is disabled via the ``TVBO_STREAMING_REDUCERS=0`` environment
+    switch (used to codegen the recompute reference for validation and as an
+    escape hatch).
     """
     if os.environ.get("TVBO_STREAMING_REDUCERS", "1") == "0":
         return None
@@ -79,7 +112,10 @@ def lookup_streaming_reducer(backend: str, reducer_module: str | None, reducer_n
     if not backend_map:
         return None
     qualified = f"{reducer_module}.{reducer_name}" if reducer_module else reducer_name
-    return backend_map.get(qualified) or backend_map.get(reducer_name)
+    spec = backend_map.get(qualified) or backend_map.get(reducer_name)
+    if spec is None or not _factory_available(spec.factory):
+        return None
+    return spec
 
 
 def streaming_capable(backend: str, reducer_module: str | None, reducer_name: str) -> bool:
