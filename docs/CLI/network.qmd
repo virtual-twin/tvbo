@@ -103,6 +103,29 @@ tvbo network build dTOR.tck atlas_dseg.nii.gz --rec dTOR \
     -o weighted.yaml
 ```
 
+## Suggested methods description
+
+If you use the TVB-O network builder to construct connectomes for a publication, the paragraphs below are starting points for your Methods section. Pick the tab that matches your data, adapt the parcellation and any non-default choices to what you ran, and cite the tools. The normative variant describes how the connectomes shipped with TVB-O were produced.
+
+::: {.panel-tabset}
+
+### Individual connectome
+
+Structural connectomes were constructed for each participant with the network builder of The Virtual Brain Ontology (TVB-O) [@Martin2025], the metadata and code-generation framework for The Virtual Brain [@SanzLeon2013], which calls the connectome tool of MRtrix3 [@Tournier2019]. A whole-brain streamline tractogram, reconstructed from the participant's diffusion-weighted MRI, and a parcellation image in the same space were used as input. Each end of every streamline was assigned to the nearest parcellation node found by a radial search out to 4 mm, and endpoints with no node in range were left unassigned [@Smith2015]. Two matrices were derived over these assignments. In the weight matrix, each entry is the number of streamlines that connect a pair of nodes. In the length matrix, every streamline contributes its own length, and the entry for a node pair is the mean of those lengths across the streamlines assigned to it, so the value is the mean streamline length of that connection. Both matrices were written in undirected form, meaning a node pair carries a single value that does not depend on which node is treated as the streamline's start or end, and the matrix diagonal was set to zero so that self-connections are excluded. The weight and length matrices were stored together as one connectome, an HDF5 array file with a YAML sidecar named following the Brain Imaging Data Structure [@Gorgolewski2016a], from which TVB-O reads them at simulation time.
+
+### Normative connectome
+
+Group-level structural connectomes were constructed with the network builder of The Virtual Brain Ontology (TVB-O) [@Martin2025], the metadata and code-generation framework for The Virtual Brain [@SanzLeon2013], which calls the connectome tool of MRtrix3 [@Tournier2019]. In place of subject-specific tractography, we used a normative whole-brain tractogram, the dTOR-985 connectome [@Elias2024], which holds roughly 12 million streamlines reconstructed in MNI space from the diffusion MRI of 985 Human Connectome Project subjects. This tractogram and a parcellation in the same MNI template space were used as input. Each end of every streamline was assigned to the nearest parcellation node found by a radial search out to 4 mm, and endpoints with no node in range were left unassigned [@Smith2015]. In the weight matrix, each entry is the number of streamlines that connect a pair of nodes. In the length matrix, every streamline contributes its own length, and the entry for a node pair is the mean of those lengths, so the value is the mean streamline length of that connection. Both matrices were written in undirected form with a zeroed diagonal, so each node pair carries a single value and self-connections are excluded. The matrices were stored together as one connectome, an HDF5 array file with a YAML sidecar named following the Brain Imaging Data Structure [@Gorgolewski2016a]. The normative connectomes distributed with TVB-O were produced this way.
+
+:::
+
+Edge weights are raw streamline counts and index the relative density of a connection rather than an absolute measure of axonal strength. Because streamline endpoints are matched to parcellation labels by proximity, the tractogram and the parcellation must already lie in the same coordinate space; the builder performs no registration.
+
+## References
+
+::: {#refs}
+:::
+
 ## See also
 
 - [`tvbo import`](import.qmd) — load foreign network files into TVBO objects
