@@ -427,6 +427,47 @@ There are classical examples, however we need to find a solution to describe any
 - Convolution
 
 
+### Compile the algorithm tuning loop with `lax.scan` (GPU + differentiable)
+
+**Deferred 2026-07-13** — investigated, scoped, and consciously postponed (not a
+CPU win; do it when we go GPU or want gradient tuning).
+
+**Motivation.** `run_<algo>` in `tvbo-tvboptim-algorithm.py.mako:583` runs the
+tuning iterations as a **Python `for i in range(n_iterations)`** that calls the
+jitted `model_fn` per step. Each iteration = one `simulation_period` (720 ms = 1
+BOLD TR) sim + one parameter update; `n_iterations` is the tuning-step count
+(50 000/stage for the Schirner 6-stage schedule). Converting the loop to
+`jax.lax.scan` (a *fold* — it compiles the sequential chain, does not parallelise
+it) would (a) run the whole tuning chain as **one on-device kernel** (no per-step
+Python↔XLA dispatch/host-sync), unlocking real GPU throughput, and (b) make the
+fit **differentiable** (gradient-based tuning / Optax, `gradient_eib`).
+
+**Why deferred (evidence).** By first principles the CPU payoff is small: each
+iteration is dominated by the jitted 720-step × N-node `model_fn`; the ~10 extra
+jax ops (buffer roll, reducer evict/add/emit, update rules) are **async-dispatched**
+(the Python loop runs ahead of the device) and the only forced host-syncs are the
+periodic `print` and the end — so removable overhead is a few % on CPU. A wall-clock
+measurement was attempted but the box was at load ~54 (99 python procs from other
+sessions), so timing was unusable; the first-principles argument stands. Subject
+parallelism is **not** blocked by this — it lives at the `tvbo workflow` / Snakemake
+layer (one job per subject, own FC path). So this is a **GPU + differentiability**
+enhancement, worthless for the current CPU + Snakemake replication path.
+
+**Scope when picked up (large, high-risk — gate + byte-equivalence test).** The
+carry must thread: `state` (`initial_state.dynamics`, `noise.key`,
+`coupling.*.wLRE/wFFI`, `dynamics.J_i`), the sliding-window **buffer**, the
+**streaming-reducer accumulator** + its periodic exact `resync`, and the **BOLD
+monitor** `_history` (functional `eqx.tree_at`, no in-place mutation). Hard parts:
+`result_history.<param>.append(...)` records the **full N×N `wLRE`/`wFFI`** at
+`save_every` — `scan` emits every step or none, and every-step N×N over 50 000 is
+~28 GB/param, so preserving matrix snapshots needs a **chunked scan** (scan in
+`save_every` blocks, record matrices between blocks). Also: collectible-observation
+appends, `print` → `jax.debug.print`, and the **nested-include** mode
+(`run_<inner>()` inside the loop → nested scan; Schirner uses `combined` so N/A).
+Companion to the streaming-reducer work below (same loop body). MUST ship behind a
+codegen flag with the Python loop as fallback + a `scan == python-loop`
+byte-equivalence test before it becomes default.
+
 ### Codegen-emit streaming reducers (drop hardcoded `tvboptim` factories)
 
 **Motivation.** Windowed pipeline reducers (`compute_fc` → an incremental FC

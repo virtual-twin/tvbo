@@ -605,9 +605,13 @@ if network_obs_keys:
 %>\
 ## Emit a tvboptim reducer (init, update, finalize) from a resolved Observation.dynamics
 ## observer (utils.resolve_reduction). The observer's per-step recurrence runs as an inner
-## scan over each block — accumulators commit gated on the first step, when memory is not
-## yet valid — so the block trajectory is never held. Every expression is a sympy Expr
-## rendered here via render_expression, keeping the reducer backend-independent.
+## scan over each block — accumulators commit only after a global-step warmup (`_gstep >
+## skip`), so the block trajectory is never held. `skip` skips leading samples from the
+## reduction: `skip=0` reproduces the plain "no accumulate on the first step" behaviour
+## (the first phase increment needs a previous sample); `skip=n_transient` streams a run
+## whose transient has NOT been trimmed, folding only the post-transient window. Memory
+## states (e.g. the previous phase) advance every step so the boundary increment is exact.
+## Every expression is a sympy Expr rendered via render_expression — backend-independent.
 <%def name="render_reduction(red, name, s_idx, dt)">\
 <%
     from tvbo.codegen import render_expression
@@ -617,31 +621,32 @@ if network_obs_keys:
     _rufuncs = {f: f for f in red['functions']}
     _jc = lambda e, ps=_rparams: render_expression(e, format='jax', user_functions=_rufuncs, parameters=ps)
 %>\
-def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}):
+def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0):
 % for _fname, _fdef in red['functions'].items():
     def ${_fname}(${", ".join(_fdef['args'])}):
         return ${_jc(_fdef['expr'], _fdef['args'])}
 % endfor
     def _init(template, n_steps):
         n = template.shape[-1]
-        return (${", ".join("jnp.full((n,), %r)" % s['init'] for s in red['states'])}, jnp.array(0), jnp.array(False))
+        return (${", ".join("jnp.full((n,), %r)" % s['init'] for s in red['states'])}, jnp.array(0), jnp.array(0))
     def _update(acc, block):
         def _step(carry, s_row):
-            ${", ".join(_snames)}, _count, _inited = carry
+            ${", ".join(_snames)}, _count, _gstep = carry
             ${_src} = s_row[s_var]
+            _accumulate = _gstep > skip
 % for s in red['states']:
             _new_${s['name']} = ${_jc(s['update'])}
 % endfor
 % for s in red['states']:
 % if s['is_accumulator']:
-            _new_${s['name']} = jnp.where(_inited, _new_${s['name']}, ${s['name']})
+            _new_${s['name']} = jnp.where(_accumulate, _new_${s['name']}, ${s['name']})
 % endif
 % endfor
-            _count = _count + jnp.where(_inited, 1, 0)
-            return (${", ".join("_new_%s" % _n for _n in _snames)}, _count, jnp.array(True)), None
+            _count = _count + jnp.where(_accumulate, 1, 0)
+            return (${", ".join("_new_%s" % _n for _n in _snames)}, _count, _gstep + 1), None
         return jax.lax.scan(_step, acc, block)[0]
     def _finalize(acc):
-        ${", ".join(_snames)}, count, _inited = acc
+        ${", ".join(_snames)}, count, _gstep = acc
         return ${_jc(red['output'])}
     return (_init, _update, _finalize)
 </%def>\
