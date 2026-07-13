@@ -3066,6 +3066,7 @@ def run_experiment(
 % for src_obs in algo_source_obs_needed:
                         ${src_obs}_buffer=_stage_${src_obs}_buffer,
 % endfor
+                        resync_every=kwargs.get('${algo_name}_resync_every', kwargs.get('resync_every', None)),
 % endif
                         monitors=_stage_monitors,
                         run_post_tuning=True,   # validate after EACH stage (r-trajectory)
@@ -3126,6 +3127,7 @@ def run_experiment(
                     ${src_obs}_buffer=kwargs.get('${src_obs}_buffer', None),  # Optional: pass from previous algorithm
 % endif
 % endfor
+                    resync_every=kwargs.get('${algo_name}_resync_every', kwargs.get('resync_every', None)),
 % endif
 % if has_deps:
                     # Pass monitors from dependency for hemodynamic continuity
