@@ -827,9 +827,63 @@ def run_workflow(
     _execute_emitted(engine, out_dir, slurm_array=array)
 
 
-@app.command("submit", help="Submit an already-emitted kit to its engine (no recipe, no re-emit).")
+def _tar_extractall_safe(tar, dest: Path) -> None:
+    """Extract *tar* into *dest*, using the ``data`` filter where available.
+
+    The ``filter='data'`` guard (Python >= 3.12) rejects members with absolute or
+    ``..`` paths; older interpreters fall back to a plain extract. Kits are emitted
+    by tvbo, so this is defensive rather than a trust boundary.
+    """
+    try:
+        tar.extractall(dest, filter="data")
+    except TypeError:
+        tar.extractall(dest)
+
+
+def _resolve_kit_dir(kit: Path) -> Path:
+    """Resolve a kit path that may be a directory or a packaged archive.
+
+    A directory is returned as-is. A ``.tar.gz`` / ``.tgz`` / ``.tar`` / ``.zip``
+    archive is extracted next to itself and the kit root inside it (the directory
+    holding the engine artefact) is returned, so a shipped kit runs without a manual
+    unzip. An already-extracted kit next to the archive is reused rather than
+    re-extracted, so a re-submit never clobbers an in-progress ``results/``.
+    """
+    if kit.is_dir():
+        return kit
+    if not kit.is_file():
+        _common.die(f"not a kit directory or archive: {kit}")
+    name = kit.name.lower()
+    is_tar = name.endswith((".tar.gz", ".tgz", ".tar"))
+    is_zip = name.endswith(".zip")
+    if not (is_tar or is_zip):
+        _common.die(f"{kit} is neither a kit directory nor a .tar.gz/.tgz/.tar/.zip archive.")
+    import tarfile
+    import zipfile
+
+    dest = kit.parent
+    with (zipfile.ZipFile(kit) if is_zip else tarfile.open(kit)) as arc:
+        names = arc.namelist() if is_zip else arc.getnames()
+        tops = sorted({n.split("/", 1)[0] for n in names if n and not n.startswith("/")})
+        for t in tops:                       # reuse an already-extracted kit; keep its results
+            d = dest / t
+            if d.is_dir() and _detect_engine_from_kit(d):
+                _common.info(f"kit already extracted → {d} (reusing)")
+                return d
+        arc.extractall(dest) if is_zip else _tar_extractall_safe(arc, dest)
+    for t in tops:
+        d = dest / t
+        if d.is_dir() and _detect_engine_from_kit(d):
+            _common.info(f"extracted kit → {d}")
+            return d
+    if _detect_engine_from_kit(dest):        # artefact sat at the archive root
+        return dest
+    _common.die(f"{kit} did not contain an engine artefact ({', '.join(_ARTEFACT_NAME.values())}).")
+
+
+@app.command("submit", help="Submit an already-emitted kit (directory or .tar.gz/.zip) to its engine.")
 def submit_kit(
-    kit: Path = typer.Argument(..., help="Path to an emitted kit directory (holds run.sbatch / Snakefile / main.nf)."),
+    kit: Path = typer.Argument(..., help="Path to an emitted kit directory OR a .tar.gz/.tgz/.tar/.zip archive of one (holds run.sbatch / Snakefile / main.nf)."),
     engine: str = typer.Option(None, "--engine", "-e", help="Engine to submit with; auto-detected from the kit when omitted."),
     array: str = typer.Option(
         None, "--array",
@@ -842,16 +896,16 @@ def submit_kit(
 ) -> None:
     """Submit a kit already emitted by ``tvbo workflow slurm|snakemake|nextflow``.
 
-    Runs only the *execute* half of ``tvbo workflow run`` against an existing kit
-    directory — no recipe, no re-emit. For Slurm this submits ``run.sbatch`` (the
-    array job) and chains ``finalize.sbatch`` with an ``afterok`` dependency, so
-    you get one reassembled result without touching ``sbatch`` yourself. The engine
-    is inferred from the kit's artefact file unless ``--engine`` is given. Run it
-    from a login node (Slurm) or wherever the engine's launcher is available.
+    Runs only the *execute* half of ``tvbo workflow run`` against an existing kit —
+    no recipe, no re-emit. The kit may be a directory or a packaged ``.tar.gz`` /
+    ``.zip`` archive of one; an archive is extracted next to itself first, so a
+    shipped kit runs without a manual unzip. For Slurm this submits ``run.sbatch``
+    (the array job) and chains ``finalize.sbatch`` with an ``afterok`` dependency,
+    so you get one reassembled result without touching ``sbatch`` yourself. The
+    engine is inferred from the kit's artefact file unless ``--engine`` is given.
+    Run it from a login node (Slurm) or wherever the engine's launcher is available.
     """
-    kit = kit.expanduser().resolve()
-    if not kit.is_dir():
-        _common.die(f"not a kit directory: {kit}")
+    kit = _resolve_kit_dir(kit.expanduser().resolve())
     eng = (engine or "").lower() or _detect_engine_from_kit(kit)
     if eng is None:
         _common.die(

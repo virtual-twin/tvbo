@@ -58,41 +58,105 @@ directives, Snakemake `resources:` entries, or Nextflow `process.<name>`
 assignments. Name each option for the target engine (e.g. `slurm_partition` for
 Snakemake, `clusterOptions` for Nextflow).
 
-## Emitting and running
+## The kit lifecycle: emit → submit → finalize
+
+A kit passes through three `tvbo workflow` subcommands. Each stands alone, so you
+can emit on a laptop, ship the kit, and submit on a login node.
 
 ```bash
-# Emit a kit (spec + network companion + backend script + run.sbatch):
+# 1. EMIT — write a self-contained kit (spec + network + backend script + run.sbatch)
 tvbo workflow slurm study.yaml --experiment <id> -o kit/
 
-# Emit and submit in one step:
-tvbo workflow run slurm study.yaml --experiment <id>
+# 2. SUBMIT — run an already-emitted kit as a unit (no recipe, no re-emit)
+tvbo workflow submit kit/
 
-# Or drive it through `tvbo run`:
-tvbo run study.yaml --engine slurm --experiment <id>
+# 3. FINALIZE — only for a sharded (multi-task) run: reassemble the shards
+tvbo workflow finalize kit/results --compress
 ```
 
-Emission and submission run in-process, so the node does not need `tvbo` on
-`$PATH`; only the scheduler command (`sbatch`, `snakemake`, `nextflow`) is
-shelled out. Override any field at emit time with `--set`, for example
-`--set slurm.mem=64G` or `--set distribute.chunk=8`.
+### Emit
 
-The kit is a self-contained provenance record. Its `spec/<name>.yaml` freezes the
-**effective** config after merging study, experiment, and every `--set` override,
-alongside the connectome (`spec/network.yaml` + `spec/network.h5`) and any custom
-callable/builder modules the recipe references (bundled into `code/`, put on
-`PYTHONPATH` by the artefact). Re-emitting from that frozen spec reproduces the same
-run with no flags:
+`tvbo workflow <engine>` (`slurm`, `snakemake`, `nextflow`) freezes the run. Override
+any field at emit time with `--set`, e.g. `--set slurm.mem=64G` or
+`--set distribute.chunk=8`. The kit is a self-contained provenance record:
+`spec/<name>.yaml` is the **effective** config after merging study, experiment, and
+every `--set`, next to the connectome (`spec/network.yaml` + `spec/network.h5`) and
+any custom callable/builder modules the recipe references, bundled into `code/`.
+Re-emitting from the frozen spec reproduces the run with no flags:
 
 ```bash
 tvbo workflow slurm kit/spec/<name>.yaml        # same partition, chunk, env, …
 ```
 
-Submit a single shard as a smoke test without editing the spec:
+### Submit
+
+`tvbo workflow submit kit/` runs a bundled kit **as a unit**. It auto-detects the
+engine from the kit's contents (`run.sbatch` → Slurm, `Snakefile` → Snakemake,
+`main.nf` → Nextflow) and shells out the scheduler command. Because the kit is
+self-contained, this is the whole story: the generated `run.sbatch` already exports
+`PYTHONPATH="code:…"` so the bundled modules resolve on the compute node — you never
+set it yourself. This is why a kit is bundled: emit once, ship it, and run it
+anywhere with one command.
+
+`submit` also accepts a **packaged archive** of a kit (`.tar.gz` / `.tgz` / `.tar` /
+`.zip`). It extracts next to the archive and submits the kit inside, so a shipped
+kit needs no manual unzip; a re-submit reuses the already-extracted kit rather than
+clobbering its `results/`.
 
 ```bash
-tvbo workflow run slurm study.yaml --array 0
-tvbo workflow run slurm study.yaml --array 0-3 --array-throttle 1  # 4 tasks, 1 at a time
+tvbo workflow submit kit/                          # a kit directory
+tvbo workflow submit koller2024_exp40_gpu.tar.gz   # …or its packaged archive (auto-extracts)
+tvbo workflow submit kit/ --array 0                # one shard as a smoke test
+tvbo workflow submit kit/ --array 0-3 --array-throttle 1   # 4 tasks, 1 at a time
+tvbo workflow submit kit/ --engine slurm           # force the engine if ambiguous
 ```
+
+The submitting host needs only the scheduler command (`sbatch` / `snakemake` /
+`nextflow`) on `$PATH`; emission and submission themselves run in-process. The
+**compute node** that executes each task needs `tvbo` installed — provision it from
+the kit's `requirements.txt` / `environment.yml`.
+
+### Two ways to reach the cluster
+
+The kit lifecycle supports two deployment styles; pick by where `tvbo` and the
+connectome data already live.
+
+1. **Ground truth on the cluster.** Put the full `SimulationStudy` / `Simulation‑
+   Experiment` YAML (plus the networks it resolves, or db access) on the cluster and
+   emit there: `tvbo workflow run slurm study.yaml --experiment <id> <--set …>`. Best
+   when the cluster already has tvbo and the data, and you want to sweep straight
+   from the recipe.
+2. **Package a kit, then ship it.** Emit locally, package the kit dir, and copy the
+   single archive over. The compute nodes never see the recipe or the db — the kit
+   carries the frozen spec, the baked `network.h5`, and the code. Submit the archive
+   directly, no unzip:
+
+   ```bash
+   # locally
+   tvbo workflow slurm study.yaml --experiment <id> <--set …> -o kit/
+   tar czf kit.tar.gz -C kit/.. kit
+   scp kit.tar.gz <cluster>:~
+   # on the cluster
+   tvbo workflow submit ~/kit.tar.gz
+   ```
+
+   Best when the cluster lacks the recipe or the connectome database, or when you
+   want a frozen, shippable provenance artefact.
+
+Emit and submit together in one call when you are already on the login node:
+
+```bash
+tvbo workflow run slurm study.yaml --experiment <id>   # emit + submit
+tvbo run study.yaml --engine slurm --experiment <id>   # equivalent via `tvbo run`
+```
+
+### Finalize
+
+A multi-task run (`distribute.chunk > 1`) writes one shard per array task. `tvbo
+workflow finalize <results-dir>` merges them into a single result keyed by the
+sweep coordinates (`--compress` gzip-deflates the HDF5). A single-task run
+(`chunk: 1`, the GPU profile below) writes the whole result directly, so it needs
+no finalize step.
 
 ## CPU and GPU: pick the tier that fits the resource
 

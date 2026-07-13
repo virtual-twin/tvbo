@@ -296,6 +296,42 @@ def test_workflow_run_slurm_chains_gather_when_sharded(tmp_path: Path, monkeypat
     assert any("--dependency=afterok" in a for c in submits for a in c)
 
 
+def test_workflow_submit_accepts_packaged_archive(tmp_path: Path, monkeypatch):
+    """`tvbo workflow submit` extracts a packaged .tar.gz kit and submits it.
+
+    The archive ships on its own (no kit directory next to it), so the submit path
+    must auto-extract before launching — the "no manual unzip" workflow.
+    """
+    import shutil
+    import tarfile
+
+    calls = []
+
+    def _fake_run(cmd, check=True, cwd=None, **kwargs):
+        calls.append(cmd)
+        return subprocess.CompletedProcess(cmd, 0, stdout="12345\n")
+
+    monkeypatch.setattr("tvbo.cli.workflow.subprocess.run", _fake_run)
+    monkeypatch.setattr(shutil, "which", lambda _launcher: "/usr/bin/snakemake")
+
+    # emit a kit, then package it into an archive that travels on its own
+    emitted = tmp_path / "emit" / "kit"
+    r = runner.invoke(app, ["workflow", "snakemake", EXP, "--backend", "jax", "-o", str(emitted)])
+    assert r.exit_code == 0, r.stdout
+    ship = tmp_path / "ship"
+    ship.mkdir()
+    archive = ship / "kit.tar.gz"
+    with tarfile.open(archive, "w:gz") as t:
+        t.add(emitted, arcname="kit")
+
+    # submit the archive directly: must extract beside it, then launch the engine
+    r = runner.invoke(app, ["workflow", "submit", str(archive)])
+    assert r.exit_code == 0, r.stdout
+    assert (ship / "kit" / "Snakefile").is_file(), "archive must auto-extract beside itself"
+    submits = [c for c in calls if c and c[0] == "snakemake"]
+    assert submits, "expected the extracted kit to be submitted"
+
+
 def test_workflow_run_rejects_unknown_engine():
     r = runner.invoke(app, ["workflow", "run", "local", EXP, "--backend", "jax"])
     assert r.exit_code != 0
