@@ -242,7 +242,9 @@ def test_workflow_stdout_only_does_not_create_kit(tmp_path: Path):
     [
         # Slurm submits the array with --parsable (then chains a gather job).
         ("slurm", ["sbatch", "--parsable", "run.sbatch"], "run.sbatch"),
-        ("snakemake", ["snakemake", "--cores", "all"], "Snakefile"),
+        # Snakemake ships a SLURM-executor profile, so submit runs the login-node
+        # orchestrator that dispatches each rule to the scheduler (not local --cores).
+        ("snakemake", ["snakemake", "--profile", "profile"], "Snakefile"),
         ("nextflow", ["nextflow", "run", "main.nf"], "main.nf"),
     ],
 )

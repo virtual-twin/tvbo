@@ -429,6 +429,23 @@ def plan(
 
     chunk = int(distribute.get("chunk") or spec.get("chunk") or 1)
     engine_block = dict(spec.get(engine) or {})
+    # Resource requirements (cpus_per_task, mem, time, env, setup, …) map across
+    # engines (WorkflowEngineConfig doc): a Snakemake run on a cluster orchestrates
+    # Slurm via its executor, so it needs the same partition/time/mem/cpus. When the
+    # engine's own block omits them, inherit from the Slurm block (the de-facto
+    # resource spec); the engine block still wins where it sets a key.
+    if engine != "slurm":
+        # Engine-agnostic resources map across engines (WorkflowEngineConfig doc).
+        _shared = ["cpus_per_task", "mem", "time", "modules", "venv", "env", "setup"]
+        # Snakemake orchestrates Slurm through its executor, so it also needs the
+        # Slurm scheduler identity; other engines (Nextflow) have their own and must
+        # not inherit these.
+        if engine == "snakemake":
+            _shared += ["partition", "account", "gres"]
+        _slurm = spec.get("slurm") or {}
+        for _k in _shared:
+            if _k not in engine_block and _k in _slurm:
+                engine_block[_k] = _slurm[_k]
     if "array_chunk" in engine_block:
         chunk = int(engine_block["array_chunk"])
     if "env" in engine_block:

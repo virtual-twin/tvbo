@@ -392,7 +392,14 @@ def _write_readme(out_dir: Path, *, engine: str, plan, script_relpath: str | Non
     if engine == "slurm":
         lines.append(f"sbatch {_ARTEFACT_NAME[engine]}")
     elif engine == "snakemake":
-        lines.append("snakemake --cores all")
+        lines += [
+            "# On a SLURM cluster (login node) — submits each rule to the scheduler:",
+            "#   needs:  pip install snakemake-executor-plugin-slurm",
+            "snakemake --profile profile        # or: tvbo workflow submit <this kit>",
+            "",
+            "# Local (laptop / one interactive node) — no scheduler:",
+            "# snakemake --cores all",
+        ]
     elif engine == "nextflow":
         lines.append("nextflow run main.nf")
     lines += [
@@ -589,9 +596,43 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
         return None
     (out_dir / "Snakefile").write_text(text, encoding="utf-8")
     _common.info(f"wrote Snakefile ({len(exp_plans)} experiment rule(s))")
+    _write_snakemake_profile(out_dir, block)
     if last_plan is not None:
         _write_readme(out_dir, engine="snakemake", plan=last_plan, script_relpath=None)
     return out_dir
+
+
+def _write_snakemake_profile(out_dir: Path, block: dict) -> None:
+    """Ship a SLURM profile so the kit runs from a login node with one command.
+
+    Snakemake 8+/9 submits to the scheduler via an executor plugin: the lightweight
+    ``snakemake`` process runs on the login node and dispatches each rule as its own
+    SLURM job (with the per-rule ``resources:`` in the Snakefile). The profile carries
+    the compute-environment settings — ``executor: slurm``, the concurrent-jobs cap,
+    and the cluster-identity default-resources (partition/account) that don't belong in
+    the workflow definition. Run: ``snakemake --profile profile`` from the kit dir.
+    """
+    partition = block.get("partition")
+    account = block.get("account")
+    lines = [
+        "# Snakemake profile — submit each rule to SLURM via the executor plugin.",
+        "# Run (login node):  snakemake --profile profile",
+        "# Requires:          pip install snakemake-executor-plugin-slurm",
+        "executor: slurm",
+        "jobs: 100                      # max SLURM jobs queued/running at once",
+        "default-resources:",
+    ]
+    if partition:
+        lines.append(f"  slurm_partition: {partition}")
+    if account:
+        lines.append(f"  slurm_account: {account}")
+    else:
+        lines.append("  # slurm_account: your_account   # set workflow.slurm.account or --set slurm.account=…")
+    lines += ["retries: 1", "keep-going: True"]
+    prof = out_dir / "profile"
+    prof.mkdir(parents=True, exist_ok=True)
+    (prof / "config.yaml").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    _common.info("wrote profile/config.yaml (SLURM executor — `snakemake --profile profile`)")
 
 
 def _pack_kit(out_dir: Path) -> Path:
@@ -652,7 +693,12 @@ def _execute_engine_artefact(engine: str, artefact: Path, *, slurm_array: str | 
             cmd.append(f"--array={slurm_array}")
         cmd.append(artefact.name)
     elif engine == "snakemake":
-        cmd = ["snakemake", "--cores", "all"]
+        # A shipped SLURM profile makes the login-node run submit each rule to the
+        # scheduler (executor: slurm + jobs); without one, fall back to local cores.
+        if (artefact.parent / "profile" / "config.yaml").exists():
+            cmd = ["snakemake", "--profile", "profile"]
+        else:
+            cmd = ["snakemake", "--cores", "all"]
     elif engine == "nextflow":
         cmd = ["nextflow", "run", artefact.name]
     else:
