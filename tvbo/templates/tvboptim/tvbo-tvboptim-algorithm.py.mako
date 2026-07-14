@@ -809,7 +809,6 @@ def run_${algo_name}(
 % endif
 % endfor
 
-        if verbose and logger.isEnabledFor(logging.INFO) and (i + 1) % print_every == 0:
 <%
     # Build progress output - show functions (if any) + all simulated observations
     progress_items = []
@@ -831,8 +830,12 @@ def run_${algo_name}(
     progress_str = ", ".join(progress_parts)
 %>
 % if progress_items:
+        # Gate on isEnabledFor so the progress f-string is only built when shown.
+        if verbose and logger.isEnabledFor(logging.INFO) and (i + 1) % print_every == 0:
             logger.info(f"  {i+1}/{n_iterations}: ${progress_str}")
 % else:
+        # Configuration guard — must fire regardless of the log level.
+        if verbose and (i + 1) % print_every == 0:
             raise ValueError("Algorithm must have functions or simulated_observations for progress display")
 % endif
 

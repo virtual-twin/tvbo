@@ -170,6 +170,14 @@ def info(msg: str) -> None:
 
 
 def die(msg: str, code: int = 1) -> None:
-    """Log *msg* at ERROR and abort the CLI with *code*."""
-    logger.error(msg)
+    """Log *msg* at ERROR and abort the CLI with *code*.
+
+    A fatal abort must always explain itself: when the configured level would
+    suppress ERROR (e.g. ``--log-level OFF`` / ``TVBO_LOG_LEVEL=OFF``) the reason
+    still goes to stderr, so the CLI never exits non-zero in silence.
+    """
+    if logger.isEnabledFor(logging.ERROR):
+        logger.error(msg)
+    else:
+        typer.echo(f"error: {msg}", err=True)
     raise typer.Exit(code)
