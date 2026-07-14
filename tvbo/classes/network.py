@@ -10,6 +10,7 @@ graph-Laplacian coupling primitives.
 """
 
 import os
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -39,6 +40,28 @@ from tvbo.datamodel import schema as tvbo_datamodel
 
 # HDF5+YAML network files — resolved via registry (works for pip & editable installs)
 NETWORK_DIR = database_dir("Network")
+
+
+@contextmanager
+def _source_dir_on_path(source_dir):
+    """Temporarily prepend ``source_dir`` to ``sys.path`` so modules living beside
+    a study YAML (graph builders, transform callables) import by bare name.
+
+    Skips insertion when ``source_dir`` is falsy or already on the path, and only
+    removes what it added.
+    """
+    src = str(Path(source_dir).resolve()) if source_dir else None
+    added = bool(src) and src not in os.sys.path
+    if added:
+        os.sys.path.insert(0, src)
+    try:
+        yield
+    finally:
+        if added:
+            try:
+                os.sys.path.remove(src)
+            except ValueError:
+                pass
 
 
 def graph_laplacian(M):
@@ -211,7 +234,8 @@ def get_normative_connectome_data(
     tractogram: str = "dTOR",
     segmentation: Optional[str] = None,
     scale: Optional[str] = None,
-) -> Tuple[np.ndarray, Optional[np.ndarray]]:
+    with_nodes: bool = False,
+):
     """Load normative connectivity matrices from tvbo/database/networks/ HDF5 files.
 
     Parameters
@@ -230,6 +254,10 @@ def get_normative_connectome_data(
         Connection strength matrix (N x N)
     lengths : np.ndarray or None
         Tract length matrix (N x N), or None if not available
+    nodes : list of Node, optional
+        Only when ``with_nodes=True``: the sidecar's labelled + positioned
+        region nodes, so the network is keyed by region (alignment by label,
+        never by position). ``None`` if the sidecar declares no nodes.
 
     Examples
     --------
@@ -262,6 +290,8 @@ def get_normative_connectome_data(
         lengths = arrays.get("lengths")
     if weights is None:
         raise ValueError(f"No 'weight' edge found in {sidecar.name}")
+    if with_nodes:
+        return weights, lengths, (getattr(net, "nodes", None) or None)
     return weights, lengths
 
 
@@ -519,6 +549,10 @@ class Network(tvbo_datamodel.Network):
         _pending = getattr(_SE, "_pending_source_file", None)
         if _pending:
             _source_dir = os.path.dirname(_pending)
+        # Persist the source dir so lazily-applied callable transforms (resolved
+        # in _apply_transform long after load) can import modules beside the YAML.
+        if _source_dir:
+            self._source_dir = _source_dir
         self._resolve(source_dir=_source_dir)
 
         # Runtime default: a Network with no nodes, no declared count, and no
@@ -814,22 +848,10 @@ class Network(tvbo_datamodel.Network):
 
             # Make the YAML source directory importable so builders can live
             # next to the study YAML.
-            added_to_path = False
-            if source_dir is not None:
-                src = str(Path(source_dir).resolve())
-                if src not in os.sys.path:
-                    os.sys.path.insert(0, src)
-                    added_to_path = True
-            try:
+            with _source_dir_on_path(source_dir):
                 mod = importlib.import_module(module_name)
                 fn = getattr(mod, func_name)
                 result = fn(**kwargs)
-            finally:
-                if added_to_path:
-                    try:
-                        os.sys.path.remove(src)
-                    except ValueError:
-                        pass
 
         # Accept a Network, a dict, or a (weights, lengths[, node_params]) tuple.
         if isinstance(result, Network):
@@ -1001,8 +1023,8 @@ class Network(tvbo_datamodel.Network):
             scale = str(scale)
 
         try:
-            w_arr, l_arr = get_normative_connectome_data(
-                atlas_name, trk_name, segmentation=seg, scale=scale
+            w_arr, l_arr, sc_nodes = get_normative_connectome_data(
+                atlas_name, trk_name, segmentation=seg, scale=scale, with_nodes=True
             )
         except FileNotFoundError:
             return
@@ -1021,7 +1043,14 @@ class Network(tvbo_datamodel.Network):
             l_arr = l_arr[:n_nodes, :n_nodes]
 
         if not self.nodes or len(self.nodes) != n_nodes:
-            self.nodes = [tvbo_datamodel.Node(id=i, label=f"region_{i}") for i in range(n_nodes)]
+            if sc_nodes and len(sc_nodes) >= n_nodes:
+                # Preserve the sidecar's region labels + MNI positions so the
+                # network is keyed by region (alignment by label, never by
+                # position) for downstream by_label / crosswalk consumers. Slice
+                # in case a weight/length size mismatch truncated n_nodes above.
+                self.nodes = sc_nodes[:n_nodes]
+            else:
+                self.nodes = [tvbo_datamodel.Node(id=i, label=f"region_{i}") for i in range(n_nodes)]
         if not self.edges:
             self.edges = []
         self.number_of_nodes = n_nodes
@@ -2757,32 +2786,41 @@ class Network(tvbo_datamodel.Network):
         # Check _arrays (set by set_matrix / add_edges). Resolve the length edge by
         # meaning, not just the canonical name, so a sidecar naming it e.g. tract_length
         # still drives delayed simulations.
+        from scipy import sparse as _sp
+
+        L = None
         _arrs = self._get_arrays()
         _lk = _length_like_key(_arrs)
         if _lk is not None:
-            from scipy import sparse as _sp
-
-            L = _arrs[_lk]
-            return L.toarray() if _sp.issparse(L) else L
-
-        # Check for cached matrix from from_matrix (performance optimization)
-        if hasattr(self, "_cached_lengths") and self._cached_lengths is not None:
-            return self._cached_lengths
-
-        if hasattr(self, "_store") and self._store is not None:
+            _raw = _arrs[_lk]
+            L = _raw.toarray() if _sp.issparse(_raw) else _raw
+        # Cached matrix from from_matrix (performance optimization)
+        elif hasattr(self, "_cached_lengths") and self._cached_lengths is not None:
+            L = self._cached_lengths
+        elif hasattr(self, "_store") and self._store is not None:
             # Lazy load from companion file (set by load_network)
             arrays = self._store.arrays
             _lk = _length_like_key(arrays)
             if _lk is not None:
                 self._cached_lengths = arrays[_lk]
-                return self._cached_lengths
+                L = self._cached_lengths
 
         # Compute from edges (fallback for networks built from explicit edges)
-        L = self._lengths_from_edges()
+        if L is None:
+            L = self._lengths_from_edges()
         if L is None:
             n = len(self.nodes) if self.nodes else (self.number_of_nodes or self.number_of_regions or 0)
             if n > 0:
                 return np.zeros((n, n), dtype=np.float64)
+            return L
+
+        # Apply transforms targeting "length" (mirrors weights_matrix; the
+        # add_transform contract lists "length" as a valid edge-property target).
+        for t in self.transforms or []:
+            if t.name in ("length", "lengths"):
+                L = self._apply_transform(
+                    L.toarray() if _sp.issparse(L) else np.asarray(L), t
+                )
         return L
 
     @property
@@ -4517,20 +4555,28 @@ class Network(tvbo_datamodel.Network):
             import importlib
             import inspect
 
-            mod = importlib.import_module(c.module)
-            fn = getattr(mod, c.name)
-            kwargs = {}
-            for name, arg in func.arguments.items():  # arguments keyed by name
-                kwargs[name] = getattr(arg, "value", None)
-            available = {"L": self.lengths_matrix, "network": self}
-            sig = inspect.signature(fn)
-            accepts_var_kw = any(
-                p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values()
-            )
-            for key, val in available.items():
-                if key in sig.parameters or accepts_var_kw:
-                    kwargs.setdefault(key, val)
-            return fn(M, **kwargs)
+            # Make the recipe's source dir importable so a transform callable can
+            # live beside the study YAML, mirroring the builder injection in
+            # _resolve_from_graph_generator.
+            with _source_dir_on_path(getattr(self, "_source_dir", None)):
+                mod = importlib.import_module(c.module)
+                fn = getattr(mod, c.name)
+                kwargs = {}
+                for name, arg in func.arguments.items():  # arguments keyed by name
+                    kwargs[name] = getattr(arg, "value", None)
+                sig = inspect.signature(fn)
+                accepts_var_kw = any(
+                    p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values()
+                )
+                if "network" in sig.parameters or accepts_var_kw:
+                    kwargs.setdefault("network", self)
+                # Inject L only when asked. For a length-target transform ``M`` IS
+                # the lengths, so use it directly — reading ``self.lengths_matrix``
+                # here would re-enter this same transform (infinite recursion).
+                if "L" in sig.parameters:
+                    _is_length = getattr(func, "name", None) in ("length", "lengths")
+                    kwargs.setdefault("L", M if _is_length else self.lengths_matrix)
+                return fn(M, **kwargs)
 
         # Equation-based transform
         eq = getattr(func, "equation", None)
