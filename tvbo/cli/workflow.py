@@ -532,6 +532,17 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
     def _san(s):
         return "".join(c if (c.isalnum() or c in ".-") else "_" for c in str(s))
 
+    # Every experiment identifier (id / key / name) -> its sanitized workflow key,
+    # so a from_experiment dependency (recorded by id in plan.depends_on) resolves
+    # to the source experiment's rule and output dir even when that experiment
+    # carries an explicit ``key`` that differs from its id.
+    _key_of = {}
+    for _e in experiments:
+        _k = _san(_common.experiment_key(_e))
+        for _ref in (getattr(_e, "id", None), getattr(_e, "key", None), getattr(_e, "name", None)):
+            if _ref is not None:
+                _key_of[str(_ref)] = _k
+
     exp_plans, block, last_plan, bundled_code = [], {}, None, False
     for exp in experiments:
         key = _san(_common.experiment_key(exp))
@@ -568,7 +579,7 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
             "container": plan.container,
             "axes": [{"name": ax.name, "parameter": ax.parameter, "values": list(ax.values)}
                      for ax in plan.workflow_axes],
-            "depends_on": list(plan.depends_on),
+            "depends_on": [_key_of.get(str(d), _san(str(d))) for d in plan.depends_on],
         })
 
     text = _render_template("snakemake/study.smk.mako", exp_plans=exp_plans,

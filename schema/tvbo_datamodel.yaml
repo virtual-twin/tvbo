@@ -3509,8 +3509,19 @@ classes:
             source_point:
                 range: string
                 description: >-
-                    Which point on the source branch/run: 'endpoint' (default),
-                    'hopf:1', 'fold:2', a step number, etc.
+                    Which point of the source branch/run seeds this run: 'endpoint'
+                    (default, the last recorded point), a step number, 'hopf:1',
+                    'fold:2', etc. — a single operating point. The special value
+                    'branch' instead selects the WHOLE recorded branch: every recorded
+                    point becomes one cell of this experiment's exploration, seeded from
+                    that point's swept-parameter value and settled state. That turns a
+                    sequential branch (e.g. a from_previous warm-start scan) into an
+                    independent, parallel per-point restart analysis — Lyapunov spectra,
+                    Jacobian/Floquet eigenvalues, basin sampling, perturbation kicks,
+                    first-passage — that shards across a cluster. The consuming
+                    exploration declares one axis (the source's swept parameter) with no
+                    domain; its values come from the branch, keeping the source run as the
+                    single source of truth for which points exist.
             source_experiment:
                 range: SimulationExperiment
                 description: >-

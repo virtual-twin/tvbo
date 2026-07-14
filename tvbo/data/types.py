@@ -1173,7 +1173,7 @@ class ExplorationResult(Bunch):
         # swept axes) — the class honours its own contract regardless of producer,
         # and every consumer (plotting, save, reassembly) sees DataArrays.
         self.observations = {
-            k: (_stacked_to_dataarray(v, self.axes, name=k)
+            k: (_stacked_to_dataarray(v, self.axes, name=k, cell_coords=self.cell_coords)
                 if v is not None and not hasattr(v, "dims") else v)
             for k, v in (observations or {}).items()
         }
