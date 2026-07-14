@@ -756,6 +756,7 @@ def resolve_reduction(obs: Any) -> Optional[Dict[str, Any]]:
         return expr
 
     states: List[Dict[str, Any]] = []
+    windowed = False
     for name, sv in sv_pairs:
         name = str(name)
         eq = get_attr(sv, "equation")
@@ -763,10 +764,20 @@ def resolve_reduction(obs: Any) -> Optional[Dict[str, Any]]:
         if rhs is None:
             continue
         expr = _parse(str(rhs), f"state {name!r}")
+        # Optional reverse recurrence: the per-step downdate removing the sample leaving a
+        # sliding window (the inverse of ``update``, which folds an arriving one in). Parsed
+        # against the same vocabulary — ``source`` denotes the sample being folded/removed.
+        # Its presence marks the observer a *windowed* reduction (add + evict + resync)
+        # rather than a cumulative accumulator; absent -> cumulative, unchanged.
+        eeq = get_attr(sv, "evict_equation")
+        erhs = get_attr(eeq, "rhs") if eeq is not None else None
+        evict = _parse(str(erhs), f"evict of state {name!r}") if erhs is not None else None
+        windowed = windowed or evict is not None
         states.append({
             "name": name,
             "init": _reduction_init_value(sv),
             "update": expr,  # sympy Expr — the printer renders it
+            "evict": evict,  # sympy Expr (sliding-window downdate) or None
             "is_accumulator": sp.Symbol(name) in expr.free_symbols,
         })
 
@@ -781,11 +792,40 @@ def resolve_reduction(obs: Any) -> Optional[Dict[str, Any]]:
         output = (_parse(str(get_attr(oeq, "rhs")), f"output {out_name!r}")
                   if oeq is not None else sp.Symbol(out_name))
 
+    # Time-reduction statistic (Observation.aggregation). Default (anything but 'median')
+    # folds a running sum (the accumulator state above) and divides by count. 'median' folds
+    # a per-node HISTOGRAM of the per-step output (bins from Observation.histogram) into the
+    # carry (O(bins) memory, no trajectory) and reads the 0.5 quantile at finalize — the
+    # streaming-safe way to get the robust median instantaneous frequency Koller uses, which
+    # a running sum cannot compute.
+    statistic = "median" if str(get_attr(obs, "aggregation", None) or "mean").lower() == "median" else "mean"
+    hist = get_attr(obs, "histogram", None)
+    histogram = None
+    if hist is not None:
+        _bins = get_attr(hist, "n", None)
+        histogram = {
+            "lo": float(get_attr(hist, "lo", -5.0)),
+            "hi": float(get_attr(hist, "hi", 55.0)),
+            "bins": int(_bins) if _bins is not None else 512,
+        }
+    # A streaming median needs explicit bins spanning the reduced quantity's range;
+    # silently assuming a default window would clip out-of-range samples and pin the
+    # result to an edge. Require the histogram slot rather than guess.
+    if statistic == "median" and histogram is None:
+        raise ValueError(
+            f"Observation {get_attr(obs, 'name', None)!r} sets aggregation: median but declares no "
+            "`histogram` slot; a streaming median needs explicit bins (lo/hi/n) spanning the "
+            "reduced quantity's range."
+        )
+
     return {
         "source": source,
         "states": states,
         "output": output,
         "functions": functions,
+        "statistic": statistic,   # 'mean' | 'median'
+        "histogram": histogram,
+        "windowed": windowed,     # True if any state declares an evict_equation (sliding window)
     }
 
 

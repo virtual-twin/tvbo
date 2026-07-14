@@ -114,6 +114,10 @@ def ref_to_code(ref_type, ref_val, state_idx=None):
         if ref_val.startswith('observations.'):
             obs_key = ref_val.split('.', 1)[1]
             return f"_network_observations['{obs_key}']"
+        # network.weight / network.weights → the connectivity matrix (embedded constant),
+        # so a callable can receive the connectome (connectogram, betweenness, moments, ...).
+        if ref_val in ('weight', 'weights'):
+            return "_network_weights"
         # For other network properties, use kwargs
         return f"kwargs.get('{ref_val}')"
     if ref_type == 'integration':
@@ -619,17 +623,58 @@ if network_obs_keys:
 <%def name="render_reduction(red, name, s_idx, dt)">\
 <%
     from tvbo.codegen import render_expression
+    _is_median = red.get('statistic', 'mean') == 'median'
     _snames = [s['name'] for s in red['states']]
+    _mem = [s for s in red['states'] if not s['is_accumulator']]   # memory-only states
+    _mnames = [s['name'] for s in _mem]
     _src = red['source']
     _rparams = _snames + [_src, 'dt', 'count']
     _rufuncs = {f: f for f in red['functions']}
     _jc = lambda e, ps=_rparams: render_expression(e, format='jax', user_functions=_rufuncs, parameters=ps)
+    _h = red.get('histogram')   # guaranteed present for median (resolve_reduction requires it)
+    _mem_pre = "".join("%s, " % _n for _n in _mnames)        # "s_prev, "
+    _mem_new = "".join("_new_%s, " % _n for _n in _mnames)   # "_new_s_prev, "
+    _mem_ini = "".join("jnp.full((n,), %r), " % s['init'] for s in _mem)
 %>\
 def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0):
 % for _fname, _fdef in red['functions'].items():
     def ${_fname}(${", ".join(_fdef['args'])}):
         return ${_jc(_fdef['expr'], _fdef['args'])}
 % endfor
+% if _is_median:
+    # Streaming median: fold a per-node histogram of the per-step output into the carry
+    # (O(bins) memory, no trajectory) and read the 0.5 quantile at finalize — the robust
+    # statistic a running sum cannot give. Memory states advance every step; the histogram
+    # only accumulates after the warmup (_gstep > skip).
+    _hlo, _hhi, _hbins = ${_h['lo']}, ${_h['hi']}, ${_h['bins']}
+    _hbw = (_hhi - _hlo) / _hbins
+    def _init(template, n_steps):
+        n = template.shape[-1]
+        return (${_mem_ini}jnp.zeros((_hbins, n)), jnp.array(0))
+    def _update(acc, block):
+        def _step(carry, s_row):
+            ${_mem_pre}_counts, _gstep = carry
+            ${_src} = s_row[s_var]
+            _accumulate = _gstep > skip
+            _q_step = ${_jc(red['output'])}
+            _b = jnp.clip(((_q_step - _hlo) / _hbw).astype(jnp.int32), 0, _hbins - 1)
+            _counts = _counts.at[_b, jnp.arange(_counts.shape[1])].add(jnp.where(_accumulate, 1.0, 0.0))
+% for s in _mem:
+            _new_${s['name']} = ${_jc(s['update'])}
+% endfor
+            return (${_mem_new}_counts, _gstep + 1), None
+        return jax.lax.scan(_step, acc, block)[0]
+    def _finalize(acc):
+        ${_mem_pre}_counts, _gstep = acc
+        _total = _counts.sum(0)
+        _cum = jnp.cumsum(_counts, 0)
+        _target = _total * 0.5   # median = 0.5 quantile
+        _bi = jnp.clip(jnp.sum(_cum < _target[None, :], axis=0), 0, _hbins - 1)
+        _cb = jnp.where(_bi > 0, jnp.take_along_axis(_cum, jnp.maximum(_bi - 1, 0)[None, :], 0)[0], 0.0)
+        _frac = (_target - _cb) / jnp.maximum(jnp.take_along_axis(_counts, _bi[None, :], 0)[0], 1.0)
+        return _hlo + (_bi + _frac) * _hbw
+    return (_init, _update, _finalize)
+% else:
     def _init(template, n_steps):
         n = template.shape[-1]
         return (${", ".join("jnp.full((n,), %r)" % s['init'] for s in red['states'])}, jnp.array(0), jnp.array(0))
@@ -653,6 +698,7 @@ def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0):
         ${", ".join(_snames)}, count, _gstep = acc
         return ${_jc(red['output'])}
     return (_init, _update, _finalize)
+% endif
 </%def>\
 """Observation classes derived from AbstractMonitor for tvboptim."""
 
@@ -670,6 +716,22 @@ from tvbo.data.types import ObservationResult
 from tvbo.classes.network import Network as _TvboNetwork
 
 _bids_network = _TvboNetwork.from_bids('${bids_dir}', observational_measures=${list(network_obs_keys)})
+% endif
+<%
+    # Embed the connectivity matrix as a constant when a callable references
+    # `network.weight` (resolved to `_network_weights` in ref_to_code). Only emitted
+    # when actually referenced, so non-network experiments are unaffected.
+    _uses_net_weight = 'network.weight' in str(get_attr(experiment, 'observations', '') or '')
+    _net_weights_data = None
+    if _uses_net_weight:
+        _net_w = get_attr(experiment, 'network', None)
+        _wm = getattr(_net_w, 'weights_matrix', None) if _net_w is not None else None
+        if _wm is not None:
+            _net_weights_data = np.asarray(_wm, dtype=float).tolist()
+%>\
+% if _net_weights_data is not None:
+# Connectivity matrix for callables referencing `network.weight`.
+_network_weights = jnp.array(${repr(_net_weights_data)})
 % endif
 
 % for module in sorted(callable_imports.keys()):
