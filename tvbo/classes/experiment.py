@@ -2417,7 +2417,27 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 parameter = str(getattr(axis, "parameter"))
                 values = list(getattr(axis, "explored_values", None) or [])
                 if not values:
-                    raise ValueError(f"Exploration {name!r} axis {parameter!r} needs explored_values")
+                    # Fall back to the axis domain (lo/hi + n or step) so a
+                    # domain-based sweep works here too, not only explicit lists.
+                    dom = getattr(axis, "domain", None)
+                    lo = getattr(dom, "lo", None) if dom is not None else None
+                    hi = getattr(dom, "hi", None) if dom is not None else None
+                    if lo is not None and hi is not None:
+                        lo, hi = float(lo), float(hi)
+                        n = int(getattr(dom, "n", 0) or 0)
+                        step = getattr(dom, "step", None)
+                        if n >= 1:
+                            # n==1 -> linspace(lo, hi, 1) == [lo] (a single-point axis),
+                            # not the 11-point default below.
+                            values = [float(v) for v in jnp.linspace(lo, hi, n)]
+                        elif step:
+                            values = [float(v) for v in jnp.arange(lo, hi + float(step) / 2, float(step))]
+                        else:
+                            values = [float(v) for v in jnp.linspace(lo, hi, 11)]
+                if not values:
+                    raise ValueError(
+                        f"Exploration {name!r} axis {parameter!r} needs explored_values or a domain (lo/hi)"
+                    )
                 axis_values.append(values)
                 # Harmonized axis shape shared by every backend: Bunch(name,
                 # explored_values, n) — the coordinate source for ExplorationResult.as_grid().
