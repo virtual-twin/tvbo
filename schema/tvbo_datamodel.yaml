@@ -380,6 +380,7 @@ enums:
         description: "How to aggregate time series data"
         permissible_values:
             mean: { description: "Average over time" }
+            median: { description: "Median over time (per node). Robust to phase-slip / outlier samples that bias the mean. For an Observation.dynamics observer this is computed streaming: a per-node histogram (bins from the observation's `histogram` slot) is folded into the integrator carry and the 0.5 quantile is read at finalize, so no trajectory is held." }
             variance: { description: "Variance over time (per node)" }
             std: { description: "Standard deviation over time (per node)" }
             first_passage: { description: "First-passage time index (per node): the first sample at which the source crosses the observation's `threshold` parameter (>=), or the sample count if it never crosses. Backend-independent (argmax of the threshold-crossing). Multiply by the sampling step for a time." }
@@ -1875,6 +1876,14 @@ classes:
             aggregation:
                 range: AggregationType
                 description: "How to aggregate over time"
+            histogram:
+                range: Range
+                inlined: true
+                description: >-
+                    Bin spec (`lo`, `hi`, `n`) for a streaming order-statistic aggregation
+                    (`aggregation: median`). Should span the expected value range of the
+                    reduced per-step quantity; the quantile is linearly interpolated within
+                    the crossing bin. Only used by the streaming-median reduction path.
             window_size:
                 range: integer
                 description: "Number of samples for windowed aggregation"
@@ -2137,6 +2146,19 @@ classes:
                     sum ``x_next = x + f``) — the symbolic, backend-independent
                     sibling of the continuous 'differential' form.
                     Algebraic equations are used by ModelingToolkit.jl backend.
+            evict_equation:
+                range: Equation
+                description: >-
+                    Optional reverse recurrence for a **sliding-window** reduction: the
+                    per-step downdate that removes the sample leaving the window, the
+                    inverse of ``equation`` (which folds an arriving sample in). Only
+                    meaningful when ``equation_type: recurrence`` on an observation's
+                    auxiliary ``dynamics``. When present, the observer is a windowed
+                    reduction — its state is maintained by ``equation`` (add) and
+                    ``evict_equation`` (evict) and rebuilt exactly from the window on
+                    resync — rather than a cumulative accumulator over the whole
+                    trajectory (``equation`` alone). Absent for ordinary state variables
+                    and cumulative reductions.
             equation_order:
                 range: integer
                 ifabsent: int(1)
