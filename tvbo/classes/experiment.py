@@ -1691,6 +1691,25 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         else:
             raise ValueError(f"Format {format} not supported. Valid formats: tvb, tvboptim, jax.")
 
+    def _locate_source_result(self, results_root, source_id):
+        """Path to the ``from_experiment`` source run's saved result HDF5.
+
+        Globs ``results_root`` (or cwd) by the ``exp-<id>_`` stem, skipping the
+        network sidecar. Raises if the source hasn't been run yet. Shared by the
+        seed / branch / parameter resolvers.
+        """
+        from pathlib import Path
+
+        root = Path(results_root) if results_root else Path.cwd()
+        cands = [p for p in root.glob(f"**/*exp-{source_id}_*.h5") if "network" not in p.name]
+        if not cands:
+            raise FileNotFoundError(
+                f"initial_state.from_experiment: no saved result for experiment {source_id} "
+                f"under {root} (looked for '*exp-{source_id}_*.h5'). Run experiment "
+                f"{source_id} first so its result is available."
+            )
+        return sorted(cands)[0]
+
     def _resolve_from_experiment_seed(self, results_root=None):
         """Load the operating point for ``initial_state.method == from_experiment``.
 
@@ -1740,8 +1759,6 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         :meth:`_resolve_from_experiment_branch`. Returns ``None`` when the
         experiment's ``source_point`` mode does not match ``branch``.
         """
-        from pathlib import Path
-
         ini = getattr(self, "initial_state", None)
         if ini is None or str(getattr(ini, "method", "") or "") != "from_experiment":
             return None
@@ -1760,16 +1777,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         sv_items = svs.items() if hasattr(svs, "items") else [(getattr(s, "name", None), s) for s in svs]
         sv_names = [getattr(sv, "name", None) or key for key, sv in sv_items]
 
-        root = Path(results_root) if results_root else Path.cwd()
-        cands = [p for p in root.glob(f"**/*exp-{source_id}_*.h5") if "network" not in p.name]
-        if not cands:
-            raise FileNotFoundError(
-                f"initial_state.from_experiment: no saved result for experiment {source_id} "
-                f"under {root} (looked for '*exp-{source_id}_*.h5'). Run experiment "
-                f"{source_id} first so its operating point is available."
-            )
-        src_h5 = sorted(cands)[0]
-
+        src_h5 = self._locate_source_result(results_root, source_id)
         n_nodes = len(self.network.nodes) if self.network.nodes else None
 
         def _node_dim(da):
@@ -1821,8 +1829,14 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 seeds[sv] = jnp.asarray(np.asarray(da.values))
                 if axis_values is None:
                     axis_name = str(sd)
-                    axis_values = (np.asarray(da.coords[sd].values) if sd in da.coords
-                                   else np.arange(da.sizes[sd], dtype=float))
+                    if sd not in da.coords:
+                        raise ValueError(
+                            "initial_state.from_experiment source_point='branch': the source's "
+                            f"'{sv}_final' has no coordinate on its swept dim '{sd}', so the per-cell "
+                            "parameter values are unavailable — the restart would run at wrong values. "
+                            "The source experiment must record its swept axis (a warm-start scan does)."
+                        )
+                    axis_values = np.asarray(da.coords[sd].values)
                     n_cells = int(da.sizes[sd])
                 elif int(da.sizes[sd]) != n_cells:
                     raise ValueError(
@@ -1850,8 +1864,6 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         its ``control_mask``.) Returns ``{param_name: (n_nodes,)}``, or ``None`` when
         no parameter sources a value this way.
         """
-        from pathlib import Path
-
         ini = getattr(self, "initial_state", None)
         if ini is None or str(getattr(ini, "method", "") or "") != "from_experiment":
             return None
@@ -1866,17 +1878,12 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             raise ValueError("initial_state.method=from_experiment requires source_experiment")
         source_id = int(getattr(src, "id", src))
 
-        root = Path(results_root) if results_root else Path.cwd()
-        cands = [p for p in root.glob(f"**/*exp-{source_id}_*.h5") if "network" not in p.name]
-        if not cands:
-            raise FileNotFoundError(
-                f"initial_state.from_experiment: no saved result for experiment {source_id} "
-                f"under {root} (looked for '*exp-{source_id}_*.h5')."
-            )
-        src_h5 = sorted(cands)[0]
+        src_h5 = self._locate_source_result(results_root, source_id)
         n_nodes = len(self.network.nodes) if self.network.nodes else None
         point = str(getattr(ini, "source_point", "") or "endpoint")
-        sel = -1 if (point in ("", "endpoint")) else int(point)
+        # 'branch' has no single point for a parameter value; fall back to the settled
+        # endpoint rather than crash on int('branch').
+        sel = -1 if point in ("", "endpoint", "branch") else int(point)
 
         def _node_dim(da):
             if n_nodes is not None:

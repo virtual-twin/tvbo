@@ -332,8 +332,18 @@ def reassemble_experiment_results(shards_root, out_dir, pattern="**/*_result.h5"
     combined = xr.concat([xr.open_dataset(p, engine="h5netcdf") for p in paths], dim=point_dim)
     coord_names = [c for c in combined.coords
                    if point_dim in combined[c].dims and c != point_dim]
-    grid = (combined.set_index({point_dim: coord_names}).unstack(point_dim)
-            if coord_names else combined)
+    if len(coord_names) >= 2:
+        # Multi-parameter sweep: pivot the flat point dim into one dim per parameter,
+        # addressing the full rectangular grid by value (order-independent).
+        grid = combined.set_index({point_dim: coord_names}).unstack(point_dim)
+    elif len(coord_names) == 1:
+        # A single ordering coordinate (a one-parameter sweep, or a branch-restart's
+        # ``branch_point`` index) is a flat, ordered sequence — not a grid to pivot.
+        # Sort by it so shard order is irrelevant, then make it the dimension. (unstack
+        # needs a multi-index, so it cannot handle the single-coordinate case at all.)
+        grid = combined.sortby(coord_names[0]).swap_dims({point_dim: coord_names[0]})
+    else:
+        grid = combined
     grid.attrs["tvbo_class"] = "tvbo:ExperimentResult"
     if sidecar is not None:
         grid.attrs["sidecar_file"] = f"{stem}.yaml"

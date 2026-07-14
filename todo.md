@@ -594,6 +594,30 @@ recompute fallback. Depends on the `Observation.dynamics` slot + the generic
 procedure/equation engine (see `NetworkGenerator` §, same sympy-printer
 extension). Not blocking — the recompute fallback is correct meanwhile.
 
+#### `windowed_cov` numerical stability (byte-identity precision fix)
+
+The sliding-window streaming FC reducer `windowed_cov` (in the tvboptim worktree,
+`observations/observation.py`) accumulates the **naive one-pass** covariance
+`comoment = sum_xxT − outer(sum_x, sum_x) / count`, which suffers **catastrophic
+cancellation** when the signal mean is large relative to its variance — exactly
+the BOLD/neural case (a large DC baseline on a small fluctuation). `compute_fc`
+(`jnp.corrcoef`, mean-centred) and the sibling `welford_cov` (Chan/Welford merge,
+mean-centred) do **not**; so `windowed_cov` can diverge from `compute_fc` by
+**≫ the 1e-12** the streaming path is swapped in to preserve. `resync`
+(`x.T @ x`, `sum(x)`) is un-centred too, so it does not reset the drift.
+
+**Fix:** rebase `windowed_cov`'s accumulator onto `welford_cov`'s mean-centred
+approach — carry `(count, mean, comoment)` and extend it with the sliding-window
+`evict` (a Chan *downdate*: reverse the mean/comoment merge for the leaving
+sample), rather than the naive sum-of-squares. Then `windowed_cov`, `welford_cov`,
+and `compute_fc` share one numerically-stable co-moment definition instead of two
+divergent ones. Validate byte-identity on a DC-offset BOLD case, not just the
+existing zero-mean-ish test data. **Do this on windowed_cov's own branch off
+`main`** (it is currently uncommitted WIP mis-parked on `differentiable-delays`),
+NOT on the delay branch. Surfaced by the 2026-07-14 `/code-review` (finding #1);
+also flagged: dead `windowed_fcd(n_diag=…)` param, and `windowed_fcd.finalize`'s
+`jnp.stack(list(...))` won't compose under the jitted stride scan.
+
 ### Explorations: Observations should be also available in Explorations
 
 So I want to setup:
