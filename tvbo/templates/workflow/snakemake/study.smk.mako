@@ -152,7 +152,9 @@ rule ${ep["rule_name"]}:
         ${repr(_line + " && ")}
 % endfor
 % if context.get("bundled_code"):
-        "export PYTHONPATH=code:${'$'}{PYTHONPATH:-} && "
+        ## Snakemake .format()s the shell string, so the ${PYTHONPATH:-} braces must be
+        ## doubled to survive as a literal (single braces are wildcard fields, e.g. {output}).
+        "export PYTHONPATH=code:${'$'}{{PYTHONPATH:-}} && "
 % endif
 % for _e in (block.get("env") or []):
         "export ${_e['name']}=${_e['value']} && "
