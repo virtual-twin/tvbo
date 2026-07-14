@@ -1838,6 +1838,78 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             "n_cells": n_cells,
         }
 
+    def _resolve_from_experiment_params(self, results_root=None):
+        """Load per-node model PARAMETERS sourced from the from_experiment operating point.
+
+        A heterogeneous parameter that declares ``measure: <observation>`` in a
+        ``method=from_experiment`` experiment takes its per-node values from that
+        named observation of the source run's operating point — the parameter
+        analogue of the state IC seed, and the same ``Parameter.source``/``measure``
+        mechanism ``P`` uses to source per-node net power from a network. (Here the
+        source is the operating point another experiment recorded, e.g. ``g`` from
+        its ``control_mask``.) Returns ``{param_name: (n_nodes,)}``, or ``None`` when
+        no parameter sources a value this way.
+        """
+        from pathlib import Path
+
+        ini = getattr(self, "initial_state", None)
+        if ini is None or str(getattr(ini, "method", "") or "") != "from_experiment":
+            return None
+        params = self.dynamics.parameters
+        pitems = params.items() if hasattr(params, "items") else [(getattr(p, "name", None), p) for p in params]
+        wanted = {(getattr(p, "name", None) or key): str(getattr(p, "measure", "") or "")
+                  for key, p in pitems if getattr(p, "measure", None)}
+        if not wanted:
+            return None
+        src = getattr(ini, "source_experiment", None)
+        if src is None:
+            raise ValueError("initial_state.method=from_experiment requires source_experiment")
+        source_id = int(getattr(src, "id", src))
+
+        root = Path(results_root) if results_root else Path.cwd()
+        cands = [p for p in root.glob(f"**/*exp-{source_id}_*.h5") if "network" not in p.name]
+        if not cands:
+            raise FileNotFoundError(
+                f"initial_state.from_experiment: no saved result for experiment {source_id} "
+                f"under {root} (looked for '*exp-{source_id}_*.h5')."
+            )
+        src_h5 = sorted(cands)[0]
+        n_nodes = len(self.network.nodes) if self.network.nodes else None
+        point = str(getattr(ini, "source_point", "") or "endpoint")
+        sel = -1 if (point in ("", "endpoint")) else int(point)
+
+        def _node_dim(da):
+            if n_nodes is not None:
+                for d in da.dims:
+                    if da.sizes[d] == n_nodes:
+                        return d
+            for d in da.dims:
+                if "node" in str(d).lower():
+                    return d
+            return da.dims[-1]
+
+        def _measure_key(ds, measure):
+            for k in ds.data_vars:
+                if k == measure or k.endswith(f"__{measure}"):
+                    return k
+            raise KeyError(
+                f"initial_state.from_experiment: source experiment {source_id} does not record "
+                f"the observation '{measure}' needed to source a parameter. Have the source "
+                f"experiment record it (e.g. a per-node control mask)."
+            )
+
+        ds = xr.open_dataset(src_h5, engine="h5netcdf")
+        try:
+            out = {}
+            for pname, measure in wanted.items():
+                da = ds[_measure_key(ds, measure)]
+                for d in [d for d in da.dims if d != _node_dim(da)]:
+                    da = da.isel({d: sel})
+                out[pname] = jnp.asarray(np.asarray(da.values).ravel())
+        finally:
+            ds.close()
+        return out
+
     def run(self, format="tvboptim", initial_conditions=None, results_root=None, **kwargs):
         """Configure, build, and run the experiment on a backend.
 
@@ -1988,6 +2060,12 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             _seed = self._resolve_from_experiment_seed(results_root)
             if _seed is not None:
                 kwargs.setdefault("seed_dynamics", _seed)
+
+            # Parameters sourced from the same operating point (Parameter.measure, e.g.
+            # a control mask g <- source's control_mask), injected as seed_params.
+            _pseed = self._resolve_from_experiment_params(results_root)
+            if _pseed is not None:
+                kwargs.setdefault("seed_params", _pseed)
 
             # source_point='branch': the source run's WHOLE branch is a per-cell seed
             # (axis values + settled state per point), handed over as branch_seed so an
