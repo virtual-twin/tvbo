@@ -6,6 +6,7 @@ labels, and region centers. Also defines helpers to build atlas metadata and to
 produce ranked (relabelled) parcellation volumes from FreeSurfer segmentations.
 """
 
+import logging
 import os
 
 try:
@@ -63,6 +64,7 @@ aseg_gm_regions = [
 ]
 
 available_atlases = bids_utils.get_unique_entity_values(atlas_data, "atlas")
+logger = logging.getLogger(__name__)
 
 
 class Atlas(tvbo_datamodel.BrainAtlas):
@@ -258,7 +260,7 @@ class Atlas(tvbo_datamodel.BrainAtlas):
             except ImportError:
                 centers = []
                 lookup_labels = []
-                print(
+                logger.warning(
                     "nilearn is required to compute atlas region centers. "
                     "Setting to empty. Install nilearn or provide atlas metadata."
                 )

@@ -56,6 +56,9 @@ from tvbo.adapters.tvb import from_tvb_simulator as _from_tvb_simulator
 from tvbo.utils import traverse_metadata
 from tvbo.utils import Bunch
 from tvbo.utils import as_list
+from tvbo.log import ensure_configured
+
+logger = logging.getLogger(__name__)
 
 sessionid = 1
 
@@ -1120,20 +1123,25 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         # 6. Verify reproducibility if requested
         # =====================================================================
         if run_to_verify and timeseries is not None:
-            print("Running simulation to verify reproducibility...")
+            logger.info("Running simulation to verify reproducibility...")
             ts_rerun = experiment.run(format="jax")
 
             # Compare shapes
             if ts_rerun.shape != timeseries.shape:
-                print(f"WARNING: Shape mismatch! Loaded: {timeseries.shape}, Rerun: {ts_rerun.shape}")
+                logger.warning(
+                    "Shape mismatch! Loaded: %s, Rerun: %s", timeseries.shape, ts_rerun.shape
+                )
             else:
                 # Compare data
                 max_diff = np.max(np.abs(np.asarray(ts_rerun.data) - np.asarray(timeseries.data)))
                 if max_diff < 1e-6:
-                    print(f"✓ Verification passed! Max difference: {max_diff:.2e}")
+                    logger.info("Verification passed! Max difference: %.2e", max_diff)
                 else:
-                    print(f"⚠ Data differs. Max difference: {max_diff:.2e}")
-                    print("  This may be expected if noise was used or parameters differ.")
+                    logger.warning(
+                        "Data differs. Max difference: %.2e "
+                        "(may be expected if noise was used or parameters differ).",
+                        max_diff,
+                    )
 
         return experiment, timeseries
 
@@ -1279,8 +1287,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 try:
                     sigma = float(sv.noise.parameters["sigma"].value)
                 except Exception as e:
-                    print(f"Error retrieving sigma for state variable {sv.name}: {e}")
-                    pass
+                    logger.debug("Error retrieving sigma for state variable %s: %s", sv.name, e)
 
             if sigma == 0.0:
                 try:
@@ -1295,8 +1302,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     ):
                         sigma = float(inparams["sigma"].value)
                 except Exception as e:
-                    print(f"Error retrieving integration-level sigma: {e}")
-                    pass
+                    logger.debug("Error retrieving integration-level sigma: %s", e)
 
             sigmas.append(float(sigma))
 
@@ -1943,6 +1949,12 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             An `ExperimentResult` holding the integrated time series and any
             observations, with `source` set to this experiment.
         """
+        # Make tvbo progress visible for interactive/script runs without
+        # clobbering an app's own logging — the same switch the CLI uses, so
+        # ``exp.run(...)`` and ``tvbo run`` log identically. No-op if the
+        # embedding application already configured logging.
+        ensure_configured()
+
         if "duration" in kwargs:
             self.integration.duration = kwargs.pop("duration")
 

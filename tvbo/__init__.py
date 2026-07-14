@@ -35,7 +35,23 @@ ROOT = os.path.dirname(__file__)
 tempdir = os.path.join(tempfile.gettempdir(), "tvbo")
 os.makedirs(tempdir, exist_ok=True)
 
-logging.disable(logging.CRITICAL)
+# Central logging. Importing tvbo installs only a NullHandler on the ``tvbo``
+# logger, so the package is silent as a library; entry points (``tvbo run``,
+# ``SimulationExperiment.run``) surface progress via ``configure_logging`` and
+# everything is controlled by one switch (``TVBO_LOG_LEVEL`` / ``set_log_level``).
+# This replaces a former process-wide ``logging.disable(CRITICAL)`` that muted
+# every logger — see :mod:`tvbo.log`.
+from tvbo.log import (  # noqa: E402,F401
+    configure_logging,
+    ensure_configured,
+    get_log_level,
+    log_level,
+    set_log_level,
+    silence,
+)
+
+if os.environ.get("TVBO_LOG_LEVEL"):
+    configure_logging()
 
 __authors__ = [
     "Leon K. Martin",

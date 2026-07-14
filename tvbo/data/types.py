@@ -6,6 +6,7 @@ the bundled simulation state (initial conditions, network, noise, parameters,
 stimulus, and monitor settings) handed to the integration backends.
 """
 
+import logging
 from copy import deepcopy
 
 import matplotlib.pyplot as plt
@@ -24,6 +25,8 @@ from tvbo.utils import format_pytree_as_string
 import jax
 from jax.tree_util import register_pytree_node_class
 import jax.numpy as jnp
+
+logger = logging.getLogger(__name__)
 
 
 def _to_dataarray(raw_data, raw_time=None, state_names=None, nodes=None):
@@ -2841,7 +2844,7 @@ class TimeSeries:
         n_svar = self.data.shape[1] if len(self.data.shape) > 1 else 1
         uses_modes = len(self.data.shape) > 3 and self.data.shape[3] > 1
         if uses_modes:
-            print("Plotting only first mode by default")
+            logger.info("Plotting only first mode by default")
 
         # n_regions = self.data.shape[2]
         if "labels" in kwargs.keys():
@@ -3299,7 +3302,7 @@ class TimeSeries:
         dt = np.diff(self.time)
         mean_dt = np.mean(dt)
         if self.sample_period != mean_dt:
-            print("Warning: Sample period does not match mean dt. Setting sample period to mean dt.")
+            logger.warning("Sample period does not match mean dt; setting sample period to mean dt.")
             self.sample_period = mean_dt
 
     def plot_power_spectrum(

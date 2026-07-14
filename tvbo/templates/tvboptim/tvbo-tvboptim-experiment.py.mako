@@ -1124,6 +1124,12 @@ first_coupling_name = list(all_couplings.keys())[0] if all_couplings else 'None'
 import os
 import copy
 import functools  # render_expression emits functools.reduce for Min/Max over lists
+import logging
+
+# Progress is logged, not printed: this generated script shares the ``tvbo``
+# logger hierarchy, so ``TVBO_LOG_LEVEL`` / ``tvbo.set_log_level`` control it the
+# same way in-process and standalone (see the ``__main__`` block below).
+logger = logging.getLogger("tvbo.run")
 
 import jax
 % if enable_x64:
@@ -1157,7 +1163,8 @@ from tvboptim.experimental.network_dynamics.noise import AdditiveNoise
 import optax
 from tvboptim.types import Parameter, BoundedParameter
 from tvboptim.optim.optax import OptaxOptimizer
-from tvboptim.optim.callbacks import MultiCallback, DefaultPrintCallback, SavingLossCallback, SavingParametersCallback
+from tvboptim.optim.callbacks import MultiCallback, SavingLossCallback, SavingParametersCallback
+from tvbo.templates.tvboptim.callbacks import LoggingProgressCallback
 % endif
 % if has_explorations:
 from tvboptim.types import Space, GridAxis, DataAxis
@@ -2118,6 +2125,7 @@ def run_stage_${stage_name}(
         loss_fn,
         optimizer="${stage_algorithm}",
         learning_rate=learning_rate,
+        max_steps=max_steps,
         **opt_kwargs
     )
     fitted_params, fitting_data = opt.run(marked_state, max_steps=max_steps, mode="${opt_mode}")
@@ -2166,10 +2174,10 @@ def create_optimizer(
     if save_every is None:
         save_every = _smart_interval(max_steps)
 
-    # Default callback: print + save loss + save state at smart intervals
+    # Default callback: log progress + save loss + save state at smart intervals
     if callback is None:
         callback = MultiCallback([
-            DefaultPrintCallback(every=print_every),
+            LoggingProgressCallback(every=print_every, total=max_steps),
             SavingLossCallback(every=save_every),
             SavingParametersCallback(every=save_every),
         ])
@@ -2964,18 +2972,22 @@ def run_experiment(
     _SEED_PARAMS = seed_params
 
     weights = jnp.array(weights)
-    # quiet=True silences the structural progress prints (run(..., quiet=True)).
+    # Progress flows through the ``tvbo.run`` logger; ``quiet=True`` forces
+    # silence for this call regardless of the configured level (back-compat with
+    # ``run(..., quiet=True)``), otherwise ``TVBO_LOG_LEVEL`` / the tvbo logger
+    # level decides what is shown.
     _quiet = kwargs.pop("quiet", False)
-    _log = (lambda *a, **k: None) if _quiet else print
+
+    def _log(msg):
+        if not _quiet:
+            logger.info(msg)
 % if network_observation_names:
     # Materialize network-observation constants (empirical targets) from the
     # supplied matrices, keyed by observation name (e.g. {'fc_target': FC}).
     _bind_network_observations(network_observations)
 % endif
 
-    _log("\n" + "=" * 60)
     _log("STEP 1: Running simulation...")
-    _log("=" * 60)
 
     % if has_delay:
     if delays is None:
@@ -3120,9 +3132,7 @@ def run_experiment(
 
     % if has_explorations:
     if mode in ('exploration', 'all'):
-        _log("\n" + "=" * 60)
         _log("STEP 2: Running explorations...")
-        _log("=" * 60)
         exploration_result = Bunch()
 
         % for expl in explorations:
@@ -3142,9 +3152,7 @@ def run_experiment(
 
     % if has_algorithms:
     if mode in ('algorithm', 'algorithms', 'all'):
-        print("\n" + "=" * 60)
-        print("STEP 3: Running algorithms...")
-        print("=" * 60)
+        _log("STEP 3: Running algorithms...")
         # Determine if running all algorithms or just one
         algorithm_name = kwargs.get('name', kwargs.get('algorithm_name', None))
         run_all_algorithms = (mode in ('algorithms', 'all')) or (algorithm_name is None and mode == 'algorithm')
@@ -3258,7 +3266,7 @@ def run_experiment(
         if run_all_algorithms:
             # All algorithms run in dependency order (topological sort)
             algorithms_to_run = [${', '.join(f"'{n}'" for n in sorted_algo_names)}]
-            print(f"  Algorithms to run (dependency order): {algorithms_to_run}")
+            _log(f"  Algorithms to run (dependency order): {algorithms_to_run}")
         else:
             algorithms_to_run = [algorithm_name]
 
@@ -3271,7 +3279,7 @@ def run_experiment(
                 _algo_seed = default_algo_seed
             algo_key = jax.random.key(_algo_seed)  # Use newer key() API for consistency
             if algo_verbose:
-                print(f"\\n>>> Running algorithm: {algorithm_name} (seed={_algo_seed})")
+                _log(f"\\n>>> Running algorithm: {algorithm_name} (seed={_algo_seed})")
             algo_result = None
 
 % for algo in algorithms_list:
@@ -3363,11 +3371,11 @@ def run_experiment(
                 if _dep_name in algorithms_results and hasattr(algorithms_results[_dep_name], 'state'):
                     _source_state = algorithms_results[_dep_name].state
                     if algo_verbose:
-                        print(f"    (using state from dependency: {_dep_name})")
+                        _log(f"    (using state from dependency: {_dep_name})")
                 else:
                     _source_state = initial_state
                     if algo_verbose:
-                        print(f"    (dependency {_dep_name} not yet run, using initial state)")
+                        _log(f"    (dependency {_dep_name} not yet run, using initial state)")
 % else:
                 # No dependencies - use initial state
                 _source_state = initial_state
@@ -3453,7 +3461,7 @@ def run_experiment(
                 _stage_conv = []      # per-stage convergence Bunch (working-point trajectory)
                 for _si, _sd in enumerate(_stage_defs):
                     if algo_verbose:
-                        print(f"  [{algorithm_name} stage {_si+1}/{len(_stage_defs)}] {_sd}")
+                        _log(f"  [{algorithm_name} stage {_si+1}/{len(_stage_defs)}] {_sd}")
                     algo_result = run_${algo_name}(
                         state=_stage_state,
                         model_fn=algo_model_fn,
@@ -3574,9 +3582,7 @@ def run_experiment(
                 results[_alg_name] = _alg_result
             # Use last algorithm's result as the "main" result
             last_algo_name = algorithms_to_run[-1]
-            print("\n" + "=" * 60)
-            print(f"  Algorithms complete. Results: {list(algorithms_results.keys())}")
-            print("=" * 60)
+            _log(f"  Algorithms complete. Results: {list(algorithms_results.keys())}")
         else:
             # Running single: expose result at top level
             results['algorithms'] = {algorithm_name: algo_result}
@@ -3586,9 +3592,7 @@ def run_experiment(
 
     % if has_optimization:
     if mode in ('optimization', 'all'):
-        print("\n" + "=" * 60)
-        print("STEP 4: Running optimization...")
-        print("=" * 60)
+        _log("STEP 4: Running optimization...")
         _missing_inputs = []
 % for kwarg_name in sorted(runtime_kwargs_needed) if runtime_kwargs_needed else []:
         if '${kwarg_name}' not in kwargs:
@@ -3599,7 +3603,7 @@ def run_experiment(
                 raise ValueError(f"Optimization requires these inputs via kwargs: {_missing_inputs}")
             else:
                 # mode='all' - skip optimization if missing inputs
-                print(f"  Skipping optimization (missing: {_missing_inputs})")
+                _log(f"  Skipping optimization (missing: {_missing_inputs})")
         else:
             # Stage results storage (use Bunch for dot-notation access)
             stage_results = Bunch()
@@ -3613,7 +3617,7 @@ def run_experiment(
 % if opt_has_custom_integration:
             # Prepare fresh model_fn and state for optimization
             # Optimization has custom integration settings: ${opt_solver_class} dt=${opt_dt} t1=${opt_t1}
-            print(f"  Preparing optimization model (t1=${opt_t1}ms, dt=${opt_dt}ms, solver=${opt_solver_class})")
+            _log(f"  Preparing optimization model (t1=${opt_t1}ms, dt=${opt_dt}ms, solver=${opt_solver_class})")
 % if opt_depends_on:
             # Use existing network (with history updated from algorithms)
             opt_model_fn, opt_state = prepare(network, get_solver(), t1=${opt_t1}, dt=${opt_dt})
@@ -3708,7 +3712,7 @@ ${search.refine_body(refine_info)}\
             for _rk in list(stage_results.keys()):
                 if not str(_rk).startswith('_'):
                     results[_rk] = stage_results[_rk]
-            print(f"  Refinement complete: {list(stage_results.keys())}")
+            _log(f"  Refinement complete: {list(stage_results.keys())}")
 % else:
 % if len(optimization_stages) > 1:
             # Multi-stage optimization with optional stage filtering
@@ -3718,10 +3722,10 @@ ${search.refine_body(refine_info)}\
                 if stage not in all_stage_names:
                     raise ValueError(f"Unknown stage '{stage}'. Available stages: {all_stage_names}")
                 stages_to_run = [stage]
-                print(f"  Running single stage: {stage}")
+                _log(f"  Running single stage: {stage}")
             else:
                 stages_to_run = all_stage_names
-                print(f"  Multi-stage optimization: ${len(optimization_stages)} stages")
+                _log(f"  Multi-stage optimization: ${len(optimization_stages)} stages")
 
 % for stage_idx, stage in enumerate(optimization_stages):
 <%
@@ -3732,20 +3736,20 @@ stage_lr = stage['learning_rate']
 %>
         # Stage ${stage_idx + 1}: ${stage_name}
         if '${stage_name}' in stages_to_run:
-            print(f"\n>>> Stage ${stage_idx + 1}/${len(optimization_stages)}: ${stage_name}")
-            print(f"    Free parameters: ${', '.join(p['name'] for p in stage['free_parameters'])}")
+            _log(f"\n>>> Stage ${stage_idx + 1}/${len(optimization_stages)}: ${stage_name}")
+            _log(f"    Free parameters: ${', '.join(p['name'] for p in stage['free_parameters'])}")
 % if stage_warmup_from:
-            print(f"    Warmup from: ${stage_warmup_from}")
+            _log(f"    Warmup from: ${stage_warmup_from}")
             # Use fitted_params from warmup_from stage (or from kwargs if running single stage)
             if '${stage_warmup_from}' in stage_results:
                 current_state = stage_results['${stage_warmup_from}'].fitted_params
             elif 'warmup_state' in kwargs:
                 # Allow passing in state from previous run
                 current_state = kwargs['warmup_state']
-                print(f"    Using warmup_state from kwargs")
+                _log(f"    Using warmup_state from kwargs")
             elif stage is not None:
                 # Running single stage without warmup - use initial state with warning
-                print(f"    WARNING: warmup_from='${stage_warmup_from}' not available, using initial state")
+                _log(f"    WARNING: warmup_from='${stage_warmup_from}' not available, using initial state")
             else:
                 raise ValueError(f"warmup_from stage '${stage_warmup_from}' not found in completed stages: {list(stage_results.keys())}")
 % endif
@@ -3778,9 +3782,7 @@ stage_lr = stage['learning_rate']
 
 % endfor
         if stage is None:
-            print("\n" + "=" * 60)
-            print("  Multi-stage optimization complete")
-            print("=" * 60)
+            _log("  Multi-stage optimization complete")
 
         # Final results: last stage's fitted_params + per-stage access via dot notation
         results['fitted_params'] = current_state
@@ -3832,25 +3834,21 @@ stage_lr = stage['learning_rate']
             # Store under results.optimizations.{name} for consistent structure
             results['optimizations'] = Bunch(**{_opt_name: _opt_result})
             results[_opt_name] = _opt_result  # Also at top level for convenience
-            print("  Optimization complete.")
+            _log("  Optimization complete.")
 % endif
 % endif
     % endif
 
     % if has_inference:
     if mode in ('inference', 'all'):
-        print("\n" + "=" * 60)
-        print("STEP 5: Running Bayesian inference (MCMC)...")
-        print("=" * 60)
+        _log("STEP 5: Running Bayesian inference (MCMC)...")
 % for _inf in inference_list:
 ${render_inference(_inf, coupling_keys, external_input_keys, set(derived_observation_names), set(network_observation_names))}
 % endfor
-        print(f"  Inference complete. Posteriors: {list(results.get('inferences', Bunch()).keys())}")
+        _log(f"  Inference complete. Posteriors: {list(results.get('inferences', Bunch()).keys())}")
     % endif
 
-    _log("\n" + "=" * 60)
     _log("Experiment complete.")
-    _log("=" * 60)
 
     return results
 
@@ -3879,15 +3877,18 @@ if __name__ == "__main__":
     import pickle
     from pathlib import Path
     from tvbo.data.types import ExperimentResult
+    from tvbo.log import configure_logging
 
-    print("=" * 60)
-    print("${dynamics_class} Experiment - Standalone Execution")
-    print("=" * 60)
+    # Standalone run: surface progress on stderr, controlled by TVBO_LOG_LEVEL
+    # (default INFO) — the same switch as ``tvbo run`` and ``exp.run(...)``.
+    configure_logging()
+
+    logger.info("${dynamics_class} Experiment - Standalone Execution")
 
 % if has_bids:
     # Load network from BIDS (BEP017)
     from tvbo import Network as TVBONetwork
-    print("Loading network from BIDS: ${bids_dir}")
+    logger.info("Loading network from BIDS: ${bids_dir}")
     _network = TVBONetwork.from_bids(
         "${bids_dir}",
 % if structural_measures:
@@ -3904,12 +3905,14 @@ if __name__ == "__main__":
         region_labels = list(_network.labels.keys()) if _network.labels else None
     except (AttributeError, TypeError):
         region_labels = None
-    print(f"  Loaded network with {weights.shape[0]} nodes")
+    logger.info("  Loaded network with %d nodes", weights.shape[0])
 % else:
     # No BIDS directory configured - check if weights available
     if 'weights' not in dir() or weights is None:
-        print("ERROR: Network weights not defined.")
-        print("Either configure network.bids_dir in YAML or call run_experiment() with weights.")
+        logger.error(
+            "Network weights not defined. Either configure network.bids_dir in "
+            "YAML or call run_experiment() with weights."
+        )
         import sys
         sys.exit(1)
     distances = distances if 'distances' in dir() else None
@@ -3945,16 +3948,14 @@ if __name__ == "__main__":
     output_path = Path(__file__).parent / "${safe_name(experiment.label or 'experiment')}_results.pkl"
     with open(output_path, 'wb') as f:
         pickle.dump(results, f)
-    print(f"\nResults saved to: {output_path}")
+    logger.info("Results saved to: %s", output_path)
 
     # Export BIDS-compatible output
     bids_output = Path(__file__).parent / "derivatives"
     results.export(bids_output, description="${safe_name(experiment.label or 'tvbsim')}")
-    print(f"BIDS output: {bids_output}")
+    logger.info("BIDS output: %s", bids_output)
 
-    # Summary
-    print("\n" + "=" * 60)
-    print("Results Summary")
-    print("=" * 60)
+    # Summary — the results object itself is the script's stdout payload.
+    logger.info("Results summary:")
     print(results)
 

@@ -88,11 +88,15 @@
     ## print('simulation delayed:', is_delayed)
 %>
 
+import logging
+
 import jax
 from tvbo.data.types import TimeSeries
 from tvbo.utils import Bunch
 ## Usefull shorthands
 import jax.numpy as jnp
+
+logger = logging.getLogger("tvbo.run")
 
 <%include file="/tvbo-jax-coupling.py.mako" />
 <%include file="/tvbo-jax-dfuns.py.mako" />
@@ -386,6 +390,10 @@ def run_experiment(state):
 if __name__ == "__main__":
     import argparse
     from pathlib import Path as _Path
+    from tvbo.log import configure_logging
+
+    # Standalone run: progress on stderr, controlled by TVBO_LOG_LEVEL (default INFO).
+    configure_logging()
 
     _parser = argparse.ArgumentParser(description="Run JAX-generated TVBO simulation")
     _parser.add_argument("--spec", type=_Path, default=None,
@@ -405,7 +413,7 @@ if __name__ == "__main__":
     _experiment = SimulationExperiment.from_yaml(str(_spec))
     _state = _experiment.collect_state()
     _result = kernel(_state)
-    print(f"Done: {type(_result).__name__}, shape={getattr(_result, 'shape', None)}")
+    logger.info("Done: %s, shape=%s", type(_result).__name__, getattr(_result, "shape", None))
 
     if _args.output is not None:
         _args.output.mkdir(parents=True, exist_ok=True)
@@ -414,4 +422,4 @@ if __name__ == "__main__":
         else:
             import numpy as _np
             _np.savez(_args.output / "result.npz", data=getattr(_result, "data", _result))
-        print(f"Wrote results to {_args.output}")
+        logger.info("Wrote results to %s", _args.output)
