@@ -620,6 +620,7 @@ def _write_snakemake_profile(out_dir: Path, block: dict) -> None:
         "# Requires:          pip install snakemake-executor-plugin-slurm",
         "executor: slurm",
         "jobs: 100                      # max SLURM jobs queued/running at once",
+        "slurm-logdir: logs             # per-rule SLURM logs -> <kit>/logs/rule_<name>/ (visible, not .snakemake/)",
         "default-resources:",
     ]
     if partition:
