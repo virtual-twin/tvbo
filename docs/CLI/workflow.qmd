@@ -12,9 +12,14 @@ Sub-tree that turns a Study or Experiment into a self-contained, portable reprod
 | `tvbo workflow slurm` | Emit an `sbatch` kit |
 | `tvbo workflow snakemake` | Emit a Snakemake kit |
 | `tvbo workflow nextflow` | Emit a Nextflow kit |
+| `tvbo workflow run` | Emit a kit **and** execute/submit it with the engine |
+| `tvbo workflow submit` | Submit an **already-emitted** kit — no recipe, no re-emit |
+| `tvbo workflow finalize` | Reassemble an array run's shard outputs into one result |
 | `tvbo workflow backends` | List backends and their ontology-derived capabilities |
 
-All emitter commands share the same flag surface. The kit layout is documented on its own page: see [Workflow kits anatomy](workflow-kits.qmd).
+The three emitters (`slurm`/`snakemake`/`nextflow`) share the same flag surface and
+just write a kit; `run` and `submit` also launch it. The kit layout is documented on
+its own page: see [Workflow kits anatomy](workflow-kits.qmd).
 
 ## Common flags
 
@@ -22,10 +27,11 @@ All emitter commands share the same flag surface. The kit layout is documented o
 |------|---------|---------|
 | `SPEC` | _(required)_ | Path, CURIE, or DB name (Study or Experiment). |
 | `--backend, -b` | `tvboptim` | Backend whose code is rendered into the kit's `scripts/` and whose `vectorize_axes` drive the planner. |
-| `--experiment` | _(first in study)_ | If SPEC is a Study, pick this experiment by `key`/`name`/`label`. |
+| `--experiment` | _(first in study)_ | If SPEC is a Study, pick the experiment(s) by `key`/`name`/`label`/numeric `id`. A comma-list (`2,3,20,30`) emits one kit per experiment (and, with `workflow run`, submits each). |
 | `-o, --output` | `out/<study>/<exp>/<engine>/` | Output directory for the kit. |
 | `--set KEY=VALUE` | _(none, repeatable)_ | Override a workflow spec key. Dotted keys nest, e.g. `--set slurm.account=foo`. Booleans/numbers are coerced. |
 | `--stdout` | _(off)_ | Print the artefact text only and skip kit creation. |
+| `--pack` | _(off)_ | Also write `<kit>.tar.gz` (the kit dir at top level), ready to `scp` + [`tvbo workflow submit`](#run-and-submit). The unpacked dir is kept too. |
 
 ## `tvbo workflow plan`
 
@@ -90,6 +96,44 @@ kits/jr_meg_jax/
 tvbo workflow slurm experiment:JR_MEG --backend jax --stdout > run.sbatch
 ```
 
+## Run and submit
+
+The emitters only *write* a kit. Two commands also *launch* it.
+
+**`tvbo workflow run <engine> SPEC`** — emit **and** execute in one step. For Slurm
+it submits `run.sbatch` (the array job) and chains `finalize.sbatch` with an
+`afterok` dependency, so the run converges to one reassembled result. Run it from a
+login node (it calls `sbatch`).
+
+```bash
+tvbo workflow run slurm mystudy.yaml --experiment 30 --backend tvboptim
+tvbo workflow run slurm mystudy.yaml --experiment 2,3,20,30 --backend tvboptim  # one parallel job each
+```
+
+Note the engine asymmetry: `run slurm` submits to the scheduler, but `run snakemake`
+executes the DAG **locally** (`snakemake --cores all`). To run a Snakefile *on* the
+cluster, emit it and launch it with snakemake's own slurm executor/profile.
+
+**`tvbo workflow submit KIT`** — submit a kit you *already* emitted (and, say,
+copied to the cluster), with no recipe and no re-emit. It infers the engine from the
+kit's artefact (`run.sbatch` → slurm) and runs the same array + `finalize` chain as
+`run`, so you never type `sbatch` by hand:
+
+```bash
+tvbo workflow slurm mystudy.yaml --experiment 30 -o kit --pack   # laptop: emit + pack → kit.tar.gz
+scp kit.tar.gz hpc:~/runs/                                        # ship one file
+ssh hpc 'cd ~/runs && tvbo workflow submit kit.tar.gz'           # extracts, then launches
+```
+
+`submit` takes a kit directory or a `.tar.gz`/`.tgz`/`.tar`/`.zip` of one — an
+archive is extracted next to itself first (and an already-extracted copy is reused,
+so a re-submit never clobbers an in-progress `results/`). `--array 0` submits a
+single smoke task; `--engine` overrides the auto-detection.
+
+**`tvbo workflow finalize`** reassembles an array run's per-shard outputs into one
+keyed `<stem>.h5` (+ `.yaml` sidecar). `run`/`submit` chain it automatically; call it
+by hand only to re-gather.
+
 ## Choosing an engine
 
 The three emitters are not interchangeable; they match two different shapes of
@@ -118,6 +162,56 @@ A vectorized sweep can still run under Snakemake if you prefer its executor, but
 it adds a driver process and per-rule bookkeeping for no gain over the array.
 The reverse does not hold: `--slurm-chunk` refuses a fanned sweep, because there
 is no in-process batch to slice.
+
+## Environment on the node
+
+The kit runs `tvbo run` on the compute node, so that node needs an environment where
+`tvbo` and the backend runtime import. Provision it from the emitted `environment.yml`
+/ `requirements.txt` (see *Environment files* below), then have the job **activate**
+it. The artefact runs `set -euo pipefail` and then activates in this order:
+
+| `workflow.<engine>` field | Emits | For |
+|---------------------------|-------|-----|
+| `modules: [python/3.11]` | `module load python/3.11` | environment modules |
+| `venv: /path/to/venv` | `source /path/to/venv/bin/activate` | a virtualenv |
+| `setup: ["…"]` | the lines verbatim, in order | anything else — conda, sourcing a profile, computed paths |
+
+`setup` is the general hook. A conda env is not a venv, so activate it with `setup`.
+**Hardcode the conda base** — run `conda info --base` once to get it. A batch job
+runs a non-login shell with no `conda` command (it's an interactive-shell function,
+and `--export=ALL` carries env vars, not shell functions), so `$(conda info --base)`
+fails on the node. Point `source` at the real path, in the recipe:
+
+```yaml
+workflow:
+  slurm:
+    setup:
+      - "source /opt/conda/etc/profile.d/conda.sh"   # ← your `conda info --base`
+      - "conda activate mystudy_env"
+```
+
+or at submit time, keeping the recipe portable (the value is JSON, so a list works):
+
+```bash
+tvbo workflow run slurm mystudy.yaml --experiment 30 \
+  --set 'slurm.setup=["source /opt/conda/etc/profile.d/conda.sh","conda activate mystudy_env"]'
+```
+
+For a single command, skip the JSON — a bare string is one line:
+
+```bash
+tvbo workflow run slurm mystudy.yaml --experiment 30 --set slurm.setup="conda activate mystudy_env"
+```
+
+If a job dies at once with `conda: command not found` or `ModuleNotFoundError: tvbo`
+in the logs, the node never got the env — this is where you fix it (and make sure the
+base path is hardcoded, not `$(conda info --base)`).
+
+**Recipe code needs no `PYTHONPATH`.** Callables/builders referenced by bare module
+name (`callable: {module: my_analysis}`) are bundled into the kit's `code/` and put on
+`PYTHONPATH` by the artefact; locally, `tvbo` adds the recipe's `code/` to `sys.path`
+on load. No `PYTHONPATH=code` prefix, on the node or off. See [`tvbo run`](run.qmd),
+*Custom code in a recipe*.
 
 ## Chunking, dependencies, and notifications
 

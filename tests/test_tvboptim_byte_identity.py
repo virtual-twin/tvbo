@@ -198,23 +198,81 @@ def test_rww_exploration_runs():
     assert np.all(np.isfinite(grid)), "exploration produced non-finite values"
 
 
-def test_experiment_result_roundtrips_via_sidecar(tmp_path, eager):
+# A small, self-contained experiment with a connectome and a sweep: a 2-node
+# Kuramoto network, deterministic (RK4, no noise), no empirical observations.
+_MINI_EXPERIMENT = """
+id: 7
+dynamics:
+  name: Kuramoto
+  label: Kuramoto
+  parameters:
+    omega: {name: omega, value: 0.0628, unit: rad_per_ms}
+  coupling_inputs:
+    c: {name: c, description: "coupling"}
+  state_variables:
+    theta:
+      name: theta
+      unit: rad
+      equation: {lhs: "Derivative(theta, t)", rhs: "omega + c"}
+      variable_of_interest: true
+      coupling_variable: true
+  output: [theta]
+  number_of_modes: 1
+network:
+  number_of_nodes: 2
+  parameters:
+    conduction_speed: {name: conduction_speed, value: 3.0, unit: mm_per_ms}
+  nodes:
+    - {id: 0, label: r0}
+    - {id: 1, label: r1}
+  edges:
+    - {source: 0, target: 1, weight: 0.5}
+    - {source: 1, target: 0, weight: 0.5}
+coupling:
+  name: KuramotoCoupling
+  label: KuramotoCoupling
+  parameters:
+    a: {name: a, value: 0.01}
+    N: {name: N, value: 1.0}
+  pre_expression: {rhs: "sin(theta_j - theta_i)"}
+  post_expression: {rhs: "a * gx / N"}
+  incoming_states: [theta]
+  local_states: [theta]
+integration:
+  method: RungeKutta4thOrder
+  duration: 200.0
+  step_size: 1.0
+  transient_time: 50.0
+explorations:
+  sweep:
+    name: sweep
+    mode: product
+    space:
+      - parameter: conduction_speed
+        explored_values: [2.0, 4.0]
+"""
+
+
+def test_experiment_result_roundtrips_via_sidecar(tmp_path):
     """A saved ExperimentResult is self-describing and reproducible.
 
-    Runs a full experiment (network + sweep), saves the unified ``<stem>.h5`` +
-    ``<stem>.yaml`` sidecar, then reloads *only the sidecar spec*, reruns, and
-    re-saves. The two result Datasets must be identical and the two YAML sidecars
-    byte-identical — i.e. the sidecar loses no config and replays exactly, and the
-    HDF5 opens with a plain ``xarray.open_dataset``. File name is BIDS-clean.
+    Runs a full experiment (2-node connectome + sweep), saves the unified
+    ``<stem>.h5`` + ``<stem>.yaml`` sidecar, then reloads *only the sidecar spec*
+    (connectome frozen alongside as an HDF5 companion), reruns, and re-saves. The
+    two result Datasets must be identical and the two YAML sidecars byte-identical
+    — the sidecar loses no config and replays exactly, and the HDF5 opens with a
+    plain ``xarray.open_dataset``. The file name is BIDS-clean (``exp-<id>``).
     """
     import filecmp
     from pathlib import Path
 
     import xarray as xr
 
-    # A full experiment with a connectome (plain simulation; empirical observations
-    # dropped so the run needs no companion measure — see _load_sim).
-    exp = _load_sim("RWW_BOLD_FC_Optimization", 400.0, 200.0)
+    spec = tmp_path / "mini.yaml"
+    spec.write_text(_MINI_EXPERIMENT)
+
+    exp = SimulationExperiment.from_file(str(spec))
+    exp.configure()
     written = exp.run("tvboptim").save(str(tmp_path / "A"))
     h5_a = next(p for p in written if p.endswith(".h5"))
     yaml_a = next(p for p in written if p.endswith(".yaml"))
@@ -222,6 +280,8 @@ def test_experiment_result_roundtrips_via_sidecar(tmp_path, eager):
     # BIDS-clean name: exp-<id> prefix, no spaces.
     name = Path(h5_a).name
     assert name.startswith("exp-") and " " not in name, name
+    # Opens with a plain xarray call — no TVBO-specific reader.
+    assert xr.open_dataset(h5_a).data_vars, "result HDF5 has no data variables"
 
     # Reload the sidecar spec alone (connectome frozen alongside), replicate, re-save.
     exp2 = SimulationExperiment.from_file(yaml_a)

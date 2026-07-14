@@ -42,7 +42,7 @@ BEP034_CONFIG_PATH = Path(__file__).parent / "bep034.json"
 # invalid combination fails fast; ``desc`` is optional. Customize the naming by
 # editing this pattern — build_path handles entity substitution and optionality.
 RESULT_PATTERNS = [
-    "exp-{experiment}[_desc-{description}]_{suffix<result>}{extension<.h5|.yaml|.json>}",
+    "[sub-{subject}_]exp-{experiment}[_desc-{description}]_{suffix<result>}{extension<.h5|.yaml|.json>}",
 ]
 
 
@@ -50,20 +50,27 @@ def result_entities(experiment, extension: str = ".h5") -> dict:
     """BIDS entities for an experiment's result, with alphanumeric values.
 
     BIDS entity values must be alphanumeric (no spaces/hyphens/underscores), so
-    the id and dynamics label are stripped to ``[A-Za-z0-9]``. Returns a dict
-    ready for :func:`bids.layout.writing.build_path` with ``RESULT_PATTERNS``.
+    the id and dynamics name are stripped to ``[A-Za-z0-9]``. The short model
+    *name* (``Kuramoto``) is used for ``desc-`` rather than the verbose label, so
+    filenames stay compact. Returns a dict ready for
+    :func:`bids.layout.writing.build_path` with ``RESULT_PATTERNS``.
     """
     def _alnum(s):
         return "".join(c for c in str(s) if c.isalnum())
 
     entities = {"suffix": "result", "extension": extension}
+    # Per-subject shards (dataset fan-out) get a sub- entity so their results do
+    # not collide when reassembled.
+    active_subject = getattr(experiment, "_active_subject", None)
+    if active_subject:
+        entities["subject"] = _alnum(active_subject)
     eid = getattr(experiment, "id", None)
     if eid is not None:
         entities["experiment"] = _alnum(eid)
     dyn = getattr(experiment, "dynamics", None)
-    label = (getattr(dyn, "label", None) or getattr(dyn, "name", None)) if dyn else None
-    if label and _alnum(label):
-        entities["description"] = _alnum(label)
+    desc = (getattr(dyn, "name", None) or getattr(dyn, "label", None)) if dyn else None
+    if desc and _alnum(desc):
+        entities["description"] = _alnum(desc)[:24]  # keep desc- compact
     return entities
 
 

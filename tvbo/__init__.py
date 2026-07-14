@@ -86,12 +86,25 @@ def clean_temp():
 # ---------------------------------------------------------------------------
 # jax-metal (Apple GPU) plugin versions <= 0.1.1 are incompatible with
 # JAX >= 0.7 and crash with "UNIMPLEMENTED: default_memory_space is not
-# supported".  Detect this early and fall back to the CPU backend so that
+# supported".  Detect this and fall back to the CPU backend so that
 # *every* downstream JAX call works out of the box.
 # Users can override by setting JAX_PLATFORMS or jax_default_device before
 # importing tvbo.
+_JAX_CONFIGURED = False
+
+
 def _configure_jax_backend():
-    """Fall back to CPU when the Metal plugin is broken."""
+    """Fall back to CPU when the Metal plugin is broken.
+
+    Called by the compute modules the first time TVBO touches JAX for a
+    simulation, not at ``import tvbo`` — so a bare import (and the CLI) never
+    imports JAX. Idempotent: the guard runs at most once regardless of how many
+    entry points call it.
+    """
+    global _JAX_CONFIGURED
+    if _JAX_CONFIGURED:
+        return
+    _JAX_CONFIGURED = True
     # Respect explicit user override
     if "JAX_PLATFORMS" in os.environ:
         return
@@ -116,48 +129,13 @@ def _configure_jax_backend():
                 jax.config.update("jax_default_device", jax.devices("cpu")[0])
     except ImportError:
         pass  # JAX not installed – nothing to configure
-
-
-_configure_jax_backend()
 # ---------------------------------------------------------------------------
 
 
-# ---------------------------------------------------------------------------
-# PyRates / networkx compatibility
-# ---------------------------------------------------------------------------
-def _patch_pyrates_networkx_backend():
-    """Fix networkx 3.4+ backend dispatch conflict with PyRates.
-
-    networkx ≥ 3.4 decorates ``MultiDiGraph.__new__`` with
-    ``@nx._dispatchable`` which intercepts a ``backend`` keyword argument.
-    PyRates' ``ComputeGraph(backend='default')`` triggers this and raises
-    ``ImportError: 'default' backend is not installed``.
-
-    We replace ``ComputeGraph.__new__`` with plain ``object.__new__`` so
-    the decorator is removed.  Applied at tvbo import time so that all
-    code paths (adapter, export, doc notebooks) benefit.
-    """
-    try:
-        from pyrates.backend.computegraph import (
-            ComputeGraph,
-            ComputeGraphBackProp,
-        )
-    except ImportError:
-        return
-
-    def _plain_new(cls, *_args, **_kwargs):
-        return object.__new__(cls)
-
-    # Check if the __new__ is wrapped by networkx dispatch
-    for klass in (ComputeGraph, ComputeGraphBackProp):
-        try:
-            klass(backend="default")
-        except (ImportError, TypeError):
-            klass.__new__ = _plain_new
-
-
-_patch_pyrates_networkx_backend()
-# ---------------------------------------------------------------------------
+# PyRates is an optional backend, imported only when its adapter runs. Its
+# networkx-dispatch monkeypatch lives with the adapters that build a PyRates
+# ComputeGraph (``tvbo.adapters.pyrates`` and ``tvbo.adapters.pyrates_bifurcation``),
+# each applying it before compiling — so a bare ``import tvbo`` pulls in no pyrates.
 
 # ---------------------------------------------------------------------------
 # Lazy public API — imports happen on first attribute access
@@ -207,6 +185,7 @@ def __getattr__(name):
     raise AttributeError(f"module 'tvbo' has no attribute {name!r}")
 
 
-# Eager side-effect imports: attach helper methods (.plot(), …) to
-# auto-generated schema classes so users get them on bare ``schema.Event(...)``.
-from tvbo.classes import event as _event_helpers  # noqa: F401,E402
+# Helper methods (.plot(), …) are attached to the auto-generated schema classes
+# by ``tvbo.datamodel`` when the datamodel is first imported, alongside the sibling
+# Network/UnitEnum patches. Keeping that out of ``import tvbo`` avoids eagerly
+# pulling the datamodel (pydantic, sympy, pandas) into every CLI invocation.

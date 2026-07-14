@@ -53,7 +53,6 @@ Usage
 from __future__ import annotations
 
 import argparse
-import subprocess
 import tempfile
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -471,50 +470,6 @@ def _dk_region_name_to_fs_indices(region_name: str) -> list[int]:
     return [1000 + idx, 2000 + idx]
 
 
-# ── Run tck2connectome ──────────────────────────────────────────────
-
-
-def run_tck2connectome(
-    tractogram: Path,
-    atlas: Path,
-    weights_csv: Path,
-    lengths_csv: Path,
-    assignments_csv: Path,
-) -> None:
-    """Run MRtrix tck2connectome for weights and mean lengths."""
-    # Streamline count (weights)
-    subprocess.run(
-        [
-            "tck2connectome",
-            str(tractogram),
-            str(atlas),
-            str(weights_csv),
-            "-out_assignments",
-            str(assignments_csv),
-            "-symmetric",
-            "-zero_diagonal",
-            "-force",
-        ],
-        check=True,
-    )
-    # Mean tract length
-    subprocess.run(
-        [
-            "tck2connectome",
-            str(tractogram),
-            str(atlas),
-            str(lengths_csv),
-            "-scale_length",
-            "-stat_edge",
-            "mean",
-            "-symmetric",
-            "-zero_diagonal",
-            "-force",
-        ],
-        check=True,
-    )
-
-
 # ── Build network ──────────────────────────────────────────────────
 
 
@@ -927,12 +882,11 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
-    import shutil
+    from tvbo.data.connectome_build import ensure_mrtrix, run_tck2connectome
 
     args = parse_args()
 
-    if shutil.which("tck2connectome") is None:
-        raise RuntimeError("tck2connectome not found in PATH. Install MRtrix3.")
+    ensure_mrtrix()  # friendly error if MRtrix3 is not installed
 
     if not args.tractogram.exists():
         raise FileNotFoundError(f"Tractogram not found: {args.tractogram}")
@@ -984,11 +938,11 @@ def main() -> None:
         else:
             print("[run ] tck2connectome (weights + lengths) ...")
             run_tck2connectome(
-                tractogram=args.tractogram,
-                atlas=atlas_nii,
-                weights_csv=weights_csv,
-                lengths_csv=lengths_csv,
-                assignments_csv=assignments_csv,
+                args.tractogram,
+                atlas_nii,
+                weights_csv,
+                lengths_csv,
+                assignments_csv,
             )
 
         # Parse matrices — tck2connectome outputs N_labels × N_labels CSV

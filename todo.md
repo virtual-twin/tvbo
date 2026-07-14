@@ -113,6 +113,33 @@ layer and buggy — do NOT keep it; Phase B replaces it:
   synced.
 Also switch the runtime load off the deprecated `tvb-o.owl` (see this section).
 
+## Unify experiment selection on `SimulationStudy` (dedup the two CLIs)
+
+`tvbo run` and `tvbo workflow` both resolve `--experiment` against a study by
+matching `{key, name, label, str(id)}` on the datamodel objects, then
+reverse-derive `sel = id or key or name or label` to hand back to
+`SimulationStudy.get_experiment(sel)` for materialisation. The `{…}` identity set
+is now shared via `_common.experiment_ids()`, but the resolution block (guard →
+`sel` → `get_experiment` → `die`) is still copy-pasted in both CLIs and has drifted
+(`hasattr(exp,"run")` vs `hasattr(exp,"render")`; different `die` wording). Root
+cause: `get_experiment` (`tvbo/classes/study.py:117`) matches by **id only**, so
+each CLI must do its own 4-field match first.
+
+Fix at the right layer:
+- Broaden `SimulationStudy.get_experiment` to accept id **or** key/name/label
+  (backward-compatible — id still matches).
+- Add `SimulationStudy.select_experiments(selector) -> list[runtime experiment]`
+  that splits the comma-list and returns runtime (`.run`/`.render`-capable)
+  experiments.
+- Collapse both CLIs to one call, deleting the per-CLI 4-field match, the `sel`
+  reverse-derivation, and the `hasattr` guard. The comma-list *semantics* stay
+  per-CLI (`tvbo run` runs all in-process; `tvbo workflow` fans into separate
+  kits) — that difference is intended, not duplication.
+
+Deferred from a `/simplify` pass because it touches `study.py` (outside the
+reviewed CLI diff) and the CLIs were being actively edited. Surfaced by 3/4
+cleanup agents (reuse + altitude).
+
 ## Harmonize class names with `tvboptim`
 
 Rename `ExplorationAxis` → `Axis` and reshape it so tvbo can declaratively
@@ -399,6 +426,197 @@ There are classical examples, however we need to find a solution to describe any
 - Projection (Matrix-Multiplication)
 - Convolution
 
+
+### Compile the algorithm tuning loop with `lax.scan` (GPU + differentiable)
+
+**Deferred 2026-07-13** — investigated, scoped, and consciously postponed (not a
+CPU win; do it when we go GPU or want gradient tuning).
+
+**Motivation.** `run_<algo>` in `tvbo-tvboptim-algorithm.py.mako:583` runs the
+tuning iterations as a **Python `for i in range(n_iterations)`** that calls the
+jitted `model_fn` per step. Each iteration = one `simulation_period` (720 ms = 1
+BOLD TR) sim + one parameter update; `n_iterations` is the tuning-step count
+(50 000/stage for the Schirner 6-stage schedule). Converting the loop to
+`jax.lax.scan` (a *fold* — it compiles the sequential chain, does not parallelise
+it) would (a) run the whole tuning chain as **one on-device kernel** (no per-step
+Python↔XLA dispatch/host-sync), unlocking real GPU throughput, and (b) make the
+fit **differentiable** (gradient-based tuning / Optax, `gradient_eib`).
+
+**Why deferred (evidence).** By first principles the CPU payoff is small: each
+iteration is dominated by the jitted 720-step × N-node `model_fn`; the ~10 extra
+jax ops (buffer roll, reducer evict/add/emit, update rules) are **async-dispatched**
+(the Python loop runs ahead of the device) and the only forced host-syncs are the
+periodic `print` and the end — so removable overhead is a few % on CPU. A wall-clock
+measurement was attempted but the box was at load ~54 (99 python procs from other
+sessions), so timing was unusable; the first-principles argument stands. Subject
+parallelism is **not** blocked by this — it lives at the `tvbo workflow` / Snakemake
+layer (one job per subject, own FC path). So this is a **GPU + differentiability**
+enhancement, worthless for the current CPU + Snakemake replication path.
+
+**Scope when picked up (large, high-risk — gate + byte-equivalence test).** The
+carry must thread: `state` (`initial_state.dynamics`, `noise.key`,
+`coupling.*.wLRE/wFFI`, `dynamics.J_i`), the sliding-window **buffer**, the
+**streaming-reducer accumulator** + its periodic exact `resync`, and the **BOLD
+monitor** `_history` (functional `eqx.tree_at`, no in-place mutation). Hard parts:
+`result_history.<param>.append(...)` records the **full N×N `wLRE`/`wFFI`** at
+`save_every` — `scan` emits every step or none, and every-step N×N over 50 000 is
+~28 GB/param, so preserving matrix snapshots needs a **chunked scan** (scan in
+`save_every` blocks, record matrices between blocks). Also: collectible-observation
+appends, `print` → `jax.debug.print`, and the **nested-include** mode
+(`run_<inner>()` inside the loop → nested scan; Schirner uses `combined` so N/A).
+Companion to the streaming-reducer work below (same loop body). MUST ship behind a
+codegen flag with the Python loop as fallback + a `scan == python-loop`
+byte-equivalence test before it becomes default.
+
+### DONE (2026-07-13): equation-based derived observations
+
+Added a general **`first_passage` aggregation** (`AggregationType` enum +
+`tvbo-tvboptim-observation.py.mako` branch reading `parameters.threshold`) — first
+sample where a source crosses a threshold over the time axis, via `argmax` of the
+crossing (backend-independent). Works end-to-end (Schirner Exp 50 DM decision:
+`t_A`/`t_B` = first 40 Hz crossing of A/B_PFC).
+
+**Fixed** the derived-observation gap: `compute_all_observations`
+(`tvbo-tvboptim-experiment.py.mako`) only emitted CALLABLE/function-based derived
+observations — an `equation`-pipeline stage set `pipeline_call=None` and was
+silently dropped, so `obs.<name>` was never set (`'Bunch' object has no attribute
+<name>`). Added an `elif pipeline_equation and src_obs_list` branch that binds each
+source observation to a local and renders the equation inline via `jaxcode`
+(= `render_expression`, so `user_functions` + local `parameters` are forwarded,
+backend-independent). Covers BOTH the base run and the exploration grid (shared
+function). `import functools` added (render_expression emits `functools.reduce`
+for `Min`/`Max`). Validated byte-exact: Schirner Exp 50 `integration_time`/`winner`
+over scalar first-passage sources, AND a synthetic `obs_v+obs_w` / `2*(obs_v-obs_w)`
+over (300,1,1) TIME-SERIES sources (max err 0.0). No regression (observation +
+experiment codegen suites green). The gap was tvboptim-specific — Julia/pyrates/report
+templates don't share this path.
+
+### Workflow from_experiment dependency: SLURM afterok not wired
+
+FIXED (2026-07-14) the Snakemake key-mismatch: `plan().depends_on` recorded
+`str(int(source.id))` while `_ep_by_key`/output dirs key by `_san(experiment_key)`
+(explicit `key` if set) — an explicit-key source silently dropped its edge, and a
+non-numeric ref crashed `int()`. Now `plan()` stores the raw id/key/name (no int),
+and `_emit_snakemake_study` resolves each dep to the source's sanitized key via an
+id/key/name→key map (`_key_of`), so the emitted `input:` points at the source's
+real output dir. Validated: dep to a `key:baseline` (id 30) source →
+`input: f"{OUT_DIR}/baseline/result.h5"`; 37/37 workflow tests pass.
+
+STILL OPEN: the `depends_on` comment promises "SLURM afterok", but only
+`_emit_snakemake_study` consumes it — no SLURM emitter turns a cross-experiment
+`from_experiment` edge into an `afterok` (the existing afterok is the within-experiment
+array→finalize gather). A study with a `from_experiment` dep submitted via SLURM runs
+dependents unordered. Wire cross-experiment afterok into the SLURM path (or drop the
+comment's promise).
+
+### first_passage could emit a time, not a sample index (altitude)
+
+`first_passage` currently returns a sample INDEX; consumers convert to a time by
+multiplying by the sampling step (Schirner Exp 50: `Min(t_A,t_B) * 0.5`, where 0.5
+duplicates `integration.step_size`). first_passage is the only aggregation whose
+output unit isn't the source's unit, and the literal drifts if step_size changes.
+Deeper form: have the aggregation emit `argmax(...) * dt` (a first-passage time in
+ms) — then `integration_time` = `Min(t_A,t_B)` with no literal and the step lives
+in one place. Deferred (behaviour/contract change, and needs correct dt/period
+handling when the observation subsamples): the effective step is `period` when set,
+else the integration `dt`; getting that wrong silently mis-scales. Winner (order
+comparison) is unaffected either way.
+
+### Julia printer: `argmax(...) * scalar` fails
+
+`render_expression('argmax(r >= thr) * dt', format='julia')` raises
+`TypeError: can't multiply sequence by non-int of type 'Symbol'` in the Julia
+printer (jax/numpy render fine: `dt*jnp.argmax(jnp.greater_equal(r, thr))`).
+Surfaced 2026-07-13 while proving the DM first-passage observation (decision =
+first threshold crossing → integration time) is expressible with existing
+array-ops (`argmax`/`where`/`max`). Backend-independence gap — the DM decision
+observation renders on jax/numpy but not Julia until this is fixed. Low priority
+(DM circuit runs on jax/numpy), but it's a genuine printer bug in the
+`argmax`-times-scalar path.
+
+### Codegen-emit streaming reducers (drop hardcoded `tvboptim` factories)
+
+**Motivation.** Windowed pipeline reducers (`compute_fc` → an incremental FC
+accumulator, dFC/FCD, metastability) are today realised by **hand-written
+factories that live in `tvboptim`** and are referenced by fully-qualified string
+in `tvbo/codegen/streaming_reducers.py` (`tvboptim.observations.observation.
+windowed_cov`, `…windowed_fcd`). The generated experiment calls that factory
+directly, so tvbo is coupled to a *specific tvboptim build*. This drifted: the
+streaming feature named `windowed_cov`, but the locked, PyPI-released
+`tvboptim==0.2.4` exposes only `compute_fc` — CI raised
+`AttributeError: module 'tvboptim.observations.observation' has no attribute
+'windowed_cov'` (`Native (tvboptim)` + `Container (tvboptim)`, 2026-07-13). The
+hardcoded realisation is the wrong layer: the reducer's math is
+backend-independent and should be **specified symbolically in metadata and
+emitted by codegen for each backend**, not imported from one backend's package.
+
+**Stopgap shipped (2026-07-13, commit on this PR).**
+`lookup_streaming_reducer` now resolves the factory via `_factory_available`
+(memoised `importlib` check) and returns `None` — i.e. falls back to the
+**byte-identical recompute path** already documented as the fallback — when the
+factory is absent in the installed backend. Keeps every tvboptim version green
+without changing generated code where the factory *is* present. This only masks
+the coupling; it does not remove it. Once reducers are codegen-emitted (below),
+there is no external factory to resolve and the `_factory_available` guard +
+`StreamingReducerSpec.factory` string both disappear.
+
+**Target — symbolic `StreamingReducer` realisation.** Express the reducer's
+`(init, add, evict, emit, finalize, resync)` protocol as symbolic recurrences
+over the sliding window (windowed covariance ≈ running-sum / Welford update on
+`add`, subtract on `evict`; Pearson normalisation on `emit`), authored once in
+metadata, and lower it through the **same** sympy → `JaxPrinter` / `JuliaPrinter`
+/ numpy pipeline every other equation uses. Each backend then emits its own
+`windowed_cov`-equivalent; tvbo ships no reducer realisation and depends on no
+tvboptim reducer API.
+
+**Unify with `Observation.dynamics` (the co-integration slot).** A windowed FC
+reducer *is* a co-integrated state recurrence — running accumulators that advance
+in lock-step with the model and read out a reduced value at emit. That is exactly
+the `Observation.dynamics` (auxiliary co-integrated Dynamics / online reduction)
+mechanism being added on the Observation class. Prefer **one** engine: lower the
+streaming reducer as a co-integrated auxiliary Dynamics rather than maintaining a
+second, string-referenced registry. The `emit_kind: window|stride` distinction
+(step-wise FC vs. per-window dFC/FCD) becomes `period`-driven read-out on that
+Dynamics.
+
+**Validation.** Byte-identity against (a) the current tvboptim
+`windowed_cov`/`windowed_fcd` reducers where present, and (b) the recompute
+reference via `TVBO_STREAMING_REDUCERS=0`. Re-verify the online-tuning
+experiments (`EI_Tuning_FIC_EIB_Optimization`, `RWW_BOLD_FC_Optimization`).
+
+**Scope / files.** `tvbo/codegen/streaming_reducers.py` (retire
+`factory`-as-string + `_factory_available`); the streaming branch in
+`tvbo/templates/tvboptim/tvbo-tvboptim-algorithm.py.mako` (emit the lowered
+recurrence instead of calling an imported factory); the reducer symbolic specs in
+metadata (co-located with the `Observation.dynamics` design); a numpy/julia
+emission path so `tvb`/`pyrates`/`julia` gain streaming instead of only the
+recompute fallback. Depends on the `Observation.dynamics` slot + the generic
+procedure/equation engine (see `NetworkGenerator` §, same sympy-printer
+extension). Not blocking — the recompute fallback is correct meanwhile.
+
+#### `windowed_cov` numerical stability (byte-identity precision fix)
+
+The sliding-window streaming FC reducer `windowed_cov` (in the tvboptim worktree,
+`observations/observation.py`) accumulates the **naive one-pass** covariance
+`comoment = sum_xxT − outer(sum_x, sum_x) / count`, which suffers **catastrophic
+cancellation** when the signal mean is large relative to its variance — exactly
+the BOLD/neural case (a large DC baseline on a small fluctuation). `compute_fc`
+(`jnp.corrcoef`, mean-centred) and the sibling `welford_cov` (Chan/Welford merge,
+mean-centred) do **not**; so `windowed_cov` can diverge from `compute_fc` by
+**≫ the 1e-12** the streaming path is swapped in to preserve. `resync`
+(`x.T @ x`, `sum(x)`) is un-centred too, so it does not reset the drift.
+
+**Fix:** rebase `windowed_cov`'s accumulator onto `welford_cov`'s mean-centred
+approach — carry `(count, mean, comoment)` and extend it with the sliding-window
+`evict` (a Chan *downdate*: reverse the mean/comoment merge for the leaving
+sample), rather than the naive sum-of-squares. Then `windowed_cov`, `welford_cov`,
+and `compute_fc` share one numerically-stable co-moment definition instead of two
+divergent ones. Validate byte-identity on a DC-offset BOLD case, not just the
+existing zero-mean-ish test data. **Do this on windowed_cov's own branch off
+`main`** (it is currently uncommitted WIP mis-parked on `differentiable-delays`),
+NOT on the delay branch. Surfaced by the 2026-07-14 `/code-review` (finding #1);
+also flagged: dead `windowed_fcd(n_diag=…)` param, and `windowed_fcd.finalize`'s
+`jnp.stack(list(...))` won't compose under the jitted stride scan.
 
 ### Explorations: Observations should be also available in Explorations
 
@@ -1048,3 +1266,26 @@ https://github.com/AllenInstitute/sonata/blob/master/docs/SONATA_DEVELOPER_GUIDE
 - can we adopt?
 - can we improve move to more modern state-of the art?
 - Is it BIDS compatible?
+
+
+
+## Engine-agnostic `workflow.setup` (dedup env activation for multi-engine studies)
+
+`WorkflowEngineConfig.setup` (verbatim shell lines run before the workload, e.g.
+`conda activate <env>`) is declared **per engine** — `workflow.slurm.setup`,
+`workflow.snakemake.setup`, `workflow.nextflow.setup` — like `env`/`venv`/`modules`.
+A study run under more than one engine must repeat the same activation lines in each
+block, but env setup is engine-independent, so that's redundant.
+
+**Plan.** Add an engine-agnostic `workflow.setup` (on `WorkflowConfig`, sibling of
+the per-engine blocks) that every emitter prepends to its own
+`workflow.<engine>.setup`. Precedence: shared `workflow.setup` first, then per-engine
+`setup` (an engine can add to / override after the shared lines). Touches: schema
+`WorkflowConfig.setup` + `make gen-linkml`; `merge_workflow_spec` / `plan()` to fold
+the shared list into each `engine_block['setup']` (reuse `_as_lines`); templates
+already consume `sb.get('setup')` unchanged. Keep per-engine `setup` for
+engine-specific lines.
+
+Context: per-engine `setup` hook + `tvbo workflow submit` landed 2026-07-13. The
+per-engine model is consistent with `env`/`venv`/`modules`; this only removes the
+multi-engine duplication.

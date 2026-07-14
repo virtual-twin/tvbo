@@ -90,9 +90,15 @@ def _render_jax(exp, **kw):
 def _render_tvboptim(exp, **kw):
     from tvbo.classes.experiment import templates, format_code
     template = templates.lookup.get_template("tvboptim/tvbo-tvboptim-experiment.py.mako")
-    # Resolve network-observation source pointers once, in Python, and hand
-    # the {obs_name: measure} mapping to the template (which only emits code).
-    kw.setdefault("network_obs_measures", exp.network_observation_measures)
+    # Resolve network- and dataset-sourced observation pointers once, in Python,
+    # and hand the {obs_name: measure} mapping to the template (which only emits
+    # code). Both bind at run_experiment time via _bind_network_observations.
+    measures = dict(exp.network_observation_measures)
+    measures.update(exp.dataset_observation_targets)
+    kw.setdefault("network_obs_measures", measures)
+    # Model-side gather (keyed by label, never positional) that aligns a simulated
+    # observable to a by_label empirical target's shared nodes in the loss.
+    kw.setdefault("dataset_reconcile_indices", exp.dataset_reconcile_indices())
     return format_code(template.render(experiment=exp, **kw), use_black=False)
 
 

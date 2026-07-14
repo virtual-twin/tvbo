@@ -47,6 +47,38 @@ def domain_enforcement(domain) -> str:
     return str(enf).rsplit(".", 1)[-1]
 
 
+def register_recipe_code_paths(source_file) -> list:
+    """Make a recipe's ``code/`` subdir importable.
+
+    A recipe references custom builders and analysis callables by bare module
+    name (e.g. ``module: taher2019_analysis``). By convention those modules live
+    in a ``code/`` subdir next to the recipe rather than as installed packages,
+    so that directory must be on ``sys.path`` for ``import`` to resolve them.
+    Registering it at load time, once and left in place (callables resolve lazily
+    during a run, not just at load), lets ``tvbo run`` / ``tvbo workflow`` and
+    notebooks load a recipe without a ``PYTHONPATH=code`` prefix. The emitted
+    reproducibility kit puts ``code`` on the compute node's path the same way.
+
+    The dir goes to the front of ``sys.path`` (matching how ``PYTHONPATH`` is
+    searched) and is skipped when already present, so repeated loads don't
+    duplicate it. Only ``code/`` is added, not the recipe's own directory: a
+    builder sitting beside the YAML is already resolved by Network._resolve's
+    scoped ``source_dir`` injection, and prepending the whole recipe dir would
+    risk shadowing stdlib/site-packages. Returns the path if newly inserted.
+    """
+    import sys
+    from pathlib import Path
+
+    if not source_file:
+        return []
+    code_dir = Path(source_file).resolve().parent / "code"
+    entry = str(code_dir)
+    if code_dir.is_dir() and entry not in sys.path:
+        sys.path.insert(0, entry)
+        return [entry]
+    return []
+
+
 def as_list(obj) -> list:
     """Normalize a keyed-dict-or-list collection to a list of its members.
 

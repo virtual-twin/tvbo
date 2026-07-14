@@ -57,7 +57,7 @@ def axis_value(expr, transform, col):
         def _obj_fn(_s):
             _oa = compute_all_observations(model_fn(_s), _s, result_transient)
             return Bunch(${obj_bunch})
-        _results = list(ParallelExecution(_obj_fn, _space, n_pmap=n_pmap).run())
+        _results = list(ParallelExecution(_obj_fn, _space, n_pmap=${expl['n_workers']}).run())
         _F = _np.empty((len(_results), ${len(objs)}))
         for _i, _r in enumerate(_results):
             _F[_i] = [float(_np.asarray(getattr(_r, _n))) for _n in _obj_names]

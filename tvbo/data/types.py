@@ -295,7 +295,8 @@ def reassemble_shards(source, pattern="*__results.nc", to_grid=False, point_dim=
 
 
 def reassemble_experiment_results(shards_root, out_dir, pattern="**/*_result.h5",
-                                  point_dim="point", stem="result", sidecar=None):
+                                  point_dim="point", stem="result", sidecar=None,
+                                  compress: bool = True):
     """Gather an HPC run's shard outputs into one keyed ``ExperimentResult`` artifact.
 
     Follows the same on-disk shape as a :class:`~tvbo.classes.network.Network`:
@@ -334,15 +335,27 @@ def reassemble_experiment_results(shards_root, out_dir, pattern="**/*_result.h5"
     combined = xr.concat([xr.open_dataset(p, engine="h5netcdf") for p in paths], dim=point_dim)
     coord_names = [c for c in combined.coords
                    if point_dim in combined[c].dims and c != point_dim]
-    grid = (combined.set_index({point_dim: coord_names}).unstack(point_dim)
-            if coord_names else combined)
+    if len(coord_names) >= 2:
+        # Multi-parameter sweep: pivot the flat point dim into one dim per parameter,
+        # addressing the full rectangular grid by value (order-independent).
+        grid = combined.set_index({point_dim: coord_names}).unstack(point_dim)
+    elif len(coord_names) == 1:
+        # A single ordering coordinate (a one-parameter sweep, or a branch-restart's
+        # ``branch_point`` index) is a flat, ordered sequence — not a grid to pivot.
+        # Sort by it so shard order is irrelevant, then make it the dimension. (unstack
+        # needs a multi-index, so it cannot handle the single-coordinate case at all.)
+        grid = combined.sortby(coord_names[0]).swap_dims({point_dim: coord_names[0]})
+    else:
+        grid = combined
     grid.attrs["tvbo_class"] = "tvbo:ExperimentResult"
     if sidecar is not None:
         grid.attrs["sidecar_file"] = f"{stem}.yaml"
 
     os.makedirs(out_dir, exist_ok=True)
     h5_path = os.path.join(out_dir, f"{stem}.h5")
-    grid.to_netcdf(h5_path, engine="h5netcdf")
+    encoding = ({name: {"zlib": True, "complevel": 4} for name in grid.data_vars}
+                if compress else None)
+    grid.to_netcdf(h5_path, engine="h5netcdf", encoding=encoding)
     written = [h5_path]
 
     if sidecar is not None and os.path.exists(os.fspath(sidecar)):
@@ -1168,7 +1181,15 @@ class ExplorationResult(Bunch):
         self.cell_coords = cell_coords
         # Per-grid-point observations as {name: xr.DataArray} with grid axes
         # prepended to each observation's intrinsic dims (time/variable/node/mode).
-        self.observations = observations or {}
+        # Grid codegen already hands over labelled DataArrays; the warm-start /
+        # adiabatic path hands over plain arrays, so label those here (against the
+        # swept axes) — the class honours its own contract regardless of producer,
+        # and every consumer (plotting, save, reassembly) sees DataArrays.
+        self.observations = {
+            k: (_stacked_to_dataarray(v, self.axes, name=k, cell_coords=self.cell_coords)
+                if v is not None and not hasattr(v, "dims") else v)
+            for k, v in (observations or {}).items()
+        }
 
         # Compute expected grid shape from axes
         self._grid_shape = tuple(
@@ -1670,7 +1691,54 @@ class ExperimentResult:
             return val is not None and val != {}
         return key in self._extras
 
-    def save(self, out_dir):
+    def _recorded_observation_names(self) -> set:
+        """Observation names to persist: leaves plus anything flagged ``record``.
+
+        An observation is recorded when it is either explicitly ``record: true``
+        or *terminal* — not consumed as a ``source`` by another observation or by
+        an optimization loss. ``record: false`` always drops it. This keeps final
+        results (a fitted FC, an effective-frequency map) while omitting
+        intermediates (a raw BOLD feeding an FC, an FC feeding a loss), which are
+        recomputable from the recipe in the sidecar. Falls back to keeping every
+        observation when the experiment carries no observation definitions.
+        """
+        exp = self.source
+        obs_defs = getattr(exp, "observations", None) or {}
+        present = set(self.observations or {})
+        if not obs_defs:
+            return present
+        consumed: set = set()
+
+        def _mark(ref):
+            s = str(getattr(ref, "name", ref))
+            if s in obs_defs:                       # bare observation name
+                consumed.add(s)
+            elif s.startswith("observations."):     # observations.<name>[.data]
+                base = s.split(".")[1]
+                if base in obs_defs:
+                    consumed.add(base)
+
+        for o in obs_defs.values():
+            for src in (getattr(o, "source", None) or []):
+                _mark(src)
+        for opt in (getattr(exp, "optimizations", None) or {}).values():
+            loss = getattr(opt, "loss", None)
+            for arg in (getattr(loss, "arguments", None) or {}).values():
+                if getattr(arg, "value", None) is not None:
+                    _mark(arg.value)
+
+        keep = set()
+        for name, o in obs_defs.items():
+            rec = getattr(o, "record", None)
+            if rec is True:
+                keep.add(name)
+            elif rec is False:
+                continue
+            elif name not in consumed:
+                keep.add(name)
+        return keep & present if present else keep
+
+    def save(self, out_dir, compress: bool = True, record_only: bool = True):
         """Persist the run as one keyed HDF5 result plus a YAML provenance sidecar.
 
         Writes ``<prefix>_result.h5`` — a single xarray ``Dataset`` where every
@@ -1692,6 +1760,8 @@ class ExperimentResult:
         # ── collect every output as a data-variable ──────────────────────────
         by_output: dict[tuple, "xr.DataArray"] = {}
         for expl_name, expl in (self.explorations or {}).items():
+            # ExplorationResult labels every observation as a DataArray at
+            # construction (grid and warm-start alike), so this stays uniform.
             for obs_name, da in (getattr(expl, "observations", None) or {}).items():
                 if da is not None and hasattr(da, "dims"):
                     by_output[(_san(expl_name), _san(obs_name))] = da
@@ -1712,6 +1782,58 @@ class ExperimentResult:
                 if hasattr(da, "dims"):
                     data_vars[f"integration__{_san(obs_name)}"] = da
 
+        # Experiments that produce observations/optimizations without an exploration
+        # sweep (e.g. a per-subject FC fit) still carry data to persist: the derived
+        # observations (simulated + reconciled empirical FC) and the fit outcome
+        # (fitted parameters, final loss, loss trajectory). Coerce to float and skip
+        # anything non-numeric so the HDF5 write never trips on Python objects.
+        def _numeric_da(name, arr):
+            if arr is None:
+                return None
+            try:
+                a = np.asarray(getattr(arr, "values", arr), dtype=float)
+            except (ValueError, TypeError):
+                try:  # jax/0-d scalar wrapped as object
+                    a = np.asarray(float(arr), dtype=float)
+                except (ValueError, TypeError):
+                    return None
+            if a.dtype == object or a.size == 0:
+                return None
+            if a.ndim == 0:
+                return xr.DataArray(a)
+            return xr.DataArray(a, dims=[f"{name}_d{i}" for i in range(a.ndim)])
+
+        def _numeric_leaves(prefix, obj):
+            """Yield (var_name, DataArray) for the numeric leaves of a nested pytree."""
+            leaf = _numeric_da(prefix.rsplit("__", 1)[-1], obj)
+            if leaf is not None:
+                yield prefix, leaf
+                return
+            if isinstance(obj, dict):
+                for k, v in obj.items():
+                    yield from _numeric_leaves(f"{prefix}__{_san(k)}", v)
+            elif isinstance(obj, (list, tuple)):
+                for i, v in enumerate(obj):
+                    yield from _numeric_leaves(f"{prefix}__{i}", v)
+
+        keep_obs = self._recorded_observation_names() if record_only else set(self.observations or {})
+        for obs_name, obs in (self.observations or {}).items():
+            if obs_name not in keep_obs:
+                continue
+            key = f"observation__{_san(obs_name)}"
+            da = _numeric_da(key, getattr(obs, "data", obs))
+            if da is not None and key not in data_vars:
+                data_vars[key] = da
+        for opt_name, opt in (self.optimizations or {}).items():
+            for field in ("final_loss", "loss_trajectory"):
+                da = _numeric_da(field, getattr(opt, field, None))
+                if da is not None:
+                    data_vars[f"optimization__{_san(opt_name)}__{field}"] = da
+            fitted = getattr(opt, "fitted_params", None)
+            if fitted is not None:
+                for name, da in _numeric_leaves(f"optimization__{_san(opt_name)}__fitted", fitted):
+                    data_vars[name] = da
+
         stem = "result"
         if self.source is not None and hasattr(self.source, "get_result_stem"):
             try:
@@ -1729,8 +1851,13 @@ class ExperimentResult:
             ds = xr.Dataset(data_vars, attrs={"tvbo_class": "tvbo:ExperimentResult",
                                               "sidecar_file": f"{stem}.yaml"})
             h5 = os.path.join(out_dir, f"{stem}.h5")
+            # Grids of trajectories/observations compress well (repeated structure,
+            # smooth fields), so gzip-deflate by default; `compress=False` opts out
+            # for max write speed. complevel 4 is the deflate speed/size sweet spot.
+            encoding = ({name: {"zlib": True, "complevel": 4} for name in ds.data_vars}
+                        if compress else None)
             try:
-                ds.to_netcdf(h5, engine="h5netcdf")
+                ds.to_netcdf(h5, engine="h5netcdf", encoding=encoding)
                 written.append(h5)
             except Exception:
                 npz = os.path.join(out_dir, f"{stem}.npz")
@@ -1749,6 +1876,68 @@ class ExperimentResult:
                 written.append(yaml_path)
             except Exception:
                 pass
+            # BEP034 alignment: a JSON metadata sidecar (BIDS tooling reads JSON)
+            # beside the richer YAML re-run recipe, and a dataset_description.json
+            # marking out_dir as a BIDS-derivatives dataset.
+            try:
+                written += self._write_bep034_sidecars(out_dir, stem)
+            except Exception:
+                pass
+        return written
+
+    def _write_bep034_sidecars(self, out_dir, stem) -> list:
+        """Write a BEP034 JSON metadata sidecar + a derivatives dataset_description.json.
+
+        Complements the YAML re-run recipe with BIDS-standard JSON so the result is
+        discoverable by pybids/BIDS tooling. The gridded HDF5 itself supersedes
+        emitting one BEP034 ``ts/`` file per sweep cell (a 15,600-cell grid would be
+        15,600 files); the sidecar records the model, integrator, and swept space so
+        the mapping back to per-cell simulations is explicit.
+        """
+        import datetime as _dt
+        import json as _json
+        import os
+
+        from tvbo.adapters.bids import DatasetDescription, SimulationProvenance
+
+        exp = self.source
+        integ = getattr(exp, "integration", None)
+        dyn = getattr(exp, "dynamics", None)
+        now = _dt.datetime.now().isoformat(timespec="seconds")
+        prov = SimulationProvenance(
+            Model=getattr(dyn, "name", None) or getattr(dyn, "label", None),
+            Integrator=getattr(integ, "method", None),
+            Duration=getattr(integ, "duration", None),
+            StepSize=getattr(integ, "step_size", None),
+            GeneratedAt=now,
+            Software="tvbo",
+        )
+        # Swept parameter space (the grid axes) — the metadata a per-cell BEP034
+        # ``ts/`` file would carry, aggregated for the whole grid.
+        space = {}
+        for expl in (getattr(exp, "explorations", None) or {}).values():
+            for ax in (getattr(expl, "space", None) or []):
+                pname = getattr(ax, "parameter", None)
+                if pname:
+                    space[str(pname)] = getattr(ax, "explored_values", None) or None
+        sidecar = {**prov.to_dict(), "ModelingRecipe": f"{stem}.yaml"}
+        if space:
+            sidecar["SweptParameters"] = space
+        json_path = os.path.join(out_dir, f"{stem}.json")
+        with open(json_path, "w", encoding="utf-8") as fh:
+            _json.dump(sidecar, fh, indent=2, default=str)
+
+        written = [json_path]
+        dd = os.path.join(out_dir, "dataset_description.json")
+        if not os.path.exists(dd):
+            desc = DatasetDescription(
+                Name=str(getattr(exp, "label", None) or getattr(exp, "id", None) or "tvbo results"),
+                DatasetType="derivative",
+                GeneratedBy=[{"Name": "tvbo", "Description": "TVB-Ontology simulation result"}],
+            )
+            with open(dd, "w", encoding="utf-8") as fh:
+                fh.write(desc.to_json())
+            written.append(dd)
         return written
 
     def plot(self, **kwargs):

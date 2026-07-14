@@ -46,7 +46,7 @@ from pathlib import Path
 # ── Paths ──────────────────────────────────────────────────────────────────────
 
 HANSEN_DIR = Path("/Users/leonmartin_bih/work_data/toolboxes/hansen_receptors/data/schaefer")
-ATLAS_DIR = Path("/Users/leonmartin_bih/tools/tvbo/tvbo/data/tvbo_data/atlas")
+ATLAS_DIR = Path("/Users/leonmartin_bih/tools/tvbo/tvbo/database/atlases")
 OUT_DIR = Path("/Users/leonmartin_bih/tools/tvbo/tvbo/database/networks")
 
 # ── Provenance strings (verbatim, schema-compliant) ────────────────────────────

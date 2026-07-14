@@ -2,10 +2,14 @@
 <%doc>TVB-Optim Algorithm Template. Context: experiment (SimulationExperiment).</%doc>
 <%
 from tvbo.codegen import render_expression
+from tvbo.codegen.streaming_reducers import lookup_streaming_reducer
 from tvbo.templates.tvboptim.utils import (
     safe_name, as_list, get_attr, is_network_observation, is_external_observation,
     get_include_info, get_all_observations_from_algo, get_all_hyperparams
 )
+
+# Backend key this template targets — used for streaming-reducer registry lookups.
+_STREAMING_BACKEND = 'tvboptim'
 
 # Define jaxcode locally
 _exp_functions = experiment.functions or {}
@@ -250,6 +254,53 @@ if network and network.coupling:
                     source_observations_needed.add(src_name)
 
     use_sliding_window = has_window_size and len(source_observations_needed) > 0
+
+    # ── Streaming-reducer resolution (backend-independent, registry-gated) ──────
+    # For each derived observation computed over a sliding-window source, look up
+    # whether its FIRST pipeline reducer (e.g. compute_fc) has a registered
+    # streaming form for this backend. When it does, the loop below replaces the
+    # O(window*N^2)/step recompute over the ring buffer with an O(N^2)/step
+    # incremental (init/add/evict/emit/finalize) reducer; when it does not (or
+    # streaming is disabled), the recompute path is kept unchanged. Transparent to
+    # the recipe: nothing here reads schema fields the recompute path does not.
+    def _pipeline_reducer_ref(dobs_def):
+        """(module, name, skip_t, s_var) of a derived obs's FIRST pipeline step, else None."""
+        pipeline = getattr(dobs_def, 'pipeline', None)
+        if not pipeline:
+            return None
+        step = pipeline[0]
+        call = getattr(step, 'callable', None)
+        if not call or not getattr(call, 'name', None) or not getattr(call, 'module', None):
+            return None
+        skip_t, s_var = 0, 0
+        for aname, arg in (getattr(step, 'arguments', None) or {}).items():
+            val = getattr(arg, 'value', None)
+            if val is None:
+                continue
+            if str(aname) == 'skip_t':
+                skip_t = int(val)
+            elif str(aname) == 's_var':
+                s_var = int(val)
+        return (str(call.module), str(call.name), skip_t, s_var)
+
+    streaming_map = {}  # derived_obs_name -> {src_obs, factory, skip_t, s_var}
+    if use_sliding_window:
+        for _dobs_name, _src_list in dependent_observations.items():
+            _dobs_def = derived_observations_dict.get(_dobs_name)
+            if not _dobs_def or not _src_list:
+                continue
+            _ref = _pipeline_reducer_ref(_dobs_def)
+            if not _ref:
+                continue
+            _mod, _name, _skip_t, _s_var = _ref
+            _spec = lookup_streaming_reducer(_STREAMING_BACKEND, _mod, _name)
+            # Only step-wise ('window') reducers are wired here; 'stride' (FCD)
+            # specs keep the recompute fallback until the stride branch lands.
+            if _spec is not None and _spec.emit_kind == 'window' and _src_list[0] in source_observations_needed:
+                streaming_map[_dobs_name] = dict(
+                    src_obs=_src_list[0], factory=_spec.factory,
+                    skip_t=_skip_t, s_var=_s_var,
+                )
 %>
 def run_${algo_name}(
     state: Any,
@@ -275,6 +326,9 @@ def run_${algo_name}(
     verbose: bool = True,
     print_every: int = None,
     save_every: int = None,
+% if use_sliding_window:
+    resync_every: int = None,  # streaming-reducer float-drift re-sync period (default = window_size; 0 disables)
+% endif
 ) -> Bunch:
     import copy
     import equinox as eqx
@@ -512,6 +566,17 @@ def run_${algo_name}(
 % endfor
 % endif
 
+% for dobs_name, sinfo in streaming_map.items():
+    # Streaming reducer for '${dobs_name}' over the '${sinfo['src_obs']}' window:
+    # replaces the O(window*N^2)/step ${sinfo['factory'].rsplit('.', 1)[-1]}-equivalent
+    # recompute with an O(N^2)/step incremental accumulator. The accumulator is
+    # (re)built EXACTLY from the ring buffer here (post-warmup / post-passed-buffer)
+    # and re-synced every _${dobs_name}_resync_every steps to reset float drift.
+    _${dobs_name}_reducer = ${sinfo['factory']}(s_var=${sinfo['s_var']}, skip_t=${sinfo['skip_t']})
+    _${dobs_name}_resync_every = int(window_size) if resync_every is None else int(resync_every)
+    _${dobs_name}_acc = _${dobs_name}_reducer.resync(_${sinfo['src_obs']}_buffer)
+% endfor
+
     if verbose:
         logger.info(f"Running ${algo_name} algorithm for {n_iterations} iterations...")
 
@@ -554,6 +619,14 @@ def run_${algo_name}(
 %>
         _${src_obs}_sample = _${src_obs}_monitor(result)
         _${src_obs}_sample_data = _${src_obs}_sample.data if hasattr(_${src_obs}_sample, 'data') else _${src_obs}_sample
+<%
+    _stream_for_src = [(d, si) for d, si in streaming_map.items() if si['src_obs'] == src_obs]
+%>
+% for dobs_name, sinfo in _stream_for_src:
+        # Sample leaving the effective window (ring index skip_t, read PRE-roll so
+        # it is the sample that falls out as the window slides forward).
+        _${dobs_name}_evict = _${src_obs}_buffer[${sinfo['skip_t']}, ${sinfo['s_var']}, :]
+% endfor
         _${src_obs}_buffer = jnp.roll(_${src_obs}_buffer, -1, axis=0)
         if _${src_obs}_sample_data.ndim == 2:
             _${src_obs}_buffer = _${src_obs}_buffer.at[-1, 0, :].set(_${src_obs}_sample_data[0, :])
@@ -561,6 +634,13 @@ def run_${algo_name}(
             _${src_obs}_buffer = _${src_obs}_buffer.at[-1, :, :].set(_${src_obs}_sample_data[0, :, :])
         else:
             _${src_obs}_buffer = _${src_obs}_buffer.at[-1, 0, :].set(_${src_obs}_sample_data)
+% for dobs_name, sinfo in _stream_for_src:
+        # Incremental update: drop the leaving sample, fold in the arriving one
+        # (read from the buffer's newest slot — the canonical storage). The
+        # accumulator now holds EXACTLY _${src_obs}_buffer[skip_t:] (the window).
+        _${dobs_name}_acc = _${dobs_name}_reducer.evict(_${dobs_name}_acc, _${dobs_name}_evict)
+        _${dobs_name}_acc = _${dobs_name}_reducer.add(_${dobs_name}_acc, _${src_obs}_buffer[-1, ${sinfo['s_var']}, :])
+% endfor
         # Maintain the monitor's own rolling history only if it carries one.
         # Stateless monitors (e.g. a BOLD monitor) have no _history buffer.
         if hasattr(_${src_obs}_monitor, '_history') and _${src_obs}_monitor._history is not None:
@@ -569,6 +649,13 @@ def run_${algo_name}(
             _${src_obs}_monitor = eqx.tree_at(history_accessor, _${src_obs}_monitor, _new_history)
 % endfor
         _buffer_idx = min(_buffer_idx + 1, int(window_size))
+% for dobs_name, sinfo in streaming_map.items():
+        # Periodic exact re-sync: rebuild the accumulator from the ring buffer to
+        # reset the float drift the running sums accumulate (add/evict are not
+        # exactly reversible in floating point). resync_every<=0 disables it.
+        if _${dobs_name}_resync_every > 0 and (i + 1) % _${dobs_name}_resync_every == 0:
+            _${dobs_name}_acc = _${dobs_name}_reducer.resync(_${sinfo['src_obs']}_buffer)
+% endfor
 
 % for obs in simulated_observations:
 <%
@@ -642,7 +729,12 @@ def run_${algo_name}(
     # Build argument string (buffer is first positional, then keyword args from pipeline)
     direct_call_kwargs = ", ".join(direct_call_args) if direct_call_args else ""
 %>
-% if src_obs_for_this:
+% if obs in streaming_map:
+        # ${obs}: streaming windowed reducer over _${streaming_map[obs]['src_obs']}_buffer.
+        # emit() == ${direct_call}(buffer${', ' + direct_call_kwargs if direct_call_kwargs else ''}) up to float rounding
+        # (re-synced every _${obs}_resync_every steps) at O(N^2)/step instead of O(window*N^2)/step.
+        ${obs} = _${obs}_reducer.emit(_${obs}_acc)
+% elif src_obs_for_this:
         # ${obs} depends on ${src_obs_for_this} - compute directly from accumulated buffer
         # Call: ${direct_call}(buffer${', ' + direct_call_kwargs if direct_call_kwargs else ''})
         ${obs} = ${direct_call}(_${src_obs_for_this}_buffer${', ' + direct_call_kwargs if direct_call_kwargs else ''})

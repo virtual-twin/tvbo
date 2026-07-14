@@ -154,7 +154,10 @@ slots:
             Whether to include this element in simulation output files.
             Applicable to state variables (default true), derived
             variables (default false), and network nodes (default true).
-            Set false to suppress recording.
+            On an observation it forces (true) or suppresses (false)
+            persistence in the result; left unset, a terminal observation
+            (one not consumed by another observation or a loss) is recorded
+            and an intermediate one is not. Set false to suppress recording.
 
 enums:
     AlgorithmCompositionMode:
@@ -244,6 +247,20 @@ enums:
                 description: "Place all otherwise-unassigned axes on the vectorized tier."
             workflow:
                 description: "Fan out all otherwise-unassigned axes as scheduler tasks."
+
+    NodeReconciliation:
+        description: >-
+            Strategy for aligning a dataset-sourced empirical target's nodes to the
+            model network before comparison. Keyed alignment is the default so a
+            differing node count or ordering (e.g. a 998-parcel empirical FC against a
+            1000-parcel model) cannot silently misalign the comparison.
+        permissible_values:
+            by_label:
+                description: >-
+                    Restrict both sides to their shared node labels by name (keyed
+                    ``.sel``), preserving the model network's order. Never positional.
+            none:
+                description: "No reconciliation; the node sets are assumed identical."
 
     ImagingModality:
         permissible_values:
@@ -363,6 +380,9 @@ enums:
         description: "How to aggregate time series data"
         permissible_values:
             mean: { description: "Average over time" }
+            variance: { description: "Variance over time (per node)" }
+            std: { description: "Standard deviation over time (per node)" }
+            first_passage: { description: "First-passage time index (per node): the first sample at which the source crosses the observation's `threshold` parameter (>=), or the sample count if it never crosses. Backend-independent (argmax of the threshold-crossing). Multiply by the sampling step for a time." }
             last: { description: "Last value in window" }
             first: { description: "First value in window" }
             window: { description: "Sliding window aggregation" }
@@ -482,6 +502,21 @@ enums:
                 description: "Use the model's default initial values directly."
             from_branch:
                 description: "Start from a point on a previously computed branch."
+            from_working_point:
+                description: >-
+                    Ramp a parameter quasi-statically (warm-start / from_previous)
+                    to a target value (see InitialState.ramp) and start from the
+                    endpoint state — reach a working point on the solution branch
+                    before the run.
+            from_experiment:
+                description: >-
+                    Seed from the settled endpoint state of another already-run
+                    experiment in the study (referenced by
+                    InitialState.source_experiment). Reuses a working point that
+                    experiment already reached instead of recomputing it — the
+                    cross-experiment counterpart of from_working_point (which
+                    recomputes the ramp inline). source_point selects which settled
+                    point of the source run (default 'endpoint').
 
     SparseFormat:
         permissible_values:
@@ -1171,6 +1206,12 @@ classes:
             hemi:
                 range: string
                 description: "BIDS hemi- entity (L or R) for hemisphere-specific surface/volume data"
+            desc:
+                range: string
+                description: "BIDS desc- entity (e.g., FCavg, SC), for disambiguating derived data variants"
+            suffix:
+                range: string
+                description: "BIDS suffix (e.g., relmat), the trailing name component before the extension"
 
     Network:
         class_uri: tvbo:Network
@@ -1535,6 +1576,7 @@ classes:
         description: "A node in a network with its own dynamics and properties"
         slots:
             - label
+            - alternateName
             - description
             - parameters
             - record
@@ -1721,6 +1763,7 @@ classes:
             - parameters
             - environment
             - time_scale
+            - record
         attributes:
             # Source specification - what this observation derives from.
             # Each entry is either a state-variable name/ref (raw observation
@@ -1784,6 +1827,43 @@ classes:
                     Load data from external source (file, database, API).
                     When specified, this observation represents empirical/external data
                     rather than simulated data. Enables unified treatment of all data.
+            query:
+                range: BidsEntities
+                inlined: true
+                description: >-
+                    BIDS entity filter that selects one per-subject file under the
+                    experiment's ``dataset.bids_root`` when ``source`` is dataset-sourced
+                    (``dataset.subject.<measure>``). The active subject fills the ``sub-``
+                    entity at resolution time; the remaining entities (e.g. ``desc: FCavg,
+                    atlas: Schaefer1000, suffix: relmat``) disambiguate among the subject's
+                    several networks/measurements. The same filter enumerates the cohort
+                    for the per-subject workflow fan-out, so one declaration drives both
+                    discovery and resolution.
+            reconcile:
+                range: NodeReconciliation
+                ifabsent: "by_label"
+                description: >-
+                    How a dataset-sourced target's nodes are aligned to the model
+                    network before comparison. ``by_label`` selects the shared node
+                    labels on both sides by name (keyed ``.sel``), never by position, so
+                    a differing node count or order cannot silently misalign the
+                    comparison. Matching is alias-aware: a target label matches a model
+                    node when it equals that node's ``label`` or any of its
+                    ``alternateName`` entries, so a differing nomenclature reconciles
+                    without relabelling either side. ``none`` disables reconciliation
+                    (identical node sets).
+            min_coverage:
+                range: float
+                minimum_value: 0.0
+                maximum_value: 1.0
+                description: >-
+                    Minimum fraction of the model network's nodes that a ``by_label``
+                    reconciliation must cover, else resolution raises. The realised
+                    coverage is always logged. Absent (``null``) means require full
+                    coverage (``1.0``) for a dataset-sourced target — silently fitting on
+                    a partial node subset must be an explicit opt-in (e.g. ``0.95`` to
+                    tolerate a few genuinely-missing empirical parcels), never the
+                    default.
 
             # Observable/aggregation attributes (for tuning algorithms)
             skip_t:
@@ -1806,6 +1886,21 @@ classes:
                 inlined: true
                 inlined_as_list: true
                 range: FunctionCall
+
+            # Co-integrated auxiliary dynamics (an online reduction / monitor)
+            dynamics:
+                range: Dynamics
+                inlined: true
+                description: >-
+                    Auxiliary state system co-integrated with the model to compute this
+                    observation online, so the full trajectory need never be held. Its
+                    state variables advance in step with the model, and the observation's
+                    value is this Dynamics' ``output`` — read at the final step for a
+                    reduction (e.g. effective frequency) or, when ``period`` is set,
+                    sub-sampled over time for a monitor. Backends fold it into their own
+                    integration so a batched parameter sweep carries only the accumulator,
+                    not a per-cell trajectory. An alternative to the post-scan ``pipeline``
+                    / ``class_reference`` for observations expressible as a time recurrence.
 
             # Direct class reference (alternative to pipeline)
             class_reference:
@@ -2033,8 +2128,14 @@ classes:
                 range: string
                 ifabsent: "string(differential)"
                 description: >-
-                    Type of equation: 'differential' (default) means dx/dt = rhs,
-                    'algebraic' means 0 = rhs or x ~ rhs (DAE constraint).
+                    How to interpret ``equation.rhs`` when advancing this state:
+                    'differential' (default) integrates it as ``dx/dt = rhs``;
+                    'algebraic' is a constraint ``0 = rhs`` / ``x ~ rhs`` (DAE);
+                    'recurrence' is a discrete per-step update ``x_next = rhs``
+                    (no integrator applied), used by an observation's auxiliary
+                    ``dynamics`` for online reductions/accumulators (e.g. a running
+                    sum ``x_next = x + f``) — the symbolic, backend-independent
+                    sibling of the continuous 'differential' form.
                     Algebraic equations are used by ModelingToolkit.jl backend.
             equation_order:
                 range: integer
@@ -3408,8 +3509,40 @@ classes:
             source_point:
                 range: string
                 description: >-
-                    Which point on the source branch: 'endpoint', 'hopf:1',
-                    'fold:2', a step number, etc.
+                    Which point of the source branch/run seeds this run: 'endpoint'
+                    (default, the last recorded point), a step number, 'hopf:1',
+                    'fold:2', etc. — a single operating point. The special value
+                    'branch' instead selects the WHOLE recorded branch: every recorded
+                    point becomes one cell of this experiment's exploration, seeded from
+                    that point's swept-parameter value and settled state. That turns a
+                    sequential branch (e.g. a from_previous warm-start scan) into an
+                    independent, parallel per-point restart analysis — Lyapunov spectra,
+                    Jacobian/Floquet eigenvalues, basin sampling, perturbation kicks,
+                    first-passage — that shards across a cluster. The consuming
+                    exploration declares one axis (the source's swept parameter) with no
+                    domain; its values come from the branch, keeping the source run as the
+                    single source of truth for which points exist.
+            source_experiment:
+                range: SimulationExperiment
+                description: >-
+                    For method=from_experiment: the experiment whose settled
+                    per-node endpoint state seeds this run (its operating point).
+                    Referenced by identifier (id); the referenced run's saved final
+                    state is loaded as this run's initial condition, with source_point
+                    selecting which settled point (default 'endpoint'). Lets a
+                    control/perturbation experiment start from a working point another
+                    experiment already reached, without recomputing its warm-start ramp
+                    — a declarative data dependency the workflow engine can order.
+            ramp:
+                range: ExplorationAxis
+                inlined: true
+                description: >-
+                    For method=from_working_point: the parameter + domain to ramp
+                    quasi-statically (warm-start, from_previous) to reach the working
+                    point; the run then seeds from the ramp endpoint. Reuses
+                    ExplorationAxis (parameter + Range domain) — the same primitive an
+                    Exploration warm-start uses; the per-step settle comes from the
+                    experiment's integration (transient, else duration).
 
     BranchSwitch:
         class_uri: tvbo:BranchSwitch
@@ -4036,6 +4169,16 @@ classes:
             venv:
                 range: string
                 description: "Path to a virtual environment to activate before running."
+            setup:
+                multivalued: true
+                range: string
+                description: >-
+                    Shell lines run verbatim before the task command, after
+                    ``set -euo pipefail`` and any module/venv activation. The general
+                    hook for environment setup the typed fields do not cover, e.g.
+                    activating a conda env (``conda activate <name>``), sourcing a
+                    profile, or exporting a computed path. Ordered; each line is
+                    emitted as-is.
             mail_type:
                 range: string
                 description: "Scheduler notification trigger (e.g. 'END,FAIL')."
@@ -4164,6 +4307,19 @@ classes:
             integration:
                 range: Integrator
                 inlined: true
+            initial_state:
+                range: InitialState
+                inlined: true
+                description: >-
+                    How to obtain the starting state for the run. Default: the
+                    model's declared initial values (method ``given``).
+                    ``from_working_point`` ramps a parameter quasi-statically to a
+                    target (reusing the warm-start ``from_previous`` primitive, see
+                    ``ramp``) and starts the run from the branch endpoint — e.g. the
+                    operating point reached by an adiabatic K-upsweep.
+                    ``from_experiment`` instead reuses a working point another
+                    experiment already reached, seeding from its saved endpoint (see
+                    ``source_experiment``) rather than recomputing the ramp.
             connectivity:
                 range: Network
                 inlined: true

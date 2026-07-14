@@ -36,6 +36,11 @@ class SweepAxis:
     values: tuple[float, ...]
     kind: str               # AXIS_KIND (parameters | initial_conditions | ...)
     placement: str = "auto"  # auto | vectorize | workflow
+    # A branch-restart axis (initial_state source_point='branch') whose cell count is
+    # known only at run time, from the source run's recorded branch. It fans into a
+    # fixed number of array shards (``chunk``); each task slices its share of the loaded
+    # branch. ``values`` is empty and ``n`` is unknown until the source result is read.
+    runtime_sized: bool = False
 
     @property
     def n(self) -> int:
@@ -66,6 +71,7 @@ class WorkflowPlan:
     source_spec: str = ""             # SPEC arg for `tvbo run` (recipe path / CURIE / DB name)
     experiment_selector: str | None = None  # --experiment value picking this experiment in a study
     workflow_spec: dict[str, Any] = field(default_factory=dict)  # effective merged workflow config (study < experiment < --set)
+    depends_on: list[str] = field(default_factory=list)  # experiment keys whose result seeds this run (initial_state.from_experiment)
 
     # ---- derived helpers --------------------------------------------------
 
@@ -80,6 +86,10 @@ class WorkflowPlan:
     def n_vectorize_cells(self) -> int:
         n = 1
         for ax in self.vectorize_axes:
+            # Runtime-sized (branch-restart) axes have an unknown cell count at plan
+            # time; they don't contribute a static factor to the vectorised total.
+            if getattr(ax, "runtime_sized", False):
+                continue
             n *= ax.n
         return n
 
@@ -88,6 +98,12 @@ class WorkflowPlan:
         if self.workflow_axes:
             # Fanned axes → one array task per ``chunk`` workflow cells.
             return max(1, (self.n_workflow_cells + self.chunk - 1) // self.chunk)
+        # A runtime-sized (branch-restart) sweep is fanned into exactly ``chunk`` array
+        # shards: the cell count is known only when the source branch is read, so each
+        # task slices its share of the loaded branch (``_branch_p[i::N]``). No cell-count
+        # cap, because there is no static count to cap against.
+        if any(getattr(ax, "runtime_sized", False) for ax in self.vectorize_axes):
+            return max(1, self.chunk)
         # Fully backend-vectorized sweep (no fanned axes): ``chunk`` is the number
         # of SLURM array shards. Each task runs ``tvbo run --slurm-chunk=$i/N`` over
         # 1/N of the sweep cells (the backend vmap/pmap-s its own share). Capped at
@@ -126,21 +142,6 @@ class WorkflowPlan:
         names = [ax.name for ax in self.workflow_axes]
         for combo in product(*(ax.values for ax in self.workflow_axes)):
             yield dict(zip(names, combo))
-
-    def per_cell_command(self, *, run_cmd: str = "tvbo run") -> str:
-        """Render a `tvbo run` command line for one workflow cell."""
-        spec = f"experiment:{self.experiment_key}"
-        parts = [run_cmd, spec, f"--backend={self.backend.name}"]
-        if self.container:
-            parts.append(f"--container={self.container}")
-        # Workflow-fanned axes become explicit --override flags
-        for ax in self.workflow_axes:
-            parts.append(f"--override={ax.parameter}={{wildcards.{ax.name}}}")
-        # Vectorized axes are passed as a sweep range so the backend packs them
-        for ax in self.vectorize_axes:
-            parts.append(f"--sweep={ax.parameter}={','.join(repr(v) for v in ax.values)}")
-        parts.append(f"-o {self.out_dir}")
-        return " ".join(parts)
 
 
 # ---------------------------------------------------------------------------
@@ -184,6 +185,14 @@ def extract_axes(experiment) -> list[SweepAxis]:
     else:
         explorations = list(explorations)
 
+    # A from_experiment:branch experiment restarts an analysis over a sibling run's whole
+    # recorded branch: its exploration axes carry no domain (values come from the branch at
+    # run time), so they are runtime-sized shard axes rather than statically-valued grids.
+    _ini = getattr(experiment, "initial_state", None)
+    _is_branch = (_ini is not None
+                  and str(getattr(_ini, "method", "") or "") == "from_experiment"
+                  and str(getattr(_ini, "source_point", "") or "endpoint") == "branch")
+
     out: list[SweepAxis] = []
     seen: set[str] = set()
     for expl in explorations:
@@ -199,13 +208,42 @@ def extract_axes(experiment) -> list[SweepAxis]:
                 uniq = f"{name}{i}"
                 i += 1
             seen.add(uniq)
+            _branch_axis = (_is_branch and getattr(ax, "domain", None) is None
+                            and not getattr(ax, "explored_values", None))
             out.append(SweepAxis(
                 name=uniq,
                 parameter=param,
-                values=_axis_values(ax),
+                values=() if _branch_axis else _axis_values(ax),
                 kind=axis_kind_of(param),
+                runtime_sized=_branch_axis,
             ))
     return out
+
+
+def _dataset_subject_axis(experiment) -> "SweepAxis | None":
+    """A workflow-fanned ``subject`` axis when the experiment has a per-subject target.
+
+    Values are the cohort subject IDs (from ``experiment.dataset_subject_ids()``);
+    each fanned cell runs ``tvbo run … --subject <sub>`` so the run resolves that
+    subject's empirical target. Returns ``None`` when the experiment declares no
+    dataset-sourced observation.
+    """
+    ids_fn = getattr(experiment, "dataset_subject_ids", None)
+    if not callable(ids_fn):
+        return None
+    try:
+        subjects = list(ids_fn())
+    except Exception:
+        return None
+    if not subjects:
+        return None
+    return SweepAxis(
+        name="subject",
+        parameter="dataset.active_subject",
+        values=tuple(str(s) for s in subjects),
+        kind="subjects",
+        placement="workflow",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -310,6 +348,20 @@ def _normalize_directives(raw) -> list[dict[str, str]]:
     return out
 
 
+def _as_lines(raw) -> list[str]:
+    """Normalize a shell-line field (``setup``) to a list of strings.
+
+    A string (or any scalar) becomes a single line; a list/tuple is stringified
+    per element. So ``--set slurm.setup="conda activate env"`` yields one line, not
+    one line per character, and a bare scalar does not raise.
+    """
+    if raw is None:
+        return []
+    if isinstance(raw, (list, tuple)):
+        return [str(x) for x in raw]
+    return [str(raw)]
+
+
 def plan(
     *,
     study_key: str,
@@ -336,9 +388,21 @@ def plan(
 
     axes = extract_axes(experiment)
 
+    # A per-subject empirical target adds an implicit "subject" fan-out axis: one
+    # shard per subject, each resolving its own target. It reuses the same
+    # wildcard/array machinery as sweep axes, so no separate per-subject path.
+    subject_axis = _dataset_subject_axis(experiment)
+    if subject_axis is not None:
+        axes = [subject_axis, *axes]
+
     vectorize: list[SweepAxis] = []
     workflow: list[SweepAxis] = []
     for ax in axes:
+        # An axis constructed with an explicit placement (e.g. the subject
+        # fan-out) is honoured as-is rather than re-decided by the auto rule.
+        if ax.placement in ("workflow", "vectorize"):
+            (workflow if ax.placement == "workflow" else vectorize).append(ax)
+            continue
         forced_vec = ax.parameter in explicit_vec or ax.name in explicit_vec
         forced_wf = ax.parameter in explicit_wf or ax.name in explicit_wf
         if forced_vec and forced_wf:
@@ -371,6 +435,8 @@ def plan(
         engine_block["env"] = _normalize_env(engine_block["env"])
     if "options" in engine_block:
         engine_block["options"] = _normalize_directives(engine_block["options"])
+    if "setup" in engine_block:
+        engine_block["setup"] = _as_lines(engine_block["setup"])
 
     # Software dependencies come from the experiment's schema-native
     # environment.requirements (overridable via workflow_spec["requirements"]).
@@ -381,14 +447,30 @@ def plan(
     _reqs = [r for r in (_norm_requirement(x) for x in _as_list(_req_raw))
              if r.get("package") or r.get("source_url")]
 
-    experiment_key = str(getattr(experiment, "key", None)
-                         or getattr(experiment, "name", None) or "experiment")
+    from ._common import experiment_key as _experiment_key  # canonical (id-first) key
+
+    experiment_key = _experiment_key(experiment)
     # Results land in a kit-relative ``results/`` by default (the emitted scripts
     # run from the kit dir, which already encodes study/experiment/engine — like
     # ``logs/``). An explicit out_dir (relative or absolute) overrides it; the
     # {study}/{experiment} placeholders still resolve for custom templates.
     out_dir = str(spec.get("out_dir") or "results")
     out_dir = out_dir.replace("{study}", study_key).replace("{experiment}", experiment_key)
+
+    # A ``from_experiment`` initial state makes this experiment depend on another
+    # experiment's completed result (its operating point). Recorded as an ordering
+    # edge so DAG engines run the source first (Snakemake input; SLURM afterok).
+    depends_on: list[str] = []
+    _ini = getattr(experiment, "initial_state", None)
+    if _ini is not None and str(getattr(_ini, "method", "") or "") == "from_experiment":
+        _src = getattr(_ini, "source_experiment", None)
+        if _src is not None:
+            # ``source_experiment`` is referenced by identifier; keep the raw
+            # reference (id, key, or name) as a string. The emitter resolves it to
+            # the source's canonical workflow key, so a non-numeric key/name here
+            # does not crash and an explicit ``key`` still matches its rule/output.
+            _sid = getattr(_src, "id", None)
+            depends_on.append(str(_sid if _sid is not None else (getattr(_src, "name", None) or _src)))
 
     return WorkflowPlan(
         study_key=study_key,
@@ -409,6 +491,7 @@ def plan(
         source_spec=source_spec or "",
         experiment_selector=experiment_selector,
         workflow_spec=spec,
+        depends_on=depends_on,
     )
 
 
@@ -459,6 +542,8 @@ def _engine_config_from_dict(blk: dict) -> Any:
             setattr(ec, key, blk[key])
     if blk.get("modules"):
         ec.modules = list(blk["modules"])
+    if blk.get("setup"):
+        ec.setup = _as_lines(blk["setup"])
     env_map = _pairs_to_map(blk.get("env")) if blk.get("env") else {}
     if env_map:
         ec.env = [dm.EnvironmentVariable(name=str(n), value=str(v)) for n, v in env_map.items()]

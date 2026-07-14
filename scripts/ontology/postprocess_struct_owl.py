@@ -35,6 +35,30 @@ TVBO = Namespace("https://w3id.org/tvbo/")
 PAV = Namespace("http://purl.org/pav/")
 
 
+def _retype_float_facets(g: Graph) -> None:
+    """Retype numeric facet literals on ``xsd:float`` datatype restrictions.
+
+    LinkML's ``gen-owl`` emits a float slot's ``minimum_value`` /
+    ``maximum_value`` bounds as bare ``0e+00`` / ``1e+00`` literals, which Turtle
+    types as ``xsd:double``. HermiT rejects an ``xsd:double`` facet value on an
+    ``owl:onDatatype xsd:float`` restriction (``the maxInclusive facet takes only
+    floats as values when used on an xsd:float datatype``); ELK does not check
+    facets, so only HermiT surfaces it. Re-type each facet literal to
+    ``xsd:float`` so the restriction is internally consistent for both reasoners.
+    """
+    facet_predicates = (XSD.minInclusive, XSD.maxInclusive,
+                        XSD.minExclusive, XSD.maxExclusive)
+    for datatype_node in set(g.subjects(OWL.onDatatype, XSD.float)):
+        for restriction_list in g.objects(datatype_node, OWL.withRestrictions):
+            for facet_node in g.items(restriction_list):
+                for facet in facet_predicates:
+                    for value in list(g.objects(facet_node, facet)):
+                        retyped = Literal(value.toPython(), datatype=XSD.float)
+                        if retyped != value:
+                            g.remove((facet_node, facet, value))
+                            g.add((facet_node, facet, retyped))
+
+
 def _augment(g: Graph, schema: dict) -> None:
     # Drop the synthetic ontology declaration LinkML emits; it points at
     # `https://w3id.org/tvbo.owl.ttl` which is not a real artefact.
@@ -229,6 +253,7 @@ def main() -> int:
     g.bind("dcterms", DCTERMS)
     g.bind("pav", PAV)
     g.bind("owl", OWL)
+    _retype_float_facets(g)
     _augment(g, schema)
     g.serialize(destination=args.owl, format="turtle")
     print(f"\u2713 Augmented ontology header in {args.owl}")

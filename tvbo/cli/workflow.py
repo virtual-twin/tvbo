@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import datetime as _dt
+import json
 import os
 import shlex
 import subprocess
@@ -40,9 +41,15 @@ def _parse_overrides(items: list[str]) -> dict[str, Any]:
         parts = k.split(".")
         for p in parts[:-1]:
             target = target.setdefault(p, {})
-        # Try numeric/bool coercion
+        # Coerce the value: JSON for a list/object literal (e.g. a `setup`
+        # command list), else bool/int/float, else the raw string.
         coerced: Any = v
-        if v.lower() in {"true", "false"}:
+        if v.lstrip()[:1] in ("[", "{"):
+            try:
+                coerced = json.loads(v)
+            except ValueError:
+                coerced = v
+        elif v.lower() in {"true", "false"}:
             coerced = v.lower() == "true"
         else:
             try:
@@ -68,12 +75,7 @@ def _resolve_study_and_experiment(spec: str, experiment_arg: str | None):
         if not items:
             _common.die(f"Study {spec!r} has no experiments.")
         if experiment_arg is not None:
-            wanted = [
-                e for e in items
-                if (getattr(e, "key", None) == experiment_arg
-                    or getattr(e, "name", None) == experiment_arg
-                    or getattr(e, "label", None) == experiment_arg)
-            ]
+            wanted = [e for e in items if experiment_arg in _common.experiment_ids(e)]
             if not wanted:
                 _common.die(f"No experiment named {experiment_arg!r} in study.")
             exp = wanted[0]
@@ -81,14 +83,17 @@ def _resolve_study_and_experiment(spec: str, experiment_arg: str | None):
             exp = items[0]
         # Prefer the *runtime* experiment (has render/render_code/render_yaml) over the
         # datamodel object, so the kit can freeze the backend script + YAML snapshot.
-        if hasattr(obj, "get_experiment"):
-            sel = getattr(exp, "id", None)
-            if sel is None:
-                sel = getattr(exp, "key", None) or getattr(exp, "name", None) or getattr(exp, "label", None)
+        if not hasattr(exp, "render") and hasattr(obj, "get_experiment"):
+            sel = (getattr(exp, "id", None) or getattr(exp, "key", None)
+                   or getattr(exp, "name", None) or getattr(exp, "label", None))
             try:
                 exp = obj.get_experiment(sel)
-            except Exception:
-                pass
+            except Exception as e:
+                _common.die(
+                    f"Could not resolve experiment {sel!r} to a runnable object: {e}\n"
+                    "If the recipe references custom modules, make them importable "
+                    "(run from their directory or set PYTHONPATH)."
+                )
         return obj, exp, getattr(obj, "key", None) or "study"
 
     if kind == "experiment":
@@ -201,6 +206,11 @@ def _freeze_spec_yaml(experiment, spec_dir: Path, *, workflow_spec: dict | None 
         spec_dir.mkdir(parents=True, exist_ok=True)
         if not isinstance(net, Network):
             net.__class__ = Network
+        # Bake real node labels into the frozen connectome so the kit is
+        # self-contained and label reconciliation works on reload (the bids- block
+        # that would hydrate them is dropped from the frozen spec).
+        if hasattr(experiment, "bake_real_node_labels"):
+            experiment.bake_real_node_labels()
         net.save(spec_dir / "network.yaml", binary_format="h5")
         _common.info("wrote spec/network.yaml + spec/network.h5")
 
@@ -222,6 +232,42 @@ def _freeze_spec_yaml(experiment, spec_dir: Path, *, workflow_spec: dict | None 
         experiment.network = original_net
         if workflow_spec:
             experiment.workflow = original_wf
+
+
+def _bundle_callable_modules(spec_yaml_text: str, out_dir: Path) -> bool:
+    """Copy the recipe's custom callable/builder modules into the kit's ``code/``.
+
+    A recipe references user code by bare module name (``callable: {module:
+    my_analysis}`` / ``builder: {module: my_networks}``). Those modules are
+    importable at emit time (on the author's ``PYTHONPATH``) but are not installed
+    packages, so the frozen spec cannot resolve them on a compute node unless they
+    travel with the kit. Each referenced module that resolves to a **local** ``.py``
+    file (not under ``site-packages``/``dist-packages`` — installed deps are
+    provisioned via ``requirements.txt``/``environment.yml`` instead) is copied into
+    ``code/``. Returns True if anything was bundled (the sbatch then puts ``code`` on
+    ``PYTHONPATH``).
+    """
+    import importlib
+    import re
+    import shutil
+
+    names = set(re.findall(r'module:\s*["\']?([A-Za-z_][\w.]*)', spec_yaml_text))
+    bundled: list[str] = []
+    code_dir = out_dir / "code"
+    for name in sorted(names):
+        try:
+            mod = importlib.import_module(name)
+        except Exception:
+            continue
+        f = getattr(mod, "__file__", None) or ""
+        if not f.endswith(".py") or "site-packages" in f or "dist-packages" in f:
+            continue  # installed package — comes from the emitted requirements, not bundled
+        code_dir.mkdir(exist_ok=True)
+        shutil.copy2(f, code_dir / Path(f).name)
+        bundled.append(Path(f).name)
+    if bundled:
+        _common.info(f"bundled callable modules → code/: {', '.join(bundled)}")
+    return bool(bundled)
 
 
 def _emit_kit(*, engine: str, plan, experiment, out_dir: Path) -> Path:
@@ -248,12 +294,14 @@ def _emit_kit(*, engine: str, plan, experiment, out_dir: Path) -> Path:
     #    (network.h5) + YAML sidecar (network.yaml) and referenced from the spec
     #    via ``network.data_file`` — the mechanism resolve_spec loads on the node.
     spec_relpath = None
+    bundled_code = False
     try:
         spec_dir = out_dir / "spec"
         yaml_text = _freeze_spec_yaml(experiment, spec_dir, workflow_spec=plan.workflow_spec)
         spec_path = spec_dir / f"{plan.experiment_key}.yaml"
         spec_path.write_text(yaml_text, encoding="utf-8")
         spec_relpath = str(spec_path.relative_to(out_dir))
+        bundled_code = _bundle_callable_modules(yaml_text, out_dir)
     except Exception as exc:
         _common.info(f"(could not snapshot YAML spec: {exc})")
 
@@ -271,20 +319,30 @@ def _emit_kit(*, engine: str, plan, experiment, out_dir: Path) -> Path:
 
     # 3) Workflow artefact
     artefact = out_dir / _ARTEFACT_NAME[engine]
+    # BIDS result stem (no subject) so the engine can declare the exact output a
+    # per-subject `tvbo run` writes (sub-<subject>_<stem>.h5), not a bare result.h5.
+    try:
+        result_stem = experiment.get_result_stem()
+    except Exception:
+        result_stem = "result"
     text = _render_template(
         _TEMPLATE_PATH[engine],
         plan=plan,
         block=plan.engine_block,
         script_relpath=str(script_path.relative_to(out_dir)) if script_path else None,
         spec_relpath=spec_relpath,
+        bundled_code=bundled_code,
+        result_stem=result_stem,
     )
     artefact.write_text(text, encoding="utf-8")
     _common.info(f"wrote {artefact.relative_to(out_dir)}")
 
     # 3a) Gather job — reassembles the array's shard outputs into one result per
     #     experiment (identical to a local run). Submitted with a dependency by
-    #     `tvbo workflow run`, so no manual post-processing is needed.
-    if engine == "slurm":
+    #     `tvbo workflow run`, so no manual post-processing is needed. A single-task
+    #     array (e.g. chunk=1 on one GPU) has nothing to reassemble — it writes the
+    #     canonical result directly — so no gather job is emitted.
+    if engine == "slurm" and plan.n_array_tasks > 1:
         # BIDS-style result stem (pybids), matching what a local ExperimentResult.save writes.
         try:
             result_stem = experiment.get_result_stem()
@@ -427,8 +485,138 @@ def plan_cmd(
             typer.echo(f"  - {o['key']}={o['value']!r}  ({o['source']})")
 
 
+def _study_experiments(spec: str, experiment: str | None):
+    """Resolve the runtime experiments a study/experiment SPEC fans out over.
+
+    Returns ``(study_or_none, [runtime_experiments], study_key)``. A study yields
+    all its experiments (or the ``--experiment`` id/label subset); a bare
+    experiment SPEC yields a single-item list.
+    """
+    kind, obj = _common.resolve_spec(spec)
+    if kind != "study":
+        _study, exp, study_key = _resolve_study_and_experiment(spec, experiment)
+        return None, [exp], study_key
+    raw = getattr(obj, "experiments", None) or getattr(obj, "simulation_experiments", None) or []
+    items = list(raw.values()) if hasattr(raw, "values") else list(raw)
+    if experiment is not None:
+        wanted = {s.strip() for s in str(experiment).split(",") if s.strip()}
+        items = [e for e in items if wanted & _common.experiment_ids(e)]
+        if not items:
+            _common.die(f"No experiment(s) matching {experiment!r} in study.")
+    resolved = []
+    for e in items:
+        if not hasattr(e, "render") and hasattr(obj, "get_experiment"):
+            sel = (getattr(e, "id", None) or getattr(e, "key", None)
+                   or getattr(e, "name", None) or getattr(e, "label", None))
+            try:
+                e = obj.get_experiment(sel)
+            except Exception as exc:
+                _common.die(f"Could not resolve experiment {sel!r} to a runnable object: {exc}")
+        resolved.append(e)
+    return obj, resolved, getattr(obj, "key", None) or "study"
+
+
+def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
+                          output: Path | None, override: list[str], stdout: bool = False):
+    """Emit one Snakefile that fans every experiment (and, per experiment, every
+    subject / sweep cell) into its own job. In kit mode each experiment is frozen
+    into a self-contained ``spec/<key>/`` so a rule runs ``tvbo run
+    spec/<key>/experiment.yaml``; in ``--stdout`` mode nothing is written and the
+    rules run ``tvbo run <source-spec> --experiment <id>``."""
+    study, experiments, study_key = _study_experiments(spec, experiment)
+    out_dir = output or Path("output").joinpath(str(study_key), "snakemake")
+    if not stdout:
+        out_dir.mkdir(parents=True, exist_ok=True)
+    parsed = _parse_overrides(override)
+
+    def _san(s):
+        return "".join(c if (c.isalnum() or c in ".-") else "_" for c in str(s))
+
+    # Every experiment identifier (id / key / name) -> its sanitized workflow key,
+    # so a from_experiment dependency (recorded by id in plan.depends_on) resolves
+    # to the source experiment's rule and output dir even when that experiment
+    # carries an explicit ``key`` that differs from its id.
+    _key_of = {}
+    for _e in experiments:
+        _k = _san(_common.experiment_key(_e))
+        for _ref in (getattr(_e, "id", None), getattr(_e, "key", None), getattr(_e, "name", None)):
+            if _ref is not None:
+                _key_of[str(_ref)] = _k
+
+    exp_plans, block, last_plan, bundled_code = [], {}, None, False
+    for exp in experiments:
+        key = _san(_common.experiment_key(exp))
+        base = _wf.merge_workflow_spec(study, exp)
+        spec_dict = _deep_merge(base, parsed["merged"])
+        plan = _wf.plan(study_key=str(study_key), experiment=exp, backend=backend,
+                        engine="snakemake", workflow_spec=spec_dict,
+                        overrides=parsed["records"], source_spec=spec, experiment_selector=key)
+        block = plan.engine_block or {}
+        last_plan = plan
+        try:
+            result_stem = exp.get_result_stem()
+        except Exception:
+            result_stem = "result"
+        if stdout:
+            spec_relpath, select = spec, key
+        else:
+            edir = out_dir / "spec" / key
+            yaml_text = _freeze_spec_yaml(exp, edir, workflow_spec=spec_dict)
+            (edir / "experiment.yaml").write_text(yaml_text, encoding="utf-8")
+            # Custom callable/builder modules the recipe references travel with the
+            # kit (shared code/ dir), so `tvbo run` resolves them on the node.
+            bundled_code = _bundle_callable_modules(yaml_text, out_dir) or bundled_code
+            spec_relpath, select = f"spec/{key}/experiment.yaml", None
+            _common.info(f"froze experiment {key} ({len(plan.workflow_axes)} fan-out axes)")
+        exp_plans.append({
+            "key": key,
+            "rule_name": "exp_" + key.replace("-", "_").replace(".", "_"),
+            "spec_relpath": spec_relpath,
+            "select": select,
+            "backend": backend,
+            "out_dir": plan.out_dir,
+            "result_stem": result_stem,
+            "container": plan.container,
+            "axes": [{"name": ax.name, "parameter": ax.parameter, "values": list(ax.values)}
+                     for ax in plan.workflow_axes],
+            "depends_on": [_key_of.get(str(d), _san(str(d))) for d in plan.depends_on],
+        })
+
+    text = _render_template("snakemake/study.smk.mako", exp_plans=exp_plans,
+                            block=block, bundled_code=bundled_code)
+    if stdout:
+        typer.echo(text)
+        return None
+    (out_dir / "Snakefile").write_text(text, encoding="utf-8")
+    _common.info(f"wrote Snakefile ({len(exp_plans)} experiment rule(s))")
+    if last_plan is not None:
+        _write_readme(out_dir, engine="snakemake", plan=last_plan, script_relpath=None)
+    return out_dir
+
+
+def _pack_kit(out_dir: Path) -> Path:
+    """Write ``<out_dir>.tar.gz`` next to the kit, ready to ship + submit.
+
+    The archive holds the kit directory at top level, so ``tvbo workflow submit
+    <archive>`` extracts and runs it directly (see :func:`_resolve_kit_dir`).
+    """
+    import shutil
+
+    out_dir = Path(out_dir)
+    archive = shutil.make_archive(str(out_dir), "gztar",
+                                  root_dir=str(out_dir.parent), base_dir=out_dir.name)
+    _common.info(f"packed {Path(archive).name}")
+    return Path(archive)
+
+
 def _emit(engine: str, *, spec: str, backend: str, experiment: str | None,
-          output: Path | None, override: list[str], stdout: bool) -> None:
+          output: Path | None, override: list[str], stdout: bool, pack: bool = False) -> None:
+    if engine == "snakemake":
+        out_dir = _emit_snakemake_study(spec=spec, backend=backend, experiment=experiment,
+                                        output=output, override=override, stdout=stdout)
+        if pack and out_dir is not None:
+            _pack_kit(out_dir)
+        return out_dir
     plan, exp = _build_plan(spec, engine=engine, backend=backend,
                             experiment=experiment, overrides=override)
     if stdout:
@@ -443,8 +631,10 @@ def _emit(engine: str, *, spec: str, backend: str, experiment: str | None,
         # so collapse the redundant level: out/<experiment>/<engine> not …/x/x/….
         parts = ([plan.experiment_key] if plan.study_key == plan.experiment_key
                  else [plan.study_key, plan.experiment_key])
-        out_dir = Path("out").joinpath(*parts, engine)
+        out_dir = Path("output").joinpath(*parts, engine)
     _emit_kit(engine=engine, plan=plan, experiment=exp, out_dir=out_dir)
+    if pack:
+        _pack_kit(out_dir)
     return out_dir
 
 
@@ -511,6 +701,18 @@ def _submit_slurm_chain(out_dir: Path, *, slurm_array: str | None = None) -> Non
         _common.info(f"submitted gather job (afterok:{base}) — one result when the array finishes")
 
 
+def _detect_engine_from_kit(kit_dir: Path) -> str | None:
+    """Infer an already-emitted kit's engine from its artefact file.
+
+    A kit carries exactly one engine artefact (``run.sbatch`` / ``Snakefile`` /
+    ``main.nf``); its presence names the engine to submit with.
+    """
+    for engine, artefact in _ARTEFACT_NAME.items():
+        if (kit_dir / artefact).exists():
+            return engine
+    return None
+
+
 @app.command("slurm", help="Emit a self-contained sbatch kit (artefact + scripts + spec).")
 def slurm(
     spec: str = typer.Argument(...),
@@ -519,10 +721,11 @@ def slurm(
     output: Path = typer.Option(None, "-o", "--output", help="Output directory."),
     override: list[str] = typer.Option([], "--set"),
     stdout: bool = typer.Option(False, "--stdout", help="Print artefact only; do not write a kit."),
+    pack: bool = typer.Option(False, "--pack", help="Also write <kit>.tar.gz, ready to scp + `tvbo workflow submit`."),
 ) -> None:
     """Emit a self-contained sbatch kit (`run.sbatch` + scripts + frozen spec)."""
     _emit("slurm", spec=spec, backend=backend, experiment=experiment,
-          output=output, override=override, stdout=stdout)
+          output=output, override=override, stdout=stdout, pack=pack)
 
 
 @app.command("snakemake", help="Emit a self-contained Snakemake kit (Snakefile + scripts + spec).")
@@ -533,10 +736,11 @@ def snakemake(
     output: Path = typer.Option(None, "-o", "--output", help="Output directory."),
     override: list[str] = typer.Option([], "--set"),
     stdout: bool = typer.Option(False, "--stdout", help="Print artefact only; do not write a kit."),
+    pack: bool = typer.Option(False, "--pack", help="Also write <kit>.tar.gz, ready to scp + `tvbo workflow submit`."),
 ) -> None:
     """Emit a self-contained Snakemake kit (`Snakefile` + scripts + frozen spec)."""
     _emit("snakemake", spec=spec, backend=backend, experiment=experiment,
-          output=output, override=override, stdout=stdout)
+          output=output, override=override, stdout=stdout, pack=pack)
 
 
 @app.command("nextflow", help="Emit a self-contained Nextflow kit (main.nf + scripts + spec).")
@@ -547,10 +751,11 @@ def nextflow(
     output: Path = typer.Option(None, "-o", "--output", help="Output directory."),
     override: list[str] = typer.Option([], "--set"),
     stdout: bool = typer.Option(False, "--stdout", help="Print artefact only; do not write a kit."),
+    pack: bool = typer.Option(False, "--pack", help="Also write <kit>.tar.gz, ready to scp + `tvbo workflow submit`."),
 ) -> None:
     """Emit a self-contained Nextflow kit (`main.nf` + scripts + frozen spec)."""
     _emit("nextflow", spec=spec, backend=backend, experiment=experiment,
-          output=output, override=override, stdout=stdout)
+          output=output, override=override, stdout=stdout, pack=pack)
 
 
 @app.command("finalize", help="Reassemble an array run's shard outputs into one keyed result artifact.")
@@ -559,6 +764,8 @@ def finalize(
     output: Path = typer.Option(Path("results"), "-o", "--output", help="Where to write the reassembled result."),
     spec: Path = typer.Option(None, "--spec", help="Frozen spec YAML to attach as the result sidecar (auto-detected in spec/ when omitted)."),
     stem: str = typer.Option("result", "--stem", help="Basename of the result artifact (<stem>.h5 + <stem>.yaml)."),
+    compress: bool = typer.Option(True, "--compress/--no-compress",
+                                  help="gzip-deflate the reassembled HDF5 (default on)."),
 ) -> None:
     """Gather sharded HPC outputs into one self-describing ``ExperimentResult``.
 
@@ -575,7 +782,8 @@ def finalize(
         specs = sorted(p for p in Path("spec").glob("*.yaml")
                        if p.name != "network.yaml") if Path("spec").is_dir() else []
         sidecar = specs[0] if specs else None
-    written = reassemble_experiment_results(shards_dir, str(output), stem=stem, sidecar=sidecar)
+    written = reassemble_experiment_results(shards_dir, str(output), stem=stem,
+                                            sidecar=sidecar, compress=compress)
     for w in written:
         _common.info(f"wrote {w}")
 
@@ -609,6 +817,15 @@ def run_workflow(
     engine = engine.lower()
     if engine not in _ARTEFACT_NAME:
         _common.die(f"`tvbo workflow run` expects engine one of: {', '.join(_ARTEFACT_NAME)}")
+    # A comma-separated --experiment ("2,3,20,30") submits each as its own kit/job;
+    # on the cluster they run in parallel. Each gets its own output subdir.
+    _exp_ids = [e.strip() for e in str(experiment).split(",") if e.strip()] if experiment else []
+    if len(_exp_ids) > 1:
+        for _eid in _exp_ids:
+            _out_i = (output / f"exp{_eid}") if output else Path("output") / f"exp{_eid}"
+            _common.info(f"── experiment {_eid} → {_out_i}")
+            run_workflow(engine, spec, backend, _eid, _out_i, override, array, array_throttle)
+        return
     effective_overrides = list(override)
     if engine == "slurm" and array is not None:
         override_keys = {
@@ -643,6 +860,108 @@ def run_workflow(
     if array is not None and array_throttle is not None:
         array = f"{array}%{array_throttle}"
     _execute_emitted(engine, out_dir, slurm_array=array)
+
+
+def _tar_extractall_safe(tar, dest: Path) -> None:
+    """Extract *tar* into *dest*, using the ``data`` filter where available.
+
+    The ``filter='data'`` guard (Python >= 3.12) rejects members with absolute or
+    ``..`` paths; older interpreters fall back to a plain extract. Kits are emitted
+    by tvbo, so this is defensive rather than a trust boundary.
+    """
+    try:
+        tar.extractall(dest, filter="data")
+    except TypeError:
+        tar.extractall(dest)
+
+
+def _resolve_kit_dir(kit: Path) -> Path:
+    """Resolve a kit path that may be a directory or a packaged archive.
+
+    A directory is returned as-is. A ``.tar.gz`` / ``.tgz`` / ``.tar`` / ``.zip``
+    archive is extracted next to itself and the kit root inside it (the directory
+    holding the engine artefact) is returned, so a shipped kit runs without a manual
+    unzip. An already-extracted kit next to the archive is reused rather than
+    re-extracted, so a re-submit never clobbers an in-progress ``results/``.
+    """
+    if kit.is_dir():
+        return kit
+    if not kit.is_file():
+        _common.die(f"not a kit directory or archive: {kit}")
+    name = kit.name.lower()
+    is_tar = name.endswith((".tar.gz", ".tgz", ".tar"))
+    is_zip = name.endswith(".zip")
+    if not (is_tar or is_zip):
+        _common.die(f"{kit} is neither a kit directory nor a .tar.gz/.tgz/.tar/.zip archive.")
+    import tarfile
+    import zipfile
+
+    dest = kit.parent
+    with (zipfile.ZipFile(kit) if is_zip else tarfile.open(kit)) as arc:
+        names = arc.namelist() if is_zip else arc.getnames()
+        tops = sorted({n.split("/", 1)[0] for n in names if n and not n.startswith("/")})
+        for t in tops:                       # reuse an already-extracted kit; keep its results
+            d = dest / t
+            if d.is_dir() and _detect_engine_from_kit(d):
+                _common.info(f"kit already extracted → {d} (reusing)")
+                return d
+        arc.extractall(dest) if is_zip else _tar_extractall_safe(arc, dest)
+    for t in tops:
+        d = dest / t
+        if d.is_dir() and _detect_engine_from_kit(d):
+            _common.info(f"extracted kit → {d}")
+            return d
+    if _detect_engine_from_kit(dest):        # artefact sat at the archive root
+        return dest
+    _common.die(f"{kit} did not contain an engine artefact ({', '.join(_ARTEFACT_NAME.values())}).")
+
+
+@app.command("submit", help="Submit an already-emitted kit (directory or .tar.gz/.zip) to its engine.")
+def submit_kit(
+    kit: Path = typer.Argument(..., help="Path to an emitted kit directory OR a .tar.gz/.tgz/.tar/.zip archive of one (holds run.sbatch / Snakefile / main.nf)."),
+    engine: str = typer.Option(None, "--engine", "-e", help="Engine to submit with; auto-detected from the kit when omitted."),
+    array: str = typer.Option(
+        None, "--array",
+        help="Slurm array index or range to submit (e.g. '0' for a smoke task, '0-3' for four). Ignored for non-Slurm engines.",
+    ),
+    array_throttle: int = typer.Option(
+        None, "--array-throttle", min=1,
+        help="Limit concurrent Slurm array tasks when using --array (e.g. 1 for one GPU at a time).",
+    ),
+) -> None:
+    """Submit a kit already emitted by ``tvbo workflow slurm|snakemake|nextflow``.
+
+    Runs only the *execute* half of ``tvbo workflow run`` against an existing kit —
+    no recipe, no re-emit. The kit may be a directory or a packaged ``.tar.gz`` /
+    ``.zip`` archive of one; an archive is extracted next to itself first, so a
+    shipped kit runs without a manual unzip. For Slurm this submits ``run.sbatch``
+    (the array job) and chains ``finalize.sbatch`` with an ``afterok`` dependency,
+    so you get one reassembled result without touching ``sbatch`` yourself. The
+    engine is inferred from the kit's artefact file unless ``--engine`` is given.
+    Run it from a login node (Slurm) or wherever the engine's launcher is available.
+    """
+    kit = _resolve_kit_dir(kit.expanduser().resolve())
+    eng = (engine or "").lower() or _detect_engine_from_kit(kit)
+    if eng is None:
+        _common.die(
+            f"could not detect an engine in {kit} "
+            f"(expected one of: {', '.join(_ARTEFACT_NAME.values())})."
+        )
+    if eng not in _ARTEFACT_NAME:
+        _common.die(f"unknown engine {eng!r}; expected one of: {', '.join(_ARTEFACT_NAME)}")
+    if not (kit / _ARTEFACT_NAME[eng]).exists():
+        _common.die(f"{kit} has no {_ARTEFACT_NAME[eng]} (needed for engine {eng!r}).")
+    import shutil
+    launcher = {"slurm": "sbatch", "snakemake": "snakemake", "nextflow": "nextflow"}[eng]
+    if shutil.which(launcher) is None:
+        _common.die(
+            f"{launcher!r} is not on PATH — {eng} kits are launched with {launcher}. "
+            f"Run this where {launcher} is available"
+            + (" (a Slurm login node)." if eng == "slurm" else ".")
+        )
+    if array is not None and array_throttle is not None:
+        array = f"{array}%{array_throttle}"
+    _execute_emitted(eng, kit, slurm_array=array)
 
 
 @app.command("backends", help="List backends and their ontology-derived capabilities.")
