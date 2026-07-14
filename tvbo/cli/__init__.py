@@ -94,8 +94,10 @@ def _configure(
     if log_level:
         level = log_level
     # CLI output is user-facing: keep it bare (no "LEVEL [name]" diagnostic
-    # prefix), matching the plain lines the CLI printed before.
-    configure_logging(level, fmt="%(message)s")
+    # prefix), matching the plain lines the CLI printed before. force=True so
+    # this format wins even if ``import tvbo`` already installed the default
+    # (diagnostic) handler because ``TVBO_LOG_LEVEL`` was set in the environment.
+    configure_logging(level, fmt="%(message)s", force=True)
 
 
 __all__ = ["app"]
