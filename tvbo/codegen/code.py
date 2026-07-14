@@ -287,6 +287,26 @@ def _afp_mode_sum(p, expr):
     return p._reduce_axis("sum", p._print(expr.args[0]), -1, keepdims=True)
 
 
+def _afp_outer(p, expr):
+    """``outer(a, b)`` -> rank-1 outer product ``a_i b_j`` (a mean/co-moment update)."""
+    return p._outer(p._print(expr.args[0]), p._print(expr.args[1]))
+
+
+def _afp_diag(p, expr):
+    """``diag(M)`` -> the main diagonal of matrix ``M`` as a vector."""
+    return p._diag(p._print(expr.args[0]))
+
+
+def _afp_zero_diagonal(p, expr):
+    """``zero_diagonal(M)`` -> ``M`` with its main diagonal set to 0 (e.g. FC self-links)."""
+    return p._zero_diagonal(p._print(expr.args[0]))
+
+
+def _afp_matmul(p, expr):
+    """``matmul(A, B)`` -> ordinary matrix product ``A @ B`` (e.g. ``Xᵀ X`` co-moment)."""
+    return p._matmul(p._print(expr.args[0]), p._print(expr.args[1]))
+
+
 _ARRAY_FUNCTION_PRINTERS = {
     "concatenate": _afp_concatenate,
     "window_mean": _afp_window_mean,
@@ -298,12 +318,20 @@ _ARRAY_FUNCTION_PRINTERS = {
     "transpose": _afp_transpose,
     "mode_dot": _afp_mode_dot,
     "mode_sum": _afp_mode_sum,
+    "outer": _afp_outer,
+    "diag": _afp_diag,
+    "zero_diagonal": _afp_zero_diagonal,
+    "matmul": _afp_matmul,
 }
 
-# Ops Julia renders natively (slice/stride family + shape, plus the mode-axis
-# contractions used by multi-mode models); the rest defer to Julia's
-# name-mappings (vcat/transpose/…) or graceful-degrade, so Julia output never regresses.
-_JULIA_HANDLED_OPS = {"subsample", "slice_axis", "slice_from", "shape", "mode_dot", "mode_sum"}
+# Ops Julia renders natively (slice/stride family + shape, the mode-axis
+# contractions used by multi-mode models, and the linear-algebra primitives for
+# streaming co-moment reducers); the rest defer to Julia's name-mappings
+# (vcat/transpose/…) or graceful-degrade, so Julia output never regresses.
+_JULIA_HANDLED_OPS = {
+    "subsample", "slice_axis", "slice_from", "shape", "mode_dot", "mode_sum",
+    "outer", "diag", "zero_diagonal", "matmul", "global_mean",
+}
 
 
 class _ArrayFunctionPrinterMixin:
@@ -346,6 +374,21 @@ class _ArrayFunctionPrinterMixin:
 
     def _mat_dot(self, a, b):
         return f"{self._afn('dot')}({a}, {b})"
+
+    def _outer(self, a, b):
+        return f"{self._afn('outer')}({a}, {b})"
+
+    def _diag(self, base):
+        return f"{self._afn('diag')}({base})"
+
+    def _zero_diagonal(self, base):
+        # ``M - diag(diag(M))``: extract the diagonal, embed it back as a diagonal
+        # matrix, subtract -> exact-zero diagonal (M_ii - M_ii), off-diagonal
+        # untouched. Byte-identical to a scatter-set of the diagonal to 0.
+        return f"({base} - {self._afn('diag')}({self._afn('diag')}({base})))"
+
+    def _matmul(self, a, b):
+        return f"({a} @ {b})"
 
     def _reduce_axis(self, fn, base, axis, keepdims=False):
         kw = ", keepdims=True" if keepdims else ""
@@ -745,11 +788,30 @@ class JuliaPrinter(_ArrayFunctionPrinterMixin, spj.JuliaCodePrinter):
         # ``reduce(hcat, M) * X`` reproduces that contraction as a mode vector.
         return f"(reduce(hcat, {b}) * {a})"
 
+    def _outer(self, a, b):
+        # Column-vector outer product a_i b_j -> a * transpose(b) (real: == adjoint).
+        return f"({a} * transpose({b}))"
+
+    def _diag(self, base):
+        return f"diag({base})"
+
+    def _zero_diagonal(self, base):
+        # M - Diagonal(diag(M)) -> zero the main diagonal (needs `using LinearAlgebra`).
+        return f"({base} - Diagonal(diag({base})))"
+
+    def _matmul(self, a, b):
+        return f"({a} * {b})"
+
     def _reduce_axis(self, fn, base, axis, keepdims=False):
-        # Mode-axis reduction (``mode_sum``) over a per-node mode vector reduces
-        # the whole vector to a scalar that broadcasts back through ``.+``/``.-``.
         jl_fn = {"sum": "sum", "mean": "Statistics.mean"}.get(fn, fn)
-        return f"{jl_fn}({base})"
+        # Mode-axis reduction (``mode_sum``, axis -1) over a per-node mode vector reduces
+        # the whole vector to a scalar that broadcasts back through ``.+``/``.-``.
+        if axis == -1:
+            return f"{jl_fn}({base})"
+        # General keepdims axis reduction (e.g. ``global_mean``, axis -2). The numpy axis
+        # (possibly negative) maps to a 1-based Julia dim at runtime; ``dims=`` keeps it.
+        jl_dim = f"ndims({base}) {axis + 1:+d}" if axis < 0 else str(axis + 1)
+        return f"{jl_fn}({base}, dims={jl_dim})"
 
     def _render_index(self, base, specs):
         parts = []

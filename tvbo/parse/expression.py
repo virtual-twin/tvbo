@@ -119,6 +119,11 @@ ARRAY_FUNCTIONS = {
     "transpose": Function("transpose"),      # transpose(X) → X.T
     "mode_dot": Function("mode_dot"),        # mode_dot(X, M) → X·M contracted over the mode axis ({np,jnp}.dot)
     "mode_sum": Function("mode_sum"),        # mode_sum(X) → sum over the mode axis, keepdims ({np,jnp}.sum(X, axis=-1, keepdims=True))
+    # Linear-algebra ops (e.g. streaming co-moment reducers, projections).
+    "outer": Function("outer"),              # outer(a, b) → rank-1 outer product a_i b_j
+    "diag": Function("diag"),                # diag(M) → the main diagonal of M as a vector
+    "zero_diagonal": Function("zero_diagonal"),  # zero_diagonal(M) → M with its main diagonal set to 0
+    "matmul": Function("matmul"),            # matmul(A, B) → ordinary matrix product A @ B
 }
 
 

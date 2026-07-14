@@ -1,0 +1,39 @@
+# Declarative streaming-reducer recipe (metadata). The math is authored as symbolic
+# assignment recurrences over the state vars, the arriving/leaving sample `v`, and the
+# window `x`; tvbo lowers them per backend via the sympy printers and emits the reducer
+# into the generated experiment (no backend ships a reducer). Sequential reassignment
+# encodes the data flow — a later RHS sees the value assigned to a state var above it —
+# so no `new_*` temporaries are needed. See tvbo/codegen/reducers.py (general resolver).
+name: windowed_fc
+description: >-
+  Windowed Pearson-correlation functional connectivity as a mean-centred streaming
+  co-moment: Welford `add` update, exact reverse-Welford `evict` downdate, two-pass
+  `resync`, and a zero-diagonal Pearson `emit`. Byte-identical to compute_fc, including
+  on a large DC baseline where a naive one-pass co-moment loses precision.
+
+# Which post-scan pipeline reducer this streams, and for which codegen backends.
+replaces: [tvboptim.observations.observation.compute_fc]
+backends: [tvboptim]
+emit_kind: window   # emit the reduced value every step (vs `stride` for dFC/FCD)
+
+state: [count, mean, comoment]
+
+add:                                        # fold in one arriving sample `v`
+  - [delta, "v - mean"]
+  - [count, "count + 1"]
+  - [mean, "mean + delta / count"]
+  - [comoment, "comoment + outer(delta, v - mean)"]
+
+evict:                                      # drop one leaving sample `v` (sliding window)
+  - [delta, "v - mean"]
+  - [count, "count - 1"]
+  - [mean, "mean - delta / count"]
+  - [comoment, "comoment - outer(v - mean, delta)"]
+
+resync:                                     # rebuild the state exactly from the window `x`
+  - [mean, "global_mean(x)"]
+  - [xc, "x - mean"]
+  - [comoment, "matmul(transpose(xc), xc)"]
+  - [count, "shape(x, 0)"]
+
+emit: "zero_diagonal(comoment / outer(sqrt(diag(comoment)), sqrt(diag(comoment))))"
