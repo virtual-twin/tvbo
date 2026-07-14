@@ -970,7 +970,8 @@ from tvboptim.experimental.network_dynamics.noise import AdditiveNoise
 import optax
 from tvboptim.types import Parameter, BoundedParameter
 from tvboptim.optim.optax import OptaxOptimizer
-from tvboptim.optim.callbacks import MultiCallback, DefaultPrintCallback, SavingLossCallback, SavingParametersCallback
+from tvboptim.optim.callbacks import MultiCallback, SavingLossCallback, SavingParametersCallback
+from tvbo.templates.tvboptim.callbacks import LoggingProgressCallback
 % endif
 % if has_explorations:
 from tvboptim.types import Space, GridAxis, DataAxis
@@ -1783,6 +1784,7 @@ def run_stage_${stage_name}(
         loss_fn,
         optimizer="${stage_algorithm}",
         learning_rate=learning_rate,
+        max_steps=max_steps,
         **opt_kwargs
     )
     fitted_params, fitting_data = opt.run(marked_state, max_steps=max_steps, mode="${opt_mode}")
@@ -1831,10 +1833,10 @@ def create_optimizer(
     if save_every is None:
         save_every = _smart_interval(max_steps)
 
-    # Default callback: print + save loss + save state at smart intervals
+    # Default callback: log progress + save loss + save state at smart intervals
     if callback is None:
         callback = MultiCallback([
-            DefaultPrintCallback(every=print_every),
+            LoggingProgressCallback(every=print_every, total=max_steps),
             SavingLossCallback(every=save_every),
             SavingParametersCallback(every=save_every),
         ])
