@@ -543,3 +543,173 @@ class TestFromTvbZipRoundTrip:
             np.testing.assert_allclose(net._arrays["weight"], weights, atol=1e-5)
             assert "length" in net._arrays
             np.testing.assert_allclose(net._arrays["length"], lengths, atol=1e-5)
+
+
+class TestMultiEdgeFreezeRoundtrip:
+    """Freezing a multi-edge / primary_weight network must preserve every edge —
+    especially the tract-length matrix, which delayed simulations require and which
+    has no ``primary_weight``-style selector. Regression for the freeze remap that
+    assumed a canonical [weight, length] edge order and, for an NMF bundle declared
+    as [length, weight_NMF_*], dropped ``length`` (no delays) and overwrote the real
+    weights with the length matrix.
+    """
+
+    def _roundtrip(self, edges: dict, primary=None):
+        from tvbo.classes.network import Network
+        import h5py
+
+        n = next(iter(edges.values())).shape[0]
+        net = Network(number_of_nodes=n)
+        net.__class__ = Network
+        for name, mat in edges.items():
+            net.set_matrix(name, mat)
+        if primary is not None:
+            net.primary_weight = primary
+        with tempfile.TemporaryDirectory() as d:
+            net.save(Path(d) / "n.yaml", binary_format="h5")
+            with h5py.File(Path(d) / "n.h5") as f:
+                frozen = set(f["edges"].keys())
+            reloaded = Network.load(str(Path(d) / "n.h5"))
+            # Materialize while the lazy-store companion file still exists — the
+            # TemporaryDirectory is removed on block exit, before assertions run.
+            _ = np.asarray(reloaded.lengths_matrix)
+            _ = np.asarray(reloaded.weights_matrix)
+        return frozen, reloaded
+
+    def test_nmf_bundle_preserves_length_and_weights(self):
+        rng = np.random.RandomState(0)
+        W = rng.rand(8, 8)
+        L = rng.rand(8, 8) * 100.0
+        edges = {"length": L, "weight_NMF_rank5": W, "weight_NMF_alpha": rng.rand(8, 8)}
+        frozen, net = self._roundtrip(edges, primary="weight_NMF_rank5")
+        assert "length" in frozen, "length edge dropped on freeze"
+        np.testing.assert_allclose(np.asarray(net.lengths_matrix), L, atol=1e-4)
+        # weights must be the NMF weights, NOT the length matrix
+        np.testing.assert_allclose(np.asarray(net.weights_matrix), W, atol=1e-4)
+        assert float(np.max(net.lengths_matrix)) > 0, "delays lost (zero lengths)"
+
+    def test_all_edge_attributes_survive(self):
+        rng = np.random.RandomState(1)
+        edges = {k: rng.rand(6, 6) for k in ("weight", "length", "fc", "local_connectivity")}
+        frozen, _ = self._roundtrip(edges)
+        assert set(edges).issubset(frozen)
+
+    def test_length_resolved_by_meaning_not_exact_name(self):
+        # a sidecar naming the length edge ``tract_length`` must still drive delays
+        rng = np.random.RandomState(2)
+        L = rng.rand(6, 6) * 100.0
+        frozen, net = self._roundtrip({"tract_length": L, "streamlinecount": rng.rand(6, 6)},
+                                      primary="streamlinecount")
+        assert "tract_length" in frozen
+        np.testing.assert_allclose(np.asarray(net.lengths_matrix), L, atol=1e-4)
+
+
+# ── region alias reconciliation (§ node-label crosswalk) ──────────────
+#
+# by_label node reconciliation must align a dataset-sourced target to the model
+# network by LABEL, never by row index. These tests lock the properties that make
+# it safer than index/order-based alignment: hemisphere parity and byte-identical
+# results under an arbitrary target reordering.
+
+
+class TestRegionAliasMap:
+    def _net(self, labels):
+        from tvbo.classes.network import Network
+
+        n = len(labels)
+        w = np.ones((n, n)) - np.eye(n)
+        return Network.from_matrix(w, w, labels=list(labels))
+
+    def test_identity_when_no_aliases(self):
+        net = self._net(["L_A", "R_A"])
+        assert net.region_alias_map() == {"L_A": "L_A", "R_A": "R_A"}
+
+    def test_inline_node_aliases(self):
+        net = self._net(["L_A", "R_A"])
+        net.nodes[0].alternateName = ["A_LEFT"]
+        net.nodes[1].alternateName = ["A_RIGHT"]
+        m = net.region_alias_map()
+        assert m["A_LEFT"] == "L_A" and m["A_RIGHT"] == "R_A"
+        # identity always retained so exact matches still resolve
+        assert m["L_A"] == "L_A"
+
+    def test_ambiguous_alias_raises(self):
+        net = self._net(["L_A", "R_A"])
+        net.nodes[0].alternateName = ["X"]
+        net.nodes[1].alternateName = ["X"]  # same alias -> two regions
+        with pytest.raises(ValueError, match="[Aa]mbiguous"):
+            net.region_alias_map()
+
+    def test_reconcile_hemisphere_safe_and_order_independent(self):
+        import xarray as xr
+
+        # model lists LEFT first; the "empirical" target lists RIGHT first (opposite
+        # hemisphere order) under a divergent nomenclature carried as aliases.
+        model = self._net(["L_A", "R_A", "L_B", "R_B"])
+        for node, alias in zip(model.nodes, ["A_LEFT", "A_RIGHT", "B_LEFT", "B_RIGHT"]):
+            node.alternateName = [alias]
+        amap = model.region_alias_map()
+        model_labels = model.node_labels
+
+        # target: right-first order, empirical labels, a recognisable matrix
+        tlabels = ["A_RIGHT", "B_RIGHT", "A_LEFT", "B_LEFT"]
+        M = np.arange(16, dtype=float).reshape(4, 4)
+        M = M + M.T  # symmetric so the check is unambiguous
+
+        def align(labels, mat):
+            canon = [amap.get(l, l) for l in labels]
+            da = xr.DataArray(mat, dims=("i", "j"), coords={"i": canon, "j": canon})
+            return da.sel(i=model_labels, j=model_labels).values
+
+        A = align(tlabels, M)
+
+        # hemisphere parity: no L<->R crossing
+        def hemi(l):
+            return "L" if l[:2] == "L_" or l.endswith("_LEFT") else "R"
+
+        assert all(hemi(t) == hemi(amap[t]) for t in tlabels)
+
+        # A must place target row "A_LEFT" at model index 0 (L_A), etc. — i.e. the
+        # aligned matrix is keyed to model order regardless of the target's order.
+        # shuffle target order -> aligned result must be byte-identical
+        for perm in ([2, 0, 3, 1], [3, 2, 1, 0], [1, 3, 0, 2]):
+            B = align([tlabels[k] for k in perm], M[np.ix_(perm, perm)])
+            assert np.array_equal(A, B), f"order dependence under perm {perm}"
+
+
+def _atlas_hemi(label):
+    """Hemisphere of a node label under any packaged-atlas convention, or None."""
+    if label in ("Brain-Stem", "BRAIN_STEM", "brain-stem"):
+        return None
+    if label[:2] == "L_" or label.endswith("_LEFT") or label.startswith(("ctx-lh-", "left-")):
+        return "L"
+    if label[:2] == "R_" or label.endswith("_RIGHT") or label.startswith(("ctx-rh-", "right-")):
+        return "R"
+    return None
+
+
+class TestAtlasAliases:
+    """Packaged atlas terminologies carry hemisphere-correct empirical aliases."""
+
+    @pytest.mark.parametrize("atlas,checks", [
+        ("hcpmmp1", {"L_Thalamus": "THALAMUS_LEFT", "R_Thalamus": "THALAMUS_RIGHT",
+                     "Brain-Stem": "BRAIN_STEM"}),
+        ("DesikanKilliany", {"left-thalamus": "THALAMUS_LEFT", "right-thalamus": "THALAMUS_RIGHT",
+                             "ctx-lh-bankssts": "L_bankssts", "brain-stem": "BRAIN_STEM"}),
+    ])
+    def test_atlas_aliases_present_and_hemisphere_consistent(self, atlas, checks):
+        from tvbo.classes.atlas import Atlas
+
+        ents = getattr(getattr(Atlas(atlas), "terminology", None), "entities", None) or {}
+        if not ents:
+            pytest.skip(f"{atlas} atlas terminology not available")
+        for canon, empirical in checks.items():
+            assert empirical in (ents[canon].alternateName or []), f"{canon} missing {empirical}"
+
+        # every alias keeps its region's hemisphere; aliases are globally unique
+        seen = {}
+        for canon, ent in ents.items():
+            for alt in ent.alternateName or []:
+                assert _atlas_hemi(canon) == _atlas_hemi(alt), f"hemisphere swap {canon} -> {alt}"
+                assert alt not in seen or seen[alt] == canon, f"alias {alt} on two regions"
+                seen[alt] = canon

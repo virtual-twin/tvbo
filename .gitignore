@@ -116,6 +116,10 @@ c.ivp
 qif.cpython-313-darwin.so
 qif.f90
 docs/Interoperability/BIDS/derivatives/
+# Atlas parcellation volumes: large binaries shipped as build artifacts, not tracked.
+# Atlases are consolidated under tvbo/database/atlases (see tvbo/data/tvbo_data/__init__.py).
+tvbo/database/atlases/*.nii.gz
+# Non-BIDS Schaefer generation source (regenerable download; used only by scripts/).
 tvbo/data/tvbo_data/atlas/schaefer2018_original_mni
 tvbo/data/tvbo_data/atlas/*.nii.gz
 tvbo/data/tvbo_data/_archive_connectome

@@ -24,7 +24,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
 NETWORKS_DIR = ROOT / "database" / "networks"
-ATLAS_DIR = ROOT / "tvbo" / "data" / "tvbo_data" / "atlas"
+ATLAS_DIR = ROOT / "tvbo" / "database" / "atlases"
 
 
 def load_atlas_entities(seg: str, scale: str, resolution: str = "1") -> list[dict] | None:

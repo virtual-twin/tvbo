@@ -7,7 +7,7 @@ Implements the cardinal HPC contract from §5.1 of ``dev/tvbo-cli.md``:
 * ``--container IMAGE`` re-execs the run inside the named OCI image
   (Singularity if ``SINGULARITY_BIND`` is set in the environment, else
   Docker).
-* ``--slurm-chunk i/N`` shards the study's sweep grid across array tasks:
+* ``--shard i/N`` runs one shard of the sweep in-process (no scheduler):
   cell index ``j`` runs iff ``j %% N == i``. This is what the generated
   sbatch script invokes for every array index.
 """
@@ -47,9 +47,39 @@ def run(
         None, "--container",
         help="OCI image (e.g. ghcr.io/the-virtual-brain/tvbo:0.7.0); re-execs the same `tvbo run` inside it.",
     ),
-    slurm_chunk: str = typer.Option(
-        None, "--slurm-chunk",
-        help="Shard sweep cells across array tasks: ``i/N`` runs cells where j%N==i.",
+    shard: str = typer.Option(
+        None, "--shard", "--slurm-chunk",
+        help="Run one shard of the sweep in-process: ``i/N`` runs cells where j%N==i "
+             "(no scheduler needed). ``--slurm-chunk`` is a deprecated alias.",
+    ),
+    limit: int = typer.Option(
+        None, "--limit", min=1,
+        help="Run at most N cells of the sweep (a spread sample) — a quick look "
+             "without needing to know the grid size. Ignored when --shard is given.",
+    ),
+    subject: str = typer.Option(
+        None, "--subject",
+        help="Active subject ID for a per-subject dataset experiment: resolves and "
+             "injects that subject's empirical target (e.g. their FC). Set per shard "
+             "by the workflow fan-out.",
+    ),
+    set_: list[str] = typer.Option(
+        [], "--set",
+        help="Override an experiment metadata field for THIS run only (the recipe file is "
+             "not modified), e.g. --set integration.duration=8 --set integration.step_size=0.05. "
+             "Repeatable; dotted keys traverse attributes and keyed collections. Lets one "
+             "recipe stay the single source of truth while the CLI runs it with test settings.",
+    ),
+    compress: bool = typer.Option(
+        True, "--compress/--no-compress",
+        help="gzip-deflate the result HDF5 (default on; grids compress well). "
+             "--no-compress writes uncompressed for maximum write speed.",
+    ),
+    save_all: bool = typer.Option(
+        False, "--save-all",
+        help="Persist every observation, including intermediates. By default only "
+             "recorded outputs are saved (leaves + `record: true`); this keeps the "
+             "scaffolding (e.g. a raw BOLD feeding an FC) for debugging.",
     ),
 ) -> None:
     """Run a SPEC (experiment or study) in the selected backend.
@@ -72,27 +102,27 @@ def run(
     kwargs: dict = {}
     if duration is not None:
         kwargs["duration"] = duration
+    if subject is not None:
+        kwargs["active_subject"] = subject
+    kwargs["compress"] = compress
+    kwargs["record_only"] = not save_all
 
     chunk_i = chunk_n = None
-    if slurm_chunk:
-        chunk_i, chunk_n = _parse_chunk(slurm_chunk)
+    if shard:
+        chunk_i, chunk_n = _parse_chunk(shard)
         _common.info(f"sharding: cell j runs iff j%{chunk_n}=={chunk_i}")
+    # --limit is a cell budget; it becomes a per-experiment shard in _run_one,
+    # which knows each experiment's grid size (a study's experiments can differ).
 
     if kind == "study":
         exps = obj.experiments if hasattr(obj, "experiments") else obj.simulation_experiments
         items = list(exps.values()) if hasattr(exps, "values") else list(exps)
         if experiment is not None:
-            items = [
-                e for e in items
-                if experiment in (
-                    getattr(e, "key", None),
-                    getattr(e, "name", None),
-                    getattr(e, "label", None),
-                    str(getattr(e, "id", "")),
-                )
-            ]
+            # Accept one id/name or a comma-separated list ("2,3,20,30" runs all).
+            wanted = {s.strip() for s in str(experiment).split(",") if s.strip()}
+            items = [e for e in items if wanted & _common.experiment_ids(e)]
             if not items:
-                _common.die(f"No experiment named {experiment!r} in study.")
+                _common.die(f"No experiment(s) matching {experiment!r} in study.")
         for exp in items:
             _common.info(f"running experiment: {getattr(exp, 'key', None) or getattr(exp, 'label', None)}")
             # Resolve to the runtime experiment (has .run) rather than the datamodel object.
@@ -108,11 +138,13 @@ def run(
                         "(e.g. `module: my_networks`), make them importable — run from "
                         "their directory or set PYTHONPATH."
                     )
-            _run_one(exp, backend, out_dir, kwargs, chunk_i, chunk_n)
+            _apply_metadata_overrides(exp, set_)
+            _run_one(exp, backend, out_dir, kwargs, chunk_i, chunk_n, limit)
         return
 
     if kind == "experiment":
-        _run_one(obj, backend, out_dir, kwargs, chunk_i, chunk_n)
+        _apply_metadata_overrides(obj, set_)
+        _run_one(obj, backend, out_dir, kwargs, chunk_i, chunk_n, limit)
         return
 
     _common.die(f"`tvbo run` does not yet support kind={kind!r}.")
@@ -124,16 +156,89 @@ def run(
 
 def _parse_chunk(s: str) -> tuple[int, int]:
     if "/" not in s:
-        raise typer.BadParameter("--slurm-chunk must be of the form i/N")
+        raise typer.BadParameter("--shard must be of the form i/N")
     i_s, n_s = s.split("/", 1)
     i, n = int(i_s), int(n_s)
     if not (0 <= i < n):
-        raise typer.BadParameter(f"--slurm-chunk i={i} out of range [0,{n})")
+        raise typer.BadParameter(f"--shard i={i} out of range [0,{n})")
     return i, n
 
 
+def _coerce_scalar(v: str):
+    """Coerce a ``--set`` value string to bool/int/float/JSON, else leave a string."""
+    low = v.strip().lower()
+    if low in {"true", "false"}:
+        return low == "true"
+    for cast in (int, float):
+        try:
+            return cast(v)
+        except ValueError:
+            pass
+    if v[:1] in "[{":               # JSON list/object, e.g. [0,2] or ["xi","freq"]
+        import json
+        try:
+            return json.loads(v)
+        except ValueError:
+            pass
+    return v
+
+
+def _apply_metadata_overrides(experiment, overrides: list[str]) -> None:
+    """Apply ``--set dotted.path=value`` overrides to a resolved experiment in place.
+
+    Traverses attributes and keyed collections (LinkML keyed dicts) so one recipe can
+    stay the single source of truth while a run uses test settings. Mutates the loaded
+    object only — the recipe file is untouched.
+    """
+    def _step(cur, seg):
+        if isinstance(cur, dict) and seg in cur:
+            return cur[seg]
+        if hasattr(cur, seg):
+            return getattr(cur, seg)
+        try:                        # LinkML keyed collection (dict-like __getitem__)
+            return cur[seg]
+        except Exception:
+            _common.die(f"--set: cannot resolve {seg!r} on {type(cur).__name__}")
+
+    for raw in overrides:
+        s = raw.lstrip("-")
+        if "=" not in s:
+            raise typer.BadParameter(f"--set {raw!r} must be of the form path=value")
+        path, _, val = s.partition("=")
+        segs = [p for p in path.split(".") if p]
+        cur = experiment
+        for seg in segs[:-1]:
+            cur = _step(cur, seg)
+        leaf, value = segs[-1], _coerce_scalar(val)
+        if isinstance(cur, dict):
+            cur[leaf] = value
+        elif hasattr(cur, leaf):
+            setattr(cur, leaf, value)
+        else:
+            try:
+                cur[leaf] = value
+            except Exception:
+                setattr(cur, leaf, value)
+        _common.info(f"--set {path} = {value!r}")
+
+
 def _run_one(experiment, backend: str, out_dir: Path | None,
-             kwargs: dict, chunk_i: int | None, chunk_n: int | None) -> None:
+             kwargs: dict, chunk_i: int | None, chunk_n: int | None,
+             limit: int | None = None) -> None:
+    # --limit N is a cell budget: turn it into a stride over this experiment's own
+    # grid so ``Space[0::stride]`` yields ~N spread cells — no need to know the size.
+    if limit is not None and chunk_n is None:
+        import math
+
+        from ._workflow import extract_axes
+        n_cells = 1
+        for ax in extract_axes(experiment):
+            n_cells *= len(ax.values)
+        if n_cells > limit:
+            chunk_i, chunk_n = 0, math.ceil(n_cells / limit)
+            _common.info(f"--limit {limit}: running ~{-(-n_cells // chunk_n)} of "
+                         f"{n_cells} cells (Space[0::{chunk_n}])")
+
     if chunk_n is not None:
         from ._backends import resolve_backend
         from ._workflow import extract_axes
@@ -156,19 +261,27 @@ def _run_one(experiment, backend: str, out_dir: Path | None,
         if fanned:
             names = ", ".join(f"{ax.parameter} ({ax.kind})" for ax in fanned)
             _common.die(
-                f"--slurm-chunk shards a sweep by slicing the backend's vectorised "
+                f"--shard shards a sweep by slicing the backend's vectorised "
                 f"batch, but backend {backend!r} does not vectorise: {names}. Emit "
                 f"the kit with snakemake/nextflow (which fan these axes into per-cell "
                 f"tasks), or use a backend that vectorises them (e.g. tvboptim)."
             )
-        n_cells = 1
-        for ax in axes:
-            n_cells *= len(ax.values)
-        per_task = -(-n_cells // chunk_n)  # ceil
-        _common.info(
-            f"sharding: task {chunk_i}/{chunk_n} runs ~{per_task} of {n_cells} "
-            f"sweep cells (backend-vectorised, Space[{chunk_i}::{chunk_n}])"
-        )
+        if any(getattr(ax, "runtime_sized", False) for ax in axes):
+            # Branch-restart sweep: the cell count comes from the source run's recorded
+            # branch (read at run time), so this task just slices its share of it.
+            _common.info(
+                f"sharding: task {chunk_i}/{chunk_n} runs its slice of a runtime-sized "
+                f"branch (Space[{chunk_i}::{chunk_n}]; cell count known at run time)"
+            )
+        else:
+            n_cells = 1
+            for ax in axes:
+                n_cells *= len(ax.values)
+            per_task = -(-n_cells // chunk_n)  # ceil
+            _common.info(
+                f"sharding: task {chunk_i}/{chunk_n} runs ~{per_task} of {n_cells} "
+                f"sweep cells (backend-vectorised, Space[{chunk_i}::{chunk_n}])"
+            )
         shard_kwargs = dict(kwargs)
         shard_kwargs["shard"] = (chunk_i, chunk_n)
         _exec_one(experiment, backend, out_dir, shard_kwargs)
@@ -178,12 +291,17 @@ def _run_one(experiment, backend: str, out_dir: Path | None,
 
 
 def _exec_one(experiment, backend: str, out_dir: Path | None, kwargs: dict) -> None:
-    result = experiment.run(format=backend, **kwargs)
+    compress = kwargs.pop("compress", True)          # save options, not backend-run kwargs
+    record_only = kwargs.pop("record_only", True)
+    # initial_state.from_experiment seeds from a sibling experiment's saved result;
+    # search the output dir's parent (covers results/<key> and output/nc/exp<id> alike).
+    results_root = out_dir.parent if out_dir is not None else None
+    result = experiment.run(format=backend, results_root=results_root, **kwargs)
     _common.info(f"done: {type(result).__name__}")
     if out_dir is not None:
         out_dir.mkdir(parents=True, exist_ok=True)
         if hasattr(result, "save"):
-            saved = result.save(str(out_dir))
+            saved = result.save(str(out_dir), compress=compress, record_only=record_only)
             _common.info(f"wrote {saved}")
         else:
             _common.info(f"(result has no .save(); skipping write to {out_dir})")

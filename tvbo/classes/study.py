@@ -59,10 +59,14 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
             A `SimulationStudy` parsed from the file.
         """
         from pathlib import Path
+        from tvbo.utils import register_recipe_code_paths
         import yaml
 
         study = yaml_loader.load(filepath, cls)
         study._source_file = str(Path(filepath).resolve())
+        # Make the recipe's code/ subdir importable, so custom builders/callables
+        # resolve by bare module name without a PYTHONPATH prefix.
+        register_recipe_code_paths(study._source_file)
         # Keep the raw (anchor-resolved) experiment dicts so experiments can be
         # materialised through SimulationExperiment.from_string — that path
         # iri-sources dynamics/coupling from the registry, which loading the

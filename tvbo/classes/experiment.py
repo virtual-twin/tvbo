@@ -16,6 +16,8 @@ backend code, and running it on any of the supported backends (`tvb`,
 import copy as _copy
 import logging
 import os
+import re
+from collections import Counter
 from os.path import join
 from pathlib import Path
 from typing import Any
@@ -24,6 +26,13 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import xarray as xr
+
+# Apply the JAX Metal-fallback guard before any simulation touches JAX. Idempotent
+# and cheap here (jax is already imported); kept out of ``import tvbo`` so the CLI
+# and bare imports stay fast. See tvbo.__init__._configure_jax_backend.
+from tvbo import _configure_jax_backend as _cfg_jax
+
+_cfg_jax()
 
 try:
     from lems.base.util import validate_lems
@@ -57,7 +66,11 @@ sessionid = 1
 def _strip_private_yaml_keys(text: str) -> str:
     """Drop private/runtime keys (``_source_file``, a codegen ``_coupling_key`` on a
     Parameter, …) from a serialized YAML at any depth, so the spec round-trips
-    through ``from_file``. A private key line and its deeper-indented block go too.
+    through ``from_file``. A private key line and its whole value block go too. The
+    value block includes deeper-indented lines and a block-sequence value whose
+    ``-`` items YAML writes at the key's own indentation (not deeper); without that
+    case a private list-valued cache (e.g. ``_model_labels_from_bids``) would leave
+    its items orphaned as a bare list at the document root.
     """
     import re as _re
 
@@ -65,7 +78,12 @@ def _strip_private_yaml_keys(text: str) -> str:
     kept, drop_indent = [], None
     for line in text.splitlines():
         if drop_indent is not None:
-            if line.strip() == "" or (len(line) - len(line.lstrip())) > drop_indent:
+            stripped = line.strip()
+            indent = len(line) - len(line.lstrip())
+            same_indent_seq_item = indent == drop_indent and (
+                stripped == "-" or stripped.startswith("- ")
+            )
+            if stripped == "" or indent > drop_indent or same_indent_seq_item:
                 continue
             drop_indent = None
         m = key.match(line)
@@ -74,6 +92,24 @@ def _strip_private_yaml_keys(text: str) -> str:
             continue
         kept.append(line)
     return "\n".join(kept) + "\n"
+
+
+# Maps ``BidsEntities`` attribute names to the short entity keys that
+# ``tvbo.classes.network._parse_bids_entities`` emits from a filename. ``suffix``
+# is deliberately absent — it is the trailing filename component, not a key-value
+# entity, and is handled separately by its consumers.
+_BIDS_ENTITY_SHORT_KEYS = {
+    "template": "tpl", "cohort": "cohort", "reconstruction": "rec",
+    "segmentation": "seg", "scale": "scale", "atlas": "atlas",
+    "acquisition": "acq", "hemi": "hemi", "desc": "desc",
+}
+
+
+def _bids_entities_to_short_dict(obj) -> dict:
+    """Convert a ``BidsEntities`` object to ``{short_key: value}`` for the set entities."""
+    return {short: str(getattr(obj, attr))
+            for attr, short in _BIDS_ENTITY_SHORT_KEYS.items()
+            if getattr(obj, attr, None) is not None}
 
 
 def _sync_network_node_count(net):
@@ -758,11 +794,15 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             A new `SimulationExperiment` populated from the file.
         """
         from pathlib import Path
-        from tvbo.utils import yaml_loader
+        from tvbo.utils import yaml_loader, register_recipe_code_paths
         import yaml
 
         # Store source file path BEFORE loading so __init__ can use it
         cls._pending_source_file = str(Path(filepath).resolve())
+        # Make the recipe's code/ subdir importable, so custom builders/callables
+        # resolve by bare module name without a PYTHONPATH prefix. Before loading:
+        # construction resolves the network builder eagerly (see __init__).
+        register_recipe_code_paths(cls._pending_source_file)
         try:
             with open(filepath) as file_handle:
                 data_as_dict = yaml.safe_load(file_handle) or {}
@@ -1657,7 +1697,233 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         else:
             raise ValueError(f"Format {format} not supported. Valid formats: tvb, tvboptim, jax.")
 
-    def run(self, format="tvboptim", initial_conditions=None, **kwargs):
+    def _locate_source_result(self, results_root, source_id):
+        """Path to the ``from_experiment`` source run's saved result HDF5.
+
+        Globs ``results_root`` (or cwd) by the ``exp-<id>_`` stem, skipping the
+        network sidecar. Raises if the source hasn't been run yet. Shared by the
+        seed / branch / parameter resolvers.
+        """
+        from pathlib import Path
+
+        root = Path(results_root) if results_root else Path.cwd()
+        cands = [p for p in root.glob(f"**/*exp-{source_id}_*.h5") if "network" not in p.name]
+        if not cands:
+            raise FileNotFoundError(
+                f"initial_state.from_experiment: no saved result for experiment {source_id} "
+                f"under {root} (looked for '*exp-{source_id}_*.h5'). Run experiment "
+                f"{source_id} first so its result is available."
+            )
+        return sorted(cands)[0]
+
+    def _resolve_from_experiment_seed(self, results_root=None):
+        """Load the operating point for ``initial_state.method == from_experiment``.
+
+        The source experiment exposes its settled per-node state as observations
+        named ``<state_variable>_final`` (e.g. ``theta_final``). This locates that
+        experiment's saved result under ``results_root`` — matched by the
+        ``exp-<id>_`` file stem, so the output-directory layout (``results/2``,
+        ``output/nc/exp2``, …) does not matter — and reads one ``<sv>_final`` per
+        state variable of *this* experiment. Everything is keyed by name/dim, never
+        positional: the result is a ``{state_variable_name: (n_nodes,)}`` dict that
+        the generated code places into its own canonical rows. For a swept source
+        (an adiabatic ramp) the operating point is the last recorded point
+        (``source_point``; default ``'endpoint'``).
+
+        Returns the name-keyed IC dict, or ``None`` when this experiment does not
+        use ``from_experiment``.
+        For ``source_point == 'branch'`` this returns ``None`` — the whole
+        recorded branch is a per-cell seed, resolved by
+        :meth:`_resolve_from_experiment_branch`.
+        """
+        return self._read_source_final(results_root, branch=False)
+
+    def _resolve_from_experiment_branch(self, results_root=None):
+        """Load the WHOLE recorded branch for ``source_point == 'branch'``.
+
+        Where :meth:`_resolve_from_experiment_seed` picks one settled point, this
+        keeps the source run's swept dimension, so every ``<sv>_final`` observation
+        loads as ``(n_cells, n_nodes)`` and the swept-axis coordinate supplies the
+        per-cell parameter values ``(n_cells,)``. An independent exploration can then
+        restart an analysis (Lyapunov exponents, Jacobian/Floquet spectra, basin
+        sampling, perturbation kicks, first-passage, …) at every branch point in
+        parallel — the per-cell, cross-experiment counterpart of the single operating
+        point above. Returns ``{axis_name, axis_values, seeds, n_cells}`` (``seeds`` a
+        name-keyed ``{sv: (n_cells, n_nodes)}`` dict), or ``None`` when this experiment
+        does not use ``from_experiment`` with ``source_point='branch'``.
+        """
+        return self._read_source_final(results_root, branch=True)
+
+    def _read_source_final(self, results_root=None, *, branch: bool):
+        """Shared loader behind the two ``from_experiment`` resolvers.
+
+        Locates the source run and reads the ``<sv>_final`` settled-state
+        observations, keyed by state-variable name (never positional). With
+        ``branch=False`` it selects a single point (``source_point``; default
+        ``endpoint``) → ``{sv: (n_nodes,)}``; with ``branch=True`` it keeps the
+        swept dimension → the branch dict described in
+        :meth:`_resolve_from_experiment_branch`. Returns ``None`` when the
+        experiment's ``source_point`` mode does not match ``branch``.
+        """
+        ini = getattr(self, "initial_state", None)
+        if ini is None or str(getattr(ini, "method", "") or "") != "from_experiment":
+            return None
+        point = str(getattr(ini, "source_point", "") or "endpoint")
+        # Each resolver owns exactly one mode, so the run() call site can invoke both.
+        if branch != (point == "branch"):
+            return None
+        src = getattr(ini, "source_experiment", None)
+        if src is None:
+            raise ValueError("initial_state.method=from_experiment requires source_experiment")
+        source_id = int(getattr(src, "id", src))
+
+        # State variables of THIS experiment → which <sv>_final observations to
+        # load. Keyed by name; the generated code places each into its own row.
+        svs = self.dynamics.state_variables
+        sv_items = svs.items() if hasattr(svs, "items") else [(getattr(s, "name", None), s) for s in svs]
+        sv_names = [getattr(sv, "name", None) or key for key, sv in sv_items]
+
+        src_h5 = self._locate_source_result(results_root, source_id)
+        n_nodes = len(self.network.nodes) if self.network.nodes else None
+
+        def _node_dim(da):
+            if n_nodes is not None:
+                for d in da.dims:
+                    if da.sizes[d] == n_nodes:
+                        return d
+            for d in da.dims:
+                if "node" in str(d).lower():
+                    return d
+            return da.dims[-1]
+
+        def _final_key(ds, sv):
+            target = f"{sv}_final"
+            for k in ds.data_vars:
+                if k == target or k.endswith(f"__{target}"):
+                    return k
+            raise KeyError(
+                f"initial_state.from_experiment: source experiment {source_id} does not "
+                f"record '{target}'. The source must expose its settled state as an "
+                f"observation named '{sv}_final' for each state variable."
+            )
+
+        ds = xr.open_dataset(src_h5, engine="h5netcdf")
+        try:
+            if not branch:
+                seed = {}
+                sel = -1 if (point in ("", "endpoint")) else int(point)
+                for sv in sv_names:
+                    da = ds[_final_key(ds, sv)]
+                    for d in [d for d in da.dims if d != _node_dim(da)]:
+                        da = da.isel({d: sel})
+                    seed[sv] = jnp.asarray(np.asarray(da.values).ravel())
+                return seed
+
+            seeds, axis_values, axis_name, n_cells = {}, None, None, None
+            for sv in sv_names:
+                da = ds[_final_key(ds, sv)]
+                nd = _node_dim(da)
+                sweep = [d for d in da.dims if d != nd]
+                if len(sweep) != 1:
+                    raise ValueError(
+                        "initial_state.from_experiment source_point='branch' expects the source "
+                        f"'{sv}_final' to have exactly one swept dimension besides nodes; got "
+                        f"dims {tuple(da.dims)}. Only a single-axis branch can be restarted per cell."
+                    )
+                sd = sweep[0]
+                da = da.transpose(sd, nd)                       # (n_cells, n_nodes), by name
+                seeds[sv] = jnp.asarray(np.asarray(da.values))
+                if axis_values is None:
+                    axis_name = str(sd)
+                    if sd not in da.coords:
+                        raise ValueError(
+                            "initial_state.from_experiment source_point='branch': the source's "
+                            f"'{sv}_final' has no coordinate on its swept dim '{sd}', so the per-cell "
+                            "parameter values are unavailable — the restart would run at wrong values. "
+                            "The source experiment must record its swept axis (a warm-start scan does)."
+                        )
+                    axis_values = np.asarray(da.coords[sd].values)
+                    n_cells = int(da.sizes[sd])
+                elif int(da.sizes[sd]) != n_cells:
+                    raise ValueError(
+                        "initial_state.from_experiment source_point='branch': state variables "
+                        "disagree on the number of recorded branch points."
+                    )
+        finally:
+            ds.close()
+        return {
+            "axis_name": axis_name,
+            "axis_values": jnp.asarray(np.asarray(axis_values, dtype=float)),
+            "seeds": seeds,
+            "n_cells": n_cells,
+        }
+
+    def _resolve_from_experiment_params(self, results_root=None):
+        """Load per-node model PARAMETERS sourced from the from_experiment operating point.
+
+        A heterogeneous parameter that declares ``measure: <observation>`` in a
+        ``method=from_experiment`` experiment takes its per-node values from that
+        named observation of the source run's operating point — the parameter
+        analogue of the state IC seed, and the same ``Parameter.source``/``measure``
+        mechanism ``P`` uses to source per-node net power from a network. (Here the
+        source is the operating point another experiment recorded, e.g. ``g`` from
+        its ``control_mask``.) Returns ``{param_name: (n_nodes,)}``, or ``None`` when
+        no parameter sources a value this way.
+        """
+        ini = getattr(self, "initial_state", None)
+        if ini is None or str(getattr(ini, "method", "") or "") != "from_experiment":
+            return None
+        params = self.dynamics.parameters
+        pitems = params.items() if hasattr(params, "items") else [(getattr(p, "name", None), p) for p in params]
+        wanted = {(getattr(p, "name", None) or key): str(getattr(p, "measure", "") or "")
+                  for key, p in pitems if getattr(p, "measure", None)}
+        if not wanted:
+            return None
+        src = getattr(ini, "source_experiment", None)
+        if src is None:
+            raise ValueError("initial_state.method=from_experiment requires source_experiment")
+        source_id = int(getattr(src, "id", src))
+
+        src_h5 = self._locate_source_result(results_root, source_id)
+        n_nodes = len(self.network.nodes) if self.network.nodes else None
+        point = str(getattr(ini, "source_point", "") or "endpoint")
+        # 'branch' has no single point for a parameter value; fall back to the settled
+        # endpoint rather than crash on int('branch').
+        sel = -1 if point in ("", "endpoint", "branch") else int(point)
+
+        def _node_dim(da):
+            if n_nodes is not None:
+                for d in da.dims:
+                    if da.sizes[d] == n_nodes:
+                        return d
+            for d in da.dims:
+                if "node" in str(d).lower():
+                    return d
+            return da.dims[-1]
+
+        def _measure_key(ds, measure):
+            for k in ds.data_vars:
+                if k == measure or k.endswith(f"__{measure}"):
+                    return k
+            raise KeyError(
+                f"initial_state.from_experiment: source experiment {source_id} does not record "
+                f"the observation '{measure}' needed to source a parameter. Have the source "
+                f"experiment record it (e.g. a per-node control mask)."
+            )
+
+        ds = xr.open_dataset(src_h5, engine="h5netcdf")
+        try:
+            out = {}
+            for pname, measure in wanted.items():
+                da = ds[_measure_key(ds, measure)]
+                for d in [d for d in da.dims if d != _node_dim(da)]:
+                    da = da.isel({d: sel})
+                out[pname] = jnp.asarray(np.asarray(da.values).ravel())
+        finally:
+            ds.close()
+        return out
+
+    def run(self, format="tvboptim", initial_conditions=None, results_root=None, **kwargs):
         """Configure, build, and run the experiment on a backend.
 
         Dispatches on `format` to the corresponding backend (`tvb`, `tvboptim`,
@@ -1669,6 +1935,11 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             initial_conditions: Optional history to seed the simulation
                 (used by the JAX backend); defaults to conditions collected
                 from the experiment.
+            results_root: Directory under which sibling experiments' saved
+                results are searched when this experiment's
+                `initial_state.method == from_experiment` (see
+                `_resolve_from_experiment_seed`). Defaults to the current
+                directory; the CLI passes the run's output-directory parent.
             **kwargs: Backend-specific run options. A `duration` value is
                 applied to the integration settings before running; other
                 keys (e.g. `benchmark`, `mode`) are passed through to the
@@ -1686,6 +1957,14 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         if "duration" in kwargs:
             self.integration.duration = kwargs.pop("duration")
+
+        # The active subject (set by the per-subject workflow fan-out) selects
+        # which per-subject empirical target this run resolves. Popped here so it
+        # never leaks into a backend runner's kwargs.
+        active_subject = kwargs.pop("active_subject", None)
+        if active_subject is None:
+            active_subject = getattr(getattr(self, "dataset", None), "active_subject", None)
+        self._active_subject = str(active_subject) if active_subject is not None else None
 
         self.configure()
         Bunch()
@@ -1784,8 +2063,35 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             # set when present, so experiments without network observations are
             # unaffected.
             net_obs = self.resolve_network_observations()
+            # Per-subject dataset-sourced targets (e.g. this subject's empirical
+            # FC), reconciled to the model's node labels, merge into the same
+            # network_observations injection.
+            if getattr(self, "_active_subject", None):
+                for obs_name, da in self.resolve_dataset_observations(self._active_subject).items():
+                    net_obs = dict(net_obs or {})
+                    net_obs[obs_name] = np.asarray(da.values)
             if net_obs:
                 kwargs.setdefault("network_observations", net_obs)
+
+            # Resolve InitialState.from_experiment -> the operating point another
+            # experiment already reached, loaded from its saved run and handed to the
+            # generated code as seed_dynamics. No-op unless method == from_experiment.
+            _seed = self._resolve_from_experiment_seed(results_root)
+            if _seed is not None:
+                kwargs.setdefault("seed_dynamics", _seed)
+
+            # Parameters sourced from the same operating point (Parameter.measure, e.g.
+            # a control mask g <- source's control_mask), injected as seed_params.
+            _pseed = self._resolve_from_experiment_params(results_root)
+            if _pseed is not None:
+                kwargs.setdefault("seed_params", _pseed)
+
+            # source_point='branch': the source run's WHOLE branch is a per-cell seed
+            # (axis values + settled state per point), handed over as branch_seed so an
+            # independent exploration can restart an analysis at every branch point.
+            _branch = self._resolve_from_experiment_branch(results_root)
+            if _branch is not None:
+                kwargs.setdefault("branch_seed", _branch)
 
             # Run the experiment with optional per-step timing
             if benchmark:
@@ -2225,6 +2531,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         out_dir.mkdir(parents=True, exist_ok=True)
         if not isinstance(net, _Network):
             net.__class__ = _Network
+        self.bake_real_node_labels()
         sidecar = out_dir / f"{network_stem}.yaml"
         net.save(sidecar, binary_format="h5")
         # The network sidecar goes through a different serializer; strip the same
@@ -2348,6 +2655,337 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 )
             resolved[name] = available[measure]
         return resolved
+
+    def bake_real_node_labels(self) -> bool:
+        """Replace the model network's placeholder labels with real ones in place.
+
+        A network sourced by a ``bids:`` entity block carries only ``region_N``
+        placeholders until run time; freezing drops that block, so the real labels
+        (hydrated from the db) are written onto the network's nodes here. This keeps
+        a frozen kit self-contained and label reconciliation (never positional)
+        working on reload. Returns True when labels were applied.
+        """
+        net = getattr(self, "network", None)
+        nodes = list(getattr(net, "nodes", None) or []) if net is not None else []
+        real_labels = self._resolve_model_node_labels()
+        if not real_labels or len(real_labels) != len(nodes):
+            return False
+        if [str(getattr(nd, "label", "")) for nd in nodes] == real_labels:
+            return False
+        for nd, lbl in zip(nodes, real_labels):
+            nd.label = lbl
+        return True
+
+    def _resolve_model_node_labels(self) -> list:
+        """Real node labels of the model network, hydrated if needed.
+
+        A network sourced by a ``bids:`` entity block loads its weights lazily,
+        so at parse time its node labels can be placeholders (``region_<i>``).
+        Label reconciliation needs the true labels, so when the current ones look
+        like placeholders this resolves the ``bids:`` entities against the tvbo
+        database and reads the matched connectome's labels. Returns the existing
+        labels unchanged when they are already real.
+        """
+        net = getattr(self, "network", None)
+        if net is None:
+            return []
+        labels = [str(lbl) for lbl in (net.node_labels or [])]
+        placeholder = bool(labels) and all(re.fullmatch(r"region_\d+", lbl) for lbl in labels)
+        if labels and not placeholder:
+            return labels
+        # Placeholder path — resolving from the db is a directory glob + a sidecar
+        # parse, so cache it (the bids block + db are stable for the experiment).
+        cached = getattr(self, "_model_labels_from_bids", None)
+        if cached is not None:
+            return cached
+        bids = getattr(net, "bids", None)
+        if bids is None:
+            return labels
+        from tvbo.classes.network import _filter_networks_by_entities
+
+        ents = _bids_entities_to_short_dict(bids)
+        matches = _filter_networks_by_entities(ents) if ents else []
+        if len(matches) == 1:
+            resolved = [str(lbl) for lbl in Network.load(str(matches[0])).node_labels]
+            self._model_labels_from_bids = resolved
+            return resolved
+        return labels
+
+    @property
+    def dataset_observation_targets(self) -> dict:
+        """Map each dataset-sourced observation to its measure name.
+
+        Recognises ``source: [dataset.subject.<measure>]`` pointers — the
+        per-subject empirical target selected by the observation's ``query``
+        under ``dataset.bids_root``. Returns e.g. ``{'empirical_fc': 'fc'}``;
+        empty when no observation is dataset-sourced.
+        """
+        out: dict = {}
+        for name, obs in (self.observations or {}).items():
+            src = getattr(obs, "source", None)
+            if isinstance(src, (list, tuple)):
+                src = src[0] if src else None
+            if src is not None and hasattr(src, "name"):
+                src = src.name
+            s = str(src) if src is not None else ""
+            if s.startswith("dataset.subject."):
+                out[name] = s.split(".")[-1]
+        return out
+
+    @staticmethod
+    def _bids_query_dict(query) -> tuple[dict, str | None]:
+        """Split a ``BidsEntities`` query into (key-value entities, suffix).
+
+        Maps the schema's attribute names to the short entity keys that
+        :func:`tvbo.classes.network._parse_bids_entities` emits. ``suffix`` is
+        returned separately because it is the trailing filename component, not a
+        ``key-value`` entity.
+        """
+        if query is None:
+            return {}, None
+        ents = _bids_entities_to_short_dict(query)
+        suffix = getattr(query, "suffix", None)
+        return ents, (str(suffix) if suffix is not None else None)
+
+    @staticmethod
+    def _match_subject_files(files, ents: dict, suffix: str | None):
+        """Yield (subject, path) for files whose parsed entities match *ents* + *suffix*."""
+        from tvbo.classes.network import _parse_bids_entities
+
+        for f in files:
+            file_ents = _parse_bids_entities(f.stem)
+            if not file_ents.get("sub"):
+                continue
+            if suffix is not None and not f.stem.endswith(f"_{suffix}"):
+                continue
+            if all(file_ents.get(k) == v for k, v in ents.items()):
+                yield file_ents["sub"], f
+
+    def _find_subject_file(self, root: Path, subject: str, query) -> Path:
+        """Resolve the single per-subject file under *root* matching *query*."""
+        sub = str(subject).replace("sub-", "")
+        ents, suffix = self._bids_query_dict(query)
+        files = sorted((root / f"sub-{sub}").glob("*.yaml"))
+        matches = [f for s, f in self._match_subject_files(files, ents, suffix) if s == sub]
+        if not matches:
+            raise ValueError(
+                f"No file for sub-{sub} matching query {ents} suffix={suffix!r} under {root}."
+            )
+        if len(matches) > 1:
+            raise ValueError(
+                f"Query {ents} suffix={suffix!r} is ambiguous for sub-{sub}: "
+                f"{[m.name for m in matches]}. Add entities to disambiguate."
+            )
+        return matches[0]
+
+    @staticmethod
+    def _reconcile_mode(obs) -> str:
+        """The ``reconcile`` mode of an observation as a plain string (default by_label)."""
+        m = getattr(obs, "reconcile", None)
+        return str(getattr(m, "value", m) or "by_label")
+
+    def _dataset_bids_root(self) -> Path:
+        """``dataset.bids_root`` as a Path, or a clear error if a dataset target needs it."""
+        ds = getattr(self, "dataset", None)
+        root = getattr(ds, "bids_root", None) if ds is not None else None
+        if not root:
+            raise ValueError("A dataset-sourced observation needs experiment.dataset.bids_root.")
+        return Path(root)
+
+    def _target_canonical_labels(self, target_net) -> list:
+        """Each target node's label mapped to the model's canonical label, target order.
+
+        Alias-aware: a target label that equals a model node's ``label`` or any of its
+        ``alternateName`` entries maps to that node's canonical label; an unmatched
+        label is returned unchanged (it will not intersect the model set and so is
+        excluded from the reconciliation, counting against coverage). Mapping is by
+        name only — a target whose nodes are permuted still maps correctly.
+        """
+        amap = self.network.region_alias_map()
+        return [amap.get(str(tl), str(tl)) for tl in target_net.node_labels]
+
+    def _shared_labels(self, model_labels: list, target_net) -> list:
+        """Canonical labels shared by the model network and a target, in model order.
+
+        Keyed and alias-aware (never positional): the target's labels are mapped to
+        the model's canonical labels first, so a divergent nomenclature reconciles.
+        """
+        tset = set(self._target_canonical_labels(target_net))
+        return [lbl for lbl in model_labels if lbl in tset]
+
+    @staticmethod
+    def _coverage_threshold(obs) -> float:
+        """Minimum reconciliation coverage for a ``by_label`` dataset target.
+
+        Absent ``min_coverage`` means require full coverage (``1.0``): silently
+        fitting on a partial node subset must be an explicit opt-in.
+        """
+        mc = getattr(obs, "min_coverage", None)
+        return 1.0 if mc is None else float(mc)
+
+    def resolve_dataset_observations(self, active_subject: str) -> dict:
+        """Resolve per-subject dataset-sourced targets for one subject.
+
+        For each observation whose ``source`` is ``dataset.subject.<measure>``:
+        query ``dataset.bids_root`` for the subject's matching file, load it as a
+        Network, read ``<measure>``, and reconcile its nodes to the model network.
+        ``reconcile: by_label`` maps each target node to the model's canonical label
+        (alias-aware — a divergent nomenclature such as ``THALAMUS_LEFT`` for
+        ``L_Thalamus`` still matches via the atlas ``alternateName`` crosswalk), then
+        selects the shared labels in the model's order. Alignment is by name on both
+        the empirical target and the simulated observable — never by row index — so a
+        differing node count or order (or a swapped hemisphere block) cannot silently
+        misalign the comparison. The realised coverage is logged, and falls back to
+        requiring full coverage unless the observation sets ``min_coverage``.
+
+        Returns ``{obs_name: xarray.DataArray}`` keyed by canonical node label on both
+        axes, restricted to the labels shared with the model network. The model-side
+        gather (which model nodes the shared labels are) is available via
+        :meth:`dataset_reconcile_index` so the simulated observation selects the same
+        sub-block.
+        """
+        targets = self.dataset_observation_targets
+        if not targets:
+            return {}
+        root = self._dataset_bids_root()
+        model_labels = self._resolve_model_node_labels()
+        logger = logging.getLogger(__name__)
+        resolved: dict = {}
+        for name, measure in targets.items():
+            obs = self.observations[name]
+            path = self._find_subject_file(root, active_subject, getattr(obs, "query", None))
+            target_net = Network.load(str(path))
+            mat = np.asarray(target_net.matrix(measure))
+            if mat.ndim != 2:
+                raise ValueError(
+                    f"Observation '{name}': measure '{measure}' is not a 2-D matrix "
+                    f"in {path.name}."
+                )
+            tlabels = list(target_net.node_labels)
+            if self._reconcile_mode(obs) == "by_label" and model_labels:
+                # Relabel the target's node axes to the model's canonical labels by
+                # NAME (alias-aware), then select the shared labels in model order.
+                tcanon = self._target_canonical_labels(target_net)
+                tcanon_set = set(tcanon)
+                model_set = set(model_labels)
+                counts = Counter(tcanon)
+                dup = sorted(c for c in tcanon_set if c in model_set and counts[c] > 1)
+                if dup:
+                    raise ValueError(
+                        f"Observation '{name}': target {path.name} maps multiple nodes "
+                        f"onto the same model region(s) {dup} — ambiguous reconciliation."
+                    )
+                shared = [lbl for lbl in model_labels if lbl in tcanon_set]
+                coverage = len(shared) / len(model_labels) if model_labels else 0.0
+                logger.info(
+                    "reconcile[%s] sub-%s: %d/%d model nodes matched (coverage %.3f) "
+                    "against %s",
+                    name, active_subject, len(shared), len(model_labels), coverage,
+                    path.name,
+                )
+                if not shared:
+                    raise ValueError(
+                        f"Observation '{name}': no node labels shared between the model "
+                        f"network and target {path.name} (after alias reconciliation). "
+                        f"Check the atlas alternateName crosswalk."
+                    )
+                threshold = self._coverage_threshold(obs)
+                if coverage < threshold:
+                    unmatched = [lbl for lbl in model_labels if lbl not in tcanon_set]
+                    raise ValueError(
+                        f"Observation '{name}': reconciliation coverage {coverage:.3f} "
+                        f"< required {threshold:.3f} for {path.name}. "
+                        f"{len(unmatched)} model node(s) unmatched, e.g. {unmatched[:5]}. "
+                        f"Set observation.min_coverage to accept a partial subset."
+                    )
+                da = xr.DataArray(
+                    mat, dims=("node_i", "node_j"),
+                    coords={"node_i": tcanon, "node_j": tcanon},
+                )
+                da = da.sel(node_i=shared, node_j=shared)
+            else:
+                da = xr.DataArray(
+                    mat, dims=("node_i", "node_j"),
+                    coords={"node_i": tlabels, "node_j": tlabels},
+                )
+            resolved[name] = da
+        return resolved
+
+    def dataset_reconcile_index(self, shared_labels: list, model_labels: list = None) -> np.ndarray:
+        """Indices into the model network's nodes for *shared_labels* (keyed).
+
+        The simulated observation selects this sub-block so it aligns, label for
+        label, with a ``by_label``-reconciled empirical target. Pass *model_labels*
+        to avoid re-resolving them.
+        """
+        model_labels = model_labels if model_labels is not None else self._resolve_model_node_labels()
+        pos = {lbl: i for i, lbl in enumerate(model_labels)}
+        return np.array([pos[lbl] for lbl in shared_labels], dtype=int)
+
+    def dataset_reconcile_indices(self) -> dict:
+        """Model-side gather index for each ``by_label`` dataset target (keyed).
+
+        For every observation sourced from ``dataset.subject.<measure>`` with
+        ``reconcile: by_label``, returns the positions of the shared node labels
+        within the model network's node order — derived from the labels, never
+        from position. The shared label set is identical across the cohort, so it
+        is resolved once from the first cohort subject (reading only its node
+        labels, not its matrix). Codegen uses this to gather the simulated
+        observable onto the same shared labels as the reconciled empirical target
+        before comparing them. Returns ``{}`` (no gather) when nothing is
+        dataset-sourced or the data cannot be resolved.
+        """
+        targets = self.dataset_observation_targets
+        subjects = self.dataset_subject_ids() if targets else []
+        if not subjects:
+            return {}
+        try:
+            root = self._dataset_bids_root()
+            model_labels = self._resolve_model_node_labels()
+            out: dict = {}
+            for name, _measure in targets.items():
+                obs = self.observations[name]
+                if self._reconcile_mode(obs) != "by_label":
+                    continue
+                path = self._find_subject_file(root, subjects[0], getattr(obs, "query", None))
+                shared = self._shared_labels(model_labels, Network.load(str(path)))
+                out[name] = self.dataset_reconcile_index(shared, model_labels).tolist()
+        except Exception:
+            return {}
+        return out
+
+    def dataset_subject_ids(self) -> list:
+        """Enumerate the cohort for the per-subject workflow fan-out.
+
+        An explicit ``dataset.subjects`` list wins (a curated subset). Otherwise
+        the subjects are discovered by querying ``dataset.bids_root`` with the
+        first dataset-sourced observation's ``query`` — the same filter that
+        resolves each shard's target, so discovery and resolution never diverge.
+        Returns sorted subject IDs without the ``sub-`` prefix; empty when the
+        experiment has no dataset-sourced observation.
+        """
+        ds = getattr(self, "dataset", None)
+        if ds is None:
+            return []
+        subs = getattr(ds, "subjects", None)
+        if subs:
+            ids = list(subs.keys()) if hasattr(subs, "keys") else [
+                getattr(x, "subject_id", x) for x in subs
+            ]
+            return [str(s).replace("sub-", "") for s in ids]
+        targets = self.dataset_observation_targets
+        root = getattr(ds, "bids_root", None)
+        if not targets or not root:
+            return []
+        cached = getattr(self, "_subject_ids_from_query", None)
+        if cached is not None:
+            return cached
+        query = getattr(self.observations[next(iter(targets))], "query", None)
+        ents, suffix = self._bids_query_dict(query)
+        files = sorted(Path(root).glob("sub-*/*.yaml"))
+        found = sorted({s for s, _ in self._match_subject_files(files, ents, suffix)})
+        self._subject_ids_from_query = found
+        return found
 
     def _resolve_events(self) -> None:
         """Lower declarative stimulus/stimulation Event fields into the form the

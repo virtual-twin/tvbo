@@ -66,10 +66,15 @@ from tvboptim.experimental.network_dynamics.solvers import ${solver_class}, Boun
 % endif
 
 
-def get_solver():
+def get_solver(block_size=None):
     """Get configured solver instance.
 
     Returns the solver specified in integration metadata.
+
+    ``block_size`` (native solvers only) sets the nested-block-scan granularity so a
+    streaming reduction (``prepare(reduce=...)``) folds the observable in-carry instead
+    of materializing the trajectory; ``None`` keeps the default single scan. Ignored by
+    Diffrax solvers, which have no such knob.
 % if has_state_bounds:
     Wrapped in BoundedSolver to enforce state variable domain constraints:
     % for i, sv_name in enumerate(model.state_variables.keys()):
@@ -86,7 +91,10 @@ def get_solver():
     base_solver = DiffraxSolver(diffrax.Dopri5())
     % endif
 % else:
-    base_solver = ${solver_class}(${solver_kwargs_str})
+    _solver_kwargs = dict(${solver_kwargs_str})
+    if block_size is not None:
+        _solver_kwargs['block_size'] = block_size
+    base_solver = ${solver_class}(**_solver_kwargs)
 % endif
 % if has_state_bounds:
     # Wrap solver with BoundedSolver to enforce state variable domain constraints

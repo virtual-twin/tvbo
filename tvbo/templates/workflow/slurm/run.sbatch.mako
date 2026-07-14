@@ -63,17 +63,54 @@ module load ${mod}
 % if sb.get("venv"):
 source ${sb["venv"]}/bin/activate
 % endif
+## workflow.<engine>.setup — verbatim shell lines for env setup the typed fields
+## don't cover (e.g. `conda activate <env>`). Runs after module/venv activation.
+% for _line in (sb.get("setup") or []):
+${_line}
+% endfor
 ## env is normalized to a shell-quoted [{name, value}] list in the plan builder
 ## (tvbo.cli._workflow._normalize_env), so values are emitted verbatim.
 % for _e in (sb.get("env") or []):
 export ${_e["name"]}=${_e["value"]}
 % endfor
+% if bundled_code:
+## The recipe's custom callable/builder modules were bundled into ./code; put it
+## on the path so the frozen spec's `module:` references resolve on the node.
+## ${'$'}{PYTHONPATH:-} escapes the Mako ${} so bash sees a literal ${PYTHONPATH:-},
+## which keeps an unset PYTHONPATH from tripping `set -u` above.
+export PYTHONPATH="code:${'$'}{PYTHONPATH:-}"
+% endif
 
 <%
-    out_pat = plan.out_dir + "/$SLURM_ARRAY_JOB_ID/$SLURM_ARRAY_TASK_ID"
+    # A per-subject dataset fan-out lowers to a Slurm array indexed BY SUBJECT: each
+    # task resolves one subject's empirical target via `tvbo run --subject <id>`
+    # (mirrors the Snakemake emitter's _run_flags, which maps a dataset.active_subject
+    # wildcard to --subject). The generic --shard path (else branch) still serves a
+    # backend-vectorized sweep with no workflow-fanned axis: there each task slices
+    # 1/N of the vmap/pmap-ed sweep in-process, and multiple tasks each write a shard
+    # subdir for finalize to reassemble. A single task IS the whole run — write
+    # straight to the canonical results dir (no gather); per-subject tasks likewise
+    # write there, since each produces an independent sub-<id>_…_result.h5.
+    subject_axis = next((ax for ax in plan.workflow_axes if ax.kind == "subjects"), None)
+    single_task = plan.n_array_tasks == 1
+    out_pat = plan.out_dir if (single_task or subject_axis) else plan.out_dir + "/$SLURM_ARRAY_JOB_ID/$SLURM_ARRAY_TASK_ID"
     prefix = ("singularity exec " + plan.container + " ") if plan.container else ""
     run_target = spec_relpath if spec_relpath else plan.run_spec
 %>\
+% if subject_axis:
+## Per-subject dataset fan-out: one array task per subject. $SLURM_ARRAY_TASK_ID
+## indexes SUBJECTS; `tvbo run --subject <id>` resolves that subject's empirical
+## target (e.g. their FC) before the fit. Independent per-subject results — no gather.
+SUBJECTS=(${" ".join(str(v) for v in subject_axis.values)})
+SUBJECT=${'$'}{SUBJECTS[$SLURM_ARRAY_TASK_ID]}
+exec ${prefix}tvbo run ${run_target} \
+    --backend=${plan.backend.name} \
+% if plan.experiment_selector and not spec_relpath:
+    --experiment="${plan.experiment_selector}" \
+% endif
+    --subject="${'$'}{SUBJECT}" \
+    -o ${out_pat}
+% else:
 ## Each array task runs 1/N of the sweep cells; the backend vmap/pmap-s its share.
 ## Prefer the self-contained frozen spec (spec/…yaml); fall back to the source recipe.
 exec ${prefix}tvbo run ${run_target} \
@@ -81,5 +118,6 @@ exec ${prefix}tvbo run ${run_target} \
 % if plan.experiment_selector and not spec_relpath:
     --experiment="${plan.experiment_selector}" \
 % endif
-    --slurm-chunk=$SLURM_ARRAY_TASK_ID/${plan.n_array_tasks} \
+    --shard=$SLURM_ARRAY_TASK_ID/${plan.n_array_tasks} \
     -o ${out_pat}
+% endif

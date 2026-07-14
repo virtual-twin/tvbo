@@ -676,6 +676,119 @@ def time_argument_ms(argument: Any, default: float) -> float:
     return value
 
 
+def _reduction_init_value(sv: Any) -> float:
+    """Initial scalar for an observer state (its declared value, else 0.0).
+
+    Accumulators start at their reduction identity (0.0 for a sum); a memory state's
+    init is irrelevant (it is overwritten on the first step), so 0.0 is a safe default.
+    """
+    for holder in (sv, get_attr(sv, "domain"), get_attr(sv, "distribution")):
+        v = get_attr(holder, "value") if holder is not None else None
+        if v is not None:
+            try:
+                return float(to_numeric(v))
+            except Exception:
+                pass
+    return 0.0
+
+
+def resolve_reduction(obs: Any) -> Optional[Dict[str, Any]]:
+    """Lift an observation's auxiliary ``dynamics`` into a backend-agnostic reduction.
+
+    An observation may declare a co-integrated auxiliary ``Dynamics`` (the observer)
+    that computes it online as a time recurrence, instead of a post-scan ``pipeline``.
+    This resolves that Dynamics into clean context for the reduction partial: the
+    source state variable read, and for each observer state its ``init`` value, its
+    discrete update RHS (``equation.rhs`` with ``equation_type: recurrence``), and
+    whether it is an *accumulator* — its update references its own symbol, so its
+    commit is gated on the first step while its memory input is still unset (a memory
+    state, which does not reference itself, updates every step). The readout is the
+    observer ``output`` (a derived variable's RHS, or a bare final state), and any
+    user ``functions`` (e.g. ``wrap``) are surfaced for the printer. Returns ``None``
+    when the observation declares no ``dynamics`` (the post-scan path runs).
+
+    Every RHS is parsed to a **sympy** expression against the observer's symbolic
+    vocabulary (its states, the source, and the framework scalars ``dt``/``count``;
+    user functions become undefined ``Function``s). That makes the analysis symbolic,
+    not string-based: accumulator classification is ``state_symbol in expr.free_symbols``,
+    and an unknown symbol (a typo) is caught here rather than surfacing as a codegen
+    error. The context carries sympy ``Expr`` objects; the partial renders them per
+    backend via ``render_expression`` (which accepts sympy directly). Returns ``None``
+    when the observation declares no ``dynamics`` (the post-scan path runs).
+    """
+    import sympy as sp
+
+    dyn = get_attr(obs, "dynamics")
+    if dyn is None:
+        return None
+    src = as_list(get_attr(obs, "source"))
+    source = str(src[0]) if src else None
+
+    svs = get_attr(dyn, "state_variables")
+    sv_pairs = list(svs.items()) if hasattr(svs, "items") else []
+    sv_names = [str(n) for n, _ in sv_pairs]
+
+    # Symbolic vocabulary: observer states + source + framework scalars are Symbols;
+    # the observer's user functions are undefined Functions. Parse every RHS against it.
+    allowed = set(sv_names) | ({source} if source else set()) | {"dt", "count"}
+    loc: Dict[str, Any] = {n: sp.Symbol(n) for n in allowed}
+    loc["pi"] = sp.pi
+    funcs = get_attr(dyn, "functions")
+    functions: Dict[str, Any] = {}
+    for fname, fn in (funcs.items() if hasattr(funcs, "items") else []):
+        feq = get_attr(fn, "equation")
+        fargs = [str(get_attr(a, "name", a)) for a in as_list(get_attr(fn, "arguments"))]
+        frhs = get_attr(feq, "rhs") if feq is not None else None
+        loc[str(fname)] = sp.Function(str(fname))
+        fexpr = (sp.sympify(str(frhs), locals={**{a: sp.Symbol(a) for a in fargs}, "pi": sp.pi})
+                 if frhs is not None else None)
+        functions[str(fname)] = {"args": fargs, "expr": fexpr}
+
+    def _parse(rhs_str: str, where: str):
+        expr = sp.sympify(rhs_str, locals=loc)
+        unknown = {str(s) for s in expr.free_symbols} - allowed
+        if unknown:
+            raise ValueError(
+                f"Observation reduction {where}: unknown symbol(s) {sorted(unknown)}; "
+                f"available are the observer states {sv_names}, the source {source!r}, "
+                f"and dt/count."
+            )
+        return expr
+
+    states: List[Dict[str, Any]] = []
+    for name, sv in sv_pairs:
+        name = str(name)
+        eq = get_attr(sv, "equation")
+        rhs = get_attr(eq, "rhs") if eq is not None else None
+        if rhs is None:
+            continue
+        expr = _parse(str(rhs), f"state {name!r}")
+        states.append({
+            "name": name,
+            "init": _reduction_init_value(sv),
+            "update": expr,  # sympy Expr — the printer renders it
+            "is_accumulator": sp.Symbol(name) in expr.free_symbols,
+        })
+
+    outs = as_list(get_attr(dyn, "output"))
+    dvs = get_attr(dyn, "derived_variables")
+    dv_map = dict(dvs.items()) if hasattr(dvs, "items") else {}
+    output = None
+    if outs:
+        out_name = str(outs[0])
+        dv = dv_map.get(out_name)
+        oeq = get_attr(dv, "equation") if dv is not None else None
+        output = (_parse(str(get_attr(oeq, "rhs")), f"output {out_name!r}")
+                  if oeq is not None else sp.Symbol(out_name))
+
+    return {
+        "source": source,
+        "states": states,
+        "output": output,
+        "functions": functions,
+    }
+
+
 def _literal_code(value: Any) -> str:
     """Render a literal constructor value as generated Python code."""
     return repr(value)
@@ -822,6 +935,25 @@ def resolve_solver_kwargs(integration: Any, dt: float, is_diffrax: bool = False)
     return ", ".join(kwargs)
 
 
+def _analysis_solver_kwargs(solver_kwargs: str) -> str:
+    """Drop the differentiation-truncation kwargs from a solver-kwargs string.
+
+    ``grad_horizon`` / ``block_size`` are truncated-BPTT knobs for the optimization
+    forward/backward pass; they are not part of an analysis diagnostic and break a
+    tangent-space (JVP) Lyapunov spectrum — the truncation ``stop_gradient``s the
+    early segment, so the initial-state perturbation never reaches the segment end
+    and the leading exponent collapses to ``log(0) = -inf``. The reference analysis
+    solves build a plain solver for the same reason. Coupling-evaluation config
+    (``recompute_coupling_per_stage``) is kept so the diagnostic characterises the
+    same trajectory as the main sim.
+    """
+    kept = [
+        tok for tok in (t.strip() for t in solver_kwargs.split(",")) if tok
+        and not tok.startswith(("grad_horizon=", "block_size="))
+    ]
+    return ", ".join(kept)
+
+
 def resolve_optimizer_mode(integration: Any) -> str:
     """Map the backend-neutral ``integration.differentiation.mode`` onto the native
     optimizer differentiation mode.
@@ -882,12 +1014,14 @@ def render_analysis_observations(
     emitted from its declarative ``analysis`` metadata (type + target + wrt +
     parameters). This lives in the adapter/Python layer — NOT the mako template —
     so the per-type branching can be deduped/harmonized and reused across backends;
-    the template only interpolates the returned block. Analysis solves use a plain
-    ``solver_class()`` (the truncation window is an optimization knob, not part of
-    these diagnostics). Returns a string whose lines are indented for a function body
+    the template only interpolates the returned block. Analysis solves drop the
+    differentiation-truncation window (an optimization knob, not part of these
+    diagnostics — see :func:`_analysis_solver_kwargs`) while keeping the coupling-
+    evaluation config. Returns a string whose lines are indented for a function body
     (4 spaces), empty string if there are no analysis observations.
     """
     window = f"t0=0.0 + {transient_time}, t1={transient_time} + {t1_default}, dt={dt}"
+    solver_kwargs = _analysis_solver_kwargs(solver_kwargs)
     lines: List[str] = []
 
     # Finite-difference observations that share the exact same per-seed computation
@@ -1015,6 +1149,7 @@ def render_recorded_observable(
     derived_names: List[str],
     network_obs_names: List[str],
     analysis_names: List[str],
+    only_obs: Optional[List[str]] = None,
 ) -> str:
     """Render the body of an exploration ``observable_fn`` that records a `record:` list.
 
@@ -1029,7 +1164,14 @@ def render_recorded_observable(
     analysis_set = set(analysis_names)
     lines = ["result = _expl_model_fn(s)"]
     if any(n not in analysis_set for n in record_names):
-        lines.append("_all_obs = compute_all_observations(result, s, result_transient)")
+        # Restrict the per-cell computation to the recorded observations and their
+        # closure (passed by the caller), so non-recorded — possibly non-jittable —
+        # observations never execute inside this jitted observable.
+        if only_obs is not None:
+            _only_lit = "{%s}" % ", ".join(repr(n) for n in sorted(only_obs))
+            lines.append(f"_all_obs = compute_all_observations(result, s, result_transient, only={_only_lit})")
+        else:
+            lines.append("_all_obs = compute_all_observations(result, s, result_transient)")
     if any(n in analysis_set for n in record_names):
         lines.append("_an_obs = compute_analysis_observations(s, _network, result_transient)")
     entries = []
@@ -1242,11 +1384,14 @@ def format_bounds_array(bounds: List, format: str = "jax") -> str:
 
 
 def is_network_observation(obs: Any) -> bool:
-    """Check if observation is a network observation (static data from network).
+    """Check if observation is bound from data rather than the simulation state.
 
-    Network observations have source starting with 'network.observations' or 'network.edges'.
-    The slot is multivalued; for raw network observations there is exactly
-    one entry. Accept both scalar and list forms.
+    True when the source starts with ``network.observations``, ``network.edges``
+    (data carried by the model network), or ``dataset.subject`` (a per-subject
+    empirical target resolved from the dataset). All three are materialized into
+    a module-level constant and bound at ``run_experiment`` time via
+    ``_bind_network_observations``, not recorded from the solver. The slot is
+    multivalued; accept both scalar and list forms.
     """
     if not obs:
         return False
@@ -1260,7 +1405,8 @@ def is_network_observation(obs: Any) -> bool:
     for item in items:
         name = item.name if hasattr(item, "name") else item
         s = str(name)
-        if s.startswith("network.observations") or s.startswith("network.edges"):
+        if (s.startswith("network.observations") or s.startswith("network.edges")
+                or s.startswith("dataset.subject")):
             return True
     return False
 

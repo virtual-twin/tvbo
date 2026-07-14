@@ -560,7 +560,13 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
         """Load a PyRates CircuitTemplate from a TVBO Dynamics model."""
         from pyrates.frontend import CircuitTemplate
 
+        from tvbo.adapters.pyrates import _patch_pyrates_networkx_backend
         from tvbo.codegen.pyrates import to_pyrates_yaml_string
+
+        # PyRates threads a ``backend`` kwarg into ComputeGraph that networkx >= 3.4's
+        # dispatch decorator intercepts; apply the shared dispatch patch (same one the
+        # main PyRates adapter uses) before the circuit is built and compiled.
+        _patch_pyrates_networkx_backend()
 
         yaml_content = to_pyrates_yaml_string(model)
 

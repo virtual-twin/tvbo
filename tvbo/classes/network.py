@@ -26,6 +26,13 @@ from jsonasobj2 import as_dict
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
+# Apply the JAX Metal-fallback guard before any Network-level JAX compute. Idempotent
+# and cheap (jax already imported); kept out of ``import tvbo``. See
+# tvbo.__init__._configure_jax_backend.
+from tvbo import _configure_jax_backend as _cfg_jax
+
+_cfg_jax()
+
 
 from tvbo.data.registry import database_dir
 from tvbo.datamodel import schema as tvbo_datamodel
@@ -138,6 +145,26 @@ _LENGTH_MEASURES = {
     "tract_length",
     "tract_lengths",
 }
+
+
+def _length_like_key(keys) -> Optional[str]:
+    """Find the edge key holding tract lengths among *keys*.
+
+    Prefers the canonical ``length`` / ``lengths``; otherwise accepts any length-like
+    name in :data:`_LENGTH_MEASURES` (``tract_length``, ``tractLength``, …). Unlike
+    weights (selected by ``primary_weight`` / ``weight`` / ``weights`` / ``sc``), the
+    length matrix has no explicit selector, so this by-meaning resolution is what makes
+    a length edge findable regardless of how a sidecar names it — and delayed
+    simulations depend on it being found.
+    """
+    ks = list(keys)
+    for canonical in ("length", "lengths"):
+        if canonical in ks:
+            return canonical
+    for k in ks:
+        if str(k).lower() in _LENGTH_MEASURES:
+            return k
+    return None
 
 
 def _discover_bids_measures(bids_dir) -> list[str]:
@@ -1213,25 +1240,25 @@ class Network(tvbo_datamodel.Network):
             yield k, v
 
     @classmethod
-    def from_datamodel(cls, datamodel: tvbo_datamodel.Network) -> "Connectome":
-        """Create a Connectome from a datamodel instance.
+    def from_datamodel(cls, datamodel: tvbo_datamodel.Network) -> "Network":
+        """Create a Network from a datamodel instance.
 
         Parameters
         ----------
         datamodel : tvbo_datamodel.Network
-            Source datamodel Connectome instance
+            Source datamodel Network instance
 
         Returns
         -------
-        Connectome
-            New Connectome with fields copied from datamodel
+        Network
+            New Network with fields copied from datamodel
 
         Examples
         --------
         ```python
         from tvbo.datamodel import schema as tvbo_datamodel
         dm = tvbo_datamodel.Network(number_of_nodes=10)
-        sc = Connectome.from_datamodel(dm)
+        sc = Network.from_datamodel(dm)
         ```
         """
         data = as_dict(datamodel)
@@ -2197,7 +2224,7 @@ class Network(tvbo_datamodel.Network):
         super_setattr(name, value)
 
     def to_yaml(self, filepath: Optional[str] = None, format: str = "tvbo") -> str:
-        """Serialize Connectome to YAML format.
+        """Serialize Network to YAML format.
 
         Parameters
         ----------
@@ -2210,12 +2237,12 @@ class Network(tvbo_datamodel.Network):
         Returns
         -------
         str
-            YAML representation of the Connectome
+            YAML representation of the Network
 
         Examples
         --------
         ```python
-        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
+        sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
         yaml_str = sc.to_yaml()
         sc.to_yaml("connectome.yaml")  # Save to file
         sc.to_yaml("network.yaml", format="pyrates")  # PyRates format
@@ -2350,8 +2377,8 @@ class Network(tvbo_datamodel.Network):
         return children, aux  # type: ignore[return-value]
 
     @classmethod
-    def tree_unflatten(cls, aux_data: Tuple[str], children: Tuple[JaxArray, JaxArray]) -> "Connectome":
-        """Rebuild a `Connectome` from JAX pytree children and metadata (inverse of `tree_flatten`).
+    def tree_unflatten(cls, aux_data: Tuple[str], children: Tuple[JaxArray, JaxArray]) -> "Network":
+        """Rebuild a `Network` from JAX pytree children and metadata (inverse of `tree_flatten`).
 
         Arrays are re-attached as `_pytree_data` rather than `Matrix` objects, so it stays valid under JAX tracing.
         """
@@ -2377,7 +2404,7 @@ class Network(tvbo_datamodel.Network):
 
     # Back-compat pointer
     @property
-    def metadata(self) -> "Connectome":
+    def metadata(self) -> "Network":
         """Back-compatible pointer that returns the network itself as its metadata."""
         return self
 
@@ -2526,6 +2553,81 @@ class Network(tvbo_datamodel.Network):
             return []
         return [n.label for n in self.nodes]  # type: ignore[union-attr]
 
+    def _atlas_terminology_entities(self) -> dict:
+        """Parcellation-terminology entities for this network's atlas, or ``{}``.
+
+        Resolves ``parcellation.atlas.name`` (case-insensitively — networks may
+        declare ``HCPMMP1`` while the packaged atlas is keyed ``hcpmmp1``) and reads
+        its SANDS ``terminology.entities``. Returns ``{}`` when the network declares
+        no atlas or the atlas has no terminology.
+        """
+        parc = getattr(self, "parcellation", None)
+        atlas = getattr(parc, "atlas", None) if parc is not None else None
+        name = getattr(atlas, "name", None) if atlas is not None else None
+        if not name:
+            return {}
+        try:
+            from tvbo.classes.atlas import Atlas, available_atlases
+
+            resolved = name if name in available_atlases else next(
+                (a for a in available_atlases if a.lower() == str(name).lower()), None
+            )
+            if not resolved:
+                return {}
+            term = getattr(Atlas(resolved), "terminology", None)
+            return getattr(term, "entities", None) or {}
+        except Exception as exc:  # noqa: BLE001 — aliases are optional; degrade but surface
+            import logging
+
+            logging.getLogger(__name__).warning(
+                "Could not load atlas terminology for %r (region aliases unavailable): %s",
+                name, exc,
+            )
+            return {}
+
+    def region_alias_map(self) -> Dict[str, str]:
+        """Map each node's canonical label AND every known alias -> canonical label.
+
+        Aliases are alternative label strings that denote the SAME region under a
+        different nomenclature. They come from two sources, unioned: each node's own
+        ``alternateName`` (inline on the network) and, when the network declares a
+        parcellation atlas, that atlas terminology's ``alternateName`` per region
+        (joined to nodes by canonical label — never by position). The identity
+        ``label -> label`` is always included so exact matches still resolve.
+
+        Used by ``by_label`` node reconciliation so a dataset-sourced target whose
+        nodes carry a divergent convention (e.g. ``THALAMUS_LEFT`` for
+        ``L_Thalamus``) aligns by name. Raises when one alias would map to two
+        different canonical labels — an ambiguous crosswalk must fail loudly rather
+        than silently mis-assign a region (and, in particular, a hemisphere).
+        """
+        labels = self.node_labels
+        canon_set = set(labels)
+        index: Dict[str, str] = {}
+
+        def _add(alias: str, canonical: str) -> None:
+            prev = index.get(alias)
+            if prev is not None and prev != canonical:
+                raise ValueError(
+                    f"Ambiguous node alias {alias!r}: maps to both {prev!r} and "
+                    f"{canonical!r}. A region alias must identify exactly one node."
+                )
+            index[alias] = canonical
+
+        for lbl in labels:
+            _add(str(lbl), str(lbl))
+        for node in self.nodes or []:
+            canonical = str(getattr(node, "label", "") or "")
+            for alias in getattr(node, "alternateName", None) or []:
+                _add(str(alias), canonical)
+        for key, ent in self._atlas_terminology_entities().items():
+            canonical = str(getattr(ent, "name", None) or key)
+            if canonical not in canon_set:
+                continue  # atlas region not present in this (sub)network
+            for alias in getattr(ent, "alternateName", None) or []:
+                _add(str(alias), canonical)
+        return index
+
     @property
     def weights_matrix(self) -> Optional[Union[np.ndarray, JaxArray]]:
         """Connection weights matrix as numpy/JAX array.
@@ -2652,17 +2754,15 @@ class Network(tvbo_datamodel.Network):
         if hasattr(self, "_pytree_data") and self._pytree_data is not None:
             return self._pytree_data[1]
 
-        # Check _arrays (set by set_matrix / add_edges)
+        # Check _arrays (set by set_matrix / add_edges). Resolve the length edge by
+        # meaning, not just the canonical name, so a sidecar naming it e.g. tract_length
+        # still drives delayed simulations.
         _arrs = self._get_arrays()
-        if "length" in _arrs:
+        _lk = _length_like_key(_arrs)
+        if _lk is not None:
             from scipy import sparse as _sp
 
-            L = _arrs["length"]
-            return L.toarray() if _sp.issparse(L) else L
-        elif "lengths" in _arrs:
-            from scipy import sparse as _sp
-
-            L = _arrs["lengths"]
+            L = _arrs[_lk]
             return L.toarray() if _sp.issparse(L) else L
 
         # Check for cached matrix from from_matrix (performance optimization)
@@ -2672,11 +2772,9 @@ class Network(tvbo_datamodel.Network):
         if hasattr(self, "_store") and self._store is not None:
             # Lazy load from companion file (set by load_network)
             arrays = self._store.arrays
-            if "length" in arrays:
-                self._cached_lengths = arrays["length"]
-                return self._cached_lengths
-            elif "lengths" in arrays:
-                self._cached_lengths = arrays["lengths"]
+            _lk = _length_like_key(arrays)
+            if _lk is not None:
+                self._cached_lengths = arrays[_lk]
                 return self._cached_lengths
 
         # Compute from edges (fallback for networks built from explicit edges)
@@ -2763,7 +2861,7 @@ class Network(tvbo_datamodel.Network):
         Examples
         --------
         ```python
-        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
+        sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
         labels = sc.labels
         print(f"Number of labeled regions: {len(labels)}")
         ```
@@ -2900,8 +2998,8 @@ class Network(tvbo_datamodel.Network):
     def __str__(self) -> str:
         parc = getattr(self, "parcellation", None)
         if parc and hasattr(parc, "atlas") and hasattr(parc.atlas, "name"):  # type: ignore[attr-defined]
-            return f"Connectome-{parc.atlas.name}({self.number_of_regions})"  # type: ignore[attr-defined]
-        return f"Connectome(N={self.number_of_regions})"
+            return f"Network-{parc.atlas.name}({self.number_of_regions})"  # type: ignore[attr-defined]
+        return f"Network(N={self.number_of_regions})"
 
     def __repr__(self) -> str:
         return self.__str__()
@@ -2918,7 +3016,7 @@ class Network(tvbo_datamodel.Network):
         Examples
         --------
         ```python
-        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
+        sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
         atlas = sc.atlas
         print(atlas.region_labels)
         ```
@@ -2936,7 +3034,7 @@ class Network(tvbo_datamodel.Network):
         Examples
         --------
         ```python
-        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
+        sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
         atlas = sc.get_atlas()
         ```
         """
@@ -3163,7 +3261,7 @@ class Network(tvbo_datamodel.Network):
         Examples
         --------
         ```python
-        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
+        sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
         sc.normalize_weights("M / M_max")  # Normalize to [0, 1]
         normalized = sc.weights_matrix  # Returns normalized weights
         ```
@@ -3195,7 +3293,7 @@ class Network(tvbo_datamodel.Network):
         --------
         ```python
         import matplotlib.pyplot as plt
-        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
+        sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
         fig, ax = plt.subplots()
         im = sc.plot_weights(ax, log=True)
         plt.colorbar(im, ax=ax)
@@ -3240,7 +3338,7 @@ class Network(tvbo_datamodel.Network):
         --------
         ```python
         import matplotlib.pyplot as plt
-        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
+        sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
         fig, ax = plt.subplots()
         im = sc.plot_lengths(ax)
         plt.colorbar(im, ax=ax, label="mm")
@@ -3272,7 +3370,7 @@ class Network(tvbo_datamodel.Network):
         Examples
         --------
         ```python
-        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
+        sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
         sc.plot_matrix(log_weights=True)
         ```
         """
@@ -3325,7 +3423,7 @@ class Network(tvbo_datamodel.Network):
         --------
         ```python
         import matplotlib.pyplot as plt
-        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
+        sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
         delays = sc.calculate_delays(conduction_speed=3.0)
         plt.imshow(delays, cmap='viridis')
         plt.colorbar(label='Delay (ms)')
@@ -3438,7 +3536,7 @@ class Network(tvbo_datamodel.Network):
         G = network.create_graph()
 
         # From weight matrix
-        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
+        sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
         G = sc.create_graph(weight_threshold=0.1)
         print(f"Nodes: {G.number_of_nodes()}, Edges: {G.number_of_edges()}")
         ```
@@ -3524,7 +3622,7 @@ class Network(tvbo_datamodel.Network):
         Examples
         --------
         ```python
-        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
+        sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
         centers = sc.get_centers()
         for idx, (x, y, z) in centers.items():
             print(f"Region {idx}: ({x:.1f}, {y:.1f}, {z:.1f})")
@@ -3685,7 +3783,7 @@ class Network(tvbo_datamodel.Network):
         --------
         ```python
         import matplotlib.pyplot as plt
-        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
+        sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
 
         # Simple graph
         fig, ax = plt.subplots(figsize=(10, 10))
@@ -3888,7 +3986,7 @@ class Network(tvbo_datamodel.Network):
         Examples
         --------
         ```python
-        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
+        sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
         sc.plot_overview(log_weights=True)
         ```
 
@@ -4073,7 +4171,7 @@ class Network(tvbo_datamodel.Network):
         Examples
         --------
         ```python
-        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
+        sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
         sc.normalize()
         normalized_weights = sc.weights_matrix  # Now in [0, 1] range
         ```
@@ -4503,7 +4601,7 @@ class Network(tvbo_datamodel.Network):
         Examples
         --------
         ```python
-        sc = Connectome(parcellation={"atlas": {"name": "DesikanKilliany"}})
+        sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
         sc.add_transform("weight", "M / M_max")
         ```
         """
@@ -4564,7 +4662,7 @@ class Connectome(Network):
 
         warnings.warn(
             "Connectome is deprecated and will be removed in a future version. "
-            "Use tvbo.data.tvbo_data.connectomes.Network instead.",
+            "Use tvbo.Network (tvbo.classes.network.Network) instead.",
             DeprecationWarning,
             stacklevel=2,
         )
