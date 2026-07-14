@@ -921,14 +921,17 @@ def _tar_extractall_safe(tar, dest: Path) -> None:
         tar.extractall(dest)
 
 
-def _resolve_kit_dir(kit: Path) -> Path:
+def _resolve_kit_dir(kit: Path, force: bool = False) -> Path:
     """Resolve a kit path that may be a directory or a packaged archive.
 
     A directory is returned as-is. A ``.tar.gz`` / ``.tgz`` / ``.tar`` / ``.zip``
     archive is extracted next to itself and the kit root inside it (the directory
     holding the engine artefact) is returned, so a shipped kit runs without a manual
     unzip. An already-extracted kit next to the archive is reused rather than
-    re-extracted, so a re-submit never clobbers an in-progress ``results/``.
+    re-extracted, so a re-submit never clobbers an in-progress ``results/`` — unless
+    *force*, which re-extracts a freshly re-uploaded archive over the stale kit files
+    (Snakefile/spec/code/profile) while leaving ``results/`` and ``.snakemake/`` (not
+    in the archive) untouched, so the run resumes with the new definition.
     """
     if kit.is_dir():
         return kit
@@ -946,11 +949,14 @@ def _resolve_kit_dir(kit: Path) -> Path:
     with (zipfile.ZipFile(kit) if is_zip else tarfile.open(kit)) as arc:
         names = arc.namelist() if is_zip else arc.getnames()
         tops = sorted({n.split("/", 1)[0] for n in names if n and not n.startswith("/")})
-        for t in tops:                       # reuse an already-extracted kit; keep its results
-            d = dest / t
-            if d.is_dir() and _detect_engine_from_kit(d):
-                _common.info(f"kit already extracted → {d} (reusing)")
-                return d
+        if not force:
+            for t in tops:                   # reuse an already-extracted kit; keep its results
+                d = dest / t
+                if d.is_dir() and _detect_engine_from_kit(d):
+                    _common.info(f"kit already extracted → {d} (reusing; pass --force to re-extract)")
+                    return d
+        # --force overwrites the kit files with the (re-uploaded) archive; results/ and
+        # .snakemake/ aren't in the archive, so they survive and the run resumes.
         arc.extractall(dest) if is_zip else _tar_extractall_safe(arc, dest)
     for t in tops:
         d = dest / t
@@ -974,6 +980,12 @@ def submit_kit(
         None, "--array-throttle", min=1,
         help="Limit concurrent Slurm array tasks when using --array (e.g. 1 for one GPU at a time).",
     ),
+    force: bool = typer.Option(
+        False, "--force", "-f",
+        help="Re-extract a re-uploaded archive over an already-extracted kit, refreshing "
+             "the Snakefile/spec/code/profile. Leaves results/ and .snakemake/ intact so the "
+             "run resumes with the new definition (no need to rm the kit dir first).",
+    ),
 ) -> None:
     """Submit a kit already emitted by ``tvbo workflow slurm|snakemake|nextflow``.
 
@@ -986,7 +998,7 @@ def submit_kit(
     engine is inferred from the kit's artefact file unless ``--engine`` is given.
     Run it from a login node (Slurm) or wherever the engine's launcher is available.
     """
-    kit = _resolve_kit_dir(kit.expanduser().resolve())
+    kit = _resolve_kit_dir(kit.expanduser().resolve(), force=force)
     eng = (engine or "").lower() or _detect_engine_from_kit(kit)
     if eng is None:
         _common.die(
