@@ -5,11 +5,14 @@ Keeps the per-verb modules as thin as possible.
 from __future__ import annotations
 
 import json as _json
+import logging
 import sys
 from pathlib import Path
 from typing import Any
 
 import typer
+
+logger = logging.getLogger("tvbo.cli")
 
 
 # ---------------------------------------------------------------------------
@@ -181,10 +184,23 @@ def emit_json(payload: Any) -> None:
 
 
 def info(msg: str) -> None:
-    """Human-facing log line — always to stderr."""
-    typer.echo(msg, err=True)
+    """Human-facing progress line, routed through the central ``tvbo`` logger.
+
+    Emits at INFO on ``tvbo.cli`` (stderr by default), so ``--quiet`` /
+    ``TVBO_LOG_LEVEL`` govern it exactly as they govern in-process ``.run()``.
+    """
+    logger.info(msg)
 
 
 def die(msg: str, code: int = 1) -> None:
-    typer.echo(f"error: {msg}", err=True)
+    """Log *msg* at ERROR and abort the CLI with *code*.
+
+    A fatal abort must always explain itself: when the configured level would
+    suppress ERROR (e.g. ``--log-level OFF`` / ``TVBO_LOG_LEVEL=OFF``) the reason
+    still goes to stderr, so the CLI never exits non-zero in silence.
+    """
+    if logger.isEnabledFor(logging.ERROR):
+        logger.error(msg)
+    else:
+        typer.echo(f"error: {msg}", err=True)
     raise typer.Exit(code)

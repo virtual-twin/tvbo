@@ -8,6 +8,7 @@ connectivity) into an observation pipeline. Helper routines convert Python
 callables and curated ontology instances into the underlying datamodel shape.
 """
 
+import logging
 import importlib
 import inspect
 from types import FunctionType
@@ -34,6 +35,7 @@ from tvbo.datamodel import schema as tvbo_datamodel
 from tvbo.codegen.code import render_expression
 from tvbo.ontology import owl as ontology
 from tvbo.plot.ontology import draw_custom_nodes
+logger = logging.getLogger(__name__)
 
 
 def expand_to_4d(array):
@@ -845,7 +847,7 @@ class ObservationModel:
                 if "Input" in self.graph.predecessors(node_label):
                     node.update({"data": self.current_data})
                 elif node["data"] is None:
-                    print("Node", node_label, "has no data")
+                    logger.warning("Node %s has no data", node_label)
                 continue
 
             time = (

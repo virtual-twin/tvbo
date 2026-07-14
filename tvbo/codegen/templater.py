@@ -11,6 +11,7 @@ Provides helpers that read model, parameter, state-variable, equation,
 coupling and integrator metadata from the ontology and render it into
 executable TVBO/TVB source using the templates in `tvbo.templates`.
 """
+import logging
 import re
 from os.path import join
 from typing import Any
@@ -24,6 +25,18 @@ from sympy import pycode
 from tvbo import templates
 from tvbo.ontology import owl as ontology
 from tvbo.classes import equation as equations, coupling
+
+logger = logging.getLogger(__name__)
+
+
+def _log_source(rendered_code: str) -> None:
+    """Emit rendered code with line numbers when ``print_source`` is requested."""
+    if not logger.isEnabledFor(logging.INFO):
+        return
+    numbered = "\n".join(
+        f"{i}\t{line}" for i, line in enumerate(rendered_code.split("\n"), start=1)
+    )
+    logger.info("rendered source:\n%s", numbered)
 
 exec_globals = {}
 TEMPLATES = templates.root
@@ -289,9 +302,7 @@ def equation2class(EQ, fout=None, print_source=False, **kwargs):
         eq_type=eq_type,
     )
     if print_source:
-        # Print each line with its line number
-        for i, line in enumerate(rendered_code.split("\n"), start=1):
-            print(f"{i}\t{line}")
+        _log_source(rendered_code)
     if fout:
         with open(fout, "w") as f:
             f.write(rendered_code)
@@ -345,9 +356,7 @@ def coupling2class(CF, fout=None, print_source=False, **kwargs):
         sparse=sparse,
     )
     if print_source:
-        # Print each line with its line number
-        for i, line in enumerate(rendered_code.split("\n"), start=1):
-            print(f"{i}\t{line}")
+        _log_source(rendered_code)
     if fout:
         with open(fout, "w") as f:
             f.write(rendered_code)
@@ -475,9 +484,7 @@ def model2class(
         import_statements=import_statements,
     )
     if print_source:
-        # Print each line with its line number
-        for i, line in enumerate(rendered_code.split("\n"), start=1):
-            print(f"{i}\t{line}")
+        _log_source(rendered_code)
     if fout:
         with open(fout, "w") as f:
             f.write(rendered_code)
