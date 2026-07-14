@@ -4,7 +4,7 @@
 from tvbo.codegen import render_expression
 from tvbo.templates.tvboptim.utils import (
     get_attr, to_numeric, get_recorded_variable_names,
-    adapt_class_reference_for_tvboptim, resolve_reduction,
+    adapt_class_reference_for_tvboptim, resolve_reduction, iter_parameter_values,
 )
 
 model = experiment.dynamics
@@ -458,11 +458,10 @@ for obs_name, obs in observations.items():
         'period': get_attr(obs, 'period'),  # Sampling period (ms) for time computation
         'tail_samples': get_attr(obs, 'tail_samples'),  # Last N samples before aggregation
         'aggregation': get_attr(obs, 'aggregation'),  # Aggregation type (mean, last, first, etc.)
-        # first_passage aggregation reads its crossing threshold from the
-        # observation's `parameters` (parameters.threshold.value).
-        'agg_threshold': (lambda _pp: (to_numeric(get_attr(_pp.get('threshold'), 'value'))
-            if (hasattr(_pp, 'get') and _pp.get('threshold') is not None) else None))(
-            get_attr(obs, 'parameters') or {}),
+        # Aggregation knobs, resolved once from the observation's generic
+        # `parameters` slot so any parametric aggregation (e.g. first_passage's
+        # crossing `threshold`) reads its values by name.
+        'agg_params': dict(iter_parameter_values(get_attr(obs, 'parameters'))),
         # An Observation.dynamics observer resolves to a streaming reducer (init, update,
         # finalize). None when the observation has no dynamics — the pipeline path applies.
         'reduction': resolve_reduction(obs),
@@ -1174,7 +1173,7 @@ class ${class_name}(AbstractMonitor):
         _aggregated = True
 % elif str(aggregation) == 'first_passage':
 <%
-    _fp_thr = obs.get('agg_threshold')
+    _fp_thr = (obs.get('agg_params') or {}).get('threshold')
     if _fp_thr is None:
         raise ValueError(f"Observation '{obs.get('name')}' uses aggregation: first_passage "
                          f"but has no parameters.threshold to cross.")

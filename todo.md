@@ -468,24 +468,59 @@ Companion to the streaming-reducer work below (same loop body). MUST ship behind
 codegen flag with the Python loop as fallback + a `scan == python-loop`
 byte-equivalence test before it becomes default.
 
-### Derived observations over aggregation outputs (base-run codegen)
+### DONE (2026-07-13): equation-based derived observations
 
-Added a general **`first_passage` aggregation** (2026-07-13: `AggregationType`
-enum + `tvbo-tvboptim-observation.py.mako` branch reading `parameters.threshold`)
-— first sample where a source crosses a threshold over the time axis, via
-`argmax` of the crossing (backend-independent). Works end-to-end (Schirner Exp 50
-DM decision: `t_A`/`t_B` = first 40 Hz crossing of A/B_PFC).
+Added a general **`first_passage` aggregation** (`AggregationType` enum +
+`tvbo-tvboptim-observation.py.mako` branch reading `parameters.threshold`) — first
+sample where a source crosses a threshold over the time axis, via `argmax` of the
+crossing (backend-independent). Works end-to-end (Schirner Exp 50 DM decision:
+`t_A`/`t_B` = first 40 Hz crossing of A/B_PFC).
 
-**Gap:** a DERIVED observation whose `source` is other aggregation-output
-observations fails in the **base-run** path — e.g. `integration_time` with
-`source: [t_A, t_B]` and `equation: Min(t_A, t_B)*dt` raises `'Bunch' object has
-no attribute integration_time` (`run_simulation`), because `t_A`/`t_B` collapse to
-per-node scalars (no time axis) and the derived-obs resolver doesn't chain over
-already-aggregated observations. Fix: let the derived-observation path accept
-aggregation-output sources (scalars) and emit their equation after the aggregations
-resolve. Until then, scalar summaries of a first-passage pair (integration time =
-`min`, winner = comparison) are computed in the study's analysis from the recorded
-`t_A`/`t_B` (Schirner Exp 50).
+**Fixed** the derived-observation gap: `compute_all_observations`
+(`tvbo-tvboptim-experiment.py.mako`) only emitted CALLABLE/function-based derived
+observations — an `equation`-pipeline stage set `pipeline_call=None` and was
+silently dropped, so `obs.<name>` was never set (`'Bunch' object has no attribute
+<name>`). Added an `elif pipeline_equation and src_obs_list` branch that binds each
+source observation to a local and renders the equation inline via `jaxcode`
+(= `render_expression`, so `user_functions` + local `parameters` are forwarded,
+backend-independent). Covers BOTH the base run and the exploration grid (shared
+function). `import functools` added (render_expression emits `functools.reduce`
+for `Min`/`Max`). Validated byte-exact: Schirner Exp 50 `integration_time`/`winner`
+over scalar first-passage sources, AND a synthetic `obs_v+obs_w` / `2*(obs_v-obs_w)`
+over (300,1,1) TIME-SERIES sources (max err 0.0). No regression (observation +
+experiment codegen suites green). The gap was tvboptim-specific — Julia/pyrates/report
+templates don't share this path.
+
+### Workflow from_experiment dependency: SLURM afterok not wired
+
+FIXED (2026-07-14) the Snakemake key-mismatch: `plan().depends_on` recorded
+`str(int(source.id))` while `_ep_by_key`/output dirs key by `_san(experiment_key)`
+(explicit `key` if set) — an explicit-key source silently dropped its edge, and a
+non-numeric ref crashed `int()`. Now `plan()` stores the raw id/key/name (no int),
+and `_emit_snakemake_study` resolves each dep to the source's sanitized key via an
+id/key/name→key map (`_key_of`), so the emitted `input:` points at the source's
+real output dir. Validated: dep to a `key:baseline` (id 30) source →
+`input: f"{OUT_DIR}/baseline/result.h5"`; 37/37 workflow tests pass.
+
+STILL OPEN: the `depends_on` comment promises "SLURM afterok", but only
+`_emit_snakemake_study` consumes it — no SLURM emitter turns a cross-experiment
+`from_experiment` edge into an `afterok` (the existing afterok is the within-experiment
+array→finalize gather). A study with a `from_experiment` dep submitted via SLURM runs
+dependents unordered. Wire cross-experiment afterok into the SLURM path (or drop the
+comment's promise).
+
+### first_passage could emit a time, not a sample index (altitude)
+
+`first_passage` currently returns a sample INDEX; consumers convert to a time by
+multiplying by the sampling step (Schirner Exp 50: `Min(t_A,t_B) * 0.5`, where 0.5
+duplicates `integration.step_size`). first_passage is the only aggregation whose
+output unit isn't the source's unit, and the literal drifts if step_size changes.
+Deeper form: have the aggregation emit `argmax(...) * dt` (a first-passage time in
+ms) — then `integration_time` = `Min(t_A,t_B)` with no literal and the step lives
+in one place. Deferred (behaviour/contract change, and needs correct dt/period
+handling when the observation subsamples): the effective step is `period` when set,
+else the integration `dt`; getting that wrong silently mis-scales. Winner (order
+comparison) is unaffected either way.
 
 ### Julia printer: `argmax(...) * scalar` fails
 

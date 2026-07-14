@@ -36,6 +36,11 @@ class SweepAxis:
     values: tuple[float, ...]
     kind: str               # AXIS_KIND (parameters | initial_conditions | ...)
     placement: str = "auto"  # auto | vectorize | workflow
+    # A branch-restart axis (initial_state source_point='branch') whose cell count is
+    # known only at run time, from the source run's recorded branch. It fans into a
+    # fixed number of array shards (``chunk``); each task slices its share of the loaded
+    # branch. ``values`` is empty and ``n`` is unknown until the source result is read.
+    runtime_sized: bool = False
 
     @property
     def n(self) -> int:
@@ -81,6 +86,10 @@ class WorkflowPlan:
     def n_vectorize_cells(self) -> int:
         n = 1
         for ax in self.vectorize_axes:
+            # Runtime-sized (branch-restart) axes have an unknown cell count at plan
+            # time; they don't contribute a static factor to the vectorised total.
+            if getattr(ax, "runtime_sized", False):
+                continue
             n *= ax.n
         return n
 
@@ -89,6 +98,12 @@ class WorkflowPlan:
         if self.workflow_axes:
             # Fanned axes → one array task per ``chunk`` workflow cells.
             return max(1, (self.n_workflow_cells + self.chunk - 1) // self.chunk)
+        # A runtime-sized (branch-restart) sweep is fanned into exactly ``chunk`` array
+        # shards: the cell count is known only when the source branch is read, so each
+        # task slices its share of the loaded branch (``_branch_p[i::N]``). No cell-count
+        # cap, because there is no static count to cap against.
+        if any(getattr(ax, "runtime_sized", False) for ax in self.vectorize_axes):
+            return max(1, self.chunk)
         # Fully backend-vectorized sweep (no fanned axes): ``chunk`` is the number
         # of SLURM array shards. Each task runs ``tvbo run --slurm-chunk=$i/N`` over
         # 1/N of the sweep cells (the backend vmap/pmap-s its own share). Capped at
@@ -170,6 +185,14 @@ def extract_axes(experiment) -> list[SweepAxis]:
     else:
         explorations = list(explorations)
 
+    # A from_experiment:branch experiment restarts an analysis over a sibling run's whole
+    # recorded branch: its exploration axes carry no domain (values come from the branch at
+    # run time), so they are runtime-sized shard axes rather than statically-valued grids.
+    _ini = getattr(experiment, "initial_state", None)
+    _is_branch = (_ini is not None
+                  and str(getattr(_ini, "method", "") or "") == "from_experiment"
+                  and str(getattr(_ini, "source_point", "") or "endpoint") == "branch")
+
     out: list[SweepAxis] = []
     seen: set[str] = set()
     for expl in explorations:
@@ -185,11 +208,14 @@ def extract_axes(experiment) -> list[SweepAxis]:
                 uniq = f"{name}{i}"
                 i += 1
             seen.add(uniq)
+            _branch_axis = (_is_branch and getattr(ax, "domain", None) is None
+                            and not getattr(ax, "explored_values", None))
             out.append(SweepAxis(
                 name=uniq,
                 parameter=param,
-                values=_axis_values(ax),
+                values=() if _branch_axis else _axis_values(ax),
                 kind=axis_kind_of(param),
+                runtime_sized=_branch_axis,
             ))
     return out
 
@@ -439,7 +465,11 @@ def plan(
     if _ini is not None and str(getattr(_ini, "method", "") or "") == "from_experiment":
         _src = getattr(_ini, "source_experiment", None)
         if _src is not None:
-            depends_on.append(str(int(getattr(_src, "id", _src))))
+            # ``source_experiment`` is referenced by identifier; keep the raw
+            # reference (id, key, or name) as a string. The emitter resolves it to
+            # the source's canonical workflow key, so a non-numeric key/name here
+            # does not crash and an explicit ``key`` still matches its rule/output.
+            depends_on.append(str(getattr(_src, "id", None) or getattr(_src, "name", None) or _src))
 
     return WorkflowPlan(
         study_key=study_key,

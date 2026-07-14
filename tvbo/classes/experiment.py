@@ -1707,11 +1707,47 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         Returns the name-keyed IC dict, or ``None`` when this experiment does not
         use ``from_experiment``.
+        For ``source_point == 'branch'`` this returns ``None`` — the whole
+        recorded branch is a per-cell seed, resolved by
+        :meth:`_resolve_from_experiment_branch`.
+        """
+        return self._read_source_final(results_root, branch=False)
+
+    def _resolve_from_experiment_branch(self, results_root=None):
+        """Load the WHOLE recorded branch for ``source_point == 'branch'``.
+
+        Where :meth:`_resolve_from_experiment_seed` picks one settled point, this
+        keeps the source run's swept dimension, so every ``<sv>_final`` observation
+        loads as ``(n_cells, n_nodes)`` and the swept-axis coordinate supplies the
+        per-cell parameter values ``(n_cells,)``. An independent exploration can then
+        restart an analysis (Lyapunov exponents, Jacobian/Floquet spectra, basin
+        sampling, perturbation kicks, first-passage, …) at every branch point in
+        parallel — the per-cell, cross-experiment counterpart of the single operating
+        point above. Returns ``{axis_name, axis_values, seeds, n_cells}`` (``seeds`` a
+        name-keyed ``{sv: (n_cells, n_nodes)}`` dict), or ``None`` when this experiment
+        does not use ``from_experiment`` with ``source_point='branch'``.
+        """
+        return self._read_source_final(results_root, branch=True)
+
+    def _read_source_final(self, results_root=None, *, branch: bool):
+        """Shared loader behind the two ``from_experiment`` resolvers.
+
+        Locates the source run and reads the ``<sv>_final`` settled-state
+        observations, keyed by state-variable name (never positional). With
+        ``branch=False`` it selects a single point (``source_point``; default
+        ``endpoint``) → ``{sv: (n_nodes,)}``; with ``branch=True`` it keeps the
+        swept dimension → the branch dict described in
+        :meth:`_resolve_from_experiment_branch`. Returns ``None`` when the
+        experiment's ``source_point`` mode does not match ``branch``.
         """
         from pathlib import Path
 
         ini = getattr(self, "initial_state", None)
         if ini is None or str(getattr(ini, "method", "") or "") != "from_experiment":
+            return None
+        point = str(getattr(ini, "source_point", "") or "endpoint")
+        # Each resolver owns exactly one mode, so the run() call site can invoke both.
+        if branch != (point == "branch"):
             return None
         src = getattr(ini, "source_experiment", None)
         if src is None:
@@ -1757,19 +1793,50 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 f"observation named '{sv}_final' for each state variable."
             )
 
-        point = str(getattr(ini, "source_point", "") or "endpoint")
         ds = xr.open_dataset(src_h5, engine="h5netcdf")
         try:
-            seed = {}
+            if not branch:
+                seed = {}
+                sel = -1 if (point in ("", "endpoint")) else int(point)
+                for sv in sv_names:
+                    da = ds[_final_key(ds, sv)]
+                    for d in [d for d in da.dims if d != _node_dim(da)]:
+                        da = da.isel({d: sel})
+                    seed[sv] = jnp.asarray(np.asarray(da.values).ravel())
+                return seed
+
+            seeds, axis_values, axis_name, n_cells = {}, None, None, None
             for sv in sv_names:
                 da = ds[_final_key(ds, sv)]
-                sel = -1 if (point in ("", "endpoint")) else int(point)
-                for d in [d for d in da.dims if d != _node_dim(da)]:
-                    da = da.isel({d: sel})
-                seed[sv] = jnp.asarray(np.asarray(da.values).ravel())
+                nd = _node_dim(da)
+                sweep = [d for d in da.dims if d != nd]
+                if len(sweep) != 1:
+                    raise ValueError(
+                        "initial_state.from_experiment source_point='branch' expects the source "
+                        f"'{sv}_final' to have exactly one swept dimension besides nodes; got "
+                        f"dims {tuple(da.dims)}. Only a single-axis branch can be restarted per cell."
+                    )
+                sd = sweep[0]
+                da = da.transpose(sd, nd)                       # (n_cells, n_nodes), by name
+                seeds[sv] = jnp.asarray(np.asarray(da.values))
+                if axis_values is None:
+                    axis_name = str(sd)
+                    axis_values = (np.asarray(da.coords[sd].values) if sd in da.coords
+                                   else np.arange(da.sizes[sd], dtype=float))
+                    n_cells = int(da.sizes[sd])
+                elif int(da.sizes[sd]) != n_cells:
+                    raise ValueError(
+                        "initial_state.from_experiment source_point='branch': state variables "
+                        "disagree on the number of recorded branch points."
+                    )
         finally:
             ds.close()
-        return seed
+        return {
+            "axis_name": axis_name,
+            "axis_values": jnp.asarray(np.asarray(axis_values, dtype=float)),
+            "seeds": seeds,
+            "n_cells": n_cells,
+        }
 
     def run(self, format="tvboptim", initial_conditions=None, results_root=None, **kwargs):
         """Configure, build, and run the experiment on a backend.
@@ -1921,6 +1988,13 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             _seed = self._resolve_from_experiment_seed(results_root)
             if _seed is not None:
                 kwargs.setdefault("seed_dynamics", _seed)
+
+            # source_point='branch': the source run's WHOLE branch is a per-cell seed
+            # (axis values + settled state per point), handed over as branch_seed so an
+            # independent exploration can restart an analysis at every branch point.
+            _branch = self._resolve_from_experiment_branch(results_root)
+            if _branch is not None:
+                kwargs.setdefault("branch_seed", _branch)
 
             # Run the experiment with optional per-step timing
             if benchmark:

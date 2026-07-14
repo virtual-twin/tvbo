@@ -266,14 +266,22 @@ def _run_one(experiment, backend: str, out_dir: Path | None,
                 f"the kit with snakemake/nextflow (which fan these axes into per-cell "
                 f"tasks), or use a backend that vectorises them (e.g. tvboptim)."
             )
-        n_cells = 1
-        for ax in axes:
-            n_cells *= len(ax.values)
-        per_task = -(-n_cells // chunk_n)  # ceil
-        _common.info(
-            f"sharding: task {chunk_i}/{chunk_n} runs ~{per_task} of {n_cells} "
-            f"sweep cells (backend-vectorised, Space[{chunk_i}::{chunk_n}])"
-        )
+        if any(getattr(ax, "runtime_sized", False) for ax in axes):
+            # Branch-restart sweep: the cell count comes from the source run's recorded
+            # branch (read at run time), so this task just slices its share of it.
+            _common.info(
+                f"sharding: task {chunk_i}/{chunk_n} runs its slice of a runtime-sized "
+                f"branch (Space[{chunk_i}::{chunk_n}]; cell count known at run time)"
+            )
+        else:
+            n_cells = 1
+            for ax in axes:
+                n_cells *= len(ax.values)
+            per_task = -(-n_cells // chunk_n)  # ceil
+            _common.info(
+                f"sharding: task {chunk_i}/{chunk_n} runs ~{per_task} of {n_cells} "
+                f"sweep cells (backend-vectorised, Space[{chunk_i}::{chunk_n}])"
+            )
         shard_kwargs = dict(kwargs)
         shard_kwargs["shard"] = (chunk_i, chunk_n)
         _exec_one(experiment, backend, out_dir, shard_kwargs)

@@ -96,16 +96,7 @@ metadata. `_adiabatic_scan` is imported once at module top, gated by `has_warmst
     # Independent per value → a memory-bounded lax.map (one analysis run per point).
     _ws_seed_states = jnp.asarray(_ws_res.stats['_seed_state'])   # (n_values, n_states, n_nodes)
 % for a in ws_analysis:
-    # ${a['name']}: Benettin QR lambda_1 / xi_i at each swept value, re-seeded from that
-    # value's settled branch state so it tracks the continued branch, not a cold start.
-    _le_solve_${a['name']}, _le_cfg_${a['name']} = prepare(_network, ${solver_class}(${solver_kwargs}), t0=0.0, t1=${a['segment_time']}, dt=${dt})
-    def _lyap_at_${a['name']}(_carry):
-        _val, _seed = _carry
-        _cfg = eqx.tree_at(lambda _c: _c.${path}, _le_cfg_${a['name']}, _val)
-        _cfg = eqx.tree_at(lambda _c: _c.initial_state.dynamics, _cfg, _seed)
-        return benettin_spectrum_and_vectors(_le_solve_${a['name']}, _cfg, t=${a['segment_time']}, n=${a['n_steps']}, k=${a['n_exponents']})
-    _exps_${a['name']}, ${a['name']}_xi = jax.lax.map(_lyap_at_${a['name']}, (_ws_p, _ws_seed_states))
-    ${a['name']}_lam = _exps_${a['name']}[:, 0]   # leading exponent lambda_1(value)
+${lyapunov_map(a, path, dt, solver_class, solver_kwargs, '_ws_p', '_ws_seed_states')}\
 % endfor
 % endif
     return ExplorationResult(
@@ -115,4 +106,71 @@ metadata. `_adiabatic_scan` is imported once at module top, gated by `has_warmst
         observable='warmstart', dt=${dt}, n_up=int(_ws_res.n_up), strategy='warmstart',
     )
 % endif
+</%def>\
+##
+<%def name="lyapunov_map(a, path, dt, solver_class, solver_kwargs, values_expr, seeds_expr)">\
+    # ${a['name']}: Benettin QR lambda_1 / xi_i at each swept value, re-seeded from that
+    # value's settled state so it tracks the continued branch, not a cold start. Independent
+    # per value → a memory-bounded lax.map (one analysis run per point); slicing the paired
+    # (value, seed) arrays is all an HPC shard needs. ``${values_expr}`` are the swept values
+    # (n_cells,); ``${seeds_expr}`` the matching settled states (n_cells, n_states, n_nodes).
+    _le_solve_${a['name']}, _le_cfg_${a['name']} = prepare(_network, ${solver_class}(${solver_kwargs}), t0=0.0, t1=${a['segment_time']}, dt=${dt})
+    def _lyap_at_${a['name']}(_carry):
+        _val, _seed = _carry
+        _cfg = eqx.tree_at(lambda _c: _c.${path}, _le_cfg_${a['name']}, _val)
+        _cfg = eqx.tree_at(lambda _c: _c.initial_state.dynamics, _cfg, _seed)
+        return benettin_spectrum_and_vectors(_le_solve_${a['name']}, _cfg, t=${a['segment_time']}, n=${a['n_steps']}, k=${a['n_exponents']})
+    _exps_${a['name']}, ${a['name']}_xi = jax.lax.map(_lyap_at_${a['name']}, (${values_expr}, ${seeds_expr}))
+    ${a['name']}_lam = _exps_${a['name']}[:, 0]   # leading exponent lambda_1(value)
+</%def>\
+##
+<%doc>
+Branch-restart analysis body (from_experiment, source_point='branch')
+====================================================================
+An independent exploration that restarts a per-point analysis over another experiment's
+recorded branch. Each cell replays one branch point — its swept-parameter value and settled
+state, loaded at runtime as `_BRANCH_SEED` — and records the analysis (Lyapunov λ₁ / ξ_i).
+Because the cells are independent (unlike the sequential scan that produced the branch), HPC
+array tasks shard it by slicing the paired (value, seed) arrays: `shard=(i, N)` keeps cells j
+where j % N == i. Reuses the exact per-point Lyapunov map (`lyapunov_map`) as the warm-start
+scan's post-scan pass — one renderer, one runtime primitive — just sourcing the pairs from
+the loaded branch instead of an in-process scan.
+</%doc>\
+<%def name="branch_analysis_body(expl, solver_class, dt, solver_kwargs='')">\
+<%
+    axis = expl['axes'][0]
+    name = axis['name']
+    label = axis.get('label', name)
+    path = ("coupling.%s.%s" % (axis['coupling_key'], name)) if axis.get('is_coupling') \
+           else ("dynamics.%s" % name)
+    analyses = expl.get('warmstart_analysis') or []
+    obs_pairs = []
+    for a in analyses:
+        obs_pairs += ["'%s': %s_lam" % (a['name'], a['name']), "'%s_xi': %s_xi" % (a['name'], a['name'])]
+%>\
+    # -- Analysis restart over a sibling experiment's recorded branch (from_experiment: branch) --
+    assert _BRANCH_SEED is not None, (
+        "exploration '${expl['name']}' needs a from_experiment branch seed; run its "
+        "source_experiment first so its recorded branch is available")
+    _branch_p = jnp.asarray(_BRANCH_SEED['axis_values'])          # (n_cells,) swept values
+    # Place each state variable's per-cell settled state into its canonical row → IC batch.
+    # Keyed by name (never positional): sort the loaded states by their model row index.
+    _branch_seeds = _BRANCH_SEED['seeds']
+    _rows = sorted(_branch_seeds, key=lambda _s: _STATE_INDEX[_s])
+    _branch_ic = jnp.stack([jnp.asarray(_branch_seeds[_s]) for _s in _rows], axis=1)  # (n_cells, n_states, n_nodes)
+    # HPC shard: keep this array task's slice of the branch (cells j where j % N == i).
+    _shard = kwargs.get('shard')
+    if _shard is not None:
+        _si, _sN = _shard
+        _branch_p = _branch_p[_si::_sN]
+        _branch_ic = _branch_ic[_si::_sN]
+% for a in analyses:
+${lyapunov_map(a, path, dt, solver_class, solver_kwargs, '_branch_p', '_branch_ic')}\
+% endfor
+    return ExplorationResult(
+        name='${expl['name']}',
+        axes=[Bunch(name='${label}', explored_values=_branch_p, n=int(_branch_p.shape[0]), is_coupling=${bool(axis.get('is_coupling'))}, coupling_key=${repr(axis.get('coupling_key'))})],
+        observations={${', '.join(obs_pairs)}},
+        observable='branch', dt=${dt}, strategy='branch',
+    )
 </%def>\
