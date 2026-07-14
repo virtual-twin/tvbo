@@ -8,7 +8,7 @@ title: The Virtual Brain Ontology
 
 ::: {.column width='80%'}
 
-`tvbo` is a Python library for defining, simulating, and analyzing dynamical systems in computational neuroscience. It combines ontology-driven knowledge representation with flexible simulation capabilities.
+`tvbo` describes a whole brain-network simulation as one typed, ontology-grounded specification. From that single source it compiles runnable code across many backends and a methods report, and grounds every entity in a knowledge graph — so studies re-run without drift and models can be compared even when they share no notation.
 
 **Core Features:**
 
@@ -29,6 +29,8 @@ title: The Virtual Brain Ontology
 
 ::::
 
+
+![One specification, two payoffs: from one typed specification, TVB-O compiles code and a methods report across backends (reproducible) and grounds every entity in a knowledge graph (comparable).](_static/tvbo_overview.png){fig-align="center" width="100%"}
 
 ```{=html}
 <div class="button-container">
