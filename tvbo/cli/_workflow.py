@@ -469,7 +469,8 @@ def plan(
             # reference (id, key, or name) as a string. The emitter resolves it to
             # the source's canonical workflow key, so a non-numeric key/name here
             # does not crash and an explicit ``key`` still matches its rule/output.
-            depends_on.append(str(getattr(_src, "id", None) or getattr(_src, "name", None) or _src))
+            _sid = getattr(_src, "id", None)
+            depends_on.append(str(_sid if _sid is not None else (getattr(_src, "name", None) or _src)))
 
     return WorkflowPlan(
         study_key=study_key,

@@ -129,6 +129,25 @@ def streaming_capable(backend: str, reducer_module: str | None, reducer_name: st
     return spec is not None and spec.emit_kind == "window"
 
 
+def is_windowed_reducer(reducer_module: str | None, reducer_name: str, backend: str = "tvboptim") -> bool:
+    """True when a pipeline reducer is a registered windowed reducer for *backend*.
+
+    The registered reducers (``compute_fc`` / ``compute_fcd`` for ``tvboptim``) are
+    windowed correlation reductions — undefined over a ``< 2``-sample window, where
+    ``jnp.corrcoef`` collapses to a scalar — so codegen routes them through a
+    degenerate-window guard. Unlike :func:`lookup_streaming_reducer`, this is a pure
+    registry-membership test with no factory-availability or
+    ``TVBO_STREAMING_REDUCERS`` gating: the guard applies whether or not the
+    streaming *path* is active. It shares the one registered FC-family set so the
+    guard's routing and the streaming lookup cannot drift.
+    """
+    backend_map = _REGISTRY.get(backend)
+    if not backend_map:
+        return False
+    qualified = f"{reducer_module}.{reducer_name}" if reducer_module else reducer_name
+    return qualified in backend_map or reducer_name in backend_map
+
+
 # ── Built-in registrations ────────────────────────────────────────────────────
 # tvboptim / JAX: windowed Pearson-correlation FC — fully implemented + validated.
 register_streaming_reducer(

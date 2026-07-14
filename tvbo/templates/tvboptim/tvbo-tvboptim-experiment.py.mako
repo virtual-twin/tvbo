@@ -1807,6 +1807,21 @@ def _obs_data(_o):
     return _o if hasattr(_o, 'dtype') else getattr(_o, 'data', _o)
 
 
+def _windowed_corr(_reduce, _ts, **_kw):
+    """Guard a windowed correlation reducer (e.g. compute_fc) against a degenerate
+    window. Pearson correlation is undefined over fewer than two retained
+    timepoints, where jnp.corrcoef collapses to a 0-d scalar that then crashes the
+    diagonal write. A window like this arises when a derived FC observation is
+    materialized on a short simulation (e.g. one BOLD sample) — the value is not
+    meaningful there, so return a NaN (n, n) matrix instead of aborting the whole
+    observation pipeline. Windows with >= 2 retained samples delegate to ``_reduce``
+    unchanged, so full FC stays byte-identical."""
+    if _ts.shape[0] - int(_kw.get('skip_t', 0)) < 2:
+        _n = _ts.shape[-1]
+        return jnp.full((_n, _n), jnp.nan).at[jnp.diag_indices(_n)].set(0)
+    return _reduce(_ts, **_kw)
+
+
 def compute_all_observations(result, state, result_transient=None, only=None):
     # ``only`` (a set of observation names) restricts computation to those observations
     # plus, by the caller's closure, whatever they derive from. Default None computes
@@ -1936,11 +1951,24 @@ def compute_all_observations(result, state, result_transient=None, only=None):
 
     # Build final args: positional first, then keyword
     all_args = positional_args + pipeline_args
+    _args = ', '.join(all_args)
+    # A windowed correlation reducer is undefined over a <2-sample window; route it
+    # through _windowed_corr so a degenerate window (e.g. a derived FC materialized on
+    # a single-BOLD-sample simulation) returns NaN instead of crashing. The FC-family
+    # set is the streaming-reducer registry (shared with the streaming path), not a
+    # hand-maintained list. Every other reducer emits a plain call, byte-identical.
+    from tvbo.codegen.streaming_reducers import is_windowed_reducer
+    _reduce_mod, _, _reduce_name = pipeline_call.rpartition('.') if pipeline_call else ('', '', '')
+    _pipeline_emit = (
+        f"_windowed_corr({pipeline_call}, {_args})"
+        if pipeline_call and is_windowed_reducer(_reduce_mod or None, _reduce_name)
+        else f"{pipeline_call}({_args})"
+    )
 %>
 % if pipeline_call and src_obs_list:
     # ${dobs_name}: derived from ${', '.join(src_obs_list)}
     if (only is None or '${dobs_name}' in only) and all(hasattr(obs, _src) for _src in [${', '.join(f"'{s}'" for s in src_obs_list)}]):
-        obs.${dobs_name} = ${pipeline_call}(${', '.join(all_args)})
+        obs.${dobs_name} = ${_pipeline_emit}
 % elif pipeline_equation and src_obs_list:
     # ${dobs_name}: equation over ${', '.join(src_obs_list)}
     if (only is None or '${dobs_name}' in only) and all(hasattr(obs, _src) for _src in [${', '.join(f"'{s}'" for s in src_obs_list)}]):

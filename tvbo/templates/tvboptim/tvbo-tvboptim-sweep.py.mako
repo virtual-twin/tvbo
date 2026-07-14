@@ -158,19 +158,30 @@ the loaded branch instead of an in-process scan.
     _branch_seeds = _BRANCH_SEED['seeds']
     _rows = sorted(_branch_seeds, key=lambda _s: _STATE_INDEX[_s])
     _branch_ic = jnp.stack([jnp.asarray(_branch_seeds[_s]) for _s in _rows], axis=1)  # (n_cells, n_states, n_nodes)
+    # Original branch position of each cell — preserved through sharding so the reassembled
+    # result reorders to the source traversal (up then down). A bidirectional branch repeats
+    # its swept values, so the position index (not the value) is what keeps the two hysteresis
+    # branches separable across shards.
+    _branch_idx = jnp.arange(_branch_p.shape[0])
     # HPC shard: keep this array task's slice of the branch (cells j where j % N == i).
     _shard = kwargs.get('shard')
     if _shard is not None:
         _si, _sN = _shard
         _branch_p = _branch_p[_si::_sN]
         _branch_ic = _branch_ic[_si::_sN]
+        _branch_idx = _branch_idx[_si::_sN]
 % for a in analyses:
 ${lyapunov_map(a, path, dt, solver_class, solver_kwargs, '_branch_p', '_branch_ic')}\
 % endfor
     return ExplorationResult(
         name='${expl['name']}',
-        axes=[Bunch(name='${label}', explored_values=_branch_p, n=int(_branch_p.shape[0]), is_coupling=${bool(axis.get('is_coupling'))}, coupling_key=${repr(axis.get('coupling_key'))})],
+        # The restarted branch is a flat, ordered sequence of points, not a rectangular grid:
+        # index it by branch position so shard files reassemble (concat + sort by branch_point)
+        # losslessly even where the swept value repeats (bidirectional). cell_coords marks the
+        # flat 'point' layout — the same result whether run whole or fanned across array tasks.
+        axes=[Bunch(name='branch_point', explored_values=_branch_idx, n=int(_branch_idx.shape[0]))],
         observations={${', '.join(obs_pairs)}},
+        cell_coords={'branch_point': _branch_idx},
         observable='branch', dt=${dt}, strategy='branch',
     )
 </%def>\
