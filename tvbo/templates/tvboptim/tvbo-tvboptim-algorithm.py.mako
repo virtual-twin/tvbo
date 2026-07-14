@@ -283,7 +283,7 @@ if network and network.coupling:
                 s_var = int(val)
         return (str(call.module), str(call.name), skip_t, s_var)
 
-    streaming_map = {}  # derived_obs_name -> {src_obs, factory, skip_t, s_var}
+    streaming_map = {}  # derived_obs_name -> {src_obs, spec, skip_t, s_var}
     if use_sliding_window:
         for _dobs_name, _src_list in dependent_observations.items():
             _dobs_def = derived_observations_dict.get(_dobs_name)
@@ -298,7 +298,7 @@ if network and network.coupling:
             # specs keep the recompute fallback until the stride branch lands.
             if _spec is not None and _spec.emit_kind == 'window' and _src_list[0] in source_observations_needed:
                 streaming_map[_dobs_name] = dict(
-                    src_obs=_src_list[0], factory=_spec.factory,
+                    src_obs=_src_list[0], spec=_spec,
                     skip_t=_skip_t, s_var=_s_var,
                 )
 %>
@@ -566,13 +566,57 @@ def run_${algo_name}(
 % endfor
 % endif
 
+% if streaming_map:
+<%
+    from tvbo.codegen.reducers import resolve_streaming_reducer
+    # All wired ('window') reducers share one recipe here; lower its declarative spec
+    # (streaming_reducers.py) to this backend's source. The scaffolding below is generic
+    # — it emits the resolved state / assignments for ANY reducer spec, no use case baked in.
+    _r = resolve_streaming_reducer(next(iter(streaming_map.values()))['spec'], 'jax')
+    _acc = ', '.join(_r['state'])
+%>
+    # Streaming windowed reducer, emitted from a declarative recurrence spec and lowered
+    # to this backend by the sympy printers — tvbo needs no backend reducer. The
+    # scaffolding (buffer slicing, sample selection, protocol object) is backend-shaped;
+    # the accumulator math is the resolved spec: `resync` rebuilds the state from the
+    # window, `add`/`evict` fold in / drop one sample, `emit` reads out the reduced value.
+    from types import SimpleNamespace as _StreamReducer
+    def _make_windowed_reducer(s_var=0, skip_t=0):
+        def _samp(x):
+            return x if x.ndim == 1 else x[s_var, :]
+        def add(acc, x_new):
+            ${_acc} = acc
+            v = _samp(x_new)
+% for _lhs, _rhs in _r['add']:
+            ${_lhs} = ${_rhs}
+% endfor
+            return (${_acc})
+        def evict(acc, x_old):
+            ${_acc} = acc
+            v = _samp(x_old)
+% for _lhs, _rhs in _r['evict']:
+            ${_lhs} = ${_rhs}
+% endfor
+            return (${_acc})
+        def emit(acc):
+            ${_acc} = acc
+            return ${_r['emit']}
+        def resync(buffer):
+            b = buffer[skip_t:]
+            x = b[:, s_var, :] if b.ndim == 3 else b
+% for _lhs, _rhs in _r['resync']:
+            ${_lhs} = ${_rhs}
+% endfor
+            return (${_acc})
+        return _StreamReducer(add=add, evict=evict, emit=emit, resync=resync)
+% endif
 % for dobs_name, sinfo in streaming_map.items():
     # Streaming reducer for '${dobs_name}' over the '${sinfo['src_obs']}' window:
-    # replaces the O(window*N^2)/step ${sinfo['factory'].rsplit('.', 1)[-1]}-equivalent
-    # recompute with an O(N^2)/step incremental accumulator. The accumulator is
-    # (re)built EXACTLY from the ring buffer here (post-warmup / post-passed-buffer)
-    # and re-synced every _${dobs_name}_resync_every steps to reset float drift.
-    _${dobs_name}_reducer = ${sinfo['factory']}(s_var=${sinfo['s_var']}, skip_t=${sinfo['skip_t']})
+    # replaces the O(window*N^2)/step recompute with an O(N^2)/step incremental
+    # accumulator. The accumulator is (re)built EXACTLY from the ring buffer here
+    # (post-warmup / post-passed-buffer) and re-synced every _${dobs_name}_resync_every
+    # steps to reset float drift.
+    _${dobs_name}_reducer = _make_windowed_reducer(s_var=${sinfo['s_var']}, skip_t=${sinfo['skip_t']})
     _${dobs_name}_resync_every = int(window_size) if resync_every is None else int(resync_every)
     _${dobs_name}_acc = _${dobs_name}_reducer.resync(_${sinfo['src_obs']}_buffer)
 % endfor
