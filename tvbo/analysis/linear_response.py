@@ -14,12 +14,19 @@ metadata — the network Jacobian ``A`` at an operating point, and the noise inp
 matrix ``Q`` — from which fixed-point observables follow (stationary covariance
 via the Lyapunov equation, power spectra, Fisher information; Deco 2014 Figs 5/6).
 
-Everything model-specific is **symbolic** (``sympy`` differentiation of the dfun,
-with the derived-variable chain unfolded), so the same derivation renders to any
-backend through the code generator. Only the generic assembly (block-diagonal
-local Jacobian + connectome-scattered coupling Jacobian) and the linear-algebra
-solves are numeric. This mirrors, on the JAX/tvboptim side, exactly what the
-Julia network-continuation emitter builds — one metadata source, two backends.
+Everything model-specific is **symbolic** and backend-independent: :func:`jacobian_terms`
+differentiates the dfun metadata with ``sympy`` (derived-variable chain unfolded) and
+returns the symbolic per-node Jacobians, which the **code generator renders to any
+backend** through ``render_expression``. The network assembly (block-diagonal local
+Jacobian + connectome-scattered coupling Jacobian) is likewise **emitted by codegen
+per backend** — a ``vmap``/scatter on JAX, a loop on Julia — exactly as the network RHS
+is emitted (one metadata source, every backend); ideally through the backend-abstracted
+``arrayops`` structural primitives so the assembly, too, is one handler.
+
+:func:`network_jacobian` below is a **NumPy reference oracle only** — it assembles ``A``
+numerically so the symbolic terms can be verified against a finite-difference Jacobian in
+tests. It is NOT the runtime path (the runtime path is the codegen described above); do
+not call it from generated code.
 
 The full network Jacobian is
 
@@ -56,20 +63,20 @@ def _dfun_symbols(model):
         svs[0],
     )
 
-    dvars = [
-        (n, sp.sympify(dv.equation.rhs))
-        for n, dv in (getattr(model, "derived_variables", {}) or {}).items()
-    ]
+    from tvbo.classes.equation import substitute_function_in_state_equations
+
+    dvars = {n: sp.sympify(dv.equation.rhs)
+             for n, dv in (getattr(model, "derived_variables", {}) or {}).items()}
     zero_local = {sp.Symbol(c): 0 for c in local_cpls}
 
-    def resolve(rhs):
-        expr = sp.sympify(rhs)
-        for _ in range(len(dvars) + 2):  # unfold the (topologically ordered) chain
-            expr = expr.subs({sp.Symbol(n): d for n, d in dvars})
-        return expr.subs(zero_local)  # zero local coupling AFTER unfolding
-
+    # Inline the derived-variable chain into the state equations with the codebase's
+    # canonical inliner, iterated to unfold nested references (a derived var may
+    # reference another), then zero local (non-network) coupling inputs.
+    sv_eqs = {v: sp.sympify(model.state_variables[v].equation.rhs) for v in svs}
+    for _ in range(len(dvars) + 1):
+        substitute_function_in_state_equations(sv_eqs, dvars)
     state_syms = [sp.Symbol(v) for v in svs]
-    f = [resolve(model.state_variables[v].equation.rhs) for v in svs]
+    f = [sv_eqs[v].subs(zero_local) for v in svs]
     return svs, state_syms, net_cpls, source_var, f
 
 
@@ -96,7 +103,13 @@ def jacobian_terms(model):
 
 
 def network_jacobian(model, weights: Any, state: Any, params: dict) -> np.ndarray:
-    """Assemble the full network Jacobian ``A`` at an operating point (numeric).
+    """NumPy **reference oracle** — assemble ``A`` numerically for verification only.
+
+    Used by tests to check the symbolic :func:`jacobian_terms` against a
+    finite-difference Jacobian. The runtime path renders those symbolic terms to the
+    target backend and assembles ``A`` in codegen (``vmap``/scatter on JAX, loop on
+    Julia); this function is deliberately NumPy and must not be called from generated
+    code.
 
     Parameters
     ----------
