@@ -192,6 +192,15 @@ def info(msg: str) -> None:
     logger.info(msg)
 
 
+def warn(msg: str) -> None:
+    """Human-facing warning line, routed through the central ``tvbo`` logger.
+
+    Emits at WARNING on ``tvbo.cli`` (stderr by default), so ``--quiet`` /
+    ``TVBO_LOG_LEVEL`` govern it exactly as they govern ``info`` / ``.run()``.
+    """
+    logger.warning(msg)
+
+
 def die(msg: str, code: int = 1) -> None:
     """Log *msg* at ERROR and abort the CLI with *code*.
 
