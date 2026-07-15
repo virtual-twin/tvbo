@@ -22,11 +22,11 @@ def _build_graph(network: "Network", delays: bool = True, max_delay: float | Non
     Returns a ``DenseDelayGraph`` when *delays* is True and the network
     has non-zero tract lengths, otherwise a ``DenseGraph``.
 
-    ``max_delay`` is forwarded to ``DenseDelayGraph`` to size the (static)
-    history buffer explicitly. Pass it as a concrete upper bound when the
-    delays are meant to vary differentiably (e.g. ``delays = lengths / speed``
-    with ``speed`` optimised), so the buffer length stays static while the
-    delays may become JAX tracers.
+    ``max_delay`` is forwarded to ``DenseDelayGraph`` as its ``max_delay_bound``
+    to size the (static) history buffer explicitly. Pass it as a concrete upper
+    bound when the delays are meant to vary differentiably (e.g.
+    ``delays = lengths / speed`` with ``speed`` optimised), so the buffer length
+    stays static while the delays may become JAX tracers.
     """
     import jax.numpy as jnp
     from tvboptim.experimental.network_dynamics.graph import DenseGraph
@@ -42,7 +42,7 @@ def _build_graph(network: "Network", delays: bool = True, max_delay: float | Non
             weights=weights,
             delays=delay_matrix,
             region_labels=labels,
-            max_delay=max_delay,
+            max_delay_bound=max_delay,
         )
     return DenseGraph(weights=weights, region_labels=labels)
 
@@ -215,7 +215,9 @@ def to_tvboptim(
     if noise is None and dyn_obj is not None:
         noise = _extract_noise(dyn_obj)
 
-    # Enable differentiable (interpolated) delays on every delayed coupling.
+    # Enable differentiable (interpolated) delays on every delayed coupling:
+    # linear history interpolation makes d(state)/d(delay) informative, so
+    # conduction speed becomes gradient-optimisable.
     if interpolate_delays:
         if isinstance(coupling, dict):
             _coups = coupling.values()
@@ -224,8 +226,8 @@ def to_tvboptim(
         else:
             _coups = [coupling]
         for _c in _coups:
-            if hasattr(_c, "interpolate_delays"):
-                _c.interpolate_delays = True
+            if hasattr(_c, "history_interpolation"):
+                _c.history_interpolation = "linear"
 
     from tvboptim.experimental.network_dynamics import Network as TvboptimNetwork
 

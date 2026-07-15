@@ -321,7 +321,7 @@ def resolve_coupling_spec(coupling, coupling_key, model, coupling_inputs_info, f
 
     class_name = coupling_key.replace(" ", "").replace("-", "")
     base_class = "DelayedCoupling" if has_delay else "InstantaneousCoupling"
-    interp_kw = "interpolate_delays=True, " if (has_delay and bool(getattr(coupling, "interpolate_delays", False))) else ""
+    interp_kw = "history_interpolation='linear', " if (has_delay and bool(getattr(coupling, "interpolate_delays", False))) else ""
 
     # Target-state aliases (theta_i) referenced in post_expression.
     post_aliases_i = []
