@@ -88,22 +88,40 @@ def ${name}(x, weights, p):
     return _A
 </%def>\
 ##
-## Stationary covariance at the deterministic operating point (Deco 2014 Fig 5, Eq 24):
-## settle the noise-free vector field to the fixed point, linearise (Jacobian A), then solve
-## the continuous Lyapunov equation A Σ + Σ Aᵀ + Q = 0 (Q = σ² I) by eigendecomposition —
-## backend-independent (jnp.linalg.eig/inv), no scipy. Returns the excitatory-block covariance
-## P[:N,:N]. Reuses the module-level ${vf}/${jac} functions (emitted once via lr_vf/lr_jacobian).
-<%def name="lr_covariance(ctx, name, sigma, n_settle=200000, dt=0.1, vf='_lr_vf', jac='_lr_jacobian')">\
-def ${name}(x0, weights, p):
-    _W = jnp.asarray(weights); _N = _W.shape[0]
-    def _settle_step(x, _):
-        return x + ${dt} * ${vf}(x, _W, p), None
-    _fp = jax.lax.scan(_settle_step, jnp.asarray(x0), None, length=${n_settle})[0]
-    _A = ${jac}(_fp, _W, p)
-    _Q = (${sigma} ** 2) * jnp.eye(_A.shape[0])
-    _lam, _V = jnp.linalg.eig(_A)
+## Operating point: settle the noise-free vector field to the deterministic fixed point and
+## linearise (Jacobian A). Emitted ONCE — the covariance/psd/fisher observables below are all
+## linear-algebra solves on this shared A, so the FP settle and eig assembly run a single time.
+## Binds _lr_fp (fixed point) and _lr_A (Jacobian) using _lr_weights/_lr_params/_lr_x0 (set by
+## the caller). Reuses the module-level ${vf}/${jac}.
+<%def name="lr_operating_point(ctx, dt=0.1, n_settle=200000, vf='_lr_vf', jac='_lr_jacobian')">\
+def _lr_settle(_x, _):
+    return _x + ${dt} * ${vf}(_x, _lr_weights, _lr_params), None
+_lr_fp = jax.lax.scan(_lr_settle, _lr_x0, None, length=${n_settle})[0]
+_lr_A = ${jac}(_lr_fp, _lr_weights, _lr_params)
+</%def>\
+##
+## Continuous Lyapunov Σ solve on the shared A (Deco 2014 Fig 5, Eq 24): A Σ + Σ Aᵀ + Q = 0,
+## Q = σ² I, by eigendecomposition Σ = V M Vᴴ, M = -(V⁻¹QV⁻ᴴ)/(λᵢ+λ̄ⱼ) — backend-independent
+## (jnp.linalg.eig/inv), no scipy. Returns the excitatory-block covariance P[:N,:N].
+<%def name="lr_covariance(ctx, name, sigma)">\
+def ${name}(A):
+    _n = A.shape[0]; _N = _n // ${ctx['n_sv']}
+    _Q = (${sigma} ** 2) * jnp.eye(_n)
+    _lam, _V = jnp.linalg.eig(A)
     _Vi = jnp.linalg.inv(_V)
     _M = -(_Vi @ _Q.astype(_V.dtype) @ _Vi.conj().T) / (_lam[:, None] + jnp.conj(_lam)[None, :])
-    _P = (_V @ _M @ _V.conj().T).real
-    return _P[:_N, :_N]
+    return (_V @ _M @ _V.conj().T).real[:_N, :_N]
+</%def>\
+##
+## Analytic power spectrum on the shared A (Deco 2014 Fig 5, Eq 28): per excitatory node,
+## Φ_k(ω) = σ² Σ_l |(iωI − A)⁻¹_{kl}|², over a log-frequency grid (Hz). Returns [n_freq, N].
+<%def name="lr_psd(ctx, name, sigma, f_lo=0.1, f_hi=50.0, n_freq=128)">\
+def ${name}(A):
+    _n = A.shape[0]; _N = _n // ${ctx['n_sv']}
+    _freqs = jnp.geomspace(${f_lo}, ${f_hi}, ${n_freq})
+    _I = jnp.eye(_n, dtype=jnp.complex128)
+    def _phi(_f):
+        _M = jnp.linalg.inv(1j * (2.0 * jnp.pi * _f) * _I - A.astype(jnp.complex128))
+        return (${sigma} ** 2) * jnp.sum(jnp.abs(_M[:_N]) ** 2, axis=1)
+    return jax.vmap(_phi)(_freqs)
 </%def>\
