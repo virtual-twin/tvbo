@@ -127,10 +127,18 @@ def render_jacobian_code(model, func_name: str = "_lr_jacobian", fmt: str = "jax
     n_sv, n_cpl = len(svs), len(net_cpls)
     src_k = svs.index(src)
     pnames = [p.name for p in model.parameters.values()]
+    # Heterogeneous (per-node) parameters — e.g. the FIC-tuned J_i, shape (n_nodes,) —
+    # are indexed by the node index inside the per-node function; scalar params are not.
+    pernode = {p.name for p in model.parameters.values() if getattr(p, "heterogeneous", False)}
     syms = svs + net_cpls + pnames  # names the printer treats as plain symbols
 
     def _entry(expr):
         return render_expression(expr, format="jax", parameters=syms)
+
+    def _param_unpack(p):
+        # per-node params are indexed by the traced node index → must be jnp for the gather
+        return (f"    {p} = jnp.asarray(getattr(p_, '{p}'))[_i]" if p in pernode
+                else f"    {p} = getattr(p_, '{p}')")
 
     def _matrix_fn(name, M, ncol):
         rows = ", ".join(
@@ -138,8 +146,8 @@ def render_jacobian_code(model, func_name: str = "_lr_jacobian", fmt: str = "jax
         )
         unpack = [f"    {v} = s[{i}]" for i, v in enumerate(svs)]
         unpack += [f"    {c} = c[{i}]" for i, c in enumerate(net_cpls)]
-        unpack += [f"    {p} = getattr(p_, '{p}')" for p in pnames]
-        return [f"def {name}(s, c, p_):", *unpack, f"    return jnp.array([{rows}])", ""]
+        unpack += [_param_unpack(p) for p in pnames]
+        return [f"def {name}(s, c, p_, _i):", *unpack, f"    return jnp.array([{rows}])", ""]
 
     lines: list[str] = []
     lines += _matrix_fn(f"{func_name}_jloc", t["Jloc"], n_sv)
@@ -148,10 +156,10 @@ def render_jacobian_code(model, func_name: str = "_lr_jacobian", fmt: str = "jax
         f"def {func_name}(x_star, weights, p):",
         f"    _W = jnp.asarray(weights); _X = jnp.asarray(x_star); _N = _W.shape[0]",
         f"    _C = jnp.stack([_W @ _X[{src_k}]" + f" for _ in range({n_cpl})])" if n_cpl else "    _C = jnp.zeros((0, _N))",
-        f"    _Jl = jax.vmap(lambda i: {func_name}_jloc(_X[:, i], _C[:, i], p))(jnp.arange(_N))",
+        f"    _Jl = jax.vmap(lambda i: {func_name}_jloc(_X[:, i], _C[:, i], p, i))(jnp.arange(_N))",
     ]
     if n_cpl:
-        lines.append(f"    _Jc = jax.vmap(lambda i: {func_name}_jcpl(_X[:, i], _C[:, i], p))(jnp.arange(_N))")
+        lines.append(f"    _Jc = jax.vmap(lambda i: {func_name}_jcpl(_X[:, i], _C[:, i], p, i))(jnp.arange(_N))")
     lines.append(f"    _A = jnp.zeros(({n_sv} * _N, {n_sv} * _N))")
     for k in range(n_sv):
         for l in range(n_sv):
@@ -204,7 +212,6 @@ def network_jacobian(model, weights: Any, state: Any, params: dict) -> np.ndarra
     arg_syms = t["state_syms"] + t["coupling_syms"] + [sp.Symbol(p) for p in params]
     Jloc = sp.lambdify(arg_syms, t["Jloc"], "numpy")
     Jcpl = sp.lambdify(arg_syms, t["Jcpl"], "numpy")
-    pvals = list(params.values())
 
     # coupling per network input per node: c_i = Σ_j W_ij s_src,j
     C = {c: W @ Y[src_k] for c in net_cpls}
@@ -212,8 +219,10 @@ def network_jacobian(model, weights: Any, state: Any, params: dict) -> np.ndarra
     A = np.zeros((n_sv * N, n_sv * N))
     for i in range(N):
         ci = [C[c][i] for c in net_cpls]
-        jl = np.asarray(Jloc(*Y[:, i], *ci, *pvals), float).reshape(n_sv, n_sv)
-        jc = np.asarray(Jcpl(*Y[:, i], *ci, *pvals), float).reshape(n_sv, len(net_cpls))
+        # per-node (array-valued) params are indexed by node; scalars pass through
+        pvals_i = [np.asarray(v)[i] if np.ndim(v) > 0 else v for v in params.values()]
+        jl = np.asarray(Jloc(*Y[:, i], *ci, *pvals_i), float).reshape(n_sv, n_sv)
+        jc = np.asarray(Jcpl(*Y[:, i], *ci, *pvals_i), float).reshape(n_sv, len(net_cpls))
         for k in range(n_sv):
             for l in range(n_sv):
                 A[k * N + i, l * N + i] += jl[k, l]  # local block (node-diagonal)
