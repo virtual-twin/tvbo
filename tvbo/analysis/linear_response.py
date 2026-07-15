@@ -102,6 +102,70 @@ def jacobian_terms(model):
     }
 
 
+def render_jacobian_code(model, func_name: str = "_lr_jacobian", fmt: str = "jax") -> str:
+    """Emit backend code that builds the network Jacobian ``A`` at an operating point.
+
+    Renders the symbolic per-node Jacobians (:func:`jacobian_terms`) to ``fmt`` via
+    ``render_expression``, and emits the assembly — ``vmap`` over nodes for the local
+    block-diagonal plus a connectome scatter for the coupling block. The result is a
+    self-contained function
+
+        ``<func_name>(x_star, weights, p) -> A``   (``x_star``: [n_sv, N], ``A``: [n_sv·N, n_sv·N])
+
+    that generated analysis code calls with the fixed point, the connectome, and the
+    resolved parameter bunch ``p``. Backend-independent by construction: only the entry
+    expressions (via the printer) and the array vocabulary differ per backend; ``fmt='jax'``
+    emits ``jnp``. No numpy in the emitted code.
+    """
+    from tvbo.codegen import render_expression
+
+    if fmt != "jax":
+        raise NotImplementedError(f"render_jacobian_code: backend {fmt!r} not yet emitted (jax only).")
+
+    t = jacobian_terms(model)
+    svs, net_cpls, src = t["state_vars"], t["net_couplings"], t["source_var"]
+    n_sv, n_cpl = len(svs), len(net_cpls)
+    src_k = svs.index(src)
+    pnames = [p.name for p in model.parameters.values()]
+    syms = svs + net_cpls + pnames  # names the printer treats as plain symbols
+
+    def _entry(expr):
+        return render_expression(expr, format="jax", parameters=syms)
+
+    def _matrix_fn(name, M, ncol):
+        rows = ", ".join(
+            "[" + ", ".join(_entry(M[k, l]) for l in range(ncol)) + "]" for k in range(n_sv)
+        )
+        unpack = [f"    {v} = s[{i}]" for i, v in enumerate(svs)]
+        unpack += [f"    {c} = c[{i}]" for i, c in enumerate(net_cpls)]
+        unpack += [f"    {p} = getattr(p_, '{p}')" for p in pnames]
+        return [f"def {name}(s, c, p_):", *unpack, f"    return jnp.array([{rows}])", ""]
+
+    lines: list[str] = []
+    lines += _matrix_fn(f"{func_name}_jloc", t["Jloc"], n_sv)
+    lines += _matrix_fn(f"{func_name}_jcpl", t["Jcpl"], max(n_cpl, 1)) if n_cpl else []
+    lines += [
+        f"def {func_name}(x_star, weights, p):",
+        f"    _W = jnp.asarray(weights); _X = jnp.asarray(x_star); _N = _W.shape[0]",
+        f"    _C = jnp.stack([_W @ _X[{src_k}]" + f" for _ in range({n_cpl})])" if n_cpl else "    _C = jnp.zeros((0, _N))",
+        f"    _Jl = jax.vmap(lambda i: {func_name}_jloc(_X[:, i], _C[:, i], p))(jnp.arange(_N))",
+    ]
+    if n_cpl:
+        lines.append(f"    _Jc = jax.vmap(lambda i: {func_name}_jcpl(_X[:, i], _C[:, i], p))(jnp.arange(_N))")
+    lines.append(f"    _A = jnp.zeros(({n_sv} * _N, {n_sv} * _N))")
+    for k in range(n_sv):
+        for l in range(n_sv):
+            lines.append(
+                f"    _A = _A.at[{k}*_N:{k+1}*_N, {l}*_N:{l+1}*_N].add(jnp.diag(_Jl[:, {k}, {l}]))"
+            )
+        for cix in range(n_cpl):
+            lines.append(
+                f"    _A = _A.at[{k}*_N:{k+1}*_N, {src_k}*_N:{src_k+1}*_N].add(_Jc[:, {k}, {cix}][:, None] * _W)"
+            )
+    lines.append("    return _A")
+    return "\n".join(lines)
+
+
 def network_jacobian(model, weights: Any, state: Any, params: dict) -> np.ndarray:
     """NumPy **reference oracle** — assemble ``A`` numerically for verification only.
 
