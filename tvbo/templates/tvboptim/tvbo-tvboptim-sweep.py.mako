@@ -120,7 +120,12 @@ ${lyapunov_map(a, path, dt, solver_class, solver_kwargs, '_ws_p', '_ws_seed_stat
         _cfg = eqx.tree_at(lambda _c: _c.${path}, _le_cfg_${a['name']}, _val)
         _cfg = eqx.tree_at(lambda _c: _c.initial_state.dynamics, _cfg, _seed)
         return benettin_spectrum_and_vectors(_le_solve_${a['name']}, _cfg, t=${a['segment_time']}, n=${a['n_steps']}, k=${a['n_exponents']})
-    _exps_${a['name']}, ${a['name']}_xi = jax.lax.map(_lyap_at_${a['name']}, (${values_expr}, ${seeds_expr}))
+    _lyap_pairs_${a['name']} = (${values_expr}, ${seeds_expr})
+    # Stream "<name> i/N" as each independent Lyapunov point completes (JAX-native
+    # jax.debug.callback per lax.map step) so a long branch does not go silent.
+    _exps_${a['name']}, ${a['name']}_xi = jax.lax.map(
+        progress_ticker(len(_lyap_pairs_${a['name']}[0]), label="${a['name']}")(_lyap_at_${a['name']}),
+        _lyap_pairs_${a['name']})
     ${a['name']}_lam = _exps_${a['name']}[:, 0]   # leading exponent lambda_1(value)
 </%def>\
 ##
