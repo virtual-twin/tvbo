@@ -97,6 +97,7 @@ def jacobian_terms(model):
         "net_couplings": net_cpls,
         "coupling_syms": cpl_syms,
         "source_var": source_var,
+        "rhs": f,  # per-node RHS (derived-var chain unfolded, local coupling zeroed)
         "Jloc": fmat.jacobian(state_syms),
         "Jcpl": fmat.jacobian(cpl_syms) if cpl_syms else sp.zeros(len(svs), 0),
     }
@@ -128,7 +129,7 @@ def linear_response_context(model):
         "pnames": pnames,
         "pernode": pernode,
         "syms": svs + net_cpls + pnames,
-        "rhs": _dfun_symbols(model)[4],
+        "rhs": t["rhs"],
         "Jloc": t["Jloc"],
         "Jcpl": t["Jcpl"],
     }
