@@ -103,11 +103,21 @@ export PYTHONPATH="code:${'$'}{PYTHONPATH:-}"
 ## target (e.g. their FC) before the fit. Independent per-subject results — no gather.
 SUBJECTS=(${" ".join(str(v) for v in subject_axis.values)})
 SUBJECT=${'$'}{SUBJECTS[$SLURM_ARRAY_TASK_ID]}
+## The frozen spec's dataset.bids_root is machine-specific (the per-subject data
+## tree). Override it from $TVBO_BIDS_ROOT when set, else keep the frozen value —
+## so this kit ports to another cluster with no hand-edit: `export TVBO_BIDS_ROOT=…`.
+## ${'$'}{arr[@]+"${'$'}{arr[@]}"} expands to nothing (not an error) under `set -u`
+## when the array is empty.
+bids_root_override=()
+if [ -n "${'$'}{TVBO_BIDS_ROOT:-}" ]; then
+    bids_root_override=(--set "dataset.bids_root=${'$'}{TVBO_BIDS_ROOT}")
+fi
 exec ${prefix}tvbo run ${run_target} \
     --backend=${plan.backend.name} \
 % if plan.experiment_selector and not spec_relpath:
     --experiment="${plan.experiment_selector}" \
 % endif
+    ${'$'}{bids_root_override[@]+"${'$'}{bids_root_override[@]}"} \
     --subject="${'$'}{SUBJECT}" \
     -o ${out_pat}
 % else:

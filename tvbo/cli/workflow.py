@@ -637,18 +637,68 @@ def _write_snakemake_profile(out_dir: Path, block: dict) -> None:
 
 
 def _pack_kit(out_dir: Path) -> Path:
-    """Write ``<out_dir>.tar.gz`` next to the kit, ready to ship + submit.
+    """Archive the kit into ``<out_dir>.tar.gz`` and remove the loose directory.
 
-    The archive holds the kit directory at top level, so ``tvbo workflow submit
-    <archive>`` extracts and runs it directly (see :func:`_resolve_kit_dir`).
+    The tarball IS the shippable artifact: ``tvbo workflow submit <archive>`` (and
+    any run) re-extracts it, so keeping the uncompressed directory beside it is pure
+    clutter. The archive holds the kit directory at top level, so submit extracts
+    and runs it directly (see :func:`_resolve_kit_dir`). Emit without ``--pack`` when
+    the loose directory is what you want (e.g. to ``sbatch`` it in place).
     """
     import shutil
 
     out_dir = Path(out_dir)
     archive = shutil.make_archive(str(out_dir), "gztar",
                                   root_dir=str(out_dir.parent), base_dir=out_dir.name)
-    _common.info(f"packed {Path(archive).name}")
+    shutil.rmtree(out_dir)
+    _common.info(f"packed {Path(archive).name} (removed loose {out_dir.name}/)")
     return Path(archive)
+
+
+def _warn_machine_specific_bids_root(out_dir: Path) -> None:
+    """Warn when a kit bakes an absolute ``dataset.bids_root`` into its frozen spec.
+
+    A reproducibility kit is meant to travel. A per-subject dataset fan-out points
+    ``dataset.bids_root`` at a data tree that is almost always machine-specific, so
+    the baked absolute path will not resolve on the target host and every task fails
+    to load its per-subject target. Surface it (engine-agnostic — read from the
+    frozen ``spec/*.yaml``) with the exact override, so a packed kit is never shipped
+    with a silently-wrong data root.
+    """
+    import re
+
+    spec_dir = out_dir / "spec"
+    if not spec_dir.is_dir():
+        return
+    seen: set[str] = set()
+    for spec_file in sorted(spec_dir.glob("*.yaml")):
+        try:
+            text = spec_file.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        for m in re.finditer(r"^\s*bids_root:\s*(\S.*?)\s*$", text, re.MULTILINE):
+            root = m.group(1).strip().strip("'\"")
+            if root.startswith("/"):
+                seen.add(root)
+    for root in sorted(seen):
+        _common.warn(
+            f"kit bakes an absolute dataset.bids_root ({root}) — this data tree is "
+            f"machine-specific; verify it exists on the target host (a per-subject "
+            f"dataset fan-out fails to resolve each subject's target if it does not). "
+            f"The slurm launcher reads it from $TVBO_BIDS_ROOT when set (just "
+            f"`export TVBO_BIDS_ROOT=<cluster path>`); otherwise override at submit "
+            f"time with `--set dataset.bids_root=<cluster path>`."
+        )
+
+
+def _finalize_kit(out_dir: Path, *, pack: bool) -> Path:
+    """Warn on portability hazards, optionally pack, and return the artifact path.
+
+    Returns the ``<kit>.tar.gz`` when *pack* (the loose dir is removed), else the
+    kit directory — so the caller always gets a path that exists.
+    """
+    _warn_machine_specific_bids_root(out_dir)
+    return _pack_kit(out_dir) if pack else out_dir
 
 
 def _emit(engine: str, *, spec: str, backend: str, experiment: str | None,
@@ -656,9 +706,7 @@ def _emit(engine: str, *, spec: str, backend: str, experiment: str | None,
     if engine == "snakemake":
         out_dir = _emit_snakemake_study(spec=spec, backend=backend, experiment=experiment,
                                         output=output, override=override, stdout=stdout)
-        if pack and out_dir is not None:
-            _pack_kit(out_dir)
-        return out_dir
+        return _finalize_kit(out_dir, pack=pack) if out_dir is not None else None
     plan, exp = _build_plan(spec, engine=engine, backend=backend,
                             experiment=experiment, overrides=override)
     if stdout:
@@ -675,9 +723,7 @@ def _emit(engine: str, *, spec: str, backend: str, experiment: str | None,
                  else [plan.study_key, plan.experiment_key])
         out_dir = Path("output").joinpath(*parts, engine)
     _emit_kit(engine=engine, plan=plan, experiment=exp, out_dir=out_dir)
-    if pack:
-        _pack_kit(out_dir)
-    return out_dir
+    return _finalize_kit(out_dir, pack=pack)
 
 
 def _execute_engine_artefact(engine: str, artefact: Path, *, slurm_array: str | None = None) -> None:
@@ -768,7 +814,7 @@ def slurm(
     output: Path = typer.Option(None, "-o", "--output", help="Output directory."),
     override: list[str] = typer.Option([], "--set"),
     stdout: bool = typer.Option(False, "--stdout", help="Print artefact only; do not write a kit."),
-    pack: bool = typer.Option(False, "--pack", help="Also write <kit>.tar.gz, ready to scp + `tvbo workflow submit`."),
+    pack: bool = typer.Option(False, "--pack", help="Emit ONLY <kit>.tar.gz (remove the loose kit dir), ready to scp + `tvbo workflow submit`."),
 ) -> None:
     """Emit a self-contained sbatch kit (`run.sbatch` + scripts + frozen spec)."""
     _emit("slurm", spec=spec, backend=backend, experiment=experiment,
@@ -783,7 +829,7 @@ def snakemake(
     output: Path = typer.Option(None, "-o", "--output", help="Output directory."),
     override: list[str] = typer.Option([], "--set"),
     stdout: bool = typer.Option(False, "--stdout", help="Print artefact only; do not write a kit."),
-    pack: bool = typer.Option(False, "--pack", help="Also write <kit>.tar.gz, ready to scp + `tvbo workflow submit`."),
+    pack: bool = typer.Option(False, "--pack", help="Emit ONLY <kit>.tar.gz (remove the loose kit dir), ready to scp + `tvbo workflow submit`."),
 ) -> None:
     """Emit a self-contained Snakemake kit (`Snakefile` + scripts + frozen spec)."""
     _emit("snakemake", spec=spec, backend=backend, experiment=experiment,
@@ -798,7 +844,7 @@ def nextflow(
     output: Path = typer.Option(None, "-o", "--output", help="Output directory."),
     override: list[str] = typer.Option([], "--set"),
     stdout: bool = typer.Option(False, "--stdout", help="Print artefact only; do not write a kit."),
-    pack: bool = typer.Option(False, "--pack", help="Also write <kit>.tar.gz, ready to scp + `tvbo workflow submit`."),
+    pack: bool = typer.Option(False, "--pack", help="Emit ONLY <kit>.tar.gz (remove the loose kit dir), ready to scp + `tvbo workflow submit`."),
 ) -> None:
     """Emit a self-contained Nextflow kit (`main.nf` + scripts + frozen spec)."""
     _emit("nextflow", spec=spec, backend=backend, experiment=experiment,

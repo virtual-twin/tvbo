@@ -334,6 +334,55 @@ def test_workflow_submit_accepts_packaged_archive(tmp_path: Path, monkeypatch):
     assert submits, "expected the extracted kit to be submitted"
 
 
+def test_slurm_pack_emits_only_tarball(tmp_path: Path):
+    """`tvbo workflow slurm … --pack` writes ONLY <kit>.tar.gz and removes the loose
+    kit directory (the tarball is the shippable artifact; submit/run re-extract it)."""
+    kit = tmp_path / "mykit"
+    r = runner.invoke(app, ["workflow", "slurm", EXP, "--backend", "jax",
+                            "-o", str(kit), "--pack"])
+    assert r.exit_code == 0, r.stdout
+    assert (tmp_path / "mykit.tar.gz").is_file(), "expected the packed tarball"
+    assert not kit.exists(), "--pack must remove the loose kit directory"
+
+
+def test_pack_warns_on_machine_specific_bids_root(tmp_path: Path, monkeypatch):
+    """A per-subject dataset fan-out kit bakes an absolute ``bids_root`` that will not
+    resolve on another host — emitting/packing it must warn with the exact submit-time
+    override, so a kit is never shipped silently wrong. (Capture ``_common.warn``
+    directly: caplog's root propagation is polluted by the shared tvbo logging setup.)"""
+    from tvbo.cli import workflow as workflow_cli
+
+    warned: list[str] = []
+    monkeypatch.setattr("tvbo.cli._common.warn", lambda m: warned.append(m))
+
+    kit = tmp_path / "kit"
+    (kit / "spec").mkdir(parents=True)
+    (kit / "spec" / "30.yaml").write_text(
+        "dataset:\n  dataset_id: hcpya\n  bids_root: /Volumes/bronkodata/hcp/fc\n",
+        encoding="utf-8",
+    )
+    workflow_cli._warn_machine_specific_bids_root(kit)
+    joined = "\n".join(warned)
+    assert warned, "expected a portability warning for the baked bids_root"
+    assert "/Volumes/bronkodata/hcp/fc" in joined
+    assert "--set dataset.bids_root=" in joined
+
+
+def test_no_bids_root_warning_without_dataset(tmp_path: Path, monkeypatch):
+    """A kit whose frozen spec has no ``dataset.bids_root`` (e.g. a group-average fit)
+    emits no portability warning."""
+    from tvbo.cli import workflow as workflow_cli
+
+    warned: list[str] = []
+    monkeypatch.setattr("tvbo.cli._common.warn", lambda m: warned.append(m))
+
+    kit = tmp_path / "kit"
+    (kit / "spec").mkdir(parents=True)
+    (kit / "spec" / "34.yaml").write_text("model: ReducedWongWangEIB\n", encoding="utf-8")
+    workflow_cli._warn_machine_specific_bids_root(kit)
+    assert not warned
+
+
 def test_workflow_run_rejects_unknown_engine():
     r = runner.invoke(app, ["workflow", "run", "local", EXP, "--backend", "jax"])
     assert r.exit_code != 0
