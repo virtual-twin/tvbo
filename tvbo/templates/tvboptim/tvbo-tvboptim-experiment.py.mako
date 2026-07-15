@@ -1179,7 +1179,7 @@ import optax
 from tvboptim.types import Parameter, BoundedParameter
 from tvboptim.optim.optax import OptaxOptimizer
 from tvboptim.optim.callbacks import MultiCallback, SavingLossCallback, SavingParametersCallback
-from tvbo.templates.tvboptim.callbacks import LoggingProgressCallback
+from tvbo.templates.tvboptim.callbacks import LoggingProgressCallback, progress_ticker
 % endif
 % if has_explorations:
 from tvboptim.types import Space, GridAxis, DataAxis
@@ -2834,7 +2834,14 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
 % else:
 % if has_axes:
     import jax as _jax
-    exec_runner = ParallelExecution(observable_fn, grid, n_pmap=_jax.device_count(), n_vmap=${expl['n_parallel']})
+    # Stream "grid batch i/N" through the tvbo.run logger from inside the jitted
+    # lax.map (JAX-native jax.debug.callback, fires once per n_vmap batch) so a long
+    # grid does not go silent after "STEP 2 > ...". Identity wrap when INFO is off.
+    _n_batches = max(1, -(-grid.N // ${expl['n_parallel']}))
+    exec_runner = ParallelExecution(
+        progress_ticker(_n_batches, label="grid batch")(observable_fn),
+        grid, n_pmap=_jax.device_count(), n_vmap=${expl['n_parallel']},
+    )
     _grid_outputs = list(exec_runner.run())
 % else:
     # Trial-only exploration — no parameter grid

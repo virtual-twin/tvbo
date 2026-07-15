@@ -41,3 +41,47 @@ class LoggingProgressCallback(AbstractCallback):
             where = f"{i}/{self.total}" if self.total else str(i)
             logger.info("  step %s: loss=%.6g", where, float(loss_value))
         return False, diff_state, static_state
+
+
+def progress_ticker(total: int, *, every: Optional[int] = None, label: str = "batch"):
+    """Wrap a scanned/vmapped per-item function so it streams ``label i/total`` progress.
+
+    The exploration / sweep grid runs as one JIT-compiled ``jax.lax.map``, so it prints
+    ``STEP 2 > <exploration>`` and then nothing until it returns — the cluster "empty log"
+    problem. This fires a JAX-native ``jax.debug.callback`` (no JIT break, vmap-safe) once
+    per ``lax.map`` batch — a no-arg callback has no batched input to vectorise, so it runs
+    once per scan step — ticking a host-side counter and logging through the central
+    ``tvbo.run`` logger. The ``jax_tqdm`` pattern, reduced to the logging we already route.
+
+    Args:
+        total: Number of batches (``ceil(n_cells / n_vmap)``) for the ``i/total`` line.
+        every: Log cadence in batches; defaults to ~25 evenly-spaced updates.
+        label: Noun for the line, e.g. ``"grid batch"``.
+
+    Returns:
+        ``wrap(fn) -> fn`` — the identity when INFO is disabled, so there is zero runtime
+        overhead under ``--quiet`` or a coarse ``TVBO_LOG_LEVEL``.
+    """
+    import jax
+    from itertools import count
+
+    total = max(1, int(total))
+    every = every or max(1, total // 25)
+    ticks = count(1)
+
+    def _tick(*_):
+        i = next(ticks)
+        if i == total or i % every == 0:
+            logger.info("  %s %d/%d (%d%%)", label, i, total, 100 * i // total)
+
+    def wrap(fn):
+        if not logger.isEnabledFor(logging.INFO):
+            return fn
+
+        def wrapped(*args, **kwargs):
+            jax.debug.callback(_tick, ordered=False)
+            return fn(*args, **kwargs)
+
+        return wrapped
+
+    return wrap
