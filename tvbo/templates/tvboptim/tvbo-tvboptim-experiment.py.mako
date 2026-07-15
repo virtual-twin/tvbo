@@ -1941,13 +1941,13 @@ def compute_all_observations(result, state, result_transient=None, only=None):
                     elif val_str.replace('.', '').replace('-', '').isdigit():
                         # Numeric literal - use as keyword arg
                         pipeline_args.append(f"{arg_name}={val_str}")
-                    elif val_str.startswith('network.') and edge_label(val_str):
+                    elif val_str.startswith('network.') and (_edge_lab := edge_label(val_str)):
                         # network.weight(s)/length(s) or network.edges.<label> → the
                         # connectome matrix embedded as a module constant by the included
                         # observation template (utils.collect_network_edge_arrays), NOT a
                         # string literal. Keeps derived observations (source = another
                         # observation) consistent with the non-derived source path.
-                        pipeline_args.append(f"{arg_name}={edge_const(edge_label(val_str))}")
+                        pipeline_args.append(f"{arg_name}={edge_const(_edge_lab)}")
                     elif '.' in val_str:
                         prefix = val_str.split('.')[0]
                         if prefix in (src_obs_list + list(observation_names) + list(derived_observation_names)):
