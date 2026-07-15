@@ -151,7 +151,7 @@ def render_jacobian_code(model, func_name: str = "_lr_jacobian", fmt: str = "jax
 
     lines: list[str] = []
     lines += _matrix_fn(f"{func_name}_jloc", t["Jloc"], n_sv)
-    lines += _matrix_fn(f"{func_name}_jcpl", t["Jcpl"], max(n_cpl, 1)) if n_cpl else []
+    lines += _matrix_fn(f"{func_name}_jcpl", t["Jcpl"], n_cpl) if n_cpl else []
     lines += [
         f"def {func_name}(x_star, weights, p):",
         f"    _W = jnp.asarray(weights); _X = jnp.asarray(x_star); _N = _W.shape[0]",
