@@ -2101,3 +2101,78 @@ def get_all_hyperparams(algo: Any, algorithms_dict: Dict) -> Dict:
         all_hp[str(getattr(hp, "name", ""))] = getattr(hp, "value", None)
 
     return all_hp
+
+
+# ---------------------------------------------------------------------------
+# Network edge references (network.weight(s)/length(s) → connectome matrices)
+# ---------------------------------------------------------------------------
+# `weight`/`weights`/`length`/`lengths` are ergonomic shortcuts for the canonical
+# `network.edges.<label>`; both resolve to a connectome matrix via Network.matrix().
+_NETWORK_EDGE_ALIASES = {"weight": "weight", "weights": "weight",
+                         "length": "length", "lengths": "length"}
+
+
+def edge_label(ref: Any) -> Optional[str]:
+    """Canonical ``Network.matrix()`` label for a network reference, else None.
+
+    Accepts the fully-qualified form (``network.weight``, ``network.edges.length``),
+    the explicit ``edges.<label>`` form (any label), and the bare
+    ``weight(s)``/``length(s)`` shortcut. Returns None for anything that is not a
+    connectome-matrix reference (state variables, ``network.observations.*``, ...),
+    which callers route through their normal path.
+    """
+    if not isinstance(ref, str):
+        return None
+    r = ref[len("network."):] if ref.startswith("network.") else ref
+    if r.startswith("edges."):
+        return r.split("edges.", 1)[1] or None
+    return _NETWORK_EDGE_ALIASES.get(r)
+
+
+def edge_const(label: str) -> str:
+    """Module-constant identifier holding the embedded matrix for ``label``."""
+    import re
+    return "_network_edge_" + re.sub(r"\W", "_", label)
+
+
+def collect_network_edge_arrays(experiment: Any) -> Dict[str, list]:
+    """Embed connectome matrices referenced by observations as ``{label: nested list}``.
+
+    Scans every observation's ``source`` and every pipeline-step argument for a
+    fully-qualified ``network.weight(s)``/``length(s)`` shortcut or explicit
+    ``network.edges.<label>`` reference, resolving each to a dense matrix via
+    ``Network.matrix()``. Covers derived and non-derived observations alike so the
+    emitted constant serves both the observation-module source path and the
+    experiment-module derived resolver. Raises if a referenced matrix is absent.
+    """
+    import numpy as np
+    net = get_attr(experiment, "network", None)
+    obs_map = get_attr(experiment, "observations", None) or {}
+    obs_iter = obs_map.values() if hasattr(obs_map, "values") else obs_map
+    arrays: Dict[str, list] = {}
+
+    def add(val: Any) -> None:
+        name = val if isinstance(val, str) else get_attr(val, "name", None)
+        # Only fully-qualified `network.*` references embed a matrix; a bare `weight`
+        # would be a state variable, not the connectome.
+        if not isinstance(name, str) or not name.startswith("network."):
+            return
+        lab = edge_label(name)
+        if not lab or lab in arrays:
+            return
+        mat = net.matrix(lab) if net is not None else None
+        if mat is None:
+            raise ValueError(
+                f"An observation references {name} but the network has no {lab!r} "
+                f"matrix to embed (Network.matrix({lab!r}) is None)."
+            )
+        arrays[lab] = np.asarray(mat, dtype=float).tolist()
+
+    for obs in obs_iter:
+        for src in (get_attr(obs, "source", None) or []):
+            add(src)
+        for stage in (get_attr(obs, "pipeline", None) or []):
+            stage_args = get_attr(stage, "arguments", None) or {}
+            for arg in (stage_args.values() if hasattr(stage_args, "values") else stage_args):
+                add(get_attr(arg, "value", None))
+    return arrays
