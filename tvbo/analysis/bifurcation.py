@@ -85,8 +85,15 @@ BIF_STYLES = {
     "LC_EP": dict(marker="none", color=_C["po_line"], label="LC EP"),
 }
 
-# Canonical TY normalisation (lower-case backend strings → upper TY key)
-_TY_ALIASES = {
+# Canonical TY normalisation (backend special-point label → canonical short
+# code, e.g. "LP"/"HB"/"BP"). The AUTHORITATIVE source is the ontology's
+# bifurcation taxonomy (``ontology/tvb-o-bifurcation.ttl``, merged into
+# ``tvbo.owl``): each type carries a ``tvbo:canonicalCode`` plus ``skos:altLabel``
+# for every backend spelling (BifurcationKit ``:bp``/``:fold``, AUTO ``LP``/``HB``/
+# ``BP``, PyRates, ...). The map below is a built-in fallback, used verbatim only
+# when the ontology cannot be read (headless / minimal installs); the ontology is
+# layered on top of it so it stays the single source of truth.
+_TY_ALIASES_FALLBACK = {
     # equilibria
     "fold": "LP", "saddle-node": "LP", "sn": "LP", "lp": "LP",
     "hopf": "HB", "hb": "HB",
@@ -102,6 +109,47 @@ _TY_ALIASES = {
     "hh": "HH", "hopf-hopf": "HH",
 }
 
+_TY_ALIASES_CACHE = None
+
+
+def _derive_ty_aliases():
+    """Build ``{backend-label(lower) → canonical code}`` from the ontology.
+
+    Reads ``tvbo:canonicalCode`` + ``skos:altLabel`` off the merged bifurcation
+    taxonomy so the label map tracks the ontology automatically. Falls back to
+    (and is layered over) ``_TY_ALIASES_FALLBACK`` if the ontology is missing.
+    """
+    aliases = dict(_TY_ALIASES_FALLBACK)
+    try:
+        from pathlib import Path
+
+        import rdflib
+
+        import tvbo
+
+        owl = Path(tvbo.__file__).parent / "data" / "ontology" / "tvbo.owl"
+        if owl.exists():
+            g = rdflib.Graph()
+            g.parse(str(owl))
+            q = (
+                "SELECT ?alt ?code WHERE { "
+                "?c <https://w3id.org/tvbo/canonicalCode> ?code ; "
+                "<http://www.w3.org/2004/02/skos/core#altLabel> ?alt }"
+            )
+            for alt, code in g.query(q):
+                aliases[str(alt).strip().lower()] = str(code).strip()
+    except Exception:
+        pass
+    return aliases
+
+
+def _ty_aliases():
+    """Lazily-derived, cached backend-label → canonical-code map."""
+    global _TY_ALIASES_CACHE
+    if _TY_ALIASES_CACHE is None:
+        _TY_ALIASES_CACHE = _derive_ty_aliases()
+    return _TY_ALIASES_CACHE
+
 
 def canonical_ty(ty):
     """Normalise any backend label to a key in ``BIF_STYLES``."""
@@ -116,7 +164,7 @@ def canonical_ty(ty):
     su = s.upper()
     if su in BIF_STYLES:
         return su
-    return _TY_ALIASES.get(s.lower())
+    return _ty_aliases().get(s.lower())
 
 
 def get_bif_style(ty, base=None):
@@ -496,7 +544,54 @@ class BifurcationResult:
                     self.df.at[rix, "sp_norm"] = norm
                     self.df.at[rix, "sp_idx"] = idx_val
 
+        # Disambiguate BifurcationKit's overloaded ``:bp``. On an equilibrium
+        # branch it labels BOTH genuine branch points and saddle-node folds
+        # ``:bp``. The ontology distinguishes them by branch geometry (Fold ⇒
+        # LimitPointGeometry, BranchPoint ⇒ BranchCrossingGeometry); a fold is
+        # the one where the continuation parameter turns around. Relabel those
+        # to ``fold`` so ``canonical_ty`` resolves them to ``LP``.
+        if sp_list and kind == "EquilibriumCont":
+            self._reclassify_folds()
+
         self._finalize()
+
+    def _reclassify_folds(self):
+        """Relabel a ``:bp`` as a fold when it sits at a parameter turning point.
+
+        Operationalises the ontology's ``LimitPointGeometry`` discriminator
+        (``ontology/tvb-o-bifurcation.ttl``): on an equilibrium branch, a
+        branch-point label whose continuation parameter is a local extremum is a
+        saddle-node fold, not a transversal branch crossing.
+        """
+        df = self.df
+        if df is None or df.empty or "specialpoint" not in df.columns \
+                or "param" not in df.columns:
+            return
+        p = df["param"].to_numpy(dtype=float)
+        n = len(p)
+        bp_tokens = ("bp", "branchpoint", "branch-point")
+        sp_col = df.columns.get_loc("specialpoint")
+        for pos in range(n):
+            val = df.iat[pos, sp_col]
+            if val is None:
+                continue
+            toks = [t.strip() for t in str(val).split(",")]
+            if not any(t.lower() in bp_tokens for t in toks):
+                continue
+            # nearest neighbours with a distinct parameter value on each side
+            lo = pos - 1
+            while lo >= 0 and p[lo] == p[pos]:
+                lo -= 1
+            hi = pos + 1
+            while hi < n and p[hi] == p[pos]:
+                hi += 1
+            if lo < 0 or hi >= n:
+                continue
+            # parameter reverses direction across the point ⇒ turning point ⇒ fold
+            if (p[pos] - p[lo]) * (p[hi] - p[pos]) < 0:
+                df.iat[pos, sp_col] = ",".join(
+                    "fold" if t.lower() in bp_tokens else t for t in toks
+                )
 
     # ── Shared post-extraction bookkeeping ──────────────────────────────
     def _finalize(self):
@@ -519,6 +614,41 @@ class BifurcationResult:
         if "step" in self.df.columns:
             self.hopf_steps = self.df.loc[hopf_mask, "step"].tolist()
             self.bp_steps = self.df.loc[bp_mask, "step"].tolist()
+
+    def to_dataset(self):
+        """Return the continuation branch as a native, self-describing xarray ``Dataset``.
+
+        The branch is a labelled table indexed by continuation ``step``; the
+        continuation parameter (``ICS``, e.g. ``G``) is a coordinate along it and
+        every recorded observable / stability flag becomes a data variable. This is
+        the same labelled container the rest of tvbo uses (``ExperimentResult`` holds
+        it under ``continuations``), so continuation results persist through the
+        standard result format instead of any ad-hoc per-figure array dump.
+        """
+        import xarray as xr
+
+        df = self.df
+        if df is None or len(df) == 0:
+            return xr.Dataset()
+        pname = str(getattr(self, "ICS", None) or "param")
+        coords = {"step": np.arange(len(df))}
+        if "param" in df.columns:
+            coords[pname] = ("step", np.asarray(df["param"], dtype=float))
+        data_vars = {}
+        for col in df.columns:
+            if col in ("param", "step"):  # param → coord; step → the dimension
+                continue
+            arr = df[col].to_numpy()
+            if col == "specialpoint":
+                # Keep the special-point labels (fold/hopf/…) as strings, "" for none.
+                data_vars[col] = ("step", np.array(["" if v is None else str(v) for v in arr]))
+            elif arr.dtype == bool or np.issubdtype(arr.dtype, np.number):
+                data_vars[col] = ("step", arr)
+        return xr.Dataset(
+            data_vars=data_vars,
+            coords=coords,
+            attrs={"continuation_kind": str(getattr(self, "kind", "") or ""), "ICS": pname},
+        )
 
     # ── Backend factory shortcuts ───────────────────────────────────────
     @classmethod
