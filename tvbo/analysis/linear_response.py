@@ -102,6 +102,75 @@ def jacobian_terms(model):
     }
 
 
+def _emit_context(model, fmt):
+    """Shared emission context for the vector-field and Jacobian codegen.
+
+    Returns the symbol layout plus ready-made line builders — an ``entry`` renderer
+    (one symbolic expression → backend code), the per-node function ``header``/unpack
+    (state from ``s``, coupling from ``c``, params from ``p_`` with per-node gather),
+    and the ``coupling`` setup (``_W``/``_X``/``_N``/``_C``) — so the two emitters below
+    share one definition of how metadata symbols become code.
+    """
+    from tvbo.codegen import render_expression
+
+    if fmt != "jax":
+        raise NotImplementedError(f"linear_response: backend {fmt!r} not yet emitted (jax only).")
+    t = jacobian_terms(model)
+    svs, net_cpls, src = t["state_vars"], t["net_couplings"], t["source_var"]
+    src_k = svs.index(src)
+    n_sv, n_cpl = len(svs), len(net_cpls)
+    pnames = [p.name for p in model.parameters.values()]
+    # Heterogeneous (per-node) params — e.g. the FIC-tuned J_i, shape (n_nodes,) — are
+    # gathered by the node index inside the per-node function; scalar params are not.
+    pernode = {p.name for p in model.parameters.values() if getattr(p, "heterogeneous", False)}
+    syms = svs + net_cpls + pnames
+
+    def entry(expr):
+        return render_expression(expr, format="jax", parameters=syms)
+
+    def node_unpack():
+        lines = [f"    {v} = s[{i}]" for i, v in enumerate(svs)]
+        lines += [f"    {c} = c[{i}]" for i, c in enumerate(net_cpls)]
+        lines += [
+            (f"    {p} = jnp.asarray(getattr(p_, '{p}'))[_i]" if p in pernode
+             else f"    {p} = getattr(p_, '{p}')")
+            for p in pnames
+        ]
+        return lines
+
+    def coupling_setup():
+        return [
+            "    _W = jnp.asarray(weights); _X = jnp.asarray(x); _N = _W.shape[0]",
+            (f"    _C = jnp.stack([_W @ _X[{src_k}] for _ in range({n_cpl})])" if n_cpl
+             else "    _C = jnp.zeros((0, _N))"),
+        ]
+
+    return dict(terms=t, svs=svs, net_cpls=net_cpls, src_k=src_k, n_sv=n_sv, n_cpl=n_cpl,
+                entry=entry, node_unpack=node_unpack, coupling_setup=coupling_setup)
+
+
+def render_vf_code(model, func_name: str = "_lr_vf", fmt: str = "jax") -> str:
+    """Emit backend code for the deterministic network vector field ``dy/dt = f(y)``.
+
+    The per-node RHS (dfun with the derived-variable chain unfolded and local coupling
+    zeroed, from :func:`jacobian_terms`) is rendered via ``render_expression`` and
+    ``vmap``-ed over nodes; long-range coupling is the connectome matvec. Emits
+
+        ``<func_name>(x, weights, p) -> dy/dt``   (both [n_sv, N])
+
+    — noise-free by construction, so settling it (or a Newton step) gives the
+    deterministic operating point the linear-response observables are evaluated at.
+    """
+    c = _emit_context(model, fmt)
+    rhs = [c["entry"](e) for e in _dfun_symbols(model)[4]]  # per-node RHS expressions f(state, coupling, params)
+    lines = [f"def {func_name}_node(s, c, p_, _i):", *c["node_unpack"](),
+             f"    return jnp.array([{', '.join(rhs)}])", ""]
+    lines += [f"def {func_name}(x, weights, p):", *c["coupling_setup"](),
+              f"    _F = jax.vmap(lambda i: {func_name}_node(_X[:, i], _C[:, i], p, i))(jnp.arange(_N))",
+              "    return _F.T"]  # vmap stacks nodes on axis 0 → transpose to [n_sv, N]
+    return "\n".join(lines)
+
+
 def render_jacobian_code(model, func_name: str = "_lr_jacobian", fmt: str = "jax") -> str:
     """Emit backend code that builds the network Jacobian ``A`` at an operating point.
 
@@ -110,54 +179,28 @@ def render_jacobian_code(model, func_name: str = "_lr_jacobian", fmt: str = "jax
     block-diagonal plus a connectome scatter for the coupling block. The result is a
     self-contained function
 
-        ``<func_name>(x_star, weights, p) -> A``   (``x_star``: [n_sv, N], ``A``: [n_sv·N, n_sv·N])
+        ``<func_name>(x, weights, p) -> A``   (``x``: [n_sv, N], ``A``: [n_sv·N, n_sv·N])
 
     that generated analysis code calls with the fixed point, the connectome, and the
     resolved parameter bunch ``p``. Backend-independent by construction: only the entry
     expressions (via the printer) and the array vocabulary differ per backend; ``fmt='jax'``
     emits ``jnp``. No numpy in the emitted code.
     """
-    from tvbo.codegen import render_expression
-
-    if fmt != "jax":
-        raise NotImplementedError(f"render_jacobian_code: backend {fmt!r} not yet emitted (jax only).")
-
-    t = jacobian_terms(model)
-    svs, net_cpls, src = t["state_vars"], t["net_couplings"], t["source_var"]
-    n_sv, n_cpl = len(svs), len(net_cpls)
-    src_k = svs.index(src)
-    pnames = [p.name for p in model.parameters.values()]
-    # Heterogeneous (per-node) parameters — e.g. the FIC-tuned J_i, shape (n_nodes,) —
-    # are indexed by the node index inside the per-node function; scalar params are not.
-    pernode = {p.name for p in model.parameters.values() if getattr(p, "heterogeneous", False)}
-    syms = svs + net_cpls + pnames  # names the printer treats as plain symbols
-
-    def _entry(expr):
-        return render_expression(expr, format="jax", parameters=syms)
-
-    def _param_unpack(p):
-        # per-node params are indexed by the traced node index → must be jnp for the gather
-        return (f"    {p} = jnp.asarray(getattr(p_, '{p}'))[_i]" if p in pernode
-                else f"    {p} = getattr(p_, '{p}')")
+    c = _emit_context(model, fmt)
+    svs, net_cpls, src_k, n_sv, n_cpl = c["svs"], c["net_cpls"], c["src_k"], c["n_sv"], c["n_cpl"]
+    t = c["terms"]
 
     def _matrix_fn(name, M, ncol):
         rows = ", ".join(
-            "[" + ", ".join(_entry(M[k, l]) for l in range(ncol)) + "]" for k in range(n_sv)
+            "[" + ", ".join(c["entry"](M[k, l]) for l in range(ncol)) + "]" for k in range(n_sv)
         )
-        unpack = [f"    {v} = s[{i}]" for i, v in enumerate(svs)]
-        unpack += [f"    {c} = c[{i}]" for i, c in enumerate(net_cpls)]
-        unpack += [_param_unpack(p) for p in pnames]
-        return [f"def {name}(s, c, p_, _i):", *unpack, f"    return jnp.array([{rows}])", ""]
+        return [f"def {name}(s, c, p_, _i):", *c["node_unpack"](), f"    return jnp.array([{rows}])", ""]
 
     lines: list[str] = []
     lines += _matrix_fn(f"{func_name}_jloc", t["Jloc"], n_sv)
     lines += _matrix_fn(f"{func_name}_jcpl", t["Jcpl"], n_cpl) if n_cpl else []
-    lines += [
-        f"def {func_name}(x_star, weights, p):",
-        f"    _W = jnp.asarray(weights); _X = jnp.asarray(x_star); _N = _W.shape[0]",
-        f"    _C = jnp.stack([_W @ _X[{src_k}]" + f" for _ in range({n_cpl})])" if n_cpl else "    _C = jnp.zeros((0, _N))",
-        f"    _Jl = jax.vmap(lambda i: {func_name}_jloc(_X[:, i], _C[:, i], p, i))(jnp.arange(_N))",
-    ]
+    lines += [f"def {func_name}(x, weights, p):", *c["coupling_setup"](),
+              f"    _Jl = jax.vmap(lambda i: {func_name}_jloc(_X[:, i], _C[:, i], p, i))(jnp.arange(_N))"]
     if n_cpl:
         lines.append(f"    _Jc = jax.vmap(lambda i: {func_name}_jcpl(_X[:, i], _C[:, i], p, i))(jnp.arange(_N))")
     lines.append(f"    _A = jnp.zeros(({n_sv} * _N, {n_sv} * _N))")
