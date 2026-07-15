@@ -124,6 +124,16 @@ class BifurcationKitAdapter:
         """
         ctx = dict(model=model, continuation=cont)
 
+        # Network context (None or 1-node ⇒ single-node RHS; >1 node ⇒ coupled).
+        network = kwargs.get("network")
+        n_nodes = int(getattr(network, "number_of_nodes", 0) or 0) if network is not None else 0
+        ctx["network"] = network if n_nodes > 1 else None
+        ctx["n_nodes"] = n_nodes if n_nodes > 1 else 1
+
+        # Constraint-defined free parameters (FIC J_i): promoted to unknown state
+        # blocks whose defining equation is the TuningObjective residual (D2).
+        ctx["constraints"] = kwargs.get("constraints") or []
+
         # -- Free parameter --
         fp_dict = cont.free_parameters if cont else None
         if fp_dict:
@@ -305,10 +315,72 @@ class BifurcationKitAdapter:
             if conts:
                 continuation = next(iter(conts.values()))
 
-        ctx = self._prepare_context(model, continuation, **kwargs)
+        # A multi-node network on the experiment ⇒ continue the coupled system.
+        network = getattr(self.experiment, "network", None)
+        constraints = self._derive_constraints(model)
+        ctx = self._prepare_context(
+            model, continuation, network=network, constraints=constraints, **kwargs
+        )
 
         template = templates.lookup.get_template("tvbo-julia-BifurcationKit.jl.mako")
         return template.render(**ctx)
+
+    def _derive_constraints(self, model):
+        """Derive constraint-defined free parameters for the continuation.
+
+        Reuses the *existing* declarations (no new schema): a parameter marked
+        ``free: true`` on the model, together with an activity-target
+        ``TuningObjective`` on one of the experiment's algorithms, defines a
+        constraint ``target_variable = target_value``. Each such free parameter
+        (e.g. the FIC ``J_i``) is promoted by the emitter to an unknown state
+        block whose defining equation is that residual (see ``_build_network_context``).
+
+        Returns a list of ``{"parameter", "target_variable", "target_value"}``;
+        empty when no parameter is free (E-E / FFI variants ⇒ plain continuation).
+        """
+        from tvbo.utils import as_list
+
+        free = [p.name for p in model.parameters.values() if getattr(p, "free", False)]
+        if not free:
+            return []
+        algos = as_list(getattr(self.experiment, "algorithms", None))
+
+        def _activity_objective(a):
+            """The algorithm's objective iff it is an activity target (has a
+            target_variable + target_value); else None."""
+            o = getattr(a, "objective", None)
+            tv = getattr(o, "target_variable", None) if o is not None else None
+            return o if (tv is not None and getattr(o, "target_value", None) is not None) else None
+
+        def _tuned_params(a):
+            """Parameter names this algorithm's update rules tune (target_parameter)."""
+            names = set()
+            for r in as_list(getattr(a, "update_rules", None)):
+                tp = getattr(r, "target_parameter", None)
+                n = getattr(tp, "name", None) or (str(tp) if tp is not None else None)
+                if n:
+                    names.add(n)
+            return names
+
+        constraints = []
+        for fp in free:
+            # Prefer the algorithm that explicitly tunes THIS parameter (so multiple
+            # free params each get their own target); fall back to a lone activity
+            # objective only when this is the sole free param.
+            obj = next(
+                (_activity_objective(a) for a in algos
+                 if fp in _tuned_params(a) and _activity_objective(a)),
+                None,
+            )
+            if obj is None and len(free) == 1:
+                obj = next((_activity_objective(a) for a in algos if _activity_objective(a)), None)
+            if obj is None:
+                continue
+            tv = getattr(obj.target_variable, "name", None) or str(obj.target_variable)
+            constraints.append(
+                {"parameter": str(fp), "target_variable": str(tv), "target_value": float(obj.target_value)}
+            )
+        return constraints
 
     @staticmethod
     def _get_ics(cont):

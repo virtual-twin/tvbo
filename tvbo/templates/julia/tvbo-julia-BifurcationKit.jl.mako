@@ -7,7 +7,15 @@ from tvbo.adapters.julia_model import build_model_context
 ## All variables are pre-computed by BifurcationKitAdapter._prepare_context()
 ## Template only places values — no processing.
 svs = list(model.state_variables.values())
-mc = build_model_context(model)
+mc = build_model_context(model, network, constraints=constraints)
+n_nodes = mc.get("n_nodes", 1)
+# Single-node: record each state var directly. Network: a loop-based record
+# (below) computes derived observables (e.g. H_e) per node and reduces to max/mean.
+_rec = ", ".join(f"{sv.name} = x[{i+1}]" for i, sv in enumerate(svs))
+# BifurcationKit calls record_from_solution(x, p) with p = the SCALAR value of the
+# continuation parameter. The fixed parameters come from the closure `p` NamedTuple;
+# exclude the continuation parameter from that destructure (the record arg supplies it).
+_destr_no_ics = ", ".join(n for n in (nm.strip() for nm in mc["destructure"].split(",")) if n and n != ICS)
 %>
 ##
 <%include file="/tvbo-julia-model.jl.mako" args="mc=mc" />
@@ -15,10 +23,10 @@ mc = build_model_context(model)
 # Override continuation parameter to start within [p_min, p_max]
 p = merge(p, (${ICS} = ${float(p_start)},))
 
-# Initial conditions from model defaults
+# Initial conditions from model defaults (network: n_nodes blocks per state var)
 x0 = [
-        % for sv in svs:
-        ${sv.initial_value if sv.initial_value is not None else 0.1}, # Initial value for ${sv.name}
+        % for v in mc['u0']:
+        ${v if v is not None else 0.1},
         % endfor
     ]
 
@@ -54,8 +62,44 @@ x0_eq = _find_steady_state(${model.name}!, x0, p)
 
 ################################################################################
 
-# Record named state variables for each continuation step
-record_from_sol = (x, p; k...) -> (${', '.join(f'{sv.name} = x[{i+1}]' for i, sv in enumerate(svs))},)
+# Record observables for each continuation step
+% if network:
+## Network: recompute derived observables per node (reusing the model's equation
+## emission) and reduce across nodes to max & mean — e.g. max firing rate r_E vs G.
+record_from_sol = (${mc['arg_x']}, ${ICS}; k...) -> begin
+    (; ${_destr_no_ics}) = p
+    N = ${n_nodes}
+% for name, rhs in mc['derived_params']:
+    ${name} = ${rhs}
+% endfor
+% for line in mc['coupling_pre']:
+    ${line}
+% endfor
+% for name in mc['record_obs']:
+    _${name}_max = -Inf; _${name}_sum = 0.0
+% endfor
+    @inbounds for i in 1:N
+% for line in mc['unpack']:
+        ${line}
+% endfor
+% for line in mc.get('pernode_gather', []):
+        ${line}
+% endfor
+% for line in mc['coupling_body']:
+        ${line}
+% endfor
+% for name, rhs in mc['derived_vars']:
+        ${name} = ${rhs}
+% endfor
+% for name in mc['record_obs']:
+        _${name}_max = max(_${name}_max, ${name}); _${name}_sum += ${name}
+% endfor
+    end
+    (${', '.join(f'{name}_max = _{name}_max, {name}_mean = _{name}_sum / N' for name in mc['record_obs'])},)
+end
+% else:
+record_from_sol = (x, p; k...) -> (${_rec},)
+% endif
 
 # Bifurcation Problem
 prob = BifurcationProblem(${model.name}_vf!, x0_eq, p, (@optic _.${ICS});
