@@ -1704,7 +1704,7 @@ class ExperimentResult:
         """
         exp = self.source
         obs_defs = getattr(exp, "observations", None) or {}
-        present = set(self.observations or {})
+        present = set(getattr(self, "observations", None) or {})
         if not obs_defs:
             return present
         consumed: set = set()
@@ -1816,8 +1816,8 @@ class ExperimentResult:
                 for i, v in enumerate(obj):
                     yield from _numeric_leaves(f"{prefix}__{i}", v)
 
-        keep_obs = self._recorded_observation_names() if record_only else set(self.observations or {})
-        for obs_name, obs in (self.observations or {}).items():
+        keep_obs = self._recorded_observation_names() if record_only else set(getattr(self, "observations", None) or {})
+        for obs_name, obs in (getattr(self, "observations", None) or {}).items():
             if obs_name not in keep_obs:
                 continue
             key = f"observation__{_san(obs_name)}"
@@ -1833,6 +1833,23 @@ class ExperimentResult:
             if fitted is not None:
                 for name, da in _numeric_leaves(f"optimization__{_san(opt_name)}__fitted", fitted):
                     data_vars[name] = da
+
+        # Continuation branches (bifurcation results) persist through the SAME native
+        # Dataset — no per-figure array dump. Each branch keeps its own ``step``
+        # dimension (renamed unique) so multiple branches and the sweep grid coexist;
+        # the continuation parameter and observables become data variables.
+        for cont_name, bifres in (self.continuations or {}).items():
+            to_ds = getattr(bifres, "to_dataset", None)
+            if not callable(to_ds):
+                continue
+            cds = to_ds()
+            if "step" not in getattr(cds, "sizes", {}):
+                continue
+            dim = f"continuation__{_san(cont_name)}__step"
+            cds = cds.rename({"step": dim}).reset_coords()  # ICS coord (e.g. G) → data var
+            for vname, da in cds.data_vars.items():
+                if da.dtype != object:  # skip special-point label strings (HDF5 object dtype)
+                    data_vars[f"continuation__{_san(cont_name)}__{_san(vname)}"] = da
 
         stem = "result"
         if self.source is not None and hasattr(self.source, "get_result_stem"):
