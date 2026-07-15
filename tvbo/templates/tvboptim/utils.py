@@ -1046,6 +1046,7 @@ def render_analysis_observations(
     t1_default: float,
     dt: float,
     solver_kwargs: str = "",
+    model: Any = None,
 ) -> str:
     """Render the body of the generated ``compute_analysis_observations()`` function.
 
@@ -1063,6 +1064,30 @@ def render_analysis_observations(
     window = f"t0=0.0 + {transient_time}, t1={transient_time} + {t1_default}, dt={dt}"
     solver_kwargs = _analysis_solver_kwargs(solver_kwargs)
     lines: List[str] = []
+
+    # Linear-response analysis types (covariance / psd / fisher) are evaluated at the
+    # deterministic operating point via the metadata-symbolic network vector field and
+    # Jacobian. Emit those two helpers ONCE (shared by every such observation) plus the
+    # operating-point seed, then each observation renders its own Mako partial below.
+    # Structure comes from _linear_response.py.mako (backend-renderable); resolution from
+    # linear_response_context — no Python string-emit of the code bodies.
+    _LR_TYPES = {"covariance"}
+    _lr_ctx = _lr_tpl = None
+    if model is not None and any(
+        str(getattr(a.analysis, "type", "") or "") in _LR_TYPES for a in analysis_obs.values()
+    ):
+        from tvbo import templates as _templates
+        from tvbo.analysis.linear_response import linear_response_context
+
+        _lr_ctx = linear_response_context(model)
+        _lr_tpl = _templates.lookup.get_template("_linear_response.py.mako")
+        for _d in ("lr_vf", "lr_jacobian"):
+            lines += _lr_tpl.get_def(_d).render(ctx=_lr_ctx).strip("\n").split("\n")
+        _nsv = _lr_ctx["n_sv"]
+        lines.append(
+            f"_lr_x0 = jnp.broadcast_to(jnp.reshape(jnp.asarray(state.initial_state.dynamics), "
+            f"({_nsv}, -1)), ({_nsv}, network.graph.weights.shape[0]))"
+        )
 
     # Finite-difference observations that share the exact same per-seed computation
     # (same target, wrt, delta, seeds, seed_base) reuse ONE ``jax.lax.map`` — matching the
@@ -1154,6 +1179,21 @@ def render_analysis_observations(
             lines += [
                 f"# {name}: seed-averaged central finite-difference {stat} of '{target}' wrt {wrt[0]}",
                 f"obs.{name} = {reduce}",
+            ]
+        elif atype == "covariance" and _lr_tpl is None:
+            lines.append(f"# {name}: covariance analysis needs the model threaded to "
+                         f"render_analysis_observations — skipped.")
+        elif atype == "covariance":
+            # Stationary covariance (Lyapunov) at the operating point — Deco 2014 Fig 5, Eq 24.
+            # Renders its own `_cov_<name>` from the Mako partial and evaluates it at the seed FP.
+            _sigma = float(params.get("sigma", 0.01))
+            _cov = _lr_tpl.get_def("lr_covariance").render(
+                ctx=_lr_ctx, name=f"_cov_{name}", sigma=_sigma
+            )
+            lines += _cov.strip("\n").split("\n")
+            lines += [
+                f"# {name}: excitatory-block stationary covariance via the Lyapunov equation",
+                f"obs.{name} = _cov_{name}(_lr_x0, network.graph.weights, state.dynamics)",
             ]
         else:
             lines.append(f"# {name}: analysis type '{atype}' not yet lowered for this backend — skipped.")
