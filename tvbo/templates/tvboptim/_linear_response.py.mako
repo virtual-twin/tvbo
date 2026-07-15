@@ -87,3 +87,23 @@ def ${name}(x, weights, p):
 % endfor
     return _A
 </%def>\
+##
+## Stationary covariance at the deterministic operating point (Deco 2014 Fig 5, Eq 24):
+## settle the noise-free vector field to the fixed point, linearise (Jacobian A), then solve
+## the continuous Lyapunov equation A Σ + Σ Aᵀ + Q = 0 (Q = σ² I) by eigendecomposition —
+## backend-independent (jnp.linalg.eig/inv), no scipy. Returns the excitatory-block covariance
+## P[:N,:N]. Reuses the module-level ${vf}/${jac} functions (emitted once via lr_vf/lr_jacobian).
+<%def name="lr_covariance(ctx, name, sigma, n_settle=200000, dt=0.1, vf='_lr_vf', jac='_lr_jacobian')">\
+def ${name}(x0, weights, p):
+    _W = jnp.asarray(weights); _N = _W.shape[0]
+    def _settle_step(x, _):
+        return x + ${dt} * ${vf}(x, _W, p), None
+    _fp = jax.lax.scan(_settle_step, jnp.asarray(x0), None, length=${n_settle})[0]
+    _A = ${jac}(_fp, _W, p)
+    _Q = (${sigma} ** 2) * jnp.eye(_A.shape[0])
+    _lam, _V = jnp.linalg.eig(_A)
+    _Vi = jnp.linalg.inv(_V)
+    _M = -(_Vi @ _Q.astype(_V.dtype) @ _Vi.conj().T) / (_lam[:, None] + jnp.conj(_lam)[None, :])
+    _P = (_V @ _M @ _V.conj().T).real
+    return _P[:_N, :_N]
+</%def>\
