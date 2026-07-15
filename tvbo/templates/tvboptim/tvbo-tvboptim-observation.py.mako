@@ -5,6 +5,7 @@ from tvbo.codegen import render_expression
 from tvbo.templates.tvboptim.utils import (
     get_attr, to_numeric, get_recorded_variable_names,
     adapt_class_reference_for_tvboptim, resolve_reduction, iter_parameter_values,
+    edge_label as _edge_label, edge_const as _edge_const, collect_network_edge_arrays,
 )
 
 model = experiment.dynamics
@@ -114,10 +115,13 @@ def ref_to_code(ref_type, ref_val, state_idx=None):
         if ref_val.startswith('observations.'):
             obs_key = ref_val.split('.', 1)[1]
             return f"_network_observations['{obs_key}']"
-        # network.weight / network.weights → the connectivity matrix (embedded constant),
-        # so a callable can receive the connectome (connectogram, betweenness, moments, ...).
-        if ref_val in ('weight', 'weights'):
-            return "_network_weights"
+        # network.weight(s)/length(s), or the explicit network.edges.<label>, → the
+        # connectivity matrix embedded once as a module constant (network_edge_arrays
+        # below), so a callable can receive the connectome (connectogram, betweenness,
+        # moments, ...).
+        _label = _edge_label(ref_val)
+        if _label:
+            return _edge_const(_label)
         # For other network properties, use kwargs
         return f"kwargs.get('{ref_val}')"
     if ref_type == 'integration':
@@ -578,18 +582,12 @@ for obs in obs_list:
         key = str(src).split('network.observations.')[1]
         network_obs_keys.add(key)
 
-# Identify observations that reference network.edges.* and extract matrix data
-network_edge_data = {}  # {edge_label: list} — embedded at codegen time
-for obs in obs_list:
-    src = obs.get('source')
-    if src and str(src).startswith('network.edges.'):
-        edge_label = str(src).split('network.edges.')[1]
-        if edge_label not in network_edge_data:
-            _net = get_attr(experiment, 'network', None)
-            if _net:
-                _matrix = _net.matrix(edge_label)
-                if _matrix is not None:
-                    network_edge_data[edge_label] = _matrix.tolist()
+# Embed connectome matrices referenced by observations (source or callable argument,
+# via the network.weight(s)/length(s) shortcut or the explicit network.edges.<label>
+# form) as module constants. Covers derived and non-derived observations, so the same
+# constant serves both the source path here and the derived resolver in the experiment
+# template (which includes this module). See utils.collect_network_edge_arrays.
+network_edge_arrays = collect_network_edge_arrays(experiment)
 
 # Get BIDS directory from experiment network (resolve to absolute path)
 bids_dir = None
@@ -717,21 +715,13 @@ from tvbo.classes.network import Network as _TvboNetwork
 
 _bids_network = _TvboNetwork.from_bids('${bids_dir}', observational_measures=${list(network_obs_keys)})
 % endif
-<%
-    # Embed the connectivity matrix as a constant when a callable references
-    # `network.weight` (resolved to `_network_weights` in ref_to_code). Only emitted
-    # when actually referenced, so non-network experiments are unaffected.
-    _uses_net_weight = 'network.weight' in str(get_attr(experiment, 'observations', '') or '')
-    _net_weights_data = None
-    if _uses_net_weight:
-        _net_w = get_attr(experiment, 'network', None)
-        _wm = getattr(_net_w, 'weights_matrix', None) if _net_w is not None else None
-        if _wm is not None:
-            _net_weights_data = np.asarray(_wm, dtype=float).tolist()
-%>\
-% if _net_weights_data is not None:
-# Connectivity matrix for callables referencing `network.weight`.
-_network_weights = jnp.array(${repr(_net_weights_data)})
+
+% if network_edge_arrays:
+# Connectome matrices referenced by observations via network.weight(s)/length(s) or
+# network.edges.<label> (embedded once; shared by observation sources and callable args).
+% for _label in sorted(network_edge_arrays):
+${_edge_const(_label)} = jnp.array(${repr(network_edge_arrays[_label])})
+% endfor
 % endif
 
 % for module in sorted(callable_imports.keys()):
@@ -759,9 +749,15 @@ from ${module} import ${class_name} as _Ext${class_name}
     is_network_observation = obs_source and str(obs_source).startswith('network.observations.')
     network_obs_key = str(obs_source).split('network.observations.')[1] if is_network_observation else None
 
-    # Check if source is from network.edges (edge matrix data)
-    is_network_edge = obs_source and str(obs_source).startswith('network.edges.')
-    network_edge_label = str(obs_source).split('network.edges.')[1] if is_network_edge else None
+    # Check if source is a connectome matrix — bare network.weight(s)/length(s)
+    # shortcut or explicit network.edges.<label>; resolves to the shared embedded
+    # constant (network_edge_arrays / _edge_const). Only short-circuits to the raw
+    # matrix when there is NO pipeline; a source matrix WITH a pipeline (e.g.
+    # betweenness_centrality(sc=network.weight)) falls through to the pipeline path,
+    # where the matrix reaches the callable as an argument via ref_to_code.
+    _src_type, _src_val = parse_reference(obs_source) if obs_source else (None, None)
+    network_edge_label = _edge_label(_src_val) if _src_type == 'network' else None
+    is_network_edge = network_edge_label is not None and not pipeline
 
     # A per-subject dataset target (dataset.subject.<measure>) is materialized as a
     # module-level constant and bound at run_experiment time by
@@ -789,12 +785,12 @@ ${render_reduction(obs['reduction'], obs_name, state_idx, dt)}
 ## =============================================================================
 # ${obs['label'] or obs_name} <- dataset.subject.${str(obs_source).split('.')[-1]} (runtime-bound)
 
-% elif is_network_edge and network_edge_label in network_edge_data:
+% elif is_network_edge and network_edge_label in network_edge_arrays:
 ## =============================================================================
-## Static Network Edge Data (embedded from network edge matrix)
+## Static Network Edge Data (embedded connectome matrix — shared constant)
 ## =============================================================================
 # ${obs['label'] or obs_name} - edge data from network
-${obs_name} = jnp.array(${repr(network_edge_data[network_edge_label])})
+${obs_name} = ${_edge_const(network_edge_label)}
 
 % elif is_network_observation and bids_dir:
 ## =============================================================================
@@ -1031,7 +1027,13 @@ class ${class_name}(AbstractMonitor):
 % for ref_obs in referenced_observations:
         _${ref_obs}_result = self._${ref_obs}_monitor(result)
 % endfor
-% if obs_source:
+% if network_edge_label:
+        # Source is a connectome matrix (network.${obs_source}); the embedded constant
+        # is the pipeline input, not a simulation trajectory. An argument naming the
+        # source (e.g. sc=network.weight) is bound to `_data` below.
+        _data = ${_edge_const(network_edge_label)}
+        _time = result.time
+% elif obs_source:
         _data = result.data[:, self.voi, :]
         _time = result.time
 % else:
