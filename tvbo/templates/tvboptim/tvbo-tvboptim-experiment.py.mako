@@ -2028,7 +2028,7 @@ def compute_analysis_observations(state, network, result_transient=None):
     diagnostics fully metadata-derived. Analysis solves use a plain solver — the truncation
     window is an optimization knob, not part of these diagnostics."""
     obs = Bunch()
-${render_analysis_observations(analysis_observations_dict, coupling_keys, solver_class, transient_time, t1_default, dt, solver_kwargs_str)}
+${render_analysis_observations(analysis_observations_dict, coupling_keys, solver_class, transient_time, t1_default, dt, solver_kwargs_str, model=model)}
     return obs
 % endif
 
@@ -2388,13 +2388,16 @@ ${sweep.warmstart_sweep_body(expl, solver_class, dt, warmstart_solver_kwargs)}\
     % for ax in expl['axes']:
     % if ax.get('builder_expr'):
     ## Builder axis: materialize the sweep values from a callable, then sweep as a DataAxis.
-    ## Values may be whole per-node vectors (array-valued axis); Space gathers one per cell
-    ## just like a scalar axis, so sharding / batching / as_grid all apply unchanged.
-    _axisvals_${ax['name']} = ${ax['builder_expr']}
+    ## Values may be whole per-node vectors (array-valued axis). Product mode meshgrids the
+    ## axes, which is 1-D only, so an array-valued axis is given a singleton group: Space's
+    ## grouped path index-gathers it, carrying one whole vector per cell. Scalar axes (1-D
+    ## values) stay ungrouped, so their behaviour is unchanged.
+    _axisvals_${ax['name']} = jnp.asarray(${ax['builder_expr']})
+    _grp_${ax['name']} = "${ax['name']}" if _axisvals_${ax['name']}.ndim > 1 else None
     % if ax.get('is_coupling'):
-    grid_state.coupling.${ax['coupling_key']}.${ax['name']} = DataAxis(jnp.asarray(_axisvals_${ax['name']}))
+    grid_state.coupling.${ax['coupling_key']}.${ax['name']} = DataAxis(_axisvals_${ax['name']}, group=_grp_${ax['name']})
     % else:
-    grid_state.dynamics.${ax['name']} = DataAxis(jnp.asarray(_axisvals_${ax['name']}))
+    grid_state.dynamics.${ax['name']} = DataAxis(_axisvals_${ax['name']}, group=_grp_${ax['name']})
     % endif
     % elif ax.get('is_seed'):
     ## Noise-seed axis: a dummy scalar slot Space sweeps; the wrapper below turns
@@ -2901,12 +2904,21 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
     _shard = kwargs.get('shard')
     if _shard is not None:
         _df = grid.to_dataframe()
-        _bare_to_label = {}
+        _bare_to_label, _network_label = {}, None
         for _a in _axes_info:
             _bare_to_label.setdefault(str(_a.name).rsplit('.', 1)[-1], str(_a.name))
+            if str(_a.name).startswith('network.'):
+                _network_label = str(_a.name)   # network-scope axis (e.g. conduction_speed)
         _cell_coords, _used = {}, set()
         for _col in _df.columns:
-            _label = _bare_to_label.get(str(_col).rsplit('.', 1)[-1], str(_col))
+            _label = _bare_to_label.get(str(_col).rsplit('.', 1)[-1], None)
+            if _label is None and _network_label is not None and str(_col).startswith('graph.'):
+                # The network.conduction_speed axis sweeps the DenseLengthGraph's `speed`
+                # leaf, which flattens to a keypath like "graph.2" whose bare name ("2")
+                # does not match the axis label — restore the friendly network name.
+                _label = _network_label
+            if _label is None:
+                _label = str(_col)
             if _label in _used:
                 _label = str(_col)  # disambiguate a bare-name collision with the keypath
             _used.add(_label)
