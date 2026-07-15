@@ -1065,14 +1065,18 @@ def render_analysis_observations(
     solver_kwargs = _analysis_solver_kwargs(solver_kwargs)
     lines: List[str] = []
 
-    # Linear-response analysis types (covariance / psd / fisher) are evaluated at the
-    # deterministic operating point via the metadata-symbolic network vector field and
-    # Jacobian. Emit those two helpers ONCE (shared by every such observation) plus the
-    # operating-point seed, then each observation renders its own Mako partial below.
-    # Structure comes from _linear_response.py.mako (backend-renderable); resolution from
-    # linear_response_context — no Python string-emit of the code bodies.
-    _LR_TYPES = {"covariance"}
+    # Linear-response analysis types (covariance / psd / fisher) are evaluated at the SAME
+    # deterministic operating point via the metadata-symbolic network vector field + Jacobian.
+    # Emit the vector field, the Jacobian, and the operating point (settle + A) ONCE — shared by
+    # every such observation — then each observation is just a linear-algebra solve on the shared
+    # ``_lr_A``. Structure comes from _linear_response.py.mako (backend-renderable); resolution
+    # from linear_response_context — no Python string-emit of the code bodies.
+    _LR_TYPES = {"covariance", "psd"}
     _lr_ctx = _lr_tpl = None
+
+    def _emit_partial(_defname, **_kw):
+        return _lr_tpl.get_def(_defname).render(**_kw).strip("\n").split("\n")
+
     if model is not None and any(
         str(getattr(a.analysis, "type", "") or "") in _LR_TYPES for a in analysis_obs.values()
     ):
@@ -1081,13 +1085,16 @@ def render_analysis_observations(
 
         _lr_ctx = linear_response_context(model)
         _lr_tpl = _templates.lookup.get_template("_linear_response.py.mako")
-        for _d in ("lr_vf", "lr_jacobian"):
-            lines += _lr_tpl.get_def(_d).render(ctx=_lr_ctx).strip("\n").split("\n")
         _nsv = _lr_ctx["n_sv"]
-        lines.append(
+        lines += [
+            "_lr_weights = jnp.asarray(network.graph.weights)",
+            "_lr_params = state.dynamics",
             f"_lr_x0 = jnp.broadcast_to(jnp.reshape(jnp.asarray(state.initial_state.dynamics), "
-            f"({_nsv}, -1)), ({_nsv}, network.graph.weights.shape[0]))"
-        )
+            f"({_nsv}, -1)), ({_nsv}, _lr_weights.shape[0]))",
+        ]
+        lines += _emit_partial("lr_vf", ctx=_lr_ctx)
+        lines += _emit_partial("lr_jacobian", ctx=_lr_ctx)
+        lines += _emit_partial("lr_operating_point", ctx=_lr_ctx)  # binds _lr_fp, _lr_A
 
     # Finite-difference observations that share the exact same per-seed computation
     # (same target, wrt, delta, seeds, seed_base) reuse ONE ``jax.lax.map`` — matching the
@@ -1180,20 +1187,28 @@ def render_analysis_observations(
                 f"# {name}: seed-averaged central finite-difference {stat} of '{target}' wrt {wrt[0]}",
                 f"obs.{name} = {reduce}",
             ]
-        elif atype == "covariance" and _lr_tpl is None:
-            lines.append(f"# {name}: covariance analysis needs the model threaded to "
+        elif atype in ("covariance", "psd") and _lr_tpl is None:
+            lines.append(f"# {name}: {atype} analysis needs the model threaded to "
                          f"render_analysis_observations — skipped.")
         elif atype == "covariance":
-            # Stationary covariance (Lyapunov) at the operating point — Deco 2014 Fig 5, Eq 24.
-            # Renders its own `_cov_<name>` from the Mako partial and evaluates it at the seed FP.
+            # Stationary covariance (Lyapunov) on the shared operating point — Deco Fig 5, Eq 24.
             _sigma = float(params.get("sigma", 0.01))
-            _cov = _lr_tpl.get_def("lr_covariance").render(
-                ctx=_lr_ctx, name=f"_cov_{name}", sigma=_sigma
-            )
-            lines += _cov.strip("\n").split("\n")
+            lines += _emit_partial("lr_covariance", ctx=_lr_ctx, name=f"_cov_{name}", sigma=_sigma)
             lines += [
                 f"# {name}: excitatory-block stationary covariance via the Lyapunov equation",
-                f"obs.{name} = _cov_{name}(_lr_x0, network.graph.weights, state.dynamics)",
+                f"obs.{name} = _cov_{name}(_lr_A)",
+            ]
+        elif atype == "psd":
+            # Analytic power spectrum per excitatory node on the shared A — Deco Fig 5, Eq 28.
+            _sigma = float(params.get("sigma", 0.01))
+            _flo = float(params.get("f_lo", 0.1))
+            _fhi = float(params.get("f_hi", 50.0))
+            _nf = int(params.get("n_freq", 128))
+            lines += _emit_partial("lr_psd", ctx=_lr_ctx, name=f"_psd_{name}",
+                                   sigma=_sigma, f_lo=_flo, f_hi=_fhi, n_freq=_nf)
+            lines += [
+                f"# {name}: analytic power spectrum per excitatory node (Eq 28)",
+                f"obs.{name} = _psd_{name}(_lr_A)",
             ]
         else:
             lines.append(f"# {name}: analysis type '{atype}' not yet lowered for this backend — skipped.")
