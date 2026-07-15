@@ -968,17 +968,19 @@ def _tar_extractall_safe(tar, dest: Path) -> None:
         tar.extractall(dest)
 
 
-def _resolve_kit_dir(kit: Path, force: bool = False) -> Path:
+def _resolve_kit_dir(kit: Path, force: bool = False, dest_override: Path | None = None) -> Path:
     """Resolve a kit path that may be a directory or a packaged archive.
 
     A directory is returned as-is. A ``.tar.gz`` / ``.tgz`` / ``.tar`` / ``.zip``
-    archive is extracted next to itself and the kit root inside it (the directory
-    holding the engine artefact) is returned, so a shipped kit runs without a manual
-    unzip. An already-extracted kit next to the archive is reused rather than
-    re-extracted, so a re-submit never clobbers an in-progress ``results/`` — unless
-    *force*, which re-extracts a freshly re-uploaded archive over the stale kit files
-    (Snakefile/spec/code/profile) while leaving ``results/`` and ``.snakemake/`` (not
-    in the archive) untouched, so the run resumes with the new definition.
+    archive is extracted into *dest_override* (default: next to itself) and the kit
+    root inside it (the directory holding the engine artefact) is returned, so a
+    shipped kit runs without a manual unzip. Point *dest_override* at a fresh
+    directory to run a second copy in parallel without touching an in-progress kit's
+    ``results/`` + ``logs/``. An already-extracted kit at the destination is reused
+    rather than re-extracted, so a re-submit never clobbers an in-progress
+    ``results/`` — unless *force*, which re-extracts a freshly re-uploaded archive
+    over the stale kit files (Snakefile/spec/code/profile) while leaving ``results/``
+    and ``.snakemake/`` (not in the archive) untouched, so the run resumes anew.
     """
     if kit.is_dir():
         return kit
@@ -992,7 +994,8 @@ def _resolve_kit_dir(kit: Path, force: bool = False) -> Path:
     import tarfile
     import zipfile
 
-    dest = kit.parent
+    dest = dest_override or kit.parent
+    dest.mkdir(parents=True, exist_ok=True)
     with (zipfile.ZipFile(kit) if is_zip else tarfile.open(kit)) as arc:
         names = arc.namelist() if is_zip else arc.getnames()
         tops = sorted({n.split("/", 1)[0] for n in names if n and not n.startswith("/")})
@@ -1033,6 +1036,12 @@ def submit_kit(
              "the Snakefile/spec/code/profile. Leaves results/ and .snakemake/ intact so the "
              "run resumes with the new definition (no need to rm the kit dir first).",
     ),
+    out: Path = typer.Option(
+        None, "--out", "-o",
+        help="Directory to extract the archive into (default: next to the archive). Point it "
+             "at a fresh dir to run a second copy in parallel — its results/ + logs/ stay "
+             "isolated from an in-progress kit. Ignored when the kit is already a directory.",
+    ),
 ) -> None:
     """Submit a kit already emitted by ``tvbo workflow slurm|snakemake|nextflow``.
 
@@ -1045,7 +1054,8 @@ def submit_kit(
     engine is inferred from the kit's artefact file unless ``--engine`` is given.
     Run it from a login node (Slurm) or wherever the engine's launcher is available.
     """
-    kit = _resolve_kit_dir(kit.expanduser().resolve(), force=force)
+    kit = _resolve_kit_dir(kit.expanduser().resolve(), force=force,
+                           dest_override=out.expanduser().resolve() if out else None)
     eng = (engine or "").lower() or _detect_engine_from_kit(kit)
     if eng is None:
         _common.die(
