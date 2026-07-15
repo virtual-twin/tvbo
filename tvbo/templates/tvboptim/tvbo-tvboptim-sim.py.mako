@@ -177,17 +177,18 @@ def create_network(
 ) -> Network:
     """Create configured Network instance.
 
-    ``max_delay`` (delayed coupling only) sets a static history-buffer length,
-    decoupled from the ``delays`` values. Pass it when ``delays`` are JAX tracers
-    (e.g. ``delays = tract_lengths / v`` with conduction speed ``v`` optimised by
-    gradient): the buffer stays a fixed shape while per-edge delays vary
-    differentiably. When None it is derived from ``delays`` (concrete) as usual.
+    ``max_delay`` (delayed coupling only) is the ``max_delay_bound``: a static
+    history-buffer length decoupled from the ``delays`` values. Pass it when
+    ``delays`` are JAX tracers (e.g. ``delays = tract_lengths / v`` with conduction
+    speed ``v`` optimised by gradient): the buffer stays a fixed shape while
+    per-edge delays vary differentiably. When None it is derived from ``delays``
+    (concrete) as usual.
     """
     % if has_delay:
     if delays is None:
         delays = jnp.zeros_like(weights)
     % if interpolate_delays:
-    graph = DenseDelayGraph(weights, delays, region_labels=region_labels, max_delay=max_delay)
+    graph = DenseDelayGraph(weights, delays, region_labels=region_labels, max_delay_bound=max_delay)
     % else:
     graph = DenseDelayGraph(weights, delays, region_labels=region_labels)
     % endif

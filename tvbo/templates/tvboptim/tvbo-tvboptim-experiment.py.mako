@@ -667,7 +667,7 @@ for expl in exploration_list:
             prefix, pname = pname.rsplit('.', 1)
             # `network` is the reserved singleton-network scope (one Network per
             # experiment): e.g. `network.conduction_speed`. Its axis is swept on
-            # grid_state.network and consumed by rebuilding the delay graph per cell.
+            # grid_state.graph.speed (the DenseLengthGraph's live conduction-speed leaf).
             is_network_param = (prefix == 'network')
             is_coupling_param = (not is_network_param) and (prefix in all_couplings)
             source_key = _to_ci_key(prefix) if is_coupling_param else (None if is_network_param else prefix)
@@ -795,6 +795,7 @@ for expl in exploration_list:
                     'values': vals,
                     'n': len(vals),
                     'is_coupling': is_coupling_param,
+                    'is_network': is_network_param,
                     'coupling_key': source_key if is_coupling_param else None,
                     'dynamics_key': source_key if not is_coupling_param and source_key else None,
                     'element_idx': None,
@@ -815,6 +816,7 @@ for expl in exploration_list:
                         'values': _vals,
                         'n': n,
                         'is_coupling': is_coupling_param,
+                        'is_network': is_network_param,
                         'coupling_key': source_key if is_coupling_param else None,
                         'dynamics_key': source_key if not is_coupling_param and source_key else None,
                         'element_idx': None,
@@ -1163,7 +1165,7 @@ from tvboptim.experimental.network_dynamics.coupling.base import InstantaneousCo
 from tvboptim.experimental.network_dynamics.external_input.base import AbstractExternalInput
 % endif
 % if has_delay:
-from tvboptim.experimental.network_dynamics.graph import DenseDelayGraph, SparseDelayGraph
+from tvboptim.experimental.network_dynamics.graph import DenseDelayGraph, DenseLengthGraph, SparseDelayGraph
 % else:
 from tvboptim.experimental.network_dynamics.graph import DenseGraph, SparseGraph
 % endif
@@ -1349,10 +1351,10 @@ def create_network(
     if delays is None:
         delays = jnp.zeros_like(weights)
     % if interpolate_delays:
-    # Differentiable delays (opt-in): max_delay (static history-buffer length) is
-    # decoupled from `delays` so the delays may be JAX tracers (gradient-optimised
-    # conduction speed v); None derives it as usual. Needs differentiable-delays tvboptim.
-    graph = DenseDelayGraph(weights, delays, region_labels=region_labels, max_delay=max_delay)
+    # Differentiable delays (opt-in): max_delay_bound sizes the (static) history
+    # buffer independently of `delays`, so the delays may be JAX tracers (e.g. a
+    # gradient-optimised conduction speed v); None derives the bound from max(delays).
+    graph = DenseDelayGraph(weights, delays, region_labels=region_labels, max_delay_bound=max_delay)
     % else:
     graph = DenseDelayGraph(weights, delays, region_labels=region_labels)
     % endif
@@ -2282,11 +2284,11 @@ def run_optimization(
     _stream_bs = expl.get('block_size') or 1000
     _stream_skip = int(round(transient_time / dt)) if has_transient else 0
     _stream_t1 = (transient_time + t1_default) if has_transient else t1_default
-    # Network-scope axes (e.g. `network.conduction_speed`): consumed per cell by rebuilding
-    # the delay graph (delays = lengths / v). v_min sizes the max_delay history buffer.
+    # Network-scope axes (e.g. `network.conduction_speed`): the base graph is a
+    # DenseLengthGraph, so the axis sweeps its live `speed` leaf directly. _v_min
+    # (the slowest swept speed) sizes the max_delay_bound history buffer.
     _network_axes = [ax for ax in expl['axes'] if ax.get('is_network')]
     _has_network_axis = bool(_network_axes)
-    _network_axis_name = _network_axes[0]['name'] if _network_axes else None
     _v_min = None
     if _network_axes:
         _vvals = []
@@ -2297,6 +2299,29 @@ def run_optimization(
 def ${expl['name']}(state, model_fn, result_transient=None, **kwargs):
     """${expl['label']} - ${grid_desc}."""
     _network = kwargs.get('network')
+% if _has_network_axis:
+    if _network is not None:
+        # Network-scope conduction_speed axis: swap the delay graph for a
+        # DenseLengthGraph so `speed` is a live, sweepable pytree leaf
+        # (delays = lengths / speed, recomputed each forward pass). Built once
+        # here, outside jit/vmap, so the one-time Network reconstruction never
+        # traces. max_delay_bound sizes the history buffer for the slowest swept
+        # speed (its largest delay), giving the sweep headroom without a re-prepare.
+        _v_build = ${conduction_speed}
+        _base_delays = _network.graph.delays
+        _lengths = _base_delays * _v_build
+        _length_graph = DenseLengthGraph(
+            _network.graph.weights, _lengths, speed=_v_build,
+            region_labels=_network.graph.region_labels,
+            # Buffer sized for the slowest speed used at build OR sweep time (its
+            # largest delay); min() guards a sweep whose speeds are all faster than
+            # the build speed, where the build-speed delay is the binding one.
+            max_delay_bound=float(jnp.max(_lengths)) / min(_v_build, ${_v_min}),
+        )
+        _network = type(_network)(
+            _network.dynamics, _network.coupling, _length_graph, noise=_network.noise,
+        )
+% endif
 % if any(ax.get('builder_expr') for ax in expl['axes']):
     # Builder-axis support: resolve a base-sim observation named in a builder argument.
     # `base_observations` is the Bunch of observations the main run computed before this
@@ -2391,14 +2416,14 @@ ${sweep.warmstart_sweep_body(expl, solver_class, dt, warmstart_solver_kwargs)}\
     grid_state.coupling.${ax['coupling_key']}.${ax['name']} = GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']}))
     % endif
     % elif ax.get('is_network'):
-    ## Network-scope axis (e.g. conduction_speed): swept on grid_state.network and
-    ## consumed per cell by rebuilding the delay graph (delays = lengths / value).
-    if not hasattr(grid_state, 'network') or grid_state.network is None:
-        grid_state.network = Bunch()
+    ## Network-scope axis (conduction_speed): the base graph is a DenseLengthGraph
+    ## (built above from tract lengths), so sweep its live `speed` leaf directly.
+    ## delays = lengths / speed is recomputed each forward pass — no per-cell graph
+    ## or Network rebuild, and speed stays a differentiable pytree leaf.
     % if 'values' in ax:
-    grid_state.network.${ax['name']} = DataAxis(${ax['values']})
+    grid_state.graph.speed = DataAxis(${ax['values']})
     % else:
-    grid_state.network.${ax['name']} = GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']}))
+    grid_state.graph.speed = GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']}))
     % endif
     % else:
     % if 'values' in ax:
@@ -2420,37 +2445,7 @@ ${sweep.warmstart_sweep_body(expl, solver_class, dt, warmstart_solver_kwargs)}\
 % endif
 
     # Create observation monitors ONCE with history baked in (optimized pattern)
-% if _has_network_axis and _network is not None:
-    # Network-scope sweep (e.g. network.conduction_speed): the delay graph depends on the
-    # swept value, so rebuild it per cell — delays = lengths / v = base_delays * v_build / v
-    # — over a max_delay buffer sized for the slowest v (its largest delay). prepare composes
-    # under the trial vmap, so the trial wrapper (if any) may still wrap this observable.
-    _v_build = ${conduction_speed}
-    _base_delays = _network.graph.delays
-    _base_graph = DenseDelayGraph(
-        _network.graph.weights, _base_delays,
-        max_delay=float(jnp.max(_base_delays)) * _v_build / ${_v_min},
-    )
-    @jax.jit
-    def observable_fn(s):
-        _v = s.network.${_network_axis_name}
-        _cell_graph = _base_graph.with_delays(_base_delays * _v_build / _v)
-        _net_cell = type(_network)(_network.dynamics, _network.coupling, _cell_graph, noise=_network.noise)
 % if _use_stream:
-        _cell_model_fn, _ = prepare(
-            _net_cell, get_solver(block_size=${_stream_bs}),
-            t0=0.0, t1=${_stream_t1}, dt=${dt},
-            reduce=_compose_reducers(*[
-                _STREAMING_REDUCERS[_n][0](_STREAMING_REDUCERS[_n][1], ${dt}, skip=${_stream_skip})
-                for _n in ${repr(_stream_names)}
-            ]),
-        )
-        return Bunch(**{_n: _cv for _n, _cv in zip(${repr(_stream_names)}, _cell_model_fn(s))})
-% else:
-        _cell_model_fn, _ = prepare(_net_cell, get_solver(), t0=0.0, t1=${t1_default}, dt=${dt})
-        return compute_all_observations(_cell_model_fn(s), s, result_transient)
-% endif
-% elif _use_stream:
     # Streaming reductions: every recorded observable is an Observation.dynamics observer,
     # so fold each into the integrator carry via prepare(reduce=...). The trajectory is
     # never materialized — peak memory is O(batch·block·n_node), which is what lets the
