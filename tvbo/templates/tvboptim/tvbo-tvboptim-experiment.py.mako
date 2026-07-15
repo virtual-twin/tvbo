@@ -115,6 +115,19 @@ has_delay = any(c.delayed for c in all_couplings.values() if c)
 # uses the stock DenseDelayGraph that derives max_delay from the delays.
 interpolate_delays = any(bool(getattr(c, 'interpolate_delays', False)) for c in all_couplings.values() if c)
 
+# Sparse coupling opt-in (Network.graph_representation: sparse): sparsify the weight matrix to
+# BCOO so the `pre @ weights` reduction runs as an edge-sum (O(nnz)) instead of a dense NxN
+# matmul. Requires EVERY coupling to be instantaneous AND vectorized (source-only `pre`, same
+# rule as resolve_coupling_spec): a per-edge `pre` (e.g. sin(x_j - x_i)) or a delayed one would
+# hit jsparse.sparsify on a nonlinear term and crash, so such networks fall back to dense.
+_is_vectorized_coupling = lambda c: bool(getattr(c, 'vectorized', False)) or (
+    bool(getattr(c, 'local_states', None)) and not getattr(c, 'incoming_states', None))
+use_sparse = (
+    str(getattr(network, 'graph_representation', 'auto') or 'auto') == 'sparse'
+    and not has_delay
+    and all(_is_vectorized_coupling(c) for c in all_couplings.values() if c)
+)
+
 # Collect all coupling parameters (for optimization)
 all_coupling_params = {}  # (coupling_key, param_name) -> param_obj
 all_coupling_param_shapes = {}  # (coupling_key, param_name) -> shape_str
@@ -1343,6 +1356,10 @@ def create_network(
     % else:
     graph = DenseDelayGraph(weights, delays, region_labels=region_labels)
     % endif
+    % elif use_sparse:
+    # Sparse coupling: the weight matrix is sparsified to BCOO so the vectorized
+    # `pre @ weights` reduction is an O(nnz) edge-sum, not a dense NxN matmul.
+    graph = SparseGraph(weights, region_labels=region_labels)
     % else:
     graph = DenseGraph(weights, region_labels=region_labels)
     % endif
