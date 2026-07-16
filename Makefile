@@ -75,6 +75,7 @@ SHACL_OUT = ontology/tvb-o.shacl.ttl
 ABOX_OUT = ontology/tvb-o-data.ttl
 BIOLOGY_OUT = ontology/tvb-o-biology.ttl
 AXIOMS_TTL = ontology/tvb-o-axioms.ttl
+BIFURCATION_TTL = ontology/tvb-o-bifurcation.ttl
 CLINICAL_TTL = ontology/tvb-o-clinical.ttl
 CLINICAL_NMM = ontology/tvb-o-clinical-nmm.ttl
 MERGED_OUT = ontology/tvbo.owl
@@ -126,6 +127,7 @@ gen-merged: gen-owl gen-abox
 	@$(ROBOT) merge \
 		--input $(OWL_OUT) \
 		--input $(AXIOMS_TTL) \
+		--input $(BIFURCATION_TTL) \
 		--input $(ABOX_OUT) \
 		--input $(BIOLOGY_OUT) \
 		--input $(CLINICAL_TTL) \
