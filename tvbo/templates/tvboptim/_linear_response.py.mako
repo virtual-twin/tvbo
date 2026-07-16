@@ -103,14 +103,20 @@ _lr_A = ${jac}(_lr_fp, _lr_weights, _lr_params)
 ## Continuous Lyapunov Σ solve on the shared A (Deco 2014 Fig 5, Eq 24): A Σ + Σ Aᵀ + Q = 0,
 ## Q = σ² I, by eigendecomposition Σ = V M Vᴴ, M = -(V⁻¹QV⁻ᴴ)/(λᵢ+λ̄ⱼ) — backend-independent
 ## (jnp.linalg.eig/inv), no scipy. Returns the excitatory-block covariance P[:N,:N].
-<%def name="lr_covariance(ctx, name, sigma)">\
+<%def name="lr_covariance(ctx, name, sigma, return_='covariance')">\
 def ${name}(A):
     _n = A.shape[0]; _N = _n // ${ctx['n_sv']}
     _Q = (${sigma} ** 2) * jnp.eye(_n)
     _lam, _V = jnp.linalg.eig(A)
     _Vi = jnp.linalg.inv(_V)
     _M = -(_Vi @ _Q.astype(_V.dtype) @ _Vi.conj().T) / (_lam[:, None] + jnp.conj(_lam)[None, :])
-    return (_V @ _M @ _V.conj().T).real[:_N, :_N]
+    _P = (_V @ _M @ _V.conj().T).real[:_N, :_N]
+% if return_ == 'correlation':
+    _d = jnp.sqrt(jnp.diag(_P))          # Pearson correlation of the excitatory gating (Deco 'Q')
+    return _P / jnp.outer(_d, _d)
+% else:
+    return _P
+% endif
 </%def>\
 ##
 ## Analytic power spectrum on the shared A (Deco 2014 Fig 5, Eq 28): per excitatory node,

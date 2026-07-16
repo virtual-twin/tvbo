@@ -1192,10 +1192,13 @@ def render_analysis_observations(
                          f"render_analysis_observations — skipped.")
         elif atype == "covariance":
             # Stationary covariance (Lyapunov) on the shared operating point — Deco Fig 5, Eq 24.
+            # `return: correlation` gives Deco's Q (Pearson correlation of the excitatory gating).
             _sigma = float(params.get("sigma", 0.01))
-            lines += _emit_partial("lr_covariance", ctx=_lr_ctx, name=f"_cov_{name}", sigma=_sigma)
+            _ret = str(params.get("return", "covariance"))
+            lines += _emit_partial("lr_covariance", ctx=_lr_ctx, name=f"_cov_{name}",
+                                   sigma=_sigma, return_=_ret)
             lines += [
-                f"# {name}: excitatory-block stationary covariance via the Lyapunov equation",
+                f"# {name}: excitatory-block stationary {_ret} via the Lyapunov equation",
                 f"obs.{name} = _cov_{name}(_lr_A)",
             ]
         elif atype == "psd":
