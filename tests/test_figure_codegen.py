@@ -34,7 +34,7 @@ TAHER_BASE = Path(
     "use-cases/replication_studies/Taher2019"
 )
 EXP3_IRI = "tvbo:exp/Taher2019/exp-3"
-MISSING_IRI = "tvbo:exp/Taher2019/exp-999"  # deliberately non-existent -> guard/placeholder
+MISSING_IRI = "tvbo:exp/Taher2019/exp-999"  # deliberately non-existent -> placeholder
 
 # Resolve once so every data-backed test shares the same gate.
 _EXP3_CONTAINER = bsplot._container_path(EXP3_IRI, TAHER_BASE) if TAHER_BASE.is_dir() else ""
@@ -197,7 +197,7 @@ def test_build_context_resolves_everything():
             "d": P.Panel(
                 panel_key="d",
                 kind="cartesian",
-                guard=P.Guard(when="missing", placeholder="no data"),
+                placeholder="no data",
                 layers=[
                     P.Layer(
                         used=P.DataRef(iri=MISSING_IRI, output="delta_omega"),
@@ -238,7 +238,7 @@ def test_build_context_resolves_everything():
         {"text": "corner", "x": 0.03, "y": 0.95},
         {"text": "xy", "x": 0.2, "y": 0.3},
     ]
-    assert a["guard"] is None
+    assert a["placeholder"] is None
 
     # (b) heatmap: mark defaults to 'heatmap' from the panel kind
     b = panels["b"]
@@ -254,7 +254,7 @@ def test_build_context_resolves_everything():
 
     # (d) guarded panel over a missing container: placeholder text surfaced, container empty
     d = panels["d"]
-    assert d["guard"] == "no data"
+    assert d["placeholder"] == "no data"
     assert d["letter"] == "(d)"
     assert d["layers"][0]["container"] == ""
 
@@ -323,7 +323,7 @@ def test_render_guarded_missing_container_does_not_raise(tmp_path):
             "a": P.Panel(
                 panel_key="a",
                 kind="cartesian",
-                guard=P.Guard(when="missing", placeholder="no data"),
+                placeholder="no data",
                 layers=[
                     P.Layer(
                         used=P.DataRef(iri=MISSING_IRI, output="delta_omega"),
