@@ -265,6 +265,54 @@ def test_build_context_default_letter_format():
     assert ctx["panels"][0]["letter"] == "a"
 
 
+def test_build_context_dataclass_flavor_kind_mark_loc():
+    """Production loads figures as the *dataclass* datamodel — both ``tvbo figure
+    render`` (``schema.Figure``) and ``SimulationStudy`` (extends
+    ``schema.SimulationStudy``) — whose enum-valued slots are NOT ``==`` a bare
+    string. The rest of this module builds pydantic objects (where the enum is a
+    ``str``), so the adapter must normalise ``kind``/``mark``/``loc`` for the
+    dataclass flavour or custom/image/heatmap dispatch and corner placement break
+    only in production.
+    """
+    from tvbo.datamodel import schema as D
+
+    fig = D.Figure(
+        name="dc", layout="ab/cd", panel_number_loc="upper right",
+        panels={
+            "a": D.Panel(panel_key="a", kind="custom", render="lyapunov_vs_k"),
+            "b": D.Panel(panel_key="b", kind="image", path="/tmp/x.png"),
+            "c": D.Panel(
+                panel_key="c", kind="cartesian", number_loc="lower left",
+                layers=[D.Layer(used=D.DataRef(iri="tvbo:exp/x", output="v"),
+                                mark="scatter", encoding=D.Encoding(x="K", y="v"))],
+            ),
+            "d": D.Panel(
+                panel_key="d", kind="heatmap",
+                layers=[D.Layer(used=D.DataRef(iri="tvbo:exp/x", output="m"),
+                                encoding=D.Encoding(x="K", y="n"))],
+            ),
+        },
+    )
+    ctx = bsplot.build_context(fig, TAHER_BASE, "out.png")
+    by = {p["key"]: p for p in ctx["panels"]}
+
+    # kind resolves to a plain string -> custom dispatch + image/heatmap branching
+    assert by["a"]["kind"] == "custom" and by["a"]["ctx"] is not None
+    assert by["b"]["kind"] == "image"
+    assert by["c"]["layers"][0]["mark"] == "scatter"    # explicit mark survives, not defaulted to line
+    assert by["d"]["layers"][0]["mark"] == "heatmap"    # implied by the heatmap panel kind
+    # Corner enum -> corner placement kwargs (figure default, and per-panel override)
+    assert by["a"]["number_kwargs"]["ha"] == "right"
+    assert (by["c"]["number_kwargs"]["ha"], by["c"]["number_kwargs"]["va"]) == ("left", "bottom")
+
+    # the emitted plot.py parses and dispatches each kind
+    code = bsplot.render_code(fig, TAHER_BASE, "out.png")
+    ast.parse(code)
+    assert "_CP[" in code           # custom-panel callable dispatch
+    assert "pcolormesh" in code     # heatmap
+    assert "imread" in code         # image
+
+
 # --------------------------------------------------------------------------- render_code validity
 
 def _emit(**fig_kw) -> str:
